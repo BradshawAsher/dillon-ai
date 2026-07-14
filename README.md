@@ -8,14 +8,30 @@ into a submission history view.
 - `frontend/` — the React UI (pages, components, utils) plus local-dev scaffolding (see below)
 - `frontend/notes/project-handoff.md` — detailed architecture and data-flow handoff notes
 
-## Running locally
+## Running without Retool (standalone)
 
-Prerequisites: **Node.js 18+** (tested on 22) and **npm**. No other global tools needed —
-everything else installs from `frontend/package.json`.
+The app runs completely outside Retool. Prerequisites: **Node.js 18+** (tested on 22) and
+**npm** — everything else installs from `frontend/package.json`.
 
 ```sh
 cd frontend
 npm install
+npm start       # builds the frontend and serves app + API on http://localhost:3000
+```
+
+`frontend/server.ts` is a small Express server that executes the real backend functions from
+`/backend/diligence` (shimming the `n8nFinancialAgent` global Retool used to inject — see
+`frontend/retoolRuntime.ts`) and serves the built frontend. `PORT` overrides the port.
+
+On first load a sign-in overlay asks for your name and email; live submissions are stamped with
+it (the role Retool's login used to play). It persists in localStorage — use the "Change" button
+on the bottom-left chip to switch users. This is identity capture, not authentication — add a
+real login layer before exposing the app beyond localhost.
+
+## Running the dev server (hot reload)
+
+```sh
+cd frontend
 npm run dev     # Vite dev server on http://localhost:5173
 ```
 
@@ -32,7 +48,12 @@ picked up by the page's 5-second polling). The choice persists in localStorage a
 Setting `VITE_USE_MOCKS=true` when starting the dev server only changes the default.
 
 Exception in both modes: the legacy findings panel (`getDiligenceData`) reads Retool DB, which
-has no local equivalent, so it always shows the page's built-in sample findings.
+has no local equivalent, so it always shows the page's built-in sample findings. This is the
+only remaining Retool-owned data; everything else (submissions, AI results) lives in n8n.
+
+Remaining steps for a full production exit from Retool: host the standalone server somewhere
+(Render/Railway/Fly), put a real login in front of it, and add header auth to the n8n webhook
+nodes (today they are gated only by the UUID in their path).
 
 ## What the Retool export includes vs. what had to be added
 
