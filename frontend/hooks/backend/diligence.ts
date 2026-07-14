@@ -5,17 +5,19 @@
 // forwards to the n8n webhooks. The frontend itself never fetches external
 // hosts, matching the handoff constraint.
 //
-// Set VITE_USE_MOCKS=true to fall back to in-memory mocks (no network at all).
+// The Mock / Live n8n toggle (bottom-right of the page) switches sources at
+// runtime; VITE_USE_MOCKS=true only sets the default. See lib/dataSource.ts.
 //
 // getDiligenceData is the exception: its backend reads Retool DB, which has no
 // local equivalent, so it always returns null and the page shows its built-in
 // sample findings.
 import { useCallback, useState } from 'react'
 
+import { getDataSource } from '../../lib/dataSource'
 import type { DiligenceFinding } from '../../utils/diligence'
 import type { SubmissionHistoryItem } from '../../utils/submissionHistory'
 
-const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === 'true'
+const USE_MOCKS = getDataSource() === 'mock'
 
 type TriggerPromise<T> = Promise<T> & { result: Promise<T> }
 
