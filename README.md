@@ -41,3 +41,19 @@ cannot build or run from the zip alone:
 Everything under `frontend/pages`, `frontend/components`, `frontend/utils`, and `backend/` is
 untouched export content. The scaffolding files above are local-dev additions only; syncing this
 repo back into Retool should treat them as extra files, not app changes.
+
+## Handoff-doc compliance
+
+The local-dev scaffolding follows the conventions in
+[`frontend/notes/project-handoff.md`](frontend/notes/project-handoff.md):
+
+- **Strict TypeScript** (§4) — enforced via `frontend/tsconfig.json`; `npx tsc --noEmit` passes
+  for both the exported app code and the scaffolding
+- **No direct external fetch from the frontend** (§4) — the mock hooks make zero network calls
+  and preserve the generated-hook interface (`{ data, loading, error, trigger }`, where
+  `trigger(params, { skipCache })` returns a promise exposing `.result`)
+- **Polling lifecycle** (§6) — mock submissions enter an active status (`processing`) so the
+  page's 5-second poll engages, and complete ~8s later so it stops on its own
+- **Row shape** (§9) — the mock store covers every normalized field `getSubmissionHistory`
+  supports, including the valuation / investment-thesis fields
+- Known doc drift: §4 says React 18, but Retool's exported `package.json` pins React 19
