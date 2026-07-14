@@ -14,6 +14,7 @@
 import { useCallback, useState } from 'react'
 
 import { getDataSource } from '../../lib/dataSource'
+import { identityHeaders } from '../../lib/identity'
 import type { DiligenceFinding } from '../../utils/diligence'
 import type { SubmissionHistoryItem } from '../../utils/submissionHistory'
 
@@ -122,7 +123,9 @@ function useLiveSubmissionHistory() {
   return useQuery(
     useCallback(async (params: Record<string, unknown> = {}) => {
       const environment = params.environment === 'test' ? 'test' : 'production'
-      return fetchJson<SubmissionHistoryItem[]>(`/api/diligence/history?environment=${environment}`)
+      return fetchJson<SubmissionHistoryItem[]>(`/api/diligence/history?environment=${environment}`, {
+        headers: identityHeaders(),
+      })
     }, [])
   )
 }
@@ -132,7 +135,7 @@ function useLiveSubmitDealPacket() {
     useCallback(async (params: Record<string, unknown> = {}) => {
       return fetchJson<SubmitResponse>('/api/diligence/submit', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...identityHeaders() },
         body: JSON.stringify(params),
       })
     }, [])
