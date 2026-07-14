@@ -4,6 +4,7 @@
 // in-memory. Nothing here talks to the network.
 import { useCallback, useState } from 'react'
 
+import type { DiligenceFinding } from '../../utils/diligence'
 import type { SubmissionHistoryItem } from '../../utils/submissionHistory'
 
 type TriggerPromise<T> = Promise<T> & { result: Promise<T> }
@@ -175,7 +176,7 @@ function useMockQuery<T>(fetcher: (params?: Record<string, unknown>) => Promise<
 
 export function useGetDiligenceData() {
   // Returning null makes the page fall back to its built-in sample findings.
-  return useMockQuery(useCallback(async () => null, []))
+  return useMockQuery(useCallback(async (): Promise<DiligenceFinding[] | null> => null, []))
 }
 
 export function useGetSubmissionHistory() {
@@ -192,21 +193,40 @@ export function useSubmitDealPacket() {
       const triggerTimestamp = new Date().toISOString()
       const requestID = crypto.randomUUID()
 
-      const row: SubmissionHistoryItem = {
-        ...blankHistoryRow(),
-        requestID,
+      // Mirrors the payload echoed back by backend/diligence/submitDealPacket.ts.
+      const payload = {
+        fileName: String(params.fileName ?? ''),
+        fileSize: Number(params.fileSize ?? 0),
+        fileType: String(params.fileType ?? ''),
         dealName: String(params.dealName ?? ''),
         companyName: String(params.companyName ?? ''),
         workstream: String(params.workstream ?? ''),
         submissionNotes: String(params.submissionNotes ?? ''),
-        analystName: 'Local Dev User',
-        analystEmail: 'localdev@example.com',
         projectId: String(params.projectId ?? ''),
         projectStage: String(params.projectStage ?? ''),
         documentType: String(params.documentType ?? ''),
-        fileName: String(params.fileName ?? ''),
-        fileSize: Number(params.fileSize ?? 0),
-        fileType: String(params.fileType ?? ''),
+        analystName: 'Local Dev User',
+        analystEmail: 'localdev@example.com',
+        triggerTimestamp,
+        requestID,
+        environment,
+      }
+
+      const row: SubmissionHistoryItem = {
+        ...blankHistoryRow(),
+        requestID,
+        dealName: payload.dealName,
+        companyName: payload.companyName,
+        workstream: payload.workstream,
+        submissionNotes: payload.submissionNotes,
+        analystName: payload.analystName,
+        analystEmail: payload.analystEmail,
+        projectId: payload.projectId,
+        projectStage: payload.projectStage,
+        documentType: payload.documentType,
+        fileName: payload.fileName,
+        fileSize: payload.fileSize,
+        fileType: payload.fileType,
         triggerTimestamp,
         status: 'processing',
         environment,
@@ -225,8 +245,8 @@ export function useSubmitDealPacket() {
         target: 'mock://local-dev (no network calls)',
         method: 'POST' as const,
         submittedAt: triggerTimestamp,
-        submittedBy: 'localdev@example.com',
-        payload: params,
+        submittedBy: payload.analystEmail,
+        payload,
         response: {
           requestID,
           status: 'queued',
