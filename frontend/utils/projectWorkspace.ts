@@ -1,267 +1,349 @@
 import {
-  formatSubmissionStatus,
-  isActiveSubmissionStatus,
-  normalizeSubmissionStatus,
-  type SubmissionHistoryItem,
+    formatSubmissionStatus,
+    isActiveSubmissionStatus,
+    normalizeSubmissionStatus,
+    type SubmissionHistoryItem,
 } from './submissionHistory'
 
 type ProjectCoverageItem = {
-  label: string
-  count: number
-  matched: boolean
+    label: string
+    count: number
+    matched: boolean
+}
+
+type ProjectDocumentSummary = {
+    fileName: string
+    documentType: string
+    status: string
+    requestID: string
+    processedAt: string
+}
+
+type ProjectSynthesisField = {
+    label: string
+    value: string
 }
 
 export type ProjectSummary = {
-  projectKey: string
-  projectId: string
-  projectName: string
-  companyName: string
-  stage: string
-  workstream: string
-  latestActivity: string
-  documentCount: number
-  completedCount: number
-  activeCount: number
-  failedCount: number
-  reviewCount: number
-  redRiskCount: number
-  highRiskCount: number
-  documentTypes: string[]
-  coverage: ProjectCoverageItem[]
-  recommendation: string
-  statusLabel: string
+    projectKey: string
+    projectId: string
+    projectName: string
+    companyName: string
+    stage: string
+    workstream: string
+    latestActivity: string
+    documentCount: number
+    completedCount: number
+    activeCount: number
+    failedCount: number
+    reviewCount: number
+    redRiskCount: number
+    highRiskCount: number
+    documentTypes: string[]
+    documents: ProjectDocumentSummary[]
+    coverage: ProjectCoverageItem[]
+    recommendation: string
+    statusLabel: string
+    synthesisFields: ProjectSynthesisField[]
 }
 
 const requiredCoverageRules = [
-  { label: 'P&L / income statement', keywords: ['p&l', 'income statement', 'profit and loss'] },
-  { label: 'Balance sheet', keywords: ['balance sheet'] },
-  { label: 'Bank statements', keywords: ['bank', 'statement'] },
-  { label: 'General ledger / trial balance', keywords: ['general ledger', 'trial balance', 'gl'] },
-  { label: 'Add-back support', keywords: ['add-back', 'addback', 'adjustment'] },
-  { label: 'Customer concentration / revenue detail', keywords: ['customer concentration', 'revenue detail', 'customer', 'sales by customer'] },
+    { label: 'P&L / income statement', keywords: ['p&l', 'income statement', 'profit and loss'] },
+    { label: 'Balance sheet', keywords: ['balance sheet'] },
+    { label: 'Bank statements', keywords: ['bank', 'statement'] },
+    { label: 'General ledger / trial balance', keywords: ['general ledger', 'trial balance', 'gl'] },
+    { label: 'Add-back support', keywords: ['add-back', 'addback', 'adjustment'] },
+    { label: 'Customer concentration / revenue detail', keywords: ['customer concentration', 'revenue detail', 'customer', 'sales by customer'] },
 ]
 
 function normalizeText(value: string) {
-  return value.trim().toLowerCase()
+    return value.trim().toLowerCase()
 }
 
 function getProjectName(row: SubmissionHistoryItem) {
-  return row.dealName || row.companyName || 'Untitled project'
+    return row.dealName || row.companyName || 'Untitled project'
 }
 
 function getCompanyName(row: SubmissionHistoryItem) {
-  return row.companyName || 'Unknown company'
+    return row.companyName || 'Unknown company'
 }
 
 export function getProjectKey(row: SubmissionHistoryItem) {
-  const explicitProjectId = row.projectId.trim()
+    const explicitProjectId = row.projectId.trim()
 
-  if (explicitProjectId.length > 0) {
-    return explicitProjectId
-  }
+    if (explicitProjectId.length > 0) {
+        return explicitProjectId
+    }
 
-  const dealName = normalizeText(row.dealName)
-  const companyName = normalizeText(row.companyName)
-  const fallback = `${dealName}::${companyName}`.trim()
+    const dealName = normalizeText(row.dealName)
+    const companyName = normalizeText(row.companyName)
+    const fallback = `${dealName}::${companyName}`.trim()
 
-  return fallback.length > 2 ? fallback : row.requestID || `row-${row.id}`
+    return fallback.length > 2 ? fallback : row.requestID || `row-${row.id}`
 }
 
 function getDisplayTimestamp(row: SubmissionHistoryItem) {
-  return row.processedAt || row.processingStartedAt || row.receivedAt || row.updatedAt || row.createdAt || row.triggerTimestamp
+    return row.processedAt || row.processingStartedAt || row.receivedAt || row.updatedAt || row.createdAt || row.triggerTimestamp
 }
 
 function getTimestampValue(value: string) {
-  if (value.length === 0) {
-    return 0
-  }
+    if (value.length === 0) {
+        return 0
+    }
 
-  const parsed = Date.parse(value)
-  return Number.isNaN(parsed) ? 0 : parsed
+    const parsed = Date.parse(value)
+    return Number.isNaN(parsed) ? 0 : parsed
 }
 
 function getDocumentTypeLabel(row: SubmissionHistoryItem) {
-  if (row.documentType.trim().length > 0) {
-    return row.documentType
-  }
+    if (row.documentType.trim().length > 0) {
+        return row.documentType
+    }
 
-  if (row.fileType.trim().length > 0) {
-    return row.fileType
-  }
+    if (row.fileType.trim().length > 0) {
+        return row.fileType
+    }
 
-  return 'Unknown document'
+    return 'Unknown document'
 }
 
 function buildCoverage(documentTypes: string[]) {
-  const normalizedTypes = documentTypes.map(normalizeText)
+    const normalizedTypes = documentTypes.map(normalizeText)
 
-  return requiredCoverageRules.map((rule) => {
-    const count = normalizedTypes.filter((documentType) => {
-      return rule.keywords.some((keyword) => documentType.includes(keyword))
-    }).length
+    return requiredCoverageRules.map((rule) => {
+        const count = normalizedTypes.filter((documentType) => {
+            return rule.keywords.some((keyword) => documentType.includes(keyword))
+        }).length
 
-    return {
-      label: rule.label,
-      count,
-      matched: count > 0,
-    }
-  })
+        return {
+            label: rule.label,
+            count,
+            matched: count > 0,
+        }
+    })
 }
 
 function getRecommendation(args: {
-  failedCount: number
-  activeCount: number
-  reviewCount: number
-  redRiskCount: number
-  highRiskCount: number
-  coverage: ProjectCoverageItem[]
+    failedCount: number
+    activeCount: number
+    reviewCount: number
+    redRiskCount: number
+    highRiskCount: number
+    coverage: ProjectCoverageItem[]
 }) {
-  if (args.failedCount > 0) {
-    return 'Resolve failed document processing before relying on project-level conclusions.'
-  }
+    if (args.failedCount > 0) {
+        return 'Resolve failed document processing before relying on project-level conclusions.'
+    }
 
-  if (args.activeCount > 0) {
-    return 'Project dossier is still processing. Wait for all queued documents before final synthesis.'
-  }
+    if (args.activeCount > 0) {
+        return 'Project dossier is still processing. Wait for all queued documents before final synthesis.'
+    }
 
-  const missingCoverageCount = args.coverage.filter((item) => !item.matched).length
+    const missingCoverageCount = args.coverage.filter((item) => !item.matched).length
 
-  if (args.reviewCount > 0 || args.redRiskCount > 0 || args.highRiskCount > 0) {
-    return 'Negotiation leverage identified. Reconcile flagged documents and prepare management follow-up requests.'
-  }
+    if (args.reviewCount > 0 || args.redRiskCount > 0 || args.highRiskCount > 0) {
+        return 'Negotiation leverage identified. Reconcile flagged documents and prepare management follow-up requests.'
+    }
 
-  if (missingCoverageCount > 0) {
-    return 'Project is partially assembled. Request the missing core diligence materials before final judgment.'
-  }
+    if (missingCoverageCount > 0) {
+        return 'Project is partially assembled. Request the missing core diligence materials before final judgment.'
+    }
 
-  return 'Project has broad coverage and appears ready for cross-document synthesis and acquisition judgment.'
+    return 'Project has broad coverage and appears ready for cross-document synthesis and acquisition judgment.'
 }
 
 function getStatusLabel(args: {
-  failedCount: number
-  activeCount: number
-  reviewCount: number
-  documentCount: number
+    failedCount: number
+    activeCount: number
+    reviewCount: number
+    documentCount: number
 }) {
-  if (args.failedCount > 0) {
-    return 'Needs triage'
-  }
+    if (args.failedCount > 0) {
+        return 'Needs triage'
+    }
 
-  if (args.activeCount > 0) {
-    return 'In progress'
-  }
+    if (args.activeCount > 0) {
+        return 'In progress'
+    }
 
-  if (args.reviewCount > 0) {
-    return 'Needs review'
-  }
+    if (args.reviewCount > 0) {
+        return 'Needs review'
+    }
 
-  if (args.documentCount > 0) {
-    return 'Ready for synthesis'
-  }
+    if (args.documentCount > 0) {
+        return 'Ready for synthesis'
+    }
 
-  return 'No documents'
+    return 'No documents'
+}
+
+function formatSynthesisLabel(key: string) {
+    return key
+        .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+        .replace(/[_-]+/g, ' ')
+        .replace(/\b\w/g, (character) => character.toUpperCase())
+}
+
+function stringifySynthesisValue(value: unknown): string {
+    if (typeof value === 'string') {
+        return value
+    }
+
+    if (typeof value === 'number' || typeof value === 'boolean') {
+        return String(value)
+    }
+
+    if (value == null) {
+        return '—'
+    }
+
+    if (Array.isArray(value)) {
+        return value.map((item) => stringifySynthesisValue(item)).join(', ')
+    }
+
+    if (typeof value === 'object') {
+        return JSON.stringify(value)
+    }
+
+    return '—'
+}
+
+function getProjectSynthesisFields(row: SubmissionHistoryItem) {
+    const record = row as SubmissionHistoryItem & Record<string, unknown>
+    const sourceFields = [
+        record.projectLevelFields,
+        record.projectLevelData,
+        record.projectSynthesis,
+        record.synthesisResult,
+    ].filter((value): value is Record<string, unknown> => typeof value === 'object' && value !== null)
+
+    const fields = sourceFields.flatMap((source) => Object.entries(source))
+        .filter(([key, value]) => key && value !== undefined)
+        .map(([key, value]) => ({
+            label: formatSynthesisLabel(key),
+            value: stringifySynthesisValue(value),
+        }))
+
+    const summary = [record.projectSynthesisSummary, record.projectLevelSummary, record.synthesisSummary]
+        .find((value): value is string => typeof value === 'string' && value.trim().length > 0)
+
+    if (summary) {
+        return [{ label: 'Project summary', value: summary }, ...fields]
+    }
+
+    return fields
 }
 
 export function getProjectStatusVariant(statusLabel: string): 'success' | 'warning' | 'destructive' | 'secondary' | 'outline' {
-  const normalized = normalizeText(statusLabel)
+    const normalized = normalizeText(statusLabel)
 
-  if (normalized === 'ready for synthesis') {
-    return 'success'
-  }
+    if (normalized === 'ready for synthesis') {
+        return 'success'
+    }
 
-  if (normalized === 'needs triage') {
-    return 'destructive'
-  }
+    if (normalized === 'needs triage') {
+        return 'destructive'
+    }
 
-  if (normalized === 'in progress' || normalized === 'needs review') {
-    return 'warning'
-  }
+    if (normalized === 'in progress' || normalized === 'needs review') {
+        return 'warning'
+    }
 
-  return 'secondary'
+    return 'secondary'
 }
 
 export function createProjectSummaries(rows: SubmissionHistoryItem[]) {
-  const rowsByProject = new Map<string, SubmissionHistoryItem[]>()
+    const rowsByProject = new Map<string, SubmissionHistoryItem[]>()
 
-  rows.forEach((row) => {
-    const projectKey = getProjectKey(row)
-    const existingRows = rowsByProject.get(projectKey)
+    rows.forEach((row) => {
+        const projectKey = getProjectKey(row)
+        const existingRows = rowsByProject.get(projectKey)
 
-    if (existingRows) {
-      existingRows.push(row)
-      return
-    }
+        if (existingRows) {
+            existingRows.push(row)
+            return
+        }
 
-    rowsByProject.set(projectKey, [row])
-  })
-
-  const summaries = [...rowsByProject.entries()].map(([projectKey, projectRows]) => {
-    const sortedRows = [...projectRows].sort((left, right) => {
-      return getTimestampValue(getDisplayTimestamp(right)) - getTimestampValue(getDisplayTimestamp(left))
+        rowsByProject.set(projectKey, [row])
     })
-    const latestRow = sortedRows[0]
 
-    if (!latestRow) {
-      return null
-    }
+    const summaries = [...rowsByProject.entries()].map(([projectKey, projectRows]) => {
+        const sortedRows = [...projectRows].sort((left, right) => {
+            return getTimestampValue(getDisplayTimestamp(right)) - getTimestampValue(getDisplayTimestamp(left))
+        })
+        const latestRow = sortedRows[0]
 
-    const documentTypes = [...new Set(sortedRows.map(getDocumentTypeLabel))]
-    const completedCount = sortedRows.filter((row) => normalizeSubmissionStatus(row.status) === 'completed').length
-    const activeCount = sortedRows.filter((row) => isActiveSubmissionStatus(row.status)).length
-    const failedCount = sortedRows.filter((row) => {
-      const normalizedStatus = normalizeSubmissionStatus(row.status)
-      return normalizedStatus === 'failed' || normalizedStatus === 'error' || normalizedStatus === 'rejected'
-    }).length
-    const reviewCount = sortedRows.filter((row) => row.needsHumanReview).length
-    const redRiskCount = sortedRows.filter((row) => normalizeText(row.trafficLight) === 'red').length
-    const highRiskCount = sortedRows.filter((row) => normalizeText(row.riskLevel) === 'high').length
-    const coverage = buildCoverage(documentTypes)
+        if (!latestRow) {
+            return null
+        }
 
-    return {
-      projectKey,
-      projectId: latestRow.projectId,
-      projectName: getProjectName(latestRow),
-      companyName: getCompanyName(latestRow),
-      stage: latestRow.projectStage,
-      workstream: latestRow.workstream || 'All workstreams',
-      latestActivity: getDisplayTimestamp(latestRow) || 'Pending',
-      documentCount: sortedRows.length,
-      completedCount,
-      activeCount,
-      failedCount,
-      reviewCount,
-      redRiskCount,
-      highRiskCount,
-      documentTypes,
-      coverage,
-      recommendation: getRecommendation({
-        failedCount,
-        activeCount,
-        reviewCount,
-        redRiskCount,
-        highRiskCount,
-        coverage,
-      }),
-      statusLabel: getStatusLabel({
-        failedCount,
-        activeCount,
-        reviewCount,
-        documentCount: sortedRows.length,
-      }),
-    } satisfies ProjectSummary
-  }).filter((summary): summary is ProjectSummary => summary !== null)
+        const documentTypes = [...new Set(sortedRows.map(getDocumentTypeLabel))]
+        const completedCount = sortedRows.filter((row) => normalizeSubmissionStatus(row.status) === 'completed').length
+        const activeCount = sortedRows.filter((row) => isActiveSubmissionStatus(row.status)).length
+        const failedCount = sortedRows.filter((row) => {
+            const normalizedStatus = normalizeSubmissionStatus(row.status)
+            return normalizedStatus === 'failed' || normalizedStatus === 'error' || normalizedStatus === 'rejected'
+        }).length
+        const reviewCount = sortedRows.filter((row) => row.needsHumanReview).length
+        const redRiskCount = sortedRows.filter((row) => normalizeText(row.trafficLight) === 'red').length
+        const highRiskCount = sortedRows.filter((row) => normalizeText(row.riskLevel) === 'high').length
+        const coverage = buildCoverage(documentTypes)
+        const documents = sortedRows.map((row) => ({
+            fileName: row.fileName || 'Unnamed document',
+            documentType: row.documentType || getDocumentTypeLabel(row),
+            status: row.status || 'pending',
+            requestID: row.requestID || row.id?.toString() || 'unknown',
+            processedAt: row.processedAt || row.processingStartedAt || row.receivedAt || row.updatedAt || row.createdAt || row.triggerTimestamp,
+        }))
+        const synthesisFields = getProjectSynthesisFields(latestRow)
 
-  return summaries.sort((left, right) => {
-    return getTimestampValue(right.latestActivity) - getTimestampValue(left.latestActivity)
-  })
+        return {
+            projectKey,
+            projectId: latestRow.projectId,
+            projectName: getProjectName(latestRow),
+            companyName: getCompanyName(latestRow),
+            stage: latestRow.projectStage,
+            workstream: latestRow.workstream || 'All workstreams',
+            latestActivity: getDisplayTimestamp(latestRow) || 'Pending',
+            documentCount: sortedRows.length,
+            completedCount,
+            activeCount,
+            failedCount,
+            reviewCount,
+            redRiskCount,
+            highRiskCount,
+            documentTypes,
+            documents,
+            coverage,
+            recommendation: getRecommendation({
+                failedCount,
+                activeCount,
+                reviewCount,
+                redRiskCount,
+                highRiskCount,
+                coverage,
+            }),
+            statusLabel: getStatusLabel({
+                failedCount,
+                activeCount,
+                reviewCount,
+                documentCount: sortedRows.length,
+            }),
+            synthesisFields,
+        } satisfies ProjectSummary
+    }).filter((summary): summary is ProjectSummary => summary !== null)
+
+    return summaries.sort((left, right) => {
+        return getTimestampValue(right.latestActivity) - getTimestampValue(left.latestActivity)
+    })
 }
 
 export function formatProjectStage(stage: string) {
-  const trimmed = stage.trim()
+    const trimmed = stage.trim()
 
-  if (trimmed.length === 0) {
-    return 'Stage not captured'
-  }
+    if (trimmed.length === 0) {
+        return 'Stage not captured'
+    }
 
-  return formatSubmissionStatus(trimmed)
+    return formatSubmissionStatus(trimmed)
 }
