@@ -14,5 +14,18 @@
     "forceConsistentCasingInFileNames": true,
     "types": ["vite/client", "node"]
   },
-  "include": ["App.tsx", "main.tsx", "vite.config.ts", "localApi.ts", "pages", "components", "utils", "lib", "hooks"]
+  "include": [
+    "App.tsx",
+    "main.tsx",
+    "vite.config.ts",
+    "localApi.ts",
+    "retoolRuntime.ts",
+    "retoolGlobals.d.ts",
+    "server.ts",
+    "pages",
+    "components",
+    "utils",
+    "lib",
+    "hooks"
+  ]
 }
