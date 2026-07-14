@@ -1,0 +1,267 @@
+import {
+  formatSubmissionStatus,
+  isActiveSubmissionStatus,
+  normalizeSubmissionStatus,
+  type SubmissionHistoryItem,
+} from './submissionHistory'
+
+type ProjectCoverageItem = {
+  label: string
+  count: number
+  matched: boolean
+}
+
+export type ProjectSummary = {
+  projectKey: string
+  projectId: string
+  projectName: string
+  companyName: string
+  stage: string
+  workstream: string
+  latestActivity: string
+  documentCount: number
+  completedCount: number
+  activeCount: number
+  failedCount: number
+  reviewCount: number
+  redRiskCount: number
+  highRiskCount: number
+  documentTypes: string[]
+  coverage: ProjectCoverageItem[]
+  recommendation: string
+  statusLabel: string
+}
+
+const requiredCoverageRules = [
+  { label: 'P&L / income statement', keywords: ['p&l', 'income statement', 'profit and loss'] },
+  { label: 'Balance sheet', keywords: ['balance sheet'] },
+  { label: 'Bank statements', keywords: ['bank', 'statement'] },
+  { label: 'General ledger / trial balance', keywords: ['general ledger', 'trial balance', 'gl'] },
+  { label: 'Add-back support', keywords: ['add-back', 'addback', 'adjustment'] },
+  { label: 'Customer concentration / revenue detail', keywords: ['customer concentration', 'revenue detail', 'customer', 'sales by customer'] },
+]
+
+function normalizeText(value: string) {
+  return value.trim().toLowerCase()
+}
+
+function getProjectName(row: SubmissionHistoryItem) {
+  return row.dealName || row.companyName || 'Untitled project'
+}
+
+function getCompanyName(row: SubmissionHistoryItem) {
+  return row.companyName || 'Unknown company'
+}
+
+export function getProjectKey(row: SubmissionHistoryItem) {
+  const explicitProjectId = row.projectId.trim()
+
+  if (explicitProjectId.length > 0) {
+    return explicitProjectId
+  }
+
+  const dealName = normalizeText(row.dealName)
+  const companyName = normalizeText(row.companyName)
+  const fallback = `${dealName}::${companyName}`.trim()
+
+  return fallback.length > 2 ? fallback : row.requestID || `row-${row.id}`
+}
+
+function getDisplayTimestamp(row: SubmissionHistoryItem) {
+  return row.processedAt || row.processingStartedAt || row.receivedAt || row.updatedAt || row.createdAt || row.triggerTimestamp
+}
+
+function getTimestampValue(value: string) {
+  if (value.length === 0) {
+    return 0
+  }
+
+  const parsed = Date.parse(value)
+  return Number.isNaN(parsed) ? 0 : parsed
+}
+
+function getDocumentTypeLabel(row: SubmissionHistoryItem) {
+  if (row.documentType.trim().length > 0) {
+    return row.documentType
+  }
+
+  if (row.fileType.trim().length > 0) {
+    return row.fileType
+  }
+
+  return 'Unknown document'
+}
+
+function buildCoverage(documentTypes: string[]) {
+  const normalizedTypes = documentTypes.map(normalizeText)
+
+  return requiredCoverageRules.map((rule) => {
+    const count = normalizedTypes.filter((documentType) => {
+      return rule.keywords.some((keyword) => documentType.includes(keyword))
+    }).length
+
+    return {
+      label: rule.label,
+      count,
+      matched: count > 0,
+    }
+  })
+}
+
+function getRecommendation(args: {
+  failedCount: number
+  activeCount: number
+  reviewCount: number
+  redRiskCount: number
+  highRiskCount: number
+  coverage: ProjectCoverageItem[]
+}) {
+  if (args.failedCount > 0) {
+    return 'Resolve failed document processing before relying on project-level conclusions.'
+  }
+
+  if (args.activeCount > 0) {
+    return 'Project dossier is still processing. Wait for all queued documents before final synthesis.'
+  }
+
+  const missingCoverageCount = args.coverage.filter((item) => !item.matched).length
+
+  if (args.reviewCount > 0 || args.redRiskCount > 0 || args.highRiskCount > 0) {
+    return 'Negotiation leverage identified. Reconcile flagged documents and prepare management follow-up requests.'
+  }
+
+  if (missingCoverageCount > 0) {
+    return 'Project is partially assembled. Request the missing core diligence materials before final judgment.'
+  }
+
+  return 'Project has broad coverage and appears ready for cross-document synthesis and acquisition judgment.'
+}
+
+function getStatusLabel(args: {
+  failedCount: number
+  activeCount: number
+  reviewCount: number
+  documentCount: number
+}) {
+  if (args.failedCount > 0) {
+    return 'Needs triage'
+  }
+
+  if (args.activeCount > 0) {
+    return 'In progress'
+  }
+
+  if (args.reviewCount > 0) {
+    return 'Needs review'
+  }
+
+  if (args.documentCount > 0) {
+    return 'Ready for synthesis'
+  }
+
+  return 'No documents'
+}
+
+export function getProjectStatusVariant(statusLabel: string): 'success' | 'warning' | 'destructive' | 'secondary' | 'outline' {
+  const normalized = normalizeText(statusLabel)
+
+  if (normalized === 'ready for synthesis') {
+    return 'success'
+  }
+
+  if (normalized === 'needs triage') {
+    return 'destructive'
+  }
+
+  if (normalized === 'in progress' || normalized === 'needs review') {
+    return 'warning'
+  }
+
+  return 'secondary'
+}
+
+export function createProjectSummaries(rows: SubmissionHistoryItem[]) {
+  const rowsByProject = new Map<string, SubmissionHistoryItem[]>()
+
+  rows.forEach((row) => {
+    const projectKey = getProjectKey(row)
+    const existingRows = rowsByProject.get(projectKey)
+
+    if (existingRows) {
+      existingRows.push(row)
+      return
+    }
+
+    rowsByProject.set(projectKey, [row])
+  })
+
+  const summaries = [...rowsByProject.entries()].map(([projectKey, projectRows]) => {
+    const sortedRows = [...projectRows].sort((left, right) => {
+      return getTimestampValue(getDisplayTimestamp(right)) - getTimestampValue(getDisplayTimestamp(left))
+    })
+    const latestRow = sortedRows[0]
+
+    if (!latestRow) {
+      return null
+    }
+
+    const documentTypes = [...new Set(sortedRows.map(getDocumentTypeLabel))]
+    const completedCount = sortedRows.filter((row) => normalizeSubmissionStatus(row.status) === 'completed').length
+    const activeCount = sortedRows.filter((row) => isActiveSubmissionStatus(row.status)).length
+    const failedCount = sortedRows.filter((row) => {
+      const normalizedStatus = normalizeSubmissionStatus(row.status)
+      return normalizedStatus === 'failed' || normalizedStatus === 'error' || normalizedStatus === 'rejected'
+    }).length
+    const reviewCount = sortedRows.filter((row) => row.needsHumanReview).length
+    const redRiskCount = sortedRows.filter((row) => normalizeText(row.trafficLight) === 'red').length
+    const highRiskCount = sortedRows.filter((row) => normalizeText(row.riskLevel) === 'high').length
+    const coverage = buildCoverage(documentTypes)
+
+    return {
+      projectKey,
+      projectId: latestRow.projectId,
+      projectName: getProjectName(latestRow),
+      companyName: getCompanyName(latestRow),
+      stage: latestRow.projectStage,
+      workstream: latestRow.workstream || 'All workstreams',
+      latestActivity: getDisplayTimestamp(latestRow) || 'Pending',
+      documentCount: sortedRows.length,
+      completedCount,
+      activeCount,
+      failedCount,
+      reviewCount,
+      redRiskCount,
+      highRiskCount,
+      documentTypes,
+      coverage,
+      recommendation: getRecommendation({
+        failedCount,
+        activeCount,
+        reviewCount,
+        redRiskCount,
+        highRiskCount,
+        coverage,
+      }),
+      statusLabel: getStatusLabel({
+        failedCount,
+        activeCount,
+        reviewCount,
+        documentCount: sortedRows.length,
+      }),
+    } satisfies ProjectSummary
+  }).filter((summary): summary is ProjectSummary => summary !== null)
+
+  return summaries.sort((left, right) => {
+    return getTimestampValue(right.latestActivity) - getTimestampValue(left.latestActivity)
+  })
+}
+
+export function formatProjectStage(stage: string) {
+  const trimmed = stage.trim()
+
+  if (trimmed.length === 0) {
+    return 'Stage not captured'
+  }
+
+  return formatSubmissionStatus(trimmed)
+}
