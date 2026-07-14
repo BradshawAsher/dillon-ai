@@ -1,11 +1,21 @@
-// Local-dev mocks for the hooks Retool generates from /backend/diligence.
-// The real backend (Retool DB + n8n webhooks) only exists inside Retool, so
-// these return canned data and simulate the async submission lifecycle
-// in-memory. Nothing here talks to the network.
+// Local-dev implementations of the hooks Retool generates from /backend/diligence.
+//
+// Default (live): calls the same-origin /api/diligence/* routes served by the
+// Vite plugin in localApi.ts, which runs the real backend functions in Node and
+// forwards to the n8n webhooks. The frontend itself never fetches external
+// hosts, matching the handoff constraint.
+//
+// Set VITE_USE_MOCKS=true to fall back to in-memory mocks (no network at all).
+//
+// getDiligenceData is the exception: its backend reads Retool DB, which has no
+// local equivalent, so it always returns null and the page shows its built-in
+// sample findings.
 import { useCallback, useState } from 'react'
 
 import type { DiligenceFinding } from '../../utils/diligence'
 import type { SubmissionHistoryItem } from '../../utils/submissionHistory'
+
+const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === 'true'
 
 type TriggerPromise<T> = Promise<T> & { result: Promise<T> }
 
@@ -18,6 +28,118 @@ function withResult<T>(promise: Promise<T>): TriggerPromise<T> {
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
+
+type QueryState<T> = {
+  data: T | null
+  loading: boolean
+  error: string | null
+}
+
+function useQuery<T>(fetcher: (params?: Record<string, unknown>) => Promise<T>, initialData: T | null = null) {
+  const [state, setState] = useState<QueryState<T>>({ data: initialData, loading: false, error: null })
+
+  const trigger = useCallback(
+    (params?: Record<string, unknown>, _options?: Record<string, unknown>) => {
+      setState((previous) => ({ ...previous, loading: true }))
+      const promise = (async () => {
+        try {
+          const data = await fetcher(params)
+          setState({ data, loading: false, error: null })
+          return data
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error)
+          setState((previous) => ({ data: previous.data, loading: false, error: message }))
+          return null
+        }
+      })()
+      return withResult(promise)
+    },
+    [fetcher]
+  )
+
+  return { ...state, trigger }
+}
+
+type SubmitPayload = {
+  fileName: string
+  fileSize: number
+  fileType: string
+  dealName: string
+  companyName: string
+  workstream: string
+  submissionNotes: string
+  projectId: string
+  projectStage: string
+  documentType: string
+  analystName: string
+  analystEmail: string
+  triggerTimestamp: string
+  requestID: string
+  environment: 'production' | 'test'
+}
+
+type SubmitResponse = {
+  status: string
+  environment: 'production' | 'test'
+  target: string
+  method: 'POST'
+  submittedAt: string
+  submittedBy: string
+  payload: SubmitPayload
+  response: {
+    requestID: string
+    status: string
+    receivedAt: string
+    id?: number
+    createdAt: string
+    updatedAt: string
+    environment: string
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Live implementations (default): same-origin /api routes → real backend code
+// ---------------------------------------------------------------------------
+
+async function fetchJson<T>(input: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(input, init)
+  const body: unknown = await response.json().catch(() => null)
+
+  if (!response.ok) {
+    const message =
+      body && typeof body === 'object' && 'error' in body
+        ? String((body as { error: unknown }).error)
+        : `Local API request failed with status ${response.status}`
+    throw new Error(message)
+  }
+
+  return body as T
+}
+
+function useLiveSubmissionHistory() {
+  return useQuery(
+    useCallback(async (params: Record<string, unknown> = {}) => {
+      const environment = params.environment === 'test' ? 'test' : 'production'
+      return fetchJson<SubmissionHistoryItem[]>(`/api/diligence/history?environment=${environment}`)
+    }, [])
+  )
+}
+
+function useLiveSubmitDealPacket() {
+  return useQuery(
+    useCallback(async (params: Record<string, unknown> = {}) => {
+      return fetchJson<SubmitResponse>('/api/diligence/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(params),
+      })
+    }, [])
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Mock implementations (VITE_USE_MOCKS=true): in-memory, no network
+// ---------------------------------------------------------------------------
 
 function blankHistoryRow(): SubmissionHistoryItem {
   return {
@@ -148,53 +270,26 @@ function completeRowLater(requestID: string) {
   }, 8000)
 }
 
-type MockQueryState<T> = {
-  data: T | null
-  loading: boolean
-  error: null
-}
-
-function useMockQuery<T>(fetcher: (params?: Record<string, unknown>) => Promise<T>, initialData: T | null = null) {
-  const [state, setState] = useState<MockQueryState<T>>({ data: initialData, loading: false, error: null })
-
-  const trigger = useCallback(
-    (params?: Record<string, unknown>, _options?: Record<string, unknown>) => {
-      setState((previous) => ({ ...previous, loading: true }))
-      const promise = (async () => {
-        await delay(250)
-        const data = await fetcher(params)
-        setState({ data, loading: false, error: null })
-        return data
-      })()
-      return withResult(promise)
-    },
-    [fetcher]
-  )
-
-  return { ...state, trigger }
-}
-
-export function useGetDiligenceData() {
-  // Returning null makes the page fall back to its built-in sample findings.
-  return useMockQuery(useCallback(async (): Promise<DiligenceFinding[] | null> => null, []))
-}
-
-export function useGetSubmissionHistory() {
-  return useMockQuery(
-    useCallback(async () => mockHistoryStore.map((row) => ({ ...row })), []),
+function useMockSubmissionHistory() {
+  return useQuery(
+    useCallback(async () => {
+      await delay(250)
+      return mockHistoryStore.map((row) => ({ ...row }))
+    }, []),
     mockHistoryStore.map((row) => ({ ...row }))
   )
 }
 
-export function useSubmitDealPacket() {
-  return useMockQuery(
-    useCallback(async (params: Record<string, unknown> = {}) => {
+function useMockSubmitDealPacket() {
+  return useQuery(
+    useCallback(async (params: Record<string, unknown> = {}): Promise<SubmitResponse> => {
+      await delay(250)
       const environment = params.environment === 'test' ? 'test' : 'production'
       const triggerTimestamp = new Date().toISOString()
       const requestID = crypto.randomUUID()
 
       // Mirrors the payload echoed back by backend/diligence/submitDealPacket.ts.
-      const payload = {
+      const payload: SubmitPayload = {
         fileName: String(params.fileName ?? ''),
         fileSize: Number(params.fileSize ?? 0),
         fileType: String(params.fileType ?? ''),
@@ -243,7 +338,7 @@ export function useSubmitDealPacket() {
         status: 'accepted',
         environment,
         target: 'mock://local-dev (no network calls)',
-        method: 'POST' as const,
+        method: 'POST',
         submittedAt: triggerTimestamp,
         submittedBy: payload.analystEmail,
         payload,
@@ -260,3 +355,16 @@ export function useSubmitDealPacket() {
     }, [])
   )
 }
+
+// ---------------------------------------------------------------------------
+// Exports: the hook names the page imports
+// ---------------------------------------------------------------------------
+
+export function useGetDiligenceData() {
+  // Returning null makes the page fall back to its built-in sample findings.
+  return useQuery(useCallback(async (): Promise<DiligenceFinding[] | null> => null, []))
+}
+
+export const useGetSubmissionHistory = USE_MOCKS ? useMockSubmissionHistory : useLiveSubmissionHistory
+
+export const useSubmitDealPacket = USE_MOCKS ? useMockSubmitDealPacket : useLiveSubmitDealPacket

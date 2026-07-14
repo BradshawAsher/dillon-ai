@@ -8,7 +8,7 @@ into a submission history view.
 - `frontend/` — the React UI (pages, components, utils) plus local-dev scaffolding (see below)
 - `frontend/notes/project-handoff.md` — detailed architecture and data-flow handoff notes
 
-## Running locally (UI preview with mocked backend)
+## Running locally
 
 Prerequisites: **Node.js 18+** (tested on 22) and **npm**. No other global tools needed —
 everything else installs from `frontend/package.json`.
@@ -19,11 +19,24 @@ npm install
 npm run dev     # Vite dev server on http://localhost:5173
 ```
 
-The local run is a **visual/UX preview only**. The real backend (Retool DB and the n8n webhooks)
-exists only inside Retool, so locally the backend hooks are replaced with in-memory mocks that
-make **no network calls**. The mocks seed one completed sample submission, and submitting a file
-through the UI simulates the async lifecycle (processing → completed after ~8s, picked up by the
-page's 5-second polling). To run against real data, open the app in Retool.
+By default the local run is **connected to the real n8n workflows**. A Vite dev-server plugin
+(`frontend/localApi.ts`) serves same-origin `/api/diligence/*` routes and executes the real
+backend functions from `/backend/diligence` in Node, shimming the `n8nFinancialAgent` global that
+Retool normally injects. The browser never fetches external hosts directly — same architecture as
+production. Submitting a file locally **does trigger the real n8n production workflow**.
+
+To run fully offline with in-memory mocks instead (no network at all):
+
+```sh
+VITE_USE_MOCKS=true npm run dev        # bash
+$env:VITE_USE_MOCKS='true'; npm run dev  # PowerShell
+```
+
+The mocks seed one completed sample submission and simulate the async lifecycle (processing →
+completed after ~8s, picked up by the page's 5-second polling).
+
+Exception in both modes: the legacy findings panel (`getDiligenceData`) reads Retool DB, which
+has no local equivalent, so it always shows the page's built-in sample findings.
 
 ## What the Retool export includes vs. what had to be added
 

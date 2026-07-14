@@ -12,7 +12,7 @@
     "isolatedModules": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "types": ["vite/client"]
+    "types": ["vite/client", "node"]
   },
-  "include": ["App.tsx", "main.tsx", "vite.config.ts", "pages", "components", "utils", "lib", "hooks"]
+  "include": ["App.tsx", "main.tsx", "vite.config.ts", "localApi.ts", "pages", "components", "utils", "lib", "hooks"]
 }
