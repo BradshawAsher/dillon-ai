@@ -25,15 +25,11 @@ backend functions from `/backend/diligence` in Node, shimming the `n8nFinancialA
 Retool normally injects. The browser never fetches external hosts directly — same architecture as
 production. Submitting a file locally **does trigger the real n8n production workflow**.
 
-To run fully offline with in-memory mocks instead (no network at all):
-
-```sh
-VITE_USE_MOCKS=true npm run dev        # bash
-$env:VITE_USE_MOCKS='true'; npm run dev  # PowerShell
-```
-
-The mocks seed one completed sample submission and simulate the async lifecycle (processing →
-completed after ~8s, picked up by the page's 5-second polling).
+A **Data: Mock / Live n8n** toggle floats at the bottom-right of the page. "Live n8n" (default)
+uses the real webhooks; "Mock" runs fully offline against in-memory sample data — it seeds one
+completed sample submission and simulates the async lifecycle (processing → completed after ~8s,
+picked up by the page's 5-second polling). The choice persists in localStorage across reloads.
+Setting `VITE_USE_MOCKS=true` when starting the dev server only changes the default.
 
 Exception in both modes: the legacy findings panel (`getDiligenceData`) reads Retool DB, which
 has no local equivalent, so it always shows the page's built-in sample findings.
