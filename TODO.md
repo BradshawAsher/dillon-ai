@@ -54,3 +54,17 @@ compare metrics to industry standards[11:28 AM]email automation based on red fla
     - financial_data_completeness_score
 
 19. Obtain the test sets from Trisha, and also make your own mock test sets
+
+20. Source file field for citations might get a little inconsistent/messy since it's 1 file and then it gives 3 differnet names for 3 differnet parts of the doc in the 3 combined happy path - maybe the doc name + part in the doc would be better for future references?
+
+21. More error trigger nodes and validator nodes
+
+22. parse out the pure numbers and run them through js math sandbox to double check math from LLMs
+
+23. Later, add cache for duplicate entries or just some sort of way to handle duplicates?   
+
+24. Ebidta normalizer? What is that?
+
+25. Show the red, green, and yellow flags for each document, not just the number of them
+
+26. Cost per run visible?
