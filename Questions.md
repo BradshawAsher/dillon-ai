@@ -1,8 +1,4 @@
-## To ASK on 7/15
-
-What type of documents will you consider to be required for the synthesizer to run and be trusted?
-
-Consider asking trisha how to balance the risk of nda-protected data, should we switch immediately to anthropic api keys even for testing, or should i create another separate workflow set for private data version? That still may have risks though?
+## To ASK TRISHA
 
 What is the threshold for a "Red Flag" in Gross Margin compression? Is >5% the standard, or should it be tighter?
 
@@ -22,7 +18,3 @@ What are the top 3 deal-killers you've encountered in the last 6 months that we 
 
 If we derive a valuation using Revenue Multiples due to missing EBITDA, how should we label that range to ensure it isn't mistaken for a GAAP-standard valuation?
 
-
-Not Important/Already Answered
-
-What is the ideal final report format? Can we see a template so we can map our JSON outputs to your existing documentation style?
