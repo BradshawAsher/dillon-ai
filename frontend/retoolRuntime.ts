@@ -23,7 +23,16 @@ export function installRetoolGlobals() {
   globals.n8nFinancialAgent = {
     async rawRequest(options: RawRequestOptions) {
       const url = new URL(options.path, N8N_BASE_URL).toString()
-      const init: RequestInit = { method: options.method ?? 'GET' }
+      const headers: Record<string, string> = {}
+
+      // When the n8n webhook nodes are configured with Header Auth, the shared
+      // secret travels server-side only — the browser never sees it.
+      const webhookSecret = process.env.N8N_WEBHOOK_SECRET ?? ''
+      if (webhookSecret.length > 0) {
+        headers['x-webhook-secret'] = webhookSecret
+      }
+
+      const init: RequestInit = { method: options.method ?? 'GET', headers }
 
       if (options.bodyType === 'form-data' && options.formData) {
         const body = new FormData()
