@@ -42,3 +42,15 @@ compare metrics to industry standards[11:28 AM]email automation based on red fla
 15. Have n8n be able to detect document types (P&L, balance sheet, etc) and what document types are missing as well for the consolidator workflow to tell the user? 
 
 16. Finish setting up multi-document uploading
+
+17. Need to have more granular confidence levels and citations for each individual stat for document-specific json schema and project-level json schema in n8n
+
+18. Add these fields for AI output, and need to be able to obtain them
+    - gross_profit_check_passed
+    - ebitda_reconstructed
+    - margin_compression_bps
+    - customer_concentration_pct
+    - addback_quality_score
+    - financial_data_completeness_score
+
+19. Obtain the test sets from Trisha, and also make your own mock test sets
