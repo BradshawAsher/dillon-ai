@@ -57,6 +57,8 @@ The repo includes a `render.yaml` blueprint. In Render: **New → Blueprint**, s
 repo, and set `APP_PASSWORD` and `N8N_WEBHOOK_SECRET` when prompted. Render builds the frontend
 and runs `server.ts`; the team gets an `https://….onrender.com` URL guarded by the password.
 
+Render website: https://due-diligence-dashboard.onrender.com/
+
 ## Running the dev server (hot reload)
 
 ```sh

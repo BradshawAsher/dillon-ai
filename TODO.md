@@ -68,3 +68,5 @@ compare metrics to industry standards[11:28 AM]email automation based on red fla
 25. Show the red, green, and yellow flags for each document, not just the number of them
 
 26. Cost per run visible?
+
+27. Have open-ended questions/data missing field in the document specific JSON response? More fields for document specific JSON response in general, and more confidence levels for each individual stat?
