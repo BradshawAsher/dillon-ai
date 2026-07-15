@@ -1,0 +1,1 @@
+1. Different models will give different valuation numbers, Gemini 3-Flash and Anthropic 4.5 Haiku gave pretty distinct valuations
