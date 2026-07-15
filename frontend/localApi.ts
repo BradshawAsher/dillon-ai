@@ -13,6 +13,14 @@ import type { Connect, Plugin, ViteDevServer } from 'vite'
 
 import { installRetoolGlobals, readJsonBody, userFromHeaders } from './retoolRuntime'
 
+// Pick up N8N_WEBHOOK_SECRET etc. from frontend/.env in dev mode, matching
+// the standalone server's behavior.
+try {
+  process.loadEnvFile()
+} catch {
+  // no .env file — env vars may still come from the shell
+}
+
 function backendModuleUrl(fileName: string) {
   const frontendDir = path.dirname(fileURLToPath(import.meta.url))
   const absolutePath = path.resolve(frontendDir, '../backend/diligence', fileName)
