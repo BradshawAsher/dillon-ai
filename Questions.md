@@ -10,7 +10,6 @@ If the P&L and Tax Returns conflict, which document do you trust as the official
 
 What specific Owner Add-backs (e.g., auto leases, family consulting) are the most frequent causes of disputes?
 
-
 How do you want to handle missing documents? Should the agent auto-email the seller, or just alert the deal team?
 
 How do you define "High Concentration" for anchor clients (e.g., >15%, >20% of revenue)?
