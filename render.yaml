@@ -1,0 +1,18 @@
+# Render blueprint — deploys the standalone dashboard (no Retool).
+# In Render: New → Blueprint → point it at this repo, then set the two
+# secret env vars when prompted.
+services:
+  - type: web
+    name: due-diligence-dashboard
+    runtime: node
+    plan: free
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    startCommand: npx tsx server.ts
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: APP_PASSWORD
+        sync: false # shared team password for the login screen
+      - key: N8N_WEBHOOK_SECRET
+        sync: false # must match the Header Auth value on the n8n webhook nodes

@@ -25,8 +25,37 @@ npm start       # builds the frontend and serves app + API on http://localhost:3
 
 On first load a sign-in overlay asks for your name and email; live submissions are stamped with
 it (the role Retool's login used to play). It persists in localStorage — use the "Change" button
-on the bottom-left chip to switch users. This is identity capture, not authentication — add a
-real login layer before exposing the app beyond localhost.
+on the bottom-left chip to switch users.
+
+### Password protection
+
+Set `APP_PASSWORD` to require a shared team password before the API responds (a login screen
+appears in front of the app). Unset — the localhost default — no login is shown. The server also
+reads a `frontend/.env` file (gitignored), so the easiest setup is:
+
+```
+# frontend/.env
+APP_PASSWORD=pick-something-strong
+N8N_WEBHOOK_SECRET=another-long-random-string
+```
+
+### Securing the n8n webhooks
+
+The two webhook endpoints are gated only by the UUID in their path. To lock them down, set
+`N8N_WEBHOOK_SECRET` (the server then sends it as an `x-webhook-secret` header on every n8n
+call) and configure both webhook nodes in n8n to require it:
+
+1. Open each workflow (submit `d6884691-…` and history `1d02344c-…`) in the n8n editor.
+2. In the **Webhook** node set **Authentication → Header Auth**, create a credential with
+   name `x-webhook-secret` and the same value as `N8N_WEBHOOK_SECRET`.
+3. Republish the workflows. (Retool will stop working against these webhooks unless you add the
+   same header to its `n8n_financial_agent` resource — fine if the goal is to leave Retool.)
+
+### Deploying to Render
+
+The repo includes a `render.yaml` blueprint. In Render: **New → Blueprint**, select this GitHub
+repo, and set `APP_PASSWORD` and `N8N_WEBHOOK_SECRET` when prompted. Render builds the frontend
+and runs `server.ts`; the team gets an `https://….onrender.com` URL guarded by the password.
 
 ## Running the dev server (hot reload)
 

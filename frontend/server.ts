@@ -7,6 +7,10 @@
 // them on the fly), shimming the globals Retool injects via retoolRuntime.ts,
 // and serves the built frontend. Identity comes from the sign-in overlay's
 // headers; PORT overrides the default port.
+//
+// Auth: set APP_PASSWORD (env var or .env file) to gate the API behind a
+// shared team password. Unset (the localhost default), no login is required.
+import crypto from 'node:crypto'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -15,6 +19,12 @@ import express from 'express'
 import getSubmissionHistoryImport from '../backend/diligence/getSubmissionHistory'
 import submitDealPacketImport from '../backend/diligence/submitDealPacket'
 import { installRetoolGlobals, userFromHeaders } from './retoolRuntime'
+
+try {
+  process.loadEnvFile()
+} catch {
+  // no .env file — env vars may still come from the shell / host
+}
 
 // The backend files compile as CommonJS (no "type": "module" in the root
 // package.json), so their default export may arrive wrapped when imported
@@ -32,8 +42,78 @@ installRetoolGlobals()
 const frontendDir = path.dirname(fileURLToPath(import.meta.url))
 const distDir = path.resolve(frontendDir, 'dist')
 const port = Number(process.env.PORT ?? 3000)
+const appPassword = process.env.APP_PASSWORD ?? ''
+
+// ---------------------------------------------------------------------------
+// Shared-password auth (only active when APP_PASSWORD is set)
+// ---------------------------------------------------------------------------
+
+const SESSION_COOKIE = 'dd_session'
+const sessions = new Set<string>()
+
+function safeEqual(a: string, b: string) {
+  const hashA = crypto.createHash('sha256').update(a).digest()
+  const hashB = crypto.createHash('sha256').update(b).digest()
+  return crypto.timingSafeEqual(hashA, hashB)
+}
+
+function sessionTokenFrom(req: express.Request): string {
+  const header = req.headers.cookie
+  if (typeof header !== 'string') {
+    return ''
+  }
+  for (const part of header.split(';')) {
+    const [name, ...rest] = part.trim().split('=')
+    if (name === SESSION_COOKIE) {
+      return rest.join('=')
+    }
+  }
+  return ''
+}
+
+function isAuthenticated(req: express.Request) {
+  return appPassword.length === 0 || sessions.has(sessionTokenFrom(req))
+}
 
 const app = express()
+
+app.get('/api/session', (req, res) => {
+  res.json({ authRequired: appPassword.length > 0, authenticated: isAuthenticated(req) })
+})
+
+app.post('/api/login', express.json(), (req, res) => {
+  if (appPassword.length === 0) {
+    res.json({ ok: true })
+    return
+  }
+
+  const supplied = typeof req.body?.password === 'string' ? req.body.password : ''
+  if (supplied.length === 0 || !safeEqual(supplied, appPassword)) {
+    res.status(401).json({ error: 'Incorrect password' })
+    return
+  }
+
+  const token = crypto.randomUUID()
+  sessions.add(token)
+  const secure = process.env.NODE_ENV === 'production' ? '; Secure' : ''
+  res.setHeader(
+    'Set-Cookie',
+    `${SESSION_COOKIE}=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=2592000${secure}`
+  )
+  res.json({ ok: true })
+})
+
+app.use('/api/diligence', (req, res, next) => {
+  if (isAuthenticated(req)) {
+    next()
+    return
+  }
+  res.status(401).json({ error: 'Authentication required' })
+})
+
+// ---------------------------------------------------------------------------
+// Diligence API — the same contract as Retool's generated hooks expect
+// ---------------------------------------------------------------------------
 
 app.get('/api/diligence/history', async (req, res) => {
   try {
@@ -69,5 +149,6 @@ app.use((_req, res) => {
 })
 
 app.listen(port, () => {
-  console.log(`Due Diligence Dashboard running at http://localhost:${port}`)
+  const authNote = appPassword.length > 0 ? 'password required' : 'no password set (open access)'
+  console.log(`Due Diligence Dashboard running at http://localhost:${port} — ${authNote}`)
 })
