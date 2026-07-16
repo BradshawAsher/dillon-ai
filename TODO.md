@@ -1,5 +1,3 @@
-0. Finish documenting 5 edge cases and solving them by Saturday ASAP
-
 1. still need to work on setting up migration and retrieving the project-wide documents from n8n after synthesizer workflow to the frontend
 
 2. also would be great if we could like delete documents from a checklist if we want to or a duplicate accidentally went through, and if that could delete the row in the n8n table, or at least mark that row as "nonconsidered"
@@ -70,3 +68,5 @@ compare metrics to industry standards[11:28 AM]email automation based on red fla
 26. Cost per run visible?
 
 27. Have open-ended questions/data missing field in the document specific JSON response? More fields for document specific JSON response in general, and more confidence levels for each individual stat?
+
+28. Finish adding robustness to handle edge cases once MVP architecture is more mature
