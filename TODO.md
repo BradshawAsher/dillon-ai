@@ -78,3 +78,5 @@ compare metrics to industry standards[11:28 AM]email automation based on red fla
 31. Have your n8n agent (consolidator) also suggest action items, like requesting certain extra documents or something else?
 
 32. Enable MCP access for n8n so that you can vibe code the n8n workflows too? Ask trisha?
+
+33. Some documents that are uploaded can count as more than 1 document, can we keep count of what types of documents are missing in n8n as well as the frontend (already partially implemented?), and then be able to detect if a huge excel sheet or something counts as multiple types of documents?
