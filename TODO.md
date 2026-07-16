@@ -24,6 +24,7 @@ compare metrics to industry standards[11:28 AM]email automation based on red fla
 - pretty much copy epicdealdone website for mvp
 - epicdealdone  has bad numbers
 - better privacy and terms and conditions
+- sometimes in the files, the wrong values will be in the wrong place (i.e. ebitda in revenue place and swapped or something, make sure we can try to detect things like this especially if the magnitude of the value is off by powers of 10)
 
 9. Make more columns in the project-Level fields table to get more data from the json output in the syntesizer workflow
 
