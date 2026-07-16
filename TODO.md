@@ -70,3 +70,11 @@ compare metrics to industry standards[11:28 AM]email automation based on red fla
 27. Have open-ended questions/data missing field in the document specific JSON response? More fields for document specific JSON response in general, and more confidence levels for each individual stat?
 
 28. Finish adding robustness to handle edge cases once MVP architecture is more mature
+
+29. Have submission history for the retool page be for per-project?
+
+30. Need to start trying adding multiple documents to see what the n8n will do
+
+31. Have your n8n agent (consolidator) also suggest action items, like requesting certain extra documents or something else?
+
+32. Enable MCP access for n8n so that you can vibe code the n8n workflows too? Ask trisha?
