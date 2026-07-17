@@ -143,7 +143,20 @@ function getFirstNumberValue(values: Array<number | string | null | undefined>) 
 // Accepts an array, a JSON-encoded array string, or a delimited plain string,
 // and returns a clean string list. The consolidator's output format may vary
 // while the workflow is iterated on, so stay permissive.
-function getStringListValue(raw: unknown): string[] {
+type ObjectListItemFormatter = (record: Record<string, unknown>) => string
+
+function getRecordString(record: Record<string, unknown>, keys: string[]) {
+  for (const key of keys) {
+    const value = record[key]
+    if (typeof value === 'string' && value.trim().length > 0) {
+      return value.trim()
+    }
+  }
+
+  return ''
+}
+
+function getStringListValue(raw: unknown, formatObject?: ObjectListItemFormatter): string[] {
   let value = raw
 
   if (typeof value === 'string') {
@@ -169,6 +182,9 @@ function getStringListValue(raw: unknown): string[] {
         }
         if (item && typeof item === 'object') {
           const record = item as Record<string, unknown>
+          if (formatObject) {
+            return formatObject(record)
+          }
           const candidate = record.summary ?? record.text ?? record.description ?? record.label
           return typeof candidate === 'string' ? candidate : JSON.stringify(item)
         }
@@ -181,9 +197,9 @@ function getStringListValue(raw: unknown): string[] {
   return []
 }
 
-function getFirstStringListValue(values: unknown[]): string[] {
+function getFirstStringListValue(values: unknown[], formatObject?: ObjectListItemFormatter): string[] {
   for (const value of values) {
-    const list = getStringListValue(value)
+    const list = getStringListValue(value, formatObject)
     if (list.length > 0) {
       return list
     }
@@ -217,6 +233,17 @@ function getJudgmentValues(raw: unknown): { summary: string; json: string } {
   return { summary: String(raw), json: '' }
 }
 
+function getFirstJudgmentValues(values: unknown[]) {
+  for (const value of values) {
+    const judgment = getJudgmentValues(value)
+    if (judgment.summary.length > 0 || judgment.json.length > 0) {
+      return judgment
+    }
+  }
+
+  return { summary: '', json: '' }
+}
+
 function extractJudgmentSummary(parsed: unknown): string {
   if (typeof parsed === 'string') {
     return parsed
@@ -232,6 +259,28 @@ function extractJudgmentSummary(parsed: unknown): string {
   }
 
   return ''
+}
+
+function formatOpenQuestion(record: Record<string, unknown>) {
+  const question = getRecordString(record, ['question', 'summary', 'text', 'description'])
+  const priority = getRecordString(record, ['priority'])
+  return priority && question ? `${priority} priority — ${question}` : question
+}
+
+function formatNegotiationLever(record: Record<string, unknown>) {
+  const theme = getRecordString(record, ['theme', 'title', 'summary', 'label'])
+  const suggestion = getRecordString(record, ['suggestion', 'description', 'text'])
+  const impact = getRecordString(record, ['impact'])
+  const headline = impact && theme ? `${impact} — ${theme}` : theme
+  return headline && suggestion ? `${headline}: ${suggestion}` : headline || suggestion
+}
+
+function formatConflict(record: Record<string, unknown>) {
+  const topic = getRecordString(record, ['topic', 'title', 'summary', 'label'])
+  const description = getRecordString(record, ['description', 'text'])
+  const severity = getRecordString(record, ['severity', 'priority'])
+  const headline = severity && topic ? `${severity} — ${topic}` : topic
+  return headline && description ? `${headline}: ${description}` : headline || description
 }
 
 function isProjectSynthesisRow(value: ProjectSynthesisResponse): value is ProjectSynthesisRow {
@@ -259,13 +308,13 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
       : responseData.rows ?? responseData.data ?? responseData.items ?? []
 
   return rows.map((row): ProjectSynthesisItem => {
-    const judgment = getJudgmentValues(
-      row.finalJudgmentJson
-      ?? row.finalJudgementJson
-      ?? row.final_judgment
-      ?? row.finalJudgment
-      ?? row.ai_summary
-    )
+    const judgment = getFirstJudgmentValues([
+      row.finalJudgmentJson,
+      row.finalJudgementJson,
+      row.final_judgment,
+      row.finalJudgment,
+      row.ai_summary,
+    ])
 
     return {
       projectId: getFirstStringValue([row.projectId, row.project_id]),
@@ -277,13 +326,13 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
         row.crossDocumentConflictsJson,
         row.cross_document_conflicts,
         row.crossDocumentConflicts,
-      ]),
-      openQuestions: getFirstStringListValue([row.openQuestionsJson, row.open_questions, row.openQuestions]),
+      ], formatConflict),
+      openQuestions: getFirstStringListValue([row.openQuestionsJson, row.open_questions, row.openQuestions], formatOpenQuestion),
       negotiationLevers: getFirstStringListValue([
         row.negotiationLeversJson,
         row.negotiation_levers,
         row.negotiationLevers,
-      ]),
+      ], formatNegotiationLever),
       finalRiskLevel: getFirstStringValue([row.finalRiskLevel, row.final_risk_level, row.ai_risk_flag]),
       finalTrafficLight: getFirstStringValue([row.finalTrafficLight, row.final_traffic_light]),
       finalRecommendation: getFirstStringValue([row.finalRecommendation, row.final_recommendation]),
