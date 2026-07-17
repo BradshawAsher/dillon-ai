@@ -1,7 +1,10 @@
+import { useState } from 'react'
+
 import { BriefcaseBusiness, Clock3, FileStack, Flag, FolderKanban, ShieldAlert } from 'lucide-react'
 
 import { Badge } from '../lib/shadcn/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
+import { Switch } from '../lib/shadcn/switch'
 import { cn } from '../lib/shadcn/utils'
 import {
     createProjectSummaries,
@@ -36,6 +39,7 @@ function SummaryMetric({
 
 export default function ProjectPortfolioCard({ rows }: ProjectPortfolioCardProps) {
     const projects = createProjectSummaries(rows)
+    const [hideDuplicateDocs, setHideDuplicateDocs] = useState(true)
     const activeProjectCount = projects.filter((project) => project.activeCount > 0).length
     const reviewProjectCount = projects.filter((project) => project.reviewCount > 0).length
     const readyProjectCount = projects.filter((project) => project.statusLabel === 'Ready for synthesis').length
@@ -51,9 +55,17 @@ export default function ProjectPortfolioCard({ rows }: ProjectPortfolioCardProps
                             Group uploaded documents by project so diligence can move from file-by-file extraction to project-level synthesis.
                         </CardDescription>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                    <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                         <Badge variant="outline">Portfolio view</Badge>
                         <Badge variant="secondary">Project-centric workflow</Badge>
+                        <label className="flex cursor-pointer items-center gap-2">
+                            <Switch
+                                checked={hideDuplicateDocs}
+                                onCheckedChange={setHideDuplicateDocs}
+                                aria-label="Hide duplicate documents in project lists"
+                            />
+                            <span>Hide duplicate uploads</span>
+                        </label>
                     </div>
                 </div>
             </CardHeader>
@@ -74,6 +86,15 @@ export default function ProjectPortfolioCard({ rows }: ProjectPortfolioCardProps
                     <div className="grid gap-4 xl:grid-cols-2">
                         {projects.map((project) => {
                             const missingCoverage = project.coverage.filter((item) => !item.matched)
+                            // project.documents is sorted latest-first, so keeping the first
+                            // occurrence of each file name keeps the freshest upload.
+                            const visibleDocuments = hideDuplicateDocs
+                                ? project.documents.filter((document, index, all) => {
+                                    const normalizedName = document.fileName.trim().toLowerCase()
+                                    return all.findIndex((candidate) => candidate.fileName.trim().toLowerCase() === normalizedName) === index
+                                })
+                                : project.documents
+                            const hiddenDuplicateCount = project.documents.length - visibleDocuments.length
 
                             return (
                                 <div key={project.projectKey} className="rounded-xl border border-border bg-background p-4">
@@ -132,10 +153,11 @@ export default function ProjectPortfolioCard({ rows }: ProjectPortfolioCardProps
 
                                     <details className="mt-4 rounded-lg border border-border bg-muted/20 p-4">
                                         <summary className="cursor-pointer text-sm font-semibold text-foreground">
-                                            Documents in this project ({project.documents.length})
+                                            Documents in this project ({visibleDocuments.length}
+                                            {hiddenDuplicateCount > 0 ? ` shown · ${hiddenDuplicateCount} duplicate${hiddenDuplicateCount === 1 ? '' : 's'} hidden` : ''})
                                         </summary>
                                         <div className="mt-3 space-y-2">
-                                            {project.documents.map((document) => (
+                                            {visibleDocuments.map((document) => (
                                                 <div key={`${document.requestID}-${document.fileName}`} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-background/70 px-3 py-2 text-sm">
                                                     <div>
                                                         <p className="font-medium text-foreground">{document.fileName}</p>

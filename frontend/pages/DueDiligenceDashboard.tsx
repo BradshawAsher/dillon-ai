@@ -7,8 +7,9 @@ import {
 
 import ProjectIntakeCard from '../components/ProjectIntakeCard'
 import ProjectPortfolioCard from '../components/ProjectPortfolioCard'
+import ProjectSynthesisCard from '../components/ProjectSynthesisCard'
 import SubmissionHistoryCard from '../components/SubmissionHistoryCard'
-import { useGetDiligenceData, useGetSubmissionHistory, useSubmitDealPacket } from '../hooks/backend/diligence'
+import { useGetDiligenceData, useGetProjectSynthesis, useGetSubmissionHistory, useSubmitDealPacket } from '../hooks/backend/diligence'
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
@@ -108,6 +109,12 @@ export default function DueDiligenceDashboard() {
         error: submitError,
         trigger: triggerSubmitDealPacket,
     } = useSubmitDealPacket()
+    const {
+        data: projectSynthesisData,
+        loading: projectSynthesisLoading,
+        error: projectSynthesisError,
+        trigger: triggerProjectSynthesis,
+    } = useGetProjectSynthesis()
 
     const diligenceFindings = useMemo(() => {
         if (Array.isArray(diligenceData) && diligenceData.length > 0) {
@@ -141,7 +148,8 @@ export default function DueDiligenceDashboard() {
     useEffect(() => {
         void trigger({})
         void triggerSubmissionHistory({ environment: 'production' })
-    }, [trigger, triggerSubmissionHistory])
+        void triggerProjectSynthesis({ environment: 'production' })
+    }, [trigger, triggerProjectSynthesis, triggerSubmissionHistory])
 
     useEffect(() => {
         if (!fallbackFinding) {
@@ -250,6 +258,7 @@ export default function DueDiligenceDashboard() {
     const handleRefreshHistory = async (environment: SubmitEnvironment) => {
         setActiveHistoryEnvironment(environment)
         await triggerSubmissionHistory({ environment }, { skipCache: true }).result
+        await triggerProjectSynthesis({ environment }, { skipCache: true }).result
     }
 
     const handleSubmit = async (environment: SubmitEnvironment) => {
@@ -555,6 +564,16 @@ export default function DueDiligenceDashboard() {
                 ) : null}
 
                 <ProjectPortfolioCard rows={submissionHistory} />
+
+                <ProjectSynthesisCard
+                    syntheses={Array.isArray(projectSynthesisData) ? projectSynthesisData : []}
+                    projects={projectSummaries}
+                    loading={projectSynthesisLoading}
+                    error={projectSynthesisError}
+                    onRefresh={() => {
+                        void triggerProjectSynthesis({ environment: activeHistoryEnvironment }, { skipCache: true }).result
+                    }}
+                />
 
                 <SubmissionHistoryCard
                     rows={submissionHistory}

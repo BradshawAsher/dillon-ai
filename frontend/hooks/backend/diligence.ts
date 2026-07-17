@@ -13,10 +13,13 @@
 // sample findings.
 import { useCallback, useState } from 'react'
 
+import type { ProjectSynthesisItem } from '../../../backend/diligence/getProjectSynthesis'
 import { getDataSource } from '../../lib/dataSource'
 import { identityHeaders } from '../../lib/identity'
 import type { DiligenceFinding } from '../../utils/diligence'
 import type { SubmissionHistoryItem } from '../../utils/submissionHistory'
+
+export type { ProjectSynthesisItem }
 
 const USE_MOCKS = getDataSource() === 'mock'
 
@@ -147,6 +150,17 @@ function useLiveSubmissionHistory() {
             })
         }, [])
     )
+}
+
+function useLiveProjectSynthesis() {
+  return useQuery(
+    useCallback(async (params: Record<string, unknown> = {}) => {
+      const environment = params.environment === 'test' ? 'test' : 'production'
+      return fetchJson<ProjectSynthesisItem[]>(`/api/diligence/synthesis?environment=${environment}`, {
+        headers: identityHeaders(),
+      })
+    }, [])
+  )
 }
 
 function useLiveSubmitDealPacket() {
@@ -294,6 +308,50 @@ function completeRowLater(requestID: string) {
     }, 8000)
 }
 
+const mockSynthesisRow: ProjectSynthesisItem = {
+  projectId: 'atlas-001',
+  projectStatus: 'synthesized',
+  documentsReceivedCount: 4,
+  documentsCompletedCount: 4,
+  missingDocuments: ['General ledger / trial balance', 'Customer concentration / revenue detail'],
+  crossDocumentConflicts: [
+    'P&L shows FY23 revenue of 48.1M USD but the bank statements support roughly 45.6M USD of deposits.',
+    'Add-back schedule claims 900K USD of one-time legal fees; the GL shows recurring legal spend each quarter.',
+  ],
+  openQuestions: [
+    'Is the top-customer renewal (41% of TTM revenue) executed or still in commercial review?',
+    'Why did deferred revenue recognition policy change in Q3?',
+  ],
+  negotiationLevers: [
+    'Revenue support gap of ~2.5M USD justifies a purchase price adjustment or an expanded escrow.',
+    'Unsupported add-backs reduce adjusted EBITDA by up to 0.9M USD.',
+  ],
+  finalRiskLevel: 'Medium',
+  finalTrafficLight: 'Yellow',
+  finalRecommendation: 'Proceed with revised terms',
+  finalJudgmentSummary:
+    'The dossier supports proceeding at a reduced valuation. Revenue quality is the core risk: bank deposits do not fully support reported revenue, and one large customer is unrenewed. Margin profile and retention remain genuinely strong.',
+  finalJudgmentJson: '',
+  valuationLowerBound: '92M',
+  valuationBaseEstimate: '104M',
+  valuationUpperBound: '118M',
+  valuationCurrency: 'USD',
+  projectProcessedAt: '2026-07-13T16:20:00.000Z',
+  id: 1,
+  createdAt: '2026-07-13T16:20:00.000Z',
+  updatedAt: '2026-07-13T16:20:00.000Z',
+}
+
+function useMockProjectSynthesis() {
+  return useQuery(
+    useCallback(async () => {
+      await delay(250)
+      return [{ ...mockSynthesisRow }]
+    }, []),
+    [{ ...mockSynthesisRow }]
+  )
+}
+
 function useMockSubmissionHistory() {
     return useQuery(
         useCallback(async () => {
@@ -392,3 +450,5 @@ export function useGetDiligenceData() {
 export const useGetSubmissionHistory = USE_MOCKS ? useMockSubmissionHistory : useLiveSubmissionHistory
 
 export const useSubmitDealPacket = USE_MOCKS ? useMockSubmitDealPacket : useLiveSubmitDealPacket
+
+export const useGetProjectSynthesis = USE_MOCKS ? useMockProjectSynthesis : useLiveProjectSynthesis
