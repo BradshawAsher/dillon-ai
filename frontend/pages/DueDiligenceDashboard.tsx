@@ -185,19 +185,30 @@ export default function DueDiligenceDashboard() {
         return submissionHistory.some((row) => isActiveSubmissionStatus(row.status))
     }, [submissionHistory])
 
+    // A document can be complete while the project-level consolidator is still
+    // running. Keep polling its independent status so the synthesis panel
+    // updates without requiring a manual refresh.
+    const hasActiveProjectSynthesis = useMemo(() => {
+        const activeStatuses = new Set(['queued', 'pending', 'processing', 'running', 'synthesis_pending', 'synthesizing'])
+        return (projectSynthesisData ?? []).some((row) => activeStatuses.has(row.projectStatus.trim().toLowerCase()))
+    }, [projectSynthesisData])
+
+    const shouldPollN8n = hasActiveSubmissions || hasActiveProjectSynthesis
+
     useEffect(() => {
-        if (!hasActiveSubmissions) {
+        if (!shouldPollN8n) {
             return
         }
 
         const intervalId = window.setInterval(() => {
             void triggerSubmissionHistory({ environment: activeHistoryEnvironment }, { skipCache: true }).result
+            void triggerProjectSynthesis({ environment: activeHistoryEnvironment }, { skipCache: true }).result
         }, 5000)
 
         return () => {
             window.clearInterval(intervalId)
         }
-    }, [activeHistoryEnvironment, hasActiveSubmissions, triggerSubmissionHistory])
+    }, [activeHistoryEnvironment, shouldPollN8n, triggerProjectSynthesis, triggerSubmissionHistory])
 
     if (!fallbackFinding) {
         return null

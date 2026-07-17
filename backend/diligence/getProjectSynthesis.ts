@@ -32,8 +32,13 @@ type ProjectSynthesisRow = {
   finalRecommendation?: TextValue
   final_recommendation?: TextValue
   finalJudgmentJson?: unknown
+  // Legacy spelling retained by the existing n8n Project-Level Fields table.
+  finalJudgementJson?: unknown
   final_judgment?: unknown
   finalJudgment?: unknown
+  ai_summary?: TextValue
+  ai_risk_flag?: TextValue
+  ai_processedAt?: TextValue
   valuationLowerBound?: TextValue
   lower_bound_estimate?: TextValue
   valuationBaseEstimate?: TextValue
@@ -51,6 +56,7 @@ type ProjectSynthesisRow = {
 
 type ProjectSynthesisResponse =
   | ProjectSynthesisRow[]
+  | ProjectSynthesisRow
   | {
       rows?: ProjectSynthesisRow[]
       data?: ProjectSynthesisRow[]
@@ -228,6 +234,13 @@ function extractJudgmentSummary(parsed: unknown): string {
   return ''
 }
 
+function isProjectSynthesisRow(value: ProjectSynthesisResponse): value is ProjectSynthesisRow {
+  return typeof value === 'object'
+    && value !== null
+    && !Array.isArray(value)
+    && ('projectId' in value || 'project_id' in value)
+}
+
 export default async function getProjectSynthesis(req: { params: Params; user: User }) {
   const path = req.params.environment === 'test'
     ? 'webhook-test/d19d24da-21d4-40f8-8626-a06a7dd54ac7'
@@ -241,10 +254,18 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
   const responseData = response.data
   const rows = Array.isArray(responseData)
     ? responseData
-    : responseData.rows ?? responseData.data ?? responseData.items ?? []
+    : isProjectSynthesisRow(responseData)
+      ? [responseData]
+      : responseData.rows ?? responseData.data ?? responseData.items ?? []
 
   return rows.map((row): ProjectSynthesisItem => {
-    const judgment = getJudgmentValues(row.finalJudgmentJson ?? row.final_judgment ?? row.finalJudgment)
+    const judgment = getJudgmentValues(
+      row.finalJudgmentJson
+      ?? row.finalJudgementJson
+      ?? row.final_judgment
+      ?? row.finalJudgment
+      ?? row.ai_summary
+    )
 
     return {
       projectId: getFirstStringValue([row.projectId, row.project_id]),
@@ -263,7 +284,7 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
         row.negotiation_levers,
         row.negotiationLevers,
       ]),
-      finalRiskLevel: getFirstStringValue([row.finalRiskLevel, row.final_risk_level]),
+      finalRiskLevel: getFirstStringValue([row.finalRiskLevel, row.final_risk_level, row.ai_risk_flag]),
       finalTrafficLight: getFirstStringValue([row.finalTrafficLight, row.final_traffic_light]),
       finalRecommendation: getFirstStringValue([row.finalRecommendation, row.final_recommendation]),
       finalJudgmentSummary: judgment.summary,
@@ -272,7 +293,7 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
       valuationBaseEstimate: getFirstStringValue([row.valuationBaseEstimate, row.base_estimate]),
       valuationUpperBound: getFirstStringValue([row.valuationUpperBound, row.upper_bound_estimate]),
       valuationCurrency: getFirstStringValue([row.valuationCurrency, row.currency]),
-      projectProcessedAt: getFirstStringValue([row.projectProcessedAt, row.project_processed_at, row.updatedAt]),
+      projectProcessedAt: getFirstStringValue([row.projectProcessedAt, row.project_processed_at, row.ai_processedAt, row.updatedAt]),
       id: getFirstNumberValue([row.id]),
       createdAt: getStringValue(row.createdAt),
       updatedAt: getStringValue(row.updatedAt),

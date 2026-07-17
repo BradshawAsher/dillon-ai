@@ -5,6 +5,8 @@
 - Do not edit or create files under the reference export folder
   `n8n_workflows_json/` unless the user explicitly asks to update exported
   workflow JSON files for local reference.
+- This remains true even when an export reveals a workflow bug: document the
+  required live n8n Cloud change instead of patching the local export.
 - You may refer to files under `n8n_workflows_images/`, but do not change,
   overwrite, or delete them unless the user explicitly asks to update those
   reference image assets.
