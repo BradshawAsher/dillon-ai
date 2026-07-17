@@ -579,6 +579,7 @@ export default function DueDiligenceDashboard() {
                 <ProjectSynthesisCard
                     syntheses={Array.isArray(projectSynthesisData) ? projectSynthesisData : []}
                     projects={projectSummaries}
+                    currentProjectId={projectId}
                     loading={projectSynthesisLoading}
                     error={projectSynthesisError}
                     onRefresh={() => {
@@ -605,9 +606,13 @@ export default function DueDiligenceDashboard() {
                         <CardHeader className="border-b border-border bg-card/80">
                             <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                                 <div className="space-y-1">
-                                    <CardTitle className="text-xl">Current extraction findings</CardTitle>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <CardTitle className="text-xl">Legacy sample extraction findings</CardTitle>
+                                        <Badge variant="outline">Static placeholder</Badge>
+                                    </div>
                                     <CardDescription>
-                                        These are still document-level findings. The next backend step is to reconcile them across all documents inside a shared project.
+                                        This panel is legacy demo data from the retired Retool query, not live n8n output. Use the project portfolio,
+                                        synthesis, and submission history panels above for current workflow results.
                                     </CardDescription>
                                 </div>
 

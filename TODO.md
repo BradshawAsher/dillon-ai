@@ -1,9 +1,9 @@
-1. still need to work on setting up migration and retrieving the project-wide documents from n8n after synthesizer workflow to the frontend
+1. Format synthesizer outputs better
 
 2. also would be great if we could like delete documents from a checklist if we want to or a duplicate accidentally went through, and if that could delete the row in the n8n table, or at least mark that row as "nonconsidered"
 
 
-4. Make sure render works correctly
+3. Make sure render works correctly
 
 5. The legacy "diligence findings" table at the bottom of the dashboard still shows sample data (its source was Retool's database). Either migrate it into n8n or remove the panel.
 The big product step from the handoff doc: an n8nproject-level synthesisworkflow that reconciles all documents for one project into a single acquisition judgment.
