@@ -85,3 +85,7 @@ compare metrics to industry standards[11:28 AM]email automation based on red fla
 34. After we finish deterministic mathematical calculations, should we run the individual docs through another llm chain, given the original doc plus the math to double check the results from the first llm chain? This way, the first llm chain may not be biased since we don't give it the math and have him figure it out?
 
 35. Similar to 34, maybe we have the synthesizer llm run on all the docs in the project without the mathematical calculations and then run another synthesizer when given all the math? Compare the results and stuff?
+
+36. Trisha enabled MCP access for n8n, figure out how to use it?
+
+37. Status gets changed to completed after it goes through document-specific, what about for after it goes through the synthesizer? Can we say like project-synthesized, or not enough docs for synthesis for the status?
