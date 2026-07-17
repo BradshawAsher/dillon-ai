@@ -326,6 +326,10 @@ const mockSynthesisRow: ProjectSynthesisItem = {
     'Revenue support gap of ~2.5M USD justifies a purchase price adjustment or an expanded escrow.',
     'Unsupported add-backs reduce adjusted EBITDA by up to 0.9M USD.',
   ],
+  citations: [
+    'FY23 P&L and bank statements',
+    'Add-back schedule and general ledger',
+  ],
   finalRiskLevel: 'Medium',
   finalTrafficLight: 'Yellow',
   finalRecommendation: 'Proceed with revised terms',

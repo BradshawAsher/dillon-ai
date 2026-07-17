@@ -39,6 +39,8 @@ type ProjectSynthesisRow = {
   ai_summary?: TextValue
   ai_risk_flag?: TextValue
   ai_processedAt?: TextValue
+  aiCitations?: unknown
+  ai_citations?: unknown
   valuationLowerBound?: TextValue
   lower_bound_estimate?: TextValue
   valuationBaseEstimate?: TextValue
@@ -76,6 +78,7 @@ export type ProjectSynthesisItem = {
   crossDocumentConflicts: string[]
   openQuestions: string[]
   negotiationLevers: string[]
+  citations: string[]
   finalRiskLevel: string
   finalTrafficLight: string
   finalRecommendation: string
@@ -333,6 +336,7 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
         row.negotiation_levers,
         row.negotiationLevers,
       ], formatNegotiationLever),
+      citations: getFirstStringListValue([row.aiCitations, row.ai_citations]),
       finalRiskLevel: getFirstStringValue([row.finalRiskLevel, row.final_risk_level, row.ai_risk_flag]),
       finalTrafficLight: getFirstStringValue([row.finalTrafficLight, row.final_traffic_light]),
       finalRecommendation: getFirstStringValue([row.finalRecommendation, row.final_recommendation]),

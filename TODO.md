@@ -1,6 +1,14 @@
+0. ASAP HAVE TO BE ABLE TO PRESENT THE EDGE CASES ON SATURDAY
+
 1. Format synthesizer outputs better
 
+1a. Do we dynamically change the coverage checklist or not really, or only if user selects doc type? Can we have n8n detect doc type to change the coverage checklist in UI?
+
+1b. Have the n8n document-analysis workflow write detected document types (including multiple types per file) and confidence back to the document table; update the frontend coverage checklist to count those detected types instead of relying only on the upload-form selection.
+
 2. also would be great if we could like delete documents from a checklist if we want to or a duplicate accidentally went through, and if that could delete the row in the n8n table, or at least mark that row as "nonconsidered"
+
+2.5 Make 4 key takeaways for acquisition judgement for project-wide synthesis and for investment thesis for document-specific, since they are not that good right now the way we are splitting it? Ask the LLM to do this for you in n8n?
 
 
 3. Make sure render works correctly

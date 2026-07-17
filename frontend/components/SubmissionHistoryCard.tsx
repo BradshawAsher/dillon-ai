@@ -20,6 +20,7 @@ import {
   getAiSubmissionViewModel,
   getSubmissionInsightTone,
 } from '../utils/aiSubmissionData'
+import { formatEasternTime } from '../utils/dateTime'
 import {
   formatSubmissionStatus,
   hasAiEnrichment,
@@ -91,6 +92,11 @@ function getTimestampValue(value: string) {
 
 function getRowSortValue(row: SubmissionHistoryItem) {
   return getTimestampValue(getDisplayTimestamp(row))
+}
+
+function getDigestibleHighlights(text: string) {
+  const sentences = text.match(/[^.!?]+(?:[.!?]+|$)/g) ?? [text]
+  return sentences.map((sentence) => sentence.trim()).filter(Boolean).slice(0, 4)
 }
 
 function getRowCompletenessScore(row: SubmissionHistoryItem) {
@@ -402,7 +408,7 @@ export default function SubmissionHistoryCard({
             {sortedRows.length === 0 ? 'No submission history returned yet.' : 'No rows match the current filters.'}
           </div>
         ) : (
-          <div className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(340px,0.65fr)]">
+          <div className="grid gap-4 2xl:grid-cols-[minmax(0,0.9fr)_minmax(560px,1.1fr)]">
             <div className="overflow-hidden rounded-lg border border-border">
               <Table>
                 <TableHeader>
@@ -490,7 +496,7 @@ export default function SubmissionHistoryCard({
                         </TableCell>
                         <TableCell>
                           <div className="space-y-1 text-sm text-foreground">
-                            <p>{getDisplayTimestamp(row)}</p>
+                            <p>{formatEasternTime(getDisplayTimestamp(row))}</p>
                             <p className="text-xs text-muted-foreground">n8n row ID: {row.id || 'Pending'}</p>
                             {row.environment ? (
                               <p className="text-xs text-muted-foreground">Environment: {row.environment}</p>
@@ -509,6 +515,7 @@ export default function SubmissionHistoryCard({
                 <div className="space-y-4">
                   {(() => {
                     const aiViewModel = getAiSubmissionViewModel(selectedRow)
+                    const investmentHighlights = getDigestibleHighlights(aiViewModel.investmentBuyReasoning)
 
                     return (
                       <>
@@ -604,7 +611,7 @@ export default function SubmissionHistoryCard({
                           </p>
                         </div>
 
-                        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                           <div className="rounded-lg border border-border bg-background p-3">
                             <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                               Risk Level
@@ -722,14 +729,31 @@ export default function SubmissionHistoryCard({
                                 </Badge>
                               ) : null}
                             </div>
-                            <p className="mt-3 text-sm leading-6 text-foreground">
-                              {aiViewModel.investmentBuyReasoning || 'No buy-side reasoning returned yet.'}
-                            </p>
+                            {investmentHighlights.length > 0 ? (
+                              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                                {investmentHighlights.map((highlight, index) => (
+                                  <div key={highlight} className="rounded-md border border-border bg-muted/30 p-3">
+                                    <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                                      Thesis point {index + 1}
+                                    </p>
+                                    <p className="mt-1 text-sm leading-6 text-foreground">{highlight}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="mt-3 text-sm leading-6 text-foreground">No buy-side reasoning returned yet.</p>
+                            )}
+                            {investmentHighlights.length > 1 ? (
+                              <details className="mt-3 rounded-md border border-border bg-muted/30 px-3 py-2 text-sm">
+                                <summary className="cursor-pointer font-medium text-foreground">Read full investment thesis</summary>
+                                <p className="mt-2 leading-6 text-muted-foreground">{aiViewModel.investmentBuyReasoning}</p>
+                              </details>
+                            ) : null}
                           </div>
                         ) : null}
 
                         {(aiViewModel.redFlags.length > 0 || aiViewModel.yellowFlags.length > 0 || aiViewModel.greenFlags.length > 0) ? (
-                          <div className="grid gap-3 lg:grid-cols-3">
+                          <div className="grid gap-3">
                             <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
                               <div className="flex items-center justify-between gap-2">
                                 <p className="text-sm font-semibold text-foreground">Red flags</p>
@@ -786,12 +810,21 @@ export default function SubmissionHistoryCard({
                           </div>
                         ) : null}
 
-                        {selectedRow.needsHumanReview ? (
+                        {aiViewModel.escalationReasons.length > 0 ? (
                           <div className="rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm text-foreground">
-                            This request is marked for human-in-the-loop review.
-                            {aiViewModel.reasonCode ? (
-                              <p className="mt-2 break-words font-medium">Escalation reason: {aiViewModel.reasonCode}</p>
-                            ) : null}
+                            <p className="font-medium">
+                              {selectedRow.needsHumanReview ? 'This request is marked for human-in-the-loop review.' : 'Escalation analysis'}
+                            </p>
+                            <div className="mt-3 space-y-2">
+                              <p className="font-medium">Escalation reasons</p>
+                              <ul className="space-y-2">
+                                {aiViewModel.escalationReasons.map((reason, index) => (
+                                  <li key={`${reason}-${index}`} className="rounded-md border border-warning/30 bg-background/80 p-3 leading-6">
+                                    {reason}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
                           </div>
                         ) : null}
 
@@ -864,19 +897,19 @@ export default function SubmissionHistoryCard({
                             <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                               Received At
                             </p>
-                            <p className="mt-1 text-sm text-foreground">{selectedRow.receivedAt || 'Pending'}</p>
+                            <p className="mt-1 text-sm text-foreground">{formatEasternTime(selectedRow.receivedAt)}</p>
                           </div>
                           <div className="rounded-lg border border-border bg-background p-3">
                             <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                               Processing Started
                             </p>
-                            <p className="mt-1 text-sm text-foreground">{selectedRow.processingStartedAt || 'Pending'}</p>
+                            <p className="mt-1 text-sm text-foreground">{formatEasternTime(selectedRow.processingStartedAt)}</p>
                           </div>
                           <div className="rounded-lg border border-border bg-background p-3">
                             <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                               Processed At
                             </p>
-                            <p className="mt-1 text-sm text-foreground">{selectedRow.processedAt || 'Pending'}</p>
+                            <p className="mt-1 text-sm text-foreground">{formatEasternTime(selectedRow.processedAt)}</p>
                           </div>
                         </div>
                       </>

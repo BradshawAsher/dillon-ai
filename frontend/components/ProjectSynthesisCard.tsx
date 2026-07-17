@@ -1,4 +1,4 @@
-import { Landmark, MessageCircleQuestion, RefreshCw, Scale, ShieldAlert, TriangleAlert } from 'lucide-react'
+import { FileText, Landmark, MessageCircleQuestion, RefreshCw, Scale, ShieldAlert, TriangleAlert } from 'lucide-react'
 
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { Badge } from '../lib/shadcn/badge'
@@ -243,6 +243,15 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                     emptyLabel="No open questions recorded."
                                     tone="default"
                                 />
+                                {(synthesis.citations?.length ?? 0) > 0 ? (
+                                    <JudgmentList
+                                        title="Synthesis citations"
+                                        icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+                                        items={synthesis.citations ?? []}
+                                        emptyLabel="No synthesis citations recorded."
+                                        tone="default"
+                                    />
+                                ) : null}
                             </div>
                         </div>
                     )
