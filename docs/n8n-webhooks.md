@@ -30,10 +30,35 @@ breaks.
 4. **Respond to Webhook** node — return the rows as JSON.
 5. **Publish.**
 
+### Recommended query scope: all projects
+
+This dashboard is a project portfolio, so its synthesis hook deliberately
+fetches **all** Project-Level Fields rows. It does **not** send a `projectId`
+when polling. The UI joins each returned row to the matching project using the
+row's `projectId` and can therefore update every visible project in one
+request.
+
+Configure the Data Table **Get row(s)** node with no filter conditions, then
+wire it exactly as follows:
+
+```text
+Webhook -> Get row(s) -> Code in JavaScript -> Respond to Webhook
+```
+
+Do not wire **Get row(s)** directly to the response node; that bypasses the
+wrapper the backend consumes. The webhook's `path` and internal webhook ID
+must also be unique to this workflow (the synthesis path is
+`d19d24da-21d4-40f8-8626-a06a7dd54ac7`, not the history workflow's ID).
+
+If the product later needs one-project API calls, use a query string such as
+`?projectId=project-1`, read it in n8n as `$json.query.projectId`, and update
+the backend to append that query parameter. Do not use `$json.projectId` for a
+Webhook trigger: query parameters are nested under `query`.
+
 ### Response format
 
-Either a bare JSON array of rows, or an object wrapping them in `rows`,
-`data`, or `items`. The backend normalizer
+Either a bare JSON array of rows, one bare row object, or an object wrapping
+rows in `rows`, `data`, or `items`. The backend normalizer
 (`backend/diligence/getProjectSynthesis.ts`) accepts camelCase or
 snake_case for every field, and list fields may be real JSON arrays,
 JSON-encoded strings, or newline/semicolon-separated text:
@@ -55,6 +80,30 @@ JSON-encoded strings, or newline/semicolon-separated text:
 
 Extra columns are ignored, so it's safe to add more fields to the table
 (TODO #9) before the frontend knows about them.
+
+### Completion and polling
+
+The project-level data-table row is the completion signal; do not keep an HTTP
+request open until the consolidator finishes. The document-counter workflow
+should upsert `projectStatus: synthesis_pending` before it starts the
+consolidator. The consolidator should update that same row to `synthesized`
+only after its final table upsert succeeds (or `failed` on its error path).
+
+The dashboard polls both submission history and this webhook every five
+seconds while either document processing or a project synthesis has an active
+status. The synthesis read webhook must therefore return in-progress rows as
+well as completed ones.
+
+To mirror the working history webhook, place this Code node between **Get
+row(s)** and **Respond to Webhook**:
+
+```js
+return { rows: $input.all().map((item) => item.json) };
+```
+
+Ensure the Webhook node is set to **Respond using Respond to Webhook Node**
+and that the Code node is connected to the response node. A default response
+body of `{}` is accepted by n8n but means the dashboard has no rows to show.
 
 ## 2. Row update webhook (future — TODO #2/#14)
 

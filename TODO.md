@@ -27,7 +27,9 @@ compare metrics to industry standards[11:28 AM]email automation based on red fla
 
 12. Be able to open each individual doc in dropdown for one project
 
-13. Maybe avoid showing duplicates in per-project but still can upload duplicates for testing purposes
+13. Be able to remove files from a project, especially if 
+
+13.1. Show red, green, yellow flags in latest project submission
 
 14. Have like a dropdown so you can delete items from a project if you want, and just a better way of seeing what docs you have uploaded?
 
