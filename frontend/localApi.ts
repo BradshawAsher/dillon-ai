@@ -45,6 +45,15 @@ async function handleRequest(
     return
   }
 
+  if (route === '/synthesis' && req.method === 'GET') {
+    const environment = requestUrl.searchParams.get('environment') === 'test' ? 'test' : 'production'
+    const mod = await server.ssrLoadModule(backendModuleUrl('getProjectSynthesis.ts'))
+    const rows: unknown = await mod.default({ params: { environment }, user })
+    res.setHeader('Content-Type', 'application/json')
+    res.end(JSON.stringify(rows))
+    return
+  }
+
   if (route === '/submit' && req.method === 'POST') {
     const params = await readJsonBody(req)
     const mod = await server.ssrLoadModule(backendModuleUrl('submitDealPacket.ts'))

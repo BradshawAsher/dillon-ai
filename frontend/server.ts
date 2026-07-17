@@ -16,6 +16,7 @@ import { fileURLToPath } from 'node:url'
 
 import express from 'express'
 
+import getProjectSynthesisImport from '../backend/diligence/getProjectSynthesis'
 import getSubmissionHistoryImport from '../backend/diligence/getSubmissionHistory'
 import submitDealPacketImport from '../backend/diligence/submitDealPacket'
 import { installRetoolGlobals, userFromHeaders } from './retoolRuntime'
@@ -34,6 +35,7 @@ function interopDefault<T>(mod: T): T {
   return typeof wrapped === 'function' ? wrapped : mod
 }
 
+const getProjectSynthesis = interopDefault(getProjectSynthesisImport)
 const getSubmissionHistory = interopDefault(getSubmissionHistoryImport)
 const submitDealPacket = interopDefault(submitDealPacketImport)
 
@@ -119,6 +121,19 @@ app.get('/api/diligence/history', async (req, res) => {
   try {
     const environment = req.query.environment === 'test' ? 'test' : 'production'
     const rows = await getSubmissionHistory({
+      params: { environment },
+      user: userFromHeaders(req.headers),
+    })
+    res.json(rows)
+  } catch (error) {
+    res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
+  }
+})
+
+app.get('/api/diligence/synthesis', async (req, res) => {
+  try {
+    const environment = req.query.environment === 'test' ? 'test' : 'production'
+    const rows = await getProjectSynthesis({
       params: { environment },
       user: userFromHeaders(req.headers),
     })
