@@ -29,6 +29,23 @@ function parseStringArray(raw: string) {
   return parsed.filter((value): value is string => typeof value === 'string')
 }
 
+function parseTextList(raw: string) {
+  const array = parseStringArray(raw)
+  if (array.length > 0) {
+    return array
+  }
+
+  const numberedItems = raw.match(/\(\d+\)\s*[\s\S]*?(?=\s*\(\d+\)|$)/g)
+  if (numberedItems && numberedItems.length > 1) {
+    return numberedItems.map((item) => item.trim())
+  }
+
+  return raw
+    .split(/\r?\n|;|•|\|/)
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0)
+}
+
 function parseExtractedObject(raw: string): ParsedJson | null {
   const parsed = parseJsonValue(raw)
 
@@ -281,6 +298,7 @@ export function getAiSubmissionViewModel(row: SubmissionHistoryItem) {
   const finalGreenFlags = greenFlags.length > 0 ? greenFlags : fallbackGreenFlags
 
   const reasonCode = row.aiEscalationReason || getStringValue(getObjectValue(escalationObject, 'reason_code'))
+  const escalationReasons = parseTextList(reasonCode)
   const valuationCurrency = row.valuationCurrency || getStringValue(getObjectValue(valuationObject, 'currency'))
   const valuationLowerBound = row.valuationLowerBound || getStringValue(getObjectValue(valuationObject, 'lower_bound'))
   const valuationBaseEstimate = row.valuationBaseEstimate || getStringValue(getObjectValue(valuationObject, 'base_estimate'))
@@ -308,6 +326,7 @@ export function getAiSubmissionViewModel(row: SubmissionHistoryItem) {
     yellowFlags: finalYellowFlags,
     greenFlags: finalGreenFlags,
     reasonCode,
+    escalationReasons,
     displayMetrics,
     valuationCurrency,
     valuationLowerBound,
