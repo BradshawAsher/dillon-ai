@@ -1,0 +1,143 @@
+{
+  "name": "[Pod 1] Financial DD Agent - Refresh Button Load History in UI",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "rBFHVB1W7ldSiObM",
+          "mode": "list",
+          "cachedResultName": "[Pod 1] Financial DD Agent - Document Specific Fields",
+          "cachedResultUrl": "/projects/0IGQ4vtxFqdL9qqX/datatables/rBFHVB1W7ldSiObM"
+        },
+        "filters": {
+          "conditions": []
+        },
+        "limit": 10,
+        "orderBy": true,
+        "orderByColumn": "receivedAt"
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "87f5baaf-4bd8-4d6c-8af6-d4e89dd5bd5b",
+      "name": "Get row(s)"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get all items from the previous node\nconst allItems = $input.all();\nconst data = allItems.map(item => item.json);\n\n// Sort the data\ndata.sort((a, b) => {\n    // 1. Resolve the values using your priority list: receivedAt -> createdAt -> id\n    const valA = a.receivedAt || a.createdAt || a.id;\n    const valB = b.receivedAt || b.createdAt || b.id;\n\n    // 2. Convert to timestamps for comparison if possible\n    const timeA = new Date(valA).getTime() || 0;\n    const timeB = new Date(valB).getTime() || 0;\n\n    // 3. Sort Descending (Newest/Latest first)\n    // If times are valid (dates), subtract them. \n    // If times are not valid (IDs), compare them as strings.\n    if (timeA !== 0 && timeB !== 0) {\n        return timeB - timeA; \n    } else {\n        return valB > valA ? 1 : -1;\n    }\n});\n\n// Return the sorted rows to Retool\nreturn { rows: data };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "d4333623-df44-4e5f-90f7-bd6c4f182f60",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        624,
+        0
+      ],
+      "id": "baada65b-1954-47a3-88f6-192837f47ccc",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "path": "1d02344c-0512-4a40-9c5b-ad8172bc91e8",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "d5ac4cf0-e185-441d-a8bb-04e4173db217",
+      "name": "Webhook",
+      "webhookId": "1d02344c-0512-4a40-9c5b-ad8172bc91e8",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "zBezOWIFrHJ7zVG1",
+          "name": "[Pod 1] Financial DD Agent - Header Auth Account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Get row(s)": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get row(s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "522614ef-b5d0-4ff4-80a9-99247920923e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "fe99320734b00c91556ed27c4e248f5338706694ae6bfd0361ca9346d525dc39"
+  },
+  "nodeGroups": [],
+  "id": "bjtY6gjRnLe7YQ4c",
+  "tags": []
+}

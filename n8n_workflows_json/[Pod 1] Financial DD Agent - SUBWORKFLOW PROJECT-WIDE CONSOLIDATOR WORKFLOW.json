@@ -1,0 +1,718 @@
+{
+  "name": "[Pod 1] Financial DD Agent - SUBWORKFLOW PROJECT-WIDE CONSOLIDATOR WORKFLOW",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "id": "c055762a-8fe7-4141-a639-df2372f30060",
+      "typeVersion": 1.1,
+      "name": "When Executed by Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "position": [
+        272,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "rBFHVB1W7ldSiObM",
+          "mode": "list",
+          "cachedResultName": "[Pod 1] Financial DD Agent - Document Specific Fields",
+          "cachedResultUrl": "/projects/0IGQ4vtxFqdL9qqX/datatables/rBFHVB1W7ldSiObM"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "projectId",
+              "keyValue": "={{ $json.projectId }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        464,
+        368
+      ],
+      "id": "81bc2dbf-6b02-4403-9d99-ac3a2ed9424f",
+      "name": "Get row(s)"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get all document rows from the previous 'Get rows' node\nconst documents = $('Get row(s)').all();\n\n// Extract only the ai_extractedJson field from each document\n// Use JSON.parse if your AI output is stored as a stringified JSON\nconst extractedData = documents.map(doc => {\n    try {\n        return typeof doc.json.ai_extractedJson === 'string' \n            ? JSON.parse(doc.json.ai_extractedJson) \n            : doc.json.ai_extractedJson;\n    } catch (e) {\n        return { error: \"Failed to parse JSON for file: \" + doc.json.fileName };\n    }\n});\n\n// Create a descriptive string for the LLM context\n// This makes the context human-readable for Claude\nlet projectContext = \"PROJECT DATA CONSOLIDATION:\\n\\n\";\n\nextractedData.forEach((data, index) => {\n    projectContext += `--- DOCUMENT ${index + 1} ---\\n`;\n    projectContext += JSON.stringify(data, null, 2);\n    projectContext += \"\\n\\n\";\n});\n\n// Return the result\nreturn {\n    json: {\n        projectContext: projectContext,\n        projectId: documents[0].json.projectId\n    }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        368
+      ],
+      "id": "907f02eb-b3b6-461c-9a6d-ef1dc2ee8068",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=The \"Forensic Consolidator\" System Prompt\nRole: You are an elite M&A Forensic Auditor and Lead Investment Analyst. You are the final authority in a high-stakes due diligence pipeline. Your objective is to reconcile the financial \"truth\" across multiple disparate documents to ensure the buyer is protected from overvaluation, undisclosed liabilities, and structural risks.\n\nCore Directives:\n\nClinical Reconciliation: Your primary task is to find contradictions. If Document A (P&L) shows one revenue figure and Document B (Customer Concentration) shows another, you MUST flag this as a reconciliation_finding with high severity.\n\nNo Assumption Policy: Never assume figures. If data is missing across all files, explicitly flag the data gap in reconciliation_findings.\n\nTraceability: Every finding must be linked to the specific document(s) it originated from. You are a truth engine, not a summarizer.\n\nNegotiation Leverage: Your goal is to identify specific \"price chips.\" If you find margin compression or unsupported add-backs, frame them as actionable negotiation levers that reduce valuation risk.\n\nForbidden Behaviors:\n\nDo NOT make final investment decisions; you provide the forensic evidence for a human to make that decision.\n\nDo NOT tolerate inconsistencies; if the math doesn't tie out across docs, the traffic_light must be RED.\n\nDo NOT extrapolate trends without a clear historical baseline from at least two sources.\n\nEscalation Logic:\nYou MUST escalate (set final_recommendation to ESCALATE or RENEGOTIATE) if:\n\nRevenue or EBITDA figures conflict across documents.\n\nGross Margin compression exceeds 5% relative across the provided periods.\n\n\"Add-backs\" are claimed but unsupported by any ledger or backup schedule.\n\nCritical structural data (like a Balance Sheet) is missing across the entire project.\n\nOutput Contract:\nYou must output ONLY valid JSON according to the provided schema. Do not include markdown (```json) or introductory prose.",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "type": "HumanMessagePromptTemplate",
+              "message": "=Below is the consolidated financial data for project {{ $json.projectId }}. Analyze these documents for cross-document inconsistencies, perform a final Quality of Earnings assessment, and suggest the final recommendation.  PROJECT CONTEXT: {{ $json.projectContext }}"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        848,
+        368
+      ],
+      "id": "64f28e6e-1c48-4871-991d-95d8937bc6f4",
+      "name": "Basic LLM Chain",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"intent\": { \"type\": \"string\", \"const\": \"Project-level due diligence synthesis\" },\n    \"global_confidence\": { \"type\": \"number\", \"minimum\": 0, \"maximum\": 1 },\n    \"traffic_light\": { \"type\": \"string\", \"enum\": [\"GREEN\", \"YELLOW\", \"RED\"] },\n    \"valuation\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"lower_bound\": { \"type\": \"number\" },\n        \"base_estimate\": { \"type\": \"number\" },\n        \"upper_bound\": { \"type\": \"number\" },\n        \"confidence_score\": { \"type\": \"number\" },\n        \"citations\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } }\n      },\n      \"required\": [\"lower_bound\", \"base_estimate\", \"upper_bound\", \"confidence_score\"]\n    },\n    \"investment_thesis\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"is_favorable_indicator\": { \"type\": \"boolean\" },\n        \"buy_reasoning\": { \"type\": \"string\" },\n        \"confidence_score\": { \"type\": \"number\" },\n        \"citations\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } }\n      },\n      \"required\": [\"is_favorable_indicator\", \"buy_reasoning\", \"confidence_score\"]\n    },\n    \"response\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"summary\": { \"type\": \"string\" },\n        \"flags\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"red_flags\": {\n              \"type\": \"array\",\n              \"items\": {\n                \"type\": \"object\",\n                \"properties\": {\n                  \"description\": { \"type\": \"string\" },\n                  \"confidence_score\": { \"type\": \"number\" },\n                  \"citations\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } }\n                },\n                \"required\": [\"description\", \"confidence_score\", \"citations\"]\n              }\n            },\n            \"yellow_flags\": {\n              \"type\": \"array\",\n              \"items\": {\n                \"type\": \"object\",\n                \"properties\": {\n                  \"description\": { \"type\": \"string\" },\n                  \"confidence_score\": { \"type\": \"number\" },\n                  \"citations\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } }\n                },\n                \"required\": [\"description\", \"confidence_score\", \"citations\"]\n              }\n            },\n            \"green_flags\": {\n              \"type\": \"array\",\n              \"items\": {\n                \"type\": \"object\",\n                \"properties\": {\n                  \"description\": { \"type\": \"string\" },\n                  \"confidence_score\": { \"type\": \"number\" },\n                  \"citations\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } }\n                },\n                \"required\": [\"description\", \"confidence_score\", \"citations\"]\n              }\n            }\n          }\n        }\n      },\n      \"required\": [\"summary\", \"flags\"]\n    },\n    \"reconciliation_findings\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"topic\": { \"type\": \"string\" },\n          \"severity\": { \"type\": \"string\", \"enum\": [\"LOW\", \"MEDIUM\", \"HIGH\"] },\n          \"description\": { \"type\": \"string\" },\n          \"confidence_score\": { \"type\": \"number\" },\n          \"citations\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } },\n          \"documents_conflicting\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } }\n        },\n        \"required\": [\"topic\", \"severity\", \"description\", \"confidence_score\"]\n      }\n    },\n    \"open_questions\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"question\": { \"type\": \"string\" },\n          \"priority\": { \"type\": \"string\", \"enum\": [\"LOW\", \"MEDIUM\", \"HIGH\"] },\n          \"reasoning\": { \"type\": \"string\" },\n          \"confidence_score\": { \"type\": \"number\" },\n          \"citations\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } }\n        },\n        \"required\": [\"question\", \"priority\", \"confidence_score\"]\n      }\n    },\n    \"negotiation_levers\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"theme\": { \"type\": \"string\" },\n          \"impact\": { \"type\": \"string\", \"enum\": [\"VALUATION\", \"STRUCTURE\", \"TERMS\"] },\n          \"suggestion\": { \"type\": \"string\" },\n          \"confidence_score\": { \"type\": \"number\" },\n          \"citations\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } }\n        },\n        \"required\": [\"theme\", \"impact\", \"suggestion\", \"confidence_score\"]\n      }\n    },\n    \"final_recommendation\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"recommendation\": { \"type\": \"string\", \"enum\": [\"PROCEED\", \"PROCEED_WITH_CAUTION\", \"RENEGOTIATE\", \"ESCALATE\", \"WALK_AWAY\"] },\n        \"citations\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } },\n        \"confidence_score\": { \"type\": \"number\" }\n      },\n      \"required\": [\"recommendation\", \"confidence_score\"]\n    }\n  },\n  \"required\": [\n    \"intent\",\n    \"global_confidence\",\n    \"traffic_light\",\n    \"valuation\",\n    \"investment_thesis\",\n    \"response\",\n    \"reconciliation_findings\",\n    \"open_questions\",\n    \"negotiation_levers\",\n    \"final_recommendation\"\n  ]\n}",
+        "autoFix": true,
+        "customizeRetryPrompt": true,
+        "prompt": "You are an automated data validator. You are currently in an error-recovery state. Your previous output was rejected. You must now produce a perfectly valid JSON output that corrects the previous structural violation\n\nCRITICAL SCHEMA VALIDATION ERROR\n--------------------------------\nThe previous output failed to satisfy the structural constraints required by the Financial Due Diligence Agent. \n\nError Details: \n{error}\n\nInstructions & Schema:\n{instructions}\n\nCorrection Required:\n1. Review the Schema definition above. \n2. Ensure {field_name} is strictly provided as a {required_type} (e.g., ensure target_value is a number, not a string).\n3. Do not include any conversational text, explanations, or markdown formatting outside the JSON block.\n4. If the data is missing or cannot be reconciled, set \"is_escalated\" to true and provide the appropriate \"reason_code\".\n\nOutput valid JSON only. Begin your response immediately with an opening brace '{'.\n\nCOMPLETION:\n{completion}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1040,
+        576
+      ],
+      "id": "c6047cb0-29a6-44a9-b78e-cf7a531196fe",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        1040,
+        720
+      ],
+      "id": "cc7c236f-2cab-4923-a774-6bf4f2d67ef0",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "UZlrzTgPalLNldFa",
+          "name": "[Pod 1] Financial DD Agent - Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "value": "DTrLU8hBUwYzmBig",
+          "mode": "list",
+          "cachedResultName": "[Pod 1] Financial DD Agent - Project-Level Fields",
+          "cachedResultUrl": "/projects/0IGQ4vtxFqdL9qqX/datatables/DTrLU8hBUwYzmBig"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "projectId",
+              "keyValue": "={{ $('Get row(s)').item.json.projectId }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "projectStatus": "synthesized",
+            "lower_bound_estimate": "={{ $json.output.valuation.lower_bound }}",
+            "base_estimate": "={{ $json.output.valuation.base_estimate }}",
+            "upper_bound_estimate": "={{ $json.output.valuation.upper_bound }}",
+            "ai_confidence": "={{ $json.output.global_confidence }}",
+            "is_favorable": "={{ $json.output.investment_thesis.is_favorable_indicator }}",
+            "buy_reasoning": "={{ $json.output.investment_thesis.buy_reasoning }}",
+            "ai_red_flags": "={{ JSON.stringify($json.output.response.flags.red_flags) }}",
+            "ai_yellow_flags": "={{ JSON.stringify($json.output.response.flags.yellow_flags) }}",
+            "ai_green_flags": "={{ JSON.stringify($json.output.response.flags.green_flags) }}",
+            "ai_citations": "={{ JSON.stringify($json.output.final_recommendation.citations) }}",
+            "ai_processedAt": "={{ new Date().toISOString() }}",
+            "ai_risk_flag": "={{ $json.output.traffic_light }}",
+            "ai_summary": "={{ $json.output.response.summary }}",
+            "projectProcessedAt": "={{ new Date().toISOString() }}",
+            "finalTrafficLight": "={{ $json.output.traffic_light }}",
+            "finalJudgementJson": "=",
+            "finalRecommendation": "={{ $json.output.final_recommendation.recommendation }}",
+            "negotiationLeversJson": "={{ JSON.stringify($json.output.negotiation_levers) }}",
+            "openQuestionsJson": "={{ JSON.stringify($json.output.open_questions) }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "projectId",
+              "displayName": "projectId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "projectName",
+              "displayName": "projectName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "targetCompany",
+              "displayName": "targetCompany",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "projectStage",
+              "displayName": "projectStage",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "projectStatus",
+              "displayName": "projectStatus",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "documentsReceivedCount",
+              "displayName": "documentsReceivedCount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "documentsCompletedCount",
+              "displayName": "documentsCompletedCount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "documentsFailedCount",
+              "displayName": "documentsFailedCount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "missingDocumentsJson",
+              "displayName": "missingDocumentsJson",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "openQuestionsJson",
+              "displayName": "openQuestionsJson",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "crossDocumentConflictsJson",
+              "displayName": "crossDocumentConflictsJson",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "negotiationLeversJson",
+              "displayName": "negotiationLeversJson",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "finalRiskLevel",
+              "displayName": "finalRiskLevel",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "finalTrafficLight",
+              "displayName": "finalTrafficLight",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "finalRecommendation",
+              "displayName": "finalRecommendation",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "finalJudgementJson",
+              "displayName": "finalJudgementJson",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "projectProcessedAt",
+              "displayName": "projectProcessedAt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "overallStatus",
+              "displayName": "overallStatus",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "coverageChecklistJson",
+              "displayName": "coverageChecklistJson",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "processingCount",
+              "displayName": "processingCount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "ai_summary",
+              "displayName": "ai_summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "ai_risk_flag",
+              "displayName": "ai_risk_flag",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "ai_target_value",
+              "displayName": "ai_target_value",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "ai_variance",
+              "displayName": "ai_variance",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "ai_is_escalated",
+              "displayName": "ai_is_escalated",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "ai_escalation_reason",
+              "displayName": "ai_escalation_reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "ai_error_message",
+              "displayName": "ai_error_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "processingStartedAt",
+              "displayName": "processingStartedAt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "ai_processedAt",
+              "displayName": "ai_processedAt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "ai_ebitda_extracted",
+              "displayName": "ai_ebitda_extracted",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "ai_intent",
+              "displayName": "ai_intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "ai_citations",
+              "displayName": "ai_citations",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "ai_red_flags",
+              "displayName": "ai_red_flags",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "ai_green_flags",
+              "displayName": "ai_green_flags",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "ai_yellow_flags",
+              "displayName": "ai_yellow_flags",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "ai_confidence",
+              "displayName": "ai_confidence",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "lower_bound_estimate",
+              "displayName": "lower_bound_estimate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "base_estimate",
+              "displayName": "base_estimate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "upper_bound_estimate",
+              "displayName": "upper_bound_estimate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "currency",
+              "displayName": "currency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "is_favorable",
+              "displayName": "is_favorable",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "buy_reasoning",
+              "displayName": "buy_reasoning",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1232,
+        368
+      ],
+      "id": "040432a8-a752-4f36-a327-b4e8713349bd",
+      "name": "Upsert row(s)"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-haiku-4-5-20251001",
+          "mode": "list",
+          "cachedResultName": "Claude Haiku 4.5"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.5,
+      "position": [
+        768,
+        576
+      ],
+      "id": "ba29e56f-01a0-4040-afe9-faea43b634e0",
+      "name": "Anthropic Chat Model",
+      "credentials": {
+        "anthropicApi": {
+          "id": "vABurqzpSJ979PBe",
+          "name": "MergeWorks Fellowship V2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Get row(s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s)": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Structured Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Upsert row(s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "6644b919-ddac-437f-b286-08dc7ff0f4f9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "fe99320734b00c91556ed27c4e248f5338706694ae6bfd0361ca9346d525dc39"
+  },
+  "nodeGroups": [],
+  "id": "IoSad3rTYJMk4Mon",
+  "tags": []
+}
