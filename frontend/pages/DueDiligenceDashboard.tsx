@@ -28,6 +28,7 @@ import { cn } from '../lib/shadcn/utils'
 import {
     getAiSubmissionViewModel,
     getSubmissionInsightTone,
+    splitReadableText,
 } from '../utils/aiSubmissionData'
 import {
     type SubmissionHistoryItem,
@@ -83,6 +84,29 @@ function getSubmissionStatusVariant(status: string): 'success' | 'warning' | 'de
     }
 
     return 'secondary'
+}
+
+function ReadableTextCards({
+    items,
+    tone = 'neutral',
+}: {
+    items: string[]
+    tone?: 'neutral' | 'warning'
+}) {
+    const itemClass = tone === 'warning'
+        ? 'border-warning/30 bg-background/80'
+        : 'border-border bg-background/80'
+
+    return (
+        <ol className="mt-3 space-y-2">
+            {items.map((item, index) => (
+                <li key={`${item}-${index}`} className={`rounded-md border p-3 text-sm leading-6 text-foreground ${itemClass}`}>
+                    {items.length > 1 ? <span className="mr-2 font-medium text-muted-foreground">{index + 1}.</span> : null}
+                    {item}
+                </li>
+            ))}
+        </ol>
+    )
 }
 
 type SubmitWebhookResponse = {
@@ -194,7 +218,26 @@ export default function DueDiligenceDashboard() {
         return (projectSynthesisData ?? []).some((row) => activeStatuses.has(row.projectStatus.trim().toLowerCase()))
     }, [projectSynthesisData])
 
-    const shouldPollN8n = hasActiveSubmissions || hasActiveProjectSynthesis
+    const isCurrentProjectAwaitingSynthesis = useMemo(() => {
+        const currentProjectId = projectId.trim()
+        if (currentProjectId.length === 0) {
+            return false
+        }
+
+        const currentProject = projectSummaries.find((project) => (project.projectId || project.projectKey) === currentProjectId)
+        if (currentProject?.statusLabel !== 'Ready for synthesis') {
+            return false
+        }
+
+        const currentSyntheses = (projectSynthesisData ?? []).filter((row) => row.projectId === currentProjectId)
+        const hasFinalJudgment = currentSyntheses.some((row) => {
+            return row.finalJudgmentSummary.trim().length > 0 || row.finalRecommendation.trim().length > 0
+        })
+
+        return !hasFinalJudgment
+    }, [projectId, projectSummaries, projectSynthesisData])
+
+    const shouldPollN8n = hasActiveSubmissions || hasActiveProjectSynthesis || isCurrentProjectAwaitingSynthesis
 
     useEffect(() => {
         if (!shouldPollN8n) {
@@ -266,6 +309,28 @@ export default function DueDiligenceDashboard() {
         setProjectStage(matchingProject.stage || 'post-loi')
         setSubmissionWorkstream(matchingProject.workstream === 'All workstreams' ? '' : matchingProject.workstream)
     }, [projectSummaries, selectedProjectKey])
+
+    const handleCreateProject = () => {
+        const newProjectNumber = projectSummaries.length + 1
+
+        setSelectedProjectKey('new')
+        setDealName('')
+        setCompanyName('')
+        setProjectId(`project-${newProjectNumber}`)
+        setProjectStage('post-loi')
+        setDocumentType('auto-detect')
+        setSubmissionWorkstream(fallbackFinding?.workstream ?? 'Financial diligence')
+        setSubmissionNotes('')
+        setSelectedFiles([])
+    }
+
+    const handlePortfolioProjectSelect = (projectKey: string) => {
+        setSelectedProjectKey(projectKey)
+
+        window.setTimeout(() => {
+            document.getElementById('project-synthesis')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }, 0)
+    }
 
     const handleRefreshHistory = async (environment: SubmitEnvironment) => {
         setActiveHistoryEnvironment(environment)
@@ -386,6 +451,7 @@ export default function DueDiligenceDashboard() {
                     onWorkstreamChange={setSubmissionWorkstream}
                     onSubmissionNotesChange={setSubmissionNotes}
                     onSelectedProjectKeyChange={setSelectedProjectKey}
+                    onCreateProject={handleCreateProject}
                     onFileSelect={setSelectedFiles}
                     onSubmit={(environment) => {
                         void handleSubmit(environment)
@@ -507,16 +573,22 @@ export default function DueDiligenceDashboard() {
                                         <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">EBITDA Extracted</p>
                                         <p className="mt-1 text-foreground">{liveSubmittedRow.ebitdaExtracted || 'Pending'}</p>
                                     </div>
-                                    {displayedSubmitEscalationReason ? (
+                                    {liveSubmitInsight?.escalationReasons.length ? (
                                         <div className="rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-foreground xl:col-span-4">
-                                            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Escalation Reason</p>
-                                            <p className="mt-1 text-sm">{displayedSubmitEscalationReason}</p>
+                                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Escalation reasons</p>
+                                                <Badge variant="warning">{liveSubmitInsight.escalationReasons.length}</Badge>
+                                            </div>
+                                            <ReadableTextCards
+                                                items={liveSubmitInsight.escalationReasons.flatMap((reason) => splitReadableText(reason))}
+                                                tone="warning"
+                                            />
                                         </div>
                                     ) : null}
                                     {displayedSubmitAiSummary ? (
                                         <div className="rounded-md border border-border bg-card px-3 py-2 xl:col-span-4">
                                             <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">AI Summary</p>
-                                            <p className="mt-1 text-sm leading-6 text-foreground">{displayedSubmitAiSummary}</p>
+                                            <ReadableTextCards items={splitReadableText(displayedSubmitAiSummary)} />
                                         </div>
                                     ) : null}
                                     {liveSubmitInsight ? (
@@ -596,7 +668,7 @@ export default function DueDiligenceDashboard() {
                                                     </Badge>
                                                 ) : null}
                                             </div>
-                                            <p className="mt-2 text-sm leading-6 text-foreground">
+                                            <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-foreground">
                                                 {liveSubmitInsight.investmentBuyReasoning || 'No buy reasoning returned yet.'}
                                             </p>
                                         </div>
@@ -607,18 +679,25 @@ export default function DueDiligenceDashboard() {
                     </Card>
                 ) : null}
 
-                <ProjectPortfolioCard rows={submissionHistory} />
-
-                <ProjectSynthesisCard
-                    syntheses={Array.isArray(projectSynthesisData) ? projectSynthesisData : []}
-                    projects={projectSummaries}
-                    currentProjectId={projectId}
-                    loading={projectSynthesisLoading}
-                    error={projectSynthesisError}
-                    onRefresh={() => {
-                        void triggerProjectSynthesis({ environment: activeHistoryEnvironment }, { skipCache: true }).result
-                    }}
+                <ProjectPortfolioCard
+                    rows={submissionHistory}
+                    activeProjectKey={selectedProjectKey}
+                    onProjectSelect={handlePortfolioProjectSelect}
                 />
+
+                <section id="project-synthesis" className="scroll-mt-6">
+                    <ProjectSynthesisCard
+                        syntheses={Array.isArray(projectSynthesisData) ? projectSynthesisData : []}
+                        projects={projectSummaries}
+                        currentProjectId={projectId}
+                        synthesisPending={isCurrentProjectAwaitingSynthesis}
+                        loading={projectSynthesisLoading}
+                        error={projectSynthesisError}
+                        onRefresh={() => {
+                            void triggerProjectSynthesis({ environment: activeHistoryEnvironment }, { skipCache: true }).result
+                        }}
+                    />
+                </section>
 
                 <SubmissionHistoryCard
                     rows={submissionHistory}

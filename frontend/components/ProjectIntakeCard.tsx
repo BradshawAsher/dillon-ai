@@ -1,4 +1,4 @@
-import { FolderKanban, Loader2, Upload } from 'lucide-react'
+import { FolderKanban, Loader2, Plus, Upload } from 'lucide-react'
 
 import FileDropzone from './FileDropzone'
 import { Badge } from '../lib/shadcn/badge'
@@ -44,6 +44,7 @@ type ProjectIntakeCardProps = {
     onWorkstreamChange: (value: string) => void
     onSubmissionNotesChange: (value: string) => void
     onSelectedProjectKeyChange: (value: string) => void
+    onCreateProject: () => void
     onFileSelect: (files: File[]) => void
     onSubmit: (environment: SubmitEnvironment) => void
 }
@@ -96,6 +97,7 @@ export default function ProjectIntakeCard({
     onWorkstreamChange,
     onSubmissionNotesChange,
     onSelectedProjectKeyChange,
+    onCreateProject,
     onFileSelect,
     onSubmit,
 }: ProjectIntakeCardProps) {
@@ -113,6 +115,10 @@ export default function ProjectIntakeCard({
                         </CardDescription>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
+                        <Button type="button" size="lg" className="shadow-sm" onClick={onCreateProject}>
+                            <Plus className="mr-2 h-4 w-4" />
+                            New project
+                        </Button>
                         <Badge variant="secondary">Project-centric</Badge>
                         <Badge variant="outline">Batch upload ready</Badge>
                         <Badge variant="outline">Multi-document roadmap enabled</Badge>

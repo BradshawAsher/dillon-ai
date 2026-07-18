@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { BriefcaseBusiness, Clock3, FileStack, Flag, FolderKanban, ShieldAlert } from 'lucide-react'
 
 import { Badge } from '../lib/shadcn/badge'
+import { Button } from '../lib/shadcn/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Switch } from '../lib/shadcn/switch'
 import { cn } from '../lib/shadcn/utils'
@@ -15,6 +16,8 @@ import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 
 type ProjectPortfolioCardProps = {
     rows: SubmissionHistoryItem[]
+    activeProjectKey: string
+    onProjectSelect: (projectKey: string) => void
 }
 
 function SummaryMetric({
@@ -37,7 +40,7 @@ function SummaryMetric({
     )
 }
 
-export default function ProjectPortfolioCard({ rows }: ProjectPortfolioCardProps) {
+export default function ProjectPortfolioCard({ rows, activeProjectKey, onProjectSelect }: ProjectPortfolioCardProps) {
     const projects = createProjectSummaries(rows)
     const [hideDuplicateDocs, setHideDuplicateDocs] = useState(true)
     const activeProjectCount = projects.filter((project) => project.activeCount > 0).length
@@ -97,7 +100,13 @@ export default function ProjectPortfolioCard({ rows }: ProjectPortfolioCardProps
                             const hiddenDuplicateCount = project.documents.length - visibleDocuments.length
 
                             return (
-                                <div key={project.projectKey} className="rounded-xl border border-border bg-background p-4">
+                                <div
+                                    key={project.projectKey}
+                                    className={cn(
+                                        'rounded-xl border bg-background p-4 transition-colors',
+                                        project.projectKey === activeProjectKey ? 'border-primary ring-1 ring-primary/20' : 'border-border',
+                                    )}
+                                >
                                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                                         <div className="space-y-1">
                                             <div className="flex flex-wrap items-center gap-2">
@@ -115,6 +124,15 @@ export default function ProjectPortfolioCard({ rows }: ProjectPortfolioCardProps
                                         </div>
 
                                         <div className="flex flex-wrap gap-2">
+                                            <Button
+                                                type="button"
+                                                variant={project.projectKey === activeProjectKey ? 'secondary' : 'default'}
+                                                size="lg"
+                                                className="shadow-sm"
+                                                onClick={() => onProjectSelect(project.projectKey)}
+                                            >
+                                                {project.projectKey === activeProjectKey ? 'Viewing synthesis' : 'View synthesis'}
+                                            </Button>
                                             {project.documentTypes.slice(0, 3).map((documentType) => (
                                                 <Badge key={documentType} variant="outline">{documentType}</Badge>
                                             ))}

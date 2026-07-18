@@ -46,6 +46,54 @@ function parseTextList(raw: string) {
     .filter((item) => item.length > 0)
 }
 
+/**
+ * Keeps LLM text intact while making long, unstructured responses easier to
+ * scan. Existing lists and paragraphs are preserved; a single long paragraph
+ * is only wrapped at sentence boundaries.
+ */
+export function splitReadableText(raw: string, maxCharacters = 360) {
+  const items = parseTextList(raw)
+
+  if (items.length > 1) {
+    return items
+  }
+
+  const text = items[0]?.trim() ?? ''
+  if (text.length <= maxCharacters) {
+    return text.length > 0 ? [text] : []
+  }
+
+  const paragraphs = text.split(/\r?\n\s*\r?\n/).map((paragraph) => paragraph.trim()).filter(Boolean)
+  if (paragraphs.length > 1) {
+    return paragraphs
+  }
+
+  const sentences = text.split(/(?<=[.!?])\s+(?=[A-Z0-9])/)
+  if (sentences.length === 1) {
+    return [text]
+  }
+
+  const sections: string[] = []
+  let currentSection = ''
+
+  for (const sentence of sentences) {
+    const nextSection = currentSection ? `${currentSection} ${sentence}` : sentence
+
+    if (currentSection && nextSection.length > maxCharacters) {
+      sections.push(currentSection)
+      currentSection = sentence
+    } else {
+      currentSection = nextSection
+    }
+  }
+
+  if (currentSection) {
+    sections.push(currentSection)
+  }
+
+  return sections
+}
+
 function parseExtractedObject(raw: string): ParsedJson | null {
   const parsed = parseJsonValue(raw)
 

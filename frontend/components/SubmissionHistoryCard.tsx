@@ -94,11 +94,6 @@ function getRowSortValue(row: SubmissionHistoryItem) {
   return getTimestampValue(getDisplayTimestamp(row))
 }
 
-function getDigestibleHighlights(text: string) {
-  const sentences = text.match(/[^.!?]+(?:[.!?]+|$)/g) ?? [text]
-  return sentences.map((sentence) => sentence.trim()).filter(Boolean).slice(0, 4)
-}
-
 function getRowCompletenessScore(row: SubmissionHistoryItem) {
   const values = [
     row.requestID,
@@ -515,8 +510,6 @@ export default function SubmissionHistoryCard({
                 <div className="space-y-4">
                   {(() => {
                     const aiViewModel = getAiSubmissionViewModel(selectedRow)
-                    const investmentHighlights = getDigestibleHighlights(aiViewModel.investmentBuyReasoning)
-
                     return (
                       <>
                         <div className="flex flex-wrap items-start justify-between gap-3">
@@ -729,26 +722,9 @@ export default function SubmissionHistoryCard({
                                 </Badge>
                               ) : null}
                             </div>
-                            {investmentHighlights.length > 0 ? (
-                              <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                                {investmentHighlights.map((highlight, index) => (
-                                  <div key={highlight} className="rounded-md border border-border bg-muted/30 p-3">
-                                    <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                                      Thesis point {index + 1}
-                                    </p>
-                                    <p className="mt-1 text-sm leading-6 text-foreground">{highlight}</p>
-                                  </div>
-                                ))}
-                              </div>
-                            ) : (
-                              <p className="mt-3 text-sm leading-6 text-foreground">No buy-side reasoning returned yet.</p>
-                            )}
-                            {investmentHighlights.length > 1 ? (
-                              <details className="mt-3 rounded-md border border-border bg-muted/30 px-3 py-2 text-sm">
-                                <summary className="cursor-pointer font-medium text-foreground">Read full investment thesis</summary>
-                                <p className="mt-2 leading-6 text-muted-foreground">{aiViewModel.investmentBuyReasoning}</p>
-                              </details>
-                            ) : null}
+                            <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-foreground">
+                              {aiViewModel.investmentBuyReasoning || 'No buy-side reasoning returned yet.'}
+                            </p>
                           </div>
                         ) : null}
 
