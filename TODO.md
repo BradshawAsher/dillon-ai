@@ -13,8 +13,7 @@
 
 3. Make sure render works correctly
 
-5. The legacy "diligence findings" table at the bottom of the dashboard still shows sample data (its source was Retool's database). Either migrate it into n8n or remove the panel.
-The big product step from the handoff doc: an n8nproject-level synthesisworkflow that reconciles all documents for one project into a single acquisition judgment.
+5. The legacy "diligence findings" table at the bottom of the dashboard still shows sample data (its source was Retool's database). Maybe add this to a separate page?
 
 
 8. Things to add (based on office hours on 7/15)
