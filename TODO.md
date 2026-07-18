@@ -10,6 +10,7 @@
 
 0e. Add KPI tiles at top of UI, the "glance test" numbers + confidence level for each glance test number
 
+0f. Add a graph/diagram for UI for interactivity and user trust
 
 1. Format synthesizer outputs better, should probably as for 4 key takeaways for synthesis report at the top and 4 key takeaways for document-specific investment thesis 
 
