@@ -65,7 +65,7 @@ compare metrics to industry standards[11:28 AM]email automation based on red fla
 
 24. Ebidta normalizer? What is that?
 
-26. Cost per run visible?
+26. Cost per run visible? Ask Trisha how much we've spent so far on the API key? Can output costs per run later to a Google Sheet or to n8n tables just in a field in document-specific and in project-specific tables?
 
 27. Have open-ended questions/data missing field in the document specific JSON response? More fields for document specific JSON response in general, and more confidence levels for each individual stat?
 
