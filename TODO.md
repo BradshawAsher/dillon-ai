@@ -8,6 +8,8 @@
 
 0d. maybe add dropdown buttons for red flags, green flags, yellow flags, open ended questions, and anything that's just really long? So like you can close and expand?
 
+0e. Add KPI tiles at top of UI, the "glance test" numbers + confidence level for each glance test number
+
 
 1. Format synthesizer outputs better, should probably as for 4 key takeaways for synthesis report at the top and 4 key takeaways for document-specific investment thesis 
 
