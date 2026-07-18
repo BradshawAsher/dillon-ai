@@ -4,7 +4,7 @@
 
 0b. Add more error triggers and stuff in case of third-party API failures?
 
-1. Format synthesizer outputs better
+1. Format synthesizer outputs better, should probably as for 4 key takeaways for synthesis report at the top and 4 key takeaways for document-specific investment thesis 
 
 
 1a. Do we dynamically change the coverage checklist or not really, or only if user selects doc type? Can we have n8n detect doc type to change the coverage checklist in UI?
@@ -13,7 +13,11 @@
 
 2. also would be great if we could like delete documents from a checklist if we want to or a duplicate accidentally went through, and if that could delete the row in the n8n table, or at least mark that row as "nonconsidered"
 
-2.5 Make 4 key takeaways for acquisition judgement for project-wide synthesis and for investment thesis for document-specific, since they are not that good right now the way we are splitting it? Ask the LLM to do this for you in n8n?
+2a. Make 4 key takeaways for acquisition judgement for project-wide synthesis and for investment thesis for document-specific, since they are not that good right now the way we are splitting it? Ask the LLM to do this for you in n8n?
+
+2b. Make the negotiation levers output more digestibly for formatting in n8n synthesizer workflow, as well as the open questions (is a little better)
+
+2c. maybe mentioned somewhere else, but citations to be clickable to open up a interactive view and then highlight where in the doc it is
 
 
 3. Make sure render works correctly

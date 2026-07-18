@@ -1,4 +1,4 @@
-import { FileText, Landmark, MessageCircleQuestion, RefreshCw, Scale, ShieldAlert, TriangleAlert } from 'lucide-react'
+import { FileText, Landmark, Loader2, MessageCircleQuestion, RefreshCw, Scale, ShieldAlert, TriangleAlert } from 'lucide-react'
 
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { Badge } from '../lib/shadcn/badge'
@@ -11,6 +11,7 @@ type ProjectSynthesisCardProps = {
     syntheses: ProjectSynthesisItem[]
     projects: ProjectSummary[]
     currentProjectId: string
+    synthesisPending: boolean
     loading: boolean
     error: string | null
     onRefresh: () => void
@@ -46,11 +47,6 @@ function formatTimestamp(value: string) {
     }
 
     return new Date(parsed).toLocaleString()
-}
-
-function getJudgmentHighlights(summary: string) {
-    const sentences = summary.match(/[^.!?]+(?:[.!?]+|$)/g) ?? [summary]
-    return sentences.map((sentence) => sentence.trim()).filter(Boolean).slice(0, 4)
 }
 
 type JudgmentListProps = {
@@ -94,7 +90,7 @@ function JudgmentList({ title, icon, items, emptyLabel, tone }: JudgmentListProp
     )
 }
 
-export default function ProjectSynthesisCard({ syntheses, projects, currentProjectId, loading, error, onRefresh }: ProjectSynthesisCardProps) {
+export default function ProjectSynthesisCard({ syntheses, projects, currentProjectId, synthesisPending, loading, error, onRefresh }: ProjectSynthesisCardProps) {
     const projectNameById = new Map(
         projects.map((project) => [project.projectId || project.projectKey, `${project.projectName} • ${project.companyName}`])
     )
@@ -132,7 +128,17 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                     </div>
                 ) : null}
 
-                {!error && visibleSyntheses.length === 0 ? (
+                {!error && synthesisPending ? (
+                    <div className="flex items-center gap-3 rounded-lg border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-foreground">
+                        <Loader2 className="h-5 w-5 shrink-0 animate-spin text-primary" />
+                        <div>
+                            <p className="font-medium">Synthesizing project findings…</p>
+                            <p className="mt-1 text-muted-foreground">All submitted documents are complete. The n8n consolidator is preparing the project-level judgment and this page will refresh automatically.</p>
+                        </div>
+                    </div>
+                ) : null}
+
+                {!error && visibleSyntheses.length === 0 && !synthesisPending ? (
                     <p className="text-sm text-muted-foreground">
                         No project-level syntheses yet. Once the consolidator workflow has processed a project&apos;s documents,
                         its final judgment appears here.
@@ -141,7 +147,6 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
 
                 {visibleSyntheses.map((synthesis) => {
                     const displayName = projectNameById.get(synthesis.projectId) ?? synthesis.projectId ?? 'Unknown project'
-                    const judgmentHighlights = getJudgmentHighlights(synthesis.finalJudgmentSummary)
 
                     return (
                         <div key={`${synthesis.projectId}-${synthesis.id}`} className="space-y-4 rounded-xl border border-border bg-card p-4">
@@ -177,20 +182,9 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                         <Scale className="h-4 w-4 text-muted-foreground" />
                                         <p className="text-sm font-medium text-foreground">Acquisition judgment</p>
                                     </div>
-                                    <div className="mt-3 grid gap-2 md:grid-cols-2">
-                                        {judgmentHighlights.map((highlight, index) => (
-                                            <div key={highlight} className="rounded-md border border-border bg-card p-3">
-                                                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                                                    Key takeaway {index + 1}
-                                                </p>
-                                                <p className="mt-1 text-sm leading-6 text-foreground">{highlight}</p>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <details className="mt-3 rounded-md border border-border bg-card px-3 py-2 text-sm">
-                                        <summary className="cursor-pointer font-medium text-foreground">Read full judgment</summary>
-                                        <p className="mt-2 leading-6 text-muted-foreground">{synthesis.finalJudgmentSummary}</p>
-                                    </details>
+                                    <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-foreground">
+                                        {synthesis.finalJudgmentSummary}
+                                    </p>
                                 </div>
                             ) : null}
 
