@@ -752,61 +752,52 @@ export default function SubmissionHistoryCard({
                           </div>
                         ) : null}
 
-                        {(aiViewModel.redFlags.length > 0 || aiViewModel.yellowFlags.length > 0 || aiViewModel.greenFlags.length > 0) ? (
+                        {aiViewModel ? (
                           <div className="grid gap-3">
-                            <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
-                              <div className="flex items-center justify-between gap-2">
-                                <p className="text-sm font-semibold text-foreground">Red flags</p>
-                                <Badge variant="destructive">{aiViewModel.redFlags.length}</Badge>
+                            {[
+                              {
+                                title: 'Red flags',
+                                flags: aiViewModel.redFlags,
+                                badge: 'destructive' as const,
+                                sectionClass: 'border-destructive/30 bg-destructive/5',
+                                itemClass: 'border-destructive/20',
+                              },
+                              {
+                                title: 'Yellow flags',
+                                flags: aiViewModel.yellowFlags,
+                                badge: 'warning' as const,
+                                sectionClass: 'border-warning/30 bg-warning/5',
+                                itemClass: 'border-warning/20',
+                              },
+                              {
+                                title: 'Green flags',
+                                flags: aiViewModel.greenFlags,
+                                badge: 'success' as const,
+                                sectionClass: 'border-success/30 bg-success/5',
+                                itemClass: 'border-success/20',
+                              },
+                            ].map((group) => (
+                              <div key={group.title} className={`rounded-lg border p-4 ${group.sectionClass}`}>
+                                <div className="flex items-center justify-between gap-2">
+                                  <p className="text-sm font-semibold text-foreground">{group.title}</p>
+                                  <Badge variant={group.badge}>{group.flags.length}</Badge>
+                                </div>
+                                {group.flags.length > 0 ? (
+                                  <ol className="mt-3 space-y-2 text-sm text-foreground">
+                                    {group.flags.map((flag, index) => (
+                                      <li key={`${flag}-${index}`} className={`rounded-md border bg-background/80 px-3 py-2 leading-6 ${group.itemClass}`}>
+                                        <span className="mr-2 font-medium text-muted-foreground">{index + 1}.</span>
+                                        {flag}
+                                      </li>
+                                    ))}
+                                  </ol>
+                                ) : (
+                                  <div className={`mt-3 rounded-md border bg-background/80 px-3 py-2 text-sm font-medium uppercase tracking-wide text-muted-foreground ${group.itemClass}`}>
+                                    None
+                                  </div>
+                                )}
                               </div>
-                              {aiViewModel.redFlags.length > 0 ? (
-                                <ul className="mt-3 space-y-2 text-sm text-foreground">
-                                  {aiViewModel.redFlags.map((flag) => (
-                                    <li key={flag} className="rounded-md bg-background/80 px-3 py-2 leading-6">
-                                      {flag}
-                                    </li>
-                                  ))}
-                                </ul>
-                              ) : (
-                                <p className="mt-3 text-sm text-muted-foreground">No red flags returned.</p>
-                              )}
-                            </div>
-
-                            <div className="rounded-lg border border-warning/30 bg-warning/5 p-4">
-                              <div className="flex items-center justify-between gap-2">
-                                <p className="text-sm font-semibold text-foreground">Yellow flags</p>
-                                <Badge variant="warning">{aiViewModel.yellowFlags.length}</Badge>
-                              </div>
-                              {aiViewModel.yellowFlags.length > 0 ? (
-                                <ul className="mt-3 space-y-2 text-sm text-foreground">
-                                  {aiViewModel.yellowFlags.map((flag) => (
-                                    <li key={flag} className="rounded-md bg-background/80 px-3 py-2 leading-6">
-                                      {flag}
-                                    </li>
-                                  ))}
-                                </ul>
-                              ) : (
-                                <p className="mt-3 text-sm text-muted-foreground">No yellow flags returned.</p>
-                              )}
-                            </div>
-
-                            <div className="rounded-lg border border-success/30 bg-success/5 p-4">
-                              <div className="flex items-center justify-between gap-2">
-                                <p className="text-sm font-semibold text-foreground">Green flags</p>
-                                <Badge variant="success">{aiViewModel.greenFlags.length}</Badge>
-                              </div>
-                              {aiViewModel.greenFlags.length > 0 ? (
-                                <ul className="mt-3 space-y-2 text-sm text-foreground">
-                                  {aiViewModel.greenFlags.map((flag) => (
-                                    <li key={flag} className="rounded-md bg-background/80 px-3 py-2 leading-6">
-                                      {flag}
-                                    </li>
-                                  ))}
-                                </ul>
-                              ) : (
-                                <p className="mt-3 text-sm text-muted-foreground">No green flags returned.</p>
-                              )}
-                            </div>
+                            ))}
                           </div>
                         ) : null}
 

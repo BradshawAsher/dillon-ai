@@ -519,20 +519,52 @@ export default function DueDiligenceDashboard() {
                                             <p className="mt-1 text-sm leading-6 text-foreground">{displayedSubmitAiSummary}</p>
                                         </div>
                                     ) : null}
-                                    {((liveSubmitInsight?.redFlags.length ?? 0) > 0 || (liveSubmitInsight?.yellowFlags.length ?? 0) > 0 || (liveSubmitInsight?.greenFlags.length ?? 0) > 0) ? (
-                                        <div className="grid gap-2 xl:col-span-4 md:grid-cols-3">
-                                            <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2">
-                                                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Red Flags</p>
-                                                <p className="mt-1 text-sm text-foreground">{liveSubmitInsight?.redFlags.length ?? 0}</p>
-                                            </div>
-                                            <div className="rounded-md border border-warning/30 bg-warning/5 px-3 py-2">
-                                                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Yellow Flags</p>
-                                                <p className="mt-1 text-sm text-foreground">{liveSubmitInsight?.yellowFlags.length ?? 0}</p>
-                                            </div>
-                                            <div className="rounded-md border border-success/30 bg-success/5 px-3 py-2">
-                                                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Green Flags</p>
-                                                <p className="mt-1 text-sm text-foreground">{liveSubmitInsight?.greenFlags.length ?? 0}</p>
-                                            </div>
+                                    {liveSubmitInsight ? (
+                                        <div className="space-y-3 xl:col-span-4">
+                                            {[
+                                                {
+                                                    title: 'Red flags',
+                                                    flags: liveSubmitInsight.redFlags,
+                                                    badge: 'destructive' as const,
+                                                    sectionClass: 'border-destructive/30 bg-destructive/5',
+                                                    itemClass: 'border-destructive/20',
+                                                },
+                                                {
+                                                    title: 'Yellow flags',
+                                                    flags: liveSubmitInsight.yellowFlags,
+                                                    badge: 'warning' as const,
+                                                    sectionClass: 'border-warning/30 bg-warning/5',
+                                                    itemClass: 'border-warning/20',
+                                                },
+                                                {
+                                                    title: 'Green flags',
+                                                    flags: liveSubmitInsight.greenFlags,
+                                                    badge: 'success' as const,
+                                                    sectionClass: 'border-success/30 bg-success/5',
+                                                    itemClass: 'border-success/20',
+                                                },
+                                            ].map((group) => (
+                                                <div key={group.title} className={`rounded-md border p-3 ${group.sectionClass}`}>
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <p className="text-sm font-medium text-foreground">{group.title}</p>
+                                                        <Badge variant={group.badge}>{group.flags.length}</Badge>
+                                                    </div>
+                                                    {group.flags.length > 0 ? (
+                                                        <ol className="mt-2 space-y-2">
+                                                            {group.flags.map((flag, index) => (
+                                                                <li key={`${flag}-${index}`} className={`rounded-md border bg-background/80 p-3 text-sm leading-6 text-foreground ${group.itemClass}`}>
+                                                                    <span className="mr-2 font-medium text-muted-foreground">{index + 1}.</span>
+                                                                    {flag}
+                                                                </li>
+                                                            ))}
+                                                        </ol>
+                                                    ) : (
+                                                        <div className={`mt-2 rounded-md border bg-background/80 p-3 text-sm font-medium uppercase tracking-wide text-muted-foreground ${group.itemClass}`}>
+                                                            None
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
                                         </div>
                                     ) : null}
                                     {(liveSubmitInsight?.formattedValuationLowerBound || liveSubmitInsight?.formattedValuationBaseEstimate || liveSubmitInsight?.formattedValuationUpperBound) ? (
