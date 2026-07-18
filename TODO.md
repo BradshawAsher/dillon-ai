@@ -24,6 +24,10 @@
 
 0l. Confidence scores on everything make sure to do this
 
+0m. If render takes too long to load, then maybe load it on vercel too as an alternative?
+
+0n. maybe adding physical tabs could help separate categories of user interaction (input, summary, etc.)
+
 1. Format synthesizer outputs better, should probably as for 4 key takeaways for synthesis report at the top and 4 key takeaways for document-specific investment thesis 
 
 
