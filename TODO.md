@@ -92,3 +92,5 @@ compare metrics to industry standards[11:28 AM]email automation based on red fla
 
 
 38. Make sure to maintain the n8n_workflows_images and n8n_workflows_json when they change
+
+39. Make the dashboard less AI generated and more authentic maybe whenever we have extra time?
