@@ -1,120 +1,171 @@
 # Due Diligence Dashboard
 
-Internal M&A / financial due diligence workspace, exported from Retool. The app groups document
-uploads into projects, sends them to an n8n workflow for AI processing, and polls results back
-into a submission history view.
+Internal M&A / financial due-diligence workspace. Documents are uploaded into
+projects, processed asynchronously by n8n, and displayed in a React dashboard
+through polling.
 
-- `backend/` — Retool backend queries (run inside Retool against Retool DB + the n8n REST resource)
-- `frontend/` — the React UI (pages, components, utils) plus local-dev scaffolding (see below)
-- `frontend/notes/project-handoff.md` — detailed architecture and data-flow handoff notes
+## Current architecture
 
-## Running without Retool (standalone)
+```text
+Browser
+  -> same-origin REST API (/api/diligence/*)
+  -> n8n webhooks
+  -> n8n Data Tables
+  -> document processing and project synthesizer workflows
+  -> polling responses back to the dashboard
+```
 
-The app runs completely outside Retool. Prerequisites: **Node.js 18+** (tested on 22) and
-**npm** — everything else installs from `frontend/package.json`.
+The browser never calls n8n directly. The local REST layer is part of this
+repository:
+
+| Runtime | REST implementation | Purpose |
+| --- | --- | --- |
+| `npm start` | `frontend/server.ts` | Express server that serves the production build and `/api/diligence/*` |
+| `npm run dev` | `frontend/localApi.ts` | Vite dev-server middleware with the same API contract |
+
+The API invokes the normalized backend functions in `backend/diligence/`,
+which forward requests to n8n through `frontend/retoolRuntime.ts`.
+
+### Data ownership
+
+- **n8n Data Tables** are the source of truth for submitted documents, their
+  AI output, and project-level synthesis results.
+- **n8n Cloud workflows** perform intake, document analysis, document counts,
+  and project-wide synthesis.
+- The legacy `getDiligenceData` query still references Retool DB, but the
+  standalone app does not use that database. It intentionally renders a
+  clearly labeled static sample panel named "Legacy sample extraction
+  findings."
+
+The local files in `n8n_workflows_json/` and `n8n_workflows_images/` are
+read-only exports for reference. They do not change the live n8n Cloud
+workflows.
+
+## Run locally
+
+Use a current Node LTS release (Node 22+ recommended).
 
 ```sh
 cd frontend
 npm install
-npm start       # builds the frontend and serves app + API on http://localhost:3000
+npm run dev
 ```
 
-`frontend/server.ts` is a small Express server that executes the real backend functions from
-`/backend/diligence` (shimming the `n8nFinancialAgent` global Retool used to inject — see
-`frontend/retoolRuntime.ts`) and serves the built frontend. `PORT` overrides the port.
+Open the URL Vite prints, normally `http://localhost:5173`. Dev mode supports
+hot reload.
 
-On first load a sign-in overlay asks for your name and email; live submissions are stamped with
-it (the role Retool's login used to play). It persists in localStorage — use the "Change" button
-on the bottom-left chip to switch users.
-
-### Password protection
-
-Set `APP_PASSWORD` to require a shared team password before the API responds (a login screen
-appears in front of the app). Unset — the localhost default — no login is shown. The server also
-reads a `frontend/.env` file (gitignored), so the easiest setup is:
-
-```
-# frontend/.env
-APP_PASSWORD=pick-something-strong
-N8N_WEBHOOK_SECRET=another-long-random-string
-```
-
-### Securing the n8n webhooks
-
-The two webhook endpoints are gated only by the UUID in their path. To lock them down, set
-`N8N_WEBHOOK_SECRET` (the server then sends it as an `x-webhook-secret` header on every n8n
-call) and configure both webhook nodes in n8n to require it:
-
-1. Open each workflow (submit `d6884691-…` and history `1d02344c-…`) in the n8n editor.
-2. In the **Webhook** node set **Authentication → Header Auth**, create a credential with
-   name `x-webhook-secret` and the same value as `N8N_WEBHOOK_SECRET`.
-3. Republish the workflows. (Retool will stop working against these webhooks unless you add the
-   same header to its `n8n_financial_agent` resource — fine if the goal is to leave Retool.)
-
-### Deploying to Render
-
-The repo includes a `render.yaml` blueprint. In Render: **New → Blueprint**, select this GitHub
-repo, and set `APP_PASSWORD` and `N8N_WEBHOOK_SECRET` when prompted. Render builds the frontend
-and runs `server.ts`; the team gets an `https://….onrender.com` URL guarded by the password.
-
-Render website: https://due-diligence-dashboard.onrender.com/
-
-## Running the dev server (hot reload)
+For a production-style local run:
 
 ```sh
 cd frontend
-npm run dev     # Vite dev server on http://localhost:5173
+npm start
 ```
 
-By default the local run is **connected to the real n8n workflows**. A Vite dev-server plugin
-(`frontend/localApi.ts`) serves same-origin `/api/diligence/*` routes and executes the real
-backend functions from `/backend/diligence` in Node, shimming the `n8nFinancialAgent` global that
-Retool normally injects. The browser never fetches external hosts directly — same architecture as
-production. Submitting a file locally **does trigger the real n8n production workflow**.
+This builds the frontend and starts the Express server at
+`http://localhost:3000`. Restart `npm start` after source-code changes.
 
-A **Data: Mock / Live n8n** toggle floats at the bottom-right of the page. "Live n8n" (default)
-uses the real webhooks; "Mock" runs fully offline against in-memory sample data — it seeds one
-completed sample submission and simulates the async lifecycle (processing → completed after ~8s,
-picked up by the page's 5-second polling). The choice persists in localStorage across reloads.
-Setting `VITE_USE_MOCKS=true` when starting the dev server only changes the default.
+Useful checks:
 
-Exception in both modes: the legacy findings panel (`getDiligenceData`) reads Retool DB, which
-has no local equivalent, so it always shows the page's built-in sample findings. This is the
-only remaining Retool-owned data; everything else (submissions, AI results) lives in n8n.
+```sh
+npm run typecheck
+npm run build
+npm run preview
+```
 
-Remaining steps for a full production exit from Retool: host the standalone server somewhere
-(Render/Railway/Fly), put a real login in front of it, and add header auth to the n8n webhook
-nodes (today they are gated only by the UUID in their path).
+## Configuration
 
-## What the Retool export includes vs. what had to be added
+Create `frontend/.env` (it is gitignored):
 
-Retool's "app as code" export only contains the code you author inside Retool. Several things the
-frontend imports are **generated by Retool at runtime and are not in the export**, so the app
-cannot build or run from the zip alone:
+```dotenv
+APP_PASSWORD=pick-a-shared-team-password
+N8N_WEBHOOK_SECRET=the-header-auth-secret-used-by-n8n
+PORT=3000
+VITE_USE_MOCKS=false
+```
 
-| Missing from the export | Why | What was added locally |
+- `APP_PASSWORD` is optional locally. When set, the standalone API requires
+  the shared-password login.
+- `N8N_WEBHOOK_SECRET` is sent server-side as `x-webhook-secret`; it is never
+  exposed to the browser.
+- `VITE_USE_MOCKS=true` changes the initial local source to Mock mode.
+
+## Live n8n and Mock mode
+
+The bottom-right **Data: Mock / Live n8n** control persists its selection in
+browser local storage.
+
+- **Live n8n** is the default. Uploads trigger the real Cloud workflow and
+  refreshes read real n8n rows.
+- **Mock** is an in-memory UI simulation. It does not send data to n8n and
+  simulates document processing locally.
+
+The legacy sample findings panel is static in both modes.
+
+## API and webhook flow
+
+The dashboard uses these same-origin endpoints:
+
+| Dashboard API | Method | n8n purpose |
 | --- | --- | --- |
-| `frontend/hooks/backend/diligence.ts` | Retool generates a React hook per backend query (`useGetDiligenceData`, `useGetSubmissionHistory`, `useSubmitDealPacket`), each returning `{ data, loading, error, trigger }` where `trigger()` returns a promise with a `.result` property | Mock implementations with the same signatures, backed by an in-memory store — no network |
-| `frontend/lib/shadcn/*` | Retool provides the shadcn/ui component library at runtime | Standard shadcn/ui implementations for the 11 modules the app imports: `badge`, `button`, `card`, `input`, `label`, `progress`, `select`, `switch`, `table`, `textarea`, `utils` (uses the Radix packages already listed in `package.json`) |
-| Build tooling / entry point | Retool hosts the app; the export has dependencies in `package.json` but no scripts, no Vite config, no `index.html`, no entry module | `index.html`, `main.tsx`, `vite.config.ts`, `tailwind.config.cjs` (theme tokens mapped to the CSS variables in `orgTheme.css`, incl. the `warning`/`success` badge variants and `shadow-retool-*`), `postcss.config.cjs`, `tailwind.css`, and `dev`/`build`/`preview` scripts |
-| Backend runtime globals | `backend/*.ts` references Retool-injected globals (`n8nFinancialAgent`, Retool DB, `User`) | Nothing — the backend files are kept as-is for Retool; they are not part of the local build |
+| `/api/diligence/submit` | `POST` | Accept a document upload and quickly acknowledge it |
+| `/api/diligence/history` | `GET` | Return document-specific rows for polling |
+| `/api/diligence/synthesis` | `GET` | Return project-level synthesis rows for polling |
 
-Everything under `frontend/pages`, `frontend/components`, `frontend/utils`, and `backend/` is
-untouched export content. The scaffolding files above are local-dev additions only; syncing this
-repo back into Retool should treat them as extra files, not app changes.
+The detailed live n8n webhook paths, response schema, and required response
+shape are documented in [docs/n8n-webhooks.md](docs/n8n-webhooks.md).
 
-## Handoff-doc compliance
+The asynchronous lifecycle is:
 
-The local-dev scaffolding follows the conventions in
-[`frontend/notes/project-handoff.md`](frontend/notes/project-handoff.md):
+```text
+submit document
+  -> document row is queued/processing
+  -> document AI workflow writes completed fields
+  -> document counter updates project state
+  -> project synthesizer writes project-level result
+  -> UI polls history and synthesis rows until terminal statuses arrive
+```
 
-- **Strict TypeScript** (§4) — enforced via `frontend/tsconfig.json`; `npx tsc --noEmit` passes
-  for both the exported app code and the scaffolding
-- **No direct external fetch from the frontend** (§4) — the mock hooks make zero network calls
-  and preserve the generated-hook interface (`{ data, loading, error, trigger }`, where
-  `trigger(params, { skipCache })` returns a promise exposing `.result`)
-- **Polling lifecycle** (§6) — mock submissions enter an active status (`processing`) so the
-  page's 5-second poll engages, and complete ~8s later so it stops on its own
-- **Row shape** (§9) — the mock store covers every normalized field `getSubmissionHistory`
-  supports, including the valuation / investment-thesis fields
-- Known doc drift: §4 says React 18, but Retool's exported `package.json` pins React 19
+## n8n setup notes
+
+All live n8n webhooks should use Header Auth with the `x-webhook-secret`
+credential matching `N8N_WEBHOOK_SECRET`.
+
+The project-synthesis read workflow must return project rows using the
+documented shape, for example:
+
+```json
+{ "rows": [{ "projectId": "project-1", "projectStatus": "synthesized" }] }
+```
+
+For a live workflow change, update it in n8n Cloud and document the change in
+this repository. Do not treat the local workflow exports as deployment files.
+
+## Deployment
+
+`render.yaml` defines the Render service. Create a Render Blueprint from the
+repository and set `APP_PASSWORD` and `N8N_WEBHOOK_SECRET` in Render.
+
+The configured deployment URL is:
+
+<https://due-diligence-dashboard.onrender.com/>
+
+## Project map
+
+| Path | Role |
+| --- | --- |
+| `frontend/pages/` and `frontend/components/` | React interface |
+| `frontend/hooks/backend/diligence.ts` | Live/mock query hooks used by the UI |
+| `frontend/server.ts` | Standalone Express API and production static server |
+| `frontend/localApi.ts` | Development API middleware |
+| `frontend/retoolRuntime.ts` | Node-side n8n client and Retool-global compatibility shim |
+| `backend/diligence/` | Submit, history, and synthesis normalizers |
+| `docs/n8n-webhooks.md` | n8n webhook contracts and troubleshooting |
+| `docs/HOW_TO_RUN.md` | Additional operating notes |
+| `n8n_workflows_json/` | Read-only workflow exports |
+
+## Retool provenance
+
+The dashboard originated as a Retool export. Some compatibility names remain
+(`n8nFinancialAgent`, generated-hook-shaped APIs, and `retoolRuntime.ts`), but
+the standalone dashboard's active document and synthesis data path is n8n,
+not Retool DB.
