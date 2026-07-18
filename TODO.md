@@ -2,7 +2,7 @@
 
 0a. Are we supporting multi-file upload? Is it good or bad?
 
-0b. Add more error triggers and stuff in case of third-party API failures?
+0b. Add more error triggers and stuff in case of third-party API failures? and validator nodes too?
 
 1. Format synthesizer outputs better, should probably as for 4 key takeaways for synthesis report at the top and 4 key takeaways for document-specific investment thesis 
 
@@ -37,21 +37,13 @@ compare metrics to industry standards[11:28 AM]email automation based on red fla
 
 9. Make more columns in the project-Level fields table to get more data from the json output in the syntesizer workflow
 
-10. Make a how-to-run doc for this workflow
-
-11. Have citations be clickable that take you to the exact line in the doc
+10. Make sure to update how-to-run and readme constantly
 
 12. Be able to open each individual doc in dropdown for one project
 
-13. Be able to remove files from a project, especially if 
-
-13.1. Show red, green, yellow flags in latest project submission
-
-14. Have like a dropdown so you can delete items from a project if you want, and just a better way of seeing what docs you have uploaded?
+14. Be able to open up each doc in the list for each project in an interactive viewer?
 
 15. Have n8n be able to detect document types (P&L, balance sheet, etc) and what document types are missing as well for the consolidator workflow to tell the user? 
-
-16. Finish setting up multi-document uploading
 
 17. Need to have more granular confidence levels and citations for each individual stat for document-specific json schema and project-level json schema in n8n
 
@@ -67,15 +59,11 @@ compare metrics to industry standards[11:28 AM]email automation based on red fla
 
 20. Source file field for citations might get a little inconsistent/messy since it's 1 file and then it gives 3 differnet names for 3 differnet parts of the doc in the 3 combined happy path - maybe the doc name + part in the doc would be better for future references?
 
-21. More error trigger nodes and validator nodes
-
 22. parse out the pure numbers and run them through js math sandbox to double check math from LLMs
 
 23. Later, add cache for duplicate entries or just some sort of way to handle duplicates?   
 
 24. Ebidta normalizer? What is that?
-
-25. Show the red, green, and yellow flags for each document, not just the number of them
 
 26. Cost per run visible?
 
@@ -83,13 +71,11 @@ compare metrics to industry standards[11:28 AM]email automation based on red fla
 
 28. Finish adding robustness to handle edge cases once MVP architecture is more mature
 
-29. Have submission history for the retool page be for per-project?
+29. Have submission history be for per-project?
 
-30. Need to start trying adding multiple documents to see what the n8n will do
+30. Need to start trying adding multiple document types to see what the n8n will do
 
 31. Have your n8n agent (consolidator) also suggest action items, like requesting certain extra documents or something else?
-
-32. Enable MCP access for n8n so that you can vibe code the n8n workflows too? Ask trisha?
 
 33. Some documents that are uploaded can count as more than 1 document, can we keep count of what types of documents are missing in n8n as well as the frontend (already partially implemented?), and then be able to detect if a huge excel sheet or something counts as multiple types of documents?
 
@@ -99,6 +85,5 @@ compare metrics to industry standards[11:28 AM]email automation based on red fla
 
 36. Trisha enabled MCP access for n8n, figure out how to use it?
 
-37. Status gets changed to completed after it goes through document-specific, what about for after it goes through the synthesizer? Can we say like project-synthesized, or not enough docs for synthesis for the status?
 
 38. Make sure to maintain the n8n_workflows_images and n8n_workflows_json when they change
