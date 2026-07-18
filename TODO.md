@@ -113,3 +113,7 @@ compare metrics to industry standards[11:28 AM]email automation based on red fla
 38. Make sure to maintain the n8n_workflows_images and n8n_workflows_json when they change
 
 39. Make the dashboard less AI generated and more authentic maybe whenever we have extra time?
+
+40. Add web scraper for public-facing info?
+
+41. I was talking about how they check whether a QoE flag is a one-time occurrence or part of a recurring pattern. That distinction is important because one unusually strong year could be temporary, but seeing the same issue across multiple years could show that the company is consistently dependent on it.
