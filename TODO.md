@@ -6,6 +6,9 @@
 
 0c. Have better error handling if the n8n workflow stops prematurely, like say failed or something in the UI so the user isn't stuck waiting and guessing?
 
+0d. maybe add dropdown buttons for red flags, green flags, yellow flags, open ended questions, and anything that's just really long? So like you can close and expand?
+
+
 1. Format synthesizer outputs better, should probably as for 4 key takeaways for synthesis report at the top and 4 key takeaways for document-specific investment thesis 
 
 
