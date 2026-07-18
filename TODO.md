@@ -28,6 +28,8 @@
 
 0n. maybe adding physical tabs could help separate categories of user interaction (input, summary, etc.)
 
+0o. Make cards scrollable with fixed size so that the page size doesn't increase super duper long, but each individual card can be scrollable?
+
 1. Format synthesizer outputs better, should probably as for 4 key takeaways for synthesis report at the top and 4 key takeaways for document-specific investment thesis 
 
 
@@ -116,4 +118,4 @@ compare metrics to industry standards[11:28 AM]email automation based on red fla
 
 40. Add web scraper for public-facing info?
 
-41. I was talking about how they check whether a QoE flag is a one-time occurrence or part of a recurring pattern. That distinction is important because one unusually strong year could be temporary, but seeing the same issue across multiple years could show that the company is consistently dependent on it.
+41. Second check for QoE? I was talking about how they check whether a QoE flag is a one-time occurrence or part of a recurring pattern. That distinction is important because one unusually strong year could be temporary, but seeing the same issue across multiple years could show that the company is consistently dependent on it.
