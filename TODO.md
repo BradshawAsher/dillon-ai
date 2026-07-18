@@ -12,6 +12,8 @@
 
 0f. Add a graph/diagram for UI for interactivity and user trust
 
+0g. Disable temporarily the signup and the query for user name and email since it takes extra user time?
+
 1. Format synthesizer outputs better, should probably as for 4 key takeaways for synthesis report at the top and 4 key takeaways for document-specific investment thesis 
 
 
