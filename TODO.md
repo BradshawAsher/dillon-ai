@@ -1,6 +1,11 @@
 0. ASAP HAVE TO BE ABLE TO PRESENT THE EDGE CASES ON SATURDAY
 
+0a. Are we supporting multi-file upload? Is it good or bad?
+
+0b. Add more error triggers and stuff in case of third-party API failures?
+
 1. Format synthesizer outputs better
+
 
 1a. Do we dynamically change the coverage checklist or not really, or only if user selects doc type? Can we have n8n detect doc type to change the coverage checklist in UI?
 
