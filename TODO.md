@@ -119,3 +119,5 @@ compare metrics to industry standards[11:28 AM]email automation based on red fla
 40. Add web scraper for public-facing info?
 
 41. Second check for QoE? I was talking about how they check whether a QoE flag is a one-time occurrence or part of a recurring pattern. That distinction is important because one unusually strong year could be temporary, but seeing the same issue across multiple years could show that the company is consistently dependent on it.
+
+42. Make the architecture more efficient by adding more webhooks and maybe using websockets to reduce the amount of polling needed?
