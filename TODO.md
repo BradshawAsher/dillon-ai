@@ -128,3 +128,6 @@ compare metrics to industry standards[11:28 AM]email automation based on red fla
 
 44. Add an API gateway for this?
 
+45. Go through the epicdealdone website and get inspiration for what to add?
+
+46. Look through example dashboard and gain inspiration: https://loi-desk.streamlit.app/
