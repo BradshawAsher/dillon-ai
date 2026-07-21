@@ -1,10 +1,11 @@
 import { useState } from 'react'
 
-import { BriefcaseBusiness, Clock3, Download, FileStack, Flag, FolderKanban, ShieldAlert } from 'lucide-react'
+import { BriefcaseBusiness, Clock3, Download, FileStack, Flag, FolderKanban, Search, ShieldAlert } from 'lucide-react'
 
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
+import { Input } from '../lib/shadcn/input'
 import { Switch } from '../lib/shadcn/switch'
 import { cn } from '../lib/shadcn/utils'
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
@@ -21,6 +22,7 @@ type ProjectPortfolioCardProps = {
     syntheses: ProjectSynthesisItem[]
     activeProjectKey: string
     onProjectSelect: (projectKey: string) => void
+    onExcludeDocument: (requestID: string) => void
 }
 
 function SummaryMetric({
@@ -43,13 +45,28 @@ function SummaryMetric({
     )
 }
 
-export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey, onProjectSelect }: ProjectPortfolioCardProps) {
+export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey, onProjectSelect, onExcludeDocument }: ProjectPortfolioCardProps) {
     const projects = createProjectSummaries(rows)
     const [hideDuplicateDocs, setHideDuplicateDocs] = useState(true)
+    const [projectSearch, setProjectSearch] = useState('')
     const activeProjectCount = projects.filter((project) => project.activeCount > 0).length
     const reviewProjectCount = projects.filter((project) => project.reviewCount > 0).length
     const readyProjectCount = projects.filter((project) => project.statusLabel === 'Ready for synthesis').length
     const totalDocuments = projects.reduce((sum, project) => sum + project.documentCount, 0)
+    const normalizedProjectSearch = projectSearch.trim().toLowerCase()
+    const visibleProjects = normalizedProjectSearch.length === 0
+        ? projects
+        : projects.filter((project) => {
+            const searchableProjectText = [
+                project.projectName,
+                project.projectId,
+                project.companyName,
+                project.stage,
+                ...project.documents.map((document) => document.fileName),
+            ].join(' ').toLowerCase()
+
+            return searchableProjectText.includes(normalizedProjectSearch)
+        })
 
     return (
         <Card className="overflow-hidden">
@@ -84,13 +101,31 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                     <SummaryMetric label="Needs review" value={reviewProjectCount} icon={ShieldAlert} />
                 </div>
 
+                {projects.length > 0 ? (
+                    <div className="relative">
+                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                            value={projectSearch}
+                            onChange={(event) => setProjectSearch(event.target.value)}
+                            placeholder="Search projects, IDs, stages, or document names"
+                            className="pl-9"
+                            aria-label="Search project portfolio"
+                        />
+                    </div>
+                ) : null}
+
                 {projects.length === 0 ? (
                     <div className="rounded-lg border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
                         No projects inferred yet. Once uploads include a project ID or stable deal/company naming, this portfolio view will group them automatically.
                     </div>
+                ) : visibleProjects.length === 0 ? (
+                    <div className="rounded-lg border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
+                        No projects match “{projectSearch}”.
+                    </div>
                 ) : (
+                    <div className="max-h-[72rem] overflow-y-auto pr-2">
                     <div className="grid gap-4 xl:grid-cols-2">
-                        {projects.map((project) => {
+                        {visibleProjects.map((project) => {
                             const missingCoverage = project.coverage.filter((item) => !item.matched)
                             // project.documents is sorted latest-first, so keeping the first
                             // occurrence of each file name keeps the freshest upload.
@@ -200,7 +235,10 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                                                         <p className="font-medium text-foreground">{document.fileName}</p>
                                                         <p className="text-xs text-muted-foreground">{document.documentType} · {document.status}</p>
                                                     </div>
-                                                    <Badge variant="outline">{document.processedAt || 'Pending'}</Badge>
+                                                    <div className="flex items-center gap-2">
+                                                        <Badge variant={document.isConsidered ? 'outline' : 'secondary'}>{document.isConsidered ? (document.processedAt || 'Pending') : 'Excluded'}</Badge>
+                                                        {document.isConsidered ? <Button type="button" size="sm" variant="outline" onClick={() => onExcludeDocument(document.requestID)}>Exclude</Button> : null}
+                                                    </div>
                                                 </div>
                                             ))}
                                         </div>
@@ -285,6 +323,7 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                                 </div>
                             )
                         })}
+                    </div>
                     </div>
                 )}
 

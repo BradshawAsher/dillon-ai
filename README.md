@@ -111,6 +111,8 @@ The dashboard uses these same-origin endpoints:
 
 The detailed live n8n webhook paths, response schema, and required response
 shape are documented in [docs/n8n-webhooks.md](docs/n8n-webhooks.md).
+For the current workflow map, Data Table ownership, and operating rules, see
+[docs/LIVE_N8N_WORKFLOWS.md](docs/LIVE_N8N_WORKFLOWS.md).
 
 The asynchronous lifecycle is:
 

@@ -18,6 +18,7 @@ import {
     useGetProjectSynthesis,
     useGetSubmissionHistory,
     useSubmitDealPacket,
+    useUpdateSubmissionConsideration,
 } from '../hooks/backend/diligence'
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
@@ -178,6 +179,7 @@ export default function DueDiligenceDashboard() {
         error: projectSynthesisError,
         trigger: triggerProjectSynthesis,
     } = useGetProjectSynthesis()
+    const { trigger: triggerSubmissionConsideration } = useUpdateSubmissionConsideration()
 
     const diligenceFindings = useMemo(() => {
         if (Array.isArray(diligenceData) && diligenceData.length > 0) {
@@ -379,7 +381,6 @@ export default function DueDiligenceDashboard() {
     const displayedSubmitTrafficLight = displayedSubmissionRow?.trafficLight ?? ''
     const displayedSubmitCategory = displayedSubmissionRow?.category ?? ''
     const displayedSubmitAiSummary = displayedSubmissionRow?.aiSummary ?? ''
-    const displayedSubmitTargetValue = displayedSubmissionRow?.aiTargetValue ?? ''
     const displayedSubmitVariance = displayedSubmissionRow?.aiVariance ?? ''
     const displayedSubmitConfidence = displayedSubmissionRow?.aiConfidence ?? ''
     const displayedSubmitEscalationReason = displayedSubmissionRow?.aiEscalationReason ?? ''
@@ -523,6 +524,12 @@ export default function DueDiligenceDashboard() {
         }, 0)
     }
 
+    const handleExcludeDocument = async (requestID: string) => {
+        if (!requestID || !window.confirm('Exclude this document from the project checklist and future synthesis? Its n8n record will be retained for audit.')) return
+        const result = await triggerSubmissionConsideration({ requestID, environment: activeHistoryEnvironment }).result
+        if (result) await handleRefreshHistory(activeHistoryEnvironment)
+    }
+
     const handleRefreshHistory = async (environment: SubmitEnvironment) => {
         setActiveHistoryEnvironment(environment)
         await triggerSubmissionHistory({ environment }, { skipCache: true }).result
@@ -602,7 +609,7 @@ export default function DueDiligenceDashboard() {
     return (
         <div className="min-h-screen bg-background text-foreground">
             <header className="border-b border-border bg-card">
-                <div className="mx-auto flex max-w-[1600px] flex-col gap-4 px-4 py-5 sm:px-6 lg:flex-row lg:items-start lg:justify-between lg:px-8">
+                <div className="mx-auto flex max-w-[1440px] flex-col gap-4 px-4 py-5 sm:px-6 lg:flex-row lg:items-start lg:justify-between lg:px-8">
                     <div className="space-y-2">
                         <p className="text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
                             Internal M&amp;A Due Diligence Workspace
@@ -645,7 +652,7 @@ export default function DueDiligenceDashboard() {
                     </div>
                 </div>
                 {!isExampleMode ? (
-                    <div className="mx-auto max-w-[1600px] px-4 pb-5 sm:px-6 lg:px-8">
+                    <div className="mx-auto max-w-[1440px] px-4 pb-5 sm:px-6 lg:px-8">
                         <div className="rounded-xl border-2 border-primary/35 bg-primary/10 px-5 py-5 shadow-sm sm:flex sm:items-center sm:justify-between sm:gap-6">
                             <div className="max-w-3xl">
                                 <p className="text-lg font-semibold text-foreground">New to the dashboard?</p>
@@ -659,7 +666,7 @@ export default function DueDiligenceDashboard() {
                         </div>
                     </div>
                 ) : (
-                    <div className="mx-auto max-w-[1600px] px-4 pb-5 sm:px-6 lg:px-8">
+                    <div className="mx-auto max-w-[1440px] px-4 pb-5 sm:px-6 lg:px-8">
                         <div className="rounded-xl border-2 border-success/35 bg-success/10 px-5 py-5 shadow-sm sm:flex sm:items-center sm:justify-between sm:gap-6">
                             <div className="max-w-3xl">
                                 <p className="text-lg font-semibold text-foreground">Ready to try it with your own documents?</p>
@@ -675,7 +682,7 @@ export default function DueDiligenceDashboard() {
                 )}
             </header>
 
-            <main className="mx-auto max-w-[1600px] space-y-6 px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
+            <main className="mx-auto max-w-[1440px] space-y-6 px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
                 <ProjectIntakeCard
                     dealName={dealName}
                     projectId={projectId}
@@ -936,10 +943,6 @@ export default function DueDiligenceDashboard() {
                                         ) : null}
                                     </div>
                                     <div className="rounded-md border border-border bg-card px-3 py-2">
-                                        <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Target Value</p>
-                                        <p className="mt-1 text-foreground">{displayedSubmitTargetValue || 'Pending'}</p>
-                                    </div>
-                                    <div className="rounded-md border border-border bg-card px-3 py-2">
                                         <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Variance</p>
                                         <p className="mt-1 text-foreground">{displayedSubmitVariance ? `${displayedSubmitVariance}%` : 'Pending'}</p>
                                     </div>
@@ -1059,6 +1062,7 @@ export default function DueDiligenceDashboard() {
                     syntheses={visibleProjectSyntheses}
                     activeProjectKey={selectedProjectKey}
                     onProjectSelect={handlePortfolioProjectSelect}
+                    onExcludeDocument={handleExcludeDocument}
                 />
 
                 <section id="project-synthesis" className="scroll-mt-6">
