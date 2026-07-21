@@ -234,7 +234,7 @@ export default function ProjectPortfolioCard({ rows, activeProjectKey, onProject
                                                         <p className="text-muted-foreground">
                                                             {project.documentCount > 1
                                                                 ? 'Enough documents are present to start comparing numbers, claims, and support across files.'
-                                                                : 'Upload more than one document so the agent can reconcile discrepancies instead of analyzing a single artifact.'}
+                                                                : 'This completed document can be synthesized now. Add more files when you want cross-document reconciliation.'}
                                                         </p>
                                                     </div>
                                                 </div>
