@@ -1,7 +1,7 @@
 # How to run the Due Diligence Dashboard
 
 Quick reference for the team. Deeper background lives in the root
-[README](../README.md) and `frontend/notes/project-handoff.md`.
+[README](../README.md) and [Project Handoff](PROJECT_HANDOFF.md).
 
 ## Use the deployed app (most people)
 

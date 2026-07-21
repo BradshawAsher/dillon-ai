@@ -4,7 +4,7 @@
 // functions from /backend/diligence in Node, shimming the globals Retool
 // injects (see retoolRuntime.ts). The browser never fetches external hosts —
 // requests to n8n happen server-side, matching the production architecture
-// described in frontend/notes/project-handoff.md.
+// described in docs/PROJECT_HANDOFF.md.
 //
 // Dev server only; the standalone equivalent is server.ts.
 import path from 'node:path'

@@ -15,6 +15,7 @@ type ProjectSynthesisCardProps = {
     syntheses: ProjectSynthesisItem[]
     projects: ProjectSummary[]
     currentProjectId: string
+    documentAnalysisPending: boolean
     synthesisPending: boolean
     synthesisProgress: number
     synthesisStage: string
@@ -88,7 +89,7 @@ export function downloadSynthesisReport(synthesis: ProjectSynthesisItem, project
     downloadTextFile(fileSafeName(projectName) + '-project-synthesis.md', report, 'text/markdown;charset=utf-8')
 }
 
-export default function ProjectSynthesisCard({ syntheses, projects, currentProjectId, synthesisPending, synthesisProgress, synthesisStage, loading, error, onRefresh }: ProjectSynthesisCardProps) {
+export default function ProjectSynthesisCard({ syntheses, projects, currentProjectId, documentAnalysisPending, synthesisPending, synthesisProgress, synthesisStage, loading, error, onRefresh }: ProjectSynthesisCardProps) {
     const [synthesisElapsedSeconds, setSynthesisElapsedSeconds] = useState(0)
     const projectNameById = new Map(
         projects.map((project) => [project.projectId || project.projectKey, `${project.projectName} • ${project.companyName}`])
@@ -161,7 +162,26 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                     </div>
                 ) : null}
 
-                {!error && visibleSyntheses.length === 0 && !synthesisPending ? (
+                {!error && documentAnalysisPending ? (
+                    <div className="rounded-lg border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-foreground">
+                        <div className="flex items-center gap-3">
+                            <Loader2 className="h-5 w-5 shrink-0 animate-spin text-warning" />
+                            <div>
+                                <p className="font-medium">Waiting for document-specific analysis to finish…</p>
+                                <p className="mt-1 text-muted-foreground">
+                                    The project synthesizer will start after every document reaches a terminal status. This section refreshes automatically.
+                                </p>
+                            </div>
+                        </div>
+                        <div className="mt-3 flex items-center justify-between gap-3 text-xs text-muted-foreground">
+                            <span>{synthesisStage}</span>
+                            <span>{synthesisProgress}%</span>
+                        </div>
+                        <Progress value={synthesisProgress} className="mt-2 h-2.5" />
+                    </div>
+                ) : null}
+
+                {!error && visibleSyntheses.length === 0 && !synthesisPending && !documentAnalysisPending ? (
                     <p className="text-sm text-muted-foreground">
                         No project-level syntheses yet. Once the consolidator workflow has processed a project&apos;s documents,
                         its final judgment appears here.
@@ -261,12 +281,14 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                     badgeVariant="warning"
                                     className="border-warning/30 bg-warning/5"
                                     itemClassName="border-warning/20"
+                                    defaultOpen
                                 />
                                 <ExpandableInsightGroup
                                     title="Open questions for management"
                                     icon={<MessageCircleQuestion className="h-4 w-4 text-muted-foreground" />}
                                     items={synthesis.openQuestions}
                                     emptyLabel="No open questions recorded."
+                                    defaultOpen
                                 />
                                 {(synthesis.citations?.length ?? 0) > 0 ? (
                                     <ExpandableInsightGroup
@@ -274,6 +296,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                         icon={<FileText className="h-4 w-4 text-muted-foreground" />}
                                         items={synthesis.citations ?? []}
                                         emptyLabel="No synthesis citations recorded."
+                                        defaultOpen
                                     />
                                 ) : null}
                             </div>

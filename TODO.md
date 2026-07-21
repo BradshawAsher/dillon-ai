@@ -14,16 +14,10 @@
 SYNTHESIZER IS TOO SLOW SOMETIMES
 Add a way we can run synthesis even if the website/n8n blocked the user from running synthesis?
 
+
 Add stat like how long it will take the company to make the money back on acquisition, and bear/bull/regular cases, and other stats like in epicdealdone
 
-Make sure to update project handoff somewhat regularly for handoff to mergeworks team and trisha, and not necessarily just handing off from retool to vs code
-
-
 Make sure we can have dropdowns for literally every text field that can get too long
-
-when we are done processing all the docs, and all is finished, under the finish bar, add a disclaimer for the user to see project synthesis and project portfolio for more details, and maybe have a clickable link to send them down to project synthesis?
-
-Also for the synthesis it does take a while for the synthesis to show up after all docs are completed, in the synthesis part, can we put like synthesizing for 30 sec and 31 sec 32 sec and etc on project x for better user experience, and maybe later add like a percentage done for synthesis like 25% 50% etc. [somewhat done?]
 
 
 0j. Before and after contrast for human took x hours and agent took y minutes (show how long the runtime worked)
@@ -112,8 +106,6 @@ compare metrics to industry standards[11:28 AM]email automation based on red fla
 
 36. Trisha enabled MCP access for n8n, figure out how to use it?
 
-
-38. Make sure to maintain the n8n_workflows_images and n8n_workflows_json when they change
 
 39. Make the dashboard less AI generated and more authentic maybe whenever we have extra time?
 
