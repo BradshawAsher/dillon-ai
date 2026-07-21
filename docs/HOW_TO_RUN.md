@@ -5,13 +5,11 @@ Quick reference for the team. Deeper background lives in the root
 
 ## Use the deployed app (most people)
 
-1. Open **https://due-diligence-dashboard.onrender.com**
-2. Enter the **team password** (ask Srijan — it's the `APP_PASSWORD` on Render).
-3. Enter **your name and email** — every document you submit is stamped with it.
-4. Upload documents into a project and watch the history table poll results.
+1. Open **https://due-diligence-dashboard.vercel.app**
+2. Upload documents into a project and watch the history table poll results.
 
-Free-tier quirks: after ~15 minutes idle the app sleeps, so the first visit
-can take ~30–60 seconds to wake. Every deploy also logs everyone out.
+The password and name/email prompts are temporarily disabled. Submissions are
+stamped as **MergeWorks Dashboard** while this test mode is active.
 
 ## Run it locally
 
@@ -37,21 +35,21 @@ Then either:
 
 ## Mock vs Live data
 
-The **Data: Mock / Live n8n** pill at the bottom-right of the page switches
+The **Data: Example / Live n8n** pill at the bottom-right of the page switches
 data sources at runtime:
 
 - **Live n8n** (default): real webhooks. **Submitting a file triggers the real
   production workflow** — real Drive upload, real AI processing run.
-- **Mock**: in-memory sample data, zero network calls. Safe for demos and UI
-  work; simulated submissions complete after ~8 seconds.
+- **Example**: pre-loaded sample data, zero network calls. Safe for demos and
+  UI walkthroughs; it includes document analysis and project synthesis output.
 
 The choice sticks in localStorage per browser.
 
 ## Deploying changes
 
-Push to `main` on GitHub → Render auto-builds and deploys (~2–4 minutes).
-Watch progress under the Render service's **Events/Logs** tabs. Broken builds
-keep the previous version running.
+Push to `main` on GitHub → Vercel automatically creates a deployment.
+Use the Vercel deployment preview for validation, then promote it to
+production. Vercel keeps prior deployments available for rollback.
 
 Before pushing, run the checks locally from `frontend/`:
 
@@ -69,8 +67,8 @@ npm run build       # what Render runs
 | Local/standalone server | `frontend/server.ts` (+ dev twin `frontend/localApi.ts`) |
 | n8n webhook contracts | [`docs/n8n-webhooks.md`](n8n-webhooks.md) |
 | n8n workflows | `merge-works.app.n8n.cloud`, project `2606-ai-fellows-mergeworks` |
-| Hosting | Render web service `due-diligence-dashboard` (Blueprint-managed from `render.yaml`) |
-| Secrets | `APP_PASSWORD`, `N8N_WEBHOOK_SECRET` — Render env vars + local `frontend/.env` |
+| Hosting | Vercel project `due-diligence-dashboard` |
+| Secrets | `N8N_WEBHOOK_SECRET` — Vercel Preview and Production vars + local `frontend/.env` |
 
 ## Troubleshooting
 
@@ -79,7 +77,7 @@ npm run build       # what Render runs
   [`docs/n8n-webhooks.md`](n8n-webhooks.md).
 - **History shows an error / 403** → your `N8N_WEBHOOK_SECRET` is missing or
   doesn't match the n8n Header Auth credential.
-- **401 errors locally** → you set `APP_PASSWORD` in `.env`; either log in or
-  comment it out.
-- **Render build fails after a dependency change** → run `npm install` in
+- **History or synthesis shows 500** → confirm `N8N_WEBHOOK_SECRET` is set
+  in Vercel for the active environment, then redeploy.
+- **Vercel build fails after a dependency change** → run `npm install` in
   `frontend/` and commit the updated `package-lock.json`.

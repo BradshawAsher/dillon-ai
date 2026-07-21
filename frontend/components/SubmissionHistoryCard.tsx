@@ -523,6 +523,19 @@ export default function SubmissionHistoryCard({
                             {row.submissionNotes ? (
                               <p className="line-clamp-2 text-xs text-muted-foreground">{row.submissionNotes}</p>
                             ) : null}
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              className="mt-2"
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                downloadDocumentAnalysis(row)
+                              }}
+                            >
+                              <Download />
+                              Download analysis
+                            </Button>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -556,6 +569,7 @@ export default function SubmissionHistoryCard({
                             </h3>
                           </div>
                           <div className="flex flex-wrap items-center gap-2">
+                            {selectedRow.requestID.startsWith('mock-') ? <Badge variant="secondary">Example document output</Badge> : null}
                             <Button type="button" size="sm" onClick={() => downloadDocumentAnalysis(selectedRow)}>
                               <Download />
                               Download document analysis
