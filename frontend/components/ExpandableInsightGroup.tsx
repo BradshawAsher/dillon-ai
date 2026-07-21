@@ -50,7 +50,7 @@ export default function ExpandableInsightGroup({
     <section className={`rounded-lg border p-4 ${className}`}>
       <button
         type="button"
-        className="flex w-full items-center justify-between gap-3 text-left"
+        className="flex w-full items-center justify-between gap-3 rounded-md border border-border bg-background/70 px-3 py-2.5 text-left transition-colors hover:bg-muted/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         onClick={() => setIsOpen((current) => !current)}
         aria-expanded={isOpen}
       >
@@ -59,7 +59,10 @@ export default function ExpandableInsightGroup({
           <span className="text-sm font-semibold text-foreground">{title}</span>
           <Badge variant={badgeVariant}>{itemCount ?? items.length}</Badge>
         </span>
-        {isOpen ? <ChevronUp className="h-4 w-4 shrink-0 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />}
+        <span className="flex shrink-0 items-center gap-1.5 text-xs font-medium text-primary">
+          {isOpen ? 'Hide' : 'Show'} details
+          {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </span>
       </button>
 
       {isOpen ? (

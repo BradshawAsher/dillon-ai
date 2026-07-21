@@ -222,6 +222,14 @@ export default function ProjectIntakeCard({
                     <div className="flex flex-col gap-2 sm:flex-row">
                         <Button
                             type="button"
+                            variant="secondary"
+                            onClick={onCreateProject}
+                        >
+                            <Plus className="mr-2 h-4 w-4" />
+                            New project
+                        </Button>
+                        <Button
+                            type="button"
                             disabled={selectedFiles.length === 0 || disabled}
                             onClick={() => onSubmit('production')}
                         >

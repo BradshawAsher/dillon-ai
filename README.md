@@ -33,9 +33,8 @@ which forward requests to n8n through `frontend/retoolRuntime.ts`.
 - **n8n Cloud workflows** perform intake, document analysis, document counts,
   and project-wide synthesis.
 - The legacy `getDiligenceData` query still references Retool DB, but the
-  standalone app does not use that database. It intentionally renders a
-  clearly labeled static sample panel named "Legacy sample extraction
-  findings."
+  standalone app does not use that database. Its retired sample data is kept
+  only as a code backup and is not rendered in the UI.
 
 Pod 1's live n8n Cloud/Enterprise workflows are the workflow source of truth.
 Inspect them through n8n MCP. If MCP access is unavailable, request access
@@ -98,7 +97,7 @@ browser local storage.
 - **Example** is pre-loaded sample data. It does not send data to n8n and
   demonstrates the document-analysis and project-synthesis experience.
 
-The legacy sample findings panel is static in both modes.
+The retired legacy sample findings data is not rendered in either mode.
 
 ## API and webhook flow
 
@@ -183,3 +182,10 @@ The dashboard originated as a Retool export. Some compatibility names remain
 (`n8nFinancialAgent`, generated-hook-shaped APIs, and `retoolRuntime.ts`), but
 the standalone dashboard's active document and synthesis data path is n8n,
 not Retool DB.
+
+## Team handoff
+
+For the operational handoff to MergeWorks and Trisha—including ownership, live
+n8n expectations, and the release smoke test—see
+[docs/PROJECT_HANDOFF.md](docs/PROJECT_HANDOFF.md). The older Retool-to-VS
+Code handoff is archived under `docs/archive/` for historical context only.

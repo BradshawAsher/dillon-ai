@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import {
     AlertCircle,
     ArrowUpRight,
+    Clock3,
     FileSearch,
 } from 'lucide-react'
 
@@ -145,6 +146,7 @@ type SubmissionBatch = {
     expectedDocumentCount: number
     environment: SubmitEnvironment
     startedAt: number
+    endedAt?: number
 }
 
 function formatElapsedDuration(seconds: number) {
@@ -272,6 +274,12 @@ export default function DueDiligenceDashboard() {
         return visibleProjectSyntheses.some((row) => activeStatuses.has(row.projectStatus.trim().toLowerCase()))
     }, [visibleProjectSyntheses])
 
+    const isCurrentProjectProcessingDocuments = useMemo(() => {
+        const currentProjectId = projectId.trim()
+        const currentProject = projectSummaries.find((project) => (project.projectId || project.projectKey) === currentProjectId)
+        return (currentProject?.activeCount ?? 0) > 0
+    }, [projectId, projectSummaries])
+
     const isCurrentProjectAwaitingSynthesis = useMemo(() => {
         const currentProjectId = projectId.trim()
         if (currentProjectId.length === 0) {
@@ -377,13 +385,48 @@ export default function DueDiligenceDashboard() {
     const displayedSubmitEscalationReason = displayedSubmissionRow?.aiEscalationReason ?? ''
     const liveSubmitInsight = displayedSubmissionRow ? getAiSubmissionViewModel(displayedSubmissionRow) : null
     const displayedSubmitValuationCurrency = displayedSubmissionRow?.valuationCurrency ?? ''
+    const latestSavedBatch = useMemo(() => {
+        const rowsWithBatchId = submissionHistory.filter((row) => row.submissionBatchId.trim().length > 0)
+
+        if (rowsWithBatchId.length === 0) {
+            return null
+        }
+
+        const latestRow = [...rowsWithBatchId].sort((left, right) => {
+            const leftTimestamp = Date.parse(left.processedAt || left.processingStartedAt || left.receivedAt || left.createdAt || left.triggerTimestamp)
+            const rightTimestamp = Date.parse(right.processedAt || right.processingStartedAt || right.receivedAt || right.createdAt || right.triggerTimestamp)
+            return (Number.isNaN(rightTimestamp) ? 0 : rightTimestamp) - (Number.isNaN(leftTimestamp) ? 0 : leftTimestamp)
+        })[0]
+
+        if (!latestRow) {
+            return null
+        }
+
+        const batchRows = rowsWithBatchId.filter((row) => row.submissionBatchId === latestRow.submissionBatchId)
+        const timestamps = batchRows
+            .map((row) => Date.parse(row.receivedAt || row.triggerTimestamp || row.createdAt))
+            .filter((value) => !Number.isNaN(value))
+        const terminalTimestamps = batchRows
+            .filter((row) => terminalBatchStatuses.has(row.status.trim().toLowerCase()))
+            .map((row) => Date.parse(row.processedAt || row.updatedAt || row.receivedAt))
+            .filter((value) => !Number.isNaN(value))
+
+        return {
+            id: latestRow.submissionBatchId,
+            expectedDocumentCount: Math.max(batchRows.length, ...batchRows.map((row) => row.expectedBatchDocumentCount || 0)),
+            environment: latestRow.environment === 'test' ? 'test' : 'production',
+            startedAt: timestamps.length > 0 ? Math.min(...timestamps) : Date.now(),
+            endedAt: terminalTimestamps.length === batchRows.length ? Math.max(...terminalTimestamps) : undefined,
+        } satisfies SubmissionBatch
+    }, [submissionHistory])
+    const displayedSubmissionBatch = activeSubmissionBatch ?? latestSavedBatch
     const activeBatchRows = useMemo(() => {
-        if (!activeSubmissionBatch) {
+        if (!displayedSubmissionBatch) {
             return []
         }
 
-        return submissionHistory.filter((row) => row.submissionBatchId === activeSubmissionBatch.id)
-    }, [activeSubmissionBatch, submissionHistory])
+        return submissionHistory.filter((row) => row.submissionBatchId === displayedSubmissionBatch.id)
+    }, [displayedSubmissionBatch, submissionHistory])
     const activeBatchFinishedCount = activeBatchRows.filter((row) => {
         const status = row.status.trim().toLowerCase()
         return terminalBatchStatuses.has(status)
@@ -393,7 +436,7 @@ export default function DueDiligenceDashboard() {
         const status = row.status.trim().toLowerCase()
         return status === 'failed' || status === 'error' || status === 'rejected'
     }).length
-    const activeBatchExpectedCount = activeSubmissionBatch?.expectedDocumentCount ?? 0
+    const activeBatchExpectedCount = displayedSubmissionBatch?.expectedDocumentCount ?? 0
     const activeBatchProgressPercent = activeBatchExpectedCount > 0
         ? Math.min(100, Math.round((activeBatchFinishedCount / activeBatchExpectedCount) * 100))
         : 0
@@ -404,13 +447,14 @@ export default function DueDiligenceDashboard() {
     const [batchElapsedSeconds, setBatchElapsedSeconds] = useState(0)
 
     useEffect(() => {
-        if (!activeSubmissionBatch) {
+        if (!displayedSubmissionBatch) {
             setBatchElapsedSeconds(0)
             return
         }
 
         const updateElapsedTime = () => {
-            setBatchElapsedSeconds(Math.max(0, Math.floor((Date.now() - activeSubmissionBatch.startedAt) / 1000)))
+            const endTime = displayedSubmissionBatch.endedAt ?? Date.now()
+            setBatchElapsedSeconds(Math.max(0, Math.floor((endTime - displayedSubmissionBatch.startedAt) / 1000)))
         }
 
         updateElapsedTime()
@@ -421,7 +465,7 @@ export default function DueDiligenceDashboard() {
 
         const intervalId = window.setInterval(updateElapsedTime, 1000)
         return () => window.clearInterval(intervalId)
-    }, [activeBatchExpectedCount, activeBatchFinishedCount, activeSubmissionBatch])
+    }, [activeBatchExpectedCount, activeBatchFinishedCount, displayedSubmissionBatch])
 
     useEffect(() => {
         if (selectedProjectKey === 'new') {
@@ -453,11 +497,11 @@ export default function DueDiligenceDashboard() {
     }, [projectId, projectSummaries, selectedProjectKey])
 
     const handleCreateProject = () => {
-        const newProjectNumber = projectSummaries.length + 1
+        const usedProjectIds = projectSummaries.map((project) => project.projectId || project.projectKey)
 
         setSelectedProjectKey('new')
         setDealName('')
-        setProjectId(`project-${newProjectNumber}`)
+        setProjectId(createUnusedProjectId(usedProjectIds))
         setProjectStage('post-loi')
         setDocumentType('auto-detect')
         setSubmissionNotes('')
@@ -657,6 +701,25 @@ export default function DueDiligenceDashboard() {
                     }}
                 />
 
+                {!isExampleMode && projectSummaries.length > 0 ? (
+                    <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 sm:flex sm:items-center sm:justify-between sm:gap-4">
+                        <div>
+                            <p className="text-sm font-semibold text-foreground">Review the current project-level result</p>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                                Project Synthesis consolidates the selected project&apos;s documents, risks, and negotiation levers. The Project Portfolio provides its document-level context.
+                            </p>
+                        </div>
+                        <Button
+                            type="button"
+                            size="lg"
+                            className="mt-3 w-full shrink-0 sm:mt-0 sm:w-auto"
+                            onClick={() => document.getElementById('project-synthesis')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                        >
+                            View project synthesis
+                        </Button>
+                    </div>
+                ) : null}
+
                 {isExampleMode ? (
                     <div className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm text-foreground">
                         <p className="font-medium">Example workspace</p>
@@ -678,12 +741,12 @@ export default function DueDiligenceDashboard() {
                     </div>
                 ) : null}
 
-                {activeSubmissionBatch ? (
+                {displayedSubmissionBatch ? (
                     <Card className="overflow-hidden">
                         <CardContent className="space-y-4 p-4">
                             <div className="flex flex-wrap items-center justify-between gap-2">
                                 <div>
-                                    <p className="text-sm font-semibold text-foreground">Batch processing progress</p>
+                                    <p className="text-sm font-semibold text-foreground">{activeSubmissionBatch ? 'Batch processing progress' : 'Most recent batch processing progress'}</p>
                                     <p className="text-sm text-muted-foreground">
                                         Finished {activeBatchFinishedCount}/{activeBatchExpectedCount} documents
                                         {activeBatchFailedCount > 0 ? ` · ${activeBatchFailedCount} failed` : ''}
@@ -703,7 +766,13 @@ export default function DueDiligenceDashboard() {
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between gap-3 text-sm">
                                     <p className="font-medium text-foreground">Finished</p>
-                                    <p className="text-muted-foreground">{activeBatchFinishedCount}/{activeBatchExpectedCount} documents · {formatElapsedDuration(batchElapsedSeconds)}</p>
+                                    <div className="flex flex-wrap items-center justify-end gap-2">
+                                        <p className="text-muted-foreground">{activeBatchFinishedCount}/{activeBatchExpectedCount} documents</p>
+                                        <Badge variant={activeBatchFinishedCount >= activeBatchExpectedCount ? 'success' : 'secondary'} className="gap-1.5 px-2.5 py-1 font-mono text-xs">
+                                            <Clock3 className="h-3.5 w-3.5" />
+                                            {formatElapsedDuration(batchElapsedSeconds)} elapsed
+                                        </Badge>
+                                    </div>
                                 </div>
                                 <Progress value={activeBatchProgressPercent} className="h-2.5 [&>span]:bg-success" />
                             </div>
@@ -878,8 +947,10 @@ export default function DueDiligenceDashboard() {
                                         <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">EBITDA Extracted</p>
                                         <p className="mt-1 text-foreground">{displayedSubmissionRow.ebitdaExtracted || 'Pending'}</p>
                                     </div>
-                                    {liveSubmitInsight?.escalationReasons.length ? (
-                                        <div className="xl:col-span-4">
+                                    {(liveSubmitInsight?.escalationReasons.length || displayedSubmitAiSummary) ? (
+                                        <div className="grid gap-3 xl:col-span-4 xl:grid-cols-2">
+                                        {liveSubmitInsight?.escalationReasons.length ? (
+                                        <div>
                                             <ExpandableInsightGroup
                                                 title="Escalation reasons"
                                                 items={liveSubmitInsight.escalationReasons.flatMap((reason) => splitReadableText(reason))}
@@ -887,11 +958,12 @@ export default function DueDiligenceDashboard() {
                                                 className="border-warning/30 bg-warning/10"
                                                 itemClassName="border-warning/30"
                                                 emptyLabel="No escalation reasons returned."
+                                                defaultOpen
                                             />
                                         </div>
-                                    ) : null}
-                                    {displayedSubmitAiSummary ? (
-                                        <div className="xl:col-span-4">
+                                        ) : null}
+                                        {displayedSubmitAiSummary ? (
+                                        <div>
                                             <ExpandableInsightGroup
                                                 title="AI Summary"
                                                 items={splitReadableText(displayedSubmitAiSummary)}
@@ -901,9 +973,11 @@ export default function DueDiligenceDashboard() {
                                                 emptyLabel="No AI summary returned."
                                             />
                                         </div>
+                                        ) : null}
+                                        </div>
                                     ) : null}
                                     {liveSubmitInsight ? (
-                                        <div className="space-y-3 xl:col-span-4">
+                                        <div className="grid gap-3 xl:col-span-4 xl:grid-cols-2">
                                             {[
                                                 {
                                                     title: 'Red flags',
@@ -935,7 +1009,7 @@ export default function DueDiligenceDashboard() {
                                                     className={group.sectionClass}
                                                     itemClassName={group.itemClass}
                                                     emptyLabel="None"
-                                                    defaultOpen={group.title === 'Red flags'}
+                                                    defaultOpen
                                                 />
                                             ))}
                                         </div>
@@ -992,6 +1066,7 @@ export default function DueDiligenceDashboard() {
                         syntheses={visibleProjectSyntheses}
                         projects={projectSummaries}
                         currentProjectId={isExampleMode ? 'atlas-001' : projectId}
+                        documentAnalysisPending={isCurrentProjectProcessingDocuments}
                         synthesisPending={isCurrentProjectAwaitingSynthesis}
                         synthesisProgress={isExampleMode ? 100 : currentSynthesisProgress.value}
                         synthesisStage={isExampleMode ? 'Example synthesis complete' : currentSynthesisProgress.stage}
