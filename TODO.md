@@ -15,8 +15,6 @@
 
 can we download output in the project portfolio for each project, add a button for that?
 
-Can we show example output for document-specific/most recent doc upload as well
-
 when we are done processing all the docs, and all is finished, under the finish bar, add a disclaimer for the user to see project synthesis and project portfolio for more details, and maybe have a clickable link to send them down to project synthesis?
 
 Also for the synthesis it does take a while for the synthesis to show up after all docs are completed, in the synthesis part, can we put like synthesizing for 30 sec and 31 sec 32 sec and etc on project x for better user experience, and maybe later add like a percentage done for synthesis like 25% 50% etc.
