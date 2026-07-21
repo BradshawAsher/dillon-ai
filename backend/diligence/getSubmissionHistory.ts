@@ -12,6 +12,8 @@ type SubmissionHistoryRow = {
   projectId?: TextValue
   projectStage?: TextValue
   documentType?: TextValue
+  submissionBatchId?: TextValue
+  expectedBatchDocumentCount?: number | string | null
   fileName?: TextValue
   fileSize?: number | string | null
   fileType?: TextValue
@@ -220,6 +222,8 @@ export default async function getSubmissionHistory(req: {
     projectId: getFirstStringValue([row.projectId]),
     projectStage: getFirstStringValue([row.projectStage]),
     documentType: getFirstStringValue([row.documentType]),
+    submissionBatchId: getFirstStringValue([row.submissionBatchId]),
+    expectedBatchDocumentCount: getFirstNumberValue([row.expectedBatchDocumentCount]),
     fileName: getFirstStringValue([row.fileName]),
     fileSize: getFirstNumberValue([row.fileSize]),
     fileType: getFirstStringValue([row.fileType]),

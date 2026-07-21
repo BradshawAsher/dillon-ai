@@ -191,6 +191,8 @@ function blankHistoryRow(): SubmissionHistoryItem {
         projectId: '',
         projectStage: '',
         documentType: '',
+        submissionBatchId: '',
+        expectedBatchDocumentCount: 0,
         fileName: '',
         fileSize: 0,
         fileType: '',

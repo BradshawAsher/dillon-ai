@@ -6,8 +6,8 @@ import type { IncomingHttpHeaders, IncomingMessage } from 'node:http'
 const N8N_BASE_URL = 'https://merge-works.app.n8n.cloud/'
 
 export const FALLBACK_USER: User = {
-  fullName: 'Local Dev User',
-  email: 'localdev@example.com',
+  fullName: 'MergeWorks Dashboard',
+  email: 'dashboard@mergeworks.local',
 }
 
 type RawRequestOptions = {
@@ -71,9 +71,8 @@ export function installRetoolGlobals() {
   }
 }
 
-// The browser sends the analyst identity captured by the sign-in overlay as
-// URI-encoded headers (see lib/identity.ts). This is convenience metadata for
-// stamping submissions, not authentication.
+// Identity headers are optional convenience metadata for stamping submissions.
+// The open dashboard uses FALLBACK_USER without prompting visitors.
 export function userFromHeaders(headers: IncomingHttpHeaders): User {
   const decode = (value: string | string[] | undefined) => {
     if (typeof value !== 'string' || value.length === 0) {

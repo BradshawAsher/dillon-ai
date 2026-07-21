@@ -1,18 +1,12 @@
-
-
-0a. Are we supporting multi-file upload? Is it good or bad?
+0. Add better error handling to project-wide consolidator workflow and just all the other workflows
 
 0b. Add more error triggers and stuff in case of third-party API failures? and validator nodes too?
 
-0c. Have better error handling if the n8n workflow stops prematurely, like say failed or something in the UI so the user isn't stuck waiting and guessing?
-
-0d. maybe add dropdown buttons for red flags, green flags, yellow flags, open ended questions, and anything that's just really long? So like you can close and expand? (or cards for each of them so you can scroll in them, so that they are fixed size so that the window doesn't become infinitely long)
+0c. Have better error handling if the n8n workflow stops prematurely, like say failed or something in the UI so the user isn't stuck waiting and guessing? [DONE??]
 
 0e. Add KPI tiles at top of UI, the "glance test" numbers + confidence level for each glance test number
 
 0f. Add a graph/diagram for UI for interactivity and user trust
-
-0g. Disable temporarily the signup and the query for user name and email since it takes extra user time?
 
 0h. Add pre-loaded sample data to show what it does? 
 
