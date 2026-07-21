@@ -65,7 +65,10 @@ function getProjectName(row: SubmissionHistoryItem) {
 }
 
 function getCompanyName(row: SubmissionHistoryItem) {
-    return row.companyName || 'Unknown company'
+    const companyName = row.companyName.trim()
+    return companyName.length > 0 && !['n/a', 'na', 'unknown'].includes(normalizeText(companyName))
+        ? companyName
+        : ''
 }
 
 export function getProjectKey(row: SubmissionHistoryItem) {
