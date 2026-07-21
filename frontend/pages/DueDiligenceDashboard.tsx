@@ -21,7 +21,7 @@ import {
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
-import { getDataSource } from '../lib/dataSource'
+import { getDataSource, setDataSource } from '../lib/dataSource'
 import { Progress } from '../lib/shadcn/progress'
 import { Switch } from '../lib/shadcn/switch'
 import { Textarea } from '../lib/shadcn/textarea'
@@ -550,7 +550,11 @@ export default function DueDiligenceDashboard() {
                     <div className="mx-auto max-w-[1600px] px-4 pb-5 sm:px-6 lg:px-8">
                         <div className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm text-foreground">
                             <span className="font-medium">New to the dashboard?</span>{' '}
-                            To see how the workflow works with pre-loaded data, select <span className="font-medium">Example</span> in the data selector at the bottom right.
+                            To see how the workflow works with pre-loaded data, open the{' '}
+                            <Button variant="link" size="sm" className="h-auto px-0 py-0 align-baseline" onClick={() => setDataSource('mock')}>
+                                Example workspace
+                            </Button>
+                            .
                         </div>
                     </div>
                 ) : null}

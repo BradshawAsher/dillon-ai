@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Download, FileText, Landmark, Loader2, MessageCircleQuestion, RefreshCw, Scale, ShieldAlert, TriangleAlert } from 'lucide-react'
 
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
@@ -5,6 +6,7 @@ import ExpandableInsightGroup from './ExpandableInsightGroup'
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
+import { Progress } from '../lib/shadcn/progress'
 import { getSubmissionInsightTone } from '../utils/aiSubmissionData'
 import { downloadTextFile, fileSafeName } from '../utils/downloadFile'
 import type { ProjectSummary } from '../utils/projectWorkspace'
@@ -85,12 +87,27 @@ function downloadSynthesisReport(synthesis: ProjectSynthesisItem, projectName: s
 }
 
 export default function ProjectSynthesisCard({ syntheses, projects, currentProjectId, synthesisPending, loading, error, onRefresh }: ProjectSynthesisCardProps) {
+    const [synthesisProgress, setSynthesisProgress] = useState(12)
     const projectNameById = new Map(
         projects.map((project) => [project.projectId || project.projectKey, `${project.projectName} • ${project.companyName}`])
     )
 
     const normalizedProjectId = currentProjectId.trim()
     const visibleSyntheses = syntheses.filter((synthesis) => synthesis.projectId === normalizedProjectId)
+
+    useEffect(() => {
+        if (!synthesisPending) {
+            setSynthesisProgress(12)
+            return
+        }
+
+        setSynthesisProgress((current) => Math.max(current, 18))
+        const interval = window.setInterval(() => {
+            setSynthesisProgress((current) => Math.min(90, current + (current < 55 ? 9 : 3)))
+        }, 3000)
+
+        return () => window.clearInterval(interval)
+    }, [synthesisPending])
 
     return (
         <Card className="overflow-hidden">
@@ -123,12 +140,19 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                 ) : null}
 
                 {!error && synthesisPending ? (
-                    <div className="flex items-center gap-3 rounded-lg border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-foreground">
+                    <div className="rounded-lg border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-foreground">
+                        <div className="flex items-center gap-3">
                         <Loader2 className="h-5 w-5 shrink-0 animate-spin text-primary" />
                         <div>
                             <p className="font-medium">Synthesizing project findings…</p>
                             <p className="mt-1 text-muted-foreground">All submitted documents are complete. The n8n consolidator is preparing the project-level judgment and this page will refresh automatically.</p>
                         </div>
+                        </div>
+                        <div className="mt-3 flex items-center justify-between gap-3 text-xs text-muted-foreground">
+                            <span>Estimated synthesis progress</span>
+                            <span>{synthesisProgress}%</span>
+                        </div>
+                        <Progress value={synthesisProgress} className="mt-2 h-2.5" />
                     </div>
                 ) : null}
 
@@ -153,9 +177,9 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                     </p>
                                 </div>
                                 <div className="flex flex-wrap items-center gap-2">
-                                    <Button variant="outline" size="sm" onClick={() => downloadSynthesisReport(synthesis, displayName)}>
+                                    <Button size="lg" onClick={() => downloadSynthesisReport(synthesis, displayName)}>
                                         <Download />
-                                        Download report
+                                        Download project report
                                     </Button>
                                     {synthesis.finalRecommendation ? (
                                         <Badge variant={getSubmissionInsightTone(synthesis.finalTrafficLight)}>
