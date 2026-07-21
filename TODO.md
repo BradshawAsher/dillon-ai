@@ -1,5 +1,16 @@
 0. Add better error handling to project-wide consolidator workflow and just all the other workflows
 
+0a. Move to vercel since render is too slow and shuts off after 15 mins
+
+Yes — Vercel is likely the better home for this app if fast first-load experience matters.
+The delay is almost certainly your current Render Free web service: Render spins free services down after 15 minutes idle, and says the next request can take about a minute to wake it. Your render.yaml explicitly uses plan: free.
+For this dashboard, I’d recommend:
+Best user experience: move the Vite frontend to Vercel’s static CDN and move the three /api/diligence/* endpoints to Vercel Functions.
+Lowest-effort fix: upgrade the existing Render web service to a paid instance; paid Render services do not spin down. Render FAQ
+I would not simply deploy the current Express server unchanged to Vercel. Vercel can run Express, but express.static() is ignored there, so we should split the static frontend from the API routes as part of the migration. Vercel’s Express guidance
+Your app is a good fit for that split: it is lightweight, stores no local state, and mostly proxies requests to n8n. Vercel functions can still scale down, but their Fluid Compute setup is designed to reduce cold-start impact; the static dashboard itself would be delivered quickly from the CDN. Vercel Functions
+My opinion: move to Vercel when we can spend a focused implementation pass on it; otherwise upgrade Render now. Don’t stay on Render Free if this is meant for regular internal use.
+
 0b. Add more error triggers and stuff in case of third-party API failures? and validator nodes too?
 
 0c. Have better error handling if the n8n workflow stops prematurely, like say failed or something in the UI so the user isn't stuck waiting and guessing? [DONE??]

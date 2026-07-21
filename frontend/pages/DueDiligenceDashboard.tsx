@@ -457,13 +457,13 @@ export default function DueDiligenceDashboard() {
     return (
         <div className="min-h-screen bg-background text-foreground">
             <header className="border-b border-border bg-card">
-                <div className="mx-auto flex max-w-[1600px] flex-col gap-4 px-6 py-5 lg:flex-row lg:items-start lg:justify-between lg:px-8">
+                <div className="mx-auto flex max-w-[1600px] flex-col gap-4 px-4 py-5 sm:px-6 lg:flex-row lg:items-start lg:justify-between lg:px-8">
                     <div className="space-y-2">
                         <p className="text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
                             Internal M&amp;A Due Diligence Workspace
                         </p>
                         <div className="flex flex-wrap items-center gap-3">
-                            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+                            <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
                                 Project-based diligence cockpit
                             </h1>
                             <Badge variant="secondary" className="rounded-md px-3 py-1 text-xs font-medium">
@@ -501,7 +501,7 @@ export default function DueDiligenceDashboard() {
                 </div>
             </header>
 
-            <main className="mx-auto max-w-[1600px] space-y-6 px-6 py-6 lg:px-8">
+            <main className="mx-auto max-w-[1600px] space-y-6 px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
                 <ProjectIntakeCard
                     dealName={dealName}
                     companyName={companyName}
@@ -862,7 +862,7 @@ export default function DueDiligenceDashboard() {
                                     Unable to refresh live diligence data. Showing fallback records.
                                 </div>
                             ) : null}
-                            <Table>
+                            <Table className="min-w-[720px]">
                                 <TableHeader>
                                     <TableRow className="hover:bg-transparent">
                                         <TableHead className="w-[180px]">Finding Type</TableHead>

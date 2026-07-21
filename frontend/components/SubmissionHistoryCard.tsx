@@ -406,7 +406,7 @@ export default function SubmissionHistoryCard({
         ) : (
           <div className="grid gap-4 2xl:grid-cols-[minmax(0,0.9fr)_minmax(560px,1.1fr)]">
             <div className="overflow-hidden rounded-lg border border-border">
-              <Table>
+              <Table className="min-w-[720px]">
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
                     <TableHead className="w-[180px]">Status</TableHead>
