@@ -1,48 +1,22 @@
 # Agent guidance for n8n workflow changes
 
-## Important rules
+## Source of truth
 
-- Do not edit or create files under the reference export folder
-  `n8n_workflows_json/` unless the user explicitly asks to update exported
-  workflow JSON files for local reference.
-- This remains true even when an export reveals a workflow bug: document the
-  required live n8n Cloud change instead of patching the local export.
-- You may refer to files under `n8n_workflows_images/`, but do not change,
-  overwrite, or delete them unless the user explicitly asks to update those
-  reference image assets.
-
-## Why
-
-The files in `n8n_workflows_json/` are reference exports of workflows that live
-in the live n8n cloud instance. They are for inspection/documentation and not
-for directly changing the real cloud workflow.
-
-The files in `n8n_workflows_images/` are reference screenshots and diagrams for
-those workflows. They should also be treated as read-only reference material.
+Pod 1's live n8n Cloud/Enterprise workflows are the source of truth for all
+workflow behavior, node configuration, and Data Table contracts. Use the n8n
+MCP connection to inspect and, when authorized, update those live workflows.
 
 ## Default behavior for future agents
 
-- Treat `n8n_workflows_json/` and `n8n_workflows_images/` as read-only
-  reference material.
-- If the user wants a change to the live n8n workflow, describe the change and
-  the exact n8n steps needed, or update a documentation file such as this one
-  instead of editing the exported JSON files or image assets.
-- If the user asks for a workflow implementation change, prefer:
-  - updating documentation in the repo (for example `docs/`, `.claude/`, or
-    `.agents/`)
-  - proposing the n8n UI/configuration change
-  - creating a local draft note or plan file that describes the intended change
-- Only modify `n8n_workflows_json/` when the user explicitly requests that the
-  exported reference files be updated.
-- Only add new image files under `n8n_workflows_images/` if the user explicitly
-  asks for new exported reference images.
-
-## Practical example
-
-If the user says they want the UI to consume project-level synthesis data from
-n8n, the agent should:
-1. inspect the current backend/frontend contract,
-2. explain what the live n8n workflow should emit,
-3. add or update documentation or code in the repo that consumes the data,
-4. avoid modifying the exported workflow JSON files or reference images unless
-   explicitly requested.
+- For any question or change involving n8n workflow behavior, first inspect
+  Pod 1's workflows through MCP rather than relying on local workflow files.
+- If n8n MCP access is unavailable, insufficient, or does not expose the
+  needed Pod 1 workflow, stop and ask the user for access or the specific
+  workflow details needed to proceed.
+- Do not infer live workflow configuration from stale exports, screenshots, or
+  repository history.
+- Make live workflow changes only through the n8n MCP connection and only when
+  the user has requested the change. Verify the resulting workflow state when
+  MCP supports verification.
+- Keep repository documentation and the frontend/backend contract in sync with
+  confirmed live workflow behavior.
