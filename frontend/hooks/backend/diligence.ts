@@ -227,6 +227,7 @@ function blankHistoryRow(): SubmissionHistoryItem {
         valuationCurrency: '',
         investmentIsFavorable: null,
         investmentBuyReasoning: '',
+        isConsidered: true,
         id: 0,
         createdAt: '',
         updatedAt: '',
@@ -348,6 +349,17 @@ const mockSynthesisRow: ProjectSynthesisItem = {
   updatedAt: '2026-07-13T16:20:00.000Z',
 }
 
+function useLiveUpdateSubmissionConsideration() {
+    return useQuery(useCallback(async (params: Record<string, unknown> = {}) => {
+        const environment = params.environment === 'test' ? 'test' : 'production'
+        return fetchJson<{ ok: boolean }>('/api/diligence/submission-consideration', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...identityHeaders() },
+            body: JSON.stringify({ requestID: params.requestID, action: 'nonconsidered', environment }),
+        })
+    }, []))
+}
+
 export const exampleProjectSyntheses: ProjectSynthesisItem[] = [mockSynthesisRow]
 
 function useMockProjectSynthesis() {
@@ -456,6 +468,7 @@ export function useGetDiligenceData() {
 }
 
 export const useGetSubmissionHistory = USE_MOCKS ? useMockSubmissionHistory : useLiveSubmissionHistory
+export const useUpdateSubmissionConsideration = useLiveUpdateSubmissionConsideration
 
 export const useSubmitDealPacket = USE_MOCKS ? useMockSubmitDealPacket : useLiveSubmitDealPacket
 

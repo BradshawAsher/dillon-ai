@@ -7,7 +7,7 @@ import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Progress } from '../lib/shadcn/progress'
-import { getSubmissionInsightTone } from '../utils/aiSubmissionData'
+import { formatCurrencyValue, getSubmissionInsightTone } from '../utils/aiSubmissionData'
 import { downloadTextFile, fileSafeName } from '../utils/downloadFile'
 import type { ProjectSummary } from '../utils/projectWorkspace'
 
@@ -242,15 +242,15 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                             <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Lower bound</p>
                                             {synthesis.valuationCurrency ? <Badge variant="outline">{synthesis.valuationCurrency}</Badge> : null}
                                         </div>
-                                        <p className="mt-1 text-sm text-foreground">{synthesis.valuationLowerBound || 'Pending'}</p>
+                                        <p className="mt-1 text-sm text-foreground">{formatCurrencyValue(synthesis.valuationLowerBound, synthesis.valuationCurrency) || 'Pending'}</p>
                                     </div>
                                     <div className="rounded-md border border-border bg-background px-3 py-2">
                                         <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Base estimate</p>
-                                        <p className="mt-1 text-sm text-foreground">{synthesis.valuationBaseEstimate || 'Pending'}</p>
+                                        <p className="mt-1 text-sm text-foreground">{formatCurrencyValue(synthesis.valuationBaseEstimate, synthesis.valuationCurrency) || 'Pending'}</p>
                                     </div>
                                     <div className="rounded-md border border-border bg-background px-3 py-2">
                                         <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Upper bound</p>
-                                        <p className="mt-1 text-sm text-foreground">{synthesis.valuationUpperBound || 'Pending'}</p>
+                                        <p className="mt-1 text-sm text-foreground">{formatCurrencyValue(synthesis.valuationUpperBound, synthesis.valuationCurrency) || 'Pending'}</p>
                                     </div>
                                 </div>
                             ) : null}

@@ -8,7 +8,8 @@ The dashboard talks to n8n exclusively through webhooks on
 | --- | --- | --- | --- |
 | Submit a document | POST | `webhook/d6884691-1689-479d-b1b3-ee7a8bca7380` | ✅ live |
 | Poll submission history | GET | `webhook/1d02344c-0512-4a40-9c5b-ad8172bc91e8` | ✅ live |
-| **Get project syntheses** | GET | `webhook/d19d24da-21d4-40f8-8626-a06a7dd54ac7` | ⏳ needs to be created |
+| Exclude a document from synthesis | POST | `webhook/dd-document-consideration` | ✅ live |
+| **Get project syntheses** | GET | `webhook/d19d24da-21d4-40f8-8626-a06a7dd54ac7` | ✅ live |
 | Mark row nonconsidered / delete | POST | *(not yet assigned)* | 💤 future |
 
 ## 1. Project synthesis webhook (create this one next)
@@ -20,6 +21,9 @@ exists, the panel shows a friendly "not connected yet" notice — nothing else
 breaks.
 
 ### Workflow shape (mirrors the history workflow)
+
+> **Live status:** this workflow is already active in Pod 1. The instructions
+> below describe its required contract; they are not a creation TODO.
 
 1. **Webhook** node — Method `GET`, Path `d19d24da-21d4-40f8-8626-a06a7dd54ac7`,
    Authentication → Header Auth → reuse the existing **"Header Auth account"**

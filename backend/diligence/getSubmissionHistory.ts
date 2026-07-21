@@ -60,6 +60,7 @@ type SubmissionHistoryRow = {
   currency?: TextValue
   is_favorable_indicator?: TextValue
   buy_reasoning?: TextValue
+  isConsidered?: TextValue
   id?: number | string | null
   rowId?: number | string | null
   createdAt?: TextValue
@@ -263,6 +264,7 @@ export default async function getSubmissionHistory(req: {
     valuationCurrency: getFirstStringValue([row.currency]),
     investmentIsFavorable: getFirstOptionalBooleanValue([row.is_favorable_indicator]),
     investmentBuyReasoning: getFirstStringValue([row.buy_reasoning]),
+    isConsidered: getFirstOptionalBooleanValue([row.isConsidered]) !== false,
     id: getFirstNumberValue([row.id, row.rowId]),
     createdAt: getFirstStringValue([row.createdAt]),
     updatedAt: getFirstStringValue([row.updatedAt]),

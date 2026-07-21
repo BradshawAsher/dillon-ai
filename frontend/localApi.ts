@@ -63,6 +63,15 @@ async function handleRequest(
     return
   }
 
+  if (route === '/submission-consideration' && req.method === 'POST') {
+    const params = await readJsonBody(req)
+    const mod = await server.ssrLoadModule(backendModuleUrl('updateSubmissionRow.ts'))
+    const result: unknown = await mod.default({ params, user })
+    res.setHeader('Content-Type', 'application/json')
+    res.end(JSON.stringify(result))
+    return
+  }
+
   res.statusCode = 404
   res.setHeader('Content-Type', 'application/json')
   res.end(JSON.stringify({ error: `Unknown local API route: ${req.method} ${route}` }))

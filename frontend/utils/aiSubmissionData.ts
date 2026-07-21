@@ -195,7 +195,7 @@ function getBooleanValue(value: unknown) {
   return null
 }
 
-function formatCurrencyValue(value: string, currency: string) {
+export function formatCurrencyValue(value: string, currency: string) {
   const trimmedValue = value.trim()
 
   if (trimmedValue.length === 0) {

@@ -17,6 +17,7 @@ type ProjectDocumentSummary = {
     status: string
     requestID: string
     processedAt: string
+    isConsidered: boolean
 }
 
 type ProjectSynthesisField = {
@@ -280,16 +281,17 @@ export function createProjectSummaries(rows: SubmissionHistoryItem[]) {
             return null
         }
 
-        const documentTypes = [...new Set(sortedRows.map(getDocumentTypeLabel))]
-        const completedCount = sortedRows.filter((row) => normalizeSubmissionStatus(row.status) === 'completed').length
-        const activeCount = sortedRows.filter((row) => isActiveSubmissionStatus(row.status)).length
-        const failedCount = sortedRows.filter((row) => {
+        const consideredRows = sortedRows.filter((row) => row.isConsidered)
+        const documentTypes = [...new Set(consideredRows.map(getDocumentTypeLabel))]
+        const completedCount = consideredRows.filter((row) => normalizeSubmissionStatus(row.status) === 'completed').length
+        const activeCount = consideredRows.filter((row) => isActiveSubmissionStatus(row.status)).length
+        const failedCount = consideredRows.filter((row) => {
             const normalizedStatus = normalizeSubmissionStatus(row.status)
             return normalizedStatus === 'failed' || normalizedStatus === 'error' || normalizedStatus === 'rejected'
         }).length
-        const reviewCount = sortedRows.filter((row) => row.needsHumanReview).length
-        const redRiskCount = sortedRows.filter((row) => normalizeText(row.trafficLight) === 'red').length
-        const highRiskCount = sortedRows.filter((row) => normalizeText(row.riskLevel) === 'high').length
+        const reviewCount = consideredRows.filter((row) => row.needsHumanReview).length
+        const redRiskCount = consideredRows.filter((row) => normalizeText(row.trafficLight) === 'red').length
+        const highRiskCount = consideredRows.filter((row) => normalizeText(row.riskLevel) === 'high').length
         const coverage = buildCoverage(documentTypes)
         const documents = sortedRows.map((row) => ({
             fileName: row.fileName || 'Unnamed document',
@@ -297,6 +299,7 @@ export function createProjectSummaries(rows: SubmissionHistoryItem[]) {
             status: row.status || 'pending',
             requestID: row.requestID || row.id?.toString() || 'unknown',
             processedAt: row.processedAt || row.processingStartedAt || row.receivedAt || row.updatedAt || row.createdAt || row.triggerTimestamp,
+            isConsidered: row.isConsidered,
         }))
         const synthesisFields = getProjectSynthesisFields(latestRow)
 
@@ -308,7 +311,7 @@ export function createProjectSummaries(rows: SubmissionHistoryItem[]) {
             stage: latestRow.projectStage,
             workstream: latestRow.workstream || 'All workstreams',
             latestActivity: getDisplayTimestamp(latestRow) || 'Pending',
-            documentCount: sortedRows.length,
+            documentCount: consideredRows.length,
             completedCount,
             activeCount,
             failedCount,
@@ -330,7 +333,7 @@ export function createProjectSummaries(rows: SubmissionHistoryItem[]) {
                 failedCount,
                 activeCount,
                 reviewCount,
-                documentCount: sortedRows.length,
+                documentCount: consideredRows.length,
             }),
             synthesisFields,
         } satisfies ProjectSummary

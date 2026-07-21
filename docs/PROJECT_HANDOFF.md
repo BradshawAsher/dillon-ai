@@ -58,6 +58,7 @@ The browser never calls n8n directly. The main implementation points are:
 | `frontend/components/SubmissionHistoryCard.tsx` | Document-level history and AI detail |
 | `backend/diligence/` | n8n request/response normalization |
 | `docs/n8n-webhooks.md` | API and expected n8n response contracts |
+| `docs/LIVE_N8N_WORKFLOWS.md` | Verified live Pod 1 workflow and Data Table map |
 
 ## Required live workflow behavior
 

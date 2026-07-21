@@ -5,6 +5,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 import getProjectSynthesis from '../../backend/diligence/getProjectSynthesis'
 import getSubmissionHistory from '../../backend/diligence/getSubmissionHistory'
 import submitDealPacket from '../../backend/diligence/submitDealPacket'
+import updateSubmissionRow from '../../backend/diligence/updateSubmissionRow'
 import { installRetoolGlobals, readJsonBody, userFromHeaders } from '../_lib/retoolRuntime'
 
 type ApiRequest = IncomingMessage
@@ -42,6 +43,12 @@ export default async function handler(req: ApiRequest, res: ServerResponse) {
       const params = await readJsonBody(req) as Parameters<typeof submitDealPacket>[0]['params']
       const acknowledgement = await submitDealPacket({ params, user })
       sendJson(res, 200, acknowledgement)
+      return
+    }
+
+    if (route === 'submission-consideration' && req.method === 'POST') {
+      const params = await readJsonBody(req) as Parameters<typeof updateSubmissionRow>[0]['params']
+      sendJson(res, 200, await updateSubmissionRow({ params, user }))
       return
     }
 
