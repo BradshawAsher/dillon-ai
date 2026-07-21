@@ -12,6 +12,9 @@
 
 0f. Add a graph/diagram for UI for interactivity and user trust
 
+
+can we download output in the project portfolio for each project, add a button for that?
+
 Can we show example output for document-specific/most recent doc upload as well
 
 when we are done processing all the docs, and all is finished, under the finish bar, add a disclaimer for the user to see project synthesis and project portfolio for more details, and maybe have a clickable link to send them down to project synthesis?
