@@ -9,6 +9,8 @@ export type SubmissionHistoryItem = {
     projectId: string
     projectStage: string
     documentType: string
+    submissionBatchId: string
+    expectedBatchDocumentCount: number
     fileName: string
     fileSize: number
     fileType: string

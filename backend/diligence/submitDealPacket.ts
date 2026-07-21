@@ -13,6 +13,8 @@ type Params = {
   projectId: string
   projectStage: string
   documentType: string
+  submissionBatchId?: string
+  expectedBatchDocumentCount?: number
 }
 
 export default async function submitDealPacket(req: { params: Params; user: User }) {
@@ -31,6 +33,8 @@ export default async function submitDealPacket(req: { params: Params; user: User
     projectId: req.params.projectId,
     projectStage: req.params.projectStage,
     documentType: req.params.documentType,
+    submissionBatchId: req.params.submissionBatchId ?? '',
+    expectedBatchDocumentCount: req.params.expectedBatchDocumentCount ?? 1,
     analystName: req.user.fullName,
     analystEmail: req.user.email,
     triggerTimestamp,
@@ -49,6 +53,8 @@ export default async function submitDealPacket(req: { params: Params; user: User
     { key: 'projectId', value: req.params.projectId },
     { key: 'projectStage', value: req.params.projectStage },
     { key: 'documentType', value: req.params.documentType },
+    { key: 'submissionBatchId', value: req.params.submissionBatchId ?? '' },
+    { key: 'expectedBatchDocumentCount', value: String(req.params.expectedBatchDocumentCount ?? 1) },
     { key: 'analystName', value: req.user.fullName },
     { key: 'analystEmail', value: req.user.email },
     { key: 'triggerTimestamp', value: triggerTimestamp },

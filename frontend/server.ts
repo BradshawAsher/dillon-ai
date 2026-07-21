@@ -44,10 +44,13 @@ installRetoolGlobals()
 const frontendDir = path.dirname(fileURLToPath(import.meta.url))
 const distDir = path.resolve(frontendDir, 'dist')
 const port = Number(process.env.PORT ?? 3000)
-const appPassword = process.env.APP_PASSWORD ?? ''
+// Temporary open-access mode. Set ENABLE_ACCESS_GATES=true to restore the
+// shared-password flow, even when APP_PASSWORD remains configured on Render.
+const accessGatesEnabled = process.env.ENABLE_ACCESS_GATES === 'true'
+const appPassword = accessGatesEnabled ? (process.env.APP_PASSWORD ?? '') : ''
 
 // ---------------------------------------------------------------------------
-// Shared-password auth (only active when APP_PASSWORD is set)
+// Shared-password auth (only active when explicitly enabled)
 // ---------------------------------------------------------------------------
 
 const SESSION_COOKIE = 'dd_session'
@@ -164,6 +167,6 @@ app.use((_req, res) => {
 })
 
 app.listen(port, () => {
-  const authNote = appPassword.length > 0 ? 'password required' : 'no password set (open access)'
+  const authNote = appPassword.length > 0 ? 'password required' : 'access gates disabled'
   console.log(`Due Diligence Dashboard running at http://localhost:${port} — ${authNote}`)
 })

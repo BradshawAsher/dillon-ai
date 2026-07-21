@@ -5,6 +5,7 @@ import {
     FileSearch,
 } from 'lucide-react'
 
+import ExpandableInsightGroup from '../components/ExpandableInsightGroup'
 import ProjectIntakeCard from '../components/ProjectIntakeCard'
 import ProjectPortfolioCard from '../components/ProjectPortfolioCard'
 import ProjectSynthesisCard from '../components/ProjectSynthesisCard'
@@ -86,6 +87,21 @@ function getSubmissionStatusVariant(status: string): 'success' | 'warning' | 'de
     return 'secondary'
 }
 
+const terminalBatchStatuses = new Set(['completed', 'failed', 'error', 'rejected'])
+const processingReachedStatuses = new Set([
+    'processing',
+    'running',
+    'human review',
+    'human_review',
+    'needs review',
+    'approved',
+    ...terminalBatchStatuses,
+])
+
+function hasReachedProcessingStage(status: string) {
+    return processingReachedStatuses.has(status.trim().toLowerCase())
+}
+
 function ReadableTextCards({
     items,
     tone = 'neutral',
@@ -119,6 +135,12 @@ type SubmitWebhookResponse = {
 }
 
 type SubmitEnvironment = 'production' | 'test'
+
+type SubmissionBatch = {
+    id: string
+    expectedDocumentCount: number
+    environment: SubmitEnvironment
+}
 
 export default function DueDiligenceDashboard() {
     const { data: diligenceData, loading: _loading, error, trigger } = useGetDiligenceData()
@@ -166,6 +188,8 @@ export default function DueDiligenceDashboard() {
     const [selectedProjectKey, setSelectedProjectKey] = useState('new')
     const [submissionNotes, setSubmissionNotes] = useState('')
     const [isSubmittingFile, setIsSubmittingFile] = useState(false)
+    const [batchSubmissionMessage, setBatchSubmissionMessage] = useState('')
+    const [activeSubmissionBatch, setActiveSubmissionBatch] = useState<SubmissionBatch | null>(null)
     const [activeHistoryEnvironment, setActiveHistoryEnvironment] = useState<SubmitEnvironment>('production')
     const [validationById, setValidationById] = useState<Record<string, boolean>>({})
     const [notesById, setNotesById] = useState<Record<string, string>>({})
@@ -291,6 +315,29 @@ export default function DueDiligenceDashboard() {
     const displayedSubmitEscalationReason = liveSubmittedRow?.aiEscalationReason ?? ''
     const liveSubmitInsight = liveSubmittedRow ? getAiSubmissionViewModel(liveSubmittedRow) : null
     const displayedSubmitValuationCurrency = liveSubmittedRow?.valuationCurrency ?? ''
+    const activeBatchRows = useMemo(() => {
+        if (!activeSubmissionBatch) {
+            return []
+        }
+
+        return submissionHistory.filter((row) => row.submissionBatchId === activeSubmissionBatch.id)
+    }, [activeSubmissionBatch, submissionHistory])
+    const activeBatchFinishedCount = activeBatchRows.filter((row) => {
+        const status = row.status.trim().toLowerCase()
+        return terminalBatchStatuses.has(status)
+    }).length
+    const activeBatchProcessingCount = activeBatchRows.filter((row) => hasReachedProcessingStage(row.status)).length
+    const activeBatchFailedCount = activeBatchRows.filter((row) => {
+        const status = row.status.trim().toLowerCase()
+        return status === 'failed' || status === 'error' || status === 'rejected'
+    }).length
+    const activeBatchExpectedCount = activeSubmissionBatch?.expectedDocumentCount ?? 0
+    const activeBatchProgressPercent = activeBatchExpectedCount > 0
+        ? Math.min(100, Math.round((activeBatchFinishedCount / activeBatchExpectedCount) * 100))
+        : 0
+    const activeBatchProcessingPercent = activeBatchExpectedCount > 0
+        ? Math.min(100, Math.round((activeBatchProcessingCount / activeBatchExpectedCount) * 100))
+        : 0
 
     useEffect(() => {
         if (selectedProjectKey === 'new') {
@@ -344,25 +391,51 @@ export default function DueDiligenceDashboard() {
         }
 
         setIsSubmittingFile(true)
+        setBatchSubmissionMessage('')
 
         try {
-            for (const file of selectedFiles) {
-                const fileBase64 = await readFileAsBase64(file)
+            const submissionBatchId = crypto.randomUUID()
+            const expectedBatchDocumentCount = selectedFiles.length
+            const failedFileNames: string[] = []
 
-                await triggerSubmitDealPacket({
-                    environment,
-                    fileName: file.name,
-                    fileSize: file.size,
-                    fileType: file.type || 'application/octet-stream',
-                    fileBase64,
-                    dealName: dealName || suggestedProjectName,
-                    companyName,
-                    workstream: submissionWorkstream,
-                    submissionNotes,
-                    projectId: projectId || suggestedProjectId,
-                    projectStage,
-                    documentType,
-                }).result
+            setActiveSubmissionBatch({
+                id: submissionBatchId,
+                expectedDocumentCount: expectedBatchDocumentCount,
+                environment,
+            })
+
+            for (const file of selectedFiles) {
+                try {
+                    const fileBase64 = await readFileAsBase64(file)
+
+                    await triggerSubmitDealPacket({
+                        environment,
+                        fileName: file.name,
+                        fileSize: file.size,
+                        fileType: file.type || 'application/octet-stream',
+                        fileBase64,
+                        dealName: dealName || suggestedProjectName,
+                        companyName,
+                        workstream: submissionWorkstream,
+                        submissionNotes,
+                        projectId: projectId || suggestedProjectId,
+                        projectStage,
+                        documentType,
+                        submissionBatchId,
+                        expectedBatchDocumentCount,
+                    }).result
+                } catch {
+                    failedFileNames.push(file.name)
+                }
+            }
+
+            if (failedFileNames.length > 0) {
+                const submittedFileCount = expectedBatchDocumentCount - failedFileNames.length
+                setBatchSubmissionMessage(
+                    submittedFileCount > 0
+                        ? `${failedFileNames.length} file${failedFileNames.length === 1 ? '' : 's'} could not be queued (${failedFileNames.join(', ')}). The remaining ${submittedFileCount} file${submittedFileCount === 1 ? '' : 's'} were submitted. Re-upload the failed file${failedFileNames.length === 1 ? '' : 's'} before this batch can be synthesized.`
+                        : `No files could be queued (${failedFileNames.join(', ')}). Please try the batch again; no synthesis will run for this batch.`
+                )
             }
 
             setSubmissionNotes('')
@@ -462,6 +535,52 @@ export default function DueDiligenceDashboard() {
                     <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
                         Unable to queue the latest document: {submitError}
                     </div>
+                ) : null}
+
+                {batchSubmissionMessage ? (
+                    <div className="rounded-lg border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-foreground">
+                        {batchSubmissionMessage}
+                    </div>
+                ) : null}
+
+                {activeSubmissionBatch ? (
+                    <Card className="overflow-hidden">
+                        <CardContent className="space-y-4 p-4">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                <div>
+                                    <p className="text-sm font-semibold text-foreground">Batch processing progress</p>
+                                    <p className="text-sm text-muted-foreground">
+                                        Finished {activeBatchFinishedCount}/{activeBatchExpectedCount} documents
+                                        {activeBatchFailedCount > 0 ? ` · ${activeBatchFailedCount} failed` : ''}
+                                    </p>
+                                </div>
+                                <Badge variant={activeBatchFinishedCount >= activeBatchExpectedCount ? (activeBatchFailedCount > 0 ? 'destructive' : 'success') : 'warning'}>
+                                    {activeBatchFinishedCount >= activeBatchExpectedCount ? 'Batch terminal' : 'Processing'}
+                                </Badge>
+                            </div>
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between gap-3 text-sm">
+                                    <p className="font-medium text-foreground">Reached processing</p>
+                                    <p className="text-muted-foreground">{activeBatchProcessingCount}/{activeBatchExpectedCount} documents</p>
+                                </div>
+                                <Progress value={activeBatchProcessingPercent} className="h-2.5" />
+                            </div>
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between gap-3 text-sm">
+                                    <p className="font-medium text-foreground">Finished</p>
+                                    <p className="text-muted-foreground">{activeBatchFinishedCount}/{activeBatchExpectedCount} documents</p>
+                                </div>
+                                <Progress value={activeBatchProgressPercent} className="h-2.5 [&>span]:bg-success" />
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                                {activeBatchFinishedCount >= activeBatchExpectedCount
+                                    ? activeBatchFailedCount > 0
+                                        ? 'All accepted documents are terminal. Review failed documents before relying on synthesis.'
+                                        : 'All accepted documents are complete. The project synthesis can now run.'
+                                    : `Waiting for ${activeBatchExpectedCount - activeBatchFinishedCount} more document${activeBatchExpectedCount - activeBatchFinishedCount === 1 ? '' : 's'} to reach a terminal status.`}
+                            </p>
+                        </CardContent>
+                    </Card>
                 ) : null}
 
                 {submitResponse ? (
@@ -616,26 +735,16 @@ export default function DueDiligenceDashboard() {
                                                     itemClass: 'border-success/20',
                                                 },
                                             ].map((group) => (
-                                                <div key={group.title} className={`rounded-md border p-3 ${group.sectionClass}`}>
-                                                    <div className="flex items-center justify-between gap-2">
-                                                        <p className="text-sm font-medium text-foreground">{group.title}</p>
-                                                        <Badge variant={group.badge}>{group.flags.length}</Badge>
-                                                    </div>
-                                                    {group.flags.length > 0 ? (
-                                                        <ol className="mt-2 space-y-2">
-                                                            {group.flags.map((flag, index) => (
-                                                                <li key={`${flag}-${index}`} className={`rounded-md border bg-background/80 p-3 text-sm leading-6 text-foreground ${group.itemClass}`}>
-                                                                    <span className="mr-2 font-medium text-muted-foreground">{index + 1}.</span>
-                                                                    {flag}
-                                                                </li>
-                                                            ))}
-                                                        </ol>
-                                                    ) : (
-                                                        <div className={`mt-2 rounded-md border bg-background/80 p-3 text-sm font-medium uppercase tracking-wide text-muted-foreground ${group.itemClass}`}>
-                                                            None
-                                                        </div>
-                                                    )}
-                                                </div>
+                                                <ExpandableInsightGroup
+                                                    key={group.title}
+                                                    title={group.title}
+                                                    items={group.flags}
+                                                    badgeVariant={group.badge}
+                                                    className={group.sectionClass}
+                                                    itemClassName={group.itemClass}
+                                                    emptyLabel="None"
+                                                    defaultOpen={group.title === 'Red flags'}
+                                                />
                                             ))}
                                         </div>
                                     ) : null}

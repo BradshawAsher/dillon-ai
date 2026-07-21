@@ -1,6 +1,7 @@
 import { FileText, Landmark, Loader2, MessageCircleQuestion, RefreshCw, Scale, ShieldAlert, TriangleAlert } from 'lucide-react'
 
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
+import ExpandableInsightGroup from './ExpandableInsightGroup'
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
@@ -47,47 +48,6 @@ function formatTimestamp(value: string) {
     }
 
     return new Date(parsed).toLocaleString()
-}
-
-type JudgmentListProps = {
-    title: string
-    icon: React.ReactNode
-    items: string[]
-    emptyLabel: string
-    tone: 'destructive' | 'warning' | 'default'
-}
-
-function JudgmentList({ title, icon, items, emptyLabel, tone }: JudgmentListProps) {
-    const toneClasses =
-        tone === 'destructive'
-            ? 'border-destructive/30 bg-destructive/5'
-            : tone === 'warning'
-                ? 'border-warning/30 bg-warning/5'
-                : 'border-border bg-background'
-
-    return (
-        <div className={`rounded-lg border p-4 ${toneClasses}`}>
-            <div className="flex items-center gap-2">
-                {icon}
-                <p className="text-sm font-medium text-foreground">{title}</p>
-                <Badge variant="outline">{items.length}</Badge>
-            </div>
-            {items.length > 0 ? (
-                <ul className="mt-3 space-y-2">
-                    {items.map((item, index) => (
-                        <li key={`${title}-${index}`} className="rounded-md border border-border bg-background/80 p-3 shadow-sm">
-                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                                {title.slice(0, -1)} {index + 1}
-                            </p>
-                            <p className="mt-1 text-sm leading-6 text-foreground">{item}</p>
-                        </li>
-                    ))}
-                </ul>
-            ) : (
-                <p className="mt-3 text-sm text-muted-foreground">{emptyLabel}</p>
-            )}
-        </div>
-    )
 }
 
 export default function ProjectSynthesisCard({ syntheses, projects, currentProjectId, synthesisPending, loading, error, onRefresh }: ProjectSynthesisCardProps) {
@@ -209,41 +169,43 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                             ) : null}
 
                             <div className="grid gap-3 xl:grid-cols-2">
-                                <JudgmentList
+                                <ExpandableInsightGroup
                                     title="Cross-document conflicts"
                                     icon={<TriangleAlert className="h-4 w-4 text-destructive" />}
                                     items={synthesis.crossDocumentConflicts}
                                     emptyLabel="No contradictions detected across the uploaded documents."
-                                    tone="destructive"
+                                    badgeVariant="destructive"
+                                    className="border-destructive/30 bg-destructive/5"
+                                    itemClassName="border-destructive/20"
+                                    defaultOpen
                                 />
-                                <JudgmentList
+                                <ExpandableInsightGroup
                                     title="Negotiation levers"
                                     icon={<Landmark className="h-4 w-4 text-foreground" />}
                                     items={synthesis.negotiationLevers}
                                     emptyLabel="No negotiation levers surfaced yet."
-                                    tone="default"
                                 />
-                                <JudgmentList
+                                <ExpandableInsightGroup
                                     title="Missing diligence materials"
                                     icon={<ShieldAlert className="h-4 w-4 text-warning" />}
                                     items={synthesis.missingDocuments}
                                     emptyLabel="All core diligence materials appear to be present."
-                                    tone="warning"
+                                    badgeVariant="warning"
+                                    className="border-warning/30 bg-warning/5"
+                                    itemClassName="border-warning/20"
                                 />
-                                <JudgmentList
+                                <ExpandableInsightGroup
                                     title="Open questions for management"
                                     icon={<MessageCircleQuestion className="h-4 w-4 text-muted-foreground" />}
                                     items={synthesis.openQuestions}
                                     emptyLabel="No open questions recorded."
-                                    tone="default"
                                 />
                                 {(synthesis.citations?.length ?? 0) > 0 ? (
-                                    <JudgmentList
+                                    <ExpandableInsightGroup
                                         title="Synthesis citations"
                                         icon={<FileText className="h-4 w-4 text-muted-foreground" />}
                                         items={synthesis.citations ?? []}
                                         emptyLabel="No synthesis citations recorded."
-                                        tone="default"
                                     />
                                 ) : null}
                             </div>

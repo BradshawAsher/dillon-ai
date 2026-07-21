@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { CheckCircle2, CircleAlert, Clock3, Loader2, RefreshCw, Search } from 'lucide-react'
 
+import ExpandableInsightGroup from './ExpandableInsightGroup'
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
@@ -753,26 +754,16 @@ export default function SubmissionHistoryCard({
                                 itemClass: 'border-success/20',
                               },
                             ].map((group) => (
-                              <div key={group.title} className={`rounded-lg border p-4 ${group.sectionClass}`}>
-                                <div className="flex items-center justify-between gap-2">
-                                  <p className="text-sm font-semibold text-foreground">{group.title}</p>
-                                  <Badge variant={group.badge}>{group.flags.length}</Badge>
-                                </div>
-                                {group.flags.length > 0 ? (
-                                  <ol className="mt-3 space-y-2 text-sm text-foreground">
-                                    {group.flags.map((flag, index) => (
-                                      <li key={`${flag}-${index}`} className={`rounded-md border bg-background/80 px-3 py-2 leading-6 ${group.itemClass}`}>
-                                        <span className="mr-2 font-medium text-muted-foreground">{index + 1}.</span>
-                                        {flag}
-                                      </li>
-                                    ))}
-                                  </ol>
-                                ) : (
-                                  <div className={`mt-3 rounded-md border bg-background/80 px-3 py-2 text-sm font-medium uppercase tracking-wide text-muted-foreground ${group.itemClass}`}>
-                                    None
-                                  </div>
-                                )}
-                              </div>
+                              <ExpandableInsightGroup
+                                key={group.title}
+                                title={group.title}
+                                items={group.flags}
+                                badgeVariant={group.badge}
+                                className={group.sectionClass}
+                                itemClassName={group.itemClass}
+                                emptyLabel="None"
+                                defaultOpen={group.title === 'Red flags'}
+                              />
                             ))}
                           </div>
                         ) : null}
