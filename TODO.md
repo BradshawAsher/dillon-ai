@@ -14,14 +14,21 @@
 
 0f. Add a graph/diagram for UI for interactivity and user trust
 
+Add a way we can run synthesis even if the website/n8n blocked the user from running synthesis?
+
+Can we add dropdowns for extracted json in document-specific submission history extracted json, document-specific submission history citations, and document-specific submission history escalation reasons, as well as ai summary for that part and investment thesis?
+
+When the document counter utility subworkflow evaluates to true, can we update the synthesis frontend to say "synthesis starting?"
 
 can we download output in the project portfolio for each project, add a button for that?
+
+Make sure we can have dropdowns for literally every text field that can get too long
 
 when we are done processing all the docs, and all is finished, under the finish bar, add a disclaimer for the user to see project synthesis and project portfolio for more details, and maybe have a clickable link to send them down to project synthesis?
 
 Also for the synthesis it does take a while for the synthesis to show up after all docs are completed, in the synthesis part, can we put like synthesizing for 30 sec and 31 sec 32 sec and etc on project x for better user experience, and maybe later add like a percentage done for synthesis like 25% 50% etc.
 
-Download button for the submission history too? and for per document, and for project specific? And download button in the example tab too?
+Download button for the submission history too? and for per document, and for project specific? And download button in the example tab too? [Done??]
 
 0j. Before and after contrast for human took x hours and agent took y minutes (show how long the runtime worked)
 

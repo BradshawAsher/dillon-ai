@@ -7,6 +7,8 @@ import { Button } from '../lib/shadcn/button'
 type ExpandableInsightGroupProps = {
   title: string
   items: string[]
+  children?: ReactNode
+  itemCount?: number
   icon?: ReactNode
   badgeVariant?: BadgeProps['variant']
   className?: string
@@ -20,6 +22,8 @@ const LONG_ITEM_LENGTH = 320
 export default function ExpandableInsightGroup({
   title,
   items,
+  children,
+  itemCount,
   icon,
   badgeVariant = 'outline',
   className = '',
@@ -53,13 +57,15 @@ export default function ExpandableInsightGroup({
         <span className="flex min-w-0 items-center gap-2">
           {icon}
           <span className="text-sm font-semibold text-foreground">{title}</span>
-          <Badge variant={badgeVariant}>{items.length}</Badge>
+          <Badge variant={badgeVariant}>{itemCount ?? items.length}</Badge>
         </span>
         {isOpen ? <ChevronUp className="h-4 w-4 shrink-0 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />}
       </button>
 
       {isOpen ? (
-        items.length > 0 ? (
+        children ? (
+          <div className="mt-3">{children}</div>
+        ) : items.length > 0 ? (
           <ol className="mt-3 space-y-2">
             {items.map((item, index) => {
               const isLong = item.length > LONG_ITEM_LENGTH

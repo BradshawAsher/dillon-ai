@@ -126,29 +126,6 @@ function hasReachedProcessingStage(status: string) {
     return processingReachedStatuses.has(status.trim().toLowerCase())
 }
 
-function ReadableTextCards({
-    items,
-    tone = 'neutral',
-}: {
-    items: string[]
-    tone?: 'neutral' | 'warning'
-}) {
-    const itemClass = tone === 'warning'
-        ? 'border-warning/30 bg-background/80'
-        : 'border-border bg-background/80'
-
-    return (
-        <ol className="mt-3 space-y-2">
-            {items.map((item, index) => (
-                <li key={`${item}-${index}`} className={`rounded-md border p-3 text-sm leading-6 text-foreground ${itemClass}`}>
-                    {items.length > 1 ? <span className="mr-2 font-medium text-muted-foreground">{index + 1}.</span> : null}
-                    {item}
-                </li>
-            ))}
-        </ol>
-    )
-}
-
 type SubmitWebhookResponse = {
     requestID?: string
     status?: string
@@ -214,11 +191,9 @@ export default function DueDiligenceDashboard() {
     const [selectedFindingId, setSelectedFindingId] = useState<string>(fallbackFinding?.id ?? '')
     const [selectedFiles, setSelectedFiles] = useState<File[]>([])
     const [dealName, setDealName] = useState('')
-    const [companyName, setCompanyName] = useState('')
     const [projectId, setProjectId] = useState(() => createUnusedProjectId())
     const [projectStage, setProjectStage] = useState('post-loi')
     const [documentType, setDocumentType] = useState('auto-detect')
-    const [submissionWorkstream, setSubmissionWorkstream] = useState(fallbackFinding?.workstream ?? 'Financial diligence')
     const [selectedProjectKey, setSelectedProjectKey] = useState('new')
     const [submissionNotes, setSubmissionNotes] = useState('')
     const [isSubmittingFile, setIsSubmittingFile] = useState(false)
@@ -257,12 +232,6 @@ export default function DueDiligenceDashboard() {
             return Object.fromEntries(nextEntries)
         })
     }, [diligenceFindings, fallbackFinding])
-
-    useEffect(() => {
-        if (fallbackFinding && submissionWorkstream.length === 0) {
-            setSubmissionWorkstream(fallbackFinding.workstream)
-        }
-    }, [fallbackFinding, submissionWorkstream])
 
     const hasActiveSubmissions = useMemo(() => {
         return submissionHistory.some((row) => isActiveSubmissionStatus(row.status))
@@ -347,7 +316,7 @@ export default function DueDiligenceDashboard() {
     const suggestedProjectId = projectId.length > 0 ? projectId : `project-${projectSummaries.length + 1}`
     const availableProjects = projectSummaries.map((project) => ({
         key: project.projectKey,
-        label: `${project.projectName} • ${project.companyName}`,
+        label: project.projectName,
     }))
     const webhookResponse = submitResponse?.response as SubmitWebhookResponse | undefined
     const submitEnvironment = (submitResponse?.environment === 'test' ? 'test' : 'production') as SubmitEnvironment
@@ -404,10 +373,8 @@ export default function DueDiligenceDashboard() {
         }
 
         setDealName(matchingProject.projectName)
-        setCompanyName(matchingProject.companyName === 'Unknown company' ? '' : matchingProject.companyName)
         setProjectId(matchingProject.projectId || matchingProject.projectKey)
         setProjectStage(matchingProject.stage || 'post-loi')
-        setSubmissionWorkstream(matchingProject.workstream === 'All workstreams' ? '' : matchingProject.workstream)
     }, [projectSummaries, selectedProjectKey])
 
     useEffect(() => {
@@ -428,11 +395,9 @@ export default function DueDiligenceDashboard() {
 
         setSelectedProjectKey('new')
         setDealName('')
-        setCompanyName('')
         setProjectId(`project-${newProjectNumber}`)
         setProjectStage('post-loi')
         setDocumentType('auto-detect')
-        setSubmissionWorkstream(fallbackFinding?.workstream ?? 'Financial diligence')
         setSubmissionNotes('')
         setSelectedFiles([])
     }
@@ -481,8 +446,8 @@ export default function DueDiligenceDashboard() {
                         fileType: file.type || 'application/octet-stream',
                         fileBase64,
                         dealName: dealName || suggestedProjectName,
-                        companyName,
-                        workstream: submissionWorkstream,
+                        companyName: dealName || suggestedProjectName,
+                        workstream: '',
                         submissionNotes,
                         projectId: projectId || suggestedProjectId,
                         projectStage,
@@ -599,11 +564,9 @@ export default function DueDiligenceDashboard() {
             <main className="mx-auto max-w-[1600px] space-y-6 px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
                 <ProjectIntakeCard
                     dealName={dealName}
-                    companyName={companyName}
                     projectId={projectId}
                     projectStage={projectStage}
                     documentType={documentType}
-                    workstream={submissionWorkstream}
                     submissionNotes={submissionNotes}
                     selectedProjectKey={selectedProjectKey}
                     suggestedProjectName={suggestedProjectName}
@@ -612,11 +575,9 @@ export default function DueDiligenceDashboard() {
                     selectedFiles={selectedFiles}
                     disabled={isSubmittingFile || submitLoading}
                     onDealNameChange={setDealName}
-                    onCompanyNameChange={setCompanyName}
                     onProjectIdChange={setProjectId}
                     onProjectStageChange={setProjectStage}
                     onDocumentTypeChange={setDocumentType}
-                    onWorkstreamChange={setSubmissionWorkstream}
                     onSubmissionNotesChange={setSubmissionNotes}
                     onSelectedProjectKeyChange={setSelectedProjectKey}
                     onCreateProject={handleCreateProject}
@@ -833,21 +794,26 @@ export default function DueDiligenceDashboard() {
                                         <p className="mt-1 text-foreground">{liveSubmittedRow.ebitdaExtracted || 'Pending'}</p>
                                     </div>
                                     {liveSubmitInsight?.escalationReasons.length ? (
-                                        <div className="rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-foreground xl:col-span-4">
-                                            <div className="flex flex-wrap items-center justify-between gap-2">
-                                                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Escalation reasons</p>
-                                                <Badge variant="warning">{liveSubmitInsight.escalationReasons.length}</Badge>
-                                            </div>
-                                            <ReadableTextCards
+                                        <div className="xl:col-span-4">
+                                            <ExpandableInsightGroup
+                                                title="Escalation reasons"
                                                 items={liveSubmitInsight.escalationReasons.flatMap((reason) => splitReadableText(reason))}
-                                                tone="warning"
+                                                badgeVariant="warning"
+                                                className="border-warning/30 bg-warning/10"
+                                                itemClassName="border-warning/30"
+                                                emptyLabel="No escalation reasons returned."
                                             />
                                         </div>
                                     ) : null}
                                     {displayedSubmitAiSummary ? (
-                                        <div className="rounded-md border border-border bg-card px-3 py-2 xl:col-span-4">
-                                            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">AI Summary</p>
-                                            <ReadableTextCards items={splitReadableText(displayedSubmitAiSummary)} />
+                                        <div className="xl:col-span-4">
+                                            <ExpandableInsightGroup
+                                                title="AI Summary"
+                                                items={splitReadableText(displayedSubmitAiSummary)}
+                                                className="border-border bg-card"
+                                                itemClassName="border-border"
+                                                emptyLabel="No AI summary returned."
+                                            />
                                         </div>
                                     ) : null}
                                     {liveSubmitInsight ? (

@@ -24,11 +24,9 @@ type ProjectOption = {
 
 type ProjectIntakeCardProps = {
     dealName: string
-    companyName: string
     projectId: string
     projectStage: string
     documentType: string
-    workstream: string
     submissionNotes: string
     selectedProjectKey: string
     suggestedProjectName: string
@@ -37,11 +35,9 @@ type ProjectIntakeCardProps = {
     selectedFiles: File[]
     disabled: boolean
     onDealNameChange: (value: string) => void
-    onCompanyNameChange: (value: string) => void
     onProjectIdChange: (value: string) => void
     onProjectStageChange: (value: string) => void
     onDocumentTypeChange: (value: string) => void
-    onWorkstreamChange: (value: string) => void
     onSubmissionNotesChange: (value: string) => void
     onSelectedProjectKeyChange: (value: string) => void
     onCreateProject: () => void
@@ -77,11 +73,9 @@ const documentTypes = [
 
 export default function ProjectIntakeCard({
     dealName,
-    companyName,
     projectId,
     projectStage,
     documentType,
-    workstream,
     submissionNotes,
     selectedProjectKey,
     suggestedProjectName,
@@ -90,11 +84,9 @@ export default function ProjectIntakeCard({
     selectedFiles,
     disabled,
     onDealNameChange,
-    onCompanyNameChange,
     onProjectIdChange,
     onProjectStageChange,
     onDocumentTypeChange,
-    onWorkstreamChange,
     onSubmissionNotesChange,
     onSelectedProjectKeyChange,
     onCreateProject,
@@ -156,16 +148,6 @@ export default function ProjectIntakeCard({
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="company-name">Target company</Label>
-                        <Input
-                            id="company-name"
-                            value={companyName}
-                            onChange={(event) => onCompanyNameChange(event.target.value)}
-                            placeholder="Acme Software, Inc."
-                        />
-                    </div>
-
-                    <div className="space-y-2">
                         <Label htmlFor="project-id">Project ID</Label>
                         <Input
                             id="project-id"
@@ -207,15 +189,6 @@ export default function ProjectIntakeCard({
                         </Select>
                     </div>
 
-                    <div className="space-y-2">
-                        <Label htmlFor="workstream">Workstream</Label>
-                        <Input
-                            id="workstream"
-                            value={workstream}
-                            onChange={(event) => onWorkstreamChange(event.target.value)}
-                            placeholder="Financial diligence"
-                        />
-                    </div>
                 </div>
 
                 <div className="space-y-2">

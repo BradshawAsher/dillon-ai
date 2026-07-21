@@ -686,11 +686,16 @@ export default function SubmissionHistoryCard({
                         </div>
 
                         {(aiViewModel.summary || aiViewModel.intent || aiViewModel.targetValue || aiViewModel.variancePercentage || aiViewModel.confidencePercent !== null) ? (
-                          <div className="space-y-3 rounded-lg border border-border bg-background p-4">
+                          <ExpandableInsightGroup
+                            title="AI Summary"
+                            items={[]}
+                            itemCount={1}
+                            className="border-border bg-background"
+                            emptyLabel="No AI summary returned."
+                            defaultOpen
+                          >
+                            <div className="space-y-3">
                             <div className="space-y-1">
-                              <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                                AI Summary
-                              </p>
                               {aiViewModel.intent ? (
                                 <p className="text-sm text-muted-foreground">{aiViewModel.intent}</p>
                               ) : null}
@@ -740,7 +745,8 @@ export default function SubmissionHistoryCard({
                                 ))}
                               </div>
                             ) : null}
-                          </div>
+                            </div>
+                          </ExpandableInsightGroup>
                         ) : null}
 
                         {(aiViewModel.formattedValuationLowerBound || aiViewModel.formattedValuationBaseEstimate || aiViewModel.formattedValuationUpperBound) ? (
@@ -767,9 +773,15 @@ export default function SubmissionHistoryCard({
                         ) : null}
 
                         {(aiViewModel.investmentBuyReasoning || aiViewModel.investmentIsFavorable !== null) ? (
-                          <div className="rounded-lg border border-border bg-background p-4">
+                          <ExpandableInsightGroup
+                            title="Investment thesis"
+                            items={[]}
+                            itemCount={1}
+                            className="border-border bg-background"
+                            emptyLabel="No investment thesis returned."
+                            defaultOpen
+                          >
                             <div className="flex flex-wrap items-center justify-between gap-2">
-                              <p className="text-sm font-semibold text-foreground">Investment thesis</p>
                               {aiViewModel.investmentIsFavorable !== null ? (
                                 <Badge variant={aiViewModel.investmentIsFavorable ? 'success' : 'destructive'}>
                                   {aiViewModel.investmentIsFavorable ? 'Favorable indicator' : 'Not favorable'}
@@ -779,7 +791,7 @@ export default function SubmissionHistoryCard({
                             <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-foreground">
                               {aiViewModel.investmentBuyReasoning || 'No buy-side reasoning returned yet.'}
                             </p>
-                          </div>
+                          </ExpandableInsightGroup>
                         ) : null}
 
                         {aiViewModel ? (
@@ -822,21 +834,15 @@ export default function SubmissionHistoryCard({
                         ) : null}
 
                         {aiViewModel.escalationReasons.length > 0 ? (
-                          <div className="rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm text-foreground">
-                            <p className="font-medium">
-                              {selectedRow.needsHumanReview ? 'This request is marked for human-in-the-loop review.' : 'Escalation analysis'}
-                            </p>
-                            <div className="mt-3 space-y-2">
-                              <p className="font-medium">Escalation reasons</p>
-                              <ul className="space-y-2">
-                                {aiViewModel.escalationReasons.map((reason, index) => (
-                                  <li key={`${reason}-${index}`} className="rounded-md border border-warning/30 bg-background/80 p-3 leading-6">
-                                    {reason}
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          </div>
+                          <ExpandableInsightGroup
+                            title={selectedRow.needsHumanReview ? 'Escalation reasons — human review required' : 'Escalation reasons'}
+                            items={aiViewModel.escalationReasons}
+                            badgeVariant="warning"
+                            className="border-warning/30 bg-warning/10"
+                            itemClassName="border-warning/30"
+                            emptyLabel="No escalation reasons returned."
+                            defaultOpen
+                          />
                         ) : null}
 
                         {selectedRow.errorMessage ? (
@@ -846,11 +852,14 @@ export default function SubmissionHistoryCard({
                         ) : null}
 
                         {aiViewModel.citations.length > 0 ? (
-                          <div className="rounded-lg border border-border bg-background p-4">
-                            <div className="flex items-center justify-between gap-2">
-                              <p className="text-sm font-semibold text-foreground">Citations</p>
-                              <Badge variant="outline">{aiViewModel.citations.length}</Badge>
-                            </div>
+                          <ExpandableInsightGroup
+                            title="Citations"
+                            items={[]}
+                            itemCount={aiViewModel.citations.length}
+                            className="border-border bg-background"
+                            emptyLabel="No citations returned."
+                            defaultOpen
+                          >
                             <div className="mt-3 grid gap-3 sm:grid-cols-2">
                               {aiViewModel.citations.map((citation, index) => (
                                 <div key={`${citation.sourceFile}-${citation.rowOrCell}-${index}`} className="rounded-lg border border-border bg-muted/30 p-3">
@@ -865,7 +874,7 @@ export default function SubmissionHistoryCard({
                                 </div>
                               ))}
                             </div>
-                          </div>
+                          </ExpandableInsightGroup>
                         ) : null}
 
                         {(selectedRow.storageFileId || selectedRow.storageFileUrl) ? (
@@ -890,17 +899,20 @@ export default function SubmissionHistoryCard({
                         ) : null}
 
                         {selectedRow.extractedJson ? (
-                          <div className="rounded-lg border border-border bg-background p-3">
+                          <ExpandableInsightGroup
+                            title="Extracted JSON"
+                            items={[]}
+                            itemCount={1}
+                            className="border-border bg-background"
+                            emptyLabel="No extracted JSON returned."
+                          >
                             <div className="flex flex-wrap items-center justify-between gap-2">
-                              <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                                Extracted JSON
-                              </p>
                               {aiViewModel.extractedObject ? <Badge variant="outline">Parsed</Badge> : <Badge variant="secondary">Raw</Badge>}
                             </div>
                             <pre className="mt-2 max-h-[220px] overflow-auto whitespace-pre-wrap break-words rounded-md bg-muted/60 p-3 text-xs text-foreground">
                               {selectedRow.extractedJson}
                             </pre>
-                          </div>
+                          </ExpandableInsightGroup>
                         ) : null}
 
                         <div className="grid gap-3 sm:grid-cols-3">
