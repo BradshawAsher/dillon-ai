@@ -18,7 +18,7 @@ export default function DataSourceToggle() {
   const current = getDataSource()
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex items-center gap-1 rounded-full border border-border bg-card p-1 shadow-retool-md">
+    <div className="fixed bottom-3 right-3 z-50 flex max-w-[calc(100vw-1.5rem)] items-center gap-1 rounded-full border border-border bg-card p-1 shadow-retool-md sm:bottom-4 sm:right-4">
       <span className="pl-2.5 pr-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
         Data
       </span>

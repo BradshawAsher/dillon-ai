@@ -43,7 +43,7 @@ export default function FileDropzone({ selectedFiles, onFileSelect, className }:
         <div className={cn('flex flex-col gap-3 lg:flex-row lg:items-stretch', className)}>
             <label
                 className={cn(
-                    'flex min-h-[96px] flex-1 cursor-pointer items-center justify-between gap-4 rounded-lg border border-dashed border-border bg-background px-4 py-4 transition-colors',
+                    'flex min-h-[96px] flex-1 cursor-pointer flex-col items-stretch justify-between gap-4 rounded-lg border border-dashed border-border bg-background px-4 py-4 transition-colors sm:flex-row sm:items-center',
                     isDragging && 'border-primary bg-accent/40'
                 )}
                 onDragOver={handleDragOver}
@@ -59,7 +59,7 @@ export default function FileDropzone({ selectedFiles, onFileSelect, className }:
                     multiple
                 />
 
-                <div className="flex items-center gap-3">
+                <div className="flex min-w-0 items-start gap-3 sm:items-center">
                     <div className="flex h-11 w-11 items-center justify-center rounded-full bg-secondary text-secondary-foreground">
                         {selectedFiles.length > 0 ? <FileText className="h-5 w-5" /> : <Upload className="h-5 w-5" />}
                     </div>
@@ -69,7 +69,7 @@ export default function FileDropzone({ selectedFiles, onFileSelect, className }:
                                 ? `${selectedFiles.length} file${selectedFiles.length === 1 ? '' : 's'} selected`
                                 : 'Drop a deal packet here or browse'}
                         </p>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="break-words text-sm text-muted-foreground">
                             {selectedFiles.length > 0
                                 ? selectedFiles.map((file) => `${file.name} (${Math.max(1, Math.round(file.size / 1024))} KB)`).join(' • ')
                                 : 'Supports PDF, Excel, Word, PowerPoint, CSV, and text files. Upload one or more documents into a shared project.'}
@@ -80,6 +80,7 @@ export default function FileDropzone({ selectedFiles, onFileSelect, className }:
                 <Button
                     type="button"
                     variant="outline"
+                    className="w-full sm:w-auto"
                     onClick={(event) => {
                         event.preventDefault()
                         inputRef.current?.click()
