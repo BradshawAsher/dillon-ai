@@ -141,6 +141,16 @@ type SubmissionBatch = {
     id: string
     expectedDocumentCount: number
     environment: SubmitEnvironment
+    startedAt: number
+}
+
+function formatElapsedDuration(seconds: number) {
+    const minutes = Math.floor(seconds / 60)
+    const remainingSeconds = seconds % 60
+
+    return minutes > 0
+        ? `${minutes}m ${remainingSeconds}s`
+        : `${remainingSeconds}s`
 }
 
 export default function DueDiligenceDashboard() {
@@ -200,6 +210,7 @@ export default function DueDiligenceDashboard() {
     const [batchSubmissionMessage, setBatchSubmissionMessage] = useState('')
     const [activeSubmissionBatch, setActiveSubmissionBatch] = useState<SubmissionBatch | null>(null)
     const [activeHistoryEnvironment, setActiveHistoryEnvironment] = useState<SubmitEnvironment>('production')
+    const [hasRestoredLatestProject, setHasRestoredLatestProject] = useState(false)
     const [validationById, setValidationById] = useState<Record<string, boolean>>({})
     const [notesById, setNotesById] = useState<Record<string, string>>({})
 
@@ -233,6 +244,19 @@ export default function DueDiligenceDashboard() {
         })
     }, [diligenceFindings, fallbackFinding])
 
+    useEffect(() => {
+        if (hasRestoredLatestProject || isExampleMode || projectSummaries.length === 0) {
+            return
+        }
+
+        const latestProject = projectSummaries[0]
+        setSelectedProjectKey(latestProject.projectKey)
+        setProjectId(latestProject.projectId || latestProject.projectKey)
+        setDealName(latestProject.projectName)
+        setProjectStage(latestProject.stage || 'post-loi')
+        setHasRestoredLatestProject(true)
+    }, [hasRestoredLatestProject, isExampleMode, projectSummaries])
+
     const hasActiveSubmissions = useMemo(() => {
         return submissionHistory.some((row) => isActiveSubmissionStatus(row.status))
     }, [submissionHistory])
@@ -252,7 +276,10 @@ export default function DueDiligenceDashboard() {
         }
 
         const currentProject = projectSummaries.find((project) => (project.projectId || project.projectKey) === currentProjectId)
-        if (currentProject?.statusLabel !== 'Ready for synthesis') {
+        // The document-counter workflow starts synthesis once every document
+        // reaches a terminal success state. Human-review flags should not hide
+        // that transition from the UI.
+        if (!currentProject || currentProject.documentCount === 0 || currentProject.activeCount > 0 || currentProject.failedCount > 0) {
             return false
         }
 
@@ -274,6 +301,10 @@ export default function DueDiligenceDashboard() {
                 value: Math.round((completed / received) * 70),
                 stage: 'Document analysis: ' + completed + '/' + received + ' complete',
             }
+        }
+
+        if (isCurrentProjectAwaitingSynthesis) {
+            return { value: 82, stage: 'Synthesis starting' }
         }
 
         if (isCurrentProjectAwaitingSynthesis) {
@@ -324,19 +355,25 @@ export default function DueDiligenceDashboard() {
     const liveSubmittedRow = latestSubmittedRequestId.length > 0
         ? submissionHistory.find((row) => row.requestID === latestSubmittedRequestId)
         : undefined
-    const displayedSubmitStatus = liveSubmittedRow?.status ?? webhookResponse?.status ?? submitResponse?.status ?? 'accepted'
-    const displayedSubmitReceivedAt = liveSubmittedRow?.receivedAt ?? webhookResponse?.receivedAt ?? 'Pending'
-    const displayedSubmitRowId = liveSubmittedRow?.id ?? webhookResponse?.id ?? 'Pending'
-    const displayedSubmitRiskLevel = liveSubmittedRow?.riskLevel ?? ''
-    const displayedSubmitTrafficLight = liveSubmittedRow?.trafficLight ?? ''
-    const displayedSubmitCategory = liveSubmittedRow?.category ?? ''
-    const displayedSubmitAiSummary = liveSubmittedRow?.aiSummary ?? ''
-    const displayedSubmitTargetValue = liveSubmittedRow?.aiTargetValue ?? ''
-    const displayedSubmitVariance = liveSubmittedRow?.aiVariance ?? ''
-    const displayedSubmitConfidence = liveSubmittedRow?.aiConfidence ?? ''
-    const displayedSubmitEscalationReason = liveSubmittedRow?.aiEscalationReason ?? ''
-    const liveSubmitInsight = liveSubmittedRow ? getAiSubmissionViewModel(liveSubmittedRow) : null
-    const displayedSubmitValuationCurrency = liveSubmittedRow?.valuationCurrency ?? ''
+    const latestHistoryRow = [...submissionHistory].sort((left, right) => {
+        const leftTimestamp = Date.parse(left.processedAt || left.processingStartedAt || left.receivedAt || left.createdAt || left.triggerTimestamp)
+        const rightTimestamp = Date.parse(right.processedAt || right.processingStartedAt || right.receivedAt || right.createdAt || right.triggerTimestamp)
+        return (Number.isNaN(rightTimestamp) ? 0 : rightTimestamp) - (Number.isNaN(leftTimestamp) ? 0 : leftTimestamp)
+    })[0]
+    const displayedSubmissionRow = liveSubmittedRow ?? latestHistoryRow
+    const displayedSubmitStatus = displayedSubmissionRow?.status ?? webhookResponse?.status ?? submitResponse?.status ?? 'accepted'
+    const displayedSubmitReceivedAt = displayedSubmissionRow?.receivedAt ?? webhookResponse?.receivedAt ?? 'Pending'
+    const displayedSubmitRowId = displayedSubmissionRow?.id ?? webhookResponse?.id ?? 'Pending'
+    const displayedSubmitRiskLevel = displayedSubmissionRow?.riskLevel ?? ''
+    const displayedSubmitTrafficLight = displayedSubmissionRow?.trafficLight ?? ''
+    const displayedSubmitCategory = displayedSubmissionRow?.category ?? ''
+    const displayedSubmitAiSummary = displayedSubmissionRow?.aiSummary ?? ''
+    const displayedSubmitTargetValue = displayedSubmissionRow?.aiTargetValue ?? ''
+    const displayedSubmitVariance = displayedSubmissionRow?.aiVariance ?? ''
+    const displayedSubmitConfidence = displayedSubmissionRow?.aiConfidence ?? ''
+    const displayedSubmitEscalationReason = displayedSubmissionRow?.aiEscalationReason ?? ''
+    const liveSubmitInsight = displayedSubmissionRow ? getAiSubmissionViewModel(displayedSubmissionRow) : null
+    const displayedSubmitValuationCurrency = displayedSubmissionRow?.valuationCurrency ?? ''
     const activeBatchRows = useMemo(() => {
         if (!activeSubmissionBatch) {
             return []
@@ -360,6 +397,28 @@ export default function DueDiligenceDashboard() {
     const activeBatchProcessingPercent = activeBatchExpectedCount > 0
         ? Math.min(100, Math.round((activeBatchProcessingCount / activeBatchExpectedCount) * 100))
         : 0
+
+    const [batchElapsedSeconds, setBatchElapsedSeconds] = useState(0)
+
+    useEffect(() => {
+        if (!activeSubmissionBatch) {
+            setBatchElapsedSeconds(0)
+            return
+        }
+
+        const updateElapsedTime = () => {
+            setBatchElapsedSeconds(Math.max(0, Math.floor((Date.now() - activeSubmissionBatch.startedAt) / 1000)))
+        }
+
+        updateElapsedTime()
+
+        if (activeBatchFinishedCount >= activeBatchExpectedCount) {
+            return
+        }
+
+        const intervalId = window.setInterval(updateElapsedTime, 1000)
+        return () => window.clearInterval(intervalId)
+    }, [activeBatchExpectedCount, activeBatchFinishedCount, activeSubmissionBatch])
 
     useEffect(() => {
         if (selectedProjectKey === 'new') {
@@ -404,6 +463,13 @@ export default function DueDiligenceDashboard() {
 
     const handlePortfolioProjectSelect = (projectKey: string) => {
         setSelectedProjectKey(projectKey)
+        const project = projectSummaries.find((candidate) => candidate.projectKey === projectKey)
+
+        if (project) {
+            setProjectId(project.projectId || project.projectKey)
+            setDealName(project.projectName)
+            setProjectStage(project.stage || 'post-loi')
+        }
 
         window.setTimeout(() => {
             document.getElementById('project-synthesis')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -433,6 +499,7 @@ export default function DueDiligenceDashboard() {
                 id: submissionBatchId,
                 expectedDocumentCount: expectedBatchDocumentCount,
                 environment,
+                startedAt: Date.now(),
             })
 
             for (const file of selectedFiles) {
@@ -471,7 +538,7 @@ export default function DueDiligenceDashboard() {
 
             setSubmissionNotes('')
             setDocumentType('auto-detect')
-            setSelectedProjectKey('new')
+            setSelectedProjectKey(projectId || suggestedProjectId)
             setSelectedFiles([])
             if (dealName.length === 0) {
                 setDealName(suggestedProjectName)
@@ -633,7 +700,7 @@ export default function DueDiligenceDashboard() {
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between gap-3 text-sm">
                                     <p className="font-medium text-foreground">Finished</p>
-                                    <p className="text-muted-foreground">{activeBatchFinishedCount}/{activeBatchExpectedCount} documents</p>
+                                    <p className="text-muted-foreground">{activeBatchFinishedCount}/{activeBatchExpectedCount} documents · {formatElapsedDuration(batchElapsedSeconds)}</p>
                                 </div>
                                 <Progress value={activeBatchProgressPercent} className="h-2.5 [&>span]:bg-success" />
                             </div>
@@ -644,6 +711,19 @@ export default function DueDiligenceDashboard() {
                                         : 'All accepted documents are complete. The project synthesis can now run.'
                                     : `Waiting for ${activeBatchExpectedCount - activeBatchFinishedCount} more document${activeBatchExpectedCount - activeBatchFinishedCount === 1 ? '' : 's'} to reach a terminal status.`}
                             </p>
+                            {activeBatchFinishedCount >= activeBatchExpectedCount && activeBatchFailedCount === 0 ? (
+                                <div className="rounded-md border border-success/30 bg-success/10 p-3 text-sm text-foreground">
+                                    <p>All documents are finished. Review the Project Portfolio and Project Synthesis for the complete project-level picture.</p>
+                                    <Button
+                                        type="button"
+                                        size="lg"
+                                        className="mt-3 w-full"
+                                        onClick={() => document.getElementById('project-synthesis')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                                    >
+                                        View project synthesis
+                                    </Button>
+                                </div>
+                            ) : null}
                         </CardContent>
                     </Card>
                 ) : null}
@@ -684,7 +764,7 @@ export default function DueDiligenceDashboard() {
                     </Card>
                 ) : null}
 
-                {submitResponse ? (
+                {!isExampleMode && (submitResponse || displayedSubmissionRow) ? (
                     <Card className="overflow-hidden">
                         <CardHeader className="border-b border-border bg-card/80">
                             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -701,8 +781,8 @@ export default function DueDiligenceDashboard() {
                                     <Badge variant={submitEnvironment === 'test' ? 'warning' : 'outline'}>
                                         {submitEnvironment}
                                     </Badge>
-                                    <Badge variant={liveSubmittedRow ? 'success' : 'secondary'}>
-                                        {liveSubmittedRow ? 'Live project row found' : 'Waiting for history refresh'}
+                                    <Badge variant={displayedSubmissionRow ? 'success' : 'secondary'}>
+                                        {liveSubmittedRow ? 'Live project row found' : 'Most recent saved submission'}
                                     </Badge>
                                 </div>
                             </div>
@@ -710,25 +790,27 @@ export default function DueDiligenceDashboard() {
 
                         <CardContent className="space-y-4 p-4">
                             <p className="text-xs text-muted-foreground">
-                                {submitResponse.method} to {submitResponse.target} at {submitResponse.submittedAt}
+                                {submitResponse
+                                    ? `${submitResponse.method} to ${submitResponse.target} at ${submitResponse.submittedAt}`
+                                    : 'Restored from the most recent n8n submission history row.'}
                             </p>
 
                             <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
                                 <div className="rounded-md border border-border bg-card px-3 py-2">
                                     <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Request ID</p>
-                                    <p className="mt-1 break-all font-mono text-foreground">{webhookResponse?.requestID ?? 'Pending'}</p>
+                                    <p className="mt-1 break-all font-mono text-foreground">{webhookResponse?.requestID ?? displayedSubmissionRow?.requestID ?? 'Pending'}</p>
                                 </div>
                                 <div className="rounded-md border border-border bg-card px-3 py-2">
                                     <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Project ID</p>
-                                    <p className="mt-1 break-all font-mono text-foreground">{liveSubmittedRow?.projectId || projectId || 'Not set'}</p>
+                                    <p className="mt-1 break-all font-mono text-foreground">{displayedSubmissionRow?.projectId || projectId || 'Not set'}</p>
                                 </div>
                                 <div className="rounded-md border border-border bg-card px-3 py-2">
                                     <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Project Stage</p>
-                                    <p className="mt-1 text-foreground">{liveSubmittedRow?.projectStage || projectStage || 'Not set'}</p>
+                                    <p className="mt-1 text-foreground">{displayedSubmissionRow?.projectStage || projectStage || 'Not set'}</p>
                                 </div>
                                 <div className="rounded-md border border-border bg-card px-3 py-2">
                                     <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Document Type</p>
-                                    <p className="mt-1 text-foreground">{liveSubmittedRow?.documentType || documentType || 'Not set'}</p>
+                                    <p className="mt-1 text-foreground">{displayedSubmissionRow?.documentType || documentType || 'Not set'}</p>
                                 </div>
                                 <div className="rounded-md border border-border bg-card px-3 py-2">
                                     <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">n8n Row ID</p>
@@ -740,15 +822,15 @@ export default function DueDiligenceDashboard() {
                                 </div>
                                 <div className="rounded-md border border-border bg-card px-3 py-2">
                                     <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Deal / Project</p>
-                                    <p className="mt-1 text-foreground">{submitResponse?.payload?.dealName || 'Pending'}</p>
+                                    <p className="mt-1 text-foreground">{submitResponse?.payload?.dealName || displayedSubmissionRow?.dealName || 'Pending'}</p>
                                 </div>
                                 <div className="rounded-md border border-border bg-card px-3 py-2">
                                     <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">File Name</p>
-                                    <p className="mt-1 break-all text-foreground">{submitResponse?.payload?.fileName ?? 'Pending'}</p>
+                                    <p className="mt-1 break-all text-foreground">{submitResponse?.payload?.fileName ?? displayedSubmissionRow?.fileName ?? 'Pending'}</p>
                                 </div>
                             </div>
 
-                            {liveSubmittedRow ? (
+                            {displayedSubmissionRow ? (
                                 <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
                                     <div className="rounded-md border border-border bg-card px-3 py-2 xl:col-span-2">
                                         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -759,8 +841,8 @@ export default function DueDiligenceDashboard() {
                                                 </Badge>
                                             ) : null}
                                         </div>
-                                        <p className="mt-1 text-foreground">Processing started: {liveSubmittedRow.processingStartedAt || 'Pending'}</p>
-                                        <p className="mt-1 text-foreground">Processed at: {liveSubmittedRow.processedAt || 'Pending'}</p>
+                                        <p className="mt-1 text-foreground">Processing started: {displayedSubmissionRow.processingStartedAt || 'Pending'}</p>
+                                        <p className="mt-1 text-foreground">Processed at: {displayedSubmissionRow.processedAt || 'Pending'}</p>
                                     </div>
                                     <div className="rounded-md border border-border bg-card px-3 py-2">
                                         <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Risk Level</p>
@@ -791,7 +873,7 @@ export default function DueDiligenceDashboard() {
                                     </div>
                                     <div className="rounded-md border border-border bg-card px-3 py-2">
                                         <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">EBITDA Extracted</p>
-                                        <p className="mt-1 text-foreground">{liveSubmittedRow.ebitdaExtracted || 'Pending'}</p>
+                                        <p className="mt-1 text-foreground">{displayedSubmissionRow.ebitdaExtracted || 'Pending'}</p>
                                     </div>
                                     {liveSubmitInsight?.escalationReasons.length ? (
                                         <div className="xl:col-span-4">
@@ -810,6 +892,7 @@ export default function DueDiligenceDashboard() {
                                             <ExpandableInsightGroup
                                                 title="AI Summary"
                                                 items={splitReadableText(displayedSubmitAiSummary)}
+                                                defaultOpen
                                                 className="border-border bg-card"
                                                 itemClassName="border-border"
                                                 emptyLabel="No AI summary returned."
@@ -896,6 +979,7 @@ export default function DueDiligenceDashboard() {
 
                 <ProjectPortfolioCard
                     rows={submissionHistory}
+                    syntheses={visibleProjectSyntheses}
                     activeProjectKey={selectedProjectKey}
                     onProjectSelect={handlePortfolioProjectSelect}
                 />

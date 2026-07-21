@@ -1,8 +1,5 @@
-0. Why does synthesizer not show output anymore? Check to make sure it works still? Is it a too strict requirement before synthesis?
 
 0i. Add better error handling to project-wide consolidator workflow and just all the other workflows
-
-0a. Make sure vercel works fine
 
 0ab. Add per-project or per-person projects so that one person's projects are only viewable by themselves
 
@@ -14,21 +11,17 @@
 
 0f. Add a graph/diagram for UI for interactivity and user trust
 
+SYNTHESIZER IS TOO SLOW SOMETIMES
 Add a way we can run synthesis even if the website/n8n blocked the user from running synthesis?
 
-Can we add dropdowns for extracted json in document-specific submission history extracted json, document-specific submission history citations, and document-specific submission history escalation reasons, as well as ai summary for that part and investment thesis?
-
-When the document counter utility subworkflow evaluates to true, can we update the synthesis frontend to say "synthesis starting?"
-
-can we download output in the project portfolio for each project, add a button for that?
+Update the agents.md files not to refer to n8n_workflows_json and n8n_workflows_images but to use mcp access to pod 1's workflows to understand how they work, and if they don't have access, to ask for access?
 
 Make sure we can have dropdowns for literally every text field that can get too long
 
 when we are done processing all the docs, and all is finished, under the finish bar, add a disclaimer for the user to see project synthesis and project portfolio for more details, and maybe have a clickable link to send them down to project synthesis?
 
-Also for the synthesis it does take a while for the synthesis to show up after all docs are completed, in the synthesis part, can we put like synthesizing for 30 sec and 31 sec 32 sec and etc on project x for better user experience, and maybe later add like a percentage done for synthesis like 25% 50% etc.
+Also for the synthesis it does take a while for the synthesis to show up after all docs are completed, in the synthesis part, can we put like synthesizing for 30 sec and 31 sec 32 sec and etc on project x for better user experience, and maybe later add like a percentage done for synthesis like 25% 50% etc. [somewhat done?]
 
-Download button for the submission history too? and for per document, and for project specific? And download button in the example tab too? [Done??]
 
 0j. Before and after contrast for human took x hours and agent took y minutes (show how long the runtime worked)
 
