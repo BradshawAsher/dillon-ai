@@ -46,6 +46,7 @@ Have opportunity score analysis with overall score at top
 
 Valuation Gap Analysis
 ![Valuation Gap Analysis](<Screenshot 2026-07-21 155250.png>)
+# [CONTINUE HERE]
 
 # Ask codex to just copy the epicdealdone website? Is he able to access it?
 # We only need the dashboard and deal library sections of epicdealdone
