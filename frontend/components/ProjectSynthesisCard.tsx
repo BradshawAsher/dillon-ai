@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Download, FileText, Landmark, Loader2, MessageCircleQuestion, RefreshCw, Scale, ShieldAlert, TriangleAlert } from 'lucide-react'
 
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
@@ -88,12 +89,28 @@ function downloadSynthesisReport(synthesis: ProjectSynthesisItem, projectName: s
 }
 
 export default function ProjectSynthesisCard({ syntheses, projects, currentProjectId, synthesisPending, synthesisProgress, synthesisStage, loading, error, onRefresh }: ProjectSynthesisCardProps) {
+    const [synthesisElapsedSeconds, setSynthesisElapsedSeconds] = useState(0)
     const projectNameById = new Map(
         projects.map((project) => [project.projectId || project.projectKey, `${project.projectName} • ${project.companyName}`])
     )
 
     const normalizedProjectId = currentProjectId.trim()
     const visibleSyntheses = syntheses.filter((synthesis) => synthesis.projectId === normalizedProjectId)
+    const currentProjectName = projectNameById.get(normalizedProjectId) ?? normalizedProjectId ?? 'this project'
+
+    useEffect(() => {
+        if (!synthesisPending) {
+            setSynthesisElapsedSeconds(0)
+            return
+        }
+
+        setSynthesisElapsedSeconds(0)
+        const interval = window.setInterval(() => {
+            setSynthesisElapsedSeconds((seconds) => seconds + 1)
+        }, 1000)
+
+        return () => window.clearInterval(interval)
+    }, [synthesisPending])
 
     return (
         <Card className="overflow-hidden">
@@ -131,6 +148,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                         <Loader2 className="h-5 w-5 shrink-0 animate-spin text-primary" />
                         <div>
                             <p className="font-medium">Synthesizing project findings…</p>
+                            <p className="text-xs font-medium text-primary">Synthesizing {currentProjectName} — {synthesisElapsedSeconds} seconds</p>
                             <p className="mt-1 text-muted-foreground">All submitted documents are complete. The n8n consolidator is preparing the project-level judgment and this page will refresh automatically.</p>
                         </div>
                         </div>
