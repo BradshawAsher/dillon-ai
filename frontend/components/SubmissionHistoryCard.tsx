@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { CheckCircle2, CircleAlert, Clock3, Loader2, RefreshCw, Search } from 'lucide-react'
+import { CheckCircle2, CircleAlert, Clock3, Download, Loader2, RefreshCw, Search } from 'lucide-react'
 
 import ExpandableInsightGroup from './ExpandableInsightGroup'
 import { Badge } from '../lib/shadcn/badge'
@@ -22,6 +22,7 @@ import {
   getSubmissionInsightTone,
 } from '../utils/aiSubmissionData'
 import { formatEasternTime } from '../utils/dateTime'
+import { downloadTextFile, fileSafeName } from '../utils/downloadFile'
 import {
   formatSubmissionStatus,
   hasAiEnrichment,
@@ -93,6 +94,40 @@ function getTimestampValue(value: string) {
 
 function getRowSortValue(row: SubmissionHistoryItem) {
   return getTimestampValue(getDisplayTimestamp(row))
+}
+
+function downloadDocumentAnalysis(row: SubmissionHistoryItem) {
+  const insight = getAiSubmissionViewModel(row)
+  const section = (title: string, items: string[]) => [
+    '## ' + title,
+    ...(items.length > 0 ? items.map((item) => '- ' + item) : ['- None recorded.']),
+    '',
+  ]
+  const report = [
+    '# ' + (row.dealName || row.companyName || row.fileName || 'Document analysis'),
+    '',
+    'Document: ' + (row.fileName || 'Not recorded'),
+    'Project ID: ' + (row.projectId || 'Not recorded'),
+    'Status: ' + formatSubmissionStatus(row.status),
+    'Risk level: ' + (row.riskLevel || 'Pending'),
+    'Generated: ' + new Date().toLocaleString(),
+    '',
+    '## AI summary',
+    row.aiSummary || 'No AI summary recorded.',
+    '',
+    ...section('Red flags', insight.redFlags),
+    ...section('Yellow flags', insight.yellowFlags),
+    ...section('Green flags', insight.greenFlags),
+    '## Valuation',
+    'Lower: ' + (insight.formattedValuationLowerBound || 'Pending'),
+    'Base: ' + (insight.formattedValuationBaseEstimate || 'Pending'),
+    'Upper: ' + (insight.formattedValuationUpperBound || 'Pending'),
+    '',
+    '## Investment thesis',
+    row.investmentBuyReasoning || 'No investment thesis recorded.',
+  ].join('\n')
+
+  downloadTextFile(fileSafeName(row.fileName || row.dealName || 'document') + '-analysis.md', report, 'text/markdown;charset=utf-8')
 }
 
 function getRowCompletenessScore(row: SubmissionHistoryItem) {
@@ -521,6 +556,10 @@ export default function SubmissionHistoryCard({
                             </h3>
                           </div>
                           <div className="flex flex-wrap items-center gap-2">
+                            <Button type="button" size="sm" onClick={() => downloadDocumentAnalysis(selectedRow)}>
+                              <Download />
+                              Download document analysis
+                            </Button>
                             <Badge variant={getStatusVariant(selectedRow.status)} className="gap-1">
                               <StatusIcon status={selectedRow.status} />
                               {formatSubmissionStatus(selectedRow.status)}

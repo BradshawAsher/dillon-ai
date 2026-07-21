@@ -16,6 +16,8 @@
 
 0i. Download output button for the output as well? [DONE?]
 
+Download button for the submission history too? and for per document, and for project specific? And download button in the example tab too?
+
 0j. Before and after contrast for human took x hours and agent took y minutes (show how long the runtime worked)
 
 0l. Confidence scores on everything make sure to do this
