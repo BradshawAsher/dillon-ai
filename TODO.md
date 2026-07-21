@@ -1,15 +1,8 @@
 0. Add better error handling to project-wide consolidator workflow and just all the other workflows
 
-0a. Move to vercel since render is too slow and shuts off after 15 mins
+0a. Make sure vercel works fine
 
-Yes — Vercel is likely the better home for this app if fast first-load experience matters.
-The delay is almost certainly your current Render Free web service: Render spins free services down after 15 minutes idle, and says the next request can take about a minute to wake it. Your render.yaml explicitly uses plan: free.
-For this dashboard, I’d recommend:
-Best user experience: move the Vite frontend to Vercel’s static CDN and move the three /api/diligence/* endpoints to Vercel Functions.
-Lowest-effort fix: upgrade the existing Render web service to a paid instance; paid Render services do not spin down. Render FAQ
-I would not simply deploy the current Express server unchanged to Vercel. Vercel can run Express, but express.static() is ignored there, so we should split the static frontend from the API routes as part of the migration. Vercel’s Express guidance
-Your app is a good fit for that split: it is lightweight, stores no local state, and mostly proxies requests to n8n. Vercel functions can still scale down, but their Fluid Compute setup is designed to reduce cold-start impact; the static dashboard itself would be delivered quickly from the CDN. Vercel Functions
-My opinion: move to Vercel when we can spend a focused implementation pass on it; otherwise upgrade Render now. Don’t stay on Render Free if this is meant for regular internal use.
+0ab. Add per-project or per-person projects so that one person's projects are only viewable by themselves
 
 0b. Add more error triggers and stuff in case of third-party API failures? and validator nodes too?
 
@@ -29,11 +22,7 @@ My opinion: move to Vercel when we can spend a focused implementation pass on it
 
 0l. Confidence scores on everything make sure to do this
 
-0m. If render takes too long to load, then maybe load it on vercel too as an alternative?
-
 0n. maybe adding physical tabs could help separate categories of user interaction (input, summary, etc.)
-
-0o. Make cards scrollable with fixed size so that the page size doesn't increase super duper long, but each individual card can be scrollable?
 
 0p. Similar to duplicate question, enable idempotency so we don't process duplicates?
 
@@ -51,9 +40,6 @@ My opinion: move to Vercel when we can spend a focused implementation pass on it
 2b. Make the negotiation levers output more digestibly for formatting in n8n synthesizer workflow, as well as the open questions (is a little better)
 
 2c. maybe mentioned somewhere else, but citations to be clickable to open up a interactive view and then highlight where in the doc it is
-
-
-3. Make sure render works correctly
 
 5. The legacy "diligence findings" table at the bottom of the dashboard still shows sample data (its source was Retool's database). Maybe add this to a separate page?
 
@@ -76,7 +62,7 @@ compare metrics to industry standards[11:28 AM]email automation based on red fla
 
 14. Be able to open up each doc in the list for each project in an interactive viewer?
 
-15. Have n8n be able to detect document types (P&L, balance sheet, etc) and what document types are missing as well for the consolidator workflow to tell the user? 
+15. Have n8n be able to detect document types (P&L, balance sheet, etc) and what document types are missing as well for the consolidator workflow to tell the user? [This is a duplicate] 
 
 17. Need to have more granular confidence levels and citations for each individual stat for document-specific json schema and project-level json schema in n8n
 

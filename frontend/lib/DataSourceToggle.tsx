@@ -4,7 +4,7 @@ import { getDataSource, setDataSource, type DataSource } from './dataSource'
 const options: Array<{ value: DataSource; label: string; hint: string }> = [
   {
     value: 'mock',
-    label: 'Mock',
+    label: 'Example',
     hint: 'In-memory sample data — no network calls',
   },
   {

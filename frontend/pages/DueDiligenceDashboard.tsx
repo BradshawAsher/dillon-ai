@@ -10,7 +10,14 @@ import ProjectIntakeCard from '../components/ProjectIntakeCard'
 import ProjectPortfolioCard from '../components/ProjectPortfolioCard'
 import ProjectSynthesisCard from '../components/ProjectSynthesisCard'
 import SubmissionHistoryCard from '../components/SubmissionHistoryCard'
-import { useGetDiligenceData, useGetProjectSynthesis, useGetSubmissionHistory, useSubmitDealPacket } from '../hooks/backend/diligence'
+import {
+    exampleProjectSyntheses,
+    exampleSubmissionHistoryRows,
+    useGetDiligenceData,
+    useGetProjectSynthesis,
+    useGetSubmissionHistory,
+    useSubmitDealPacket,
+} from '../hooks/backend/diligence'
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
@@ -85,6 +92,22 @@ function getSubmissionStatusVariant(status: string): 'success' | 'warning' | 'de
     }
 
     return 'secondary'
+}
+
+function createUnusedProjectId(usedProjectIds: Iterable<string> = []) {
+    const used = new Set(
+        Array.from(usedProjectIds, (id) => id.trim().toLowerCase()).filter((id) => id.length > 0)
+    )
+
+    let candidate = ''
+    do {
+        const randomSuffix = typeof crypto.randomUUID === 'function'
+            ? crypto.randomUUID().slice(0, 8)
+            : Math.random().toString(36).slice(2, 10)
+        candidate = 'project-' + new Date().toISOString().slice(0, 10).replaceAll('-', '') + '-' + randomSuffix
+    } while (used.has(candidate.toLowerCase()))
+
+    return candidate
 }
 
 const terminalBatchStatuses = new Set(['completed', 'failed', 'error', 'rejected'])
@@ -171,9 +194,18 @@ export default function DueDiligenceDashboard() {
         return fallbackDiligenceFindings
     }, [diligenceData])
 
-    const submissionHistory = (Array.isArray(submissionHistoryData)
+    const liveSubmissionHistory = (Array.isArray(submissionHistoryData)
         ? submissionHistoryData
         : []) as SubmissionHistoryItem[]
+    const isShowingExampleWorkspace = !submissionHistoryLoading
+        && !submissionHistoryError
+        && liveSubmissionHistory.length === 0
+    const submissionHistory = isShowingExampleWorkspace
+        ? exampleSubmissionHistoryRows
+        : liveSubmissionHistory
+    const visibleProjectSyntheses = isShowingExampleWorkspace
+        ? exampleProjectSyntheses
+        : (Array.isArray(projectSynthesisData) ? projectSynthesisData : [])
     const projectSummaries = useMemo(() => createProjectSummaries(submissionHistory), [submissionHistory])
 
     const fallbackFinding = diligenceFindings[0]
@@ -181,7 +213,7 @@ export default function DueDiligenceDashboard() {
     const [selectedFiles, setSelectedFiles] = useState<File[]>([])
     const [dealName, setDealName] = useState('')
     const [companyName, setCompanyName] = useState('')
-    const [projectId, setProjectId] = useState('project-1')
+    const [projectId, setProjectId] = useState(() => createUnusedProjectId())
     const [projectStage, setProjectStage] = useState('post-loi')
     const [documentType, setDocumentType] = useState('auto-detect')
     const [submissionWorkstream, setSubmissionWorkstream] = useState(fallbackFinding?.workstream ?? 'Financial diligence')
@@ -239,8 +271,8 @@ export default function DueDiligenceDashboard() {
     // updates without requiring a manual refresh.
     const hasActiveProjectSynthesis = useMemo(() => {
         const activeStatuses = new Set(['queued', 'pending', 'processing', 'running', 'synthesis_pending', 'synthesizing'])
-        return (projectSynthesisData ?? []).some((row) => activeStatuses.has(row.projectStatus.trim().toLowerCase()))
-    }, [projectSynthesisData])
+        return visibleProjectSyntheses.some((row) => activeStatuses.has(row.projectStatus.trim().toLowerCase()))
+    }, [visibleProjectSyntheses])
 
     const isCurrentProjectAwaitingSynthesis = useMemo(() => {
         const currentProjectId = projectId.trim()
@@ -253,13 +285,13 @@ export default function DueDiligenceDashboard() {
             return false
         }
 
-        const currentSyntheses = (projectSynthesisData ?? []).filter((row) => row.projectId === currentProjectId)
+        const currentSyntheses = visibleProjectSyntheses.filter((row) => row.projectId === currentProjectId)
         const hasFinalJudgment = currentSyntheses.some((row) => {
             return row.finalJudgmentSummary.trim().length > 0 || row.finalRecommendation.trim().length > 0
         })
 
         return !hasFinalJudgment
-    }, [projectId, projectSummaries, projectSynthesisData])
+    }, [projectId, projectSummaries, visibleProjectSyntheses])
 
     const shouldPollN8n = hasActiveSubmissions || hasActiveProjectSynthesis || isCurrentProjectAwaitingSynthesis
 
@@ -356,6 +388,19 @@ export default function DueDiligenceDashboard() {
         setProjectStage(matchingProject.stage || 'post-loi')
         setSubmissionWorkstream(matchingProject.workstream === 'All workstreams' ? '' : matchingProject.workstream)
     }, [projectSummaries, selectedProjectKey])
+
+    useEffect(() => {
+        if (selectedProjectKey !== 'new') {
+            return
+        }
+
+        const usedProjectIds = projectSummaries.map((project) => project.projectId || project.projectKey)
+        const normalizedCurrentId = projectId.trim().toLowerCase()
+
+        if (normalizedCurrentId.length === 0 || usedProjectIds.some((id) => id.trim().toLowerCase() === normalizedCurrentId)) {
+            setProjectId(createUnusedProjectId(usedProjectIds))
+        }
+    }, [projectId, projectSummaries, selectedProjectKey])
 
     const handleCreateProject = () => {
         const newProjectNumber = projectSummaries.length + 1
@@ -530,6 +575,15 @@ export default function DueDiligenceDashboard() {
                         void handleSubmit(environment)
                     }}
                 />
+
+                {isShowingExampleWorkspace ? (
+                    <div className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm text-foreground">
+                        <p className="font-medium">Example workspace</p>
+                        <p className="mt-1 text-muted-foreground">
+                            This sample project illustrates the document analysis, portfolio, and final synthesis views. It is not live n8n data.
+                        </p>
+                    </div>
+                ) : null}
 
                 {submitError ? (
                     <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
@@ -796,9 +850,9 @@ export default function DueDiligenceDashboard() {
 
                 <section id="project-synthesis" className="scroll-mt-6">
                     <ProjectSynthesisCard
-                        syntheses={Array.isArray(projectSynthesisData) ? projectSynthesisData : []}
+                        syntheses={visibleProjectSyntheses}
                         projects={projectSummaries}
-                        currentProjectId={projectId}
+                        currentProjectId={isShowingExampleWorkspace ? 'atlas-001' : projectId}
                         synthesisPending={isCurrentProjectAwaitingSynthesis}
                         loading={projectSynthesisLoading}
                         error={projectSynthesisError}
