@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react'
 import { Download, FileText, Landmark, Loader2, MessageCircleQuestion, RefreshCw, Scale, ShieldAlert, TriangleAlert } from 'lucide-react'
 
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
@@ -16,6 +15,8 @@ type ProjectSynthesisCardProps = {
     projects: ProjectSummary[]
     currentProjectId: string
     synthesisPending: boolean
+    synthesisProgress: number
+    synthesisStage: string
     loading: boolean
     error: string | null
     onRefresh: () => void
@@ -86,28 +87,13 @@ function downloadSynthesisReport(synthesis: ProjectSynthesisItem, projectName: s
     downloadTextFile(fileSafeName(projectName) + '-project-synthesis.md', report, 'text/markdown;charset=utf-8')
 }
 
-export default function ProjectSynthesisCard({ syntheses, projects, currentProjectId, synthesisPending, loading, error, onRefresh }: ProjectSynthesisCardProps) {
-    const [synthesisProgress, setSynthesisProgress] = useState(12)
+export default function ProjectSynthesisCard({ syntheses, projects, currentProjectId, synthesisPending, synthesisProgress, synthesisStage, loading, error, onRefresh }: ProjectSynthesisCardProps) {
     const projectNameById = new Map(
         projects.map((project) => [project.projectId || project.projectKey, `${project.projectName} • ${project.companyName}`])
     )
 
     const normalizedProjectId = currentProjectId.trim()
     const visibleSyntheses = syntheses.filter((synthesis) => synthesis.projectId === normalizedProjectId)
-
-    useEffect(() => {
-        if (!synthesisPending) {
-            setSynthesisProgress(12)
-            return
-        }
-
-        setSynthesisProgress((current) => Math.max(current, 18))
-        const interval = window.setInterval(() => {
-            setSynthesisProgress((current) => Math.min(90, current + (current < 55 ? 9 : 3)))
-        }, 3000)
-
-        return () => window.clearInterval(interval)
-    }, [synthesisPending])
 
     return (
         <Card className="overflow-hidden">
@@ -149,7 +135,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                         </div>
                         </div>
                         <div className="mt-3 flex items-center justify-between gap-3 text-xs text-muted-foreground">
-                            <span>Estimated synthesis progress</span>
+                            <span>{synthesisStage}</span>
                             <span>{synthesisProgress}%</span>
                         </div>
                         <Progress value={synthesisProgress} className="mt-2 h-2.5" />

@@ -295,6 +295,25 @@ export default function DueDiligenceDashboard() {
         return !hasFinalJudgment
     }, [projectId, projectSummaries, visibleProjectSyntheses])
 
+    const currentSynthesisProgress = useMemo(() => {
+        const currentProject = projectSummaries.find((project) => (project.projectId || project.projectKey) === projectId.trim())
+        const completed = currentProject?.completedCount ?? 0
+        const received = currentProject?.documentCount ?? 0
+
+        if (received > 0 && completed < received) {
+            return {
+                value: Math.round((completed / received) * 70),
+                stage: 'Document analysis: ' + completed + '/' + received + ' complete',
+            }
+        }
+
+        if (isCurrentProjectAwaitingSynthesis) {
+            return { value: 82, stage: 'All documents complete — n8n is consolidating findings' }
+        }
+
+        return { value: 0, stage: 'Waiting for project documents' }
+    }, [isCurrentProjectAwaitingSynthesis, projectId, projectSummaries])
+
     const shouldPollN8n = hasActiveSubmissions || hasActiveProjectSynthesis || isCurrentProjectAwaitingSynthesis
 
     useEffect(() => {
@@ -551,7 +570,7 @@ export default function DueDiligenceDashboard() {
                         <div className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm text-foreground">
                             <span className="font-medium">New to the dashboard?</span>{' '}
                             To see how the workflow works with pre-loaded data, open the{' '}
-                            <Button variant="link" size="sm" className="h-auto px-0 py-0 align-baseline" onClick={() => setDataSource('mock')}>
+                            <Button size="lg" className="mx-1 align-middle" onClick={() => setDataSource('mock')}>
                                 Example workspace
                             </Button>
                             .
@@ -868,6 +887,8 @@ export default function DueDiligenceDashboard() {
                         projects={projectSummaries}
                         currentProjectId={isExampleMode ? 'atlas-001' : projectId}
                         synthesisPending={isCurrentProjectAwaitingSynthesis}
+                        synthesisProgress={isExampleMode ? 100 : currentSynthesisProgress.value}
+                        synthesisStage={isExampleMode ? 'Example synthesis complete' : currentSynthesisProgress.stage}
                         loading={projectSynthesisLoading}
                         error={projectSynthesisError}
                         onRefresh={() => {

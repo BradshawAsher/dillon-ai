@@ -16,6 +16,10 @@
 
 0i. Download output button for the output as well? [DONE?]
 
+Make the example workspace button in the disclaimer way bigger
+
+Can we show example output for document-specific/most recent doc upload as well
+
 Download button for the submission history too? and for per document, and for project specific? And download button in the example tab too?
 
 0j. Before and after contrast for human took x hours and agent took y minutes (show how long the runtime worked)

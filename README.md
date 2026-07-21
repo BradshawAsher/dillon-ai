@@ -77,27 +77,26 @@ npm run preview
 Create `frontend/.env` (it is gitignored):
 
 ```dotenv
-APP_PASSWORD=pick-a-shared-team-password
 N8N_WEBHOOK_SECRET=the-header-auth-secret-used-by-n8n
 PORT=3000
 VITE_USE_MOCKS=false
 ```
 
-- `APP_PASSWORD` is optional locally. When set, the standalone API requires
-  the shared-password login.
 - `N8N_WEBHOOK_SECRET` is sent server-side as `x-webhook-secret`; it is never
   exposed to the browser.
-- `VITE_USE_MOCKS=true` changes the initial local source to Mock mode.
+- `VITE_USE_MOCKS=true` changes the initial local source to Example mode.
+- Access gates are currently disabled. To restore the shared-password gate for
+  the local/Render server, set `ENABLE_ACCESS_GATES=true` and `APP_PASSWORD`.
 
-## Live n8n and Mock mode
+## Live n8n and Example mode
 
-The bottom-right **Data: Mock / Live n8n** control persists its selection in
+The bottom-right **Data: Example / Live n8n** control persists its selection in
 browser local storage.
 
 - **Live n8n** is the default. Uploads trigger the real Cloud workflow and
   refreshes read real n8n rows.
-- **Mock** is an in-memory UI simulation. It does not send data to n8n and
-  simulates document processing locally.
+- **Example** is pre-loaded sample data. It does not send data to n8n and
+  demonstrates the document-analysis and project-synthesis experience.
 
 The legacy sample findings panel is static in both modes.
 
@@ -140,7 +139,22 @@ documented shape, for example:
 For a live workflow change, update it in n8n Cloud and document the change in
 this repository. Do not treat the local workflow exports as deployment files.
 
-## Deployment
+## Deployment: Vercel (primary)
+
+The production dashboard is deployed on Vercel:
+
+<https://due-diligence-dashboard.vercel.app/>
+
+Import the repository with the Root Directory set to the repository root.
+The committed vercel.json supplies the install, build, and output settings.
+Set N8N_WEBHOOK_SECRET in Vercel for both Preview and Production; never
+expose it with a VITE_ prefix.
+
+Use a Vercel preview deployment to validate live history, a test upload,
+batch progress, and project synthesis before promoting a change. See
+[docs/DEPLOY_VERCEL.md](docs/DEPLOY_VERCEL.md) for the full checklist.
+
+## Render backup (legacy)
 
 `render.yaml` defines the Render service. Create a Render Blueprint from the
 repository and set `APP_PASSWORD` and `N8N_WEBHOOK_SECRET` in Render.
