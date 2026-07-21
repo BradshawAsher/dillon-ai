@@ -12,13 +12,11 @@
 
 0f. Add a graph/diagram for UI for interactivity and user trust
 
-0h. Add pre-loaded sample data to show what it does? 
+0h. Add pre-loaded sample data to show what it does? [DONE?]
 
-0i. Download output button for the output as well?
+0i. Download output button for the output as well? [DONE?]
 
 0j. Before and after contrast for human took x hours and agent took y minutes (show how long the runtime worked)
-
-0k. Make sure website works on mobile?
 
 0l. Confidence scores on everything make sure to do this
 

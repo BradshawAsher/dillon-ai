@@ -21,6 +21,7 @@ import {
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
+import { getDataSource } from '../lib/dataSource'
 import { Progress } from '../lib/shadcn/progress'
 import { Switch } from '../lib/shadcn/switch'
 import { Textarea } from '../lib/shadcn/textarea'
@@ -200,6 +201,7 @@ export default function DueDiligenceDashboard() {
     const isShowingExampleWorkspace = !submissionHistoryLoading
         && !submissionHistoryError
         && liveSubmissionHistory.length === 0
+    const isExampleMode = getDataSource() === 'mock' || isShowingExampleWorkspace
     const submissionHistory = isShowingExampleWorkspace
         ? exampleSubmissionHistoryRows
         : liveSubmissionHistory
@@ -544,6 +546,14 @@ export default function DueDiligenceDashboard() {
                         </div>
                     </div>
                 </div>
+                {!isExampleMode ? (
+                    <div className="mx-auto max-w-[1600px] px-4 pb-5 sm:px-6 lg:px-8">
+                        <div className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm text-foreground">
+                            <span className="font-medium">New to the dashboard?</span>{' '}
+                            To see how the workflow works with pre-loaded data, select <span className="font-medium">Example</span> in the data selector at the bottom right.
+                        </div>
+                    </div>
+                ) : null}
             </header>
 
             <main className="mx-auto max-w-[1600px] space-y-6 px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
@@ -576,7 +586,7 @@ export default function DueDiligenceDashboard() {
                     }}
                 />
 
-                {isShowingExampleWorkspace ? (
+                {isExampleMode ? (
                     <div className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm text-foreground">
                         <p className="font-medium">Example workspace</p>
                         <p className="mt-1 text-muted-foreground">
@@ -852,7 +862,7 @@ export default function DueDiligenceDashboard() {
                     <ProjectSynthesisCard
                         syntheses={visibleProjectSyntheses}
                         projects={projectSummaries}
-                        currentProjectId={isShowingExampleWorkspace ? 'atlas-001' : projectId}
+                        currentProjectId={isExampleMode ? 'atlas-001' : projectId}
                         synthesisPending={isCurrentProjectAwaitingSynthesis}
                         loading={projectSynthesisLoading}
                         error={projectSynthesisError}
