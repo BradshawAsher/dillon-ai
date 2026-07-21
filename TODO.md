@@ -1,4 +1,6 @@
-0. Add better error handling to project-wide consolidator workflow and just all the other workflows
+0. Why does synthesizer not show output anymore? Check to make sure it works still? Is it a too strict requirement before synthesis?
+
+0i. Add better error handling to project-wide consolidator workflow and just all the other workflows
 
 0a. Make sure vercel works fine
 
