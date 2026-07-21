@@ -670,6 +670,42 @@ export default function DueDiligenceDashboard() {
                     </Card>
                 ) : null}
 
+                {isExampleMode && !submitResponse ? (
+                    <Card className="overflow-hidden border-primary/30">
+                        <CardHeader className="border-b border-primary/20 bg-primary/5">
+                            <div className="flex flex-wrap items-center justify-between gap-3">
+                                <div>
+                                    <CardDescription>Example latest project document submission</CardDescription>
+                                    <CardTitle className="text-lg">{exampleSubmissionHistoryRows[0].fileName}</CardTitle>
+                                </div>
+                                <Badge variant="success">Completed</Badge>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="space-y-3 p-4">
+                            <p className="text-sm text-muted-foreground">
+                                This is the document-level result that appears after a queued upload completes, before the project-wide synthesis is reviewed.
+                            </p>
+                            <div className="grid gap-3 sm:grid-cols-3">
+                                <div className="rounded-lg border border-border bg-background p-3">
+                                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Risk</p>
+                                    <p className="mt-1 text-sm font-semibold text-foreground">{exampleSubmissionHistoryRows[0].riskLevel}</p>
+                                </div>
+                                <div className="rounded-lg border border-border bg-background p-3">
+                                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Confidence</p>
+                                    <p className="mt-1 text-sm font-semibold text-foreground">{exampleSubmissionHistoryRows[0].aiConfidence}%</p>
+                                </div>
+                                <div className="rounded-lg border border-border bg-background p-3">
+                                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Project</p>
+                                    <p className="mt-1 text-sm font-semibold text-foreground">{exampleSubmissionHistoryRows[0].projectId}</p>
+                                </div>
+                            </div>
+                            <p className="rounded-lg border border-border bg-muted/30 p-3 text-sm leading-6 text-foreground">
+                                {exampleSubmissionHistoryRows[0].aiSummary}
+                            </p>
+                        </CardContent>
+                    </Card>
+                ) : null}
+
                 {submitResponse ? (
                     <Card className="overflow-hidden">
                         <CardHeader className="border-b border-border bg-card/80">
