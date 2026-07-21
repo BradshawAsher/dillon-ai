@@ -64,9 +64,9 @@ export default function ExpandableInsightGroup({
 
       {isOpen ? (
         children ? (
-          <div className="mt-3">{children}</div>
+          <div className="mt-3 max-h-[28rem] overflow-y-auto pr-1">{children}</div>
         ) : items.length > 0 ? (
-          <ol className="mt-3 space-y-2">
+          <ol className="mt-3 max-h-[28rem] space-y-2 overflow-y-auto pr-1">
             {items.map((item, index) => {
               const isLong = item.length > LONG_ITEM_LENGTH
               const isExpanded = expandedItems.has(index)

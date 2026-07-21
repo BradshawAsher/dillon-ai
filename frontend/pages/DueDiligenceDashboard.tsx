@@ -112,6 +112,9 @@ function createUnusedProjectId(usedProjectIds: Iterable<string> = []) {
 }
 
 const terminalBatchStatuses = new Set(['completed', 'failed', 'error', 'rejected'])
+// Retains the retired Retool sample implementation as a code backup without
+// exposing it in the project-based live workspace.
+const SHOW_LEGACY_DILIGENCE_BACKUP = false
 const processingReachedStatuses = new Set([
     'processing',
     'running',
@@ -1014,6 +1017,7 @@ export default function DueDiligenceDashboard() {
                     isPolling={hasActiveSubmissions}
                 />
 
+                {SHOW_LEGACY_DILIGENCE_BACKUP ? (
                 <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
                     <Card className="overflow-hidden">
                         <CardHeader className="border-b border-border bg-card/80">
@@ -1251,6 +1255,7 @@ export default function DueDiligenceDashboard() {
                         </Card>
                     </div>
                 </div>
+                ) : null}
             </main>
         </div>
     )

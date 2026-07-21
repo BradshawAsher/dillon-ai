@@ -14,7 +14,10 @@
 SYNTHESIZER IS TOO SLOW SOMETIMES
 Add a way we can run synthesis even if the website/n8n blocked the user from running synthesis?
 
-Update the agents.md files not to refer to n8n_workflows_json and n8n_workflows_images but to use mcp access to pod 1's workflows to understand how they work, and if they don't have access, to ask for access?
+Add stat like how long it will take the company to make the money back on acquisition, and bear/bull/regular cases, and other stats like in epicdealdone
+
+Make sure to update project handoff somewhat regularly for handoff to mergeworks team and trisha, and not necessarily just handing off from retool to vs code
+
 
 Make sure we can have dropdowns for literally every text field that can get too long
 

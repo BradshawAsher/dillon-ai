@@ -37,9 +37,9 @@ which forward requests to n8n through `frontend/retoolRuntime.ts`.
   clearly labeled static sample panel named "Legacy sample extraction
   findings."
 
-The local files in `n8n_workflows_json/` and `n8n_workflows_images/` are
-read-only exports for reference. They do not change the live n8n Cloud
-workflows.
+Pod 1's live n8n Cloud/Enterprise workflows are the workflow source of truth.
+Inspect them through n8n MCP. If MCP access is unavailable, request access
+before diagnosing or changing workflow behavior.
 
 ## Run locally
 
@@ -136,8 +136,9 @@ documented shape, for example:
 { "rows": [{ "projectId": "project-1", "projectStatus": "synthesized" }] }
 ```
 
-For a live workflow change, update it in n8n Cloud and document the change in
-this repository. Do not treat the local workflow exports as deployment files.
+For a live workflow change, use n8n MCP to inspect and update the Pod 1
+workflow, then document the confirmed change in this repository. If MCP access
+is unavailable, ask for access rather than relying on local exports.
 
 ## Deployment: Vercel (primary)
 
@@ -175,7 +176,6 @@ The configured deployment URL is:
 | `backend/diligence/` | Submit, history, and synthesis normalizers |
 | `docs/n8n-webhooks.md` | n8n webhook contracts and troubleshooting |
 | `docs/HOW_TO_RUN.md` | Additional operating notes |
-| `n8n_workflows_json/` | Read-only workflow exports |
 
 ## Retool provenance
 
