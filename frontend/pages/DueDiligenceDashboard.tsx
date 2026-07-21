@@ -567,16 +567,33 @@ export default function DueDiligenceDashboard() {
                 </div>
                 {!isExampleMode ? (
                     <div className="mx-auto max-w-[1600px] px-4 pb-5 sm:px-6 lg:px-8">
-                        <div className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm text-foreground">
-                            <span className="font-medium">New to the dashboard?</span>{' '}
-                            To see how the workflow works with pre-loaded data, open the{' '}
-                            <Button size="lg" className="mx-1 align-middle" onClick={() => setDataSource('mock')}>
-                                Example workspace
+                        <div className="rounded-xl border-2 border-primary/35 bg-primary/10 px-5 py-5 shadow-sm sm:flex sm:items-center sm:justify-between sm:gap-6">
+                            <div className="max-w-3xl">
+                                <p className="text-lg font-semibold text-foreground">New to the dashboard?</p>
+                                <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                                    Explore a completed diligence project with document analysis, batch progress, and final synthesis before submitting live data.
+                                </p>
+                            </div>
+                            <Button size="lg" className="mt-4 w-full shrink-0 sm:mt-0 sm:w-auto" onClick={() => setDataSource('mock')}>
+                                Open example workspace
                             </Button>
-                            .
                         </div>
                     </div>
-                ) : null}
+                ) : (
+                    <div className="mx-auto max-w-[1600px] px-4 pb-5 sm:px-6 lg:px-8">
+                        <div className="rounded-xl border-2 border-success/35 bg-success/10 px-5 py-5 shadow-sm sm:flex sm:items-center sm:justify-between sm:gap-6">
+                            <div className="max-w-3xl">
+                                <p className="text-lg font-semibold text-foreground">Ready to try it with your own documents?</p>
+                                <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                                    Switch to Live n8n to queue a real project document and follow its document-level analysis through project synthesis.
+                                </p>
+                            </div>
+                            <Button size="lg" className="mt-4 w-full shrink-0 sm:mt-0 sm:w-auto" onClick={() => setDataSource('live')}>
+                                Go to Live n8n
+                            </Button>
+                        </div>
+                    </div>
+                )}
             </header>
 
             <main className="mx-auto max-w-[1600px] space-y-6 px-4 py-4 sm:px-6 sm:py-6 lg:px-8">

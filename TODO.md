@@ -12,12 +12,6 @@
 
 0f. Add a graph/diagram for UI for interactivity and user trust
 
-0h. Add pre-loaded sample data to show what it does? [DONE?]
-
-0i. Download output button for the output as well? [DONE?]
-
-Make the example workspace button in the disclaimer way bigger
-
 Can we show example output for document-specific/most recent doc upload as well
 
 when we are done processing all the docs, and all is finished, under the finish bar, add a disclaimer for the user to see project synthesis and project portfolio for more details, and maybe have a clickable link to send them down to project synthesis?
