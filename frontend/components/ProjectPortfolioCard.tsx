@@ -1,12 +1,14 @@
 import { useState } from 'react'
 
-import { BriefcaseBusiness, Clock3, FileStack, Flag, FolderKanban, ShieldAlert } from 'lucide-react'
+import { BriefcaseBusiness, Clock3, Download, FileStack, Flag, FolderKanban, ShieldAlert } from 'lucide-react'
 
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Switch } from '../lib/shadcn/switch'
 import { cn } from '../lib/shadcn/utils'
+import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
+import { downloadSynthesisReport } from './ProjectSynthesisCard'
 import {
     createProjectSummaries,
     formatProjectStage,
@@ -16,6 +18,7 @@ import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 
 type ProjectPortfolioCardProps = {
     rows: SubmissionHistoryItem[]
+    syntheses: ProjectSynthesisItem[]
     activeProjectKey: string
     onProjectSelect: (projectKey: string) => void
 }
@@ -40,7 +43,7 @@ function SummaryMetric({
     )
 }
 
-export default function ProjectPortfolioCard({ rows, activeProjectKey, onProjectSelect }: ProjectPortfolioCardProps) {
+export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey, onProjectSelect }: ProjectPortfolioCardProps) {
     const projects = createProjectSummaries(rows)
     const [hideDuplicateDocs, setHideDuplicateDocs] = useState(true)
     const activeProjectCount = projects.filter((project) => project.activeCount > 0).length
@@ -98,6 +101,7 @@ export default function ProjectPortfolioCard({ rows, activeProjectKey, onProject
                                 })
                                 : project.documents
                             const hiddenDuplicateCount = project.documents.length - visibleDocuments.length
+                            const synthesis = syntheses.find((candidate) => candidate.projectId === (project.projectId || project.projectKey))
 
                             return (
                                 <div
@@ -124,6 +128,21 @@ export default function ProjectPortfolioCard({ rows, activeProjectKey, onProject
                                         </div>
 
                                         <div className="flex flex-wrap gap-2">
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="lg"
+                                                disabled={!synthesis}
+                                                title={synthesis ? 'Download project synthesis' : 'Synthesis is not ready to download yet'}
+                                                onClick={() => {
+                                                    if (synthesis) {
+                                                        downloadSynthesisReport(synthesis, project.projectName)
+                                                    }
+                                                }}
+                                            >
+                                                <Download />
+                                                Download synthesis
+                                            </Button>
                                             <Button
                                                 type="button"
                                                 variant={project.projectKey === activeProjectKey ? 'secondary' : 'default'}

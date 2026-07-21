@@ -55,7 +55,7 @@ function formatTimestamp(value: string) {
     return new Date(parsed).toLocaleString()
 }
 
-function downloadSynthesisReport(synthesis: ProjectSynthesisItem, projectName: string) {
+export function downloadSynthesisReport(synthesis: ProjectSynthesisItem, projectName: string) {
     const section = (title: string, items: string[]) => [
         '## ' + title,
         ...(items.length > 0 ? items.map((item) => '- ' + item) : ['- None recorded.']),
@@ -147,6 +147,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                         <div className="flex items-center gap-3">
                         <Loader2 className="h-5 w-5 shrink-0 animate-spin text-primary" />
                         <div>
+                            <p className="font-medium">Synthesis starting…</p>
                             <p className="font-medium">Synthesizing project findings…</p>
                             <p className="text-xs font-medium text-primary">Synthesizing {currentProjectName} — {synthesisElapsedSeconds} seconds</p>
                             <p className="mt-1 text-muted-foreground">All submitted documents are complete. The n8n consolidator is preparing the project-level judgment and this page will refresh automatically.</p>
@@ -250,6 +251,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                     icon={<Landmark className="h-4 w-4 text-foreground" />}
                                     items={synthesis.negotiationLevers}
                                     emptyLabel="No negotiation levers surfaced yet."
+                                    defaultOpen
                                 />
                                 <ExpandableInsightGroup
                                     title="Missing diligence materials"
