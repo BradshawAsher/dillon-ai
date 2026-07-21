@@ -1,4 +1,4 @@
-import { FileText, Landmark, Loader2, MessageCircleQuestion, RefreshCw, Scale, ShieldAlert, TriangleAlert } from 'lucide-react'
+import { Download, FileText, Landmark, Loader2, MessageCircleQuestion, RefreshCw, Scale, ShieldAlert, TriangleAlert } from 'lucide-react'
 
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import ExpandableInsightGroup from './ExpandableInsightGroup'
@@ -6,6 +6,7 @@ import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { getSubmissionInsightTone } from '../utils/aiSubmissionData'
+import { downloadTextFile, fileSafeName } from '../utils/downloadFile'
 import type { ProjectSummary } from '../utils/projectWorkspace'
 
 type ProjectSynthesisCardProps = {
@@ -48,6 +49,39 @@ function formatTimestamp(value: string) {
     }
 
     return new Date(parsed).toLocaleString()
+}
+
+function downloadSynthesisReport(synthesis: ProjectSynthesisItem, projectName: string) {
+    const section = (title: string, items: string[]) => [
+        '## ' + title,
+        ...(items.length > 0 ? items.map((item) => '- ' + item) : ['- None recorded.']),
+        '',
+    ]
+
+    const report = [
+        '# ' + projectName + ' — Project Synthesis',
+        '',
+        'Generated: ' + new Date().toLocaleString(),
+        'Recommendation: ' + (synthesis.finalRecommendation || 'Pending'),
+        'Risk level: ' + (synthesis.finalRiskLevel || 'Pending'),
+        'Documents processed: ' + synthesis.documentsCompletedCount + '/' + synthesis.documentsReceivedCount,
+        '',
+        '## Acquisition judgment',
+        synthesis.finalJudgmentSummary || 'No final judgment recorded.',
+        '',
+        '## Valuation range',
+        'Lower: ' + (synthesis.valuationLowerBound || 'Pending') + ' ' + synthesis.valuationCurrency,
+        'Base: ' + (synthesis.valuationBaseEstimate || 'Pending') + ' ' + synthesis.valuationCurrency,
+        'Upper: ' + (synthesis.valuationUpperBound || 'Pending') + ' ' + synthesis.valuationCurrency,
+        '',
+        ...section('Cross-document conflicts', synthesis.crossDocumentConflicts),
+        ...section('Negotiation levers', synthesis.negotiationLevers),
+        ...section('Missing diligence materials', synthesis.missingDocuments),
+        ...section('Open questions for management', synthesis.openQuestions),
+        ...section('Citations', synthesis.citations ?? []),
+    ].join('\n')
+
+    downloadTextFile(fileSafeName(projectName) + '-project-synthesis.md', report, 'text/markdown;charset=utf-8')
 }
 
 export default function ProjectSynthesisCard({ syntheses, projects, currentProjectId, synthesisPending, loading, error, onRefresh }: ProjectSynthesisCardProps) {
@@ -119,6 +153,10 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                     </p>
                                 </div>
                                 <div className="flex flex-wrap items-center gap-2">
+                                    <Button variant="outline" size="sm" onClick={() => downloadSynthesisReport(synthesis, displayName)}>
+                                        <Download />
+                                        Download report
+                                    </Button>
                                     {synthesis.finalRecommendation ? (
                                         <Badge variant={getSubmissionInsightTone(synthesis.finalTrafficLight)}>
                                             {synthesis.finalRecommendation}

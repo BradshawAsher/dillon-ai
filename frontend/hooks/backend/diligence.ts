@@ -233,7 +233,7 @@ function blankHistoryRow(): SubmissionHistoryItem {
     }
 }
 
-const seededCompletedRow: SubmissionHistoryItem = {
+export const exampleSubmissionHistoryRows: SubmissionHistoryItem[] = [{
     ...blankHistoryRow(),
     requestID: 'mock-req-0001',
     dealName: 'Project Atlas',
@@ -286,9 +286,9 @@ const seededCompletedRow: SubmissionHistoryItem = {
     id: 1,
     createdAt: '2026-07-13T15:04:02.000Z',
     updatedAt: '2026-07-13T15:06:41.000Z',
-}
+}]
 
-const mockHistoryStore: SubmissionHistoryItem[] = [seededCompletedRow]
+const mockHistoryStore: SubmissionHistoryItem[] = [...exampleSubmissionHistoryRows]
 let nextRowId = 2
 
 function completeRowLater(requestID: string) {
@@ -348,13 +348,15 @@ const mockSynthesisRow: ProjectSynthesisItem = {
   updatedAt: '2026-07-13T16:20:00.000Z',
 }
 
+export const exampleProjectSyntheses: ProjectSynthesisItem[] = [mockSynthesisRow]
+
 function useMockProjectSynthesis() {
   return useQuery(
     useCallback(async () => {
       await delay(250)
-      return [{ ...mockSynthesisRow }]
+      return exampleProjectSyntheses.map((row) => ({ ...row }))
     }, []),
-    [{ ...mockSynthesisRow }]
+    exampleProjectSyntheses.map((row) => ({ ...row }))
   )
 }
 
