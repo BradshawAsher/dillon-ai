@@ -9,7 +9,7 @@
 Add more pages just like epicdealdone? literally just wanna copy epicdealdone or no?
 
 * Deal Analysis Scores
-![Deal Analysis Scores](image-1.png)
+![Deal Analysis Scores](EPICDEALDONE_IMAGES/image-18.png)
 
 Add deal analysis scores like overall score (largest), valuation score, cash flow, risk, and growth (each one is score out of 100 in a circle)
 
@@ -18,21 +18,21 @@ Acquisition fit score (e.g. 7/10) (would need context abt the buyer company thou
 Overall assessment (1 paragraph for the valuation, at the top?)
 
 * Stats
-![Stats](image-2.png)
+![Stats](EPICDEALDONE_IMAGES/image-19.png)
 Have enterprise value, annual roi, payback period, asset coverage, revenue per employee, EBITDA margin, net worth, debt-to-asset ratio
 
 When you hover over them, it shows their math formulas
 
 * Asset Composition Graph
-![Asset composition](image-3.png)
+![Asset composition](EPICDEALDONE_IMAGES/image-20.png)
 Show an asset composition graph 
 
 * Business Snapshot
-![Business Snapshot](image-4.png)
+![Business Snapshot](EPICDEALDONE_IMAGES/image-21.png)
 Give a business snapshot box (name of company, location, # of employees, and 1 paragraph summary)
 
 * Good Match and Mismatch Reasons
-![Good Matches and Mismatches](image-5.png)
+![Good Matches and Mismatches](EPICDEALDONE_IMAGES/image-22.png)
 
 good match reasons and mismatch reasons? (ordered by severity like high medium low)
 
