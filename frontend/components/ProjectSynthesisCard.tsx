@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Download, FileText, Landmark, Loader2, MessageCircleQuestion, RefreshCw, Scale, ShieldAlert, TriangleAlert } from 'lucide-react'
 
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
@@ -89,10 +89,22 @@ export function downloadSynthesisReport(synthesis: ProjectSynthesisItem, project
     downloadTextFile(fileSafeName(projectName) + '-project-synthesis.md', report, 'text/markdown;charset=utf-8')
 }
 
+function formatProjectDisplayName(project: ProjectSummary) {
+    const projectName = project.projectName.trim()
+    const companyName = project.companyName.trim()
+
+    if (companyName.length === 0 || projectName.toLocaleLowerCase() === companyName.toLocaleLowerCase()) {
+        return projectName || companyName || project.projectId || project.projectKey
+    }
+
+    return `${projectName} • ${companyName}`
+}
+
 export default function ProjectSynthesisCard({ syntheses, projects, currentProjectId, documentAnalysisPending, synthesisPending, synthesisProgress, synthesisStage, loading, error, onRefresh }: ProjectSynthesisCardProps) {
     const [synthesisElapsedSeconds, setSynthesisElapsedSeconds] = useState(0)
+    const wasSynthesizing = useRef(false)
     const projectNameById = new Map(
-        projects.map((project) => [project.projectId || project.projectKey, `${project.projectName} • ${project.companyName}`])
+        projects.map((project) => [project.projectId || project.projectKey, formatProjectDisplayName(project)])
     )
 
     const normalizedProjectId = currentProjectId.trim()
@@ -114,6 +126,15 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
         }, 1000)
 
         return () => window.clearInterval(interval)
+    }, [synthesisPending])
+
+    useEffect(() => {
+        if (synthesisPending) { wasSynthesizing.current = true; return }
+        if (!wasSynthesizing.current) return
+        wasSynthesizing.current = false
+        if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
+            new Notification('Project synthesis complete', { body: 'Your due diligence synthesis is ready to review.' })
+        }
     }, [synthesisPending])
 
     return (
@@ -153,6 +174,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                         <div>
                             <p className="font-medium">{hasPriorSynthesis ? 'Refreshing the project synthesis' : 'Synthesis starting'}</p>
                             <p className="text-xs font-medium text-primary">Synthesizing {currentProjectName} — {synthesisElapsedSeconds} seconds</p>
+                            <p className="text-xs text-muted-foreground">Estimated completion: about 1 min 30 sec</p>
                             <p className="mt-1 text-muted-foreground">
                                 {hasPriorSynthesis
                                     ? 'The previous synthesis remains visible below while n8n incorporates the most recent document. This page will update automatically when the new pass is complete.'
