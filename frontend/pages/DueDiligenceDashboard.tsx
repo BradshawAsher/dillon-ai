@@ -256,6 +256,7 @@ export default function DueDiligenceDashboard() {
         if (typeof window === 'undefined' || !('Notification' in window)) return 'unsupported'
         return Notification.permission
     })
+    const completionAudioContext = useRef<AudioContext | null>(null)
     const [hasRestoredLatestProject, setHasRestoredLatestProject] = useState(false)
     const [validationById, setValidationById] = useState<Record<string, boolean>>({})
     const [notesById, setNotesById] = useState<Record<string, string>>({})
@@ -511,6 +512,29 @@ export default function DueDiligenceDashboard() {
         : 0
     const activeBatchImpact = useMemo(() => computeImpactMetrics(activeBatchRows), [activeBatchRows])
     const batchInProgressNotificationId = useRef<string | null>(null)
+    const synthesisInProgressNotificationProjectId = useRef<string | null>(null)
+
+    const playCompletionSound = () => {
+        const AudioContextConstructor = window.AudioContext || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+        if (!AudioContextConstructor) return
+        const context = completionAudioContext.current ?? new AudioContextConstructor()
+        completionAudioContext.current = context
+        const playTone = () => {
+            const oscillator = context.createOscillator()
+            const gain = context.createGain()
+            oscillator.type = 'sine'
+            oscillator.frequency.setValueAtTime(880, context.currentTime)
+            oscillator.frequency.setValueAtTime(1175, context.currentTime + 0.13)
+            gain.gain.setValueAtTime(0.0001, context.currentTime)
+            gain.gain.exponentialRampToValueAtTime(0.14, context.currentTime + 0.02)
+            gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.32)
+            oscillator.connect(gain).connect(context.destination)
+            oscillator.start()
+            oscillator.stop(context.currentTime + 0.34)
+        }
+        if (context.state === 'running') playTone()
+        else void context.resume().then(playTone).catch(() => undefined)
+    }
 
     const [batchElapsedSeconds, setBatchElapsedSeconds] = useState(0)
 
@@ -543,12 +567,27 @@ export default function DueDiligenceDashboard() {
         }
         if (batchInProgressNotificationId.current !== displayedSubmissionBatch.id) return
         batchInProgressNotificationId.current = null
+        playCompletionSound()
         if ('Notification' in window && Notification.permission === 'granted' && !document.hasFocus()) {
             new Notification('Document batch complete', { body: `${activeBatchFinishedCount}/${activeBatchExpectedCount} documents have reached a final status.` })
         }
     }, [activeBatchExpectedCount, activeBatchFinishedCount, displayedSubmissionBatch])
 
+    useEffect(() => {
+        if (isCurrentProjectAwaitingSynthesis) {
+            synthesisInProgressNotificationProjectId.current = activeProjectId
+            return
+        }
+        if (synthesisInProgressNotificationProjectId.current !== activeProjectId) return
+        synthesisInProgressNotificationProjectId.current = null
+        playCompletionSound()
+        if ('Notification' in window && Notification.permission === 'granted' && !document.hasFocus()) {
+            new Notification('Project synthesis complete', { body: 'Your due diligence synthesis is ready to review.' })
+        }
+    }, [activeProjectId, isCurrentProjectAwaitingSynthesis])
+
     const enableDesktopNotifications = async () => {
+        playCompletionSound()
         if (!('Notification' in window)) { setDesktopNotificationPermission('unsupported'); return }
         const permission = await Notification.requestPermission()
         setDesktopNotificationPermission(permission)
@@ -772,7 +811,7 @@ export default function DueDiligenceDashboard() {
                             </Badge>
                             {desktopNotificationPermission !== 'unsupported' ? (
                                 <Button type="button" size="sm" variant="outline" disabled={desktopNotificationPermission === 'denied'} onClick={() => { void enableDesktopNotifications() }}>
-                                    {desktopNotificationPermission === 'granted' ? 'Desktop alerts on' : desktopNotificationPermission === 'denied' ? 'Desktop alerts blocked' : 'Enable desktop alerts'}
+                                    {desktopNotificationPermission === 'granted' ? 'Completion alerts on' : desktopNotificationPermission === 'denied' ? 'Desktop alerts blocked' : 'Enable completion alerts'}
                                 </Button>
                             ) : null}
                         </div>
