@@ -130,9 +130,21 @@ const processingReachedStatuses = new Set([
     'approved',
     ...terminalBatchStatuses,
 ])
+const activeSynthesisStatuses = new Set(['queued', 'pending', 'processing', 'running', 'synthesis_pending', 'synthesizing'])
 
 function hasReachedProcessingStage(status: string) {
     return processingReachedStatuses.has(status.trim().toLowerCase())
+}
+
+function isDuplicateProjectDocument(file: File, projectId: string, rows: SubmissionHistoryItem[]) {
+    const normalizedProjectId = projectId.trim().toLowerCase()
+    const normalizedFileName = file.name.trim().toLowerCase()
+
+    return rows.some((row) => {
+        return row.projectId.trim().toLowerCase() === normalizedProjectId
+            && row.fileName.trim().toLowerCase() === normalizedFileName
+            && row.fileSize === file.size
+    })
 }
 
 type SubmitWebhookResponse = {
@@ -302,8 +314,7 @@ export default function DueDiligenceDashboard() {
     // running. Keep polling its independent status so the synthesis panel
     // updates without requiring a manual refresh.
     const hasActiveProjectSynthesis = useMemo(() => {
-        const activeStatuses = new Set(['queued', 'pending', 'processing', 'running', 'synthesis_pending', 'synthesizing'])
-        return visibleProjectSyntheses.some((row) => activeStatuses.has(row.projectStatus.trim().toLowerCase()))
+        return visibleProjectSyntheses.some((row) => activeSynthesisStatuses.has(row.projectStatus.trim().toLowerCase()))
     }, [visibleProjectSyntheses])
 
     const isCurrentProjectProcessingDocuments = useMemo(() => {
@@ -327,6 +338,12 @@ export default function DueDiligenceDashboard() {
         }
 
         const currentSyntheses = visibleProjectSyntheses.filter((row) => row.projectId === currentProjectId)
+        const hasActiveSynthesis = currentSyntheses.some((row) => activeSynthesisStatuses.has(row.projectStatus.trim().toLowerCase()))
+
+        if (hasActiveSynthesis) {
+            return true
+        }
+
         const hasFinalJudgment = currentSyntheses.some((row) => {
             return row.finalJudgmentSummary.trim().length > 0 || row.finalRecommendation.trim().length > 0
         })
@@ -347,11 +364,7 @@ export default function DueDiligenceDashboard() {
         }
 
         if (isCurrentProjectAwaitingSynthesis) {
-            return { value: 82, stage: 'Synthesis starting' }
-        }
-
-        if (isCurrentProjectAwaitingSynthesis) {
-            return { value: 82, stage: 'All documents complete — n8n is consolidating findings' }
+            return { value: 82, stage: 'Synthesizing the latest project documents' }
         }
 
         return { value: 0, stage: 'Waiting for project documents' }
@@ -578,12 +591,43 @@ export default function DueDiligenceDashboard() {
             return
         }
 
+        const refreshedHistory = await triggerSubmissionHistory({ environment }, { skipCache: true }).result
+        const duplicateCheckRows = Array.isArray(refreshedHistory) ? refreshedHistory as SubmissionHistoryItem[] : submissionHistory
+        const resolvedProjectId = projectId || suggestedProjectId
+        const duplicateFileNames: string[] = []
+        const selectedMetadataKeys = new Set<string>()
+        const filesToQueue = selectedFiles.filter((file) => {
+            const metadataKey = `${file.name.trim().toLowerCase()}::${file.size}`
+            const isDuplicate = selectedMetadataKeys.has(metadataKey)
+                || isDuplicateProjectDocument(file, resolvedProjectId, duplicateCheckRows)
+
+            selectedMetadataKeys.add(metadataKey)
+            if (isDuplicate) {
+                duplicateFileNames.push(file.name)
+                return false
+            }
+
+            return true
+        })
+
+        if (filesToQueue.length === 0) {
+            setBatchSubmissionMessage(`No documents were queued. ${duplicateFileNames.join(', ')} ${duplicateFileNames.length === 1 ? 'has' : 'have'} already been added to this project.`)
+            return
+        }
+
+        if (environment === 'production') {
+            setActiveWorkspaceTab('diligence')
+            window.setTimeout(() => {
+                document.getElementById('deal-workspace')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            }, 0)
+        }
+
         setIsSubmittingFile(true)
         setBatchSubmissionMessage('')
 
         try {
             const submissionBatchId = crypto.randomUUID()
-            const expectedBatchDocumentCount = selectedFiles.length
+            const expectedBatchDocumentCount = filesToQueue.length
             const failedFileNames: string[] = []
 
             setActiveSubmissionBatch({
@@ -593,11 +637,11 @@ export default function DueDiligenceDashboard() {
                 startedAt: Date.now(),
             })
 
-            for (const file of selectedFiles) {
+            for (const file of filesToQueue) {
                 try {
                     const fileBase64 = await readFileAsBase64(file)
 
-                    await triggerSubmitDealPacket({
+                    const result = await triggerSubmitDealPacket({
                         environment,
                         fileName: file.name,
                         fileSize: file.size,
@@ -613,18 +657,29 @@ export default function DueDiligenceDashboard() {
                         submissionBatchId,
                         expectedBatchDocumentCount,
                     }).result
+
+                    if (result?.status === 'duplicate') {
+                        duplicateFileNames.push(file.name)
+                    }
                 } catch {
                     failedFileNames.push(file.name)
                 }
             }
 
+            const queuedFileCount = expectedBatchDocumentCount - failedFileNames.length - duplicateFileNames.length
+            const submissionMessages: string[] = []
+            if (duplicateFileNames.length > 0) {
+                submissionMessages.push(`${duplicateFileNames.join(', ')} ${duplicateFileNames.length === 1 ? 'was' : 'were'} not queued because ${duplicateFileNames.length === 1 ? 'this document has' : 'these documents have'} already been added to this project.`)
+            }
             if (failedFileNames.length > 0) {
-                const submittedFileCount = expectedBatchDocumentCount - failedFileNames.length
-                setBatchSubmissionMessage(
-                    submittedFileCount > 0
-                        ? `${failedFileNames.length} file${failedFileNames.length === 1 ? '' : 's'} could not be queued (${failedFileNames.join(', ')}). The remaining ${submittedFileCount} file${submittedFileCount === 1 ? '' : 's'} were submitted. Re-upload the failed file${failedFileNames.length === 1 ? '' : 's'} before this batch can be synthesized.`
-                        : `No files could be queued (${failedFileNames.join(', ')}). Please try the batch again; no synthesis will run for this batch.`
+                submissionMessages.push(
+                    queuedFileCount > 0
+                        ? `${failedFileNames.length} file${failedFileNames.length === 1 ? '' : 's'} could not be queued (${failedFileNames.join(', ')}). Re-upload the failed file${failedFileNames.length === 1 ? '' : 's'} before relying on synthesis.`
+                        : `No new files could be queued (${failedFileNames.join(', ')}). Please try the non-duplicate files again.`
                 )
+            }
+            if (submissionMessages.length > 0) {
+                setBatchSubmissionMessage(submissionMessages.join(' '))
             }
 
             setSubmissionNotes('')
@@ -747,6 +802,19 @@ export default function DueDiligenceDashboard() {
                     }}
                 />
 
+                {submitError ? (
+                    <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                        Unable to queue the latest document: {submitError}
+                    </div>
+                ) : null}
+
+                {batchSubmissionMessage ? (
+                    <div role="status" className="rounded-lg border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-foreground">
+                        <p className="font-medium">Upload notice</p>
+                        <p className="mt-1 text-muted-foreground">{batchSubmissionMessage}</p>
+                    </div>
+                ) : null}
+
                 <DealWorkspaceNav activeTab={activeWorkspaceTab} onTabChange={setActiveWorkspaceTab} />
 
                 {activeWorkspaceTab === 'overview' ? <section id="deal-overview" className="scroll-mt-6">
@@ -791,18 +859,6 @@ export default function DueDiligenceDashboard() {
                         <p className="mt-1 text-muted-foreground">
                             This sample project illustrates the document analysis, portfolio, and final synthesis views. It is not live n8n data.
                         </p>
-                    </div>
-                ) : null}
-
-                {submitError ? (
-                    <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-                        Unable to queue the latest document: {submitError}
-                    </div>
-                ) : null}
-
-                {batchSubmissionMessage ? (
-                    <div className="rounded-lg border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-foreground">
-                        {batchSubmissionMessage}
                     </div>
                 ) : null}
 

@@ -12,14 +12,14 @@ const tabs: Array<{ id: WorkspaceTab; label: string }> = [
     { id: 'returns', label: 'Returns' },
     { id: 'growth', label: 'Growth' },
     { id: 'structure', label: 'Deal Structure' },
-    { id: 'documents', label: 'Documents' },
+    { id: 'documents', label: 'Projects' },
 ]
 
 export type { WorkspaceTab }
 
 export default function DealWorkspaceNav({ activeTab, onTabChange }: DealWorkspaceNavProps) {
     return (
-        <nav aria-label="Deal workspace" className="sticky top-3 z-20 overflow-x-auto rounded-xl border border-border bg-card/95 p-2 shadow-sm backdrop-blur">
+        <nav id="deal-workspace" aria-label="Deal workspace" className="sticky top-3 z-20 overflow-x-auto rounded-xl border border-border bg-card/95 p-2 shadow-sm backdrop-blur">
             <div className="flex min-w-max gap-1" role="tablist" aria-label="Deal workspace sections">
                 {tabs.map((tab) => {
                     const isActive = activeTab === tab.id

@@ -98,6 +98,9 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
     const normalizedProjectId = currentProjectId.trim()
     const visibleSyntheses = syntheses.filter((synthesis) => synthesis.projectId === normalizedProjectId)
     const currentProjectName = projectNameById.get(normalizedProjectId) ?? normalizedProjectId ?? 'this project'
+    const hasPriorSynthesis = visibleSyntheses.some((synthesis) => {
+        return synthesis.finalJudgmentSummary.trim().length > 0 || synthesis.finalRecommendation.trim().length > 0
+    })
 
     useEffect(() => {
         if (!synthesisPending) {
@@ -148,10 +151,13 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                         <div className="flex items-center gap-3">
                         <Loader2 className="h-5 w-5 shrink-0 animate-spin text-primary" />
                         <div>
-                            <p className="font-medium">Synthesis starting…</p>
-                            <p className="font-medium">Synthesizing project findings…</p>
+                            <p className="font-medium">{hasPriorSynthesis ? 'Refreshing the project synthesis' : 'Synthesis starting'}</p>
                             <p className="text-xs font-medium text-primary">Synthesizing {currentProjectName} — {synthesisElapsedSeconds} seconds</p>
-                            <p className="mt-1 text-muted-foreground">All submitted documents are complete. The n8n consolidator is preparing the project-level judgment and this page will refresh automatically.</p>
+                            <p className="mt-1 text-muted-foreground">
+                                {hasPriorSynthesis
+                                    ? 'The previous synthesis remains visible below while n8n incorporates the most recent document. This page will update automatically when the new pass is complete.'
+                                    : 'All submitted documents are complete. The n8n consolidator is preparing the first project-level judgment and this page will refresh automatically.'}
+                            </p>
                         </div>
                         </div>
                         <div className="mt-3 flex items-center justify-between gap-3 text-xs text-muted-foreground">
@@ -206,6 +212,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                         <Download />
                                         Download project report
                                     </Button>
+                                    <Badge variant="outline" className="font-mono">Project ID: {synthesis.projectId}</Badge>
                                     {synthesis.finalRecommendation ? (
                                         <Badge variant={getSubmissionInsightTone(synthesis.finalTrafficLight)}>
                                             {synthesis.finalRecommendation}

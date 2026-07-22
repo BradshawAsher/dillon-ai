@@ -4,7 +4,7 @@ This is a compact operating map of the live workflows backing the dashboard.
 It is intentionally not a workflow export: the live Pod 1 n8n Cloud project is
 the source of truth. Inspect it through n8n MCP before changing behavior.
 
-Last verified: 2026-07-21 via n8n MCP.
+Last verified: 2026-07-22 via n8n MCP.
 
 | Workflow | Live ID | Purpose | Key dependency |
 | --- | --- | --- | --- |
@@ -15,6 +15,7 @@ Last verified: 2026-07-21 via n8n MCP.
 | Project Synthesis Webhook | `35Hmd7f0EyXKpc4x` | Serves saved project-level synthesis rows to the dashboard. | Project-Level Fields table |
 | Refresh Button Load History in UI | `bjtY6gjRnLe7YQ4c` | Serves document-submission history to the dashboard. | Document Specific Fields table |
 | Document Consideration Webhook | `lXz9fVKY4RaTlDFM` | Marks a document `isConsidered=false` without deleting it, then refreshes batch readiness. | Document Specific Fields; Document Counter |
+| Workflow Error Audit | `4dqKa3CyLjjaFn8C` | Records uncaught production errors after local recovery has been exhausted. It does not notify humans. | Workflow Error Log table |
 
 ## Live Data Table contract
 
@@ -23,6 +24,10 @@ Last verified: 2026-07-21 via n8n MCP.
   fields, and `isConsidered`.
 - **Project-Level Fields** (`DTrLU8hBUwYzmBig`): one row per project with
   batch counts, project status, and the final synthesis fields.
+- **Workflow Error Log** (`aSPSRYm0ScfGsV0b`): an append-only audit trail for
+  uncaught production errors. It captures the failed workflow/node, execution
+  ID, error message, and raw error context. It is intentionally not an alert
+  channel.
 
 `isConsidered` is backward compatible: rows that predate the field are treated
 as considered. Explicit `false` excludes the document from batch completion,
@@ -37,3 +42,17 @@ project counts, coverage, and future synthesis while retaining it for audit.
    active production version.
 4. Keep dashboard webhook paths and response fields aligned with
    [n8n-webhooks.md](n8n-webhooks.md).
+
+## Reliability baseline
+
+The submit, counter, consolidator, document-consideration, history, and
+project-synthesis workflows retry their external/Data Table/subworkflow calls
+three times with a two-second delay. The per-document analysis workflow already
+uses the same retry policy and routes exhausted processing failures to a terminal
+document status so the batch can continue.
+
+The shared Error Audit workflow is published and ready. Attaching it through
+`settings.errorWorkflow` is currently blocked by an n8n server-side SQLite
+schema error (`distinctAlias.SharedWorkflow_projectId`); no workflow settings
+were changed by those rejected updates. Once n8n resolves that issue, attach
+`4dqKa3CyLjjaFn8C` as the shared last-resort production error handler.
