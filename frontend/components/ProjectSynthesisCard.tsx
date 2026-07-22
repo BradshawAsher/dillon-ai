@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Download, FileText, Landmark, Loader2, MessageCircleQuestion, RefreshCw, Scale, ShieldAlert, TriangleAlert } from 'lucide-react'
 
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
@@ -104,7 +104,6 @@ function formatProjectDisplayName(project: ProjectSummary) {
 
 export default function ProjectSynthesisCard({ syntheses, projects, currentProjectId, documentAnalysisPending, synthesisPending, synthesisProgress, synthesisStage, loading, error, onRefresh, impact }: ProjectSynthesisCardProps) {
     const [synthesisElapsedSeconds, setSynthesisElapsedSeconds] = useState(0)
-    const wasSynthesizing = useRef(false)
     const projectNameById = new Map(
         projects.map((project) => [project.projectId || project.projectKey, formatProjectDisplayName(project)])
     )
@@ -128,15 +127,6 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
         }, 1000)
 
         return () => window.clearInterval(interval)
-    }, [synthesisPending])
-
-    useEffect(() => {
-        if (synthesisPending) { wasSynthesizing.current = true; return }
-        if (!wasSynthesizing.current) return
-        wasSynthesizing.current = false
-        if (!document.hasFocus() && 'Notification' in window && Notification.permission === 'granted') {
-            new Notification('Project synthesis complete', { body: 'Your due diligence synthesis is ready to review.' })
-        }
     }, [synthesisPending])
 
     return (
