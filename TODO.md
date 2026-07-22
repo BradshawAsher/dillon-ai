@@ -12,41 +12,6 @@
 Can also add severity of each green/yellow/red flag as well as for escalation reasons, open-ended questions, and suggested actions (to add) 
 
 
-# Epic Deal Done Deal Library - Overview Page
-Add overview, valuation, ROI Analaysis, growth forecast, and deal stack windows on the top just like how epicdealdone did it?
-
-Add more pages just like epicdealdone? literally just wanna copy epicdealdone or no?
-
-Add deal analysis scores like overall score (largest), valuation score, cash flow, risk, and growth
-
-Add acquisition fit score? (would need context abt the buyer company though)
-
-Give an overall assessment (1 paragraph for the valuation, at the top?)
-
-Have enterprise value, annual roi, payback period, asset coverage, revenue per employee, EBITDA margin, net worth, debt-to-asset ratio
-
-Show an asset composition graph (if we know their assets)
-
-Give a business snapshot box (name of company, location, # of employees, and 1 paragraph summary)
-
-good match reasons and mismatch reasons? (ordered by severity like high medium low)
-
-# Epic Deal Done Deal Library - Valuation Page
-
-add valuation methods comparison graph? Asking price on the bottom (x-axis)
-![Valuation Methods Comparison table](<Screenshot 2026-07-21 154722.png>)
-
-have different valuation methods based on asset-based, revenue multiple, ebitda multiple, blended fair value
-
-Have opportunity score analysis with overall score at top
-![Opportunity score analysis](<Screenshot 2026-07-21 155114.png>)
-- with different criteria like based on revenue multiple, ebitda multiple, ebitda margin, revenue/employee, debt ratio
-- compare different metrics to the industry standards (e.g. 1.1x Industry Standard)
-- also give key opportunities
-
-Valuation Gap Analysis
-![Valuation Gap Analysis](<Screenshot 2026-07-21 155250.png>)
-# [CONTINUE HERE]
 
 # Ask codex to just copy the epicdealdone website? Is he able to access it?
 # We only need the dashboard and deal library sections of epicdealdone
