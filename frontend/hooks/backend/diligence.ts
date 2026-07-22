@@ -14,6 +14,7 @@
 import { useCallback, useState } from 'react'
 
 import type { ProjectSynthesisItem } from '../../../backend/diligence/getProjectSynthesis'
+import type { WorkflowErrorItem } from '../../../backend/diligence/getWorkflowErrors'
 import { getDataSource } from '../../lib/dataSource'
 import { identityHeaders } from '../../lib/identity'
 import type { DiligenceFinding } from '../../utils/diligence'
@@ -350,6 +351,13 @@ const mockSynthesisRow: ProjectSynthesisItem = {
   updatedAt: '2026-07-13T16:20:00.000Z',
 }
 
+function useLiveWorkflowErrors() {
+    return useQuery(useCallback(async (params: Record<string, unknown> = {}) => {
+        const environment = params.environment === 'test' ? 'test' : 'production'
+        return fetchJson<WorkflowErrorItem[]>(`/api/diligence/workflow-errors?environment=${environment}`, { headers: identityHeaders() })
+    }, []))
+}
+
 function useLiveUpdateSubmissionConsideration() {
     return useQuery(useCallback(async (params: Record<string, unknown> = {}) => {
         const environment = params.environment === 'test' ? 'test' : 'production'
@@ -381,6 +389,13 @@ function useMockSubmissionHistory() {
         }, []),
         mockHistoryStore.map((row) => ({ ...row }))
     )
+}
+
+function useMockWorkflowErrors() {
+    return useQuery(useCallback(async (): Promise<WorkflowErrorItem[]> => {
+        await delay(100)
+        return []
+    }, []), [])
 }
 
 function useMockSubmitDealPacket() {
@@ -474,3 +489,4 @@ export const useUpdateSubmissionConsideration = useLiveUpdateSubmissionConsidera
 export const useSubmitDealPacket = USE_MOCKS ? useMockSubmitDealPacket : useLiveSubmitDealPacket
 
 export const useGetProjectSynthesis = USE_MOCKS ? useMockProjectSynthesis : useLiveProjectSynthesis
+export const useGetWorkflowErrors = USE_MOCKS ? useMockWorkflowErrors : useLiveWorkflowErrors

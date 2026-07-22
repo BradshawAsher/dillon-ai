@@ -4,6 +4,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 
 import getProjectSynthesis from '../../backend/diligence/getProjectSynthesis'
 import getSubmissionHistory from '../../backend/diligence/getSubmissionHistory'
+import getWorkflowErrors from '../../backend/diligence/getWorkflowErrors'
 import retryFailedDocument from '../../backend/diligence/retryFailedDocument'
 import submitDealPacket from '../../backend/diligence/submitDealPacket'
 import updateSubmissionRow from '../../backend/diligence/updateSubmissionRow'
@@ -31,6 +32,10 @@ export default async function handler(req: ApiRequest, res: ServerResponse) {
     if (route === 'history' && req.method === 'GET') {
       const rows = await getSubmissionHistory({ params: { environment }, user })
       sendJson(res, 200, rows)
+      return
+    }
+    if (route === 'workflow-errors' && req.method === 'GET') {
+      sendJson(res, 200, await getWorkflowErrors({ params: { environment }, user }))
       return
     }
 
