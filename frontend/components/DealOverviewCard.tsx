@@ -113,7 +113,23 @@ export default function DealOverviewCard({ syntheses, projects, currentProjectId
                     </div>
                 ) : (
                     <>
-                        {synthesis.finalJudgmentSummary ? (
+                        {synthesis.finalRecommendation ? (
+                            <div className="rounded-xl border border-border bg-muted/20 p-5">
+                                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Recommendation</p>
+                                <div className="mt-1 flex flex-wrap items-center gap-3">
+                                    <p className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">{synthesis.finalRecommendation}</p>
+                                    {synthesis.finalTrafficLight ? (
+                                        <Badge variant={getSubmissionInsightTone(synthesis.finalTrafficLight)}>{synthesis.finalTrafficLight}</Badge>
+                                    ) : null}
+                                    {synthesis.finalRiskLevel ? (
+                                        <Badge variant={riskVariant(synthesis.finalRiskLevel)}>Risk: {synthesis.finalRiskLevel}</Badge>
+                                    ) : null}
+                                </div>
+                                {synthesis.finalJudgmentSummary ? (
+                                    <p className="mt-3 text-sm leading-6 text-muted-foreground">{synthesis.finalJudgmentSummary}</p>
+                                ) : null}
+                            </div>
+                        ) : synthesis.finalJudgmentSummary ? (
                             <div className="rounded-lg border border-border bg-background p-4">
                                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Executive assessment</p>
                                 <p className="mt-2 text-sm leading-6 text-foreground">{synthesis.finalJudgmentSummary}</p>
