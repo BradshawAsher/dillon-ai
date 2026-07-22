@@ -23,6 +23,7 @@ import {
 } from '../utils/aiSubmissionData'
 import { formatEasternTime } from '../utils/dateTime'
 import { downloadTextFile, fileSafeName } from '../utils/downloadFile'
+import { computeImpactMetrics, formatHours, HUMAN_MINUTES_PER_DOCUMENT } from '../utils/impactMetrics'
 import {
   formatSubmissionStatus,
   hasAiEnrichment,
@@ -563,6 +564,8 @@ export default function SubmissionHistoryCard({
                 <div className="space-y-4">
                   {(() => {
                     const aiViewModel = getAiSubmissionViewModel(selectedRow)
+                    const documentImpact = computeImpactMetrics([selectedRow])
+                    const isCompleted = normalizeSubmissionStatus(selectedRow.status) === 'completed'
                     return (
                       <>
                         <div className="flex flex-wrap items-start justify-between gap-3">
@@ -597,6 +600,17 @@ export default function SubmissionHistoryCard({
                         </div>
 
                         <div className="grid gap-3 sm:grid-cols-2">
+                          <div className="rounded-lg border border-primary/20 bg-primary/[0.04] p-3 sm:col-span-2">
+                            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Document review impact</p>
+                            <p className="mt-1 text-sm font-semibold text-foreground">
+                              {isCompleted ? `~${formatHours(documentImpact.timeSavedHours)} analyst time saved` : `~${HUMAN_MINUTES_PER_DOCUMENT}m estimated manual review`}
+                            </p>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {isCompleted
+                                ? `Estimated manual review: ${HUMAN_MINUTES_PER_DOCUMENT}m · Agent runtime: ${documentImpact.agentMinutes >= 1 ? `${Math.round(documentImpact.agentMinutes)}m` : '<1m'}`
+                                : 'This becomes a saved-time estimate after the document finishes processing.'}
+                            </p>
+                          </div>
                           <div className="rounded-lg border border-border bg-background p-3">
                             <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                               Request ID

@@ -50,7 +50,7 @@ import {
     formatSubmissionStatus,
     isActiveSubmissionStatus,
 } from '../utils/submissionHistory'
-import { createProjectSummaries } from '../utils/projectWorkspace'
+import { createProjectSummaries, getProjectKey } from '../utils/projectWorkspace'
 import { computeImpactMetrics, formatHours } from '../utils/impactMetrics'
 import { fallbackDiligenceFindings, type FindingType, type Severity } from '../utils/diligence'
 import { formatEasternTime } from '../utils/dateTime'
@@ -399,6 +399,10 @@ export default function DueDiligenceDashboard() {
         (finding) => finding.severity === 'Critical' || finding.severity === 'High'
     ).length
     const impact = useMemo(() => computeImpactMetrics(submissionHistory), [submissionHistory])
+    const activeProjectImpact = useMemo(() => {
+        const normalizedProjectId = activeProjectId.trim()
+        return computeImpactMetrics(submissionHistory.filter((row) => getProjectKey(row) === normalizedProjectId))
+    }, [activeProjectId, submissionHistory])
     const reviewProjectCount = projectSummaries.filter((project) => project.reviewCount > 0).length
     const activeProjectCount = projectSummaries.filter((project) => project.activeCount > 0).length
     const readyProjectCount = projectSummaries.filter((project) => project.statusLabel === 'Ready for synthesis').length
@@ -875,6 +879,7 @@ export default function DueDiligenceDashboard() {
                         currentProjectId={activeProjectId}
                         askingPrice={askingPrice}
                         onAskingPriceChange={handleAskingPriceChange}
+                        impact={activeProjectImpact}
                     />
                 </section> : null}
 

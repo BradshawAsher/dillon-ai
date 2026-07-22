@@ -5,6 +5,7 @@ import { Badge } from '../lib/shadcn/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Input } from '../lib/shadcn/input'
 import { formatCurrencyValue, getSubmissionInsightTone } from '../utils/aiSubmissionData'
+import { formatHours, type ImpactMetrics } from '../utils/impactMetrics'
 import type { ProjectSummary } from '../utils/projectWorkspace'
 
 type DealOverviewCardProps = {
@@ -13,6 +14,7 @@ type DealOverviewCardProps = {
     currentProjectId: string
     askingPrice: string
     onAskingPriceChange: (value: string) => void
+    impact: ImpactMetrics
 }
 
 function riskVariant(riskLevel: string): 'destructive' | 'warning' | 'secondary' | 'outline' {
@@ -43,7 +45,7 @@ function parseMoney(value: string) {
     return Number.isFinite(parsed) && parsed >= 0 ? parsed : null
 }
 
-export default function DealOverviewCard({ syntheses, projects, currentProjectId, askingPrice, onAskingPriceChange }: DealOverviewCardProps) {
+export default function DealOverviewCard({ syntheses, projects, currentProjectId, askingPrice, onAskingPriceChange, impact }: DealOverviewCardProps) {
     const projectId = currentProjectId.trim()
     const synthesis = syntheses.find((item) => item.projectId === projectId)
     const project = projects.find((item) => (item.projectId || item.projectKey) === projectId)
@@ -86,6 +88,25 @@ export default function DealOverviewCard({ syntheses, projects, currentProjectId
             </CardHeader>
 
             <CardContent className="space-y-5 p-4">
+                <div className="rounded-lg border border-primary/20 bg-primary/[0.04] p-4">
+                    <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
+                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Project review impact</p>
+                        <p className="text-sm font-semibold text-success">
+                            {impact.completedDocuments > 0 ? `~${formatHours(impact.timeSavedHours)} saved` : 'Awaiting completed documents'}
+                        </p>
+                    </div>
+                    <p className="mt-2 text-sm text-foreground">
+                        {impact.completedDocuments > 0
+                            ? `${impact.completedDocuments} completed document${impact.completedDocuments === 1 ? '' : 's'} · ${formatHours(impact.analystHours)} estimated manual review`
+                            : 'Each completed document is currently estimated at 40 minutes of analyst review.'}
+                    </p>
+                    {impact.completedDocuments > 0 ? (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                            Agent runtime: {impact.agentMinutes >= 1 ? `${Math.round(impact.agentMinutes)}m` : '<1m'}.
+                        </p>
+                    ) : null}
+                </div>
+
                 {!synthesis ? (
                     <div className="rounded-lg border border-dashed border-border bg-muted/20 p-5 text-sm text-muted-foreground">
                         Upload and process the project documents to generate an evidence-backed recommendation, valuation range, and negotiation plan here.
