@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 
 import ExpandableInsightGroup from '../components/ExpandableInsightGroup'
+import DealOverviewCard from '../components/DealOverviewCard'
 import ProjectIntakeCard from '../components/ProjectIntakeCard'
 import ProjectPortfolioCard from '../components/ProjectPortfolioCard'
 import ProjectSynthesisCard from '../components/ProjectSynthesisCard'
@@ -708,6 +709,14 @@ export default function DueDiligenceDashboard() {
                     }}
                 />
 
+                <section id="deal-overview" className="scroll-mt-6">
+                    <DealOverviewCard
+                        syntheses={visibleProjectSyntheses}
+                        projects={projectSummaries}
+                        currentProjectId={projectId}
+                    />
+                </section>
+
                 {!isExampleMode && projectSummaries.length > 0 ? (
                     <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 sm:flex sm:items-center sm:justify-between sm:gap-4">
                         <div>
@@ -1057,13 +1066,15 @@ export default function DueDiligenceDashboard() {
                     </Card>
                 ) : null}
 
-                <ProjectPortfolioCard
-                    rows={submissionHistory}
-                    syntheses={visibleProjectSyntheses}
-                    activeProjectKey={selectedProjectKey}
-                    onProjectSelect={handlePortfolioProjectSelect}
-                    onExcludeDocument={handleExcludeDocument}
-                />
+                <section id="project-portfolio" className="scroll-mt-6">
+                    <ProjectPortfolioCard
+                        rows={submissionHistory}
+                        syntheses={visibleProjectSyntheses}
+                        activeProjectKey={selectedProjectKey}
+                        onProjectSelect={handlePortfolioProjectSelect}
+                        onExcludeDocument={handleExcludeDocument}
+                    />
+                </section>
 
                 <section id="project-synthesis" className="scroll-mt-6">
                     <ProjectSynthesisCard
