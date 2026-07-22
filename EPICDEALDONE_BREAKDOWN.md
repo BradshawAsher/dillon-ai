@@ -3,32 +3,47 @@
 # We only need the dashboard and deal library sections of epicdealdone
 
 # Epic Deal Done Deal Library - Overview Page
-Add overview, valuation, ROI Analaysis, growth forecast, and deal stack windows on the top just like how epicdealdone did it?
+
+* Nav bar - Add overview, valuation, ROI Analaysis, growth forecast, and deal stack windows on the top just like how epicdealdone did it?
 
 Add more pages just like epicdealdone? literally just wanna copy epicdealdone or no?
 
-Add deal analysis scores like overall score (largest), valuation score, cash flow, risk, and growth
+* Deal Analysis Scores
+![Deal Analysis Scores](image-1.png)
 
-Add acquisition fit score? (would need context abt the buyer company though)
+Add deal analysis scores like overall score (largest), valuation score, cash flow, risk, and growth (each one is score out of 100 in a circle)
 
-Give an overall assessment (1 paragraph for the valuation, at the top?)
+Acquisition fit score (e.g. 7/10) (would need context abt the buyer company though)
 
+Overall assessment (1 paragraph for the valuation, at the top?)
+
+* Stats
+![Stats](image-2.png)
 Have enterprise value, annual roi, payback period, asset coverage, revenue per employee, EBITDA margin, net worth, debt-to-asset ratio
 
-Show an asset composition graph (if we know their assets)
+When you hover over them, it shows their math formulas
 
+* Asset Composition Graph
+![Asset composition](image-3.png)
+Show an asset composition graph 
+
+* Business Snapshot
+![Business Snapshot](image-4.png)
 Give a business snapshot box (name of company, location, # of employees, and 1 paragraph summary)
+
+* Good Match and Mismatch Reasons
+![Good Matches and Mismatches](image-5.png)
 
 good match reasons and mismatch reasons? (ordered by severity like high medium low)
 
 # Epic Deal Done Deal Library - Valuation Page
 
-* add valuation methods comparison graph? Asking price on the bottom (x-axis)
+* Valuation methods comparison graph? Asking price on the bottom (x-axis)
 ![Valuation Methods Comparison table](<EPICDEALDONE_IMAGES/Screenshot 2026-07-21 154722.png>)
 
 have different valuation methods based on asset-based, revenue multiple, ebitda multiple, blended fair value
 
-* Have opportunity score analysis with overall score at top
+* Opportunity score analysis with overall score at top
 ![Opportunity score analysis](<EPICDEALDONE_IMAGES/Screenshot 2026-07-21 155114.png>)
 - with different criteria like based on revenue multiple, ebitda multiple, ebitda margin, revenue/employee, debt ratio
 - compare different metrics to the industry standards (e.g. 1.1x Industry Standard)
@@ -184,3 +199,16 @@ Calculates total liabilities at the bottom for you
 Highlights any initial observations, like EBITDA multiple is above average (suggesting a premium price, yellow warning), and net asset value is significantly lower than asset price (consider the value of intagible assets, yellow warning), and revenue multiple (10.86x, just an info I in blue, neutral)
 
 Literally just has you confirm the things you added with 4 cards, 1 card for each sectino you filled
+ 
+
+# Brad's Critiques for this website
+
+No place to add PDFs, very large manual entry stuff, our tool needs to try to minimize how much calculations the user has to do
+
+Our thing is more for post-LOI negotiation
+
+Sometimes this website can get a bit cluttered with too many stats, give key takeaways at the top especially for people who don't understand the tech difficulties
+
+What if the user doesn't know a lot of the things that are asked for in the original project creation?
+
+Sensitivity analysis bar UIs for impact depending on changes can get cluttered, and the bars will go all the way horizontally lol
