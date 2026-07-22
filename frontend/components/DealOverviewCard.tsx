@@ -3,6 +3,7 @@ import { ArrowDownToLine, BadgeDollarSign, CircleAlert, FileCheck2, MessageCircl
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { Badge } from '../lib/shadcn/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
+import { Input } from '../lib/shadcn/input'
 import { formatCurrencyValue, getSubmissionInsightTone } from '../utils/aiSubmissionData'
 import type { ProjectSummary } from '../utils/projectWorkspace'
 
@@ -10,6 +11,8 @@ type DealOverviewCardProps = {
     syntheses: ProjectSynthesisItem[]
     projects: ProjectSummary[]
     currentProjectId: string
+    askingPrice: string
+    onAskingPriceChange: (value: string) => void
 }
 
 function riskVariant(riskLevel: string): 'destructive' | 'warning' | 'secondary' | 'outline' {
@@ -20,10 +23,6 @@ function riskVariant(riskLevel: string): 'destructive' | 'warning' | 'secondary'
     if (normalized === 'low') return 'secondary'
 
     return 'outline'
-}
-
-function scrollToSection(id: string) {
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
 function InsightList({ items, emptyLabel }: { items: string[]; emptyLabel: string }) {
@@ -38,12 +37,30 @@ function InsightList({ items, emptyLabel }: { items: string[]; emptyLabel: strin
     )
 }
 
-export default function DealOverviewCard({ syntheses, projects, currentProjectId }: DealOverviewCardProps) {
+function parseMoney(value: string) {
+    const normalized = value.replace(/[$,\s]/g, '')
+    const parsed = Number(normalized)
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : null
+}
+
+export default function DealOverviewCard({ syntheses, projects, currentProjectId, askingPrice, onAskingPriceChange }: DealOverviewCardProps) {
     const projectId = currentProjectId.trim()
     const synthesis = syntheses.find((item) => item.projectId === projectId)
     const project = projects.find((item) => (item.projectId || item.projectKey) === projectId)
     const projectName = project ? `${project.projectName} - ${project.companyName}` : projectId || 'Selected project'
     const hasValuation = Boolean(synthesis?.valuationLowerBound || synthesis?.valuationBaseEstimate || synthesis?.valuationUpperBound)
+    const askingPriceValue = parseMoney(askingPrice)
+    const baseValue = synthesis ? parseMoney(synthesis.valuationBaseEstimate) : null
+    const priceGapPercent = askingPriceValue !== null && baseValue !== null && baseValue > 0
+        ? ((askingPriceValue - baseValue) / baseValue) * 100
+        : null
+    const priceGapLabel = priceGapPercent === null
+        ? ''
+        : priceGapPercent === 0
+            ? 'matches the supported base valuation'
+            : priceGapPercent > 0
+                ? `${Math.abs(priceGapPercent).toFixed(1)}% above the supported base valuation`
+                : `${Math.abs(priceGapPercent).toFixed(1)}% below the supported base valuation`
 
     return (
         <Card className="overflow-hidden border-primary/30">
@@ -69,14 +86,6 @@ export default function DealOverviewCard({ syntheses, projects, currentProjectId
             </CardHeader>
 
             <CardContent className="space-y-5 p-4">
-                <nav aria-label="Deal workspace sections" className="flex flex-wrap gap-2 border-b border-border pb-4">
-                    <button type="button" className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground">Overview</button>
-                    <button type="button" className="rounded-md border border-border px-3 py-1.5 text-sm font-medium hover:bg-muted" onClick={() => scrollToSection('project-synthesis')}>Diligence</button>
-                    <button type="button" className="rounded-md border border-border px-3 py-1.5 text-sm font-medium hover:bg-muted" onClick={() => scrollToSection('project-synthesis')}>Valuation</button>
-                    <button type="button" className="rounded-md border border-border px-3 py-1.5 text-sm font-medium hover:bg-muted" onClick={() => scrollToSection('project-portfolio')}>Documents</button>
-                    <span className="self-center text-xs text-muted-foreground">Returns, Growth, and Deal Structure unlock when their models are added.</span>
-                </nav>
-
                 {!synthesis ? (
                     <div className="rounded-lg border border-dashed border-border bg-muted/20 p-5 text-sm text-muted-foreground">
                         Upload and process the project documents to generate an evidence-backed recommendation, valuation range, and negotiation plan here.
@@ -103,8 +112,21 @@ export default function DealOverviewCard({ syntheses, projects, currentProjectId
                             </div>
                             <div className="rounded-lg border border-border bg-background p-4">
                                 <div className="flex items-center gap-2 text-muted-foreground"><ArrowDownToLine className="h-4 w-4" /><p className="text-xs font-medium uppercase tracking-wide">Price position</p></div>
-                                <p className="mt-3 text-sm font-medium text-foreground">Asking price not captured</p>
-                                <p className="mt-1 text-sm leading-6 text-muted-foreground">Add it to the deal model before showing a premium/discount against the supported range.</p>
+                                <label htmlFor="overview-asking-price" className="sr-only">Asking price in USD</label>
+                                <Input
+                                    id="overview-asking-price"
+                                    inputMode="decimal"
+                                    value={askingPrice}
+                                    onChange={(event) => onAskingPriceChange(event.target.value)}
+                                    placeholder="Enter asking price in USD"
+                                    className="mt-3"
+                                />
+                                {askingPriceValue !== null && baseValue !== null ? (
+                                    <>
+                                        <p className="mt-3 text-sm font-semibold text-foreground">{formatCurrencyValue(String(askingPriceValue), synthesis.valuationCurrency || 'USD')}</p>
+                                        <p className={priceGapPercent !== null && priceGapPercent > 0 ? 'mt-1 text-sm leading-6 text-destructive' : 'mt-1 text-sm leading-6 text-success'}>{priceGapLabel}</p>
+                                    </>
+                                ) : <p className="mt-2 text-sm leading-6 text-muted-foreground">Enter the asking price to compare it with the supported base valuation.</p>}
                             </div>
                             <div className="rounded-lg border border-border bg-background p-4">
                                 <div className="flex items-center gap-2 text-muted-foreground"><FileCheck2 className="h-4 w-4" /><p className="text-xs font-medium uppercase tracking-wide">Evidence coverage</p></div>
