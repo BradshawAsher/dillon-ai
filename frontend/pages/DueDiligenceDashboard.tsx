@@ -244,6 +244,7 @@ export default function DueDiligenceDashboard() {
     const [submissionNotes, setSubmissionNotes] = useState('')
     const [isSubmittingFile, setIsSubmittingFile] = useState(false)
     const [batchSubmissionMessage, setBatchSubmissionMessage] = useState('')
+    const [retryingRequestId, setRetryingRequestId] = useState<string | null>(null)
     const [activeSubmissionBatch, setActiveSubmissionBatch] = useState<SubmissionBatch | null>(null)
     const [activeHistoryEnvironment, setActiveHistoryEnvironment] = useState<SubmitEnvironment>('production')
     const [hasRestoredLatestProject, setHasRestoredLatestProject] = useState(false)
@@ -578,6 +579,26 @@ export default function DueDiligenceDashboard() {
         if (!requestID || !window.confirm('Exclude this document from the project checklist and future synthesis? Its n8n record will be retained for audit.')) return
         const result = await triggerSubmissionConsideration({ requestID, environment: activeHistoryEnvironment }).result
         if (result) await handleRefreshHistory(activeHistoryEnvironment)
+    }
+
+    const handleRetryFailedDocument = async (requestID: string) => {
+        setRetryingRequestId(requestID)
+        setBatchSubmissionMessage('')
+        try {
+            const response = await fetch('/api/diligence/retry-failed-document', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ requestID, environment: activeHistoryEnvironment }),
+            })
+            const body = await response.json() as { error?: string; status?: string }
+            if (!response.ok) throw new Error(body.error || 'Unable to queue retry')
+            setBatchSubmissionMessage('Retry queued. The existing document is being processed again.')
+            await triggerSubmissionHistory({ environment: activeHistoryEnvironment }, { skipCache: true }).result
+        } catch (error) {
+            setBatchSubmissionMessage(error instanceof Error ? error.message : 'Unable to queue retry')
+        } finally {
+            setRetryingRequestId(null)
+        }
     }
 
     const handleRefreshHistory = async (environment: SubmitEnvironment) => {
@@ -1219,6 +1240,8 @@ export default function DueDiligenceDashboard() {
                         void handleRefreshHistory('test')
                     }}
                     isPolling={hasActiveSubmissions}
+                    onRetryFailedDocument={handleRetryFailedDocument}
+                    retryingRequestId={retryingRequestId}
                 />
 
                 </> : null}

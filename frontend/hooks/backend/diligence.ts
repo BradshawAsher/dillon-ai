@@ -339,6 +339,7 @@ const mockSynthesisRow: ProjectSynthesisItem = {
   finalJudgmentSummary:
     'The dossier supports proceeding at a reduced valuation. Revenue quality is the core risk: bank deposits do not fully support reported revenue, and one large customer is unrenewed. Margin profile and retention remain genuinely strong.',
   finalJudgmentJson: '',
+  aiErrorMessage: '',
   valuationLowerBound: '92M',
   valuationBaseEstimate: '104M',
   valuationUpperBound: '118M',

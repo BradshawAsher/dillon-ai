@@ -4,6 +4,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 
 import getProjectSynthesis from '../../backend/diligence/getProjectSynthesis'
 import getSubmissionHistory from '../../backend/diligence/getSubmissionHistory'
+import retryFailedDocument from '../../backend/diligence/retryFailedDocument'
 import submitDealPacket from '../../backend/diligence/submitDealPacket'
 import updateSubmissionRow from '../../backend/diligence/updateSubmissionRow'
 import { installRetoolGlobals, readJsonBody, userFromHeaders } from '../_lib/retoolRuntime'
@@ -49,6 +50,12 @@ export default async function handler(req: ApiRequest, res: ServerResponse) {
     if (route === 'submission-consideration' && req.method === 'POST') {
       const params = await readJsonBody(req) as Parameters<typeof updateSubmissionRow>[0]['params']
       sendJson(res, 200, await updateSubmissionRow({ params, user }))
+      return
+    }
+
+    if (route === 'retry-failed-document' && req.method === 'POST') {
+      const params = await readJsonBody(req) as Parameters<typeof retryFailedDocument>[0]['params']
+      sendJson(res, 202, await retryFailedDocument({ params, user }))
       return
     }
 

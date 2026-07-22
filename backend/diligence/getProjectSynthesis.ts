@@ -37,6 +37,7 @@ type ProjectSynthesisRow = {
   final_judgment?: unknown
   finalJudgment?: unknown
   ai_summary?: TextValue
+  ai_error_message?: TextValue
   ai_risk_flag?: TextValue
   ai_processedAt?: TextValue
   aiCitations?: unknown
@@ -84,6 +85,7 @@ export type ProjectSynthesisItem = {
   finalRecommendation: string
   finalJudgmentSummary: string
   finalJudgmentJson: string
+  aiErrorMessage: string
   valuationLowerBound: string
   valuationBaseEstimate: string
   valuationUpperBound: string
@@ -342,6 +344,7 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
       finalRecommendation: getFirstStringValue([row.finalRecommendation, row.final_recommendation]),
       finalJudgmentSummary: judgment.summary,
       finalJudgmentJson: judgment.json,
+      aiErrorMessage: getStringValue(row.ai_error_message),
       valuationLowerBound: getFirstStringValue([row.valuationLowerBound, row.lower_bound_estimate]),
       valuationBaseEstimate: getFirstStringValue([row.valuationBaseEstimate, row.base_estimate]),
       valuationUpperBound: getFirstStringValue([row.valuationUpperBound, row.upper_bound_estimate]),
