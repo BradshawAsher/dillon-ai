@@ -148,3 +148,39 @@ I think it just helps you visualize how you're going to fund the acquisition
 Can have a button to create with AI
 
 # WHAT EPIC DEAL DONE IS ASKING USER BEFORE ANALYSIS
+
+# Business Basics
+![Business Basics](EPICDEALDONE_IMAGES/image-13.png)
+
+Business name, industry, state and city, # of employees, business description
+
+# Financial Overview
+![Financial Overview](EPICDEALDONE_IMAGES/image-14.png)
+AI finds industry average EBITDA multiple for that industry (e.g. e-commerce, 9.9x)
+
+Asking price, annual revenue, cash flow metrics (either EBITDA or SDE)
+
+# Assets
+![Asset Breakdown](EPICDEALDONE_IMAGES/image-15.png)
+
+Asset breakdown, enter the cash value of assets included in this deal
+
+Cash & Equivalents, Accounts Receviable, inventory, real estate, equipment, furniture & fixes, vehicles, intellectual property, other assets
+
+Calculates total assets at the bottom for you
+
+# Liabilities
+![Liabilities](EPICDEALDONE_IMAGES/image-16.png)
+
+Enter the value of business liabilities
+
+Accounts payable, short-term debt, long-term debt, other liabilities
+
+Calculates total liabilities at the bottom for you 
+
+# Deal Summary
+![Deal Summary](EPICDEALDONE_IMAGES/image-17.png)
+
+Highlights any initial observations, like EBITDA multiple is above average (suggesting a premium price, yellow warning), and net asset value is significantly lower than asset price (consider the value of intagible assets, yellow warning), and revenue multiple (10.86x, just an info I in blue, neutral)
+
+Literally just has you confirm the things you added with 4 cards, 1 card for each sectino you filled
