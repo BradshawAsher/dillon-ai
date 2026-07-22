@@ -1,4 +1,5 @@
 import { getSubmitPath, normalizeWebhookResponse, type N8nSubmitResponse } from './submissionPayload'
+import getSubmissionHistory from './getSubmissionHistory'
 
 type Params = {
   environment?: 'production' | 'test'
@@ -21,6 +22,61 @@ export default async function submitDealPacket(req: { params: Params; user: User
   const triggerTimestamp = new Date().toISOString()
   const requestID = crypto.randomUUID()
   const environment = req.params.environment === 'test' ? 'test' : 'production'
+  const normalizedProjectId = req.params.projectId.trim().toLowerCase()
+  const normalizedFileName = req.params.fileName.trim().toLowerCase()
+
+  // The browser performs the same check for immediate feedback, but repeat it
+  // on the server so stale browser state cannot re-queue an already-known
+  // document through the normal dashboard API path.
+  const priorSubmissions = await getSubmissionHistory({
+    params: { environment },
+    user: req.user,
+  })
+  const existingDocument = priorSubmissions.find((submission) => {
+    return submission.projectId.trim().toLowerCase() === normalizedProjectId
+      && submission.fileName.trim().toLowerCase() === normalizedFileName
+      && submission.fileSize === req.params.fileSize
+  })
+
+  if (existingDocument) {
+    return {
+      status: 'duplicate',
+      environment,
+      target: 'duplicate-check',
+      method: 'POST' as const,
+      submittedAt: triggerTimestamp,
+      submittedBy: req.user.email,
+      payload: {
+        fileName: req.params.fileName,
+        fileSize: req.params.fileSize,
+        fileType: req.params.fileType,
+        dealName: req.params.dealName,
+        companyName: req.params.companyName,
+        workstream: req.params.workstream,
+        submissionNotes: req.params.submissionNotes,
+        projectId: req.params.projectId,
+        projectStage: req.params.projectStage,
+        documentType: req.params.documentType,
+        submissionBatchId: req.params.submissionBatchId ?? '',
+        expectedBatchDocumentCount: req.params.expectedBatchDocumentCount ?? 1,
+        analystName: req.user.fullName,
+        analystEmail: req.user.email,
+        triggerTimestamp,
+        requestID,
+        environment,
+      },
+      response: {
+        requestID: existingDocument.requestID,
+        status: 'duplicate',
+        receivedAt: existingDocument.receivedAt || existingDocument.createdAt || triggerTimestamp,
+        id: existingDocument.id,
+        createdAt: existingDocument.createdAt || triggerTimestamp,
+        updatedAt: existingDocument.updatedAt || triggerTimestamp,
+        environment,
+      },
+    }
+  }
+
   const path = getSubmitPath(environment)
   const payload = {
     fileName: req.params.fileName,

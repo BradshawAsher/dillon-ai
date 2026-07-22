@@ -2,7 +2,7 @@
 
 Category: 3. Duplicate triggers or entries   
 
-Status: Documented (spec written)
+Status: Partially implemented - dashboard/API guard complete; direct-webhook guard still required
 
 1. What is the edge case (specific): 
 - The system receives duplicate files or triggers for the same financial packet, which could lead to redundant LLM processing and inconsistent project states.
@@ -17,5 +17,13 @@ Status: Documented (spec written)
 - This ensures the system is efficient, cost-effective, and prevents "double-processing" identical data.
 
 
-4. What the agent DOES do (actual result when tested): 
-- Ran test on 2026-07-15. Result: Confirmed that the system currently processes duplicate triggers, which is our intended behavior for dev-environment stress testing. Currently, we create another row even for duplicate files for testing purposes, but we identify that we will eventually have to prevent duplicates by using the n8n table as a metadata cache to prevent processing duplicates.
+4. What the agent DOES do (current implementation):
+- The dashboard refreshes project history immediately before submitting.
+- It compares project ID + normalized file name + file size against existing rows and against the files selected in the same batch.
+- A duplicate is not queued. The user sees an inline notification such as: "This document has already been added to this project."
+- The server repeats the same metadata check before it forwards the dashboard request to n8n, protecting against stale browser state.
+- The document is not deleted or overwritten; the existing row remains the audit record.
+
+5. Remaining gap before this is fully closed:
+- A request sent directly to the n8n intake webhook can still bypass the dashboard/API guard. The live intake workflow must query Document Specific Fields using project ID + normalized file metadata (or, preferably, a content hash) before creating a row or invoking the LLM chain.
+- The live intake-workflow configuration is currently not readable through the n8n connection because its webhook credential is unavailable. Do not modify it until that access issue is resolved.
