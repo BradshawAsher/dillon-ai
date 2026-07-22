@@ -18,6 +18,7 @@ import express from 'express'
 
 import getProjectSynthesisImport from '../backend/diligence/getProjectSynthesis'
 import getSubmissionHistoryImport from '../backend/diligence/getSubmissionHistory'
+import retryFailedDocumentImport from '../backend/diligence/retryFailedDocument'
 import submitDealPacketImport from '../backend/diligence/submitDealPacket'
 import updateSubmissionRowImport from '../backend/diligence/updateSubmissionRow'
 import { installRetoolGlobals, userFromHeaders } from './retoolRuntime'
@@ -38,6 +39,7 @@ function interopDefault<T>(mod: T): T {
 
 const getProjectSynthesis = interopDefault(getProjectSynthesisImport)
 const getSubmissionHistory = interopDefault(getSubmissionHistoryImport)
+const retryFailedDocument = interopDefault(retryFailedDocumentImport)
 const submitDealPacket = interopDefault(submitDealPacketImport)
 const updateSubmissionRow = interopDefault(updateSubmissionRowImport)
 
@@ -164,6 +166,14 @@ app.post('/api/diligence/submit', express.json({ limit: '50mb' }), async (req, r
 app.post('/api/diligence/submission-consideration', express.json(), async (req, res) => {
   try {
     res.json(await updateSubmissionRow({ params: req.body, user: userFromHeaders(req.headers) }))
+  } catch (error) {
+    res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
+  }
+})
+
+app.post('/api/diligence/retry-failed-document', express.json(), async (req, res) => {
+  try {
+    res.status(202).json(await retryFailedDocument({ params: req.body, user: userFromHeaders(req.headers) }))
   } catch (error) {
     res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
   }

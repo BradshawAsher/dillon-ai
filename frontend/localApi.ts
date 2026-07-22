@@ -72,6 +72,16 @@ async function handleRequest(
     return
   }
 
+  if (route === '/retry-failed-document' && req.method === 'POST') {
+    const params = await readJsonBody(req)
+    const mod = await server.ssrLoadModule(backendModuleUrl('retryFailedDocument.ts'))
+    const result: unknown = await mod.default({ params, user })
+    res.statusCode = 202
+    res.setHeader('Content-Type', 'application/json')
+    res.end(JSON.stringify(result))
+    return
+  }
+
   res.statusCode = 404
   res.setHeader('Content-Type', 'application/json')
   res.end(JSON.stringify({ error: `Unknown local API route: ${req.method} ${route}` }))

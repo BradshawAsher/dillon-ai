@@ -204,6 +204,8 @@ type SubmissionHistoryCardProps = {
   onRefreshProduction: () => void
   onRefreshTest: () => void
   isPolling: boolean
+  onRetryFailedDocument: (requestID: string) => void
+  retryingRequestId: string | null
 }
 
 export default function SubmissionHistoryCard({
@@ -214,6 +216,8 @@ export default function SubmissionHistoryCard({
   onRefreshProduction,
   onRefreshTest,
   isPolling,
+  onRetryFailedDocument,
+  retryingRequestId,
 }: SubmissionHistoryCardProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedStatus, setSelectedStatus] = useState('all')
@@ -574,6 +578,12 @@ export default function SubmissionHistoryCard({
                               <Download />
                               Download document analysis
                             </Button>
+                            {['failed', 'error', 'rejected'].includes(selectedRow.status.trim().toLowerCase()) && selectedRow.requestID ? (
+                              <Button type="button" size="sm" variant="outline" disabled={retryingRequestId === selectedRow.requestID} onClick={() => onRetryFailedDocument(selectedRow.requestID)}>
+                                {retryingRequestId === selectedRow.requestID ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                                Retry document
+                              </Button>
+                            ) : null}
                             <Badge variant={getStatusVariant(selectedRow.status)} className="gap-1">
                               <StatusIcon status={selectedRow.status} />
                               {formatSubmissionStatus(selectedRow.status)}
