@@ -15,11 +15,13 @@ import ProjectIntakeCard from '../components/ProjectIntakeCard'
 import ProjectPortfolioCard from '../components/ProjectPortfolioCard'
 import ProjectSynthesisCard from '../components/ProjectSynthesisCard'
 import SubmissionHistoryCard from '../components/SubmissionHistoryCard'
+import WorkflowErrorLogCard from '../components/WorkflowErrorLogCard'
 import {
     exampleProjectSyntheses,
     exampleSubmissionHistoryRows,
     useGetDiligenceData,
     useGetProjectSynthesis,
+    useGetWorkflowErrors,
     useGetSubmissionHistory,
     useSubmitDealPacket,
     useUpdateSubmissionConsideration,
@@ -196,6 +198,7 @@ export default function DueDiligenceDashboard() {
         error: projectSynthesisError,
         trigger: triggerProjectSynthesis,
     } = useGetProjectSynthesis()
+    const { data: workflowErrorData, loading: workflowErrorsLoading, error: workflowErrorsError, trigger: triggerWorkflowErrors } = useGetWorkflowErrors()
     const { trigger: triggerSubmissionConsideration } = useUpdateSubmissionConsideration()
 
     const diligenceFindings = useMemo(() => {
@@ -269,7 +272,8 @@ export default function DueDiligenceDashboard() {
         void trigger({})
         void triggerSubmissionHistory({ environment: 'production' })
         void triggerProjectSynthesis({ environment: 'production' })
-    }, [trigger, triggerProjectSynthesis, triggerSubmissionHistory])
+        void triggerWorkflowErrors({ environment: 'production' })
+    }, [trigger, triggerProjectSynthesis, triggerSubmissionHistory, triggerWorkflowErrors])
 
     useEffect(() => {
         if (!fallbackFinding) {
@@ -1287,6 +1291,12 @@ export default function DueDiligenceDashboard() {
                     isPolling={hasActiveSubmissions}
                     onRetryFailedDocument={handleRetryFailedDocument}
                     retryingRequestId={retryingRequestId}
+                />
+                <WorkflowErrorLogCard
+                    rows={Array.isArray(workflowErrorData) ? workflowErrorData : []}
+                    loading={workflowErrorsLoading}
+                    error={workflowErrorsError}
+                    onRefresh={() => { void triggerWorkflowErrors({ environment: activeHistoryEnvironment }) }}
                 />
 
                 </> : null}

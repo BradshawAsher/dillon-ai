@@ -18,6 +18,7 @@ import express from 'express'
 
 import getProjectSynthesisImport from '../backend/diligence/getProjectSynthesis'
 import getSubmissionHistoryImport from '../backend/diligence/getSubmissionHistory'
+import getWorkflowErrorsImport from '../backend/diligence/getWorkflowErrors'
 import retryFailedDocumentImport from '../backend/diligence/retryFailedDocument'
 import submitDealPacketImport from '../backend/diligence/submitDealPacket'
 import updateSubmissionRowImport from '../backend/diligence/updateSubmissionRow'
@@ -38,6 +39,7 @@ function interopDefault<T>(mod: T): T {
 }
 
 const getProjectSynthesis = interopDefault(getProjectSynthesisImport)
+const getWorkflowErrors = interopDefault(getWorkflowErrorsImport)
 const getSubmissionHistory = interopDefault(getSubmissionHistoryImport)
 const retryFailedDocument = interopDefault(retryFailedDocumentImport)
 const submitDealPacket = interopDefault(submitDealPacketImport)
@@ -158,6 +160,15 @@ app.post('/api/diligence/submit', express.json({ limit: '50mb' }), async (req, r
       user: userFromHeaders(req.headers),
     })
     res.json(ack)
+  } catch (error) {
+    res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
+  }
+})
+
+app.get('/api/diligence/workflow-errors', async (req, res) => {
+  try {
+    const environment = req.query.environment === 'test' ? 'test' : 'production'
+    res.json(await getWorkflowErrors({ params: { environment }, user: userFromHeaders(req.headers) }))
   } catch (error) {
     res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
   }
