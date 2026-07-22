@@ -1316,15 +1316,18 @@ export default function DueDiligenceDashboard() {
                     onRetryFailedDocument={handleRetryFailedDocument}
                     retryingRequestId={retryingRequestId}
                 />
-                <WorkflowErrorLogCard
-                    rows={Array.isArray(workflowErrorData) ? workflowErrorData : []}
-                    loading={workflowErrorsLoading}
-                    error={workflowErrorsError}
-                    onRefresh={() => { void triggerWorkflowErrors({ environment: activeHistoryEnvironment }) }}
-                />
                 </section>
 
                 </> : null}
+
+                {activeWorkspaceTab === 'errors' ? <section id="workflow-errors" className="scroll-mt-6">
+                    <WorkflowErrorLogCard
+                        rows={Array.isArray(workflowErrorData) ? workflowErrorData : []}
+                        loading={workflowErrorsLoading}
+                        error={workflowErrorsError}
+                        onRefresh={() => { void triggerWorkflowErrors({ environment: activeHistoryEnvironment }) }}
+                    />
+                </section> : null}
 
                 {SHOW_LEGACY_DILIGENCE_BACKUP ? (
                 <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
