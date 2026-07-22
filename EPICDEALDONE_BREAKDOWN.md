@@ -137,7 +137,7 @@ Revenue Growth Rate slider (starts at 5%), and margin improvement slider (starts
 Graph for Revenue and EBITDA Projections, with revenue line and EBITDA line projections
 
 * Business Value Evolution
-![Business Value Evolution](image.png)
+![Business Value Evolution](EPICDEALDONE_IMAGES/image-23.png)
 
 your 1.7M investment could be worth $2.1M in 5 years, with 28% gain
 
