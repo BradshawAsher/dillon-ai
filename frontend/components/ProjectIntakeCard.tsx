@@ -24,6 +24,7 @@ type ProjectOption = {
 
 type ProjectIntakeCardProps = {
     dealName: string
+    askingPrice: string
     projectId: string
     projectStage: string
     documentType: string
@@ -35,6 +36,7 @@ type ProjectIntakeCardProps = {
     selectedFiles: File[]
     disabled: boolean
     onDealNameChange: (value: string) => void
+    onAskingPriceChange: (value: string) => void
     onProjectIdChange: (value: string) => void
     onProjectStageChange: (value: string) => void
     onDocumentTypeChange: (value: string) => void
@@ -73,6 +75,7 @@ const documentTypes = [
 
 export default function ProjectIntakeCard({
     dealName,
+    askingPrice,
     projectId,
     projectStage,
     documentType,
@@ -84,6 +87,7 @@ export default function ProjectIntakeCard({
     selectedFiles,
     disabled,
     onDealNameChange,
+    onAskingPriceChange,
     onProjectIdChange,
     onProjectStageChange,
     onDocumentTypeChange,
@@ -155,6 +159,18 @@ export default function ProjectIntakeCard({
                             onChange={(event) => onProjectIdChange(event.target.value)}
                             placeholder={suggestedProjectId}
                         />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="asking-price">Asking price (USD)</Label>
+                        <Input
+                            id="asking-price"
+                            inputMode="decimal"
+                            value={askingPrice}
+                            onChange={(event) => onAskingPriceChange(event.target.value)}
+                            placeholder="e.g. 12000000"
+                        />
+                        <p className="text-xs text-muted-foreground">Used locally to compare the asking price with the supported valuation range.</p>
                     </div>
 
                     <div className="space-y-2">

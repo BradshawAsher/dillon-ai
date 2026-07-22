@@ -7,7 +7,10 @@ import {
 } from 'lucide-react'
 
 import ExpandableInsightGroup from '../components/ExpandableInsightGroup'
+import DealModelPendingCard from '../components/DealModelPendingCard'
 import DealOverviewCard from '../components/DealOverviewCard'
+import DealValuationCard from '../components/DealValuationCard'
+import DealWorkspaceNav, { type WorkspaceTab } from '../components/DealWorkspaceNav'
 import ProjectIntakeCard from '../components/ProjectIntakeCard'
 import ProjectPortfolioCard from '../components/ProjectPortfolioCard'
 import ProjectSynthesisCard from '../components/ProjectSynthesisCard'
@@ -209,6 +212,19 @@ export default function DueDiligenceDashboard() {
     const [selectedFindingId, setSelectedFindingId] = useState<string>(fallbackFinding?.id ?? '')
     const [selectedFiles, setSelectedFiles] = useState<File[]>([])
     const [dealName, setDealName] = useState('')
+    const [askingPrice, setAskingPrice] = useState('')
+    const [askingPriceByProject, setAskingPriceByProject] = useState<Record<string, string>>(() => {
+        if (typeof window === 'undefined') return {}
+
+        try {
+            const stored = window.localStorage.getItem('mergeworks.askingPriceByProject')
+            const parsed = stored ? JSON.parse(stored) : {}
+            return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed as Record<string, string> : {}
+        } catch {
+            return {}
+        }
+    })
+    const [activeWorkspaceTab, setActiveWorkspaceTab] = useState<WorkspaceTab>('overview')
     const [projectId, setProjectId] = useState(() => createUnusedProjectId())
     const [projectStage, setProjectStage] = useState('post-loi')
     const [documentType, setDocumentType] = useState('auto-detect')
@@ -221,6 +237,19 @@ export default function DueDiligenceDashboard() {
     const [hasRestoredLatestProject, setHasRestoredLatestProject] = useState(false)
     const [validationById, setValidationById] = useState<Record<string, boolean>>({})
     const [notesById, setNotesById] = useState<Record<string, string>>({})
+    const activeProjectId = isExampleMode ? 'atlas-001' : projectId
+
+    useEffect(() => {
+        setAskingPrice(askingPriceByProject[activeProjectId] ?? '')
+    }, [activeProjectId, askingPriceByProject])
+
+    useEffect(() => {
+        try {
+            window.localStorage.setItem('mergeworks.askingPriceByProject', JSON.stringify(askingPriceByProject))
+        } catch {
+            // Local persistence is a convenience only; the workspace remains usable if storage is unavailable.
+        }
+    }, [askingPriceByProject])
 
     useEffect(() => {
         void trigger({})
@@ -422,6 +451,12 @@ export default function DueDiligenceDashboard() {
         } satisfies SubmissionBatch
     }, [submissionHistory])
     const displayedSubmissionBatch = activeSubmissionBatch ?? latestSavedBatch
+    const activeProjectSynthesis = visibleProjectSyntheses.find((synthesis) => synthesis.projectId === activeProjectId)
+
+    const handleAskingPriceChange = (value: string) => {
+        setAskingPrice(value)
+        setAskingPriceByProject((current) => ({ ...current, [activeProjectId]: value }))
+    }
     const activeBatchRows = useMemo(() => {
         if (!displayedSubmissionBatch) {
             return []
@@ -512,6 +547,7 @@ export default function DueDiligenceDashboard() {
 
     const handlePortfolioProjectSelect = (projectKey: string) => {
         setSelectedProjectKey(projectKey)
+        setActiveWorkspaceTab('diligence')
         const project = projectSummaries.find((candidate) => candidate.projectKey === projectKey)
 
         if (project) {
@@ -686,6 +722,7 @@ export default function DueDiligenceDashboard() {
             <main className="mx-auto max-w-[1440px] space-y-6 px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
                 <ProjectIntakeCard
                     dealName={dealName}
+                    askingPrice={askingPrice}
                     projectId={projectId}
                     projectStage={projectStage}
                     documentType={documentType}
@@ -697,6 +734,7 @@ export default function DueDiligenceDashboard() {
                     selectedFiles={selectedFiles}
                     disabled={isSubmittingFile || submitLoading}
                     onDealNameChange={setDealName}
+                    onAskingPriceChange={handleAskingPriceChange}
                     onProjectIdChange={setProjectId}
                     onProjectStageChange={setProjectStage}
                     onDocumentTypeChange={setDocumentType}
@@ -709,13 +747,24 @@ export default function DueDiligenceDashboard() {
                     }}
                 />
 
-                <section id="deal-overview" className="scroll-mt-6">
+                <DealWorkspaceNav activeTab={activeWorkspaceTab} onTabChange={setActiveWorkspaceTab} />
+
+                {activeWorkspaceTab === 'overview' ? <section id="deal-overview" className="scroll-mt-6">
                     <DealOverviewCard
                         syntheses={visibleProjectSyntheses}
                         projects={projectSummaries}
-                        currentProjectId={projectId}
+                        currentProjectId={activeProjectId}
+                        askingPrice={askingPrice}
+                        onAskingPriceChange={handleAskingPriceChange}
                     />
-                </section>
+                </section> : null}
+
+                {activeWorkspaceTab === 'valuation' ? <DealValuationCard synthesis={activeProjectSynthesis} askingPrice={askingPrice} /> : null}
+                {activeWorkspaceTab === 'returns' ? <DealModelPendingCard area="returns" /> : null}
+                {activeWorkspaceTab === 'growth' ? <DealModelPendingCard area="growth" /> : null}
+                {activeWorkspaceTab === 'structure' ? <DealModelPendingCard area="structure" /> : null}
+
+                {activeWorkspaceTab === 'diligence' ? <>
 
                 {!isExampleMode && projectSummaries.length > 0 ? (
                     <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 sm:flex sm:items-center sm:justify-between sm:gap-4">
@@ -1066,6 +1115,9 @@ export default function DueDiligenceDashboard() {
                     </Card>
                 ) : null}
 
+                </> : null}
+
+                {activeWorkspaceTab === 'documents' ? <>
                 <section id="project-portfolio" className="scroll-mt-6">
                     <ProjectPortfolioCard
                         rows={submissionHistory}
@@ -1076,6 +1128,9 @@ export default function DueDiligenceDashboard() {
                     />
                 </section>
 
+                </> : null}
+
+                {activeWorkspaceTab === 'diligence' ? <>
                 <section id="project-synthesis" className="scroll-mt-6">
                     <ProjectSynthesisCard
                         syntheses={visibleProjectSyntheses}
@@ -1093,6 +1148,9 @@ export default function DueDiligenceDashboard() {
                     />
                 </section>
 
+                </> : null}
+
+                {activeWorkspaceTab === 'documents' ? <>
                 <SubmissionHistoryCard
                     rows={submissionHistory}
                     loading={submissionHistoryLoading}
@@ -1106,6 +1164,8 @@ export default function DueDiligenceDashboard() {
                     }}
                     isPolling={hasActiveSubmissions}
                 />
+
+                </> : null}
 
                 {SHOW_LEGACY_DILIGENCE_BACKUP ? (
                 <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">

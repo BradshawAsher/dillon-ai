@@ -6,6 +6,19 @@ MergeWorks should borrow Epic Deal Done's clarity and decision-oriented visual d
 
 **Core promise:** upload the diligence package, understand what is true, what conflicts, what is missing, and how the evidence should change price or deal terms.
 
+## Current implementation status
+
+The detailed implementation tracker lives in [epicdealdone-todos.md](epicdealdone-todos.md). In short:
+
+| Area | Status | Current reality |
+| --- | --- | --- |
+| Workspace navigation | Done | Separate Overview, Diligence, Valuation, Documents, Returns, Growth, and Deal Structure views with sticky navigation. |
+| Overview | Mostly done | Recommendation, risk, synthesis summary, valuation range, asking-price comparison, risks, levers, and questions are visible. Asking price is browser-local only. |
+| Diligence | Mostly done | Portfolio, document analysis, coverage, synthesis, conflicts, levers, and citations are present; project-level filtering and evidence drawer are still missing. |
+| Valuation | Partial | Shows the returned range and price comparison. Methods, probabilities, quantified bridge, and sensitivity are missing. |
+| Returns / Growth / Deal Structure | Partial | Dedicated views exist but intentionally wait for a persisted deal model before calculating. |
+| Data model and workflow | Missing | A canonical persisted deal model and richer n8n synthesis contract are required for financial modeling. |
+
 ## What MergeWorks already does better
 
 - Batch document upload instead of requiring users to manually enter every financial input.
