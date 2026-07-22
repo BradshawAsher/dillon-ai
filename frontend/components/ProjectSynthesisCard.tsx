@@ -134,7 +134,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
         if (synthesisPending) { wasSynthesizing.current = true; return }
         if (!wasSynthesizing.current) return
         wasSynthesizing.current = false
-        if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
+        if (!document.hasFocus() && 'Notification' in window && Notification.permission === 'granted') {
             new Notification('Project synthesis complete', { body: 'Your due diligence synthesis is ready to review.' })
         }
     }, [synthesisPending])
