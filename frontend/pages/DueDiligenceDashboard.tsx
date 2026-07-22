@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
     AlertCircle,
     ArrowUpRight,
@@ -252,6 +252,10 @@ export default function DueDiligenceDashboard() {
     const [retryingRequestId, setRetryingRequestId] = useState<string | null>(null)
     const [activeSubmissionBatch, setActiveSubmissionBatch] = useState<SubmissionBatch | null>(null)
     const [activeHistoryEnvironment, setActiveHistoryEnvironment] = useState<SubmitEnvironment>('production')
+    const [desktopNotificationPermission, setDesktopNotificationPermission] = useState<NotificationPermission | 'unsupported'>(() => {
+        if (typeof window === 'undefined' || !('Notification' in window)) return 'unsupported'
+        return Notification.permission
+    })
     const [hasRestoredLatestProject, setHasRestoredLatestProject] = useState(false)
     const [validationById, setValidationById] = useState<Record<string, boolean>>({})
     const [notesById, setNotesById] = useState<Record<string, string>>({})
@@ -506,6 +510,7 @@ export default function DueDiligenceDashboard() {
         ? Math.min(100, Math.round((activeBatchProcessingCount / activeBatchExpectedCount) * 100))
         : 0
     const activeBatchImpact = useMemo(() => computeImpactMetrics(activeBatchRows), [activeBatchRows])
+    const batchInProgressNotificationId = useRef<string | null>(null)
 
     const [batchElapsedSeconds, setBatchElapsedSeconds] = useState(0)
 
@@ -529,6 +534,25 @@ export default function DueDiligenceDashboard() {
         const intervalId = window.setInterval(updateElapsedTime, 1000)
         return () => window.clearInterval(intervalId)
     }, [activeBatchExpectedCount, activeBatchFinishedCount, displayedSubmissionBatch])
+
+    useEffect(() => {
+        if (!displayedSubmissionBatch || activeBatchExpectedCount === 0) return
+        if (activeBatchFinishedCount < activeBatchExpectedCount) {
+            batchInProgressNotificationId.current = displayedSubmissionBatch.id
+            return
+        }
+        if (batchInProgressNotificationId.current !== displayedSubmissionBatch.id) return
+        batchInProgressNotificationId.current = null
+        if ('Notification' in window && Notification.permission === 'granted' && !document.hasFocus()) {
+            new Notification('Document batch complete', { body: `${activeBatchFinishedCount}/${activeBatchExpectedCount} documents have reached a final status.` })
+        }
+    }, [activeBatchExpectedCount, activeBatchFinishedCount, displayedSubmissionBatch])
+
+    const enableDesktopNotifications = async () => {
+        if (!('Notification' in window)) { setDesktopNotificationPermission('unsupported'); return }
+        const permission = await Notification.requestPermission()
+        setDesktopNotificationPermission(permission)
+    }
 
     useEffect(() => {
         if (selectedProjectKey === 'new') {
@@ -746,6 +770,11 @@ export default function DueDiligenceDashboard() {
                             <Badge variant="secondary" className="rounded-md px-3 py-1 text-xs font-medium">
                                 Async intake + polling enabled
                             </Badge>
+                            {desktopNotificationPermission !== 'unsupported' ? (
+                                <Button type="button" size="sm" variant="outline" disabled={desktopNotificationPermission === 'denied'} onClick={() => { void enableDesktopNotifications() }}>
+                                    {desktopNotificationPermission === 'granted' ? 'Desktop alerts on' : desktopNotificationPermission === 'denied' ? 'Desktop alerts blocked' : 'Enable desktop alerts'}
+                                </Button>
+                            ) : null}
                         </div>
                         <p className="max-w-4xl text-sm text-muted-foreground">
                             Shift from one-off document extraction to project-level diligence. Group uploads into a shared project,
