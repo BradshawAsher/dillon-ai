@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../li
 import { Progress } from '../lib/shadcn/progress'
 import { formatCurrencyValue, getSubmissionInsightTone } from '../utils/aiSubmissionData'
 import { downloadTextFile, fileSafeName } from '../utils/downloadFile'
+import { formatHours, type ImpactMetrics } from '../utils/impactMetrics'
 import type { ProjectSummary } from '../utils/projectWorkspace'
 
 type ProjectSynthesisCardProps = {
@@ -22,6 +23,7 @@ type ProjectSynthesisCardProps = {
     loading: boolean
     error: string | null
     onRefresh: () => void
+    impact: ImpactMetrics
 }
 
 function getRiskVariant(riskLevel: string): 'destructive' | 'warning' | 'secondary' | 'outline' {
@@ -100,7 +102,7 @@ function formatProjectDisplayName(project: ProjectSummary) {
     return `${projectName} • ${companyName}`
 }
 
-export default function ProjectSynthesisCard({ syntheses, projects, currentProjectId, documentAnalysisPending, synthesisPending, synthesisProgress, synthesisStage, loading, error, onRefresh }: ProjectSynthesisCardProps) {
+export default function ProjectSynthesisCard({ syntheses, projects, currentProjectId, documentAnalysisPending, synthesisPending, synthesisProgress, synthesisStage, loading, error, onRefresh, impact }: ProjectSynthesisCardProps) {
     const [synthesisElapsedSeconds, setSynthesisElapsedSeconds] = useState(0)
     const wasSynthesizing = useRef(false)
     const projectNameById = new Map(
@@ -264,13 +266,21 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
 
                             {synthesis.finalJudgmentSummary ? (
                                 <div className="rounded-lg border border-border bg-background p-4">
-                                    <div className="flex items-center gap-2">
-                                        <Scale className="h-4 w-4 text-muted-foreground" />
-                                        <p className="text-sm font-medium text-foreground">Acquisition judgment</p>
+                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                        <div className="flex items-center gap-2">
+                                            <Scale className="h-4 w-4 text-muted-foreground" />
+                                            <p className="text-sm font-medium text-foreground">Acquisition judgment</p>
+                                        </div>
+                                        {impact.completedDocuments > 0 ? <Badge variant="success">~{formatHours(impact.timeSavedHours)} analyst time saved</Badge> : null}
                                     </div>
                                     <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-foreground">
                                         {synthesis.finalJudgmentSummary}
                                     </p>
+                                    {impact.completedDocuments > 0 ? (
+                                        <p className="mt-3 text-xs text-muted-foreground">
+                                            This judgment consolidates {impact.completedDocuments} completed document{impact.completedDocuments === 1 ? '' : 's'}: ~{formatHours(impact.analystHours)} estimated manual review versus {impact.agentMinutes >= 1 ? `${Math.round(impact.agentMinutes)}m` : '<1m'} of recorded agent runtime.
+                                        </p>
+                                    ) : null}
                                 </div>
                             ) : null}
 

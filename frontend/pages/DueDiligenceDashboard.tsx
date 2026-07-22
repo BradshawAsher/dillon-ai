@@ -500,6 +500,7 @@ export default function DueDiligenceDashboard() {
     const activeBatchProcessingPercent = activeBatchExpectedCount > 0
         ? Math.min(100, Math.round((activeBatchProcessingCount / activeBatchExpectedCount) * 100))
         : 0
+    const activeBatchImpact = useMemo(() => computeImpactMetrics(activeBatchRows), [activeBatchRows])
 
     const [batchElapsedSeconds, setBatchElapsedSeconds] = useState(0)
 
@@ -953,6 +954,14 @@ export default function DueDiligenceDashboard() {
                                 </div>
                                 <Progress value={activeBatchProgressPercent} className="h-2.5 [&>span]:bg-success" />
                             </div>
+                            <div className="rounded-md border border-success/25 bg-success/5 px-3 py-2 text-sm">
+                                <p className="font-medium text-foreground">Batch analyst time saved</p>
+                                <p className="mt-1 text-muted-foreground">
+                                    {activeBatchImpact.completedDocuments > 0
+                                        ? `~${formatHours(activeBatchImpact.timeSavedHours)} saved across ${activeBatchImpact.completedDocuments} completed document${activeBatchImpact.completedDocuments === 1 ? '' : 's'} (40m manual-review baseline per document).`
+                                        : 'Time saved will appear as documents complete (40m manual-review baseline per document).'}
+                                </p>
+                            </div>
                             <p className="text-xs text-muted-foreground">
                                 {activeBatchFinishedCount >= activeBatchExpectedCount
                                     ? activeBatchFailedCount > 0
@@ -1254,6 +1263,7 @@ export default function DueDiligenceDashboard() {
                         synthesisStage={isExampleMode ? 'Example synthesis complete' : currentSynthesisProgress.stage}
                         loading={projectSynthesisLoading}
                         error={projectSynthesisError}
+                        impact={activeProjectImpact}
                         onRefresh={() => {
                             void triggerProjectSynthesis({ environment: activeHistoryEnvironment }, { skipCache: true }).result
                         }}

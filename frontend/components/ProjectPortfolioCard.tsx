@@ -13,8 +13,10 @@ import { downloadSynthesisReport } from './ProjectSynthesisCard'
 import {
     createProjectSummaries,
     formatProjectStage,
+    getProjectKey,
     getProjectStatusVariant,
 } from '../utils/projectWorkspace'
+import { computeImpactMetrics, formatHours } from '../utils/impactMetrics'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 
 type ProjectPortfolioCardProps = {
@@ -126,6 +128,7 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                     <div className="max-h-[72rem] overflow-y-auto pr-2">
                     <div className="grid gap-4 xl:grid-cols-2">
                         {visibleProjects.map((project) => {
+                            const projectImpact = computeImpactMetrics(rows.filter((row) => row.isConsidered && getProjectKey(row) === project.projectKey))
                             const missingCoverage = project.coverage.filter((item) => !item.matched)
                             // project.documents is sorted latest-first, so keeping the first
                             // occurrence of each file name keeps the freshest upload.
@@ -196,7 +199,7 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                                         </div>
                                     </div>
 
-                                    <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                                    <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
                                         <div className="rounded-lg border border-border bg-muted/30 p-3">
                                             <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Documents</p>
                                             <p className="mt-1 text-lg font-semibold text-foreground">{project.documentCount}</p>
@@ -212,6 +215,13 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                                         <div className="rounded-lg border border-border bg-muted/30 p-3">
                                             <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Red-risk docs</p>
                                             <p className="mt-1 text-lg font-semibold text-foreground">{project.redRiskCount}</p>
+                                        </div>
+                                        <div className="rounded-lg border border-success/25 bg-success/5 p-3">
+                                            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Analyst time saved</p>
+                                            <p className="mt-1 text-lg font-semibold text-success">
+                                                {projectImpact.completedDocuments > 0 ? `~${formatHours(projectImpact.timeSavedHours)}` : '—'}
+                                            </p>
+                                            <p className="mt-1 text-xs text-muted-foreground">40m baseline per completed doc</p>
                                         </div>
                                     </div>
 
