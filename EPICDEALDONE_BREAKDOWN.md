@@ -132,12 +132,12 @@ Shows revenue for current and 5-year, with growth %
 also shows ebitda growth with current and 5-year projections, with growth %
 
 * 5 Year Revenue Bridge
-![5 Year Revenue Bridge](image-1.png)
+![5 Year Revenue Bridge](EPICDEALDONE_IMAGES/image-11.png)
 
 Shows bar graph for current revenue, volume growth, price increases, and future revenue
 
 * Sensitivity Analysis 
-![Sensitivity Analysis](image-2.png)
+![Sensitivity Analysis](EPICDEALDONE_IMAGES/image-12.png)
 
 Impact of 5-year business value from various changes
 revenue +- 5%, margin +-2%, multiple +- 1x, and then gives their effects on business value
@@ -147,4 +147,4 @@ I think it just helps you visualize how you're going to fund the acquisition
 
 Can have a button to create with AI
 
-# ALSO NEED TO LOOK AT WHAT EPICDEALDONE IS ASKING TRISHA FOR TO ANALYZE TODO
+# WHAT EPIC DEAL DONE IS ASKING USER BEFORE ANALYSIS
