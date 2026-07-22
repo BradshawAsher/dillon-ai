@@ -14,6 +14,7 @@ import DealWorkspaceNav, { type WorkspaceTab } from '../components/DealWorkspace
 import ProjectIntakeCard from '../components/ProjectIntakeCard'
 import ProjectPortfolioCard from '../components/ProjectPortfolioCard'
 import ProjectSynthesisCard from '../components/ProjectSynthesisCard'
+import SectionHeader from '../components/SectionHeader'
 import SubmissionHistoryCard from '../components/SubmissionHistoryCard'
 import {
     exampleProjectSyntheses,
@@ -825,7 +826,7 @@ export default function DueDiligenceDashboard() {
                 )}
             </header>
 
-            <main className="mx-auto max-w-[1440px] space-y-6 px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
+            <main className="mx-auto max-w-[1440px] space-y-8 px-4 py-4 sm:px-6 sm:py-8 lg:px-8">
                 <ProjectIntakeCard
                     dealName={dealName}
                     askingPrice={askingPrice}
@@ -1039,7 +1040,13 @@ export default function DueDiligenceDashboard() {
                                     : 'Restored from the most recent n8n submission history row.'}
                             </p>
 
-                            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                            <details className="group rounded-lg border border-border bg-muted/20">
+                                <summary className="flex cursor-pointer items-center justify-between px-3 py-2.5 text-sm font-medium text-foreground">
+                                    <span>Submission metadata — IDs, timestamps, file</span>
+                                    <span className="text-xs text-primary group-open:hidden">Show</span>
+                                    <span className="hidden text-xs text-primary group-open:inline">Hide</span>
+                                </summary>
+                                <div className="grid gap-2 p-3 pt-0 sm:grid-cols-2 xl:grid-cols-4">
                                 <div className="rounded-md border border-border bg-card px-3 py-2">
                                     <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Request ID</p>
                                     <p className="mt-1 break-all font-mono text-foreground">{webhookResponse?.requestID ?? displayedSubmissionRow?.requestID ?? 'Pending'}</p>
@@ -1072,7 +1079,8 @@ export default function DueDiligenceDashboard() {
                                     <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">File Name</p>
                                     <p className="mt-1 break-all text-foreground">{submitResponse?.payload?.fileName ?? displayedSubmissionRow?.fileName ?? 'Pending'}</p>
                                 </div>
-                            </div>
+                                </div>
+                            </details>
 
                             {displayedSubmissionRow ? (
                                 <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
@@ -1225,7 +1233,12 @@ export default function DueDiligenceDashboard() {
                 </> : null}
 
                 {activeWorkspaceTab === 'documents' ? <>
-                <section id="project-portfolio" className="scroll-mt-6">
+                <section id="project-portfolio" className="scroll-mt-6 space-y-4">
+                    <SectionHeader
+                        step={1}
+                        title="Document portfolio"
+                        description="Every uploaded document grouped by project, with coverage and duplicates."
+                    />
                     <ProjectPortfolioCard
                         rows={submissionHistory}
                         syntheses={visibleProjectSyntheses}
@@ -1238,7 +1251,12 @@ export default function DueDiligenceDashboard() {
                 </> : null}
 
                 {activeWorkspaceTab === 'diligence' ? <>
-                <section id="project-synthesis" className="scroll-mt-6">
+                <section id="project-synthesis" className="scroll-mt-6 space-y-4">
+                    <SectionHeader
+                        step={1}
+                        title="Final acquisition judgment"
+                        description="The consolidator's cross-document verdict for the selected project."
+                    />
                     <ProjectSynthesisCard
                         syntheses={visibleProjectSyntheses}
                         projects={projectSummaries}
@@ -1258,6 +1276,12 @@ export default function DueDiligenceDashboard() {
                 </> : null}
 
                 {activeWorkspaceTab === 'documents' ? <>
+                <section className="space-y-4">
+                <SectionHeader
+                    step={2}
+                    title="Submission audit trail"
+                    description="Per-document processing status and AI output, newest first."
+                />
                 <SubmissionHistoryCard
                     rows={submissionHistory}
                     loading={submissionHistoryLoading}
@@ -1273,6 +1297,7 @@ export default function DueDiligenceDashboard() {
                     onRetryFailedDocument={handleRetryFailedDocument}
                     retryingRequestId={retryingRequestId}
                 />
+                </section>
 
                 </> : null}
 
