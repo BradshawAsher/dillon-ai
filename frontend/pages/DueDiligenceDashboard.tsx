@@ -51,6 +51,7 @@ import {
     isActiveSubmissionStatus,
 } from '../utils/submissionHistory'
 import { createProjectSummaries } from '../utils/projectWorkspace'
+import { computeImpactMetrics, formatHours } from '../utils/impactMetrics'
 import { fallbackDiligenceFindings, type FindingType, type Severity } from '../utils/diligence'
 import { formatEasternTime } from '../utils/dateTime'
 import { readFileAsBase64 } from '../utils/fileEncoding'
@@ -397,6 +398,7 @@ export default function DueDiligenceDashboard() {
     const highPriorityCount = diligenceFindings.filter(
         (finding) => finding.severity === 'Critical' || finding.severity === 'High'
     ).length
+    const impact = useMemo(() => computeImpactMetrics(submissionHistory), [submissionHistory])
     const reviewProjectCount = projectSummaries.filter((project) => project.reviewCount > 0).length
     const activeProjectCount = projectSummaries.filter((project) => project.activeCount > 0).length
     const readyProjectCount = projectSummaries.filter((project) => project.statusLabel === 'Ready for synthesis').length
@@ -761,6 +763,34 @@ export default function DueDiligenceDashboard() {
                             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Ready for synthesis</p>
                             <p className="mt-1 text-2xl font-semibold text-foreground">{readyProjectCount}</p>
                             <p className="mt-1 text-xs text-muted-foreground">Project dossier has enough coverage</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="mx-auto max-w-[1440px] px-4 pb-5 sm:px-6 lg:px-8">
+                    <div className="grid gap-3 rounded-xl border border-primary/20 bg-primary/[0.04] p-3 sm:grid-cols-3">
+                        <div className="rounded-lg bg-background/60 px-4 py-3">
+                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Documents analyzed</p>
+                            <p className="mt-1 text-2xl font-semibold text-foreground">{impact.completedDocuments}</p>
+                            <p className="mt-1 text-xs text-muted-foreground">Extracted and reconciled by the agent</p>
+                        </div>
+                        <div className="rounded-lg bg-background/60 px-4 py-3">
+                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Analyst time saved</p>
+                            <p className="mt-1 text-2xl font-semibold text-success">
+                                {impact.completedDocuments > 0 ? `~${formatHours(impact.timeSavedHours)}` : '—'}
+                            </p>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                                {impact.completedDocuments > 0
+                                    ? `${formatHours(impact.analystHours)} manual review vs ${impact.agentMinutes >= 1 ? `${Math.round(impact.agentMinutes)}m` : '<1m'} agent${impact.fasterMultiple && impact.fasterMultiple >= 2 ? ` · ${Math.round(impact.fasterMultiple)}× faster` : ''}`
+                                    : 'Based on ~40 min manual review per document'}
+                            </p>
+                        </div>
+                        <div className="rounded-lg bg-background/60 px-4 py-3">
+                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Avg AI confidence</p>
+                            <p className="mt-1 text-2xl font-semibold text-foreground">
+                                {impact.avgConfidence !== null ? `${impact.avgConfidence}%` : '—'}
+                            </p>
+                            <p className="mt-1 text-xs text-muted-foreground">Mean extraction confidence across completed docs</p>
                         </div>
                     </div>
                 </div>
