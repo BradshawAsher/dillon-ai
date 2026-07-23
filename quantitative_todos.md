@@ -16,7 +16,7 @@ Each input and output needs a provenance label:
 - Per-document analysis extracts EBITDA and a broad valuation range, but no independent calculation/reconciliation engine exists.
 - Asking price is browser-local, not a persisted project input.
 - Returns, Growth, and Deal Structure are placeholder views because no canonical persisted deal model exists.
-- Employee/headcount is not currently extracted.
+- Employee/headcount extraction is implemented per document with source/date/status/confidence fields; only evidence-backed values display in the overview.
 
 ## Phase 1 — Verified financial facts and math checks
 
@@ -115,7 +115,7 @@ Show the exact inputs, five-year cash-flow path, payback, IRR, and MOIC for each
 
 ## Build order
 
-1. Add employee/fact extraction fields and the financial-facts contract.
+1. [In progress] Add employee/fact extraction fields and the financial-facts contract. Employee extraction is complete; the broader financial-facts contract remains.
 2. Add deterministic reconciliation and ratios workflow.
 3. Persist asking price and Deal Model assumptions.
 4. Replace Returns placeholder with all-cash + financed calculator.

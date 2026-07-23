@@ -1,4 +1,4 @@
-import { ArrowDownToLine, BadgeDollarSign, CircleAlert, FileCheck2, MessageCircleQuestion, Scale, ShieldAlert } from 'lucide-react'
+import { ArrowDownToLine, BadgeDollarSign, CircleAlert, FileCheck2, MessageCircleQuestion, Scale, ShieldAlert, UsersRound } from 'lucide-react'
 
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { Badge } from '../lib/shadcn/badge'
@@ -50,6 +50,10 @@ export default function DealOverviewCard({ syntheses, projects, currentProjectId
     const synthesis = syntheses.find((item) => item.projectId === projectId)
     const project = projects.find((item) => (item.projectId || item.projectKey) === projectId)
     const projectName = project ? `${project.projectName} - ${project.companyName}` : projectId || 'Selected project'
+    const employeeCount = project?.employeeCount ?? null
+    const employeeCountLabel = employeeCount === null
+        ? 'Not confirmed'
+        : `${employeeCount.toLocaleString()} ${project?.employeeType || 'employees'}`
     const hasValuation = Boolean(synthesis?.valuationLowerBound || synthesis?.valuationBaseEstimate || synthesis?.valuationUpperBound)
     const askingPriceValue = parseMoney(askingPrice)
     const baseValue = synthesis ? parseMoney(synthesis.valuationBaseEstimate) : null
@@ -105,6 +109,16 @@ export default function DealOverviewCard({ syntheses, projects, currentProjectId
                             Agent runtime: {impact.agentMinutes >= 1 ? `${Math.round(impact.agentMinutes)}m` : '<1m'}.
                         </p>
                     ) : null}
+                </div>
+
+                <div className="rounded-lg border border-border bg-background p-4">
+                    <div className="flex items-center gap-2 text-muted-foreground"><UsersRound className="h-4 w-4" /><p className="text-xs font-medium uppercase tracking-wide">Employee count</p></div>
+                    <p className="mt-2 text-lg font-semibold text-foreground">{employeeCountLabel}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                        {employeeCount === null
+                            ? 'No evidence-backed headcount has been found in the processed documents.'
+                            : `${project?.employeeEvidenceStatus === 'estimated' ? 'Estimated' : 'Documented'}${project?.employeeAsOfDate ? ` · as of ${project.employeeAsOfDate}` : ''}`}
+                    </p>
                 </div>
 
                 {!synthesis ? (

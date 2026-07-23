@@ -18,6 +18,12 @@ type SubmissionHistoryRow = {
   detectedHeaderRow?: number | string | null
   columnMapConfidence?: number | string | null
   validatedColumnMap?: TextValue
+  employeeCount?: number | string | null
+  employeeType?: TextValue
+  employeeAsOfDate?: TextValue
+  employeeConfidence?: number | string | null
+  employeeCitation?: TextValue
+  employeeEvidenceStatus?: TextValue
   submissionBatchId?: TextValue
   expectedBatchDocumentCount?: number | string | null
   fileName?: TextValue
@@ -134,6 +140,24 @@ function getFirstNumberValue(values: Array<number | string | null | undefined>) 
   return 0
 }
 
+function getFirstOptionalNumberValue(values: Array<number | string | null | undefined>) {
+  for (const value of values) {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value
+    }
+
+    if (typeof value === 'string' && value.trim().length > 0) {
+      const parsed = Number(value)
+
+      if (Number.isFinite(parsed)) {
+        return parsed
+      }
+    }
+  }
+
+  return null
+}
+
 function parseBooleanValue(value: TextValue) {
   if (typeof value === 'boolean') {
     return value
@@ -235,6 +259,12 @@ export default async function getSubmissionHistory(req: {
     detectedHeaderRow: getFirstNumberValue([row.detectedHeaderRow]),
     columnMapConfidence: getFirstNumberValue([row.columnMapConfidence]),
     validatedColumnMap: getFirstStringValue([row.validatedColumnMap]),
+    employeeCount: getFirstOptionalNumberValue([row.employeeCount]),
+    employeeType: getFirstStringValue([row.employeeType]),
+    employeeAsOfDate: getFirstStringValue([row.employeeAsOfDate]),
+    employeeConfidence: getFirstOptionalNumberValue([row.employeeConfidence]),
+    employeeCitation: getFirstStringValue([row.employeeCitation]),
+    employeeEvidenceStatus: getFirstStringValue([row.employeeEvidenceStatus]),
     submissionBatchId: getFirstStringValue([row.submissionBatchId]),
     expectedBatchDocumentCount: getFirstNumberValue([row.expectedBatchDocumentCount]),
     fileName: getFirstStringValue([row.fileName]),
