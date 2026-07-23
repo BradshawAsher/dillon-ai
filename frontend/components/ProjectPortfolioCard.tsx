@@ -50,9 +50,23 @@ function SummaryMetric({
 }
 
 export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey, onProjectSelect, onExcludeDocument, onRetryDocument, retryingRequestId }: ProjectPortfolioCardProps) {
-    const projects = createProjectSummaries(rows)
     const [hideDuplicateDocs, setHideDuplicateDocs] = useState(true)
     const [projectSearch, setProjectSearch] = useState('')
+    const [workstreamFilter, setWorkstreamFilter] = useState('all')
+    const [statusFilter, setStatusFilter] = useState('all')
+    const [riskFilter, setRiskFilter] = useState('all')
+    const workstreams = [...new Set(rows.map((row) => row.workstream.trim()).filter(Boolean))].sort()
+    const filteredRows = rows.filter((row) => {
+        const status = row.status.trim().toLowerCase()
+        const risk = `${row.trafficLight} ${row.riskLevel}`.trim().toLowerCase()
+        const workstreamMatches = workstreamFilter === 'all' || row.workstream.trim() === workstreamFilter
+        const statusMatches = statusFilter === 'all' || status === statusFilter
+        const riskMatches = riskFilter === 'all'
+            || (riskFilter === 'attention' && /red|high|yellow|medium/.test(risk))
+            || (riskFilter === 'high' && /red|high/.test(risk))
+        return workstreamMatches && statusMatches && riskMatches
+    })
+    const projects = createProjectSummaries(filteredRows)
     const activeProjectCount = projects.filter((project) => project.activeCount > 0).length
     const reviewProjectCount = projects.filter((project) => project.reviewCount > 0).length
     const readyProjectCount = projects.filter((project) => project.statusLabel === 'Ready for synthesis').length
@@ -115,6 +129,14 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                             className="pl-9"
                             aria-label="Search project portfolio"
                         />
+                    </div>
+                ) : null}
+
+                {rows.length > 0 ? (
+                    <div className="grid gap-2 rounded-lg border border-border bg-muted/20 p-3 sm:grid-cols-3">
+                        <label className="space-y-1"><span className="text-xs font-medium text-muted-foreground">Workstream</span><select value={workstreamFilter} onChange={(event) => setWorkstreamFilter(event.target.value)} className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="all">All workstreams</option>{workstreams.map((workstream) => <option key={workstream} value={workstream}>{workstream}</option>)}</select></label>
+                        <label className="space-y-1"><span className="text-xs font-medium text-muted-foreground">Document status</span><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="all">All statuses</option><option value="completed">Completed</option><option value="processing">Processing</option><option value="failed">Failed</option><option value="needs_review">Needs review</option></select></label>
+                        <label className="space-y-1"><span className="text-xs font-medium text-muted-foreground">Risk signal</span><select value={riskFilter} onChange={(event) => setRiskFilter(event.target.value)} className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="all">All risk signals</option><option value="attention">Any attention</option><option value="high">High / red only</option></select></label>
                     </div>
                 ) : null}
 

@@ -312,47 +312,52 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
       ? [responseData]
       : responseData.rows ?? responseData.data ?? responseData.items ?? []
 
-  return rows.map((row): ProjectSynthesisItem => {
-    const judgment = getFirstJudgmentValues([
-      row.finalJudgmentJson,
-      row.finalJudgementJson,
-      row.final_judgment,
-      row.finalJudgment,
-      row.ai_summary,
-    ])
+  // A historical workflow version could create a synthesis row without its
+  // project ID. It cannot be attached to a portfolio project, so keep it out
+  // of the product response rather than rendering an unusable orphan.
+  return rows
+    .filter((row) => getFirstStringValue([row.projectId, row.project_id]).trim().length > 0)
+    .map((row): ProjectSynthesisItem => {
+      const judgment = getFirstJudgmentValues([
+        row.finalJudgmentJson,
+        row.finalJudgementJson,
+        row.final_judgment,
+        row.finalJudgment,
+        row.ai_summary,
+      ])
 
-    return {
-      projectId: getFirstStringValue([row.projectId, row.project_id]),
-      projectStatus: getFirstStringValue([row.projectStatus, row.project_status]),
-      documentsReceivedCount: getFirstNumberValue([row.documentsReceivedCount, row.documents_received_count]),
-      documentsCompletedCount: getFirstNumberValue([row.documentsCompletedCount, row.documents_completed_count]),
-      missingDocuments: getFirstStringListValue([row.missingDocumentsJson, row.missing_documents, row.missingDocuments]),
-      crossDocumentConflicts: getFirstStringListValue([
-        row.crossDocumentConflictsJson,
-        row.cross_document_conflicts,
-        row.crossDocumentConflicts,
-      ], formatConflict),
-      openQuestions: getFirstStringListValue([row.openQuestionsJson, row.open_questions, row.openQuestions], formatOpenQuestion),
-      negotiationLevers: getFirstStringListValue([
-        row.negotiationLeversJson,
-        row.negotiation_levers,
-        row.negotiationLevers,
-      ], formatNegotiationLever),
-      citations: getFirstStringListValue([row.aiCitations, row.ai_citations]),
-      finalRiskLevel: getFirstStringValue([row.finalRiskLevel, row.final_risk_level, row.ai_risk_flag]),
-      finalTrafficLight: getFirstStringValue([row.finalTrafficLight, row.final_traffic_light]),
-      finalRecommendation: getFirstStringValue([row.finalRecommendation, row.final_recommendation]),
-      finalJudgmentSummary: judgment.summary,
-      finalJudgmentJson: judgment.json,
-      aiErrorMessage: getStringValue(row.ai_error_message),
-      valuationLowerBound: getFirstStringValue([row.valuationLowerBound, row.lower_bound_estimate]),
-      valuationBaseEstimate: getFirstStringValue([row.valuationBaseEstimate, row.base_estimate]),
-      valuationUpperBound: getFirstStringValue([row.valuationUpperBound, row.upper_bound_estimate]),
-      valuationCurrency: getFirstStringValue([row.valuationCurrency, row.currency]),
-      projectProcessedAt: getFirstStringValue([row.projectProcessedAt, row.project_processed_at, row.ai_processedAt, row.updatedAt]),
-      id: getFirstNumberValue([row.id]),
-      createdAt: getStringValue(row.createdAt),
-      updatedAt: getStringValue(row.updatedAt),
-    }
-  })
+      return {
+        projectId: getFirstStringValue([row.projectId, row.project_id]),
+        projectStatus: getFirstStringValue([row.projectStatus, row.project_status]),
+        documentsReceivedCount: getFirstNumberValue([row.documentsReceivedCount, row.documents_received_count]),
+        documentsCompletedCount: getFirstNumberValue([row.documentsCompletedCount, row.documents_completed_count]),
+        missingDocuments: getFirstStringListValue([row.missingDocumentsJson, row.missing_documents, row.missingDocuments]),
+        crossDocumentConflicts: getFirstStringListValue([
+          row.crossDocumentConflictsJson,
+          row.cross_document_conflicts,
+          row.crossDocumentConflicts,
+        ], formatConflict),
+        openQuestions: getFirstStringListValue([row.openQuestionsJson, row.open_questions, row.openQuestions], formatOpenQuestion),
+        negotiationLevers: getFirstStringListValue([
+          row.negotiationLeversJson,
+          row.negotiation_levers,
+          row.negotiationLevers,
+        ], formatNegotiationLever),
+        citations: getFirstStringListValue([row.aiCitations, row.ai_citations]),
+        finalRiskLevel: getFirstStringValue([row.finalRiskLevel, row.final_risk_level, row.ai_risk_flag]),
+        finalTrafficLight: getFirstStringValue([row.finalTrafficLight, row.final_traffic_light]),
+        finalRecommendation: getFirstStringValue([row.finalRecommendation, row.final_recommendation]),
+        finalJudgmentSummary: judgment.summary,
+        finalJudgmentJson: judgment.json,
+        aiErrorMessage: getStringValue(row.ai_error_message),
+        valuationLowerBound: getFirstStringValue([row.valuationLowerBound, row.lower_bound_estimate]),
+        valuationBaseEstimate: getFirstStringValue([row.valuationBaseEstimate, row.base_estimate]),
+        valuationUpperBound: getFirstStringValue([row.valuationUpperBound, row.upper_bound_estimate]),
+        valuationCurrency: getFirstStringValue([row.valuationCurrency, row.currency]),
+        projectProcessedAt: getFirstStringValue([row.projectProcessedAt, row.project_processed_at, row.ai_processedAt, row.updatedAt]),
+        id: getFirstNumberValue([row.id]),
+        createdAt: getStringValue(row.createdAt),
+        updatedAt: getStringValue(row.updatedAt),
+      }
+    })
 }

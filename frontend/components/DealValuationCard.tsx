@@ -9,6 +9,7 @@ import { buildDerivedEvidence, buildFactEvidence, parseDocumentedFacts, type Evi
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import { Input } from '../lib/shadcn/input'
 import { MoneyBarChart } from './DealCharts'
+import ValuationImpactBridge from './ValuationImpactBridge'
 
 type DealValuationCardProps = {
     synthesis?: ProjectSynthesisItem
@@ -147,6 +148,7 @@ export default function DealValuationCard({ synthesis, askingPrice, model, onMod
                             <div className="rounded-xl border border-border bg-muted/20 p-4"><div className="flex items-center gap-2"><TriangleAlert className="h-4 w-4 text-warning" /><p className="text-sm font-semibold">Value-risk bridge</p></div><p className="mt-2 text-sm leading-6 text-muted-foreground">The workflow has identified the following items as price or terms considerations. Quantified value adjustments require a valuation-method model and analyst-approved assumptions.</p><ul className="mt-3 space-y-2 text-sm">{synthesis.crossDocumentConflicts.length > 0 ? synthesis.crossDocumentConflicts.map((item) => <li key={item} className="rounded-md border border-border bg-background p-3">{item}</li>) : <li className="text-muted-foreground">No cross-document valuation risks recorded.</li>}</ul></div>
                             <div className="rounded-xl border border-border bg-muted/20 p-4"><p className="text-sm font-semibold">Method comparison</p><p className="mt-2 text-sm leading-6 text-muted-foreground">The methods above are calculated only from confirmed facts and saved analyst assumptions. The sensitivity grid uses the base-case inputs and shows exit enterprise value, not a probability-weighted valuation or IRR.</p><div className="mt-4 flex flex-wrap gap-2"><Badge variant="outline">Asset-based</Badge><Badge variant="outline">Revenue multiple</Badge><Badge variant="outline">EBITDA / SDE multiple</Badge><Badge variant="outline">Sensitivity analysis</Badge></div></div>
                         </div>
+                        <ValuationImpactBridge synthesis={synthesis} baseValue={baseValue} onOpenEvidence={onOpenEvidence} />
                     </>
                 )}
             </CardContent>

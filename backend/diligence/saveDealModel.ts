@@ -12,6 +12,22 @@ type Params = {
   maintenanceCapex?: number | string | null
   exitMultiple?: number | string | null
   exitCosts?: number | string | null
+  equityContributionPercent?: number | string | null
+  interestRate?: number | string | null
+  amortizationYears?: number | string | null
+  sellerNoteAmount?: number | string | null
+  bearRevenueGrowth?: number | string | null
+  baseRevenueGrowth?: number | string | null
+  bullRevenueGrowth?: number | string | null
+  bearEbitdaMargin?: number | string | null
+  baseEbitdaMargin?: number | string | null
+  bullEbitdaMargin?: number | string | null
+  bearExitMultiple?: number | string | null
+  baseExitMultiple?: number | string | null
+  bullExitMultiple?: number | string | null
+  revenueMultiple?: number | string | null
+  ebitdaMultiple?: number | string | null
+  assetHaircutPercent?: number | string | null
 }
 
 export default async function saveDealModel(req: { params: Params; user: User }) {

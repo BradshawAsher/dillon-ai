@@ -2,19 +2,32 @@
 
 `TODO.md` is preserved as the original brainstorming list. This is the clean, active version; completed work from the current build session is intentionally omitted.
 
-# Brad's Bad Grammar TODOLIST
+## Immediate live-data fixes
 
-FOR BRAD - Continue looking through the current website and play around with it and what else needs to be added
+- [x] Confirm a provider parse failure retries and then reaches a graceful terminal failure state instead of crashing the Pod 1 pipeline. A broader post-fix regression remains open below.
+- [x] Prevent newly created project-synthesis rows from being orphaned: the consolidator now writes its `projectId` on upsert. Existing blank-ID rows still need a one-time manual data cleanup.
+- [x] Persist a usable document-type fallback: every completed document now saves primary and multi-type classification, falling back to the selected intake type or `Other` when the model omits it.
+- [x] Correct the per-document yellow/green flag mappings and calibrate prompts so ordinary document incompleteness does not automatically produce `RED` / escalation.
+- [x] **P0 — Wire live Deal Model hydration.** The successful per-document path now runs the Documented Facts Bridge before the document counter can trigger project synthesis.
+- [ ] **P0 — Verify live Deal Model hydration.** Confirm `financialFactsJson` reaches `documentedFactsJson`, then live Valuation, Returns, Growth, and Deal Structure cards. Purchase price, tax, financing, and scenario values remain visible analyst assumptions unless explicitly supplied or confirmed.
+- [ ] **P0 — Clean up the existing blank-`projectId` synthesis row** and verify it no longer appears as an invisible/orphaned record.
+- [ ] **P0 — Run a clean-document live regression.** Confirm a normal financial document can return GREEN/YELLOW, types populate the coverage checklist, confirmed facts reach the Deal Model, and a new synthesis row has its project ID.
+- [ ] Run the remaining end-to-end cases: normal document, combined P&L/balance sheet, lax CSV, malformed CSV, duplicate, retry after provider failure, three-document batch, and final synthesis.
+- [x] Add a repeatable clean-document test guide: [evals/LIVE_CLEAN_DOCUMENT_REGRESSION.md](evals/LIVE_CLEAN_DOCUMENT_REGRESSION.md).
 
-URGENT THE CSV EDGE CASE IS WAY TOO STRICT AND DOESNT LET DOCS GO THROUGH FIX n8n and UI
+### Friend checklist status
 
-Look through the live n8n page and test what happens when you put docs through
+- [-] **Pod 1 pipeline is error-free:** the observed parse-failure retry and graceful terminal handling are fixed; certify this only after the full live regression passes.
+- [-] **Live Deal Model inputs:** bridge wiring is complete; verify a real completed document populates `documentedFactsJson` and the quantitative cards.
+- [-] **Document-type data flow:** persistence fallback is complete; verify live rows update project coverage from detected types.
+- [-] **All results are RED:** prompt calibration is complete; verify a clean document can produce GREEN or YELLOW before closing this item.
+- [-] **Orphan synthesis row:** new rows are prevented and blank-ID rows are hidden in the app; the existing raw n8n record still needs targeted cleanup if desired.
 
-can we also have a button for the live n8n page to see example 
+## Immediate product experience
 
-can we make citations clickable and open up interactive viewer
-
-Also for the returns section can we make up some model assumptions (somewhat industry accepted) if that will allow the user to get a first glance of ressults, as well as growth, deal structure, (lmk if you need anything else from me for this)
+- [x] Provide an example-data workspace toggle alongside live n8n data.
+- [-] Show illustrative analyst assumptions for Returns, Growth, and Deal Structure. Example mode is populated; the live workspace now fills only missing generic starting inputs after documented revenue or EBITDA arrives and preserves analyst entries. Verify live persistence and revise values per project.
+- [ ] Make citations clickable and open an interactive document viewer at the cited page, cell, row, or excerpt.
 
 ## Now — validate what is already built
 
@@ -25,12 +38,12 @@ Also for the returns section can we make up some model assumptions (somewhat ind
 
 ## Highest product priority — finish the evidence workflow
 
-- [ ] Extend the new evidence drawer to Valuation, Returns, Growth, and Deal Structure metrics.
+- [x] Extend the evidence drawer to Valuation, Returns, Growth, and Deal Structure metrics. Every current quantitative metric now exposes its formula and documented versus analyst-entered inputs.
 - [ ] Build an interactive document viewer: open the cited uploaded file and highlight the cited page, cell, row, or excerpt when available.
 - [ ] Normalize source-file names and citations so a synthesis citation reliably matches one uploaded document and its stored URL.
 - [ ] Return/store granular citation metadata for every document and project-level fact: source file, page/cell, excerpt, period, currency, confidence, and status.
 - [ ] Add explicit `confirmed`, `estimated`, and `contradicted` labels consistently across facts, findings, and calculations.
-- [ ] Add project-level finding filters for workstream, severity, and status, plus a material-impact view linking each finding to valuation, cash flow, closing conditions, or negotiation actions.
+- [-] Add project-level finding filters for workstream, severity, and status, plus a material-impact view linking each finding to valuation, cash flow, closing conditions, or negotiation actions. Project Portfolio now filters documents by workstream, status, and risk signal; material-impact mapping remains missing.
 
 ## Project and document experience
 
@@ -40,12 +53,12 @@ Also for the returns section can we make up some model assumptions (somewhat ind
 - [ ] Test mixed/multi-sheet spreadsheet uploads and documents that represent more than one financial statement type.
 - [ ] Improve synthesis formatting: four key acquisition takeaways, four document-level investment-thesis takeaways, digestible negotiation levers, and readable open questions.
 - [ ] Make long text fields consistently expandable/scrollable.
-- [ ] Add a management-question tracker with owner, priority, status, response, and resulting thesis impact.
+- [-] Add a management-question tracker with owner, priority, status, response, and resulting thesis impact. The UI now exists and saves per project in the current browser; shared backend persistence is still missing.
 
 ## Quantitative modeling — next enhancements
 
 - [ ] Add financed bear/base/bull scenarios, including levered cash-flow paths, debt amortization, MOIC, and IRR by scenario.
-- [ ] Build a quantified valuation bridge: evidence-linked adjustments for unsupported add-backs, customer concentration, working-capital gaps, debt, and asset quality, with a negotiation translation for each adjustment.
+- [-] Build a quantified valuation bridge: evidence-linked adjustments for unsupported add-backs, customer concentration, working-capital gaps, debt, and asset quality, with a negotiation translation for each adjustment. The Valuation tab now provides an evidence-linked, analyst-entered price/terms bridge saved in the browser; shared persistence and source-specific quantitative defaults remain missing.
 - [ ] Add ROI timeline and revenue/EBITDA projection charts from the deterministic model; never show a chart when required inputs are missing.
 - [ ] Add sources-and-uses / deal-stack visualization with leverage and downside-resilience indicators.
 - [ ] Add industry benchmarks only with a source, as-of date, comparability notes, and analyst review.
@@ -74,5 +87,3 @@ Also for the returns section can we make up some model assumptions (somewhat ind
 - [ ] WebSocket/event-driven progress updates if polling becomes a measured UX or scaling problem.
 - [ ] API gateway evaluation if deployment/security requirements justify it.
 - [ ] Visual polish and additional inspiration review, while preserving the document-first, post-LOI product focus.
-
-
