@@ -1794,15 +1794,6 @@ export default function DueDiligenceDashboard() {
                 <section id="project-synthesis" className="scroll-mt-6 space-y-4">
                     <SectionHeader
                         step={1}
-                        title="Next steps after synthesis"
-                        description="Assign and resolve the management questions that could change the acquisition decision."
-                    />
-                    <ManagementQuestionTracker
-                        projectId={activeProjectId}
-                        suggestedQuestions={activeProjectSynthesis?.openQuestions ?? []}
-                    />
-                    <SectionHeader
-                        step={2}
                         title="Final acquisition judgment"
                         description="The consolidator's cross-document verdict for the selected project."
                     />
@@ -1822,6 +1813,10 @@ export default function DueDiligenceDashboard() {
                         onRefresh={() => {
                             void triggerProjectSynthesis({ environment: activeHistoryEnvironment }, { skipCache: true }).result
                         }}
+                    />
+                    <ManagementQuestionTracker
+                        projectId={activeProjectId}
+                        suggestedQuestions={activeProjectSynthesis?.openQuestions ?? []}
                     />
                 </section>
 
