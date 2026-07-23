@@ -12,8 +12,14 @@ type DealModelRow = {
   maintenanceCapex?: string | number | null
   exitMultiple?: string | number | null
   exitCosts?: string | number | null
+  equityContributionPercent?: string | number | null
+  interestRate?: string | number | null
+  amortizationYears?: string | number | null
+  sellerNoteAmount?: string | number | null
   modelUpdatedAt?: string | null
   modelUpdatedBy?: string | null
+  documentedFactsJson?: string | null
+  documentedFactsStatus?: string | null
 }
 
 type Params = { projectId?: string }
@@ -38,5 +44,7 @@ export default async function getDealModels(req: { params: Params; user: User })
     projectId: String(row.projectId ?? ''),
     askingPrice: numberOrNull(row.askingPrice), purchasePrice: numberOrNull(row.purchasePrice), debtAssumed: numberOrNull(row.debtAssumed), cashAcquired: numberOrNull(row.cashAcquired), workingCapitalRequirement: numberOrNull(row.workingCapitalRequirement), transactionFees: numberOrNull(row.transactionFees), holdPeriodYears: numberOrNull(row.holdPeriodYears), taxRate: numberOrNull(row.taxRate), closingCosts: numberOrNull(row.closingCosts), maintenanceCapex: numberOrNull(row.maintenanceCapex), exitMultiple: numberOrNull(row.exitMultiple), exitCosts: numberOrNull(row.exitCosts),
     modelUpdatedAt: row.modelUpdatedAt ?? '', modelUpdatedBy: row.modelUpdatedBy ?? '',
+    equityContributionPercent: numberOrNull(row.equityContributionPercent), interestRate: numberOrNull(row.interestRate), amortizationYears: numberOrNull(row.amortizationYears), sellerNoteAmount: numberOrNull(row.sellerNoteAmount),
+    documentedFactsJson: row.documentedFactsJson ?? '', documentedFactsStatus: row.documentedFactsStatus ?? '',
   }))
 }
