@@ -3,16 +3,26 @@ import { ChartNoAxesCombined } from 'lucide-react'
 import type { DealModel } from '../hooks/backend/diligence'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { calculateIrr } from '../utils/dealMath'
+import { buildDerivedEvidence, buildFactEvidence, parseDocumentedFacts, type EvidenceItem } from '../utils/evidence'
+import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import { GrowthLineChart } from './DealCharts'
 
 function facts(model: DealModel) { try { return JSON.parse(model.documentedFactsJson || '{}') as Record<string, { value?: number; status?: string; currency?: string }> } catch { return {} } }
 function money(value: number, currency: string) { return new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: 0 }).format(value) }
 
-export default function ScenarioComparisonCard({ model }: { model: DealModel }) {
+type ScenarioComparisonCardProps = {
+    model: DealModel
+    documents?: SubmissionHistoryItem[]
+    onOpenEvidence?: (evidence: EvidenceItem) => void
+}
+
+export default function ScenarioComparisonCard({ model, documents = [], onOpenEvidence }: ScenarioComparisonCardProps) {
     const documented = facts(model)
     const revenue = documented.revenue?.status === 'confirmed' ? documented.revenue.value ?? null : null
     const ebitda = documented.ebitda_sde?.status === 'confirmed' ? documented.ebitda_sde.value ?? null : null
     const currency = documented.revenue?.currency || documented.ebitda_sde?.currency || 'USD'
+    const parsedFacts = parseDocumentedFacts(model.documentedFactsJson)
+    const revenueEvidence = buildFactEvidence({ field: 'revenue', title: 'Starting revenue', facts: parsedFacts, documents })
     const years = model.holdPeriodYears ?? 5
     const price = model.purchasePrice ?? model.askingPrice
     const initial = price === null ? null : price + (model.transactionFees ?? 0) + (model.workingCapitalRequirement ?? 0)
@@ -39,6 +49,18 @@ export default function ScenarioComparisonCard({ model }: { model: DealModel }) 
         const totalMoic = cashFlows ? cashFlows.slice(1).reduce((sum, cashFlow) => sum + cashFlow, 0) / initial! : null
         const irr = cashFlows ? calculateIrr(cashFlows) : null
         const paybackYear = yearlyOperatingCashFlow ? yearlyOperatingCashFlow.reduce<{ cumulative: number; year: number | null }>((state, cashFlow, year) => ({ cumulative: state.cumulative + cashFlow, year: state.year ?? (state.cumulative + cashFlow >= (initial ?? Infinity) ? year + 1 : null) }), { cumulative: 0, year: null }).year : null
-        return <div key={name} className="rounded-lg border border-border bg-background p-4"><p className="font-semibold">{name}</p><p className="mt-2 text-sm text-muted-foreground">Year {years} revenue / EBITDA</p><p className="font-medium">{money(exitRevenue, currency)} / {money(exitEbitda, currency)}</p><p className="mt-2 text-sm text-muted-foreground">Net exit value</p><p className="font-medium">{money(netExitValue, currency)}</p>{!allCashReady ? <p className="mt-3 text-sm text-muted-foreground">Add price and tax rate for all-cash cash flow, MOIC, payback, and IRR.</p> : <><p className="mt-2 text-sm text-muted-foreground">All-cash MOIC / IRR</p><p className="font-medium">{totalMoic?.toFixed(2) ?? '—'}x / {irr === null ? 'Not available' : `${(irr * 100).toFixed(1)}%`}</p><p className="mt-2 text-sm text-muted-foreground">Operating payback</p><p className="font-medium">{paybackYear === null ? `Beyond year ${years}` : `Year ${paybackYear}`}</p><p className="mt-3 text-xs text-muted-foreground">Annual operating cash flow: {yearlyOperatingCashFlow!.map((cashFlow, year) => `Y${year + 1} ${money(cashFlow, currency)}`).join(' · ')}</p></>}</div>
+        const scenarioEvidence = buildDerivedEvidence({
+            title: `${name} scenario`,
+            formula: 'grow revenue at the growth rate; EBITDA = revenue × margin; net exit = year-N EBITDA × exit multiple − exit costs; MOIC/IRR over the all-cash cash flows',
+            documentedInputs: [{ label: 'Starting revenue', value: revenue === null ? 'Not documented' : money(revenue, currency) }],
+            analystInputs: [
+                { label: 'Revenue growth', value: `${((growth ?? 0) * 100).toFixed(1)}%` },
+                { label: 'EBITDA margin', value: `${((margin ?? 0) * 100).toFixed(1)}%` },
+                { label: 'Exit multiple', value: `${multiple}x` },
+                { label: 'Hold period', value: `${years} years` },
+            ],
+            primaryFact: revenueEvidence,
+        })
+        return <div key={name} className="rounded-lg border border-border bg-background p-4"><div className="flex items-center justify-between gap-2"><p className="font-semibold">{name}</p>{onOpenEvidence ? <button type="button" onClick={() => onOpenEvidence(scenarioEvidence)} aria-label={`Show how the ${name} scenario was calculated`} className="text-xs font-medium text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">How this was calculated</button> : null}</div><p className="mt-2 text-sm text-muted-foreground">Year {years} revenue / EBITDA</p><p className="font-medium">{money(exitRevenue, currency)} / {money(exitEbitda, currency)}</p><p className="mt-2 text-sm text-muted-foreground">Net exit value</p><p className="font-medium">{money(netExitValue, currency)}</p>{!allCashReady ? <p className="mt-3 text-sm text-muted-foreground">Add price and tax rate for all-cash cash flow, MOIC, payback, and IRR.</p> : <><p className="mt-2 text-sm text-muted-foreground">All-cash MOIC / IRR</p><p className="font-medium">{totalMoic?.toFixed(2) ?? '—'}x / {irr === null ? 'Not available' : `${(irr * 100).toFixed(1)}%`}</p><p className="mt-2 text-sm text-muted-foreground">Operating payback</p><p className="font-medium">{paybackYear === null ? `Beyond year ${years}` : `Year ${paybackYear}`}</p><p className="mt-3 text-xs text-muted-foreground">Annual operating cash flow: {yearlyOperatingCashFlow!.map((cashFlow, year) => `Y${year + 1} ${money(cashFlow, currency)}`).join(' · ')}</p></>}</div>
     })}</div></>}<p className="mt-4 text-xs text-muted-foreground">Revenue growth, margin, and exit multiple are scenario assumptions. Revenue is documented; price, tax, capex, working capital, fees, and exit costs are analyst assumptions unless separately documented. This is an all-cash scenario model; financed bear/base/bull modeling remains separate.</p></CardContent></Card>
 }
