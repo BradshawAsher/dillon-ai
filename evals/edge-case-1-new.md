@@ -1,6 +1,6 @@
 🛡 Edge Case #2
 
-Category: 2. Malformed or Wrong-Shape Data
+Category: 1. Missing or Imcomplete Data      
 
 Status: Implemented (Guardrail in place)
 
