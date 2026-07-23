@@ -74,6 +74,23 @@ function shortList(value: string) {
     return value.split(/\n|•|;|\|/).map((item) => item.trim()).filter(Boolean).slice(0, 5)
 }
 
+type DocumentThesisTakeaway = { fileName: string; takeaway: string; stance: string; documentId: string; documentUrl: string; status: string }
+
+function getDocumentThesisTakeaway(document: SubmissionHistoryItem): DocumentThesisTakeaway | null {
+    try {
+        const parsed = JSON.parse(document.extractedJson || '{}') as { investment_thesis?: { buy_reasoning?: unknown; is_favorable_indicator?: unknown }; response?: { summary?: unknown } }
+        const reasoning = typeof parsed.investment_thesis?.buy_reasoning === 'string' ? parsed.investment_thesis.buy_reasoning.trim() : ''
+        const summary = typeof parsed.response?.summary === 'string' ? parsed.response.summary.trim() : document.aiSummary.trim()
+        const takeaway = reasoning || summary
+        if (!takeaway) return null
+        const favorable = parsed.investment_thesis?.is_favorable_indicator
+        return { fileName: document.fileName || 'Unnamed document', takeaway, stance: favorable === true ? 'Supportive indicator' : favorable === false ? 'Caution indicator' : 'Document insight', documentId: document.storageFileId, documentUrl: document.storageFileUrl, status: document.status }
+    } catch {
+        if (!document.aiSummary.trim()) return null
+        return { fileName: document.fileName || 'Unnamed document', takeaway: document.aiSummary.trim(), stance: 'Document insight', documentId: document.storageFileId, documentUrl: document.storageFileUrl, status: document.status }
+    }
+}
+
 export function downloadSynthesisReport(synthesis: ProjectSynthesisItem, projectName: string) {
     const section = (title: string, items: string[]) => [
         '## ' + title,
@@ -133,6 +150,11 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
     const currentProject = projects.find((project) => (project.projectId || project.projectKey) === normalizedProjectId)
     const projectDocuments = documents.filter((document) => document.projectId === normalizedProjectId)
     const selectedProjectDocument = projectDocuments.find((document) => document.requestID === selectedDocumentRequestId)
+    const documentThesisTakeaways = projectDocuments
+        .filter((document) => document.isConsidered && document.status.trim().toLowerCase() === 'completed')
+        .map(getDocumentThesisTakeaway)
+        .filter((takeaway): takeaway is DocumentThesisTakeaway => takeaway !== null)
+        .slice(0, 4)
     const currentProjectName = projectNameById.get(normalizedProjectId) ?? normalizedProjectId ?? 'this project'
     const hasPriorSynthesis = visibleSyntheses.some((synthesis) => {
         return synthesis.finalJudgmentSummary.trim().length > 0 || synthesis.finalRecommendation.trim().length > 0
@@ -365,6 +387,11 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                     itemClassName="border-primary/20"
                                     defaultOpen
                                 />
+                                <section className="rounded-lg border border-border bg-muted/20 p-4">
+                                    <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><FileText className="h-4 w-4 text-muted-foreground" /><p className="text-sm font-semibold text-foreground">Document-level thesis takeaways</p></div><Badge variant="outline">{documentThesisTakeaways.length}</Badge></div>
+                                    <p className="mt-1 text-xs text-muted-foreground">Each point is from one completed document—not a new project-level conclusion.</p>
+                                    {documentThesisTakeaways.length ? <div className="mt-3 max-h-[28rem] space-y-2 overflow-y-auto pr-1">{documentThesisTakeaways.map((takeaway, index) => <button key={`${takeaway.fileName}-${index}`} type="button" onClick={() => onOpenEvidence?.({ title: `Document thesis: ${takeaway.fileName}`, sourceFile: takeaway.fileName, sourceLocation: 'Document-level investment thesis', excerpt: takeaway.takeaway, status: takeaway.status || takeaway.stance, provenance: takeaway.stance, documentId: takeaway.documentId, documentUrl: takeaway.documentUrl })} className="w-full rounded-md border border-border bg-background/80 p-3 text-left text-sm leading-6 text-foreground transition-colors hover:border-primary/40 hover:bg-muted/30"><div className="flex flex-wrap items-center gap-2"><span className="font-medium">{takeaway.fileName}</span><Badge variant={takeaway.stance === 'Caution indicator' ? 'warning' : takeaway.stance === 'Supportive indicator' ? 'success' : 'outline'}>{takeaway.stance}</Badge></div><p className="mt-1">{takeaway.takeaway}</p><span className="mt-1 block text-xs font-medium text-primary">View source evidence</span></button>)}</div> : <p className="mt-3 rounded-md border border-border bg-background/80 px-3 py-2 text-sm text-muted-foreground">No document-level investment-thesis takeaway has returned yet.</p>}
+                                </section>
                                 <ExpandableInsightGroup
                                     title="Cross-document conflicts"
                                     icon={<TriangleAlert className="h-4 w-4 text-destructive" />}

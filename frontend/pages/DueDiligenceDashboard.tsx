@@ -985,7 +985,13 @@ export default function DueDiligenceDashboard() {
 
     const handleExcludeDocument = async (requestID: string) => {
         if (!requestID || !window.confirm('Exclude this document from the project checklist and future synthesis? Its n8n record will be retained for audit.')) return
-        const result = await triggerSubmissionConsideration({ requestID, environment: activeHistoryEnvironment }).result
+        const result = await triggerSubmissionConsideration({ requestID, action: 'nonconsidered', environment: activeHistoryEnvironment }).result
+        if (result) await handleRefreshHistory(activeHistoryEnvironment)
+    }
+
+    const handleIncludeDocument = async (requestID: string) => {
+        if (!requestID || !window.confirm('Include this document in the project checklist and future synthesis again?')) return
+        const result = await triggerSubmissionConsideration({ requestID, action: 'considered', environment: activeHistoryEnvironment }).result
         if (result) await handleRefreshHistory(activeHistoryEnvironment)
     }
 
@@ -1737,6 +1743,7 @@ export default function DueDiligenceDashboard() {
                         activeProjectKey={selectedProjectKey}
                         onProjectSelect={handlePortfolioProjectSelect}
                         onExcludeDocument={handleExcludeDocument}
+                        onIncludeDocument={handleIncludeDocument}
                         onRetryDocument={handleRetryFailedDocument}
                         retryingRequestId={retryingRequestId}
                     />

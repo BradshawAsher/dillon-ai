@@ -106,6 +106,23 @@ export function findCitedDocument(sourceFile: string | undefined, documents: Sub
     return best?.document
 }
 
+export type EvidenceStatusPresentation = {
+    label: 'Confirmed' | 'Estimated' | 'Contradicted' | 'Illustrative' | 'Calculated' | 'Synthesized' | 'Needs review'
+    variant: 'success' | 'warning' | 'destructive' | 'secondary' | 'outline'
+}
+
+/** One status vocabulary for facts, findings, and calculated metrics. */
+export function getEvidenceStatusPresentation(status?: string, provenance?: string): EvidenceStatusPresentation {
+    const normalized = `${status ?? ''} ${provenance ?? ''}`.trim().toLowerCase()
+    if (/contradict|conflict/.test(normalized)) return { label: 'Contradicted', variant: 'destructive' }
+    if (/illustrative|assum/.test(normalized)) return { label: 'Illustrative', variant: 'warning' }
+    if (/estimate/.test(normalized)) return { label: 'Estimated', variant: 'warning' }
+    if (/confirm|documented|fully documented/.test(normalized)) return { label: 'Confirmed', variant: 'success' }
+    if (/calculat/.test(normalized)) return { label: 'Calculated', variant: 'secondary' }
+    if (/synthes/.test(normalized)) return { label: 'Synthesized', variant: 'secondary' }
+    return { label: 'Needs review', variant: 'outline' }
+}
+
 /** Evidence for a single documented fact (revenue, EBITDA, debt, ...). */
 export function buildFactEvidence(args: {
     field: string

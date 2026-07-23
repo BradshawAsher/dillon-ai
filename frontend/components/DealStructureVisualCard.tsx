@@ -4,6 +4,7 @@ import type { DealModel } from '../hooks/backend/diligence'
 import { Badge } from '../lib/shadcn/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { buildDerivedEvidence, type EvidenceItem } from '../utils/evidence'
+import { parseDocumentedFacts } from '../utils/evidence'
 import { MoneyBarChart } from './DealCharts'
 
 function money(value: number) {
@@ -24,13 +25,26 @@ export default function DealStructureVisualCard({ model, onOpenEvidence }: { mod
     const uses = price + fees + workingCapital
     const equity = uses * equityPercent
     const seniorDebt = Math.max(0, uses - equity - sellerNote)
-    const data = [
+    const usesData = [
         { label: isIllustrativePreview ? 'Illustrative purchase price' : 'Purchase price', value: price },
         { label: 'Fees + working capital', value: fees + workingCapital },
+    ]
+    const sourcesData = [
         { label: 'Senior debt', value: seniorDebt },
         { label: 'Equity', value: equity },
         ...(sellerNote > 0 ? [{ label: 'Seller note', value: sellerNote }] : []),
     ]
+    const facts = parseDocumentedFacts(model.documentedFactsJson)
+    const ebitda = facts.ebitda_sde?.status === 'confirmed' && typeof facts.ebitda_sde.value === 'number' ? facts.ebitda_sde.value : null
+    const leverage = ebitda !== null && ebitda > 0 ? seniorDebt / ebitda : null
+    const taxRate = model.taxRate ?? 0.25
+    const capex = model.maintenanceCapex ?? 0
+    const interestRate = model.interestRate ?? 0.1
+    const amortizationYears = Math.max(1, model.amortizationYears ?? 10)
+    const annualDebtService = seniorDebt === 0 ? 0 : interestRate === 0 ? seniorDebt / amortizationYears : seniorDebt * ((interestRate * (1 + interestRate) ** amortizationYears) / ((1 + interestRate) ** amortizationYears - 1))
+    const operatingCashFlow = ebitda === null ? null : ebitda * (1 - taxRate) - capex
+    const dscr = operatingCashFlow !== null && annualDebtService > 0 ? operatingCashFlow / annualDebtService : null
+    const hasIllustrativeFinancing = isIllustrativePreview || model.interestRate === null || model.interestRate === undefined || model.amortizationYears === null || model.amortizationYears === undefined
     const capitalStackEvidence = buildDerivedEvidence({
         title: 'Illustrative capital stack',
         formula: 'total uses = purchase price + transaction fees + working-capital requirement; equity = total uses × equity contribution; senior debt = total uses − equity − seller note',
@@ -56,8 +70,9 @@ export default function DealStructureVisualCard({ model, onOpenEvidence }: { mod
                     <div className="rounded-lg border border-border bg-background p-3"><p className="text-xs text-muted-foreground">Illustrative equity</p><p className="mt-1 text-lg font-semibold">{money(equity)}</p></div>
                     <div className="rounded-lg border border-border bg-background p-3"><p className="text-xs text-muted-foreground">Illustrative senior debt</p><p className="mt-1 text-lg font-semibold">{money(seniorDebt)}</p></div>
                 </div>
+                <div className="rounded-lg border border-border bg-muted/20 p-4"><div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-sm font-semibold">Leverage and downside resilience</p><p className="mt-1 text-xs text-muted-foreground">These are screening indicators, not lender underwriting.</p></div>{hasIllustrativeFinancing ? <Badge variant="warning">Financing assumptions included</Badge> : <Badge variant="outline">Saved financing inputs</Badge>}</div><div className="mt-3 grid gap-3 sm:grid-cols-3"><div className="rounded-md border border-border bg-background p-3"><p className="text-xs text-muted-foreground">Debt funding</p><p className="mt-1 text-lg font-semibold">{uses > 0 ? `${((seniorDebt / uses) * 100).toFixed(0)}%` : '—'}</p><p className="mt-1 text-xs text-muted-foreground">senior debt ÷ total uses</p></div><div className="rounded-md border border-border bg-background p-3"><p className="text-xs text-muted-foreground">Debt / EBITDA</p><p className="mt-1 text-lg font-semibold">{leverage === null ? 'Needs EBITDA' : `${leverage.toFixed(1)}x`}</p><p className="mt-1 text-xs text-muted-foreground">senior debt ÷ confirmed EBITDA/SDE</p></div><div className="rounded-md border border-border bg-background p-3"><p className="text-xs text-muted-foreground">Debt-service coverage</p><p className="mt-1 text-lg font-semibold">{dscr === null ? 'Needs EBITDA' : `${dscr.toFixed(2)}x`}</p><p className="mt-1 text-xs text-muted-foreground">operating cash flow ÷ annual debt service</p></div></div>{dscr !== null && dscr < 1.25 ? <p className="mt-3 rounded-md border border-warning/30 bg-warning/10 p-3 text-sm text-foreground">Downside resilience is thin: DSCR is below 1.25×. Consider lower leverage, more equity, a seller note, or revised terms.</p> : leverage !== null && leverage > 5 ? <p className="mt-3 rounded-md border border-warning/30 bg-warning/10 p-3 text-sm text-foreground">Leverage is above 5.0× confirmed EBITDA/SDE. Review cash-flow downside and lender constraints before relying on this structure.</p> : null}</div>
                 <div className="rounded-lg border border-primary/20 bg-primary/[0.04] p-4"><div className="flex items-center justify-between gap-3"><p className="text-sm font-semibold">Starting assumptions</p><Badge variant={isIllustrativePreview ? 'warning' : 'secondary'}>{isIllustrativePreview ? 'Preview values' : 'Saved inputs'}</Badge></div><div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-5"><div><p className="text-xs text-muted-foreground">Purchase price</p><p className="mt-1 text-sm font-medium">{money(price)}</p></div><div><p className="text-xs text-muted-foreground">Transaction fees</p><p className="mt-1 text-sm font-medium">{money(fees)}</p></div><div><p className="text-xs text-muted-foreground">Working capital</p><p className="mt-1 text-sm font-medium">{money(workingCapital)}</p></div><div><p className="text-xs text-muted-foreground">Equity contribution</p><p className="mt-1 text-sm font-medium">{(equityPercent * 100).toFixed(0)}%</p></div><div><p className="text-xs text-muted-foreground">Seller note</p><p className="mt-1 text-sm font-medium">{money(sellerNote)}</p></div></div></div>
-                <MoneyBarChart title="Capital stack" description="Uses and funding sources should reconcile after you review the assumptions below." data={data} />
+                <div className="grid gap-4 xl:grid-cols-2"><MoneyBarChart title="Uses" description="Purchase price plus transaction fees and working-capital funding needs." data={usesData} /><MoneyBarChart title="Sources" description="Funding mix: senior debt, equity, and any seller note. Sources reconcile to uses." data={sourcesData} /></div>
                 {onOpenEvidence ? <button type="button" onClick={() => onOpenEvidence(capitalStackEvidence)} className="text-xs font-medium text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">How this was calculated</button> : null}
             </>
             <p className="text-xs leading-5 text-muted-foreground">This is an illustrative structure, not a lender commitment. Edit the saved assumptions below before relying on the debt and equity mix.</p>
