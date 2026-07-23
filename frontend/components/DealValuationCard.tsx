@@ -5,6 +5,8 @@ import type { DealModel } from '../hooks/backend/diligence'
 import { Badge } from '../lib/shadcn/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { formatCurrencyValue } from '../utils/aiSubmissionData'
+import { buildDerivedEvidence, buildFactEvidence, parseDocumentedFacts, type EvidenceItem } from '../utils/evidence'
+import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import { Input } from '../lib/shadcn/input'
 import { MoneyBarChart } from './DealCharts'
 
@@ -13,6 +15,8 @@ type DealValuationCardProps = {
     askingPrice: string
     model?: DealModel
     onModelChange?: (field: keyof DealModel, value: string) => void
+    documents?: SubmissionHistoryItem[]
+    onOpenEvidence?: (evidence: EvidenceItem) => void
 }
 
 function parseMoney(value: string) {
@@ -22,7 +26,7 @@ function parseMoney(value: string) {
     return Number.isFinite(parsed) && parsed >= 0 ? parsed * multiplier : null
 }
 
-export default function DealValuationCard({ synthesis, askingPrice, model, onModelChange }: DealValuationCardProps) {
+export default function DealValuationCard({ synthesis, askingPrice, model, onModelChange, documents = [], onOpenEvidence }: DealValuationCardProps) {
     const askingPriceValue = parseMoney(askingPrice) ?? model?.askingPrice ?? null
     const baseValue = synthesis ? parseMoney(synthesis.valuationBaseEstimate) : null
     const premiumPercent = askingPriceValue !== null && baseValue !== null && baseValue > 0
@@ -37,13 +41,52 @@ export default function DealValuationCard({ synthesis, askingPrice, model, onMod
     try { facts = JSON.parse(model?.documentedFactsJson || '{}') } catch {}
     const confirmed = (key: string) => facts[key]?.status === 'confirmed' ? facts[key]?.value ?? null : null
     const revenue = confirmed('revenue'), ebitda = confirmed('ebitda_sde'), assets = confirmed('total_assets'), liabilities = confirmed('total_liabilities')
+    const documentedFacts = parseDocumentedFacts(model?.documentedFactsJson)
+    const factEvidence = (field: string, title: string) => buildFactEvidence({ field, title, facts: documentedFacts, documents })
+    const asMoney = (value: number | null | undefined) => value === null || value === undefined ? 'Not documented' : formatCurrencyValue(String(value), 'USD')
+
     const methods = [
-        { label: 'Asset-based', value: assets !== null && liabilities !== null && model?.assetHaircutPercent !== null && model?.assetHaircutPercent !== undefined ? (assets - liabilities) * (1 - model.assetHaircutPercent) : null },
-        { label: 'Revenue multiple', value: revenue !== null && model?.revenueMultiple !== null && model?.revenueMultiple !== undefined ? revenue * model.revenueMultiple : null },
-        { label: 'EBITDA / SDE multiple', value: ebitda !== null && model?.ebitdaMultiple !== null && model?.ebitdaMultiple !== undefined ? ebitda * model.ebitdaMultiple : null },
+        {
+            label: 'Asset-based',
+            value: assets !== null && liabilities !== null && model?.assetHaircutPercent !== null && model?.assetHaircutPercent !== undefined ? (assets - liabilities) * (1 - model.assetHaircutPercent) : null,
+            evidence: buildDerivedEvidence({
+                title: 'Asset-based valuation',
+                formula: '(total assets − total liabilities) × (1 − asset haircut)',
+                documentedInputs: [
+                    { label: 'Total assets', value: asMoney(assets) },
+                    { label: 'Total liabilities', value: asMoney(liabilities) },
+                ],
+                analystInputs: [{ label: 'Asset haircut', value: model?.assetHaircutPercent !== null && model?.assetHaircutPercent !== undefined ? `${(model.assetHaircutPercent * 100).toFixed(0)}%` : 'Not set' }],
+                primaryFact: factEvidence('total_assets', 'Total assets'),
+            }),
+        },
+        {
+            label: 'Revenue multiple',
+            value: revenue !== null && model?.revenueMultiple !== null && model?.revenueMultiple !== undefined ? revenue * model.revenueMultiple : null,
+            evidence: buildDerivedEvidence({
+                title: 'Revenue-multiple valuation',
+                formula: 'revenue × revenue multiple',
+                documentedInputs: [{ label: 'Revenue', value: asMoney(revenue) }],
+                analystInputs: [{ label: 'Revenue multiple', value: model?.revenueMultiple !== null && model?.revenueMultiple !== undefined ? `${model.revenueMultiple}x` : 'Not set' }],
+                primaryFact: factEvidence('revenue', 'Revenue'),
+            }),
+        },
+        {
+            label: 'EBITDA / SDE multiple',
+            value: ebitda !== null && model?.ebitdaMultiple !== null && model?.ebitdaMultiple !== undefined ? ebitda * model.ebitdaMultiple : null,
+            evidence: buildDerivedEvidence({
+                title: 'EBITDA-multiple valuation',
+                formula: 'EBITDA/SDE × EBITDA multiple',
+                documentedInputs: [{ label: 'EBITDA / SDE', value: asMoney(ebitda) }],
+                analystInputs: [{ label: 'EBITDA multiple', value: model?.ebitdaMultiple !== null && model?.ebitdaMultiple !== undefined ? `${model.ebitdaMultiple}x` : 'Not set' }],
+                primaryFact: factEvidence('ebitda_sde', 'EBITDA / SDE'),
+            }),
+        },
     ]
     const available = methods.map(x => x.value).filter((x): x is number => x !== null)
-    const methodChartData = methods.filter((method): method is { label: string; value: number } => method.value !== null)
+    const methodChartData = methods
+        .filter((method) => method.value !== null)
+        .map((method) => ({ label: method.label, value: method.value as number }))
     const blended = available.length ? available.reduce((a,b)=>a+b,0) / available.length : null
     const holdPeriodYears = model?.holdPeriodYears ?? 5
     const baseRevenueGrowth: number | null = model?.baseRevenueGrowth ?? null
@@ -73,7 +116,7 @@ export default function DealValuationCard({ synthesis, askingPrice, model, onMod
             </CardHeader>
             <CardContent className="space-y-5 p-4">
                 <div className="rounded-lg border border-primary/25 bg-primary/5 p-4"><p className="text-sm font-semibold">Valuation assumptions</p><div className="mt-3 grid gap-3 sm:grid-cols-3">{([['revenueMultiple','Revenue multiple'],['ebitdaMultiple','EBITDA / SDE multiple'],['assetHaircutPercent','Asset haircut (decimal)']] as Array<[keyof DealModel,string]>).map(([field,label])=><label key={field} className="space-y-1"><span className="text-xs text-muted-foreground">{label}</span><Input inputMode="decimal" value={model?.[field] ?? ''} onChange={e=>onModelChange?.(field,e.target.value)} placeholder="Not set" /></label>)}</div></div>
-                <div className="grid gap-3 sm:grid-cols-3">{methods.map(method=><div key={method.label} className="rounded-lg border border-border bg-background p-3"><p className="text-xs text-muted-foreground">{method.label}</p><p className="mt-1 font-semibold">{method.value === null ? 'Not available' : formatCurrencyValue(String(method.value), 'USD')}</p></div>)}</div>
+                <div className="grid gap-3 sm:grid-cols-3">{methods.map(method=><div key={method.label} className="rounded-lg border border-border bg-background p-3"><p className="text-xs text-muted-foreground">{method.label}</p><p className="mt-1 font-semibold">{method.value === null ? 'Not available' : formatCurrencyValue(String(method.value), 'USD')}</p>{onOpenEvidence ? <button type="button" onClick={() => onOpenEvidence(method.evidence)} aria-label={`Show how ${method.label} was calculated`} className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">How this was calculated</button> : null}</div>)}</div>
                 <MoneyBarChart title="Valuation-method comparison" description="Only methods with confirmed source facts and saved analyst assumptions are plotted." data={methodChartData} />
                 {blended !== null ? <div className="rounded-lg border border-success/25 bg-success/5 p-4"><p className="text-sm font-semibold">Blended supported value: {formatCurrencyValue(String(blended), 'USD')}</p>{askingPriceValue !== null ? <p className="mt-1 text-sm text-muted-foreground">Asking price is {(((askingPriceValue - blended) / blended) * 100).toFixed(1)}% {(askingPriceValue - blended) >= 0 ? 'above' : 'below'} this blend.</p> : null}</div> : null}
                 <div className="rounded-xl border border-border bg-muted/20 p-4">
