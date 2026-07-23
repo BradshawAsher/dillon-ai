@@ -491,6 +491,7 @@ export default function SubmissionHistoryCard({
                               </Badge>
                               {showDuplicateBadge ? <Badge variant="outline">Duplicate candidate</Badge> : null}
                               {row.needsHumanReview ? <Badge variant="warning">Human review</Badge> : null}
+                              {row.tableStructureStatus === 'needs_review' ? <Badge variant="warning">Table structure review</Badge> : null}
                             </div>
                             <p className="break-all font-mono text-xs text-muted-foreground">
                               {row.requestID || 'No request ID'}
@@ -506,6 +507,9 @@ export default function SubmissionHistoryCard({
                             ) : null}
                             {row.documentType ? (
                               <p className="text-xs text-muted-foreground">Document type: {row.documentType}</p>
+                            ) : null}
+                            {row.detectedDocumentType ? (
+                              <p className="text-xs text-muted-foreground">AI detected: {row.detectedDocumentType}</p>
                             ) : null}
                             {row.projectId ? (
                               <p className="font-mono text-xs text-muted-foreground">Project ID: {row.projectId}</p>
@@ -670,8 +674,18 @@ export default function SubmissionHistoryCard({
                             {selectedRow.documentType ? (
                               <p className="mt-1 text-xs text-muted-foreground">Document type: {selectedRow.documentType}</p>
                             ) : null}
+                            {selectedRow.detectedDocumentType ? (
+                              <p className="mt-1 text-xs text-muted-foreground">AI detected: {selectedRow.detectedDocumentType}</p>
+                            ) : null}
                           </div>
                         </div>
+
+                        {selectedRow.tableStructureStatus === 'needs_review' ? (
+                          <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-foreground">
+                            <p className="font-medium">Table structure needs review</p>
+                            <p className="mt-1 text-muted-foreground">{selectedRow.tableStructureIssues || 'The uploaded table could not be mapped confidently. Review the source before relying on extracted values.'}</p>
+                          </div>
+                        ) : null}
 
                         <div className="rounded-lg border border-border bg-background p-3">
                           <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
