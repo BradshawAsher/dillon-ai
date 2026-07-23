@@ -113,6 +113,8 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
 
     const normalizedProjectId = currentProjectId.trim()
     const visibleSyntheses = syntheses.filter((synthesis) => synthesis.projectId === normalizedProjectId)
+    const currentProject = projects.find((project) => (project.projectId || project.projectKey) === normalizedProjectId)
+    const projectDocuments = currentProject?.documents ?? []
     const currentProjectName = projectNameById.get(normalizedProjectId) ?? normalizedProjectId ?? 'this project'
     const hasPriorSynthesis = visibleSyntheses.some((synthesis) => {
         return synthesis.finalJudgmentSummary.trim().length > 0 || synthesis.finalRecommendation.trim().length > 0
@@ -162,6 +164,30 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                     </div>
                 ) : null}
 
+                {currentProject ? (
+                    <details className="group rounded-lg border border-border bg-muted/20">
+                        <summary className="flex cursor-pointer items-center justify-between gap-3 px-4 py-3 text-sm font-medium text-foreground">
+                            <span className="flex items-center gap-2"><FileText className="h-4 w-4 text-primary" />Project documents ({projectDocuments.length})</span>
+                            <span className="text-xs text-primary group-open:hidden">Show list</span>
+                            <span className="hidden text-xs text-primary group-open:inline">Hide list</span>
+                        </summary>
+                        <div className="space-y-2 border-t border-border p-3">
+                            {projectDocuments.length > 0 ? projectDocuments.map((document) => (
+                                <div key={document.requestID} className="flex flex-col gap-2 rounded-md border border-border bg-card p-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <div className="min-w-0">
+                                        <p className="truncate text-sm font-medium text-foreground" title={document.fileName}>{document.fileName}</p>
+                                        <p className="mt-1 text-xs text-muted-foreground">{document.documentType || 'Document type pending'} · {formatTimestamp(document.processedAt)}</p>
+                                    </div>
+                                    <div className="flex shrink-0 flex-wrap gap-2">
+                                        <Badge variant="outline">{document.status || 'Pending'}</Badge>
+                                        {!document.isConsidered ? <Badge variant="secondary">Excluded</Badge> : null}
+                                    </div>
+                                </div>
+                            )) : <p className="text-sm text-muted-foreground">No project documents have been recorded yet.</p>}
+                        </div>
+                    </details>
+                ) : null}
+
                 {!error && synthesisPending ? (
                     <div className="rounded-lg border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-foreground">
                         <div className="flex items-center gap-3">
@@ -182,6 +208,15 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                             <span>{synthesisProgress}%</span>
                         </div>
                         <Progress value={synthesisProgress} className="mt-2 h-2.5" />
+                        {synthesisElapsedSeconds >= 300 ? (
+                            <div className="mt-3 flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-foreground">
+                                <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+                                <div>
+                                    <p className="font-medium">This synthesis is taking longer than expected.</p>
+                                    <p className="mt-1 text-muted-foreground">Please reload the page to re-sync the latest n8n status. Reloading will not restart the synthesis.</p>
+                                </div>
+                            </div>
+                        ) : null}
                     </div>
                 ) : null}
 

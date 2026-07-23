@@ -6,6 +6,8 @@
 
 FOR BRAD - Continue looking through the current website and play around with it and what else needs to be added
 
+URGENT THE CSV EDGE CASE IS WAY TOO STRICT AND DOESNT LET DOCS GO THROUGH FIX n8n and UI
+
 Look through the live n8n page and test what happens when you put docs through
 
 can we also have a button for the live n8n page to see example 
