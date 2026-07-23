@@ -11,6 +11,7 @@ import {
     ratio,
     revenuePerEmployee,
 } from './dealMath'
+import { driveEmbedUrl } from './evidence'
 
 describe('calculateIrr', () => {
     it('solves a single-period return exactly', () => {
@@ -269,6 +270,22 @@ describe('computeAllCashReturns — degenerate cases', () => {
         expect(result.paybackYears).toBeNull()
         expect(result.exitEnterpriseValue).toBe(0)
         expect(Number.isNaN(result.annualRoi ?? 0)).toBe(false)
+    })
+})
+
+describe('driveEmbedUrl', () => {
+    it('builds a preview URL from a Drive file id', () => {
+        expect(driveEmbedUrl('10HQjrm57ybuLwJ')).toBe('https://drive.google.com/file/d/10HQjrm57ybuLwJ/preview')
+    })
+
+    it('extracts the id from a share URL when no id is given', () => {
+        expect(driveEmbedUrl(undefined, 'https://drive.google.com/file/d/ABC123/view?usp=sharing'))
+            .toBe('https://drive.google.com/file/d/ABC123/preview')
+    })
+
+    it('returns null when neither an id nor a parseable URL is available', () => {
+        expect(driveEmbedUrl(undefined, undefined)).toBeNull()
+        expect(driveEmbedUrl('', 'https://example.com/not-a-drive-link')).toBeNull()
     })
 })
 
