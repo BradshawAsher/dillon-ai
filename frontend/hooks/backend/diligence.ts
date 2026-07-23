@@ -60,6 +60,15 @@ export type DealModel = {
     interestRate: number | null
     amortizationYears: number | null
     sellerNoteAmount: number | null
+    bearRevenueGrowth: number | null
+    baseRevenueGrowth: number | null
+    bullRevenueGrowth: number | null
+    bearEbitdaMargin: number | null
+    baseEbitdaMargin: number | null
+    bullEbitdaMargin: number | null
+    bearExitMultiple: number | null
+    baseExitMultiple: number | null
+    bullExitMultiple: number | null
     modelUpdatedAt: string
     modelUpdatedBy: string
     documentedFactsJson: string
