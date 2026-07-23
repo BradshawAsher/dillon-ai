@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import { BriefcaseBusiness, Clock3, Download, FileStack, Flag, FolderKanban, Search, ShieldAlert } from 'lucide-react'
+import { BriefcaseBusiness, Clock3, Download, FileStack, Flag, FolderKanban, RefreshCw, Search, ShieldAlert } from 'lucide-react'
 
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
@@ -25,6 +25,8 @@ type ProjectPortfolioCardProps = {
     activeProjectKey: string
     onProjectSelect: (projectKey: string) => void
     onExcludeDocument: (requestID: string) => void
+    onRetryDocument: (requestID: string) => void
+    retryingRequestId: string | null
 }
 
 function SummaryMetric({
@@ -47,7 +49,7 @@ function SummaryMetric({
     )
 }
 
-export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey, onProjectSelect, onExcludeDocument }: ProjectPortfolioCardProps) {
+export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey, onProjectSelect, onExcludeDocument, onRetryDocument, retryingRequestId }: ProjectPortfolioCardProps) {
     const projects = createProjectSummaries(rows)
     const [hideDuplicateDocs, setHideDuplicateDocs] = useState(true)
     const [projectSearch, setProjectSearch] = useState('')
@@ -239,7 +241,10 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                                             {hiddenDuplicateCount > 0 ? ` shown · ${hiddenDuplicateCount} duplicate${hiddenDuplicateCount === 1 ? '' : 's'} hidden` : ''})
                                         </summary>
                                         <div className="mt-3 space-y-2">
-                                            {visibleDocuments.map((document) => (
+                                            {visibleDocuments.map((document) => {
+                                                const status = document.status.trim().toLowerCase()
+                                                const canRetry = ['failed', 'error', 'rejected', 'needs_review', 'needs review'].includes(status) && document.requestID
+                                                return (
                                                 <div key={`${document.requestID}-${document.fileName}`} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-background/70 px-3 py-2 text-sm">
                                                     <div>
                                                         <p className="font-medium text-foreground">{document.fileName}</p>
@@ -247,10 +252,12 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                                                     </div>
                                                     <div className="flex items-center gap-2">
                                                         <Badge variant={document.isConsidered ? 'outline' : 'secondary'}>{document.isConsidered ? (document.processedAt || 'Pending') : 'Excluded'}</Badge>
+                                                        {canRetry ? <Button type="button" size="sm" variant="outline" disabled={retryingRequestId === document.requestID} onClick={() => onRetryDocument(document.requestID)}>{retryingRequestId === document.requestID ? <RefreshCw className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}Retry</Button> : null}
                                                         {document.isConsidered ? <Button type="button" size="sm" variant="outline" onClick={() => onExcludeDocument(document.requestID)}>Exclude</Button> : null}
                                                     </div>
                                                 </div>
-                                            ))}
+                                                )
+                                            })}
                                         </div>
                                     </details>
 

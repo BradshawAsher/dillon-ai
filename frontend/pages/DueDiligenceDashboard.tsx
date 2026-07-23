@@ -423,6 +423,7 @@ export default function DueDiligenceDashboard() {
     }, [isCurrentProjectAwaitingSynthesis, projectId, projectSummaries])
 
     const shouldPollN8n = hasActiveSubmissions || hasActiveProjectSynthesis || isCurrentProjectAwaitingSynthesis
+    const hasDuplicateSubmissionMessage = batchSubmissionMessage.toLowerCase().includes('already been added')
 
     useEffect(() => {
         if (!shouldPollN8n) {
@@ -624,6 +625,30 @@ export default function DueDiligenceDashboard() {
         else void context.resume().then(playTone).catch(() => undefined)
     }
 
+    const playErrorSound = () => {
+        const AudioContextConstructor = window.AudioContext || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+        if (!AudioContextConstructor) return
+        const context = completionAudioContext.current ?? new AudioContextConstructor()
+        completionAudioContext.current = context
+        const playTone = () => {
+            ;[0, 0.18].forEach((offset) => {
+                const oscillator = context.createOscillator()
+                const gain = context.createGain()
+                oscillator.type = 'square'
+                oscillator.frequency.setValueAtTime(300, context.currentTime + offset)
+                oscillator.frequency.exponentialRampToValueAtTime(190, context.currentTime + offset + 0.13)
+                gain.gain.setValueAtTime(0.0001, context.currentTime + offset)
+                gain.gain.exponentialRampToValueAtTime(0.09, context.currentTime + offset + 0.015)
+                gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + offset + 0.15)
+                oscillator.connect(gain).connect(context.destination)
+                oscillator.start(context.currentTime + offset)
+                oscillator.stop(context.currentTime + offset + 0.16)
+            })
+        }
+        if (context.state === 'running') playTone()
+        else void context.resume().then(playTone).catch(() => undefined)
+    }
+
     const [batchElapsedSeconds, setBatchElapsedSeconds] = useState(0)
 
     useEffect(() => {
@@ -795,6 +820,7 @@ export default function DueDiligenceDashboard() {
         })
 
         if (filesToQueue.length === 0) {
+            playErrorSound()
             setBatchSubmissionMessage(`No documents were queued. ${duplicateFileNames.join(', ')} ${duplicateFileNames.length === 1 ? 'has' : 'have'} already been added to this project.`)
             return
         }
@@ -867,6 +893,7 @@ export default function DueDiligenceDashboard() {
                 )
             }
             if (submissionMessages.length > 0) {
+                if (duplicateFileNames.length > 0) playErrorSound()
                 setBatchSubmissionMessage(submissionMessages.join(' '))
             }
 
@@ -1042,9 +1069,15 @@ export default function DueDiligenceDashboard() {
                 ) : null}
 
                 {batchSubmissionMessage ? (
-                    <div role="status" className="rounded-lg border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-foreground">
-                        <p className="font-medium">Upload notice</p>
-                        <p className="mt-1 text-muted-foreground">{batchSubmissionMessage}</p>
+                    <div role={hasDuplicateSubmissionMessage ? 'alert' : 'status'} aria-live={hasDuplicateSubmissionMessage ? 'assertive' : 'polite'} className={hasDuplicateSubmissionMessage ? 'rounded-xl border-2 border-destructive/60 bg-destructive/10 px-4 py-4 text-sm text-foreground shadow-md' : 'rounded-lg border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-foreground'}>
+                        <div className="flex items-start gap-3">
+                            <AlertCircle className={hasDuplicateSubmissionMessage ? 'mt-0.5 h-5 w-5 shrink-0 text-destructive' : 'mt-0.5 h-5 w-5 shrink-0 text-warning'} />
+                            <div>
+                                <p className={hasDuplicateSubmissionMessage ? 'font-semibold text-destructive' : 'font-semibold'}>{hasDuplicateSubmissionMessage ? 'Duplicate document blocked' : 'Upload notice'}</p>
+                                <p className="mt-1 leading-6 text-foreground">{batchSubmissionMessage}</p>
+                                {hasDuplicateSubmissionMessage ? <p className="mt-1 text-xs text-muted-foreground">No duplicate was sent to n8n. Choose a different file or switch to another project to upload it.</p> : null}
+                            </div>
+                        </div>
                     </div>
                 ) : null}
 
@@ -1455,6 +1488,8 @@ export default function DueDiligenceDashboard() {
                         activeProjectKey={selectedProjectKey}
                         onProjectSelect={handlePortfolioProjectSelect}
                         onExcludeDocument={handleExcludeDocument}
+                        onRetryDocument={handleRetryFailedDocument}
+                        retryingRequestId={retryingRequestId}
                     />
                 </section>
 
