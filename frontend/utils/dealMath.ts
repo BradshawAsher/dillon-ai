@@ -39,10 +39,25 @@ export const DEAL_MATH_DEFAULTS = {
     taxRate: 0.25,
     maintenanceCapex: 0,
     holdPeriodYears: 5,
+    /**
+     * Last-resort exit multiple, used only when the entry multiple cannot be
+     * derived (no price or no earnings). Prefer `entryMultiple` — see below.
+     */
     exitMultiple: 4,
     /** Exit costs default to 2% of exit enterprise value. */
     exitCostRate: 0.02,
 } as const
+
+/**
+ * Entry multiple actually paid: purchase price ÷ earnings.
+ * Returns null when it cannot be computed.
+ */
+export function entryMultiple(purchasePrice: number | null, ebitda: number | null) {
+    if (!isNumber(purchasePrice) || !isNumber(ebitda) || ebitda <= 0) {
+        return null
+    }
+    return purchasePrice / ebitda
+}
 
 const INPUT_LABELS: Record<string, string> = {
     transactionFees: 'Transaction fees',
@@ -161,7 +176,11 @@ export function computeAllCashReturns(inputs: DealMathInputs): AllCashReturns {
     const taxRate = resolve('taxRate', inputs.taxRate, DEAL_MATH_DEFAULTS.taxRate)
     const capex = resolve('maintenanceCapex', inputs.maintenanceCapex, DEAL_MATH_DEFAULTS.maintenanceCapex)
     const holdPeriodYears = resolve('holdPeriodYears', inputs.holdPeriodYears, DEAL_MATH_DEFAULTS.holdPeriodYears)
-    const exitMultiple = resolve('exitMultiple', inputs.exitMultiple, DEAL_MATH_DEFAULTS.exitMultiple)
+    // Default to a flat multiple — exit at what you paid. Inventing an
+    // unrelated constant here is what turns an ordinary deal into a fake
+    // catastrophe (an 8.7x entry "exiting" at 4x can only lose money).
+    const impliedExitMultiple = entryMultiple(purchasePrice, ebitda) ?? DEAL_MATH_DEFAULTS.exitMultiple
+    const exitMultiple = resolve('exitMultiple', inputs.exitMultiple, impliedExitMultiple)
 
     const initialInvestment = purchasePrice === null ? null : purchasePrice + fees + workingCapital
     const annualCashFlow = ebitda === null ? null : ebitda * (1 - taxRate) - capex

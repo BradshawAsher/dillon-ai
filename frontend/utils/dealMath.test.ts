@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+    DEAL_MATH_DEFAULTS,
     calculateIrr,
     calculateNpv,
     computeAllCashReturns,
@@ -163,6 +164,53 @@ describe('computeAllCashReturns — transparency about assumptions', () => {
         })
 
         expect(result.assumedInputs.some((input) => input.field === 'transactionFees')).toBe(false)
+    })
+})
+
+describe('computeAllCashReturns — exit multiple defaults to the entry multiple', () => {
+    it('assumes a flat exit rather than an invented constant', () => {
+        // 50M paid for 10M of earnings = 5.0x in, so 5.0x out.
+        const result = computeAllCashReturns({ ebitda: 10_000_000, purchasePrice: 50_000_000 })
+        const assumedExit = result.assumedInputs.find((input) => input.field === 'exitMultiple')
+
+        expect(assumedExit?.value).toBeCloseTo(5, 6)
+        expect(result.exitEnterpriseValue).toBeCloseTo(50_000_000, 6)
+    })
+
+    it('does not manufacture a loss on a high-multiple entry', () => {
+        // 8.7x entry. A hardcoded 4x exit would force a negative IRR here.
+        const result = computeAllCashReturns({
+            ebitda: 12_400_000,
+            purchasePrice: 108_000_000,
+            transactionFees: 1_500_000,
+            workingCapital: 2_000_000,
+            taxRate: 0.25,
+            maintenanceCapex: 1_200_000,
+            holdPeriodYears: 5,
+        })
+
+        expect(result.totalMoic).not.toBeNull()
+        expect(result.totalMoic as number).toBeGreaterThan(1)
+        expect(result.irr as number).toBeGreaterThan(0)
+    })
+
+    it('still respects an explicitly provided exit multiple', () => {
+        const result = computeAllCashReturns({
+            ebitda: 10_000_000,
+            purchasePrice: 50_000_000,
+            exitMultiple: 7,
+        })
+
+        expect(result.exitEnterpriseValue).toBeCloseTo(70_000_000, 6)
+        expect(result.assumedInputs.some((input) => input.field === 'exitMultiple')).toBe(false)
+    })
+
+    it('falls back to the constant when the entry multiple is underivable', () => {
+        const result = computeAllCashReturns({ ebitda: 0, purchasePrice: 10_000_000 })
+        const assumedExit = result.assumedInputs.find((input) => input.field === 'exitMultiple')
+
+        expect(assumedExit?.value).toBe(DEAL_MATH_DEFAULTS.exitMultiple)
+        expect(Number.isFinite(result.exitEnterpriseValue ?? 0)).toBe(true)
     })
 })
 
