@@ -193,6 +193,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
             </CardHeader>
 
             <CardContent className="space-y-6 p-4">
+                <div className="rounded-xl border-2 border-primary/60 bg-primary/10 p-4 shadow-sm"><p className="text-sm font-bold uppercase tracking-wide text-primary">Management questions come first</p><p className="mt-1 text-sm leading-6 text-foreground">Use the Management Question Tracker above this judgment to assign an owner, due date, and follow-up plan for the gaps that could change the acquisition decision.</p></div>
                 {error ? (
                     <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-foreground">
                         <p className="font-medium">Synthesis endpoint not reachable yet.</p>
