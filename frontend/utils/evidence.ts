@@ -41,6 +41,8 @@ export type EvidenceItem = {
     status?: string
     provenance?: string
     documentUrl?: string
+    /** Google Drive file id, used to embed an inline preview of the source. */
+    documentId?: string
     /** Present for derived metrics: the formula used. */
     formula?: string
     /** Present for derived metrics: each input and where it came from. */
@@ -103,7 +105,27 @@ export function buildFactEvidence(args: {
         status: fact?.status,
         provenance: fact?.provenance || 'Documented',
         documentUrl: document?.storageFileUrl,
+        documentId: document?.storageFileId,
     }
+}
+
+/**
+ * Builds a Google Drive inline-preview URL from a stored file id or a share
+ * URL. Returns null when neither yields a usable id.
+ */
+export function driveEmbedUrl(documentId?: string, documentUrl?: string): string | null {
+    const id = (documentId ?? '').trim()
+    if (id.length > 0) {
+        return `https://drive.google.com/file/d/${encodeURIComponent(id)}/preview`
+    }
+
+    // Fall back to extracting the id from a /file/d/<id>/ share URL.
+    const match = (documentUrl ?? '').match(/\/file\/d\/([^/]+)/)
+    if (match) {
+        return `https://drive.google.com/file/d/${match[1]}/preview`
+    }
+
+    return null
 }
 
 /**
@@ -149,5 +171,6 @@ export function buildDerivedEvidence(args: {
         currency: args.primaryFact?.currency,
         confidence: args.primaryFact?.confidence,
         documentUrl: args.primaryFact?.documentUrl,
+        documentId: args.primaryFact?.documentId,
     }
 }

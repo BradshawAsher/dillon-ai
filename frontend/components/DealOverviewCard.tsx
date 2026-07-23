@@ -106,7 +106,7 @@ export default function DealOverviewCard({ syntheses, projects, currentProjectId
         const citation = fact?.citations?.[0]
         const sourceFile = citation?.source_file || 'Source file was not returned'
         const document = documents.find((item) => item.fileName.toLowerCase() === sourceFile.toLowerCase() || sourceFile.toLowerCase().includes(item.fileName.toLowerCase()))
-        return { title, sourceFile, sourceLocation: citation?.row_or_cell, excerpt: citation?.excerpt, period: fact?.period, currency: fact?.currency, confidence: fact?.confidence ?? document?.aiConfidence, status: fact?.status, provenance: fact?.provenance || 'Documented', documentUrl: document?.storageFileUrl }
+        return { title, sourceFile, sourceLocation: citation?.row_or_cell, excerpt: citation?.excerpt, period: fact?.period, currency: fact?.currency, confidence: fact?.confidence ?? document?.aiConfidence, status: fact?.status, provenance: fact?.provenance || 'Documented', documentUrl: document?.storageFileUrl, documentId: document?.storageFileId }
     }
     const evidenceForSynthesis = (title: string): EvidenceItem => ({ title, sourceFile: synthesis?.citations?.[0] || 'Project synthesis', sourceLocation: 'Project-level synthesis', excerpt: synthesis?.finalJudgmentSummary, status: 'Synthesized', provenance: 'Project synthesis' })
     const kpis = [
