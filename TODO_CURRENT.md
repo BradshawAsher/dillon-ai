@@ -26,7 +26,7 @@
 ## Immediate product experience
 
 - [x] Provide an example-data workspace toggle alongside live n8n data.
-- [-] Show illustrative analyst assumptions for Returns, Growth, and Deal Structure. Example mode is populated; the live workspace now fills only missing generic starting inputs after documented revenue or EBITDA arrives and preserves analyst entries. Returns, Growth, and Deal Structure each show an explicitly non-saved preview while key live inputs are still missing. Verify live persistence and revise values per project.
+- [-] Show illustrative analyst assumptions for Returns, Growth, Deal Structure, and valuation-method comparison. Example mode is populated; the live workspace now fills only missing generic starting inputs after documented revenue or EBITDA arrives and preserves analyst entries. Returns, Growth, Deal Structure, and valuation comparison each show an explicitly non-saved preview while key live inputs are still missing. Verify live persistence and revise values per project.
 - [ ] Make citations clickable and open an interactive document viewer at the cited page, cell, row, or excerpt.
 
 ## Now — validate what is already built
@@ -42,16 +42,16 @@
 - [ ] Build an interactive document viewer: open the cited uploaded file and highlight the cited page, cell, row, or excerpt when available.
 - [-] Normalize source-file names and citations so a synthesis citation reliably matches one uploaded document and its stored URL. The UI now normalizes paths/extensions/punctuation and safely uses high-confidence filename-token matching; validate this on live synthesis citations, especially generic labels such as “Document 1”.
 - [-] Return/store granular citation metadata for every document and project-level fact: source file, page/cell, excerpt, period, currency, confidence, and status. The per-document schema already returns it; the project consolidator now requires structured citations and stores them in its synthesis JSON, which the UI exposes in the evidence drawer. Validate one new project synthesis in production; historical syntheses retain their legacy filename-only citations.
-- [ ] Add explicit `confirmed`, `estimated`, and `contradicted` labels consistently across facts, findings, and calculations.
+- [-] Add explicit `confirmed`, `estimated`, and `contradicted` labels consistently across facts, findings, and calculations. A shared status vocabulary now labels Evidence Drawer items and Deal Model documented facts as Confirmed, Estimated, Contradicted, Illustrative, Calculated, Synthesized, or Needs review. Extend the same badges to remaining finding/list surfaces after live validation.
 - [-] Add project-level finding filters for workstream, severity, and status, plus a material-impact view linking each finding to valuation, cash flow, closing conditions, or negotiation actions. Project Portfolio now filters documents by workstream, status, and risk signal; material-impact mapping remains missing.
 
 ## Project and document experience
 
-- [ ] Finish document deletion/exclusion: allow an accidental or duplicate upload to be marked not considered (or removed safely) and ensure synthesis respects it.
+- [-] Finish document deletion/exclusion: accidental or duplicate uploads can be marked Excluded while retaining their audit row, excluded rows are omitted from coverage/synthesis, and analysts can now Include again through the same n8n audit workflow. Validate both directions on a live project; permanent deletion remains intentionally unsupported.
 - [x] Make each project document selectable from a project list and show its analysis, status, detected type(s), and citations. The Project Synthesis card now exposes a document-detail panel and source-document action.
 - [-] Support multiple detected document types per file and update the coverage checklist from detected types rather than only the intake selection. The document LLM returns all material types; its n8n table-write schema and the history API fallback now preserve/use them for coverage. Validate a combined financial-statement upload in production.
 - [ ] Test mixed/multi-sheet spreadsheet uploads and documents that represent more than one financial statement type.
-- [-] Improve synthesis formatting: four key acquisition takeaways, four document-level investment-thesis takeaways, digestible negotiation levers, and readable open questions. The consolidator now returns an evidence-backed key-takeaways brief, persists cross-document reconciliation findings, and the synthesis card renders takeaways plus expandable negotiation/open-question sections. Document-level thesis takeaways and live validation remain.
+- [-] Improve synthesis formatting: four key acquisition takeaways, four document-level investment-thesis takeaways, digestible negotiation levers, and readable open questions. The consolidator now returns an evidence-backed key-takeaways brief, persists cross-document reconciliation findings, and the synthesis card renders expandable project-level takeaways, negotiation levers, open questions, and up to four clickable document-level thesis takeaways. Validate a new live synthesis before closing.
 - [ ] Make long text fields consistently expandable/scrollable.
 - [-] Add a management-question tracker with owner, priority, status, response, and resulting thesis impact. The checklist and question tracker now read/write through the authenticated shared n8n API, while retaining browser-local fallback. Validate cross-browser persistence and simultaneous edits before closing this item.
 
@@ -59,8 +59,8 @@
 
 - [-] Add financed bear/base/bull scenarios, including levered cash-flow paths, debt amortization, MOIC, and IRR by scenario. The Returns tab now calculates levered Bear/Base/Bull MOIC, IRR, exit proceeds, and DSCR from saved financing terms; scenario-level cash-flow charts and evidence links remain future refinement.
 - [-] Build a quantified valuation bridge: evidence-linked adjustments for unsupported add-backs, customer concentration, working-capital gaps, debt, and asset quality, with a negotiation translation for each adjustment. The Valuation tab now provides an evidence-linked, analyst-entered price/terms bridge saved in the browser; shared persistence and source-specific quantitative defaults remain missing.
-- [ ] Add ROI timeline and revenue/EBITDA projection charts from the deterministic model; never show a chart when required inputs are missing.
-- [ ] Add sources-and-uses / deal-stack visualization with leverage and downside-resilience indicators.
+- [-] Add ROI timeline and revenue/EBITDA projection charts from the deterministic model; never show a chart when required inputs are missing. The Returns tab now shows annual cash flow and a cumulative payback timeline when exit inputs are available, and Growth already shows bear/base/bull revenue paths. EBITDA projection and live-model validation remain.
+- [-] Add sources-and-uses / deal-stack visualization with leverage and downside-resilience indicators. Deal Structure now separates Uses from Sources and shows debt funding, Debt/EBITDA, DSCR, and practical downside warnings; validate against saved live financing inputs.
 - [ ] Add industry benchmarks only with a source, as-of date, comparability notes, and analyst review.
 - [ ] Add an optional buyer profile and explainable acquisition-fit reasons; do not create opaque scores.
 

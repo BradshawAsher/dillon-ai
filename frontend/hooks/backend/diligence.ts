@@ -435,7 +435,7 @@ function useLiveUpdateSubmissionConsideration() {
         return fetchJson<{ ok: boolean }>('/api/diligence/submission-consideration', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', ...identityHeaders() },
-            body: JSON.stringify({ requestID: params.requestID, action: 'nonconsidered', environment }),
+            body: JSON.stringify({ requestID: params.requestID, action: params.action === 'considered' ? 'considered' : 'nonconsidered', environment }),
         })
     }, []))
 }

@@ -3,7 +3,7 @@ import { CheckCircle2, CircleAlert, Database, FileSearch } from 'lucide-react'
 import type { DealModel } from '../hooks/backend/diligence'
 import { Badge } from '../lib/shadcn/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
-import { buildFactEvidence, parseDocumentedFacts, type EvidenceItem } from '../utils/evidence'
+import { buildFactEvidence, getEvidenceStatusPresentation, parseDocumentedFacts, type EvidenceItem } from '../utils/evidence'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 
 const factLabels: Array<[string, string]> = [
@@ -53,10 +53,11 @@ export default function DealModelReadinessCard({ model, documents, onOpenEvidenc
                         {factLabels.map(([key, label]) => {
                             const fact = facts[key]
                             const confirmed = fact?.status === 'confirmed' && typeof fact.value === 'number'
+                            const status = getEvidenceStatusPresentation(fact?.status, fact?.provenance)
                             return <button key={key} type="button" disabled={!fact} onClick={() => onOpenEvidence(buildFactEvidence({ field: key, title: `${label} evidence`, facts, documents }))} className="rounded-lg border border-border bg-background p-3 text-left transition-colors enabled:hover:border-primary/40 disabled:cursor-default">
                                 <div className="flex items-center justify-between gap-2"><span className="text-xs text-muted-foreground">{label}</span>{confirmed ? <CheckCircle2 className="h-4 w-4 text-success" /> : <CircleAlert className="h-4 w-4 text-warning" />}</div>
                                 <p className="mt-2 text-sm font-semibold text-foreground">{formatFact(fact?.value, fact?.currency)}</p>
-                                <p className="mt-1 text-xs text-muted-foreground">{confirmed ? `${fact.period || 'Period missing'} · View evidence` : fact?.status || 'Not documented'}</p>
+                                <div className="mt-1 flex flex-wrap items-center gap-1.5"><Badge variant={status.variant}>{status.label}</Badge><span className="text-xs text-muted-foreground">{confirmed ? `${fact.period || 'Period missing'} · View evidence` : fact?.status || 'Not documented'}</span></div>
                             </button>
                         })}
                     </div>
