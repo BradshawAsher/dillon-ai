@@ -356,6 +356,8 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                 </div>
                             ) : null}
 
+                            {!synthesis.finalJudgmentSummary ? <div className="rounded-xl border-2 border-warning bg-warning/10 p-5 shadow-md"><div className="flex items-center gap-2"><Scale className="h-5 w-5 text-warning" /><p className="text-sm font-bold uppercase tracking-wide text-warning">Acquisition judgment pending</p></div><p className="mt-3 text-sm leading-6 text-foreground">{synthesis.finalRecommendation ? `n8n returned the recommendation “${synthesis.finalRecommendation},” but did not return its final plain-English judgment yet. Refresh after the next synthesis pass.` : 'This synthesis row has no final judgment text yet. It may still be processing, or the consolidator returned an incomplete payload. Refresh after the next synthesis pass.'}</p></div> : null}
+
                             {synthesis.valuationBaseEstimate || synthesis.valuationLowerBound || synthesis.valuationUpperBound ? (
                                 <div className="grid gap-2 md:grid-cols-3">
                                     <div className="rounded-md border border-border bg-background px-3 py-2">
@@ -377,6 +379,36 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                             ) : null}
 
                             <div className="grid gap-3 xl:grid-cols-2">
+                                <ExpandableInsightGroup
+                                    title="Project-level red flags"
+                                    icon={<TriangleAlert className="h-4 w-4 text-destructive" />}
+                                    items={synthesis.redFlags}
+                                    emptyLabel="No material project-level red flags returned."
+                                    badgeVariant="destructive"
+                                    className="border-destructive/30 bg-destructive/5"
+                                    itemClassName="border-destructive/20"
+                                    defaultOpen
+                                />
+                                <ExpandableInsightGroup
+                                    title="Project-level yellow flags"
+                                    icon={<TriangleAlert className="h-4 w-4 text-warning" />}
+                                    items={synthesis.yellowFlags}
+                                    emptyLabel="No project-level items requiring follow-up returned."
+                                    badgeVariant="warning"
+                                    className="border-warning/30 bg-warning/5"
+                                    itemClassName="border-warning/20"
+                                    defaultOpen
+                                />
+                                <ExpandableInsightGroup
+                                    title="Project-level green flags"
+                                    icon={<Scale className="h-4 w-4 text-success" />}
+                                    items={synthesis.greenFlags}
+                                    emptyLabel="No project-level supportive indicators returned."
+                                    badgeVariant="success"
+                                    className="border-success/30 bg-success/5"
+                                    itemClassName="border-success/20"
+                                    defaultOpen
+                                />
                                 <ExpandableInsightGroup
                                     title="Key acquisition takeaways"
                                     icon={<Scale className="h-4 w-4 text-primary" />}

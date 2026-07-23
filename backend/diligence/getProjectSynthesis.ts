@@ -80,6 +80,9 @@ export type ProjectSynthesisItem = {
   openQuestions: string[]
   negotiationLevers: string[]
   keyTakeaways: string[]
+  redFlags: string[]
+  yellowFlags: string[]
+  greenFlags: string[]
   citations: string[]
   citationDetails: ProjectCitation[]
   finalRiskLevel: string
@@ -307,6 +310,18 @@ function formatTakeaway(record: Record<string, unknown>) {
   return takeaway && impact ? `${takeaway} — ${impact}` : takeaway || impact
 }
 
+function formatFlag(record: Record<string, unknown>) {
+  return getRecordString(record, ['description', 'summary', 'text', 'takeaway', 'label'])
+}
+
+function getProjectFlags(raw: string, key: 'red_flags' | 'yellow_flags' | 'green_flags') {
+  const response = getJudgmentField(raw, 'response')
+  if (!response || typeof response !== 'object') return []
+  const flags = (response as Record<string, unknown>).flags
+  if (!flags || typeof flags !== 'object') return []
+  return getStringListValue((flags as Record<string, unknown>)[key], formatFlag)
+}
+
 function extractJudgmentSummary(parsed: unknown): string {
   if (typeof parsed === 'string') {
     return parsed
@@ -314,6 +329,11 @@ function extractJudgmentSummary(parsed: unknown): string {
 
   if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
     const record = parsed as Record<string, unknown>
+    const response = record.response
+    if (response && typeof response === 'object') {
+      const responseSummary = getRecordString(response as Record<string, unknown>, ['summary'])
+      if (responseSummary) return responseSummary
+    }
     const candidate =
       record.summary ?? record.judgment ?? record.recommendation ?? record.thesis ?? record.conclusion
     if (typeof candidate === 'string' && candidate.trim().length > 0) {
@@ -322,6 +342,14 @@ function extractJudgmentSummary(parsed: unknown): string {
   }
 
   return ''
+}
+
+function getJudgmentRecommendation(raw: string) {
+  const recommendation = getJudgmentField(raw, 'final_recommendation')
+  if (recommendation && typeof recommendation === 'object') {
+    return getRecordString(recommendation as Record<string, unknown>, ['recommendation'])
+  }
+  return getStringValue(recommendation as TextValue)
 }
 
 function formatOpenQuestion(record: Record<string, unknown>) {
@@ -403,13 +431,16 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
           row.negotiationLevers,
         ], formatNegotiationLever),
         keyTakeaways: getStringListValue(getJudgmentField(judgment.json, 'key_acquisition_takeaways'), formatTakeaway),
+        redFlags: getProjectFlags(judgment.json, 'red_flags'),
+        yellowFlags: getProjectFlags(judgment.json, 'yellow_flags'),
+        greenFlags: getProjectFlags(judgment.json, 'green_flags'),
         citations: citationDetails.map((citation) => citation.sourceFile).filter((value, index, values) => values.indexOf(value) === index).length
           ? citationDetails.map((citation) => citation.sourceFile).filter((value, index, values) => values.indexOf(value) === index)
           : getFirstStringListValue([row.aiCitations, row.ai_citations]),
         citationDetails,
         finalRiskLevel: getFirstStringValue([row.finalRiskLevel, row.final_risk_level, row.ai_risk_flag]),
-        finalTrafficLight: getFirstStringValue([row.finalTrafficLight, row.final_traffic_light]),
-        finalRecommendation: getFirstStringValue([row.finalRecommendation, row.final_recommendation]),
+        finalTrafficLight: getFirstStringValue([row.finalTrafficLight, row.final_traffic_light, getStringValue(getJudgmentField(judgment.json, 'traffic_light') as TextValue)]),
+        finalRecommendation: getFirstStringValue([row.finalRecommendation, row.final_recommendation, getJudgmentRecommendation(judgment.json)]),
         finalJudgmentSummary: judgment.summary,
         finalJudgmentJson: judgment.json,
         aiErrorMessage: getStringValue(row.ai_error_message),
