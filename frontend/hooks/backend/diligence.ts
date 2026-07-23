@@ -400,6 +400,9 @@ const mockSynthesisRow: ProjectSynthesisItem = {
     'Treat recurring legal costs as operating expense — the add-back support conflicts with the general ledger.',
     'Customer concentration remains a closing-condition risk — obtain renewal evidence before final approval.',
   ],
+  redFlags: ['Bank deposits do not fully support reported revenue.', 'One major customer renewal remains unconfirmed.'],
+  yellowFlags: ['Recurring legal costs may be overstated as one-time add-backs.'],
+  greenFlags: ['Margin profile and retention indicators remain supportive.'],
   citations: [
     'FY23 P&L and bank statements',
     'Add-back schedule and general ledger',
