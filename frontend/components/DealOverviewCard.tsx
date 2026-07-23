@@ -1,12 +1,14 @@
 import { ArrowDownToLine, BadgeDollarSign, CircleAlert, FileCheck2, MessageCircleQuestion, Scale, ShieldAlert, UsersRound } from 'lucide-react'
 
-import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
+import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { Badge } from '../lib/shadcn/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Input } from '../lib/shadcn/input'
 import { formatCurrencyValue, getSubmissionInsightTone } from '../utils/aiSubmissionData'
 import { formatHours, type ImpactMetrics } from '../utils/impactMetrics'
 import type { ProjectSummary } from '../utils/projectWorkspace'
+import type { SubmissionHistoryItem } from '../utils/submissionHistory'
+import type { EvidenceItem } from './EvidenceDrawer'
 
 type DealOverviewCardProps = {
     syntheses: ProjectSynthesisItem[]
@@ -15,6 +17,9 @@ type DealOverviewCardProps = {
     askingPrice: string
     onAskingPriceChange: (value: string) => void
     impact: ImpactMetrics
+    model?: DealModel
+    documents: SubmissionHistoryItem[]
+    onOpenEvidence: (evidence: EvidenceItem) => void
 }
 
 function riskVariant(riskLevel: string): 'destructive' | 'warning' | 'secondary' | 'outline' {
@@ -45,7 +50,7 @@ function parseMoney(value: string) {
     return Number.isFinite(parsed) && parsed >= 0 ? parsed : null
 }
 
-export default function DealOverviewCard({ syntheses, projects, currentProjectId, askingPrice, onAskingPriceChange, impact }: DealOverviewCardProps) {
+export default function DealOverviewCard({ syntheses, projects, currentProjectId, askingPrice, onAskingPriceChange, impact, model, documents, onOpenEvidence }: DealOverviewCardProps) {
     const projectId = currentProjectId.trim()
     const synthesis = syntheses.find((item) => item.projectId === projectId)
     const project = projects.find((item) => (item.projectId || item.projectKey) === projectId)
@@ -67,6 +72,52 @@ export default function DealOverviewCard({ syntheses, projects, currentProjectId
             : priceGapPercent > 0
                 ? `${Math.abs(priceGapPercent).toFixed(1)}% above the supported base valuation`
                 : `${Math.abs(priceGapPercent).toFixed(1)}% below the supported base valuation`
+    let documentedFacts: Record<string, { value?: number; status?: string; currency?: string; period?: string; provenance?: string; confidence?: number; citations?: Array<{ source_file?: string; row_or_cell?: string; excerpt?: string }> }> = {}
+    try { documentedFacts = JSON.parse(model?.documentedFactsJson || '{}') } catch {}
+    const confirmedFact = (field: string) => documentedFacts[field]?.status === 'confirmed' && typeof documentedFacts[field]?.value === 'number' ? documentedFacts[field].value ?? null : null
+    const revenue = confirmedFact('revenue')
+    const ebitda = confirmedFact('ebitda_sde')
+    const debt = confirmedFact('debt')
+    const assets = confirmedFact('total_assets')
+    const purchasePrice = model?.purchasePrice ?? model?.askingPrice ?? askingPriceValue
+    const initialInvestment = purchasePrice === null || purchasePrice === undefined ? null : purchasePrice + (model?.transactionFees ?? 0) + (model?.workingCapitalRequirement ?? 0)
+    const annualOperatingCashFlow = ebitda === null || model?.taxRate === null || model?.taxRate === undefined ? null : ebitda * (1 - model.taxRate) - (model?.maintenanceCapex ?? 0)
+    const annualRoi = initialInvestment !== null && initialInvestment > 0 && annualOperatingCashFlow !== null ? annualOperatingCashFlow / initialInvestment : null
+    const paybackYears = initialInvestment !== null && annualOperatingCashFlow !== null && annualOperatingCashFlow > 0 ? initialInvestment / annualOperatingCashFlow : null
+    const ebitdaMargin = revenue !== null && revenue > 0 && ebitda !== null ? ebitda / revenue : null
+    const debtToAssets = debt !== null && assets !== null && assets > 0 ? debt / assets : null
+    const revenuePerEmployee = revenue !== null && employeeCount !== null && employeeCount > 0 ? revenue / employeeCount : null
+    const metricCurrency = documentedFacts.revenue?.currency || documentedFacts.ebitda_sde?.currency || synthesis?.valuationCurrency || 'USD'
+    const evidenceForFact = (field: string, title: string): EvidenceItem => {
+        const fact = documentedFacts[field]
+        const citation = fact?.citations?.[0]
+        const sourceFile = citation?.source_file || 'Source file was not returned'
+        const document = documents.find((item) => item.fileName.toLowerCase() === sourceFile.toLowerCase() || sourceFile.toLowerCase().includes(item.fileName.toLowerCase()))
+        return { title, sourceFile, sourceLocation: citation?.row_or_cell, excerpt: citation?.excerpt, period: fact?.period, currency: fact?.currency, confidence: fact?.confidence ?? document?.aiConfidence, status: fact?.status, provenance: fact?.provenance || 'Documented', documentUrl: document?.storageFileUrl }
+    }
+    const evidenceForSynthesis = (title: string): EvidenceItem => ({ title, sourceFile: synthesis?.citations?.[0] || 'Project synthesis', sourceLocation: 'Project-level synthesis', excerpt: synthesis?.finalJudgmentSummary, status: 'Synthesized', provenance: 'Project synthesis' })
+    const kpis = [
+        { label: 'Price vs. base value', value: priceGapPercent === null ? 'Not available' : `${Math.abs(priceGapPercent).toFixed(1)}% ${priceGapPercent > 0 ? 'above' : priceGapPercent < 0 ? 'below' : 'at'} base`, detail: 'Asking price ÷ supported base value − 1', source: 'Synthesis + assumption', evidence: evidenceForSynthesis('Price vs. supported base value') },
+        { label: 'Simple annual ROI', value: annualRoi === null ? 'Not available' : `${(annualRoi * 100).toFixed(1)}%`, detail: 'Annual operating cash flow ÷ initial investment', source: 'Documented + assumptions', evidence: evidenceForFact('ebitda_sde', 'Simple annual ROI input evidence') },
+        { label: 'Payback period', value: paybackYears === null ? 'Not available' : `${paybackYears.toFixed(1)} years`, detail: 'Initial investment ÷ annual operating cash flow', source: 'Documented + assumptions', evidence: evidenceForFact('ebitda_sde', 'Payback-period input evidence') },
+        { label: 'EBITDA margin', value: ebitdaMargin === null ? 'Not available' : `${(ebitdaMargin * 100).toFixed(1)}%`, detail: 'Documented EBITDA/SDE ÷ documented revenue', source: 'Documented', evidence: evidenceForFact('ebitda_sde', 'EBITDA margin evidence') },
+        { label: 'Debt to assets', value: debtToAssets === null ? 'Not available' : `${(debtToAssets * 100).toFixed(1)}%`, detail: 'Documented debt ÷ documented total assets', source: 'Documented', evidence: evidenceForFact('debt', 'Debt-to-assets evidence') },
+        { label: 'Revenue per employee', value: revenuePerEmployee === null ? 'Not available' : formatCurrencyValue(String(revenuePerEmployee), metricCurrency), detail: 'Documented revenue ÷ documented employee count', source: 'Documented', evidence: evidenceForFact('revenue', 'Revenue-per-employee evidence') },
+    ]
+    const decisionDrivers = synthesis ? [
+        { label: 'Primary risk', value: synthesis.crossDocumentConflicts[0] || 'No cross-document conflict recorded.' },
+        { label: 'Negotiation leverage', value: synthesis.negotiationLevers[0] || 'No negotiation lever surfaced yet.' },
+        { label: 'Open diligence question', value: synthesis.openQuestions[0] || 'No open management question recorded.' },
+    ] : []
+    const nextAction = !synthesis
+        ? 'Process project documents to generate an evidence-backed recommendation and next action.'
+        : synthesis.missingDocuments[0]
+            ? `Request or confirm: ${synthesis.missingDocuments[0]}`
+            : synthesis.negotiationLevers[0]
+                ? `Use the leading negotiation lever: ${synthesis.negotiationLevers[0]}`
+                : synthesis.openQuestions[0]
+                    ? `Resolve the leading management question: ${synthesis.openQuestions[0]}`
+                    : 'Review the supported valuation and confirm the next diligence owner.'
 
     return (
         <Card className="overflow-hidden border-primary/30">
@@ -121,6 +172,11 @@ export default function DealOverviewCard({ syntheses, projects, currentProjectId
                     </p>
                 </div>
 
+                <div className="rounded-xl border border-primary/20 bg-primary/[0.04] p-4">
+                    <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-semibold">Decision metrics</p><p className="mt-1 text-xs text-muted-foreground">Formula and provenance are visible for every metric; unavailable means its required evidence or assumptions are not ready.</p></div><Badge variant="outline">Evidence-backed</Badge></div>
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{kpis.map((kpi) => <button type="button" key={kpi.label} title={`View evidence: ${kpi.detail}`} onClick={() => onOpenEvidence(kpi.evidence)} className="rounded-lg border border-border bg-background p-3 text-left transition-colors hover:border-primary/40 hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><p className="text-xs text-muted-foreground">{kpi.label}</p><p className="mt-1 text-lg font-semibold text-foreground">{kpi.value}</p><p className="mt-1 text-xs text-muted-foreground">{kpi.detail}</p><Badge variant={kpi.source === 'Documented' ? 'secondary' : 'outline'} className="mt-2 text-[10px]">{kpi.source} · View evidence</Badge></button>)}</div>
+                </div>
+
                 {!synthesis ? (
                     <div className="rounded-lg border border-dashed border-border bg-muted/20 p-5 text-sm text-muted-foreground">
                         Upload and process the project documents to generate an evidence-backed recommendation, valuation range, and negotiation plan here.
@@ -149,6 +205,11 @@ export default function DealOverviewCard({ syntheses, projects, currentProjectId
                                 <p className="mt-2 text-sm leading-6 text-foreground">{synthesis.finalJudgmentSummary}</p>
                             </div>
                         ) : null}
+
+                        <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.75fr)]">
+                            <div className="rounded-xl border border-border bg-muted/20 p-4"><div className="flex items-center justify-between gap-3"><p className="text-sm font-semibold">Three decision drivers</p><Badge variant="outline">Project synthesis</Badge></div><div className="mt-3 grid gap-3 md:grid-cols-3">{decisionDrivers.map((driver) => <div key={driver.label} className="rounded-lg border border-border bg-background p-3"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{driver.label}</p><p className="mt-2 text-sm leading-6 text-foreground">{driver.value}</p></div>)}</div></div>
+                            <div className="rounded-xl border border-primary/25 bg-primary/5 p-4"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Recommended next action</p><p className="mt-2 text-sm leading-6 font-medium text-foreground">{nextAction}</p><p className="mt-3 text-xs text-muted-foreground">Prioritized from missing materials, negotiation levers, and open questions.</p></div>
+                        </div>
 
                         <div className="grid gap-3 lg:grid-cols-3">
                             <div className="rounded-lg border border-border bg-background p-4">

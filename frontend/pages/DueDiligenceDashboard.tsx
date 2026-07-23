@@ -13,6 +13,7 @@ import FinancedReturnsCard from '../components/FinancedReturnsCard'
 import ScenarioComparisonCard from '../components/ScenarioComparisonCard'
 import DealOverviewCard from '../components/DealOverviewCard'
 import DealValuationCard from '../components/DealValuationCard'
+import EvidenceDrawer, { type EvidenceItem } from '../components/EvidenceDrawer'
 import DealWorkspaceNav, { type WorkspaceTab } from '../components/DealWorkspaceNav'
 import ProjectIntakeCard from '../components/ProjectIntakeCard'
 import ProjectPortfolioCard from '../components/ProjectPortfolioCard'
@@ -264,6 +265,7 @@ export default function DueDiligenceDashboard() {
         if (typeof window === 'undefined' || !('Notification' in window)) return 'unsupported'
         return Notification.permission
     })
+    const [activeEvidence, setActiveEvidence] = useState<EvidenceItem | null>(null)
     const [dealModelDraftByProject, setDealModelDraftByProject] = useState<Record<string, DealModel>>({})
     const completionAudioContext = useRef<AudioContext | null>(null)
     const dealModelSaveTimeout = useRef<number | null>(null)
@@ -429,6 +431,20 @@ export default function DueDiligenceDashboard() {
     }
 
     const selectedFinding = diligenceFindings.find((finding) => finding.id === selectedFindingId) ?? fallbackFinding
+    const openFindingEvidence = (finding: typeof selectedFinding) => {
+        const citation = finding.sourceCitation.toLowerCase()
+        const document = submissionHistory.find((row) => row.fileName.length > 0 && citation.includes(row.fileName.toLowerCase()))
+        setActiveEvidence({
+            title: finding.summary,
+            sourceFile: document?.fileName || finding.sourceCitation,
+            sourceLocation: finding.sourceCitation,
+            excerpt: finding.sourceExcerpt,
+            confidence: finding.confidenceScore,
+            status: validationById[finding.id] ? 'Validated' : 'Pending analyst review',
+            provenance: finding.workstream,
+            documentUrl: document?.storageFileUrl,
+        })
+    }
     const validatedCount = diligenceFindings.filter((finding) => validationById[finding.id]).length
     const highPriorityCount = diligenceFindings.filter(
         (finding) => finding.severity === 'Critical' || finding.severity === 'High'
@@ -749,6 +765,10 @@ export default function DueDiligenceDashboard() {
             return
         }
 
+        if (environment === 'production' && desktopNotificationPermission === 'default') {
+            void enableDesktopNotifications()
+        }
+
         if (environment === 'production') {
             setActiveWorkspaceTab('diligence')
             window.setTimeout(() => {
@@ -1004,6 +1024,9 @@ export default function DueDiligenceDashboard() {
                         askingPrice={askingPrice}
                         onAskingPriceChange={handleAskingPriceChange}
                         impact={activeProjectImpact}
+                        model={activeDealModel}
+                        documents={submissionHistory.filter((row) => getProjectKey(row) === activeProjectId)}
+                        onOpenEvidence={setActiveEvidence}
                     />
                 </section> : null}
 
@@ -1514,11 +1537,12 @@ export default function DueDiligenceDashboard() {
                                                     'cursor-pointer border-b border-border/80 align-top',
                                                     isSelected && 'bg-accent/60 hover:bg-accent/60'
                                                 )}
-                                                onClick={() => setSelectedFindingId(finding.id)}
+                                                onClick={() => { setSelectedFindingId(finding.id); openFindingEvidence(finding) }}
                                                 onKeyDown={(event) => {
                                                     if (event.key === 'Enter' || event.key === ' ') {
                                                         event.preventDefault()
                                                         setSelectedFindingId(finding.id)
+                                                        openFindingEvidence(finding)
                                                     }
                                                 }}
                                             >
@@ -1580,6 +1604,7 @@ export default function DueDiligenceDashboard() {
                                     <Badge variant={validationById[selectedFinding.id] ? 'success' : 'outline'}>
                                         {validationById[selectedFinding.id] ? 'Validated' : 'Pending analyst review'}
                                     </Badge>
+                                    <Button type="button" size="sm" variant="outline" onClick={() => openFindingEvidence(selectedFinding)}>View evidence</Button>
                                 </div>
 
                                 <div className="space-y-3 rounded-lg border border-border bg-background p-4">
@@ -1687,6 +1712,7 @@ export default function DueDiligenceDashboard() {
                 </div>
                 ) : null}
             </main>
+            <EvidenceDrawer evidence={activeEvidence} onClose={() => setActiveEvidence(null)} />
         </div>
     )
 }
