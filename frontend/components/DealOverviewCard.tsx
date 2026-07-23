@@ -47,8 +47,9 @@ function InsightList({ items, emptyLabel }: { items: string[]; emptyLabel: strin
 
 function parseMoney(value: string) {
     const normalized = value.replace(/[$,\s]/g, '')
-    const parsed = Number(normalized)
-    return Number.isFinite(parsed) && parsed >= 0 ? parsed : null
+    const multiplier = /m$/i.test(normalized) ? 1_000_000 : /b$/i.test(normalized) ? 1_000_000_000 : /k$/i.test(normalized) ? 1_000 : 1
+    const parsed = Number(normalized.replace(/[kmb]$/i, ''))
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed * multiplier : null
 }
 
 export default function DealOverviewCard({ syntheses, projects, currentProjectId, askingPrice, onAskingPriceChange, impact, model, documents, onOpenEvidence, exampleMode = false }: DealOverviewCardProps) {

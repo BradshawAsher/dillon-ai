@@ -4,11 +4,7 @@
 
 # Brad's Bad Grammar TODOLIST
 
-Can we make the recommendation more digestible from the n8n side of things if possible, as well as recommended next action, and three decision drivers and pretty much everything?
-
-Can you consider how we are currently displaying the data from the LLMs to the user and then change the json schema and whatever you need to in n8n and the frontend so that the information is much more digestible for the user? And also maybe save a full report in depth as well for the user to download and look at if they really want to nitpick?
-
-Also for the checklist for them to be able to check things off and then have a "completed tab" for that sectino as well so they can mark it as unfinished if they made a msitake?
+FOR BRAD - Continue looking through the current website and play around with it and what else needs to be added
 
 Also for the returns section can we make up some model assumptions (somewhat industry accepted) if that will allow the user to get a first glance of ressults, as well as growth, deal structure, (lmk if you need anything else from me for this)
 

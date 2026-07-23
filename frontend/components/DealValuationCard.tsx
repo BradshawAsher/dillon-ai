@@ -15,12 +15,14 @@ type DealValuationCardProps = {
 }
 
 function parseMoney(value: string) {
-    const parsed = Number(value.replace(/[$,\s]/g, ''))
-    return Number.isFinite(parsed) && parsed >= 0 ? parsed : null
+    const normalized = value.replace(/[$,\s]/g, '')
+    const multiplier = /m$/i.test(normalized) ? 1_000_000 : /b$/i.test(normalized) ? 1_000_000_000 : /k$/i.test(normalized) ? 1_000 : 1
+    const parsed = Number(normalized.replace(/[kmb]$/i, ''))
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed * multiplier : null
 }
 
 export default function DealValuationCard({ synthesis, askingPrice, model, onModelChange }: DealValuationCardProps) {
-    const askingPriceValue = parseMoney(askingPrice)
+    const askingPriceValue = parseMoney(askingPrice) ?? model?.askingPrice ?? null
     const baseValue = synthesis ? parseMoney(synthesis.valuationBaseEstimate) : null
     const premiumPercent = askingPriceValue !== null && baseValue !== null && baseValue > 0
         ? ((askingPriceValue - baseValue) / baseValue) * 100

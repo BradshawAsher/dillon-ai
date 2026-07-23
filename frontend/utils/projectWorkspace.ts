@@ -105,20 +105,32 @@ function getTimestampValue(value: string) {
     return Number.isNaN(parsed) ? 0 : parsed
 }
 
-function getDocumentTypeLabel(row: SubmissionHistoryItem) {
+function getDocumentTypeLabels(row: SubmissionHistoryItem) {
+    try {
+        const detected = JSON.parse(row.detectedDocumentTypesJson || '')
+        if (Array.isArray(detected) && detected.every((value) => typeof value === 'string') && detected.length > 0) {
+            return detected.map((value) => value.trim()).filter(Boolean)
+        }
+    } catch {
+        // Older rows do not have multi-type classification yet.
+    }
     if (row.detectedDocumentType?.trim()) {
-        return row.detectedDocumentType
+        return [row.detectedDocumentType]
     }
 
     if (row.documentType.trim().length > 0) {
-        return row.documentType
+        return [row.documentType]
     }
 
     if (row.fileType.trim().length > 0) {
-        return row.fileType
+        return [row.fileType]
     }
 
-    return 'Unknown document'
+    return ['Unknown document']
+}
+
+function getDocumentTypeLabel(row: SubmissionHistoryItem) {
+    return getDocumentTypeLabels(row).join(' + ')
 }
 
 function buildCoverage(documentTypes: string[]) {
@@ -292,7 +304,7 @@ export function createProjectSummaries(rows: SubmissionHistoryItem[]) {
         }
 
         const consideredRows = sortedRows.filter((row) => row.isConsidered)
-        const documentTypes = [...new Set(consideredRows.map(getDocumentTypeLabel))]
+        const documentTypes = [...new Set(consideredRows.flatMap(getDocumentTypeLabels))]
         const completedCount = consideredRows.filter((row) => normalizeSubmissionStatus(row.status) === 'completed').length
         const activeCount = consideredRows.filter((row) => isActiveSubmissionStatus(row.status)).length
         const failedCount = consideredRows.filter((row) => {

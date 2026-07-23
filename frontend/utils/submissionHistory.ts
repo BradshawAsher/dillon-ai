@@ -11,6 +11,8 @@ export type SubmissionHistoryItem = {
     documentType: string
     /** AI classification from the completed per-document analysis; preserves the intake selection above. */
     detectedDocumentType?: string
+    /** JSON list of every material document type detected in one uploaded file. */
+    detectedDocumentTypesJson?: string
     /** Deterministic CSV/table preflight result, when applicable. */
     tableStructureStatus?: string
     tableStructureIssues?: string

@@ -13,6 +13,7 @@ type SubmissionHistoryRow = {
   projectStage?: TextValue
   documentType?: TextValue
   detectedDocumentType?: TextValue
+  detectedDocumentTypesJson?: TextValue
   tableStructureStatus?: TextValue
   tableStructureIssues?: TextValue
   detectedHeaderRow?: number | string | null
@@ -257,6 +258,7 @@ export default async function getSubmissionHistory(req: {
     projectStage: getFirstStringValue([row.projectStage]),
     documentType: getFirstStringValue([row.documentType]),
     detectedDocumentType: getFirstStringValue([row.detectedDocumentType]),
+    detectedDocumentTypesJson: getFirstStringValue([row.detectedDocumentTypesJson]),
     tableStructureStatus: getFirstStringValue([row.tableStructureStatus]),
     tableStructureIssues: getFirstStringValue([row.tableStructureIssues]),
     detectedHeaderRow: getFirstNumberValue([row.detectedHeaderRow]),
