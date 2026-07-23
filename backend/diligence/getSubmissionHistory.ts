@@ -24,6 +24,9 @@ type SubmissionHistoryRow = {
   employeeConfidence?: number | string | null
   employeeCitation?: TextValue
   employeeEvidenceStatus?: TextValue
+  financialFactsJson?: TextValue
+  reconciliationJson?: TextValue
+  mathCheckStatus?: TextValue
   submissionBatchId?: TextValue
   expectedBatchDocumentCount?: number | string | null
   fileName?: TextValue
@@ -265,6 +268,9 @@ export default async function getSubmissionHistory(req: {
     employeeConfidence: getFirstOptionalNumberValue([row.employeeConfidence]),
     employeeCitation: getFirstStringValue([row.employeeCitation]),
     employeeEvidenceStatus: getFirstStringValue([row.employeeEvidenceStatus]),
+    financialFactsJson: getFirstStringValue([row.financialFactsJson]),
+    reconciliationJson: getFirstStringValue([row.reconciliationJson]),
+    mathCheckStatus: getFirstStringValue([row.mathCheckStatus]),
     submissionBatchId: getFirstStringValue([row.submissionBatchId]),
     expectedBatchDocumentCount: getFirstNumberValue([row.expectedBatchDocumentCount]),
     fileName: getFirstStringValue([row.fileName]),

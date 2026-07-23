@@ -63,6 +63,23 @@ async function handleRequest(
     return
   }
 
+  if (route === '/deal-models' && req.method === 'GET') {
+    const mod = await server.ssrLoadModule(backendModuleUrl('getDealModels.ts'))
+    const rows: unknown = await mod.default({ params: { projectId: requestUrl.searchParams.get('projectId') ?? '' }, user })
+    res.setHeader('Content-Type', 'application/json')
+    res.end(JSON.stringify(rows))
+    return
+  }
+
+  if (route === '/deal-models' && req.method === 'POST') {
+    const params = await readJsonBody(req)
+    const mod = await server.ssrLoadModule(backendModuleUrl('saveDealModel.ts'))
+    const result: unknown = await mod.default({ params, user })
+    res.setHeader('Content-Type', 'application/json')
+    res.end(JSON.stringify(result))
+    return
+  }
+
   if (route === '/submission-consideration' && req.method === 'POST') {
     const params = await readJsonBody(req)
     const mod = await server.ssrLoadModule(backendModuleUrl('updateSubmissionRow.ts'))

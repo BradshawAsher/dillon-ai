@@ -42,6 +42,24 @@ type QueryState<T> = {
     error: string | null
 }
 
+export type DealModel = {
+    projectId: string
+    askingPrice: number | null
+    purchasePrice: number | null
+    debtAssumed: number | null
+    cashAcquired: number | null
+    workingCapitalRequirement: number | null
+    transactionFees: number | null
+    holdPeriodYears: number | null
+    taxRate: number | null
+    closingCosts: number | null
+    maintenanceCapex: number | null
+    exitMultiple: number | null
+    exitCosts: number | null
+    modelUpdatedAt: string
+    modelUpdatedBy: string
+}
+
 function useQuery<T>(fetcher: (params?: Record<string, unknown>) => Promise<T>, initialData: T | null = null) {
     const [state, setState] = useState<QueryState<T>>({ data: initialData, loading: false, error: null })
 
@@ -162,6 +180,19 @@ function useLiveProjectSynthesis() {
       })
     }, [])
   )
+}
+
+function useLiveDealModels() {
+    return useQuery(useCallback(async (params: Record<string, unknown> = {}) => {
+        const projectId = typeof params.projectId === 'string' ? params.projectId : ''
+        return fetchJson<DealModel[]>(`/api/diligence/deal-models${projectId ? `?projectId=${encodeURIComponent(projectId)}` : ''}`, { headers: identityHeaders() })
+    }, []))
+}
+
+function useLiveSaveDealModel() {
+    return useQuery(useCallback(async (params: Record<string, unknown> = {}) => {
+        return fetchJson<DealModel>('/api/diligence/deal-models', { method: 'POST', headers: { 'Content-Type': 'application/json', ...identityHeaders() }, body: JSON.stringify(params) })
+    }, []))
 }
 
 function useLiveSubmitDealPacket() {
@@ -490,3 +521,5 @@ export const useSubmitDealPacket = USE_MOCKS ? useMockSubmitDealPacket : useLive
 
 export const useGetProjectSynthesis = USE_MOCKS ? useMockProjectSynthesis : useLiveProjectSynthesis
 export const useGetWorkflowErrors = USE_MOCKS ? useMockWorkflowErrors : useLiveWorkflowErrors
+export const useGetDealModels = useLiveDealModels
+export const useSaveDealModel = useLiveSaveDealModel

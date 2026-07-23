@@ -3,6 +3,8 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 
 import getProjectSynthesis from '../../backend/diligence/getProjectSynthesis'
+import getDealModels from '../../backend/diligence/getDealModels'
+import saveDealModel from '../../backend/diligence/saveDealModel'
 import getSubmissionHistory from '../../backend/diligence/getSubmissionHistory'
 import getWorkflowErrors from '../../backend/diligence/getWorkflowErrors'
 import retryFailedDocument from '../../backend/diligence/retryFailedDocument'
@@ -42,6 +44,17 @@ export default async function handler(req: ApiRequest, res: ServerResponse) {
     if (route === 'synthesis' && req.method === 'GET') {
       const rows = await getProjectSynthesis({ params: { environment }, user })
       sendJson(res, 200, rows)
+      return
+    }
+
+    if (route === 'deal-models' && req.method === 'GET') {
+      sendJson(res, 200, await getDealModels({ params: { projectId: requestUrl.searchParams.get('projectId') ?? '' }, user }))
+      return
+    }
+
+    if (route === 'deal-models' && req.method === 'POST') {
+      const params = await readJsonBody(req) as Parameters<typeof saveDealModel>[0]['params']
+      sendJson(res, 200, await saveDealModel({ params, user }))
       return
     }
 

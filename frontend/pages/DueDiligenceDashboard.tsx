@@ -21,10 +21,12 @@ import {
     exampleProjectSyntheses,
     exampleSubmissionHistoryRows,
     useGetDiligenceData,
+    useGetDealModels,
     useGetProjectSynthesis,
     useGetWorkflowErrors,
     useGetSubmissionHistory,
     useSubmitDealPacket,
+    useSaveDealModel,
     useUpdateSubmissionConsideration,
 } from '../hooks/backend/diligence'
 import { Badge } from '../lib/shadcn/badge'
@@ -199,6 +201,8 @@ export default function DueDiligenceDashboard() {
         error: projectSynthesisError,
         trigger: triggerProjectSynthesis,
     } = useGetProjectSynthesis()
+    const { data: dealModelsData, trigger: triggerDealModels } = useGetDealModels()
+    const { trigger: triggerSaveDealModel } = useSaveDealModel()
     const { data: workflowErrorData, loading: workflowErrorsLoading, error: workflowErrorsError, trigger: triggerWorkflowErrors } = useGetWorkflowErrors()
     const { trigger: triggerSubmissionConsideration } = useUpdateSubmissionConsideration()
 
@@ -257,6 +261,7 @@ export default function DueDiligenceDashboard() {
         return Notification.permission
     })
     const completionAudioContext = useRef<AudioContext | null>(null)
+    const dealModelSaveTimeout = useRef<number | null>(null)
     const [hasRestoredLatestProject, setHasRestoredLatestProject] = useState(false)
     const [validationById, setValidationById] = useState<Record<string, boolean>>({})
     const [notesById, setNotesById] = useState<Record<string, string>>({})
@@ -279,7 +284,16 @@ export default function DueDiligenceDashboard() {
         void triggerSubmissionHistory({ environment: 'production' })
         void triggerProjectSynthesis({ environment: 'production' })
         void triggerWorkflowErrors({ environment: 'production' })
-    }, [trigger, triggerProjectSynthesis, triggerSubmissionHistory, triggerWorkflowErrors])
+        void triggerDealModels({})
+    }, [trigger, triggerDealModels, triggerProjectSynthesis, triggerSubmissionHistory, triggerWorkflowErrors])
+
+    useEffect(() => {
+        if (!Array.isArray(dealModelsData)) return
+        setAskingPriceByProject((current) => ({
+            ...current,
+            ...Object.fromEntries(dealModelsData.filter((model) => model.projectId && model.askingPrice !== null).map((model) => [model.projectId, String(model.askingPrice)])),
+        }))
+    }, [dealModelsData])
 
     useEffect(() => {
         if (!fallbackFinding) {
@@ -486,6 +500,10 @@ export default function DueDiligenceDashboard() {
     const handleAskingPriceChange = (value: string) => {
         setAskingPrice(value)
         setAskingPriceByProject((current) => ({ ...current, [activeProjectId]: value }))
+        if (dealModelSaveTimeout.current !== null) window.clearTimeout(dealModelSaveTimeout.current)
+        dealModelSaveTimeout.current = window.setTimeout(() => {
+            void triggerSaveDealModel({ projectId: activeProjectId, askingPrice: value }).result
+        }, 500)
     }
     const activeBatchRows = useMemo(() => {
         if (!displayedSubmissionBatch) {

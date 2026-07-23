@@ -80,6 +80,27 @@ function getRowKey(row: SubmissionHistoryItem) {
   return `${row.id}-${row.requestID || 'missing-request-id'}-${row.receivedAt || row.createdAt || 'no-time'}`
 }
 
+type ReconciliationView = {
+  status?: string
+  warnings?: string[]
+  metrics?: Record<string, { value?: number; actual?: number; withinTolerance?: boolean; formula?: string }>
+}
+
+function getReconciliationView(raw: string | undefined): ReconciliationView | null {
+  if (!raw?.trim()) return null
+
+  try {
+    const parsed = JSON.parse(raw) as ReconciliationView
+    return parsed && typeof parsed === 'object' ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+function formatReconciliationLabel(value: string) {
+  return value.replace(/_/g, ' ').replace(/\b\w/g, (character) => character.toUpperCase())
+}
+
 function getDisplayTimestamp(row: SubmissionHistoryItem) {
   return row.processedAt || row.processingStartedAt || row.receivedAt || row.updatedAt || row.createdAt || row.triggerTimestamp || 'Pending'
 }
@@ -568,6 +589,7 @@ export default function SubmissionHistoryCard({
                 <div className="space-y-4">
                   {(() => {
                     const aiViewModel = getAiSubmissionViewModel(selectedRow)
+                    const reconciliation = getReconciliationView(selectedRow.reconciliationJson)
                     const documentImpact = computeImpactMetrics([selectedRow])
                     const isCompleted = normalizeSubmissionStatus(selectedRow.status) === 'completed'
                     return (
@@ -722,6 +744,39 @@ export default function SubmissionHistoryCard({
                             <p className="mt-1 text-sm text-foreground">{selectedRow.ebitdaExtracted || 'Pending'}</p>
                           </div>
                         </div>
+
+                        {reconciliation ? (
+                          <ExpandableInsightGroup
+                            title="Deterministic math checks"
+                            items={[]}
+                            itemCount={Object.keys(reconciliation.metrics ?? {}).length}
+                            className="border-border bg-background"
+                            emptyLabel="No comparable evidence-backed facts were available for a calculation."
+                            defaultOpen
+                          >
+                            <div className="space-y-3">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <Badge variant={reconciliation.status === 'warning' ? 'destructive' : reconciliation.status === 'passed' ? 'success' : 'secondary'}>
+                                  {reconciliation.status === 'passed' ? 'Checks passed' : reconciliation.status === 'warning' ? 'Needs review' : 'Not available'}
+                                </Badge>
+                                <p className="text-xs text-muted-foreground">Calculated from confirmed, period- and currency-matched document facts. Reconciliation tolerance: 2%.</p>
+                              </div>
+                              {Object.entries(reconciliation.metrics ?? {}).length > 0 ? (
+                                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                  {Object.entries(reconciliation.metrics ?? {}).map(([key, metric]) => (
+                                    <div key={key} className="rounded-lg border border-border bg-muted/30 p-3">
+                                      <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{formatReconciliationLabel(key)}</p>
+                                      <p className="mt-1 text-sm font-medium text-foreground">{typeof metric.value === 'number' ? metric.value.toLocaleString(undefined, { maximumFractionDigits: 2 }) : 'Not available'}</p>
+                                      {metric.formula ? <p className="mt-1 text-xs text-muted-foreground">{metric.formula}</p> : null}
+                                      {typeof metric.withinTolerance === 'boolean' ? <p className={metric.withinTolerance ? 'mt-1 text-xs text-success' : 'mt-1 text-xs text-destructive'}>{metric.withinTolerance ? 'Within tolerance' : 'Outside tolerance'}</p> : null}
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : null}
+                              {reconciliation.warnings?.length ? <p className="text-sm text-destructive">{reconciliation.warnings.map(formatReconciliationLabel).join(' · ')}</p> : null}
+                            </div>
+                          </ExpandableInsightGroup>
+                        ) : null}
 
                         {(aiViewModel.summary || aiViewModel.intent || aiViewModel.targetValue || aiViewModel.variancePercentage || aiViewModel.confidencePercent !== null) ? (
                           <ExpandableInsightGroup

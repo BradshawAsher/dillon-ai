@@ -24,6 +24,10 @@ export type SubmissionHistoryItem = {
     employeeConfidence?: number | null
     employeeCitation?: string
     employeeEvidenceStatus?: string
+    /** Cited facts and calculator output saved by the deterministic reconciliation step. */
+    financialFactsJson?: string
+    reconciliationJson?: string
+    mathCheckStatus?: string
     submissionBatchId: string
     expectedBatchDocumentCount: number
     fileName: string
