@@ -213,7 +213,8 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
 
                 {visibleSyntheses.map((synthesis) => {
                     const displayName = projectNameById.get(synthesis.projectId) ?? synthesis.projectId ?? 'Unknown project'
-                    const hasRefreshFailure = synthesis.projectStatus.trim().toLowerCase() === 'synthesis_refresh_failed'
+                    const synthesisStatus = synthesis.projectStatus.trim().toLowerCase()
+                    const hasRefreshFailure = synthesisStatus === 'synthesis_refresh_failed' || synthesisStatus === 'synthesis_blocked'
 
                     return (
                         <div key={`${synthesis.projectId}-${synthesis.id}`} className="space-y-4 rounded-xl border border-border bg-card p-4">
@@ -250,7 +251,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
 
                             {hasRefreshFailure ? (
                                 <div className="rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm text-foreground">
-                                    <p className="font-medium">Latest synthesis refresh failed after automatic retries.</p>
+                                    <p className="font-medium">{synthesisStatus === 'synthesis_blocked' ? 'Latest synthesis is blocked until document processing is resolved.' : 'Latest synthesis refresh failed after automatic retries.'}</p>
                                     <p className="mt-1 text-muted-foreground">
                                         The prior synthesis below remains available. {synthesis.aiErrorMessage || 'A provider or processing step did not complete.'}
                                     </p>

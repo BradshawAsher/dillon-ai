@@ -130,7 +130,7 @@ function createUnusedProjectId(usedProjectIds: Iterable<string> = []) {
     return candidate
 }
 
-const terminalBatchStatuses = new Set(['completed', 'failed', 'error', 'rejected'])
+const terminalBatchStatuses = new Set(['completed', 'failed', 'error', 'rejected', 'needs_review', 'needs review'])
 // Retains the retired Retool sample implementation as a code backup without
 // exposing it in the project-based live workspace.
 const SHOW_LEGACY_DILIGENCE_BACKUP = false
@@ -586,8 +586,11 @@ export default function DueDiligenceDashboard() {
     const activeBatchProcessingCount = activeBatchRows.filter((row) => hasReachedProcessingStage(row.status)).length
     const activeBatchFailedCount = activeBatchRows.filter((row) => {
         const status = row.status.trim().toLowerCase()
-        return status === 'failed' || status === 'error' || status === 'rejected'
+        return status === 'failed' || status === 'error' || status === 'rejected' || status === 'needs_review' || status === 'needs review'
     }).length
+    const activeBatchErrors = activeBatchRows
+        .filter((row) => row.errorMessage.trim().length > 0)
+        .map((row) => ({ fileName: row.fileName || 'Unnamed document', message: row.errorMessage }))
     const activeBatchExpectedCount = displayedSubmissionBatch?.expectedDocumentCount ?? 0
     const activeBatchProgressPercent = activeBatchExpectedCount > 0
         ? Math.min(100, Math.round((activeBatchFinishedCount / activeBatchExpectedCount) * 100))
@@ -1148,6 +1151,14 @@ export default function DueDiligenceDashboard() {
                                         : 'Time saved will appear as documents complete (40m manual-review baseline per document).'}
                                 </p>
                             </div>
+                            {activeBatchErrors.length > 0 ? (
+                                <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-foreground">
+                                    <p className="font-medium">Document processing issue{activeBatchErrors.length === 1 ? '' : 's'}</p>
+                                    <ul className="mt-1 space-y-1 text-muted-foreground">
+                                        {activeBatchErrors.map((item) => <li key={`${item.fileName}-${item.message}`}>{item.fileName}: {item.message}</li>)}
+                                    </ul>
+                                </div>
+                            ) : null}
                             <p className="text-xs text-muted-foreground">
                                 {activeBatchFinishedCount >= activeBatchExpectedCount
                                     ? activeBatchFailedCount > 0
