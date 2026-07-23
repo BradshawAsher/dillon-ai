@@ -2,24 +2,11 @@ import { ChartNoAxesCombined } from 'lucide-react'
 
 import type { DealModel } from '../hooks/backend/diligence'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
+import { calculateIrr } from '../utils/dealMath'
 import { GrowthLineChart } from './DealCharts'
 
 function facts(model: DealModel) { try { return JSON.parse(model.documentedFactsJson || '{}') as Record<string, { value?: number; status?: string; currency?: string }> } catch { return {} } }
 function money(value: number, currency: string) { return new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: 0 }).format(value) }
-function calculateIrr(cashFlows: number[]) {
-    if (!cashFlows.some((value) => value < 0) || !cashFlows.some((value) => value > 0)) return null
-    let rate = 0.1
-    for (let iteration = 0; iteration < 100; iteration += 1) {
-        const npv = cashFlows.reduce((sum, cashFlow, year) => sum + cashFlow / (1 + rate) ** year, 0)
-        const derivative = cashFlows.slice(1).reduce((sum, cashFlow, year) => sum - ((year + 1) * cashFlow) / (1 + rate) ** (year + 2), 0)
-        if (!Number.isFinite(npv) || !Number.isFinite(derivative) || Math.abs(derivative) < 1e-9) return null
-        const nextRate = rate - npv / derivative
-        if (nextRate <= -0.999 || nextRate > 100) return null
-        if (Math.abs(nextRate - rate) < 1e-7) return nextRate
-        rate = nextRate
-    }
-    return null
-}
 
 export default function ScenarioComparisonCard({ model }: { model: DealModel }) {
     const documented = facts(model)
