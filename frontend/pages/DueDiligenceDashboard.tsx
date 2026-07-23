@@ -550,6 +550,11 @@ export default function DueDiligenceDashboard() {
         }
     }, [activeSubmissionBatch, latestSavedBatch])
     const activeProjectSynthesis = visibleProjectSyntheses.find((synthesis) => synthesis.projectId === activeProjectId)
+    const activeProjectSynthesisSucceeded = Boolean(
+        activeProjectSynthesis
+        && activeProjectSynthesis.projectStatus.trim().toLowerCase() === 'synthesized'
+        && (activeProjectSynthesis.finalJudgmentSummary.trim().length > 0 || activeProjectSynthesis.finalRecommendation.trim().length > 0)
+    )
 
     const handleAskingPriceChange = (value: string) => {
         setAskingPrice(value)
@@ -591,7 +596,12 @@ export default function DueDiligenceDashboard() {
     }).length
     const activeBatchErrors = activeBatchRows
         .filter((row) => row.errorMessage.trim().length > 0)
-        .map((row) => ({ fileName: row.fileName || 'Unnamed document', message: row.errorMessage }))
+        .map((row) => ({
+            fileName: row.fileName || 'Unnamed document',
+            message: row.errorMessage,
+            requestID: row.requestID,
+            canRetry: ['failed', 'error', 'rejected', 'needs_review', 'needs review'].includes(row.status.trim().toLowerCase()),
+        }))
     const activeBatchExpectedCount = displayedSubmissionBatch?.expectedDocumentCount ?? 0
     const activeBatchProgressPercent = activeBatchExpectedCount > 0
         ? Math.min(100, Math.round((activeBatchFinishedCount / activeBatchExpectedCount) * 100))
@@ -601,6 +611,7 @@ export default function DueDiligenceDashboard() {
         : 0
     const activeBatchImpact = useMemo(() => computeImpactMetrics(activeBatchRows), [activeBatchRows])
     const batchInProgressNotificationId = useRef<string | null>(null)
+    const batchReachedProcessingNotificationId = useRef<string | null>(null)
     const synthesisInProgressNotificationProjectId = useRef<string | null>(null)
 
     const playCompletionSound = () => {
@@ -674,6 +685,16 @@ export default function DueDiligenceDashboard() {
 
     useEffect(() => {
         if (!displayedSubmissionBatch || activeBatchExpectedCount === 0) return
+        if (activeBatchProcessingCount < activeBatchExpectedCount || activeBatchFinishedCount >= activeBatchExpectedCount) return
+        if (batchReachedProcessingNotificationId.current === displayedSubmissionBatch.id) return
+        batchReachedProcessingNotificationId.current = displayedSubmissionBatch.id
+        if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('Document batch is processing', { body: `All ${activeBatchExpectedCount} documents have reached processing. Analysis is still running.` })
+        }
+    }, [activeBatchExpectedCount, activeBatchFinishedCount, activeBatchProcessingCount, displayedSubmissionBatch])
+
+    useEffect(() => {
+        if (!displayedSubmissionBatch || activeBatchExpectedCount === 0) return
         if (activeBatchFinishedCount < activeBatchExpectedCount) {
             batchInProgressNotificationId.current = displayedSubmissionBatch.id
             return
@@ -691,13 +712,13 @@ export default function DueDiligenceDashboard() {
             synthesisInProgressNotificationProjectId.current = activeProjectId
             return
         }
-        if (synthesisInProgressNotificationProjectId.current !== activeProjectId) return
+        if (synthesisInProgressNotificationProjectId.current !== activeProjectId || !activeProjectSynthesisSucceeded) return
         synthesisInProgressNotificationProjectId.current = null
         playCompletionSound()
         if ('Notification' in window && Notification.permission === 'granted') {
             new Notification('Project synthesis complete', { body: 'Your due diligence synthesis is ready to review.' })
         }
-    }, [activeProjectId, isCurrentProjectAwaitingSynthesis])
+    }, [activeProjectId, activeProjectSynthesisSucceeded, isCurrentProjectAwaitingSynthesis])
 
     const enableDesktopNotifications = async () => {
         playCompletionSound()
@@ -739,6 +760,7 @@ export default function DueDiligenceDashboard() {
         const usedProjectIds = projectSummaries.map((project) => project.projectId || project.projectKey)
 
         setSelectedProjectKey('new')
+        setBatchSubmissionMessage('')
         setDealName('')
         setProjectId(createUnusedProjectId(usedProjectIds))
         setProjectStage('post-loi')
@@ -1184,11 +1206,29 @@ export default function DueDiligenceDashboard() {
                                         : 'Time saved will appear as documents complete (40m manual-review baseline per document).'}
                                 </p>
                             </div>
+                            {batchElapsedSeconds >= 300 && activeBatchFinishedCount < activeBatchExpectedCount ? (
+                                <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-foreground">
+                                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+                                    <div>
+                                        <p className="font-medium">This batch is taking longer than expected.</p>
+                                        <p className="mt-1 text-muted-foreground">Please reload the page to re-sync the latest n8n status. Reloading will not submit the documents again.</p>
+                                    </div>
+                                </div>
+                            ) : null}
                             {activeBatchErrors.length > 0 ? (
                                 <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-foreground">
                                     <p className="font-medium">Document processing issue{activeBatchErrors.length === 1 ? '' : 's'}</p>
                                     <ul className="mt-1 space-y-1 text-muted-foreground">
-                                        {activeBatchErrors.map((item) => <li key={`${item.fileName}-${item.message}`}>{item.fileName}: {item.message}</li>)}
+                                        {activeBatchErrors.map((item) => (
+                                            <li key={`${item.fileName}-${item.message}`} className="flex flex-wrap items-center justify-between gap-2">
+                                                <span>{item.fileName}: {item.message}</span>
+                                                {item.canRetry && item.requestID ? (
+                                                    <Button type="button" size="sm" variant="outline" disabled={retryingRequestId === item.requestID} onClick={() => handleRetryFailedDocument(item.requestID)}>
+                                                        {retryingRequestId === item.requestID ? 'Retrying…' : 'Retry document'}
+                                                    </Button>
+                                                ) : null}
+                                            </li>
+                                        ))}
                                     </ul>
                                 </div>
                             ) : null}
@@ -1263,6 +1303,11 @@ export default function DueDiligenceDashboard() {
                                     </CardDescription>
                                 </div>
                                 <div className="flex flex-wrap items-center gap-2">
+                                    {displayedSubmissionRow && ['failed', 'error', 'rejected', 'needs_review', 'needs review'].includes(displayedSubmitStatus.trim().toLowerCase()) && displayedSubmissionRow.requestID ? (
+                                        <Button type="button" variant="outline" disabled={retryingRequestId === displayedSubmissionRow.requestID} onClick={() => handleRetryFailedDocument(displayedSubmissionRow.requestID)}>
+                                            {retryingRequestId === displayedSubmissionRow.requestID ? 'Retrying document…' : 'Retry document'}
+                                        </Button>
+                                    ) : null}
                                     <Badge variant={getSubmissionStatusVariant(displayedSubmitStatus)}>
                                         {formatSubmissionStatus(displayedSubmitStatus)}
                                     </Badge>
