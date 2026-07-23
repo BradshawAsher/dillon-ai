@@ -20,6 +20,7 @@ type DealOverviewCardProps = {
     model?: DealModel
     documents: SubmissionHistoryItem[]
     onOpenEvidence: (evidence: EvidenceItem) => void
+    exampleMode?: boolean
 }
 
 function riskVariant(riskLevel: string): 'destructive' | 'warning' | 'secondary' | 'outline' {
@@ -50,17 +51,17 @@ function parseMoney(value: string) {
     return Number.isFinite(parsed) && parsed >= 0 ? parsed : null
 }
 
-export default function DealOverviewCard({ syntheses, projects, currentProjectId, askingPrice, onAskingPriceChange, impact, model, documents, onOpenEvidence }: DealOverviewCardProps) {
+export default function DealOverviewCard({ syntheses, projects, currentProjectId, askingPrice, onAskingPriceChange, impact, model, documents, onOpenEvidence, exampleMode = false }: DealOverviewCardProps) {
     const projectId = currentProjectId.trim()
     const synthesis = syntheses.find((item) => item.projectId === projectId)
     const project = projects.find((item) => (item.projectId || item.projectKey) === projectId)
     const projectName = project ? `${project.projectName} - ${project.companyName}` : projectId || 'Selected project'
-    const employeeCount = project?.employeeCount ?? null
+    const employeeCount = project?.employeeCount ?? (exampleMode ? 84 : null)
     const employeeCountLabel = employeeCount === null
         ? 'Not confirmed'
         : `${employeeCount.toLocaleString()} ${project?.employeeType || 'employees'}`
     const hasValuation = Boolean(synthesis?.valuationLowerBound || synthesis?.valuationBaseEstimate || synthesis?.valuationUpperBound)
-    const askingPriceValue = parseMoney(askingPrice)
+    const askingPriceValue = parseMoney(askingPrice) ?? (exampleMode ? 110_000_000 : null)
     const baseValue = synthesis ? parseMoney(synthesis.valuationBaseEstimate) : null
     const priceGapPercent = askingPriceValue !== null && baseValue !== null && baseValue > 0
         ? ((askingPriceValue - baseValue) / baseValue) * 100
@@ -74,14 +75,21 @@ export default function DealOverviewCard({ syntheses, projects, currentProjectId
                 : `${Math.abs(priceGapPercent).toFixed(1)}% below the supported base valuation`
     let documentedFacts: Record<string, { value?: number; status?: string; currency?: string; period?: string; provenance?: string; confidence?: number; citations?: Array<{ source_file?: string; row_or_cell?: string; excerpt?: string }> }> = {}
     try { documentedFacts = JSON.parse(model?.documentedFactsJson || '{}') } catch {}
+    if (exampleMode && Object.keys(documentedFacts).length === 0) documentedFacts = {
+        revenue: { value: 48_100_000, status: 'confirmed', currency: 'USD', period: 'FY23', provenance: 'Example data', confidence: 87, citations: [{ source_file: 'northwind-q4-financials.pdf', row_or_cell: 'Page 18', excerpt: 'FY23 revenue reported as $48.1M; bank-deposit support remains under review.' }] },
+        ebitda_sde: { value: 12_400_000, status: 'confirmed', currency: 'USD', period: 'FY23', provenance: 'Example data', confidence: 87, citations: [{ source_file: 'northwind-q4-financials.pdf', row_or_cell: 'Page 18', excerpt: 'EBITDA of $12.4M is within 4% of the target model.' }] },
+        debt: { value: 13_200_000, status: 'confirmed', currency: 'USD', period: 'FY23', provenance: 'Example data', confidence: 82, citations: [{ source_file: 'northwind-q4-financials.pdf', row_or_cell: 'Page 22', excerpt: 'Debt balance used for the demonstration debt-to-assets calculation.' }] },
+        total_assets: { value: 60_000_000, status: 'confirmed', currency: 'USD', period: 'FY23', provenance: 'Example data', confidence: 82, citations: [{ source_file: 'northwind-q4-financials.pdf', row_or_cell: 'Page 22', excerpt: 'Total assets used for the demonstration debt-to-assets calculation.' }] },
+    }
     const confirmedFact = (field: string) => documentedFacts[field]?.status === 'confirmed' && typeof documentedFacts[field]?.value === 'number' ? documentedFacts[field].value ?? null : null
     const revenue = confirmedFact('revenue')
     const ebitda = confirmedFact('ebitda_sde')
     const debt = confirmedFact('debt')
     const assets = confirmedFact('total_assets')
     const purchasePrice = model?.purchasePrice ?? model?.askingPrice ?? askingPriceValue
-    const initialInvestment = purchasePrice === null || purchasePrice === undefined ? null : purchasePrice + (model?.transactionFees ?? 0) + (model?.workingCapitalRequirement ?? 0)
-    const annualOperatingCashFlow = ebitda === null || model?.taxRate === null || model?.taxRate === undefined ? null : ebitda * (1 - model.taxRate) - (model?.maintenanceCapex ?? 0)
+    const initialInvestment = purchasePrice === null || purchasePrice === undefined ? null : purchasePrice + (model?.transactionFees ?? (exampleMode ? 1_500_000 : 0)) + (model?.workingCapitalRequirement ?? (exampleMode ? 2_000_000 : 0))
+    const taxRate = model?.taxRate ?? (exampleMode ? 0.25 : null)
+    const annualOperatingCashFlow = ebitda === null || taxRate === null ? null : ebitda * (1 - taxRate) - (model?.maintenanceCapex ?? (exampleMode ? 1_200_000 : 0))
     const annualRoi = initialInvestment !== null && initialInvestment > 0 && annualOperatingCashFlow !== null ? annualOperatingCashFlow / initialInvestment : null
     const paybackYears = initialInvestment !== null && annualOperatingCashFlow !== null && annualOperatingCashFlow > 0 ? initialInvestment / annualOperatingCashFlow : null
     const ebitdaMargin = revenue !== null && revenue > 0 && ebitda !== null ? ebitda / revenue : null
@@ -97,12 +105,12 @@ export default function DealOverviewCard({ syntheses, projects, currentProjectId
     }
     const evidenceForSynthesis = (title: string): EvidenceItem => ({ title, sourceFile: synthesis?.citations?.[0] || 'Project synthesis', sourceLocation: 'Project-level synthesis', excerpt: synthesis?.finalJudgmentSummary, status: 'Synthesized', provenance: 'Project synthesis' })
     const kpis = [
-        { label: 'Price vs. base value', value: priceGapPercent === null ? 'Not available' : `${Math.abs(priceGapPercent).toFixed(1)}% ${priceGapPercent > 0 ? 'above' : priceGapPercent < 0 ? 'below' : 'at'} base`, detail: 'Asking price ÷ supported base value − 1', source: 'Synthesis + assumption', evidence: evidenceForSynthesis('Price vs. supported base value') },
-        { label: 'Simple annual ROI', value: annualRoi === null ? 'Not available' : `${(annualRoi * 100).toFixed(1)}%`, detail: 'Annual operating cash flow ÷ initial investment', source: 'Documented + assumptions', evidence: evidenceForFact('ebitda_sde', 'Simple annual ROI input evidence') },
-        { label: 'Payback period', value: paybackYears === null ? 'Not available' : `${paybackYears.toFixed(1)} years`, detail: 'Initial investment ÷ annual operating cash flow', source: 'Documented + assumptions', evidence: evidenceForFact('ebitda_sde', 'Payback-period input evidence') },
-        { label: 'EBITDA margin', value: ebitdaMargin === null ? 'Not available' : `${(ebitdaMargin * 100).toFixed(1)}%`, detail: 'Documented EBITDA/SDE ÷ documented revenue', source: 'Documented', evidence: evidenceForFact('ebitda_sde', 'EBITDA margin evidence') },
-        { label: 'Debt to assets', value: debtToAssets === null ? 'Not available' : `${(debtToAssets * 100).toFixed(1)}%`, detail: 'Documented debt ÷ documented total assets', source: 'Documented', evidence: evidenceForFact('debt', 'Debt-to-assets evidence') },
-        { label: 'Revenue per employee', value: revenuePerEmployee === null ? 'Not available' : formatCurrencyValue(String(revenuePerEmployee), metricCurrency), detail: 'Documented revenue ÷ documented employee count', source: 'Documented', evidence: evidenceForFact('revenue', 'Revenue-per-employee evidence') },
+        { label: 'Price vs. base value', value: priceGapPercent === null ? 'Not available' : `${Math.abs(priceGapPercent).toFixed(1)}% ${priceGapPercent > 0 ? 'above' : priceGapPercent < 0 ? 'below' : 'at'} base`, detail: 'Asking price ÷ supported base value − 1', source: exampleMode ? 'Example data' : 'Synthesis + assumption', evidence: evidenceForSynthesis('Price vs. supported base value') },
+        { label: 'Simple annual ROI', value: annualRoi === null ? 'Not available' : `${(annualRoi * 100).toFixed(1)}%`, detail: 'Annual operating cash flow ÷ initial investment', source: exampleMode ? 'Example data' : 'Documented + assumptions', evidence: evidenceForFact('ebitda_sde', 'Simple annual ROI input evidence') },
+        { label: 'Payback period', value: paybackYears === null ? 'Not available' : `${paybackYears.toFixed(1)} years`, detail: 'Initial investment ÷ annual operating cash flow', source: exampleMode ? 'Example data' : 'Documented + assumptions', evidence: evidenceForFact('ebitda_sde', 'Payback-period input evidence') },
+        { label: 'EBITDA margin', value: ebitdaMargin === null ? 'Not available' : `${(ebitdaMargin * 100).toFixed(1)}%`, detail: 'Documented EBITDA/SDE ÷ documented revenue', source: exampleMode ? 'Example data' : 'Documented', evidence: evidenceForFact('ebitda_sde', 'EBITDA margin evidence') },
+        { label: 'Debt to assets', value: debtToAssets === null ? 'Not available' : `${(debtToAssets * 100).toFixed(1)}%`, detail: 'Documented debt ÷ documented total assets', source: exampleMode ? 'Example data' : 'Documented', evidence: evidenceForFact('debt', 'Debt-to-assets evidence') },
+        { label: 'Revenue per employee', value: revenuePerEmployee === null ? 'Not available' : formatCurrencyValue(String(revenuePerEmployee), metricCurrency), detail: 'Documented revenue ÷ documented employee count', source: exampleMode ? 'Example data' : 'Documented', evidence: evidenceForFact('revenue', 'Revenue-per-employee evidence') },
     ]
     const decisionDrivers = synthesis ? [
         { label: 'Primary risk', value: synthesis.crossDocumentConflicts[0] || 'No cross-document conflict recorded.' },
@@ -162,7 +170,7 @@ export default function DealOverviewCard({ syntheses, projects, currentProjectId
                     ) : null}
                 </div>
 
-                <div className="rounded-lg border border-border bg-background p-4">
+                <button type="button" onClick={() => { const sourceFile = exampleMode ? 'northwind-q4-financials.pdf' : project?.employeeCitation || 'Source file was not returned'; const document = documents.find((item) => sourceFile.toLowerCase().includes(item.fileName.toLowerCase())); onOpenEvidence({ title: 'Employee count evidence', sourceFile, sourceLocation: exampleMode ? 'Page 6' : project?.employeeCitation, excerpt: exampleMode ? 'Northwind Analytics employs 84 full-time employees as of the FY23 reporting period.' : undefined, period: exampleMode ? 'FY23' : project?.employeeAsOfDate, confidence: exampleMode ? 89 : project?.employeeConfidence ?? undefined, status: employeeCount === null ? 'Not confirmed' : 'Confirmed', provenance: exampleMode ? 'Example data' : project?.employeeEvidenceStatus || 'Documented', documentUrl: document?.storageFileUrl }) }} className="w-full rounded-lg border border-border bg-background p-4 text-left transition-colors hover:border-primary/40 hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                     <div className="flex items-center gap-2 text-muted-foreground"><UsersRound className="h-4 w-4" /><p className="text-xs font-medium uppercase tracking-wide">Employee count</p></div>
                     <p className="mt-2 text-lg font-semibold text-foreground">{employeeCountLabel}</p>
                     <p className="mt-1 text-sm text-muted-foreground">
@@ -170,7 +178,7 @@ export default function DealOverviewCard({ syntheses, projects, currentProjectId
                             ? 'No evidence-backed headcount has been found in the processed documents.'
                             : `${project?.employeeEvidenceStatus === 'estimated' ? 'Estimated' : 'Documented'}${project?.employeeAsOfDate ? ` · as of ${project.employeeAsOfDate}` : ''}`}
                     </p>
-                </div>
+                </button>
 
                 <div className="rounded-xl border border-primary/20 bg-primary/[0.04] p-4">
                     <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-semibold">Decision metrics</p><p className="mt-1 text-xs text-muted-foreground">Formula and provenance are visible for every metric; unavailable means its required evidence or assumptions are not ready.</p></div><Badge variant="outline">Evidence-backed</Badge></div>
