@@ -25,6 +25,9 @@ type DealModelRow = {
   bearExitMultiple?: string | number | null
   baseExitMultiple?: string | number | null
   bullExitMultiple?: string | number | null
+  revenueMultiple?: string | number | null
+  ebitdaMultiple?: string | number | null
+  assetHaircutPercent?: string | number | null
   modelUpdatedAt?: string | null
   modelUpdatedBy?: string | null
   documentedFactsJson?: string | null
@@ -55,6 +58,7 @@ export default async function getDealModels(req: { params: Params; user: User })
     modelUpdatedAt: row.modelUpdatedAt ?? '', modelUpdatedBy: row.modelUpdatedBy ?? '',
     equityContributionPercent: numberOrNull(row.equityContributionPercent), interestRate: numberOrNull(row.interestRate), amortizationYears: numberOrNull(row.amortizationYears), sellerNoteAmount: numberOrNull(row.sellerNoteAmount),
     bearRevenueGrowth: numberOrNull(row.bearRevenueGrowth), baseRevenueGrowth: numberOrNull(row.baseRevenueGrowth), bullRevenueGrowth: numberOrNull(row.bullRevenueGrowth), bearEbitdaMargin: numberOrNull(row.bearEbitdaMargin), baseEbitdaMargin: numberOrNull(row.baseEbitdaMargin), bullEbitdaMargin: numberOrNull(row.bullEbitdaMargin), bearExitMultiple: numberOrNull(row.bearExitMultiple), baseExitMultiple: numberOrNull(row.baseExitMultiple), bullExitMultiple: numberOrNull(row.bullExitMultiple),
+    revenueMultiple: numberOrNull(row.revenueMultiple), ebitdaMultiple: numberOrNull(row.ebitdaMultiple), assetHaircutPercent: numberOrNull(row.assetHaircutPercent),
     documentedFactsJson: row.documentedFactsJson ?? '', documentedFactsStatus: row.documentedFactsStatus ?? '',
   }))
 }
