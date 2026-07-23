@@ -62,6 +62,18 @@ function formatTimestamp(value: string) {
     return new Date(parsed).toLocaleString()
 }
 
+function detectedTypes(document: SubmissionHistoryItem) {
+    try {
+        const parsed = JSON.parse(document.detectedDocumentTypesJson || '')
+        if (Array.isArray(parsed)) return parsed.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+    } catch {}
+    return [document.detectedDocumentType || document.documentType].filter(Boolean)
+}
+
+function shortList(value: string) {
+    return value.split(/\n|•|;|\|/).map((item) => item.trim()).filter(Boolean).slice(0, 5)
+}
+
 export function downloadSynthesisReport(synthesis: ProjectSynthesisItem, projectName: string) {
     const section = (title: string, items: string[]) => [
         '## ' + title,
@@ -111,6 +123,7 @@ function formatProjectDisplayName(project: ProjectSummary) {
 
 export default function ProjectSynthesisCard({ syntheses, projects, currentProjectId, documentAnalysisPending, synthesisPending, synthesisProgress, synthesisStage, loading, error, onRefresh, impact, documents = [], onOpenEvidence }: ProjectSynthesisCardProps) {
     const [synthesisElapsedSeconds, setSynthesisElapsedSeconds] = useState(0)
+    const [selectedDocumentRequestId, setSelectedDocumentRequestId] = useState('')
     const projectNameById = new Map(
         projects.map((project) => [project.projectId || project.projectKey, formatProjectDisplayName(project)])
     )
@@ -118,7 +131,8 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
     const normalizedProjectId = currentProjectId.trim()
     const visibleSyntheses = syntheses.filter((synthesis) => synthesis.projectId === normalizedProjectId)
     const currentProject = projects.find((project) => (project.projectId || project.projectKey) === normalizedProjectId)
-    const projectDocuments = currentProject?.documents ?? []
+    const projectDocuments = documents.filter((document) => document.projectId === normalizedProjectId)
+    const selectedProjectDocument = projectDocuments.find((document) => document.requestID === selectedDocumentRequestId)
     const currentProjectName = projectNameById.get(normalizedProjectId) ?? normalizedProjectId ?? 'this project'
     const hasPriorSynthesis = visibleSyntheses.some((synthesis) => {
         return synthesis.finalJudgmentSummary.trim().length > 0 || synthesis.finalRecommendation.trim().length > 0
@@ -185,12 +199,15 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                     <div className="flex shrink-0 flex-wrap gap-2">
                                         <Badge variant="outline">{document.status || 'Pending'}</Badge>
                                         {!document.isConsidered ? <Badge variant="secondary">Excluded</Badge> : null}
+                                        <Button type="button" size="sm" variant="outline" onClick={() => setSelectedDocumentRequestId(document.requestID)}>View analysis</Button>
                                     </div>
                                 </div>
                             )) : <p className="text-sm text-muted-foreground">No project documents have been recorded yet.</p>}
                         </div>
                     </details>
                 ) : null}
+
+                {selectedProjectDocument ? <div className="rounded-lg border border-primary/25 bg-primary/[0.035] p-4"><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><p className="text-sm font-semibold text-foreground">Document analysis</p><p className="mt-1 text-sm text-muted-foreground">{selectedProjectDocument.fileName}</p></div><Button type="button" variant="ghost" size="sm" onClick={() => setSelectedDocumentRequestId('')}>Close</Button></div><div className="mt-4 flex flex-wrap gap-2"><Badge variant="outline">{selectedProjectDocument.status || 'Pending'}</Badge>{detectedTypes(selectedProjectDocument).map((type) => <Badge key={type} variant="secondary">{type}</Badge>)}</div>{selectedProjectDocument.aiSummary ? <div className="mt-4"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">AI summary</p><p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-foreground">{selectedProjectDocument.aiSummary}</p></div> : <p className="mt-4 text-sm text-muted-foreground">No document-specific summary has returned yet.</p>}<div className="mt-4 grid gap-3 md:grid-cols-2">{selectedProjectDocument.aiRedFlags ? <div className="rounded-md border border-destructive/25 bg-destructive/5 p-3"><p className="text-xs font-semibold uppercase tracking-wide text-destructive">Red flags</p><ul className="mt-2 list-disc space-y-1 pl-4 text-sm text-foreground">{shortList(selectedProjectDocument.aiRedFlags).map((item) => <li key={item}>{item}</li>)}</ul></div> : null}{selectedProjectDocument.aiYellowFlags ? <div className="rounded-md border border-warning/25 bg-warning/5 p-3"><p className="text-xs font-semibold uppercase tracking-wide text-warning">Items to review</p><ul className="mt-2 list-disc space-y-1 pl-4 text-sm text-foreground">{shortList(selectedProjectDocument.aiYellowFlags).map((item) => <li key={item}>{item}</li>)}</ul></div> : null}</div>{onOpenEvidence && (selectedProjectDocument.storageFileId || selectedProjectDocument.storageFileUrl) ? <Button type="button" variant="outline" className="mt-4" onClick={() => onOpenEvidence({ title: `Source document: ${selectedProjectDocument.fileName}`, sourceFile: selectedProjectDocument.fileName, sourceLocation: 'Document-level analysis', excerpt: selectedProjectDocument.aiSummary, status: selectedProjectDocument.status, provenance: 'Uploaded document', documentId: selectedProjectDocument.storageFileId, documentUrl: selectedProjectDocument.storageFileUrl })}>Open source document</Button> : null}</div> : null}
 
                 {!error && synthesisPending ? (
                     <div className="rounded-lg border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-foreground">

@@ -24,7 +24,7 @@ function Metric({ label, value, detail, evidence, onOpenEvidence }: { label: str
 export default function FinancedReturnsCard({ model, documents = [], onOpenEvidence }: { model: DealModel; documents?: SubmissionHistoryItem[]; onOpenEvidence?: (evidence: EvidenceItem) => void }) {
     const documentedFacts = parseDocumentedFacts(model.documentedFactsJson)
     const ebitdaFact = documentedFacts.ebitda_sde
-    const ebitda = ebitdaFact?.status === 'confirmed' && typeof ebitdaFact.value === 'number' ? ebitdaFact.value : null
+    const ebitda = (ebitdaFact?.status === 'confirmed' || ebitdaFact?.status === 'illustrative') && typeof ebitdaFact.value === 'number' ? ebitdaFact.value : null
     const price = model.purchasePrice ?? model.askingPrice
     const tax = model.taxRate ?? 0.25
     const equityPct = model.equityContributionPercent ?? 0.3

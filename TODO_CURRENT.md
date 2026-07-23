@@ -9,7 +9,7 @@
 - [x] Persist a usable document-type fallback: every completed document now saves primary and multi-type classification, falling back to the selected intake type or `Other` when the model omits it.
 - [x] Correct the per-document yellow/green flag mappings and calibrate prompts so ordinary document incompleteness does not automatically produce `RED` / escalation.
 - [x] **P0 — Wire live Deal Model hydration.** The successful per-document path now runs the Documented Facts Bridge before the document counter can trigger project synthesis.
-- [ ] **P0 — Verify live Deal Model hydration.** Confirm `financialFactsJson` reaches `documentedFactsJson`, then live Valuation, Returns, Growth, and Deal Structure cards. Purchase price, tax, financing, and scenario values remain visible analyst assumptions unless explicitly supplied or confirmed.
+- [-] **P0 — Verify live Deal Model hydration.** The UI now safely hydrates display-only confirmed facts from completed documents while the Deal Model bridge catches up. Confirm the n8n bridge still writes `financialFactsJson` to `documentedFactsJson`; purchase price, tax, financing, and scenario values remain analyst assumptions unless explicitly supplied or confirmed.
 - [ ] **P0 — Clean up the existing blank-`projectId` synthesis row** and verify it no longer appears as an invisible/orphaned record.
 - [ ] **P0 — Run a clean-document live regression.** Confirm a normal financial document can return GREEN/YELLOW, types populate the coverage checklist, confirmed facts reach the Deal Model, and a new synthesis row has its project ID.
 - [ ] Run the remaining end-to-end cases: normal document, combined P&L/balance sheet, lax CSV, malformed CSV, duplicate, retry after provider failure, three-document batch, and final synthesis.
@@ -26,7 +26,7 @@
 ## Immediate product experience
 
 - [x] Provide an example-data workspace toggle alongside live n8n data.
-- [-] Show illustrative analyst assumptions for Returns, Growth, and Deal Structure. Example mode is populated; the live workspace now fills only missing generic starting inputs after documented revenue or EBITDA arrives and preserves analyst entries. Verify live persistence and revise values per project.
+- [-] Show illustrative analyst assumptions for Returns, Growth, and Deal Structure. Example mode is populated; the live workspace now fills only missing generic starting inputs after documented revenue or EBITDA arrives and preserves analyst entries. Returns, Growth, and Deal Structure each show an explicitly non-saved preview while key live inputs are still missing. Verify live persistence and revise values per project.
 - [ ] Make citations clickable and open an interactive document viewer at the cited page, cell, row, or excerpt.
 
 ## Now — validate what is already built
@@ -48,7 +48,7 @@
 ## Project and document experience
 
 - [ ] Finish document deletion/exclusion: allow an accidental or duplicate upload to be marked not considered (or removed safely) and ensure synthesis respects it.
-- [ ] Make each project document selectable from a project list and show its analysis, status, detected type(s), and citations.
+- [x] Make each project document selectable from a project list and show its analysis, status, detected type(s), and citations. The Project Synthesis card now exposes a document-detail panel and source-document action.
 - [ ] Support multiple detected document types per file and update the coverage checklist from detected types rather than only the intake selection.
 - [ ] Test mixed/multi-sheet spreadsheet uploads and documents that represent more than one financial statement type.
 - [ ] Improve synthesis formatting: four key acquisition takeaways, four document-level investment-thesis takeaways, digestible negotiation levers, and readable open questions.
@@ -57,7 +57,7 @@
 
 ## Quantitative modeling — next enhancements
 
-- [ ] Add financed bear/base/bull scenarios, including levered cash-flow paths, debt amortization, MOIC, and IRR by scenario.
+- [-] Add financed bear/base/bull scenarios, including levered cash-flow paths, debt amortization, MOIC, and IRR by scenario. The Returns tab now calculates levered Bear/Base/Bull MOIC, IRR, exit proceeds, and DSCR from saved financing terms; scenario-level cash-flow charts and evidence links remain future refinement.
 - [-] Build a quantified valuation bridge: evidence-linked adjustments for unsupported add-backs, customer concentration, working-capital gaps, debt, and asset quality, with a negotiation translation for each adjustment. The Valuation tab now provides an evidence-linked, analyst-entered price/terms bridge saved in the browser; shared persistence and source-specific quantitative defaults remain missing.
 - [ ] Add ROI timeline and revenue/EBITDA projection charts from the deterministic model; never show a chart when required inputs are missing.
 - [ ] Add sources-and-uses / deal-stack visualization with leverage and downside-resilience indicators.
@@ -66,7 +66,7 @@
 
 ## Data quality and model assurance
 
-- [ ] Add extraction checks for swapped fields, wrong units, powers-of-ten errors, and implausible metric relationships.
+- [-] Add extraction checks for swapped fields, wrong units, powers-of-ten errors, and implausible metric relationships. The Overview now flags implausible margins, entry multiples, leverage, and rate-decimal errors; n8n-side unit/power-of-ten validation remains to be added.
 - [ ] Add the remaining structured outputs where supported: reconstructed EBITDA, margin compression, customer concentration, add-back quality, and financial-data completeness.
 - [ ] Add a second independent quality-of-earnings check for recurring versus one-time findings, plus a project-level reconciliation review.
 - [ ] Consider independent second-pass LLM review only after deterministic checks, with explicit comparison and review flags rather than silent overwrites.

@@ -18,8 +18,8 @@ type ScenarioComparisonCardProps = {
 
 export default function ScenarioComparisonCard({ model, documents = [], onOpenEvidence }: ScenarioComparisonCardProps) {
     const documented = facts(model)
-    const revenue = documented.revenue?.status === 'confirmed' ? documented.revenue.value ?? null : null
-    const ebitda = documented.ebitda_sde?.status === 'confirmed' ? documented.ebitda_sde.value ?? null : null
+    const revenue = (documented.revenue?.status === 'confirmed' || documented.revenue?.status === 'illustrative') ? documented.revenue.value ?? null : null
+    const ebitda = (documented.ebitda_sde?.status === 'confirmed' || documented.ebitda_sde?.status === 'illustrative') ? documented.ebitda_sde.value ?? null : null
     const currency = documented.revenue?.currency || documented.ebitda_sde?.currency || 'USD'
     const parsedFacts = parseDocumentedFacts(model.documentedFactsJson)
     const revenueEvidence = buildFactEvidence({ field: 'revenue', title: 'Starting revenue', facts: parsedFacts, documents })
