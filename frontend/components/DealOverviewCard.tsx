@@ -14,6 +14,7 @@ import {
 import { formatHours, type ImpactMetrics } from '../utils/impactMetrics'
 import type { ProjectSummary } from '../utils/projectWorkspace'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
+import { findCitedDocument } from '../utils/evidence'
 import type { EvidenceItem } from './EvidenceDrawer'
 
 type DealOverviewCardProps = {
@@ -105,10 +106,15 @@ export default function DealOverviewCard({ syntheses, projects, currentProjectId
         const fact = documentedFacts[field]
         const citation = fact?.citations?.[0]
         const sourceFile = citation?.source_file || 'Source file was not returned'
-        const document = documents.find((item) => item.fileName.toLowerCase() === sourceFile.toLowerCase() || sourceFile.toLowerCase().includes(item.fileName.toLowerCase()))
+        const document = findCitedDocument(sourceFile, documents)
         return { title, sourceFile, sourceLocation: citation?.row_or_cell, excerpt: citation?.excerpt, period: fact?.period, currency: fact?.currency, confidence: fact?.confidence ?? document?.aiConfidence, status: fact?.status, provenance: fact?.provenance || 'Documented', documentUrl: document?.storageFileUrl, documentId: document?.storageFileId }
     }
-    const evidenceForSynthesis = (title: string): EvidenceItem => ({ title, sourceFile: synthesis?.citations?.[0] || 'Project synthesis', sourceLocation: 'Project-level synthesis', excerpt: synthesis?.finalJudgmentSummary, status: 'Synthesized', provenance: 'Project synthesis' })
+    const evidenceForSynthesis = (title: string): EvidenceItem => {
+        const citation = synthesis?.citationDetails?.[0]
+        const sourceFile = citation?.sourceFile || synthesis?.citations?.[0] || 'Project synthesis'
+        const document = findCitedDocument(sourceFile, documents)
+        return { title, sourceFile, sourceLocation: citation?.sourceLocation || 'Project-level synthesis', excerpt: citation?.excerpt || synthesis?.finalJudgmentSummary, period: citation?.period, currency: citation?.currency, confidence: citation?.confidence ?? undefined, status: citation?.status || 'Synthesized', provenance: 'Project synthesis', documentId: document?.storageFileId, documentUrl: document?.storageFileUrl }
+    }
     const kpis = [
         { label: 'Price vs. base value', value: priceGapPercent === null ? 'Not available' : `${Math.abs(priceGapPercent).toFixed(1)}% ${priceGapPercent > 0 ? 'above' : priceGapPercent < 0 ? 'below' : 'at'} base`, detail: 'Asking price ÷ supported base value − 1', source: exampleMode ? 'Example data' : 'Synthesis + assumption', evidence: evidenceForSynthesis('Price vs. supported base value') },
         { label: 'Simple annual ROI', value: annualRoi === null ? 'Not available' : `${(annualRoi * 100).toFixed(1)}%`, detail: 'Annual operating cash flow ÷ initial investment', source: exampleMode ? 'Example data' : 'Documented + assumptions', evidence: evidenceForFact('ebitda_sde', 'Simple annual ROI input evidence') },
@@ -175,7 +181,7 @@ export default function DealOverviewCard({ syntheses, projects, currentProjectId
                     ) : null}
                 </div>
 
-                <button type="button" onClick={() => { const sourceFile = exampleMode ? 'northwind-q4-financials.pdf' : project?.employeeCitation || 'Source file was not returned'; const document = documents.find((item) => sourceFile.toLowerCase().includes(item.fileName.toLowerCase())); onOpenEvidence({ title: 'Employee count evidence', sourceFile, sourceLocation: exampleMode ? 'Page 6' : project?.employeeCitation, excerpt: exampleMode ? 'Northwind Analytics employs 84 full-time employees as of the FY23 reporting period.' : undefined, period: exampleMode ? 'FY23' : project?.employeeAsOfDate, confidence: exampleMode ? 89 : project?.employeeConfidence ?? undefined, status: employeeCount === null ? 'Not confirmed' : 'Confirmed', provenance: exampleMode ? 'Example data' : project?.employeeEvidenceStatus || 'Documented', documentUrl: document?.storageFileUrl }) }} className="w-full rounded-lg border border-border bg-background p-4 text-left transition-colors hover:border-primary/40 hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                    <button type="button" onClick={() => { const sourceFile = exampleMode ? 'northwind-q4-financials.pdf' : project?.employeeCitation || 'Source file was not returned'; const document = findCitedDocument(sourceFile, documents); onOpenEvidence({ title: 'Employee count evidence', sourceFile, sourceLocation: exampleMode ? 'Page 6' : project?.employeeCitation, excerpt: exampleMode ? 'Northwind Analytics employs 84 full-time employees as of the FY23 reporting period.' : undefined, period: exampleMode ? 'FY23' : project?.employeeAsOfDate, confidence: exampleMode ? 89 : project?.employeeConfidence ?? undefined, status: employeeCount === null ? 'Not confirmed' : 'Confirmed', provenance: exampleMode ? 'Example data' : project?.employeeEvidenceStatus || 'Documented', documentUrl: document?.storageFileUrl, documentId: document?.storageFileId }) }} className="w-full rounded-lg border border-border bg-background p-4 text-left transition-colors hover:border-primary/40 hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                     <div className="flex items-center gap-2 text-muted-foreground"><UsersRound className="h-4 w-4" /><p className="text-xs font-medium uppercase tracking-wide">Employee count</p></div>
                     <p className="mt-2 text-lg font-semibold text-foreground">{employeeCountLabel}</p>
                     <p className="mt-1 text-sm text-muted-foreground">

@@ -70,16 +70,40 @@ export function findCitedDocument(sourceFile: string | undefined, documents: Sub
         return undefined
     }
 
-    const needle = sourceFile.trim().toLowerCase()
+    const normalizeFileName = (value: string) => decodeURIComponent(value)
+        .replace(/\\/g, '/')
+        .split('/').pop()!
+        .replace(/\?.*$/, '')
+        .replace(/\.[a-z0-9]{1,6}$/i, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim()
+
+    const needle = normalizeFileName(sourceFile)
 
     if (needle.length === 0) {
         return undefined
     }
 
-    return documents.find((item) => {
-        const fileName = item.fileName.trim().toLowerCase()
+    const exactOrContaining = documents.find((item) => {
+        const fileName = normalizeFileName(item.fileName)
         return fileName.length > 0 && (fileName === needle || needle.includes(fileName) || fileName.includes(needle))
     })
+    if (exactOrContaining) return exactOrContaining
+
+    // LLM citations occasionally lose punctuation, extensions, or one short
+    // descriptor. Match only when the meaningful filename tokens still align.
+    const needleTokens = new Set(needle.split(' ').filter((token) => token.length > 1))
+    let best: { document: SubmissionHistoryItem; score: number } | undefined
+    for (const document of documents) {
+        const tokens = new Set(normalizeFileName(document.fileName).split(' ').filter((token) => token.length > 1))
+        if (tokens.size === 0) continue
+        const overlap = [...needleTokens].filter((token) => tokens.has(token)).length
+        const score = overlap / Math.max(needleTokens.size, tokens.size)
+        if (score >= 0.6 && (!best || score > best.score)) best = { document, score }
+    }
+
+    return best?.document
 }
 
 /** Evidence for a single documented fact (revenue, EBITDA, debt, ...). */

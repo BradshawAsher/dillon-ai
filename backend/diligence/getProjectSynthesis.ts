@@ -79,7 +79,9 @@ export type ProjectSynthesisItem = {
   crossDocumentConflicts: string[]
   openQuestions: string[]
   negotiationLevers: string[]
+  keyTakeaways: string[]
   citations: string[]
+  citationDetails: ProjectCitation[]
   finalRiskLevel: string
   finalTrafficLight: string
   finalRecommendation: string
@@ -161,6 +163,16 @@ function getRecordString(record: Record<string, unknown>, keys: string[]) {
   return ''
 }
 
+export type ProjectCitation = {
+  sourceFile: string
+  sourceLocation: string
+  excerpt: string
+  period: string
+  currency: string
+  confidence: number | null
+  status: string
+}
+
 function getStringListValue(raw: unknown, formatObject?: ObjectListItemFormatter): string[] {
   let value = raw
 
@@ -238,6 +250,36 @@ function getJudgmentValues(raw: unknown): { summary: string; json: string } {
   return { summary: String(raw), json: '' }
 }
 
+function getCitationDetails(values: unknown[]): ProjectCitation[] {
+  const found: ProjectCitation[] = []
+  const seen = new Set<string>()
+  const visit = (value: unknown) => {
+    if (typeof value === 'string') {
+      try { visit(JSON.parse(value)) } catch { /* Plain legacy citations are handled below. */ }
+      return
+    }
+    if (Array.isArray(value)) { value.forEach(visit); return }
+    if (!value || typeof value !== 'object') return
+    const record = value as Record<string, unknown>
+    const sourceFile = getRecordString(record, ['source_file', 'sourceFile', 'file_name', 'fileName'])
+    if (sourceFile) {
+      const page = record.page_number ?? record.pageNumber
+      const explicitLocation = getRecordString(record, ['row_or_cell', 'rowOrCell', 'location'])
+      const sourceLocation = explicitLocation || (typeof page === 'number' || typeof page === 'string' ? `Page ${page}` : '')
+      const confidenceValue = record.confidence_score ?? record.confidence
+      const confidence = typeof confidenceValue === 'number' && Number.isFinite(confidenceValue)
+        ? confidenceValue
+        : typeof confidenceValue === 'string' && Number.isFinite(Number(confidenceValue)) ? Number(confidenceValue) : null
+      const citation: ProjectCitation = { sourceFile, sourceLocation, excerpt: getRecordString(record, ['excerpt']), period: getRecordString(record, ['period']), currency: getRecordString(record, ['currency']), confidence, status: getRecordString(record, ['status']) }
+      const key = JSON.stringify(citation)
+      if (!seen.has(key)) { seen.add(key); found.push(citation) }
+    }
+    Object.values(record).forEach(visit)
+  }
+  values.forEach(visit)
+  return found.slice(0, 30)
+}
+
 function getFirstJudgmentValues(values: unknown[]) {
   for (const value of values) {
     const judgment = getJudgmentValues(value)
@@ -247,6 +289,22 @@ function getFirstJudgmentValues(values: unknown[]) {
   }
 
   return { summary: '', json: '' }
+}
+
+function getJudgmentField(raw: string, field: string): unknown {
+  if (!raw) return undefined
+  try {
+    const parsed = JSON.parse(raw) as Record<string, unknown>
+    return parsed[field]
+  } catch {
+    return undefined
+  }
+}
+
+function formatTakeaway(record: Record<string, unknown>) {
+  const takeaway = getRecordString(record, ['takeaway', 'summary', 'text', 'description'])
+  const impact = getRecordString(record, ['impact', 'why_it_matters'])
+  return takeaway && impact ? `${takeaway} — ${impact}` : takeaway || impact
 }
 
 function extractJudgmentSummary(parsed: unknown): string {
@@ -326,6 +384,7 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
         row.ai_summary,
       ])
 
+      const citationDetails = getCitationDetails([row.aiCitations, row.ai_citations, judgment.json])
       return {
         projectId: getFirstStringValue([row.projectId, row.project_id]),
         projectStatus: getFirstStringValue([row.projectStatus, row.project_status]),
@@ -343,7 +402,11 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
           row.negotiation_levers,
           row.negotiationLevers,
         ], formatNegotiationLever),
-        citations: getFirstStringListValue([row.aiCitations, row.ai_citations]),
+        keyTakeaways: getStringListValue(getJudgmentField(judgment.json, 'key_acquisition_takeaways'), formatTakeaway),
+        citations: citationDetails.map((citation) => citation.sourceFile).filter((value, index, values) => values.indexOf(value) === index).length
+          ? citationDetails.map((citation) => citation.sourceFile).filter((value, index, values) => values.indexOf(value) === index)
+          : getFirstStringListValue([row.aiCitations, row.ai_citations]),
+        citationDetails,
         finalRiskLevel: getFirstStringValue([row.finalRiskLevel, row.final_risk_level, row.ai_risk_flag]),
         finalTrafficLight: getFirstStringValue([row.finalTrafficLight, row.final_traffic_light]),
         finalRecommendation: getFirstStringValue([row.finalRecommendation, row.final_recommendation]),

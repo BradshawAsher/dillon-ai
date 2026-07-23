@@ -395,10 +395,16 @@ const mockSynthesisRow: ProjectSynthesisItem = {
     'Revenue support gap of ~2.5M USD justifies a purchase price adjustment or an expanded escrow.',
     'Unsupported add-backs reduce adjusted EBITDA by up to 0.9M USD.',
   ],
+  keyTakeaways: [
+    'Revenue support needs a valuation adjustment — bank deposits do not fully support reported revenue.',
+    'Treat recurring legal costs as operating expense — the add-back support conflicts with the general ledger.',
+    'Customer concentration remains a closing-condition risk — obtain renewal evidence before final approval.',
+  ],
   citations: [
     'FY23 P&L and bank statements',
     'Add-back schedule and general ledger',
   ],
+  citationDetails: [],
   finalRiskLevel: 'Medium',
   finalTrafficLight: 'Yellow',
   finalRecommendation: 'Proceed with revised terms',

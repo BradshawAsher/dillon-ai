@@ -356,6 +356,16 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
 
                             <div className="grid gap-3 xl:grid-cols-2">
                                 <ExpandableInsightGroup
+                                    title="Key acquisition takeaways"
+                                    icon={<Scale className="h-4 w-4 text-primary" />}
+                                    items={synthesis.keyTakeaways}
+                                    emptyLabel="No concise takeaways were returned by this synthesis yet."
+                                    badgeVariant="success"
+                                    className="border-primary/25 bg-primary/5"
+                                    itemClassName="border-primary/20"
+                                    defaultOpen
+                                />
+                                <ExpandableInsightGroup
                                     title="Cross-document conflicts"
                                     icon={<TriangleAlert className="h-4 w-4 text-destructive" />}
                                     items={synthesis.crossDocumentConflicts}
@@ -389,14 +399,14 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                     emptyLabel="No open questions recorded."
                                     defaultOpen
                                 />
-                                {(synthesis.citations?.length ?? 0) > 0 ? (
+                                {(synthesis.citationDetails?.length ?? synthesis.citations?.length ?? 0) > 0 ? (
                                     <div className="rounded-lg border border-border bg-muted/20 p-4">
                                         <div className="flex items-center gap-2"><FileText className="h-4 w-4 text-muted-foreground" /><p className="text-sm font-semibold text-foreground">Synthesis citations</p></div>
                                         <div className="mt-3 space-y-2">
-                                            {(synthesis.citations ?? []).map((citation) => {
-                                                const document = findCitedDocument(citation, documents)
-                                                return <button key={citation} type="button" onClick={() => onOpenEvidence?.({ title: 'Project synthesis citation', sourceFile: citation, sourceLocation: 'Project-level synthesis', excerpt: synthesis.finalJudgmentSummary, status: 'Synthesized', provenance: 'Project synthesis', documentId: document?.storageFileId, documentUrl: document?.storageFileUrl })} className="w-full rounded-md border border-border bg-background p-3 text-left text-sm text-foreground transition-colors hover:border-primary/40 hover:bg-muted/30">
-                                                    <span className="font-medium">{citation}</span><span className="ml-2 text-xs text-primary">View evidence</span>
+                                            {(synthesis.citationDetails?.length ? synthesis.citationDetails : (synthesis.citations ?? []).map((sourceFile) => ({ sourceFile, sourceLocation: 'Project-level synthesis', excerpt: synthesis.finalJudgmentSummary, period: '', currency: '', confidence: null, status: 'Synthesized' }))).map((citation, index) => {
+                                                const document = findCitedDocument(citation.sourceFile, documents)
+                                                return <button key={`${citation.sourceFile}-${citation.sourceLocation}-${index}`} type="button" onClick={() => onOpenEvidence?.({ title: 'Project synthesis citation', sourceFile: citation.sourceFile, sourceLocation: citation.sourceLocation || 'Project-level synthesis', excerpt: citation.excerpt || synthesis.finalJudgmentSummary, period: citation.period, currency: citation.currency, confidence: citation.confidence ?? undefined, status: citation.status || 'Synthesized', provenance: 'Project synthesis', documentId: document?.storageFileId, documentUrl: document?.storageFileUrl })} className="w-full rounded-md border border-border bg-background p-3 text-left text-sm text-foreground transition-colors hover:border-primary/40 hover:bg-muted/30">
+                                                    <span className="font-medium">{citation.sourceFile}</span>{citation.sourceLocation ? <span className="ml-2 text-xs text-muted-foreground">{citation.sourceLocation}</span> : null}<span className="ml-2 text-xs text-primary">View evidence</span>
                                                 </button>
                                             })}
                                         </div>
