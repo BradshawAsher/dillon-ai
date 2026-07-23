@@ -14,6 +14,7 @@ import ScenarioComparisonCard from '../components/ScenarioComparisonCard'
 import DealOverviewCard from '../components/DealOverviewCard'
 import DealValuationCard from '../components/DealValuationCard'
 import EvidenceDrawer, { type EvidenceItem } from '../components/EvidenceDrawer'
+import ProjectChecklistCard, { type ProjectChecklistState } from '../components/ProjectChecklistCard'
 import DealWorkspaceNav, { type WorkspaceTab } from '../components/DealWorkspaceNav'
 import ProjectIntakeCard from '../components/ProjectIntakeCard'
 import ProjectPortfolioCard from '../components/ProjectPortfolioCard'
@@ -266,6 +267,9 @@ export default function DueDiligenceDashboard() {
         return Notification.permission
     })
     const [activeEvidence, setActiveEvidence] = useState<EvidenceItem | null>(null)
+    const [projectChecklistById, setProjectChecklistById] = useState<Record<string, ProjectChecklistState>>(() => {
+        try { return JSON.parse(window.localStorage.getItem('mergeworks.projectChecklistById') || '{}') as Record<string, ProjectChecklistState> } catch { return {} }
+    })
     const [dealModelDraftByProject, setDealModelDraftByProject] = useState<Record<string, DealModel>>({})
     const completionAudioContext = useRef<AudioContext | null>(null)
     const dealModelSaveTimeout = useRef<number | null>(null)
@@ -291,6 +295,10 @@ export default function DueDiligenceDashboard() {
             // Local persistence is a convenience only; the workspace remains usable if storage is unavailable.
         }
     }, [askingPriceByProject])
+
+    useEffect(() => {
+        try { window.localStorage.setItem('mergeworks.projectChecklistById', JSON.stringify(projectChecklistById)) } catch {}
+    }, [projectChecklistById])
 
     useEffect(() => {
         void trigger({})
@@ -538,6 +546,11 @@ export default function DueDiligenceDashboard() {
         if (numericValue !== null && !Number.isFinite(numericValue)) return
         const currentAskingPrice = askingPrice.trim() === '' ? activeDealModel.askingPrice : Number(askingPrice)
         const updated = { ...activeDealModel, askingPrice: typeof currentAskingPrice === 'number' && Number.isFinite(currentAskingPrice) ? currentAskingPrice : null, [field]: numericValue } as DealModel
+        setDealModelDraftByProject((current) => ({ ...current, [activeProjectId]: updated }))
+        void triggerSaveDealModel(updated).result
+    }
+    const handleDealModelDefaults = (values: Partial<DealModel>) => {
+        const updated = { ...activeDealModel, ...values } as DealModel
         setDealModelDraftByProject((current) => ({ ...current, [activeProjectId]: updated }))
         void triggerSaveDealModel(updated).result
     }
@@ -1016,7 +1029,7 @@ export default function DueDiligenceDashboard() {
 
                 <DealWorkspaceNav activeTab={activeWorkspaceTab} onTabChange={setActiveWorkspaceTab} />
 
-                {activeWorkspaceTab === 'overview' ? <section id="deal-overview" className="scroll-mt-6">
+                {activeWorkspaceTab === 'overview' ? <section id="deal-overview" className="space-y-6 scroll-mt-6">
                     <DealOverviewCard
                         syntheses={visibleProjectSyntheses}
                         projects={projectSummaries}
@@ -1027,13 +1040,22 @@ export default function DueDiligenceDashboard() {
                         model={activeDealModel}
                         documents={submissionHistory.filter((row) => getProjectKey(row) === activeProjectId)}
                         onOpenEvidence={setActiveEvidence}
+                        exampleMode={isExampleMode}
+                    />
+                    <ProjectChecklistCard
+                        projectId={activeProjectId}
+                        state={projectChecklistById[activeProjectId] ?? {}}
+                        onChange={(next) => setProjectChecklistById((current) => ({ ...current, [activeProjectId]: next }))}
+                        missingDocuments={activeProjectSynthesis?.missingDocuments ?? []}
+                        employeeConfirmed={Boolean(projectSummaries.find((project) => (project.projectId || project.projectKey) === activeProjectId)?.employeeCount) || isExampleMode}
+                        hasAskingPrice={askingPrice.trim().length > 0 || activeDealModel.askingPrice !== null}
                     />
                 </section> : null}
 
                 {activeWorkspaceTab === 'valuation' ? <DealValuationCard synthesis={activeProjectSynthesis} askingPrice={askingPrice} model={activeDealModel} onModelChange={handleDealModelChange} /> : null}
-                {activeWorkspaceTab === 'returns' ? <section className="space-y-6"><AllCashReturnsCard model={activeDealModel} /><FinancedReturnsCard model={activeDealModel} /><DealModelPendingCard area="returns" model={activeDealModel} onChange={handleDealModelChange} /></section> : null}
-                {activeWorkspaceTab === 'growth' ? <section className="space-y-6"><ScenarioComparisonCard model={activeDealModel} /><DealModelPendingCard area="growth" model={activeDealModel} onChange={handleDealModelChange} /></section> : null}
-                {activeWorkspaceTab === 'structure' ? <DealModelPendingCard area="structure" model={activeDealModel} onChange={handleDealModelChange} /> : null}
+                {activeWorkspaceTab === 'returns' ? <section className="space-y-6"><AllCashReturnsCard model={activeDealModel} /><FinancedReturnsCard model={activeDealModel} /><DealModelPendingCard area="returns" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
+                {activeWorkspaceTab === 'growth' ? <section className="space-y-6"><ScenarioComparisonCard model={activeDealModel} /><DealModelPendingCard area="growth" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
+                {activeWorkspaceTab === 'structure' ? <DealModelPendingCard area="structure" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /> : null}
 
                 {activeWorkspaceTab === 'diligence' ? <>
 

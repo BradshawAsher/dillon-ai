@@ -86,6 +86,9 @@ export function downloadSynthesisReport(synthesis: ProjectSynthesisItem, project
         ...section('Missing diligence materials', synthesis.missingDocuments),
         ...section('Open questions for management', synthesis.openQuestions),
         ...section('Citations', synthesis.citations ?? []),
+        '## Full structured synthesis record',
+        synthesis.finalJudgmentJson ? '```json\n' + synthesis.finalJudgmentJson + '\n```' : 'The workflow did not return a separate structured synthesis record for this project.',
+        '',
     ].join('\n')
 
     downloadTextFile(fileSafeName(projectName) + '-project-synthesis.md', report, 'text/markdown;charset=utf-8')
