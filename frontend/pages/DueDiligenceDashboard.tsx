@@ -568,7 +568,7 @@ export default function DueDiligenceDashboard() {
         if (batchInProgressNotificationId.current !== displayedSubmissionBatch.id) return
         batchInProgressNotificationId.current = null
         playCompletionSound()
-        if ('Notification' in window && Notification.permission === 'granted' && !document.hasFocus()) {
+        if ('Notification' in window && Notification.permission === 'granted') {
             new Notification('Document batch complete', { body: `${activeBatchFinishedCount}/${activeBatchExpectedCount} documents have reached a final status.` })
         }
     }, [activeBatchExpectedCount, activeBatchFinishedCount, displayedSubmissionBatch])
@@ -581,7 +581,7 @@ export default function DueDiligenceDashboard() {
         if (synthesisInProgressNotificationProjectId.current !== activeProjectId) return
         synthesisInProgressNotificationProjectId.current = null
         playCompletionSound()
-        if ('Notification' in window && Notification.permission === 'granted' && !document.hasFocus()) {
+        if ('Notification' in window && Notification.permission === 'granted') {
             new Notification('Project synthesis complete', { body: 'Your due diligence synthesis is ready to review.' })
         }
     }, [activeProjectId, isCurrentProjectAwaitingSynthesis])
@@ -844,6 +844,18 @@ export default function DueDiligenceDashboard() {
                         </div>
                     </div>
                 </div>
+
+                {desktopNotificationPermission === 'default' ? (
+                    <div className="mx-auto max-w-[1440px] px-4 pb-5 sm:px-6 lg:px-8">
+                        <div className="flex flex-col gap-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <p className="text-sm font-semibold text-foreground">Enable completion notifications</p>
+                                <p className="mt-1 text-sm text-muted-foreground">Get a desktop alert and chime when a document batch or project synthesis finishes, even while you are elsewhere in the workspace.</p>
+                            </div>
+                            <Button type="button" size="sm" className="shrink-0" onClick={() => { void enableDesktopNotifications() }}>Enable notifications</Button>
+                        </div>
+                    </div>
+                ) : null}
 
                 <div className="mx-auto max-w-[1440px] px-4 pb-5 sm:px-6 lg:px-8">
                     <div className="grid gap-3 rounded-xl border border-primary/20 bg-primary/[0.04] p-3 sm:grid-cols-3">
