@@ -22,7 +22,7 @@ function money(value: number, currency = 'USD') {
 export default function AllCashReturnsCard({ model, documents = [], onOpenEvidence }: AllCashReturnsCardProps) {
     const documented = parseDocumentedFacts(model.documentedFactsJson)
     const ebitdaFact = documented.ebitda_sde
-    const ebitda = ebitdaFact?.status === 'confirmed' && typeof ebitdaFact.value === 'number' ? ebitdaFact.value : null
+    const ebitda = (ebitdaFact?.status === 'confirmed' || ebitdaFact?.status === 'illustrative') && typeof ebitdaFact.value === 'number' ? ebitdaFact.value : null
     const currency = ebitdaFact?.currency || 'USD'
 
     const returns = computeAllCashReturns({

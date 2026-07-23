@@ -10,10 +10,12 @@ import ExpandableInsightGroup from '../components/ExpandableInsightGroup'
 import DealModelPendingCard from '../components/DealModelPendingCard'
 import AllCashReturnsCard from '../components/AllCashReturnsCard'
 import FinancedReturnsCard from '../components/FinancedReturnsCard'
+import FinancedScenarioComparisonCard from '../components/FinancedScenarioComparisonCard'
 import ScenarioComparisonCard from '../components/ScenarioComparisonCard'
 import DealStructureVisualCard from '../components/DealStructureVisualCard'
 import DealOverviewCard from '../components/DealOverviewCard'
 import DealModelReadinessCard from '../components/DealModelReadinessCard'
+import DataQualityChecksCard from '../components/DataQualityChecksCard'
 import DealValuationCard from '../components/DealValuationCard'
 import EvidenceDrawer, { type EvidenceItem } from '../components/EvidenceDrawer'
 import ProjectChecklistCard, { type ProjectChecklistState } from '../components/ProjectChecklistCard'
@@ -155,6 +157,95 @@ function parseIllustrativeFacts(raw: string) {
     } catch {
         return { revenue: null, ebitda: null }
     }
+}
+
+function hydrateModelFactsFromDocuments(model: DealModel, documents: SubmissionHistoryItem[]) {
+    let merged: Record<string, Record<string, unknown>> = {}
+    try {
+        const parsed = JSON.parse(model.documentedFactsJson || '{}') as unknown
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) merged = parsed as Record<string, Record<string, unknown>>
+    } catch {}
+
+    for (const document of documents) {
+        if (document.status.trim().toLowerCase() !== 'completed' || !document.financialFactsJson?.trim()) continue
+        try {
+            const parsed = JSON.parse(document.financialFactsJson) as unknown
+            const candidate = parsed && typeof parsed === 'object' && !Array.isArray(parsed) && 'facts' in parsed
+                ? (parsed as { facts?: unknown }).facts
+                : parsed
+            if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) continue
+            for (const [field, fact] of Object.entries(candidate as Record<string, Record<string, unknown>>)) {
+                const current = merged[field]
+                const isConfirmed = fact?.status === 'confirmed' && typeof fact.value === 'number' && Number.isFinite(fact.value)
+                const currentConfirmed = current?.status === 'confirmed' && typeof current.value === 'number'
+                if (!isConfirmed || currentConfirmed) continue
+                merged[field] = {
+                    ...fact,
+                    provenance: fact.provenance || 'Completed document fact',
+                    citations: Array.isArray(fact.citations) && fact.citations.length ? fact.citations : [{ source_file: document.fileName, row_or_cell: 'Document analysis' }],
+                }
+            }
+        } catch {
+            // A malformed document fact record must never prevent the workspace from rendering.
+        }
+    }
+
+    return JSON.stringify(merged) === (model.documentedFactsJson || '{}') ? model : {
+        ...model,
+        documentedFactsJson: JSON.stringify(merged),
+        documentedFactsStatus: model.documentedFactsStatus || 'Temporarily hydrated from completed documents',
+    }
+}
+
+function buildReturnsDisplayModel(model: DealModel) {
+    let facts: Record<string, Record<string, unknown>> = {}
+    try {
+        const parsed = JSON.parse(model.documentedFactsJson || '{}') as unknown
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) facts = parsed as Record<string, Record<string, unknown>>
+    } catch {}
+    const confirmedNumber = (field: string) => facts[field]?.status === 'confirmed' && typeof facts[field]?.value === 'number'
+    const hasEbitda = confirmedNumber('ebitda_sde')
+    const hasRevenue = confirmedNumber('revenue')
+    const hasPrice = (model.purchasePrice ?? model.askingPrice) !== null
+    if (hasEbitda && hasRevenue && hasPrice) return model
+
+    // Rendering-only values: they give the live workspace a useful first
+    // screen while facts are still loading, but are never saved or treated as
+    // documentary evidence.
+    return {
+        ...model,
+        askingPrice: model.askingPrice ?? 1_000_000,
+        purchasePrice: model.purchasePrice ?? model.askingPrice ?? 1_000_000,
+        transactionFees: model.transactionFees ?? 10_000,
+        workingCapitalRequirement: model.workingCapitalRequirement ?? 20_000,
+        holdPeriodYears: model.holdPeriodYears ?? 5,
+        taxRate: model.taxRate ?? 0.25,
+        maintenanceCapex: model.maintenanceCapex ?? 10_000,
+        exitMultiple: model.exitMultiple ?? 4,
+        exitCosts: model.exitCosts ?? 16_000,
+        equityContributionPercent: model.equityContributionPercent ?? 0.3,
+        interestRate: model.interestRate ?? 0.1,
+        amortizationYears: model.amortizationYears ?? 10,
+        sellerNoteAmount: model.sellerNoteAmount ?? 0,
+        bearRevenueGrowth: model.bearRevenueGrowth ?? 0,
+        baseRevenueGrowth: model.baseRevenueGrowth ?? 0.05,
+        bullRevenueGrowth: model.bullRevenueGrowth ?? 0.1,
+        bearEbitdaMargin: model.bearEbitdaMargin ?? 0.15,
+        baseEbitdaMargin: model.baseEbitdaMargin ?? 0.2,
+        bullEbitdaMargin: model.bullEbitdaMargin ?? 0.25,
+        bearExitMultiple: model.bearExitMultiple ?? 3,
+        baseExitMultiple: model.baseExitMultiple ?? 4,
+        bullExitMultiple: model.bullExitMultiple ?? 5,
+        documentedFactsJson: JSON.stringify({
+            ...facts,
+            revenue: hasRevenue ? facts.revenue : { value: 1_000_000, status: 'illustrative', currency: 'USD', period: 'Display preview', provenance: 'Illustrative preview' },
+            ebitda_sde: hasEbitda ? facts.ebitda_sde : { value: 200_000, status: 'illustrative', currency: 'USD', period: 'Display preview', provenance: 'Illustrative preview' },
+        }),
+    } as DealModel
+}
+
+function IllustrativeModelPreviewNotice() {
+    return <div className="rounded-lg border border-warning/30 bg-warning/10 p-4 text-sm text-foreground"><p className="font-semibold">Illustrative model preview</p><p className="mt-1 text-muted-foreground">This card uses display-only starting values because this project is still missing confirmed revenue/EBITDA or a saved price. Nothing in this preview is saved to the project; returned facts and your inputs replace it automatically.</p></div>
 }
 
 function hasReachedProcessingStage(status: string) {
@@ -300,6 +391,11 @@ export default function DueDiligenceDashboard() {
             projectId: activeProjectId, askingPrice: null, purchasePrice: null, debtAssumed: null, cashAcquired: null, workingCapitalRequirement: null, transactionFees: null, holdPeriodYears: null, taxRate: null, closingCosts: null, maintenanceCapex: null, exitMultiple: null, exitCosts: null, equityContributionPercent: null, interestRate: null, amortizationYears: null, sellerNoteAmount: null, bearRevenueGrowth: null, baseRevenueGrowth: null, bullRevenueGrowth: null, bearEbitdaMargin: null, baseEbitdaMargin: null, bullEbitdaMargin: null, bearExitMultiple: null, baseExitMultiple: null, bullExitMultiple: null, revenueMultiple: null, ebitdaMultiple: null, assetHaircutPercent: null, modelUpdatedAt: '', modelUpdatedBy: '', documentedFactsJson: '', documentedFactsStatus: '',
         }
     }, [activeProjectId, dealModelDraftByProject, dealModelsData, isExampleMode])
+    const activeProjectDocuments = useMemo(() => submissionHistory.filter((row) => getProjectKey(row) === activeProjectId), [activeProjectId, submissionHistory])
+    const hydratedDealModel = useMemo(() => isExampleMode ? activeDealModel : hydrateModelFactsFromDocuments(activeDealModel, activeProjectDocuments), [activeDealModel, activeProjectDocuments, isExampleMode])
+    const returnsDisplayModel = useMemo(() => isExampleMode ? hydratedDealModel : buildReturnsDisplayModel(hydratedDealModel), [hydratedDealModel, isExampleMode])
+    const isReturnsIllustrativePreview = !isExampleMode && returnsDisplayModel !== activeDealModel
+    const isGrowthIllustrativePreview = !isExampleMode && returnsDisplayModel !== hydratedDealModel
 
     useEffect(() => {
         setAskingPrice(askingPriceByProject[activeProjectId] ?? '')
@@ -1175,10 +1271,11 @@ export default function DueDiligenceDashboard() {
                         exampleMode={isExampleMode}
                     />
                     <DealModelReadinessCard
-                        model={activeDealModel}
-                        documents={submissionHistory.filter((row) => getProjectKey(row) === activeProjectId)}
+                        model={hydratedDealModel}
+                        documents={activeProjectDocuments}
                         onOpenEvidence={setActiveEvidence}
                     />
+                    <DataQualityChecksCard model={hydratedDealModel} />
                     <ProjectChecklistCard
                         projectId={activeProjectId}
                         state={projectChecklistById[activeProjectId] ?? {}}
@@ -1189,10 +1286,10 @@ export default function DueDiligenceDashboard() {
                     />
                 </section> : null}
 
-                {activeWorkspaceTab === 'valuation' ? <DealValuationCard synthesis={activeProjectSynthesis} askingPrice={askingPrice} model={activeDealModel} onModelChange={handleDealModelChange} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /> : null}
-                {activeWorkspaceTab === 'returns' ? <section className="space-y-6"><AllCashReturnsCard model={activeDealModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><FinancedReturnsCard model={activeDealModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><DealModelPendingCard area="returns" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
-                {activeWorkspaceTab === 'growth' ? <section className="space-y-6"><ScenarioComparisonCard model={activeDealModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><DealModelPendingCard area="growth" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
-                {activeWorkspaceTab === 'structure' ? <section className="space-y-6"><DealStructureVisualCard model={activeDealModel} onOpenEvidence={setActiveEvidence} /><DealModelPendingCard area="structure" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
+                {activeWorkspaceTab === 'valuation' ? <DealValuationCard synthesis={activeProjectSynthesis} askingPrice={askingPrice} model={hydratedDealModel} onModelChange={handleDealModelChange} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /> : null}
+                {activeWorkspaceTab === 'returns' ? <section className="space-y-6">{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<AllCashReturnsCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<FinancedReturnsCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<FinancedScenarioComparisonCard model={returnsDisplayModel} /><DealModelPendingCard area="returns" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
+                {activeWorkspaceTab === 'growth' ? <section className="space-y-6">{isGrowthIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<ScenarioComparisonCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><DealModelPendingCard area="growth" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
+                {activeWorkspaceTab === 'structure' ? <section className="space-y-6"><DealStructureVisualCard model={hydratedDealModel} onOpenEvidence={setActiveEvidence} /><DealModelPendingCard area="structure" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
 
                 {activeWorkspaceTab === 'diligence' ? <>
 
