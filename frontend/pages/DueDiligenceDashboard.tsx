@@ -1005,6 +1005,20 @@ export default function DueDiligenceDashboard() {
         }, 0)
     }
 
+    const handleOpenProjectSynthesis = (targetProjectId: string) => {
+        const project = projectSummaries.find((candidate) => (candidate.projectId || candidate.projectKey) === targetProjectId)
+        setSelectedProjectKey(project?.projectKey || targetProjectId)
+        setProjectId(project?.projectId || targetProjectId)
+        if (project) {
+            setDealName(project.projectName)
+            setProjectStage(project.stage || 'post-loi')
+        }
+        setActiveWorkspaceTab('synthesis')
+        window.setTimeout(() => {
+            document.getElementById('project-synthesis')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }, 0)
+    }
+
     const handleIncludeDocument = async (requestID: string) => {
         if (!requestID || !window.confirm('Include this document in the project checklist and future synthesis again?')) return
         const result = await triggerSubmissionConsideration({ requestID, action: 'considered', environment: activeHistoryEnvironment }).result
@@ -1548,6 +1562,9 @@ export default function DueDiligenceDashboard() {
                         </CardHeader>
 
                         <CardContent className="space-y-4 p-4">
+                            <Button type="button" variant="default" onClick={() => handleOpenProjectSynthesis(displayedSubmissionRow?.projectId || projectId)} disabled={!(displayedSubmissionRow?.projectId || projectId)}>
+                                View this project&apos;s synthesis
+                            </Button>
                             {liveSubmitInsight && (liveSubmitInsight.investmentBuyReasoning || liveSubmitInsight.investmentIsFavorable !== null) ? <div className="rounded-xl border-2 border-primary bg-gradient-to-br from-primary/15 via-primary/5 to-background p-5 shadow-md"><div className="flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-bold uppercase tracking-wide text-primary">Investment thesis — start here</p>{liveSubmitInsight.investmentIsFavorable !== null ? <Badge variant={liveSubmitInsight.investmentIsFavorable ? 'success' : 'destructive'}>{liveSubmitInsight.investmentIsFavorable ? 'Favorable indicator' : 'Caution indicator'}</Badge> : null}</div><p className="mt-3 text-sm leading-6 text-foreground">{liveSubmitInsight.investmentBuyReasoning || 'No investment thesis returned yet.'}</p></div> : null}
                             <div className="rounded-xl border-2 border-primary bg-gradient-to-br from-primary/15 via-primary/5 to-background p-5 shadow-md">
                                 <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-bold uppercase tracking-wide text-primary">Start here — latest document at a glance</p><Badge variant={getSubmissionStatusVariant(displayedSubmitStatus)}>{formatSubmissionStatus(displayedSubmitStatus)}</Badge></div>
@@ -1773,10 +1790,19 @@ export default function DueDiligenceDashboard() {
 
                 </> : null}
 
-                {activeWorkspaceTab === 'diligence' ? <>
+                {activeWorkspaceTab === 'synthesis' ? <>
                 <section id="project-synthesis" className="scroll-mt-6 space-y-4">
                     <SectionHeader
                         step={1}
+                        title="Next steps after synthesis"
+                        description="Assign and resolve the management questions that could change the acquisition decision."
+                    />
+                    <ManagementQuestionTracker
+                        projectId={activeProjectId}
+                        suggestedQuestions={activeProjectSynthesis?.openQuestions ?? []}
+                    />
+                    <SectionHeader
+                        step={2}
                         title="Final acquisition judgment"
                         description="The consolidator's cross-document verdict for the selected project."
                     />
@@ -1796,10 +1822,6 @@ export default function DueDiligenceDashboard() {
                         onRefresh={() => {
                             void triggerProjectSynthesis({ environment: activeHistoryEnvironment }, { skipCache: true }).result
                         }}
-                    />
-                    <ManagementQuestionTracker
-                        projectId={activeProjectId}
-                        suggestedQuestions={activeProjectSynthesis?.openQuestions ?? []}
                     />
                 </section>
 
