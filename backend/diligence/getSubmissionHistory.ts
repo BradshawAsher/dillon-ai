@@ -12,6 +12,12 @@ type SubmissionHistoryRow = {
   projectId?: TextValue
   projectStage?: TextValue
   documentType?: TextValue
+  detectedDocumentType?: TextValue
+  tableStructureStatus?: TextValue
+  tableStructureIssues?: TextValue
+  detectedHeaderRow?: number | string | null
+  columnMapConfidence?: number | string | null
+  validatedColumnMap?: TextValue
   submissionBatchId?: TextValue
   expectedBatchDocumentCount?: number | string | null
   fileName?: TextValue
@@ -223,6 +229,12 @@ export default async function getSubmissionHistory(req: {
     projectId: getFirstStringValue([row.projectId]),
     projectStage: getFirstStringValue([row.projectStage]),
     documentType: getFirstStringValue([row.documentType]),
+    detectedDocumentType: getFirstStringValue([row.detectedDocumentType]),
+    tableStructureStatus: getFirstStringValue([row.tableStructureStatus]),
+    tableStructureIssues: getFirstStringValue([row.tableStructureIssues]),
+    detectedHeaderRow: getFirstNumberValue([row.detectedHeaderRow]),
+    columnMapConfidence: getFirstNumberValue([row.columnMapConfidence]),
+    validatedColumnMap: getFirstStringValue([row.validatedColumnMap]),
     submissionBatchId: getFirstStringValue([row.submissionBatchId]),
     expectedBatchDocumentCount: getFirstNumberValue([row.expectedBatchDocumentCount]),
     fileName: getFirstStringValue([row.fileName]),

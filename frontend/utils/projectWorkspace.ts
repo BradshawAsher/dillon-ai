@@ -100,6 +100,10 @@ function getTimestampValue(value: string) {
 }
 
 function getDocumentTypeLabel(row: SubmissionHistoryItem) {
+    if (row.detectedDocumentType?.trim()) {
+        return row.detectedDocumentType
+    }
+
     if (row.documentType.trim().length > 0) {
         return row.documentType
     }

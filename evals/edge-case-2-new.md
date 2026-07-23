@@ -2,7 +2,7 @@
 
 Category: 2. Malformed or Wrong-Shape Data
 
-Status: Test case and expected guardrail drafted; deterministic structure validator not yet implemented
+Status: Implemented in the production per-document workflow; controlled upload test still pending
 
 ### 1. What is the edge case (specific)?
 
@@ -40,21 +40,22 @@ Adjusted EBITDA,1.4m,TBD,N/M,See add-back schedule
 
 ### 4. What the agent DOES do (current implementation)?
 
-- The current structured extraction and robust document-processing workflow can flag invalid numeric placeholders and route an uncertain document to review rather than treating `TBD` as a valid financial figure.
-- The dashboard can retain the document, show its failed/review state, and allow a metadata-based retry without requiring a re-upload.
-- However, the workflow does not yet have a deterministic pre-extraction CSV schema validator that proves the header row, period alignment, and column mapping are structurally sound. Today, recognition of a shifted/renamed table depends partly on the document parser and LLM judgment.
+- The production per-document workflow now performs a deterministic CSV preflight before LlamaParse and the LLM. It skips title/note rows, finds a likely header, checks every subsequent non-empty row against that column count, and detects `#REF!`, `#VALUE!`, `#N/A`, `TBD`, and `N/M`.
+- When the check finds an issue, the document is saved as `needs_review`, marked for human review with `malformed_or_ambiguous_table_structure`, and retains the concrete issue list, detected header row, confidence, and candidate column map.
+- The document does not enter the LLM extraction route, so it cannot invent a shifted Revenue or EBITDA value. It remains visible in the dashboard with a **Table structure review** badge and the issue explanation.
+- The batch counter treats `needs_review` as terminal, so the project does not remain stuck. Normal non-CSV documents and structurally valid CSVs continue through the existing parse and analysis route.
 
-### 5. How we will make detection deterministic
+### 5. How detection is deterministic
 
-- Add a CSV/XLSX preflight step before the LLM extraction:
+- The CSV preflight runs before the LLM extraction and:
   - locate the likely header row after skipping title/notes rows;
   - normalize and compare headers against an approved financial-header dictionary;
   - verify that every data row has the same number of columns as the chosen header;
   - detect invalid tokens (`#REF!`, `#DIV/0!`, `TBD`, `N/M`) in required numeric fields;
   - emit `tableStructureStatus`, `tableStructureIssues`, and `columnMapConfidence` into the document record.
-- If the preflight fails, write a recoverable review state and send the document to the existing review/error path instead of allowing the LLM to make an uncertain mapping.
+- If the preflight fails, it writes a recoverable review state instead of allowing the LLM to make an uncertain mapping. This implementation is CSV-only; equivalent XLSX sheet-level validation remains a future improvement.
 
 ### 6. Evidence and test plan
 
-- This revised wrong-shape CSV test has not yet been run against a deterministic preflight validator because that validator is the remaining implementation task.
+- The deterministic preflight has been published to the production per-document workflow. A controlled upload of the revised test CSV is still needed to capture presentation evidence.
 - Baseline success criteria: the agent must not report the shifted or malformed values as verified EBITDA/revenue; it must flag the source structure, preserve the record, and request a clean export.

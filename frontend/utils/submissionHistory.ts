@@ -9,6 +9,14 @@ export type SubmissionHistoryItem = {
     projectId: string
     projectStage: string
     documentType: string
+    /** AI classification from the completed per-document analysis; preserves the intake selection above. */
+    detectedDocumentType?: string
+    /** Deterministic CSV/table preflight result, when applicable. */
+    tableStructureStatus?: string
+    tableStructureIssues?: string
+    detectedHeaderRow?: number
+    columnMapConfidence?: number
+    validatedColumnMap?: string
     submissionBatchId: string
     expectedBatchDocumentCount: number
     fileName: string
