@@ -1,0 +1,269 @@
+// Single source of truth for the quantitative deal model.
+//
+// Every returns/valuation card must use these functions rather than
+// re-deriving formulas locally — three separate copies of calculateIrr had
+// already drifted into the codebase, which let different tabs disagree about
+// the same metric.
+//
+// Transparency rule: when an input is not documented we still fall back to an
+// assumption (so the UI keeps working), but the fallback is RECORDED in
+// `assumedInputs`. Callers are expected to surface that, so a payback period
+// resting on "capex assumed 0" can never look like a documented fact.
+
+export type ResolvedInput = {
+    field: string
+    label: string
+    value: number
+    /** 'provided' = came from the saved deal model; 'assumed' = fallback default. */
+    source: 'provided' | 'assumed'
+}
+
+export type DealMathInputs = {
+    /** Documented EBITDA/SDE. Required — no default, because guessing earnings is never acceptable. */
+    ebitda: number | null
+    /** Purchase price (or asking price). Required. */
+    purchasePrice: number | null
+    transactionFees?: number | null
+    workingCapital?: number | null
+    taxRate?: number | null
+    maintenanceCapex?: number | null
+    holdPeriodYears?: number | null
+    exitMultiple?: number | null
+    exitCosts?: number | null
+}
+
+/** Fallbacks used when an input is absent. Exported so the UI and tests agree. */
+export const DEAL_MATH_DEFAULTS = {
+    transactionFees: 0,
+    workingCapital: 0,
+    taxRate: 0.25,
+    maintenanceCapex: 0,
+    holdPeriodYears: 5,
+    exitMultiple: 4,
+    /** Exit costs default to 2% of exit enterprise value. */
+    exitCostRate: 0.02,
+} as const
+
+const INPUT_LABELS: Record<string, string> = {
+    transactionFees: 'Transaction fees',
+    workingCapital: 'Working capital requirement',
+    taxRate: 'Tax rate',
+    maintenanceCapex: 'Maintenance capex',
+    holdPeriodYears: 'Hold period',
+    exitMultiple: 'Exit multiple',
+    exitCosts: 'Exit costs',
+}
+
+export type AllCashReturns = {
+    initialInvestment: number | null
+    annualCashFlow: number | null
+    annualRoi: number | null
+    paybackYears: number | null
+    cumulativeHoldCashFlow: number | null
+    operatingMoic: number | null
+    exitEnterpriseValue: number | null
+    netExitProceeds: number | null
+    cashFlows: number[] | null
+    totalMoic: number | null
+    irr: number | null
+    /** Core operating metrics can be computed. */
+    ready: boolean
+    /** Exit-dependent metrics (MOIC/IRR) can be computed. */
+    exitReady: boolean
+    /** Inputs that fell back to a default — surface these next to the numbers. */
+    assumedInputs: ResolvedInput[]
+    /** Required inputs with no value and no safe default. */
+    missingInputs: string[]
+}
+
+function isNumber(value: unknown): value is number {
+    return typeof value === 'number' && Number.isFinite(value)
+}
+
+/**
+ * Internal rate of return via Newton-Raphson.
+ *
+ * Returns null when IRR is undefined or cannot be trusted: a series with no
+ * sign change has no IRR, and non-convergence must not be reported as a number.
+ */
+export function calculateIrr(cashFlows: number[]): number | null {
+    if (!cashFlows.some((value) => value < 0) || !cashFlows.some((value) => value > 0)) {
+        return null
+    }
+
+    let rate = 0.1
+
+    for (let iteration = 0; iteration < 100; iteration += 1) {
+        const npv = cashFlows.reduce((sum, cashFlow, year) => sum + cashFlow / (1 + rate) ** year, 0)
+        // d(NPV)/dr = sum over t>=1 of -t * CF_t / (1+r)^(t+1)
+        const derivative = cashFlows
+            .slice(1)
+            .reduce((sum, cashFlow, year) => sum - ((year + 1) * cashFlow) / (1 + rate) ** (year + 2), 0)
+
+        if (!Number.isFinite(npv) || !Number.isFinite(derivative) || Math.abs(derivative) < 1e-9) {
+            return null
+        }
+
+        const nextRate = rate - npv / derivative
+
+        if (nextRate <= -0.999 || nextRate > 100) {
+            return null
+        }
+
+        if (Math.abs(nextRate - rate) < 1e-7) {
+            return nextRate
+        }
+
+        rate = nextRate
+    }
+
+    return null
+}
+
+/** Net present value of a cash-flow series at a given discount rate. */
+export function calculateNpv(cashFlows: number[], discountRate: number): number | null {
+    if (discountRate <= -1) {
+        return null
+    }
+
+    const npv = cashFlows.reduce((sum, cashFlow, year) => sum + cashFlow / (1 + discountRate) ** year, 0)
+    return Number.isFinite(npv) ? npv : null
+}
+
+/**
+ * Resolves the full all-cash returns model, recording which inputs were
+ * assumed rather than documented.
+ */
+export function computeAllCashReturns(inputs: DealMathInputs): AllCashReturns {
+    const assumedInputs: ResolvedInput[] = []
+    const missingInputs: string[] = []
+
+    const resolve = (field: keyof typeof INPUT_LABELS, provided: number | null | undefined, fallback: number) => {
+        if (isNumber(provided)) {
+            return provided
+        }
+        assumedInputs.push({ field, label: INPUT_LABELS[field], value: fallback, source: 'assumed' })
+        return fallback
+    }
+
+    const ebitda = isNumber(inputs.ebitda) ? inputs.ebitda : null
+    const purchasePrice = isNumber(inputs.purchasePrice) ? inputs.purchasePrice : null
+
+    if (ebitda === null) {
+        missingInputs.push('Documented EBITDA/SDE')
+    }
+    if (purchasePrice === null) {
+        missingInputs.push('Purchase or asking price')
+    }
+
+    const fees = resolve('transactionFees', inputs.transactionFees, DEAL_MATH_DEFAULTS.transactionFees)
+    const workingCapital = resolve('workingCapital', inputs.workingCapital, DEAL_MATH_DEFAULTS.workingCapital)
+    const taxRate = resolve('taxRate', inputs.taxRate, DEAL_MATH_DEFAULTS.taxRate)
+    const capex = resolve('maintenanceCapex', inputs.maintenanceCapex, DEAL_MATH_DEFAULTS.maintenanceCapex)
+    const holdPeriodYears = resolve('holdPeriodYears', inputs.holdPeriodYears, DEAL_MATH_DEFAULTS.holdPeriodYears)
+    const exitMultiple = resolve('exitMultiple', inputs.exitMultiple, DEAL_MATH_DEFAULTS.exitMultiple)
+
+    const initialInvestment = purchasePrice === null ? null : purchasePrice + fees + workingCapital
+    const annualCashFlow = ebitda === null ? null : ebitda * (1 - taxRate) - capex
+
+    const annualRoi = initialInvestment !== null && initialInvestment > 0 && annualCashFlow !== null
+        ? annualCashFlow / initialInvestment
+        : null
+
+    const paybackYears = initialInvestment !== null && annualCashFlow !== null && annualCashFlow > 0
+        ? initialInvestment / annualCashFlow
+        : null
+
+    const cumulativeHoldCashFlow = annualCashFlow !== null ? annualCashFlow * holdPeriodYears : null
+
+    const operatingMoic = initialInvestment !== null && initialInvestment > 0 && cumulativeHoldCashFlow !== null
+        ? cumulativeHoldCashFlow / initialInvestment
+        : null
+
+    const exitEnterpriseValue = ebitda === null ? null : ebitda * exitMultiple
+
+    const defaultExitCosts = exitEnterpriseValue === null ? 0 : exitEnterpriseValue * DEAL_MATH_DEFAULTS.exitCostRate
+    const exitCosts = isNumber(inputs.exitCosts)
+        ? inputs.exitCosts
+        : (() => {
+            assumedInputs.push({
+                field: 'exitCosts',
+                label: INPUT_LABELS.exitCosts,
+                value: defaultExitCosts,
+                source: 'assumed',
+            })
+            return defaultExitCosts
+        })()
+
+    const netExitProceeds = exitEnterpriseValue === null ? null : exitEnterpriseValue - exitCosts
+
+    const cashFlows = initialInvestment !== null
+        && annualCashFlow !== null
+        && netExitProceeds !== null
+        && holdPeriodYears > 0
+        ? [
+            -initialInvestment,
+            ...Array.from(
+                { length: holdPeriodYears },
+                (_, year) => annualCashFlow + (year === holdPeriodYears - 1 ? netExitProceeds : 0)
+            ),
+        ]
+        : null
+
+    const totalMoic = initialInvestment !== null && initialInvestment > 0 && cashFlows !== null
+        ? cashFlows.slice(1).reduce((sum, cashFlow) => sum + cashFlow, 0) / initialInvestment
+        : null
+
+    const irr = cashFlows ? calculateIrr(cashFlows) : null
+
+    return {
+        initialInvestment,
+        annualCashFlow,
+        annualRoi,
+        paybackYears,
+        cumulativeHoldCashFlow,
+        operatingMoic,
+        exitEnterpriseValue,
+        netExitProceeds,
+        cashFlows,
+        totalMoic,
+        irr,
+        ready: initialInvestment !== null && annualCashFlow !== null,
+        exitReady: netExitProceeds !== null && cashFlows !== null,
+        assumedInputs,
+        missingInputs,
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Ratio helpers — shared so Overview and Valuation can never disagree.
+// ---------------------------------------------------------------------------
+
+/** Safe division that returns null instead of Infinity/NaN. */
+export function ratio(numerator: number | null, denominator: number | null): number | null {
+    if (!isNumber(numerator) || !isNumber(denominator) || denominator === 0) {
+        return null
+    }
+    const result = numerator / denominator
+    return Number.isFinite(result) ? result : null
+}
+
+export function ebitdaMargin(ebitda: number | null, revenue: number | null) {
+    return revenue !== null && revenue > 0 ? ratio(ebitda, revenue) : null
+}
+
+export function debtToAssets(debt: number | null, totalAssets: number | null) {
+    return totalAssets !== null && totalAssets > 0 ? ratio(debt, totalAssets) : null
+}
+
+export function revenuePerEmployee(revenue: number | null, employeeCount: number | null) {
+    return employeeCount !== null && employeeCount > 0 ? ratio(revenue, employeeCount) : null
+}
+
+/** Premium (+) or discount (−) of asking price against a supported valuation. */
+export function priceGapPercent(askingPrice: number | null, baseValuation: number | null) {
+    if (!isNumber(askingPrice) || !isNumber(baseValuation) || baseValuation <= 0) {
+        return null
+    }
+    return ((askingPrice - baseValuation) / baseValuation) * 100
+}

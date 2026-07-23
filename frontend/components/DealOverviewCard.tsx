@@ -5,6 +5,12 @@ import { Badge } from '../lib/shadcn/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Input } from '../lib/shadcn/input'
 import { formatCurrencyValue, getSubmissionInsightTone } from '../utils/aiSubmissionData'
+import {
+    debtToAssets as computeDebtToAssets,
+    ebitdaMargin as computeEbitdaMargin,
+    priceGapPercent as computePriceGapPercent,
+    revenuePerEmployee as computeRevenuePerEmployee,
+} from '../utils/dealMath'
 import { formatHours, type ImpactMetrics } from '../utils/impactMetrics'
 import type { ProjectSummary } from '../utils/projectWorkspace'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
@@ -64,9 +70,7 @@ export default function DealOverviewCard({ syntheses, projects, currentProjectId
     const hasValuation = Boolean(synthesis?.valuationLowerBound || synthesis?.valuationBaseEstimate || synthesis?.valuationUpperBound)
     const askingPriceValue = parseMoney(askingPrice) ?? (exampleMode ? 110_000_000 : null)
     const baseValue = synthesis ? parseMoney(synthesis.valuationBaseEstimate) : null
-    const priceGapPercent = askingPriceValue !== null && baseValue !== null && baseValue > 0
-        ? ((askingPriceValue - baseValue) / baseValue) * 100
-        : null
+    const priceGapPercent = computePriceGapPercent(askingPriceValue, baseValue)
     const priceGapLabel = priceGapPercent === null
         ? ''
         : priceGapPercent === 0
@@ -93,9 +97,9 @@ export default function DealOverviewCard({ syntheses, projects, currentProjectId
     const annualOperatingCashFlow = ebitda === null || taxRate === null ? null : ebitda * (1 - taxRate) - (model?.maintenanceCapex ?? (exampleMode ? 1_200_000 : 0))
     const annualRoi = initialInvestment !== null && initialInvestment > 0 && annualOperatingCashFlow !== null ? annualOperatingCashFlow / initialInvestment : null
     const paybackYears = initialInvestment !== null && annualOperatingCashFlow !== null && annualOperatingCashFlow > 0 ? initialInvestment / annualOperatingCashFlow : null
-    const ebitdaMargin = revenue !== null && revenue > 0 && ebitda !== null ? ebitda / revenue : null
-    const debtToAssets = debt !== null && assets !== null && assets > 0 ? debt / assets : null
-    const revenuePerEmployee = revenue !== null && employeeCount !== null && employeeCount > 0 ? revenue / employeeCount : null
+    const ebitdaMargin = computeEbitdaMargin(ebitda, revenue)
+    const debtToAssets = computeDebtToAssets(debt, assets)
+    const revenuePerEmployee = computeRevenuePerEmployee(revenue, employeeCount)
     const metricCurrency = documentedFacts.revenue?.currency || documentedFacts.ebitda_sde?.currency || synthesis?.valuationCurrency || 'USD'
     const evidenceForFact = (field: string, title: string): EvidenceItem => {
         const fact = documentedFacts[field]

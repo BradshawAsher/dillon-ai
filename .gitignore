@@ -3,5 +3,6 @@ dist/
 .env
 .env.*
 .vercel
+.mcp.json
 *.log
 .DS_Store
