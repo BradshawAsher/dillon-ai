@@ -213,6 +213,22 @@ function useLiveSaveDealModel() {
     }, []))
 }
 
+export type ProjectActionTracker = { projectId: string; checklistJson: string; questionsJson: string; lastModifiedAt?: string; lastModifiedBy?: string } | null
+
+function useLiveProjectActionTracker() {
+    return useQuery(useCallback(async (params: Record<string, unknown> = {}) => {
+        const projectId = typeof params.projectId === 'string' ? params.projectId : ''
+        if (!projectId) return null
+        return fetchJson<ProjectActionTracker>(`/api/diligence/project-action-tracker?projectId=${encodeURIComponent(projectId)}`, { headers: identityHeaders() })
+    }, []))
+}
+
+function useLiveSaveProjectActionTracker() {
+    return useQuery(useCallback(async (params: Record<string, unknown> = {}) => {
+        return fetchJson<ProjectActionTracker>('/api/diligence/project-action-tracker', { method: 'POST', headers: { 'Content-Type': 'application/json', ...identityHeaders() }, body: JSON.stringify(params) })
+    }, []))
+}
+
 function useLiveSubmitDealPacket() {
     return useQuery(
         useCallback(async (params: Record<string, unknown> = {}) => {
@@ -541,3 +557,5 @@ export const useGetProjectSynthesis = USE_MOCKS ? useMockProjectSynthesis : useL
 export const useGetWorkflowErrors = USE_MOCKS ? useMockWorkflowErrors : useLiveWorkflowErrors
 export const useGetDealModels = useLiveDealModels
 export const useSaveDealModel = useLiveSaveDealModel
+export const useGetProjectActionTracker = useLiveProjectActionTracker
+export const useSaveProjectActionTracker = useLiveSaveProjectActionTracker

@@ -19,6 +19,8 @@ import express from 'express'
 import getProjectSynthesisImport from '../backend/diligence/getProjectSynthesis'
 import getDealModelsImport from '../backend/diligence/getDealModels'
 import saveDealModelImport from '../backend/diligence/saveDealModel'
+import getProjectActionTrackerImport from '../backend/diligence/getProjectActionTracker'
+import saveProjectActionTrackerImport from '../backend/diligence/saveProjectActionTracker'
 import getSubmissionHistoryImport from '../backend/diligence/getSubmissionHistory'
 import getWorkflowErrorsImport from '../backend/diligence/getWorkflowErrors'
 import retryFailedDocumentImport from '../backend/diligence/retryFailedDocument'
@@ -43,6 +45,8 @@ function interopDefault<T>(mod: T): T {
 const getProjectSynthesis = interopDefault(getProjectSynthesisImport)
 const getDealModels = interopDefault(getDealModelsImport)
 const saveDealModel = interopDefault(saveDealModelImport)
+const getProjectActionTracker = interopDefault(getProjectActionTrackerImport)
+const saveProjectActionTracker = interopDefault(saveProjectActionTrackerImport)
 const getWorkflowErrors = interopDefault(getWorkflowErrorsImport)
 const getSubmissionHistory = interopDefault(getSubmissionHistoryImport)
 const retryFailedDocument = interopDefault(retryFailedDocumentImport)
@@ -167,6 +171,22 @@ app.get('/api/diligence/deal-models', async (req, res) => {
 app.post('/api/diligence/deal-models', express.json(), async (req, res) => {
   try {
     res.json(await saveDealModel({ params: req.body, user: userFromHeaders(req.headers) }))
+  } catch (error) {
+    res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
+  }
+})
+
+app.get('/api/diligence/project-action-tracker', async (req, res) => {
+  try {
+    res.json(await getProjectActionTracker({ params: { projectId: typeof req.query.projectId === 'string' ? req.query.projectId : '' }, user: userFromHeaders(req.headers) }))
+  } catch (error) {
+    res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
+  }
+})
+
+app.post('/api/diligence/project-action-tracker', express.json(), async (req, res) => {
+  try {
+    res.json(await saveProjectActionTracker({ params: req.body, user: userFromHeaders(req.headers) }))
   } catch (error) {
     res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
   }
