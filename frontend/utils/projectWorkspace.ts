@@ -299,7 +299,7 @@ export function createProjectSummaries(rows: SubmissionHistoryItem[]) {
         const coverage = buildCoverage(documentTypes)
         const documents = sortedRows.map((row) => ({
             fileName: row.fileName || 'Unnamed document',
-            documentType: row.documentType || getDocumentTypeLabel(row),
+            documentType: getDocumentTypeLabel(row),
             status: row.status || 'pending',
             requestID: row.requestID || row.id?.toString() || 'unknown',
             processedAt: row.processedAt || row.processingStartedAt || row.receivedAt || row.updatedAt || row.createdAt || row.triggerTimestamp,
