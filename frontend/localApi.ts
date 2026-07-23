@@ -80,6 +80,23 @@ async function handleRequest(
     return
   }
 
+  if (route === '/project-action-tracker' && req.method === 'GET') {
+    const mod = await server.ssrLoadModule(backendModuleUrl('getProjectActionTracker.ts'))
+    const result: unknown = await mod.default({ params: { projectId: requestUrl.searchParams.get('projectId') ?? '' }, user })
+    res.setHeader('Content-Type', 'application/json')
+    res.end(JSON.stringify(result))
+    return
+  }
+
+  if (route === '/project-action-tracker' && req.method === 'POST') {
+    const params = await readJsonBody(req)
+    const mod = await server.ssrLoadModule(backendModuleUrl('saveProjectActionTracker.ts'))
+    const result: unknown = await mod.default({ params, user })
+    res.setHeader('Content-Type', 'application/json')
+    res.end(JSON.stringify(result))
+    return
+  }
+
   if (route === '/submission-consideration' && req.method === 'POST') {
     const params = await readJsonBody(req)
     const mod = await server.ssrLoadModule(backendModuleUrl('updateSubmissionRow.ts'))

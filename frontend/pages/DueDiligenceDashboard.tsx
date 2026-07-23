@@ -33,11 +33,13 @@ import {
     type DealModel,
     useGetDiligenceData,
     useGetDealModels,
+    useGetProjectActionTracker,
     useGetProjectSynthesis,
     useGetWorkflowErrors,
     useGetSubmissionHistory,
     useSubmitDealPacket,
     useSaveDealModel,
+    useSaveProjectActionTracker,
     useUpdateSubmissionConsideration,
 } from '../hooks/backend/diligence'
 import { Badge } from '../lib/shadcn/badge'
@@ -374,12 +376,16 @@ export default function DueDiligenceDashboard() {
     const [projectChecklistById, setProjectChecklistById] = useState<Record<string, ProjectChecklistState>>(() => {
         try { return JSON.parse(window.localStorage.getItem('mergeworks.projectChecklistById') || '{}') as Record<string, ProjectChecklistState> } catch { return {} }
     })
+    const [actionTrackerProjectId, setActionTrackerProjectId] = useState('')
     const [dealModelDraftByProject, setDealModelDraftByProject] = useState<Record<string, DealModel>>({})
     const completionAudioContext = useRef<AudioContext | null>(null)
     const dealModelSaveTimeout = useRef<number | null>(null)
+    const checklistSaveTimeout = useRef<number | null>(null)
     const [hasRestoredLatestProject, setHasRestoredLatestProject] = useState(false)
     const [validationById, setValidationById] = useState<Record<string, boolean>>({})
     const [notesById, setNotesById] = useState<Record<string, string>>({})
+    const { data: sharedActionTracker, trigger: triggerProjectActionTracker } = useGetProjectActionTracker()
+    const { trigger: saveProjectActionTracker } = useSaveProjectActionTracker()
     const activeProjectId = isExampleMode ? 'atlas-001' : projectId
     const activeDealModel = useMemo<DealModel>(() => {
         const saved = Array.isArray(dealModelsData) ? dealModelsData.find((model) => model.projectId === activeProjectId) : undefined
@@ -412,6 +418,44 @@ export default function DueDiligenceDashboard() {
     useEffect(() => {
         try { window.localStorage.setItem('mergeworks.projectChecklistById', JSON.stringify(projectChecklistById)) } catch {}
     }, [projectChecklistById])
+
+    // The tracker is shared through n8n when it is reachable; local storage remains a
+    // deliberately safe fallback for offline/demo use.
+    useEffect(() => {
+        if (!activeProjectId || isExampleMode) return
+        setActionTrackerProjectId('')
+        void triggerProjectActionTracker({ projectId: activeProjectId }).result.then((tracker) => {
+            // A missing row is the normal first-use case. It is safe to create it
+            // from the browser's current checklist; a returned row is hydrated below.
+            if (tracker === null) setActionTrackerProjectId(activeProjectId)
+        })
+    }, [activeProjectId, isExampleMode, triggerProjectActionTracker])
+
+    useEffect(() => {
+        if (!sharedActionTracker?.projectId || sharedActionTracker.projectId !== activeProjectId) return
+        try {
+            const sharedChecklist = JSON.parse(sharedActionTracker.checklistJson || '{}') as ProjectChecklistState
+            if (!sharedChecklist || typeof sharedChecklist !== 'object' || Array.isArray(sharedChecklist)) return
+            setProjectChecklistById((current) => ({ ...current, [activeProjectId]: { ...(current[activeProjectId] ?? {}), ...sharedChecklist } }))
+        } catch {
+            // A malformed remote value must not prevent the local checklist from being used.
+        }
+        setActionTrackerProjectId(activeProjectId)
+    }, [activeProjectId, sharedActionTracker])
+
+    useEffect(() => {
+        if (isExampleMode || actionTrackerProjectId !== activeProjectId) return
+        const checklistJson = JSON.stringify(projectChecklistById[activeProjectId] ?? {})
+        if (checklistSaveTimeout.current) window.clearTimeout(checklistSaveTimeout.current)
+        checklistSaveTimeout.current = window.setTimeout(() => {
+            void saveProjectActionTracker({
+                projectId: activeProjectId,
+                checklistJson,
+                questionsJson: sharedActionTracker?.questionsJson || '[]',
+            }).result
+        }, 500)
+        return () => { if (checklistSaveTimeout.current) window.clearTimeout(checklistSaveTimeout.current) }
+    }, [actionTrackerProjectId, activeProjectId, isExampleMode, projectChecklistById, saveProjectActionTracker, sharedActionTracker?.questionsJson])
 
     useEffect(() => {
         void trigger({})

@@ -53,7 +53,7 @@
 - [ ] Test mixed/multi-sheet spreadsheet uploads and documents that represent more than one financial statement type.
 - [ ] Improve synthesis formatting: four key acquisition takeaways, four document-level investment-thesis takeaways, digestible negotiation levers, and readable open questions.
 - [ ] Make long text fields consistently expandable/scrollable.
-- [-] Add a management-question tracker with owner, priority, status, response, and resulting thesis impact. The UI now exists and saves per project in the current browser; shared backend persistence is still missing.
+- [-] Add a management-question tracker with owner, priority, status, response, and resulting thesis impact. The checklist and question tracker now read/write through the authenticated shared n8n API, while retaining browser-local fallback. Validate cross-browser persistence and simultaneous edits before closing this item.
 
 ## Quantitative modeling — next enhancements
 
@@ -66,7 +66,7 @@
 
 ## Data quality and model assurance
 
-- [-] Add extraction checks for swapped fields, wrong units, powers-of-ten errors, and implausible metric relationships. The Overview now flags implausible margins, entry multiples, leverage, and rate-decimal errors; n8n-side unit/power-of-ten validation remains to be added.
+- [-] Add extraction checks for swapped fields, wrong units, powers-of-ten errors, and implausible metric relationships. The Overview flags implausible margins, entry multiples, leverage, and rate-decimal errors. The per-document n8n reconciliation now also flags raw-to-normalized scale errors, materially conflicting duplicate facts, and implausible EBITDA margins; validate this on a live document before closing the item.
 - [ ] Add the remaining structured outputs where supported: reconstructed EBITDA, margin compression, customer concentration, add-back quality, and financial-data completeness.
 - [ ] Add a second independent quality-of-earnings check for recurring versus one-time findings, plus a project-level reconciliation review.
 - [ ] Consider independent second-pass LLM review only after deterministic checks, with explicit comparison and review flags rather than silent overwrites.
@@ -87,3 +87,8 @@
 - [ ] WebSocket/event-driven progress updates if polling becomes a measured UX or scaling problem.
 - [ ] API gateway evaluation if deployment/security requirements justify it.
 - [ ] Visual polish and additional inspiration review, while preserving the document-first, post-LOI product focus.
+
+# Even later - Brad's Ideas
+- Make a chatbot for the website for the user to chat with about the deal, maybe uses RAG or something to have more context about the deal to give better answers
+- Turn LLM chains to agents to have memory and tool calls? Do we need this or no? 
+- Any way we can make this workflow better using some sort of backend agent orchestration?
