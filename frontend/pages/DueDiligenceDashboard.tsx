@@ -1075,7 +1075,7 @@ export default function DueDiligenceDashboard() {
 
                 {activeWorkspaceTab === 'valuation' ? <DealValuationCard synthesis={activeProjectSynthesis} askingPrice={askingPrice} model={activeDealModel} onModelChange={handleDealModelChange} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /> : null}
                 {activeWorkspaceTab === 'returns' ? <section className="space-y-6"><AllCashReturnsCard model={activeDealModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><FinancedReturnsCard model={activeDealModel} /><DealModelPendingCard area="returns" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
-                {activeWorkspaceTab === 'growth' ? <section className="space-y-6"><ScenarioComparisonCard model={activeDealModel} /><DealModelPendingCard area="growth" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
+                {activeWorkspaceTab === 'growth' ? <section className="space-y-6"><ScenarioComparisonCard model={activeDealModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><DealModelPendingCard area="growth" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
                 {activeWorkspaceTab === 'structure' ? <section className="space-y-6"><DealStructureVisualCard model={activeDealModel} /><DealModelPendingCard area="structure" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
 
                 {activeWorkspaceTab === 'diligence' ? <>
