@@ -20,6 +20,8 @@ import DealValuationCard from '../components/DealValuationCard'
 import EvidenceDrawer, { type EvidenceItem } from '../components/EvidenceDrawer'
 import ProjectChecklistCard, { type ProjectChecklistState } from '../components/ProjectChecklistCard'
 import DealWorkspaceNav, { type WorkspaceTab } from '../components/DealWorkspaceNav'
+import GrowthDecisionSummary from '../components/GrowthDecisionSummary'
+import ReturnsDecisionSummary from '../components/ReturnsDecisionSummary'
 import ProjectIntakeCard from '../components/ProjectIntakeCard'
 import ProjectPortfolioCard from '../components/ProjectPortfolioCard'
 import ProjectSynthesisCard from '../components/ProjectSynthesisCard'
@@ -248,7 +250,7 @@ function buildReturnsDisplayModel(model: DealModel) {
 }
 
 function IllustrativeModelPreviewNotice() {
-    return <div className="rounded-lg border border-warning/30 bg-warning/10 p-4 text-sm text-foreground"><p className="font-semibold">Illustrative model preview</p><p className="mt-1 text-muted-foreground">This card uses display-only starting values because this project is still missing confirmed revenue/EBITDA or a saved price. Nothing in this preview is saved to the project; returned facts and your inputs replace it automatically.</p></div>
+    return <div role="alert" className="rounded-lg border-2 border-destructive/60 bg-destructive/10 p-4 text-sm text-foreground shadow-sm"><div className="flex items-center gap-2 text-destructive"><AlertCircle className="h-5 w-5 shrink-0" /><p className="font-bold uppercase tracking-wide">Illustrative model preview — not source-backed</p></div><p className="mt-2 font-medium">This card uses display-only starting values because this project is still missing confirmed revenue/EBITDA or a saved price.</p><p className="mt-1 text-muted-foreground">Nothing in this preview is saved to the project; returned facts and your inputs replace it automatically.</p></div>
 }
 
 function hasReachedProcessingStage(status: string) {
@@ -989,6 +991,20 @@ export default function DueDiligenceDashboard() {
         if (result) await handleRefreshHistory(activeHistoryEnvironment)
     }
 
+    const handleAuditProjectOpen = (projectId: string) => {
+        const project = projectSummaries.find((candidate) => (candidate.projectId || candidate.projectKey) === projectId)
+        setSelectedProjectKey(project?.projectKey || projectId)
+        setProjectId(project?.projectId || projectId)
+        if (project) {
+            setDealName(project.projectName)
+            setProjectStage(project.stage || 'post-loi')
+        }
+        setActiveWorkspaceTab('documents')
+        window.setTimeout(() => {
+            document.getElementById('project-portfolio')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }, 0)
+    }
+
     const handleIncludeDocument = async (requestID: string) => {
         if (!requestID || !window.confirm('Include this document in the project checklist and future synthesis again?')) return
         const result = await triggerSubmissionConsideration({ requestID, action: 'considered', environment: activeHistoryEnvironment }).result
@@ -1339,8 +1355,8 @@ export default function DueDiligenceDashboard() {
                 </section> : null}
 
                 {activeWorkspaceTab === 'valuation' ? <DealValuationCard synthesis={activeProjectSynthesis} askingPrice={askingPrice} model={hydratedDealModel} onModelChange={handleDealModelChange} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /> : null}
-                {activeWorkspaceTab === 'returns' ? <section className="space-y-6">{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<AllCashReturnsCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<FinancedReturnsCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<FinancedScenarioComparisonCard model={returnsDisplayModel} /><DealModelPendingCard area="returns" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
-                {activeWorkspaceTab === 'growth' ? <section className="space-y-6">{isGrowthIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<ScenarioComparisonCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><DealModelPendingCard area="growth" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
+                {activeWorkspaceTab === 'returns' ? <section className="space-y-6"><ReturnsDecisionSummary model={returnsDisplayModel} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<AllCashReturnsCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<FinancedReturnsCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<FinancedScenarioComparisonCard model={returnsDisplayModel} /><DealModelPendingCard area="returns" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
+                {activeWorkspaceTab === 'growth' ? <section className="space-y-6">{isGrowthIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<GrowthDecisionSummary model={returnsDisplayModel} /><ScenarioComparisonCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><DealModelPendingCard area="growth" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
                 {activeWorkspaceTab === 'structure' ? <section className="space-y-6"><DealStructureVisualCard model={hydratedDealModel} onOpenEvidence={setActiveEvidence} /><DealModelPendingCard area="structure" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
 
                 {activeWorkspaceTab === 'diligence' ? <>
@@ -1532,6 +1548,11 @@ export default function DueDiligenceDashboard() {
                         </CardHeader>
 
                         <CardContent className="space-y-4 p-4">
+                            <div className="rounded-xl border-2 border-primary bg-gradient-to-br from-primary/15 via-primary/5 to-background p-5 shadow-md">
+                                <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-bold uppercase tracking-wide text-primary">Start here — latest document at a glance</p><Badge variant={getSubmissionStatusVariant(displayedSubmitStatus)}>{formatSubmissionStatus(displayedSubmitStatus)}</Badge></div>
+                                <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><div className="rounded-lg border border-primary/25 bg-background/90 p-3"><p className="text-xs text-muted-foreground">Risk signal</p><p className="mt-1 text-lg font-bold">{displayedSubmitTrafficLight || displayedSubmitRiskLevel || 'Still processing'}</p></div><div className="rounded-lg border border-primary/25 bg-background/90 p-3"><p className="text-xs text-muted-foreground">AI confidence</p><p className="mt-1 text-lg font-bold">{liveSubmitInsight?.confidencePercent != null ? `${liveSubmitInsight.confidencePercent}%` : displayedSubmitConfidence || 'Pending'}</p></div><div className="rounded-lg border border-primary/25 bg-background/90 p-3"><p className="text-xs text-muted-foreground">Detected document type</p><p className="mt-1 text-lg font-bold">{displayedSubmissionRow?.detectedDocumentType || displayedSubmissionRow?.documentType || documentType || 'Pending'}</p></div><div className="rounded-lg border border-primary/25 bg-background/90 p-3"><p className="text-xs text-muted-foreground">Action needed</p><p className="mt-1 text-lg font-bold">{liveSubmitInsight?.escalationReasons.length ? 'Review flags' : displayedSubmitStatus.toLowerCase() === 'completed' ? 'Ready to use' : 'Wait for analysis'}</p></div></div>
+                                <p className="mt-4 text-sm leading-6 text-foreground">{displayedSubmitAiSummary || (liveSubmitInsight?.escalationReasons.length ? 'The document has items that need review before relying on its findings.' : 'This panel will surface the document’s key result as soon as n8n returns it.')}</p>
+                            </div>
                             <p className="text-xs text-muted-foreground">
                                 {submitResponse
                                     ? `${submitResponse.method} to ${submitResponse.target} at ${submitResponse.submittedAt}`
@@ -1783,10 +1804,10 @@ export default function DueDiligenceDashboard() {
 
                 </> : null}
 
-                {activeWorkspaceTab === 'documents' ? <>
+                {activeWorkspaceTab === 'history' ? <>
                 <section className="space-y-4">
                 <SectionHeader
-                    step={2}
+                    step={1}
                     title="Submission audit trail"
                     description="Per-document processing status and AI output, newest first."
                 />
@@ -1804,6 +1825,7 @@ export default function DueDiligenceDashboard() {
                     isPolling={hasActiveSubmissions}
                     onRetryFailedDocument={handleRetryFailedDocument}
                     retryingRequestId={retryingRequestId}
+                    onOpenProject={handleAuditProjectOpen}
                 />
                 </section>
 

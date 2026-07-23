@@ -228,6 +228,7 @@ type SubmissionHistoryCardProps = {
   isPolling: boolean
   onRetryFailedDocument: (requestID: string) => void
   retryingRequestId: string | null
+  onOpenProject?: (projectId: string) => void
 }
 
 export default function SubmissionHistoryCard({
@@ -240,6 +241,7 @@ export default function SubmissionHistoryCard({
   isPolling,
   onRetryFailedDocument,
   retryingRequestId,
+  onOpenProject,
 }: SubmissionHistoryCardProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedStatus, setSelectedStatus] = useState('all')
@@ -466,7 +468,7 @@ export default function SubmissionHistoryCard({
           </div>
         ) : (
           <div className="grid gap-4 2xl:grid-cols-[minmax(0,0.9fr)_minmax(560px,1.1fr)]">
-            <div className="max-h-[600px] overflow-auto rounded-lg border border-border">
+            <div className="max-h-[900px] overflow-auto rounded-lg border border-border">
               <Table className="min-w-[720px]">
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
@@ -521,7 +523,19 @@ export default function SubmissionHistoryCard({
                         </TableCell>
                         <TableCell>
                           <div className="space-y-1">
-                            <p className="font-medium text-foreground">{title}</p>
+                            {row.projectId && onOpenProject ? (
+                              <button
+                                type="button"
+                                onClick={(event) => {
+                                  event.stopPropagation()
+                                  onOpenProject(row.projectId)
+                                }}
+                                className="text-left font-medium text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                aria-label={`Open project ${title} in Projects`}
+                              >
+                                {title}
+                              </button>
+                            ) : <p className="font-medium text-foreground">{title}</p>}
                             <p className="text-xs text-muted-foreground">{detail}</p>
                             {row.workstream ? (
                               <p className="text-xs text-muted-foreground">Workstream: {row.workstream}</p>
@@ -533,7 +547,16 @@ export default function SubmissionHistoryCard({
                               <p className="text-xs text-muted-foreground">AI detected: {row.detectedDocumentType}</p>
                             ) : null}
                             {row.projectId ? (
-                              <p className="font-mono text-xs text-muted-foreground">Project ID: {row.projectId}</p>
+                              <button
+                                type="button"
+                                onClick={(event) => {
+                                  event.stopPropagation()
+                                  onOpenProject?.(row.projectId)
+                                }}
+                                className="font-mono text-xs text-muted-foreground underline-offset-2 hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                              >
+                                Project ID: {row.projectId}
+                              </button>
                             ) : null}
                             {hasAiEnrichment(row) ? (
                               <div className="flex flex-wrap gap-2 pt-1">
