@@ -607,7 +607,7 @@ export default function SubmissionHistoryCard({
                               <Download />
                               Download document analysis
                             </Button>
-                            {['failed', 'error', 'rejected'].includes(selectedRow.status.trim().toLowerCase()) && selectedRow.requestID ? (
+                            {['failed', 'error', 'rejected', 'needs_review', 'needs review'].includes(selectedRow.status.trim().toLowerCase()) && selectedRow.requestID ? (
                               <Button type="button" size="sm" variant="outline" disabled={retryingRequestId === selectedRow.requestID} onClick={() => onRetryFailedDocument(selectedRow.requestID)}>
                                 {retryingRequestId === selectedRow.requestID ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                                 Retry document

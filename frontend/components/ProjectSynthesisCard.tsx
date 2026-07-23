@@ -250,10 +250,10 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                             </div>
 
                             {hasRefreshFailure ? (
-                                <div className="rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm text-foreground">
+                                <div role="alert" className="rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm text-foreground">
                                     <p className="font-medium">{synthesisStatus === 'synthesis_blocked' ? 'Latest synthesis is blocked until document processing is resolved.' : 'Latest synthesis refresh failed after automatic retries.'}</p>
                                     <p className="mt-1 text-muted-foreground">
-                                        The prior synthesis below remains available. {synthesis.aiErrorMessage || 'A provider or processing step did not complete.'}
+                                        {hasPriorSynthesis ? 'The prior synthesis below remains available. ' : 'No new synthesis was produced. '}{synthesis.aiErrorMessage || 'A provider or processing step did not complete.'}
                                     </p>
                                 </div>
                             ) : null}
