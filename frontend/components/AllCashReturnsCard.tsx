@@ -36,11 +36,11 @@ export default function AllCashReturnsCard({ model }: { model: DealModel }) {
     const purchasePrice = model.purchasePrice ?? model.askingPrice
     const fees = model.transactionFees ?? 0
     const workingCapital = model.workingCapitalRequirement ?? 0
-    const taxRate = model.taxRate
+    const taxRate = model.taxRate ?? 0.25
     const capex = model.maintenanceCapex ?? 0
-    const holdPeriod = model.holdPeriodYears
-    const exitMultiple = model.exitMultiple
-    const exitCosts = model.exitCosts ?? 0
+    const holdPeriod = model.holdPeriodYears ?? 5
+    const exitMultiple = model.exitMultiple ?? 4
+    const exitCosts = model.exitCosts ?? (ebitda === null ? 0 : ebitda * exitMultiple * 0.02)
     const initialInvestment = purchasePrice === null ? null : purchasePrice + fees + workingCapital
     const annualCashFlow = ebitda === null || taxRate === null ? null : ebitda * (1 - taxRate) - capex
     const annualRoi = initialInvestment && annualCashFlow !== null && initialInvestment > 0 ? annualCashFlow / initialInvestment : null
