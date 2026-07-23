@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Download, FileText, Landmark, Loader2, MessageCircleQuestion, RefreshCw, Scale, ShieldAlert, TriangleAlert } from 'lucide-react'
 
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
+import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import ExpandableInsightGroup from './ExpandableInsightGroup'
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
@@ -11,6 +12,7 @@ import { formatCurrencyValue, getSubmissionInsightTone } from '../utils/aiSubmis
 import { downloadTextFile, fileSafeName } from '../utils/downloadFile'
 import { formatHours, type ImpactMetrics } from '../utils/impactMetrics'
 import type { ProjectSummary } from '../utils/projectWorkspace'
+import { findCitedDocument, type EvidenceItem } from '../utils/evidence'
 
 type ProjectSynthesisCardProps = {
     syntheses: ProjectSynthesisItem[]
@@ -24,6 +26,8 @@ type ProjectSynthesisCardProps = {
     error: string | null
     onRefresh: () => void
     impact: ImpactMetrics
+    documents?: SubmissionHistoryItem[]
+    onOpenEvidence?: (evidence: EvidenceItem) => void
 }
 
 function getRiskVariant(riskLevel: string): 'destructive' | 'warning' | 'secondary' | 'outline' {
@@ -105,7 +109,7 @@ function formatProjectDisplayName(project: ProjectSummary) {
     return `${projectName} • ${companyName}`
 }
 
-export default function ProjectSynthesisCard({ syntheses, projects, currentProjectId, documentAnalysisPending, synthesisPending, synthesisProgress, synthesisStage, loading, error, onRefresh, impact }: ProjectSynthesisCardProps) {
+export default function ProjectSynthesisCard({ syntheses, projects, currentProjectId, documentAnalysisPending, synthesisPending, synthesisProgress, synthesisStage, loading, error, onRefresh, impact, documents = [], onOpenEvidence }: ProjectSynthesisCardProps) {
     const [synthesisElapsedSeconds, setSynthesisElapsedSeconds] = useState(0)
     const projectNameById = new Map(
         projects.map((project) => [project.projectId || project.projectKey, formatProjectDisplayName(project)])
@@ -369,13 +373,17 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                     defaultOpen
                                 />
                                 {(synthesis.citations?.length ?? 0) > 0 ? (
-                                    <ExpandableInsightGroup
-                                        title="Synthesis citations"
-                                        icon={<FileText className="h-4 w-4 text-muted-foreground" />}
-                                        items={synthesis.citations ?? []}
-                                        emptyLabel="No synthesis citations recorded."
-                                        defaultOpen
-                                    />
+                                    <div className="rounded-lg border border-border bg-muted/20 p-4">
+                                        <div className="flex items-center gap-2"><FileText className="h-4 w-4 text-muted-foreground" /><p className="text-sm font-semibold text-foreground">Synthesis citations</p></div>
+                                        <div className="mt-3 space-y-2">
+                                            {(synthesis.citations ?? []).map((citation) => {
+                                                const document = findCitedDocument(citation, documents)
+                                                return <button key={citation} type="button" onClick={() => onOpenEvidence?.({ title: 'Project synthesis citation', sourceFile: citation, sourceLocation: 'Project-level synthesis', excerpt: synthesis.finalJudgmentSummary, status: 'Synthesized', provenance: 'Project synthesis', documentId: document?.storageFileId, documentUrl: document?.storageFileUrl })} className="w-full rounded-md border border-border bg-background p-3 text-left text-sm text-foreground transition-colors hover:border-primary/40 hover:bg-muted/30">
+                                                    <span className="font-medium">{citation}</span><span className="ml-2 text-xs text-primary">View evidence</span>
+                                                </button>
+                                            })}
+                                        </div>
+                                    </div>
                                 ) : null}
                             </div>
                         </div>

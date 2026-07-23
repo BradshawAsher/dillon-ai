@@ -13,6 +13,7 @@ import FinancedReturnsCard from '../components/FinancedReturnsCard'
 import ScenarioComparisonCard from '../components/ScenarioComparisonCard'
 import DealStructureVisualCard from '../components/DealStructureVisualCard'
 import DealOverviewCard from '../components/DealOverviewCard'
+import DealModelReadinessCard from '../components/DealModelReadinessCard'
 import DealValuationCard from '../components/DealValuationCard'
 import EvidenceDrawer, { type EvidenceItem } from '../components/EvidenceDrawer'
 import ProjectChecklistCard, { type ProjectChecklistState } from '../components/ProjectChecklistCard'
@@ -20,6 +21,7 @@ import DealWorkspaceNav, { type WorkspaceTab } from '../components/DealWorkspace
 import ProjectIntakeCard from '../components/ProjectIntakeCard'
 import ProjectPortfolioCard from '../components/ProjectPortfolioCard'
 import ProjectSynthesisCard from '../components/ProjectSynthesisCard'
+import ManagementQuestionTracker from '../components/ManagementQuestionTracker'
 import SectionHeader from '../components/SectionHeader'
 import SubmissionHistoryCard from '../components/SubmissionHistoryCard'
 import WorkflowErrorLogCard from '../components/WorkflowErrorLogCard'
@@ -144,6 +146,16 @@ const processingReachedStatuses = new Set([
     ...terminalBatchStatuses,
 ])
 const activeSynthesisStatuses = new Set(['queued', 'pending', 'processing', 'running', 'synthesis_pending', 'synthesizing'])
+
+function parseIllustrativeFacts(raw: string) {
+    try {
+        const parsed = JSON.parse(raw) as Record<string, { value?: number; status?: string }>
+        const confirmed = (key: string) => parsed[key]?.status === 'confirmed' && typeof parsed[key]?.value === 'number' ? parsed[key].value ?? null : null
+        return { revenue: confirmed('revenue'), ebitda: confirmed('ebitda_sde') }
+    } catch {
+        return { revenue: null, ebitda: null }
+    }
+}
 
 function hasReachedProcessingStage(status: string) {
     return processingReachedStatuses.has(status.trim().toLowerCase())
@@ -574,10 +586,54 @@ export default function DueDiligenceDashboard() {
         void triggerSaveDealModel(updated).result
     }
     const handleDealModelDefaults = (values: Partial<DealModel>) => {
-        const updated = { ...activeDealModel, ...values } as DealModel
+        // Do not write a null "default" into another null field. In the live
+        // hydration path, a project can have revenue before EBITDA; repeatedly
+        // writing those unresolved nulls would cause a React update loop.
+        const missingOnly = Object.fromEntries(Object.entries(values).filter(([field, value]) => value !== null && value !== undefined && (activeDealModel[field as keyof DealModel] === null || activeDealModel[field as keyof DealModel] === undefined))) as Partial<DealModel>
+        if (Object.keys(missingOnly).length === 0) return
+        const updated = { ...activeDealModel, ...missingOnly } as DealModel
         setDealModelDraftByProject((current) => ({ ...current, [activeProjectId]: updated }))
         void triggerSaveDealModel(updated).result
     }
+
+    useEffect(() => {
+        if (isExampleMode) return
+        const { revenue, ebitda } = parseIllustrativeFacts(activeDealModel.documentedFactsJson)
+        if (revenue === null && ebitda === null) return
+
+        // These are deliberately generic scenario inputs, not claims about a
+        // target or its industry. They unlock a first-pass model and retain
+        // null/user-entered values as the source of truth when available.
+        const purchasePrice = activeDealModel.askingPrice ?? (ebitda === null ? null : ebitda * 4)
+        const currentMargin = revenue !== null && ebitda !== null && revenue > 0 ? ebitda / revenue : null
+        const defaults: Partial<DealModel> = {
+            purchasePrice,
+            transactionFees: purchasePrice === null ? null : purchasePrice * 0.01,
+            workingCapitalRequirement: purchasePrice === null ? null : purchasePrice * 0.02,
+            holdPeriodYears: 5,
+            taxRate: 0.25,
+            maintenanceCapex: ebitda === null ? null : ebitda * 0.03,
+            exitMultiple: 4,
+            exitCosts: purchasePrice === null ? null : purchasePrice * 0.01,
+            equityContributionPercent: 0.3,
+            interestRate: 0.1,
+            amortizationYears: 10,
+            sellerNoteAmount: 0,
+            bearRevenueGrowth: 0,
+            baseRevenueGrowth: 0.05,
+            bullRevenueGrowth: 0.1,
+            bearEbitdaMargin: currentMargin === null ? 0.15 : Math.max(0, currentMargin - 0.03),
+            baseEbitdaMargin: currentMargin ?? 0.2,
+            bullEbitdaMargin: currentMargin === null ? 0.25 : currentMargin + 0.03,
+            bearExitMultiple: 3,
+            baseExitMultiple: 4,
+            bullExitMultiple: 5,
+            revenueMultiple: 1,
+            ebitdaMultiple: 4,
+            assetHaircutPercent: 0.1,
+        }
+        handleDealModelDefaults(defaults)
+    }, [activeDealModel, activeProjectId, isExampleMode])
     const activeBatchRows = useMemo(() => {
         if (!displayedSubmissionBatch) {
             return []
@@ -1118,6 +1174,11 @@ export default function DueDiligenceDashboard() {
                         onOpenEvidence={setActiveEvidence}
                         exampleMode={isExampleMode}
                     />
+                    <DealModelReadinessCard
+                        model={activeDealModel}
+                        documents={submissionHistory.filter((row) => getProjectKey(row) === activeProjectId)}
+                        onOpenEvidence={setActiveEvidence}
+                    />
                     <ProjectChecklistCard
                         projectId={activeProjectId}
                         state={projectChecklistById[activeProjectId] ?? {}}
@@ -1129,9 +1190,9 @@ export default function DueDiligenceDashboard() {
                 </section> : null}
 
                 {activeWorkspaceTab === 'valuation' ? <DealValuationCard synthesis={activeProjectSynthesis} askingPrice={askingPrice} model={activeDealModel} onModelChange={handleDealModelChange} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /> : null}
-                {activeWorkspaceTab === 'returns' ? <section className="space-y-6"><AllCashReturnsCard model={activeDealModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><FinancedReturnsCard model={activeDealModel} /><DealModelPendingCard area="returns" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
+                {activeWorkspaceTab === 'returns' ? <section className="space-y-6"><AllCashReturnsCard model={activeDealModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><FinancedReturnsCard model={activeDealModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><DealModelPendingCard area="returns" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
                 {activeWorkspaceTab === 'growth' ? <section className="space-y-6"><ScenarioComparisonCard model={activeDealModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><DealModelPendingCard area="growth" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
-                {activeWorkspaceTab === 'structure' ? <section className="space-y-6"><DealStructureVisualCard model={activeDealModel} /><DealModelPendingCard area="structure" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
+                {activeWorkspaceTab === 'structure' ? <section className="space-y-6"><DealStructureVisualCard model={activeDealModel} onOpenEvidence={setActiveEvidence} /><DealModelPendingCard area="structure" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
 
                 {activeWorkspaceTab === 'diligence' ? <>
 
@@ -1558,9 +1619,15 @@ export default function DueDiligenceDashboard() {
                         loading={projectSynthesisLoading}
                         error={projectSynthesisError}
                         impact={activeProjectImpact}
+                        documents={submissionHistory.filter((row) => getProjectKey(row) === activeProjectId)}
+                        onOpenEvidence={setActiveEvidence}
                         onRefresh={() => {
                             void triggerProjectSynthesis({ environment: activeHistoryEnvironment }, { skipCache: true }).result
                         }}
+                    />
+                    <ManagementQuestionTracker
+                        projectId={activeProjectId}
+                        suggestedQuestions={activeProjectSynthesis?.openQuestions ?? []}
                     />
                 </section>
 
