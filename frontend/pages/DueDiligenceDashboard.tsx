@@ -20,6 +20,7 @@ import WorkflowErrorLogCard from '../components/WorkflowErrorLogCard'
 import {
     exampleProjectSyntheses,
     exampleSubmissionHistoryRows,
+    type DealModel,
     useGetDiligenceData,
     useGetDealModels,
     useGetProjectSynthesis,
@@ -260,12 +261,19 @@ export default function DueDiligenceDashboard() {
         if (typeof window === 'undefined' || !('Notification' in window)) return 'unsupported'
         return Notification.permission
     })
+    const [dealModelDraftByProject, setDealModelDraftByProject] = useState<Record<string, DealModel>>({})
     const completionAudioContext = useRef<AudioContext | null>(null)
     const dealModelSaveTimeout = useRef<number | null>(null)
     const [hasRestoredLatestProject, setHasRestoredLatestProject] = useState(false)
     const [validationById, setValidationById] = useState<Record<string, boolean>>({})
     const [notesById, setNotesById] = useState<Record<string, string>>({})
     const activeProjectId = isExampleMode ? 'atlas-001' : projectId
+    const activeDealModel = useMemo<DealModel>(() => {
+        const saved = Array.isArray(dealModelsData) ? dealModelsData.find((model) => model.projectId === activeProjectId) : undefined
+        return dealModelDraftByProject[activeProjectId] ?? saved ?? {
+            projectId: activeProjectId, askingPrice: null, purchasePrice: null, debtAssumed: null, cashAcquired: null, workingCapitalRequirement: null, transactionFees: null, holdPeriodYears: null, taxRate: null, closingCosts: null, maintenanceCapex: null, exitMultiple: null, exitCosts: null, modelUpdatedAt: '', modelUpdatedBy: '',
+        }
+    }, [activeProjectId, dealModelDraftByProject, dealModelsData])
 
     useEffect(() => {
         setAskingPrice(askingPriceByProject[activeProjectId] ?? '')
@@ -504,6 +512,15 @@ export default function DueDiligenceDashboard() {
         dealModelSaveTimeout.current = window.setTimeout(() => {
             void triggerSaveDealModel({ projectId: activeProjectId, askingPrice: value }).result
         }, 500)
+    }
+
+    const handleDealModelChange = (field: keyof DealModel, value: string) => {
+        const numericValue = value.trim() === '' ? null : Number(value)
+        if (numericValue !== null && !Number.isFinite(numericValue)) return
+        const currentAskingPrice = askingPrice.trim() === '' ? activeDealModel.askingPrice : Number(askingPrice)
+        const updated = { ...activeDealModel, askingPrice: typeof currentAskingPrice === 'number' && Number.isFinite(currentAskingPrice) ? currentAskingPrice : null, [field]: numericValue } as DealModel
+        setDealModelDraftByProject((current) => ({ ...current, [activeProjectId]: updated }))
+        void triggerSaveDealModel(updated).result
     }
     const activeBatchRows = useMemo(() => {
         if (!displayedSubmissionBatch) {
@@ -988,9 +1005,9 @@ export default function DueDiligenceDashboard() {
                 </section> : null}
 
                 {activeWorkspaceTab === 'valuation' ? <DealValuationCard synthesis={activeProjectSynthesis} askingPrice={askingPrice} /> : null}
-                {activeWorkspaceTab === 'returns' ? <DealModelPendingCard area="returns" /> : null}
+                {activeWorkspaceTab === 'returns' ? <DealModelPendingCard area="returns" model={activeDealModel} onChange={handleDealModelChange} /> : null}
                 {activeWorkspaceTab === 'growth' ? <DealModelPendingCard area="growth" /> : null}
-                {activeWorkspaceTab === 'structure' ? <DealModelPendingCard area="structure" /> : null}
+                {activeWorkspaceTab === 'structure' ? <DealModelPendingCard area="structure" model={activeDealModel} onChange={handleDealModelChange} /> : null}
 
                 {activeWorkspaceTab === 'diligence' ? <>
 
