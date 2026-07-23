@@ -337,15 +337,15 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                             ) : null}
 
                             {synthesis.finalJudgmentSummary ? (
-                                <div className="rounded-lg border border-border bg-background p-4">
+                                <div className="rounded-xl border-2 border-primary bg-gradient-to-br from-primary/15 via-primary/5 to-background p-5 shadow-md">
                                     <div className="flex flex-wrap items-center justify-between gap-2">
                                         <div className="flex items-center gap-2">
-                                            <Scale className="h-4 w-4 text-muted-foreground" />
-                                            <p className="text-sm font-medium text-foreground">Acquisition judgment</p>
+                                            <Scale className="h-5 w-5 text-primary" />
+                                            <p className="text-sm font-bold uppercase tracking-wide text-primary">Start here — acquisition judgment</p>
                                         </div>
                                         {impact.completedDocuments > 0 ? <Badge variant="success">~{formatHours(impact.timeSavedHours)} analyst time saved</Badge> : null}
                                     </div>
-                                    <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-foreground">
+                                    <p className="mt-4 whitespace-pre-wrap rounded-lg border border-primary/25 bg-background/90 p-4 text-sm leading-6 text-foreground">
                                         {synthesis.finalJudgmentSummary}
                                     </p>
                                     {impact.completedDocuments > 0 ? (
