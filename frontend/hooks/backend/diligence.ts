@@ -69,6 +69,9 @@ export type DealModel = {
     bearExitMultiple: number | null
     baseExitMultiple: number | null
     bullExitMultiple: number | null
+    revenueMultiple: number | null
+    ebitdaMultiple: number | null
+    assetHaircutPercent: number | null
     modelUpdatedAt: string
     modelUpdatedBy: string
     documentedFactsJson: string
