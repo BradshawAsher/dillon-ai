@@ -16,6 +16,15 @@ type DealModelRow = {
   interestRate?: string | number | null
   amortizationYears?: string | number | null
   sellerNoteAmount?: string | number | null
+  bearRevenueGrowth?: string | number | null
+  baseRevenueGrowth?: string | number | null
+  bullRevenueGrowth?: string | number | null
+  bearEbitdaMargin?: string | number | null
+  baseEbitdaMargin?: string | number | null
+  bullEbitdaMargin?: string | number | null
+  bearExitMultiple?: string | number | null
+  baseExitMultiple?: string | number | null
+  bullExitMultiple?: string | number | null
   modelUpdatedAt?: string | null
   modelUpdatedBy?: string | null
   documentedFactsJson?: string | null
@@ -45,6 +54,7 @@ export default async function getDealModels(req: { params: Params; user: User })
     askingPrice: numberOrNull(row.askingPrice), purchasePrice: numberOrNull(row.purchasePrice), debtAssumed: numberOrNull(row.debtAssumed), cashAcquired: numberOrNull(row.cashAcquired), workingCapitalRequirement: numberOrNull(row.workingCapitalRequirement), transactionFees: numberOrNull(row.transactionFees), holdPeriodYears: numberOrNull(row.holdPeriodYears), taxRate: numberOrNull(row.taxRate), closingCosts: numberOrNull(row.closingCosts), maintenanceCapex: numberOrNull(row.maintenanceCapex), exitMultiple: numberOrNull(row.exitMultiple), exitCosts: numberOrNull(row.exitCosts),
     modelUpdatedAt: row.modelUpdatedAt ?? '', modelUpdatedBy: row.modelUpdatedBy ?? '',
     equityContributionPercent: numberOrNull(row.equityContributionPercent), interestRate: numberOrNull(row.interestRate), amortizationYears: numberOrNull(row.amortizationYears), sellerNoteAmount: numberOrNull(row.sellerNoteAmount),
+    bearRevenueGrowth: numberOrNull(row.bearRevenueGrowth), baseRevenueGrowth: numberOrNull(row.baseRevenueGrowth), bullRevenueGrowth: numberOrNull(row.bullRevenueGrowth), bearEbitdaMargin: numberOrNull(row.bearEbitdaMargin), baseEbitdaMargin: numberOrNull(row.baseEbitdaMargin), bullEbitdaMargin: numberOrNull(row.bullEbitdaMargin), bearExitMultiple: numberOrNull(row.bearExitMultiple), baseExitMultiple: numberOrNull(row.baseExitMultiple), bullExitMultiple: numberOrNull(row.bullExitMultiple),
     documentedFactsJson: row.documentedFactsJson ?? '', documentedFactsStatus: row.documentedFactsStatus ?? '',
   }))
 }

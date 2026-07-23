@@ -14,6 +14,7 @@ const content = {
 } satisfies Record<PendingArea, { icon: typeof Calculator; title: string; description: string; required: string }>
 
 const fields: Partial<Record<PendingArea, Array<[keyof DealModel, string]>>> = {
+    growth: [['bearRevenueGrowth', 'Bear revenue growth'], ['baseRevenueGrowth', 'Base revenue growth'], ['bullRevenueGrowth', 'Bull revenue growth'], ['bearEbitdaMargin', 'Bear EBITDA margin'], ['baseEbitdaMargin', 'Base EBITDA margin'], ['bullEbitdaMargin', 'Bull EBITDA margin'], ['bearExitMultiple', 'Bear exit multiple'], ['baseExitMultiple', 'Base exit multiple'], ['bullExitMultiple', 'Bull exit multiple']],
     returns: [['holdPeriodYears', 'Hold period (years)'], ['taxRate', 'Tax rate (decimal)'], ['maintenanceCapex', 'Annual maintenance capex'], ['exitMultiple', 'Exit multiple'], ['exitCosts', 'Exit costs'], ['equityContributionPercent', 'Equity contribution (decimal)'], ['interestRate', 'Interest rate (decimal)'], ['amortizationYears', 'Amortization (years)'], ['sellerNoteAmount', 'Seller note amount']],
     structure: [['purchasePrice', 'Purchase price'], ['debtAssumed', 'Debt assumed'], ['cashAcquired', 'Cash acquired'], ['workingCapitalRequirement', 'Working-capital requirement'], ['transactionFees', 'Transaction fees']],
 }
