@@ -10,6 +10,8 @@ Look through the live n8n page and test what happens when you put docs through
 
 can we also have a button for the live n8n page to see example 
 
+can we make citations clickable and open up interactive viewer
+
 Also for the returns section can we make up some model assumptions (somewhat industry accepted) if that will allow the user to get a first glance of ressults, as well as growth, deal structure, (lmk if you need anything else from me for this)
 
 ## Now — validate what is already built
