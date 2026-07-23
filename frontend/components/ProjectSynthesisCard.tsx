@@ -193,7 +193,6 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
             </CardHeader>
 
             <CardContent className="space-y-6 p-4">
-                <div className="rounded-xl border-2 border-primary/60 bg-primary/10 p-4 shadow-sm"><p className="text-sm font-bold uppercase tracking-wide text-primary">Management questions come first</p><p className="mt-1 text-sm leading-6 text-foreground">Use the Management Question Tracker above this judgment to assign an owner, due date, and follow-up plan for the gaps that could change the acquisition decision.</p></div>
                 {error ? (
                     <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-foreground">
                         <p className="font-medium">Synthesis endpoint not reachable yet.</p>
@@ -358,6 +357,8 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                             ) : null}
 
                             {!synthesis.finalJudgmentSummary ? <div className="rounded-xl border-2 border-warning bg-warning/10 p-5 shadow-md"><div className="flex items-center gap-2"><Scale className="h-5 w-5 text-warning" /><p className="text-sm font-bold uppercase tracking-wide text-warning">Acquisition judgment pending</p></div><p className="mt-3 text-sm leading-6 text-foreground">{synthesis.finalRecommendation ? `n8n returned the recommendation “${synthesis.finalRecommendation},” but did not return its final plain-English judgment yet. Refresh after the next synthesis pass.` : 'This synthesis row has no final judgment text yet. It may still be processing, or the consolidator returned an incomplete payload. Refresh after the next synthesis pass.'}</p></div> : null}
+
+                            <div className="rounded-xl border-2 border-primary/60 bg-primary/10 p-4 shadow-sm"><p className="text-sm font-bold uppercase tracking-wide text-primary">Next step after the synthesis</p><p className="mt-1 text-sm leading-6 text-foreground">Use the Management Question Tracker immediately below this synthesis to turn the open questions into an owner, due date, and follow-up plan. It is the best place to resolve the gaps that could change the acquisition decision.</p></div>
 
                             {synthesis.valuationBaseEstimate || synthesis.valuationLowerBound || synthesis.valuationUpperBound ? (
                                 <div className="grid gap-2 md:grid-cols-3">
