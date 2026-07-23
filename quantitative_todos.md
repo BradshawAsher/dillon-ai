@@ -117,8 +117,8 @@ Show the exact inputs, five-year cash-flow path, payback, IRR, and MOIC for each
 
 1. [Complete] Add employee/fact extraction fields and the financial-facts contract. The production workflow now requires cited, normalized financial facts and employee evidence.
 2. [Complete] Add deterministic reconciliation and ratios workflow. It calculates only from confirmed, period/currency-matched facts and saves an auditable result per document.
-3. [In progress] Persist asking price and Deal Model assumptions. Asking price, purchase price, debt/cash, working capital, fees, hold period, tax rate, capex, exit multiple, and exit costs now save per project. Remaining: merge documented facts into the model with citations and distinguish them from assumptions in the UI.
-4. Replace Returns placeholder with all-cash + financed calculator.
+3. [Complete] Persist asking price and Deal Model assumptions. Asking price, purchase price, debt/cash, working capital, fees, hold period, tax rate, capex, exit multiple, and exit costs now save per project. The project synthesis runs a deterministic Documented Facts Bridge that consolidates only confirmed, period/currency-consistent document facts with citations and flags conflicts; the Deal Model UI displays those facts separately from assumptions with provenance labels.
+4. [Complete] Replace Returns placeholder with all-cash + financed calculator. All-cash and financed baseline calculations now use persisted Deal Model inputs; financing assumptions include equity contribution, interest rate, amortization, and seller note. IRR and exit-value modeling remain for the scenario phase.
 5. Add bear/base/bull returns and scenario comparison.
 6. Add valuation-method comparison and sensitivity.
 

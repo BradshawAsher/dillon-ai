@@ -56,8 +56,14 @@ export type DealModel = {
     maintenanceCapex: number | null
     exitMultiple: number | null
     exitCosts: number | null
+    equityContributionPercent: number | null
+    interestRate: number | null
+    amortizationYears: number | null
+    sellerNoteAmount: number | null
     modelUpdatedAt: string
     modelUpdatedBy: string
+    documentedFactsJson: string
+    documentedFactsStatus: string
 }
 
 function useQuery<T>(fetcher: (params?: Record<string, unknown>) => Promise<T>, initialData: T | null = null) {
