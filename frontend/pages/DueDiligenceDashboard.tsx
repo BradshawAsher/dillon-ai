@@ -11,6 +11,7 @@ import DealModelPendingCard from '../components/DealModelPendingCard'
 import AllCashReturnsCard from '../components/AllCashReturnsCard'
 import FinancedReturnsCard from '../components/FinancedReturnsCard'
 import ScenarioComparisonCard from '../components/ScenarioComparisonCard'
+import DealStructureVisualCard from '../components/DealStructureVisualCard'
 import DealOverviewCard from '../components/DealOverviewCard'
 import DealValuationCard from '../components/DealValuationCard'
 import EvidenceDrawer, { type EvidenceItem } from '../components/EvidenceDrawer'
@@ -533,7 +534,20 @@ export default function DueDiligenceDashboard() {
             endedAt: terminalTimestamps.length === batchRows.length ? Math.max(...terminalTimestamps) : undefined,
         } satisfies SubmissionBatch
     }, [submissionHistory])
-    const displayedSubmissionBatch = activeSubmissionBatch ?? latestSavedBatch
+    const displayedSubmissionBatch = useMemo(() => {
+        if (!activeSubmissionBatch) return latestSavedBatch
+        if (!latestSavedBatch || latestSavedBatch.id !== activeSubmissionBatch.id) return activeSubmissionBatch
+
+        // The submission state is created immediately, while the saved history is
+        // refreshed asynchronously. Prefer the saved terminal timestamp once it
+        // arrives so the elapsed timer freezes at the actual completion time.
+        return {
+            ...activeSubmissionBatch,
+            expectedDocumentCount: Math.max(activeSubmissionBatch.expectedDocumentCount, latestSavedBatch.expectedDocumentCount),
+            startedAt: Math.min(activeSubmissionBatch.startedAt, latestSavedBatch.startedAt),
+            endedAt: latestSavedBatch.endedAt,
+        }
+    }, [activeSubmissionBatch, latestSavedBatch])
     const activeProjectSynthesis = visibleProjectSyntheses.find((synthesis) => synthesis.projectId === activeProjectId)
 
     const handleAskingPriceChange = (value: string) => {
@@ -1059,7 +1073,7 @@ export default function DueDiligenceDashboard() {
                 {activeWorkspaceTab === 'valuation' ? <DealValuationCard synthesis={activeProjectSynthesis} askingPrice={askingPrice} model={activeDealModel} onModelChange={handleDealModelChange} /> : null}
                 {activeWorkspaceTab === 'returns' ? <section className="space-y-6"><AllCashReturnsCard model={activeDealModel} /><FinancedReturnsCard model={activeDealModel} /><DealModelPendingCard area="returns" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
                 {activeWorkspaceTab === 'growth' ? <section className="space-y-6"><ScenarioComparisonCard model={activeDealModel} /><DealModelPendingCard area="growth" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
-                {activeWorkspaceTab === 'structure' ? <DealModelPendingCard area="structure" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /> : null}
+                {activeWorkspaceTab === 'structure' ? <section className="space-y-6"><DealStructureVisualCard model={activeDealModel} /><DealModelPendingCard area="structure" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
 
                 {activeWorkspaceTab === 'diligence' ? <>
 

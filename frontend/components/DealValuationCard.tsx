@@ -6,6 +6,7 @@ import { Badge } from '../lib/shadcn/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { formatCurrencyValue } from '../utils/aiSubmissionData'
 import { Input } from '../lib/shadcn/input'
+import { MoneyBarChart } from './DealCharts'
 
 type DealValuationCardProps = {
     synthesis?: ProjectSynthesisItem
@@ -42,6 +43,7 @@ export default function DealValuationCard({ synthesis, askingPrice, model, onMod
         { label: 'EBITDA / SDE multiple', value: ebitda !== null && model?.ebitdaMultiple !== null && model?.ebitdaMultiple !== undefined ? ebitda * model.ebitdaMultiple : null },
     ]
     const available = methods.map(x => x.value).filter((x): x is number => x !== null)
+    const methodChartData = methods.filter((method): method is { label: string; value: number } => method.value !== null)
     const blended = available.length ? available.reduce((a,b)=>a+b,0) / available.length : null
     const holdPeriodYears = model?.holdPeriodYears ?? 5
     const baseRevenueGrowth: number | null = model?.baseRevenueGrowth ?? null
@@ -72,6 +74,7 @@ export default function DealValuationCard({ synthesis, askingPrice, model, onMod
             <CardContent className="space-y-5 p-4">
                 <div className="rounded-lg border border-primary/25 bg-primary/5 p-4"><p className="text-sm font-semibold">Valuation assumptions</p><div className="mt-3 grid gap-3 sm:grid-cols-3">{([['revenueMultiple','Revenue multiple'],['ebitdaMultiple','EBITDA / SDE multiple'],['assetHaircutPercent','Asset haircut (decimal)']] as Array<[keyof DealModel,string]>).map(([field,label])=><label key={field} className="space-y-1"><span className="text-xs text-muted-foreground">{label}</span><Input inputMode="decimal" value={model?.[field] ?? ''} onChange={e=>onModelChange?.(field,e.target.value)} placeholder="Not set" /></label>)}</div></div>
                 <div className="grid gap-3 sm:grid-cols-3">{methods.map(method=><div key={method.label} className="rounded-lg border border-border bg-background p-3"><p className="text-xs text-muted-foreground">{method.label}</p><p className="mt-1 font-semibold">{method.value === null ? 'Not available' : formatCurrencyValue(String(method.value), 'USD')}</p></div>)}</div>
+                <MoneyBarChart title="Valuation-method comparison" description="Only methods with confirmed source facts and saved analyst assumptions are plotted." data={methodChartData} />
                 {blended !== null ? <div className="rounded-lg border border-success/25 bg-success/5 p-4"><p className="text-sm font-semibold">Blended supported value: {formatCurrencyValue(String(blended), 'USD')}</p>{askingPriceValue !== null ? <p className="mt-1 text-sm text-muted-foreground">Asking price is {(((askingPriceValue - blended) / blended) * 100).toFixed(1)}% {(askingPriceValue - blended) >= 0 ? 'above' : 'below'} this blend.</p> : null}</div> : null}
                 <div className="rounded-xl border border-border bg-muted/20 p-4">
                     <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-semibold">Exit-value sensitivity</p><p className="mt-1 text-xs text-muted-foreground">Enterprise value at year {holdPeriodYears}, varying revenue growth, EBITDA margin, and exit multiple around the saved base case.</p></div><Badge variant="outline">Scenario assumptions</Badge></div>

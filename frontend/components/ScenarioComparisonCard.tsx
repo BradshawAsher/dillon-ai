@@ -2,6 +2,7 @@ import { ChartNoAxesCombined } from 'lucide-react'
 
 import type { DealModel } from '../hooks/backend/diligence'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
+import { GrowthLineChart } from './DealCharts'
 
 function facts(model: DealModel) { try { return JSON.parse(model.documentedFactsJson || '{}') as Record<string, { value?: number; status?: string; currency?: string }> } catch { return {} } }
 function money(value: number, currency: string) { return new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: 0 }).format(value) }
@@ -34,8 +35,14 @@ export default function ScenarioComparisonCard({ model }: { model: DealModel }) 
     const scenarios = [['Bear', model.bearRevenueGrowth ?? 0, model.bearEbitdaMargin ?? 0.15, model.bearExitMultiple ?? 3], ['Base', model.baseRevenueGrowth ?? 0.05, model.baseEbitdaMargin ?? 0.2, model.baseExitMultiple ?? 4], ['Bull', model.bullRevenueGrowth ?? 0.1, model.bullEbitdaMargin ?? 0.25, model.bullExitMultiple ?? 5]] as const
     const ready = revenue !== null && scenarios.every(([, growth, margin, multiple]) => growth !== null && margin !== null && multiple !== null)
     const allCashReady = initial !== null && initial > 0
+    const growthChartData = revenue === null ? [] : Array.from({ length: years + 1 }, (_, year) => ({
+        label: year === 0 ? 'Today' : `Year ${year}`,
+        Bear: revenue * (1 + (model.bearRevenueGrowth ?? 0)) ** year,
+        Base: revenue * (1 + (model.baseRevenueGrowth ?? 0.05)) ** year,
+        Bull: revenue * (1 + (model.bullRevenueGrowth ?? 0.1)) ** year,
+    }))
 
-    return <Card className="overflow-hidden"><CardHeader className="border-b border-border bg-card/80"><div className="flex items-center gap-2"><ChartNoAxesCombined className="h-5 w-5 text-primary" /><CardTitle className="text-xl">Bear / base / bull scenarios</CardTitle></div><CardDescription>All-cash five-year projection from documented starting revenue and analyst-entered scenario assumptions.</CardDescription></CardHeader><CardContent className="p-5">{!ready ? <p className="rounded-lg border border-dashed border-border bg-muted/20 p-4 text-sm text-muted-foreground">Add documented revenue plus revenue-growth, EBITDA-margin, and exit-multiple assumptions for each scenario.</p> : <div className="grid gap-3 lg:grid-cols-3">{scenarios.map(([name, growth, margin, multiple]) => {
+    return <Card className="overflow-hidden"><CardHeader className="border-b border-border bg-card/80"><div className="flex items-center gap-2"><ChartNoAxesCombined className="h-5 w-5 text-primary" /><CardTitle className="text-xl">Bear / base / bull scenarios</CardTitle></div><CardDescription>All-cash five-year projection from documented starting revenue and analyst-entered scenario assumptions.</CardDescription></CardHeader><CardContent className="p-5">{!ready ? <p className="rounded-lg border border-dashed border-border bg-muted/20 p-4 text-sm text-muted-foreground">Add documented revenue plus revenue-growth, EBITDA-margin, and exit-multiple assumptions for each scenario.</p> : <><GrowthLineChart data={growthChartData} /><div className="mt-5 grid gap-3 lg:grid-cols-3">{scenarios.map(([name, growth, margin, multiple]) => {
         const yearlyRevenue = Array.from({ length: years }, (_, year) => revenue! * (1 + growth!) ** (year + 1))
         const yearlyOperatingCashFlow = taxRate === null ? null : yearlyRevenue.map((yearRevenue) => yearRevenue * margin! * (1 - taxRate) - capex)
         const exitRevenue = yearlyRevenue[years - 1]
@@ -46,5 +53,5 @@ export default function ScenarioComparisonCard({ model }: { model: DealModel }) 
         const irr = cashFlows ? calculateIrr(cashFlows) : null
         const paybackYear = yearlyOperatingCashFlow ? yearlyOperatingCashFlow.reduce<{ cumulative: number; year: number | null }>((state, cashFlow, year) => ({ cumulative: state.cumulative + cashFlow, year: state.year ?? (state.cumulative + cashFlow >= (initial ?? Infinity) ? year + 1 : null) }), { cumulative: 0, year: null }).year : null
         return <div key={name} className="rounded-lg border border-border bg-background p-4"><p className="font-semibold">{name}</p><p className="mt-2 text-sm text-muted-foreground">Year {years} revenue / EBITDA</p><p className="font-medium">{money(exitRevenue, currency)} / {money(exitEbitda, currency)}</p><p className="mt-2 text-sm text-muted-foreground">Net exit value</p><p className="font-medium">{money(netExitValue, currency)}</p>{!allCashReady ? <p className="mt-3 text-sm text-muted-foreground">Add price and tax rate for all-cash cash flow, MOIC, payback, and IRR.</p> : <><p className="mt-2 text-sm text-muted-foreground">All-cash MOIC / IRR</p><p className="font-medium">{totalMoic?.toFixed(2) ?? '—'}x / {irr === null ? 'Not available' : `${(irr * 100).toFixed(1)}%`}</p><p className="mt-2 text-sm text-muted-foreground">Operating payback</p><p className="font-medium">{paybackYear === null ? `Beyond year ${years}` : `Year ${paybackYear}`}</p><p className="mt-3 text-xs text-muted-foreground">Annual operating cash flow: {yearlyOperatingCashFlow!.map((cashFlow, year) => `Y${year + 1} ${money(cashFlow, currency)}`).join(' · ')}</p></>}</div>
-    })}</div>}<p className="mt-4 text-xs text-muted-foreground">Revenue growth, margin, and exit multiple are scenario assumptions. Revenue is documented; price, tax, capex, working capital, fees, and exit costs are analyst assumptions unless separately documented. This is an all-cash scenario model; financed bear/base/bull modeling remains separate.</p></CardContent></Card>
+    })}</div></>}<p className="mt-4 text-xs text-muted-foreground">Revenue growth, margin, and exit multiple are scenario assumptions. Revenue is documented; price, tax, capex, working capital, fees, and exit costs are analyst assumptions unless separately documented. This is an all-cash scenario model; financed bear/base/bull modeling remains separate.</p></CardContent></Card>
 }
