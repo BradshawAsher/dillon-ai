@@ -17,6 +17,13 @@ export type SubmissionHistoryItem = {
     detectedHeaderRow?: number
     columnMapConfidence?: number
     validatedColumnMap?: string
+    /** Evidence-backed employee count; null means this document did not support one. */
+    employeeCount?: number | null
+    employeeType?: string
+    employeeAsOfDate?: string
+    employeeConfidence?: number | null
+    employeeCitation?: string
+    employeeEvidenceStatus?: string
     submissionBatchId: string
     expectedBatchDocumentCount: number
     fileName: string

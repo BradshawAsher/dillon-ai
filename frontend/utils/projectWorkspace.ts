@@ -46,6 +46,12 @@ export type ProjectSummary = {
     recommendation: string
     statusLabel: string
     synthesisFields: ProjectSynthesisField[]
+    employeeCount: number | null
+    employeeType: string
+    employeeAsOfDate: string
+    employeeEvidenceStatus: string
+    employeeCitation: string
+    employeeConfidence: number | null
 }
 
 const requiredCoverageRules = [
@@ -306,6 +312,13 @@ export function createProjectSummaries(rows: SubmissionHistoryItem[]) {
             isConsidered: row.isConsidered,
         }))
         const synthesisFields = getProjectSynthesisFields(latestRow)
+        const employeeEvidence = ['confirmed', 'estimated']
+            .flatMap((status) => consideredRows.filter((row) => {
+                return normalizeText(row.employeeEvidenceStatus ?? '') === status
+                    && typeof row.employeeCount === 'number'
+                    && Number.isFinite(row.employeeCount)
+            }))
+            .at(0)
 
         return {
             projectKey,
@@ -340,6 +353,12 @@ export function createProjectSummaries(rows: SubmissionHistoryItem[]) {
                 documentCount: consideredRows.length,
             }),
             synthesisFields,
+            employeeCount: employeeEvidence?.employeeCount ?? null,
+            employeeType: employeeEvidence?.employeeType ?? '',
+            employeeAsOfDate: employeeEvidence?.employeeAsOfDate ?? '',
+            employeeEvidenceStatus: employeeEvidence?.employeeEvidenceStatus ?? '',
+            employeeCitation: employeeEvidence?.employeeCitation ?? '',
+            employeeConfidence: employeeEvidence?.employeeConfidence ?? null,
         } satisfies ProjectSummary
     }).filter((summary): summary is ProjectSummary => summary !== null)
 
