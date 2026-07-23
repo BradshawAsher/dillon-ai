@@ -73,6 +73,7 @@ import { computeImpactMetrics, formatHours } from '../utils/impactMetrics'
 import { fallbackDiligenceFindings, type FindingType, type Severity } from '../utils/diligence'
 import { formatEasternTime } from '../utils/dateTime'
 import { readFileAsBase64 } from '../utils/fileEncoding'
+import { findCitedDocument } from '../utils/evidence'
 
 function getFindingVariant(findingType: FindingType): 'destructive' | 'success' {
     return findingType === 'Red Flag' ? 'destructive' : 'success'
@@ -599,7 +600,7 @@ export default function DueDiligenceDashboard() {
     const selectedFinding = diligenceFindings.find((finding) => finding.id === selectedFindingId) ?? fallbackFinding
     const openFindingEvidence = (finding: typeof selectedFinding) => {
         const citation = finding.sourceCitation.toLowerCase()
-        const document = submissionHistory.find((row) => row.fileName.length > 0 && citation.includes(row.fileName.toLowerCase()))
+        const document = findCitedDocument(finding.sourceCitation, submissionHistory)
         setActiveEvidence({
             title: finding.summary,
             sourceFile: document?.fileName || finding.sourceCitation,
@@ -609,6 +610,7 @@ export default function DueDiligenceDashboard() {
             status: validationById[finding.id] ? 'Validated' : 'Pending analyst review',
             provenance: finding.workstream,
             documentUrl: document?.storageFileUrl,
+            documentId: document?.storageFileId,
         })
     }
     const validatedCount = diligenceFindings.filter((finding) => validationById[finding.id]).length

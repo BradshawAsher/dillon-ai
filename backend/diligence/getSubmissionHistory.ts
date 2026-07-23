@@ -216,6 +216,35 @@ function getFirstOptionalBooleanValue(values: TextValue[]) {
   return null
 }
 
+function getDetectedDocumentTypes(row: SubmissionHistoryRow) {
+  const stored = getFirstStringValue([row.detectedDocumentTypesJson])
+
+  try {
+    const parsed = JSON.parse(stored)
+    if (Array.isArray(parsed)) {
+      const types = parsed.filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+      if (types.length > 0) return types
+    }
+  } catch {
+    // Fall through to the original LLM output for rows created before the
+    // dedicated multi-type field was persisted.
+  }
+
+  try {
+    const output = JSON.parse(getFirstStringValue([row.extractedJson, row.ai_extractedJson])) as { document_types?: unknown; document_type?: unknown }
+    if (Array.isArray(output.document_types)) {
+      const types = output.document_types.filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+      if (types.length > 0) return types
+    }
+    if (typeof output.document_type === 'string' && output.document_type.trim().length > 0) return [output.document_type]
+  } catch {
+    // Older/non-JSON rows simply use the primary or intake type below.
+  }
+
+  const primary = getFirstStringValue([row.detectedDocumentType, row.documentType])
+  return primary ? [primary] : []
+}
+
 function getNormalizedEnvironment(value: string): 'production' | 'test' | '' {
   if (value === 'test') {
     return 'test'
@@ -257,8 +286,8 @@ export default async function getSubmissionHistory(req: {
     projectId: getFirstStringValue([row.projectId]),
     projectStage: getFirstStringValue([row.projectStage]),
     documentType: getFirstStringValue([row.documentType]),
-    detectedDocumentType: getFirstStringValue([row.detectedDocumentType]),
-    detectedDocumentTypesJson: getFirstStringValue([row.detectedDocumentTypesJson]),
+    detectedDocumentType: getFirstStringValue([row.detectedDocumentType]) || getDetectedDocumentTypes(row)[0] || '',
+    detectedDocumentTypesJson: JSON.stringify(getDetectedDocumentTypes(row)),
     tableStructureStatus: getFirstStringValue([row.tableStructureStatus]),
     tableStructureIssues: getFirstStringValue([row.tableStructureIssues]),
     detectedHeaderRow: getFirstNumberValue([row.detectedHeaderRow]),

@@ -40,8 +40,8 @@
 
 - [x] Extend the evidence drawer to Valuation, Returns, Growth, and Deal Structure metrics. Every current quantitative metric now exposes its formula and documented versus analyst-entered inputs.
 - [ ] Build an interactive document viewer: open the cited uploaded file and highlight the cited page, cell, row, or excerpt when available.
-- [ ] Normalize source-file names and citations so a synthesis citation reliably matches one uploaded document and its stored URL.
-- [ ] Return/store granular citation metadata for every document and project-level fact: source file, page/cell, excerpt, period, currency, confidence, and status.
+- [-] Normalize source-file names and citations so a synthesis citation reliably matches one uploaded document and its stored URL. The UI now normalizes paths/extensions/punctuation and safely uses high-confidence filename-token matching; validate this on live synthesis citations, especially generic labels such as “Document 1”.
+- [-] Return/store granular citation metadata for every document and project-level fact: source file, page/cell, excerpt, period, currency, confidence, and status. The per-document schema already returns it; the project consolidator now requires structured citations and stores them in its synthesis JSON, which the UI exposes in the evidence drawer. Validate one new project synthesis in production; historical syntheses retain their legacy filename-only citations.
 - [ ] Add explicit `confirmed`, `estimated`, and `contradicted` labels consistently across facts, findings, and calculations.
 - [-] Add project-level finding filters for workstream, severity, and status, plus a material-impact view linking each finding to valuation, cash flow, closing conditions, or negotiation actions. Project Portfolio now filters documents by workstream, status, and risk signal; material-impact mapping remains missing.
 
@@ -49,9 +49,9 @@
 
 - [ ] Finish document deletion/exclusion: allow an accidental or duplicate upload to be marked not considered (or removed safely) and ensure synthesis respects it.
 - [x] Make each project document selectable from a project list and show its analysis, status, detected type(s), and citations. The Project Synthesis card now exposes a document-detail panel and source-document action.
-- [ ] Support multiple detected document types per file and update the coverage checklist from detected types rather than only the intake selection.
+- [-] Support multiple detected document types per file and update the coverage checklist from detected types rather than only the intake selection. The document LLM returns all material types; its n8n table-write schema and the history API fallback now preserve/use them for coverage. Validate a combined financial-statement upload in production.
 - [ ] Test mixed/multi-sheet spreadsheet uploads and documents that represent more than one financial statement type.
-- [ ] Improve synthesis formatting: four key acquisition takeaways, four document-level investment-thesis takeaways, digestible negotiation levers, and readable open questions.
+- [-] Improve synthesis formatting: four key acquisition takeaways, four document-level investment-thesis takeaways, digestible negotiation levers, and readable open questions. The consolidator now returns an evidence-backed key-takeaways brief, persists cross-document reconciliation findings, and the synthesis card renders takeaways plus expandable negotiation/open-question sections. Document-level thesis takeaways and live validation remain.
 - [ ] Make long text fields consistently expandable/scrollable.
 - [-] Add a management-question tracker with owner, priority, status, response, and resulting thesis impact. The checklist and question tracker now read/write through the authenticated shared n8n API, while retaining browser-local fallback. Validate cross-browser persistence and simultaneous edits before closing this item.
 
@@ -90,5 +90,6 @@
 
 # Even later - Brad's Ideas
 - Make a chatbot for the website for the user to chat with about the deal, maybe uses RAG or something to have more context about the deal to give better answers
-- Turn LLM chains to agents to have memory and tool calls? Do we need this or no? 
+- Turn LLM chains to agents nodes in n8n to have memory and tool calls? Do we need this or no? Can we implement this somehow for our resumes so we can say that we used AI agents instead of just LLM chains?
 - Any way we can make this workflow better using some sort of backend agent orchestration?
+- Start working on some account system so that the user can only see their stuff and their stuff is saved?
