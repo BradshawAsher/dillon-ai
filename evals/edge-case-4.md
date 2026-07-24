@@ -26,7 +26,8 @@ Status: Enhanced implementation complete; controlled end-to-end re-test pending
 
 ### 4. What the agent DOES do (current implementation)?
 
-- Provider-dependent workflow nodes use three attempts with a two-second wait between retries. A failed synthesis refresh preserves the last successful synthesis and exposes a clear refresh-failed state rather than erasing prior output.
+- Provider and structured-output failures retry automatically before they become terminal. In particular, invalid JSON/schema-format responses follow the robust recovery path with increasing waits of approximately 2, 6, and 15 seconds; other transient provider failures use their configured backoff.
+- A failed synthesis refresh preserves the last successful synthesis and exposes a clear refresh-failed state rather than erasing prior output.
 - Failed documents remain visible in submission history with an error status and can be retried through the dashboard; the retry workflow reuses the stored request metadata and Drive file reference.
 - The active Stuck Document Watchdog runs every 15 minutes. It identifies Drive-backed documents stuck for more than 30 minutes and re-runs the robust per-document processor.
 - The shared Workflow Error Audit records uncaught production failures after local recovery paths are exhausted. The dashboard Errors tab provides a safe internal review view of recent error records.
