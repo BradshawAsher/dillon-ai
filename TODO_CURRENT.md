@@ -3,7 +3,7 @@
 `TODO.md` is preserved as the original brainstorming list. This is the clean, active version; completed work from the current build session is intentionally omitted.
 
 # Brad list
-- The takeaways are still too long, change to bullet points and even shorter
+- [x] Make takeaways shorter and easier to scan. Project insight lists now collapse long items earlier, while document-level thesis cards show a concise first-sentence preview and open the full evidence on click.
 - [x] Make the project synthesis/doc-counter handoff asynchronous. The counter now writes `synthesis_pending`, starts the consolidator without waiting, and returns document completion immediately; validate one production batch after this change.
 - Instead of citations, just make each thing like each green flag or each open question clickable and then it shows the citation that way instead of having the citations
 - Is there a way to check if the doc is over like 100 pages and reject in that case or something
@@ -46,7 +46,7 @@
 ## Highest product priority — finish the evidence workflow
 
 - [x] Extend the evidence drawer to Valuation, Returns, Growth, and Deal Structure metrics. Every current quantitative metric now exposes its formula and documented versus analyst-entered inputs.
-- [ ] Build an interactive document viewer: open the cited uploaded file and highlight the cited page, cell, row, or excerpt when available.
+- [-] Build an interactive document viewer: the Evidence Drawer now opens an inline Drive preview or a new-tab source link and shows the cited location/excerpt. Automated page/cell highlighting remains unavailable because uploaded document formats and Drive previews do not expose a reliable common anchor API.
 - [-] Normalize source-file names and citations so a synthesis citation reliably matches one uploaded document and its stored URL. The UI now normalizes paths/extensions/punctuation and safely uses high-confidence filename-token matching; validate this on live synthesis citations, especially generic labels such as “Document 1”.
 - [-] Return/store granular citation metadata for every document and project-level fact: source file, page/cell, excerpt, period, currency, confidence, and status. The per-document schema already returns it; the project consolidator now requires structured citations and stores them in its synthesis JSON, which the UI exposes in the evidence drawer. Validate one new project synthesis in production; historical syntheses retain their legacy filename-only citations.
 - [-] Add explicit `confirmed`, `estimated`, and `contradicted` labels consistently across facts, findings, and calculations. A shared status vocabulary now labels Evidence Drawer items and Deal Model documented facts as Confirmed, Estimated, Contradicted, Illustrative, Calculated, Synthesized, or Needs review. Extend the same badges to remaining finding/list surfaces after live validation.

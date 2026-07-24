@@ -17,7 +17,7 @@ type ExpandableInsightGroupProps = {
   defaultOpen?: boolean
 }
 
-const LONG_ITEM_LENGTH = 320
+const LONG_ITEM_LENGTH = 220
 
 export default function ExpandableInsightGroup({
   title,
@@ -76,7 +76,7 @@ export default function ExpandableInsightGroup({
 
               return (
                 <li key={`${title}-${item}-${index}`} className={`rounded-md border bg-background/80 p-3 text-sm leading-6 text-foreground ${itemClassName}`}>
-                  <div className={isLong && !isExpanded ? 'max-h-24 overflow-hidden' : undefined}>
+                  <div className={isLong && !isExpanded ? 'max-h-20 overflow-hidden' : undefined}>
                     <span className="mr-2 font-medium text-muted-foreground">{index + 1}.</span>
                     {item}
                   </div>
