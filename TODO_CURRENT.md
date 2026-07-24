@@ -2,12 +2,70 @@
 
 `TODO.md` is preserved as the original brainstorming list. This is the clean, active version; completed work from the current build session is intentionally omitted.
 
+## New-agent handoff (updated 2026-07-23)
+
+### Start here
+
+- **Product:** MergeWorks, an M&A due-diligence dashboard. Users upload deal documents, n8n runs document-level analysis and a project synthesis, and the React app presents findings, evidence, coverage, and illustrative financial models.
+- **Repository:** `C:\Users\s-bas\MERGEWORKS REAL WEBSITE\Due-Diligence-Dashboard`
+- **Frontend:** `frontend/`. Run `npm run dev` there for local development and `npm run build` before handoff. The last production build passed; its only warning is the existing large-chunk warning.
+- **Do not expose credentials or webhook secrets.** They live in n8n/environment configuration, not in this document or source changes.
+- **Treat this file as the active plan.** Preserve `TODO.md` as historical brainstorming. A `[-]` item is partly built and needs live validation or a remaining subtask; `[ ]` is unstarted; `[x]` is implemented.
+
+### Current pipeline and important behavior
+
+| Area | Current behavior | Key workflow / location |
+|---|---|---|
+| Per-document analysis | Lax by design: provider/format failures retry; terminal failures are recorded rather than crashing the batch. Suspect table layouts and large documents continue with an advisory rather than being blocked. | n8n **`[Pod 1] - Financial DD Agent - MCP Test - Robust Per Document AI Analysis`** (`W5Jp7CJIQbNy0qlY`) |
+| Large documents | At roughly 100,000 extracted characters, analysis continues but stores a `largeDocumentAdvisory`. There is intentionally no ordinary page-count hard rejection. | Per-document workflow: `Assess Document Volume` → `Record Large Document Advisory` |
+| Project readiness | Failed/excluded documents do not block synthesis if at least one considered completed document has usable extraction JSON. | n8n **`[Pod 1] Financial DD Agent - DOCUMENT COUNTER UTILITY SUBWORKFLOW`** (`0OVTAMMp2iMx53Aw`) |
+| Synthesis execution | The counter writes `synthesis_pending` and starts the consolidator asynchronously (`waitForSubWorkflow: false`), so document processing can finish without waiting for project synthesis. | Counter → **`[Pod 1] Financial DD Agent - SUBWORKFLOW PROJECT-WIDE CONSOLIDATOR WORKFLOW`** (`IoSad3rTYJMk4Mon`) |
+| Exclude/include | `isConsidered === false` retains the audit row but removes that document from coverage and synthesis. The consideration endpoint triggers a refreshed counter/synthesis. | n8n **Document Consideration** (`lXz9fVKY4RaTlDFM`); frontend synthesis and project document lists |
+| Evidence | The Evidence Drawer can open Drive inline/new-tab and shows location/excerpt. It cannot reliably auto-highlight an exact page/cell across file types yet. | `frontend/components/EvidenceDrawer.tsx` |
+
+### Recent changes that must not be accidentally reverted
+
+- Format/structured-output failures from the document LLM are now retryable (up to three recovery attempts with 2/6/15-second waits). This fixed a real malformed-JSON failure from the Customer Concentration test document.
+- Table-shape and large-document checks are **advisories**, not gates. Keep the system lax unless a request is clearly abusive/spam-like.
+- The consolidator filters evidence to considered, completed rows with nonempty `ai_extractedJson`; failed documents must not create `null` evidence blocks.
+- A retry action from Projects/Synthesis routes the user to Diligence. The synthesis screen also has retry/exclude actions and a safe “Run synthesis now” refresh path.
+- Batch UI separates true failures from completed-with-advisory documents. Synthesis citations and document citations use fixed-height scrolling panels.
+- `ProjectSynthesisCard.tsx` now owns the prominent acquisition-judgment callout; do not duplicate it at the parent page level.
+
+### First work to do (in this order)
+
+1. **Run one real two-document production regression:** one normal document plus one document that fails or is excluded. Confirm the normal document reaches `completed`, the counter shows `synthesis_pending`, synthesis completes asynchronously, and no timer/progress state remains stuck.
+2. **Run a clean financial-document regression:** verify a GREEN/YELLOW result, detected types update coverage, documented facts reach the Deal Model, and the synthesis row has a real `projectId`.
+3. **Verify live deal-model hydration:** real `financialFactsJson` / `documentedFactsJson` must populate the quantitative tabs. This is the highest-leverage unfinished capability for real deals.
+4. **Clean the pre-existing blank-`projectId` synthesis record** directly in the data layer only after identifying its exact row. New rows are protected, but the legacy orphan remains.
+5. After the live path is proven, finish per-finding clickable evidence and page/cell anchoring where the document provider supports it; then add finding filters/material-impact mapping.
+
+### Fast verification checklist
+
+- Build frontend: from `frontend`, run `npm run build`.
+- Queue one ordinary document: expect document completion first, then an explicit synthesis-pending state, then synthesis completion/desktop notification if permission is granted.
+- Queue a deliberately malformed/failed document alongside one normal document: expect the failed row to show Retry/Exclude, while the usable document can still synthesize.
+- Exclude then include a completed document: confirm coverage and synthesis update, with audit history retained.
+- Open Valuation, Returns, Growth, and Deal Structure on a real project: confirmed facts should displace illustrative values where available; all assumptions must remain visibly labeled.
+
+### Useful files
+
+- Main app orchestration: `frontend/pages/DueDiligenceDashboard.tsx`
+- Project synthesis UI: `frontend/components/ProjectSynthesisCard.tsx`
+- Evidence UI: `frontend/components/EvidenceDrawer.tsx`
+- Expandable findings: `frontend/components/ExpandableInsightGroup.tsx`
+- Live regression guide: `evals/LIVE_CLEAN_DOCUMENT_REGRESSION.md`
+
+### Handoff rule
+
+Before closing any `[-]` item, verify it against a **new live n8n run**, not example data or a historical database row. Update this file in the same change with: what was changed, what was verified, and the remaining limitation.
+
 # Brad list
 - [x] Make takeaways shorter and easier to scan. Project insight lists now collapse long items earlier, while document-level thesis cards show a concise first-sentence preview and open the full evidence on click.
 - [x] Make the project synthesis/doc-counter handoff asynchronous. The counter now writes `synthesis_pending`, starts the consolidator without waiting, and returns document completion immediately; validate one production batch after this change.
-- Instead of citations, just make each thing like each green flag or each open question clickable and then it shows the citation that way instead of having the citations
-- Is there a way to check if the doc is over like 100 pages and reject in that case or something
-- Ask Codex how we are handling edge cases and make sure its not too strict
+- [-] Make every flag, open question, and decision driver clickable to open the relevant evidence; the Evidence Drawer and source links exist, but several synthesis/list surfaces still rely on standalone citation panels.
+- [x] Handle exceptionally large documents without strict rejection. A 100,000-extracted-character threshold records a visible advisory and continues analysis; only clearly abusive requests should be stopped in a future policy.
+- [x] Keep edge-case handling intentionally lax. Bad table shape and large-document detection are advisories; malformed provider output retries; a failed document can be retried/excluded without blocking synthesis of usable documents.
 
 ## Immediate live-data fixes
 
@@ -34,7 +92,7 @@
 
 - [x] Provide an example-data workspace toggle alongside live n8n data.
 - [-] Show illustrative analyst assumptions for Returns, Growth, Deal Structure, and valuation-method comparison. Example mode is populated; the live workspace now fills only missing generic starting inputs after documented revenue or EBITDA arrives and preserves analyst entries. Returns, Growth, Deal Structure, and valuation comparison each show an explicitly non-saved preview while key live inputs are still missing. Verify live persistence and revise values per project.
-- [ ] Make citations clickable and open an interactive document viewer at the cited page, cell, row, or excerpt.
+- [-] Make citations/finding links open the interactive document viewer at the cited location or excerpt. Drive preview and source links work now; exact page/cell/row highlighting and conversion of every standalone citation panel to per-finding links remain unfinished.
 
 ## Now — validate what is already built
 
