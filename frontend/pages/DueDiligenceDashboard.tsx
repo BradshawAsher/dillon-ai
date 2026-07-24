@@ -25,7 +25,6 @@ import ReturnsDecisionSummary from '../components/ReturnsDecisionSummary'
 import ProjectIntakeCard from '../components/ProjectIntakeCard'
 import ProjectPortfolioCard from '../components/ProjectPortfolioCard'
 import ProjectSynthesisCard from '../components/ProjectSynthesisCard'
-import AcquisitionJudgmentCallout from '../components/AcquisitionJudgmentCallout'
 import ManagementQuestionTracker from '../components/ManagementQuestionTracker'
 import SectionHeader from '../components/SectionHeader'
 import SubmissionHistoryCard from '../components/SubmissionHistoryCard'
@@ -1847,7 +1846,6 @@ export default function DueDiligenceDashboard() {
                         title="Final acquisition judgment"
                         description="The consolidator's cross-document verdict for the selected project."
                     />
-                    <AcquisitionJudgmentCallout synthesis={activeProjectSynthesis} impact={activeProjectImpact} />
                     <ProjectSynthesisCard
                         syntheses={visibleProjectSyntheses}
                         projects={projectSummaries}
