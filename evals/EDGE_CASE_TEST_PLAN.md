@@ -60,16 +60,16 @@ Adjusted EBITDA,1.4m,TBD,N/M,See add-back schedule
 
 **Pass criteria**
 
-- Status is `needs_review`, not an endlessly active job.
-- A **Table structure review** badge and an explanation such as `INCONSISTENT_COLUMN_COUNT` and/or `INVALID_OR_PLACEHOLDER_VALUES` appear.
-- It does not receive normal LLM-derived EBITDA, valuation, or financial conclusions.
-- The project batch reaches a terminal state rather than remaining stuck.
+- The document reaches a terminal state rather than remaining active indefinitely. A table-layout issue may now finish as a completed document with an advisory; it is no longer expected to be blocked as `needs_review` before analysis.
+- A visible **Table structure review** / table-layout advisory explains an inconsistent column count and/or invalid placeholder values.
+- Any questionable mapping is not presented as confirmed evidence. The document may still produce qualified analysis, but its source-layout warning must remain visible.
+- The project batch reaches a terminal state rather than remaining stuck; if another usable document exists, synthesis may proceed.
 
 **Evidence to capture**
 
-- The table-review badge and detail message.
+- The table-layout advisory and detail message.
 - The document status and project status.
-- The absence of a fabricated financial conclusion.
+- Any extracted fact's evidence/status label, showing it is not silently presented as confirmed.
 
 ## 3. Duplicate Document
 
@@ -131,7 +131,7 @@ Adjusted EBITDA,1.4m,TBD,N/M,See add-back schedule
 **Pass criteria**
 
 - The app does not show invented EBITDA, valuation, citations, or confidently asserted financial facts that are absent from the source.
-- Invalid structured output is retried by the output parser; an unrecoverable result becomes failed/escalated/reviewable rather than silently completing.
+- Invalid structured output is retried by the robust output-recovery path (currently up to three attempts with increasing waits); an unrecoverable result becomes failed/escalated/reviewable rather than silently completing.
 - The source document and its request ID remain available for human review.
 
 **Evidence to capture**
