@@ -28,6 +28,12 @@ type ProjectSynthesisCardProps = {
     impact: ImpactMetrics
     documents?: SubmissionHistoryItem[]
     onOpenEvidence?: (evidence: EvidenceItem) => void
+    onExcludeDocument?: (requestID: string) => void
+    onIncludeDocument?: (requestID: string) => void
+    onRetryDocument?: (requestID: string) => void
+    retryingRequestId?: string | null
+    onRunSynthesis?: () => void
+    runningSynthesis?: boolean
 }
 
 function getRiskVariant(riskLevel: string): 'destructive' | 'warning' | 'secondary' | 'outline' {
@@ -138,7 +144,7 @@ function formatProjectDisplayName(project: ProjectSummary) {
     return `${projectName} • ${companyName}`
 }
 
-export default function ProjectSynthesisCard({ syntheses, projects, currentProjectId, documentAnalysisPending, synthesisPending, synthesisProgress, synthesisStage, loading, error, onRefresh, impact, documents = [], onOpenEvidence }: ProjectSynthesisCardProps) {
+export default function ProjectSynthesisCard({ syntheses, projects, currentProjectId, documentAnalysisPending, synthesisPending, synthesisProgress, synthesisStage, loading, error, onRefresh, impact, documents = [], onOpenEvidence, onExcludeDocument, onIncludeDocument, onRetryDocument, retryingRequestId, onRunSynthesis, runningSynthesis = false }: ProjectSynthesisCardProps) {
     const [synthesisElapsedSeconds, setSynthesisElapsedSeconds] = useState(0)
     const [selectedDocumentRequestId, setSelectedDocumentRequestId] = useState('')
     const projectNameById = new Map(
@@ -185,10 +191,16 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                             conflicts, gaps, and negotiation levers pulled from every uploaded document.
                         </CardDescription>
                     </div>
-                    <Button variant="outline" onClick={onRefresh} disabled={loading}>
-                        <RefreshCw className={loading ? 'animate-spin' : undefined} />
-                        Refresh synthesis
-                    </Button>
+                    <div className="flex flex-wrap gap-2">
+                        <Button variant="outline" onClick={onRefresh} disabled={loading}>
+                            <RefreshCw className={loading ? 'animate-spin' : undefined} />
+                            Refresh view
+                        </Button>
+                        <Button onClick={onRunSynthesis} disabled={!onRunSynthesis || runningSynthesis || documentAnalysisPending}>
+                            <RefreshCw className={runningSynthesis ? 'animate-spin' : undefined} />
+                            {runningSynthesis ? 'Starting synthesis…' : 'Run synthesis now'}
+                        </Button>
+                    </div>
                 </div>
             </CardHeader>
 
@@ -222,6 +234,8 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                         <Badge variant="outline">{document.status || 'Pending'}</Badge>
                                         {!document.isConsidered ? <Badge variant="secondary">Excluded</Badge> : null}
                                         <Button type="button" size="sm" variant="outline" onClick={() => setSelectedDocumentRequestId(document.requestID)}>View analysis</Button>
+                                        {document.isConsidered ? <Button type="button" size="sm" variant="outline" onClick={() => onExcludeDocument?.(document.requestID)}>Exclude from synthesis</Button> : <Button type="button" size="sm" variant="outline" onClick={() => onIncludeDocument?.(document.requestID)}>Include again</Button>}
+                                        {['failed', 'error', 'rejected'].includes(document.status.trim().toLowerCase()) ? <Button type="button" size="sm" variant="outline" disabled={retryingRequestId === document.requestID} onClick={() => onRetryDocument?.(document.requestID)}>{retryingRequestId === document.requestID ? 'Retrying…' : 'Retry document'}</Button> : null}
                                     </div>
                                 </div>
                             )) : <p className="text-sm text-muted-foreground">No project documents have been recorded yet.</p>}
@@ -336,7 +350,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                 </div>
                             ) : null}
 
-                            {synthesis.finalJudgmentSummary ? (
+                            {false && synthesis.finalJudgmentSummary ? (
                                 <div className="rounded-xl border-2 border-primary bg-gradient-to-br from-primary/15 via-primary/5 to-background p-5 shadow-md">
                                     <div className="flex flex-wrap items-center justify-between gap-2">
                                         <div className="flex items-center gap-2">

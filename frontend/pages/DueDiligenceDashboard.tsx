@@ -25,6 +25,7 @@ import ReturnsDecisionSummary from '../components/ReturnsDecisionSummary'
 import ProjectIntakeCard from '../components/ProjectIntakeCard'
 import ProjectPortfolioCard from '../components/ProjectPortfolioCard'
 import ProjectSynthesisCard from '../components/ProjectSynthesisCard'
+import AcquisitionJudgmentCallout from '../components/AcquisitionJudgmentCallout'
 import ManagementQuestionTracker from '../components/ManagementQuestionTracker'
 import SectionHeader from '../components/SectionHeader'
 import SubmissionHistoryCard from '../components/SubmissionHistoryCard'
@@ -656,6 +657,15 @@ export default function DueDiligenceDashboard() {
     const displayedSubmitConfidence = displayedSubmissionRow?.aiConfidence ?? ''
     const displayedSubmitEscalationReason = displayedSubmissionRow?.aiEscalationReason ?? ''
     const liveSubmitInsight = displayedSubmissionRow ? getAiSubmissionViewModel(displayedSubmissionRow) : null
+    const liveSubmitCitations = useMemo(() => {
+        const seen = new Set<string>()
+        return (liveSubmitInsight?.citations ?? []).filter((citation) => {
+            const key = `${citation.sourceFile.trim().toLowerCase()}|${citation.rowOrCell.trim().toLowerCase()}`
+            if (seen.has(key)) return false
+            seen.add(key)
+            return true
+        })
+    }, [liveSubmitInsight])
     const displayedSubmitValuationCurrency = displayedSubmissionRow?.valuationCurrency ?? ''
     const latestSavedBatch = useMemo(() => {
         const rowsWithBatchId = submissionHistory.filter((row) => row.submissionBatchId.trim().length > 0)
@@ -794,14 +804,18 @@ export default function DueDiligenceDashboard() {
         const status = row.status.trim().toLowerCase()
         return status === 'failed' || status === 'error' || status === 'rejected' || status === 'needs_review' || status === 'needs review'
     }).length
+    const activeBatchCompletedCount = activeBatchRows.filter((row) => row.status.trim().toLowerCase() === 'completed').length
     const activeBatchErrors = activeBatchRows
-        .filter((row) => row.errorMessage.trim().length > 0)
+        .filter((row) => row.errorMessage.trim().length > 0 && ['failed', 'error', 'rejected', 'needs_review', 'needs review'].includes(row.status.trim().toLowerCase()))
         .map((row) => ({
             fileName: row.fileName || 'Unnamed document',
             message: row.errorMessage,
             requestID: row.requestID,
             canRetry: ['failed', 'error', 'rejected', 'needs_review', 'needs review'].includes(row.status.trim().toLowerCase()),
         }))
+    const activeBatchAdvisories = activeBatchRows
+        .filter((row) => row.status.trim().toLowerCase() === 'completed' && row.errorMessage.trim().length > 0)
+        .map((row) => ({ fileName: row.fileName || 'Unnamed document', message: row.errorMessage }))
     const activeBatchExpectedCount = displayedSubmissionBatch?.expectedDocumentCount ?? 0
     const activeBatchProgressPercent = activeBatchExpectedCount > 0
         ? Math.min(100, Math.round((activeBatchFinishedCount / activeBatchExpectedCount) * 100))
@@ -966,7 +980,6 @@ export default function DueDiligenceDashboard() {
         setProjectStage('post-loi')
         setDocumentType('auto-detect')
         setSubmissionNotes('')
-        setSelectedFiles([])
     }
 
     const handlePortfolioProjectSelect = (projectKey: string) => {
@@ -1023,6 +1036,27 @@ export default function DueDiligenceDashboard() {
         if (!requestID || !window.confirm('Include this document in the project checklist and future synthesis again?')) return
         const result = await triggerSubmissionConsideration({ requestID, action: 'considered', environment: activeHistoryEnvironment }).result
         if (result) await handleRefreshHistory(activeHistoryEnvironment)
+    }
+
+    const handleRunSynthesis = async () => {
+        const sourceDocument = submissionHistory.find((row) => getProjectKey(row) === activeProjectId
+            && row.isConsidered
+            && row.status.trim().toLowerCase() === 'completed'
+            && row.extractedJson.trim().length > 0
+            && row.extractedJson.trim() !== 'null')
+        if (!sourceDocument) {
+            setBatchSubmissionMessage('A completed document with saved analysis is required before synthesis can run.')
+            return
+        }
+        if (!window.confirm('Run a new project synthesis using the currently completed, included documents? This does not re-upload or reprocess files.')) return
+        setBatchSubmissionMessage('Starting a new project synthesis from the completed documents…')
+        try {
+            const result = await triggerSubmissionConsideration({ requestID: sourceDocument.requestID, action: 'considered', environment: activeHistoryEnvironment }).result
+            if (!result) throw new Error('Unable to start synthesis')
+            await handleRefreshHistory(activeHistoryEnvironment)
+        } catch (error) {
+            setBatchSubmissionMessage(error instanceof Error ? error.message : 'Unable to start synthesis')
+        }
     }
 
     const handleRetryFailedDocument = async (requestID: string) => {
@@ -1472,6 +1506,14 @@ export default function DueDiligenceDashboard() {
                                     </ul>
                                 </div>
                             ) : null}
+                            {activeBatchAdvisories.length > 0 ? (
+                                <div className="rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-sm text-foreground">
+                                    <p className="font-medium">Document advisory</p>
+                                    <ul className="mt-1 space-y-1 text-muted-foreground">
+                                        {activeBatchAdvisories.map((item) => <li key={`${item.fileName}-${item.message}`}>{item.fileName}: {item.message}</li>)}
+                                    </ul>
+                                </div>
+                            ) : null}
                             <p className="text-xs text-muted-foreground">
                                 {activeBatchFinishedCount >= activeBatchExpectedCount
                                     ? activeBatchFailedCount > 0
@@ -1479,16 +1521,17 @@ export default function DueDiligenceDashboard() {
                                         : 'All accepted documents are complete. The project synthesis can now run.'
                                     : `Waiting for ${activeBatchExpectedCount - activeBatchFinishedCount} more document${activeBatchExpectedCount - activeBatchFinishedCount === 1 ? '' : 's'} to reach a terminal status.`}
                             </p>
-                            {activeBatchFinishedCount >= activeBatchExpectedCount && activeBatchFailedCount === 0 ? (
-                                <div className="rounded-md border border-success/30 bg-success/10 p-3 text-sm text-foreground">
-                                    <p>All documents are finished. Review the Project Portfolio and Project Synthesis for the complete project-level picture.</p>
+                            {activeBatchFinishedCount >= activeBatchExpectedCount && activeBatchCompletedCount > 0 ? (
+                                <div className="rounded-md border border-primary/35 bg-primary/10 p-4 text-sm text-foreground shadow-sm">
+                                    <p className="font-semibold">{activeBatchFailedCount > 0 ? 'Usable documents are ready for synthesis.' : 'All documents are ready for synthesis.'}</p>
+                                    <p className="mt-1 text-muted-foreground">{activeBatchFailedCount > 0 ? `${activeBatchFailedCount} failed document${activeBatchFailedCount === 1 ? '' : 's'} will be left out; you can retry or exclude them from the Synthesis tab.` : 'Review the complete project-level picture and final acquisition judgment.'}</p>
                                     <Button
                                         type="button"
                                         size="lg"
-                                        className="mt-3 w-full"
-                                        onClick={() => document.getElementById('project-synthesis')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                                        className="mt-4 h-14 w-full text-base font-semibold shadow-md"
+                                        onClick={() => handleOpenProjectSynthesis(activeProjectId)}
                                     >
-                                        View project synthesis
+                                        Open project synthesis
                                     </Button>
                                 </div>
                             ) : null}
@@ -1727,6 +1770,7 @@ export default function DueDiligenceDashboard() {
                                             ))}
                                         </div>
                                     ) : null}
+                                    {liveSubmitCitations.length ? <div className="xl:col-span-4 rounded-lg border border-primary/25 bg-primary/5 p-4"><div className="flex items-center justify-between gap-2"><p className="text-sm font-semibold text-foreground">Document citations</p><Badge variant="outline">{liveSubmitCitations.length} locations</Badge></div><p className="mt-1 text-xs text-muted-foreground">Each line identifies the exact section n8n used; click it to view source evidence when available.</p><div className="mt-3 space-y-2">{liveSubmitCitations.map((citation, index) => <button key={`${citation.sourceFile}-${citation.rowOrCell}-${index}`} type="button" onClick={() => setActiveEvidence({ title: 'Document analysis citation', sourceFile: citation.sourceFile || displayedSubmissionRow?.fileName || 'Uploaded document', sourceLocation: citation.rowOrCell || 'Document analysis', excerpt: citation.rowOrCell ? `Source location: ${citation.rowOrCell}` : 'No additional excerpt was returned for this citation.', status: 'Confirmed', provenance: 'Document-level analysis', documentId: displayedSubmissionRow?.storageFileId, documentUrl: displayedSubmissionRow?.storageFileUrl })} className="flex w-full flex-wrap items-center justify-between gap-2 rounded-md border border-primary/20 bg-background px-3 py-2 text-left text-sm text-foreground transition-colors hover:border-primary/50 hover:bg-muted/30"><span><span className="font-medium">{citation.sourceFile || displayedSubmissionRow?.fileName || 'Uploaded document'}</span><span className="mx-2 text-muted-foreground">·</span><span className="text-muted-foreground">{citation.rowOrCell || 'Document analysis'}</span></span><span className="text-xs font-medium text-primary">View evidence</span></button>)}</div></div> : null}
                                     {(liveSubmitInsight?.formattedValuationLowerBound || liveSubmitInsight?.formattedValuationBaseEstimate || liveSubmitInsight?.formattedValuationUpperBound) ? (
                                         <div className="grid gap-2 xl:col-span-4 md:grid-cols-3">
                                             <div className="rounded-md border border-border bg-card px-3 py-2">
@@ -1785,6 +1829,8 @@ export default function DueDiligenceDashboard() {
                         onIncludeDocument={handleIncludeDocument}
                         onRetryDocument={handleRetryFailedDocument}
                         retryingRequestId={retryingRequestId}
+                        onRunSynthesis={() => { void handleRunSynthesis() }}
+                        runningSynthesis={isCurrentProjectAwaitingSynthesis}
                     />
                 </section>
 
@@ -1797,6 +1843,7 @@ export default function DueDiligenceDashboard() {
                         title="Final acquisition judgment"
                         description="The consolidator's cross-document verdict for the selected project."
                     />
+                    <AcquisitionJudgmentCallout synthesis={activeProjectSynthesis} impact={activeProjectImpact} />
                     <ProjectSynthesisCard
                         syntheses={visibleProjectSyntheses}
                         projects={projectSummaries}
@@ -1810,6 +1857,10 @@ export default function DueDiligenceDashboard() {
                         impact={activeProjectImpact}
                         documents={submissionHistory.filter((row) => getProjectKey(row) === activeProjectId)}
                         onOpenEvidence={setActiveEvidence}
+                        onExcludeDocument={handleExcludeDocument}
+                        onIncludeDocument={handleIncludeDocument}
+                        onRetryDocument={handleRetryFailedDocument}
+                        retryingRequestId={retryingRequestId}
                         onRefresh={() => {
                             void triggerProjectSynthesis({ environment: activeHistoryEnvironment }, { skipCache: true }).result
                         }}

@@ -2,6 +2,13 @@
 
 `TODO.md` is preserved as the original brainstorming list. This is the clean, active version; completed work from the current build session is intentionally omitted.
 
+# Brad list
+- The takeaways are still too long, change to bullet points and even shorter
+- Make the project synthesis and even doc counter asynchronous, or just find a way to have finished be returned faster for the latest doc submission thing?
+- Instead of citations, just make each thing like each green flag or each open question clickable and then it shows the citation that way instead of having the citations
+- Is there a way to check if the doc is over like 100 pages and reject in that case or something
+- Ask Codex how we are handling edge cases and make sure its not too strict
+
 ## Immediate live-data fixes
 
 - [x] Confirm a provider parse failure retries and then reaches a graceful terminal failure state instead of crashing the Pod 1 pipeline. A broader post-fix regression remains open below.
