@@ -155,6 +155,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
     const visibleSyntheses = syntheses.filter((synthesis) => synthesis.projectId === normalizedProjectId)
     const currentProject = projects.find((project) => (project.projectId || project.projectKey) === normalizedProjectId)
     const projectDocuments = documents.filter((document) => document.projectId === normalizedProjectId)
+    const failedProjectDocuments = projectDocuments.filter((document) => ['failed', 'error', 'rejected', 'needs_review', 'needs review'].includes(document.status.trim().toLowerCase()))
     const selectedProjectDocument = projectDocuments.find((document) => document.requestID === selectedDocumentRequestId)
     const documentThesisTakeaways = projectDocuments
         .filter((document) => document.isConsidered && document.status.trim().toLowerCase() === 'completed')
@@ -341,12 +342,16 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                 </div>
                             </div>
 
-                            {hasRefreshFailure ? (
+                            {hasRefreshFailure ? synthesisStatus === 'synthesis_blocked' ? (
+                                <div role="alert" className="rounded-xl border-2 border-destructive/55 bg-destructive/10 p-5 text-foreground shadow-md">
+                                    <p className="text-base font-bold text-destructive">Synthesis blocked — {failedProjectDocuments.length || synthesis.documentsFailedCount || 1} document{(failedProjectDocuments.length || synthesis.documentsFailedCount || 1) === 1 ? '' : 's'} need action</p>
+                                    <p className="mt-2 text-sm leading-6 text-foreground">{synthesis.aiErrorMessage || 'No completed document currently has usable analysis.'} Retry a document to recover its analysis, or exclude a document you do not want considered. Excluding keeps it in the audit trail but lets the remaining completed documents synthesize.</p>
+                                    {failedProjectDocuments.length > 0 ? <div className="mt-4 space-y-3">{failedProjectDocuments.map((document) => <div key={document.requestID} className="rounded-lg border border-destructive/25 bg-background/75 p-4"><p className="break-words text-sm font-semibold text-foreground">{document.fileName || 'Failed document'}</p>{document.errorMessage ? <p className="mt-1 text-xs text-muted-foreground">{document.errorMessage}</p> : null}<div className="mt-3 grid gap-2 sm:grid-cols-2"><Button type="button" size="lg" className="h-12 font-semibold" disabled={retryingRequestId === document.requestID} onClick={() => onRetryDocument?.(document.requestID)}>{retryingRequestId === document.requestID ? 'Retrying document…' : 'Retry document'}</Button><Button type="button" size="lg" variant="outline" className="h-12 border-destructive/40 text-destructive hover:bg-destructive/10" onClick={() => onExcludeDocument?.(document.requestID)}>Exclude from synthesis</Button></div></div>)}</div> : <p className="mt-3 text-sm text-muted-foreground">Open the project document list above to retry or exclude the affected document.</p>}
+                                </div>
+                            ) : (
                                 <div role="alert" className="rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm text-foreground">
-                                    <p className="font-medium">{synthesisStatus === 'synthesis_blocked' ? 'Latest synthesis is blocked until document processing is resolved.' : 'Latest synthesis refresh failed after automatic retries.'}</p>
-                                    <p className="mt-1 text-muted-foreground">
-                                        {hasPriorSynthesis ? 'The prior synthesis below remains available. ' : 'No new synthesis was produced. '}{synthesis.aiErrorMessage || 'A provider or processing step did not complete.'}
-                                    </p>
+                                    <p className="font-medium">Latest synthesis refresh failed after automatic retries.</p>
+                                    <p className="mt-1 text-muted-foreground">{hasPriorSynthesis ? 'The prior synthesis below remains available. ' : 'No new synthesis was produced. '}{synthesis.aiErrorMessage || 'A provider or processing step did not complete.'}</p>
                                 </div>
                             ) : null}
 
@@ -477,7 +482,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                 {(synthesis.citationDetails?.length ?? synthesis.citations?.length ?? 0) > 0 ? (
                                     <div className="rounded-lg border border-border bg-muted/20 p-4">
                                         <div className="flex items-center gap-2"><FileText className="h-4 w-4 text-muted-foreground" /><p className="text-sm font-semibold text-foreground">Synthesis citations</p></div>
-                                        <div className="mt-3 space-y-2">
+                                        <div className="mt-3 h-64 space-y-2 overflow-y-auto pr-1">
                                             {(synthesis.citationDetails?.length ? synthesis.citationDetails : (synthesis.citations ?? []).map((sourceFile) => ({ sourceFile, sourceLocation: 'Project-level synthesis', excerpt: synthesis.finalJudgmentSummary, period: '', currency: '', confidence: null, status: 'Synthesized' }))).map((citation, index) => {
                                                 const document = findCitedDocument(citation.sourceFile, documents)
                                                 return <button key={`${citation.sourceFile}-${citation.sourceLocation}-${index}`} type="button" onClick={() => onOpenEvidence?.({ title: 'Project synthesis citation', sourceFile: citation.sourceFile, sourceLocation: citation.sourceLocation || 'Project-level synthesis', excerpt: citation.excerpt || synthesis.finalJudgmentSummary, period: citation.period, currency: citation.currency, confidence: citation.confidence ?? undefined, status: citation.status || 'Synthesized', provenance: 'Project synthesis', documentId: document?.storageFileId, documentUrl: document?.storageFileUrl })} className="w-full rounded-md border border-border bg-background p-3 text-left text-sm text-foreground transition-colors hover:border-primary/40 hover:bg-muted/30">
