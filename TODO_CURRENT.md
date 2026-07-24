@@ -4,7 +4,7 @@
 
 # Brad list
 - The takeaways are still too long, change to bullet points and even shorter
-- Make the project synthesis and even doc counter asynchronous, or just find a way to have finished be returned faster for the latest doc submission thing?
+- [x] Make the project synthesis/doc-counter handoff asynchronous. The counter now writes `synthesis_pending`, starts the consolidator without waiting, and returns document completion immediately; validate one production batch after this change.
 - Instead of citations, just make each thing like each green flag or each open question clickable and then it shows the citation that way instead of having the citations
 - Is there a way to check if the doc is over like 100 pages and reject in that case or something
 - Ask Codex how we are handling edge cases and make sure its not too strict
