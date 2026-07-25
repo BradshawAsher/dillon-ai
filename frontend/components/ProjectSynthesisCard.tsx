@@ -4,6 +4,7 @@ import { Download, FileText, Landmark, Loader2, MessageCircleQuestion, RefreshCw
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import ExpandableInsightGroup from './ExpandableInsightGroup'
+import ExpandableText from './ExpandableText'
 import AcquisitionJudgmentCallout from './AcquisitionJudgmentCallout'
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
@@ -140,6 +141,34 @@ export function downloadSynthesisReport(synthesis: ProjectSynthesisItem, project
     downloadTextFile(fileSafeName(projectName) + '-project-synthesis.md', report, 'text/markdown;charset=utf-8')
 }
 
+type InsightGroupType = 'red-flag' | 'yellow-flag' | 'green-flag' | 'takeaway' | 'conflict' | 'negotiation-lever' | 'missing-document' | 'open-question'
+
+function insightGroupStatus(groupType: InsightGroupType): string {
+    switch (groupType) {
+        case 'red-flag': return 'Contradicted'
+        case 'yellow-flag': return 'Needs review'
+        case 'green-flag': return 'Confirmed'
+        case 'takeaway': return 'Synthesized'
+        case 'conflict': return 'Contradicted'
+        case 'negotiation-lever': return 'Synthesized'
+        case 'missing-document': return 'Needs review'
+        case 'open-question': return 'Needs review'
+    }
+}
+
+function insightGroupLabel(groupType: InsightGroupType): string {
+    switch (groupType) {
+        case 'red-flag': return 'Red flag'
+        case 'yellow-flag': return 'Yellow flag'
+        case 'green-flag': return 'Green flag'
+        case 'takeaway': return 'Key takeaway'
+        case 'conflict': return 'Conflict'
+        case 'negotiation-lever': return 'Negotiation lever'
+        case 'missing-document': return 'Missing document'
+        case 'open-question': return 'Open question'
+    }
+}
+
 function formatProjectDisplayName(project: ProjectSummary) {
     const projectName = project.projectName.trim()
     const companyName = project.companyName.trim()
@@ -252,7 +281,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                     </details>
                 ) : null}
 
-                {selectedProjectDocument ? <div className="rounded-lg border border-primary/25 bg-primary/[0.035] p-4"><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><p className="text-sm font-semibold text-foreground">Document analysis</p><p className="mt-1 text-sm text-muted-foreground">{selectedProjectDocument.fileName}</p></div><Button type="button" variant="ghost" size="sm" onClick={() => setSelectedDocumentRequestId('')}>Close</Button></div><div className="mt-4 flex flex-wrap gap-2"><Badge variant="outline">{selectedProjectDocument.status || 'Pending'}</Badge>{detectedTypes(selectedProjectDocument).map((type) => <Badge key={type} variant="secondary">{type}</Badge>)}</div>{selectedProjectDocument.aiSummary ? <div className="mt-4"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">AI summary</p><p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-foreground">{selectedProjectDocument.aiSummary}</p></div> : <p className="mt-4 text-sm text-muted-foreground">No document-specific summary has returned yet.</p>}<div className="mt-4 grid gap-3 md:grid-cols-2">{selectedProjectDocument.aiRedFlags ? <div className="rounded-md border border-destructive/25 bg-destructive/5 p-3"><p className="text-xs font-semibold uppercase tracking-wide text-destructive">Red flags</p><ul className="mt-2 list-disc space-y-1 pl-4 text-sm text-foreground">{shortList(selectedProjectDocument.aiRedFlags).map((item) => <li key={item}>{item}</li>)}</ul></div> : null}{selectedProjectDocument.aiYellowFlags ? <div className="rounded-md border border-warning/25 bg-warning/5 p-3"><p className="text-xs font-semibold uppercase tracking-wide text-warning">Items to review</p><ul className="mt-2 list-disc space-y-1 pl-4 text-sm text-foreground">{shortList(selectedProjectDocument.aiYellowFlags).map((item) => <li key={item}>{item}</li>)}</ul></div> : null}</div>{onOpenEvidence && (selectedProjectDocument.storageFileId || selectedProjectDocument.storageFileUrl) ? <Button type="button" variant="outline" className="mt-4" onClick={() => onOpenEvidence({ title: `Source document: ${selectedProjectDocument.fileName}`, sourceFile: selectedProjectDocument.fileName, sourceLocation: 'Document-level analysis', excerpt: selectedProjectDocument.aiSummary, status: selectedProjectDocument.status, provenance: 'Uploaded document', documentId: selectedProjectDocument.storageFileId, documentUrl: selectedProjectDocument.storageFileUrl })}>Open source document</Button> : null}</div> : null}
+                {selectedProjectDocument ? <div className="rounded-lg border border-primary/25 bg-primary/[0.035] p-4"><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><p className="text-sm font-semibold text-foreground">Document analysis</p><p className="mt-1 text-sm text-muted-foreground">{selectedProjectDocument.fileName}</p></div><Button type="button" variant="ghost" size="sm" onClick={() => setSelectedDocumentRequestId('')}>Close</Button></div><div className="mt-4 flex flex-wrap gap-2"><Badge variant="outline">{selectedProjectDocument.status || 'Pending'}</Badge>{detectedTypes(selectedProjectDocument).map((type) => <Badge key={type} variant="secondary">{type}</Badge>)}</div>{selectedProjectDocument.aiSummary ? <div className="mt-4"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">AI summary</p><ExpandableText text={selectedProjectDocument.aiSummary} maxHeight={120} className="mt-1" /></div> : <p className="mt-4 text-sm text-muted-foreground">No document-specific summary has returned yet.</p>}<div className="mt-4 grid gap-3 md:grid-cols-2">{selectedProjectDocument.aiRedFlags ? <div className="rounded-md border border-destructive/25 bg-destructive/5 p-3"><p className="text-xs font-semibold uppercase tracking-wide text-destructive">Red flags</p><ul className="mt-2 list-disc space-y-1 pl-4 text-sm text-foreground">{shortList(selectedProjectDocument.aiRedFlags).map((item) => <li key={item}>{item}</li>)}</ul></div> : null}{selectedProjectDocument.aiYellowFlags ? <div className="rounded-md border border-warning/25 bg-warning/5 p-3"><p className="text-xs font-semibold uppercase tracking-wide text-warning">Items to review</p><ul className="mt-2 list-disc space-y-1 pl-4 text-sm text-foreground">{shortList(selectedProjectDocument.aiYellowFlags).map((item) => <li key={item}>{item}</li>)}</ul></div> : null}</div>{onOpenEvidence && (selectedProjectDocument.storageFileId || selectedProjectDocument.storageFileUrl) ? <Button type="button" variant="outline" className="mt-4" onClick={() => onOpenEvidence({ title: `Source document: ${selectedProjectDocument.fileName}`, sourceFile: selectedProjectDocument.fileName, sourceLocation: 'Document-level analysis', excerpt: selectedProjectDocument.aiSummary, status: selectedProjectDocument.status, provenance: 'Uploaded document', documentId: selectedProjectDocument.storageFileId, documentUrl: selectedProjectDocument.storageFileUrl })}>Open source document</Button> : null}</div> : null}
 
                 {!error && synthesisPending ? (
                     <div className="rounded-lg border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-foreground">
@@ -317,6 +346,33 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                     const synthesisStatus = synthesis.projectStatus.trim().toLowerCase()
                     const hasRefreshFailure = synthesisStatus === 'synthesis_refresh_failed' || synthesisStatus === 'synthesis_blocked'
 
+                    function handleInsightClick(groupType: InsightGroupType, item: string, index: number) {
+                        if (!onOpenEvidence) return
+                        const label = insightGroupLabel(groupType)
+                        const evidenceTitle = `${label} #${index + 1}`
+                        const status = insightGroupStatus(groupType)
+
+                        // Try to find a cited document by checking if any citation sourceFile
+                        // is mentioned within the item text, or vice versa.
+                        const citations = synthesis.citations ?? []
+                        const matchedCitation = citations.find((sourceFile) => {
+                            const normalized = sourceFile.toLowerCase().replace(/\.[a-z0-9]{1,6}$/i, '').replace(/[^a-z0-9]+/g, ' ').trim()
+                            return normalized.length > 3 && item.toLowerCase().includes(normalized)
+                        })
+                        const citedDoc = matchedCitation ? findCitedDocument(matchedCitation, documents) : undefined
+
+                        onOpenEvidence({
+                            title: evidenceTitle,
+                            sourceFile: citedDoc?.fileName,
+                            sourceLocation: 'Project synthesis',
+                            excerpt: item,
+                            status,
+                            provenance: 'Project synthesis',
+                            documentId: citedDoc?.storageFileId,
+                            documentUrl: citedDoc?.storageFileUrl,
+                        })
+                    }
+
                     return (
                         <div key={`${synthesis.projectId}-${synthesis.id}`} className="space-y-4 rounded-xl border border-border bg-card p-4">
                             <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
@@ -352,7 +408,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
 
                             {hasRefreshFailure ? synthesisStatus === 'synthesis_blocked' ? (
                                 <div role="alert" className="rounded-xl border-2 border-destructive/55 bg-destructive/10 p-5 text-foreground shadow-md">
-                                    <p className="text-base font-bold text-destructive">Synthesis blocked — {failedProjectDocuments.length || synthesis.documentsFailedCount || 1} document{(failedProjectDocuments.length || synthesis.documentsFailedCount || 1) === 1 ? '' : 's'} need action</p>
+                                    <p className="text-base font-bold text-destructive">Synthesis blocked — {failedProjectDocuments.length || failedProjectDocuments.length || 1} document{(failedProjectDocuments.length || failedProjectDocuments.length || 1) === 1 ? '' : 's'} need action</p>
                                     <p className="mt-2 text-sm leading-6 text-foreground">{synthesis.aiErrorMessage || 'No completed document currently has usable analysis.'} Retry a document to recover its analysis, or exclude a document you do not want considered. Excluding keeps it in the audit trail but lets the remaining completed documents synthesize.</p>
                                     {failedProjectDocuments.length > 0 ? <div className="mt-4 space-y-3">{failedProjectDocuments.map((document) => <div key={document.requestID} className="rounded-lg border border-destructive/25 bg-background/75 p-4"><p className="break-words text-sm font-semibold text-foreground">{document.fileName || 'Failed document'}</p>{document.errorMessage ? <p className="mt-1 text-xs text-muted-foreground">{document.errorMessage}</p> : null}<div className="mt-3 grid gap-2 sm:grid-cols-2"><Button type="button" size="lg" className="h-12 font-semibold" disabled={retryingRequestId === document.requestID} onClick={() => onRetryDocument?.(document.requestID)}>{retryingRequestId === document.requestID ? 'Retrying document…' : 'Retry document'}</Button><Button type="button" size="lg" variant="outline" className="h-12 border-destructive/40 text-destructive hover:bg-destructive/10" onClick={() => onExcludeDocument?.(document.requestID)}>Exclude from synthesis</Button></div></div>)}</div> : <p className="mt-3 text-sm text-muted-foreground">Open the project document list above to retry or exclude the affected document.</p>}
                                 </div>
@@ -372,9 +428,9 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                         </div>
                                         {impact.completedDocuments > 0 ? <Badge variant="success">~{formatHours(impact.timeSavedHours)} analyst time saved</Badge> : null}
                                     </div>
-                                    <p className="mt-4 whitespace-pre-wrap rounded-lg border border-primary/25 bg-background/90 p-4 text-sm leading-6 text-foreground">
-                                        {synthesis.finalJudgmentSummary}
-                                    </p>
+                                    <div className="mt-4 rounded-lg border border-primary/25 bg-background/90 p-4">
+                                        <ExpandableText text={synthesis.finalJudgmentSummary} maxHeight={120} />
+                                    </div>
                                     {impact.completedDocuments > 0 ? (
                                         <p className="mt-3 text-xs text-muted-foreground">
                                             This judgment consolidates {impact.completedDocuments} completed document{impact.completedDocuments === 1 ? '' : 's'}: ~{formatHours(impact.analystHours)} estimated manual review versus {impact.agentMinutes >= 1 ? `${Math.round(impact.agentMinutes)}m` : '<1m'} of recorded agent runtime.
@@ -417,6 +473,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                     className="border-destructive/30 bg-destructive/5"
                                     itemClassName="border-destructive/20"
                                     defaultOpen
+                                    onItemClick={onOpenEvidence ? (item, index) => handleInsightClick('red-flag', item, index) : undefined}
                                 />
                                 <ExpandableInsightGroup
                                     title="Project-level yellow flags"
@@ -427,6 +484,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                     className="border-warning/30 bg-warning/5"
                                     itemClassName="border-warning/20"
                                     defaultOpen
+                                    onItemClick={onOpenEvidence ? (item, index) => handleInsightClick('yellow-flag', item, index) : undefined}
                                 />
                                 <ExpandableInsightGroup
                                     title="Project-level green flags"
@@ -437,6 +495,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                     className="border-success/30 bg-success/5"
                                     itemClassName="border-success/20"
                                     defaultOpen
+                                    onItemClick={onOpenEvidence ? (item, index) => handleInsightClick('green-flag', item, index) : undefined}
                                 />
                                 <ExpandableInsightGroup
                                     title="Key acquisition takeaways"
@@ -447,6 +506,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                     className="border-primary/25 bg-primary/5"
                                     itemClassName="border-primary/20"
                                     defaultOpen
+                                    onItemClick={onOpenEvidence ? (item, index) => handleInsightClick('takeaway', item, index) : undefined}
                                 />
                                 <section className="rounded-lg border border-border bg-muted/20 p-4">
                                     <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><FileText className="h-4 w-4 text-muted-foreground" /><p className="text-sm font-semibold text-foreground">Document-level thesis takeaways</p></div><Badge variant="outline">{documentThesisTakeaways.length}</Badge></div>
@@ -462,6 +522,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                     className="border-destructive/30 bg-destructive/5"
                                     itemClassName="border-destructive/20"
                                     defaultOpen
+                                    onItemClick={onOpenEvidence ? (item, index) => handleInsightClick('conflict', item, index) : undefined}
                                 />
                                 <ExpandableInsightGroup
                                     title="Negotiation levers"
@@ -469,6 +530,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                     items={synthesis.negotiationLevers}
                                     emptyLabel="No negotiation levers surfaced yet."
                                     defaultOpen
+                                    onItemClick={onOpenEvidence ? (item, index) => handleInsightClick('negotiation-lever', item, index) : undefined}
                                 />
                                 <ExpandableInsightGroup
                                     title="Missing diligence materials"
@@ -479,6 +541,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                     className="border-warning/30 bg-warning/5"
                                     itemClassName="border-warning/20"
                                     defaultOpen
+                                    onItemClick={onOpenEvidence ? (item, index) => handleInsightClick('missing-document', item, index) : undefined}
                                 />
                                 <ExpandableInsightGroup
                                     title="Open questions for management"
@@ -486,6 +549,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                     items={synthesis.openQuestions}
                                     emptyLabel="No open questions recorded."
                                     defaultOpen
+                                    onItemClick={onOpenEvidence ? (item, index) => handleInsightClick('open-question', item, index) : undefined}
                                 />
                                 {(synthesis.citationDetails?.length ?? synthesis.citations?.length ?? 0) > 0 ? (
                                     <div className="rounded-lg border border-border bg-muted/20 p-4">

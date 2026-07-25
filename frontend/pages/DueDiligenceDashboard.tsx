@@ -7,6 +7,8 @@ import {
 } from 'lucide-react'
 
 import ExpandableInsightGroup from '../components/ExpandableInsightGroup'
+import ExpandableText from '../components/ExpandableText'
+import EbitdaProjectionCard from '../components/EbitdaProjectionCard'
 import DealModelPendingCard from '../components/DealModelPendingCard'
 import AllCashReturnsCard from '../components/AllCashReturnsCard'
 import FinancedReturnsCard from '../components/FinancedReturnsCard'
@@ -1407,7 +1409,7 @@ export default function DueDiligenceDashboard() {
 
                 {activeWorkspaceTab === 'valuation' ? <DealValuationCard synthesis={activeProjectSynthesis} askingPrice={askingPrice} model={hydratedDealModel} onModelChange={handleDealModelChange} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /> : null}
                 {activeWorkspaceTab === 'returns' ? <section className="space-y-6"><ReturnsDecisionSummary model={returnsDisplayModel} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<AllCashReturnsCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<FinancedReturnsCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<FinancedScenarioComparisonCard model={returnsDisplayModel} /><DealModelPendingCard area="returns" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
-                {activeWorkspaceTab === 'growth' ? <section className="space-y-6">{isGrowthIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<GrowthDecisionSummary model={returnsDisplayModel} /><ScenarioComparisonCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><DealModelPendingCard area="growth" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
+                {activeWorkspaceTab === 'growth' ? <section className="space-y-6">{isGrowthIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<GrowthDecisionSummary model={returnsDisplayModel} /><ScenarioComparisonCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><EbitdaProjectionCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><DealModelPendingCard area="growth" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
                 {activeWorkspaceTab === 'structure' ? <section className="space-y-6"><DealStructureVisualCard model={hydratedDealModel} onOpenEvidence={setActiveEvidence} /><DealModelPendingCard area="structure" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
 
                 {activeWorkspaceTab === 'diligence' ? <>
@@ -1571,9 +1573,9 @@ export default function DueDiligenceDashboard() {
                                     <p className="mt-1 text-sm font-semibold text-foreground">{exampleSubmissionHistoryRows[0].projectId}</p>
                                 </div>
                             </div>
-                            <p className="rounded-lg border border-border bg-muted/30 p-3 text-sm leading-6 text-foreground">
-                                {exampleSubmissionHistoryRows[0].aiSummary}
-                            </p>
+                            <div className="rounded-lg border border-border bg-muted/30 p-3">
+                                <ExpandableText text={exampleSubmissionHistoryRows[0].aiSummary} maxHeight={120} />
+                            </div>
                         </CardContent>
                     </Card>
                 ) : null}
@@ -1615,7 +1617,7 @@ export default function DueDiligenceDashboard() {
                             <div className="rounded-xl border-2 border-primary bg-gradient-to-br from-primary/15 via-primary/5 to-background p-5 shadow-md">
                                 <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-bold uppercase tracking-wide text-primary">Start here — latest document at a glance</p><Badge variant={getSubmissionStatusVariant(displayedSubmitStatus)}>{formatSubmissionStatus(displayedSubmitStatus)}</Badge></div>
                                 <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><div className="rounded-lg border border-primary/25 bg-background/90 p-3"><p className="text-xs text-muted-foreground">Risk signal</p><p className="mt-1 text-lg font-bold">{displayedSubmitTrafficLight || displayedSubmitRiskLevel || 'Still processing'}</p></div><div className="rounded-lg border border-primary/25 bg-background/90 p-3"><p className="text-xs text-muted-foreground">AI confidence</p><p className="mt-1 text-lg font-bold">{liveSubmitInsight?.confidencePercent != null ? `${liveSubmitInsight.confidencePercent}%` : displayedSubmitConfidence || 'Pending'}</p></div><div className="rounded-lg border border-primary/25 bg-background/90 p-3"><p className="text-xs text-muted-foreground">Detected document type</p><p className="mt-1 text-lg font-bold">{displayedSubmissionRow?.detectedDocumentType || displayedSubmissionRow?.documentType || documentType || 'Pending'}</p></div><div className="rounded-lg border border-primary/25 bg-background/90 p-3"><p className="text-xs text-muted-foreground">Action needed</p><p className="mt-1 text-lg font-bold">{liveSubmitInsight?.escalationReasons.length ? 'Review flags' : displayedSubmitStatus.toLowerCase() === 'completed' ? 'Ready to use' : 'Wait for analysis'}</p></div></div>
-                                <p className="mt-4 text-sm leading-6 text-foreground">{displayedSubmitAiSummary || (liveSubmitInsight?.escalationReasons.length ? 'The document has items that need review before relying on its findings.' : 'This panel will surface the document’s key result as soon as n8n returns it.')}</p>
+                                <ExpandableText text={displayedSubmitAiSummary || (liveSubmitInsight?.escalationReasons.length ? "The document has items that need review before relying on its findings." : "This panel will surface the document’s key result as soon as n8n returns it.")} maxHeight={120} className="mt-4" />
                             </div>
                             <p className="text-xs text-muted-foreground">
                                 {submitResponse
