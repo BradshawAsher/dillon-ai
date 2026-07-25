@@ -152,7 +152,7 @@ Before closing any `[-]` item, verify it against a **new live n8n run**, not exa
 ## Data quality and model assurance
 
 - [-] Add extraction checks for swapped fields, wrong units, powers-of-ten errors, and implausible metric relationships. The Overview flags implausible margins, entry multiples, leverage, and rate-decimal errors. The per-document n8n reconciliation now also flags raw-to-normalized scale errors, materially conflicting duplicate facts, and implausible EBITDA margins; validate this on a live document before closing the item.
-- [-] Add the remaining structured outputs where supported: reconstructed EBITDA, margin compression, customer concentration, add-back quality, and financial-data completeness. EBITDA reconstruction card is now built (shows revenue → opex → EBITDA breakdown with source badges and margin warnings). Remaining: customer concentration view, add-back quality scoring, and financial-data completeness indicator.
+- [x] Add the remaining structured outputs where supported: reconstructed EBITDA, margin compression, customer concentration, add-back quality, and financial-data completeness. EBITDA reconstruction card shows revenue → opex → EBITDA breakdown. CustomerConcentrationCard extracts concentration findings from synthesis flags with a visual risk gauge. AddBackQualityCard scores each add-back as supported/partial/unsupported with revenue-percentage context. FinancialCompletenessCard shows all 17 expected financial facts as confirmed/estimated/missing across income, balance sheet, and operational categories. All cards click-to-evidence.
 - [ ] Add a second independent quality-of-earnings check for recurring versus one-time findings, plus a project-level reconciliation review.
 - [ ] Consider independent second-pass LLM review only after deterministic checks, with explicit comparison and review flags rather than silent overwrites.
 - [ ] Obtain external test sets and create additional realistic mock diligence packages.
@@ -161,7 +161,7 @@ Before closing any `[-]` item, verify it against a **new live n8n run**, not exa
 
 - [x] Add a "no findings match" empty state when synthesis filters hide all groups, so users know their filter is active (not that data is missing).
 - [x] Add keyboard shortcut (Escape) to close Evidence Drawer.
-- [ ] Add a quick-filter chip bar on the Overview/Deal page for jumping to red-flag findings, open questions, or missing materials.
+- [x] Add a quick-filter chip bar on the Overview/Deal page for jumping to red-flag findings, open questions, or missing materials. QuickFilterBar shows colored count chips for red flags, conflicts, open questions, missing docs, and negotiation levers. Clicking a chip switches to the Synthesis tab and smooth-scrolls to the matching section (scroll-anchor IDs added to ProjectSynthesisCard groups).
 - [x] Code-split the dashboard page. React.lazy() now defers all non-overview tabs (16 components). Initial bundle dropped from 1,315KB to 555KB (58% reduction). Recharts is isolated in its own 394KB async chunk loaded only on chart tabs. Each card component is a separate chunk.
 
 ## Workflow reliability and operations
