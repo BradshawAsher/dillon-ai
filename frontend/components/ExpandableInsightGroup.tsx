@@ -15,6 +15,7 @@ type ExpandableInsightGroupProps = {
   itemClassName?: string
   emptyLabel: string
   defaultOpen?: boolean
+  onItemClick?: (item: string, index: number) => void
 }
 
 const LONG_ITEM_LENGTH = 220
@@ -30,6 +31,7 @@ export default function ExpandableInsightGroup({
   itemClassName = '',
   emptyLabel,
   defaultOpen = false,
+  onItemClick,
 }: ExpandableInsightGroupProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen)
   const [expandedItems, setExpandedItems] = useState<Set<number>>(() => new Set())
@@ -73,20 +75,41 @@ export default function ExpandableInsightGroup({
             {items.map((item, index) => {
               const isLong = item.length > LONG_ITEM_LENGTH
               const isExpanded = expandedItems.has(index)
+              const isClickable = !!onItemClick
 
               return (
-                <li key={`${title}-${item}-${index}`} className={`rounded-md border bg-background/80 p-3 text-sm leading-6 text-foreground ${itemClassName}`}>
-                  <div className={isLong && !isExpanded ? 'max-h-20 overflow-hidden' : undefined}>
-                    <span className="mr-2 font-medium text-muted-foreground">{index + 1}.</span>
-                    {item}
-                  </div>
+                <li
+                  key={`${title}-${item}-${index}`}
+                  className={`rounded-md border bg-background/80 text-sm leading-6 text-foreground ${isClickable ? 'transition-colors hover:border-primary/40 hover:bg-muted/30' : ''} ${itemClassName}`}
+                >
+                  <button
+                    type="button"
+                    className={`w-full p-3 text-left ${isClickable ? 'cursor-pointer' : 'cursor-default'}`}
+                    onClick={() => {
+                      if (isClickable) {
+                        onItemClick(item, index)
+                      }
+                    }}
+                    tabIndex={isClickable ? 0 : -1}
+                  >
+                    <div className={isLong && !isExpanded ? 'max-h-20 overflow-hidden' : undefined}>
+                      <span className="mr-2 font-medium text-muted-foreground">{index + 1}.</span>
+                      {item}
+                    </div>
+                    {isClickable ? (
+                      <span className="mt-1 block text-xs font-medium text-primary">View evidence →</span>
+                    ) : null}
+                  </button>
                   {isLong ? (
                     <Button
                       type="button"
                       variant="link"
                       size="sm"
-                      className="mt-1 h-auto px-0 py-0 text-xs"
-                      onClick={() => toggleItem(index)}
+                      className="mt-1 h-auto px-3 pb-3 pt-0 text-xs"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toggleItem(index)
+                      }}
                     >
                       {isExpanded ? 'Show less' : 'Show more'}
                     </Button>

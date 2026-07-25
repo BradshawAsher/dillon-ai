@@ -4,5 +4,7 @@ dist/
 .env.*
 .vercel
 .mcp.json
+.claude/settings.local.json
+.claude/settings.json
 *.log
 .DS_Store
