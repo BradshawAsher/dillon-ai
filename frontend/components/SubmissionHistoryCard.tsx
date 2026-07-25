@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { CheckCircle2, CircleAlert, Clock3, Download, Loader2, RefreshCw, Search } from 'lucide-react'
 
 import ExpandableInsightGroup from './ExpandableInsightGroup'
+import ExpandableText from './ExpandableText'
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
@@ -574,7 +575,7 @@ export default function SubmissionHistoryCard({
                               <p className="text-xs text-muted-foreground">EBITDA: {row.ebitdaExtracted}</p>
                             ) : null}
                             {row.submissionNotes ? (
-                              <p className="line-clamp-2 text-xs text-muted-foreground">{row.submissionNotes}</p>
+                              <ExpandableText text={row.submissionNotes} maxHeight={40} className="text-xs text-muted-foreground" />
                             ) : null}
                             <Button
                               type="button"
@@ -904,9 +905,7 @@ export default function SubmissionHistoryCard({
                                 </Badge>
                               ) : null}
                             </div>
-                            <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-foreground">
-                              {aiViewModel.investmentBuyReasoning || 'No buy-side reasoning returned yet.'}
-                            </p>
+                            <ExpandableText text={aiViewModel.investmentBuyReasoning || 'No buy-side reasoning returned yet.'} maxHeight={120} className="mt-3 whitespace-pre-wrap text-sm leading-6 text-foreground" />
                           </ExpandableInsightGroup>
                         ) : null}
 
