@@ -29,6 +29,8 @@ type ProjectPortfolioCardProps = {
     onIncludeDocument: (requestID: string) => void
     onRetryDocument: (requestID: string) => void
     retryingRequestId: string | null
+    onRunSynthesis: () => void
+    runningSynthesis: boolean
 }
 
 function SummaryMetric({
@@ -51,7 +53,7 @@ function SummaryMetric({
     )
 }
 
-export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey, onProjectSelect, onExcludeDocument, onIncludeDocument, onRetryDocument, retryingRequestId }: ProjectPortfolioCardProps) {
+export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey, onProjectSelect, onExcludeDocument, onIncludeDocument, onRetryDocument, retryingRequestId, onRunSynthesis, runningSynthesis }: ProjectPortfolioCardProps) {
     const [hideDuplicateDocs, setHideDuplicateDocs] = useState(true)
     const [projectSearch, setProjectSearch] = useState('')
     const [workstreamFilter, setWorkstreamFilter] = useState('all')
@@ -216,6 +218,18 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                                             >
                                                 {project.projectKey === activeProjectKey ? 'Viewing synthesis' : 'View synthesis'}
                                             </Button>
+                                            {project.projectKey === activeProjectKey ? (
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    size="lg"
+                                                    className="shadow-sm"
+                                                    disabled={runningSynthesis}
+                                                    onClick={onRunSynthesis}
+                                                >
+                                                    {runningSynthesis ? 'Synthesizing…' : 'Run synthesis'}
+                                                </Button>
+                                            ) : null}
                                             {project.documentTypes.slice(0, 3).map((documentType) => (
                                                 <Badge key={documentType} variant="outline">{documentType}</Badge>
                                             ))}

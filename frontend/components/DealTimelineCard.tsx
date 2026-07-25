@@ -71,7 +71,7 @@ export default function DealTimelineCard({ documents, synthesis, projectName }: 
         const isSynthComplete = synthStatus === 'synthesized' && (synthesis.finalJudgmentSummary.trim().length > 0 || synthesis.finalRecommendation.trim().length > 0)
         events.push({
             id: 'synthesis',
-            timestamp: parseTimestamp(synthesis.synthesizedAt || ''),
+            timestamp: parseTimestamp(synthesis.projectProcessedAt || ''),
             label: 'Project synthesis',
             detail: isSynthComplete ? `${synthesis.finalTrafficLight || synthesis.finalRiskLevel} · ${synthesis.finalRecommendation.slice(0, 60)}${synthesis.finalRecommendation.length > 60 ? '…' : ''}` :
                    ['queued', 'pending', 'processing', 'running', 'synthesis_pending', 'synthesizing'].includes(synthStatus) ? 'Running...' : 'Pending',
