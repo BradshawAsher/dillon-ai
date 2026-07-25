@@ -72,6 +72,10 @@ Before closing any `[-]` item, verify it against a **new live n8n run**, not exa
 - I don't get what the bottom of the valuation page means?
 - Show the saved model assumptions initially for returns, valuation, deal structure, and growth, so the user can see what they are? Why is there no place for saved model assumptions on valuation?
 - Did we add parsing of pure numbers and deterministic double checking? Have that be explained to you?
+- Can we make deterministic math checks, red flags, green flags, yellow flags, escalation reasons, and citations be clickable in audit trail? Why are there only deterministc math calcs in audit trail but not in latest doc submission nor synthesis?
+- Can we refer to what n8n workflows and maybe even what files in the frontend are responsible for what in the edge cases? 
+- Why does structured output parser oftentimes fail in per doc analysis?
+- For latest doc submission, change the button from view project synthesis to view latest doc submission (scrolls them down a little bit), and then maybe in the middle and in the end of the latest doc submission stuff, have buttons for view this project's synthesis (could also show whether the synthesis is done or not)
 
 ## Immediate live-data fixes
 
