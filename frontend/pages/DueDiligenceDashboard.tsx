@@ -103,6 +103,7 @@ import {
 } from '../utils/submissionHistory'
 import { createProjectSummaries, getProjectKey } from '../utils/projectWorkspace'
 import { computeImpactMetrics, formatHours } from '../utils/impactMetrics'
+import { deriveDocumentedFacts } from '../utils/documentedFacts'
 import { fallbackDiligenceFindings, type FindingType, type Severity } from '../utils/diligence'
 import { formatEasternTime } from '../utils/dateTime'
 import { readFileAsBase64 } from '../utils/fileEncoding'
@@ -196,34 +197,25 @@ function parseIllustrativeFacts(raw: string) {
 }
 
 function hydrateModelFactsFromDocuments(model: DealModel, documents: SubmissionHistoryItem[]) {
+    // Start from any facts already on the model (object keyed by field).
     let merged: Record<string, Record<string, unknown>> = {}
     try {
         const parsed = JSON.parse(model.documentedFactsJson || '{}') as unknown
         if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) merged = parsed as Record<string, Record<string, unknown>>
     } catch {}
 
-    for (const document of documents) {
-        if (document.status.trim().toLowerCase() !== 'completed' || !document.financialFactsJson?.trim()) continue
-        try {
-            const parsed = JSON.parse(document.financialFactsJson) as unknown
-            const candidate = parsed && typeof parsed === 'object' && !Array.isArray(parsed) && 'facts' in parsed
-                ? (parsed as { facts?: unknown }).facts
-                : parsed
-            if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) continue
-            for (const [field, fact] of Object.entries(candidate as Record<string, Record<string, unknown>>)) {
-                const current = merged[field]
-                const isConfirmed = fact?.status === 'confirmed' && typeof fact.value === 'number' && Number.isFinite(fact.value)
-                const currentConfirmed = current?.status === 'confirmed' && typeof current.value === 'number'
-                if (!isConfirmed || currentConfirmed) continue
-                merged[field] = {
-                    ...fact,
-                    provenance: fact.provenance || 'Completed document fact',
-                    citations: Array.isArray(fact.citations) && fact.citations.length ? fact.citations : [{ source_file: document.fileName, row_or_cell: 'Document analysis' }],
-                }
-            }
-        } catch {
-            // A malformed document fact record must never prevent the workspace from rendering.
-        }
+    // Derive facts from the documents' real financialFactsJson shape (an array
+    // of { metric, normalized_value, ... }). The previous implementation
+    // assumed a field-keyed object and skipped arrays, so it never merged
+    // anything from live n8n data.
+    const derived = deriveDocumentedFacts(documents)
+
+    for (const [field, fact] of Object.entries(derived)) {
+        const current = merged[field]
+        const currentConfirmed = current?.status === 'confirmed' && typeof current.value === 'number'
+        // Keep an already-confirmed model fact; otherwise fill from documents.
+        if (currentConfirmed) continue
+        merged[field] = { ...fact }
     }
 
     return JSON.stringify(merged) === (model.documentedFactsJson || '{}') ? model : {
