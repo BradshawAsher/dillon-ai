@@ -16,6 +16,7 @@ import type { ProjectSummary } from '../utils/projectWorkspace'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import { findCitedDocument } from '../utils/evidence'
 import type { EvidenceItem } from './EvidenceDrawer'
+import ExpandableText from './ExpandableText'
 
 type DealOverviewCardProps = {
     syntheses: ProjectSynthesisItem[]
@@ -221,19 +222,19 @@ export default function DealOverviewCard({ syntheses, projects, currentProjectId
                                     ) : null}
                                 </div>
                                 {synthesis.finalJudgmentSummary ? (
-                                    <p className="mt-3 text-sm leading-6 text-muted-foreground">{synthesis.finalJudgmentSummary}</p>
+                                    <ExpandableText text={synthesis.finalJudgmentSummary} maxHeight={100} className="mt-3 text-sm leading-6 text-muted-foreground" />
                                 ) : null}
                             </div>
                         ) : synthesis.finalJudgmentSummary ? (
                             <div className="rounded-lg border border-border bg-background p-4">
                                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Executive assessment</p>
-                                <p className="mt-2 text-sm leading-6 text-foreground">{synthesis.finalJudgmentSummary}</p>
+                                <ExpandableText text={synthesis.finalJudgmentSummary} maxHeight={120} className="mt-2 text-sm leading-6 text-foreground" />
                             </div>
                         ) : null}
 
                         <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.75fr)]">
-                            <div className="rounded-xl border border-border bg-muted/20 p-4"><div className="flex items-center justify-between gap-3"><p className="text-sm font-semibold">Three decision drivers</p><Badge variant="outline">Project synthesis</Badge></div><div className="mt-3 grid gap-3 md:grid-cols-3">{decisionDrivers.map((driver) => <div key={driver.label} className="rounded-lg border border-border bg-background p-3"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{driver.label}</p><p className="mt-2 text-sm leading-6 text-foreground">{driver.value}</p></div>)}</div></div>
-                            <div className="rounded-xl border border-primary/25 bg-primary/5 p-4"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Recommended next action</p><p className="mt-2 text-sm leading-6 font-medium text-foreground">{nextAction}</p><p className="mt-3 text-xs text-muted-foreground">Prioritized from missing materials, negotiation levers, and open questions.</p></div>
+                            <div className="rounded-xl border border-border bg-muted/20 p-4"><div className="flex items-center justify-between gap-3"><p className="text-sm font-semibold">Three decision drivers</p><Badge variant="outline">Project synthesis</Badge></div><div className="mt-3 grid gap-3 md:grid-cols-3">{decisionDrivers.map((driver) => <div key={driver.label} className="rounded-lg border border-border bg-background p-3"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{driver.label}</p><ExpandableText text={driver.value} maxHeight={72} className="mt-2 text-sm leading-6 text-foreground" /></div>)}</div></div>
+                            <div className="rounded-xl border border-primary/25 bg-primary/5 p-4"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Recommended next action</p><ExpandableText text={nextAction} maxHeight={72} className="mt-2 text-sm leading-6 font-medium text-foreground" /><p className="mt-3 text-xs text-muted-foreground">Prioritized from missing materials, negotiation levers, and open questions.</p></div>
                         </div>
 
                         <div className="grid gap-3 lg:grid-cols-3">

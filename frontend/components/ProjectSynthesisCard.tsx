@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
-import { Download, FileText, Landmark, Loader2, MessageCircleQuestion, RefreshCw, Scale, ShieldAlert, TriangleAlert } from 'lucide-react'
+import { Download, FileText, Filter, Landmark, Loader2, MessageCircleQuestion, RefreshCw, Scale, ShieldAlert, TriangleAlert } from 'lucide-react'
 
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import ExpandableInsightGroup from './ExpandableInsightGroup'
 import ExpandableText from './ExpandableText'
+import MaterialImpactView from './MaterialImpactView'
 import AcquisitionJudgmentCallout from './AcquisitionJudgmentCallout'
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
@@ -180,9 +181,31 @@ function formatProjectDisplayName(project: ProjectSummary) {
     return `${projectName} • ${companyName}`
 }
 
+type SeverityFilter = 'all' | 'critical' | 'medium' | 'low' | 'informational'
+type TypeFilter = 'all' | InsightGroupType
+
+function getSeverityForGroup(groupType: InsightGroupType): SeverityFilter {
+    switch (groupType) {
+        case 'red-flag':
+        case 'conflict':
+            return 'critical'
+        case 'yellow-flag':
+        case 'missing-document':
+        case 'open-question':
+            return 'medium'
+        case 'green-flag':
+            return 'low'
+        case 'takeaway':
+        case 'negotiation-lever':
+            return 'informational'
+    }
+}
+
 export default function ProjectSynthesisCard({ syntheses, projects, currentProjectId, documentAnalysisPending, synthesisPending, synthesisProgress, synthesisStage, loading, error, onRefresh, impact, documents = [], onOpenEvidence, onExcludeDocument, onIncludeDocument, onRetryDocument, retryingRequestId, onRunSynthesis, runningSynthesis = false }: ProjectSynthesisCardProps) {
     const [synthesisElapsedSeconds, setSynthesisElapsedSeconds] = useState(0)
     const [selectedDocumentRequestId, setSelectedDocumentRequestId] = useState('')
+    const [severityFilter, setSeverityFilter] = useState<SeverityFilter>('all')
+    const [typeFilter, setTypeFilter] = useState<TypeFilter>('all')
     const projectNameById = new Map(
         projects.map((project) => [project.projectId || project.projectKey, formatProjectDisplayName(project)])
     )
@@ -463,8 +486,40 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                 </div>
                             ) : null}
 
+                            <div className="grid gap-2 rounded-lg border border-border bg-muted/20 p-3 sm:grid-cols-2">
+                                <label className="flex flex-col gap-1">
+                                    <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground"><Filter className="h-3 w-3" />Severity</span>
+                                    <select value={severityFilter} onChange={(e) => setSeverityFilter(e.target.value as SeverityFilter)} className="rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground">
+                                        <option value="all">All severities</option>
+                                        <option value="critical">Critical / High</option>
+                                        <option value="medium">Medium</option>
+                                        <option value="low">Low / Supportive</option>
+                                        <option value="informational">Informational</option>
+                                    </select>
+                                </label>
+                                <label className="flex flex-col gap-1">
+                                    <span className="text-xs font-medium text-muted-foreground">Finding type</span>
+                                    <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value as TypeFilter)} className="rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground">
+                                        <option value="all">All types</option>
+                                        <option value="red-flag">Red flags</option>
+                                        <option value="yellow-flag">Yellow flags</option>
+                                        <option value="green-flag">Green flags</option>
+                                        <option value="takeaway">Key takeaways</option>
+                                        <option value="conflict">Cross-document conflicts</option>
+                                        <option value="negotiation-lever">Negotiation levers</option>
+                                        <option value="missing-document">Missing materials</option>
+                                        <option value="open-question">Open questions</option>
+                                    </select>
+                                </label>
+                            </div>
+
                             <div className="grid gap-3 xl:grid-cols-2">
-                                <ExpandableInsightGroup
+                                {severityFilter !== 'all' || typeFilter !== 'all' ? (() => {
+                                    const allTypes: InsightGroupType[] = ['red-flag', 'yellow-flag', 'green-flag', 'takeaway', 'conflict', 'negotiation-lever', 'missing-document', 'open-question']
+                                    const anyVisible = allTypes.some((t) => (severityFilter === 'all' || getSeverityForGroup(t) === severityFilter) && (typeFilter === 'all' || typeFilter === t))
+                                    return !anyVisible ? <p className="col-span-full rounded-md border border-border bg-muted/20 px-4 py-3 text-sm text-muted-foreground">No finding groups match the current filter. Adjust severity or type above to see results.</p> : null
+                                })() : null}
+                                {(severityFilter === 'all' || getSeverityForGroup('red-flag') === severityFilter) && (typeFilter === 'all' || typeFilter === 'red-flag') ? <ExpandableInsightGroup
                                     title="Project-level red flags"
                                     icon={<TriangleAlert className="h-4 w-4 text-destructive" />}
                                     items={synthesis.redFlags}
@@ -474,8 +529,8 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                     itemClassName="border-destructive/20"
                                     defaultOpen
                                     onItemClick={onOpenEvidence ? (item, index) => handleInsightClick('red-flag', item, index) : undefined}
-                                />
-                                <ExpandableInsightGroup
+                                /> : null}
+                                {(severityFilter === 'all' || getSeverityForGroup('yellow-flag') === severityFilter) && (typeFilter === 'all' || typeFilter === 'yellow-flag') ? <ExpandableInsightGroup
                                     title="Project-level yellow flags"
                                     icon={<TriangleAlert className="h-4 w-4 text-warning" />}
                                     items={synthesis.yellowFlags}
@@ -485,8 +540,8 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                     itemClassName="border-warning/20"
                                     defaultOpen
                                     onItemClick={onOpenEvidence ? (item, index) => handleInsightClick('yellow-flag', item, index) : undefined}
-                                />
-                                <ExpandableInsightGroup
+                                /> : null}
+                                {(severityFilter === 'all' || getSeverityForGroup('green-flag') === severityFilter) && (typeFilter === 'all' || typeFilter === 'green-flag') ? <ExpandableInsightGroup
                                     title="Project-level green flags"
                                     icon={<Scale className="h-4 w-4 text-success" />}
                                     items={synthesis.greenFlags}
@@ -496,8 +551,8 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                     itemClassName="border-success/20"
                                     defaultOpen
                                     onItemClick={onOpenEvidence ? (item, index) => handleInsightClick('green-flag', item, index) : undefined}
-                                />
-                                <ExpandableInsightGroup
+                                /> : null}
+                                {(severityFilter === 'all' || getSeverityForGroup('takeaway') === severityFilter) && (typeFilter === 'all' || typeFilter === 'takeaway') ? <ExpandableInsightGroup
                                     title="Key acquisition takeaways"
                                     icon={<Scale className="h-4 w-4 text-primary" />}
                                     items={synthesis.keyTakeaways}
@@ -507,13 +562,13 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                     itemClassName="border-primary/20"
                                     defaultOpen
                                     onItemClick={onOpenEvidence ? (item, index) => handleInsightClick('takeaway', item, index) : undefined}
-                                />
-                                <section className="rounded-lg border border-border bg-muted/20 p-4">
+                                /> : null}
+                                {(severityFilter === 'all' || getSeverityForGroup('takeaway') === severityFilter) && (typeFilter === 'all' || typeFilter === 'takeaway') ? <section className="rounded-lg border border-border bg-muted/20 p-4">
                                     <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><FileText className="h-4 w-4 text-muted-foreground" /><p className="text-sm font-semibold text-foreground">Document-level thesis takeaways</p></div><Badge variant="outline">{documentThesisTakeaways.length}</Badge></div>
                                     <p className="mt-1 text-xs text-muted-foreground">Each point is from one completed document—not a new project-level conclusion.</p>
                                     {documentThesisTakeaways.length ? <div className="mt-3 max-h-[28rem] space-y-2 overflow-y-auto pr-1">{documentThesisTakeaways.map((takeaway, index) => <button key={`${takeaway.fileName}-${index}`} type="button" onClick={() => onOpenEvidence?.({ title: `Document thesis: ${takeaway.fileName}`, sourceFile: takeaway.fileName, sourceLocation: 'Document-level investment thesis', excerpt: takeaway.takeaway, status: takeaway.status || takeaway.stance, provenance: takeaway.stance, documentId: takeaway.documentId, documentUrl: takeaway.documentUrl })} className="w-full rounded-md border border-border bg-background/80 p-3 text-left text-sm leading-6 text-foreground transition-colors hover:border-primary/40 hover:bg-muted/30"><div className="flex flex-wrap items-center gap-2"><span className="font-medium">{takeaway.fileName}</span><Badge variant={takeaway.stance === 'Caution indicator' ? 'warning' : takeaway.stance === 'Supportive indicator' ? 'success' : 'outline'}>{takeaway.stance}</Badge></div><p className="mt-1">{compactTakeaway(takeaway.takeaway)}</p><span className="mt-1 block text-xs font-medium text-primary">View full source evidence</span></button>)}</div> : <p className="mt-3 rounded-md border border-border bg-background/80 px-3 py-2 text-sm text-muted-foreground">No document-level investment-thesis takeaway has returned yet.</p>}
-                                </section>
-                                <ExpandableInsightGroup
+                                </section> : null}
+                                {(severityFilter === 'all' || getSeverityForGroup('conflict') === severityFilter) && (typeFilter === 'all' || typeFilter === 'conflict') ? <ExpandableInsightGroup
                                     title="Cross-document conflicts"
                                     icon={<TriangleAlert className="h-4 w-4 text-destructive" />}
                                     items={synthesis.crossDocumentConflicts}
@@ -523,16 +578,16 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                     itemClassName="border-destructive/20"
                                     defaultOpen
                                     onItemClick={onOpenEvidence ? (item, index) => handleInsightClick('conflict', item, index) : undefined}
-                                />
-                                <ExpandableInsightGroup
+                                /> : null}
+                                {(severityFilter === 'all' || getSeverityForGroup('negotiation-lever') === severityFilter) && (typeFilter === 'all' || typeFilter === 'negotiation-lever') ? <ExpandableInsightGroup
                                     title="Negotiation levers"
                                     icon={<Landmark className="h-4 w-4 text-foreground" />}
                                     items={synthesis.negotiationLevers}
                                     emptyLabel="No negotiation levers surfaced yet."
                                     defaultOpen
                                     onItemClick={onOpenEvidence ? (item, index) => handleInsightClick('negotiation-lever', item, index) : undefined}
-                                />
-                                <ExpandableInsightGroup
+                                /> : null}
+                                {(severityFilter === 'all' || getSeverityForGroup('missing-document') === severityFilter) && (typeFilter === 'all' || typeFilter === 'missing-document') ? <ExpandableInsightGroup
                                     title="Missing diligence materials"
                                     icon={<ShieldAlert className="h-4 w-4 text-warning" />}
                                     items={synthesis.missingDocuments}
@@ -542,15 +597,15 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                     itemClassName="border-warning/20"
                                     defaultOpen
                                     onItemClick={onOpenEvidence ? (item, index) => handleInsightClick('missing-document', item, index) : undefined}
-                                />
-                                <ExpandableInsightGroup
+                                /> : null}
+                                {(severityFilter === 'all' || getSeverityForGroup('open-question') === severityFilter) && (typeFilter === 'all' || typeFilter === 'open-question') ? <ExpandableInsightGroup
                                     title="Open questions for management"
                                     icon={<MessageCircleQuestion className="h-4 w-4 text-muted-foreground" />}
                                     items={synthesis.openQuestions}
                                     emptyLabel="No open questions recorded."
                                     defaultOpen
                                     onItemClick={onOpenEvidence ? (item, index) => handleInsightClick('open-question', item, index) : undefined}
-                                />
+                                /> : null}
                                 {(synthesis.citationDetails?.length ?? synthesis.citations?.length ?? 0) > 0 ? (
                                     <div className="rounded-lg border border-border bg-muted/20 p-4">
                                         <div className="flex items-center gap-2"><FileText className="h-4 w-4 text-muted-foreground" /><p className="text-sm font-semibold text-foreground">Synthesis citations</p></div>
@@ -565,6 +620,8 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                     </div>
                                 ) : null}
                             </div>
+
+                            <MaterialImpactView synthesis={synthesis} onOpenEvidence={onOpenEvidence} />
                         </div>
                     )
                 })}

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 import { BriefcaseBusiness, Clock3, Download, FileStack, Flag, FolderKanban, RefreshCw, Search, ShieldAlert } from 'lucide-react'
+import ExpandableText from './ExpandableText'
 
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
@@ -255,7 +256,7 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                                             <Flag className="h-4 w-4 text-muted-foreground" />
                                             <p className="text-sm font-semibold text-foreground">Recommended next action</p>
                                         </div>
-                                        <p className="mt-2 text-sm leading-6 text-foreground">{project.recommendation}</p>
+                                        <ExpandableText text={project.recommendation} maxHeight={80} className="mt-2 text-sm leading-6 text-foreground" />
                                     </div>
 
                                     <details className="mt-4 rounded-lg border border-border bg-muted/20 p-4">

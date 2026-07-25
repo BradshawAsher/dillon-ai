@@ -3,6 +3,7 @@ import { ChartNoAxesCombined } from 'lucide-react'
 import type { DealModel } from '../hooks/backend/diligence'
 import { Badge } from '../lib/shadcn/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
+import { GrowthLineChart, type ChartDatum } from './DealCharts'
 import { calculateIrr } from '../utils/dealMath'
 
 function money(value: number) {
@@ -45,6 +46,24 @@ export default function FinancedScenarioComparisonCard({ model }: { model: DealM
     ]
     const ready = revenue !== null && equity !== null && annualDebtService !== null && debtAtExit !== null
 
+    const scenarioCashFlowChartData: ChartDatum[] = ready ? (() => {
+        const data: ChartDatum[] = [{ label: 'Close', Bear: -equity!, Base: -equity!, Bull: -equity! }]
+        for (let year = 1; year <= holdPeriod; year++) {
+            const point: ChartDatum = { label: `Year ${year}` }
+            for (const scenario of scenarios) {
+                const yearRevenue = revenue! * (1 + scenario.growth) ** year
+                let cf = yearRevenue * scenario.margin * (1 - tax) - capex - annualDebtService!
+                if (year === holdPeriod) {
+                    const exitEbitda = yearRevenue * scenario.margin
+                    cf += exitEbitda * scenario.exitMultiple - exitCosts - debtAtExit! - sellerNote
+                }
+                point[scenario.name] = Math.round(cf)
+            }
+            data.push(point)
+        }
+        return data
+    })() : []
+
     return <Card className="overflow-hidden">
         <CardHeader className="border-b border-border bg-card/80">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -53,7 +72,7 @@ export default function FinancedScenarioComparisonCard({ model }: { model: DealM
             </div>
         </CardHeader>
         <CardContent className="p-5">
-            {!ready ? <p className="rounded-lg border border-dashed border-border bg-muted/20 p-4 text-sm text-muted-foreground">Add confirmed starting revenue plus a purchase price and financing inputs to calculate financed scenarios.</p> : <div className="grid gap-3 lg:grid-cols-3">
+            {!ready ? <p className="rounded-lg border border-dashed border-border bg-muted/20 p-4 text-sm text-muted-foreground">Add confirmed starting revenue plus a purchase price and financing inputs to calculate financed scenarios.</p> : <div className="space-y-5"><div className="grid gap-3 lg:grid-cols-3">
                 {scenarios.map((scenario) => {
                     const yearlyRevenue = Array.from({ length: holdPeriod }, (_, year) => revenue! * (1 + scenario.growth) ** (year + 1))
                     const yearlyCashFlows = yearlyRevenue.map((yearRevenue) => yearRevenue * scenario.margin * (1 - tax) - capex - annualDebtService!)
@@ -71,6 +90,12 @@ export default function FinancedScenarioComparisonCard({ model }: { model: DealM
                         <p className="mt-4 text-xs leading-5 text-muted-foreground">Growth, EBITDA margin, and exit multiple are scenario assumptions. Financing terms are shared saved assumptions.</p>
                     </div>
                 })}
+            </div>
+            <div className="rounded-lg border border-border bg-muted/10 p-4">
+                <p className="text-sm font-semibold text-foreground">Levered cash-flow paths by scenario</p>
+                <p className="mt-1 text-xs text-muted-foreground">Annual levered free cash flow after debt service, with exit proceeds in the final year. Bear (red), Base (blue), Bull (green).</p>
+                <GrowthLineChart data={scenarioCashFlowChartData} />
+            </div>
             </div>}
         </CardContent>
     </Card>

@@ -1771,6 +1771,18 @@ export default function DueDiligenceDashboard() {
                                                     itemClassName={group.itemClass}
                                                     emptyLabel="None"
                                                     defaultOpen
+                                                    onItemClick={(item) => {
+                                                        setActiveEvidence({
+                                                            title: `${group.title.replace(' flags', ' flag')}: finding`,
+                                                            sourceFile: displayedSubmissionRow?.fileName || 'Uploaded document',
+                                                            sourceLocation: group.title,
+                                                            excerpt: item,
+                                                            status: group.badge === 'destructive' ? 'Risk' : group.badge === 'warning' ? 'Caution' : 'Confirmed',
+                                                            provenance: `Document-level ${group.title.toLowerCase()} analysis`,
+                                                            documentId: displayedSubmissionRow?.storageFileId,
+                                                            documentUrl: displayedSubmissionRow?.storageFileUrl,
+                                                        })
+                                                    }}
                                                 />
                                             ))}
                                         </div>
@@ -1805,9 +1817,7 @@ export default function DueDiligenceDashboard() {
                                                     </Badge>
                                                 ) : null}
                                             </div>
-                                            <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-foreground">
-                                                {liveSubmitInsight.investmentBuyReasoning || 'No buy reasoning returned yet.'}
-                                            </p>
+                                            <ExpandableText text={liveSubmitInsight.investmentBuyReasoning || 'No buy reasoning returned yet.'} maxHeight={120} className="mt-3 whitespace-pre-wrap text-sm leading-6 text-foreground" />
                                         </div>
                                     ) : null}
                                 </div>
