@@ -76,6 +76,8 @@ Before closing any `[-]` item, verify it against a **new live n8n run**, not exa
 - Can we refer to what n8n workflows and maybe even what files in the frontend are responsible for what in the edge cases? 
 - Why does structured output parser oftentimes fail in per doc analysis?
 - For latest doc submission, change the button from view project synthesis to view latest doc submission (scrolls them down a little bit), and then maybe in the middle and in the end of the latest doc submission stuff, have buttons for view this project's synthesis (could also show whether the synthesis is done or not)
+- Change API key to Pod 1 and then be able to show cost per run?
+- Ask Trisha since there are 2 points section for week 7 there is the old one from week 6 and then the new one?
 
 ## Immediate live-data fixes
 
