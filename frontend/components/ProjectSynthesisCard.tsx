@@ -497,7 +497,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                     </div>
                                 </div>
                             ) : (
-                                {(() => {
+                                (() => {
                                     const facts = model ? parseDocumentedFacts(model.documentedFactsJson) : {}
                                     const revenue = facts.revenue?.status === 'confirmed' && typeof facts.revenue?.value === 'number' ? facts.revenue.value : null
                                     const ebitda = facts.ebitda_sde?.status === 'confirmed' && typeof facts.ebitda_sde?.value === 'number' ? facts.ebitda_sde.value : null
@@ -543,7 +543,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                             <p className="mt-1 text-sm leading-6 text-muted-foreground">Upload financial statements (P&L, balance sheet) with clear revenue and EBITDA figures. Once confirmed financial facts are available, an illustrative valuation range will be calculated automatically.</p>
                                         </div>
                                     )
-                                })()}
+                                })()
                             )}
 
                             <div className="grid gap-2 rounded-lg border border-border bg-muted/20 p-3 sm:grid-cols-2">
