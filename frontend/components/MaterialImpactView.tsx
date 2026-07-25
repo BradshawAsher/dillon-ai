@@ -8,12 +8,54 @@ import type { EvidenceItem } from '../utils/evidence'
 
 type ImpactCategory = 'valuation' | 'cash_flow' | 'closing' | 'negotiation' | 'risk'
 
+type StructuredCitation = {
+    source_file?: string
+    page_number?: string
+    row_or_cell?: string
+    excerpt?: string
+}
+
 type CategorizedFinding = {
     id: string
     text: string
     sourceGroup: string
     severity: 'critical' | 'medium' | 'low'
     impact: ImpactCategory
+    confidence?: number
+    citation?: StructuredCitation
+}
+
+function parseStructuredFindings(json: string): Map<string, { confidence?: number; citation?: StructuredCitation; severity?: string; impact?: string }> {
+    const map = new Map<string, { confidence?: number; citation?: StructuredCitation; severity?: string; impact?: string }>()
+    try {
+        const parsed = JSON.parse(json)
+        const processArray = (items: unknown[], keyPrefix: string) => {
+            if (!Array.isArray(items)) return
+            for (const item of items) {
+                if (!item || typeof item !== 'object') continue
+                const record = item as Record<string, unknown>
+                const text = (record.description || record.question || record.takeaway || record.suggestion || record.topic || '') as string
+                if (!text) continue
+                const citations = Array.isArray(record.citations) ? record.citations : []
+                map.set(`${keyPrefix}:${text.slice(0, 80)}`, {
+                    confidence: typeof record.confidence_score === 'number' ? record.confidence_score : undefined,
+                    citation: citations[0] as StructuredCitation | undefined,
+                    severity: (record.severity || '') as string,
+                    impact: (record.impact || '') as string,
+                })
+            }
+        }
+        if (parsed?.flags) {
+            processArray(parsed.flags.red_flags, 'red')
+            processArray(parsed.flags.yellow_flags, 'yellow')
+            processArray(parsed.flags.green_flags, 'green')
+        }
+        processArray(parsed?.reconciliation_findings, 'conflict')
+        processArray(parsed?.open_questions, 'question')
+        processArray(parsed?.negotiation_levers, 'lever')
+        processArray(parsed?.key_acquisition_takeaways, 'takeaway')
+    } catch {}
+    return map
 }
 
 const IMPACT_LABELS: Record<ImpactCategory, string> = {
@@ -57,24 +99,28 @@ export default function MaterialImpactView({ synthesis, onOpenEvidence }: { synt
     const [selectedCategory, setSelectedCategory] = useState<ImpactCategory | 'all'>('all')
 
     const findings = useMemo(() => {
+        const structured = parseStructuredFindings(synthesis.finalJudgmentJson || '{}')
         const result: CategorizedFinding[] = []
-        const groups: { key: string; items: string[] }[] = [
-            { key: 'red-flag', items: synthesis.redFlags },
-            { key: 'yellow-flag', items: synthesis.yellowFlags },
-            { key: 'conflict', items: synthesis.crossDocumentConflicts },
-            { key: 'negotiation-lever', items: synthesis.negotiationLevers },
-            { key: 'missing-document', items: synthesis.missingDocuments },
-            { key: 'open-question', items: synthesis.openQuestions },
+        const groups: { key: string; items: string[]; prefix: string }[] = [
+            { key: 'red-flag', items: synthesis.redFlags, prefix: 'red' },
+            { key: 'yellow-flag', items: synthesis.yellowFlags, prefix: 'yellow' },
+            { key: 'conflict', items: synthesis.crossDocumentConflicts, prefix: 'conflict' },
+            { key: 'negotiation-lever', items: synthesis.negotiationLevers, prefix: 'lever' },
+            { key: 'missing-document', items: synthesis.missingDocuments, prefix: 'question' },
+            { key: 'open-question', items: synthesis.openQuestions, prefix: 'question' },
         ]
         for (const group of groups) {
             for (let i = 0; i < group.items.length; i++) {
                 const text = group.items[i]
+                const match = structured.get(`${group.prefix}:${text.slice(0, 80)}`)
                 result.push({
                     id: `${group.key}-${i}`,
                     text,
                     sourceGroup: group.key,
                     severity: getSeverity(group.key),
                     impact: classifyImpact(text, group.key),
+                    confidence: match?.confidence,
+                    citation: match?.citation,
                 })
             }
         }
@@ -115,11 +161,12 @@ export default function MaterialImpactView({ synthesis, onOpenEvidence }: { synt
                         type="button"
                         onClick={() => onOpenEvidence?.({
                             title: `${IMPACT_LABELS[finding.impact]}: finding`,
-                            sourceFile: synthesis.citations?.[0],
-                            sourceLocation: 'Project synthesis',
-                            excerpt: finding.text,
+                            sourceFile: finding.citation?.source_file || synthesis.citations?.[0],
+                            sourceLocation: finding.citation?.row_or_cell || finding.citation?.page_number || 'Project synthesis',
+                            excerpt: finding.citation?.excerpt || finding.text,
                             status: finding.severity === 'critical' ? 'Risk' : finding.severity === 'medium' ? 'Needs review' : 'Confirmed',
                             provenance: 'Material-impact mapping',
+                            confidence: finding.confidence,
                         })}
                         className={`flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-colors hover:border-primary/40 ${IMPACT_STYLES[finding.impact]}`}
                     >
@@ -129,9 +176,11 @@ export default function MaterialImpactView({ synthesis, onOpenEvidence }: { synt
                                     {finding.severity === 'critical' ? 'Critical' : finding.severity === 'medium' ? 'Medium' : 'Low'}
                                 </Badge>
                                 <Badge variant="outline">{IMPACT_LABELS[finding.impact]}</Badge>
+                                {finding.confidence !== undefined ? <Badge variant="secondary">{finding.confidence}% confidence</Badge> : null}
                                 <span className="text-xs text-muted-foreground">{finding.sourceGroup.replace('-', ' ')}</span>
                             </div>
                             <p className="mt-2 text-sm leading-6 text-foreground">{finding.text}</p>
+                            {finding.citation?.source_file ? <p className="mt-1 text-xs text-muted-foreground">Source: {finding.citation.source_file}{finding.citation.row_or_cell ? ` · ${finding.citation.row_or_cell}` : ''}</p> : null}
                         </div>
                         <ArrowRight className="mt-2 h-4 w-4 shrink-0 text-primary" />
                     </button>

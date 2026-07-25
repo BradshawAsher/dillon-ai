@@ -1,36 +1,39 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import {
     AlertCircle,
     ArrowUpRight,
     Clock3,
     FileSearch,
+    Loader2,
 } from 'lucide-react'
 
 import ExpandableInsightGroup from '../components/ExpandableInsightGroup'
 import ExpandableText from '../components/ExpandableText'
-import EbitdaProjectionCard from '../components/EbitdaProjectionCard'
-import DealModelPendingCard from '../components/DealModelPendingCard'
-import AllCashReturnsCard from '../components/AllCashReturnsCard'
-import FinancedReturnsCard from '../components/FinancedReturnsCard'
-import FinancedScenarioComparisonCard from '../components/FinancedScenarioComparisonCard'
-import ScenarioComparisonCard from '../components/ScenarioComparisonCard'
-import DealStructureVisualCard from '../components/DealStructureVisualCard'
 import DealOverviewCard from '../components/DealOverviewCard'
 import DealModelReadinessCard from '../components/DealModelReadinessCard'
 import DataQualityChecksCard from '../components/DataQualityChecksCard'
-import DealValuationCard from '../components/DealValuationCard'
+import EbitdaReconstructionCard from '../components/EbitdaReconstructionCard'
 import EvidenceDrawer, { type EvidenceItem } from '../components/EvidenceDrawer'
 import ProjectChecklistCard, { type ProjectChecklistState } from '../components/ProjectChecklistCard'
 import DealWorkspaceNav, { type WorkspaceTab } from '../components/DealWorkspaceNav'
-import GrowthDecisionSummary from '../components/GrowthDecisionSummary'
-import ReturnsDecisionSummary from '../components/ReturnsDecisionSummary'
-import ProjectIntakeCard from '../components/ProjectIntakeCard'
-import ProjectPortfolioCard from '../components/ProjectPortfolioCard'
-import ProjectSynthesisCard from '../components/ProjectSynthesisCard'
-import ManagementQuestionTracker from '../components/ManagementQuestionTracker'
 import SectionHeader from '../components/SectionHeader'
-import SubmissionHistoryCard from '../components/SubmissionHistoryCard'
-import WorkflowErrorLogCard from '../components/WorkflowErrorLogCard'
+
+const EbitdaProjectionCard = lazy(() => import('../components/EbitdaProjectionCard'))
+const DealModelPendingCard = lazy(() => import('../components/DealModelPendingCard'))
+const AllCashReturnsCard = lazy(() => import('../components/AllCashReturnsCard'))
+const FinancedReturnsCard = lazy(() => import('../components/FinancedReturnsCard'))
+const FinancedScenarioComparisonCard = lazy(() => import('../components/FinancedScenarioComparisonCard'))
+const ScenarioComparisonCard = lazy(() => import('../components/ScenarioComparisonCard'))
+const DealStructureVisualCard = lazy(() => import('../components/DealStructureVisualCard'))
+const DealValuationCard = lazy(() => import('../components/DealValuationCard'))
+const GrowthDecisionSummary = lazy(() => import('../components/GrowthDecisionSummary'))
+const ReturnsDecisionSummary = lazy(() => import('../components/ReturnsDecisionSummary'))
+const ProjectIntakeCard = lazy(() => import('../components/ProjectIntakeCard'))
+const ProjectPortfolioCard = lazy(() => import('../components/ProjectPortfolioCard'))
+const ProjectSynthesisCard = lazy(() => import('../components/ProjectSynthesisCard'))
+const ManagementQuestionTracker = lazy(() => import('../components/ManagementQuestionTracker'))
+const SubmissionHistoryCard = lazy(() => import('../components/SubmissionHistoryCard'))
+const WorkflowErrorLogCard = lazy(() => import('../components/WorkflowErrorLogCard'))
 import {
     exampleProjectSyntheses,
     exampleSubmissionHistoryRows,
@@ -1397,6 +1400,7 @@ export default function DueDiligenceDashboard() {
                         onOpenEvidence={setActiveEvidence}
                     />
                     <DataQualityChecksCard model={hydratedDealModel} />
+                    <EbitdaReconstructionCard model={hydratedDealModel} onOpenEvidence={setActiveEvidence} />
                     <ProjectChecklistCard
                         projectId={activeProjectId}
                         state={projectChecklistById[activeProjectId] ?? {}}
@@ -1407,6 +1411,7 @@ export default function DueDiligenceDashboard() {
                     />
                 </section> : null}
 
+                <Suspense fallback={<div className="flex items-center justify-center gap-2 rounded-lg border border-border bg-muted/20 p-8"><Loader2 className="h-5 w-5 animate-spin text-primary" /><span className="text-sm text-muted-foreground">Loading tab…</span></div>}>
                 {activeWorkspaceTab === 'valuation' ? <DealValuationCard synthesis={activeProjectSynthesis} askingPrice={askingPrice} model={hydratedDealModel} onModelChange={handleDealModelChange} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /> : null}
                 {activeWorkspaceTab === 'returns' ? <section className="space-y-6"><ReturnsDecisionSummary model={returnsDisplayModel} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<AllCashReturnsCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<FinancedReturnsCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<FinancedScenarioComparisonCard model={returnsDisplayModel} /><DealModelPendingCard area="returns" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
                 {activeWorkspaceTab === 'growth' ? <section className="space-y-6">{isGrowthIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<GrowthDecisionSummary model={returnsDisplayModel} /><ScenarioComparisonCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><EbitdaProjectionCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><DealModelPendingCard area="growth" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
@@ -1922,6 +1927,7 @@ export default function DueDiligenceDashboard() {
                         onRefresh={() => { void triggerWorkflowErrors({ environment: activeHistoryEnvironment }) }}
                     />
                 </section> : null}
+                </Suspense>
 
                 {SHOW_LEGACY_DILIGENCE_BACKUP ? (
                 <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
