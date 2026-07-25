@@ -13,6 +13,10 @@ import DealOverviewCard from '../components/DealOverviewCard'
 import DealModelReadinessCard from '../components/DealModelReadinessCard'
 import DataQualityChecksCard from '../components/DataQualityChecksCard'
 import EbitdaReconstructionCard from '../components/EbitdaReconstructionCard'
+import CustomerConcentrationCard from '../components/CustomerConcentrationCard'
+import FinancialCompletenessCard from '../components/FinancialCompletenessCard'
+import AddBackQualityCard from '../components/AddBackQualityCard'
+import QuickFilterBar from '../components/QuickFilterBar'
 import EvidenceDrawer, { type EvidenceItem } from '../components/EvidenceDrawer'
 import ProjectChecklistCard, { type ProjectChecklistState } from '../components/ProjectChecklistCard'
 import DealWorkspaceNav, { type WorkspaceTab } from '../components/DealWorkspaceNav'
@@ -1394,13 +1398,26 @@ export default function DueDiligenceDashboard() {
                         onOpenEvidence={setActiveEvidence}
                         exampleMode={isExampleMode}
                     />
+                    <QuickFilterBar
+                        synthesis={activeProjectSynthesis}
+                        onJumpTo={(target) => {
+                            setActiveWorkspaceTab('synthesis')
+                            setTimeout(() => {
+                                const el = document.getElementById(`synthesis-${target}`)
+                                el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                            }, 150)
+                        }}
+                    />
                     <DealModelReadinessCard
                         model={hydratedDealModel}
                         documents={activeProjectDocuments}
                         onOpenEvidence={setActiveEvidence}
                     />
+                    <FinancialCompletenessCard model={hydratedDealModel} documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} />
                     <DataQualityChecksCard model={hydratedDealModel} />
                     <EbitdaReconstructionCard model={hydratedDealModel} onOpenEvidence={setActiveEvidence} />
+                    <AddBackQualityCard model={hydratedDealModel} synthesis={activeProjectSynthesis} onOpenEvidence={setActiveEvidence} />
+                    {activeProjectSynthesis && <CustomerConcentrationCard synthesis={activeProjectSynthesis} onOpenEvidence={setActiveEvidence} />}
                     <ProjectChecklistCard
                         projectId={activeProjectId}
                         state={projectChecklistById[activeProjectId] ?? {}}
