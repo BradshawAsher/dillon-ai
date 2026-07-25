@@ -67,6 +67,12 @@ Before closing any `[-]` item, verify it against a **new live n8n run**, not exa
 - [x] Handle exceptionally large documents without strict rejection. A 100,000-extracted-character threshold records a visible advisory and continues analysis; only clearly abusive requests should be stopped in a future policy.
 - [x] Keep edge-case handling intentionally lax. Bad table shape and large-document detection are advisories; malformed provider output retries; a failed document can be retried/excluded without blocking synthesis of usable documents.
 
+- Can we add estimated time is 1 min for doc specific latest doc submission?
+- Can we make escalation reasons, ai summary also clickable for citations?
+- I don't get what the bottom of the valuation page means?
+- Show the saved model assumptions initially for returns, valuation, deal structure, and growth, so the user can see what they are? Why is there no place for saved model assumptions on valuation?
+- Did we add parsing of pure numbers and deterministic double checking? Have that be explained to you?
+
 ## Immediate live-data fixes
 
 - [x] Confirm a provider parse failure retries and then reaches a graceful terminal failure state instead of crashing the Pod 1 pipeline. A broader post-fix regression remains open below.
