@@ -22,8 +22,17 @@ import QuickFilterBar from '../components/QuickFilterBar'
 const BuyerProfileCard = lazy(() => import('../components/BuyerProfileCard'))
 const CostPerRunCard = lazy(() => import('../components/CostPerRunCard'))
 const IndustryBenchmarksCard = lazy(() => import('../components/IndustryBenchmarksCard'))
-import { getStoredAuth, clearAuth } from '../components/AuthGate'
+const WhatsNewCard = lazy(() => import('../components/WhatsNewCard'))
+import LoginButton from '../components/AuthGate'
+const CommandPalette = lazy(() => import('../components/CommandPalette'))
+import ExportDealButton, { buildMarkdownReport, buildJsonExport, downloadFile } from '../components/ExportDealButton'
+import KeyboardShortcutsDialog from '../components/KeyboardShortcutsDialog'
+import NotificationCenter, { type Notification } from '../components/NotificationCenter'
+import ActivityFeed from '../components/ActivityFeed'
 import DealHealthKPIs from '../components/DealHealthKPIs'
+import DealReadinessGauge from '../components/DealReadinessGauge'
+import DealScorecard from '../components/DealScorecard'
+import PipelineStatusIndicator from '../components/PipelineStatusIndicator'
 const DealTimelineCard = lazy(() => import('../components/DealTimelineCard'))
 import ModelAssumptionsSummary from '../components/ModelAssumptionsSummary'
 import RecurringVsOneTimeCard from '../components/RecurringVsOneTimeCard'
@@ -410,6 +419,13 @@ export default function DueDiligenceDashboard() {
     const [hasRestoredLatestProject, setHasRestoredLatestProject] = useState(false)
     const [validationById, setValidationById] = useState<Record<string, boolean>>({})
     const [notesById, setNotesById] = useState<Record<string, string>>({})
+    const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
+    const [notifications, setNotifications] = useState<Notification[]>(() => {
+        const now = new Date()
+        return [
+            { id: '1', type: 'info', title: 'Welcome to MergeWorks', description: 'Upload documents or switch to example data to explore.', timestamp: now, read: false },
+        ]
+    })
     const { data: sharedActionTracker, trigger: triggerProjectActionTracker } = useGetProjectActionTracker()
     const { trigger: saveProjectActionTracker } = useSaveProjectActionTracker()
     const activeProjectId = isExampleMode ? 'atlas-001' : projectId
@@ -941,6 +957,7 @@ export default function DueDiligenceDashboard() {
         if ('Notification' in window && Notification.permission === 'granted') {
             new Notification('Document batch complete', { body: `${activeBatchFinishedCount}/${activeBatchExpectedCount} documents have reached a final status.` })
         }
+        setNotifications(prev => [{ id: `batch-${Date.now()}`, type: 'document_processed', title: 'Document batch complete', description: `${activeBatchFinishedCount}/${activeBatchExpectedCount} documents processed.`, timestamp: new Date(), read: false }, ...prev])
     }, [activeBatchExpectedCount, activeBatchFinishedCount, displayedSubmissionBatch])
 
     useEffect(() => {
@@ -954,6 +971,7 @@ export default function DueDiligenceDashboard() {
         if ('Notification' in window && Notification.permission === 'granted') {
             new Notification('Project synthesis complete', { body: 'Your due diligence synthesis is ready to review.' })
         }
+        setNotifications(prev => [{ id: `synth-${Date.now()}`, type: 'synthesis_complete', title: 'Synthesis complete', description: 'Your due diligence synthesis is ready to review.', timestamp: new Date(), read: false }, ...prev])
     }, [activeProjectId, activeProjectSynthesisSucceeded, isCurrentProjectAwaitingSynthesis])
 
     const enableDesktopNotifications = async () => {
@@ -962,6 +980,21 @@ export default function DueDiligenceDashboard() {
         const permission = await Notification.requestPermission()
         setDesktopNotificationPermission(permission)
     }
+
+    useEffect(() => {
+        function handleCtrlK(e: KeyboardEvent) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault()
+                setCommandPaletteOpen(prev => !prev)
+            }
+        }
+        window.addEventListener('keydown', handleCtrlK)
+        return () => window.removeEventListener('keydown', handleCtrlK)
+    }, [])
+
+    const handleMarkNotificationRead = (id: string) => setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
+    const handleMarkAllNotificationsRead = () => setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+    const handleClearNotifications = () => setNotifications([])
 
     useEffect(() => {
         if (selectedProjectKey === 'new') {
@@ -1241,23 +1274,24 @@ export default function DueDiligenceDashboard() {
                             <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
                                 Project-based diligence cockpit
                             </h1>
-                            <Badge variant="secondary" className="rounded-md px-3 py-1 text-xs font-medium">
-                                Async intake + polling enabled
-                            </Badge>
-                            <Button type="button" size="sm" variant="outline" className="gap-1.5" onClick={() => { const next = currentTheme === 'dark' ? 'light' : currentTheme === 'light' ? 'system' : 'dark'; setCurrentTheme(next); setStoredTheme(next) }}>
-                                {currentTheme === 'dark' ? <Moon className="h-3.5 w-3.5" /> : <Sun className="h-3.5 w-3.5" />}
-                                {currentTheme === 'system' ? 'Auto' : currentTheme === 'dark' ? 'Dark' : 'Light'}
+                            <PipelineStatusIndicator
+                                isPolling={!isExampleMode}
+                                hasActiveSubmissions={activeProjectDocuments.some(d => isActiveSubmissionStatus(d.status))}
+                                hasErrors={false}
+                            />
+                            <Button type="button" variant="outline" className="gap-2 px-4 py-2 text-sm" onClick={() => { const next = currentTheme === 'dark' ? 'light' : currentTheme === 'light' ? 'system' : 'dark'; setCurrentTheme(next); setStoredTheme(next) }}>
+                                {currentTheme === 'dark' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+                                {currentTheme === 'system' ? 'Auto theme' : currentTheme === 'dark' ? 'Dark mode' : 'Light mode'}
                             </Button>
-                            {desktopNotificationPermission !== 'unsupported' ? (
-                                <Button type="button" size="sm" variant="outline" disabled={desktopNotificationPermission === 'denied'} onClick={() => { void enableDesktopNotifications() }}>
-                                    {desktopNotificationPermission === 'granted' ? 'Completion alerts on' : desktopNotificationPermission === 'denied' ? 'Desktop alerts blocked' : 'Enable completion alerts'}
-                                </Button>
-                            ) : null}
-                            {getStoredAuth() && (
-                                <Button type="button" size="sm" variant="ghost" className="gap-1.5 text-xs" onClick={() => { clearAuth(); window.location.reload() }}>
-                                    {getStoredAuth()!.name} ({getStoredAuth()!.team}) · Sign out
-                                </Button>
-                            )}
+                            <ExportDealButton model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
+                            <KeyboardShortcutsDialog />
+                            <NotificationCenter
+                                notifications={notifications}
+                                onMarkRead={handleMarkNotificationRead}
+                                onMarkAllRead={handleMarkAllNotificationsRead}
+                                onClear={handleClearNotifications}
+                            />
+                            <LoginButton />
                         </div>
                         <p className="max-w-4xl text-sm text-muted-foreground">
                             Shift from one-off document extraction to project-level diligence. Group uploads into a shared project,
@@ -1416,6 +1450,19 @@ export default function DueDiligenceDashboard() {
                         impact={activeProjectImpact}
                         documentsCount={activeProjectDocuments.length}
                     />
+                    <DealReadinessGauge
+                        model={hydratedDealModel}
+                        synthesis={activeProjectSynthesis}
+                        documentsCount={activeProjectDocuments.length}
+                        completedDocuments={activeProjectImpact.completedDocuments}
+                    />
+                    <DealScorecard
+                        model={hydratedDealModel}
+                        synthesis={activeProjectSynthesis}
+                        impact={activeProjectImpact}
+                        documentsCount={activeProjectDocuments.length}
+                    />
+                    <ActivityFeed documents={activeProjectDocuments} />
                     <DealOverviewCard
                         syntheses={visibleProjectSyntheses}
                         projects={projectSummaries}
@@ -1457,7 +1504,7 @@ export default function DueDiligenceDashboard() {
                     />
                     <BuyerProfileCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
                     <IndustryBenchmarksCard />
-                    <CostPerRunCard documentsProcessed={impact.completedDocuments} synthesisRuns={projectSyntheses.length} />
+                    <CostPerRunCard documentsProcessed={impact.completedDocuments} synthesisRuns={visibleProjectSyntheses.length} />
                     </Suspense>
                     <ProjectChecklistCard
                         projectId={activeProjectId}
@@ -1467,6 +1514,7 @@ export default function DueDiligenceDashboard() {
                         employeeConfirmed={Boolean(projectSummaries.find((project) => (project.projectId || project.projectKey) === activeProjectId)?.employeeCount) || isExampleMode}
                         hasAskingPrice={askingPrice.trim().length > 0 || activeDealModel.askingPrice !== null}
                     />
+                    <Suspense fallback={null}><WhatsNewCard /></Suspense>
                 </section> : null}
 
                 <Suspense fallback={<div className="flex items-center justify-center gap-2 rounded-lg border border-border bg-muted/20 p-8"><Loader2 className="h-5 w-5 animate-spin text-primary" /><span className="text-sm text-muted-foreground">Loading tab…</span></div>}>
@@ -2278,6 +2326,18 @@ export default function DueDiligenceDashboard() {
             <EvidenceDrawer evidence={activeEvidence} onClose={() => setActiveEvidence(null)} />
             <Suspense fallback={null}>
                 <DealChatPanel synthesis={activeProjectSynthesis} model={hydratedDealModel} projectName={dealName || suggestedProjectName} />
+            </Suspense>
+            <Suspense fallback={null}>
+                <CommandPalette
+                    open={commandPaletteOpen}
+                    onClose={() => setCommandPaletteOpen(false)}
+                    onSelectTab={(tab) => setActiveWorkspaceTab(tab as WorkspaceTab)}
+                    onToggleTheme={() => { const next = currentTheme === 'dark' ? 'light' : currentTheme === 'light' ? 'system' : 'dark'; setCurrentTheme(next); setStoredTheme(next) }}
+                    onExportMarkdown={() => { const name = dealName || suggestedProjectName; const safeName = name.replace(/[^a-zA-Z0-9-_]/g, '_').slice(0, 50) || 'deal'; downloadFile(buildMarkdownReport(hydratedDealModel, activeProjectSynthesis, name), `${safeName}_summary.md`, 'text/markdown') }}
+                    onExportJson={() => { const name = dealName || suggestedProjectName; const safeName = name.replace(/[^a-zA-Z0-9-_]/g, '_').slice(0, 50) || 'deal'; downloadFile(JSON.stringify(buildJsonExport(hydratedDealModel, activeProjectSynthesis, name), null, 2), `${safeName}_export.json`, 'application/json') }}
+                    onShowShortcuts={() => {}}
+                    onOpenChat={() => {}}
+                />
             </Suspense>
         </div>
     )
