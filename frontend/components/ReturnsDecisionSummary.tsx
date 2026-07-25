@@ -33,7 +33,7 @@ export default function ReturnsDecisionSummary({ model }: { model: DealModel }) 
     const uses = price === null ? null : price + (model.transactionFees ?? 0) + (model.workingCapitalRequirement ?? 0)
     const equityPercent = model.equityContributionPercent ?? 0.3
     const equity = uses === null ? null : uses * equityPercent
-    const debt = uses === null ? null : Math.max(0, uses - equity - (model.sellerNoteAmount ?? 0))
+    const debt = uses === null || equity === null ? null : Math.max(0, uses - equity - (model.sellerNoteAmount ?? 0))
     const interestRate = model.interestRate ?? 0.1
     const amortization = model.amortizationYears ?? 10
     const annualDebtService = debt === null ? null : interestRate === 0 ? debt / amortization : debt * ((interestRate * (1 + interestRate) ** amortization) / ((1 + interestRate) ** amortization - 1))
