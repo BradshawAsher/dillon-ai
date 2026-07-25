@@ -82,6 +82,7 @@ Before closing any `[-]` item, verify it against a **new live n8n run**, not exa
 - Give more pop out numbers like 5 red flags 3 green flags and just 3 key things in project synthesis without the user having to see?
 - In what cases are we not giving a valuation? Should we make the requirements for giving a valuation less strict?
 - Show we give lower bound, upper bound, and base estimate for latest project submission for per doc, maybe gets updates by previous docs in the cases of batch uploading or no, so the user can get an initial idea?
+- Maybe have explicit buttons for upload more files for this project in latest doc submission, synthesis, and in project portfolio and audit trail?
 
 ## Immediate live-data fixes
 
