@@ -2023,6 +2023,7 @@ export default function DueDiligenceDashboard() {
                         synthesisStage={isExampleMode ? 'Example synthesis complete' : currentSynthesisProgress.stage}
                         loading={projectSynthesisLoading}
                         error={projectSynthesisError}
+                        model={hydratedDealModel}
                         impact={activeProjectImpact}
                         documents={submissionHistory.filter((row) => getProjectKey(row) === activeProjectId)}
                         onOpenEvidence={setActiveEvidence}
