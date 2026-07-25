@@ -1,6 +1,6 @@
 import { FileUp, FileCheck, Sparkles, AlertCircle, Clock } from 'lucide-react'
 
-import type { SubmissionHistoryItem } from '../utils/submissionHistory'
+import { type SubmissionHistoryItem, isActiveSubmissionStatus } from '../utils/submissionHistory'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 
 type Props = {
@@ -45,7 +45,8 @@ export default function ActivityFeed({ documents, maxItems = 8 }: Props) {
             })
         }
 
-        if (doc.status === 'completed' && doc.processedAt) {
+        const isActive = isActiveSubmissionStatus(doc.status)
+        if (!isActive && doc.processedAt && doc.status.toLowerCase() !== 'failed') {
             events.push({
                 id: `done-${doc.requestID}`,
                 icon: <FileCheck className="h-3.5 w-3.5 text-green-500" />,
@@ -54,7 +55,7 @@ export default function ActivityFeed({ documents, maxItems = 8 }: Props) {
                 time: relativeTime(doc.processedAt),
                 sortTime: new Date(doc.processedAt).getTime(),
             })
-        } else if (doc.status === 'failed') {
+        } else if (doc.status.toLowerCase() === 'failed') {
             events.push({
                 id: `fail-${doc.requestID}`,
                 icon: <AlertCircle className="h-3.5 w-3.5 text-destructive" />,
@@ -63,7 +64,7 @@ export default function ActivityFeed({ documents, maxItems = 8 }: Props) {
                 time: relativeTime(doc.processedAt || uploadTime),
                 sortTime: new Date(doc.processedAt || uploadTime).getTime(),
             })
-        } else if (doc.status === 'processing') {
+        } else if (isActive) {
             events.push({
                 id: `proc-${doc.requestID}`,
                 icon: <Clock className="h-3.5 w-3.5 text-amber-500 animate-pulse" />,
