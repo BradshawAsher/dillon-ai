@@ -84,6 +84,8 @@ Before closing any `[-]` item, verify it against a **new live n8n run**, not exa
 - Show we give lower bound, upper bound, and base estimate for latest project submission for per doc, maybe gets updates by previous docs in the cases of batch uploading or no, so the user can get an initial idea?
 - Maybe have explicit buttons for upload more files for this project in latest doc submission, synthesis, and in project portfolio and audit trail?
 - Add more sticky notes in n8n to explain what things do and make things more spaced out and organized?
+- More KPIs like in Pod 4?
+![Pod 4 dashboard](image.png)
 
 ## Immediate live-data fixes
 
