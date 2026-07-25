@@ -79,7 +79,7 @@ Before closing any `[-]` item, verify it against a **new live n8n run**, not exa
 - Change API key to Pod 1 and then be able to show cost per run?
 - Ask Trisha since there are 2 points section for week 7 there is the old one from week 6 and then the new one?
 - Self-improving algorithms maybe for agentic AI and for your tool to get better over time?
-
+- Give more pop out numbers like 5 red flags 3 green flags and just 3 key things in project synthesis without the user having to see?
 
 ## Immediate live-data fixes
 
