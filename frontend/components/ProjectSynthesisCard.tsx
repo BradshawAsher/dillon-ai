@@ -125,9 +125,9 @@ export function downloadSynthesisReport(synthesis: ProjectSynthesisItem, project
         synthesis.finalJudgmentSummary || 'No final judgment recorded.',
         '',
         '## Valuation range',
-        'Lower: ' + (synthesis.valuationLowerBound || 'Pending') + ' ' + synthesis.valuationCurrency,
-        'Base: ' + (synthesis.valuationBaseEstimate || 'Pending') + ' ' + synthesis.valuationCurrency,
-        'Upper: ' + (synthesis.valuationUpperBound || 'Pending') + ' ' + synthesis.valuationCurrency,
+        'Lower: ' + (synthesis.valuationLowerBound && synthesis.valuationLowerBound !== '0' ? synthesis.valuationLowerBound + ' ' + synthesis.valuationCurrency : 'Pending'),
+        'Base: ' + (synthesis.valuationBaseEstimate && synthesis.valuationBaseEstimate !== '0' ? synthesis.valuationBaseEstimate + ' ' + synthesis.valuationCurrency : 'Pending'),
+        'Upper: ' + (synthesis.valuationUpperBound && synthesis.valuationUpperBound !== '0' ? synthesis.valuationUpperBound + ' ' + synthesis.valuationCurrency : 'Pending'),
         '',
         ...section('Cross-document conflicts', synthesis.crossDocumentConflicts),
         ...section('Negotiation levers', synthesis.negotiationLevers),
@@ -477,7 +477,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
 
                             <div className="rounded-xl border-2 border-primary/60 bg-primary/10 p-4 shadow-sm"><p className="text-sm font-bold uppercase tracking-wide text-primary">Next step after the synthesis</p><p className="mt-1 text-sm leading-6 text-foreground">Use the Management Question Tracker immediately below this synthesis to turn the open questions into an owner, due date, and follow-up plan. It is the best place to resolve the gaps that could change the acquisition decision.</p></div>
 
-                            {synthesis.valuationBaseEstimate || synthesis.valuationLowerBound || synthesis.valuationUpperBound ? (
+                            {(synthesis.valuationBaseEstimate && synthesis.valuationBaseEstimate !== '0') || (synthesis.valuationLowerBound && synthesis.valuationLowerBound !== '0') || (synthesis.valuationUpperBound && synthesis.valuationUpperBound !== '0') ? (
                                 <div className="grid gap-2 md:grid-cols-3">
                                     <div className="rounded-md border border-border bg-background px-3 py-2">
                                         <div className="flex items-center justify-between gap-2">

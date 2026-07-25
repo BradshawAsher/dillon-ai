@@ -157,16 +157,17 @@ export default function DealChatPanel({ synthesis, model, projectName }: Props) 
         return (
             <button
                 onClick={() => setIsOpen(true)}
-                className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-105 active:scale-95"
-                aria-label="Open deal chat"
+                className="fixed bottom-20 right-6 z-50 flex items-center gap-2.5 rounded-full bg-primary px-5 py-3 text-primary-foreground shadow-lg transition-transform hover:scale-105 active:scale-95"
+                aria-label="Open AI deal assistant"
             >
-                <MessageCircle className="h-6 w-6" />
+                <Bot className="h-5 w-5" />
+                <span className="text-sm font-medium">AI Deal Assistant</span>
             </button>
         )
     }
 
     return (
-        <Card className="fixed bottom-6 right-6 z-50 flex h-[500px] w-[380px] flex-col overflow-hidden shadow-2xl sm:w-[420px]">
+        <Card className="fixed bottom-20 right-6 z-50 flex h-[500px] w-[380px] flex-col overflow-hidden shadow-2xl sm:w-[420px]">
             <div className="flex items-center justify-between border-b border-border bg-primary/5 px-4 py-3">
                 <div className="flex items-center gap-2">
                     <Bot className="h-5 w-5 text-primary" />
