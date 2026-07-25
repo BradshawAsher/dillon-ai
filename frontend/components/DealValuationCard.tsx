@@ -153,7 +153,16 @@ export default function DealValuationCard({ synthesis, askingPrice, model, onMod
                     })}</div>}
                 </div>
                 {!synthesis ? (
-                    <div className="rounded-lg border border-dashed border-border bg-muted/20 p-6 text-sm text-muted-foreground">A valuation page will populate after project synthesis returns a supported range.</div>
+                    <div className="rounded-xl border-2 border-dashed border-border bg-muted/20 p-6 space-y-3">
+                        <p className="text-sm font-semibold text-foreground">Why is there no synthesis-backed valuation yet?</p>
+                        <p className="text-sm leading-6 text-muted-foreground">The supported valuation range (downside / base / upside) comes from the project synthesis workflow. It requires:</p>
+                        <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
+                            <li>At least one completed document with usable financial extraction</li>
+                            <li>A finished project synthesis run (triggered automatically after all documents complete)</li>
+                            <li>The synthesis LLM returning explicit valuation bounds (it may decline if insufficient financial data exists)</li>
+                        </ul>
+                        <p className="text-sm text-muted-foreground">The three-method comparison and sensitivity grid above still work using your saved assumptions and any confirmed facts. Upload more financial documents or run synthesis to unlock the full range.</p>
+                    </div>
                 ) : (
                     <>
                         <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.75fr)]">
@@ -169,9 +178,18 @@ export default function DealValuationCard({ synthesis, askingPrice, model, onMod
                             </div>
                         </div>
 
+                        <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+                            <p className="text-sm font-bold uppercase tracking-wide text-primary">What do the sections below mean?</p>
+                            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                                <strong>Value-risk bridge:</strong> Qualitative risks from conflicting documents that could justify negotiating price down. These are not automatic adjustments — they require analyst judgment to quantify.
+                            </p>
+                            <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                                <strong>Impact bridge:</strong> A waterfall showing how each risk category would adjust the base value if you apply the suggested haircuts.
+                            </p>
+                        </div>
                         <div className="grid gap-3 xl:grid-cols-2">
-                            <div className="rounded-xl border border-border bg-muted/20 p-4"><div className="flex items-center gap-2"><TriangleAlert className="h-4 w-4 text-warning" /><p className="text-sm font-semibold">Value-risk bridge</p></div><p className="mt-2 text-sm leading-6 text-muted-foreground">The workflow has identified the following items as price or terms considerations. Quantified value adjustments require a valuation-method model and analyst-approved assumptions.</p><ul className="mt-3 space-y-2 text-sm">{synthesis.crossDocumentConflicts.length > 0 ? synthesis.crossDocumentConflicts.map((item) => <li key={item} className="rounded-md border border-border bg-background p-3">{item}</li>) : <li className="text-muted-foreground">No cross-document valuation risks recorded.</li>}</ul></div>
-                            <div className="rounded-xl border border-border bg-muted/20 p-4"><p className="text-sm font-semibold">Method comparison</p><p className="mt-2 text-sm leading-6 text-muted-foreground">All three methods remain visible. A documented-and-saved method is evidence-backed; an Illustrative method is a display-only starting point until returned facts or your saved assumptions replace it. The sensitivity grid shows exit enterprise value, not a probability-weighted valuation or IRR.</p><div className="mt-4 flex flex-wrap gap-2"><Badge variant="outline">Asset-based</Badge><Badge variant="outline">Revenue multiple</Badge><Badge variant="outline">EBITDA / SDE multiple</Badge><Badge variant="outline">Sensitivity analysis</Badge></div></div>
+                            <div className="rounded-xl border border-border bg-muted/20 p-4"><div className="flex items-center gap-2"><TriangleAlert className="h-4 w-4 text-warning" /><p className="text-sm font-semibold">Value-risk bridge</p></div><p className="mt-2 text-sm leading-6 text-muted-foreground">Cross-document conflicts that may affect price. Each is a negotiation lever — use them to justify a lower offer or request additional diligence.</p><ul className="mt-3 space-y-2 text-sm">{synthesis.crossDocumentConflicts.length > 0 ? synthesis.crossDocumentConflicts.map((item) => <li key={item} className="rounded-md border border-border bg-background p-3">{item}</li>) : <li className="text-muted-foreground">No cross-document valuation risks recorded.</li>}</ul></div>
+                            <div className="rounded-xl border border-border bg-muted/20 p-4"><p className="text-sm font-semibold">How to read these methods</p><p className="mt-2 text-sm leading-6 text-muted-foreground">Each method gives you a different lens on value. <strong>Asset-based</strong> = floor value if you liquidated today. <strong>Revenue multiple</strong> = market comp for top-line businesses. <strong>EBITDA multiple</strong> = cash-flow-based value, the most common for M&A. The <strong>sensitivity grid</strong> (above) shows what the business could be worth at exit under different growth/margin assumptions — it is NOT a current valuation, it is a forward-looking scenario analysis.</p><div className="mt-4 flex flex-wrap gap-2"><Badge variant="outline">Asset-based = floor</Badge><Badge variant="outline">Revenue = market comp</Badge><Badge variant="outline">EBITDA = cash flow</Badge><Badge variant="outline">Sensitivity = future exit</Badge></div></div>
                         </div>
                         <ValuationImpactBridge synthesis={synthesis} baseValue={baseValue} onOpenEvidence={onOpenEvidence} />
                     </>

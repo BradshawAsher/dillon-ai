@@ -4,6 +4,7 @@ import type { DealModel } from '../hooks/backend/diligence'
 import { Badge } from '../lib/shadcn/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { parseDocumentedFacts, type EvidenceItem } from '../utils/evidence'
+import { WaterfallChart, type WaterfallDatum } from './DealCharts'
 
 function money(value: number) {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value)
@@ -108,6 +109,16 @@ export default function EbitdaReconstructionCard({ model, onOpenEvidence }: { mo
                     </div>
                 ))}
             </div> : null}
+
+            <WaterfallChart
+                title="EBITDA bridge"
+                description="Visual flow from revenue through expenses to EBITDA/SDE. Green bars add value; red bars subtract."
+                data={lines.map((line): WaterfallDatum => ({
+                    label: line.label.replace('Less: ', '').replace('Plus: ', '').replace(' (implied)', ''),
+                    value: line.value,
+                    type: line.label === 'Revenue' || line.label === 'EBITDA / SDE' ? 'total' : line.value >= 0 ? 'positive' : 'negative',
+                }))}
+            />
 
             <p className="mt-4 text-xs text-muted-foreground">Click any line to see its evidence source. Additional line items (interest, taxes, depreciation, add-backs) appear automatically when documented by the uploaded financials.</p>
         </CardContent>

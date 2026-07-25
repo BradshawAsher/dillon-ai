@@ -495,7 +495,18 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                         <p className="mt-1 text-sm text-foreground">{formatCurrencyValue(synthesis.valuationUpperBound, synthesis.valuationCurrency) || 'Pending'}</p>
                                     </div>
                                 </div>
-                            ) : null}
+                            ) : (
+                                <div className="rounded-lg border border-dashed border-warning/40 bg-warning/5 p-4">
+                                    <p className="text-sm font-semibold text-foreground">No valuation range returned</p>
+                                    <p className="mt-1 text-sm leading-6 text-muted-foreground">The synthesis completed but did not produce valuation bounds. This typically happens when:</p>
+                                    <ul className="mt-2 list-disc pl-5 space-y-1 text-sm text-muted-foreground">
+                                        <li>The uploaded documents lack explicit revenue or EBITDA figures</li>
+                                        <li>Financial data was too incomplete or contradictory for the LLM to produce a defensible range</li>
+                                        <li>The documents are operational/legal rather than financial in nature</li>
+                                    </ul>
+                                    <p className="mt-2 text-sm text-muted-foreground">Upload financial statements (P&L, balance sheet) with clear revenue and earnings figures, then run synthesis again. The Valuation tab still shows method comparisons using your saved assumptions.</p>
+                                </div>
+                            )}
 
                             <div className="grid gap-2 rounded-lg border border-border bg-muted/20 p-3 sm:grid-cols-2">
                                 <label className="flex flex-col gap-1">

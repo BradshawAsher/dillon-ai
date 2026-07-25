@@ -829,6 +829,15 @@ export default function SubmissionHistoryCard({
                                 </div>
                               ) : null}
                               {reconciliation.warnings?.length ? <p className="text-sm text-destructive">{reconciliation.warnings.map(formatReconciliationLabel).join(' · ')}</p> : null}
+                              <details className="group rounded-md border border-border bg-muted/20">
+                                <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground">What are deterministic math checks?</summary>
+                                <div className="px-3 pb-3 text-xs leading-5 text-muted-foreground space-y-2">
+                                  <p>These checks run <strong>without AI</strong> — they are pure arithmetic verifications on the numbers the LLM extracted from your document.</p>
+                                  <p><strong>What they check:</strong> Revenue − COGS = Gross Profit, Revenue − Operating Expenses ≈ EBITDA, Assets − Liabilities = Equity, and similar accounting identities. Each formula is checked to within a 2% tolerance.</p>
+                                  <p><strong>Why they matter:</strong> If the LLM hallucinated or misread a number, these checks catch it immediately. A "Contradicted" result means the extracted numbers don&apos;t add up — go back to the source document and verify.</p>
+                                  <p><strong>Limitations:</strong> Checks can only run when the document contains at least two related confirmed numbers in the same period and currency. Single-number documents or qualitative-only documents won&apos;t produce any checks.</p>
+                                </div>
+                              </details>
                             </div>
                           </ExpandableInsightGroup>
                         ) : null}

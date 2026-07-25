@@ -5,6 +5,8 @@ import {
     Clock3,
     FileSearch,
     Loader2,
+    Moon,
+    Sun,
 } from 'lucide-react'
 
 import ExpandableInsightGroup from '../components/ExpandableInsightGroup'
@@ -12,12 +14,20 @@ import ExpandableText from '../components/ExpandableText'
 import DealOverviewCard from '../components/DealOverviewCard'
 import DealModelReadinessCard from '../components/DealModelReadinessCard'
 import DataQualityChecksCard from '../components/DataQualityChecksCard'
-import EbitdaReconstructionCard from '../components/EbitdaReconstructionCard'
+const EbitdaReconstructionCard = lazy(() => import('../components/EbitdaReconstructionCard'))
 import CustomerConcentrationCard from '../components/CustomerConcentrationCard'
 import FinancialCompletenessCard from '../components/FinancialCompletenessCard'
 import AddBackQualityCard from '../components/AddBackQualityCard'
 import QuickFilterBar from '../components/QuickFilterBar'
+const BuyerProfileCard = lazy(() => import('../components/BuyerProfileCard'))
+const CostPerRunCard = lazy(() => import('../components/CostPerRunCard'))
+const IndustryBenchmarksCard = lazy(() => import('../components/IndustryBenchmarksCard'))
+import { getStoredAuth, clearAuth } from '../components/AuthGate'
 import DealHealthKPIs from '../components/DealHealthKPIs'
+const DealTimelineCard = lazy(() => import('../components/DealTimelineCard'))
+import ModelAssumptionsSummary from '../components/ModelAssumptionsSummary'
+import RecurringVsOneTimeCard from '../components/RecurringVsOneTimeCard'
+const SystemArchitectureCard = lazy(() => import('../components/SystemArchitectureCard'))
 import EvidenceDrawer, { type EvidenceItem } from '../components/EvidenceDrawer'
 import ProjectChecklistCard, { type ProjectChecklistState } from '../components/ProjectChecklistCard'
 import DealWorkspaceNav, { type WorkspaceTab } from '../components/DealWorkspaceNav'
@@ -38,6 +48,7 @@ const ProjectPortfolioCard = lazy(() => import('../components/ProjectPortfolioCa
 const ProjectSynthesisCard = lazy(() => import('../components/ProjectSynthesisCard'))
 const ManagementQuestionTracker = lazy(() => import('../components/ManagementQuestionTracker'))
 const SubmissionHistoryCard = lazy(() => import('../components/SubmissionHistoryCard'))
+const DealChatPanel = lazy(() => import('../components/DealChatPanel'))
 const WorkflowErrorLogCard = lazy(() => import('../components/WorkflowErrorLogCard'))
 import {
     exampleProjectSyntheses,
@@ -57,6 +68,7 @@ import {
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
+import { getStoredTheme, setStoredTheme } from '../lib/darkMode'
 import { getDataSource, setDataSource } from '../lib/dataSource'
 import { Progress } from '../lib/shadcn/progress'
 import { Switch } from '../lib/shadcn/switch'
@@ -381,6 +393,7 @@ export default function DueDiligenceDashboard() {
     const [retryingRequestId, setRetryingRequestId] = useState<string | null>(null)
     const [activeSubmissionBatch, setActiveSubmissionBatch] = useState<SubmissionBatch | null>(null)
     const [activeHistoryEnvironment, setActiveHistoryEnvironment] = useState<SubmitEnvironment>('production')
+    const [currentTheme, setCurrentTheme] = useState(getStoredTheme)
     const [desktopNotificationPermission, setDesktopNotificationPermission] = useState<NotificationPermission | 'unsupported'>(() => {
         if (typeof window === 'undefined' || !('Notification' in window)) return 'unsupported'
         return Notification.permission
@@ -1231,11 +1244,20 @@ export default function DueDiligenceDashboard() {
                             <Badge variant="secondary" className="rounded-md px-3 py-1 text-xs font-medium">
                                 Async intake + polling enabled
                             </Badge>
+                            <Button type="button" size="sm" variant="outline" className="gap-1.5" onClick={() => { const next = currentTheme === 'dark' ? 'light' : currentTheme === 'light' ? 'system' : 'dark'; setCurrentTheme(next); setStoredTheme(next) }}>
+                                {currentTheme === 'dark' ? <Moon className="h-3.5 w-3.5" /> : <Sun className="h-3.5 w-3.5" />}
+                                {currentTheme === 'system' ? 'Auto' : currentTheme === 'dark' ? 'Dark' : 'Light'}
+                            </Button>
                             {desktopNotificationPermission !== 'unsupported' ? (
                                 <Button type="button" size="sm" variant="outline" disabled={desktopNotificationPermission === 'denied'} onClick={() => { void enableDesktopNotifications() }}>
                                     {desktopNotificationPermission === 'granted' ? 'Completion alerts on' : desktopNotificationPermission === 'denied' ? 'Desktop alerts blocked' : 'Enable completion alerts'}
                                 </Button>
                             ) : null}
+                            {getStoredAuth() && (
+                                <Button type="button" size="sm" variant="ghost" className="gap-1.5 text-xs" onClick={() => { clearAuth(); window.location.reload() }}>
+                                    {getStoredAuth()!.name} ({getStoredAuth()!.team}) · Sign out
+                                </Button>
+                            )}
                         </div>
                         <p className="max-w-4xl text-sm text-muted-foreground">
                             Shift from one-off document extraction to project-level diligence. Group uploads into a shared project,
@@ -1423,9 +1445,20 @@ export default function DueDiligenceDashboard() {
                     />
                     <FinancialCompletenessCard model={hydratedDealModel} documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} />
                     <DataQualityChecksCard model={hydratedDealModel} />
-                    <EbitdaReconstructionCard model={hydratedDealModel} onOpenEvidence={setActiveEvidence} />
+                    <Suspense fallback={null}><EbitdaReconstructionCard model={hydratedDealModel} onOpenEvidence={setActiveEvidence} /></Suspense>
                     <AddBackQualityCard model={hydratedDealModel} synthesis={activeProjectSynthesis} onOpenEvidence={setActiveEvidence} />
+                    {activeProjectSynthesis && <RecurringVsOneTimeCard model={hydratedDealModel} synthesis={activeProjectSynthesis} onOpenEvidence={setActiveEvidence} />}
                     {activeProjectSynthesis && <CustomerConcentrationCard synthesis={activeProjectSynthesis} onOpenEvidence={setActiveEvidence} />}
+                    <Suspense fallback={null}>
+                    <DealTimelineCard
+                        documents={activeProjectDocuments}
+                        synthesis={activeProjectSynthesis}
+                        projectName={dealName || suggestedProjectName}
+                    />
+                    <BuyerProfileCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
+                    <IndustryBenchmarksCard />
+                    <CostPerRunCard documentsProcessed={impact.completedDocuments} synthesisRuns={projectSyntheses.length} />
+                    </Suspense>
                     <ProjectChecklistCard
                         projectId={activeProjectId}
                         state={projectChecklistById[activeProjectId] ?? {}}
@@ -1437,10 +1470,10 @@ export default function DueDiligenceDashboard() {
                 </section> : null}
 
                 <Suspense fallback={<div className="flex items-center justify-center gap-2 rounded-lg border border-border bg-muted/20 p-8"><Loader2 className="h-5 w-5 animate-spin text-primary" /><span className="text-sm text-muted-foreground">Loading tab…</span></div>}>
-                {activeWorkspaceTab === 'valuation' ? <DealValuationCard synthesis={activeProjectSynthesis} askingPrice={askingPrice} model={hydratedDealModel} onModelChange={handleDealModelChange} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /> : null}
-                {activeWorkspaceTab === 'returns' ? <section className="space-y-6"><ReturnsDecisionSummary model={returnsDisplayModel} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<AllCashReturnsCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<FinancedReturnsCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<FinancedScenarioComparisonCard model={returnsDisplayModel} /><DealModelPendingCard area="returns" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
-                {activeWorkspaceTab === 'growth' ? <section className="space-y-6">{isGrowthIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<GrowthDecisionSummary model={returnsDisplayModel} /><ScenarioComparisonCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><EbitdaProjectionCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><DealModelPendingCard area="growth" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
-                {activeWorkspaceTab === 'structure' ? <section className="space-y-6"><DealStructureVisualCard model={hydratedDealModel} onOpenEvidence={setActiveEvidence} /><DealModelPendingCard area="structure" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
+                {activeWorkspaceTab === 'valuation' ? <section className="space-y-6"><ModelAssumptionsSummary model={hydratedDealModel} area="valuation" /><DealValuationCard synthesis={activeProjectSynthesis} askingPrice={askingPrice} model={hydratedDealModel} onModelChange={handleDealModelChange} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /></section> : null}
+                {activeWorkspaceTab === 'returns' ? <section className="space-y-6"><ModelAssumptionsSummary model={activeDealModel} area="returns" /><ReturnsDecisionSummary model={returnsDisplayModel} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<AllCashReturnsCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<FinancedReturnsCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<FinancedScenarioComparisonCard model={returnsDisplayModel} /><DealModelPendingCard area="returns" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
+                {activeWorkspaceTab === 'growth' ? <section className="space-y-6"><ModelAssumptionsSummary model={activeDealModel} area="growth" />{isGrowthIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<GrowthDecisionSummary model={returnsDisplayModel} /><ScenarioComparisonCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><EbitdaProjectionCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><DealModelPendingCard area="growth" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
+                {activeWorkspaceTab === 'structure' ? <section className="space-y-6"><ModelAssumptionsSummary model={activeDealModel} area="structure" /><DealStructureVisualCard model={hydratedDealModel} onOpenEvidence={setActiveEvidence} /><DealModelPendingCard area="structure" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
 
                 {activeWorkspaceTab === 'diligence' ? <>
 
@@ -1989,13 +2022,14 @@ export default function DueDiligenceDashboard() {
 
                 </> : null}
 
-                {activeWorkspaceTab === 'errors' ? <section id="workflow-errors" className="scroll-mt-6">
+                {activeWorkspaceTab === 'errors' ? <section id="workflow-errors" className="scroll-mt-6 space-y-6">
                     <WorkflowErrorLogCard
                         rows={Array.isArray(workflowErrorData) ? workflowErrorData : []}
                         loading={workflowErrorsLoading}
                         error={workflowErrorsError}
                         onRefresh={() => { void triggerWorkflowErrors({ environment: activeHistoryEnvironment }) }}
                     />
+                    <SystemArchitectureCard />
                 </section> : null}
                 </Suspense>
 
@@ -2242,6 +2276,9 @@ export default function DueDiligenceDashboard() {
                 ) : null}
             </main>
             <EvidenceDrawer evidence={activeEvidence} onClose={() => setActiveEvidence(null)} />
+            <Suspense fallback={null}>
+                <DealChatPanel synthesis={activeProjectSynthesis} model={hydratedDealModel} projectName={dealName || suggestedProjectName} />
+            </Suspense>
         </div>
     )
 }
