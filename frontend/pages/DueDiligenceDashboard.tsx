@@ -17,6 +17,7 @@ import CustomerConcentrationCard from '../components/CustomerConcentrationCard'
 import FinancialCompletenessCard from '../components/FinancialCompletenessCard'
 import AddBackQualityCard from '../components/AddBackQualityCard'
 import QuickFilterBar from '../components/QuickFilterBar'
+import DealHealthKPIs from '../components/DealHealthKPIs'
 import EvidenceDrawer, { type EvidenceItem } from '../components/EvidenceDrawer'
 import ProjectChecklistCard, { type ProjectChecklistState } from '../components/ProjectChecklistCard'
 import DealWorkspaceNav, { type WorkspaceTab } from '../components/DealWorkspaceNav'
@@ -1337,6 +1338,7 @@ export default function DueDiligenceDashboard() {
             </header>
 
             <main className="mx-auto max-w-[1440px] space-y-8 px-4 py-4 sm:px-6 sm:py-8 lg:px-8">
+                <div id="upload-section" className="scroll-mt-6" />
                 <ProjectIntakeCard
                     dealName={dealName}
                     askingPrice={askingPrice}
@@ -1386,6 +1388,12 @@ export default function DueDiligenceDashboard() {
                 <DealWorkspaceNav activeTab={activeWorkspaceTab} onTabChange={setActiveWorkspaceTab} />
 
                 {activeWorkspaceTab === 'overview' ? <section id="deal-overview" className="space-y-6 scroll-mt-6">
+                    <DealHealthKPIs
+                        synthesis={activeProjectSynthesis}
+                        model={hydratedDealModel}
+                        impact={activeProjectImpact}
+                        documentsCount={activeProjectDocuments.length}
+                    />
                     <DealOverviewCard
                         syntheses={visibleProjectSyntheses}
                         projects={projectSummaries}
@@ -1632,9 +1640,20 @@ export default function DueDiligenceDashboard() {
                         </CardHeader>
 
                         <CardContent className="space-y-4 p-4">
-                            <Button type="button" variant="default" onClick={() => handleOpenProjectSynthesis(displayedSubmissionRow?.projectId || projectId)} disabled={!(displayedSubmissionRow?.projectId || projectId)}>
-                                View this project&apos;s synthesis
-                            </Button>
+                            <div className="flex flex-wrap items-center gap-3">
+                                <Button type="button" variant="default" onClick={() => handleOpenProjectSynthesis(displayedSubmissionRow?.projectId || projectId)} disabled={!(displayedSubmissionRow?.projectId || projectId)}>
+                                    View this project&apos;s synthesis
+                                </Button>
+                                <Button type="button" variant="outline" onClick={() => { const el = document.getElementById('upload-section'); el?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}>
+                                    Upload more files for this project
+                                </Button>
+                                {displayedSubmitStatus && !['completed', 'failed', 'error'].includes(displayedSubmitStatus.trim().toLowerCase()) && (
+                                    <Badge variant="secondary" className="gap-1.5">
+                                        <Clock3 className="h-3 w-3" />
+                                        Est. ~1 min remaining
+                                    </Badge>
+                                )}
+                            </div>
                             {liveSubmitInsight && (liveSubmitInsight.investmentBuyReasoning || liveSubmitInsight.investmentIsFavorable !== null) ? <div className="rounded-xl border-2 border-primary bg-gradient-to-br from-primary/15 via-primary/5 to-background p-5 shadow-md"><div className="flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-bold uppercase tracking-wide text-primary">Investment thesis — start here</p>{liveSubmitInsight.investmentIsFavorable !== null ? <Badge variant={liveSubmitInsight.investmentIsFavorable ? 'success' : 'destructive'}>{liveSubmitInsight.investmentIsFavorable ? 'Favorable indicator' : 'Caution indicator'}</Badge> : null}</div><p className="mt-3 text-sm leading-6 text-foreground">{liveSubmitInsight.investmentBuyReasoning || 'No investment thesis returned yet.'}</p></div> : null}
                             <div className="rounded-xl border-2 border-primary bg-gradient-to-br from-primary/15 via-primary/5 to-background p-5 shadow-md">
                                 <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-bold uppercase tracking-wide text-primary">Start here — latest document at a glance</p><Badge variant={getSubmissionStatusVariant(displayedSubmitStatus)}>{formatSubmissionStatus(displayedSubmitStatus)}</Badge></div>
@@ -1742,6 +1761,18 @@ export default function DueDiligenceDashboard() {
                                                 itemClassName="border-warning/30"
                                                 emptyLabel="No escalation reasons returned."
                                                 defaultOpen
+                                                onItemClick={(item) => {
+                                                    setActiveEvidence({
+                                                        title: 'Escalation reason',
+                                                        sourceFile: displayedSubmissionRow?.fileName || 'Uploaded document',
+                                                        sourceLocation: 'Escalation analysis',
+                                                        excerpt: item,
+                                                        status: 'Needs review',
+                                                        provenance: 'Document-level escalation',
+                                                        documentId: displayedSubmissionRow?.storageFileId,
+                                                        documentUrl: displayedSubmissionRow?.storageFileUrl,
+                                                    })
+                                                }}
                                             />
                                         </div>
                                         ) : null}
@@ -1754,6 +1785,18 @@ export default function DueDiligenceDashboard() {
                                                 className="border-border bg-card"
                                                 itemClassName="border-border"
                                                 emptyLabel="No AI summary returned."
+                                                onItemClick={(item) => {
+                                                    setActiveEvidence({
+                                                        title: 'AI Summary finding',
+                                                        sourceFile: displayedSubmissionRow?.fileName || 'Uploaded document',
+                                                        sourceLocation: 'AI document summary',
+                                                        excerpt: item,
+                                                        status: 'Synthesized',
+                                                        provenance: 'Document-level AI summary',
+                                                        documentId: displayedSubmissionRow?.storageFileId,
+                                                        documentUrl: displayedSubmissionRow?.storageFileUrl,
+                                                    })
+                                                }}
                                             />
                                         </div>
                                         ) : null}
@@ -1844,6 +1887,15 @@ export default function DueDiligenceDashboard() {
                                     ) : null}
                                 </div>
                             ) : null}
+                            <div className="flex flex-wrap items-center gap-3 border-t border-border pt-4">
+                                <Button type="button" variant="default" onClick={() => handleOpenProjectSynthesis(displayedSubmissionRow?.projectId || projectId)} disabled={!(displayedSubmissionRow?.projectId || projectId)}>
+                                    View this project&apos;s synthesis
+                                    {activeProjectSynthesis ? <Badge variant="success" className="ml-2">Ready</Badge> : isCurrentProjectAwaitingSynthesis ? <Badge variant="warning" className="ml-2">Running</Badge> : null}
+                                </Button>
+                                <Button type="button" variant="outline" onClick={() => { const el = document.getElementById('upload-section'); el?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}>
+                                    Upload more files
+                                </Button>
+                            </div>
                         </CardContent>
                     </Card>
                 ) : null}
@@ -1931,6 +1983,7 @@ export default function DueDiligenceDashboard() {
                     onRetryFailedDocument={handleRetryFailedDocument}
                     retryingRequestId={retryingRequestId}
                     onOpenProject={handleAuditProjectOpen}
+                    onOpenEvidence={setActiveEvidence}
                 />
                 </section>
 

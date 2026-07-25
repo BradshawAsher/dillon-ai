@@ -399,17 +399,28 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                     return (
                         <div key={`${synthesis.projectId}-${synthesis.id}`} className="space-y-4 rounded-xl border border-border bg-card p-4">
                             <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                                <div className="space-y-1">
+                                <div className="space-y-2">
                                     <p className="text-lg font-semibold text-foreground">{displayName}</p>
                                     <p className="text-xs text-muted-foreground">
                                         {synthesis.documentsCompletedCount} of {synthesis.documentsReceivedCount} documents processed ·
                                         synthesized {formatTimestamp(synthesis.projectProcessedAt)}
                                     </p>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        {synthesis.redFlags.length > 0 && <Badge variant="destructive">{synthesis.redFlags.length} red flag{synthesis.redFlags.length > 1 ? 's' : ''}</Badge>}
+                                        {synthesis.yellowFlags.length > 0 && <Badge variant="warning">{synthesis.yellowFlags.length} yellow flag{synthesis.yellowFlags.length > 1 ? 's' : ''}</Badge>}
+                                        {synthesis.greenFlags.length > 0 && <Badge variant="success">{synthesis.greenFlags.length} green flag{synthesis.greenFlags.length > 1 ? 's' : ''}</Badge>}
+                                        {synthesis.crossDocumentConflicts.length > 0 && <Badge variant="destructive">{synthesis.crossDocumentConflicts.length} conflict{synthesis.crossDocumentConflicts.length > 1 ? 's' : ''}</Badge>}
+                                        {synthesis.openQuestions.length > 0 && <Badge variant="outline">{synthesis.openQuestions.length} open question{synthesis.openQuestions.length > 1 ? 's' : ''}</Badge>}
+                                        {synthesis.negotiationLevers.length > 0 && <Badge variant="secondary">{synthesis.negotiationLevers.length} lever{synthesis.negotiationLevers.length > 1 ? 's' : ''}</Badge>}
+                                    </div>
                                 </div>
                                 <div className="flex flex-wrap items-center gap-2">
                                     <Button size="lg" onClick={() => downloadSynthesisReport(synthesis, displayName)}>
                                         <Download />
                                         Download project report
+                                    </Button>
+                                    <Button size="lg" variant="outline" onClick={() => { const el = document.getElementById('upload-section'); el?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}>
+                                        Upload more files
                                     </Button>
                                     <Badge variant="outline" className="font-mono">Project ID: {synthesis.projectId}</Badge>
                                     {synthesis.finalRecommendation ? (
