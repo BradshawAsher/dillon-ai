@@ -54,3 +54,28 @@ export function EbitdaLineChart({ data }: { data: ChartDatum[] }) {
     if (!data.length) return null
     return <div className="rounded-xl border border-border bg-muted/20 p-4"><p className="text-sm font-semibold">EBITDA projection by case</p><p className="mt-1 text-xs text-muted-foreground">Projected EBITDA (revenue x margin) for each scenario. Bear is red/dashed, Base is blue/solid, and Bull is green/dotted.</p><div className="mt-4 h-64" role="img" aria-label="Projected bear red dashed, base blue solid, and bull green dotted EBITDA by year"><ResponsiveContainer width="100%" height="100%"><LineChart data={data} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}><CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} /><XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} /><YAxis tickFormatter={compactMoney} tickLine={false} axisLine={false} width={64} tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} /><Tooltip content={<ChartTooltip />} /><Legend wrapperStyle={{ fontSize: 12 }} /><Line type="monotone" name="Bear (downside)" dataKey="Bear" stroke="#dc2626" strokeWidth={2.5} strokeDasharray="7 4" dot={false} activeDot={{ r: 4 }} /><Line type="monotone" name="Base (expected)" dataKey="Base" stroke="#2563eb" strokeWidth={3} dot={false} activeDot={{ r: 4 }} /><Line type="monotone" name="Bull (upside)" dataKey="Bull" stroke="#16a34a" strokeWidth={2.5} strokeDasharray="2 4" dot={false} activeDot={{ r: 4 }} /></LineChart></ResponsiveContainer></div></div>
 }
+
+export type WaterfallDatum = { label: string; value: number; type: 'positive' | 'negative' | 'total' }
+
+export function WaterfallChart({ title, description, data }: { title: string; description: string; data: WaterfallDatum[] }) {
+    if (!data.length) return null
+    let running = 0
+    const computedData = data.map((item) => {
+        if (item.type === 'total') {
+            const base = 0
+            const result = { label: item.label, base, value: item.value, fill: chartColors[0] }
+            running = item.value
+            return result
+        }
+        const base = running
+        running += item.value
+        return {
+            label: item.label,
+            base: item.value >= 0 ? base : base + item.value,
+            value: Math.abs(item.value),
+            fill: item.value >= 0 ? '#16a34a' : '#dc2626',
+        }
+    })
+
+    return <div className="rounded-xl border border-border bg-muted/20 p-4"><div><p className="text-sm font-semibold">{title}</p><p className="mt-1 text-xs text-muted-foreground">{description}</p></div><div className="mt-4 h-72" role="img" aria-label={`${title}. ${description}`}><ResponsiveContainer width="100%" height="100%"><BarChart data={computedData} margin={{ top: 24, right: 8, left: 8, bottom: 0 }}><CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} /><XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} interval={0} angle={-20} textAnchor="end" height={50} /><YAxis tickFormatter={compactMoney} tickLine={false} axisLine={false} width={64} tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} /><Tooltip content={<ChartTooltip />} cursor={{ fill: 'hsl(var(--muted))' }} /><Bar dataKey="base" stackId="stack" fill="transparent" name="" /><Bar dataKey="value" stackId="stack" name="Value" radius={[4, 4, 0, 0]}><LabelList dataKey="value" position="top" formatter={(v: number) => compactMoney(v)} fontSize={11} fill="hsl(var(--foreground))" />{computedData.map((entry) => <Cell key={entry.label} fill={entry.fill} />)}</Bar></BarChart></ResponsiveContainer></div></div>
+}

@@ -89,7 +89,7 @@ export default function DealHealthKPIs({ synthesis, model, impact, documentsCoun
     return (
         <Card className="overflow-hidden border-primary/20 bg-gradient-to-r from-primary/[0.03] to-transparent">
             <CardContent className="p-4">
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
                     {kpis.map((kpi) => (
                         <div key={kpi.label} className="flex items-start gap-3">
                             <div className={`mt-0.5 rounded-lg p-2 ${

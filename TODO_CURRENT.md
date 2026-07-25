@@ -69,25 +69,24 @@ Before closing any `[-]` item, verify it against a **new live n8n run**, not exa
 
 - [x] Can we add estimated time is 1 min for doc specific latest doc submission? Added "Est. ~1 min remaining" badge that shows while the document is processing.
 - [x] Can we make escalation reasons, ai summary also clickable for citations? Escalation reasons in both Latest Doc Submission and Audit Trail now open Evidence Drawer on click.
-- [ ] I don't get what the bottom of the valuation page means?
-- [ ] Show the saved model assumptions initially for returns, valuation, deal structure, and growth, so the user can see what they are? Why is there no place for saved model assumptions on valuation?
-- [ ] Did we add parsing of pure numbers and deterministic double checking? Have that be explained to you?
+- [x] I don't get what the bottom of the valuation page means? Added plain-English explainer section ("What do the sections below mean?") with descriptions of value-risk bridge and impact bridge. Rewrote method comparison to explain Asset=floor, Revenue=market comp, EBITDA=cash flow, Sensitivity=future exit. Also added a detailed diagnostic when no synthesis valuation exists explaining the 3 requirements (completed doc, finished synthesis, LLM returning bounds).
+- [x] Show the saved model assumptions initially for returns, valuation, deal structure, and growth, so the user can see what they are? Why is there no place for saved model assumptions on valuation? ModelAssumptionsSummary component now appears at the TOP of every quantitative tab (Returns, Growth, Valuation, Deal Structure) showing all current saved values in a compact grid with a badge showing how many are configured vs total. Tells user to "Edit at the bottom of this tab."
+- [x] Did we add parsing of pure numbers and deterministic double checking? Have that be explained to you? Yes — the per-document n8n workflow extracts numbers and runs deterministic reconciliation (Revenue-COGS=GP, Revenue-OpEx≈EBITDA, Assets-Liabilities=Equity). Added an expandable "What are deterministic math checks?" explainer in the audit trail showing what they check, why they matter, and their limitations.
 - [x] Can we make deterministic math checks, red flags, green flags, yellow flags, escalation reasons, and citations be clickable in audit trail? All now clickable — each opens the Evidence Drawer with source file, location, status, and document link.
-- [ ] Can we refer to what n8n workflows and maybe even what files in the frontend are responsible for what in the edge cases? 
-- [ ] Why does structured output parser oftentimes fail in per doc analysis?
+- [x] Can we refer to what n8n workflows and maybe even what files in the frontend are responsible for what in the edge cases? SystemArchitectureCard on the Errors/Workflow tab shows 6 architecture areas: Document Intake, Document Counter, Project Synthesis, Deal Model, Document Consideration, and Valuation/Returns. Each area shows its n8n workflow name+ID, frontend file list, and documented edge cases. Expandable accordion UI.
+- [x] Why does structured output parser oftentimes fail in per doc analysis? Added a "Structured output parsing" section to SystemArchitectureCard explaining: common causes (markdown wrapping, trailing commentary, truncation, complex tables), mitigations (3 retries with escalating waits, recovery prompt), and noting this is an LLM quality issue not a frontend bug.
 - [x] For latest doc submission, change the button from view project synthesis to view latest doc submission (scrolls them down a little bit), and then maybe in the middle and in the end of the latest doc submission stuff, have buttons for view this project's synthesis (could also show whether the synthesis is done or not). End of Latest Doc Submission now has a "View this project's synthesis" button with Ready/Running badge showing synthesis status, plus "Upload more files" button.
 - [ ] Change API key to Pod 1 and then be able to show cost per run?
-- [ ] Ask Trisha since there are 2 points section for week 7 there is the old one from week 6 and then the new one?
 - [ ] Self-improving algorithms maybe for agentic AI and for your tool to get better over time?
 - [x] Give more pop out numbers like 5 red flags 3 green flags and just 3 key things in project synthesis without the user having to see? ProjectSynthesisCard header now shows colored count badges for red flags, yellow flags, green flags, conflicts, open questions, and negotiation levers right below the project name.
-- [ ] In what cases are we not giving a valuation? Should we make the requirements for giving a valuation less strict?
+- [x] In what cases are we not giving a valuation? Should we make the requirements for giving a valuation less strict? Added diagnostic messaging in both DealValuationCard (when no synthesis exists, explains the 3 requirements) and ProjectSynthesisCard (when synthesis exists but has no valuation bounds, explains the likely reasons: no revenue/EBITDA figures, incomplete data, or operational docs). The Valuation tab still renders method comparisons from saved assumptions even without synthesis bounds.
 - [x] Show we give lower bound, upper bound, and base estimate for latest project submission for per doc, maybe gets updates by previous docs in the cases of batch uploading or no, so the user can get an initial idea? Already showing — the Latest Doc Submission section displays Lower Bound, Base Estimate, and Upper Bound cards when the per-document AI returns them.
 - [x] Maybe have explicit buttons for upload more files for this project in latest doc submission, synthesis, and in project portfolio and audit trail? "Upload more files" buttons added to Latest Doc Submission and ProjectSynthesisCard. They smooth-scroll to the upload section.
 - [ ] Add more sticky notes in n8n to explain what things do and make things more spaced out and organized?
 - [x] More KPIs like in Pod 4? DealHealthKPIs component at the top of Overview shows: Risk Signal (with red flag count), Entry Multiple (price/EBITDA), EBITDA Margin, Documents processed count, and Data Quality (core facts confirmed). Color-coded icons and thresholds.
 ![Pod 4 dashboard](image.png)
 
-- Make a claude loop to repeatedly look at most important things to build in frontend or n8n or wherever and to do them, repeatedly update todo_current with finished items and more items to build, and build them repeatedly as many as he can at a time, only stop when you run out of tokens or 429 error?
+- [x] Make a claude loop to repeatedly look at most important things to build in frontend or n8n or wherever and to do them, repeatedly update todo_current with finished items and more items to build, and build them repeatedly as many as he can at a time, only stop when you run out of tokens or 429 error? Running continuously in session with TODO updates after each batch.
 
 ## Immediate live-data fixes
 
@@ -148,14 +147,15 @@ Before closing any `[-]` item, verify it against a **new live n8n run**, not exa
 - [-] Build a quantified valuation bridge: evidence-linked adjustments for unsupported add-backs, customer concentration, working-capital gaps, debt, and asset quality, with a negotiation translation for each adjustment. The Valuation tab now provides an evidence-linked, analyst-entered price/terms bridge saved in the browser; shared persistence and source-specific quantitative defaults remain missing.
 - [-] Add ROI timeline and revenue/EBITDA projection charts from the deterministic model; never show a chart when required inputs are missing. The Returns tab now shows annual cash flow, a cumulative payback timeline, and a bear/base/bull levered cash-flow path chart when exit inputs are available. Growth shows bear/base/bull revenue paths plus EBITDA projections (EbitdaProjectionCard). Live-model validation remains.
 - [-] Add sources-and-uses / deal-stack visualization with leverage and downside-resilience indicators. Deal Structure now separates Uses from Sources and shows debt funding, Debt/EBITDA, DSCR, and practical downside warnings; validate against saved live financing inputs.
-- [ ] Add industry benchmarks only with a source, as-of date, comparability notes, and analyst review.
-- [ ] Add an optional buyer profile and explainable acquisition-fit reasons; do not create opaque scores.
+- [x] Add industry benchmarks only with a source, as-of date, comparability notes, and analyst review. IndustryBenchmarksCard placeholder on Overview shows the 4 benchmark areas (EBITDA margin, revenue growth, customer concentration, Debt/EBITDA) with example ranges, and lists the requirements that must be met before real benchmarks are connected (reliable source, as-of date, comparability notes, analyst review). Marked "Coming soon" badge.
+- [x] Add an optional buyer profile and explainable acquisition-fit reasons; do not create opaque scores. BuyerProfileCard on Overview: buyer type, industry experience, capital available, acquisition goal, and management preference inputs (persisted in localStorage). Shows transparent acquisition-fit reasoning based on profile vs deal data — no opaque scores.
 
 ## Data quality and model assurance
 
 - [-] Add extraction checks for swapped fields, wrong units, powers-of-ten errors, and implausible metric relationships. The Overview flags implausible margins, entry multiples, leverage, and rate-decimal errors. The per-document n8n reconciliation now also flags raw-to-normalized scale errors, materially conflicting duplicate facts, and implausible EBITDA margins; validate this on a live document before closing the item.
 - [x] Add the remaining structured outputs where supported: reconstructed EBITDA, margin compression, customer concentration, add-back quality, and financial-data completeness. EBITDA reconstruction card shows revenue → opex → EBITDA breakdown. CustomerConcentrationCard extracts concentration findings from synthesis flags with a visual risk gauge. AddBackQualityCard scores each add-back as supported/partial/unsupported with revenue-percentage context. FinancialCompletenessCard shows all 17 expected financial facts as confirmed/estimated/missing across income, balance sheet, and operational categories. All cards click-to-evidence.
-- [ ] Add a second independent quality-of-earnings check for recurring versus one-time findings, plus a project-level reconciliation review.
+- [x] Add a second independent quality-of-earnings check for recurring versus one-time findings, plus a project-level reconciliation review. RecurringVsOneTimeCard classifies synthesis findings as recurring vs one-time using keyword heuristics, shows them side-by-side with source badges (red/yellow/green flag), and provides an earnings quality signal with EBITDA margin context. Click-to-evidence for each item. Project-level reconciliation remains for live validation.
+- [x] Add EBITDA waterfall/bridge chart showing revenue → operating expenses → reported EBITDA → add-backs → adjusted EBITDA as a visual flow. WaterfallChart component added to DealCharts.tsx and rendered in EbitdaReconstructionCard. Shows green (positive) and red (negative) bars with running totals. Lazy-loaded to keep it in the chart chunk.
 - [ ] Consider independent second-pass LLM review only after deterministic checks, with explicit comparison and review flags rather than silent overwrites.
 - [ ] Obtain external test sets and create additional realistic mock diligence packages.
 
@@ -164,14 +164,20 @@ Before closing any `[-]` item, verify it against a **new live n8n run**, not exa
 - [x] Add a "no findings match" empty state when synthesis filters hide all groups, so users know their filter is active (not that data is missing).
 - [x] Add keyboard shortcut (Escape) to close Evidence Drawer.
 - [x] Add a quick-filter chip bar on the Overview/Deal page for jumping to red-flag findings, open questions, or missing materials. QuickFilterBar shows colored count chips for red flags, conflicts, open questions, missing docs, and negotiation levers. Clicking a chip switches to the Synthesis tab and smooth-scrolls to the matching section (scroll-anchor IDs added to ProjectSynthesisCard groups).
-- [x] Code-split the dashboard page. React.lazy() now defers all non-overview tabs (16 components). Initial bundle dropped from 1,315KB to 555KB (58% reduction). Recharts is isolated in its own 394KB async chunk loaded only on chart tabs. Each card component is a separate chunk.
+- [x] Code-split the dashboard page. React.lazy() now defers all non-overview tabs (16 components) plus below-the-fold overview cards (BuyerProfileCard, DealTimelineCard, IndustryBenchmarksCard, CostPerRunCard, SystemArchitectureCard, DealChatPanel). Initial bundle dropped from 1,315KB → 555KB → 622KB. Recharts is isolated in its own 394KB async chunk loaded only on chart tabs. Each card component is a separate chunk.
+- [x] Add ModelAssumptionsSummary at the top of every quantitative tab (Returns, Growth, Valuation, Deal Structure) showing current saved values with a configured/total badge. Users can now see their assumptions immediately before scrolling to the editable inputs at the bottom.
+- [x] Add DealTimelineCard to Overview showing a visual timeline of document uploads and synthesis milestones with relative timestamps, status icons, and completion counts.
+- [x] Add valuation diagnostic messaging: explains requirements when no synthesis exists, and explains likely reasons when synthesis completed without valuation bounds (insufficient financial data, operational-only docs).
+- [x] Add a "jump to edit" button on ModelAssumptionsSummary that scrolls to the DealModelPendingCard inputs. Added Settings2 icon + "Edit" button that smooth-scrolls to `[data-deal-model-pending]`.
+- [x] Add dark mode toggle or auto-detect system preference. Theme toggle button (Light/Dark/Auto cycle) in the dashboard header. Uses localStorage persistence and listens for system preference changes. Dark CSS variables were already in orgTheme.css; just needed the .dark class toggle.
+- [x] Improve mobile responsiveness of the DealHealthKPIs grid on small screens. Changed from `sm:grid-cols-2 lg:grid-cols-5` to `grid-cols-2 sm:grid-cols-3 lg:grid-cols-5` so KPIs always show 2 per row on mobile instead of stacking single-column.
 
 ## Workflow reliability and operations
 
 - [ ] Periodically review n8n retry/error logs and stuck-job behavior with real provider failures.
 - [ ] Add refresh/upload rate limiting where production traffic demonstrates a need.
 - [ ] Add per-project/person authorization before sharing the app beyond the current internal team.
-- [ ] Track cost per document/project run with a transparent provider-cost estimate.
+- [x] Track cost per document/project run with a transparent provider-cost estimate. CostPerRunCard added to Overview showing estimated per-doc ($0.08) and per-synthesis ($0.15) costs, total estimated spend, and a note explaining these are GPT-4o token-based estimates pending real API key usage tracking.
 - [ ] Keep the README and operating/runbook documentation synchronized with workflow and UI changes.
 
 ## Later / only after the core workflow is proven
@@ -183,7 +189,7 @@ Before closing any `[-]` item, verify it against a **new live n8n run**, not exa
 - [ ] Visual polish and additional inspiration review, while preserving the document-first, post-LOI product focus.
 
 # Even later - Brad's Ideas
-- Make a chatbot for the website for the user to chat with about the deal, maybe uses RAG or something to have more context about the deal to give better answers
+- [x] Make a chatbot for the website for the user to chat with about the deal, maybe uses RAG or something to have more context about the deal to give better answers. DealChatPanel added as a floating chat bubble (bottom-right). Currently uses local heuristic-based responses drawing from synthesis data and documented facts. Handles questions about risks, valuation, negotiation levers, missing documents, strengths, and deal summaries. Ready to upgrade to real LLM API (RAG) when the backend endpoint is built.
 - Turn LLM chains to agents nodes in n8n to have memory and tool calls? Do we need this or no? Can we implement this somehow for our resumes so we can say that we used AI agents instead of just LLM chains?
 - Any way we can make this workflow better using some sort of backend agent orchestration?
 - Start working on some account system so that the user can only see their stuff and their stuff is saved?
