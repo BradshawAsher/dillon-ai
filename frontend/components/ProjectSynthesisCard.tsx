@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Download, FileText, Filter, Landmark, Loader2, MessageCircleQuestion, RefreshCw, Scale, ShieldAlert, TriangleAlert } from 'lucide-react'
 
-import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
+import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import ExpandableInsightGroup from './ExpandableInsightGroup'
 import ExpandableText from './ExpandableText'
@@ -15,7 +15,7 @@ import { formatCurrencyValue, getSubmissionInsightTone } from '../utils/aiSubmis
 import { downloadTextFile, fileSafeName } from '../utils/downloadFile'
 import { formatHours, type ImpactMetrics } from '../utils/impactMetrics'
 import type { ProjectSummary } from '../utils/projectWorkspace'
-import { findCitedDocument, type EvidenceItem } from '../utils/evidence'
+import { findCitedDocument, parseDocumentedFacts, type EvidenceItem } from '../utils/evidence'
 
 type ProjectSynthesisCardProps = {
     syntheses: ProjectSynthesisItem[]
@@ -37,6 +37,7 @@ type ProjectSynthesisCardProps = {
     retryingRequestId?: string | null
     onRunSynthesis?: () => void
     runningSynthesis?: boolean
+    model?: DealModel
 }
 
 function getRiskVariant(riskLevel: string): 'destructive' | 'warning' | 'secondary' | 'outline' {
@@ -201,7 +202,7 @@ function getSeverityForGroup(groupType: InsightGroupType): SeverityFilter {
     }
 }
 
-export default function ProjectSynthesisCard({ syntheses, projects, currentProjectId, documentAnalysisPending, synthesisPending, synthesisProgress, synthesisStage, loading, error, onRefresh, impact, documents = [], onOpenEvidence, onExcludeDocument, onIncludeDocument, onRetryDocument, retryingRequestId, onRunSynthesis, runningSynthesis = false }: ProjectSynthesisCardProps) {
+export default function ProjectSynthesisCard({ syntheses, projects, currentProjectId, documentAnalysisPending, synthesisPending, synthesisProgress, synthesisStage, loading, error, onRefresh, impact, documents = [], onOpenEvidence, onExcludeDocument, onIncludeDocument, onRetryDocument, retryingRequestId, onRunSynthesis, runningSynthesis = false, model }: ProjectSynthesisCardProps) {
     const [synthesisElapsedSeconds, setSynthesisElapsedSeconds] = useState(0)
     const [selectedDocumentRequestId, setSelectedDocumentRequestId] = useState('')
     const [severityFilter, setSeverityFilter] = useState<SeverityFilter>('all')
@@ -496,16 +497,53 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                     </div>
                                 </div>
                             ) : (
-                                <div className="rounded-lg border border-dashed border-warning/40 bg-warning/5 p-4">
-                                    <p className="text-sm font-semibold text-foreground">No valuation range returned</p>
-                                    <p className="mt-1 text-sm leading-6 text-muted-foreground">The synthesis completed but did not produce valuation bounds. This typically happens when:</p>
-                                    <ul className="mt-2 list-disc pl-5 space-y-1 text-sm text-muted-foreground">
-                                        <li>The uploaded documents lack explicit revenue or EBITDA figures</li>
-                                        <li>Financial data was too incomplete or contradictory for the LLM to produce a defensible range</li>
-                                        <li>The documents are operational/legal rather than financial in nature</li>
-                                    </ul>
-                                    <p className="mt-2 text-sm text-muted-foreground">Upload financial statements (P&L, balance sheet) with clear revenue and earnings figures, then run synthesis again. The Valuation tab still shows method comparisons using your saved assumptions.</p>
-                                </div>
+                                {(() => {
+                                    const facts = model ? parseDocumentedFacts(model.documentedFactsJson) : {}
+                                    const revenue = facts.revenue?.status === 'confirmed' && typeof facts.revenue?.value === 'number' ? facts.revenue.value : null
+                                    const ebitda = facts.ebitda_sde?.status === 'confirmed' && typeof facts.ebitda_sde?.value === 'number' ? facts.ebitda_sde.value : null
+                                    const hasFinancials = revenue !== null || ebitda !== null
+                                    const multiple = model?.ebitdaMultiple ?? 5
+                                    const lower = ebitda ? ebitda * (multiple * 0.7) : revenue ? revenue * 1.5 : null
+                                    const base = ebitda ? ebitda * multiple : revenue ? revenue * 2.2 : null
+                                    const upper = ebitda ? ebitda * (multiple * 1.3) : revenue ? revenue * 3.0 : null
+                                    const confidence = ebitda ? 'Medium' : revenue ? 'Low' : 'Very low'
+                                    const confidenceColor = ebitda ? 'text-amber-500' : 'text-destructive'
+
+                                    if (hasFinancials && lower && base && upper) {
+                                        const fmt = (v: number) => v >= 1_000_000 ? `$${(v / 1_000_000).toFixed(1)}M` : v >= 1_000 ? `$${(v / 1_000).toFixed(0)}K` : `$${v.toFixed(0)}`
+                                        return (
+                                            <div>
+                                                <div className="mb-2 flex items-center gap-2">
+                                                    <Badge variant="outline" className={confidenceColor}>{confidence} confidence</Badge>
+                                                    <span className="text-xs text-muted-foreground">Illustrative — based on {ebitda ? 'EBITDA × multiple' : 'revenue × market range'}</span>
+                                                </div>
+                                                <div className="grid gap-2 md:grid-cols-3">
+                                                    <div className="rounded-md border border-dashed border-border bg-background px-3 py-2">
+                                                        <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Lower bound</p>
+                                                        <p className="mt-1 text-sm text-foreground">{fmt(lower)}</p>
+                                                    </div>
+                                                    <div className="rounded-md border border-dashed border-border bg-background px-3 py-2">
+                                                        <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Base estimate</p>
+                                                        <p className="mt-1 text-sm text-foreground">{fmt(base)}</p>
+                                                    </div>
+                                                    <div className="rounded-md border border-dashed border-border bg-background px-3 py-2">
+                                                        <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Upper bound</p>
+                                                        <p className="mt-1 text-sm text-foreground">{fmt(upper)}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )
+                                    }
+                                    return (
+                                        <div className="rounded-lg border border-dashed border-warning/40 bg-warning/5 p-4">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <Badge variant="outline" className="text-destructive">Very low confidence</Badge>
+                                            </div>
+                                            <p className="text-sm font-semibold text-foreground">Insufficient data for valuation</p>
+                                            <p className="mt-1 text-sm leading-6 text-muted-foreground">Upload financial statements (P&L, balance sheet) with clear revenue and EBITDA figures. Once confirmed financial facts are available, an illustrative valuation range will be calculated automatically.</p>
+                                        </div>
+                                    )
+                                })()}
                             )}
 
                             <div className="grid gap-2 rounded-lg border border-border bg-muted/20 p-3 sm:grid-cols-2">
