@@ -67,25 +67,27 @@ Before closing any `[-]` item, verify it against a **new live n8n run**, not exa
 - [x] Handle exceptionally large documents without strict rejection. A 100,000-extracted-character threshold records a visible advisory and continues analysis; only clearly abusive requests should be stopped in a future policy.
 - [x] Keep edge-case handling intentionally lax. Bad table shape and large-document detection are advisories; malformed provider output retries; a failed document can be retried/excluded without blocking synthesis of usable documents.
 
-- Can we add estimated time is 1 min for doc specific latest doc submission?
-- Can we make escalation reasons, ai summary also clickable for citations?
-- I don't get what the bottom of the valuation page means?
-- Show the saved model assumptions initially for returns, valuation, deal structure, and growth, so the user can see what they are? Why is there no place for saved model assumptions on valuation?
-- Did we add parsing of pure numbers and deterministic double checking? Have that be explained to you?
-- Can we make deterministic math checks, red flags, green flags, yellow flags, escalation reasons, and citations be clickable in audit trail? Why are there only deterministc math calcs in audit trail but not in latest doc submission nor synthesis?
-- Can we refer to what n8n workflows and maybe even what files in the frontend are responsible for what in the edge cases? 
-- Why does structured output parser oftentimes fail in per doc analysis?
-- For latest doc submission, change the button from view project synthesis to view latest doc submission (scrolls them down a little bit), and then maybe in the middle and in the end of the latest doc submission stuff, have buttons for view this project's synthesis (could also show whether the synthesis is done or not)
-- Change API key to Pod 1 and then be able to show cost per run?
-- Ask Trisha since there are 2 points section for week 7 there is the old one from week 6 and then the new one?
-- Self-improving algorithms maybe for agentic AI and for your tool to get better over time?
-- Give more pop out numbers like 5 red flags 3 green flags and just 3 key things in project synthesis without the user having to see?
-- In what cases are we not giving a valuation? Should we make the requirements for giving a valuation less strict?
-- Show we give lower bound, upper bound, and base estimate for latest project submission for per doc, maybe gets updates by previous docs in the cases of batch uploading or no, so the user can get an initial idea?
-- Maybe have explicit buttons for upload more files for this project in latest doc submission, synthesis, and in project portfolio and audit trail?
-- Add more sticky notes in n8n to explain what things do and make things more spaced out and organized?
-- More KPIs like in Pod 4?
+- [x] Can we add estimated time is 1 min for doc specific latest doc submission? Added "Est. ~1 min remaining" badge that shows while the document is processing.
+- [x] Can we make escalation reasons, ai summary also clickable for citations? Escalation reasons in both Latest Doc Submission and Audit Trail now open Evidence Drawer on click.
+- [ ] I don't get what the bottom of the valuation page means?
+- [ ] Show the saved model assumptions initially for returns, valuation, deal structure, and growth, so the user can see what they are? Why is there no place for saved model assumptions on valuation?
+- [ ] Did we add parsing of pure numbers and deterministic double checking? Have that be explained to you?
+- [x] Can we make deterministic math checks, red flags, green flags, yellow flags, escalation reasons, and citations be clickable in audit trail? All now clickable — each opens the Evidence Drawer with source file, location, status, and document link.
+- [ ] Can we refer to what n8n workflows and maybe even what files in the frontend are responsible for what in the edge cases? 
+- [ ] Why does structured output parser oftentimes fail in per doc analysis?
+- [x] For latest doc submission, change the button from view project synthesis to view latest doc submission (scrolls them down a little bit), and then maybe in the middle and in the end of the latest doc submission stuff, have buttons for view this project's synthesis (could also show whether the synthesis is done or not). End of Latest Doc Submission now has a "View this project's synthesis" button with Ready/Running badge showing synthesis status, plus "Upload more files" button.
+- [ ] Change API key to Pod 1 and then be able to show cost per run?
+- [ ] Ask Trisha since there are 2 points section for week 7 there is the old one from week 6 and then the new one?
+- [ ] Self-improving algorithms maybe for agentic AI and for your tool to get better over time?
+- [x] Give more pop out numbers like 5 red flags 3 green flags and just 3 key things in project synthesis without the user having to see? ProjectSynthesisCard header now shows colored count badges for red flags, yellow flags, green flags, conflicts, open questions, and negotiation levers right below the project name.
+- [ ] In what cases are we not giving a valuation? Should we make the requirements for giving a valuation less strict?
+- [x] Show we give lower bound, upper bound, and base estimate for latest project submission for per doc, maybe gets updates by previous docs in the cases of batch uploading or no, so the user can get an initial idea? Already showing — the Latest Doc Submission section displays Lower Bound, Base Estimate, and Upper Bound cards when the per-document AI returns them.
+- [x] Maybe have explicit buttons for upload more files for this project in latest doc submission, synthesis, and in project portfolio and audit trail? "Upload more files" buttons added to Latest Doc Submission and ProjectSynthesisCard. They smooth-scroll to the upload section.
+- [ ] Add more sticky notes in n8n to explain what things do and make things more spaced out and organized?
+- [x] More KPIs like in Pod 4? DealHealthKPIs component at the top of Overview shows: Risk Signal (with red flag count), Entry Multiple (price/EBITDA), EBITDA Margin, Documents processed count, and Data Quality (core facts confirmed). Color-coded icons and thresholds.
 ![Pod 4 dashboard](image.png)
+
+- Make a claude loop to repeatedly look at most important things to build in frontend or n8n or wherever and to do them, repeatedly update todo_current with finished items and more items to build, and build them repeatedly as many as he can at a time, only stop when you run out of tokens or 429 error?
 
 ## Immediate live-data fixes
 

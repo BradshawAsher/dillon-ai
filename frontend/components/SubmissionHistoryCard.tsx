@@ -219,6 +219,21 @@ function choosePreferredRow(current: SubmissionHistoryItem, candidate: Submissio
   return getRowSortValue(candidate) >= getRowSortValue(current) ? candidate : current
 }
 
+type EvidenceItem = {
+  title: string
+  sourceFile?: string
+  sourceLocation?: string
+  excerpt?: string
+  period?: string
+  currency?: string
+  confidence?: string | number
+  status?: string
+  provenance?: string
+  documentUrl?: string
+  documentId?: string
+  formula?: string
+}
+
 type SubmissionHistoryCardProps = {
   rows: SubmissionHistoryItem[]
   loading: boolean
@@ -230,6 +245,7 @@ type SubmissionHistoryCardProps = {
   onRetryFailedDocument: (requestID: string) => void
   retryingRequestId: string | null
   onOpenProject?: (projectId: string) => void
+  onOpenEvidence?: (evidence: EvidenceItem) => void
 }
 
 export default function SubmissionHistoryCard({
@@ -243,6 +259,7 @@ export default function SubmissionHistoryCard({
   onRetryFailedDocument,
   retryingRequestId,
   onOpenProject,
+  onOpenEvidence,
 }: SubmissionHistoryCardProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedStatus, setSelectedStatus] = useState('all')
@@ -788,12 +805,26 @@ export default function SubmissionHistoryCard({
                               {Object.entries(reconciliation.metrics ?? {}).length > 0 ? (
                                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                                   {Object.entries(reconciliation.metrics ?? {}).map(([key, metric]) => (
-                                    <div key={key} className="rounded-lg border border-border bg-muted/30 p-3">
+                                    <button
+                                      key={key}
+                                      type="button"
+                                      onClick={() => onOpenEvidence?.({
+                                        title: `Math check: ${formatReconciliationLabel(key)}`,
+                                        sourceFile: selectedRow.fileName || 'Uploaded document',
+                                        sourceLocation: 'Deterministic reconciliation',
+                                        excerpt: metric.formula ? `${formatReconciliationLabel(key)}: ${typeof metric.value === 'number' ? metric.value.toLocaleString(undefined, { maximumFractionDigits: 2 }) : 'N/A'} (${metric.formula})` : `${formatReconciliationLabel(key)}: ${typeof metric.value === 'number' ? metric.value.toLocaleString(undefined, { maximumFractionDigits: 2 }) : 'N/A'}`,
+                                        status: metric.withinTolerance === false ? 'Contradicted' : metric.withinTolerance ? 'Confirmed' : 'Calculated',
+                                        provenance: 'Deterministic math check',
+                                        documentId: selectedRow.storageFileId,
+                                        documentUrl: selectedRow.storageFileUrl,
+                                      })}
+                                      className="rounded-lg border border-border bg-muted/30 p-3 text-left transition-colors hover:border-primary/40"
+                                    >
                                       <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{formatReconciliationLabel(key)}</p>
                                       <p className="mt-1 text-sm font-medium text-foreground">{typeof metric.value === 'number' ? metric.value.toLocaleString(undefined, { maximumFractionDigits: 2 }) : 'Not available'}</p>
                                       {metric.formula ? <p className="mt-1 text-xs text-muted-foreground">{metric.formula}</p> : null}
                                       {typeof metric.withinTolerance === 'boolean' ? <p className={metric.withinTolerance ? 'mt-1 text-xs text-success' : 'mt-1 text-xs text-destructive'}>{metric.withinTolerance ? 'Within tolerance' : 'Outside tolerance'}</p> : null}
-                                    </div>
+                                    </button>
                                   ))}
                                 </div>
                               ) : null}
@@ -918,6 +949,7 @@ export default function SubmissionHistoryCard({
                                 badge: 'destructive' as const,
                                 sectionClass: 'border-destructive/30 bg-destructive/5',
                                 itemClass: 'border-destructive/20',
+                                status: 'Risk',
                               },
                               {
                                 title: 'Yellow flags',
@@ -925,6 +957,7 @@ export default function SubmissionHistoryCard({
                                 badge: 'warning' as const,
                                 sectionClass: 'border-warning/30 bg-warning/5',
                                 itemClass: 'border-warning/20',
+                                status: 'Caution',
                               },
                               {
                                 title: 'Green flags',
@@ -932,6 +965,7 @@ export default function SubmissionHistoryCard({
                                 badge: 'success' as const,
                                 sectionClass: 'border-success/30 bg-success/5',
                                 itemClass: 'border-success/20',
+                                status: 'Confirmed',
                               },
                             ].map((group) => (
                               <ExpandableInsightGroup
@@ -943,6 +977,16 @@ export default function SubmissionHistoryCard({
                                 itemClassName={group.itemClass}
                                 emptyLabel="None"
                                 defaultOpen={group.title === 'Red flags'}
+                                onItemClick={onOpenEvidence ? (item) => onOpenEvidence({
+                                  title: `${group.title.replace(' flags', ' flag')}: finding`,
+                                  sourceFile: selectedRow.fileName || 'Uploaded document',
+                                  sourceLocation: group.title,
+                                  excerpt: item,
+                                  status: group.status,
+                                  provenance: `Document-level ${group.title.toLowerCase()} analysis`,
+                                  documentId: selectedRow.storageFileId,
+                                  documentUrl: selectedRow.storageFileUrl,
+                                }) : undefined}
                               />
                             ))}
                           </div>
@@ -957,6 +1001,16 @@ export default function SubmissionHistoryCard({
                             itemClassName="border-warning/30"
                             emptyLabel="No escalation reasons returned."
                             defaultOpen
+                            onItemClick={onOpenEvidence ? (item) => onOpenEvidence({
+                              title: 'Escalation reason',
+                              sourceFile: selectedRow.fileName || 'Uploaded document',
+                              sourceLocation: 'Escalation analysis',
+                              excerpt: item,
+                              status: 'Needs review',
+                              provenance: 'Document-level escalation',
+                              documentId: selectedRow.storageFileId,
+                              documentUrl: selectedRow.storageFileUrl,
+                            }) : undefined}
                           />
                         ) : null}
 
@@ -977,7 +1031,21 @@ export default function SubmissionHistoryCard({
                           >
                             <div className="mt-3 grid gap-3 sm:grid-cols-2">
                               {aiViewModel.citations.map((citation, index) => (
-                                <div key={`${citation.sourceFile}-${citation.rowOrCell}-${index}`} className="rounded-lg border border-border bg-muted/30 p-3">
+                                <button
+                                  key={`${citation.sourceFile}-${citation.rowOrCell}-${index}`}
+                                  type="button"
+                                  onClick={() => onOpenEvidence?.({
+                                    title: 'Document citation',
+                                    sourceFile: citation.sourceFile || selectedRow.fileName || 'Uploaded document',
+                                    sourceLocation: citation.rowOrCell || 'Document analysis',
+                                    excerpt: citation.rowOrCell ? `Source: ${citation.sourceFile || selectedRow.fileName} · ${citation.rowOrCell}` : undefined,
+                                    status: 'Confirmed',
+                                    provenance: 'Document-level citation',
+                                    documentId: selectedRow.storageFileId,
+                                    documentUrl: selectedRow.storageFileUrl,
+                                  })}
+                                  className="rounded-lg border border-border bg-muted/30 p-3 text-left transition-colors hover:border-primary/40 hover:bg-muted/50"
+                                >
                                   <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                                     Source file
                                   </p>
@@ -986,7 +1054,8 @@ export default function SubmissionHistoryCard({
                                     Row or cell
                                   </p>
                                   <p className="mt-1 text-sm text-foreground">{citation.rowOrCell || 'Not provided'}</p>
-                                </div>
+                                  <p className="mt-2 text-xs font-medium text-primary">View evidence</p>
+                                </button>
                               ))}
                             </div>
                           </ExpandableInsightGroup>
