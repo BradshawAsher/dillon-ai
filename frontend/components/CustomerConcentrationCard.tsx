@@ -12,6 +12,10 @@ type ConcentrationFinding = {
     detail: string
     severity: 'critical' | 'medium' | 'low'
     source?: string
+    sourceLocation?: string
+    excerpt?: string
+    confidence?: number | null
+    status?: string
 }
 
 function parseConcentrationFromSynthesis(synthesis: ProjectSynthesisItem): ConcentrationFinding[] {

@@ -76,7 +76,7 @@ function detectedTypes(document: SubmissionHistoryItem) {
     try {
         const parsed = JSON.parse(document.detectedDocumentTypesJson || '')
         if (Array.isArray(parsed)) return parsed.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
-    } catch {}
+    } catch { }
     return [document.detectedDocumentType || document.documentType].filter(Boolean)
 }
 
@@ -310,17 +310,17 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                 {!error && synthesisPending ? (
                     <div className="rounded-lg border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-foreground">
                         <div className="flex items-center gap-3">
-                        <Loader2 className="h-5 w-5 shrink-0 animate-spin text-primary" />
-                        <div>
-                            <p className="font-medium">{hasPriorSynthesis ? 'Refreshing the project synthesis' : 'Synthesis starting'}</p>
-                            <p className="text-xs font-medium text-primary">Synthesizing {currentProjectName} — {synthesisElapsedSeconds} seconds</p>
-                            <p className="text-xs text-muted-foreground">Estimated completion: about 1 min 30 sec</p>
-                            <p className="mt-1 text-muted-foreground">
-                                {hasPriorSynthesis
-                                    ? 'The previous synthesis remains visible below while n8n incorporates the most recent document. This page will update automatically when the new pass is complete.'
-                                    : 'All submitted documents are complete. The n8n consolidator is preparing the first project-level judgment and this page will refresh automatically.'}
-                            </p>
-                        </div>
+                            <Loader2 className="h-5 w-5 shrink-0 animate-spin text-primary" />
+                            <div>
+                                <p className="font-medium">{hasPriorSynthesis ? 'Refreshing the project synthesis' : 'Synthesis starting'}</p>
+                                <p className="text-xs font-medium text-primary">Synthesizing {currentProjectName} — {synthesisElapsedSeconds} seconds</p>
+                                <p className="text-xs text-muted-foreground">Estimated completion: about 1 min 30 sec</p>
+                                <p className="mt-1 text-muted-foreground">
+                                    {hasPriorSynthesis
+                                        ? 'The previous synthesis remains visible below while n8n incorporates the most recent document. This page will update automatically when the new pass is complete.'
+                                        : 'All submitted documents are complete. The n8n consolidator is preparing the first project-level judgment and this page will refresh automatically.'}
+                                </p>
+                            </div>
                         </div>
                         <div className="mt-3 flex items-center justify-between gap-3 text-xs text-muted-foreground">
                             <span>{synthesisStage}</span>
@@ -376,21 +376,31 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                         const evidenceTitle = `${label} #${index + 1}`
                         const status = insightGroupStatus(groupType)
 
-                        // Try to find a cited document by checking if any citation sourceFile
-                        // is mentioned within the item text, or vice versa.
-                        const citations = synthesis.citations ?? []
-                        const matchedCitation = citations.find((sourceFile) => {
-                            const normalized = sourceFile.toLowerCase().replace(/\.[a-z0-9]{1,6}$/i, '').replace(/[^a-z0-9]+/g, ' ').trim()
-                            return normalized.length > 3 && item.toLowerCase().includes(normalized)
-                        })
-                        const citedDoc = matchedCitation ? findCitedDocument(matchedCitation, documents) : undefined
+                        const structuredGroupMap: Record<InsightGroupType, typeof synthesis.structuredFindings.redFlags> = {
+                            'red-flag': synthesis.structuredFindings?.redFlags ?? [],
+                            'yellow-flag': synthesis.structuredFindings?.yellowFlags ?? [],
+                            'green-flag': synthesis.structuredFindings?.greenFlags ?? [],
+                            'takeaway': synthesis.structuredFindings?.keyTakeaways ?? [],
+                            'conflict': synthesis.structuredFindings?.crossDocumentConflicts ?? [],
+                            'negotiation-lever': synthesis.structuredFindings?.negotiationLevers ?? [],
+                            'missing-document': synthesis.structuredFindings?.missingDocuments ?? [],
+                            'open-question': synthesis.structuredFindings?.openQuestions ?? [],
+                        }
+                        const structuredFinding = structuredGroupMap[groupType]?.[index]
+                        const primaryCitation = structuredFinding?.citations?.[0]
+                        const citedDoc = primaryCitation?.sourceFile
+                            ? findCitedDocument(primaryCitation.sourceFile, documents)
+                            : undefined
 
                         onOpenEvidence({
                             title: evidenceTitle,
-                            sourceFile: citedDoc?.fileName,
-                            sourceLocation: 'Project synthesis',
-                            excerpt: item,
-                            status,
+                            sourceFile: primaryCitation?.sourceFile || citedDoc?.fileName,
+                            sourceLocation: primaryCitation?.sourceLocation || 'Project synthesis',
+                            excerpt: primaryCitation?.excerpt || item,
+                            period: primaryCitation?.period,
+                            currency: primaryCitation?.currency,
+                            confidence: structuredFinding?.confidence ?? primaryCitation?.confidence ?? undefined,
+                            status: structuredFinding?.status || primaryCitation?.status || status,
                             provenance: 'Project synthesis',
                             documentId: citedDoc?.storageFileId,
                             documentUrl: citedDoc?.storageFileUrl,

@@ -22,6 +22,7 @@ type Props = {
     projectName: string
     documents?: SubmissionHistoryItem[]
     allSyntheses?: ProjectSynthesisItem[]
+    onSuggestProjectSwitch?: (projectId: string) => void
 }
 
 function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealModel, projectName: string, documents?: SubmissionHistoryItem[], allSyntheses?: ProjectSynthesisItem[]): string {
@@ -299,9 +300,31 @@ function relativeTime(ts: number): string {
     return new Date(ts).toLocaleDateString()
 }
 
+function normalizeProjectText(value: string): string {
+    return value.trim().toLowerCase()
+}
+
+function detectReferencedProject(question: string, currentProjectName: string, allSyntheses?: ProjectSynthesisItem[]) {
+    const normalizedQuestion = normalizeProjectText(question)
+    const normalizedCurrent = normalizeProjectText(currentProjectName)
+    if (!allSyntheses?.length) return null
+
+    return allSyntheses.find((project) => {
+        const candidateNames = [
+            project.projectName,
+            project.projectId,
+            project.companyName,
+        ]
+            .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+            .map(normalizeProjectText)
+
+        return candidateNames.some((candidate) => candidate !== normalizedCurrent && normalizedQuestion.includes(candidate))
+    }) ?? null
+}
+
 const CHAT_STORAGE_KEY = 'mergeworks.chatHistory'
 
-export default function DealChatPanel({ synthesis, model, projectName, documents, allSyntheses }: Props) {
+export default function DealChatPanel({ synthesis, model, projectName, documents, allSyntheses, onSuggestProjectSwitch }: Props) {
     const [isOpen, setIsOpen] = useState(false)
     const [messages, setMessages] = useState<Message[]>(() => {
         try {
@@ -316,9 +339,10 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
     const messagesEndRef = useRef<HTMLDivElement>(null)
     const textareaRef = useRef<HTMLTextAreaElement>(null)
     const [ratings, setRatings] = useState<Record<string, 'up' | 'down'>>({})
+    const [suggestedProject, setSuggestedProject] = useState<ProjectSynthesisItem | null>(null)
 
     useEffect(() => {
-        try { localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages.slice(-50))) } catch {}
+        try { localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages.slice(-50))) } catch { }
     }, [messages])
 
     useEffect(() => {
@@ -370,6 +394,9 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
     const handleSend = useCallback(async () => {
         const trimmed = input.trim()
         if (!trimmed) return
+
+        const detectedProject = detectReferencedProject(trimmed, projectName, allSyntheses)
+        setSuggestedProject(detectedProject)
 
         const userMessage: Message = {
             id: `user-${Date.now()}`,
@@ -492,11 +519,10 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                 {messages.map(msg => (
                     <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                         <div className="max-w-[85%]">
-                            <div className={`rounded-lg px-3 py-2 text-sm ${
-                                msg.role === 'user'
+                            <div className={`rounded-lg px-3 py-2 text-sm ${msg.role === 'user'
                                     ? 'bg-primary text-primary-foreground whitespace-pre-wrap'
                                     : 'bg-muted text-foreground space-y-0.5'
-                            }`}>
+                                }`}>
                                 {msg.role === 'assistant' ? renderSimpleMarkdown(msg.content) : msg.content}
                             </div>
                             <div className="mt-1 flex items-center gap-1">
@@ -523,6 +549,30 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                         </div>
                     </div>
                 ))}
+
+                {!isTyping && suggestedProject && onSuggestProjectSwitch ? (
+                    <div className="rounded-lg border border-primary/25 bg-primary/5 px-3 py-2 text-xs text-foreground">
+                        <p className="font-medium">You mentioned another project.</p>
+                        <p className="mt-1 text-muted-foreground">Switch to {suggestedProject.projectName || suggestedProject.projectId} to chat with that project as the active context.</p>
+                        <div className="mt-2 flex gap-2">
+                            <button
+                                onClick={() => {
+                                    onSuggestProjectSwitch(suggestedProject.projectId)
+                                    setSuggestedProject(null)
+                                }}
+                                className="rounded-full bg-primary px-3 py-1 text-[11px] font-medium text-primary-foreground transition-colors hover:opacity-90"
+                            >
+                                Switch project
+                            </button>
+                            <button
+                                onClick={() => setSuggestedProject(null)}
+                                className="rounded-full border border-border bg-background px-3 py-1 text-[11px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                            >
+                                Stay here
+                            </button>
+                        </div>
+                    </div>
+                ) : null}
 
                 {!isTyping && messages.length > 0 && messages[messages.length - 1].role === 'assistant' && (
                     <div className="flex flex-wrap gap-1.5 px-1">

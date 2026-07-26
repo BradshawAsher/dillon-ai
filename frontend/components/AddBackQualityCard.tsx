@@ -12,6 +12,11 @@ type AddBackItem = {
     amount: number | null
     quality: 'supported' | 'partial' | 'unsupported'
     detail: string
+    sourceFile?: string
+    sourceLocation?: string
+    excerpt?: string
+    confidence?: number | null
+    status?: string
 }
 
 function money(value: number) {
@@ -30,24 +35,25 @@ function parseAddBacksFromSynthesis(synthesis: ProjectSynthesisItem | undefined,
             detail: totalAddBacks.status === 'confirmed'
                 ? 'Total add-back figure is confirmed in uploaded documents.'
                 : 'Total reported but individual line items not independently verified.',
+            status: totalAddBacks.status,
         })
     }
 
     if (!synthesis) return items
 
     const addBackPattern = /add.?back|adjustment|owner.?(?:salary|comp|benefit|perquisite|perk)|personal|non.?recurring|one.?time/i
-    const allText = [
-        ...synthesis.redFlags,
-        ...synthesis.yellowFlags,
-        ...synthesis.crossDocumentConflicts,
-        ...synthesis.openQuestions,
-        ...synthesis.negotiationLevers,
-        ...synthesis.keyTakeaways,
+    const structuredGroups = [
+        ...synthesis.structuredFindings.redFlags,
+        ...synthesis.structuredFindings.yellowFlags,
+        ...synthesis.structuredFindings.crossDocumentConflicts,
+        ...synthesis.structuredFindings.openQuestions,
+        ...synthesis.structuredFindings.negotiationLevers,
+        ...synthesis.structuredFindings.keyTakeaways,
     ]
 
-    for (const text of allText) {
-        if (!addBackPattern.test(text)) continue
-        const amountMatch = text.match(/\$[\d,]+(?:\.\d+)?[KkMm]?|\d+(?:,\d{3})+/)
+    for (const finding of structuredGroups) {
+        if (!addBackPattern.test(finding.text)) continue
+        const amountMatch = finding.text.match(/\$[\d,]+(?:\.\d+)?[KkMm]?|\d+(?:,\d{3})+/)
         let amount: number | null = null
         if (amountMatch) {
             const raw = amountMatch[0].replace(/[$,]/g, '')
@@ -56,40 +62,54 @@ function parseAddBacksFromSynthesis(synthesis: ProjectSynthesisItem | undefined,
             if (/[Mm]$/.test(amountMatch[0])) amount *= 1_000_000
         }
 
-        const isUnsupported = /unsupported|unsubstantiated|cannot.+verif|no.+documentation|question/i.test(text)
-        const isPartial = /partial|some|limited|unclear|inconsisten/i.test(text)
+        const isUnsupported = /unsupported|unsubstantiated|cannot.+verif|no.+documentation|question/i.test(finding.text)
+        const isPartial = /partial|some|limited|unclear|inconsisten/i.test(finding.text)
+        const primaryCitation = finding.citations?.[0]
 
         items.push({
-            label: text.length > 80 ? text.slice(0, 77) + '…' : text,
+            label: finding.text.length > 80 ? finding.text.slice(0, 77) + '…' : finding.text,
             amount,
             quality: isUnsupported ? 'unsupported' : isPartial ? 'partial' : 'supported',
-            detail: text,
+            detail: finding.text,
+            sourceFile: primaryCitation?.sourceFile,
+            sourceLocation: primaryCitation?.sourceLocation,
+            excerpt: primaryCitation?.excerpt,
+            confidence: finding.confidence,
+            status: finding.status,
         })
     }
 
-    if (synthesis.finalJudgmentJson) {
-        try {
-            const parsed = JSON.parse(synthesis.finalJudgmentJson)
-            const response = parsed?.response || parsed
-            const sources = [
-                ...(response?.flags?.red_flags || []),
-                ...(response?.flags?.yellow_flags || []),
-                ...(response?.reconciliation_findings || []),
-            ]
-            for (const item of sources) {
-                if (!item || typeof item !== 'object') continue
-                const desc = item.description || item.text || item.summary || ''
-                if (!addBackPattern.test(desc)) continue
-                const alreadyAdded = items.some((existing) => existing.detail === desc)
-                if (alreadyAdded) continue
-                items.push({
-                    label: desc.length > 80 ? desc.slice(0, 77) + '…' : desc,
-                    amount: null,
-                    quality: /unsupported|unsubstantiated|cannot/i.test(desc) ? 'unsupported' : 'partial',
-                    detail: desc,
-                })
+    if (items.length === 0) {
+        const allText = [
+            ...synthesis.redFlags,
+            ...synthesis.yellowFlags,
+            ...synthesis.crossDocumentConflicts,
+            ...synthesis.openQuestions,
+            ...synthesis.negotiationLevers,
+            ...synthesis.keyTakeaways,
+        ]
+
+        for (const text of allText) {
+            if (!addBackPattern.test(text)) continue
+            const amountMatch = text.match(/\$[\d,]+(?:\.\d+)?[KkMm]?|\d+(?:,\d{3})+/)
+            let amount: number | null = null
+            if (amountMatch) {
+                const raw = amountMatch[0].replace(/[$,]/g, '')
+                amount = parseFloat(raw)
+                if (/[Kk]$/.test(amountMatch[0])) amount *= 1000
+                if (/[Mm]$/.test(amountMatch[0])) amount *= 1_000_000
             }
-        } catch {}
+
+            const isUnsupported = /unsupported|unsubstantiated|cannot.+verif|no.+documentation|question/i.test(text)
+            const isPartial = /partial|some|limited|unclear|inconsisten/i.test(text)
+
+            items.push({
+                label: text.length > 80 ? text.slice(0, 77) + '…' : text,
+                amount,
+                quality: isUnsupported ? 'unsupported' : isPartial ? 'partial' : 'supported',
+                detail: text,
+            })
+        }
     }
 
     return items
@@ -151,10 +171,11 @@ export default function AddBackQualityCard({ model, synthesis, onOpenEvidence }:
                             type="button"
                             onClick={() => onOpenEvidence?.({
                                 title: 'Add-back quality finding',
-                                sourceFile: synthesis?.citations?.[0],
-                                sourceLocation: 'Financial analysis',
-                                excerpt: item.detail,
-                                status: item.quality === 'supported' ? 'Confirmed' : item.quality === 'partial' ? 'Needs review' : 'Risk',
+                                sourceFile: item.sourceFile || synthesis?.citations?.[0],
+                                sourceLocation: item.sourceLocation || 'Financial analysis',
+                                excerpt: item.excerpt || item.detail,
+                                confidence: item.confidence ?? undefined,
+                                status: item.status || (item.quality === 'supported' ? 'Confirmed' : item.quality === 'partial' ? 'Needs review' : 'Risk'),
                                 provenance: 'Add-back quality scoring',
                             })}
                             className="flex w-full items-start gap-3 rounded-lg border border-border p-3 text-left transition-colors hover:border-primary/40"

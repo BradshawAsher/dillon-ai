@@ -2481,7 +2481,18 @@ export default function DueDiligenceDashboard() {
             </main>
             <EvidenceDrawer evidence={activeEvidence} onClose={() => setActiveEvidence(null)} />
             <Suspense fallback={null}>
-                <DealChatPanel synthesis={activeProjectSynthesis} model={hydratedDealModel} projectName={dealName || suggestedProjectName} documents={activeProjectDocuments} allSyntheses={visibleProjectSyntheses} />
+                <DealChatPanel
+                    synthesis={activeProjectSynthesis}
+                    model={hydratedDealModel}
+                    projectName={dealName || suggestedProjectName}
+                    documents={activeProjectDocuments}
+                    allSyntheses={visibleProjectSyntheses}
+                    onSuggestProjectSwitch={(targetProjectId) => {
+                        const targetProject = projectSummaries.find((project) => (project.projectId || project.projectKey) === targetProjectId)
+                        if (!targetProject) return
+                        handlePortfolioProjectSelect(targetProject.projectKey)
+                    }}
+                />
             </Suspense>
             <Suspense fallback={null}>
                 <CommandPalette
