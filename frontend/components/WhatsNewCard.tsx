@@ -13,6 +13,11 @@ type ChangelogEntry = {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+    { date: '2026-07-26', title: 'Sensitivity analysis table', description: 'Returns tab now shows a MOIC/IRR matrix across entry and exit multiple combinations with color-coded cells and current-deal highlighting.', category: 'feature' },
+    { date: '2026-07-26', title: 'DD request list generator', description: 'Auto-generates a prioritized due diligence request list for the seller based on documentation gaps, open questions, and standard M&A requirements.', category: 'feature' },
+    { date: '2026-07-26', title: 'Deal rules of thumb', description: 'Quick-scan heuristics: entry multiple, EBITDA margin, payback period, revenue multiple, and DSCR with pass/warn/fail indicators.', category: 'feature' },
+    { date: '2026-07-26', title: 'Strengths & weaknesses', description: 'Two-column summary pulling from synthesis flags and calculated metrics to show deal pros and cons at a glance.', category: 'feature' },
+    { date: '2026-07-26', title: 'Deal summary banner', description: 'Compact top-of-page banner showing project name, verdict, key metrics, and red flag count.', category: 'feature' },
     { date: '2026-07-26', title: 'Always-on LLM valuation', description: 'The consolidator now always returns a valuation range even with limited data, using a confidence score (High/Medium/Low) to indicate reliability.', category: 'improvement' },
     { date: '2026-07-26', title: 'Valuation confidence badges', description: 'Synthesis valuation and Valuation tab now display a colored confidence badge (e.g. "High confidence 75%") derived from the LLM\'s self-assessed data quality.', category: 'feature' },
     { date: '2026-07-25', title: 'Document coverage matrix', description: '10-category coverage grid showing which standard diligence document types have been uploaded.', category: 'feature' },

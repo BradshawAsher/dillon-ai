@@ -202,10 +202,24 @@ export function formatCurrencyValue(value: string, currency: string) {
     return ''
   }
 
-  const numericValue = Number(trimmedValue)
+  let numericValue = Number(trimmedValue)
 
   if (!Number.isFinite(numericValue)) {
-    return trimmedValue
+    const cleaned = trimmedValue.replace(/[$,\s]/g, '')
+    const abbrevMatch = cleaned.match(/^([0-9.]+)\s*(M|K|B|m|k|b)$/i)
+    if (abbrevMatch) {
+      const base = parseFloat(abbrevMatch[1])
+      const suffix = abbrevMatch[2].toUpperCase()
+      const multiplier = suffix === 'B' ? 1_000_000_000 : suffix === 'M' ? 1_000_000 : 1_000
+      numericValue = base * multiplier
+    } else {
+      const strippedNum = Number(cleaned)
+      if (Number.isFinite(strippedNum)) {
+        numericValue = strippedNum
+      } else {
+        return trimmedValue
+      }
+    }
   }
 
   const trimmedCurrency = currency.trim()
