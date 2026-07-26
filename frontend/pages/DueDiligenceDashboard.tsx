@@ -6,6 +6,7 @@ import {
     FileSearch,
     Loader2,
     Moon,
+    Plus,
     Sun,
 } from 'lucide-react'
 
@@ -38,20 +39,22 @@ import NegotiationPlaybook from '../components/NegotiationPlaybook'
 import DealRulesOfThumb from '../components/DealRulesOfThumb'
 import DealGradeCard from '../components/DealGradeCard'
 import DealActionItemsCard from '../components/DealActionItemsCard'
-import DealQuickInsights from '../components/DealQuickInsights'
-import InvestmentThesisCard from '../components/InvestmentThesisCard'
-import RiskMatrixCard from '../components/RiskMatrixCard'
-import DecisionFrameworkCard from '../components/DecisionFrameworkCard'
-import KeyPersonRiskCard from '../components/KeyPersonRiskCard'
-import ClosingChecklistCard from '../components/ClosingChecklistCard'
-import SellerQuestionsCard from '../components/SellerQuestionsCard'
 import ConfidenceMeterCard from '../components/ConfidenceMeterCard'
 import QuickValuationCard from '../components/QuickValuationCard'
 import DealRadarCard from '../components/DealRadarCard'
 import FinancialHealthCard from '../components/FinancialHealthCard'
-import AssumptionGapsCard from '../components/AssumptionGapsCard'
-import TimeToCloseCard from '../components/TimeToCloseCard'
 import WhatsMissingCard from '../components/WhatsMissingCard'
+const DealQuickInsights = lazy(() => import('../components/DealQuickInsights'))
+const InvestmentThesisCard = lazy(() => import('../components/InvestmentThesisCard'))
+const RiskMatrixCard = lazy(() => import('../components/RiskMatrixCard'))
+const DecisionFrameworkCard = lazy(() => import('../components/DecisionFrameworkCard'))
+const KeyPersonRiskCard = lazy(() => import('../components/KeyPersonRiskCard'))
+const ClosingChecklistCard = lazy(() => import('../components/ClosingChecklistCard'))
+const SellerQuestionsCard = lazy(() => import('../components/SellerQuestionsCard'))
+const AssumptionGapsCard = lazy(() => import('../components/AssumptionGapsCard'))
+const TimeToCloseCard = lazy(() => import('../components/TimeToCloseCard'))
+const MarketCompsCard = lazy(() => import('../components/MarketCompsCard'))
+const DealEmailDraftCard = lazy(() => import('../components/DealEmailDraftCard'))
 import StrengthsWeaknessesCard from '../components/StrengthsWeaknessesCard'
 import DealSummaryBanner from '../components/DealSummaryBanner'
 import DDRequestListCard from '../components/DDRequestListCard'
@@ -414,6 +417,7 @@ export default function DueDiligenceDashboard() {
         }
     })
     const [activeWorkspaceTab, setActiveWorkspaceTab] = useState<WorkspaceTab>('overview')
+    const [overviewSubTab, setOverviewSubTab] = useState<'summary' | 'analysis'>('summary')
     const [projectId, setProjectId] = useState(() => createUnusedProjectId())
     const [projectStage, setProjectStage] = useState('post-loi')
     const [documentType, setDocumentType] = useState('auto-detect')
@@ -1467,13 +1471,49 @@ export default function DueDiligenceDashboard() {
                 <DealWorkspaceNav activeTab={activeWorkspaceTab} onTabChange={setActiveWorkspaceTab} />
 
                 {activeWorkspaceTab === 'overview' ? <section id="deal-overview" className="space-y-6 scroll-mt-6">
+                    <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-1 rounded-lg border border-border bg-card/80 p-1 w-fit">
+                            <button
+                                onClick={() => setOverviewSubTab('summary')}
+                                className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${overviewSubTab === 'summary' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                            >
+                                Summary
+                            </button>
+                            <button
+                                onClick={() => setOverviewSubTab('analysis')}
+                                className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${overviewSubTab === 'analysis' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                            >
+                                Deep Analysis
+                            </button>
+                        </div>
+                        <button
+                            onClick={() => document.querySelector('[data-project-intake]')?.scrollIntoView({ behavior: 'smooth' })}
+                            className="flex items-center gap-1.5 rounded-md border border-border bg-card/80 px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                        >
+                            <Plus className="h-3.5 w-3.5" />
+                            Add documents
+                        </button>
+                    </div>
                     <DealSummaryBanner model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
+
+                    {overviewSubTab === 'summary' && <>
+                    <Suspense fallback={null}>
+                        <DealMemoView model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} documents={activeProjectDocuments} />
+                    </Suspense>
                     <DealHealthKPIs
                         synthesis={activeProjectSynthesis}
                         model={hydratedDealModel}
                         impact={activeProjectImpact}
                         documentsCount={activeProjectDocuments.length}
                     />
+                    <DealGradeCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
+                    <QuickValuationCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
+                    <DealRadarCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documentsCount={activeProjectDocuments.length} />
+                    <DealActionItemsCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} />
+                    </>}
+
+                    {/* DEEP ANALYSIS SUB-TAB */}
+                    {overviewSubTab === 'analysis' && <>
                     <NextActionsCard
                         model={hydratedDealModel}
                         synthesis={activeProjectSynthesis}
@@ -1500,16 +1540,13 @@ export default function DueDiligenceDashboard() {
                         documentsCount={activeProjectDocuments.length}
                     />
                     <DealRulesOfThumb model={hydratedDealModel} />
-                    <DealGradeCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
-                    <DealActionItemsCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} />
                     <ConfidenceMeterCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} />
-
-                    <QuickValuationCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
-                    <DealRadarCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documentsCount={activeProjectDocuments.length} />
                     <FinancialHealthCard model={hydratedDealModel} />
-                    <AssumptionGapsCard model={hydratedDealModel} />
+                    <Suspense fallback={null}><AssumptionGapsCard model={hydratedDealModel} /></Suspense>
                     <WhatsMissingCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} />
+                    <Suspense fallback={null}><MarketCompsCard model={hydratedDealModel} /></Suspense>
 
+                    <Suspense fallback={null}>
                     <div className="border-t border-border pt-4">
                         <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Analysis & Insights</h3>
                     </div>
@@ -1539,10 +1576,10 @@ export default function DueDiligenceDashboard() {
                     <SellerQuestionsCard synthesis={activeProjectSynthesis} model={hydratedDealModel} />
                     <NegotiationPlaybook synthesis={activeProjectSynthesis} model={hydratedDealModel} />
                     <DDRequestListCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} projectName={dealName || suggestedProjectName} />
-                    <Suspense fallback={null}>
-                        <DealMemoView model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} documents={activeProjectDocuments} />
+                    <DealEmailDraftCard model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
                     </Suspense>
                     <ActivityFeed documents={activeProjectDocuments} />
+                    </>}
                     {projectSummaries.length > 1 && (
                         <ProjectComparisonCard
                             projects={projectSummaries.map(ps => ({
@@ -2104,6 +2141,12 @@ export default function DueDiligenceDashboard() {
                         retryingRequestId={retryingRequestId}
                         onRunSynthesis={() => { void handleRunSynthesis() }}
                         runningSynthesis={isCurrentProjectAwaitingSynthesis}
+                        onAddDocuments={(projectKey) => {
+                            setSelectedProjectKey(projectKey)
+                            setTimeout(() => {
+                                document.querySelector('[data-project-intake]')?.scrollIntoView({ behavior: 'smooth' })
+                            }, 100)
+                        }}
                     />
                 </section>
 
@@ -2430,7 +2473,7 @@ export default function DueDiligenceDashboard() {
             </main>
             <EvidenceDrawer evidence={activeEvidence} onClose={() => setActiveEvidence(null)} />
             <Suspense fallback={null}>
-                <DealChatPanel synthesis={activeProjectSynthesis} model={hydratedDealModel} projectName={dealName || suggestedProjectName} documents={activeProjectDocuments} />
+                <DealChatPanel synthesis={activeProjectSynthesis} model={hydratedDealModel} projectName={dealName || suggestedProjectName} documents={activeProjectDocuments} allSyntheses={visibleProjectSyntheses} />
             </Suspense>
             <Suspense fallback={null}>
                 <CommandPalette

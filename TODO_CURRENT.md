@@ -239,7 +239,7 @@ Before closing any `[-]` item, verify it against a **new live n8n run**, not exa
 - [ ] Add refresh/upload rate limiting where production traffic demonstrates a need.
 - [ ] Add per-project/person authorization before sharing the app beyond the current internal team.
 - [x] Track cost per document/project run with a transparent provider-cost estimate. CostPerRunCard added to Overview showing estimated per-doc ($0.08) and per-synthesis ($0.15) costs, total estimated spend, and a note explaining these are GPT-4o token-based estimates pending real API key usage tracking.
-- [ ] Keep the README and operating/runbook documentation synchronized with workflow and UI changes.
+- [x] Keep the README and operating/runbook documentation synchronized with workflow and UI changes. README updated with Key UI features section and expanded project map.
 
 ## Later / only after the core workflow is proven
 
@@ -252,5 +252,8 @@ Before closing any `[-]` item, verify it against a **new live n8n run**, not exa
 # Even later - Brad's Ideas
 - [x] Make a chatbot for the website for the user to chat with about the deal, maybe uses RAG or something to have more context about the deal to give better answers. DealChatPanel added as a floating chat bubble (bottom-right). Now connected to a real LLM via n8n workflow "DD Chat Assistant" (LBZVN8zeFT03Wn12) — webhook-triggered AI Agent with OpenAI (Pod 1 credential), conversation memory per session, system prompt grounded in deal context. Heuristic responses kept as offline fallback.
 - [x] Turn LLM chains to agents nodes in n8n to have memory and tool calls. Done — the Chat Assistant workflow uses an AI Agent node (not a basic LLM chain) with conversation memory (Window Buffer Memory per session) and Claude Sonnet 4.6. This is a proper agentic architecture for resumes.
+- [x] Split Overview page into Summary / Deep Analysis sub-tabs. Summary tab shows Deal Memo first (as requested), plus KPIs, Grade, Quick Valuation, Radar, and Action Items. Deep Analysis shows all remaining analytical cards (Risk Matrix, Closing Checklist, Market Comps, etc.). Toggle bar at top with "Add documents" shortcut button.
+- [x] Add "Add documents" button per project in Project Portfolio card. Each project now has a prominent "+ Add documents" button that selects the project and scrolls to the upload area. Also added to the Overview sub-tab header bar for quick access from any tab.
+- [x] Give the chatbot access to all projects. DealChatPanel now receives `allSyntheses` prop and includes context summaries of all other projects (risk, signal, documents, valuation, red flags, key takeaways) so users can ask about any project, not just the currently active one.
 - [ ] Any way we can make this workflow better using some sort of backend agent orchestration? Could add tools (data table lookup, document retrieval) to the agent so it can actively fetch info instead of relying solely on frontend context.
 - [x] Start working on some account system so that the user can only see their stuff and their stuff is saved? Optional LoginButton in the header toolbar — users can sign in if they want (name, email, team selector) via a modal dialog, or skip it entirely. No blocking gate. localStorage-based session shows user name + team badge when signed in. Ready to connect to a real auth backend (Firebase, Supabase, custom JWT) when needed.

@@ -21,9 +21,10 @@ type Props = {
     model: DealModel
     projectName: string
     documents?: SubmissionHistoryItem[]
+    allSyntheses?: ProjectSynthesisItem[]
 }
 
-function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealModel, projectName: string, documents?: SubmissionHistoryItem[]): string {
+function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealModel, projectName: string, documents?: SubmissionHistoryItem[], allSyntheses?: ProjectSynthesisItem[]): string {
     const parts: string[] = []
     parts.push(`# Project: ${projectName}`)
 
@@ -117,6 +118,24 @@ function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealMo
             if (doc.aiRedFlags) parts.push(`  Red flags: ${doc.aiRedFlags}`)
             if (doc.aiGreenFlags) parts.push(`  Green flags: ${doc.aiGreenFlags}`)
             if (doc.ebitdaExtracted) parts.push(`  EBITDA extracted: ${doc.ebitdaExtracted}`)
+        }
+    }
+
+    if (allSyntheses && allSyntheses.length > 0) {
+        const otherProjects = allSyntheses.filter(s => s.projectId !== (synthesis?.projectId))
+        if (otherProjects.length > 0) {
+            parts.push(`\n## Other Projects in Portfolio (${otherProjects.length})`)
+            parts.push(`(The user currently has ${allSyntheses.length} total projects. Here are summaries of the others:)\n`)
+            for (const s of otherProjects) {
+                parts.push(`### ${s.projectName || s.projectId}`)
+                parts.push(`- Risk: ${s.finalRiskLevel || 'N/A'} | Signal: ${s.finalTrafficLight || 'N/A'}`)
+                parts.push(`- Documents: ${s.documentsCompletedCount || 0}`)
+                if (s.finalRecommendation) parts.push(`- Recommendation: ${s.finalRecommendation}`)
+                if (s.valuationBaseEstimate && s.valuationBaseEstimate !== '0') parts.push(`- Valuation: $${s.valuationLowerBound} – $${s.valuationBaseEstimate} – $${s.valuationUpperBound}`)
+                if (s.redFlags?.length) parts.push(`- Red flags: ${s.redFlags.slice(0, 3).join('; ')}`)
+                if (s.keyTakeaways?.length) parts.push(`- Key takeaways: ${s.keyTakeaways.slice(0, 2).join('; ')}`)
+                parts.push('')
+            }
         }
     }
 
@@ -282,7 +301,7 @@ function relativeTime(ts: number): string {
 
 const CHAT_STORAGE_KEY = 'mergeworks.chatHistory'
 
-export default function DealChatPanel({ synthesis, model, projectName, documents }: Props) {
+export default function DealChatPanel({ synthesis, model, projectName, documents, allSyntheses }: Props) {
     const [isOpen, setIsOpen] = useState(false)
     const [messages, setMessages] = useState<Message[]>(() => {
         try {
@@ -365,7 +384,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
         setTypingElapsed(0)
         typingTimerRef.current = setInterval(() => setTypingElapsed(t => t + 1), 1000)
 
-        const context = buildContext(synthesis, model, projectName, documents)
+        const context = buildContext(synthesis, model, projectName, documents, allSyntheses)
 
         try {
             const res = await fetch('https://merge-works.app.n8n.cloud/webhook/45ffcb0f-7e10-471e-bdf8-b134617e6b3c/dd-chat', {

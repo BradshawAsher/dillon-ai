@@ -165,6 +165,20 @@ The configured deployment URL is:
 
 <https://due-diligence-dashboard.onrender.com/>
 
+## Key UI features
+
+- **Overview tab** with Summary / Deep Analysis sub-tabs — Deal Memo shown first
+- **AI Chatbot** (floating panel) — context-aware Q&A about the active project and all other projects in the portfolio
+- **Deterministic math checks** — pure arithmetic cross-verification of extracted financials (see [DETERMINISTIC_MATH_CHECKS.md](DETERMINISTIC_MATH_CHECKS.md))
+- **Deal Grade** — letter grade (A–F) across pricing, profitability, risk, data quality, payback
+- **Quick Valuation** — back-of-napkin valuation ranges with price marker
+- **Radar Chart** — 5-dimension SVG spider chart (no Recharts dependency)
+- **Risk Matrix** — 2×2 likelihood × impact grid
+- **Confidence Meter** — circular gauge across 4 dimensions
+- **Seller Questions / DD Request List / Email Draft** — auto-generated from deal state
+- **Project Portfolio** — per-project "Add documents" button and synthesis download
+- **Keyboard shortcuts** — Cmd/Ctrl+K command palette, C for chat, Escape to close panels
+
 ## Project map
 
 | Path | Role |
@@ -177,6 +191,7 @@ The configured deployment URL is:
 | `backend/diligence/` | Submit, history, and synthesis normalizers |
 | `docs/n8n-webhooks.md` | n8n webhook contracts and troubleshooting |
 | `docs/HOW_TO_RUN.md` | Additional operating notes |
+| `DETERMINISTIC_MATH_CHECKS.md` | How deterministic math checks work |
 
 ## Retool provenance
 
