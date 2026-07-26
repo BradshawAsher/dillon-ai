@@ -1,3 +1,6 @@
+import { useCallback, useState } from 'react'
+import { Check, Copy } from 'lucide-react'
+
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { Badge } from '../lib/shadcn/badge'
@@ -15,6 +18,7 @@ function compact(value: number) {
 }
 
 export default function DealSummaryBanner({ model, synthesis, projectName }: Props) {
+    const [copied, setCopied] = useState(false)
     const facts = parseDocumentedFacts(model.documentedFactsJson)
     const ebitda = (facts.ebitda_sde?.status === 'confirmed' || facts.ebitda_sde?.status === 'illustrative') && typeof facts.ebitda_sde.value === 'number' ? facts.ebitda_sde.value : null
     const revenue = (facts.revenue?.status === 'confirmed' || facts.revenue?.status === 'illustrative') && typeof facts.revenue.value === 'number' ? facts.revenue.value : null
@@ -55,6 +59,24 @@ export default function DealSummaryBanner({ model, synthesis, projectName }: Pro
             {synthesis?.redFlags && synthesis.redFlags.length > 0 && (
                 <span className="text-xs text-destructive font-medium">{synthesis.redFlags.length} red flag{synthesis.redFlags.length > 1 ? 's' : ''}</span>
             )}
+            <button
+                onClick={() => {
+                    const lines = [`📋 ${projectName || 'Deal'} — Quick Summary`]
+                    if (synthesis?.finalTrafficLight) lines.push(`Signal: ${synthesis.finalTrafficLight} | Risk: ${synthesis.finalRiskLevel || 'N/A'}`)
+                    if (revenue) lines.push(`Revenue: ${compact(revenue)}`)
+                    if (ebitda) lines.push(`EBITDA: ${compact(ebitda)}${revenue ? ` (${((ebitda / revenue) * 100).toFixed(0)}% margin)` : ''}`)
+                    if (price) lines.push(`Price: ${compact(price)}${multiple ? ` (${multiple.toFixed(1)}x)` : ''}`)
+                    if (synthesis?.redFlags?.length) lines.push(`⚠️ ${synthesis.redFlags.length} red flag${synthesis.redFlags.length > 1 ? 's' : ''}: ${synthesis.redFlags.slice(0, 2).join('; ')}`)
+                    if (synthesis?.finalRecommendation) lines.push(`Verdict: ${synthesis.finalRecommendation}`)
+                    navigator.clipboard.writeText(lines.join('\n'))
+                    setCopied(true)
+                    setTimeout(() => setCopied(false), 2000)
+                }}
+                className="ml-auto shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                title="Copy deal summary to clipboard"
+            >
+                {copied ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
+            </button>
         </div>
     )
 }
