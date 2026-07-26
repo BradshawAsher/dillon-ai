@@ -37,6 +37,16 @@ import DealScorecard from '../components/DealScorecard'
 import NegotiationPlaybook from '../components/NegotiationPlaybook'
 import DealRulesOfThumb from '../components/DealRulesOfThumb'
 import DealGradeCard from '../components/DealGradeCard'
+import DealActionItemsCard from '../components/DealActionItemsCard'
+import DealQuickInsights from '../components/DealQuickInsights'
+import InvestmentThesisCard from '../components/InvestmentThesisCard'
+import RiskMatrixCard from '../components/RiskMatrixCard'
+import DecisionFrameworkCard from '../components/DecisionFrameworkCard'
+import KeyPersonRiskCard from '../components/KeyPersonRiskCard'
+import ClosingChecklistCard from '../components/ClosingChecklistCard'
+import SellerQuestionsCard from '../components/SellerQuestionsCard'
+import ConfidenceMeterCard from '../components/ConfidenceMeterCard'
+import QuickValuationCard from '../components/QuickValuationCard'
 import StrengthsWeaknessesCard from '../components/StrengthsWeaknessesCard'
 import DealSummaryBanner from '../components/DealSummaryBanner'
 import DDRequestListCard from '../components/DDRequestListCard'
@@ -1486,8 +1496,31 @@ export default function DueDiligenceDashboard() {
                     />
                     <DealRulesOfThumb model={hydratedDealModel} />
                     <DealGradeCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
+                    <DealActionItemsCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} />
+                    <ConfidenceMeterCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} />
+
+                    <QuickValuationCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
+
+                    <div className="border-t border-border pt-4">
+                        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Analysis & Insights</h3>
+                    </div>
+                    <DealQuickInsights model={hydratedDealModel} synthesis={activeProjectSynthesis} />
+                    <InvestmentThesisCard model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
+                    <DecisionFrameworkCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
                     <StrengthsWeaknessesCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
+
+                    <div className="border-t border-border pt-4">
+                        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Risk Assessment</h3>
+                    </div>
                     <RiskSummaryCard synthesis={activeProjectSynthesis} />
+                    <RiskMatrixCard synthesis={activeProjectSynthesis} />
+                    <KeyPersonRiskCard synthesis={activeProjectSynthesis} />
+
+                    <div className="border-t border-border pt-4">
+                        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Negotiation & Closing</h3>
+                    </div>
+                    <ClosingChecklistCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} />
+                    <SellerQuestionsCard synthesis={activeProjectSynthesis} model={hydratedDealModel} />
                     <NegotiationPlaybook synthesis={activeProjectSynthesis} model={hydratedDealModel} />
                     <DDRequestListCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} projectName={dealName || suggestedProjectName} />
                     <Suspense fallback={null}>
@@ -2381,7 +2414,7 @@ export default function DueDiligenceDashboard() {
             </main>
             <EvidenceDrawer evidence={activeEvidence} onClose={() => setActiveEvidence(null)} />
             <Suspense fallback={null}>
-                <DealChatPanel synthesis={activeProjectSynthesis} model={hydratedDealModel} projectName={dealName || suggestedProjectName} />
+                <DealChatPanel synthesis={activeProjectSynthesis} model={hydratedDealModel} projectName={dealName || suggestedProjectName} documents={activeProjectDocuments} />
             </Suspense>
             <Suspense fallback={null}>
                 <CommandPalette

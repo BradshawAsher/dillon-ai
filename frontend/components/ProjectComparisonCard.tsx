@@ -1,6 +1,8 @@
-import { GitCompareArrows } from 'lucide-react'
+import { useCallback } from 'react'
+import { Download, GitCompareArrows } from 'lucide-react'
 
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
+import { Button } from '../lib/shadcn/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { parseDocumentedFacts } from '../utils/evidence'
 
@@ -33,7 +35,79 @@ function riskDot(level: string | undefined) {
     return <span className="inline-block h-2.5 w-2.5 rounded-full bg-muted-foreground/40" />
 }
 
+function buildComparisonMarkdown(projects: ProjectComparison[]): string {
+    const lines: string[] = []
+    lines.push('# Deal Comparison Report')
+    lines.push('')
+    lines.push(`*Generated ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}*`)
+    lines.push('')
+    lines.push(`Comparing ${projects.length} projects side by side.`)
+    lines.push('')
+
+    const header = ['Metric', ...projects.map(p => p.projectName)]
+    const separator = header.map(() => '---')
+    lines.push(`| ${header.join(' | ')} |`)
+    lines.push(`| ${separator.join(' | ')} |`)
+
+    const metricRows: { label: string; getValue: (p: ProjectComparison) => string }[] = [
+        { label: 'Risk Level', getValue: p => p.synthesis?.finalRiskLevel || 'Pending' },
+        { label: 'Traffic Light', getValue: p => p.synthesis?.finalTrafficLight || 'Pending' },
+        { label: 'Revenue', getValue: p => { const f = parseDocumentedFacts(p.model.documentedFactsJson); return typeof f.revenue?.value === 'number' ? `$${Number(f.revenue.value).toLocaleString()}` : 'N/A' } },
+        { label: 'EBITDA/SDE', getValue: p => { const f = parseDocumentedFacts(p.model.documentedFactsJson); return typeof f.ebitda_sde?.value === 'number' ? `$${Number(f.ebitda_sde.value).toLocaleString()}` : 'N/A' } },
+        { label: 'Asking Price', getValue: p => p.model.askingPrice ? `$${p.model.askingPrice.toLocaleString()}` : 'N/A' },
+        { label: 'Entry Multiple', getValue: p => { const f = parseDocumentedFacts(p.model.documentedFactsJson); const e = f.ebitda_sde?.value; const pr = p.model.askingPrice; return typeof pr === 'number' && typeof e === 'number' && e > 0 ? `${(pr / e).toFixed(1)}x` : 'N/A' } },
+        { label: 'EBITDA Margin', getValue: p => { const f = parseDocumentedFacts(p.model.documentedFactsJson); const r = f.revenue?.value; const e = f.ebitda_sde?.value; return typeof r === 'number' && typeof e === 'number' && r > 0 ? `${((e / r) * 100).toFixed(0)}%` : 'N/A' } },
+        { label: 'Valuation (Base)', getValue: p => p.synthesis?.valuationBaseEstimate && p.synthesis.valuationBaseEstimate !== '0' ? `$${p.synthesis.valuationBaseEstimate}` : 'Pending' },
+        { label: 'Confidence', getValue: p => { const raw = p.synthesis?.valuationConfidence || p.synthesis?.aiConfidence; if (!raw) return 'N/A'; const c = parseFloat(raw); return Number.isFinite(c) ? `${c <= 1 ? Math.round(c * 100) : Math.round(c)}%` : 'N/A' } },
+        { label: 'Red Flags', getValue: p => String(p.synthesis?.redFlags?.length ?? 0) },
+        { label: 'Documents', getValue: p => `${p.completedDocuments}/${p.documentsCount}` },
+    ]
+
+    for (const row of metricRows) {
+        lines.push(`| ${row.label} | ${projects.map(p => row.getValue(p)).join(' | ')} |`)
+    }
+
+    lines.push('')
+    for (const p of projects) {
+        lines.push(`## ${p.projectName}`)
+        lines.push('')
+        if (p.synthesis?.redFlags?.length) {
+            lines.push('### Red Flags')
+            p.synthesis.redFlags.forEach(f => lines.push(`- ${f}`))
+            lines.push('')
+        }
+        if (p.synthesis?.greenFlags?.length) {
+            lines.push('### Green Flags')
+            p.synthesis.greenFlags.forEach(f => lines.push(`- ${f}`))
+            lines.push('')
+        }
+        if (p.synthesis?.negotiationLevers?.length) {
+            lines.push('### Negotiation Levers')
+            p.synthesis.negotiationLevers.forEach(l => lines.push(`- ${l}`))
+            lines.push('')
+        }
+        if (p.synthesis?.buyReasoning) {
+            lines.push(`### Recommendation`)
+            lines.push(p.synthesis.buyReasoning)
+            lines.push('')
+        }
+    }
+
+    return lines.join('\n')
+}
+
 export default function ProjectComparisonCard({ projects, activeProjectId, onSelectProject }: ProjectComparisonCardProps) {
+    const handleExport = useCallback(() => {
+        const md = buildComparisonMarkdown(projects)
+        const blob = new Blob([md], { type: 'text/markdown' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `deal-comparison-${new Date().toISOString().slice(0, 10)}.md`
+        a.click()
+        URL.revokeObjectURL(url)
+    }, [projects])
+
     if (projects.length <= 1) {
         return (
             <Card>
@@ -128,10 +202,16 @@ export default function ProjectComparisonCard({ projects, activeProjectId, onSel
     return (
         <Card>
             <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                    <GitCompareArrows className="h-4 w-4 text-muted-foreground" />
-                    Project comparison
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                        <GitCompareArrows className="h-4 w-4 text-muted-foreground" />
+                        Project comparison
+                    </CardTitle>
+                    <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={handleExport}>
+                        <Download className="h-3 w-3" />
+                        Export comparison
+                    </Button>
+                </div>
             </CardHeader>
             <CardContent className="overflow-x-auto">
                 <table className="w-full min-w-[480px] text-left">

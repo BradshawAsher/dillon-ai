@@ -1,11 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { Bot, MessageCircle, Send, X } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Bot, Send, ThumbsDown, ThumbsUp, X } from 'lucide-react'
 
 import { Button } from '../lib/shadcn/button'
 import { Card } from '../lib/shadcn/card'
 import { Textarea } from '../lib/shadcn/textarea'
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import type { DealModel } from '../hooks/backend/diligence'
+import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import { parseDocumentedFacts } from '../utils/evidence'
 
 type Message = {
@@ -19,9 +20,10 @@ type Props = {
     synthesis?: ProjectSynthesisItem
     model: DealModel
     projectName: string
+    documents?: SubmissionHistoryItem[]
 }
 
-function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealModel, projectName: string): string {
+function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealModel, projectName: string, documents?: SubmissionHistoryItem[]): string {
     const parts: string[] = []
     parts.push(`# Project: ${projectName}`)
 
@@ -99,6 +101,22 @@ function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealMo
         }
         if (synthesis.buyReasoning) {
             parts.push(`\n### Buy/Pass Reasoning\n${synthesis.buyReasoning}`)
+        }
+    }
+
+    if (documents && documents.length > 0) {
+        const completed = documents.filter(d => d.status === 'completed')
+        parts.push(`\n## Uploaded Documents (${documents.length} total, ${completed.length} completed)`)
+        for (const doc of completed.slice(0, 10)) {
+            const docParts: string[] = [`- **${doc.fileName}**`]
+            if (doc.detectedDocumentType) docParts.push(`type: ${doc.detectedDocumentType}`)
+            if (doc.riskLevel) docParts.push(`risk: ${doc.riskLevel}`)
+            if (doc.trafficLight) docParts.push(`signal: ${doc.trafficLight}`)
+            parts.push(docParts.join(' | '))
+            if (doc.aiSummary) parts.push(`  Summary: ${doc.aiSummary.slice(0, 200)}`)
+            if (doc.aiRedFlags) parts.push(`  Red flags: ${doc.aiRedFlags}`)
+            if (doc.aiGreenFlags) parts.push(`  Green flags: ${doc.aiGreenFlags}`)
+            if (doc.ebitdaExtracted) parts.push(`  EBITDA extracted: ${doc.ebitdaExtracted}`)
         }
     }
 
@@ -230,13 +248,65 @@ function generateResponse(question: string, context: string): string {
     return `I can help you understand this deal. Try asking about:\n\n- **Risks** — "What are the red flags?"\n- **Valuation** — "What multiple am I paying?"\n- **Earnings** — "What's the EBITDA margin?"\n- **Returns** — "What's my IRR?"\n- **Structure** — "How is the deal financed?"\n- **Customers** — "Is there concentration risk?"\n- **Negotiation** — "What levers do I have?"\n- **Confidence** — "How reliable is this valuation?"\n- **Missing info** — "What documents do I still need?"\n- **Next steps** — "What should I do next?"\n- **Overview** — "Give me a summary"\n\nI use the project synthesis and documented facts to answer. For deeper analysis, check the specific tabs.`
 }
 
-export default function DealChatPanel({ synthesis, model, projectName }: Props) {
+function renderSimpleMarkdown(text: string) {
+    return text.split('\n').map((line, i) => {
+        let processed = line
+            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.+?)\*/g, '<em>$1</em>')
+            .replace(/`(.+?)`/g, '<code class="rounded bg-foreground/10 px-1 py-0.5 text-[11px] font-mono">$1</code>')
+
+        if (/^#{1,3}\s/.test(line)) {
+            const content = line.replace(/^#{1,3}\s+/, '')
+            return <p key={i} className="font-semibold mt-1">{content}</p>
+        }
+        if (/^[-•]\s/.test(line)) {
+            const content = processed.replace(/^[-•]\s+/, '')
+            return <li key={i} className="ml-3 list-disc" dangerouslySetInnerHTML={{ __html: content }} />
+        }
+        if (/^\d+\.\s/.test(line)) {
+            const content = processed.replace(/^\d+\.\s+/, '')
+            return <li key={i} className="ml-3 list-decimal" dangerouslySetInnerHTML={{ __html: content }} />
+        }
+        if (line.trim() === '') return <br key={i} />
+        return <p key={i} dangerouslySetInnerHTML={{ __html: processed }} />
+    })
+}
+
+function relativeTime(ts: number): string {
+    const diff = Date.now() - ts
+    if (diff < 60_000) return 'just now'
+    if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`
+    if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h ago`
+    return new Date(ts).toLocaleDateString()
+}
+
+const CHAT_STORAGE_KEY = 'mergeworks.chatHistory'
+
+export default function DealChatPanel({ synthesis, model, projectName, documents }: Props) {
     const [isOpen, setIsOpen] = useState(false)
-    const [messages, setMessages] = useState<Message[]>([])
+    const [messages, setMessages] = useState<Message[]>(() => {
+        try {
+            const stored = localStorage.getItem(CHAT_STORAGE_KEY)
+            return stored ? JSON.parse(stored) : []
+        } catch { return [] }
+    })
     const [input, setInput] = useState('')
     const [isTyping, setIsTyping] = useState(false)
     const messagesEndRef = useRef<HTMLDivElement>(null)
     const textareaRef = useRef<HTMLTextAreaElement>(null)
+    const [ratings, setRatings] = useState<Record<string, 'up' | 'down'>>({})
+
+    useEffect(() => {
+        try { localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages.slice(-50))) } catch {}
+    }, [messages])
+
+    useEffect(() => {
+        function handleKeyDown(e: KeyboardEvent) {
+            if (e.key === 'Escape' && isOpen) setIsOpen(false)
+        }
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [isOpen])
 
     const scrollToBottom = useCallback(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -247,6 +317,29 @@ export default function DealChatPanel({ synthesis, model, projectName }: Props) 
     }, [messages, scrollToBottom])
 
     const sessionId = useRef(`chat-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`).current
+
+    const smartSuggestions = useMemo(() => {
+        const suggestions: string[] = []
+        const redCount = synthesis?.redFlags?.length ?? 0
+        const hasValuation = synthesis?.valuationBaseEstimate && synthesis.valuationBaseEstimate !== '0'
+        const facts = parseDocumentedFacts(model.documentedFactsJson)
+        const hasEbitda = typeof facts.ebitda_sde?.value === 'number'
+        const price = model.purchasePrice ?? model.askingPrice
+
+        if (redCount > 0) suggestions.push(`Explain the ${redCount} red flag${redCount > 1 ? 's' : ''}`)
+        else suggestions.push('What are the risks?')
+
+        if (hasEbitda && price) suggestions.push('What if I negotiate 15% off?')
+        else suggestions.push('Give me a summary')
+
+        if (hasValuation) suggestions.push('Is this fairly priced?')
+        else suggestions.push('What docs do I still need?')
+
+        if (synthesis?.negotiationLevers?.length) suggestions.push('Best negotiation strategy?')
+        else suggestions.push('What should I do next?')
+
+        return suggestions.slice(0, 4)
+    }, [synthesis, model])
 
     const handleSend = useCallback(async () => {
         const trimmed = input.trim()
@@ -263,10 +356,10 @@ export default function DealChatPanel({ synthesis, model, projectName }: Props) 
         setInput('')
         setIsTyping(true)
 
-        const context = buildContext(synthesis, model, projectName)
+        const context = buildContext(synthesis, model, projectName, documents)
 
         try {
-            const res = await fetch('https://merge-works.app.n8n.cloud/webhook/dd-chat', {
+            const res = await fetch('https://merge-works.app.n8n.cloud/webhook/45ffcb0f-7e10-471e-bdf8-b134617e6b3c/dd-chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ question: trimmed, context, sessionId }),
@@ -292,7 +385,7 @@ export default function DealChatPanel({ synthesis, model, projectName }: Props) 
         } finally {
             setIsTyping(false)
         }
-    }, [input, synthesis, model, projectName, sessionId])
+    }, [input, synthesis, model, projectName, documents, sessionId])
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && !e.shiftKey) {
@@ -310,6 +403,11 @@ export default function DealChatPanel({ synthesis, model, projectName }: Props) 
             >
                 <Bot className="h-5 w-5" />
                 <span className="text-sm font-medium">AI Deal Assistant</span>
+                {messages.length > 0 && (
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary-foreground/20 text-[10px] font-bold">
+                        {messages.filter(m => m.role === 'assistant').length}
+                    </span>
+                )}
             </button>
         )
     }
@@ -320,14 +418,26 @@ export default function DealChatPanel({ synthesis, model, projectName }: Props) 
                 <div className="flex items-center gap-2">
                     <Bot className="h-5 w-5 text-primary" />
                     <span className="text-sm font-semibold text-foreground">Deal Assistant</span>
+                    <span className="text-[10px] text-muted-foreground">Claude</span>
                 </div>
-                <button
-                    onClick={() => setIsOpen(false)}
-                    className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                    aria-label="Close chat"
-                >
-                    <X className="h-4 w-4" />
-                </button>
+                <div className="flex items-center gap-1">
+                    {messages.length > 0 && (
+                        <button
+                            onClick={() => { setMessages([]); setRatings({}) }}
+                            className="rounded-md px-2 py-1 text-[10px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                            title="Clear conversation"
+                        >
+                            Clear
+                        </button>
+                    )}
+                    <button
+                        onClick={() => setIsOpen(false)}
+                        className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                        aria-label="Close chat"
+                    >
+                        <X className="h-4 w-4" />
+                    </button>
+                </div>
             </div>
 
             <div className="flex-1 overflow-y-auto p-3 space-y-3">
@@ -335,9 +445,9 @@ export default function DealChatPanel({ synthesis, model, projectName }: Props) 
                     <div className="flex h-full flex-col items-center justify-center text-center">
                         <Bot className="h-10 w-10 text-muted-foreground/50" />
                         <p className="mt-3 text-sm font-medium text-foreground">Ask about this deal</p>
-                        <p className="mt-1 text-xs text-muted-foreground">I can answer questions about risks, valuation, negotiation levers, and more using your uploaded documents.</p>
+                        <p className="mt-1 text-xs text-muted-foreground">Powered by Claude. I have full context on your deal — financials, risks, flags, documents, and model assumptions.</p>
                         <div className="mt-4 flex flex-wrap justify-center gap-2">
-                            {['What are the risks?', 'Give me a summary', 'What\'s missing?'].map(suggestion => (
+                            {smartSuggestions.map(suggestion => (
                                 <button
                                     key={suggestion}
                                     onClick={() => { setInput(suggestion); textareaRef.current?.focus() }}
@@ -352,15 +462,52 @@ export default function DealChatPanel({ synthesis, model, projectName }: Props) 
 
                 {messages.map(msg => (
                     <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-[85%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap ${
-                            msg.role === 'user'
-                                ? 'bg-primary text-primary-foreground'
-                                : 'bg-muted text-foreground'
-                        }`}>
-                            {msg.content}
+                        <div className="max-w-[85%]">
+                            <div className={`rounded-lg px-3 py-2 text-sm ${
+                                msg.role === 'user'
+                                    ? 'bg-primary text-primary-foreground whitespace-pre-wrap'
+                                    : 'bg-muted text-foreground space-y-0.5'
+                            }`}>
+                                {msg.role === 'assistant' ? renderSimpleMarkdown(msg.content) : msg.content}
+                            </div>
+                            <div className="mt-1 flex items-center gap-1">
+                                <span className="text-[9px] text-muted-foreground/60">{relativeTime(msg.timestamp)}</span>
+                                {msg.role === 'assistant' && (
+                                    <>
+                                        <button
+                                            onClick={() => setRatings(prev => ({ ...prev, [msg.id]: prev[msg.id] === 'up' ? undefined as never : 'up' }))}
+                                            className={`rounded p-0.5 transition-colors ${ratings[msg.id] === 'up' ? 'text-green-600' : 'text-muted-foreground/40 hover:text-muted-foreground'}`}
+                                            title="Helpful"
+                                        >
+                                            <ThumbsUp className="h-3 w-3" />
+                                        </button>
+                                        <button
+                                            onClick={() => setRatings(prev => ({ ...prev, [msg.id]: prev[msg.id] === 'down' ? undefined as never : 'down' }))}
+                                            className={`rounded p-0.5 transition-colors ${ratings[msg.id] === 'down' ? 'text-red-600' : 'text-muted-foreground/40 hover:text-muted-foreground'}`}
+                                            title="Not helpful"
+                                        >
+                                            <ThumbsDown className="h-3 w-3" />
+                                        </button>
+                                    </>
+                                )}
+                            </div>
                         </div>
                     </div>
                 ))}
+
+                {!isTyping && messages.length > 0 && messages[messages.length - 1].role === 'assistant' && (
+                    <div className="flex flex-wrap gap-1.5 px-1">
+                        {['Tell me more', 'What else should I know?', 'How do I verify this?'].map(q => (
+                            <button
+                                key={q}
+                                onClick={() => { setInput(q); textareaRef.current?.focus() }}
+                                className="rounded-full border border-border bg-background px-2.5 py-1 text-[11px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                            >
+                                {q}
+                            </button>
+                        ))}
+                    </div>
+                )}
 
                 {isTyping && (
                     <div className="flex justify-start">

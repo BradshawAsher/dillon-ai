@@ -8,8 +8,9 @@ type Props = {
     synthesisRuns: number
 }
 
-const ESTIMATED_COST_PER_DOC = 0.08
-const ESTIMATED_COST_PER_SYNTHESIS = 0.15
+const ESTIMATED_COST_PER_DOC = 0.06
+const ESTIMATED_COST_PER_SYNTHESIS = 0.12
+const ESTIMATED_COST_PER_CHAT = 0.02
 
 export default function CostPerRunCard({ documentsProcessed, synthesisRuns }: Props) {
     const estimatedDocCost = documentsProcessed * ESTIMATED_COST_PER_DOC
@@ -25,9 +26,9 @@ export default function CostPerRunCard({ documentsProcessed, synthesisRuns }: Pr
                             <DollarSign className="h-5 w-5 text-primary" />
                             <CardTitle className="text-lg">Estimated cost per run</CardTitle>
                         </div>
-                        <CardDescription>Estimated LLM API costs based on document count and synthesis runs. Actual costs will show once the Pod 1 API key is configured with usage tracking.</CardDescription>
+                        <CardDescription>Estimated Anthropic Claude API costs based on document count, synthesis runs, and chat messages. Pod 1 credential is active.</CardDescription>
                     </div>
-                    <Badge variant="warning">Estimated</Badge>
+                    <Badge variant="secondary">Pod 1 Active</Badge>
                 </div>
             </CardHeader>
             <CardContent className="p-4">
@@ -55,8 +56,8 @@ export default function CostPerRunCard({ documentsProcessed, synthesisRuns }: Pr
                 </div>
                 <div className="mt-4 rounded-md border border-dashed border-border bg-muted/20 p-3">
                     <p className="text-xs text-muted-foreground">
-                        <strong>Note:</strong> These are rough estimates based on typical GPT-4o token usage (~$0.08 per document analysis, ~$0.15 per synthesis).
-                        Actual costs depend on document length, retry count, and model pricing. Connect the Pod 1 API key with usage tracking to see real costs.
+                        <strong>Provider:</strong> Anthropic Claude (Sonnet 4.6 for chat, per-doc analysis, and synthesis). Estimates based on ~$3/M input, ~$15/M output tokens.
+                        Actual costs depend on document length, retry count, and context size. Chat messages are cheaper due to shorter responses.
                     </p>
                 </div>
             </CardContent>
