@@ -30,9 +30,13 @@ import KeyboardShortcutsDialog from '../components/KeyboardShortcutsDialog'
 import NotificationCenter, { type Notification } from '../components/NotificationCenter'
 import ActivityFeed from '../components/ActivityFeed'
 import DealHealthKPIs from '../components/DealHealthKPIs'
+import DocumentCoverageMatrix from '../components/DocumentCoverageMatrix'
 import DealReadinessGauge from '../components/DealReadinessGauge'
 import DealScorecard from '../components/DealScorecard'
+import NegotiationPlaybook from '../components/NegotiationPlaybook'
 import PipelineStatusIndicator from '../components/PipelineStatusIndicator'
+import RiskSummaryCard from '../components/RiskSummaryCard'
+import ProjectComparisonCard from '../components/ProjectComparisonCard'
 const DealTimelineCard = lazy(() => import('../components/DealTimelineCard'))
 import ModelAssumptionsSummary from '../components/ModelAssumptionsSummary'
 import RecurringVsOneTimeCard from '../components/RecurringVsOneTimeCard'
@@ -1448,13 +1452,30 @@ export default function DueDiligenceDashboard() {
                         documentsCount={activeProjectDocuments.length}
                         completedDocuments={activeProjectImpact.completedDocuments}
                     />
+                    <DocumentCoverageMatrix documents={activeProjectDocuments} />
                     <DealScorecard
                         model={hydratedDealModel}
                         synthesis={activeProjectSynthesis}
                         impact={activeProjectImpact}
                         documentsCount={activeProjectDocuments.length}
                     />
+                    <RiskSummaryCard synthesis={activeProjectSynthesis} />
+                    <NegotiationPlaybook synthesis={activeProjectSynthesis} model={hydratedDealModel} />
                     <ActivityFeed documents={activeProjectDocuments} />
+                    {projectSummaries.length > 1 && (
+                        <ProjectComparisonCard
+                            projects={projectSummaries.map(ps => ({
+                                projectId: ps.projectId || ps.projectKey,
+                                projectName: ps.projectName || ps.companyName || ps.projectKey,
+                                model: (Array.isArray(dealModelsData) ? dealModelsData.find(m => m.projectId === (ps.projectId || ps.projectKey)) : undefined) ?? { projectId: ps.projectId || ps.projectKey, askingPrice: null, purchasePrice: null, debtAssumed: null, cashAcquired: null, workingCapitalRequirement: null, transactionFees: null, holdPeriodYears: null, taxRate: null, closingCosts: null, maintenanceCapex: null, exitMultiple: null, exitCosts: null, equityContributionPercent: null, interestRate: null, amortizationYears: null, sellerNoteAmount: null, bearRevenueGrowth: null, baseRevenueGrowth: null, bullRevenueGrowth: null, bearEbitdaMargin: null, baseEbitdaMargin: null, bullEbitdaMargin: null, bearExitMultiple: null, baseExitMultiple: null, bullExitMultiple: null, revenueMultiple: null, ebitdaMultiple: null, assetHaircutPercent: null, modelUpdatedAt: '', modelUpdatedBy: '', documentedFactsJson: '', documentedFactsStatus: '' },
+                                synthesis: visibleProjectSyntheses.find(s => s.projectId === (ps.projectId || ps.projectKey)),
+                                documentsCount: ps.documentCount,
+                                completedDocuments: ps.completedCount,
+                            }))}
+                            activeProjectId={activeProjectId}
+                            onSelectProject={(id) => { setSelectedProjectKey(id) }}
+                        />
+                    )}
                     <DealOverviewCard
                         syntheses={visibleProjectSyntheses}
                         projects={projectSummaries}
@@ -1926,22 +1947,25 @@ export default function DueDiligenceDashboard() {
                                         </div>
                                     ) : null}
                                     {liveSubmitCitations.length ? <div className="xl:col-span-4 rounded-lg border border-primary/25 bg-primary/5 p-4"><div className="flex items-center justify-between gap-2"><p className="text-sm font-semibold text-foreground">Document citations</p><Badge variant="outline">{liveSubmitCitations.length} locations</Badge></div><p className="mt-1 text-xs text-muted-foreground">Each line identifies the exact section n8n used; click it to view source evidence when available.</p><div className="mt-3 h-64 space-y-2 overflow-y-auto pr-1">{liveSubmitCitations.map((citation, index) => <button key={`${citation.sourceFile}-${citation.rowOrCell}-${index}`} type="button" onClick={() => setActiveEvidence({ title: 'Document analysis citation', sourceFile: citation.sourceFile || displayedSubmissionRow?.fileName || 'Uploaded document', sourceLocation: citation.rowOrCell || 'Document analysis', excerpt: citation.rowOrCell ? `Source location: ${citation.rowOrCell}` : 'No additional excerpt was returned for this citation.', status: 'Confirmed', provenance: 'Document-level analysis', documentId: displayedSubmissionRow?.storageFileId, documentUrl: displayedSubmissionRow?.storageFileUrl })} className="flex w-full flex-wrap items-center justify-between gap-2 rounded-md border border-primary/20 bg-background px-3 py-2 text-left text-sm text-foreground transition-colors hover:border-primary/50 hover:bg-muted/30"><span><span className="font-medium">{citation.sourceFile || displayedSubmissionRow?.fileName || 'Uploaded document'}</span><span className="mx-2 text-muted-foreground">·</span><span className="text-muted-foreground">{citation.rowOrCell || 'Document analysis'}</span></span><span className="text-xs font-medium text-primary">View evidence</span></button>)}</div></div> : null}
-                                    {(liveSubmitInsight?.formattedValuationLowerBound || liveSubmitInsight?.formattedValuationBaseEstimate || liveSubmitInsight?.formattedValuationUpperBound) ? (
-                                        <div className="grid gap-2 xl:col-span-4 md:grid-cols-3">
-                                            <div className="rounded-md border border-border bg-card px-3 py-2">
-                                                <div className="flex items-center justify-between gap-2">
+                                    {(liveSubmitInsight?.formattedValuationLowerBound && liveSubmitInsight.formattedValuationLowerBound !== '$0') || (liveSubmitInsight?.formattedValuationBaseEstimate && liveSubmitInsight.formattedValuationBaseEstimate !== '$0') || (liveSubmitInsight?.formattedValuationUpperBound && liveSubmitInsight.formattedValuationUpperBound !== '$0') ? (
+                                        <div className="xl:col-span-4">
+                                            <div className="mb-2 flex items-center gap-2">
+                                                <Badge variant="outline" className="text-xs">{displayedSubmissionRow?.aiConfidence ? `${displayedSubmissionRow.aiConfidence}% confidence` : 'AI estimate'}</Badge>
+                                                {displayedSubmitValuationCurrency ? <Badge variant="secondary">{displayedSubmitValuationCurrency}</Badge> : null}
+                                            </div>
+                                            <div className="grid gap-2 md:grid-cols-3">
+                                                <div className="rounded-md border border-border bg-card px-3 py-2">
                                                     <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Lower Bound</p>
-                                                    {displayedSubmitValuationCurrency ? <Badge variant="outline">{displayedSubmitValuationCurrency}</Badge> : null}
+                                                    <p className="mt-1 text-sm text-foreground">{liveSubmitInsight?.formattedValuationLowerBound || 'Pending'}</p>
                                                 </div>
-                                                <p className="mt-1 text-sm text-foreground">{liveSubmitInsight?.formattedValuationLowerBound || 'Pending'}</p>
-                                            </div>
-                                            <div className="rounded-md border border-border bg-card px-3 py-2">
-                                                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Base Estimate</p>
-                                                <p className="mt-1 text-sm text-foreground">{liveSubmitInsight?.formattedValuationBaseEstimate || 'Pending'}</p>
-                                            </div>
-                                            <div className="rounded-md border border-border bg-card px-3 py-2">
-                                                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Upper Bound</p>
-                                                <p className="mt-1 text-sm text-foreground">{liveSubmitInsight?.formattedValuationUpperBound || 'Pending'}</p>
+                                                <div className="rounded-md border border-border bg-card px-3 py-2">
+                                                    <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Base Estimate</p>
+                                                    <p className="mt-1 text-sm text-foreground">{liveSubmitInsight?.formattedValuationBaseEstimate || 'Pending'}</p>
+                                                </div>
+                                                <div className="rounded-md border border-border bg-card px-3 py-2">
+                                                    <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Upper Bound</p>
+                                                    <p className="mt-1 text-sm text-foreground">{liveSubmitInsight?.formattedValuationUpperBound || 'Pending'}</p>
+                                                </div>
                                             </div>
                                         </div>
                                     ) : null}

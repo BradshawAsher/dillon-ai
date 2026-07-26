@@ -176,6 +176,18 @@ Before closing any `[-]` item, verify it against a **new live n8n run**, not exa
 - [x] Add a "jump to edit" button on ModelAssumptionsSummary that scrolls to the DealModelPendingCard inputs. Added Settings2 icon + "Edit" button that smooth-scrolls to `[data-deal-model-pending]`.
 - [x] Add dark mode toggle or auto-detect system preference. Theme toggle button (Light/Dark/Auto cycle) in the dashboard header. Uses localStorage persistence and listens for system preference changes. Dark CSS variables were already in orgTheme.css; just needed the .dark class toggle.
 - [x] Improve mobile responsiveness of the DealHealthKPIs grid on small screens. Changed from `sm:grid-cols-2 lg:grid-cols-5` to `grid-cols-2 sm:grid-cols-3 lg:grid-cols-5` so KPIs always show 2 per row on mobile instead of stacking single-column.
+- [x] Add pipeline status indicator. Pulsing green/amber/red dot in the header shows whether the system is live, processing documents, or idle. Replaces the old "Async intake + polling enabled" badge.
+- [x] Add deal readiness scorecard. A/B/C/D/F grade with 4-dimension breakdown (Data, Coverage, Risk, Model) using compact progress bars and a circular grade display.
+- [x] Add activity feed. Real-time event stream showing document uploads, processing completions, and failures with relative timestamps and status icons.
+- [x] Add project comparison card. Side-by-side comparison table when multiple projects exist, showing risk level, revenue, EBITDA, asking price, entry multiple, document coverage, and synthesis status. Clickable columns to switch projects.
+- [x] Always show valuation with confidence. Synthesis now always shows a valuation range — either from the LLM (high confidence) or computed illustratively from documented facts with a confidence badge (Medium/Low/Very low). Values of $0 are filtered out.
+- [x] Add confidence badges to per-document valuation. Latest doc submission now shows AI confidence percentage alongside the valuation range.
+- [x] Default to light mode. New users no longer inherit system dark mode — defaults to light theme with manual toggle available.
+- [x] Add document coverage matrix. 10-category grid (P&L, Balance Sheet, Cash Flow, Tax Returns, AR Aging, Customer List, Employee Data, Lease/RE, Legal, Operational) with check/empty icons showing which standard diligence categories are covered by uploaded documents.
+- [x] Add risk concentration map. Visual breakdown of synthesis findings by business area (Revenue, Customer, Debt, Legal, People, Margins, Growth) with severity-colored chips and counts.
+- [x] Add negotiation playbook. Turns synthesis negotiation levers and red flags into prioritized tactics with estimated $ impact calculations based on deal model data.
+- [x] Move AI Deal Assistant button to bottom-right and higher up to avoid overlapping with page-level action buttons.
+- [x] Enhanced AI chat with more response patterns: returns/IRR/MOIC, deal structure/financing, and "what should I do next" action-item recommendations.
 
 ## Workflow reliability and operations
 
