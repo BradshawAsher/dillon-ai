@@ -13,6 +13,8 @@ type ChangelogEntry = {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+    { date: '2026-07-26', title: 'Always-on LLM valuation', description: 'The consolidator now always returns a valuation range even with limited data, using a confidence score (High/Medium/Low) to indicate reliability.', category: 'improvement' },
+    { date: '2026-07-26', title: 'Valuation confidence badges', description: 'Synthesis valuation and Valuation tab now display a colored confidence badge (e.g. "High confidence 75%") derived from the LLM\'s self-assessed data quality.', category: 'feature' },
     { date: '2026-07-25', title: 'Document coverage matrix', description: '10-category coverage grid showing which standard diligence document types have been uploaded.', category: 'feature' },
     { date: '2026-07-25', title: 'Risk concentration map', description: 'Visual breakdown of findings by business category (Revenue, Customer, Debt, Legal, People, Margins, Growth) with severity coloring.', category: 'feature' },
     { date: '2026-07-25', title: 'Project comparison table', description: 'Side-by-side comparison of multiple deals showing key metrics, risk level, and document progress.', category: 'feature' },

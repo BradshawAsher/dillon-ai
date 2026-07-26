@@ -2354,6 +2354,8 @@ export default function DueDiligenceDashboard() {
                     onExportJson={() => { const name = dealName || suggestedProjectName; const safeName = name.replace(/[^a-zA-Z0-9-_]/g, '_').slice(0, 50) || 'deal'; downloadFile(JSON.stringify(buildJsonExport(hydratedDealModel, activeProjectSynthesis, name), null, 2), `${safeName}_export.json`, 'application/json') }}
                     onShowShortcuts={() => {}}
                     onOpenChat={() => {}}
+                    onCopySummary={() => { const name = dealName || suggestedProjectName; navigator.clipboard.writeText(buildMarkdownReport(hydratedDealModel, activeProjectSynthesis, name)) }}
+                    onScrollToUpload={() => { document.querySelector('[data-project-intake]')?.scrollIntoView({ behavior: 'smooth' }) }}
                 />
             </Suspense>
         </div>

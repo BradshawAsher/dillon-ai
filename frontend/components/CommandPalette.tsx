@@ -25,6 +25,8 @@ type CommandPaletteProps = {
     onExportJson: () => void
     onShowShortcuts: () => void
     onOpenChat: () => void
+    onCopySummary?: () => void
+    onScrollToUpload?: () => void
 }
 
 type Command = {
@@ -44,6 +46,8 @@ export default function CommandPalette({
     onExportJson,
     onShowShortcuts,
     onOpenChat,
+    onCopySummary,
+    onScrollToUpload,
 }: CommandPaletteProps) {
     const [query, setQuery] = useState('')
     const [selectedIndex, setSelectedIndex] = useState(0)
@@ -142,6 +146,20 @@ export default function CommandPalette({
             action: onOpenChat,
             group: 'Actions',
         },
+        ...(onCopySummary ? [{
+            id: 'copy-summary',
+            label: 'Copy deal summary to clipboard',
+            icon: <FileDown className="h-4 w-4" />,
+            action: onCopySummary,
+            group: 'Actions',
+        }] : []),
+        ...(onScrollToUpload ? [{
+            id: 'upload-docs',
+            label: 'Upload documents',
+            icon: <FileText className="h-4 w-4" />,
+            action: onScrollToUpload,
+            group: 'Actions',
+        }] : []),
     ]
 
     const filtered = commands.filter((cmd) =>

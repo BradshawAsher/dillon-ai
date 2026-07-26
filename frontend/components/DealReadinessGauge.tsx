@@ -22,7 +22,11 @@ export default function DealReadinessGauge({ model, synthesis, documentsCount, c
     const hasEbitda = facts.ebitda_sde?.status === 'confirmed' && typeof facts.ebitda_sde?.value === 'number'
     const hasPrice = model.askingPrice !== null || model.purchasePrice !== null
     const hasSynthesis = !!synthesis
-    const hasValuation = !!(synthesis?.valuationLowerBound || synthesis?.valuationUpperBound)
+    const hasValuation = !!(
+        (synthesis?.valuationLowerBound && synthesis.valuationLowerBound !== '0')
+        || (synthesis?.valuationBaseEstimate && synthesis.valuationBaseEstimate !== '0')
+        || (synthesis?.valuationUpperBound && synthesis.valuationUpperBound !== '0')
+    )
     const allDocsProcessed = documentsCount > 0 && completedDocuments >= documentsCount
 
     const milestones: Milestone[] = [

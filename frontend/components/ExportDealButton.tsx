@@ -34,6 +34,20 @@ export function buildMarkdownReport(model: DealModel, synthesis: ProjectSynthesi
     lines.push(``)
 
     if (synthesis) {
+        if ((synthesis.valuationBaseEstimate && synthesis.valuationBaseEstimate !== '0') || (synthesis.valuationLowerBound && synthesis.valuationLowerBound !== '0')) {
+            lines.push(`## Valuation Range`)
+            lines.push(``)
+            lines.push(`- **Lower Bound:** ${synthesis.valuationLowerBound || 'Pending'}`)
+            lines.push(`- **Base Estimate:** ${synthesis.valuationBaseEstimate || 'Pending'}`)
+            lines.push(`- **Upper Bound:** ${synthesis.valuationUpperBound || 'Pending'}`)
+            const conf = parseFloat(synthesis.valuationConfidence || synthesis.aiConfidence || '')
+            if (Number.isFinite(conf)) {
+                const pct = conf <= 1 ? Math.round(conf * 100) : Math.round(conf)
+                lines.push(`- **Confidence:** ${pct}% (${pct >= 70 ? 'High' : pct >= 40 ? 'Medium' : 'Low'})`)
+            }
+            lines.push(``)
+        }
+
         lines.push(`## Risk Assessment`)
         lines.push(``)
         lines.push(`- **Overall Risk:** ${synthesis.finalRiskLevel}`)

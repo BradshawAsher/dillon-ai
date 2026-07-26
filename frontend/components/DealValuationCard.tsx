@@ -159,7 +159,7 @@ export default function DealValuationCard({ synthesis, askingPrice, model, onMod
                         <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
                             <li>At least one completed document with usable financial extraction</li>
                             <li>A finished project synthesis run (triggered automatically after all documents complete)</li>
-                            <li>The synthesis LLM returning explicit valuation bounds (it may decline if insufficient financial data exists)</li>
+                            <li>The synthesis LLM returning valuation bounds (it now always returns a range with a confidence score)</li>
                         </ul>
                         <p className="text-sm text-muted-foreground">The three-method comparison and sensitivity grid above still work using your saved assumptions and any confirmed facts. Upload more financial documents or run synthesis to unlock the full range.</p>
                     </div>
@@ -167,7 +167,14 @@ export default function DealValuationCard({ synthesis, askingPrice, model, onMod
                     <>
                         <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.75fr)]">
                             <div className="rounded-xl border border-primary/25 bg-primary/5 p-4">
-                                <div className="flex items-center gap-2"><BadgeDollarSign className="h-4 w-4 text-primary" /><p className="text-sm font-semibold">Supported valuation range</p></div>
+                                <div className="flex items-center gap-2"><BadgeDollarSign className="h-4 w-4 text-primary" /><p className="text-sm font-semibold">Supported valuation range</p>{(() => {
+                                    const conf = parseFloat(synthesis.valuationConfidence || synthesis.aiConfidence || '')
+                                    if (!Number.isFinite(conf)) return null
+                                    const pct = conf <= 1 ? Math.round(conf * 100) : Math.round(conf)
+                                    const label = pct >= 70 ? 'High' : pct >= 40 ? 'Medium' : 'Low'
+                                    const color = pct >= 70 ? 'text-green-600 dark:text-green-400' : pct >= 40 ? 'text-amber-600 dark:text-amber-400' : 'text-destructive'
+                                    return <Badge variant="outline" className={`ml-auto ${color}`}>{label} confidence ({pct}%)</Badge>
+                                })()}</div>
                                 <div className="mt-4 grid gap-3 sm:grid-cols-3">
                                     {cases.map((item) => <div key={item.label} className="rounded-lg border border-border bg-background p-3"><p className="text-xs text-muted-foreground">{item.label}</p><p className="mt-1 text-lg font-semibold text-foreground">{formatCurrencyValue(item.value, synthesis.valuationCurrency) || 'Pending'}</p><p className="mt-1 text-xs text-muted-foreground">{item.description}</p></div>)}
                                 </div>

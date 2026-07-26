@@ -479,21 +479,33 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                             <div className="rounded-xl border-2 border-primary/60 bg-primary/10 p-4 shadow-sm"><p className="text-sm font-bold uppercase tracking-wide text-primary">Next step after the synthesis</p><p className="mt-1 text-sm leading-6 text-foreground">Use the Management Question Tracker immediately below this synthesis to turn the open questions into an owner, due date, and follow-up plan. It is the best place to resolve the gaps that could change the acquisition decision.</p></div>
 
                             {(synthesis.valuationBaseEstimate && synthesis.valuationBaseEstimate !== '0') || (synthesis.valuationLowerBound && synthesis.valuationLowerBound !== '0') || (synthesis.valuationUpperBound && synthesis.valuationUpperBound !== '0') ? (
-                                <div className="grid gap-2 md:grid-cols-3">
-                                    <div className="rounded-md border border-border bg-background px-3 py-2">
-                                        <div className="flex items-center justify-between gap-2">
+                                <div>
+                                    {(() => {
+                                        const conf = parseFloat(synthesis.valuationConfidence || synthesis.aiConfidence || '')
+                                        if (!Number.isFinite(conf)) return null
+                                        const pct = conf <= 1 ? Math.round(conf * 100) : Math.round(conf)
+                                        const label = pct >= 70 ? 'High' : pct >= 40 ? 'Medium' : 'Low'
+                                        const color = pct >= 70 ? 'text-green-600 dark:text-green-400' : pct >= 40 ? 'text-amber-600 dark:text-amber-400' : 'text-destructive'
+                                        return (
+                                            <div className="mb-2 flex items-center gap-2">
+                                                <Badge variant="outline" className={color}>{label} confidence ({pct}%)</Badge>
+                                                {synthesis.valuationCurrency ? <span className="text-xs text-muted-foreground">{synthesis.valuationCurrency}</span> : null}
+                                            </div>
+                                        )
+                                    })()}
+                                    <div className="grid gap-2 md:grid-cols-3">
+                                        <div className="rounded-md border border-border bg-background px-3 py-2">
                                             <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Lower bound</p>
-                                            {synthesis.valuationCurrency ? <Badge variant="outline">{synthesis.valuationCurrency}</Badge> : null}
+                                            <p className="mt-1 text-sm text-foreground">{formatCurrencyValue(synthesis.valuationLowerBound, synthesis.valuationCurrency) || 'Pending'}</p>
                                         </div>
-                                        <p className="mt-1 text-sm text-foreground">{formatCurrencyValue(synthesis.valuationLowerBound, synthesis.valuationCurrency) || 'Pending'}</p>
-                                    </div>
-                                    <div className="rounded-md border border-border bg-background px-3 py-2">
-                                        <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Base estimate</p>
-                                        <p className="mt-1 text-sm text-foreground">{formatCurrencyValue(synthesis.valuationBaseEstimate, synthesis.valuationCurrency) || 'Pending'}</p>
-                                    </div>
-                                    <div className="rounded-md border border-border bg-background px-3 py-2">
-                                        <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Upper bound</p>
-                                        <p className="mt-1 text-sm text-foreground">{formatCurrencyValue(synthesis.valuationUpperBound, synthesis.valuationCurrency) || 'Pending'}</p>
+                                        <div className="rounded-md border border-border bg-background px-3 py-2">
+                                            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Base estimate</p>
+                                            <p className="mt-1 text-sm text-foreground">{formatCurrencyValue(synthesis.valuationBaseEstimate, synthesis.valuationCurrency) || 'Pending'}</p>
+                                        </div>
+                                        <div className="rounded-md border border-border bg-background px-3 py-2">
+                                            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Upper bound</p>
+                                            <p className="mt-1 text-sm text-foreground">{formatCurrencyValue(synthesis.valuationUpperBound, synthesis.valuationCurrency) || 'Pending'}</p>
+                                        </div>
                                     </div>
                                 </div>
                             ) : (
