@@ -1,4 +1,5 @@
-import { Award } from 'lucide-react'
+import { useState } from 'react'
+import { Award, ChevronDown, ChevronUp } from 'lucide-react'
 
 import type { DealModel } from '../hooks/backend/diligence'
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
@@ -26,7 +27,16 @@ function computeGrade(totalScore: number, maxScore: number): { letter: string; c
     return { letter: 'F', color: 'text-red-700 dark:text-red-300', bg: 'bg-red-100 dark:bg-red-900/40' }
 }
 
+const IMPROVEMENT_TIPS: Record<string, string> = {
+    Pricing: 'Negotiate a lower purchase price, or identify add-backs that increase true EBITDA (lowering the effective multiple).',
+    Profitability: 'Look for cost-cutting opportunities or undocumented add-backs that would raise margins.',
+    Risk: 'Request documentation that addresses red flags. Resolve open questions through management meetings.',
+    'Data quality': 'Upload more financial documents (P&L, tax returns, balance sheet) to confirm key figures.',
+    Payback: 'Reduce the purchase price, identify revenue growth levers, or reduce post-acquisition capex needs.',
+}
+
 export default function DealGradeCard({ model, synthesis }: Props) {
+    const [showTips, setShowTips] = useState(false)
     const facts = parseDocumentedFacts(model.documentedFactsJson)
     const ebitda = (facts.ebitda_sde?.status === 'confirmed' || facts.ebitda_sde?.status === 'illustrative') && typeof facts.ebitda_sde.value === 'number' ? facts.ebitda_sde.value : null
     const revenue = (facts.revenue?.status === 'confirmed' || facts.revenue?.status === 'illustrative') && typeof facts.revenue.value === 'number' ? facts.revenue.value : null
@@ -136,9 +146,29 @@ export default function DealGradeCard({ model, synthesis }: Props) {
                         ))}
                     </div>
                 </div>
-                <p className="mt-3 text-[10px] text-muted-foreground">
-                    {totalScore}/{maxScore} points across {dimensions.length} dimensions. Grade reflects deal attractiveness for a typical SMB buyer.
-                </p>
+                <div className="mt-3 flex items-center justify-between">
+                    <p className="text-[10px] text-muted-foreground">
+                        {totalScore}/{maxScore} points across {dimensions.length} dimensions. Grade reflects deal attractiveness for a typical SMB buyer.
+                    </p>
+                    {dimensions.some(d => d.score < d.maxScore) && (
+                        <button
+                            onClick={() => setShowTips(!showTips)}
+                            className="flex items-center gap-0.5 text-[10px] text-primary hover:underline"
+                        >
+                            How to improve {showTips ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                        </button>
+                    )}
+                </div>
+                {showTips && (
+                    <div className="mt-3 space-y-2 rounded-lg border border-dashed border-border bg-muted/20 p-3">
+                        {dimensions.filter(d => d.score < d.maxScore).map(d => (
+                            <div key={d.label} className="flex items-start gap-2">
+                                <span className="mt-0.5 text-[10px] font-bold text-primary">{d.label}:</span>
+                                <span className="text-[11px] text-muted-foreground">{IMPROVEMENT_TIPS[d.label] ?? 'Improve the underlying metrics.'}</span>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </CardContent>
         </Card>
     )

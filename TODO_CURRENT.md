@@ -111,6 +111,25 @@ Before closing any `[-]` item, verify it against a **new live n8n run**, not exa
 - [x] Make the AI chat use real LLM API instead of heuristic pattern matching for deeper answers. Created n8n workflow "[Pod 1] Financial DD Agent - Chat Assistant" (LBZVN8zeFT03Wn12) with webhook trigger → AI Agent (Anthropic Claude Sonnet 4.6 via Pod 1 credential) → Respond to Webhook. Frontend DealChatPanel now POSTs to the webhook with {question, context, sessionId}. Full deal context including all synthesis data, deal model, and per-document summaries sent to LLM. Heuristic responses kept as offline fallback.
 - [x] Smart contextual chat suggestions. Chat starter buttons now adapt based on current deal state (red flag count, valuation availability, negotiation levers). Shows "Explain the N red flags", "What if I negotiate 15% off?", "Is this fairly priced?", etc.
 - [x] Copy deal summary to clipboard. DealSummaryBanner has a copy icon that generates a Slack-ready 5-line summary with signal, revenue, EBITDA, price, multiple, red flags, and verdict.
+- [x] Chat persistence & message badge. Chat history persists to localStorage (last 50 messages). Floating button shows reply count badge. Clear button resets conversation.
+- [x] Chat markdown rendering. AI responses render bold, italic, bullets, numbered lists, headers, and inline code with proper formatting.
+- [x] Chat relative timestamps. Messages show "just now", "5m ago", "2h ago" for conversation context.
+- [x] Chat follow-up suggestions. After each AI response, contextual follow-up buttons ("Tell me more", "What else should I know?", "How do I verify this?") appear.
+- [x] Chat Escape key to close. Pressing Escape while chat panel is open closes it.
+- [x] Next Actions checklist (DealActionItemsCard). Dynamic action items based on current state: uploads needed, missing data, red flags to investigate, open questions to resolve. Progress bar tracks completion.
+- [x] Analysis Confidence Meter (ConfidenceMeterCard). Circular gauge with 4 dimensions: data volume, financial confirmation, AI synthesis quality, model inputs. Shows overall % and level.
+- [x] Quick Insights (DealQuickInsights). Auto-generated one-liner insights comparing deal metrics to market norms — entry multiple, margin, payback, valuation gap, projected MOIC. Positive/negative/neutral sentiment.
+- [x] Investment Thesis Generator (InvestmentThesisCard). Auto-generates 3-sentence investment thesis: what the deal is, why it's interesting, risk/reward balance. Copy to clipboard.
+- [x] Decision Framework (DecisionFrameworkCard). Four go/no-go questions auto-answered: affordability, business health, growth potential, risk understanding. Shows overall verdict badge.
+- [x] Risk Matrix 2×2 (RiskMatrixCard). Maps red/yellow flags into likelihood × impact quadrants: Critical, Monitor, Investigate, Accept. Keyword-based classification.
+- [x] Key Person Risk Detection (KeyPersonRiskCard). Auto-identifies owner/founder dependency from synthesis flags. Shows mitigation strategies.
+- [x] Closing Checklist (ClosingChecklistCard). 12-point auto-filled checklist by category (financial, operational, deal, legal). Shows % ready with progress bar.
+- [x] Seller Questions Generator (SellerQuestionsCard). Auto-generates top 5 professional seller questions from red flags, open questions, and data gaps. Copy to clipboard.
+- [x] Quick Valuation Ranges (QuickValuationCard). Back-of-napkin valuation with EBITDA multiple, revenue multiple, and DCF-lite ranges. Visual price marker shows where asking price falls.
+- [x] Deal Profile Radar (DealRadarCard). SVG radar chart showing 5 dimensions: Pricing, Margins, Safety, Data, Upside. Pure CSS/SVG, no Recharts.
+- [x] Financial Health Indicators (FinancialHealthCard). Key ratio cards: EBITDA margin, gross margin, Debt/EBITDA, entry multiple, Price/Revenue, payback period. Color-coded with benchmarks.
+- [x] Overview section dividers. Cards organized into labeled sections: Scoring & Progress, Analysis & Insights, Risk Assessment, Negotiation & Closing.
+- [x] WhatsNewCard updated with all new features. Changelog now shows 60+ updates including all items from this session.
 
 ## Immediate live-data fixes
 
