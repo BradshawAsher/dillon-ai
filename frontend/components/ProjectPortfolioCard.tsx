@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import { BriefcaseBusiness, Clock3, Download, FileStack, Flag, FolderKanban, RefreshCw, Search, ShieldAlert } from 'lucide-react'
+import { BriefcaseBusiness, Clock3, Download, FileStack, Flag, FolderKanban, Plus, RefreshCw, Search, ShieldAlert } from 'lucide-react'
 import ExpandableText from './ExpandableText'
 
 import { Badge } from '../lib/shadcn/badge'
@@ -31,6 +31,7 @@ type ProjectPortfolioCardProps = {
     retryingRequestId: string | null
     onRunSynthesis: () => void
     runningSynthesis: boolean
+    onAddDocuments?: (projectKey: string) => void
 }
 
 function SummaryMetric({
@@ -53,7 +54,7 @@ function SummaryMetric({
     )
 }
 
-export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey, onProjectSelect, onExcludeDocument, onIncludeDocument, onRetryDocument, retryingRequestId, onRunSynthesis, runningSynthesis }: ProjectPortfolioCardProps) {
+export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey, onProjectSelect, onExcludeDocument, onIncludeDocument, onRetryDocument, retryingRequestId, onRunSynthesis, runningSynthesis, onAddDocuments }: ProjectPortfolioCardProps) {
     const [hideDuplicateDocs, setHideDuplicateDocs] = useState(true)
     const [projectSearch, setProjectSearch] = useState('')
     const [workstreamFilter, setWorkstreamFilter] = useState('all')
@@ -194,6 +195,17 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                                         </div>
 
                                         <div className="flex flex-wrap gap-2">
+                                            {onAddDocuments && (
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    size="lg"
+                                                    onClick={() => onAddDocuments(project.projectKey)}
+                                                >
+                                                    <Plus className="h-4 w-4" />
+                                                    Add documents
+                                                </Button>
+                                            )}
                                             <Button
                                                 type="button"
                                                 variant="outline"
