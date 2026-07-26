@@ -235,7 +235,7 @@ function hydrateModelFactsFromDocuments(model: DealModel, documents: SubmissionH
     try {
         const parsed = JSON.parse(model.documentedFactsJson || '{}') as unknown
         if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) merged = parsed as Record<string, Record<string, unknown>>
-    } catch {}
+    } catch { }
 
     // Derive facts from the documents' real financialFactsJson shape (an array
     // of { metric, normalized_value, ... }). The previous implementation
@@ -263,7 +263,7 @@ function buildReturnsDisplayModel(model: DealModel) {
     try {
         const parsed = JSON.parse(model.documentedFactsJson || '{}') as unknown
         if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) facts = parsed as Record<string, Record<string, unknown>>
-    } catch {}
+    } catch { }
     const confirmedNumber = (field: string) => facts[field]?.status === 'confirmed' && typeof facts[field]?.value === 'number'
     const hasEbitda = confirmedNumber('ebitda_sde')
     const hasRevenue = confirmedNumber('revenue')
@@ -425,6 +425,7 @@ export default function DueDiligenceDashboard() {
     const [submissionNotes, setSubmissionNotes] = useState('')
     const [isSubmittingFile, setIsSubmittingFile] = useState(false)
     const [batchSubmissionMessage, setBatchSubmissionMessage] = useState('')
+    const lastUploadAttemptAtRef = useRef(0)
     const [retryingRequestId, setRetryingRequestId] = useState<string | null>(null)
     const [activeSubmissionBatch, setActiveSubmissionBatch] = useState<SubmissionBatch | null>(null)
     const [activeHistoryEnvironment, setActiveHistoryEnvironment] = useState<SubmitEnvironment>('production')
@@ -484,7 +485,7 @@ export default function DueDiligenceDashboard() {
     }, [askingPriceByProject])
 
     useEffect(() => {
-        try { window.localStorage.setItem('mergeworks.projectChecklistById', JSON.stringify(projectChecklistById)) } catch {}
+        try { window.localStorage.setItem('mergeworks.projectChecklistById', JSON.stringify(projectChecklistById)) } catch { }
     }, [projectChecklistById])
 
     // The tracker is shared through n8n when it is reachable; local storage remains a
@@ -1175,6 +1176,13 @@ export default function DueDiligenceDashboard() {
             return
         }
 
+        const now = Date.now()
+        if (isSubmittingFile || now - lastUploadAttemptAtRef.current < 10_000) {
+            setBatchSubmissionMessage('Upload is already in progress or was just started. Wait a few seconds before submitting another batch so the same files are not queued twice.')
+            return
+        }
+        lastUploadAttemptAtRef.current = now
+
         const refreshedHistory = await triggerSubmissionHistory({ environment }, { skipCache: true }).result
         const duplicateCheckRows = Array.isArray(refreshedHistory) ? refreshedHistory as SubmissionHistoryItem[] : submissionHistory
         const resolvedProjectId = projectId || suggestedProjectId
@@ -1497,88 +1505,88 @@ export default function DueDiligenceDashboard() {
                     <DealSummaryBanner model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
 
                     {overviewSubTab === 'summary' && <>
-                    <Suspense fallback={null}>
-                        <DealMemoView model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} documents={activeProjectDocuments} />
-                    </Suspense>
-                    <DealHealthKPIs
-                        synthesis={activeProjectSynthesis}
-                        model={hydratedDealModel}
-                        impact={activeProjectImpact}
-                        documentsCount={activeProjectDocuments.length}
-                    />
-                    <DealGradeCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
-                    <QuickValuationCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
-                    <DealRadarCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documentsCount={activeProjectDocuments.length} />
-                    <DealActionItemsCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} />
+                        <Suspense fallback={null}>
+                            <DealMemoView model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} documents={activeProjectDocuments} />
+                        </Suspense>
+                        <DealHealthKPIs
+                            synthesis={activeProjectSynthesis}
+                            model={hydratedDealModel}
+                            impact={activeProjectImpact}
+                            documentsCount={activeProjectDocuments.length}
+                        />
+                        <DealGradeCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
+                        <QuickValuationCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
+                        <DealRadarCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documentsCount={activeProjectDocuments.length} />
+                        <DealActionItemsCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} />
                     </>}
 
                     {/* DEEP ANALYSIS SUB-TAB */}
                     {overviewSubTab === 'analysis' && <>
-                    <NextActionsCard
-                        model={hydratedDealModel}
-                        synthesis={activeProjectSynthesis}
-                        documents={activeProjectDocuments}
-                        onNavigate={(target) => {
-                            if (target === 'upload') {
-                                document.querySelector('[data-project-intake]')?.scrollIntoView({ behavior: 'smooth' })
-                            } else {
-                                setActiveWorkspaceTab(target as WorkspaceTab)
-                            }
-                        }}
-                    />
-                    <DealReadinessGauge
-                        model={hydratedDealModel}
-                        synthesis={activeProjectSynthesis}
-                        documentsCount={activeProjectDocuments.length}
-                        completedDocuments={activeProjectImpact.completedDocuments}
-                    />
-                    <DocumentCoverageMatrix documents={activeProjectDocuments} />
-                    <DealScorecard
-                        model={hydratedDealModel}
-                        synthesis={activeProjectSynthesis}
-                        impact={activeProjectImpact}
-                        documentsCount={activeProjectDocuments.length}
-                    />
-                    <DealRulesOfThumb model={hydratedDealModel} />
-                    <ConfidenceMeterCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} />
-                    <FinancialHealthCard model={hydratedDealModel} />
-                    <Suspense fallback={null}><AssumptionGapsCard model={hydratedDealModel} /></Suspense>
-                    <WhatsMissingCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} />
-                    <Suspense fallback={null}><MarketCompsCard model={hydratedDealModel} /></Suspense>
+                        <NextActionsCard
+                            model={hydratedDealModel}
+                            synthesis={activeProjectSynthesis}
+                            documents={activeProjectDocuments}
+                            onNavigate={(target) => {
+                                if (target === 'upload') {
+                                    document.querySelector('[data-project-intake]')?.scrollIntoView({ behavior: 'smooth' })
+                                } else {
+                                    setActiveWorkspaceTab(target as WorkspaceTab)
+                                }
+                            }}
+                        />
+                        <DealReadinessGauge
+                            model={hydratedDealModel}
+                            synthesis={activeProjectSynthesis}
+                            documentsCount={activeProjectDocuments.length}
+                            completedDocuments={activeProjectImpact.completedDocuments}
+                        />
+                        <DocumentCoverageMatrix documents={activeProjectDocuments} />
+                        <DealScorecard
+                            model={hydratedDealModel}
+                            synthesis={activeProjectSynthesis}
+                            impact={activeProjectImpact}
+                            documentsCount={activeProjectDocuments.length}
+                        />
+                        <DealRulesOfThumb model={hydratedDealModel} />
+                        <ConfidenceMeterCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} />
+                        <FinancialHealthCard model={hydratedDealModel} />
+                        <Suspense fallback={null}><AssumptionGapsCard model={hydratedDealModel} /></Suspense>
+                        <WhatsMissingCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} />
+                        <Suspense fallback={null}><MarketCompsCard model={hydratedDealModel} /></Suspense>
 
-                    <Suspense fallback={null}>
-                    <div className="border-t border-border pt-4">
-                        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Analysis & Insights</h3>
-                    </div>
-                    <DealQuickInsights model={hydratedDealModel} synthesis={activeProjectSynthesis} />
-                    <InvestmentThesisCard model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
-                    <DecisionFrameworkCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
-                    <StrengthsWeaknessesCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
+                        <Suspense fallback={null}>
+                            <div className="border-t border-border pt-4">
+                                <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Analysis & Insights</h3>
+                            </div>
+                            <DealQuickInsights model={hydratedDealModel} synthesis={activeProjectSynthesis} />
+                            <InvestmentThesisCard model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
+                            <DecisionFrameworkCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
+                            <StrengthsWeaknessesCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
 
-                    <div className="border-t border-border pt-4">
-                        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Risk Assessment</h3>
-                    </div>
-                    <RiskSummaryCard synthesis={activeProjectSynthesis} />
-                    <RiskMatrixCard synthesis={activeProjectSynthesis} />
-                    <KeyPersonRiskCard synthesis={activeProjectSynthesis} />
+                            <div className="border-t border-border pt-4">
+                                <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Risk Assessment</h3>
+                            </div>
+                            <RiskSummaryCard synthesis={activeProjectSynthesis} />
+                            <RiskMatrixCard synthesis={activeProjectSynthesis} />
+                            <KeyPersonRiskCard synthesis={activeProjectSynthesis} />
 
-                    <div className="border-t border-border pt-4">
-                        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Negotiation & Closing</h3>
-                    </div>
-                    <TimeToCloseCard
-                        documentsCount={activeProjectDocuments.length}
-                        completedDocuments={activeProjectDocuments.filter(d => d.status === 'completed').length}
-                        hasSynthesis={!!activeProjectSynthesis}
-                        hasValuation={!!activeProjectSynthesis?.valuationBaseEstimate && activeProjectSynthesis.valuationBaseEstimate !== '0'}
-                        hasFinancing={hydratedDealModel.equityContributionPercent != null}
-                    />
-                    <ClosingChecklistCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} />
-                    <SellerQuestionsCard synthesis={activeProjectSynthesis} model={hydratedDealModel} />
-                    <NegotiationPlaybook synthesis={activeProjectSynthesis} model={hydratedDealModel} />
-                    <DDRequestListCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} projectName={dealName || suggestedProjectName} />
-                    <DealEmailDraftCard model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
-                    </Suspense>
-                    <ActivityFeed documents={activeProjectDocuments} />
+                            <div className="border-t border-border pt-4">
+                                <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Negotiation & Closing</h3>
+                            </div>
+                            <TimeToCloseCard
+                                documentsCount={activeProjectDocuments.length}
+                                completedDocuments={activeProjectDocuments.filter(d => d.status === 'completed').length}
+                                hasSynthesis={!!activeProjectSynthesis}
+                                hasValuation={!!activeProjectSynthesis?.valuationBaseEstimate && activeProjectSynthesis.valuationBaseEstimate !== '0'}
+                                hasFinancing={hydratedDealModel.equityContributionPercent != null}
+                            />
+                            <ClosingChecklistCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} />
+                            <SellerQuestionsCard synthesis={activeProjectSynthesis} model={hydratedDealModel} />
+                            <NegotiationPlaybook synthesis={activeProjectSynthesis} model={hydratedDealModel} />
+                            <DDRequestListCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} projectName={dealName || suggestedProjectName} />
+                            <DealEmailDraftCard model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
+                        </Suspense>
+                        <ActivityFeed documents={activeProjectDocuments} />
                     </>}
                     {projectSummaries.length > 1 && (
                         <ProjectComparisonCard
@@ -1629,14 +1637,14 @@ export default function DueDiligenceDashboard() {
                     {activeProjectSynthesis && <RecurringVsOneTimeCard model={hydratedDealModel} synthesis={activeProjectSynthesis} onOpenEvidence={setActiveEvidence} />}
                     {activeProjectSynthesis && <CustomerConcentrationCard synthesis={activeProjectSynthesis} onOpenEvidence={setActiveEvidence} />}
                     <Suspense fallback={null}>
-                    <DealTimelineCard
-                        documents={activeProjectDocuments}
-                        synthesis={activeProjectSynthesis}
-                        projectName={dealName || suggestedProjectName}
-                    />
-                    <BuyerProfileCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
-                    <IndustryBenchmarksCard />
-                    <CostPerRunCard documentsProcessed={impact.completedDocuments} synthesisRuns={visibleProjectSyntheses.length} />
+                        <DealTimelineCard
+                            documents={activeProjectDocuments}
+                            synthesis={activeProjectSynthesis}
+                            projectName={dealName || suggestedProjectName}
+                        />
+                        <BuyerProfileCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
+                        <IndustryBenchmarksCard />
+                        <CostPerRunCard documentsProcessed={impact.completedDocuments} synthesisRuns={visibleProjectSyntheses.length} />
                     </Suspense>
                     <ProjectChecklistCard
                         projectId={activeProjectId}
@@ -1650,825 +1658,825 @@ export default function DueDiligenceDashboard() {
                 </section> : null}
 
                 <Suspense fallback={<div className="flex items-center justify-center gap-2 rounded-lg border border-border bg-muted/20 p-8"><Loader2 className="h-5 w-5 animate-spin text-primary" /><span className="text-sm text-muted-foreground">Loading tab…</span></div>}>
-                {activeWorkspaceTab === 'valuation' ? <section className="space-y-6"><ModelAssumptionsSummary model={hydratedDealModel} area="valuation" /><DealValuationCard synthesis={activeProjectSynthesis} askingPrice={askingPrice} model={hydratedDealModel} onModelChange={handleDealModelChange} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><SensitivityAnalysisCard model={hydratedDealModel} /><MathChecksSection documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} compact title="Data integrity checks" description="Verifies the financial numbers feeding into valuation methods." /></section> : null}
-                {activeWorkspaceTab === 'returns' ? <section className="space-y-6"><ModelAssumptionsSummary model={activeDealModel} area="returns" /><ReturnsDecisionSummary model={returnsDisplayModel} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<AllCashReturnsCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<FinancedReturnsCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<FinancedScenarioComparisonCard model={returnsDisplayModel} /><SensitivityAnalysisCard model={returnsDisplayModel} /><HoldPeriodSensitivity model={returnsDisplayModel} /><MathChecksSection documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} compact title="Input data checks" description="Verifies EBITDA and revenue figures used in returns calculations." /><DealModelPendingCard area="returns" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
-                {activeWorkspaceTab === 'growth' ? <section className="space-y-6"><ModelAssumptionsSummary model={activeDealModel} area="growth" />{isGrowthIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<GrowthDecisionSummary model={returnsDisplayModel} /><ScenarioComparisonCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><EbitdaProjectionCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><MathChecksSection documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} compact title="Revenue & margin checks" description="Verifies starting revenue and margin figures used in growth projections." /><DealModelPendingCard area="growth" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
-                {activeWorkspaceTab === 'structure' ? <section className="space-y-6"><ModelAssumptionsSummary model={activeDealModel} area="structure" /><DealStructureVisualCard model={hydratedDealModel} onOpenEvidence={setActiveEvidence} /><DealModelPendingCard area="structure" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
+                    {activeWorkspaceTab === 'valuation' ? <section className="space-y-6"><ModelAssumptionsSummary model={hydratedDealModel} area="valuation" /><DealValuationCard synthesis={activeProjectSynthesis} askingPrice={askingPrice} model={hydratedDealModel} onModelChange={handleDealModelChange} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><SensitivityAnalysisCard model={hydratedDealModel} /><MathChecksSection documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} compact title="Data integrity checks" description="Verifies the financial numbers feeding into valuation methods." /></section> : null}
+                    {activeWorkspaceTab === 'returns' ? <section className="space-y-6"><ModelAssumptionsSummary model={activeDealModel} area="returns" /><ReturnsDecisionSummary model={returnsDisplayModel} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<AllCashReturnsCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<FinancedReturnsCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<FinancedScenarioComparisonCard model={returnsDisplayModel} /><SensitivityAnalysisCard model={returnsDisplayModel} /><HoldPeriodSensitivity model={returnsDisplayModel} /><MathChecksSection documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} compact title="Input data checks" description="Verifies EBITDA and revenue figures used in returns calculations." /><DealModelPendingCard area="returns" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
+                    {activeWorkspaceTab === 'growth' ? <section className="space-y-6"><ModelAssumptionsSummary model={activeDealModel} area="growth" />{isGrowthIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<GrowthDecisionSummary model={returnsDisplayModel} /><ScenarioComparisonCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><EbitdaProjectionCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><MathChecksSection documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} compact title="Revenue & margin checks" description="Verifies starting revenue and margin figures used in growth projections." /><DealModelPendingCard area="growth" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
+                    {activeWorkspaceTab === 'structure' ? <section className="space-y-6"><ModelAssumptionsSummary model={activeDealModel} area="structure" /><DealStructureVisualCard model={hydratedDealModel} onOpenEvidence={setActiveEvidence} /><DealModelPendingCard area="structure" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
 
-                {activeWorkspaceTab === 'diligence' ? <>
+                    {activeWorkspaceTab === 'diligence' ? <>
 
-                {!isExampleMode && projectSummaries.length > 0 ? (
-                    <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 sm:flex sm:items-center sm:justify-between sm:gap-4">
-                        <div>
-                            <p className="text-sm font-semibold text-foreground">Review the current project-level result</p>
-                            <p className="mt-1 text-sm text-muted-foreground">
-                                Project Synthesis consolidates the selected project&apos;s documents, risks, and negotiation levers. The Project Portfolio provides its document-level context.
-                            </p>
-                        </div>
-                        <Button
-                            type="button"
-                            size="lg"
-                            className="mt-3 w-full shrink-0 sm:mt-0 sm:w-auto"
-                            onClick={() => document.getElementById('project-synthesis')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                        >
-                            View project synthesis
-                        </Button>
-                    </div>
-                ) : null}
-
-                {isExampleMode ? (
-                    <div className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm text-foreground">
-                        <p className="font-medium">Example workspace</p>
-                        <p className="mt-1 text-muted-foreground">
-                            This sample project illustrates the document analysis, portfolio, and final synthesis views. It is not live n8n data.
-                        </p>
-                    </div>
-                ) : null}
-
-                {displayedSubmissionBatch ? (
-                    <Card className="overflow-hidden">
-                        <CardContent className="space-y-4 p-4">
-                            <div className="flex flex-wrap items-center justify-between gap-2">
+                        {!isExampleMode && projectSummaries.length > 0 ? (
+                            <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 sm:flex sm:items-center sm:justify-between sm:gap-4">
                                 <div>
-                                    <p className="text-sm font-semibold text-foreground">{activeSubmissionBatch ? 'Batch processing progress' : 'Most recent batch processing progress'}</p>
-                                    <p className="text-sm text-muted-foreground">
-                                        Finished {activeBatchFinishedCount}/{activeBatchExpectedCount} documents
-                                        {activeBatchFailedCount > 0 ? ` · ${activeBatchFailedCount} failed` : ''}
+                                    <p className="text-sm font-semibold text-foreground">Review the current project-level result</p>
+                                    <p className="mt-1 text-sm text-muted-foreground">
+                                        Project Synthesis consolidates the selected project&apos;s documents, risks, and negotiation levers. The Project Portfolio provides its document-level context.
                                     </p>
                                 </div>
-                                <Badge variant={activeBatchFinishedCount >= activeBatchExpectedCount ? (activeBatchFailedCount > 0 ? 'destructive' : 'success') : 'warning'}>
-                                    {activeBatchFinishedCount >= activeBatchExpectedCount ? 'Batch terminal' : 'Processing'}
-                                </Badge>
+                                <Button
+                                    type="button"
+                                    size="lg"
+                                    className="mt-3 w-full shrink-0 sm:mt-0 sm:w-auto"
+                                    onClick={() => document.getElementById('project-synthesis')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                                >
+                                    View project synthesis
+                                </Button>
                             </div>
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between gap-3 text-sm">
-                                    <p className="font-medium text-foreground">Reached processing</p>
-                                    <p className="text-muted-foreground">{activeBatchProcessingCount}/{activeBatchExpectedCount} documents</p>
-                                </div>
-                                <Progress value={activeBatchProcessingPercent} className="h-2.5" />
-                            </div>
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between gap-3 text-sm">
-                                    <p className="font-medium text-foreground">Finished</p>
-                                    <div className="flex flex-wrap items-center justify-end gap-2">
-                                        <p className="text-muted-foreground">{activeBatchFinishedCount}/{activeBatchExpectedCount} documents</p>
-                                        <Badge variant={activeBatchFinishedCount >= activeBatchExpectedCount ? 'success' : 'secondary'} className="gap-1.5 px-2.5 py-1 font-mono text-xs">
-                                            <Clock3 className="h-3.5 w-3.5" />
-                                            {formatElapsedDuration(batchElapsedSeconds)} elapsed
-                                        </Badge>
-                                    </div>
-                                </div>
-                                <Progress value={activeBatchProgressPercent} className="h-2.5 [&>span]:bg-success" />
-                            </div>
-                            <div className="rounded-md border border-success/25 bg-success/5 px-3 py-2 text-sm">
-                                <p className="font-medium text-foreground">Batch analyst time saved</p>
+                        ) : null}
+
+                        {isExampleMode ? (
+                            <div className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm text-foreground">
+                                <p className="font-medium">Example workspace</p>
                                 <p className="mt-1 text-muted-foreground">
-                                    {activeBatchImpact.completedDocuments > 0
-                                        ? `~${formatHours(activeBatchImpact.timeSavedHours)} saved across ${activeBatchImpact.completedDocuments} completed document${activeBatchImpact.completedDocuments === 1 ? '' : 's'} (40m manual-review baseline per document).`
-                                        : 'Time saved will appear as documents complete (40m manual-review baseline per document).'}
+                                    This sample project illustrates the document analysis, portfolio, and final synthesis views. It is not live n8n data.
                                 </p>
                             </div>
-                            {batchElapsedSeconds >= 300 && activeBatchFinishedCount < activeBatchExpectedCount ? (
-                                <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-foreground">
-                                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
-                                    <div>
-                                        <p className="font-medium">This batch is taking longer than expected.</p>
-                                        <p className="mt-1 text-muted-foreground">Please reload the page to re-sync the latest n8n status. Reloading will not submit the documents again.</p>
+                        ) : null}
+
+                        {displayedSubmissionBatch ? (
+                            <Card className="overflow-hidden">
+                                <CardContent className="space-y-4 p-4">
+                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                        <div>
+                                            <p className="text-sm font-semibold text-foreground">{activeSubmissionBatch ? 'Batch processing progress' : 'Most recent batch processing progress'}</p>
+                                            <p className="text-sm text-muted-foreground">
+                                                Finished {activeBatchFinishedCount}/{activeBatchExpectedCount} documents
+                                                {activeBatchFailedCount > 0 ? ` · ${activeBatchFailedCount} failed` : ''}
+                                            </p>
+                                        </div>
+                                        <Badge variant={activeBatchFinishedCount >= activeBatchExpectedCount ? (activeBatchFailedCount > 0 ? 'destructive' : 'success') : 'warning'}>
+                                            {activeBatchFinishedCount >= activeBatchExpectedCount ? 'Batch terminal' : 'Processing'}
+                                        </Badge>
                                     </div>
-                                </div>
-                            ) : null}
-                            {activeBatchErrors.length > 0 ? (
-                                <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-foreground">
-                                    <p className="font-medium">Document processing issue{activeBatchErrors.length === 1 ? '' : 's'}</p>
-                                    <ul className="mt-1 space-y-1 text-muted-foreground">
-                                        {activeBatchErrors.map((item) => (
-                                            <li key={`${item.fileName}-${item.message}`} className="flex flex-wrap items-center justify-between gap-2">
-                                                <span>{item.fileName}: {item.message}</span>
-                                                {item.canRetry && item.requestID ? (
-                                                    <Button type="button" size="sm" variant="outline" disabled={retryingRequestId === item.requestID} onClick={() => handleRetryFailedDocument(item.requestID)}>
-                                                        {retryingRequestId === item.requestID ? 'Retrying…' : 'Retry document'}
-                                                    </Button>
-                                                ) : null}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            ) : null}
-                            {activeBatchAdvisories.length > 0 ? (
-                                <div className="rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-sm text-foreground">
-                                    <p className="font-medium">Document advisory</p>
-                                    <ul className="mt-1 space-y-1 text-muted-foreground">
-                                        {activeBatchAdvisories.map((item) => <li key={`${item.fileName}-${item.message}`}>{item.fileName}: {item.message}</li>)}
-                                    </ul>
-                                </div>
-                            ) : null}
-                            <p className="text-xs text-muted-foreground">
-                                {activeBatchFinishedCount >= activeBatchExpectedCount
-                                    ? activeBatchFailedCount > 0
-                                        ? 'All accepted documents are terminal. Review failed documents before relying on synthesis.'
-                                        : 'All accepted documents are complete. The project synthesis can now run.'
-                                    : `Waiting for ${activeBatchExpectedCount - activeBatchFinishedCount} more document${activeBatchExpectedCount - activeBatchFinishedCount === 1 ? '' : 's'} to reach a terminal status.`}
-                            </p>
-                            {activeBatchFinishedCount >= activeBatchExpectedCount && activeBatchCompletedCount > 0 ? (
-                                <div className="rounded-md border border-primary/35 bg-primary/10 p-4 text-sm text-foreground shadow-sm">
-                                    <p className="font-semibold">{activeBatchFailedCount > 0 ? 'Usable documents are ready for synthesis.' : 'All documents are ready for synthesis.'}</p>
-                                    <p className="mt-1 text-muted-foreground">{activeBatchFailedCount > 0 ? `${activeBatchFailedCount} failed document${activeBatchFailedCount === 1 ? '' : 's'} will be left out; you can retry or exclude them from the Synthesis tab.` : 'Review the complete project-level picture and final acquisition judgment.'}</p>
-                                    <Button
-                                        type="button"
-                                        size="lg"
-                                        className="mt-4 h-14 w-full text-base font-semibold shadow-md"
-                                        onClick={() => handleOpenProjectSynthesis(activeProjectId)}
-                                    >
-                                        Open project synthesis
-                                    </Button>
-                                </div>
-                            ) : null}
-                        </CardContent>
-                    </Card>
-                ) : null}
-
-                {isExampleMode && !submitResponse ? (
-                    <Card className="overflow-hidden border-primary/30">
-                        <CardHeader className="border-b border-primary/20 bg-primary/5">
-                            <div className="flex flex-wrap items-center justify-between gap-3">
-                                <div>
-                                    <CardDescription>Example latest project document submission</CardDescription>
-                                    <CardTitle className="text-lg">{exampleSubmissionHistoryRows[0].fileName}</CardTitle>
-                                </div>
-                                <Badge variant="success">Completed</Badge>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="space-y-3 p-4">
-                            <p className="text-sm text-muted-foreground">
-                                This is the document-level result that appears after a queued upload completes, before the project-wide synthesis is reviewed.
-                            </p>
-                            <div className="grid gap-3 sm:grid-cols-3">
-                                <div className="rounded-lg border border-border bg-background p-3">
-                                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Risk</p>
-                                    <p className="mt-1 text-sm font-semibold text-foreground">{exampleSubmissionHistoryRows[0].riskLevel}</p>
-                                </div>
-                                <div className="rounded-lg border border-border bg-background p-3">
-                                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Confidence</p>
-                                    <p className="mt-1 text-sm font-semibold text-foreground">{exampleSubmissionHistoryRows[0].aiConfidence}%</p>
-                                </div>
-                                <div className="rounded-lg border border-border bg-background p-3">
-                                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Project</p>
-                                    <p className="mt-1 text-sm font-semibold text-foreground">{exampleSubmissionHistoryRows[0].projectId}</p>
-                                </div>
-                            </div>
-                            <div className="rounded-lg border border-border bg-muted/30 p-3">
-                                <ExpandableText text={exampleSubmissionHistoryRows[0].aiSummary} maxHeight={120} />
-                            </div>
-                        </CardContent>
-                    </Card>
-                ) : null}
-
-                {!isExampleMode && (submitResponse || displayedSubmissionRow) ? (
-                    <Card className="overflow-hidden">
-                        <CardHeader className="border-b border-border bg-card/80">
-                            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                                <div className="space-y-1">
-                                    <CardTitle className="text-xl">Latest project document submission</CardTitle>
-                                    <CardDescription>
-                                        The most recent document was accepted quickly, then the UI switched to polling for the live n8n row and extracted outputs.
-                                    </CardDescription>
-                                </div>
-                                <div className="flex flex-wrap items-center gap-2">
-                                    {displayedSubmissionRow && ['failed', 'error', 'rejected', 'needs_review', 'needs review'].includes(displayedSubmitStatus.trim().toLowerCase()) && displayedSubmissionRow.requestID ? (
-                                        <Button type="button" variant="outline" disabled={retryingRequestId === displayedSubmissionRow.requestID} onClick={() => handleRetryFailedDocument(displayedSubmissionRow.requestID)}>
-                                            {retryingRequestId === displayedSubmissionRow.requestID ? 'Retrying document…' : 'Retry document'}
-                                        </Button>
-                                    ) : null}
-                                    <Badge variant={getSubmissionStatusVariant(displayedSubmitStatus)}>
-                                        {formatSubmissionStatus(displayedSubmitStatus)}
-                                    </Badge>
-                                    <Badge variant={submitEnvironment === 'test' ? 'warning' : 'outline'}>
-                                        {submitEnvironment}
-                                    </Badge>
-                                    <Badge variant={displayedSubmissionRow ? 'success' : 'secondary'}>
-                                        {liveSubmittedRow ? 'Live project row found' : 'Most recent saved submission'}
-                                    </Badge>
-                                </div>
-                            </div>
-                        </CardHeader>
-
-                        <CardContent className="space-y-4 p-4">
-                            <div className="flex flex-wrap items-center gap-3">
-                                <Button type="button" variant="default" onClick={() => handleOpenProjectSynthesis(displayedSubmissionRow?.projectId || projectId)} disabled={!(displayedSubmissionRow?.projectId || projectId)}>
-                                    View this project&apos;s synthesis
-                                </Button>
-                                <Button type="button" variant="outline" onClick={() => { const el = document.getElementById('upload-section'); el?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}>
-                                    Upload more files for this project
-                                </Button>
-                                {displayedSubmitStatus && !['completed', 'failed', 'error'].includes(displayedSubmitStatus.trim().toLowerCase()) && (
-                                    <Badge variant="secondary" className="gap-1.5">
-                                        <Clock3 className="h-3 w-3" />
-                                        Est. ~1 min remaining
-                                    </Badge>
-                                )}
-                            </div>
-                            {liveSubmitInsight && (liveSubmitInsight.investmentBuyReasoning || liveSubmitInsight.investmentIsFavorable !== null) ? <div className="rounded-xl border-2 border-primary bg-gradient-to-br from-primary/15 via-primary/5 to-background p-5 shadow-md"><div className="flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-bold uppercase tracking-wide text-primary">Investment thesis — start here</p>{liveSubmitInsight.investmentIsFavorable !== null ? <Badge variant={liveSubmitInsight.investmentIsFavorable ? 'success' : 'destructive'}>{liveSubmitInsight.investmentIsFavorable ? 'Favorable indicator' : 'Caution indicator'}</Badge> : null}</div><p className="mt-3 text-sm leading-6 text-foreground">{liveSubmitInsight.investmentBuyReasoning || 'No investment thesis returned yet.'}</p></div> : null}
-                            <div className="rounded-xl border-2 border-primary bg-gradient-to-br from-primary/15 via-primary/5 to-background p-5 shadow-md">
-                                <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-bold uppercase tracking-wide text-primary">Start here — latest document at a glance</p><Badge variant={getSubmissionStatusVariant(displayedSubmitStatus)}>{formatSubmissionStatus(displayedSubmitStatus)}</Badge></div>
-                                <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><div className="rounded-lg border border-primary/25 bg-background/90 p-3"><p className="text-xs text-muted-foreground">Risk signal</p><p className="mt-1 text-lg font-bold">{displayedSubmitTrafficLight || displayedSubmitRiskLevel || 'Still processing'}</p></div><div className="rounded-lg border border-primary/25 bg-background/90 p-3"><p className="text-xs text-muted-foreground">AI confidence</p><p className="mt-1 text-lg font-bold">{liveSubmitInsight?.confidencePercent != null ? `${liveSubmitInsight.confidencePercent}%` : displayedSubmitConfidence || 'Pending'}</p></div><div className="rounded-lg border border-primary/25 bg-background/90 p-3"><p className="text-xs text-muted-foreground">Detected document type</p><p className="mt-1 text-lg font-bold">{displayedSubmissionRow?.detectedDocumentType || displayedSubmissionRow?.documentType || documentType || 'Pending'}</p></div><div className="rounded-lg border border-primary/25 bg-background/90 p-3"><p className="text-xs text-muted-foreground">Action needed</p><p className="mt-1 text-lg font-bold">{liveSubmitInsight?.escalationReasons.length ? 'Review flags' : displayedSubmitStatus.toLowerCase() === 'completed' ? 'Ready to use' : 'Wait for analysis'}</p></div></div>
-                                <ExpandableText text={displayedSubmitAiSummary || (liveSubmitInsight?.escalationReasons.length ? "The document has items that need review before relying on its findings." : "This panel will surface the document’s key result as soon as n8n returns it.")} maxHeight={120} className="mt-4" />
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                                {submitResponse
-                                    ? `${submitResponse.method} to ${submitResponse.target} at ${submitResponse.submittedAt}`
-                                    : 'Restored from the most recent n8n submission history row.'}
-                            </p>
-
-                            <details className="group rounded-lg border border-border bg-muted/20">
-                                <summary className="flex cursor-pointer items-center justify-between px-3 py-2.5 text-sm font-medium text-foreground">
-                                    <span>Submission metadata — IDs, timestamps, file</span>
-                                    <span className="text-xs text-primary group-open:hidden">Show</span>
-                                    <span className="hidden text-xs text-primary group-open:inline">Hide</span>
-                                </summary>
-                                <div className="grid gap-2 p-3 pt-0 sm:grid-cols-2 xl:grid-cols-4">
-                                <div className="rounded-md border border-border bg-card px-3 py-2">
-                                    <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Request ID</p>
-                                    <p className="mt-1 break-all font-mono text-foreground">{webhookResponse?.requestID ?? displayedSubmissionRow?.requestID ?? 'Pending'}</p>
-                                </div>
-                                <div className="rounded-md border border-border bg-card px-3 py-2">
-                                    <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Project ID</p>
-                                    <p className="mt-1 break-all font-mono text-foreground">{displayedSubmissionRow?.projectId || projectId || 'Not set'}</p>
-                                </div>
-                                <div className="rounded-md border border-border bg-card px-3 py-2">
-                                    <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Project Stage</p>
-                                    <p className="mt-1 text-foreground">{displayedSubmissionRow?.projectStage || projectStage || 'Not set'}</p>
-                                </div>
-                                <div className="rounded-md border border-border bg-card px-3 py-2">
-                                    <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Document Type</p>
-                                    <p className="mt-1 text-foreground">{displayedSubmissionRow?.documentType || documentType || 'Not set'}</p>
-                                </div>
-                                <div className="rounded-md border border-border bg-card px-3 py-2">
-                                    <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">n8n Row ID</p>
-                                    <p className="mt-1 font-mono text-foreground">{displayedSubmitRowId}</p>
-                                </div>
-                                <div className="rounded-md border border-border bg-card px-3 py-2">
-                                    <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Received At</p>
-                                    <p className="mt-1 text-foreground">{formatEasternTime(displayedSubmitReceivedAt)}</p>
-                                </div>
-                                <div className="rounded-md border border-border bg-card px-3 py-2">
-                                    <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Deal / Project</p>
-                                    <p className="mt-1 text-foreground">{submitResponse?.payload?.dealName || displayedSubmissionRow?.dealName || 'Pending'}</p>
-                                </div>
-                                <div className="rounded-md border border-border bg-card px-3 py-2">
-                                    <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">File Name</p>
-                                    <p className="mt-1 break-all text-foreground">{submitResponse?.payload?.fileName ?? displayedSubmissionRow?.fileName ?? 'Pending'}</p>
-                                </div>
-                                </div>
-                            </details>
-
-                            {displayedSubmissionRow ? (
-                                <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-                                    <div className="rounded-md border border-border bg-card px-3 py-2 xl:col-span-2">
-                                        <div className="flex flex-wrap items-center justify-between gap-2">
-                                            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Live progress</p>
-                                            {displayedSubmitTrafficLight ? (
-                                                <Badge variant={getSubmissionInsightTone(displayedSubmitTrafficLight)}>
-                                                    {displayedSubmitTrafficLight}
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between gap-3 text-sm">
+                                            <p className="font-medium text-foreground">Reached processing</p>
+                                            <p className="text-muted-foreground">{activeBatchProcessingCount}/{activeBatchExpectedCount} documents</p>
+                                        </div>
+                                        <Progress value={activeBatchProcessingPercent} className="h-2.5" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between gap-3 text-sm">
+                                            <p className="font-medium text-foreground">Finished</p>
+                                            <div className="flex flex-wrap items-center justify-end gap-2">
+                                                <p className="text-muted-foreground">{activeBatchFinishedCount}/{activeBatchExpectedCount} documents</p>
+                                                <Badge variant={activeBatchFinishedCount >= activeBatchExpectedCount ? 'success' : 'secondary'} className="gap-1.5 px-2.5 py-1 font-mono text-xs">
+                                                    <Clock3 className="h-3.5 w-3.5" />
+                                                    {formatElapsedDuration(batchElapsedSeconds)} elapsed
                                                 </Badge>
+                                            </div>
+                                        </div>
+                                        <Progress value={activeBatchProgressPercent} className="h-2.5 [&>span]:bg-success" />
+                                    </div>
+                                    <div className="rounded-md border border-success/25 bg-success/5 px-3 py-2 text-sm">
+                                        <p className="font-medium text-foreground">Batch analyst time saved</p>
+                                        <p className="mt-1 text-muted-foreground">
+                                            {activeBatchImpact.completedDocuments > 0
+                                                ? `~${formatHours(activeBatchImpact.timeSavedHours)} saved across ${activeBatchImpact.completedDocuments} completed document${activeBatchImpact.completedDocuments === 1 ? '' : 's'} (40m manual-review baseline per document).`
+                                                : 'Time saved will appear as documents complete (40m manual-review baseline per document).'}
+                                        </p>
+                                    </div>
+                                    {batchElapsedSeconds >= 300 && activeBatchFinishedCount < activeBatchExpectedCount ? (
+                                        <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-foreground">
+                                            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+                                            <div>
+                                                <p className="font-medium">This batch is taking longer than expected.</p>
+                                                <p className="mt-1 text-muted-foreground">Please reload the page to re-sync the latest n8n status. Reloading will not submit the documents again.</p>
+                                            </div>
+                                        </div>
+                                    ) : null}
+                                    {activeBatchErrors.length > 0 ? (
+                                        <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-foreground">
+                                            <p className="font-medium">Document processing issue{activeBatchErrors.length === 1 ? '' : 's'}</p>
+                                            <ul className="mt-1 space-y-1 text-muted-foreground">
+                                                {activeBatchErrors.map((item) => (
+                                                    <li key={`${item.fileName}-${item.message}`} className="flex flex-wrap items-center justify-between gap-2">
+                                                        <span>{item.fileName}: {item.message}</span>
+                                                        {item.canRetry && item.requestID ? (
+                                                            <Button type="button" size="sm" variant="outline" disabled={retryingRequestId === item.requestID} onClick={() => handleRetryFailedDocument(item.requestID)}>
+                                                                {retryingRequestId === item.requestID ? 'Retrying…' : 'Retry document'}
+                                                            </Button>
+                                                        ) : null}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    ) : null}
+                                    {activeBatchAdvisories.length > 0 ? (
+                                        <div className="rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-sm text-foreground">
+                                            <p className="font-medium">Document advisory</p>
+                                            <ul className="mt-1 space-y-1 text-muted-foreground">
+                                                {activeBatchAdvisories.map((item) => <li key={`${item.fileName}-${item.message}`}>{item.fileName}: {item.message}</li>)}
+                                            </ul>
+                                        </div>
+                                    ) : null}
+                                    <p className="text-xs text-muted-foreground">
+                                        {activeBatchFinishedCount >= activeBatchExpectedCount
+                                            ? activeBatchFailedCount > 0
+                                                ? 'All accepted documents are terminal. Review failed documents before relying on synthesis.'
+                                                : 'All accepted documents are complete. The project synthesis can now run.'
+                                            : `Waiting for ${activeBatchExpectedCount - activeBatchFinishedCount} more document${activeBatchExpectedCount - activeBatchFinishedCount === 1 ? '' : 's'} to reach a terminal status.`}
+                                    </p>
+                                    {activeBatchFinishedCount >= activeBatchExpectedCount && activeBatchCompletedCount > 0 ? (
+                                        <div className="rounded-md border border-primary/35 bg-primary/10 p-4 text-sm text-foreground shadow-sm">
+                                            <p className="font-semibold">{activeBatchFailedCount > 0 ? 'Usable documents are ready for synthesis.' : 'All documents are ready for synthesis.'}</p>
+                                            <p className="mt-1 text-muted-foreground">{activeBatchFailedCount > 0 ? `${activeBatchFailedCount} failed document${activeBatchFailedCount === 1 ? '' : 's'} will be left out; you can retry or exclude them from the Synthesis tab.` : 'Review the complete project-level picture and final acquisition judgment.'}</p>
+                                            <Button
+                                                type="button"
+                                                size="lg"
+                                                className="mt-4 h-14 w-full text-base font-semibold shadow-md"
+                                                onClick={() => handleOpenProjectSynthesis(activeProjectId)}
+                                            >
+                                                Open project synthesis
+                                            </Button>
+                                        </div>
+                                    ) : null}
+                                </CardContent>
+                            </Card>
+                        ) : null}
+
+                        {isExampleMode && !submitResponse ? (
+                            <Card className="overflow-hidden border-primary/30">
+                                <CardHeader className="border-b border-primary/20 bg-primary/5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <div>
+                                            <CardDescription>Example latest project document submission</CardDescription>
+                                            <CardTitle className="text-lg">{exampleSubmissionHistoryRows[0].fileName}</CardTitle>
+                                        </div>
+                                        <Badge variant="success">Completed</Badge>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="space-y-3 p-4">
+                                    <p className="text-sm text-muted-foreground">
+                                        This is the document-level result that appears after a queued upload completes, before the project-wide synthesis is reviewed.
+                                    </p>
+                                    <div className="grid gap-3 sm:grid-cols-3">
+                                        <div className="rounded-lg border border-border bg-background p-3">
+                                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Risk</p>
+                                            <p className="mt-1 text-sm font-semibold text-foreground">{exampleSubmissionHistoryRows[0].riskLevel}</p>
+                                        </div>
+                                        <div className="rounded-lg border border-border bg-background p-3">
+                                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Confidence</p>
+                                            <p className="mt-1 text-sm font-semibold text-foreground">{exampleSubmissionHistoryRows[0].aiConfidence}%</p>
+                                        </div>
+                                        <div className="rounded-lg border border-border bg-background p-3">
+                                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Project</p>
+                                            <p className="mt-1 text-sm font-semibold text-foreground">{exampleSubmissionHistoryRows[0].projectId}</p>
+                                        </div>
+                                    </div>
+                                    <div className="rounded-lg border border-border bg-muted/30 p-3">
+                                        <ExpandableText text={exampleSubmissionHistoryRows[0].aiSummary} maxHeight={120} />
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ) : null}
+
+                        {!isExampleMode && (submitResponse || displayedSubmissionRow) ? (
+                            <Card className="overflow-hidden">
+                                <CardHeader className="border-b border-border bg-card/80">
+                                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                                        <div className="space-y-1">
+                                            <CardTitle className="text-xl">Latest project document submission</CardTitle>
+                                            <CardDescription>
+                                                The most recent document was accepted quickly, then the UI switched to polling for the live n8n row and extracted outputs.
+                                            </CardDescription>
+                                        </div>
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            {displayedSubmissionRow && ['failed', 'error', 'rejected', 'needs_review', 'needs review'].includes(displayedSubmitStatus.trim().toLowerCase()) && displayedSubmissionRow.requestID ? (
+                                                <Button type="button" variant="outline" disabled={retryingRequestId === displayedSubmissionRow.requestID} onClick={() => handleRetryFailedDocument(displayedSubmissionRow.requestID)}>
+                                                    {retryingRequestId === displayedSubmissionRow.requestID ? 'Retrying document…' : 'Retry document'}
+                                                </Button>
+                                            ) : null}
+                                            <Badge variant={getSubmissionStatusVariant(displayedSubmitStatus)}>
+                                                {formatSubmissionStatus(displayedSubmitStatus)}
+                                            </Badge>
+                                            <Badge variant={submitEnvironment === 'test' ? 'warning' : 'outline'}>
+                                                {submitEnvironment}
+                                            </Badge>
+                                            <Badge variant={displayedSubmissionRow ? 'success' : 'secondary'}>
+                                                {liveSubmittedRow ? 'Live project row found' : 'Most recent saved submission'}
+                                            </Badge>
+                                        </div>
+                                    </div>
+                                </CardHeader>
+
+                                <CardContent className="space-y-4 p-4">
+                                    <div className="flex flex-wrap items-center gap-3">
+                                        <Button type="button" variant="default" onClick={() => handleOpenProjectSynthesis(displayedSubmissionRow?.projectId || projectId)} disabled={!(displayedSubmissionRow?.projectId || projectId)}>
+                                            View this project&apos;s synthesis
+                                        </Button>
+                                        <Button type="button" variant="outline" onClick={() => { const el = document.getElementById('upload-section'); el?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}>
+                                            Upload more files for this project
+                                        </Button>
+                                        {displayedSubmitStatus && !['completed', 'failed', 'error'].includes(displayedSubmitStatus.trim().toLowerCase()) && (
+                                            <Badge variant="secondary" className="gap-1.5">
+                                                <Clock3 className="h-3 w-3" />
+                                                Est. ~1 min remaining
+                                            </Badge>
+                                        )}
+                                    </div>
+                                    {liveSubmitInsight && (liveSubmitInsight.investmentBuyReasoning || liveSubmitInsight.investmentIsFavorable !== null) ? <div className="rounded-xl border-2 border-primary bg-gradient-to-br from-primary/15 via-primary/5 to-background p-5 shadow-md"><div className="flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-bold uppercase tracking-wide text-primary">Investment thesis — start here</p>{liveSubmitInsight.investmentIsFavorable !== null ? <Badge variant={liveSubmitInsight.investmentIsFavorable ? 'success' : 'destructive'}>{liveSubmitInsight.investmentIsFavorable ? 'Favorable indicator' : 'Caution indicator'}</Badge> : null}</div><p className="mt-3 text-sm leading-6 text-foreground">{liveSubmitInsight.investmentBuyReasoning || 'No investment thesis returned yet.'}</p></div> : null}
+                                    <div className="rounded-xl border-2 border-primary bg-gradient-to-br from-primary/15 via-primary/5 to-background p-5 shadow-md">
+                                        <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-bold uppercase tracking-wide text-primary">Start here — latest document at a glance</p><Badge variant={getSubmissionStatusVariant(displayedSubmitStatus)}>{formatSubmissionStatus(displayedSubmitStatus)}</Badge></div>
+                                        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><div className="rounded-lg border border-primary/25 bg-background/90 p-3"><p className="text-xs text-muted-foreground">Risk signal</p><p className="mt-1 text-lg font-bold">{displayedSubmitTrafficLight || displayedSubmitRiskLevel || 'Still processing'}</p></div><div className="rounded-lg border border-primary/25 bg-background/90 p-3"><p className="text-xs text-muted-foreground">AI confidence</p><p className="mt-1 text-lg font-bold">{liveSubmitInsight?.confidencePercent != null ? `${liveSubmitInsight.confidencePercent}%` : displayedSubmitConfidence || 'Pending'}</p></div><div className="rounded-lg border border-primary/25 bg-background/90 p-3"><p className="text-xs text-muted-foreground">Detected document type</p><p className="mt-1 text-lg font-bold">{displayedSubmissionRow?.detectedDocumentType || displayedSubmissionRow?.documentType || documentType || 'Pending'}</p></div><div className="rounded-lg border border-primary/25 bg-background/90 p-3"><p className="text-xs text-muted-foreground">Action needed</p><p className="mt-1 text-lg font-bold">{liveSubmitInsight?.escalationReasons.length ? 'Review flags' : displayedSubmitStatus.toLowerCase() === 'completed' ? 'Ready to use' : 'Wait for analysis'}</p></div></div>
+                                        <ExpandableText text={displayedSubmitAiSummary || (liveSubmitInsight?.escalationReasons.length ? "The document has items that need review before relying on its findings." : "This panel will surface the document’s key result as soon as n8n returns it.")} maxHeight={120} className="mt-4" />
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">
+                                        {submitResponse
+                                            ? `${submitResponse.method} to ${submitResponse.target} at ${submitResponse.submittedAt}`
+                                            : 'Restored from the most recent n8n submission history row.'}
+                                    </p>
+
+                                    <details className="group rounded-lg border border-border bg-muted/20">
+                                        <summary className="flex cursor-pointer items-center justify-between px-3 py-2.5 text-sm font-medium text-foreground">
+                                            <span>Submission metadata — IDs, timestamps, file</span>
+                                            <span className="text-xs text-primary group-open:hidden">Show</span>
+                                            <span className="hidden text-xs text-primary group-open:inline">Hide</span>
+                                        </summary>
+                                        <div className="grid gap-2 p-3 pt-0 sm:grid-cols-2 xl:grid-cols-4">
+                                            <div className="rounded-md border border-border bg-card px-3 py-2">
+                                                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Request ID</p>
+                                                <p className="mt-1 break-all font-mono text-foreground">{webhookResponse?.requestID ?? displayedSubmissionRow?.requestID ?? 'Pending'}</p>
+                                            </div>
+                                            <div className="rounded-md border border-border bg-card px-3 py-2">
+                                                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Project ID</p>
+                                                <p className="mt-1 break-all font-mono text-foreground">{displayedSubmissionRow?.projectId || projectId || 'Not set'}</p>
+                                            </div>
+                                            <div className="rounded-md border border-border bg-card px-3 py-2">
+                                                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Project Stage</p>
+                                                <p className="mt-1 text-foreground">{displayedSubmissionRow?.projectStage || projectStage || 'Not set'}</p>
+                                            </div>
+                                            <div className="rounded-md border border-border bg-card px-3 py-2">
+                                                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Document Type</p>
+                                                <p className="mt-1 text-foreground">{displayedSubmissionRow?.documentType || documentType || 'Not set'}</p>
+                                            </div>
+                                            <div className="rounded-md border border-border bg-card px-3 py-2">
+                                                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">n8n Row ID</p>
+                                                <p className="mt-1 font-mono text-foreground">{displayedSubmitRowId}</p>
+                                            </div>
+                                            <div className="rounded-md border border-border bg-card px-3 py-2">
+                                                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Received At</p>
+                                                <p className="mt-1 text-foreground">{formatEasternTime(displayedSubmitReceivedAt)}</p>
+                                            </div>
+                                            <div className="rounded-md border border-border bg-card px-3 py-2">
+                                                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Deal / Project</p>
+                                                <p className="mt-1 text-foreground">{submitResponse?.payload?.dealName || displayedSubmissionRow?.dealName || 'Pending'}</p>
+                                            </div>
+                                            <div className="rounded-md border border-border bg-card px-3 py-2">
+                                                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">File Name</p>
+                                                <p className="mt-1 break-all text-foreground">{submitResponse?.payload?.fileName ?? displayedSubmissionRow?.fileName ?? 'Pending'}</p>
+                                            </div>
+                                        </div>
+                                    </details>
+
+                                    {displayedSubmissionRow ? (
+                                        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                                            <div className="rounded-md border border-border bg-card px-3 py-2 xl:col-span-2">
+                                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                                    <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Live progress</p>
+                                                    {displayedSubmitTrafficLight ? (
+                                                        <Badge variant={getSubmissionInsightTone(displayedSubmitTrafficLight)}>
+                                                            {displayedSubmitTrafficLight}
+                                                        </Badge>
+                                                    ) : null}
+                                                </div>
+                                                <p className="mt-1 text-foreground">Processing started: {displayedSubmissionRow.processingStartedAt || 'Pending'}</p>
+                                                <p className="mt-1 text-foreground">Processed at: {displayedSubmissionRow.processedAt || 'Pending'}</p>
+                                            </div>
+                                            <div className="rounded-md border border-border bg-card px-3 py-2">
+                                                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Risk Level</p>
+                                                <p className="mt-1 text-foreground">{displayedSubmitRiskLevel || 'Pending'}</p>
+                                            </div>
+                                            <div className="rounded-md border border-border bg-card px-3 py-2">
+                                                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Category</p>
+                                                <p className="mt-1 text-foreground">{displayedSubmitCategory || 'Pending'}</p>
+                                            </div>
+                                            <div className="rounded-md border border-border bg-card px-3 py-2">
+                                                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Confidence</p>
+                                                <p className="mt-1 text-foreground">
+                                                    {liveSubmitInsight?.confidencePercent != null
+                                                        ? `${liveSubmitInsight.confidencePercent}%`
+                                                        : displayedSubmitConfidence || 'Pending'}
+                                                </p>
+                                                {liveSubmitInsight?.confidencePercent != null ? (
+                                                    <Progress value={liveSubmitInsight.confidencePercent} className="mt-2 h-2" />
+                                                ) : null}
+                                            </div>
+                                            <div className="rounded-md border border-border bg-card px-3 py-2">
+                                                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Variance</p>
+                                                <p className="mt-1 text-foreground">{displayedSubmitVariance ? `${displayedSubmitVariance}%` : 'Pending'}</p>
+                                            </div>
+                                            <div className="rounded-md border border-border bg-card px-3 py-2">
+                                                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">EBITDA Extracted</p>
+                                                <p className="mt-1 text-foreground">{displayedSubmissionRow.ebitdaExtracted || 'Pending'}</p>
+                                            </div>
+                                            {(liveSubmitInsight?.escalationReasons.length || displayedSubmitAiSummary) ? (
+                                                <div className="grid gap-3 xl:col-span-4 xl:grid-cols-2">
+                                                    {liveSubmitInsight?.escalationReasons.length ? (
+                                                        <div>
+                                                            <ExpandableInsightGroup
+                                                                title="Escalation reasons"
+                                                                items={liveSubmitInsight.escalationReasons.flatMap((reason) => splitReadableText(reason))}
+                                                                badgeVariant="warning"
+                                                                className="border-warning/30 bg-warning/10"
+                                                                itemClassName="border-warning/30"
+                                                                emptyLabel="No escalation reasons returned."
+                                                                defaultOpen
+                                                                onItemClick={(item) => {
+                                                                    setActiveEvidence({
+                                                                        title: 'Escalation reason',
+                                                                        sourceFile: displayedSubmissionRow?.fileName || 'Uploaded document',
+                                                                        sourceLocation: 'Escalation analysis',
+                                                                        excerpt: item,
+                                                                        status: 'Needs review',
+                                                                        provenance: 'Document-level escalation',
+                                                                        documentId: displayedSubmissionRow?.storageFileId,
+                                                                        documentUrl: displayedSubmissionRow?.storageFileUrl,
+                                                                    })
+                                                                }}
+                                                            />
+                                                        </div>
+                                                    ) : null}
+                                                    {displayedSubmitAiSummary ? (
+                                                        <div>
+                                                            <ExpandableInsightGroup
+                                                                title="AI Summary"
+                                                                items={splitReadableText(displayedSubmitAiSummary)}
+                                                                defaultOpen
+                                                                className="border-border bg-card"
+                                                                itemClassName="border-border"
+                                                                emptyLabel="No AI summary returned."
+                                                                onItemClick={(item) => {
+                                                                    setActiveEvidence({
+                                                                        title: 'AI Summary finding',
+                                                                        sourceFile: displayedSubmissionRow?.fileName || 'Uploaded document',
+                                                                        sourceLocation: 'AI document summary',
+                                                                        excerpt: item,
+                                                                        status: 'Synthesized',
+                                                                        provenance: 'Document-level AI summary',
+                                                                        documentId: displayedSubmissionRow?.storageFileId,
+                                                                        documentUrl: displayedSubmissionRow?.storageFileUrl,
+                                                                    })
+                                                                }}
+                                                            />
+                                                        </div>
+                                                    ) : null}
+                                                </div>
+                                            ) : null}
+                                            {liveSubmitInsight ? (
+                                                <div className="grid gap-3 xl:col-span-4 xl:grid-cols-2">
+                                                    {[
+                                                        {
+                                                            title: 'Red flags',
+                                                            flags: liveSubmitInsight.redFlags,
+                                                            badge: 'destructive' as const,
+                                                            sectionClass: 'border-destructive/30 bg-destructive/5',
+                                                            itemClass: 'border-destructive/20',
+                                                        },
+                                                        {
+                                                            title: 'Yellow flags',
+                                                            flags: liveSubmitInsight.yellowFlags,
+                                                            badge: 'warning' as const,
+                                                            sectionClass: 'border-warning/30 bg-warning/5',
+                                                            itemClass: 'border-warning/20',
+                                                        },
+                                                        {
+                                                            title: 'Green flags',
+                                                            flags: liveSubmitInsight.greenFlags,
+                                                            badge: 'success' as const,
+                                                            sectionClass: 'border-success/30 bg-success/5',
+                                                            itemClass: 'border-success/20',
+                                                        },
+                                                    ].map((group) => (
+                                                        <ExpandableInsightGroup
+                                                            key={group.title}
+                                                            title={group.title}
+                                                            items={group.flags}
+                                                            badgeVariant={group.badge}
+                                                            className={group.sectionClass}
+                                                            itemClassName={group.itemClass}
+                                                            emptyLabel="None"
+                                                            defaultOpen
+                                                            onItemClick={(item) => {
+                                                                setActiveEvidence({
+                                                                    title: `${group.title.replace(' flags', ' flag')}: finding`,
+                                                                    sourceFile: displayedSubmissionRow?.fileName || 'Uploaded document',
+                                                                    sourceLocation: group.title,
+                                                                    excerpt: item,
+                                                                    status: group.badge === 'destructive' ? 'Risk' : group.badge === 'warning' ? 'Caution' : 'Confirmed',
+                                                                    provenance: `Document-level ${group.title.toLowerCase()} analysis`,
+                                                                    documentId: displayedSubmissionRow?.storageFileId,
+                                                                    documentUrl: displayedSubmissionRow?.storageFileUrl,
+                                                                })
+                                                            }}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            ) : null}
+                                            {liveSubmitCitations.length ? <div className="xl:col-span-4 rounded-lg border border-primary/25 bg-primary/5 p-4"><div className="flex items-center justify-between gap-2"><p className="text-sm font-semibold text-foreground">Document citations</p><Badge variant="outline">{liveSubmitCitations.length} locations</Badge></div><p className="mt-1 text-xs text-muted-foreground">Each line identifies the exact section n8n used; click it to view source evidence when available.</p><div className="mt-3 h-64 space-y-2 overflow-y-auto pr-1">{liveSubmitCitations.map((citation, index) => <button key={`${citation.sourceFile}-${citation.rowOrCell}-${index}`} type="button" onClick={() => setActiveEvidence({ title: 'Document analysis citation', sourceFile: citation.sourceFile || displayedSubmissionRow?.fileName || 'Uploaded document', sourceLocation: citation.rowOrCell || 'Document analysis', excerpt: citation.rowOrCell ? `Source location: ${citation.rowOrCell}` : 'No additional excerpt was returned for this citation.', status: 'Confirmed', provenance: 'Document-level analysis', documentId: displayedSubmissionRow?.storageFileId, documentUrl: displayedSubmissionRow?.storageFileUrl })} className="flex w-full flex-wrap items-center justify-between gap-2 rounded-md border border-primary/20 bg-background px-3 py-2 text-left text-sm text-foreground transition-colors hover:border-primary/50 hover:bg-muted/30"><span><span className="font-medium">{citation.sourceFile || displayedSubmissionRow?.fileName || 'Uploaded document'}</span><span className="mx-2 text-muted-foreground">·</span><span className="text-muted-foreground">{citation.rowOrCell || 'Document analysis'}</span></span><span className="text-xs font-medium text-primary">View evidence</span></button>)}</div></div> : null}
+                                            {(liveSubmitInsight?.formattedValuationLowerBound && liveSubmitInsight.formattedValuationLowerBound !== '$0') || (liveSubmitInsight?.formattedValuationBaseEstimate && liveSubmitInsight.formattedValuationBaseEstimate !== '$0') || (liveSubmitInsight?.formattedValuationUpperBound && liveSubmitInsight.formattedValuationUpperBound !== '$0') ? (
+                                                <div className="xl:col-span-4">
+                                                    <div className="mb-2 flex items-center gap-2">
+                                                        <Badge variant="outline" className="text-xs">{displayedSubmissionRow?.aiConfidence ? `${displayedSubmissionRow.aiConfidence}% confidence` : 'AI estimate'}</Badge>
+                                                        {displayedSubmitValuationCurrency ? <Badge variant="secondary">{displayedSubmitValuationCurrency}</Badge> : null}
+                                                    </div>
+                                                    <div className="grid gap-2 md:grid-cols-3">
+                                                        <div className="rounded-md border border-border bg-card px-3 py-2">
+                                                            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Lower Bound</p>
+                                                            <p className="mt-1 text-sm text-foreground">{liveSubmitInsight?.formattedValuationLowerBound || 'Pending'}</p>
+                                                        </div>
+                                                        <div className="rounded-md border border-border bg-card px-3 py-2">
+                                                            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Base Estimate</p>
+                                                            <p className="mt-1 text-sm text-foreground">{liveSubmitInsight?.formattedValuationBaseEstimate || 'Pending'}</p>
+                                                        </div>
+                                                        <div className="rounded-md border border-border bg-card px-3 py-2">
+                                                            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Upper Bound</p>
+                                                            <p className="mt-1 text-sm text-foreground">{liveSubmitInsight?.formattedValuationUpperBound || 'Pending'}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ) : null}
+                                            {liveSubmitInsight && (liveSubmitInsight.investmentBuyReasoning || liveSubmitInsight.investmentIsFavorable !== null) ? (
+                                                <div className="rounded-md border border-border bg-card px-3 py-2 xl:col-span-4">
+                                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                                        <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Investment Thesis</p>
+                                                        {liveSubmitInsight.investmentIsFavorable !== null ? (
+                                                            <Badge variant={liveSubmitInsight.investmentIsFavorable ? 'success' : 'destructive'}>
+                                                                {liveSubmitInsight.investmentIsFavorable ? 'Favorable indicator' : 'Not favorable'}
+                                                            </Badge>
+                                                        ) : null}
+                                                    </div>
+                                                    <ExpandableText text={liveSubmitInsight.investmentBuyReasoning || 'No buy reasoning returned yet.'} maxHeight={120} className="mt-3 whitespace-pre-wrap text-sm leading-6 text-foreground" />
+                                                </div>
+                                            ) : null}
+                                            {displayedSubmissionRow?.reconciliationJson ? (
+                                                <div className="xl:col-span-4">
+                                                    <MathChecksSection documents={[displayedSubmissionRow]} onOpenEvidence={setActiveEvidence} compact title="Document math checks" description="Deterministic arithmetic verifications on this document's extracted numbers." />
+                                                </div>
                                             ) : null}
                                         </div>
-                                        <p className="mt-1 text-foreground">Processing started: {displayedSubmissionRow.processingStartedAt || 'Pending'}</p>
-                                        <p className="mt-1 text-foreground">Processed at: {displayedSubmissionRow.processedAt || 'Pending'}</p>
-                                    </div>
-                                    <div className="rounded-md border border-border bg-card px-3 py-2">
-                                        <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Risk Level</p>
-                                        <p className="mt-1 text-foreground">{displayedSubmitRiskLevel || 'Pending'}</p>
-                                    </div>
-                                    <div className="rounded-md border border-border bg-card px-3 py-2">
-                                        <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Category</p>
-                                        <p className="mt-1 text-foreground">{displayedSubmitCategory || 'Pending'}</p>
-                                    </div>
-                                    <div className="rounded-md border border-border bg-card px-3 py-2">
-                                        <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Confidence</p>
-                                        <p className="mt-1 text-foreground">
-                                            {liveSubmitInsight?.confidencePercent != null
-                                                ? `${liveSubmitInsight.confidencePercent}%`
-                                                : displayedSubmitConfidence || 'Pending'}
-                                        </p>
-                                        {liveSubmitInsight?.confidencePercent != null ? (
-                                            <Progress value={liveSubmitInsight.confidencePercent} className="mt-2 h-2" />
-                                        ) : null}
-                                    </div>
-                                    <div className="rounded-md border border-border bg-card px-3 py-2">
-                                        <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Variance</p>
-                                        <p className="mt-1 text-foreground">{displayedSubmitVariance ? `${displayedSubmitVariance}%` : 'Pending'}</p>
-                                    </div>
-                                    <div className="rounded-md border border-border bg-card px-3 py-2">
-                                        <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">EBITDA Extracted</p>
-                                        <p className="mt-1 text-foreground">{displayedSubmissionRow.ebitdaExtracted || 'Pending'}</p>
-                                    </div>
-                                    {(liveSubmitInsight?.escalationReasons.length || displayedSubmitAiSummary) ? (
-                                        <div className="grid gap-3 xl:col-span-4 xl:grid-cols-2">
-                                        {liveSubmitInsight?.escalationReasons.length ? (
-                                        <div>
-                                            <ExpandableInsightGroup
-                                                title="Escalation reasons"
-                                                items={liveSubmitInsight.escalationReasons.flatMap((reason) => splitReadableText(reason))}
-                                                badgeVariant="warning"
-                                                className="border-warning/30 bg-warning/10"
-                                                itemClassName="border-warning/30"
-                                                emptyLabel="No escalation reasons returned."
-                                                defaultOpen
-                                                onItemClick={(item) => {
-                                                    setActiveEvidence({
-                                                        title: 'Escalation reason',
-                                                        sourceFile: displayedSubmissionRow?.fileName || 'Uploaded document',
-                                                        sourceLocation: 'Escalation analysis',
-                                                        excerpt: item,
-                                                        status: 'Needs review',
-                                                        provenance: 'Document-level escalation',
-                                                        documentId: displayedSubmissionRow?.storageFileId,
-                                                        documentUrl: displayedSubmissionRow?.storageFileUrl,
-                                                    })
-                                                }}
-                                            />
-                                        </div>
-                                        ) : null}
-                                        {displayedSubmitAiSummary ? (
-                                        <div>
-                                            <ExpandableInsightGroup
-                                                title="AI Summary"
-                                                items={splitReadableText(displayedSubmitAiSummary)}
-                                                defaultOpen
-                                                className="border-border bg-card"
-                                                itemClassName="border-border"
-                                                emptyLabel="No AI summary returned."
-                                                onItemClick={(item) => {
-                                                    setActiveEvidence({
-                                                        title: 'AI Summary finding',
-                                                        sourceFile: displayedSubmissionRow?.fileName || 'Uploaded document',
-                                                        sourceLocation: 'AI document summary',
-                                                        excerpt: item,
-                                                        status: 'Synthesized',
-                                                        provenance: 'Document-level AI summary',
-                                                        documentId: displayedSubmissionRow?.storageFileId,
-                                                        documentUrl: displayedSubmissionRow?.storageFileUrl,
-                                                    })
-                                                }}
-                                            />
-                                        </div>
-                                        ) : null}
-                                        </div>
                                     ) : null}
-                                    {liveSubmitInsight ? (
-                                        <div className="grid gap-3 xl:col-span-4 xl:grid-cols-2">
-                                            {[
-                                                {
-                                                    title: 'Red flags',
-                                                    flags: liveSubmitInsight.redFlags,
-                                                    badge: 'destructive' as const,
-                                                    sectionClass: 'border-destructive/30 bg-destructive/5',
-                                                    itemClass: 'border-destructive/20',
-                                                },
-                                                {
-                                                    title: 'Yellow flags',
-                                                    flags: liveSubmitInsight.yellowFlags,
-                                                    badge: 'warning' as const,
-                                                    sectionClass: 'border-warning/30 bg-warning/5',
-                                                    itemClass: 'border-warning/20',
-                                                },
-                                                {
-                                                    title: 'Green flags',
-                                                    flags: liveSubmitInsight.greenFlags,
-                                                    badge: 'success' as const,
-                                                    sectionClass: 'border-success/30 bg-success/5',
-                                                    itemClass: 'border-success/20',
-                                                },
-                                            ].map((group) => (
-                                                <ExpandableInsightGroup
-                                                    key={group.title}
-                                                    title={group.title}
-                                                    items={group.flags}
-                                                    badgeVariant={group.badge}
-                                                    className={group.sectionClass}
-                                                    itemClassName={group.itemClass}
-                                                    emptyLabel="None"
-                                                    defaultOpen
-                                                    onItemClick={(item) => {
-                                                        setActiveEvidence({
-                                                            title: `${group.title.replace(' flags', ' flag')}: finding`,
-                                                            sourceFile: displayedSubmissionRow?.fileName || 'Uploaded document',
-                                                            sourceLocation: group.title,
-                                                            excerpt: item,
-                                                            status: group.badge === 'destructive' ? 'Risk' : group.badge === 'warning' ? 'Caution' : 'Confirmed',
-                                                            provenance: `Document-level ${group.title.toLowerCase()} analysis`,
-                                                            documentId: displayedSubmissionRow?.storageFileId,
-                                                            documentUrl: displayedSubmissionRow?.storageFileUrl,
-                                                        })
-                                                    }}
-                                                />
-                                            ))}
-                                        </div>
-                                    ) : null}
-                                    {liveSubmitCitations.length ? <div className="xl:col-span-4 rounded-lg border border-primary/25 bg-primary/5 p-4"><div className="flex items-center justify-between gap-2"><p className="text-sm font-semibold text-foreground">Document citations</p><Badge variant="outline">{liveSubmitCitations.length} locations</Badge></div><p className="mt-1 text-xs text-muted-foreground">Each line identifies the exact section n8n used; click it to view source evidence when available.</p><div className="mt-3 h-64 space-y-2 overflow-y-auto pr-1">{liveSubmitCitations.map((citation, index) => <button key={`${citation.sourceFile}-${citation.rowOrCell}-${index}`} type="button" onClick={() => setActiveEvidence({ title: 'Document analysis citation', sourceFile: citation.sourceFile || displayedSubmissionRow?.fileName || 'Uploaded document', sourceLocation: citation.rowOrCell || 'Document analysis', excerpt: citation.rowOrCell ? `Source location: ${citation.rowOrCell}` : 'No additional excerpt was returned for this citation.', status: 'Confirmed', provenance: 'Document-level analysis', documentId: displayedSubmissionRow?.storageFileId, documentUrl: displayedSubmissionRow?.storageFileUrl })} className="flex w-full flex-wrap items-center justify-between gap-2 rounded-md border border-primary/20 bg-background px-3 py-2 text-left text-sm text-foreground transition-colors hover:border-primary/50 hover:bg-muted/30"><span><span className="font-medium">{citation.sourceFile || displayedSubmissionRow?.fileName || 'Uploaded document'}</span><span className="mx-2 text-muted-foreground">·</span><span className="text-muted-foreground">{citation.rowOrCell || 'Document analysis'}</span></span><span className="text-xs font-medium text-primary">View evidence</span></button>)}</div></div> : null}
-                                    {(liveSubmitInsight?.formattedValuationLowerBound && liveSubmitInsight.formattedValuationLowerBound !== '$0') || (liveSubmitInsight?.formattedValuationBaseEstimate && liveSubmitInsight.formattedValuationBaseEstimate !== '$0') || (liveSubmitInsight?.formattedValuationUpperBound && liveSubmitInsight.formattedValuationUpperBound !== '$0') ? (
-                                        <div className="xl:col-span-4">
-                                            <div className="mb-2 flex items-center gap-2">
-                                                <Badge variant="outline" className="text-xs">{displayedSubmissionRow?.aiConfidence ? `${displayedSubmissionRow.aiConfidence}% confidence` : 'AI estimate'}</Badge>
-                                                {displayedSubmitValuationCurrency ? <Badge variant="secondary">{displayedSubmitValuationCurrency}</Badge> : null}
-                                            </div>
-                                            <div className="grid gap-2 md:grid-cols-3">
-                                                <div className="rounded-md border border-border bg-card px-3 py-2">
-                                                    <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Lower Bound</p>
-                                                    <p className="mt-1 text-sm text-foreground">{liveSubmitInsight?.formattedValuationLowerBound || 'Pending'}</p>
-                                                </div>
-                                                <div className="rounded-md border border-border bg-card px-3 py-2">
-                                                    <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Base Estimate</p>
-                                                    <p className="mt-1 text-sm text-foreground">{liveSubmitInsight?.formattedValuationBaseEstimate || 'Pending'}</p>
-                                                </div>
-                                                <div className="rounded-md border border-border bg-card px-3 py-2">
-                                                    <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Upper Bound</p>
-                                                    <p className="mt-1 text-sm text-foreground">{liveSubmitInsight?.formattedValuationUpperBound || 'Pending'}</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ) : null}
-                                    {liveSubmitInsight && (liveSubmitInsight.investmentBuyReasoning || liveSubmitInsight.investmentIsFavorable !== null) ? (
-                                        <div className="rounded-md border border-border bg-card px-3 py-2 xl:col-span-4">
-                                            <div className="flex flex-wrap items-center justify-between gap-2">
-                                                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Investment Thesis</p>
-                                                {liveSubmitInsight.investmentIsFavorable !== null ? (
-                                                    <Badge variant={liveSubmitInsight.investmentIsFavorable ? 'success' : 'destructive'}>
-                                                        {liveSubmitInsight.investmentIsFavorable ? 'Favorable indicator' : 'Not favorable'}
-                                                    </Badge>
-                                                ) : null}
-                                            </div>
-                                            <ExpandableText text={liveSubmitInsight.investmentBuyReasoning || 'No buy reasoning returned yet.'} maxHeight={120} className="mt-3 whitespace-pre-wrap text-sm leading-6 text-foreground" />
-                                        </div>
-                                    ) : null}
-                                    {displayedSubmissionRow?.reconciliationJson ? (
-                                        <div className="xl:col-span-4">
-                                            <MathChecksSection documents={[displayedSubmissionRow]} onOpenEvidence={setActiveEvidence} compact title="Document math checks" description="Deterministic arithmetic verifications on this document's extracted numbers." />
-                                        </div>
-                                    ) : null}
-                                </div>
-                            ) : null}
-                            <div className="flex flex-wrap items-center gap-3 border-t border-border pt-4">
-                                <Button type="button" variant="default" onClick={() => handleOpenProjectSynthesis(displayedSubmissionRow?.projectId || projectId)} disabled={!(displayedSubmissionRow?.projectId || projectId)}>
-                                    View this project&apos;s synthesis
-                                    {activeProjectSynthesis ? <Badge variant="success" className="ml-2">Ready</Badge> : isCurrentProjectAwaitingSynthesis ? <Badge variant="warning" className="ml-2">Running</Badge> : null}
-                                </Button>
-                                <Button type="button" variant="outline" onClick={() => { const el = document.getElementById('upload-section'); el?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}>
-                                    Upload more files
-                                </Button>
-                            </div>
-                        </CardContent>
-                    </Card>
-                ) : null}
+                                    <div className="flex flex-wrap items-center gap-3 border-t border-border pt-4">
+                                        <Button type="button" variant="default" onClick={() => handleOpenProjectSynthesis(displayedSubmissionRow?.projectId || projectId)} disabled={!(displayedSubmissionRow?.projectId || projectId)}>
+                                            View this project&apos;s synthesis
+                                            {activeProjectSynthesis ? <Badge variant="success" className="ml-2">Ready</Badge> : isCurrentProjectAwaitingSynthesis ? <Badge variant="warning" className="ml-2">Running</Badge> : null}
+                                        </Button>
+                                        <Button type="button" variant="outline" onClick={() => { const el = document.getElementById('upload-section'); el?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}>
+                                            Upload more files
+                                        </Button>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ) : null}
 
-                </> : null}
+                    </> : null}
 
-                {activeWorkspaceTab === 'documents' ? <>
-                <section id="project-portfolio" className="scroll-mt-6 space-y-4">
-                    <SectionHeader
-                        step={1}
-                        title="Document portfolio"
-                        description="Every uploaded document grouped by project, with coverage and duplicates."
-                    />
-                    <ProjectPortfolioCard
-                        rows={submissionHistory}
-                        syntheses={visibleProjectSyntheses}
-                        activeProjectKey={selectedProjectKey}
-                        onProjectSelect={handlePortfolioProjectSelect}
-                        onExcludeDocument={handleExcludeDocument}
-                        onIncludeDocument={handleIncludeDocument}
-                        onRetryDocument={handleRetryFailedDocument}
-                        retryingRequestId={retryingRequestId}
-                        onRunSynthesis={() => { void handleRunSynthesis() }}
-                        runningSynthesis={isCurrentProjectAwaitingSynthesis}
-                        onAddDocuments={(projectKey) => {
-                            setSelectedProjectKey(projectKey)
-                            setTimeout(() => {
-                                document.querySelector('[data-project-intake]')?.scrollIntoView({ behavior: 'smooth' })
-                            }, 100)
-                        }}
-                    />
-                </section>
+                    {activeWorkspaceTab === 'documents' ? <>
+                        <section id="project-portfolio" className="scroll-mt-6 space-y-4">
+                            <SectionHeader
+                                step={1}
+                                title="Document portfolio"
+                                description="Every uploaded document grouped by project, with coverage and duplicates."
+                            />
+                            <ProjectPortfolioCard
+                                rows={submissionHistory}
+                                syntheses={visibleProjectSyntheses}
+                                activeProjectKey={selectedProjectKey}
+                                onProjectSelect={handlePortfolioProjectSelect}
+                                onExcludeDocument={handleExcludeDocument}
+                                onIncludeDocument={handleIncludeDocument}
+                                onRetryDocument={handleRetryFailedDocument}
+                                retryingRequestId={retryingRequestId}
+                                onRunSynthesis={() => { void handleRunSynthesis() }}
+                                runningSynthesis={isCurrentProjectAwaitingSynthesis}
+                                onAddDocuments={(projectKey) => {
+                                    setSelectedProjectKey(projectKey)
+                                    setTimeout(() => {
+                                        document.querySelector('[data-project-intake]')?.scrollIntoView({ behavior: 'smooth' })
+                                    }, 100)
+                                }}
+                            />
+                        </section>
 
-                </> : null}
+                    </> : null}
 
-                {activeWorkspaceTab === 'synthesis' ? <>
-                <section id="project-synthesis" className="scroll-mt-6 space-y-4">
-                    <SectionHeader
-                        step={1}
-                        title="Final acquisition judgment"
-                        description="The consolidator's cross-document verdict for the selected project."
-                    />
-                    <ProjectSynthesisCard
-                        syntheses={visibleProjectSyntheses}
-                        projects={projectSummaries}
-                        currentProjectId={isExampleMode ? 'atlas-001' : projectId}
-                        documentAnalysisPending={isCurrentProjectProcessingDocuments}
-                        synthesisPending={isCurrentProjectAwaitingSynthesis}
-                        synthesisProgress={isExampleMode ? 100 : currentSynthesisProgress.value}
-                        synthesisStage={isExampleMode ? 'Example synthesis complete' : currentSynthesisProgress.stage}
-                        loading={projectSynthesisLoading}
-                        error={projectSynthesisError}
-                        model={hydratedDealModel}
-                        impact={activeProjectImpact}
-                        documents={submissionHistory.filter((row) => getProjectKey(row) === activeProjectId)}
-                        onOpenEvidence={setActiveEvidence}
-                        onExcludeDocument={handleExcludeDocument}
-                        onIncludeDocument={handleIncludeDocument}
-                        onRetryDocument={handleRetryFailedDocument}
-                        retryingRequestId={retryingRequestId}
-                        onRefresh={() => {
-                            void triggerProjectSynthesis({ environment: activeHistoryEnvironment }, { skipCache: true }).result
-                        }}
-                    />
-                    <ManagementQuestionTracker
-                        projectId={activeProjectId}
-                        suggestedQuestions={activeProjectSynthesis?.openQuestions ?? []}
-                    />
-                    <MathChecksSection documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} title="Project-wide deterministic checks" description="Aggregated arithmetic verifications from all processed documents in this project." />
-                </section>
+                    {activeWorkspaceTab === 'synthesis' ? <>
+                        <section id="project-synthesis" className="scroll-mt-6 space-y-4">
+                            <SectionHeader
+                                step={1}
+                                title="Final acquisition judgment"
+                                description="The consolidator's cross-document verdict for the selected project."
+                            />
+                            <ProjectSynthesisCard
+                                syntheses={visibleProjectSyntheses}
+                                projects={projectSummaries}
+                                currentProjectId={isExampleMode ? 'atlas-001' : projectId}
+                                documentAnalysisPending={isCurrentProjectProcessingDocuments}
+                                synthesisPending={isCurrentProjectAwaitingSynthesis}
+                                synthesisProgress={isExampleMode ? 100 : currentSynthesisProgress.value}
+                                synthesisStage={isExampleMode ? 'Example synthesis complete' : currentSynthesisProgress.stage}
+                                loading={projectSynthesisLoading}
+                                error={projectSynthesisError}
+                                model={hydratedDealModel}
+                                impact={activeProjectImpact}
+                                documents={submissionHistory.filter((row) => getProjectKey(row) === activeProjectId)}
+                                onOpenEvidence={setActiveEvidence}
+                                onExcludeDocument={handleExcludeDocument}
+                                onIncludeDocument={handleIncludeDocument}
+                                onRetryDocument={handleRetryFailedDocument}
+                                retryingRequestId={retryingRequestId}
+                                onRefresh={() => {
+                                    void triggerProjectSynthesis({ environment: activeHistoryEnvironment }, { skipCache: true }).result
+                                }}
+                            />
+                            <ManagementQuestionTracker
+                                projectId={activeProjectId}
+                                suggestedQuestions={activeProjectSynthesis?.openQuestions ?? []}
+                            />
+                            <MathChecksSection documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} title="Project-wide deterministic checks" description="Aggregated arithmetic verifications from all processed documents in this project." />
+                        </section>
 
-                </> : null}
+                    </> : null}
 
-                {activeWorkspaceTab === 'history' ? <>
-                <section className="space-y-4">
-                <SectionHeader
-                    step={1}
-                    title="Submission audit trail"
-                    description="Per-document processing status and AI output, newest first."
-                />
-                <SubmissionHistoryCard
-                    rows={submissionHistory}
-                    loading={submissionHistoryLoading}
-                    error={submissionHistoryError}
-                    activeEnvironment={activeHistoryEnvironment}
-                    onRefreshProduction={() => {
-                        void handleRefreshHistory('production')
-                    }}
-                    onRefreshTest={() => {
-                        void handleRefreshHistory('test')
-                    }}
-                    isPolling={hasActiveSubmissions}
-                    onRetryFailedDocument={handleRetryFailedDocument}
-                    retryingRequestId={retryingRequestId}
-                    onOpenProject={handleAuditProjectOpen}
-                    onOpenEvidence={setActiveEvidence}
-                />
-                </section>
+                    {activeWorkspaceTab === 'history' ? <>
+                        <section className="space-y-4">
+                            <SectionHeader
+                                step={1}
+                                title="Submission audit trail"
+                                description="Per-document processing status and AI output, newest first."
+                            />
+                            <SubmissionHistoryCard
+                                rows={submissionHistory}
+                                loading={submissionHistoryLoading}
+                                error={submissionHistoryError}
+                                activeEnvironment={activeHistoryEnvironment}
+                                onRefreshProduction={() => {
+                                    void handleRefreshHistory('production')
+                                }}
+                                onRefreshTest={() => {
+                                    void handleRefreshHistory('test')
+                                }}
+                                isPolling={hasActiveSubmissions}
+                                onRetryFailedDocument={handleRetryFailedDocument}
+                                retryingRequestId={retryingRequestId}
+                                onOpenProject={handleAuditProjectOpen}
+                                onOpenEvidence={setActiveEvidence}
+                            />
+                        </section>
 
-                </> : null}
+                    </> : null}
 
-                {activeWorkspaceTab === 'errors' ? <section id="workflow-errors" className="scroll-mt-6 space-y-6">
-                    <WorkflowErrorLogCard
-                        rows={Array.isArray(workflowErrorData) ? workflowErrorData : []}
-                        loading={workflowErrorsLoading}
-                        error={workflowErrorsError}
-                        onRefresh={() => { void triggerWorkflowErrors({ environment: activeHistoryEnvironment }) }}
-                    />
-                    <SystemArchitectureCard />
-                </section> : null}
+                    {activeWorkspaceTab === 'errors' ? <section id="workflow-errors" className="scroll-mt-6 space-y-6">
+                        <WorkflowErrorLogCard
+                            rows={Array.isArray(workflowErrorData) ? workflowErrorData : []}
+                            loading={workflowErrorsLoading}
+                            error={workflowErrorsError}
+                            onRefresh={() => { void triggerWorkflowErrors({ environment: activeHistoryEnvironment }) }}
+                        />
+                        <SystemArchitectureCard />
+                    </section> : null}
                 </Suspense>
 
                 {SHOW_LEGACY_DILIGENCE_BACKUP ? (
-                <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-                    <Card className="overflow-hidden">
-                        <CardHeader className="border-b border-border bg-card/80">
-                            <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-                                <div className="space-y-1">
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        <CardTitle className="text-xl">Legacy sample extraction findings</CardTitle>
-                                        <Badge variant="outline">Static placeholder</Badge>
-                                    </div>
-                                    <CardDescription>
-                                        This panel is legacy demo data from the retired Retool query, not live n8n output. Use the project portfolio,
-                                        synthesis, and submission history panels above for current workflow results.
-                                    </CardDescription>
-                                </div>
-
-                                <div className="grid gap-3 sm:grid-cols-3">
-                                    <div className="rounded-lg border border-border bg-background px-4 py-3">
-                                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Total findings</p>
-                                        <p className="mt-1 text-2xl font-semibold text-foreground">{diligenceFindings.length}</p>
-                                        <p className="mt-1 text-xs text-muted-foreground">Query: getDiligenceData</p>
-                                    </div>
-                                    <div className="rounded-lg border border-border bg-background px-4 py-3">
-                                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">High priority</p>
-                                        <p className="mt-1 text-2xl font-semibold text-foreground">{highPriorityCount}</p>
-                                    </div>
-                                    <div className="rounded-lg border border-border bg-background px-4 py-3">
-                                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Validated</p>
-                                        <p className="mt-1 text-2xl font-semibold text-foreground">{validatedCount}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </CardHeader>
-
-                        <CardContent className="p-0">
-                            {error ? (
-                                <div className="flex items-center gap-2 border-b border-border bg-destructive/10 px-4 py-3 text-sm text-destructive">
-                                    <AlertCircle className="h-4 w-4" />
-                                    Unable to refresh live diligence data. Showing fallback records.
-                                </div>
-                            ) : null}
-                            <Table className="min-w-[720px]">
-                                <TableHeader>
-                                    <TableRow className="hover:bg-transparent">
-                                        <TableHead className="w-[180px]">Finding Type</TableHead>
-                                        <TableHead className="w-[140px]">Severity</TableHead>
-                                        <TableHead>Summary</TableHead>
-                                        <TableHead className="w-[180px]">Workstream</TableHead>
-                                        <TableHead className="w-[140px]">Confidence</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {diligenceFindings.map((finding) => {
-                                        const isSelected = selectedFinding.id === finding.id
-                                        const isValidated = validationById[finding.id]
-                                        const noteValue = notesById[finding.id] ?? finding.analystNotes
-
-                                        return (
-                                            <TableRow
-                                                key={finding.id}
-                                                role="button"
-                                                tabIndex={0}
-                                                aria-selected={isSelected}
-                                                className={cn(
-                                                    'cursor-pointer border-b border-border/80 align-top',
-                                                    isSelected && 'bg-accent/60 hover:bg-accent/60'
-                                                )}
-                                                onClick={() => { setSelectedFindingId(finding.id); openFindingEvidence(finding) }}
-                                                onKeyDown={(event) => {
-                                                    if (event.key === 'Enter' || event.key === ' ') {
-                                                        event.preventDefault()
-                                                        setSelectedFindingId(finding.id)
-                                                        openFindingEvidence(finding)
-                                                    }
-                                                }}
-                                            >
-                                                <TableCell>
-                                                    <div className="flex flex-col gap-2">
-                                                        <Badge variant={getFindingVariant(finding.findingType)}>{finding.findingType}</Badge>
-                                                        {isValidated ? <Badge variant="success">Validated</Badge> : <Badge variant="outline">Needs review</Badge>}
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Badge variant={getSeverityVariant(finding.severity)}>{finding.severity}</Badge>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className="space-y-2">
-                                                        <p className="font-medium leading-6 text-foreground">{finding.summary}</p>
-                                                        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                                                            <span>Owner: {finding.owner}</span>
-                                                            <span>•</span>
-                                                            <span>{finding.sourceCitation}</span>
-                                                        </div>
-                                                        <p className="line-clamp-2 text-sm text-muted-foreground">{noteValue}</p>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className="space-y-1 text-sm text-foreground">
-                                                        <p>{finding.workstream}</p>
-                                                        <p className="text-xs text-muted-foreground">Source: {finding.owner}</p>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className="space-y-2">
-                                                        <div className="flex items-center justify-between text-sm">
-                                                            <span className="text-muted-foreground">Score</span>
-                                                            <span className="font-medium text-foreground">{finding.confidenceScore}%</span>
-                                                        </div>
-                                                        <Progress value={finding.confidenceScore} className="h-2.5" />
-                                                    </div>
-                                                </TableCell>
-                                            </TableRow>
-                                        )
-                                    })}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
-
-                    <div className="space-y-6">
+                    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
                         <Card className="overflow-hidden">
                             <CardHeader className="border-b border-border bg-card/80">
-                                <div className="space-y-1">
-                                    <CardDescription>Selected finding detail</CardDescription>
-                                    <CardTitle className="text-lg leading-7">{selectedFinding.summary}</CardTitle>
-                                </div>
-                            </CardHeader>
-                            <CardContent className="space-y-5 p-5">
-                                <div className="flex flex-wrap gap-2">
-                                    <Badge variant={getFindingVariant(selectedFinding.findingType)}>{selectedFinding.findingType}</Badge>
-                                    <Badge variant={getSeverityVariant(selectedFinding.severity)}>{selectedFinding.severity}</Badge>
-                                    <Badge variant={validationById[selectedFinding.id] ? 'success' : 'outline'}>
-                                        {validationById[selectedFinding.id] ? 'Validated' : 'Pending analyst review'}
-                                    </Badge>
-                                    <Button type="button" size="sm" variant="outline" onClick={() => openFindingEvidence(selectedFinding)}>View evidence</Button>
-                                </div>
-
-                                <div className="space-y-3 rounded-lg border border-border bg-background p-4">
-                                    <div>
-                                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Source citation</p>
-                                        <p className="mt-1 text-sm text-foreground">{selectedFinding.sourceCitation}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Source excerpt</p>
-                                        <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-foreground">{selectedFinding.sourceExcerpt}</p>
-                                    </div>
-                                </div>
-
-                                <div className="rounded-lg border border-border bg-background p-4">
-                                    <div className="flex items-center justify-between">
-                                        <p className="text-sm font-medium text-foreground">Confidence Score</p>
-                                        <p className="text-sm font-semibold text-foreground">{selectedFinding.confidenceScore}%</p>
-                                    </div>
-                                    <Progress value={selectedFinding.confidenceScore} className="mt-3 h-2.5" />
-                                    <p className="mt-3 text-sm text-muted-foreground">
-                                        Use this as a document-level extraction confidence score. In the project-based roadmap, these will roll into a project-level confidence assessment.
-                                    </p>
-                                </div>
-
-                                <div className="rounded-lg border border-border bg-background p-4">
-                                    <div className="flex items-center justify-between gap-3">
-                                        <div>
-                                            <p className="text-sm font-medium text-foreground">Analyst validation</p>
-                                            <p className="text-sm text-muted-foreground">Mark whether this finding should feed project-level synthesis.</p>
+                                <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                                    <div className="space-y-1">
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <CardTitle className="text-xl">Legacy sample extraction findings</CardTitle>
+                                            <Badge variant="outline">Static placeholder</Badge>
                                         </div>
-                                        <Switch
-                                            checked={validationById[selectedFinding.id] ?? false}
-                                            onCheckedChange={(checked) => {
-                                                setValidationById((current) => ({
-                                                    ...current,
-                                                    [selectedFinding.id]: checked,
-                                                }))
-                                            }}
-                                            aria-label={`Toggle validation for ${selectedFinding.summary}`}
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="rounded-lg border border-border bg-background p-4">
-                                    <p className="text-sm font-medium text-foreground">Analyst notes</p>
-                                    <p className="mt-1 text-sm text-muted-foreground">
-                                        Capture how this document-level point should affect the final acquisition narrative or negotiation strategy.
-                                    </p>
-                                    <Textarea
-                                        value={notesById[selectedFinding.id] ?? selectedFinding.analystNotes}
-                                        onChange={(event) => {
-                                            const nextValue = event.target.value
-                                            setNotesById((current) => ({
-                                                ...current,
-                                                [selectedFinding.id]: nextValue,
-                                            }))
-                                        }}
-                                        className="mt-3 min-h-[120px]"
-                                        placeholder="Document-level takeaway, cross-check needed, or potential negotiation lever."
-                                    />
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        <Card className="overflow-hidden">
-                            <CardHeader className="border-b border-border bg-card/80">
-                                <div className="flex items-start gap-3">
-                                    <div className="rounded-full bg-secondary p-2 text-secondary-foreground">
-                                        <FileSearch className="h-4 w-4" />
-                                    </div>
-                                    <div>
-                                        <CardTitle className="text-lg">What still needs to happen</CardTitle>
                                         <CardDescription>
-                                            UI is now aligned to a project-based diligence model, but the backend workflow still needs one more layer of project synthesis.
+                                            This panel is legacy demo data from the retired Retool query, not live n8n output. Use the project portfolio,
+                                            synthesis, and submission history panels above for current workflow results.
                                         </CardDescription>
                                     </div>
+
+                                    <div className="grid gap-3 sm:grid-cols-3">
+                                        <div className="rounded-lg border border-border bg-background px-4 py-3">
+                                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Total findings</p>
+                                            <p className="mt-1 text-2xl font-semibold text-foreground">{diligenceFindings.length}</p>
+                                            <p className="mt-1 text-xs text-muted-foreground">Query: getDiligenceData</p>
+                                        </div>
+                                        <div className="rounded-lg border border-border bg-background px-4 py-3">
+                                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">High priority</p>
+                                            <p className="mt-1 text-2xl font-semibold text-foreground">{highPriorityCount}</p>
+                                        </div>
+                                        <div className="rounded-lg border border-border bg-background px-4 py-3">
+                                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Validated</p>
+                                            <p className="mt-1 text-2xl font-semibold text-foreground">{validatedCount}</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </CardHeader>
-                            <CardContent className="space-y-4 p-5 text-sm text-foreground">
-                                <div className="rounded-lg border border-border bg-background p-4">
-                                    <p className="font-medium">Today</p>
-                                    <p className="mt-2 text-muted-foreground">
-                                        Each upload is processed independently, then polling surfaces the latest n8n row, AI findings, valuation, and investment-thesis metadata.
-                                    </p>
-                                </div>
-                                <div className="rounded-lg border border-border bg-background p-4">
-                                    <p className="font-medium">Next backend milestone</p>
-                                    <p className="mt-2 text-muted-foreground">
-                                        Build a project-level workflow that waits until enough project documents are present, reconciles overlaps and contradictions, and writes one final project judgment back to n8n.
-                                    </p>
-                                </div>
-                                <div className="rounded-lg border border-border bg-background p-4">
-                                    <p className="font-medium">Why this matters post-LOI</p>
-                                    <p className="mt-2 text-muted-foreground">
-                                        Negotiation leverage usually comes from gaps between documents, not from any single file. This UI now makes that project-centric operating model visible to analysts.
-                                    </p>
-                                </div>
-                                <Button variant="outline" className="w-full justify-between">
-                                    <span>Project-based diligence roadmap is now reflected in the workspace</span>
-                                    <ArrowUpRight className="h-4 w-4" />
-                                </Button>
+
+                            <CardContent className="p-0">
+                                {error ? (
+                                    <div className="flex items-center gap-2 border-b border-border bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                                        <AlertCircle className="h-4 w-4" />
+                                        Unable to refresh live diligence data. Showing fallback records.
+                                    </div>
+                                ) : null}
+                                <Table className="min-w-[720px]">
+                                    <TableHeader>
+                                        <TableRow className="hover:bg-transparent">
+                                            <TableHead className="w-[180px]">Finding Type</TableHead>
+                                            <TableHead className="w-[140px]">Severity</TableHead>
+                                            <TableHead>Summary</TableHead>
+                                            <TableHead className="w-[180px]">Workstream</TableHead>
+                                            <TableHead className="w-[140px]">Confidence</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {diligenceFindings.map((finding) => {
+                                            const isSelected = selectedFinding.id === finding.id
+                                            const isValidated = validationById[finding.id]
+                                            const noteValue = notesById[finding.id] ?? finding.analystNotes
+
+                                            return (
+                                                <TableRow
+                                                    key={finding.id}
+                                                    role="button"
+                                                    tabIndex={0}
+                                                    aria-selected={isSelected}
+                                                    className={cn(
+                                                        'cursor-pointer border-b border-border/80 align-top',
+                                                        isSelected && 'bg-accent/60 hover:bg-accent/60'
+                                                    )}
+                                                    onClick={() => { setSelectedFindingId(finding.id); openFindingEvidence(finding) }}
+                                                    onKeyDown={(event) => {
+                                                        if (event.key === 'Enter' || event.key === ' ') {
+                                                            event.preventDefault()
+                                                            setSelectedFindingId(finding.id)
+                                                            openFindingEvidence(finding)
+                                                        }
+                                                    }}
+                                                >
+                                                    <TableCell>
+                                                        <div className="flex flex-col gap-2">
+                                                            <Badge variant={getFindingVariant(finding.findingType)}>{finding.findingType}</Badge>
+                                                            {isValidated ? <Badge variant="success">Validated</Badge> : <Badge variant="outline">Needs review</Badge>}
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Badge variant={getSeverityVariant(finding.severity)}>{finding.severity}</Badge>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="space-y-2">
+                                                            <p className="font-medium leading-6 text-foreground">{finding.summary}</p>
+                                                            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                                                                <span>Owner: {finding.owner}</span>
+                                                                <span>•</span>
+                                                                <span>{finding.sourceCitation}</span>
+                                                            </div>
+                                                            <p className="line-clamp-2 text-sm text-muted-foreground">{noteValue}</p>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="space-y-1 text-sm text-foreground">
+                                                            <p>{finding.workstream}</p>
+                                                            <p className="text-xs text-muted-foreground">Source: {finding.owner}</p>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="space-y-2">
+                                                            <div className="flex items-center justify-between text-sm">
+                                                                <span className="text-muted-foreground">Score</span>
+                                                                <span className="font-medium text-foreground">{finding.confidenceScore}%</span>
+                                                            </div>
+                                                            <Progress value={finding.confidenceScore} className="h-2.5" />
+                                                        </div>
+                                                    </TableCell>
+                                                </TableRow>
+                                            )
+                                        })}
+                                    </TableBody>
+                                </Table>
                             </CardContent>
                         </Card>
+
+                        <div className="space-y-6">
+                            <Card className="overflow-hidden">
+                                <CardHeader className="border-b border-border bg-card/80">
+                                    <div className="space-y-1">
+                                        <CardDescription>Selected finding detail</CardDescription>
+                                        <CardTitle className="text-lg leading-7">{selectedFinding.summary}</CardTitle>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="space-y-5 p-5">
+                                    <div className="flex flex-wrap gap-2">
+                                        <Badge variant={getFindingVariant(selectedFinding.findingType)}>{selectedFinding.findingType}</Badge>
+                                        <Badge variant={getSeverityVariant(selectedFinding.severity)}>{selectedFinding.severity}</Badge>
+                                        <Badge variant={validationById[selectedFinding.id] ? 'success' : 'outline'}>
+                                            {validationById[selectedFinding.id] ? 'Validated' : 'Pending analyst review'}
+                                        </Badge>
+                                        <Button type="button" size="sm" variant="outline" onClick={() => openFindingEvidence(selectedFinding)}>View evidence</Button>
+                                    </div>
+
+                                    <div className="space-y-3 rounded-lg border border-border bg-background p-4">
+                                        <div>
+                                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Source citation</p>
+                                            <p className="mt-1 text-sm text-foreground">{selectedFinding.sourceCitation}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Source excerpt</p>
+                                            <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-foreground">{selectedFinding.sourceExcerpt}</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="rounded-lg border border-border bg-background p-4">
+                                        <div className="flex items-center justify-between">
+                                            <p className="text-sm font-medium text-foreground">Confidence Score</p>
+                                            <p className="text-sm font-semibold text-foreground">{selectedFinding.confidenceScore}%</p>
+                                        </div>
+                                        <Progress value={selectedFinding.confidenceScore} className="mt-3 h-2.5" />
+                                        <p className="mt-3 text-sm text-muted-foreground">
+                                            Use this as a document-level extraction confidence score. In the project-based roadmap, these will roll into a project-level confidence assessment.
+                                        </p>
+                                    </div>
+
+                                    <div className="rounded-lg border border-border bg-background p-4">
+                                        <div className="flex items-center justify-between gap-3">
+                                            <div>
+                                                <p className="text-sm font-medium text-foreground">Analyst validation</p>
+                                                <p className="text-sm text-muted-foreground">Mark whether this finding should feed project-level synthesis.</p>
+                                            </div>
+                                            <Switch
+                                                checked={validationById[selectedFinding.id] ?? false}
+                                                onCheckedChange={(checked) => {
+                                                    setValidationById((current) => ({
+                                                        ...current,
+                                                        [selectedFinding.id]: checked,
+                                                    }))
+                                                }}
+                                                aria-label={`Toggle validation for ${selectedFinding.summary}`}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="rounded-lg border border-border bg-background p-4">
+                                        <p className="text-sm font-medium text-foreground">Analyst notes</p>
+                                        <p className="mt-1 text-sm text-muted-foreground">
+                                            Capture how this document-level point should affect the final acquisition narrative or negotiation strategy.
+                                        </p>
+                                        <Textarea
+                                            value={notesById[selectedFinding.id] ?? selectedFinding.analystNotes}
+                                            onChange={(event) => {
+                                                const nextValue = event.target.value
+                                                setNotesById((current) => ({
+                                                    ...current,
+                                                    [selectedFinding.id]: nextValue,
+                                                }))
+                                            }}
+                                            className="mt-3 min-h-[120px]"
+                                            placeholder="Document-level takeaway, cross-check needed, or potential negotiation lever."
+                                        />
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="overflow-hidden">
+                                <CardHeader className="border-b border-border bg-card/80">
+                                    <div className="flex items-start gap-3">
+                                        <div className="rounded-full bg-secondary p-2 text-secondary-foreground">
+                                            <FileSearch className="h-4 w-4" />
+                                        </div>
+                                        <div>
+                                            <CardTitle className="text-lg">What still needs to happen</CardTitle>
+                                            <CardDescription>
+                                                UI is now aligned to a project-based diligence model, but the backend workflow still needs one more layer of project synthesis.
+                                            </CardDescription>
+                                        </div>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="space-y-4 p-5 text-sm text-foreground">
+                                    <div className="rounded-lg border border-border bg-background p-4">
+                                        <p className="font-medium">Today</p>
+                                        <p className="mt-2 text-muted-foreground">
+                                            Each upload is processed independently, then polling surfaces the latest n8n row, AI findings, valuation, and investment-thesis metadata.
+                                        </p>
+                                    </div>
+                                    <div className="rounded-lg border border-border bg-background p-4">
+                                        <p className="font-medium">Next backend milestone</p>
+                                        <p className="mt-2 text-muted-foreground">
+                                            Build a project-level workflow that waits until enough project documents are present, reconciles overlaps and contradictions, and writes one final project judgment back to n8n.
+                                        </p>
+                                    </div>
+                                    <div className="rounded-lg border border-border bg-background p-4">
+                                        <p className="font-medium">Why this matters post-LOI</p>
+                                        <p className="mt-2 text-muted-foreground">
+                                            Negotiation leverage usually comes from gaps between documents, not from any single file. This UI now makes that project-centric operating model visible to analysts.
+                                        </p>
+                                    </div>
+                                    <Button variant="outline" className="w-full justify-between">
+                                        <span>Project-based diligence roadmap is now reflected in the workspace</span>
+                                        <ArrowUpRight className="h-4 w-4" />
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        </div>
                     </div>
-                </div>
                 ) : null}
             </main>
             <EvidenceDrawer evidence={activeEvidence} onClose={() => setActiveEvidence(null)} />
@@ -2483,8 +2491,8 @@ export default function DueDiligenceDashboard() {
                     onToggleTheme={() => { const next = currentTheme === 'dark' ? 'light' : currentTheme === 'light' ? 'system' : 'dark'; setCurrentTheme(next); setStoredTheme(next) }}
                     onExportMarkdown={() => { const name = dealName || suggestedProjectName; const safeName = name.replace(/[^a-zA-Z0-9-_]/g, '_').slice(0, 50) || 'deal'; downloadFile(buildMarkdownReport(hydratedDealModel, activeProjectSynthesis, name), `${safeName}_summary.md`, 'text/markdown') }}
                     onExportJson={() => { const name = dealName || suggestedProjectName; const safeName = name.replace(/[^a-zA-Z0-9-_]/g, '_').slice(0, 50) || 'deal'; downloadFile(JSON.stringify(buildJsonExport(hydratedDealModel, activeProjectSynthesis, name), null, 2), `${safeName}_export.json`, 'application/json') }}
-                    onShowShortcuts={() => {}}
-                    onOpenChat={() => {}}
+                    onShowShortcuts={() => { }}
+                    onOpenChat={() => { }}
                     onCopySummary={() => { const name = dealName || suggestedProjectName; navigator.clipboard.writeText(buildMarkdownReport(hydratedDealModel, activeProjectSynthesis, name)) }}
                     onScrollToUpload={() => { document.querySelector('[data-project-intake]')?.scrollIntoView({ behavior: 'smooth' }) }}
                 />
