@@ -34,12 +34,16 @@ function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealMo
     if (synthesis) {
         parts.push(`Risk level: ${synthesis.finalRiskLevel}`)
         parts.push(`Traffic light: ${synthesis.finalTrafficLight}`)
+        parts.push(`Documents: ${synthesis.documentsCompletedCount}`)
+        if (synthesis.aiConfidence) parts.push(`Confidence: ${parseFloat(synthesis.aiConfidence) <= 1 ? Math.round(parseFloat(synthesis.aiConfidence) * 100) + '%' : synthesis.aiConfidence + '%'}`)
+        if (synthesis.valuationConfidence) parts.push(`Valuation confidence: ${parseFloat(synthesis.valuationConfidence) <= 1 ? Math.round(parseFloat(synthesis.valuationConfidence) * 100) + '%' : synthesis.valuationConfidence + '%'}`)
         if (synthesis.redFlags.length > 0) parts.push(`Red flags: ${synthesis.redFlags.join('; ')}`)
         if (synthesis.yellowFlags?.length) parts.push(`Yellow flags: ${synthesis.yellowFlags.join('; ')}`)
         if (synthesis.greenFlags?.length) parts.push(`Green flags: ${synthesis.greenFlags.join('; ')}`)
         if (synthesis.openQuestions?.length) parts.push(`Open questions: ${synthesis.openQuestions.join('; ')}`)
         if (synthesis.negotiationLevers?.length) parts.push(`Negotiation levers: ${synthesis.negotiationLevers.join('; ')}`)
         if (synthesis.missingDocuments?.length) parts.push(`Missing documents: ${synthesis.missingDocuments.join('; ')}`)
+        if (synthesis.valuationBaseEstimate && synthesis.valuationBaseEstimate !== '0') parts.push(`Valuation range: ${synthesis.valuationLowerBound} – ${synthesis.valuationBaseEstimate} – ${synthesis.valuationUpperBound}`)
     }
 
     return parts.join('\n')
@@ -114,13 +118,52 @@ function generateResponse(question: string, context: string): string {
         return 'Check the Returns tab for:\n\n- **All-cash returns:** MOIC and IRR across bear/base/bull scenarios\n- **Financed returns:** Leveraged MOIC, cash-on-cash, and DSCR\n- **Payback timeline:** Annual cash flow and cumulative payback period\n\nThe model uses your saved assumptions (hold period, exit multiple, growth rates). Edit them at the bottom of the Returns tab.'
     }
 
+    if (q.includes('confidence') || q.includes('how confident') || q.includes('reliable') || q.includes('trust')) {
+        const confidence = context.match(/Confidence: (.+)/)?.[1]
+        const valConf = context.match(/Valuation confidence: (.+)/)?.[1]
+        const parts: string[] = []
+        if (confidence) parts.push(`Overall synthesis confidence: ${confidence}`)
+        if (valConf) parts.push(`Valuation confidence: ${valConf}`)
+        if (parts.length) {
+            parts.push('\nConfidence reflects how much corroborating data the AI found. Scores below 40% mean the estimate uses limited data — verify key figures with management before relying on them.')
+            return parts.join('\n')
+        }
+        return 'Confidence scores appear once the synthesis completes. They reflect how many documents corroborate key financial figures. Higher confidence = more sources agreeing.'
+    }
+
+    if (q.includes('ebitda') || q.includes('earnings') || q.includes('margin') || q.includes('profit')) {
+        const ebitda = context.match(/EBITDA\/SDE: \$(.+)/)?.[1]
+        const revenue = context.match(/Revenue: \$(.+)/)?.[1]
+        if (ebitda && revenue) {
+            const ebitdaNum = parseFloat(ebitda.replace(/,/g, ''))
+            const revNum = parseFloat(revenue.replace(/,/g, ''))
+            const margin = ((ebitdaNum / revNum) * 100).toFixed(1)
+            return `EBITDA/SDE: $${ebitda} on revenue of $${revenue} (${margin}% margin).\n\nFor context:\n- Small businesses typically show 15-25% EBITDA margins\n- Margins below 15% may indicate operational inefficiency or high owner comp\n- Margins above 30% are strong but verify they're sustainable\n\nCheck the EBITDA waterfall on the Overview tab for the breakdown.`
+        }
+        return ebitda ? `EBITDA/SDE: $${ebitda}. Upload P&L statements to see the full margin analysis and add-back quality review.` : 'EBITDA hasn\'t been confirmed yet. Upload income statements or P&L to extract earnings data.'
+    }
+
+    if (q.includes('customer') || q.includes('concentration') || q.includes('client')) {
+        const flags = context.match(/Red flags: (.+)/)?.[1] || ''
+        const concFlag = flags.split('; ').find(f => /customer|concentration|client/i.test(f))
+        if (concFlag) {
+            return `Customer concentration risk detected: "${concFlag}"\n\nThis is one of the most common deal-killers in SMB acquisitions. Key questions:\n- Is the top customer under contract? For how long?\n- What's the renewal history?\n- Could the business survive losing that customer?\n\nConsider negotiating an escrow or earn-out tied to customer retention.`
+        }
+        return 'No customer concentration risk has been flagged. This is a positive signal — but verify by uploading a customer revenue breakdown if available.'
+    }
+
+    if (q.includes('timeline') || q.includes('when') || q.includes('how long') || q.includes('progress')) {
+        const docs = context.match(/Documents: (\d+)/)?.[1]
+        return `Deal progress:\n\n- Documents processed: ${docs || 'unknown'}\n- Check the Deal Readiness gauge on Overview for milestone progress\n- The Activity Feed shows real-time processing events\n\nTypical due diligence timelines:\n- Initial review: 1-2 weeks\n- Deep dive: 2-4 weeks\n- Negotiation/closing: 2-6 weeks`
+    }
+
     if (q.includes('summary') || q.includes('overview') || q.includes('tell me about')) {
         const risk = context.match(/Risk level: (.+)/)?.[1] || 'unknown'
         const traffic = context.match(/Traffic light: (.+)/)?.[1] || 'pending'
         return `Here\'s a quick summary of ${context.match(/Project: (.+)/)?.[1] || 'this deal'}:\n\n- Overall risk: ${risk} (${traffic})\n- ${context.match(/Red flags/)?.[0] ? 'Has identified concerns' : 'No major red flags yet'}\n- ${context.match(/Revenue/)?.[0] || 'Revenue not yet confirmed'}\n- ${context.match(/EBITDA/)?.[0] || 'EBITDA not yet confirmed'}\n\nAsk me about specific areas like risks, valuation, negotiation, returns, deal structure, or what to do next.`
     }
 
-    return `I can help you understand this deal. Try asking about:\n\n- **Risks** — "What are the red flags?"\n- **Valuation** — "What multiple am I paying?"\n- **Returns** — "What's my IRR?"\n- **Structure** — "How is the deal financed?"\n- **Negotiation** — "What levers do I have?"\n- **Missing info** — "What documents do I still need?"\n- **Next steps** — "What should I do next?"\n- **Overview** — "Give me a summary"\n\nI use the project synthesis and documented facts to answer. For deeper analysis, check the specific tabs.`
+    return `I can help you understand this deal. Try asking about:\n\n- **Risks** — "What are the red flags?"\n- **Valuation** — "What multiple am I paying?"\n- **Earnings** — "What's the EBITDA margin?"\n- **Returns** — "What's my IRR?"\n- **Structure** — "How is the deal financed?"\n- **Customers** — "Is there concentration risk?"\n- **Negotiation** — "What levers do I have?"\n- **Confidence** — "How reliable is this valuation?"\n- **Missing info** — "What documents do I still need?"\n- **Next steps** — "What should I do next?"\n- **Overview** — "Give me a summary"\n\nI use the project synthesis and documented facts to answer. For deeper analysis, check the specific tabs.`
 }
 
 export default function DealChatPanel({ synthesis, model, projectName }: Props) {

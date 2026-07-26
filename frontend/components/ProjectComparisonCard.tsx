@@ -89,6 +89,28 @@ export default function ProjectComparisonCard({ projects, activeProjectId, onSel
             },
         },
         {
+            label: 'Valuation',
+            render: (p) => {
+                const val = p.synthesis?.valuationBaseEstimate
+                if (!val || val === '0') return <span className="text-xs text-muted-foreground">Pending</span>
+                const num = parseFloat(val.replace(/[^0-9.]/g, ''))
+                const suffix = /m$/i.test(val) ? 'M' : /b$/i.test(val) ? 'B' : /k$/i.test(val) ? 'K' : ''
+                return <span className="text-xs font-medium">{suffix ? `$${num}${suffix}` : money(num)}</span>
+            },
+        },
+        {
+            label: 'Confidence',
+            render: (p) => {
+                const raw = p.synthesis?.valuationConfidence || p.synthesis?.aiConfidence
+                if (!raw) return <span className="text-xs text-muted-foreground">—</span>
+                const conf = parseFloat(raw)
+                if (!Number.isFinite(conf)) return <span className="text-xs text-muted-foreground">—</span>
+                const pct = conf <= 1 ? Math.round(conf * 100) : Math.round(conf)
+                const color = pct >= 70 ? 'text-green-600 dark:text-green-400' : pct >= 40 ? 'text-amber-600 dark:text-amber-400' : 'text-destructive'
+                return <span className={`text-xs font-medium ${color}`}>{pct}%</span>
+            },
+        },
+        {
             label: 'Documents',
             render: (p) => <span className="text-xs">{p.completedDocuments}/{p.documentsCount} processed</span>,
         },

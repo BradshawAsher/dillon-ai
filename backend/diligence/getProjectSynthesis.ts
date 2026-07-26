@@ -40,6 +40,8 @@ type ProjectSynthesisRow = {
   ai_error_message?: TextValue
   ai_risk_flag?: TextValue
   ai_processedAt?: TextValue
+  ai_confidence?: TextValue
+  aiConfidence?: TextValue
   aiCitations?: unknown
   ai_citations?: unknown
   valuationLowerBound?: TextValue
@@ -91,6 +93,8 @@ export type ProjectSynthesisItem = {
   finalJudgmentSummary: string
   finalJudgmentJson: string
   aiErrorMessage: string
+  aiConfidence: string
+  valuationConfidence: string
   valuationLowerBound: string
   valuationBaseEstimate: string
   valuationUpperBound: string
@@ -444,6 +448,8 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
         finalJudgmentSummary: judgment.summary,
         finalJudgmentJson: judgment.json,
         aiErrorMessage: getStringValue(row.ai_error_message),
+        aiConfidence: getFirstStringValue([row.ai_confidence, row.aiConfidence]),
+        valuationConfidence: getStringValue(getJudgmentField(judgment.json, 'valuation') && typeof getJudgmentField(judgment.json, 'valuation') === 'object' ? (getJudgmentField(judgment.json, 'valuation') as Record<string, unknown>).confidence_score as TextValue : undefined),
         valuationLowerBound: getFirstStringValue([row.valuationLowerBound, row.lower_bound_estimate]),
         valuationBaseEstimate: getFirstStringValue([row.valuationBaseEstimate, row.base_estimate]),
         valuationUpperBound: getFirstStringValue([row.valuationUpperBound, row.upper_bound_estimate]),
