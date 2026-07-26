@@ -14,7 +14,7 @@ import {
 import { formatHours, type ImpactMetrics } from '../utils/impactMetrics'
 import type { ProjectSummary } from '../utils/projectWorkspace'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
-import { findCitedDocument } from '../utils/evidence'
+import { findCitedDocument, parseDocumentedFacts } from '../utils/evidence'
 import type { EvidenceItem } from './EvidenceDrawer'
 import ExpandableText from './ExpandableText'
 
@@ -80,8 +80,7 @@ export default function DealOverviewCard({ syntheses, projects, currentProjectId
             : priceGapPercent > 0
                 ? `${Math.abs(priceGapPercent).toFixed(1)}% above the supported base valuation`
                 : `${Math.abs(priceGapPercent).toFixed(1)}% below the supported base valuation`
-    let documentedFacts: Record<string, { value?: number; status?: string; currency?: string; period?: string; provenance?: string; confidence?: number; citations?: Array<{ source_file?: string; row_or_cell?: string; excerpt?: string }> }> = {}
-    try { documentedFacts = JSON.parse(model?.documentedFactsJson || '{}') } catch {}
+    let documentedFacts: Record<string, { value?: number; status?: string; currency?: string; period?: string; provenance?: string; confidence?: number; citations?: Array<{ source_file?: string; row_or_cell?: string; excerpt?: string }> }> = parseDocumentedFacts(model?.documentedFactsJson)
     if (exampleMode && Object.keys(documentedFacts).length === 0) documentedFacts = {
         revenue: { value: 48_100_000, status: 'confirmed', currency: 'USD', period: 'FY23', provenance: 'Example data', confidence: 87, citations: [{ source_file: 'northwind-q4-financials.pdf', row_or_cell: 'Page 18', excerpt: 'FY23 revenue reported as $48.1M; bank-deposit support remains under review.' }] },
         ebitda_sde: { value: 12_400_000, status: 'confirmed', currency: 'USD', period: 'FY23', provenance: 'Example data', confidence: 87, citations: [{ source_file: 'northwind-q4-financials.pdf', row_or_cell: 'Page 18', excerpt: 'EBITDA of $12.4M is within 4% of the target model.' }] },
@@ -125,9 +124,75 @@ export default function DealOverviewCard({ syntheses, projects, currentProjectId
         { label: 'Revenue per employee', value: revenuePerEmployee === null ? 'Not available' : formatCurrencyValue(String(revenuePerEmployee), metricCurrency), detail: 'Documented revenue ÷ documented employee count', source: exampleMode ? 'Example data' : 'Documented', evidence: evidenceForFact('revenue', 'Revenue-per-employee evidence') },
     ]
     const decisionDrivers = synthesis ? [
-        { label: 'Primary risk', value: synthesis.crossDocumentConflicts[0] || 'No cross-document conflict recorded.' },
-        { label: 'Negotiation leverage', value: synthesis.negotiationLevers[0] || 'No negotiation lever surfaced yet.' },
-        { label: 'Open diligence question', value: synthesis.openQuestions[0] || 'No open management question recorded.' },
+        {
+            label: 'Primary risk',
+            value: synthesis.crossDocumentConflicts[0] || 'No cross-document conflict recorded.',
+            evidence: (() => {
+                const finding = synthesis.structuredFindings.crossDocumentConflicts[0]
+                const citation = finding?.citations?.[0]
+                const sourceFile = citation?.sourceFile || synthesis.citationDetails?.[0]?.sourceFile || synthesis.citations?.[0] || 'Project synthesis'
+                const document = findCitedDocument(sourceFile, documents)
+                return {
+                    title: 'Primary risk evidence',
+                    sourceFile,
+                    sourceLocation: citation?.sourceLocation || synthesis.citationDetails?.[0]?.sourceLocation || 'Project-level synthesis',
+                    excerpt: citation?.excerpt || finding?.text || synthesis.crossDocumentConflicts[0],
+                    period: citation?.period,
+                    currency: citation?.currency,
+                    confidence: finding?.confidence ?? citation?.confidence ?? undefined,
+                    status: finding?.status || citation?.status || 'Contradicted',
+                    provenance: 'Project synthesis',
+                    documentUrl: document?.storageFileUrl,
+                    documentId: document?.storageFileId,
+                }
+            })(),
+        },
+        {
+            label: 'Negotiation leverage',
+            value: synthesis.negotiationLevers[0] || 'No negotiation lever surfaced yet.',
+            evidence: (() => {
+                const finding = synthesis.structuredFindings.negotiationLevers[0]
+                const citation = finding?.citations?.[0]
+                const sourceFile = citation?.sourceFile || synthesis.citationDetails?.[0]?.sourceFile || synthesis.citations?.[0] || 'Project synthesis'
+                const document = findCitedDocument(sourceFile, documents)
+                return {
+                    title: 'Negotiation leverage evidence',
+                    sourceFile,
+                    sourceLocation: citation?.sourceLocation || synthesis.citationDetails?.[0]?.sourceLocation || 'Project-level synthesis',
+                    excerpt: citation?.excerpt || finding?.text || synthesis.negotiationLevers[0],
+                    period: citation?.period,
+                    currency: citation?.currency,
+                    confidence: finding?.confidence ?? citation?.confidence ?? undefined,
+                    status: finding?.status || citation?.status || 'Synthesized',
+                    provenance: 'Project synthesis',
+                    documentUrl: document?.storageFileUrl,
+                    documentId: document?.storageFileId,
+                }
+            })(),
+        },
+        {
+            label: 'Open diligence question',
+            value: synthesis.openQuestions[0] || 'No open management question recorded.',
+            evidence: (() => {
+                const finding = synthesis.structuredFindings.openQuestions[0]
+                const citation = finding?.citations?.[0]
+                const sourceFile = citation?.sourceFile || synthesis.citationDetails?.[0]?.sourceFile || synthesis.citations?.[0] || 'Project synthesis'
+                const document = findCitedDocument(sourceFile, documents)
+                return {
+                    title: 'Open diligence question evidence',
+                    sourceFile,
+                    sourceLocation: citation?.sourceLocation || synthesis.citationDetails?.[0]?.sourceLocation || 'Project-level synthesis',
+                    excerpt: citation?.excerpt || finding?.text || synthesis.openQuestions[0],
+                    period: citation?.period,
+                    currency: citation?.currency,
+                    confidence: finding?.confidence ?? citation?.confidence ?? undefined,
+                    status: finding?.status || citation?.status || 'Needs review',
+                    provenance: 'Project synthesis',
+                    documentUrl: document?.storageFileUrl,
+                    documentId: document?.storageFileId,
+                }
+            })(),
+        },
     ] : []
     const nextAction = !synthesis
         ? 'Process project documents to generate an evidence-backed recommendation and next action.'
@@ -182,7 +247,7 @@ export default function DealOverviewCard({ syntheses, projects, currentProjectId
                     ) : null}
                 </div>
 
-                    <button type="button" onClick={() => { const sourceFile = exampleMode ? 'northwind-q4-financials.pdf' : project?.employeeCitation || 'Source file was not returned'; const document = findCitedDocument(sourceFile, documents); onOpenEvidence({ title: 'Employee count evidence', sourceFile, sourceLocation: exampleMode ? 'Page 6' : project?.employeeCitation, excerpt: exampleMode ? 'Northwind Analytics employs 84 full-time employees as of the FY23 reporting period.' : undefined, period: exampleMode ? 'FY23' : project?.employeeAsOfDate, confidence: exampleMode ? 89 : project?.employeeConfidence ?? undefined, status: employeeCount === null ? 'Not confirmed' : 'Confirmed', provenance: exampleMode ? 'Example data' : project?.employeeEvidenceStatus || 'Documented', documentUrl: document?.storageFileUrl, documentId: document?.storageFileId }) }} className="w-full rounded-lg border border-border bg-background p-4 text-left transition-colors hover:border-primary/40 hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <button type="button" onClick={() => { const sourceFile = exampleMode ? 'northwind-q4-financials.pdf' : project?.employeeCitation || 'Source file was not returned'; const document = findCitedDocument(sourceFile, documents); onOpenEvidence({ title: 'Employee count evidence', sourceFile, sourceLocation: exampleMode ? 'Page 6' : project?.employeeCitation, excerpt: exampleMode ? 'Northwind Analytics employs 84 full-time employees as of the FY23 reporting period.' : undefined, period: exampleMode ? 'FY23' : project?.employeeAsOfDate, confidence: exampleMode ? 89 : project?.employeeConfidence ?? undefined, status: employeeCount === null ? 'Not confirmed' : 'Confirmed', provenance: exampleMode ? 'Example data' : project?.employeeEvidenceStatus || 'Documented', documentUrl: document?.storageFileUrl, documentId: document?.storageFileId }) }} className="w-full rounded-lg border border-border bg-background p-4 text-left transition-colors hover:border-primary/40 hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                     <div className="flex items-center gap-2 text-muted-foreground"><UsersRound className="h-4 w-4" /><p className="text-xs font-medium uppercase tracking-wide">Employee count</p></div>
                     <p className="mt-2 text-lg font-semibold text-foreground">{employeeCountLabel}</p>
                     <p className="mt-1 text-sm text-muted-foreground">
@@ -195,7 +260,7 @@ export default function DealOverviewCard({ syntheses, projects, currentProjectId
                 <div className="rounded-xl border border-border bg-muted/20 p-4">
                     <div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-sm font-semibold">Document coverage</p><p className="mt-1 text-xs text-muted-foreground">Coverage helps guide diligence, but does not block a synthesis or recommendation.</p></div><Badge variant={project?.coverage.every((item) => item.matched) ? 'success' : 'warning'}>{project?.coverage.filter((item) => item.matched).length ?? 0}/{project?.coverage.length ?? 0} covered</Badge></div>
                     <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{project?.coverage.map((item) => <div key={item.label} className={item.matched ? 'rounded-md border border-success/25 bg-success/5 p-3' : 'rounded-md border border-warning/25 bg-warning/5 p-3'}><p className="text-sm font-medium">{item.label}</p><p className="mt-1 text-xs text-muted-foreground">{item.matched ? `${item.count} document${item.count === 1 ? '' : 's'} detected` : 'Missing / not detected'}</p></div>)}</div>
-                    {synthesis?.missingDocuments.length ? <p className="mt-3 rounded-md border border-warning/25 bg-warning/5 p-3 text-sm text-foreground"><span className="font-medium">Synthesis requests:</span> {synthesis.missingDocuments.join(' · ')}</p> : null}
+                    {synthesis?.missingDocuments.length ? <div className="mt-3 rounded-md border border-warning/25 bg-warning/5 p-3 text-sm text-foreground"><span className="font-medium">Synthesis requests:</span><div className="mt-2 flex flex-wrap gap-2">{synthesis.missingDocuments.map((item, index) => { const finding = synthesis.structuredFindings.missingDocuments[index]; const citation = finding?.citations?.[0]; const sourceFile = citation?.sourceFile || synthesis.citationDetails?.[0]?.sourceFile || synthesis.citations?.[0] || 'Project synthesis'; const document = findCitedDocument(sourceFile, documents); return <button key={`${item}-${index}`} type="button" onClick={() => onOpenEvidence({ title: 'Missing diligence material', sourceFile, sourceLocation: citation?.sourceLocation || synthesis.citationDetails?.[0]?.sourceLocation || 'Project-level synthesis', excerpt: citation?.excerpt || finding?.text || item, period: citation?.period, currency: citation?.currency, confidence: finding?.confidence ?? citation?.confidence ?? undefined, status: finding?.status || citation?.status || 'Needs review', provenance: 'Project synthesis', documentUrl: document?.storageFileUrl, documentId: document?.storageFileId })} className="rounded-full border border-warning/30 bg-background px-3 py-1 text-left text-xs font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-muted/30">{item}</button> })}</div></div> : null}
                 </div>
 
                 <div className="rounded-xl border border-primary/20 bg-primary/[0.04] p-4">
@@ -233,7 +298,7 @@ export default function DealOverviewCard({ syntheses, projects, currentProjectId
                         ) : null}
 
                         <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.75fr)]">
-                            <div className="rounded-xl border border-border bg-muted/20 p-4"><div className="flex items-center justify-between gap-3"><p className="text-sm font-semibold">Three decision drivers</p><Badge variant="outline">Project synthesis</Badge></div><div className="mt-3 grid gap-3 md:grid-cols-3">{decisionDrivers.map((driver) => <div key={driver.label} className="rounded-lg border border-border bg-background p-3"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{driver.label}</p><ExpandableText text={driver.value} maxHeight={72} className="mt-2 text-sm leading-6 text-foreground" /></div>)}</div></div>
+                            <div className="rounded-xl border border-border bg-muted/20 p-4"><div className="flex items-center justify-between gap-3"><p className="text-sm font-semibold">Three decision drivers</p><Badge variant="outline">Project synthesis</Badge></div><div className="mt-3 grid gap-3 md:grid-cols-3">{decisionDrivers.map((driver) => <button type="button" key={driver.label} onClick={() => onOpenEvidence(driver.evidence)} className="rounded-lg border border-border bg-background p-3 text-left transition-colors hover:border-primary/40 hover:bg-muted/30"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{driver.label}</p><ExpandableText text={driver.value} maxHeight={72} className="mt-2 text-sm leading-6 text-foreground" /><span className="mt-2 block text-xs font-medium text-primary">View evidence</span></button>)}</div></div>
                             <div className="rounded-xl border border-primary/25 bg-primary/5 p-4"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Recommended next action</p><ExpandableText text={nextAction} maxHeight={72} className="mt-2 text-sm leading-6 font-medium text-foreground" /><p className="mt-3 text-xs text-muted-foreground">Prioritized from missing materials, negotiation levers, and open questions.</p></div>
                         </div>
 
