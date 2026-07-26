@@ -22,17 +22,18 @@ function parseConcentrationFromSynthesis(synthesis: ProjectSynthesisItem): Conce
     const findings: ConcentrationFinding[] = []
 
     const allFindings = [
-        ...synthesis.redFlags.map((t) => ({ text: t, sev: 'critical' as const })),
-        ...synthesis.yellowFlags.map((t) => ({ text: t, sev: 'medium' as const })),
-        ...synthesis.crossDocumentConflicts.map((t) => ({ text: t, sev: 'medium' as const })),
-        ...synthesis.openQuestions.map((t) => ({ text: t, sev: 'low' as const })),
-        ...synthesis.negotiationLevers.map((t) => ({ text: t, sev: 'low' as const })),
-        ...synthesis.keyTakeaways.map((t) => ({ text: t, sev: 'low' as const })),
+        ...synthesis.structuredFindings.redFlags.map((item) => ({ finding: item, sev: 'critical' as const })),
+        ...synthesis.structuredFindings.yellowFlags.map((item) => ({ finding: item, sev: 'medium' as const })),
+        ...synthesis.structuredFindings.crossDocumentConflicts.map((item) => ({ finding: item, sev: 'medium' as const })),
+        ...synthesis.structuredFindings.openQuestions.map((item) => ({ finding: item, sev: 'low' as const })),
+        ...synthesis.structuredFindings.negotiationLevers.map((item) => ({ finding: item, sev: 'low' as const })),
+        ...synthesis.structuredFindings.keyTakeaways.map((item) => ({ finding: item, sev: 'low' as const })),
     ]
 
     const concentrationPattern = /customer|client|concentration|revenue.*(?:\d+%|percent)|top.+(?:account|customer|client)|single.*(?:customer|client)|depend(?:en|an)/i
 
-    for (const { text, sev } of allFindings) {
+    for (const { finding, sev } of allFindings) {
+        const text = finding.text
         if (!concentrationPattern.test(text)) continue
 
         const percentMatch = text.match(/(\d{1,3})(?:\.\d+)?%/)
@@ -40,40 +41,43 @@ function parseConcentrationFromSynthesis(synthesis: ProjectSynthesisItem): Conce
 
         const customerMatch = text.match(/(?:top|largest|single|#1|primary)\s+(?:customer|client|account)\s+(?:is\s+)?([^,.\d]+)/i)
         const customer = customerMatch?.[1]?.trim() || 'Top customer'
+        const primaryCitation = finding.citations?.[0]
 
         findings.push({
             customer,
             revenueShare,
             detail: text,
-            severity: sev,
-            source: revenueShare && revenueShare > 0.3 ? 'High concentration risk' : 'Customer dependency noted',
+            severity: finding.severity === 'critical' || finding.severity === 'high' ? 'critical' : finding.severity === 'medium' ? 'medium' : sev,
+            source: primaryCitation?.sourceFile || (revenueShare && revenueShare > 0.3 ? 'High concentration risk' : 'Customer dependency noted'),
+            sourceLocation: primaryCitation?.sourceLocation,
+            excerpt: primaryCitation?.excerpt,
+            confidence: finding.confidence,
+            status: finding.status,
         })
     }
 
-    if (findings.length === 0 && synthesis.finalJudgmentJson) {
-        try {
-            const parsed = JSON.parse(synthesis.finalJudgmentJson)
-            const response = parsed?.response || parsed
-            const searchFields = [
-                ...(response?.flags?.red_flags || []),
-                ...(response?.flags?.yellow_flags || []),
-                ...(response?.reconciliation_findings || []),
-                ...(response?.key_acquisition_takeaways || []),
-            ]
-            for (const item of searchFields) {
-                if (!item || typeof item !== 'object') continue
-                const desc = item.description || item.text || item.takeaway || item.summary || ''
-                if (!concentrationPattern.test(desc)) continue
-                const percentMatch = desc.match(/(\d{1,3})(?:\.\d+)?%/)
-                findings.push({
-                    customer: 'Top customer',
-                    revenueShare: percentMatch ? parseFloat(percentMatch[1]) / 100 : null,
-                    detail: desc,
-                    severity: item.severity === 'critical' || item.severity === 'high' ? 'critical' : 'medium',
-                    source: item.citations?.[0]?.source_file,
-                })
-            }
-        } catch {}
+    if (findings.length === 0) {
+        const fallbackFindings = [
+            ...synthesis.redFlags.map((text) => ({ text, sev: 'critical' as const })),
+            ...synthesis.yellowFlags.map((text) => ({ text, sev: 'medium' as const })),
+            ...synthesis.crossDocumentConflicts.map((text) => ({ text, sev: 'medium' as const })),
+            ...synthesis.openQuestions.map((text) => ({ text, sev: 'low' as const })),
+            ...synthesis.negotiationLevers.map((text) => ({ text, sev: 'low' as const })),
+            ...synthesis.keyTakeaways.map((text) => ({ text, sev: 'low' as const })),
+        ]
+
+        for (const { text, sev } of fallbackFindings) {
+            if (!concentrationPattern.test(text)) continue
+            const percentMatch = text.match(/(\d{1,3})(?:\.\d+)?%/)
+            const customerMatch = text.match(/(?:top|largest|single|#1|primary)\s+(?:customer|client|account)\s+(?:is\s+)?([^,.\d]+)/i)
+            findings.push({
+                customer: customerMatch?.[1]?.trim() || 'Top customer',
+                revenueShare: percentMatch ? parseFloat(percentMatch[1]) / 100 : null,
+                detail: text,
+                severity: sev,
+                source: percentMatch ? 'Customer concentration finding' : undefined,
+            })
+        }
     }
 
     return findings
@@ -163,9 +167,10 @@ export default function CustomerConcentrationCard({ synthesis, onOpenEvidence }:
                             onClick={() => onOpenEvidence?.({
                                 title: 'Customer concentration finding',
                                 sourceFile: finding.source || synthesis.citations?.[0],
-                                sourceLocation: 'Synthesis analysis',
-                                excerpt: finding.detail,
-                                status: finding.severity === 'critical' ? 'Risk' : 'Needs review',
+                                sourceLocation: finding.sourceLocation || 'Synthesis analysis',
+                                excerpt: finding.excerpt || finding.detail,
+                                confidence: finding.confidence ?? undefined,
+                                status: finding.status || (finding.severity === 'critical' ? 'Risk' : 'Needs review'),
                                 provenance: 'Customer concentration analysis',
                             })}
                             className="flex w-full items-start gap-3 rounded-lg border border-border p-3 text-left transition-colors hover:border-primary/40"
