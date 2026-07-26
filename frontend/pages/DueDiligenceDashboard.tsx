@@ -30,14 +30,21 @@ import KeyboardShortcutsDialog from '../components/KeyboardShortcutsDialog'
 import NotificationCenter, { type Notification } from '../components/NotificationCenter'
 import ActivityFeed from '../components/ActivityFeed'
 import DealHealthKPIs from '../components/DealHealthKPIs'
+import NextActionsCard from '../components/NextActionsCard'
 import DocumentCoverageMatrix from '../components/DocumentCoverageMatrix'
 import DealReadinessGauge from '../components/DealReadinessGauge'
 import DealScorecard from '../components/DealScorecard'
 import NegotiationPlaybook from '../components/NegotiationPlaybook'
+import DealRulesOfThumb from '../components/DealRulesOfThumb'
+import StrengthsWeaknessesCard from '../components/StrengthsWeaknessesCard'
+import DealSummaryBanner from '../components/DealSummaryBanner'
+import DDRequestListCard from '../components/DDRequestListCard'
+import MathChecksSection from '../components/MathChecksSection'
 import PipelineStatusIndicator from '../components/PipelineStatusIndicator'
 import RiskSummaryCard from '../components/RiskSummaryCard'
 import ProjectComparisonCard from '../components/ProjectComparisonCard'
 const DealTimelineCard = lazy(() => import('../components/DealTimelineCard'))
+const DealMemoView = lazy(() => import('../components/DealMemoView'))
 import ModelAssumptionsSummary from '../components/ModelAssumptionsSummary'
 import RecurringVsOneTimeCard from '../components/RecurringVsOneTimeCard'
 const SystemArchitectureCard = lazy(() => import('../components/SystemArchitectureCard'))
@@ -51,6 +58,7 @@ const DealModelPendingCard = lazy(() => import('../components/DealModelPendingCa
 const AllCashReturnsCard = lazy(() => import('../components/AllCashReturnsCard'))
 const FinancedReturnsCard = lazy(() => import('../components/FinancedReturnsCard'))
 const FinancedScenarioComparisonCard = lazy(() => import('../components/FinancedScenarioComparisonCard'))
+const SensitivityAnalysisCard = lazy(() => import('../components/SensitivityAnalysisCard'))
 const ScenarioComparisonCard = lazy(() => import('../components/ScenarioComparisonCard'))
 const DealStructureVisualCard = lazy(() => import('../components/DealStructureVisualCard'))
 const DealValuationCard = lazy(() => import('../components/DealValuationCard'))
@@ -1440,11 +1448,24 @@ export default function DueDiligenceDashboard() {
                 <DealWorkspaceNav activeTab={activeWorkspaceTab} onTabChange={setActiveWorkspaceTab} />
 
                 {activeWorkspaceTab === 'overview' ? <section id="deal-overview" className="space-y-6 scroll-mt-6">
+                    <DealSummaryBanner model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
                     <DealHealthKPIs
                         synthesis={activeProjectSynthesis}
                         model={hydratedDealModel}
                         impact={activeProjectImpact}
                         documentsCount={activeProjectDocuments.length}
+                    />
+                    <NextActionsCard
+                        model={hydratedDealModel}
+                        synthesis={activeProjectSynthesis}
+                        documents={activeProjectDocuments}
+                        onNavigate={(target) => {
+                            if (target === 'upload') {
+                                document.querySelector('[data-project-intake]')?.scrollIntoView({ behavior: 'smooth' })
+                            } else {
+                                setActiveWorkspaceTab(target as WorkspaceTab)
+                            }
+                        }}
                     />
                     <DealReadinessGauge
                         model={hydratedDealModel}
@@ -1459,8 +1480,14 @@ export default function DueDiligenceDashboard() {
                         impact={activeProjectImpact}
                         documentsCount={activeProjectDocuments.length}
                     />
+                    <DealRulesOfThumb model={hydratedDealModel} />
+                    <StrengthsWeaknessesCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
                     <RiskSummaryCard synthesis={activeProjectSynthesis} />
                     <NegotiationPlaybook synthesis={activeProjectSynthesis} model={hydratedDealModel} />
+                    <DDRequestListCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} projectName={dealName || suggestedProjectName} />
+                    <Suspense fallback={null}>
+                        <DealMemoView model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} documents={activeProjectDocuments} />
+                    </Suspense>
                     <ActivityFeed documents={activeProjectDocuments} />
                     {projectSummaries.length > 1 && (
                         <ProjectComparisonCard
@@ -1504,6 +1531,7 @@ export default function DueDiligenceDashboard() {
                         onOpenEvidence={setActiveEvidence}
                     />
                     <FinancialCompletenessCard model={hydratedDealModel} documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} />
+                    <MathChecksSection documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} compact title="Project math checks" description="Aggregated deterministic checks across all processed documents." />
                     <DataQualityChecksCard model={hydratedDealModel} />
                     <Suspense fallback={null}><EbitdaReconstructionCard model={hydratedDealModel} onOpenEvidence={setActiveEvidence} /></Suspense>
                     <AddBackQualityCard model={hydratedDealModel} synthesis={activeProjectSynthesis} onOpenEvidence={setActiveEvidence} />
@@ -1531,8 +1559,8 @@ export default function DueDiligenceDashboard() {
                 </section> : null}
 
                 <Suspense fallback={<div className="flex items-center justify-center gap-2 rounded-lg border border-border bg-muted/20 p-8"><Loader2 className="h-5 w-5 animate-spin text-primary" /><span className="text-sm text-muted-foreground">Loading tab…</span></div>}>
-                {activeWorkspaceTab === 'valuation' ? <section className="space-y-6"><ModelAssumptionsSummary model={hydratedDealModel} area="valuation" /><DealValuationCard synthesis={activeProjectSynthesis} askingPrice={askingPrice} model={hydratedDealModel} onModelChange={handleDealModelChange} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /></section> : null}
-                {activeWorkspaceTab === 'returns' ? <section className="space-y-6"><ModelAssumptionsSummary model={activeDealModel} area="returns" /><ReturnsDecisionSummary model={returnsDisplayModel} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<AllCashReturnsCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<FinancedReturnsCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<FinancedScenarioComparisonCard model={returnsDisplayModel} /><DealModelPendingCard area="returns" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
+                {activeWorkspaceTab === 'valuation' ? <section className="space-y-6"><ModelAssumptionsSummary model={hydratedDealModel} area="valuation" /><DealValuationCard synthesis={activeProjectSynthesis} askingPrice={askingPrice} model={hydratedDealModel} onModelChange={handleDealModelChange} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><MathChecksSection documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} compact title="Data integrity checks" description="Verifies the financial numbers feeding into valuation methods." /></section> : null}
+                {activeWorkspaceTab === 'returns' ? <section className="space-y-6"><ModelAssumptionsSummary model={activeDealModel} area="returns" /><ReturnsDecisionSummary model={returnsDisplayModel} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<AllCashReturnsCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<FinancedReturnsCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<FinancedScenarioComparisonCard model={returnsDisplayModel} /><SensitivityAnalysisCard model={returnsDisplayModel} /><MathChecksSection documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} compact title="Input data checks" description="Verifies EBITDA and revenue figures used in returns calculations." /><DealModelPendingCard area="returns" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
                 {activeWorkspaceTab === 'growth' ? <section className="space-y-6"><ModelAssumptionsSummary model={activeDealModel} area="growth" />{isGrowthIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<GrowthDecisionSummary model={returnsDisplayModel} /><ScenarioComparisonCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><EbitdaProjectionCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><DealModelPendingCard area="growth" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
                 {activeWorkspaceTab === 'structure' ? <section className="space-y-6"><ModelAssumptionsSummary model={activeDealModel} area="structure" /><DealStructureVisualCard model={hydratedDealModel} onOpenEvidence={setActiveEvidence} /><DealModelPendingCard area="structure" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
 
@@ -1982,6 +2010,11 @@ export default function DueDiligenceDashboard() {
                                             <ExpandableText text={liveSubmitInsight.investmentBuyReasoning || 'No buy reasoning returned yet.'} maxHeight={120} className="mt-3 whitespace-pre-wrap text-sm leading-6 text-foreground" />
                                         </div>
                                     ) : null}
+                                    {displayedSubmissionRow?.reconciliationJson ? (
+                                        <div className="xl:col-span-4">
+                                            <MathChecksSection documents={[displayedSubmissionRow]} onOpenEvidence={setActiveEvidence} compact title="Document math checks" description="Deterministic arithmetic verifications on this document's extracted numbers." />
+                                        </div>
+                                    ) : null}
                                 </div>
                             ) : null}
                             <div className="flex flex-wrap items-center gap-3 border-t border-border pt-4">
@@ -2055,6 +2088,7 @@ export default function DueDiligenceDashboard() {
                         projectId={activeProjectId}
                         suggestedQuestions={activeProjectSynthesis?.openQuestions ?? []}
                     />
+                    <MathChecksSection documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} title="Project-wide deterministic checks" description="Aggregated arithmetic verifications from all processed documents in this project." />
                 </section>
 
                 </> : null}

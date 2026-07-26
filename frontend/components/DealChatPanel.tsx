@@ -157,6 +157,14 @@ function generateResponse(question: string, context: string): string {
         return `Deal progress:\n\n- Documents processed: ${docs || 'unknown'}\n- Check the Deal Readiness gauge on Overview for milestone progress\n- The Activity Feed shows real-time processing events\n\nTypical due diligence timelines:\n- Initial review: 1-2 weeks\n- Deep dive: 2-4 weeks\n- Negotiation/closing: 2-6 weeks`
     }
 
+    if (q.includes('sensitiv') || q.includes('what if') || q.includes('scenario')) {
+        return 'The Sensitivity Analysis table on the Returns tab shows how your MOIC and IRR change across different entry and exit multiple combinations.\n\nKey things to look for:\n- Where does MOIC drop below 2.0x? That\'s your risk boundary\n- How wide is the "green zone" (≥3.0x)? Wider = more margin for error\n- Does a 1x lower exit multiple still produce acceptable returns?\n\nThe Growth tab also shows bear/base/bull revenue and EBITDA projections.'
+    }
+
+    if (q.includes('request') || q.includes('seller') || q.includes('ask for') || q.includes('checklist')) {
+        return 'The DD Request List on the Overview tab auto-generates a prioritized list of items to request from the seller.\n\nIt includes:\n- Standard documents not yet uploaded (P&L, balance sheet, tax returns, etc.)\n- Open questions from the AI synthesis\n- Missing documents identified by the analysis\n\nUse the "Copy list" button to send it directly to the seller or broker.'
+    }
+
     if (q.includes('summary') || q.includes('overview') || q.includes('tell me about')) {
         const risk = context.match(/Risk level: (.+)/)?.[1] || 'unknown'
         const traffic = context.match(/Traffic light: (.+)/)?.[1] || 'pending'

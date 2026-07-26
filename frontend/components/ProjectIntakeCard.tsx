@@ -98,7 +98,7 @@ export default function ProjectIntakeCard({
     onSubmit,
 }: ProjectIntakeCardProps) {
     return (
-        <Card className="overflow-hidden">
+        <Card className="overflow-hidden" data-project-intake>
             <CardHeader className="border-b border-border bg-card/80">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="space-y-1">
