@@ -92,13 +92,35 @@ function generateResponse(question: string, context: string): string {
         return 'No specific green flags surfaced yet. Upload more documents to build a fuller picture of the deal\'s strengths.'
     }
 
+    if (q.includes('next') || q.includes('action') || q.includes('should i') || q.includes('recommend')) {
+        const missing = context.match(/Missing documents: (.+)/)?.[1]
+        const open = context.match(/Open questions: (.+)/)?.[1]
+        const parts: string[] = ['Here\'s what I\'d recommend next:\n']
+        if (missing) parts.push(`1. **Upload missing documents:** ${missing.split('; ').slice(0, 3).join(', ')}`)
+        if (open) parts.push(`${missing ? '2' : '1'}. **Resolve open questions:** ${open.split('; ').slice(0, 3).join(', ')}`)
+        parts.push(`${missing && open ? '3' : missing || open ? '2' : '1'}. **Review the Management Question Tracker** on the Synthesis tab to assign owners and due dates to outstanding items.`)
+        parts.push('\nFocus on items that could materially change the valuation or kill the deal.')
+        return parts.join('\n')
+    }
+
+    if (q.includes('structure') || q.includes('financing') || q.includes('debt') || q.includes('equity')) {
+        const price = context.match(/(?:Asking|Purchase) price: \$(.+)/)?.[1]
+        return price
+            ? `The deal is priced at $${price}. Check the Deal Structure tab for the full sources-and-uses breakdown, leverage ratios (Debt/EBITDA), DSCR, and downside resilience indicators.\n\nKey considerations: ensure the debt service coverage ratio (DSCR) stays above 1.2x even in a bear scenario, and that the equity contribution leaves enough working capital for day-one operations.`
+            : 'Set up the deal model inputs (asking price, equity contribution, financing terms) to see the full deal structure analysis. Head to the Deal Structure tab to configure these.'
+    }
+
+    if (q.includes('return') || q.includes('irr') || q.includes('moic') || q.includes('payback')) {
+        return 'Check the Returns tab for:\n\n- **All-cash returns:** MOIC and IRR across bear/base/bull scenarios\n- **Financed returns:** Leveraged MOIC, cash-on-cash, and DSCR\n- **Payback timeline:** Annual cash flow and cumulative payback period\n\nThe model uses your saved assumptions (hold period, exit multiple, growth rates). Edit them at the bottom of the Returns tab.'
+    }
+
     if (q.includes('summary') || q.includes('overview') || q.includes('tell me about')) {
         const risk = context.match(/Risk level: (.+)/)?.[1] || 'unknown'
         const traffic = context.match(/Traffic light: (.+)/)?.[1] || 'pending'
-        return `Here\'s a quick summary of ${context.match(/Project: (.+)/)?.[1] || 'this deal'}:\n\n- Overall risk: ${risk} (${traffic})\n- ${context.match(/Red flags/)?.[0] ? 'Has identified concerns' : 'No major red flags yet'}\n- ${context.match(/Revenue/)?.[0] || 'Revenue not yet confirmed'}\n- ${context.match(/EBITDA/)?.[0] || 'EBITDA not yet confirmed'}\n\nAsk me about specific areas like risks, valuation, negotiation levers, or missing documents for more detail.`
+        return `Here\'s a quick summary of ${context.match(/Project: (.+)/)?.[1] || 'this deal'}:\n\n- Overall risk: ${risk} (${traffic})\n- ${context.match(/Red flags/)?.[0] ? 'Has identified concerns' : 'No major red flags yet'}\n- ${context.match(/Revenue/)?.[0] || 'Revenue not yet confirmed'}\n- ${context.match(/EBITDA/)?.[0] || 'EBITDA not yet confirmed'}\n\nAsk me about specific areas like risks, valuation, negotiation, returns, deal structure, or what to do next.`
     }
 
-    return `I can help you understand this deal. Try asking about:\n\n- **Risks** — "What are the red flags?"\n- **Valuation** — "What multiple am I paying?"\n- **Negotiation** — "What levers do I have?"\n- **Missing info** — "What documents do I still need?"\n- **Strengths** — "What are the green flags?"\n- **Overview** — "Give me a summary"\n\nI use the project synthesis and documented facts to answer. For deeper analysis, check the specific tabs (Valuation, Returns, Growth, Structure).`
+    return `I can help you understand this deal. Try asking about:\n\n- **Risks** — "What are the red flags?"\n- **Valuation** — "What multiple am I paying?"\n- **Returns** — "What's my IRR?"\n- **Structure** — "How is the deal financed?"\n- **Negotiation** — "What levers do I have?"\n- **Missing info** — "What documents do I still need?"\n- **Next steps** — "What should I do next?"\n- **Overview** — "Give me a summary"\n\nI use the project synthesis and documented facts to answer. For deeper analysis, check the specific tabs.`
 }
 
 export default function DealChatPanel({ synthesis, model, projectName }: Props) {

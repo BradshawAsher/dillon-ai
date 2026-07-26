@@ -13,6 +13,10 @@ type ChangelogEntry = {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+    { date: '2026-07-25', title: 'Document coverage matrix', description: '10-category coverage grid showing which standard diligence document types have been uploaded.', category: 'feature' },
+    { date: '2026-07-25', title: 'Risk concentration map', description: 'Visual breakdown of findings by business category (Revenue, Customer, Debt, Legal, People, Margins, Growth) with severity coloring.', category: 'feature' },
+    { date: '2026-07-25', title: 'Project comparison table', description: 'Side-by-side comparison of multiple deals showing key metrics, risk level, and document progress.', category: 'feature' },
+    { date: '2026-07-25', title: 'Always-on valuation', description: 'Synthesis now always shows a valuation range with confidence badges. No more blank $0 values.', category: 'improvement' },
     { date: '2026-07-25', title: 'Command palette (Ctrl+K)', description: 'Quick-switch between tabs, toggle theme, export, and more from a searchable command bar.', category: 'feature' },
     { date: '2026-07-25', title: 'Notification center', description: 'Bell icon in toolbar shows recent document processing and synthesis completion events with timestamps.', category: 'feature' },
     { date: '2026-07-25', title: 'Deal readiness gauge', description: '7-milestone progress indicator tracking documents, revenue, EBITDA, price, synthesis, and valuation completion.', category: 'feature' },
