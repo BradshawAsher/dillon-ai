@@ -292,6 +292,8 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
     })
     const [input, setInput] = useState('')
     const [isTyping, setIsTyping] = useState(false)
+    const [typingElapsed, setTypingElapsed] = useState(0)
+    const typingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
     const messagesEndRef = useRef<HTMLDivElement>(null)
     const textareaRef = useRef<HTMLTextAreaElement>(null)
     const [ratings, setRatings] = useState<Record<string, 'up' | 'down'>>({})
@@ -303,6 +305,11 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
     useEffect(() => {
         function handleKeyDown(e: KeyboardEvent) {
             if (e.key === 'Escape' && isOpen) setIsOpen(false)
+            if (e.key === 'c' && !isOpen && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                const target = e.target as HTMLElement
+                if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return
+                setIsOpen(true)
+            }
         }
         window.addEventListener('keydown', handleKeyDown)
         return () => window.removeEventListener('keydown', handleKeyDown)
@@ -355,6 +362,8 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
         setMessages(prev => [...prev, userMessage])
         setInput('')
         setIsTyping(true)
+        setTypingElapsed(0)
+        typingTimerRef.current = setInterval(() => setTypingElapsed(t => t + 1), 1000)
 
         const context = buildContext(synthesis, model, projectName, documents)
 
@@ -384,6 +393,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
             }])
         } finally {
             setIsTyping(false)
+            if (typingTimerRef.current) { clearInterval(typingTimerRef.current); typingTimerRef.current = null }
         }
     }, [input, synthesis, model, projectName, documents, sessionId])
 
@@ -512,10 +522,15 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                 {isTyping && (
                     <div className="flex justify-start">
                         <div className="rounded-lg bg-muted px-3 py-2">
-                            <span className="flex gap-1">
-                                <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground/50 [animation-delay:0ms]" />
-                                <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground/50 [animation-delay:150ms]" />
-                                <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground/50 [animation-delay:300ms]" />
+                            <span className="flex items-center gap-2">
+                                <span className="flex gap-1">
+                                    <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground/50 [animation-delay:0ms]" />
+                                    <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground/50 [animation-delay:150ms]" />
+                                    <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground/50 [animation-delay:300ms]" />
+                                </span>
+                                {typingElapsed > 2 && (
+                                    <span className="text-[10px] text-muted-foreground">{typingElapsed}s</span>
+                                )}
                             </span>
                         </div>
                     </div>

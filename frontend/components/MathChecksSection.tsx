@@ -116,7 +116,7 @@ export default function MathChecksSection({ documents, onOpenEvidence, compact, 
                                 sourceFile: check.sourceFile,
                                 sourceLocation: 'Deterministic reconciliation',
                                 excerpt: check.metric.formula
-                                    ? `${formatLabel(check.key)}: ${typeof check.metric.value === 'number' ? check.metric.value.toLocaleString(undefined, { maximumFractionDigits: 2 }) : 'N/A'} (${check.metric.formula})`
+                                    ? `${formatLabel(check.key)}: ${typeof check.metric.value === 'number' ? check.metric.value.toLocaleString(undefined, { maximumFractionDigits: 2 }) : 'N/A'}\nFormula: ${check.metric.formula}${typeof check.metric.actual === 'number' ? `\nActual: ${check.metric.actual.toLocaleString(undefined, { maximumFractionDigits: 2 })}` : ''}`
                                     : `${formatLabel(check.key)}: ${typeof check.metric.value === 'number' ? check.metric.value.toLocaleString(undefined, { maximumFractionDigits: 2 }) : 'N/A'}`,
                                 status: check.metric.withinTolerance === false ? 'Contradicted' : check.metric.withinTolerance ? 'Confirmed' : 'Calculated',
                                 provenance: 'Deterministic math check',
@@ -134,6 +134,12 @@ export default function MathChecksSection({ documents, onOpenEvidence, compact, 
                             <p className="mt-0.5 text-xs font-semibold tabular-nums">
                                 {typeof check.metric.value === 'number' ? check.metric.value.toLocaleString(undefined, { maximumFractionDigits: 0 }) : '—'}
                             </p>
+                            {check.metric.formula && (
+                                <p className="mt-0.5 text-[9px] text-muted-foreground truncate" title={check.metric.formula}>{check.metric.formula}</p>
+                            )}
+                            {typeof check.metric.actual === 'number' && check.metric.withinTolerance === false && (
+                                <p className="mt-0.5 text-[9px] text-destructive">Actual: {check.metric.actual.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                            )}
                         </button>
                     ))}
                 </div>
@@ -186,7 +192,7 @@ export default function MathChecksSection({ documents, onOpenEvidence, compact, 
                                                 sourceFile: doc.fileName || 'Document',
                                                 sourceLocation: 'Deterministic reconciliation',
                                                 excerpt: metric.formula
-                                                    ? `${formatLabel(key)}: ${typeof metric.value === 'number' ? metric.value.toLocaleString(undefined, { maximumFractionDigits: 2 }) : 'N/A'} (${metric.formula})`
+                                                    ? `${formatLabel(key)}: ${typeof metric.value === 'number' ? metric.value.toLocaleString(undefined, { maximumFractionDigits: 2 }) : 'N/A'}\nFormula: ${metric.formula}${typeof metric.actual === 'number' ? `\nActual from document: ${metric.actual.toLocaleString(undefined, { maximumFractionDigits: 2 })}` : ''}\nResult: ${metric.withinTolerance === true ? 'VERIFIED ✓' : metric.withinTolerance === false ? 'MISMATCH ✗' : 'Calculated'}`
                                                     : `${formatLabel(key)}: ${typeof metric.value === 'number' ? metric.value.toLocaleString(undefined, { maximumFractionDigits: 2 }) : 'N/A'}`,
                                                 status: metric.withinTolerance === false ? 'Contradicted' : metric.withinTolerance ? 'Confirmed' : 'Calculated',
                                                 provenance: 'Deterministic math check',
@@ -204,7 +210,16 @@ export default function MathChecksSection({ documents, onOpenEvidence, compact, 
                                             <p className="mt-1 text-sm font-bold tabular-nums">
                                                 {typeof metric.value === 'number' ? metric.value.toLocaleString(undefined, { maximumFractionDigits: 0 }) : '—'}
                                             </p>
-                                            {metric.formula && <p className="mt-0.5 text-[10px] text-muted-foreground">{metric.formula}</p>}
+                                            {metric.formula && (
+                                                <p className="mt-0.5 text-[10px] text-muted-foreground font-mono">{metric.formula}</p>
+                                            )}
+                                            {typeof metric.actual === 'number' && metric.withinTolerance !== undefined && (
+                                                <p className={`mt-0.5 text-[10px] ${metric.withinTolerance ? 'text-green-600 dark:text-green-400' : 'text-destructive'}`}>
+                                                    {metric.withinTolerance ? '✓ ' : '✗ '}
+                                                    Actual: {metric.actual.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                                    {metric.withinTolerance === false && typeof metric.value === 'number' ? ` (${((Math.abs(metric.actual - metric.value) / metric.value) * 100).toFixed(1)}% off)` : ''}
+                                                </p>
+                                            )}
                                         </button>
                                     ))}
                                 </div>

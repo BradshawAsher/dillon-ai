@@ -6,7 +6,8 @@ import { Button } from '../lib/shadcn/button'
 const SHORTCUTS = [
     { keys: ['Esc'], description: 'Close evidence drawer / chat panel' },
     { keys: ['?'], description: 'Open this shortcuts dialog' },
-    { keys: ['Ctrl', 'K'], description: 'Jump to project search (coming soon)' },
+    { keys: ['Ctrl', 'K'], description: 'Open command palette' },
+    { keys: ['C'], description: 'Open AI chat assistant' },
 ] as const
 
 export default function KeyboardShortcutsDialog() {

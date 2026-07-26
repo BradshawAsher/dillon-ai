@@ -47,6 +47,11 @@ import ClosingChecklistCard from '../components/ClosingChecklistCard'
 import SellerQuestionsCard from '../components/SellerQuestionsCard'
 import ConfidenceMeterCard from '../components/ConfidenceMeterCard'
 import QuickValuationCard from '../components/QuickValuationCard'
+import DealRadarCard from '../components/DealRadarCard'
+import FinancialHealthCard from '../components/FinancialHealthCard'
+import AssumptionGapsCard from '../components/AssumptionGapsCard'
+import TimeToCloseCard from '../components/TimeToCloseCard'
+import WhatsMissingCard from '../components/WhatsMissingCard'
 import StrengthsWeaknessesCard from '../components/StrengthsWeaknessesCard'
 import DealSummaryBanner from '../components/DealSummaryBanner'
 import DDRequestListCard from '../components/DDRequestListCard'
@@ -1500,6 +1505,10 @@ export default function DueDiligenceDashboard() {
                     <ConfidenceMeterCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} />
 
                     <QuickValuationCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
+                    <DealRadarCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documentsCount={activeProjectDocuments.length} />
+                    <FinancialHealthCard model={hydratedDealModel} />
+                    <AssumptionGapsCard model={hydratedDealModel} />
+                    <WhatsMissingCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} />
 
                     <div className="border-t border-border pt-4">
                         <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Analysis & Insights</h3>
@@ -1519,6 +1528,13 @@ export default function DueDiligenceDashboard() {
                     <div className="border-t border-border pt-4">
                         <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Negotiation & Closing</h3>
                     </div>
+                    <TimeToCloseCard
+                        documentsCount={activeProjectDocuments.length}
+                        completedDocuments={activeProjectDocuments.filter(d => d.status === 'completed').length}
+                        hasSynthesis={!!activeProjectSynthesis}
+                        hasValuation={!!activeProjectSynthesis?.valuationBaseEstimate && activeProjectSynthesis.valuationBaseEstimate !== '0'}
+                        hasFinancing={hydratedDealModel.equityContributionPercent != null}
+                    />
                     <ClosingChecklistCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} />
                     <SellerQuestionsCard synthesis={activeProjectSynthesis} model={hydratedDealModel} />
                     <NegotiationPlaybook synthesis={activeProjectSynthesis} model={hydratedDealModel} />
