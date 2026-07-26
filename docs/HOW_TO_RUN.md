@@ -81,3 +81,14 @@ npm run build       # what Render runs
   in Vercel for the active environment, then redeploy.
 - **Vercel build fails after a dependency change** → run `npm install` in
   `frontend/` and commit the updated `package-lock.json`.
+
+### Safe n8n debugging rule
+
+When a live workflow appears broken:
+
+1. Inspect the live workflow through n8n MCP first.
+2. Check recent executions and note the workflow ID, failed node, and execution ID.
+3. Compare the active workflow against the latest known-good version in workflow history before editing anything.
+4. Prefer UI/runbook fixes or credential verification first; avoid mutating live Pod 1 workflows unless the failure is reproduced and scoped.
+
+This is especially important for the Pod 1 submit, per-document, counter, and consolidator workflows.
