@@ -16,6 +16,11 @@ type ClassifiedItem = {
     text: string
     classification: 'recurring' | 'one-time' | 'unclear'
     source: 'red-flag' | 'yellow-flag' | 'green-flag' | 'open-question'
+    sourceFile?: string
+    sourceLocation?: string
+    excerpt?: string
+    confidence?: number | null
+    status?: string
 }
 
 const recurringKeywords = [
@@ -45,17 +50,40 @@ function extractQualityItems(synthesis?: ProjectSynthesisItem): ClassifiedItem[]
     if (!synthesis) return []
     const items: ClassifiedItem[] = []
 
-    for (const flag of synthesis.redFlags) {
-        items.push({ text: flag, classification: classifyItem(flag), source: 'red-flag' })
-    }
-    for (const flag of synthesis.yellowFlags) {
-        items.push({ text: flag, classification: classifyItem(flag), source: 'yellow-flag' })
-    }
-    for (const flag of synthesis.greenFlags) {
-        items.push({ text: flag, classification: classifyItem(flag), source: 'green-flag' })
-    }
-    for (const q of synthesis.openQuestions) {
-        items.push({ text: q, classification: classifyItem(q), source: 'open-question' })
+    const structuredGroups = [
+        ...synthesis.structuredFindings.redFlags.map((finding) => ({ finding, source: 'red-flag' as const })),
+        ...synthesis.structuredFindings.yellowFlags.map((finding) => ({ finding, source: 'yellow-flag' as const })),
+        ...synthesis.structuredFindings.greenFlags.map((finding) => ({ finding, source: 'green-flag' as const })),
+        ...synthesis.structuredFindings.openQuestions.map((finding) => ({ finding, source: 'open-question' as const })),
+    ]
+
+    if (structuredGroups.length > 0) {
+        for (const { finding, source } of structuredGroups) {
+            const primaryCitation = finding.citations?.[0]
+            items.push({
+                text: finding.text,
+                classification: classifyItem(finding.text),
+                source,
+                sourceFile: primaryCitation?.sourceFile,
+                sourceLocation: primaryCitation?.sourceLocation,
+                excerpt: primaryCitation?.excerpt,
+                confidence: finding.confidence,
+                status: finding.status,
+            })
+        }
+    } else {
+        for (const flag of synthesis.redFlags) {
+            items.push({ text: flag, classification: classifyItem(flag), source: 'red-flag' })
+        }
+        for (const flag of synthesis.yellowFlags) {
+            items.push({ text: flag, classification: classifyItem(flag), source: 'yellow-flag' })
+        }
+        for (const flag of synthesis.greenFlags) {
+            items.push({ text: flag, classification: classifyItem(flag), source: 'green-flag' })
+        }
+        for (const q of synthesis.openQuestions) {
+            items.push({ text: q, classification: classifyItem(q), source: 'open-question' })
+        }
     }
 
     return items.filter((item) => item.classification !== 'unclear')
@@ -122,10 +150,11 @@ export default function RecurringVsOneTimeCard({ model, synthesis, onOpenEvidenc
                                         className="w-full rounded-md border border-success/20 bg-success/5 p-3 text-left text-sm text-foreground transition-colors hover:bg-success/10"
                                         onClick={() => onOpenEvidence?.({
                                             title: 'Recurring finding',
-                                            sourceFile: 'Project synthesis',
-                                            sourceLocation: item.source.replace('-', ' '),
-                                            excerpt: item.text,
-                                            status: 'Recurring',
+                                            sourceFile: item.sourceFile || 'Project synthesis',
+                                            sourceLocation: item.sourceLocation || item.source.replace('-', ' '),
+                                            excerpt: item.excerpt || item.text,
+                                            confidence: item.confidence ?? undefined,
+                                            status: item.status || 'Recurring',
                                             provenance: 'Quality-of-earnings classification',
                                         })}
                                     >
@@ -153,10 +182,11 @@ export default function RecurringVsOneTimeCard({ model, synthesis, onOpenEvidenc
                                         className="w-full rounded-md border border-warning/20 bg-warning/5 p-3 text-left text-sm text-foreground transition-colors hover:bg-warning/10"
                                         onClick={() => onOpenEvidence?.({
                                             title: 'One-time finding',
-                                            sourceFile: 'Project synthesis',
-                                            sourceLocation: item.source.replace('-', ' '),
-                                            excerpt: item.text,
-                                            status: 'One-time',
+                                            sourceFile: item.sourceFile || 'Project synthesis',
+                                            sourceLocation: item.sourceLocation || item.source.replace('-', ' '),
+                                            excerpt: item.excerpt || item.text,
+                                            confidence: item.confidence ?? undefined,
+                                            status: item.status || 'One-time',
                                             provenance: 'Quality-of-earnings classification',
                                         })}
                                     >

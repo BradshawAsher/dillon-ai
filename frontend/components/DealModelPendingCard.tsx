@@ -4,9 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../li
 import { Input } from '../lib/shadcn/input'
 import { Badge } from '../lib/shadcn/badge'
 import type { DealModel } from '../hooks/backend/diligence'
+import { parseDocumentedFacts, type DocumentedFact } from '../utils/evidence'
 
 type PendingArea = 'returns' | 'growth' | 'structure'
-type DocumentedFact = { value: number | null; period?: string; currency?: string; provenance?: string; status?: string; citations?: Array<{ source_file?: string; row_or_cell?: string }> }
 
 const content = {
     returns: { icon: Calculator, title: 'Returns model', description: 'Cash-on-cash return, debt service, IRR, payback, and MOIC.', fields: [['holdPeriodYears', 'Hold period (years)'], ['taxRate', 'Tax rate (decimal)'], ['maintenanceCapex', 'Annual maintenance capex'], ['exitMultiple', 'Exit multiple'], ['exitCosts', 'Exit costs'], ['equityContributionPercent', 'Equity contribution (decimal)'], ['interestRate', 'Interest rate (decimal)'], ['amortizationYears', 'Amortization (years)'], ['sellerNoteAmount', 'Seller note amount']] },
@@ -15,7 +15,7 @@ const content = {
 } satisfies Record<PendingArea, { icon: typeof Calculator; title: string; description: string; fields: Array<[keyof DealModel, string]> }>
 
 function getFacts(model?: DealModel) {
-    try { return Object.entries(JSON.parse(model?.documentedFactsJson || '{}') as Record<string, DocumentedFact>) } catch { return [] as Array<[string, DocumentedFact]> }
+    return Object.entries(parseDocumentedFacts(model?.documentedFactsJson)) as Array<[string, DocumentedFact]>
 }
 function label(value: string) { return value.replace(/_/g, ' ').replace(/\b\w/g, (character) => character.toUpperCase()) }
 
