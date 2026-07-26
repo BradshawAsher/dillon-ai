@@ -90,10 +90,7 @@ export default function StrengthsWeaknessesCard({ model, synthesis }: Props) {
                         {weaknesses.length > 0 ? (
                             <ul className="space-y-1.5">
                                 {weaknesses.slice(0, 5).map((w, i) => (
-                                    <li key={i} className="flex items-start gap-2 text-sm">
-                                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-red-500" />
-                                        <span className="text-foreground">{w.text}</span>
-                                    </li>
+                                    <TruncatedListItem key={i} text={w.text} bulletColor="bg-red-500" maxLength={90} />
                                 ))}
                             </ul>
                         ) : (

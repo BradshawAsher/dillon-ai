@@ -36,9 +36,11 @@ import DealReadinessGauge from '../components/DealReadinessGauge'
 import DealScorecard from '../components/DealScorecard'
 import NegotiationPlaybook from '../components/NegotiationPlaybook'
 import DealRulesOfThumb from '../components/DealRulesOfThumb'
+import DealGradeCard from '../components/DealGradeCard'
 import StrengthsWeaknessesCard from '../components/StrengthsWeaknessesCard'
 import DealSummaryBanner from '../components/DealSummaryBanner'
 import DDRequestListCard from '../components/DDRequestListCard'
+import DealStageIndicator from '../components/DealStageIndicator'
 import MathChecksSection from '../components/MathChecksSection'
 import PipelineStatusIndicator from '../components/PipelineStatusIndicator'
 import RiskSummaryCard from '../components/RiskSummaryCard'
@@ -59,6 +61,7 @@ const AllCashReturnsCard = lazy(() => import('../components/AllCashReturnsCard')
 const FinancedReturnsCard = lazy(() => import('../components/FinancedReturnsCard'))
 const FinancedScenarioComparisonCard = lazy(() => import('../components/FinancedScenarioComparisonCard'))
 const SensitivityAnalysisCard = lazy(() => import('../components/SensitivityAnalysisCard'))
+const HoldPeriodSensitivity = lazy(() => import('../components/HoldPeriodSensitivity'))
 const ScenarioComparisonCard = lazy(() => import('../components/ScenarioComparisonCard'))
 const DealStructureVisualCard = lazy(() => import('../components/DealStructureVisualCard'))
 const DealValuationCard = lazy(() => import('../components/DealValuationCard'))
@@ -1278,6 +1281,7 @@ export default function DueDiligenceDashboard() {
                             <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
                                 Project-based diligence cockpit
                             </h1>
+                            <DealStageIndicator />
                             <PipelineStatusIndicator
                                 isPolling={!isExampleMode}
                                 hasActiveSubmissions={activeProjectDocuments.some(d => isActiveSubmissionStatus(d.status))}
@@ -1481,6 +1485,7 @@ export default function DueDiligenceDashboard() {
                         documentsCount={activeProjectDocuments.length}
                     />
                     <DealRulesOfThumb model={hydratedDealModel} />
+                    <DealGradeCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
                     <StrengthsWeaknessesCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
                     <RiskSummaryCard synthesis={activeProjectSynthesis} />
                     <NegotiationPlaybook synthesis={activeProjectSynthesis} model={hydratedDealModel} />
@@ -1559,9 +1564,9 @@ export default function DueDiligenceDashboard() {
                 </section> : null}
 
                 <Suspense fallback={<div className="flex items-center justify-center gap-2 rounded-lg border border-border bg-muted/20 p-8"><Loader2 className="h-5 w-5 animate-spin text-primary" /><span className="text-sm text-muted-foreground">Loading tab…</span></div>}>
-                {activeWorkspaceTab === 'valuation' ? <section className="space-y-6"><ModelAssumptionsSummary model={hydratedDealModel} area="valuation" /><DealValuationCard synthesis={activeProjectSynthesis} askingPrice={askingPrice} model={hydratedDealModel} onModelChange={handleDealModelChange} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><MathChecksSection documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} compact title="Data integrity checks" description="Verifies the financial numbers feeding into valuation methods." /></section> : null}
-                {activeWorkspaceTab === 'returns' ? <section className="space-y-6"><ModelAssumptionsSummary model={activeDealModel} area="returns" /><ReturnsDecisionSummary model={returnsDisplayModel} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<AllCashReturnsCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<FinancedReturnsCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<FinancedScenarioComparisonCard model={returnsDisplayModel} /><SensitivityAnalysisCard model={returnsDisplayModel} /><MathChecksSection documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} compact title="Input data checks" description="Verifies EBITDA and revenue figures used in returns calculations." /><DealModelPendingCard area="returns" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
-                {activeWorkspaceTab === 'growth' ? <section className="space-y-6"><ModelAssumptionsSummary model={activeDealModel} area="growth" />{isGrowthIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<GrowthDecisionSummary model={returnsDisplayModel} /><ScenarioComparisonCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><EbitdaProjectionCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><DealModelPendingCard area="growth" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
+                {activeWorkspaceTab === 'valuation' ? <section className="space-y-6"><ModelAssumptionsSummary model={hydratedDealModel} area="valuation" /><DealValuationCard synthesis={activeProjectSynthesis} askingPrice={askingPrice} model={hydratedDealModel} onModelChange={handleDealModelChange} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><SensitivityAnalysisCard model={hydratedDealModel} /><MathChecksSection documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} compact title="Data integrity checks" description="Verifies the financial numbers feeding into valuation methods." /></section> : null}
+                {activeWorkspaceTab === 'returns' ? <section className="space-y-6"><ModelAssumptionsSummary model={activeDealModel} area="returns" /><ReturnsDecisionSummary model={returnsDisplayModel} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<AllCashReturnsCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<FinancedReturnsCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<FinancedScenarioComparisonCard model={returnsDisplayModel} /><SensitivityAnalysisCard model={returnsDisplayModel} /><HoldPeriodSensitivity model={returnsDisplayModel} /><MathChecksSection documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} compact title="Input data checks" description="Verifies EBITDA and revenue figures used in returns calculations." /><DealModelPendingCard area="returns" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
+                {activeWorkspaceTab === 'growth' ? <section className="space-y-6"><ModelAssumptionsSummary model={activeDealModel} area="growth" />{isGrowthIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<GrowthDecisionSummary model={returnsDisplayModel} /><ScenarioComparisonCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><EbitdaProjectionCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><MathChecksSection documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} compact title="Revenue & margin checks" description="Verifies starting revenue and margin figures used in growth projections." /><DealModelPendingCard area="growth" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
                 {activeWorkspaceTab === 'structure' ? <section className="space-y-6"><ModelAssumptionsSummary model={activeDealModel} area="structure" /><DealStructureVisualCard model={hydratedDealModel} onOpenEvidence={setActiveEvidence} /><DealModelPendingCard area="structure" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
 
                 {activeWorkspaceTab === 'diligence' ? <>

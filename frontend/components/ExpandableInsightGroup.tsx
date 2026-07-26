@@ -18,7 +18,7 @@ type ExpandableInsightGroupProps = {
   onItemClick?: (item: string, index: number) => void
 }
 
-const LONG_ITEM_LENGTH = 220
+const LONG_ITEM_LENGTH = 100
 
 export default function ExpandableInsightGroup({
   title,
@@ -92,9 +92,9 @@ export default function ExpandableInsightGroup({
                     }}
                     tabIndex={isClickable ? 0 : -1}
                   >
-                    <div className={isLong && !isExpanded ? 'max-h-20 overflow-hidden' : undefined}>
+                    <div>
                       <span className="mr-2 font-medium text-muted-foreground">{index + 1}.</span>
-                      {item}
+                      {isLong && !isExpanded ? item.slice(0, LONG_ITEM_LENGTH).replace(/\s\S*$/, '') + '…' : item}
                     </div>
                     {isClickable ? (
                       <span className="mt-1 block text-xs font-medium text-primary">View evidence →</span>

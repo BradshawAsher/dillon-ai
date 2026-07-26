@@ -87,3 +87,11 @@ body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
 }
+
+@media print {
+  body { background: white; }
+  nav, header, [data-workspace-nav], [data-project-intake], .print\\:hidden { display: none !important; }
+  main { padding: 0 !important; max-width: 100% !important; }
+  .print\\:border-0 { border: none !important; }
+  .print\\:shadow-none { box-shadow: none !important; }
+}
