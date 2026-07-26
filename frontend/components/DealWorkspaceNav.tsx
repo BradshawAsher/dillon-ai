@@ -22,7 +22,7 @@ export type { WorkspaceTab }
 
 export default function DealWorkspaceNav({ activeTab, onTabChange }: DealWorkspaceNavProps) {
     return (
-        <nav id="deal-workspace" aria-label="Deal workspace" className="sticky top-3 z-20 overflow-x-auto rounded-xl border border-border bg-card/95 p-2 shadow-sm backdrop-blur">
+        <nav id="deal-workspace" aria-label="Deal workspace" data-workspace-nav className="sticky top-3 z-20 overflow-x-auto rounded-xl border border-border bg-card/95 p-2 shadow-sm backdrop-blur print:hidden">
             <div className="flex min-w-max gap-1" role="tablist" aria-label="Deal workspace sections">
                 {tabs.map((tab) => {
                     const isActive = activeTab === tab.id

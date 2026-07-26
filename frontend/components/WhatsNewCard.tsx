@@ -13,10 +13,17 @@ type ChangelogEntry = {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
-    { date: '2026-07-26', title: 'Sensitivity analysis table', description: 'Returns tab now shows a MOIC/IRR matrix across entry and exit multiple combinations with color-coded cells and current-deal highlighting.', category: 'feature' },
-    { date: '2026-07-26', title: 'DD request list generator', description: 'Auto-generates a prioritized due diligence request list for the seller based on documentation gaps, open questions, and standard M&A requirements.', category: 'feature' },
-    { date: '2026-07-26', title: 'Deal rules of thumb', description: 'Quick-scan heuristics: entry multiple, EBITDA margin, payback period, revenue multiple, and DSCR with pass/warn/fail indicators.', category: 'feature' },
-    { date: '2026-07-26', title: 'Strengths & weaknesses', description: 'Two-column summary pulling from synthesis flags and calculated metrics to show deal pros and cons at a glance.', category: 'feature' },
+    { date: '2026-07-26', title: 'Deal grade (A/B/C/D/F)', description: 'Single letter grade combining pricing, profitability, risk flags, data quality, and payback into one quick-screening score.', category: 'feature' },
+    { date: '2026-07-26', title: 'AI chatbot powered by real LLM', description: 'Deal Assistant now uses OpenAI via n8n workflow for intelligent, context-aware answers instead of pattern matching. Conversation memory persists across messages.', category: 'feature' },
+    { date: '2026-07-26', title: 'Hold period sensitivity table', description: 'IRR matrix across different hold periods and revenue growth rates, showing how exit timing affects returns.', category: 'feature' },
+    { date: '2026-07-26', title: 'Deal stage indicator', description: 'Dropdown in header to track where you are: Discovery → Pre-LOI → LOI → DD → Negotiation → Closing.', category: 'feature' },
+    { date: '2026-07-26', title: 'Deterministic math checks everywhere', description: 'Aggregated reconciliation checks now visible on Overview, Synthesis, Valuation, Returns, Growth, and Latest Doc Submission.', category: 'improvement' },
+    { date: '2026-07-26', title: 'Shorter expandable items', description: 'Long synthesis items (flags, questions, levers, takeaways) now truncate at ~100 chars with "Show more" buttons.', category: 'improvement' },
+    { date: '2026-07-26', title: 'Comma-formatted valuations', description: 'All valuation ranges now display with proper thousand separators (e.g. $1,200,000 instead of 1.2M).', category: 'improvement' },
+    { date: '2026-07-26', title: 'Sensitivity analysis table', description: 'Returns and Valuation tabs show a MOIC/IRR matrix across entry and exit multiple combinations with color-coded cells.', category: 'feature' },
+    { date: '2026-07-26', title: 'DD request list generator', description: 'Auto-generates a prioritized due diligence request list for the seller with copy-to-clipboard.', category: 'feature' },
+    { date: '2026-07-26', title: 'Deal rules of thumb', description: 'Quick-scan heuristics: entry multiple, EBITDA margin, payback period, revenue multiple, and DSCR with pass/warn/fail.', category: 'feature' },
+    { date: '2026-07-26', title: 'Strengths & weaknesses', description: 'Two-column summary pulling from synthesis flags and calculated metrics to show deal pros and cons.', category: 'feature' },
     { date: '2026-07-26', title: 'Deal summary banner', description: 'Compact top-of-page banner showing project name, verdict, key metrics, and red flag count.', category: 'feature' },
     { date: '2026-07-26', title: 'Always-on LLM valuation', description: 'The consolidator now always returns a valuation range even with limited data, using a confidence score (High/Medium/Low) to indicate reliability.', category: 'improvement' },
     { date: '2026-07-26', title: 'Valuation confidence badges', description: 'Synthesis valuation and Valuation tab now display a colored confidence badge (e.g. "High confidence 75%") derived from the LLM\'s self-assessed data quality.', category: 'feature' },

@@ -90,6 +90,25 @@ Before closing any `[-]` item, verify it against a **new live n8n run**, not exa
 ![Pod 4 dashboard](image.png)
 
 - [x] Make a claude loop to repeatedly look at most important things to build in frontend or n8n or wherever and to do them, repeatedly update todo_current with finished items and more items to build, and build them repeatedly as many as he can at a time, only stop when you run out of tokens or 429 error? Running continuously in session with TODO updates after each batch.
+- [x] Sensitivity analysis table on Returns tab. 7×7 MOIC/IRR matrix across entry/exit multiple combinations. Color-coded cells (green ≥3x, red <1x). Highlights the current deal position.
+- [x] Deal rules of thumb on Overview. Pass/warn/fail heuristics for entry multiple, EBITDA margin, payback period, revenue multiple, and DSCR.
+- [x] Strengths & weaknesses card on Overview. Two-column summary pulling from synthesis green/red flags and calculated metrics.
+- [x] Deal summary banner at top of Overview. Compact bar showing project name, verdict badge, key metrics chips, and red flag count.
+- [x] DD request list generator on Overview. Auto-generates prioritized seller request list from documentation gaps, open questions, and standard M&A requirements. Copy-to-clipboard button.
+- [x] Deterministic math checks shown across multiple pages. New MathChecksSection component displayed in Overview (compact), Synthesis (full), Valuation (compact), Returns (compact), and Latest Doc Submission (per-document). Aggregates reconciliation data from all processed documents.
+- [x] Valuation number formatting with comma separators. Enhanced formatCurrencyValue to parse abbreviated forms (96M → $96,000,000, 1.2M → $1,200,000) and always display with proper thousand separators.
+- [x] Truncated expandable list items. Long takeaways, negotiation levers, open questions, red flags now show first ~80 chars with "more" button to expand. Applied to DealMemoView and StrengthsWeaknessesCard.
+- [x] Chat response patterns for sensitivity analysis and DD request list topics.
+- [x] Fixed scroll-to-upload navigation (added data-project-intake attribute to ProjectIntakeCard).
+- [x] ExpandableInsightGroup items now truncate at 100 chars with proper ellipsis and "Show more" button (was 220 with overflow hidden). Applies to all synthesis flags, open questions, negotiation levers, takeaways, and conflicts.
+- [x] Print-friendly CSS: @media print hides nav, workspace tabs, and intake card. DealMemoView prints cleanly.
+- [x] Deal stage indicator in header toolbar. Dropdown selector for Discovery → Pre-LOI → LOI → DD → Negotiation → Closing. Persists in localStorage.
+- [x] Sensitivity analysis also added to Valuation tab (in addition to Returns tab).
+- [x] Math checks also on Growth tab for revenue/margin verification.
+- [x] ProjectSynthesisCard copy-to-clipboard now uses formatted currency values for valuation range.
+- [ ] Add a deal comparison PDF/printable export when multiple projects exist.
+- [x] Deal Score single grade (A/B/C/D/F). DealGradeCard combines 5 dimensions (Pricing, Profitability, Risk, Data Quality, Payback) into a weighted letter grade with per-dimension progress bars. Shown on Overview after DealRulesOfThumb.
+- [x] Make the AI chat use real LLM API instead of heuristic pattern matching for deeper answers. Created n8n workflow "DD Chat Assistant" (LBZVN8zeFT03Wn12) with webhook trigger → AI Agent (OpenAI via Pod 1 credential) → Respond to Webhook. Frontend DealChatPanel now POSTs to the webhook with {question, context, sessionId}. Heuristic responses kept as offline fallback.
 
 ## Immediate live-data fixes
 
@@ -210,7 +229,7 @@ Before closing any `[-]` item, verify it against a **new live n8n run**, not exa
 - [ ] Visual polish and additional inspiration review, while preserving the document-first, post-LOI product focus.
 
 # Even later - Brad's Ideas
-- [x] Make a chatbot for the website for the user to chat with about the deal, maybe uses RAG or something to have more context about the deal to give better answers. DealChatPanel added as a floating chat bubble (bottom-right). Currently uses local heuristic-based responses drawing from synthesis data and documented facts. Handles questions about risks, valuation, negotiation levers, missing documents, strengths, and deal summaries. Ready to upgrade to real LLM API (RAG) when the backend endpoint is built.
+- [x] Make a chatbot for the website for the user to chat with about the deal, maybe uses RAG or something to have more context about the deal to give better answers. DealChatPanel added as a floating chat bubble (bottom-right). Now connected to a real LLM via n8n workflow "DD Chat Assistant" (LBZVN8zeFT03Wn12) — webhook-triggered AI Agent with OpenAI (Pod 1 credential), conversation memory per session, system prompt grounded in deal context. Heuristic responses kept as offline fallback.
 - Turn LLM chains to agents nodes in n8n to have memory and tool calls? Do we need this or no? Can we implement this somehow for our resumes so we can say that we used AI agents instead of just LLM chains?
 - Any way we can make this workflow better using some sort of backend agent orchestration?
 - [x] Start working on some account system so that the user can only see their stuff and their stuff is saved? Optional LoginButton in the header toolbar — users can sign in if they want (name, email, team selector) via a modal dialog, or skip it entirely. No blocking gate. localStorage-based session shows user name + team badge when signed in. Ready to connect to a real auth backend (Firebase, Supabase, custom JWT) when needed.

@@ -23,27 +23,83 @@ type Props = {
 
 function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealModel, projectName: string): string {
     const parts: string[] = []
-    parts.push(`Project: ${projectName}`)
+    parts.push(`# Project: ${projectName}`)
 
     const facts = parseDocumentedFacts(model.documentedFactsJson)
-    if (facts.revenue?.value) parts.push(`Revenue: $${Number(facts.revenue.value).toLocaleString()}`)
-    if (facts.ebitda_sde?.value) parts.push(`EBITDA/SDE: $${Number(facts.ebitda_sde.value).toLocaleString()}`)
-    if (model.askingPrice) parts.push(`Asking price: $${model.askingPrice.toLocaleString()}`)
-    if (model.purchasePrice) parts.push(`Purchase price: $${model.purchasePrice.toLocaleString()}`)
+
+    parts.push('\n## Documented Financial Facts')
+    for (const [key, fact] of Object.entries(facts)) {
+        if (fact && fact.value != null) {
+            const val = typeof fact.value === 'number' ? `$${fact.value.toLocaleString()}` : fact.value
+            parts.push(`- ${key}: ${val} (${fact.status}${fact.source ? `, source: ${fact.source}` : ''})`)
+        }
+    }
+
+    parts.push('\n## Deal Model Assumptions')
+    if (model.askingPrice) parts.push(`- Asking price: $${model.askingPrice.toLocaleString()}`)
+    if (model.purchasePrice) parts.push(`- Purchase price: $${model.purchasePrice.toLocaleString()}`)
+    if (model.holdPeriodYears) parts.push(`- Hold period: ${model.holdPeriodYears} years`)
+    if (model.exitMultiple) parts.push(`- Exit multiple: ${model.exitMultiple}x`)
+    if (model.taxRate) parts.push(`- Tax rate: ${(model.taxRate * 100).toFixed(0)}%`)
+    if (model.equityContributionPercent) parts.push(`- Equity contribution: ${model.equityContributionPercent}%`)
+    if (model.interestRate) parts.push(`- Interest rate: ${(model.interestRate * 100).toFixed(1)}%`)
+    if (model.amortizationYears) parts.push(`- Amortization: ${model.amortizationYears} years`)
+    if (model.maintenanceCapex) parts.push(`- Maintenance capex: $${model.maintenanceCapex.toLocaleString()}/yr`)
+    if (model.transactionFees) parts.push(`- Transaction fees: $${model.transactionFees.toLocaleString()}`)
+    if (model.workingCapitalRequirement) parts.push(`- Working capital: $${model.workingCapitalRequirement.toLocaleString()}`)
+    if (model.baseRevenueGrowth) parts.push(`- Base revenue growth: ${(model.baseRevenueGrowth * 100).toFixed(0)}%`)
+    if (model.baseEbitdaMargin) parts.push(`- Base EBITDA margin: ${(model.baseEbitdaMargin * 100).toFixed(0)}%`)
+    if (model.bearRevenueGrowth != null) parts.push(`- Bear revenue growth: ${(model.bearRevenueGrowth * 100).toFixed(0)}%`)
+    if (model.bullRevenueGrowth != null) parts.push(`- Bull revenue growth: ${(model.bullRevenueGrowth * 100).toFixed(0)}%`)
 
     if (synthesis) {
-        parts.push(`Risk level: ${synthesis.finalRiskLevel}`)
-        parts.push(`Traffic light: ${synthesis.finalTrafficLight}`)
-        parts.push(`Documents: ${synthesis.documentsCompletedCount}`)
-        if (synthesis.aiConfidence) parts.push(`Confidence: ${parseFloat(synthesis.aiConfidence) <= 1 ? Math.round(parseFloat(synthesis.aiConfidence) * 100) + '%' : synthesis.aiConfidence + '%'}`)
-        if (synthesis.valuationConfidence) parts.push(`Valuation confidence: ${parseFloat(synthesis.valuationConfidence) <= 1 ? Math.round(parseFloat(synthesis.valuationConfidence) * 100) + '%' : synthesis.valuationConfidence + '%'}`)
-        if (synthesis.redFlags.length > 0) parts.push(`Red flags: ${synthesis.redFlags.join('; ')}`)
-        if (synthesis.yellowFlags?.length) parts.push(`Yellow flags: ${synthesis.yellowFlags.join('; ')}`)
-        if (synthesis.greenFlags?.length) parts.push(`Green flags: ${synthesis.greenFlags.join('; ')}`)
-        if (synthesis.openQuestions?.length) parts.push(`Open questions: ${synthesis.openQuestions.join('; ')}`)
-        if (synthesis.negotiationLevers?.length) parts.push(`Negotiation levers: ${synthesis.negotiationLevers.join('; ')}`)
-        if (synthesis.missingDocuments?.length) parts.push(`Missing documents: ${synthesis.missingDocuments.join('; ')}`)
-        if (synthesis.valuationBaseEstimate && synthesis.valuationBaseEstimate !== '0') parts.push(`Valuation range: ${synthesis.valuationLowerBound} – ${synthesis.valuationBaseEstimate} – ${synthesis.valuationUpperBound}`)
+        parts.push('\n## Synthesis Results')
+        parts.push(`- Risk level: ${synthesis.finalRiskLevel}`)
+        parts.push(`- Traffic light: ${synthesis.finalTrafficLight}`)
+        parts.push(`- Recommendation: ${synthesis.finalRecommendation || 'N/A'}`)
+        parts.push(`- Documents completed: ${synthesis.documentsCompletedCount}`)
+        if (synthesis.aiConfidence) parts.push(`- AI confidence: ${parseFloat(synthesis.aiConfidence) <= 1 ? Math.round(parseFloat(synthesis.aiConfidence) * 100) + '%' : synthesis.aiConfidence + '%'}`)
+        if (synthesis.valuationConfidence) parts.push(`- Valuation confidence: ${parseFloat(synthesis.valuationConfidence) <= 1 ? Math.round(parseFloat(synthesis.valuationConfidence) * 100) + '%' : synthesis.valuationConfidence + '%'}`)
+        if (synthesis.valuationBaseEstimate && synthesis.valuationBaseEstimate !== '0') {
+            parts.push(`- Valuation range: $${synthesis.valuationLowerBound} (low) – $${synthesis.valuationBaseEstimate} (base) – $${synthesis.valuationUpperBound} (high)`)
+            if (synthesis.valuationCurrency) parts.push(`- Valuation currency: ${synthesis.valuationCurrency}`)
+        }
+
+        if (synthesis.redFlags.length > 0) {
+            parts.push('\n### Red Flags')
+            synthesis.redFlags.forEach(f => parts.push(`- ${f}`))
+        }
+        if (synthesis.yellowFlags?.length) {
+            parts.push('\n### Yellow Flags')
+            synthesis.yellowFlags.forEach(f => parts.push(`- ${f}`))
+        }
+        if (synthesis.greenFlags?.length) {
+            parts.push('\n### Green Flags')
+            synthesis.greenFlags.forEach(f => parts.push(`- ${f}`))
+        }
+        if (synthesis.openQuestions?.length) {
+            parts.push('\n### Open Questions')
+            synthesis.openQuestions.forEach(q => parts.push(`- ${q}`))
+        }
+        if (synthesis.negotiationLevers?.length) {
+            parts.push('\n### Negotiation Levers')
+            synthesis.negotiationLevers.forEach(l => parts.push(`- ${l}`))
+        }
+        if (synthesis.missingDocuments?.length) {
+            parts.push('\n### Missing Documents')
+            synthesis.missingDocuments.forEach(d => parts.push(`- ${d}`))
+        }
+        if (synthesis.keyTakeaways?.length) {
+            parts.push('\n### Key Takeaways')
+            synthesis.keyTakeaways.forEach(t => parts.push(`- ${t}`))
+        }
+        if (synthesis.crossDocumentConflicts?.length) {
+            parts.push('\n### Cross-Document Conflicts')
+            synthesis.crossDocumentConflicts.forEach(c => parts.push(`- ${c}`))
+        }
+        if (synthesis.buyReasoning) {
+            parts.push(`\n### Buy/Pass Reasoning\n${synthesis.buyReasoning}`)
+        }
     }
 
     return parts.join('\n')
@@ -190,7 +246,9 @@ export default function DealChatPanel({ synthesis, model, projectName }: Props) 
         scrollToBottom()
     }, [messages, scrollToBottom])
 
-    const handleSend = useCallback(() => {
+    const sessionId = useRef(`chat-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`).current
+
+    const handleSend = useCallback(async () => {
         const trimmed = input.trim()
         if (!trimmed) return
 
@@ -206,18 +264,35 @@ export default function DealChatPanel({ synthesis, model, projectName }: Props) 
         setIsTyping(true)
 
         const context = buildContext(synthesis, model, projectName)
-        setTimeout(() => {
+
+        try {
+            const res = await fetch('https://merge-works.app.n8n.cloud/webhook/dd-chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ question: trimmed, context, sessionId }),
+            })
+            if (!res.ok) throw new Error(`HTTP ${res.status}`)
+            const data = await res.json()
+            const answer = data.answer || data.output || data.text || ''
+            if (!answer) throw new Error('Empty response')
+            setMessages(prev => [...prev, {
+                id: `assistant-${Date.now()}`,
+                role: 'assistant',
+                content: answer,
+                timestamp: Date.now(),
+            }])
+        } catch {
             const response = generateResponse(trimmed, context)
-            const assistantMessage: Message = {
+            setMessages(prev => [...prev, {
                 id: `assistant-${Date.now()}`,
                 role: 'assistant',
                 content: response,
                 timestamp: Date.now(),
-            }
-            setMessages(prev => [...prev, assistantMessage])
+            }])
+        } finally {
             setIsTyping(false)
-        }, 600)
-    }, [input, synthesis, model, projectName])
+        }
+    }, [input, synthesis, model, projectName, sessionId])
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && !e.shiftKey) {
