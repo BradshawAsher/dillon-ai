@@ -12,6 +12,8 @@ import {
     DollarSign,
     Handshake,
     FileText,
+    FileSearch,
+    Clock3,
     AlertTriangle,
     Sparkles,
 } from 'lucide-react'
@@ -63,6 +65,13 @@ export default function CommandPalette({
             group: 'Navigation',
         },
         {
+            id: 'tab-analysis',
+            label: 'Switch to Analysis tab',
+            icon: <FlaskConical className="h-4 w-4" />,
+            action: () => onSelectTab('analysis'),
+            group: 'Navigation',
+        },
+        {
             id: 'tab-synthesis',
             label: 'Switch to Synthesis tab',
             icon: <Sparkles className="h-4 w-4" />,
@@ -94,7 +103,14 @@ export default function CommandPalette({
             id: 'tab-deal-structure',
             label: 'Switch to Deal Structure tab',
             icon: <Handshake className="h-4 w-4" />,
-            action: () => onSelectTab('deal-structure'),
+            action: () => onSelectTab('structure'),
+            group: 'Navigation',
+        },
+        {
+            id: 'tab-diligence',
+            label: 'Switch to Diligence tab',
+            icon: <FileSearch className="h-4 w-4" />,
+            action: () => onSelectTab('diligence'),
             group: 'Navigation',
         },
         {
@@ -102,6 +118,13 @@ export default function CommandPalette({
             label: 'Switch to Documents tab',
             icon: <FileText className="h-4 w-4" />,
             action: () => onSelectTab('documents'),
+            group: 'Navigation',
+        },
+        {
+            id: 'tab-history',
+            label: 'Switch to History tab',
+            icon: <Clock3 className="h-4 w-4" />,
+            action: () => onSelectTab('history'),
             group: 'Navigation',
         },
         {
