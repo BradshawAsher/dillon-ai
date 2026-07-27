@@ -61,6 +61,10 @@
 Before closing any `[-]` item, verify it against a **new live n8n run**, not example data or a historical database row. Update this file in the same change with: what was changed, what was verified, and the remaining limitation.
 
 # Brad list
+
+
+- Can we make the basic LLM chains in robust per document ai analysis workflow and the subworkflow project wide consolidator workflow into AI Agent nodes instead? Would this be good or bad? Can we do this for my resume or would this be a bad idea in the cost perspective?
+
 - [x] Make takeaways shorter and easier to scan. Project insight lists now collapse long items earlier, while document-level thesis cards show a concise first-sentence preview and open the full evidence on click.
 - [x] Make the project synthesis/doc-counter handoff asynchronous. The counter now writes `synthesis_pending`, starts the consolidator without waiting, and returns document completion immediately; validate one production batch after this change.
 - [x] Make every flag, open question, and decision driver clickable to open the relevant evidence. All 8 project-level insight groups, document-level flags (red/yellow/green), and document-level thesis takeaways now open the Evidence Drawer on click with source file, location, severity-status, and document links.
