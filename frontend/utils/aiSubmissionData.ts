@@ -8,7 +8,9 @@ type ParsedCitation = {
 }
 
 function parseJsonValue(raw: string) {
-  if (raw.trim().length === 0) {
+  // Rows can arrive partially populated (missing/optional fields), so coerce
+  // anything non-string to an empty string rather than throwing on .trim().
+  if (typeof raw !== 'string' || raw.trim().length === 0) {
     return null
   }
 

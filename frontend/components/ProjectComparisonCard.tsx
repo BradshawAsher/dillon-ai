@@ -86,9 +86,9 @@ function buildComparisonMarkdown(projects: ProjectComparison[]): string {
             p.synthesis.negotiationLevers.forEach(l => lines.push(`- ${l}`))
             lines.push('')
         }
-        if (p.synthesis?.buyReasoning) {
+        if (p.synthesis?.finalJudgmentSummary) {
             lines.push(`### Recommendation`)
-            lines.push(p.synthesis.buyReasoning)
+            lines.push(p.synthesis.finalJudgmentSummary)
             lines.push('')
         }
     }

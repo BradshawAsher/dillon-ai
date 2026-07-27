@@ -16,6 +16,9 @@ export default function HoldPeriodSensitivity({ model }: Props) {
     const revenue = (facts.revenue?.status === 'confirmed' || facts.revenue?.status === 'illustrative') && typeof facts.revenue.value === 'number' ? facts.revenue.value : null
 
     if (!ebitda || ebitda <= 0) return null
+    // Narrowed to a positive number here; capture so the value stays non-null
+    // inside the compute() closure below (TS widens outer lets across closures).
+    const ebitdaValue: number = ebitda
 
     const price = model.purchasePrice ?? model.askingPrice
     if (!price || price <= 0) return null
@@ -36,7 +39,7 @@ export default function HoldPeriodSensitivity({ model }: Props) {
     const currentHold = model.holdPeriodYears ?? 5
 
     function compute(hold: number, growth: number): { irr: number | null; moic: number | null } {
-        const startRev = revenue ?? ebitda / baseMargin
+        const startRev = revenue ?? ebitdaValue / baseMargin
         const yearlyRev = Array.from({ length: hold }, (_, y) => startRev * (1 + growth) ** (y + 1))
         const yearlyOcf = yearlyRev.map(r => r * baseMargin * (1 - taxRate) - capex)
         const exitEbitda = yearlyRev[hold - 1] * baseMargin

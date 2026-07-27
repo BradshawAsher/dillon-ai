@@ -35,7 +35,7 @@ function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealMo
     for (const [key, fact] of Object.entries(facts)) {
         if (fact && fact.value != null) {
             const val = typeof fact.value === 'number' ? `$${fact.value.toLocaleString()}` : fact.value
-            parts.push(`- ${key}: ${val} (${fact.status}${fact.source ? `, source: ${fact.source}` : ''})`)
+            parts.push(`- ${key}: ${val} (${fact.status}${fact.provenance ? `, source: ${fact.provenance}` : ''})`)
         }
     }
 
@@ -101,8 +101,8 @@ function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealMo
             parts.push('\n### Cross-Document Conflicts')
             synthesis.crossDocumentConflicts.forEach(c => parts.push(`- ${c}`))
         }
-        if (synthesis.buyReasoning) {
-            parts.push(`\n### Buy/Pass Reasoning\n${synthesis.buyReasoning}`)
+        if (synthesis.finalJudgmentSummary) {
+            parts.push(`\n### Buy/Pass Reasoning\n${synthesis.finalJudgmentSummary}`)
         }
     }
 
@@ -533,6 +533,8 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                                             onClick={() => setRatings(prev => ({ ...prev, [msg.id]: prev[msg.id] === 'up' ? undefined as never : 'up' }))}
                                             className={`rounded p-0.5 transition-colors ${ratings[msg.id] === 'up' ? 'text-green-600' : 'text-muted-foreground/40 hover:text-muted-foreground'}`}
                                             title="Helpful"
+                                            aria-label="Rate this answer helpful"
+                                            aria-pressed={ratings[msg.id] === 'up'}
                                         >
                                             <ThumbsUp className="h-3 w-3" />
                                         </button>
@@ -540,6 +542,8 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                                             onClick={() => setRatings(prev => ({ ...prev, [msg.id]: prev[msg.id] === 'down' ? undefined as never : 'down' }))}
                                             className={`rounded p-0.5 transition-colors ${ratings[msg.id] === 'down' ? 'text-red-600' : 'text-muted-foreground/40 hover:text-muted-foreground'}`}
                                             title="Not helpful"
+                                            aria-label="Rate this answer not helpful"
+                                            aria-pressed={ratings[msg.id] === 'down'}
                                         >
                                             <ThumbsDown className="h-3 w-3" />
                                         </button>
@@ -616,6 +620,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                         onChange={e => setInput(e.target.value)}
                         onKeyDown={handleKeyDown}
                         placeholder="Ask about this deal..."
+                        aria-label="Ask about this deal"
                         className="min-h-[38px] max-h-[100px] resize-none text-sm"
                         rows={1}
                     />
@@ -624,6 +629,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                         onClick={handleSend}
                         disabled={!input.trim()}
                         className="h-[38px] w-[38px] shrink-0"
+                        aria-label="Send message"
                     >
                         <Send className="h-4 w-4" />
                     </Button>
