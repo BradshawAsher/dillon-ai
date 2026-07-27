@@ -1509,6 +1509,16 @@ export default function DueDiligenceDashboard() {
                 )}
             </header>
 
+            {/* ── Top-level Deal Health KPI strip (duplicated for at-a-glance visibility) ── */}
+            <div className="mx-auto max-w-[1440px] px-4 pt-4 sm:px-6 lg:px-8">
+                <DealHealthKPIs
+                    synthesis={activeProjectSynthesis}
+                    model={hydratedDealModel}
+                    impact={activeProjectImpact}
+                    documentsCount={activeProjectDocuments.length}
+                />
+            </div>
+
             <main className="mx-auto max-w-[1440px] space-y-8 px-4 py-4 sm:px-6 sm:py-8 lg:px-8">
                 <div id="upload-section" className="scroll-mt-6" />
                 <ProjectIntakeCard
