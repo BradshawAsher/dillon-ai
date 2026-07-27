@@ -1,24 +1,46 @@
 import { useCallback, useState } from 'react'
-import { LogIn, User } from 'lucide-react'
+import { LogIn, Shield, User } from 'lucide-react'
 
 import { Button } from '../lib/shadcn/button'
+import { Badge } from '../lib/shadcn/badge'
 
 type AuthUser = {
     email: string
     name: string
     team: string
+    role?: 'admin' | 'tester'
 }
 
 const STORAGE_KEY = 'mergeworks.auth'
+const ISOLATION_KEY = 'mergeworks.dataIsolation'
+
+const ADMIN_EMAILS = ['bradshaw@mergeworks.io', 'brad@mergeworks.io', 'srijan@mergeworks.io', 'admin@mergeworks.io']
 
 export function getStoredAuth(): AuthUser | null {
     try {
         const raw = localStorage.getItem(STORAGE_KEY)
         if (!raw) return null
-        return JSON.parse(raw) as AuthUser
+        const user = JSON.parse(raw) as AuthUser
+        if (!user.role) {
+            user.role = ADMIN_EMAILS.includes(user.email.toLowerCase()) ? 'admin' : 'tester'
+        }
+        return user
     } catch {
         return null
     }
+}
+
+export function isAdmin(): boolean {
+    const user = getStoredAuth()
+    return user?.role === 'admin' || !user
+}
+
+export function isDataIsolationEnabled(): boolean {
+    return localStorage.getItem(ISOLATION_KEY) === 'true'
+}
+
+export function setDataIsolation(enabled: boolean) {
+    localStorage.setItem(ISOLATION_KEY, enabled ? 'true' : 'false')
 }
 
 export function clearAuth() {
@@ -35,11 +57,13 @@ export default function LoginButton() {
     const [email, setEmail] = useState('')
     const [name, setName] = useState('')
     const [team, setTeam] = useState('Pod 1')
+    const [isolation, setIsolation] = useState(isDataIsolationEnabled)
 
     const handleLogin = useCallback((e: React.FormEvent) => {
         e.preventDefault()
         if (!email.trim() || !name.trim()) return
-        const newUser: AuthUser = { email: email.trim(), name: name.trim(), team }
+        const role = ADMIN_EMAILS.includes(email.trim().toLowerCase()) ? 'admin' as const : 'tester' as const
+        const newUser: AuthUser = { email: email.trim(), name: name.trim(), team, role }
         saveAuth(newUser)
         setAuthUser(newUser)
         setShowDialog(false)
@@ -50,11 +74,33 @@ export default function LoginButton() {
         setAuthUser(null)
     }, [])
 
+    const toggleIsolation = useCallback(() => {
+        const next = !isolation
+        setDataIsolation(next)
+        setIsolation(next)
+        window.location.reload()
+    }, [isolation])
+
     if (authUser) {
         return (
-            <Button type="button" variant="ghost" className="gap-2 px-4 py-2 text-sm" onClick={handleSignOut}>
-                {authUser.name} ({authUser.team}) · Sign out
-            </Button>
+            <div className="flex items-center gap-2">
+                {authUser.role === 'admin' && (
+                    <button
+                        onClick={toggleIsolation}
+                        className={`flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-medium transition-colors ${isolation ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:bg-muted'}`}
+                        title={isolation ? 'Data isolation ON — testers only see their own data' : 'Data isolation OFF — everyone sees all data'}
+                    >
+                        <Shield className="h-3 w-3" />
+                        {isolation ? 'Isolation ON' : 'Isolation OFF'}
+                    </button>
+                )}
+                <Badge variant={authUser.role === 'admin' ? 'default' : 'secondary'} className="text-[10px]">
+                    {authUser.role === 'admin' ? 'Admin' : 'Tester'}
+                </Badge>
+                <Button type="button" variant="ghost" className="gap-2 px-4 py-2 text-sm" onClick={handleSignOut}>
+                    {authUser.name} · Sign out
+                </Button>
+            </div>
         )
     }
 

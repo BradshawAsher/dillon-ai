@@ -141,7 +141,7 @@ export default function DealGradeCard({ model, synthesis }: Props) {
                                         />
                                     ))}
                                 </div>
-                                <span className="w-40 shrink-0 text-right text-[10px] text-muted-foreground">{d.detail}</span>
+                                <span className="hidden sm:inline sm:w-40 shrink-0 text-right text-[10px] text-muted-foreground">{d.detail}</span>
                             </div>
                         ))}
                     </div>
