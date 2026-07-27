@@ -24,7 +24,7 @@ const BuyerProfileCard = lazy(() => import('../components/BuyerProfileCard'))
 const CostPerRunCard = lazy(() => import('../components/CostPerRunCard'))
 const IndustryBenchmarksCard = lazy(() => import('../components/IndustryBenchmarksCard'))
 const WhatsNewCard = lazy(() => import('../components/WhatsNewCard'))
-import LoginButton from '../components/AuthGate'
+import LoginButton, { getStoredAuth, isDataIsolationEnabled } from '../components/AuthGate'
 const CommandPalette = lazy(() => import('../components/CommandPalette'))
 import ExportDealButton, { buildMarkdownReport, buildJsonExport, downloadFile } from '../components/ExportDealButton'
 import KeyboardShortcutsDialog from '../components/KeyboardShortcutsDialog'
@@ -38,6 +38,16 @@ import DealScorecard from '../components/DealScorecard'
 import NegotiationPlaybook from '../components/NegotiationPlaybook'
 import DealRulesOfThumb from '../components/DealRulesOfThumb'
 import DealGradeCard from '../components/DealGradeCard'
+import DealAnalysisScoresCard from '../components/DealAnalysisScoresCard'
+import DealStatsGridCard from '../components/DealStatsGridCard'
+const OpportunityScoreCard = lazy(() => import('../components/OpportunityScoreCard'))
+const RiskAdjustedValuationCard = lazy(() => import('../components/RiskAdjustedValuationCard'))
+const BusinessSnapshotCard = lazy(() => import('../components/BusinessSnapshotCard'))
+const FinancingScenariosCard = lazy(() => import('../components/FinancingScenariosCard'))
+const InvestmentMetricsCard = lazy(() => import('../components/InvestmentMetricsCard'))
+const IndustryPercentileCard = lazy(() => import('../components/IndustryPercentileCard'))
+const DealTypeAnalysisCard = lazy(() => import('../components/DealTypeAnalysisCard'))
+const DealFitCard = lazy(() => import('../components/DealFitCard'))
 import DealActionItemsCard from '../components/DealActionItemsCard'
 import ConfidenceMeterCard from '../components/ConfidenceMeterCard'
 import QuickValuationCard from '../components/QuickValuationCard'
@@ -135,6 +145,7 @@ import {
     isActiveSubmissionStatus,
 } from '../utils/submissionHistory'
 import { createProjectSummaries, getProjectKey } from '../utils/projectWorkspace'
+import { claimProject, isOwnedByUser } from '../utils/projectOwnership'
 import { computeImpactMetrics, formatHours } from '../utils/impactMetrics'
 import { deriveDocumentedFacts } from '../utils/documentedFacts'
 import { fallbackDiligenceFindings, type FindingType, type Severity } from '../utils/diligence'
@@ -392,12 +403,33 @@ export default function DueDiligenceDashboard() {
         && !submissionHistoryError
         && liveSubmissionHistory.length === 0
     const isExampleMode = getDataSource() === 'mock' || isShowingExampleWorkspace
-    const submissionHistory = isShowingExampleWorkspace
+    const rawSubmissionHistory = isShowingExampleWorkspace
         ? exampleSubmissionHistoryRows
         : liveSubmissionHistory
-    const visibleProjectSyntheses = isShowingExampleWorkspace
+    const rawProjectSyntheses = isShowingExampleWorkspace
         ? exampleProjectSyntheses
         : (Array.isArray(projectSynthesisData) ? projectSynthesisData : [])
+
+    const submissionHistory = useMemo(() => {
+        if (!isDataIsolationEnabled()) return rawSubmissionHistory
+        const user = getStoredAuth()
+        if (!user || user.role === 'admin') return rawSubmissionHistory
+        return rawSubmissionHistory.filter(row => {
+            const key = getProjectKey(row)
+            return isOwnedByUser(key, user.email)
+        })
+    }, [rawSubmissionHistory])
+
+    const visibleProjectSyntheses = useMemo(() => {
+        if (!isDataIsolationEnabled()) return rawProjectSyntheses
+        const user = getStoredAuth()
+        if (!user || user.role === 'admin') return rawProjectSyntheses
+        return rawProjectSyntheses.filter(s => {
+            const key = s.projectId || ''
+            return isOwnedByUser(key, user.email)
+        })
+    }, [rawProjectSyntheses])
+
     const projectSummaries = useMemo(() => createProjectSummaries(submissionHistory), [submissionHistory])
 
     const fallbackFinding = diligenceFindings[0]
@@ -1282,13 +1314,18 @@ export default function DueDiligenceDashboard() {
 
             setSubmissionNotes('')
             setDocumentType('auto-detect')
-            setSelectedProjectKey(projectId || suggestedProjectId)
+            const resolvedKey = projectId || suggestedProjectId
+            setSelectedProjectKey(resolvedKey)
             setSelectedFiles([])
             if (dealName.length === 0) {
                 setDealName(suggestedProjectName)
             }
             if (projectId.length === 0) {
                 setProjectId(suggestedProjectId)
+            }
+            const currentUser = getStoredAuth()
+            if (currentUser?.email && resolvedKey) {
+                claimProject(resolvedKey, currentUser.email)
             }
             await handleRefreshHistory(environment)
         } finally {
@@ -1479,7 +1516,7 @@ export default function DueDiligenceDashboard() {
                 <DealWorkspaceNav activeTab={activeWorkspaceTab} onTabChange={setActiveWorkspaceTab} />
 
                 {activeWorkspaceTab === 'overview' ? <section id="deal-overview" className="space-y-6 scroll-mt-6">
-                    <div className="flex items-center justify-between gap-3">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
                         <div className="flex items-center gap-1 rounded-lg border border-border bg-card/80 p-1 w-fit">
                             <button
                                 onClick={() => setOverviewSubTab('summary')}
@@ -1515,6 +1552,8 @@ export default function DueDiligenceDashboard() {
                             documentsCount={activeProjectDocuments.length}
                         />
                         <DealGradeCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
+                        <DealAnalysisScoresCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
+                        <DealStatsGridCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
                         <QuickValuationCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
                         <DealRadarCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documentsCount={activeProjectDocuments.length} />
                         <DealActionItemsCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} />
@@ -1522,6 +1561,11 @@ export default function DueDiligenceDashboard() {
 
                     {/* DEEP ANALYSIS SUB-TAB */}
                     {overviewSubTab === 'analysis' && <>
+                        <Suspense fallback={null}>
+                        <BusinessSnapshotCard model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
+                        <OpportunityScoreCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
+                        <RiskAdjustedValuationCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
+                        </Suspense>
                         <NextActionsCard
                             model={hydratedDealModel}
                             synthesis={activeProjectSynthesis}
@@ -1553,6 +1597,13 @@ export default function DueDiligenceDashboard() {
                         <Suspense fallback={null}><AssumptionGapsCard model={hydratedDealModel} /></Suspense>
                         <WhatsMissingCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} />
                         <Suspense fallback={null}><MarketCompsCard model={hydratedDealModel} /></Suspense>
+                        <Suspense fallback={null}>
+                        <FinancingScenariosCard model={hydratedDealModel} />
+                        <InvestmentMetricsCard model={hydratedDealModel} />
+                        <IndustryPercentileCard model={hydratedDealModel} />
+                        <DealTypeAnalysisCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
+                        <DealFitCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
+                        </Suspense>
 
                         <Suspense fallback={null}>
                             <div className="border-t border-border pt-4">
