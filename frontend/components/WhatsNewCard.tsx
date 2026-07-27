@@ -13,6 +13,12 @@ type ChangelogEntry = {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+    { date: '2026-07-27', title: 'Public Data Enrichment', description: 'Shows external data sources that could enrich analysis: industry margins, market growth, comparable transactions, regulatory requirements, local indicators. Placeholder for future integration.', category: 'feature' },
+    { date: '2026-07-27', title: 'Independent Review Checklist', description: '8-point verification checklist that auto-marks items as verified or needs-review based on available data. Shows verification completeness percentage. Future: automated LLM review.', category: 'feature' },
+    { date: '2026-07-27', title: 'Tax Planning Impact', description: 'Shows impact of tax strategies on returns: asset step-up depreciation, Section 179, interest deduction, pass-through election. Total annual and 5-year cumulative savings.', category: 'feature' },
+    { date: '2026-07-27', title: 'Working Capital Analysis', description: 'Cash tied up in operations: AR days, inventory turns, net working capital, WC/revenue ratio, and annual growth WC needs. DSO and DIH health indicators.', category: 'feature' },
+    { date: '2026-07-27', title: 'Operating Leverage', description: 'Shows how revenue growth amplifies into EBITDA gains. Degree of leverage calculation with scenario table: +5% to +20% revenue → corresponding EBITDA impact.', category: 'feature' },
+    { date: '2026-07-27', title: 'Additional test fixtures', description: 'Added 3 more mock deal scenarios: Professional Services Firm (high margin, people-dependent), Franchise (asset-heavy, proven model), and E-commerce (high growth, seasonal).', category: 'improvement' },
     { date: '2026-07-27', title: 'Comparable Transactions', description: 'Hypothetical market comps at different multiples: Conservative SMB, Market Standard, Premium Quality, Strategic Buyer. Shows implied price and premium/discount vs asking.', category: 'feature' },
     { date: '2026-07-27', title: 'Deal Killer Check', description: '8 common deal-breaker conditions tested: DSCR, entry multiple, red flag count, open questions, margins, leverage, growth, price/revenue ratio. Pass/fail with explanations.', category: 'feature' },
     { date: '2026-07-27', title: 'EBITDA Quality Score', description: 'Grades EBITDA quality (A/B/C/D) across 5 dimensions: margin sustainability, revenue diversity, add-back transparency, recurring revenue signals, and growth trajectory.', category: 'feature' },
