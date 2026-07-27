@@ -1610,6 +1610,8 @@ export default function DueDiligenceDashboard() {
                     <QuickValuationCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
                     <DealRadarCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documentsCount={activeProjectDocuments.length} />
                     <DealActionItemsCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} />
+                    <SellerQuestionsCard synthesis={activeProjectSynthesis} model={hydratedDealModel} />
+
 
                     {projectSummaries.length > 1 && (
                         <ProjectComparisonCard
