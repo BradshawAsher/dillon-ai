@@ -63,6 +63,31 @@ const PaybackTimelineCard = lazy(() => import('../components/PaybackTimelineCard
 const OwnerDependencyCard = lazy(() => import('../components/OwnerDependencyCard'))
 const TermSheetCard = lazy(() => import('../components/TermSheetCard'))
 const BenchmarkComparisonCard = lazy(() => import('../components/BenchmarkComparisonCard'))
+const AnnualCashFlowCard = lazy(() => import('../components/AnnualCashFlowCard'))
+const ExitReadinessCard = lazy(() => import('../components/ExitReadinessCard'))
+const DebtServiceCoverageCard = lazy(() => import('../components/DebtServiceCoverageCard'))
+const DealTimingCard = lazy(() => import('../components/DealTimingCard'))
+const ValueCreationPlanCard = lazy(() => import('../components/ValueCreationPlanCard'))
+const DiligenceCompletenessCard = lazy(() => import('../components/DiligenceCompletenessCard'))
+const WeeklyProjectionCard = lazy(() => import('../components/WeeklyProjectionCard'))
+const LeverageSafetyCard = lazy(() => import('../components/LeverageSafetyCard'))
+const DealOnAPageCard = lazy(() => import('../components/DealOnAPageCard'))
+const SensitivityRankingCard = lazy(() => import('../components/SensitivityRankingCard'))
+const AcquisitionTimelineCard = lazy(() => import('../components/AcquisitionTimelineCard'))
+const RiskRewardScatterCard = lazy(() => import('../components/RiskRewardScatterCard'))
+const QuickWinsCard = lazy(() => import('../components/QuickWinsCard'))
+const DownsideProtectionCard = lazy(() => import('../components/DownsideProtectionCard'))
+const InvestorReadinessCard = lazy(() => import('../components/InvestorReadinessCard'))
+const CashReserveAnalysisCard = lazy(() => import('../components/CashReserveAnalysisCard'))
+const First100DaysCard = lazy(() => import('../components/First100DaysCard'))
+const DealScorecardExportCard = lazy(() => import('../components/DealScorecardExportCard'))
+const MarketPositionCard = lazy(() => import('../components/MarketPositionCard'))
+const WhatIfScenariosCard = lazy(() => import('../components/WhatIfScenariosCard'))
+const KeyMetricsTrendCard = lazy(() => import('../components/KeyMetricsTrendCard'))
+const FinancingComparisonCard = lazy(() => import('../components/FinancingComparisonCard'))
+const ComparableTransactionsCard = lazy(() => import('../components/ComparableTransactionsCard'))
+const DealKillerCheckCard = lazy(() => import('../components/DealKillerCheckCard'))
+const EBITDAQualityScoreCard = lazy(() => import('../components/EBITDAQualityScoreCard'))
 import DealActionItemsCard from '../components/DealActionItemsCard'
 import ConfidenceMeterCard from '../components/ConfidenceMeterCard'
 import QuickValuationCard from '../components/QuickValuationCard'
@@ -464,7 +489,6 @@ export default function DueDiligenceDashboard() {
         }
     })
     const [activeWorkspaceTab, setActiveWorkspaceTab] = useState<WorkspaceTab>('overview')
-    const [overviewSubTab, setOverviewSubTab] = useState<'summary' | 'analysis'>('summary')
     const [projectId, setProjectId] = useState(() => createUnusedProjectId())
     const [projectStage, setProjectStage] = useState('post-loi')
     const [documentType, setDocumentType] = useState('auto-detect')
@@ -1528,24 +1552,34 @@ export default function DueDiligenceDashboard() {
                     </div>
                 ) : null}
 
+                {activeProjectId && (
+                    <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-card/80 px-4 py-2 text-xs print:hidden">
+                        <span className="font-medium text-foreground truncate max-w-[200px]">{dealName || suggestedProjectName}</span>
+                        <span className="text-muted-foreground">|</span>
+                        <span className={`font-medium ${activeProjectSynthesis?.finalTrafficLight === 'RED' ? 'text-red-600' : activeProjectSynthesis?.finalTrafficLight === 'YELLOW' ? 'text-amber-600' : activeProjectSynthesis?.finalTrafficLight === 'GREEN' ? 'text-green-600' : 'text-muted-foreground'}`}>
+                            {activeProjectSynthesis?.finalTrafficLight === 'RED' ? `⚠ ${activeProjectSynthesis.redFlags.length} red flags` : activeProjectSynthesis?.finalTrafficLight === 'YELLOW' ? `△ ${activeProjectSynthesis.yellowFlags?.length ?? 0} cautions` : activeProjectSynthesis?.finalTrafficLight === 'GREEN' ? '✓ Low risk' : '— Pending'}
+                        </span>
+                        {(() => {
+                            const facts = hydratedDealModel.documentedFactsJson ? (() => { try { return JSON.parse(hydratedDealModel.documentedFactsJson) } catch { return {} } })() : {}
+                            const ebitda = typeof facts.ebitda_sde?.value === 'number' ? facts.ebitda_sde.value : null
+                            const revenue = typeof facts.revenue?.value === 'number' ? facts.revenue.value : null
+                            const price = hydratedDealModel.purchasePrice ?? hydratedDealModel.askingPrice
+                            const entryMult = price && ebitda && ebitda > 0 ? (price / ebitda).toFixed(1) + 'x' : null
+                            const margin = revenue && ebitda && revenue > 0 ? ((ebitda / revenue) * 100).toFixed(0) + '%' : null
+                            return <>
+                                {entryMult && <><span className="text-muted-foreground">|</span><span className="text-foreground">Entry: <span className="font-semibold">{entryMult}</span></span></>}
+                                {margin && <><span className="text-muted-foreground">|</span><span className="text-foreground">Margin: <span className="font-semibold">{margin}</span></span></>}
+                            </>
+                        })()}
+                        <span className="text-muted-foreground">|</span>
+                        <span className="text-foreground">Docs: <span className="font-semibold">{activeProjectDocuments.length}</span></span>
+                        {activeProjectSynthesis && <><span className="text-muted-foreground">|</span><span className="text-foreground">Quality: <span className="font-semibold">{activeProjectSynthesis.aiConfidence || '—'}</span></span></>}
+                    </div>
+                )}
                 <DealWorkspaceNav activeTab={activeWorkspaceTab} onTabChange={setActiveWorkspaceTab} />
 
                 {activeWorkspaceTab === 'overview' ? <section id="deal-overview" className="space-y-6 scroll-mt-6">
                     <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div className="flex items-center gap-1 rounded-lg border border-border bg-card/80 p-1 w-fit">
-                            <button
-                                onClick={() => setOverviewSubTab('summary')}
-                                className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${overviewSubTab === 'summary' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
-                            >
-                                Summary
-                            </button>
-                            <button
-                                onClick={() => setOverviewSubTab('analysis')}
-                                className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${overviewSubTab === 'analysis' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
-                            >
-                                Deep Analysis
-                            </button>
-                        </div>
                         <button
                             onClick={() => document.querySelector('[data-project-intake]')?.scrollIntoView({ behavior: 'smooth' })}
                             className="flex items-center gap-1.5 rounded-md border border-border bg-card/80 px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
@@ -1556,117 +1590,22 @@ export default function DueDiligenceDashboard() {
                     </div>
                     <DealSummaryBanner model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
 
-                    {overviewSubTab === 'summary' && <>
-                        <Suspense fallback={null}>
-                            <DealMemoView model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} documents={activeProjectDocuments} />
-                        </Suspense>
-                        <DealHealthKPIs
-                            synthesis={activeProjectSynthesis}
-                            model={hydratedDealModel}
-                            impact={activeProjectImpact}
-                            documentsCount={activeProjectDocuments.length}
-                        />
-                        <DealGradeCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
-                        <DealAnalysisScoresCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
-                        <DealStatsGridCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
-                        <QuickValuationCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
-                        <DealRadarCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documentsCount={activeProjectDocuments.length} />
-                        <DealActionItemsCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} />
-                    </>}
+                    <Suspense fallback={null}>
+                        <DealMemoView model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} documents={activeProjectDocuments} />
+                    </Suspense>
+                    <DealHealthKPIs
+                        synthesis={activeProjectSynthesis}
+                        model={hydratedDealModel}
+                        impact={activeProjectImpact}
+                        documentsCount={activeProjectDocuments.length}
+                    />
+                    <DealGradeCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
+                    <DealAnalysisScoresCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
+                    <DealStatsGridCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
+                    <QuickValuationCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
+                    <DealRadarCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documentsCount={activeProjectDocuments.length} />
+                    <DealActionItemsCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} />
 
-                    {/* DEEP ANALYSIS SUB-TAB */}
-                    {overviewSubTab === 'analysis' && <>
-                        <Suspense fallback={null}>
-                        <BusinessSnapshotCard model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
-                        <OpportunityScoreCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
-                        <RiskAdjustedValuationCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
-                        </Suspense>
-                        <NextActionsCard
-                            model={hydratedDealModel}
-                            synthesis={activeProjectSynthesis}
-                            documents={activeProjectDocuments}
-                            onNavigate={(target) => {
-                                if (target === 'upload') {
-                                    document.querySelector('[data-project-intake]')?.scrollIntoView({ behavior: 'smooth' })
-                                } else {
-                                    setActiveWorkspaceTab(target as WorkspaceTab)
-                                }
-                            }}
-                        />
-                        <DealReadinessGauge
-                            model={hydratedDealModel}
-                            synthesis={activeProjectSynthesis}
-                            documentsCount={activeProjectDocuments.length}
-                            completedDocuments={activeProjectImpact.completedDocuments}
-                        />
-                        <DocumentCoverageMatrix documents={activeProjectDocuments} />
-                        <DealScorecard
-                            model={hydratedDealModel}
-                            synthesis={activeProjectSynthesis}
-                            impact={activeProjectImpact}
-                            documentsCount={activeProjectDocuments.length}
-                        />
-                        <DealRulesOfThumb model={hydratedDealModel} />
-                        <ConfidenceMeterCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} />
-                        <FinancialHealthCard model={hydratedDealModel} />
-                        <BenchmarkComparisonCard model={hydratedDealModel} />
-                        <Suspense fallback={null}><AssumptionGapsCard model={hydratedDealModel} /></Suspense>
-                        <WhatsMissingCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} />
-                        <Suspense fallback={null}><MarketCompsCard model={hydratedDealModel} /></Suspense>
-                        <Suspense fallback={null}>
-                        <FinancingScenariosCard model={hydratedDealModel} />
-                        <InvestmentMetricsCard model={hydratedDealModel} />
-                        <IndustryPercentileCard model={hydratedDealModel} />
-                        <DealTypeAnalysisCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
-                        <DealFitCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
-                        <AssetCompositionCard model={hydratedDealModel} />
-                        <ValuationGapCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
-                        <CashOnCashCalculatorCard model={hydratedDealModel} />
-                        <BusinessValueEvolutionCard model={hydratedDealModel} />
-                        <RevenueBridgeCard model={hydratedDealModel} />
-                        <BaseReturnMetricsCard model={hydratedDealModel} />
-                        <GrowthSensitivityCard model={hydratedDealModel} />
-                        <MonteCarloCard model={hydratedDealModel} />
-                        <BreakevenAnalysisCard model={hydratedDealModel} />
-                        </Suspense>
-
-                        <Suspense fallback={null}>
-                            <div className="border-t border-border pt-4">
-                                <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Analysis & Insights</h3>
-                            </div>
-                            <DealQuickInsights model={hydratedDealModel} synthesis={activeProjectSynthesis} />
-                            <InvestmentThesisCard model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
-                            <DecisionFrameworkCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
-                            <StrengthsWeaknessesCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
-
-                            <div className="border-t border-border pt-4">
-                                <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Risk Assessment</h3>
-                            </div>
-                            <RiskSummaryCard synthesis={activeProjectSynthesis} />
-                            <RiskMatrixCard synthesis={activeProjectSynthesis} />
-                            <KeyPersonRiskCard synthesis={activeProjectSynthesis} />
-                            <OwnerDependencyCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
-
-                            <div className="border-t border-border pt-4">
-                                <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Negotiation & Closing</h3>
-                            </div>
-                            <TimeToCloseCard
-                                documentsCount={activeProjectDocuments.length}
-                                completedDocuments={activeProjectDocuments.filter(d => d.status === 'completed').length}
-                                hasSynthesis={!!activeProjectSynthesis}
-                                hasValuation={!!activeProjectSynthesis?.valuationBaseEstimate && activeProjectSynthesis.valuationBaseEstimate !== '0'}
-                                hasFinancing={hydratedDealModel.equityContributionPercent != null}
-                            />
-                            <ClosingChecklistCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} />
-                            <SellerQuestionsCard synthesis={activeProjectSynthesis} model={hydratedDealModel} />
-                            <NegotiationPlaybook synthesis={activeProjectSynthesis} model={hydratedDealModel} />
-                            <NegotiationImpactCard model={hydratedDealModel} />
-                            <TermSheetCard model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
-                            <DDRequestListCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} projectName={dealName || suggestedProjectName} />
-                            <DealEmailDraftCard model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
-                        </Suspense>
-                        <ActivityFeed documents={activeProjectDocuments} />
-                    </>}
                     {projectSummaries.length > 1 && (
                         <ProjectComparisonCard
                             projects={projectSummaries.map(ps => ({
@@ -1736,11 +1675,115 @@ export default function DueDiligenceDashboard() {
                     <Suspense fallback={null}><WhatsNewCard /></Suspense>
                 </section> : null}
 
+                {activeWorkspaceTab === 'analysis' ? <section id="deal-analysis" className="space-y-6 scroll-mt-6">
+                    <Suspense fallback={null}>
+                        <DealOnAPageCard model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
+                        <DealScorecardExportCard model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
+                        <BusinessSnapshotCard model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
+                        <OpportunityScoreCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
+                        <RiskAdjustedValuationCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
+                    </Suspense>
+                    <NextActionsCard
+                        model={hydratedDealModel}
+                        synthesis={activeProjectSynthesis}
+                        documents={activeProjectDocuments}
+                        onNavigate={(target) => {
+                            if (target === 'upload') {
+                                document.querySelector('[data-project-intake]')?.scrollIntoView({ behavior: 'smooth' })
+                            } else {
+                                setActiveWorkspaceTab(target as WorkspaceTab)
+                            }
+                        }}
+                    />
+                    <DealReadinessGauge
+                        model={hydratedDealModel}
+                        synthesis={activeProjectSynthesis}
+                        documentsCount={activeProjectDocuments.length}
+                        completedDocuments={activeProjectImpact.completedDocuments}
+                    />
+                    <DocumentCoverageMatrix documents={activeProjectDocuments} />
+                    <DealScorecard
+                        model={hydratedDealModel}
+                        synthesis={activeProjectSynthesis}
+                        impact={activeProjectImpact}
+                        documentsCount={activeProjectDocuments.length}
+                    />
+                    <DealRulesOfThumb model={hydratedDealModel} />
+                    <ConfidenceMeterCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} />
+                    <FinancialHealthCard model={hydratedDealModel} />
+                    <EBITDAQualityScoreCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
+                    <BenchmarkComparisonCard model={hydratedDealModel} />
+                    <MarketPositionCard model={hydratedDealModel} />
+                    <Suspense fallback={null}><AssumptionGapsCard model={hydratedDealModel} /></Suspense>
+                    <WhatsMissingCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} />
+                    <Suspense fallback={null}><MarketCompsCard model={hydratedDealModel} /></Suspense>
+                    <Suspense fallback={null}>
+                        <FinancingScenariosCard model={hydratedDealModel} />
+                        <InvestmentMetricsCard model={hydratedDealModel} />
+                        <IndustryPercentileCard model={hydratedDealModel} />
+                        <DealTypeAnalysisCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
+                        <DealFitCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
+                        <AssetCompositionCard model={hydratedDealModel} />
+                        <ValuationGapCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
+                        <CashOnCashCalculatorCard model={hydratedDealModel} />
+                        <BusinessValueEvolutionCard model={hydratedDealModel} />
+                        <RevenueBridgeCard model={hydratedDealModel} />
+                        <BaseReturnMetricsCard model={hydratedDealModel} />
+                        <GrowthSensitivityCard model={hydratedDealModel} />
+                        <MonteCarloCard model={hydratedDealModel} />
+                        <BreakevenAnalysisCard model={hydratedDealModel} />
+                    </Suspense>
+
+                    <Suspense fallback={null}>
+                        <div className="border-t border-border pt-4">
+                            <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Analysis & Insights</h3>
+                        </div>
+                        <DealQuickInsights model={hydratedDealModel} synthesis={activeProjectSynthesis} />
+                        <InvestmentThesisCard model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
+                        <DecisionFrameworkCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
+                        <QuickWinsCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
+                        <StrengthsWeaknessesCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
+
+                        <div className="border-t border-border pt-4">
+                            <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Risk Assessment</h3>
+                        </div>
+                        <RiskSummaryCard synthesis={activeProjectSynthesis} />
+                        <RiskMatrixCard synthesis={activeProjectSynthesis} />
+                        <KeyPersonRiskCard synthesis={activeProjectSynthesis} />
+                        <OwnerDependencyCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
+                        <DiligenceCompletenessCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documentCount={activeProjectDocuments.length} />
+                        <RiskRewardScatterCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
+                        <DealKillerCheckCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
+
+                        <div className="border-t border-border pt-4">
+                            <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Negotiation & Closing</h3>
+                        </div>
+                        <TimeToCloseCard
+                            documentsCount={activeProjectDocuments.length}
+                            completedDocuments={activeProjectDocuments.filter(d => d.status === 'completed').length}
+                            hasSynthesis={!!activeProjectSynthesis}
+                            hasValuation={!!activeProjectSynthesis?.valuationBaseEstimate && activeProjectSynthesis.valuationBaseEstimate !== '0'}
+                            hasFinancing={hydratedDealModel.equityContributionPercent != null}
+                        />
+                        <ClosingChecklistCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} />
+                        <SellerQuestionsCard synthesis={activeProjectSynthesis} model={hydratedDealModel} />
+                        <NegotiationPlaybook synthesis={activeProjectSynthesis} model={hydratedDealModel} />
+                        <NegotiationImpactCard model={hydratedDealModel} />
+                        <DealTimingCard model={hydratedDealModel} />
+                        <AcquisitionTimelineCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
+                        <InvestorReadinessCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documentCount={activeProjectDocuments.length} />
+                        <TermSheetCard model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
+                        <DDRequestListCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} projectName={dealName || suggestedProjectName} />
+                        <DealEmailDraftCard model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
+                    </Suspense>
+                    <ActivityFeed documents={activeProjectDocuments} />
+                </section> : null}
+
                 <Suspense fallback={<div className="flex items-center justify-center gap-2 rounded-lg border border-border bg-muted/20 p-8"><Loader2 className="h-5 w-5 animate-spin text-primary" /><span className="text-sm text-muted-foreground">Loading tab…</span></div>}>
-                    {activeWorkspaceTab === 'valuation' ? <section className="space-y-6"><ModelAssumptionsSummary model={hydratedDealModel} area="valuation" /><DealValuationCard synthesis={activeProjectSynthesis} askingPrice={askingPrice} model={hydratedDealModel} onModelChange={handleDealModelChange} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><Suspense fallback={null}><ValuationGapCard model={hydratedDealModel} synthesis={activeProjectSynthesis} /></Suspense><SensitivityAnalysisCard model={hydratedDealModel} /><MathChecksSection documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} compact title="Data integrity checks" description="Verifies the financial numbers feeding into valuation methods." /></section> : null}
-                    {activeWorkspaceTab === 'returns' ? <section className="space-y-6"><ModelAssumptionsSummary model={activeDealModel} area="returns" /><ReturnsDecisionSummary model={returnsDisplayModel} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<AllCashReturnsCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<FinancedReturnsCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<FinancedScenarioComparisonCard model={returnsDisplayModel} /><Suspense fallback={null}><BaseReturnMetricsCard model={returnsDisplayModel} /><CashOnCashCalculatorCard model={returnsDisplayModel} /><MonteCarloCard model={returnsDisplayModel} /><BreakevenAnalysisCard model={returnsDisplayModel} /><PaybackTimelineCard model={returnsDisplayModel} /></Suspense><SensitivityAnalysisCard model={returnsDisplayModel} /><HoldPeriodSensitivity model={returnsDisplayModel} /><MathChecksSection documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} compact title="Input data checks" description="Verifies EBITDA and revenue figures used in returns calculations." /><DealModelPendingCard area="returns" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
-                    {activeWorkspaceTab === 'growth' ? <section className="space-y-6"><ModelAssumptionsSummary model={activeDealModel} area="growth" />{isGrowthIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<GrowthDecisionSummary model={returnsDisplayModel} /><ScenarioComparisonCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><EbitdaProjectionCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><Suspense fallback={null}><BusinessValueEvolutionCard model={returnsDisplayModel} /><RevenueBridgeCard model={returnsDisplayModel} /><GrowthSensitivityCard model={returnsDisplayModel} /></Suspense><MathChecksSection documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} compact title="Revenue & margin checks" description="Verifies starting revenue and margin figures used in growth projections." /><DealModelPendingCard area="growth" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
-                    {activeWorkspaceTab === 'structure' ? <section className="space-y-6"><ModelAssumptionsSummary model={activeDealModel} area="structure" /><DealStructureVisualCard model={hydratedDealModel} onOpenEvidence={setActiveEvidence} /><Suspense fallback={null}><DealStackCard model={hydratedDealModel} /></Suspense><DealModelPendingCard area="structure" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
+                    {activeWorkspaceTab === 'valuation' ? <section className="space-y-6"><ModelAssumptionsSummary model={hydratedDealModel} area="valuation" /><DealValuationCard synthesis={activeProjectSynthesis} askingPrice={askingPrice} model={hydratedDealModel} onModelChange={handleDealModelChange} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><Suspense fallback={null}><ValuationGapCard model={hydratedDealModel} synthesis={activeProjectSynthesis} /><ComparableTransactionsCard model={hydratedDealModel} /></Suspense><SensitivityAnalysisCard model={hydratedDealModel} /><MathChecksSection documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} compact title="Data integrity checks" description="Verifies the financial numbers feeding into valuation methods." /></section> : null}
+                    {activeWorkspaceTab === 'returns' ? <section className="space-y-6"><ModelAssumptionsSummary model={activeDealModel} area="returns" /><ReturnsDecisionSummary model={returnsDisplayModel} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<AllCashReturnsCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<FinancedReturnsCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<FinancedScenarioComparisonCard model={returnsDisplayModel} /><Suspense fallback={null}><BaseReturnMetricsCard model={returnsDisplayModel} /><CashOnCashCalculatorCard model={returnsDisplayModel} /><MonteCarloCard model={returnsDisplayModel} /><BreakevenAnalysisCard model={returnsDisplayModel} /><PaybackTimelineCard model={returnsDisplayModel} /><AnnualCashFlowCard model={returnsDisplayModel} /><DebtServiceCoverageCard model={returnsDisplayModel} /><WeeklyProjectionCard model={returnsDisplayModel} /><SensitivityRankingCard model={returnsDisplayModel} /><WhatIfScenariosCard model={returnsDisplayModel} /></Suspense><SensitivityAnalysisCard model={returnsDisplayModel} /><HoldPeriodSensitivity model={returnsDisplayModel} /><MathChecksSection documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} compact title="Input data checks" description="Verifies EBITDA and revenue figures used in returns calculations." /><DealModelPendingCard area="returns" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
+                    {activeWorkspaceTab === 'growth' ? <section className="space-y-6"><ModelAssumptionsSummary model={activeDealModel} area="growth" />{isGrowthIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<GrowthDecisionSummary model={returnsDisplayModel} /><ScenarioComparisonCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><EbitdaProjectionCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><Suspense fallback={null}><BusinessValueEvolutionCard model={returnsDisplayModel} /><RevenueBridgeCard model={returnsDisplayModel} /><GrowthSensitivityCard model={returnsDisplayModel} /><ExitReadinessCard model={returnsDisplayModel} synthesis={activeProjectSynthesis} /><ValueCreationPlanCard model={returnsDisplayModel} /><First100DaysCard model={returnsDisplayModel} synthesis={activeProjectSynthesis} /><KeyMetricsTrendCard model={returnsDisplayModel} /></Suspense><MathChecksSection documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} compact title="Revenue & margin checks" description="Verifies starting revenue and margin figures used in growth projections." /><DealModelPendingCard area="growth" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
+                    {activeWorkspaceTab === 'structure' ? <section className="space-y-6"><ModelAssumptionsSummary model={activeDealModel} area="structure" /><DealStructureVisualCard model={hydratedDealModel} onOpenEvidence={setActiveEvidence} /><Suspense fallback={null}><DealStackCard model={hydratedDealModel} /><LeverageSafetyCard model={hydratedDealModel} /><DownsideProtectionCard model={hydratedDealModel} /><CashReserveAnalysisCard model={hydratedDealModel} /><FinancingComparisonCard model={hydratedDealModel} /></Suspense><DealModelPendingCard area="structure" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
 
                     {activeWorkspaceTab === 'diligence' ? <>
 
