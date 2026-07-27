@@ -67,8 +67,15 @@ Useful checks:
 
 ```sh
 npm run typecheck
+npm run test
 npm run build
 npm run preview
+```
+
+Or run typecheck, tests, and the production build together as one gate:
+
+```sh
+npm run check
 ```
 
 ## Configuration

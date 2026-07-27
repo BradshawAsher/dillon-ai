@@ -7,6 +7,12 @@ type TextValue = string | number | boolean | null | undefined
 type ProjectSynthesisRow = {
     projectId?: TextValue
     project_id?: TextValue
+    projectName?: TextValue
+    project_name?: TextValue
+    dealName?: TextValue
+    deal_name?: TextValue
+    companyName?: TextValue
+    company_name?: TextValue
     projectStatus?: TextValue
     project_status?: TextValue
     documentsReceivedCount?: number | string | null
@@ -94,6 +100,10 @@ export type ProjectStructuredFindingGroups = {
 
 export type ProjectSynthesisItem = {
     projectId: string
+    /** Human-readable project/deal name, when the workflow supplies one. */
+    projectName?: string
+    /** Target company name, when the workflow supplies one. */
+    companyName?: string
     projectStatus: string
     documentsReceivedCount: number
     documentsCompletedCount: number
@@ -558,6 +568,8 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
 
             return {
                 projectId: getFirstStringValue([row.projectId, row.project_id]),
+                projectName: getFirstStringValue([row.projectName, row.project_name, row.dealName, row.deal_name]) || undefined,
+                companyName: getFirstStringValue([row.companyName, row.company_name]) || undefined,
                 projectStatus: getFirstStringValue([row.projectStatus, row.project_status]),
                 documentsReceivedCount: getFirstNumberValue([row.documentsReceivedCount, row.documents_received_count]),
                 documentsCompletedCount: getFirstNumberValue([row.documentsCompletedCount, row.documents_completed_count]),

@@ -1,5 +1,10 @@
+import ErrorBoundary from './components/ErrorBoundary'
 import DueDiligenceDashboard from './pages/DueDiligenceDashboard'
 
 export default function App() {
-  return <DueDiligenceDashboard />
+  return (
+    <ErrorBoundary label="dashboard">
+      <DueDiligenceDashboard />
+    </ErrorBoundary>
+  )
 }
