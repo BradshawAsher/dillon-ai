@@ -65,6 +65,7 @@ Before closing any `[-]` item, verify it against a **new live n8n run**, not exa
 
 - Can we make the basic LLM chains in robust per document ai analysis workflow and the subworkflow project wide consolidator workflow into AI Agent nodes instead? Would this be good or bad? Can we do this for my resume or would this be a bad idea in the cost perspective?
 - For the chat assistant workflow, should we add a tool to get the n8n rows or does it already do this in teh frontend?
+- Just continue playing around the website and see what else can be done/fixed
 
 - [x] Make takeaways shorter and easier to scan. Project insight lists now collapse long items earlier, while document-level thesis cards show a concise first-sentence preview and open the full evidence on click.
 - [x] Make the project synthesis/doc-counter handoff asynchronous. The counter now writes `synthesis_pending`, starts the consolidator without waiting, and returns document completion immediately; validate one production batch after this change.
