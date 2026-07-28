@@ -14,6 +14,7 @@
   - Slack Alerts : A "Stuck Document Watchdog" monitors error logs and project processing. It sends Slack alerts to #pod-1-agent-alerts for repeated failures (e.g., three uncaught failures in 30 minutes for the same workflow) or documents stuck for more than 60 minutes. Alerts are deduplicated for one hour to prevent fatigue. How do they intervene?
 - Retrying Documents : Users can retry failed documents directly from the dashboard, which re-runs the workflow using the original submission metadata.
 - Automated Watchdog : The "Stuck Document Watchdog" automatically identifies and re-runs processing for Drive-backed documents that become stuck for over 30 minutes.
+- Per-section Crash Isolation : New `SafeSuspense.tsx` pairs an ErrorBoundary with Suspense, applied to analysis snapshot and lazy card groups. One card failing now degrades to a local retry instead of blanking the app.
 - Error Review : Uncaught production failures are recorded by the "Workflow Error Audit" and are accessible for safe internal review via the dashboard's "Errors" tab.
 - n8n Debugging Guidance : Documentation provides guidance ( docs/HOW_TO_RUN.md ) on comparing active workflows against known-good version history for debugging failures in n8n. What does each run cost?
 - CostPerRunCard : The CostPerRunCard on the dashboard's Overview section displays estimated costs:
@@ -22,6 +23,7 @@
   - $0.02 per chat message (for Anthropic Claude pricing).
   - The card also shows estimated per-doc ( [ o bj ec tO bj ec t ] 0.08 ) an d p er − sy n t h es i s ( 0.15) costs for GPT-4o token-based estimates, with a note that these are pending real API key usage tracking.
 - Impact Metrics : The system tracks agentMinutes , analystHours , timeSavedHours , and avgConfidence to provide insights into efficiency and cost savings.
+
 ### 2. Cost optimization — what did you do, and what was the $/run delta?
 - Model Routing Change : The consolidator workflow was intentionally kept as an LLM Chain (not converted to an AI Agent) to avoid a 30-50% cost increase, as agents involve multiple LLM calls. The Chat Assistant, however, was converted to an agent.
 - Prompt Caching : There is no explicit mention of prompt caching in the provided context.
@@ -32,8 +34,10 @@
     - Project synthesis: [ o bj ec tO bj ec t ] 0.12 ( A n t h ro p i c Cl a u d e ) or 0.15 (GPT-4o token-based estimate).
     - Chat message: $0.02 (Anthropic Claude).
   - Implicit Cost Saving : By not converting the consolidator to an agent, a potential 30-50% cost increase for that specific workflow was avoided. "Before" numbers for current setup are not explicitly compared to a prior (more expensive) implementation, but rather to a more expensive alternative that was considered.
+
 ### 3. Business interest form — share your draft or link
 - https://mergeworks-dashboard.onrender.com/feedback/beta-feedback-financial-dd.html
+
 ### 4. UX dashboard sketch — share the link or describe it
 The Mergeworks Due Diligence Dashboard is designed as a diligence partner , moving beyond simple file parsing to provide actionable insights. The UX prioritizes a project-centric view, with a focus on progressive disclosure of information and evidence-backed findings.
 
@@ -74,8 +78,9 @@ The dashboard's design emphasizes leading with key decisions, progressively disc
 - Many features like "Public-web enrichment", "Email/Slack automation", "API gateway evaluation", and further "Visual polish" are implicitly blocked by time or prioritization, reserved for later stages. Other High-Priority TODOs
 - Stuck-job Watchdog : A scheduled workflow to detect and retry documents/projects stuck in processing states is a high-priority, unimplemented item for robustness.
 - Submission Compensation : A mechanism to ensure clear recoverable states if Drive upload succeeds but database write fails, or vice-versa, is critical for data integrity.
+
 ### 6. Any other notes for Trisha + Maple?
-- Frontend Stability and Enhancements : The frontend has seen continued refinement. A recent bug where projects were not loading despite data isolation being off was identified and seems to have resolved itself after a fresh development server restart. UI improvements have also been implemented, including making the "Data Isolation" and "Sign In" buttons more prominent for better user experience.
+- Frontend Stability and Enhancements : The frontend has seen continued refinement, including fixed TypeScript regressions, per-section crash isolation (`SafeSuspense.tsx`), loading skeletons for lazy cards, new tests for `documentedFacts` and `projectWorkspace`, correctness/consistency fixes in scorecards, improved SEO/mobile metadata, and radar chart accessibility. UI improvements have also been implemented, including making the "Data Isolation" and "Sign In" buttons more prominent for better user experience.
 - Production Readiness : A detailed assessment of production readiness has been completed, outlining the system's resilience to missing inputs and API downtime, monitoring mechanisms (including Slack alerts for critical issues), intervention strategies, and transparent cost tracking for AI operations.
 - Cost Optimization : Strategic decisions have been made to optimize costs, such as retaining the consolidator workflow as an LLM Chain to avoid a 30-50% cost increase that would have resulted from converting it to a more agentic architecture. Per-run cost estimates for document analysis, synthesis, and chat messages are now available.
 - Key Blocking Items : While significant progress has been made, several items are currently blocking or are high-priority for future development, as detailed in point 5. These include resolving the n8n Shared Error Audit blockage, implementing a more robust API rate-limiting strategy, and refining the project portfolio data model.
