@@ -87,11 +87,11 @@ export default function DealHealthKPIs({ synthesis, model, impact, documentsCoun
     if (kpis.length === 0) return null
 
     return (
-        <Card className="overflow-hidden border-primary/20 bg-gradient-to-r from-primary/[0.03] to-transparent">
+        <Card className="dashboard-kpi-glass border-primary/20">
             <CardContent className="p-4">
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
                     {kpis.map((kpi) => (
-                        <div key={kpi.label} className="flex items-start gap-3">
+                        <div key={kpi.label} className="flex items-start gap-3 rounded-lg p-1 transition-transform duration-200 hover:scale-[1.02]">
                             <div className={`mt-0.5 rounded-lg p-2 ${
                                 kpi.variant === 'success' ? 'bg-success/10 text-success'
                                     : kpi.variant === 'warning' ? 'bg-warning/10 text-warning'

@@ -312,6 +312,12 @@ export const exampleSubmissionHistoryRows: SubmissionHistoryItem[] = [{
     projectId: 'atlas-001',
     projectStage: 'Post-LOI',
     documentType: 'Financial statements',
+    detectedDocumentType: 'P&L / income statement',
+    detectedDocumentTypesJson: JSON.stringify([
+        'P&L / income statement',
+        'Balance sheet',
+        'Customer concentration / revenue detail',
+    ]),
     fileName: 'northwind-q4-financials.pdf',
     fileSize: 482133,
     fileType: 'application/pdf',

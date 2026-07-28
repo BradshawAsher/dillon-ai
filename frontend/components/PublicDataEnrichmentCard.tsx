@@ -3,6 +3,7 @@ import { Globe, Search, RefreshCw, CheckCircle, Star, Users, Building, ShieldChe
 
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
+import ProvenanceBadge from './ProvenanceBadge'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
 
@@ -87,19 +88,25 @@ export default function PublicDataEnrichmentCard({ model, synthesis, projectName
     }
 
     return (
-        <Card className="overflow-hidden">
+        <Card className="overflow-hidden border-amber-500/20">
             <CardHeader className="border-b border-border bg-card/80 pb-3">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2">
                         <Globe className="h-5 w-5 text-primary" />
                         <CardTitle className="text-lg">Public & web intelligence enrichment</CardTitle>
                     </div>
-                    {enrichedData && (
-                        <Badge variant="outline" className="text-[10px] text-green-600 bg-green-500/10 border-green-500/30">
-                            Enriched {enrichedData.lastEnrichedAt}
-                        </Badge>
-                    )}
+                    <div className="flex flex-wrap items-center gap-2">
+                        <ProvenanceBadge provenance="Public web enrichment" status="estimated" />
+                        {enrichedData && (
+                            <Badge variant="outline" className="text-[10px] text-green-600 bg-green-500/10 border-green-500/30">
+                                Enriched {enrichedData.lastEnrichedAt}
+                            </Badge>
+                        )}
+                    </div>
                 </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                    Web-sourced signals are kept separate from uploaded-document evidence. Use them for context only — not as diligence proof.
+                </p>
             </CardHeader>
             <CardContent className="p-4 space-y-4">
                 {/* Search & Enrich bar */}

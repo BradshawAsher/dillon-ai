@@ -4,6 +4,7 @@ import { Check, Copy, ExternalLink, FileText, X } from 'lucide-react'
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
 import ExpandableText from './ExpandableText'
+import ProvenanceBadge from './ProvenanceBadge'
 import { driveEmbedUrl, getEvidenceStatusPresentation, type EvidenceItem, type MetricInput } from '../utils/evidence'
 
 // The canonical definition now lives in utils/evidence.ts; re-exported here so
@@ -171,11 +172,23 @@ export default function EvidenceDrawer({ evidence, onClose }: { evidence: Eviden
 
                 <div className="flex-1 space-y-5 overflow-y-auto p-5">
                     <div className="flex flex-wrap gap-2">
+                        <ProvenanceBadge
+                            provenance={evidence.provenance}
+                            status={evidence.status}
+                            formula={evidence.formula}
+                            documentUrl={evidence.documentUrl}
+                            documentId={evidence.documentId}
+                            sourceFile={evidence.sourceFile}
+                        />
                         <Badge variant={status.variant}>{status.label}</Badge>
                         {evidence.status && evidence.status.toLowerCase() !== status.label.toLowerCase() ? (
                             <Badge variant="outline">{evidence.status}</Badge>
                         ) : null}
-                        <Badge variant="secondary">{evidence.provenance || 'Evidence source'}</Badge>
+                        {evidence.provenance ? (
+                            <Badge variant="outline" className="max-w-[14rem] truncate" title={evidence.provenance}>
+                                {evidence.provenance}
+                            </Badge>
+                        ) : null}
                     </div>
 
                     <CalculationBreakdown formula={evidence.formula} inputs={evidence.inputs} />

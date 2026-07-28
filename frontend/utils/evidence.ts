@@ -111,6 +111,49 @@ export type EvidenceStatusPresentation = {
     variant: 'success' | 'warning' | 'destructive' | 'secondary' | 'outline'
 }
 
+export type ProvenanceCategory = 'document' | 'web' | 'calculated' | 'synthesized' | 'analyst' | 'unknown'
+
+export type ProvenanceCategoryPresentation = {
+    category: ProvenanceCategory
+    label: string
+    variant: 'success' | 'warning' | 'destructive' | 'secondary' | 'outline'
+}
+
+/** High-level origin badge: document upload vs web enrichment vs derived math. */
+export function getProvenanceCategory(args: {
+    provenance?: string
+    status?: string
+    formula?: string
+    documentUrl?: string
+    documentId?: string
+    sourceFile?: string
+}): ProvenanceCategoryPresentation {
+    const normalized = `${args.provenance ?? ''} ${args.status ?? ''}`.trim().toLowerCase()
+
+    if (/web|public|enrichment|domain|internet|online reputation/.test(normalized)) {
+        return { category: 'web', label: 'Web source', variant: 'outline' }
+    }
+    if (args.formula || /calculat|deterministic math|reconcil/.test(normalized)) {
+        return { category: 'calculated', label: 'Calculated', variant: 'secondary' }
+    }
+    if (/synthes|project synthesis|consolidat/.test(normalized)) {
+        return { category: 'synthesized', label: 'Synthesized', variant: 'secondary' }
+    }
+    if (/analyst|assumption|illustrative|preview|example/.test(normalized)) {
+        return { category: 'analyst', label: 'Analyst input', variant: 'warning' }
+    }
+    if (
+        args.documentUrl ||
+        args.documentId ||
+        (args.sourceFile && !/not returned|n\/a/.test(args.sourceFile.toLowerCase())) ||
+        /document|upload|extracted|extract/.test(normalized)
+    ) {
+        return { category: 'document', label: 'Document source', variant: 'success' }
+    }
+
+    return { category: 'unknown', label: 'Source unknown', variant: 'outline' }
+}
+
 /** One status vocabulary for facts, findings, and calculated metrics. */
 export function getEvidenceStatusPresentation(status?: string, provenance?: string): EvidenceStatusPresentation {
     const normalized = `${status ?? ''} ${provenance ?? ''}`.trim().toLowerCase()

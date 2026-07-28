@@ -5,6 +5,7 @@ import {
     driveEmbedUrl,
     findCitedDocument,
     getEvidenceStatusPresentation,
+    getProvenanceCategory,
     parseDocumentedFacts,
 } from './evidence'
 
@@ -58,6 +59,24 @@ describe('getEvidenceStatusPresentation', () => {
             label: 'Needs review',
             variant: 'outline',
         })
+    })
+})
+
+describe('getProvenanceCategory', () => {
+    it('labels web enrichment separately from documents', () => {
+        expect(getProvenanceCategory({ provenance: 'Public web enrichment' }).label).toBe('Web source')
+    })
+
+    it('labels calculated metrics from formula or provenance text', () => {
+        expect(getProvenanceCategory({ formula: 'MOIC = exit / equity' }).label).toBe('Calculated')
+        expect(getProvenanceCategory({ provenance: 'Deterministic math check' }).label).toBe('Calculated')
+    })
+
+    it('labels uploaded document citations as document source', () => {
+        expect(getProvenanceCategory({
+            provenance: 'Extracted from uploaded documents',
+            sourceFile: 'northwind-q4-financials.pdf',
+        }).label).toBe('Document source')
     })
 })
 

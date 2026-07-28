@@ -36,6 +36,7 @@ import DocumentCoverageMatrix from '../components/DocumentCoverageMatrix'
 import DealReadinessGauge from '../components/DealReadinessGauge'
 import DealScorecard from '../components/DealScorecard'
 import NegotiationPlaybook from '../components/NegotiationPlaybook'
+import AlertRulesCard from '../components/AlertRulesCard'
 import DealRulesOfThumb from '../components/DealRulesOfThumb'
 import DealGradeCard from '../components/DealGradeCard'
 import DealAnalysisScoresCard from '../components/DealAnalysisScoresCard'
@@ -1379,7 +1380,7 @@ export default function DueDiligenceDashboard() {
 
     return (
         <div className="min-h-screen bg-background text-foreground">
-            <header className="border-b border-border bg-card">
+            <header className="dashboard-header-mesh">
                 <div className="mx-auto flex max-w-[1440px] flex-col gap-4 px-4 py-5 sm:px-6 lg:flex-row lg:items-start lg:justify-between lg:px-8">
                     <div className="space-y-2">
                         <p className="text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
@@ -1568,7 +1569,7 @@ export default function DueDiligenceDashboard() {
                 ) : null}
 
                 {activeProjectId && (
-                    <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-card/80 px-4 py-2 text-xs print:hidden">
+                    <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border/80 bg-card/75 px-4 py-2 text-xs shadow-sm backdrop-blur-md transition-shadow duration-200 hover:shadow-md print:hidden">
                         <span className="font-medium text-foreground truncate max-w-[200px]">{dealName || suggestedProjectName}</span>
                         <span className="text-muted-foreground">|</span>
                         <span className={`font-medium ${activeProjectSynthesis?.finalTrafficLight === 'RED' ? 'text-red-600' : activeProjectSynthesis?.finalTrafficLight === 'YELLOW' ? 'text-amber-600' : activeProjectSynthesis?.finalTrafficLight === 'GREEN' ? 'text-green-600' : 'text-muted-foreground'}`}>
@@ -1786,6 +1787,7 @@ export default function DueDiligenceDashboard() {
                         <ClosingChecklistCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} />
                         <SellerQuestionsCard synthesis={activeProjectSynthesis} model={hydratedDealModel} />
                         <NegotiationPlaybook synthesis={activeProjectSynthesis} model={hydratedDealModel} />
+                        <AlertRulesCard synthesis={activeProjectSynthesis ?? undefined} />
                         <NegotiationImpactCard model={hydratedDealModel} />
                         <DealTimingCard model={hydratedDealModel} />
                         <AcquisitionTimelineCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
