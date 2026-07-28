@@ -18,10 +18,10 @@
 - Error Review : Uncaught production failures are recorded by the "Workflow Error Audit" and are accessible for safe internal review via the dashboard's "Errors" tab.
 - n8n Debugging Guidance : Documentation provides guidance ( docs/HOW_TO_RUN.md ) on comparing active workflows against known-good version history for debugging failures in n8n. What does each run cost?
 - CostPerRunCard : The CostPerRunCard on the dashboard's Overview section displays estimated costs:
-  - $0.06 per document analysis.
-  - $0.12 per synthesis run.
-  - $0.02 per chat message (for Anthropic Claude pricing).
-  - The card also shows estimated per-doc ( [ o bj ec tO bj ec t ] 0.08 ) an d p er − sy n t h es i s ( 0.15) costs for GPT-4o token-based estimates, with a note that these are pending real API key usage tracking.
+  - $0.06 per document analysis (Anthropic Claude).
+  - $0.12 per synthesis run (Anthropic Claude).
+  - $0.02 per chat message (Anthropic Claude).
+  - Note: These are Anthropic Claude token-based estimates, pending real API key usage tracking.
 - Impact Metrics : The system tracks agentMinutes , analystHours , timeSavedHours , and avgConfidence to provide insights into efficiency and cost savings.
 
 ### 2. Cost optimization — what did you do, and what was the $/run delta?
@@ -30,8 +30,8 @@
 - Batching : While batch document upload is supported for user input, there's no explicit information about LLM API call batching for cost optimization.
 - $/run delta (Numbers: before vs after) :
   - Current estimated costs :
-    - Document analysis: [ o bj ec tO bj ec t ] 0.06 ( A n t h ro p i c Cl a u d e ) or 0.08 (GPT-4o token-based estimate).
-    - Project synthesis: [ o bj ec tO bj ec t ] 0.12 ( A n t h ro p i c Cl a u d e ) or 0.15 (GPT-4o token-based estimate).
+    - Document analysis: $0.06 (Anthropic Claude).
+    - Project synthesis: $0.12 (Anthropic Claude).
     - Chat message: $0.02 (Anthropic Claude).
   - Implicit Cost Saving : By not converting the consolidator to an agent, a potential 30-50% cost increase for that specific workflow was avoided. "Before" numbers for current setup are not explicitly compared to a prior (more expensive) implementation, but rather to a more expensive alternative that was considered.
 
@@ -39,6 +39,9 @@
 - https://mergeworks-dashboard.onrender.com/feedback/beta-feedback-financial-dd.html
 
 ### 4. UX dashboard sketch — share the link or describe it
+
+https://due-diligence-dashboard.vercel.app/
+
 The Mergeworks Due Diligence Dashboard is designed as a diligence partner , moving beyond simple file parsing to provide actionable insights. The UX prioritizes a project-centric view, with a focus on progressive disclosure of information and evidence-backed findings.
 
 Key UI Elements & What a Business Owner Sees:
@@ -62,20 +65,34 @@ Key UI Elements & What a Business Owner Sees:
   - Acquisition Timeline, Risk vs. Reward Scatter, Quick Wins, Downside Protection, Cash Reserve Analysis, Investor/Lender Readiness Cards : Offer specialized views and analytical tools for different aspects of due diligence.
 The dashboard's design emphasizes leading with key decisions, progressively disclosing details, and ensuring every metric is explainable and linked to evidence, providing a comprehensive and auditable view for business owners.
 
-### 5. What's BLOCKING you? Credential/API Limits
+### 5. What's BLOCKING you?
+
+#### Budget/Resource Constraints (Most Important)
+- AI Usage Credits: The team is facing a bottleneck with AI usage credits. Brad has exhausted his $200 AWS Bedrock free trial for Claude and $100 from Codex for students. Srijan and Yaswant are likely facing similar constraints, which may slow down development and testing that relies on agentic AI features.
+
+#### Credential/API Limits
+- API Usage/Spending Visibility: The team is unable to see API usage or spending, as they do not have access to the Anthropic account that owns the Pod 1 credential. This blocks cost monitoring and budget management.
 - n8n Shared Error Audit Workflow : Currently blocked due to an n8n server-side SQLite schema error, preventing the attachment of a centralized, robust error handling mechanism.
 - Rate-limiting & Backoff Policy : While a 10-second cooldown on submits is implemented, a more comprehensive rate-limit/backoff policy is needed for 429/5xx provider failures to prevent hitting API limits under high load. Architecture Decisions/Technical Limitations
+
+#### Architecture Decisions/Technical Limitations
 - Evidence Drawer Auto-highlighting : The Evidence Drawer cannot yet reliably auto-highlight exact page/cell locations across all file types, impacting precision.
 - Project Portfolio Data Model : The project portfolio is currently inferred from document history, lacking a dedicated, more robust project table for advanced management.
 - Frontend-only Project Synthesis Bridge : Current project synthesis relies on a "frontend-only bridge," indicating that a more robust, backend-driven architecture is a future step.
 - Consolidator Workflow Design : Keeping the consolidator as an LLM Chain (rather than an AI Agent) was a cost-driven decision, potentially limiting future tool use or "agentic" architectural flexibility for this component.
 - Backend Authentication : While local authentication is functional, integration with a production-grade backend authentication system is a future requirement.
 - Polling for Progress Updates : The current polling mechanism for progress updates could become a UX or scaling problem, suggesting a future need for WebSocket or event-driven updates. Data Quality/Model Assurance (Known Follow-ups)
+
+#### Data Quality/Model Assurance (Known Follow-ups)
 - Inconsistent Percentage Handling : Inconsistent handling of equityContributionPercent (whole percent vs. fraction) in DealStackCard.tsx and CashOnCashCalculatorCard.tsx needs reconciliation.
 - Validation of Reconciliation : Live validation is pending for n8n reconciliation flags (e.g., scale errors, conflicting facts, implausible EBITDA margins).
 - Project-level Reconciliation Review : This feature is implemented but requires live validation.
 - Mixed/Multi-sheet Spreadsheet Uploads : Testing and validation are needed for complex spreadsheet uploads. Time/Resource Constraints
+
+#### Time/Resource Constraints
 - Many features like "Public-web enrichment", "Email/Slack automation", "API gateway evaluation", and further "Visual polish" are implicitly blocked by time or prioritization, reserved for later stages. Other High-Priority TODOs
+
+#### Other High-Priority TODOs
 - Stuck-job Watchdog : A scheduled workflow to detect and retry documents/projects stuck in processing states is a high-priority, unimplemented item for robustness.
 - Submission Compensation : A mechanism to ensure clear recoverable states if Drive upload succeeds but database write fails, or vice-versa, is critical for data integrity.
 
