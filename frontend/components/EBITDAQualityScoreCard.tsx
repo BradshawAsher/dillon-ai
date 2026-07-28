@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 
 type Props = {
     model: DealModel
-    synthesis: ProjectSynthesisItem | null
+    synthesis?: ProjectSynthesisItem | null
 }
 
 type QualityDimension = {
@@ -19,6 +19,9 @@ type QualityDimension = {
 }
 
 function getGrade(totalScore: number, maxScore: number): { grade: string; color: string } {
+    // No scored dimensions means there's nothing to grade — avoid 0/0 = NaN
+    // silently collapsing to the lowest grade.
+    if (maxScore <= 0) return { grade: 'N/A', color: 'text-muted-foreground' }
     const pct = totalScore / maxScore
     if (pct >= 0.8) return { grade: 'A', color: 'text-green-600' }
     if (pct >= 0.6) return { grade: 'B', color: 'text-blue-600' }

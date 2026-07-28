@@ -52,7 +52,7 @@ export default function OpportunityScoreCard({ model, synthesis }: Props) {
             items.push({ label: 'Revenue Multiple', yourValue: `${revMult.toFixed(2)}x`, benchmark: '0.8–1.2x industry', score, maxScore: 5 })
         }
 
-        if (revenue && ebitda) {
+        if (revenue && revenue > 0 && ebitda) {
             const margin = (ebitda / revenue) * 100
             const score = margin >= 30 ? 5 : margin >= 25 ? 4 : margin >= 20 ? 3 : margin >= 15 ? 2 : 1
             items.push({ label: 'EBITDA Margin', yourValue: `${margin.toFixed(0)}%`, benchmark: '20–30% industry', score, maxScore: 5 })

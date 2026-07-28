@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 
 type Props = {
     model: DealModel
-    synthesis: ProjectSynthesisItem | null
+    synthesis?: ProjectSynthesisItem | null
 }
 
 type RiskFactor = {

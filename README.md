@@ -185,6 +185,9 @@ The configured deployment URL is:
 - **Seller Questions / DD Request List / Email Draft** — auto-generated from deal state
 - **Project Portfolio** — per-project "Add documents" button and synthesis download
 - **Keyboard shortcuts** — Cmd/Ctrl+K command palette, C for chat, Escape to close panels
+- **Resilient analysis modules** — 40+ analysis cards are lazy-loaded and wrapped
+  in per-section error boundaries (`SafeSuspense`), so a single card failing to
+  load or render degrades to a local retry message instead of blanking the page
 
 ## Project map
 

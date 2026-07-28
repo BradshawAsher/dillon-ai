@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 
 type Props = {
     model: DealModel
-    synthesis: ProjectSynthesisItem | null
+    synthesis?: ProjectSynthesisItem | null
 }
 
 type Milestone = {
@@ -21,7 +21,7 @@ export default function AcquisitionTimelineCard({ model, synthesis }: Props) {
         const facts = parseDocumentedFacts(model.documentedFactsJson)
         const hasFinancials = typeof facts.revenue?.value === 'number' || typeof facts.ebitda_sde?.value === 'number'
         const hasFinancing = (model.interestRate !== null) || (model.sellerNoteAmount !== null)
-        const hasSynthesis = synthesis !== null && (synthesis.redFlags.length > 0 || synthesis.greenFlags.length > 0)
+        const hasSynthesis = synthesis != null && (synthesis.redFlags.length > 0 || synthesis.greenFlags.length > 0)
         const hasPrice = model.purchasePrice !== null || model.askingPrice !== null
 
         if (!hasPrice && !hasFinancials) return null
