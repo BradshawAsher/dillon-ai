@@ -3,6 +3,7 @@ import { Banknote } from 'lucide-react'
 
 import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
+import { normalizeEquityFraction } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 
 type Props = {
@@ -27,7 +28,7 @@ export default function AnnualCashFlowCard({ model }: Props) {
         const taxRate = model.taxRate ?? 0.25
         const capex = model.maintenanceCapex ?? 0
 
-        const equityPct = model.equityContributionPercent ?? 25
+        const equityPct = normalizeEquityFraction(model.equityContributionPercent) * 100
         const debt = price * (1 - equityPct / 100) - (model.sellerNoteAmount ?? 0)
         const rate = model.interestRate ?? 0.07
         const amortYears = model.amortizationYears ?? 10
