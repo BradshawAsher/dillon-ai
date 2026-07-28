@@ -59,6 +59,27 @@ export function entryMultiple(purchasePrice: number | null, ebitda: number | nul
     return purchasePrice / ebitda
 }
 
+/**
+ * Normalizes the saved equity-contribution input to a fraction in (0, 1].
+ *
+ * The Deal Model input form saves this as a decimal ("Equity contribution
+ * (decimal)", default 0.3 = 30%), matching taxRate/interestRate. But a number
+ * of cards were written assuming a whole percent (25 = 25%) and divided by 100,
+ * which turned a real saved 0.3 into 0.003 — a 100× understatement of equity.
+ * This is the single place that resolves the ambiguity:
+ *   - values > 1 are treated as a whole percent and divided by 100 (25 → 0.25,
+ *     and also 30 → 0.30 if a user typed a percent into the decimal field),
+ *   - values in (0, 1] are already fractions and pass through (0.3 → 0.30),
+ *   - null / non-finite / non-positive fall back to the 0.3 default.
+ * Every consumer should call this rather than reading the raw field.
+ */
+export function normalizeEquityFraction(value: number | null | undefined): number {
+    if (!isNumber(value) || value <= 0) {
+        return 0.3
+    }
+    return value > 1 ? value / 100 : value
+}
+
 const INPUT_LABELS: Record<string, string> = {
     transactionFees: 'Transaction fees',
     workingCapital: 'Working capital requirement',
