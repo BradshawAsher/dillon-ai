@@ -278,6 +278,33 @@ export const FIXTURE_ECOMMERCE: DealModel = {
     }),
 }
 
+/** Combined P&L + balance sheet in one upload — exercises multi-type coverage. */
+export const FIXTURE_COMBINED_FINANCIALS: DealModel = {
+    ...baseModel,
+    projectId: 'fixture-combined-financials',
+    askingPrice: 4_800_000,
+    purchasePrice: 4_500_000,
+    documentedFactsJson: baseFacts({
+        revenue: { value: 5_600_000, status: 'confirmed', currency: 'USD', period: 'TTM', provenance: 'Extracted from uploaded documents' },
+        ebitda_sde: { value: 1_120_000, status: 'confirmed', currency: 'USD', period: 'TTM', provenance: 'Extracted from uploaded documents' },
+        total_assets: { value: 3_900_000, status: 'confirmed', currency: 'USD', period: 'FY24' },
+        total_liabilities: { value: 1_450_000, status: 'confirmed', currency: 'USD', period: 'FY24' },
+        accounts_receivable: { value: 520_000, status: 'confirmed', currency: 'USD' },
+        cash_equivalents: { value: 310_000, status: 'confirmed', currency: 'USD' },
+    }),
+}
+
+/** Example submission row: one PDF classified as both P&L and balance sheet. */
+export const EXAMPLE_COMBINED_FINANCIALS_DOCUMENT = {
+    fileName: 'acme-combined-financial-statement.pdf',
+    detectedDocumentType: 'P&L / income statement',
+    detectedDocumentTypesJson: JSON.stringify([
+        'P&L / income statement',
+        'Balance sheet',
+        'General ledger / trial balance',
+    ]),
+} as const
+
 /** All fixtures as an array for iteration in tests */
 export const ALL_FIXTURES = [
     FIXTURE_HEALTHY_DEAL,
@@ -288,4 +315,5 @@ export const ALL_FIXTURES = [
     FIXTURE_SERVICES_FIRM,
     FIXTURE_FRANCHISE,
     FIXTURE_ECOMMERCE,
+    FIXTURE_COMBINED_FINANCIALS,
 ] as const

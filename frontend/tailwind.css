@@ -1,3 +1,21 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+    .dashboard-header-mesh {
+        @apply relative overflow-hidden border-b border-border/80 bg-card/90 backdrop-blur-md;
+        background-image:
+            radial-gradient(at 0% 0%, hsl(var(--primary) / 0.12) 0px, transparent 50%),
+            radial-gradient(at 100% 0%, hsl(var(--primary) / 0.08) 0px, transparent 45%),
+            radial-gradient(at 50% 100%, hsl(var(--muted) / 0.35) 0px, transparent 55%);
+    }
+
+    .dashboard-kpi-glass {
+        @apply overflow-hidden rounded-xl border border-border/70 bg-card/75 shadow-sm backdrop-blur-md transition-all duration-200 ease-out hover:shadow-md;
+    }
+
+    .dashboard-card-hover {
+        @apply transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md;
+    }
+}

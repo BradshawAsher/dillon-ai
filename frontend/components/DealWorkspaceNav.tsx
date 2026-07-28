@@ -23,7 +23,7 @@ export type { WorkspaceTab }
 
 export default function DealWorkspaceNav({ activeTab, onTabChange }: DealWorkspaceNavProps) {
     return (
-        <nav id="deal-workspace" aria-label="Deal workspace" data-workspace-nav className="sticky top-3 z-20 overflow-x-auto rounded-xl border border-border bg-card/95 p-2 shadow-sm backdrop-blur print:hidden">
+        <nav id="deal-workspace" aria-label="Deal workspace" data-workspace-nav className="sticky top-3 z-20 overflow-x-auto rounded-xl border border-border/80 bg-card/90 p-2 shadow-sm backdrop-blur-md transition-shadow duration-200 hover:shadow-md print:hidden">
             <div className="flex min-w-max gap-1" role="tablist" aria-label="Deal workspace sections">
                 {tabs.map((tab) => {
                     const isActive = activeTab === tab.id
@@ -34,8 +34,8 @@ export default function DealWorkspaceNav({ activeTab, onTabChange }: DealWorkspa
                             role="tab"
                             aria-selected={isActive}
                             className={isActive
-                                ? 'rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground shadow-sm'
-                                : 'rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground'}
+                                ? 'rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-all duration-200 ease-out'
+                                : 'rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-all duration-200 ease-out hover:bg-muted hover:text-foreground hover:shadow-sm'}
                             onClick={() => onTabChange(tab.id)}
                         >
                             {tab.label}
