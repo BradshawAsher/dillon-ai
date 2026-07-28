@@ -87,7 +87,12 @@ export default function DealRadarCard({ model, synthesis, documentsCount }: Prop
                 </div>
             </CardHeader>
             <CardContent className="p-4 flex items-center justify-center">
-                <svg viewBox="0 0 200 200" className="w-full max-w-[280px] h-auto">
+                <svg
+                    viewBox="0 0 200 200"
+                    className="w-full max-w-[280px] h-auto"
+                    role="img"
+                    aria-label={`Deal profile radar across ${dimensions.length} dimensions: ${dimensions.map(d => `${d.label} ${Math.round(d.score)} out of 100`).join(', ')}.`}
+                >
                     {gridLevels.map(level => {
                         const gridPoints = Array.from({ length: n }, (_, i) => {
                             const r = level * maxR

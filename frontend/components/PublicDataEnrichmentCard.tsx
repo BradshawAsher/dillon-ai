@@ -9,7 +9,7 @@ import { Badge } from '../lib/shadcn/badge'
 
 type Props = {
     model: DealModel
-    synthesis: ProjectSynthesisItem | null
+    synthesis?: ProjectSynthesisItem | null
     projectName: string
 }
 
