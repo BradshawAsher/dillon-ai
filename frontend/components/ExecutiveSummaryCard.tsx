@@ -9,7 +9,7 @@ import { Button } from '../lib/shadcn/button'
 
 type Props = {
     model: DealModel
-    synthesis: ProjectSynthesisItem | null
+    synthesis?: ProjectSynthesisItem | null
     projectName: string
 }
 
