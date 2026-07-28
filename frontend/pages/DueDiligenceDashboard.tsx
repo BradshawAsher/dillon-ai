@@ -486,23 +486,53 @@ export default function DueDiligenceDashboard() {
         : (Array.isArray(projectSynthesisData) ? projectSynthesisData : [])
 
     const submissionHistory = useMemo(() => {
-        if (!isDataIsolationEnabled()) return rawSubmissionHistory
+        const isolationEnabled = isDataIsolationEnabled()
         const user = getStoredAuth()
-        if (!user || user.role === 'admin') return rawSubmissionHistory
-        return rawSubmissionHistory.filter(row => {
+        console.log('Data Isolation Enabled:', isolationEnabled)
+        console.log('Authenticated User:', user)
+        console.log('Raw Submission History Length:', rawSubmissionHistory.length)
+
+        if (!isolationEnabled) {
+            console.log('Data isolation is OFF. Returning raw submission history.')
+            return rawSubmissionHistory
+        }
+        if (!user || user.role === 'admin') {
+            console.log('User is not logged in or is admin. Returning raw submission history.')
+            return rawSubmissionHistory
+        }
+        const filteredHistory = rawSubmissionHistory.filter(row => {
             const key = getProjectKey(row)
-            return isOwnedByUser(key, user.email)
+            const owned = isOwnedByUser(key, user.email)
+            // console.log(`Project: ${key}, Owned by User: ${owned}`) // Too verbose, enable if needed
+            return owned
         })
+        console.log('Filtered Submission History Length (with isolation):', filteredHistory.length)
+        return filteredHistory
     }, [rawSubmissionHistory])
 
     const visibleProjectSyntheses = useMemo(() => {
-        if (!isDataIsolationEnabled()) return rawProjectSyntheses
+        const isolationEnabled = isDataIsolationEnabled()
         const user = getStoredAuth()
-        if (!user || user.role === 'admin') return rawProjectSyntheses
-        return rawProjectSyntheses.filter(s => {
+        console.log('Data Isolation Enabled (Syntheses):', isolationEnabled)
+        console.log('Authenticated User (Syntheses):', user)
+        console.log('Raw Project Syntheses Length:', rawProjectSyntheses.length)
+
+        if (!isolationEnabled) {
+            console.log('Data isolation is OFF. Returning raw project syntheses.')
+            return rawProjectSyntheses
+        }
+        if (!user || user.role === 'admin') {
+            console.log('User is not logged in or is admin. Returning raw project syntheses.')
+            return rawProjectSyntheses
+        }
+        const filteredSyntheses = rawProjectSyntheses.filter(s => {
             const key = s.projectId || ''
-            return isOwnedByUser(key, user.email)
+            const owned = isOwnedByUser(key, user.email)
+            // console.log(`Synthesis Project: ${key}, Owned by User: ${owned}`) // Too verbose, enable if needed
+            return owned
         })
+        console.log('Filtered Project Syntheses Length (with isolation):', filteredSyntheses.length)
+        return filteredSyntheses
     }, [rawProjectSyntheses])
 
     const projectSummaries = useMemo(() => createProjectSummaries(submissionHistory), [submissionHistory])
