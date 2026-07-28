@@ -362,6 +362,35 @@ function buildReturnsDisplayModel(model: DealModel) {
     } as DealModel
 }
 
+// Derive the acquisition capital stack (equity / senior debt) and loan term
+// from the analyst's saved financing inputs so financing, leverage, and
+// returns cards reflect the entered structure instead of silently reading
+// `undefined` (which made every card model the deal as 100% equity / 10yr).
+// Only computed once the analyst has actually supplied financing terms, so
+// projects without financing keep their existing "not defined" fallbacks.
+// Uses the saved fraction convention for equityContributionPercent (0.3 = 30%),
+// matching the Deal Model inputs and FinancedReturnsCard.
+function withDerivedCapitalStack(model: DealModel): DealModel {
+    const price = model.purchasePrice ?? model.askingPrice
+    const hasFinancingInputs =
+        model.equityContributionPercent != null ||
+        model.sellerNoteAmount != null ||
+        model.debtAssumed != null
+    if (price == null || price <= 0 || !hasFinancingInputs) return model
+
+    const equityPct = model.equityContributionPercent ?? 0.3
+    const equity = Math.max(0, price * equityPct)
+    const sellerNote = model.sellerNoteAmount ?? 0
+    const seniorDebt = Math.max(0, price - equity - sellerNote)
+
+    return {
+        ...model,
+        equityAmount: equity,
+        seniorDebtAmount: seniorDebt,
+        loanTermYears: model.amortizationYears ?? model.loanTermYears ?? null,
+    }
+}
+
 function IllustrativeModelPreviewNotice() {
     return <div role="alert" className="rounded-lg border-2 border-destructive/60 bg-destructive/10 p-4 text-sm text-foreground shadow-sm"><div className="flex items-center gap-2 text-destructive"><AlertCircle className="h-5 w-5 shrink-0" /><p className="font-bold uppercase tracking-wide">Illustrative model preview — not source-backed</p></div><p className="mt-2 font-medium">This card uses display-only starting values because this project is still missing confirmed revenue/EBITDA or a saved price.</p><p className="mt-1 text-muted-foreground">Nothing in this preview is saved to the project; returned facts and your inputs replace it automatically.</p></div>
 }
@@ -544,8 +573,8 @@ export default function DueDiligenceDashboard() {
         }
     }, [activeProjectId, dealModelDraftByProject, dealModelsData, isExampleMode])
     const activeProjectDocuments = useMemo(() => submissionHistory.filter((row) => getProjectKey(row) === activeProjectId), [activeProjectId, submissionHistory])
-    const hydratedDealModel = useMemo(() => isExampleMode ? activeDealModel : hydrateModelFactsFromDocuments(activeDealModel, activeProjectDocuments), [activeDealModel, activeProjectDocuments, isExampleMode])
-    const returnsDisplayModel = useMemo(() => isExampleMode ? hydratedDealModel : buildReturnsDisplayModel(hydratedDealModel), [hydratedDealModel, isExampleMode])
+    const hydratedDealModel = useMemo(() => withDerivedCapitalStack(isExampleMode ? activeDealModel : hydrateModelFactsFromDocuments(activeDealModel, activeProjectDocuments)), [activeDealModel, activeProjectDocuments, isExampleMode])
+    const returnsDisplayModel = useMemo(() => withDerivedCapitalStack(isExampleMode ? hydratedDealModel : buildReturnsDisplayModel(hydratedDealModel)), [hydratedDealModel, isExampleMode])
     const isReturnsIllustrativePreview = !isExampleMode && returnsDisplayModel !== activeDealModel
     const isGrowthIllustrativePreview = !isExampleMode && returnsDisplayModel !== hydratedDealModel
 
@@ -1615,15 +1644,24 @@ export default function DueDiligenceDashboard() {
                         impact={activeProjectImpact}
                         documentsCount={activeProjectDocuments.length}
                     />
+                    <div className="border-t border-border pt-4">
+                        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Scoring &amp; valuation</h3>
+                    </div>
                     <DealGradeCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
                     <DealAnalysisScoresCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
                     <DealStatsGridCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
                     <QuickValuationCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
                     <DealRadarCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documentsCount={activeProjectDocuments.length} />
+                    <div className="border-t border-border pt-4">
+                        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Next steps</h3>
+                    </div>
                     <DealActionItemsCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} />
                     <SellerQuestionsCard synthesis={activeProjectSynthesis} model={hydratedDealModel} />
 
 
+                    <div className="border-t border-border pt-4">
+                        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Portfolio &amp; deal overview</h3>
+                    </div>
                     {projectSummaries.length > 1 && (
                         <ProjectComparisonCard
                             projects={projectSummaries.map(ps => ({
@@ -1660,6 +1698,9 @@ export default function DueDiligenceDashboard() {
                             }, 150)
                         }}
                     />
+                    <div className="border-t border-border pt-4">
+                        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Financial data quality</h3>
+                    </div>
                     <DealModelReadinessCard
                         model={hydratedDealModel}
                         documents={activeProjectDocuments}
@@ -1672,6 +1713,9 @@ export default function DueDiligenceDashboard() {
                     <AddBackQualityCard model={hydratedDealModel} synthesis={activeProjectSynthesis} onOpenEvidence={setActiveEvidence} />
                     {activeProjectSynthesis && <RecurringVsOneTimeCard model={hydratedDealModel} synthesis={activeProjectSynthesis} onOpenEvidence={setActiveEvidence} />}
                     {activeProjectSynthesis && <CustomerConcentrationCard synthesis={activeProjectSynthesis} onOpenEvidence={setActiveEvidence} />}
+                    <div className="border-t border-border pt-4">
+                        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Context &amp; settings</h3>
+                    </div>
                     <Suspense fallback={null}>
                         <DealTimelineCard
                             documents={activeProjectDocuments}
@@ -1694,6 +1738,9 @@ export default function DueDiligenceDashboard() {
                 </section> : null}
 
                 {activeWorkspaceTab === 'analysis' ? <section id="deal-analysis" className="space-y-6 scroll-mt-6">
+                    <div className="pt-1">
+                        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Snapshot &amp; scoring</h3>
+                    </div>
                     <Suspense fallback={null}>
                         <DealOnAPageCard model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
                         <DealScorecardExportCard model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
@@ -1728,6 +1775,9 @@ export default function DueDiligenceDashboard() {
                     />
                     <DealRulesOfThumb model={hydratedDealModel} />
                     <ConfidenceMeterCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} />
+                    <div className="border-t border-border pt-4">
+                        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Health, benchmarks &amp; modeling</h3>
+                    </div>
                     <FinancialHealthCard model={hydratedDealModel} />
                     <EBITDAQualityScoreCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
                     <BenchmarkComparisonCard model={hydratedDealModel} />

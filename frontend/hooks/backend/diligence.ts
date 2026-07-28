@@ -76,6 +76,18 @@ export type DealModel = {
     modelUpdatedBy: string
     documentedFactsJson: string
     documentedFactsStatus: string
+    // Derived at hydration time from the saved capital-stack inputs
+    // (equityContributionPercent, sellerNoteAmount, purchase/asking price).
+    // Left undefined until the analyst provides financing terms so that
+    // "is financing defined?" checks and per-card fallbacks stay correct.
+    seniorDebtAmount?: number | null
+    equityAmount?: number | null
+    loanTermYears?: number | null
+    // Optional convenience fallbacks a few cards read only when no documented
+    // fact is available. Not persisted; undefined unless a caller supplies them.
+    revenue?: number | null
+    ebitda?: number | null
+    projectName?: string | null
 }
 
 function useQuery<T>(fetcher: (params?: Record<string, unknown>) => Promise<T>, initialData: T | null = null) {
