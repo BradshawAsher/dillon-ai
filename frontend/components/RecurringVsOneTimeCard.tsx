@@ -107,6 +107,21 @@ export default function RecurringVsOneTimeCard({ model, synthesis, onOpenEvidenc
         return 'outline' as const
     }
 
+    const itemStyle = (source: ClassifiedItem['source'], defaultClass: 'recurring' | 'one-time') => {
+        if (source === 'red-flag') {
+            return "border-destructive/20 bg-destructive/5 hover:bg-destructive/10"
+        }
+        if (source === 'yellow-flag') {
+            return "border-warning/20 bg-warning/5 hover:bg-warning/10"
+        }
+        if (source === 'green-flag') {
+            return "border-success/20 bg-success/5 hover:bg-success/10"
+        }
+        return defaultClass === 'recurring'
+            ? "border-success/20 bg-success/5 hover:bg-success/10"
+            : "border-warning/20 bg-warning/5 hover:bg-warning/10"
+    }
+
     return (
         <Card className="overflow-hidden">
             <CardHeader className="border-b border-border bg-card/80">
@@ -147,7 +162,7 @@ export default function RecurringVsOneTimeCard({ model, synthesis, onOpenEvidenc
                                     <button
                                         key={i}
                                         type="button"
-                                        className="w-full rounded-md border border-success/20 bg-success/5 p-3 text-left text-sm text-foreground transition-colors hover:bg-success/10"
+                                        className={`w-full rounded-md border p-3 text-left text-sm text-foreground transition-colors ${itemStyle(item.source, 'recurring')}`}
                                         onClick={() => onOpenEvidence?.({
                                             title: 'Recurring finding',
                                             sourceFile: item.sourceFile || 'Project synthesis',
@@ -179,7 +194,7 @@ export default function RecurringVsOneTimeCard({ model, synthesis, onOpenEvidenc
                                     <button
                                         key={i}
                                         type="button"
-                                        className="w-full rounded-md border border-warning/20 bg-warning/5 p-3 text-left text-sm text-foreground transition-colors hover:bg-warning/10"
+                                        className={`w-full rounded-md border p-3 text-left text-sm text-foreground transition-colors ${itemStyle(item.source, 'one-time')}`}
                                         onClick={() => onOpenEvidence?.({
                                             title: 'One-time finding',
                                             sourceFile: item.sourceFile || 'Project synthesis',

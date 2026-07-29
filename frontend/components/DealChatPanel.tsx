@@ -107,6 +107,7 @@ function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealMo
     }
 
     const trackerKey = `mergeworks.managementQuestions.${model.projectId || synthesis?.projectId || 'default-project'}`
+    const sellerQuestionsKey = `mergeworks_seller_questions_${model.projectId || synthesis?.projectId || 'default-project'}`
     try {
         if (typeof window !== 'undefined') {
             const stored = window.localStorage.getItem(trackerKey)
@@ -120,6 +121,20 @@ function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealMo
                         if (q.status) parts.push(`   Status: ${q.status}`)
                         if (q.response) parts.push(`   Management Response/Answer: ${q.response}`)
                         if (q.thesisImpact) parts.push(`   Thesis Impact: ${q.thesisImpact}`)
+                    })
+                }
+            }
+
+            const storedSeller = window.localStorage.getItem(sellerQuestionsKey)
+            if (storedSeller) {
+                const parsedSeller = JSON.parse(storedSeller)
+                if (Array.isArray(parsedSeller) && parsedSeller.length > 0) {
+                    parts.push('\n## Questions for Seller & Answers')
+                    parsedSeller.forEach((q, idx) => {
+                        parts.push(`${idx + 1}. Question: ${q.question}`)
+                        if (q.owner) parts.push(`   Assigned To: ${q.owner}`)
+                        parts.push(`   Status: ${q.answered ? 'Answered' : 'Open'}`)
+                        if (q.notes) parts.push(`   Answer / Seller Response: ${q.notes}`)
                     })
                 }
             }
