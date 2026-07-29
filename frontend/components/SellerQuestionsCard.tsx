@@ -256,13 +256,6 @@ export default function SellerQuestionsCard({ synthesis, model }: Props) {
                                 </div>
                                 <div className="ml-auto flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button
-                                        onClick={() => setActiveEditId(activeEditId === q.id ? null : q.id)}
-                                        className="p-1 text-muted-foreground hover:text-foreground transition-colors"
-                                        title="Answer question / edit details"
-                                    >
-                                        <Edit2 className="h-3.5 w-3.5" />
-                                    </button>
-                                    <button
                                         onClick={() => deleteQuestion(q.id)}
                                         className="p-1 text-muted-foreground hover:text-destructive transition-colors"
                                         title="Delete question"
@@ -272,44 +265,35 @@ export default function SellerQuestionsCard({ synthesis, model }: Props) {
                                 </div>
                             </div>
 
-                            {activeEditId === q.id && (
-                                <div className="mt-3 space-y-2 border-t border-border/65 pt-2.5 animate-in fade-in duration-200">
-                                    <div>
-                                        <label className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Seller Response / Answer</label>
-                                        <textarea
-                                            value={q.notes || ''}
+                            <div className="mt-3 space-y-2 border-t border-border/60 pt-2.5">
+                                <div>
+                                    <label className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Seller Response / Answer</label>
+                                    <textarea
+                                        value={q.notes || ''}
+                                        onChange={e => {
+                                            const updated = questions.map(item => item.id === q.id ? { ...item, notes: e.target.value } : item)
+                                            updateAndSaveQuestions(updated)
+                                        }}
+                                        placeholder="Type the seller's or broker's answer here..."
+                                        className="mt-1 w-full rounded-md border border-input bg-background px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary min-h-[50px] resize-none"
+                                    />
+                                </div>
+                                <div className="flex gap-2">
+                                    <div className="flex-1">
+                                        <label className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Owner / Assignee</label>
+                                        <input
+                                            type="text"
+                                            value={q.owner || ''}
                                             onChange={e => {
-                                                const updated = questions.map(item => item.id === q.id ? { ...item, notes: e.target.value } : item)
+                                                const updated = questions.map(item => item.id === q.id ? { ...item, owner: e.target.value } : item)
                                                 updateAndSaveQuestions(updated)
                                             }}
-                                            placeholder="Type the seller's or broker's answer here..."
-                                            className="mt-1 w-full rounded-md border border-input bg-background px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary min-h-[50px] resize-none"
+                                            placeholder="e.g. Broker, Seller, Management"
+                                            className="mt-1 w-full rounded-md border border-input bg-background px-3 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
                                         />
                                     </div>
-                                    <div className="flex gap-2">
-                                        <div className="flex-1">
-                                            <label className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Owner / Assignee</label>
-                                            <input
-                                                type="text"
-                                                value={q.owner || ''}
-                                                onChange={e => {
-                                                    const updated = questions.map(item => item.id === q.id ? { ...item, owner: e.target.value } : item)
-                                                    updateAndSaveQuestions(updated)
-                                                }}
-                                                placeholder="e.g. Broker, Seller, Management"
-                                                className="mt-1 w-full rounded-md border border-input bg-background px-3 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-                                            />
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => setActiveEditId(null)}
-                                            className="mt-5 shrink-0 rounded border border-border bg-background px-3 py-1 text-xs font-semibold hover:bg-muted transition-colors"
-                                        >
-                                            Save
-                                        </button>
-                                    </div>
                                 </div>
-                            )}
+                            </div>
                         </div>
                     ))}
                     {questions.length === 0 && (

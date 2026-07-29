@@ -191,12 +191,53 @@ export default function DealMemoView({ model, synthesis, projectName, documents 
                             </div>
                         )}
 
-                        {synthesis.finalJudgmentSummary && (
-                            <div>
-                                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">Summary</p>
-                                <p className="text-sm leading-6 text-foreground">{synthesis.finalJudgmentSummary}</p>
-                            </div>
-                        )}
+                        {synthesis.finalJudgmentSummary && (() => {
+                            let cleanText = synthesis.finalJudgmentSummary.trim();
+                            cleanText = cleanText.replace(/^(?:###\s+)?Summary:?\s*/i, '').trim();
+
+                            const uppercaseMatch = cleanText.match(/^([A-Z\s&,-]{4,}\.?)\s*([\s\S]*)/);
+                            let recText = '';
+                            let remainder = cleanText;
+                            if (uppercaseMatch) {
+                                recText = uppercaseMatch[1].replace(/\.$/, '').trim();
+                                remainder = uppercaseMatch[2].trim();
+                            }
+
+                            const bullets = remainder.split(/(?<=[.!?])\s+/).map(s => s.trim()).filter(Boolean);
+
+                            const getActionColor = (text: string) => {
+                                const lower = text.toLowerCase();
+                                if (lower.includes('escalat') || lower.includes('renegotiat') || lower.includes('abort') || lower.includes('avoid') || lower.includes('risk') || lower.includes('warning')) {
+                                    return 'text-destructive';
+                                }
+                                if (lower.includes('proceed') || lower.includes('buy') || lower.includes('acquire') || lower.includes('accept') || lower.includes('approve')) {
+                                    return 'text-success';
+                                }
+                                return 'text-primary';
+                            };
+
+                            return (
+                                <div className="space-y-4 mt-1">
+                                    {recText && (
+                                        <div className="rounded-xl border border-border bg-background p-4 shadow-sm">
+                                            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">Actionable Recommendation</p>
+                                            <p className={`text-xl sm:text-2xl font-black tracking-tight leading-tight ${getActionColor(recText)}`}>
+                                                {recText}
+                                            </p>
+                                        </div>
+                                    )}
+                                    <div className="space-y-3 bg-background/50 rounded-xl p-4 border border-border/40">
+                                        <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground border-b border-border/30 pb-2 mb-2">Key Assessment Details</p>
+                                        {bullets.map((point, index) => (
+                                            <div key={index} className="flex items-start gap-2.5">
+                                                <span className={`mt-2 h-2 w-2 shrink-0 rounded-full ${recText ? getActionColor(recText).replace('text-', 'bg-') : 'bg-primary'}`} />
+                                                <p className="text-sm leading-relaxed text-foreground/90 font-medium">{point}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            );
+                        })()}
 
                         {synthesis.redFlags.length > 0 && (
                             <div>
