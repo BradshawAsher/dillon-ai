@@ -86,6 +86,9 @@ export default function QuickValuationCard({ model, synthesis }: Props) {
                 <div className="space-y-3">
                     {methods.map(m => {
                         const pricePosition = price ? ((price - m.low) / (m.high - m.low)) * 100 : null
+                        const isOutOfRange = pricePosition !== null && (pricePosition < 0 || pricePosition > 100)
+                        const clampedPosition = pricePosition !== null ? Math.min(Math.max(pricePosition, 0), 100) : null
+
                         return (
                             <div key={m.name}>
                                 <div className="flex items-center justify-between">
@@ -96,18 +99,26 @@ export default function QuickValuationCard({ model, synthesis }: Props) {
                                     <span className="text-[10px] text-muted-foreground w-14 text-right">{money(m.low)}</span>
                                     <div className="relative flex-1 h-3 rounded-full bg-gradient-to-r from-green-200 via-amber-200 to-red-200 dark:from-green-900 dark:via-amber-900 dark:to-red-900">
                                         <div className="absolute inset-y-0 left-1/2 w-px bg-foreground/30" />
-                                        {pricePosition !== null && pricePosition >= 0 && pricePosition <= 100 && (
+                                        {clampedPosition !== null && (
                                             <div
-                                                className="absolute top-1/2 -translate-y-1/2 h-4 w-1 rounded-sm bg-foreground shadow-sm"
-                                                style={{ left: `${Math.min(Math.max(pricePosition, 2), 98)}%` }}
-                                                title={`Asking price: ${money(price!)}`}
+                                                className={`absolute top-1/2 -translate-y-1/2 h-4 w-2 rounded-full shadow-md transition-all ${isOutOfRange
+                                                    ? 'bg-destructive ring-2 ring-background animate-pulse scale-125'
+                                                    : 'bg-foreground ring-1 ring-background'
+                                                    }`}
+                                                style={{ left: `${Math.min(Math.max(clampedPosition, 2), 98)}%` }}
+                                                title={isOutOfRange
+                                                    ? `Off-spectrum! Price is ${money(price!)} (Out of standard bounds)`
+                                                    : `Price: ${money(price!)}`
+                                                }
                                             />
                                         )}
                                     </div>
                                     <span className="text-[10px] text-muted-foreground w-14">{money(m.high)}</span>
                                 </div>
-                                <div className="flex justify-center">
-                                    <span className="text-[10px] font-medium text-foreground">{money(m.mid)}</span>
+                                <div className="flex justify-between px-14 text-[10px] font-medium text-muted-foreground">
+                                    <span>Average</span>
+                                    <span className="text-foreground">{money(m.mid)}</span>
+                                    <span>{isOutOfRange && pricePosition > 100 ? '⚠️ High Price' : isOutOfRange ? '⚠️ Low Price' : ''}</span>
                                 </div>
                             </div>
                         )

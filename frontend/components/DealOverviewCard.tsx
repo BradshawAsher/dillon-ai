@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { ArrowDownToLine, BadgeDollarSign, CircleAlert, FileCheck2, MessageCircleQuestion, Scale, ShieldAlert, UsersRound } from 'lucide-react'
 
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
@@ -42,14 +43,32 @@ function riskVariant(riskLevel: string): 'destructive' | 'warning' | 'secondary'
 }
 
 function InsightList({ items, emptyLabel }: { items: string[]; emptyLabel: string }) {
+    const [expanded, setExpanded] = useState(false)
     if (items.length === 0) {
         return <p className="text-sm text-muted-foreground">{emptyLabel}</p>
     }
 
+    const displayedItems = expanded ? items : items.slice(0, 2)
+
     return (
-        <ul className="space-y-2 text-sm leading-6 text-foreground">
-            {items.slice(0, 2).map((item) => <li key={item}>{item}</li>)}
-        </ul>
+        <div className="space-y-2">
+            <ul className="space-y-2.5 text-sm leading-6 text-foreground">
+                {displayedItems.map((item, idx) => (
+                    <li key={`${item}-${idx}`} className="border-b border-border/30 pb-1.5 last:border-0 last:pb-0">
+                        <ExpandableText text={item} maxHeight={60} className="text-xs sm:text-sm leading-relaxed text-foreground" />
+                    </li>
+                ))}
+            </ul>
+            {items.length > 2 && (
+                <button
+                    type="button"
+                    onClick={() => setExpanded(!expanded)}
+                    className="mt-1.5 text-[11px] font-semibold text-primary hover:underline focus:outline-none"
+                >
+                    {expanded ? 'Show less items' : `Show all ${items.length} items`}
+                </button>
+            )}
+        </div>
     )
 }
 
@@ -276,24 +295,40 @@ export default function DealOverviewCard({ syntheses, projects, currentProjectId
                     <>
                         {synthesis.finalRecommendation ? (
                             <div className="rounded-xl border border-border bg-muted/20 p-5">
-                                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Recommendation</p>
-                                <div className="mt-1 flex flex-wrap items-center gap-3">
-                                    <p className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">{synthesis.finalRecommendation}</p>
-                                    {synthesis.finalTrafficLight ? (
-                                        <Badge variant={getSubmissionInsightTone(synthesis.finalTrafficLight)}>{synthesis.finalTrafficLight}</Badge>
-                                    ) : null}
-                                    {synthesis.finalRiskLevel ? (
-                                        <Badge variant={riskVariant(synthesis.finalRiskLevel)}>Risk: {synthesis.finalRiskLevel}</Badge>
-                                    ) : null}
+                                <div className="pb-3 border-b border-border/40 mb-3">
+                                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-1">Recommendation</p>
+                                    <div className="flex flex-wrap items-center gap-3">
+                                        <p className="text-2xl font-black tracking-tight text-foreground sm:text-3xl">{synthesis.finalRecommendation}</p>
+                                        {synthesis.finalTrafficLight ? (
+                                            <Badge variant={getSubmissionInsightTone(synthesis.finalTrafficLight)}>{synthesis.finalTrafficLight}</Badge>
+                                        ) : null}
+                                        {synthesis.finalRiskLevel ? (
+                                            <Badge variant={riskVariant(synthesis.finalRiskLevel)}>Risk: {synthesis.finalRiskLevel}</Badge>
+                                        ) : null}
+                                    </div>
                                 </div>
                                 {synthesis.finalJudgmentSummary ? (
-                                    <ExpandableText text={synthesis.finalJudgmentSummary} maxHeight={100} className="mt-3 text-sm leading-6 text-muted-foreground" />
+                                    <div className="space-y-2 mt-3 bg-background/50 rounded-lg p-3 border border-border/40">
+                                        {synthesis.finalJudgmentSummary.split(/(?<=[.!?])\s+/).map((point, index) => (
+                                            <div key={index} className="flex items-start gap-2">
+                                                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                                                <p className="text-xs sm:text-sm leading-relaxed text-foreground/90 font-medium">{point}</p>
+                                            </div>
+                                        ))}
+                                    </div>
                                 ) : null}
                             </div>
                         ) : synthesis.finalJudgmentSummary ? (
                             <div className="rounded-lg border border-border bg-background p-4">
                                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Executive assessment</p>
-                                <ExpandableText text={synthesis.finalJudgmentSummary} maxHeight={120} className="mt-2 text-sm leading-6 text-foreground" />
+                                <div className="space-y-2 mt-2 bg-background/50 rounded-lg p-3 border border-border/40">
+                                    {synthesis.finalJudgmentSummary.split(/(?<=[.!?])\s+/).map((point, index) => (
+                                        <div key={index} className="flex items-start gap-2">
+                                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                                            <p className="text-xs sm:text-sm leading-relaxed text-foreground/90 font-medium">{point}</p>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         ) : null}
 

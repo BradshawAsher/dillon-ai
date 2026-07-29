@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Check, CheckSquare, Copy, Download, MessageSquareText, Plus, Square, Trash2, RotateCcw } from 'lucide-react'
+import { Check, CheckSquare, Copy, Download, MessageSquareText, Plus, Square, Trash2, RotateCcw, Edit2 } from 'lucide-react'
 
 import type { ProjectSynthesisItem, DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
@@ -86,6 +86,7 @@ export default function SellerQuestionsCard({ synthesis, model }: Props) {
     const [copied, setCopied] = useState(false)
     const [isAdding, setIsAdding] = useState(false)
     const [newQuestionText, setNewQuestionText] = useState('')
+    const [activeEditId, setActiveEditId] = useState<string | null>(null)
 
     // Hydrate state from localStorage or fallback to defaults
     useEffect(() => {
@@ -219,34 +220,96 @@ export default function SellerQuestionsCard({ synthesis, model }: Props) {
 
                 <div className="space-y-2.5">
                     {questions.map((q, i) => (
-                        <div key={q.id} className={`group flex items-start gap-2.5 rounded-md p-1.5 transition-colors hover:bg-muted/30 ${q.answered ? 'opacity-60' : ''}`}>
-                            <button
-                                onClick={() => toggleAnswered(q.id)}
-                                className="mt-0.5 shrink-0 text-muted-foreground hover:text-primary focus:outline-none"
-                                title={q.answered ? 'Mark open' : 'Mark answered'}
-                            >
-                                {q.answered ? (
-                                    <CheckSquare className="h-4 w-4 text-green-600" />
-                                ) : (
-                                    <Square className="h-4 w-4" />
-                                )}
-                            </button>
-                            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
-                                {i + 1}
-                            </span>
-                            <p
-                                onClick={() => toggleAnswered(q.id)}
-                                className={`cursor-pointer text-sm ${q.answered ? 'line-through text-muted-foreground' : 'text-foreground'}`}
-                            >
-                                {q.question}
-                            </p>
-                            <button
-                                onClick={() => deleteQuestion(q.id)}
-                                className="ml-auto opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-destructive transition-opacity"
-                                title="Delete question"
-                            >
-                                <Trash2 className="h-3.5 w-3.5" />
-                            </button>
+                        <div key={q.id} className="rounded-lg border border-border/40 p-2.5 transition-colors hover:bg-muted/10">
+                            <div className={`group flex items-start gap-2.5 ${q.answered ? 'opacity-60' : ''}`}>
+                                <button
+                                    onClick={() => toggleAnswered(q.id)}
+                                    className="mt-0.5 shrink-0 text-muted-foreground hover:text-primary focus:outline-none"
+                                    title={q.answered ? 'Mark open' : 'Mark answered'}
+                                >
+                                    {q.answered ? (
+                                        <CheckSquare className="h-4 w-4 text-green-600" />
+                                    ) : (
+                                        <Square className="h-4 w-4" />
+                                    )}
+                                </button>
+                                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
+                                    {i + 1}
+                                </span>
+                                <div className="flex-1 min-w-0">
+                                    <p
+                                        onClick={() => toggleAnswered(q.id)}
+                                        className={`cursor-pointer text-sm font-medium ${q.answered ? 'line-through text-muted-foreground' : 'text-foreground'}`}
+                                    >
+                                        {q.question}
+                                    </p>
+                                    {q.notes && (
+                                        <p className="mt-1 text-xs text-green-600 dark:text-green-400 bg-green-500/5 px-2 py-1 rounded border border-green-500/10 whitespace-pre-wrap">
+                                            <strong>Answer:</strong> {q.notes}
+                                        </p>
+                                    )}
+                                    {q.owner && (
+                                        <p className="mt-0.5 text-[10px] text-muted-foreground">
+                                            Assigned to: <span className="font-semibold text-foreground">{q.owner}</span>
+                                        </p>
+                                    )}
+                                </div>
+                                <div className="ml-auto flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button
+                                        onClick={() => setActiveEditId(activeEditId === q.id ? null : q.id)}
+                                        className="p-1 text-muted-foreground hover:text-foreground transition-colors"
+                                        title="Answer question / edit details"
+                                    >
+                                        <Edit2 className="h-3.5 w-3.5" />
+                                    </button>
+                                    <button
+                                        onClick={() => deleteQuestion(q.id)}
+                                        className="p-1 text-muted-foreground hover:text-destructive transition-colors"
+                                        title="Delete question"
+                                    >
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {activeEditId === q.id && (
+                                <div className="mt-3 space-y-2 border-t border-border/65 pt-2.5 animate-in fade-in duration-200">
+                                    <div>
+                                        <label className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Seller Response / Answer</label>
+                                        <textarea
+                                            value={q.notes || ''}
+                                            onChange={e => {
+                                                const updated = questions.map(item => item.id === q.id ? { ...item, notes: e.target.value } : item)
+                                                updateAndSaveQuestions(updated)
+                                            }}
+                                            placeholder="Type the seller's or broker's answer here..."
+                                            className="mt-1 w-full rounded-md border border-input bg-background px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary min-h-[50px] resize-none"
+                                        />
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <div className="flex-1">
+                                            <label className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Owner / Assignee</label>
+                                            <input
+                                                type="text"
+                                                value={q.owner || ''}
+                                                onChange={e => {
+                                                    const updated = questions.map(item => item.id === q.id ? { ...item, owner: e.target.value } : item)
+                                                    updateAndSaveQuestions(updated)
+                                                }}
+                                                placeholder="e.g. Broker, Seller, Management"
+                                                className="mt-1 w-full rounded-md border border-input bg-background px-3 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                                            />
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setActiveEditId(null)}
+                                            className="mt-5 shrink-0 rounded border border-border bg-background px-3 py-1 text-xs font-semibold hover:bg-muted transition-colors"
+                                        >
+                                            Save
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     ))}
                     {questions.length === 0 && (
