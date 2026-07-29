@@ -55,7 +55,7 @@ function InsightList({ items, emptyLabel }: { items: string[]; emptyLabel: strin
             <ul className="space-y-2.5 text-sm leading-6 text-foreground">
                 {displayedItems.map((item, idx) => (
                     <li key={`${item}-${idx}`} className="border-b border-border/30 pb-1.5 last:border-0 last:pb-0">
-                        <ExpandableText text={item} maxHeight={60} className="text-xs sm:text-sm leading-relaxed text-foreground" />
+                        <ExpandableText text={item} maxHeight={150} className="text-xs sm:text-sm leading-relaxed text-foreground" />
                     </li>
                 ))}
             </ul>
@@ -307,30 +307,104 @@ export default function DealOverviewCard({ syntheses, projects, currentProjectId
                                         ) : null}
                                     </div>
                                 </div>
-                                {synthesis.finalJudgmentSummary ? (
-                                    <div className="space-y-2 mt-3 bg-background/50 rounded-lg p-3 border border-border/40">
-                                        {synthesis.finalJudgmentSummary.split(/(?<=[.!?])\s+/).map((point, index) => (
-                                            <div key={index} className="flex items-start gap-2">
-                                                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
-                                                <p className="text-xs sm:text-sm leading-relaxed text-foreground/90 font-medium">{point}</p>
+                                {synthesis.finalJudgmentSummary ? (() => {
+                                    let cleanText = synthesis.finalJudgmentSummary.trim();
+                                    cleanText = cleanText.replace(/^(?:###\s+)?Summary:?\s*/i, '').trim();
+
+                                    const uppercaseMatch = cleanText.match(/^([A-Z\s&,-]{4,}\.?)\s*([\s\S]*)/);
+                                    let recText = '';
+                                    let remainder = cleanText;
+                                    if (uppercaseMatch) {
+                                        recText = uppercaseMatch[1].replace(/\.$/, '').trim();
+                                        remainder = uppercaseMatch[2].trim();
+                                    }
+
+                                    const bullets = remainder.split(/(?<=[.!?])\s+/).map(s => s.trim()).filter(Boolean);
+
+                                    const getActionColor = (text: string) => {
+                                        const lower = text.toLowerCase();
+                                        if (lower.includes('escalat') || lower.includes('renegotiat') || lower.includes('abort') || lower.includes('avoid') || lower.includes('risk') || lower.includes('warning')) {
+                                            return 'text-destructive';
+                                        }
+                                        if (lower.includes('proceed') || lower.includes('buy') || lower.includes('acquire') || lower.includes('accept') || lower.includes('approve')) {
+                                            return 'text-success';
+                                        }
+                                        return 'text-primary';
+                                    };
+
+                                    return (
+                                        <div className="space-y-4 mt-4">
+                                            {recText && (
+                                                <div className="rounded-xl border border-border bg-background p-4 shadow-sm">
+                                                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">Actionable Recommendation</p>
+                                                    <p className={`text-xl sm:text-2xl md:text-3xl font-black tracking-tight leading-tight ${getActionColor(recText)}`}>
+                                                        {recText}
+                                                    </p>
+                                                </div>
+                                            )}
+                                            <div className="space-y-3 bg-background/50 rounded-xl p-4 border border-border/40">
+                                                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground border-b border-border/30 pb-2 mb-2">Key Assessment Details</p>
+                                                {bullets.map((point, index) => (
+                                                    <div key={index} className="flex items-start gap-2.5">
+                                                        <span className={`mt-2 h-2 w-2 shrink-0 rounded-full ${recText ? getActionColor(recText).replace('text-', 'bg-') : 'bg-primary'}`} />
+                                                        <p className="text-sm sm:text-base leading-relaxed text-foreground/90 font-medium">{point}</p>
+                                                    </div>
+                                                ))}
                                             </div>
-                                        ))}
-                                    </div>
-                                ) : null}
-                            </div>
-                        ) : synthesis.finalJudgmentSummary ? (
-                            <div className="rounded-lg border border-border bg-background p-4">
-                                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Executive assessment</p>
-                                <div className="space-y-2 mt-2 bg-background/50 rounded-lg p-3 border border-border/40">
-                                    {synthesis.finalJudgmentSummary.split(/(?<=[.!?])\s+/).map((point, index) => (
-                                        <div key={index} className="flex items-start gap-2">
-                                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
-                                            <p className="text-xs sm:text-sm leading-relaxed text-foreground/90 font-medium">{point}</p>
                                         </div>
-                                    ))}
-                                </div>
+                                    );
+                                })() : null}
                             </div>
-                        ) : null}
+                        ) : synthesis.finalJudgmentSummary ? (() => {
+                            let cleanText = synthesis.finalJudgmentSummary.trim();
+                            cleanText = cleanText.replace(/^(?:###\s+)?Summary:?\s*/i, '').trim();
+
+                            const uppercaseMatch = cleanText.match(/^([A-Z\s&,-]{4,}\.?)\s*([\s\S]*)/);
+                            let recText = '';
+                            let remainder = cleanText;
+                            if (uppercaseMatch) {
+                                recText = uppercaseMatch[1].replace(/\.$/, '').trim();
+                                remainder = uppercaseMatch[2].trim();
+                            }
+
+                            const bullets = remainder.split(/(?<=[.!?])\s+/).map(s => s.trim()).filter(Boolean);
+
+                            const getActionColor = (text: string) => {
+                                const lower = text.toLowerCase();
+                                if (lower.includes('escalat') || lower.includes('renegotiat') || lower.includes('abort') || lower.includes('avoid') || lower.includes('risk') || lower.includes('warning')) {
+                                    return 'text-destructive';
+                                }
+                                if (lower.includes('proceed') || lower.includes('buy') || lower.includes('acquire') || lower.includes('accept') || lower.includes('approve')) {
+                                    return 'text-success';
+                                }
+                                return 'text-primary';
+                            };
+
+                            return (
+                                <div className="rounded-lg border border-border bg-background p-4">
+                                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Executive assessment</p>
+                                    <div className="space-y-4 mt-4">
+                                        {recText && (
+                                            <div className="rounded-xl border border-border bg-background p-4 shadow-sm">
+                                                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">Actionable Recommendation</p>
+                                                <p className={`text-xl sm:text-2xl md:text-3xl font-black tracking-tight leading-tight ${getActionColor(recText)}`}>
+                                                    {recText}
+                                                </p>
+                                            </div>
+                                        )}
+                                        <div className="space-y-3 bg-background/50 rounded-xl p-4 border border-border/40">
+                                            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground border-b border-border/30 pb-2 mb-2">Key Assessment Details</p>
+                                            {bullets.map((point, index) => (
+                                                <div key={index} className="flex items-start gap-2.5">
+                                                    <span className={`mt-2 h-2 w-2 shrink-0 rounded-full ${recText ? getActionColor(recText).replace('text-', 'bg-') : 'bg-primary'}`} />
+                                                    <p className="text-sm sm:text-base leading-relaxed text-foreground/90 font-medium">{point}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })() : null}
 
                         <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.75fr)]">
                             <div className="rounded-xl border border-border bg-muted/20 p-4"><div className="flex items-center justify-between gap-3"><p className="text-sm font-semibold">Three decision drivers</p><Badge variant="outline">Project synthesis</Badge></div><div className="mt-3 grid gap-3 md:grid-cols-3">{decisionDrivers.map((driver) => <div key={driver.label} className="flex flex-col rounded-lg border border-border bg-background p-3 text-left transition-colors hover:border-primary/40 hover:bg-muted/30"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{driver.label}</p><ExpandableText text={driver.value} maxHeight={72} className="mt-2 text-sm leading-6 text-foreground" /><button type="button" onClick={() => onOpenEvidence(driver.evidence)} className="mt-2 self-start text-xs font-medium text-primary transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">View evidence</button></div>)}</div></div>

@@ -20,12 +20,16 @@ export default function AcquisitionJudgmentCallout({ synthesis, impact }: { synt
     const parsedSummary = useMemo(() => {
         if (!message) return { recommendation: '', bullets: [] }
 
+        // Clean leading "Summary", "Summary:", "### Summary", or generic title markers
+        let cleanMessage = message.trim()
+        cleanMessage = cleanMessage.replace(/^(?:###\s+)?Summary:?\s*/i, '').trim()
+
         // Find leading uppercase recommendation phrase ending with a period or exclamation mark
         // (e.g., "RECOMMEND ESCALATION AND RENEGOTIATION. The target reports...")
-        const uppercaseMatch = message.match(/^([A-Z\s&]{4,}\.)\s*([\s\S]*)/)
+        const uppercaseMatch = cleanMessage.match(/^([A-Z\s&,-]{4,}\.?)\s*([\s\S]*)/)
 
         let recommendationText = synthesis?.finalRecommendation || ''
-        let remainderText = message
+        let remainderText = cleanMessage
 
         if (uppercaseMatch) {
             recommendationText = uppercaseMatch[1].replace(/\.$/, '').trim()
@@ -42,6 +46,17 @@ export default function AcquisitionJudgmentCallout({ synthesis, impact }: { synt
             bullets
         }
     }, [message, synthesis?.finalRecommendation])
+
+    const getActionColor = (text: string) => {
+        const lower = text.toLowerCase();
+        if (lower.includes('escalat') || lower.includes('renegotiat') || lower.includes('abort') || lower.includes('avoid') || lower.includes('risk') || lower.includes('warning')) {
+            return 'text-destructive';
+        }
+        if (lower.includes('proceed') || lower.includes('buy') || lower.includes('acquire') || lower.includes('accept') || lower.includes('approve')) {
+            return 'text-success';
+        }
+        return 'text-primary';
+    };
 
     return (
         <Card className={pending ? 'overflow-hidden border-2 border-warning shadow-lg' : 'overflow-hidden border-2 border-primary shadow-lg'}>
@@ -68,24 +83,29 @@ export default function AcquisitionJudgmentCallout({ synthesis, impact }: { synt
                     </div>
                 </div>
 
-                <div className="mt-5 rounded-xl border border-primary/25 bg-background/90 p-5 shadow-sm">
+                <div className="space-y-4 mt-5">
                     {parsedSummary.recommendation && !pending && (
-                        <div className="mb-4 pb-3 border-b border-border/60">
-                            <p className="text-[10px] uppercase tracking-wider font-extrabold text-muted-foreground mb-1">Acquisition Recommendation</p>
-                            <p className="text-xl sm:text-2xl font-black text-destructive tracking-tight uppercase leading-relaxed">{parsedSummary.recommendation}</p>
+                        <div className="rounded-xl border border-border bg-background p-5 shadow-sm">
+                            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">Actionable Recommendation</p>
+                            <p className={`text-xl sm:text-2xl md:text-3xl font-black tracking-tight leading-tight ${getActionColor(parsedSummary.recommendation)}`}>
+                                {parsedSummary.recommendation}
+                            </p>
                         </div>
                     )}
                     {parsedSummary.bullets.length > 0 ? (
-                        <div className="space-y-3">
+                        <div className="space-y-3 bg-background/50 rounded-xl p-5 border border-border/40">
+                            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground border-b border-border/30 pb-2 mb-2">Key Assessment Details</p>
                             {parsedSummary.bullets.map((point, index) => (
                                 <div key={index} className="flex items-start gap-2.5">
-                                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
-                                    <p className="text-sm sm:text-base leading-relaxed text-foreground/95 font-medium">{point}</p>
+                                    <span className={`mt-2 h-2 w-2 shrink-0 rounded-full ${parsedSummary.recommendation ? getActionColor(parsedSummary.recommendation).replace('text-', 'bg-') : 'bg-primary'}`} />
+                                    <p className="text-sm sm:text-base leading-relaxed text-foreground/90 font-medium">{point}</p>
                                 </div>
                             ))}
                         </div>
                     ) : (
-                        <ExpandableText text={message} maxHeight={150} className="text-base leading-7" />
+                        <div className="rounded-xl border border-border bg-background p-5 shadow-sm">
+                            <ExpandableText text={message} maxHeight={150} className="text-base leading-7" />
+                        </div>
                     )}
                 </div>
 
