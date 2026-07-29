@@ -75,7 +75,7 @@ export default function NextActionsCard({ model, synthesis, documents, onNavigat
             description: 'Enter the asking price to see your entry multiple and price premium/discount.',
             priority: 'medium',
             icon: <Calculator className="h-4 w-4" />,
-            target: 'deal-structure',
+            target: 'structure',
         })
     }
 

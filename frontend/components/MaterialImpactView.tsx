@@ -66,7 +66,10 @@ function getSeverity(sourceGroup: string): 'critical' | 'medium' | 'low' {
     return 'low'
 }
 
-export default function MaterialImpactView({ synthesis, onOpenEvidence }: { synthesis: ProjectSynthesisItem; onOpenEvidence?: (item: EvidenceItem) => void }) {
+import { findCitedDocument } from '../utils/evidence'
+import type { SubmissionHistoryItem } from '../utils/submissionHistory'
+
+export default function MaterialImpactView({ synthesis, onOpenEvidence, documents = [] }: { synthesis: ProjectSynthesisItem; onOpenEvidence?: (item: EvidenceItem) => void; documents?: SubmissionHistoryItem[] }) {
     const [selectedCategory, setSelectedCategory] = useState<ImpactCategory | 'all'>('all')
 
     const findings = useMemo(() => {
@@ -135,38 +138,45 @@ export default function MaterialImpactView({ synthesis, onOpenEvidence }: { synt
             </div>
 
             <div className="space-y-2">
-                {filtered.map((finding) => (
-                    <button
-                        key={finding.id}
-                        type="button"
-                        onClick={() => onOpenEvidence?.({
-                            title: `${IMPACT_LABELS[finding.impact]}: finding`,
-                            sourceFile: finding.citation?.sourceFile || synthesis.citations?.[0],
-                            sourceLocation: finding.citation?.sourceLocation || 'Project synthesis',
-                            excerpt: finding.citation?.excerpt || finding.text,
-                            period: finding.citation?.period,
-                            currency: finding.citation?.currency,
-                            status: finding.status || (finding.severity === 'critical' ? 'Risk' : finding.severity === 'medium' ? 'Needs review' : 'Confirmed'),
-                            provenance: 'Material-impact mapping',
-                            confidence: finding.confidence,
-                        })}
-                        className={`flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-colors hover:border-primary/40 ${IMPACT_STYLES[finding.impact]}`}
-                    >
-                        <div className="min-w-0 flex-1">
-                            <div className="flex flex-wrap items-center gap-2">
-                                <Badge variant={finding.severity === 'critical' ? 'destructive' : finding.severity === 'medium' ? 'warning' : 'secondary'}>
-                                    {finding.severity === 'critical' ? 'Critical' : finding.severity === 'medium' ? 'Medium' : 'Low'}
-                                </Badge>
-                                <Badge variant="outline">{IMPACT_LABELS[finding.impact]}</Badge>
-                                {finding.confidence !== undefined ? <Badge variant="secondary">{finding.confidence}% confidence</Badge> : null}
-                                <span className="text-xs text-muted-foreground">{finding.sourceGroup.replace('-', ' ')}</span>
+                {filtered.map((finding) => {
+                    const sourceDocName = finding.citation?.sourceFile || synthesis.citations?.[0] || 'Project synthesis'
+                    const matchedDocument = findCitedDocument(sourceDocName, documents)
+
+                    return (
+                        <button
+                            key={finding.id}
+                            type="button"
+                            onClick={() => onOpenEvidence?.({
+                                title: `${IMPACT_LABELS[finding.impact]}: finding`,
+                                sourceFile: sourceDocName,
+                                sourceLocation: finding.citation?.sourceLocation || 'Project synthesis',
+                                excerpt: finding.citation?.excerpt || finding.text,
+                                period: finding.citation?.period,
+                                currency: finding.citation?.currency,
+                                status: finding.status || (finding.severity === 'critical' ? 'Risk' : finding.severity === 'medium' ? 'Needs review' : 'Confirmed'),
+                                provenance: 'Material-impact mapping',
+                                confidence: finding.confidence,
+                                documentId: matchedDocument?.storageFileId,
+                                documentUrl: matchedDocument?.storageFileUrl,
+                            })}
+                            className={`flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-colors hover:border-primary/40 ${IMPACT_STYLES[finding.impact]}`}
+                        >
+                            <div className="min-w-0 flex-1">
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <Badge variant={finding.severity === 'critical' ? 'destructive' : finding.severity === 'medium' ? 'warning' : 'secondary'}>
+                                        {finding.severity === 'critical' ? 'Critical' : finding.severity === 'medium' ? 'Medium' : 'Low'}
+                                    </Badge>
+                                    <Badge variant="outline">{IMPACT_LABELS[finding.impact]}</Badge>
+                                    {finding.confidence !== undefined ? <Badge variant="secondary">{finding.confidence}% confidence</Badge> : null}
+                                    <span className="text-xs text-muted-foreground">{finding.sourceGroup.replace('-', ' ')}</span>
+                                </div>
+                                <p className="mt-2 text-sm leading-6 text-foreground">{finding.text}</p>
+                                {finding.citation?.sourceFile ? <p className="mt-1 text-xs text-muted-foreground">Source: {finding.citation.sourceFile}{finding.citation.sourceLocation ? ` · ${finding.citation.sourceLocation}` : ''}</p> : null}
                             </div>
-                            <p className="mt-2 text-sm leading-6 text-foreground">{finding.text}</p>
-                            {finding.citation?.sourceFile ? <p className="mt-1 text-xs text-muted-foreground">Source: {finding.citation.sourceFile}{finding.citation.sourceLocation ? ` · ${finding.citation.sourceLocation}` : ''}</p> : null}
-                        </div>
-                        <ArrowRight className="mt-2 h-4 w-4 shrink-0 text-primary" />
-                    </button>
-                ))}
+                            <ArrowRight className="mt-2 h-4 w-4 shrink-0 text-primary" />
+                        </button>
+                    )
+                })}
                 {filtered.length === 0 ? <p className="rounded-md border border-dashed border-border p-3 text-sm text-muted-foreground">No findings in this category.</p> : null}
             </div>
 

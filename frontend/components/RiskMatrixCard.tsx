@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Grid3x3 } from 'lucide-react'
 
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
@@ -29,6 +29,34 @@ function classifyRisk(text: string): { likelihood: RiskItem['likelihood']; impac
     const likelihood = isHighLikelihood ? 'high' : 'medium'
 
     return { likelihood, impact }
+}
+
+function QuadrantList({ items }: { items: RiskItem[] }) {
+    const [expanded, setExpanded] = useState(false)
+    if (items.length === 0) return <p className="text-xs text-muted-foreground italic">None</p>
+
+    const visibleItems = expanded ? items : items.slice(0, 3)
+
+    return (
+        <div className="space-y-1">
+            {visibleItems.map((r, i) => (
+                <div key={i} className="border-b border-border/10 pb-1.5 mb-1.5 last:border-0 last:mb-0">
+                    <p className="text-[11px] font-semibold leading-relaxed text-foreground whitespace-normal">
+                        • {r.text}
+                    </p>
+                </div>
+            ))}
+            {items.length > 3 && (
+                <button
+                    type="button"
+                    onClick={() => setExpanded(!expanded)}
+                    className="text-[10px] font-black text-primary hover:underline focus:outline-none block mt-1"
+                >
+                    {expanded ? 'Show less' : `+${items.length - 3} more`}
+                </button>
+            )}
+        </div>
+    )
 }
 
 export default function RiskMatrixCard({ synthesis }: Props) {
@@ -71,45 +99,26 @@ export default function RiskMatrixCard({ synthesis }: Props) {
                 </div>
             </CardHeader>
             <CardContent className="p-4">
-                <div className="grid grid-cols-2 gap-2">
-                    <div className="rounded-lg border-2 border-red-200 bg-red-50 p-3 dark:border-red-900 dark:bg-red-950/30">
-                        <p className="text-[10px] font-semibold uppercase tracking-wide text-red-700 dark:text-red-400">Critical — Act now</p>
-                        <p className="text-[9px] text-muted-foreground mb-1.5">High impact + high likelihood</p>
-                        {quadrants.highHigh.length === 0 ? (
-                            <p className="text-xs text-muted-foreground italic">None</p>
-                        ) : quadrants.highHigh.map((r, i) => (
-                            <p key={i} className="text-xs text-foreground truncate" title={r.text}>• {r.text}</p>
-                        ))}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="rounded-lg border-2 border-red-200 bg-red-50 p-3.5 dark:border-red-900 dark:bg-red-950/30">
+                        <p className="text-[10px] font-bold uppercase tracking-wide text-red-700 dark:text-red-400">Critical — Act now</p>
+                        <p className="text-[9px] text-muted-foreground mb-2">High impact + high likelihood</p>
+                        <QuadrantList items={quadrants.highHigh} />
                     </div>
-                    <div className="rounded-lg border-2 border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950/30">
-                        <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400">Monitor — High impact</p>
-                        <p className="text-[9px] text-muted-foreground mb-1.5">High impact + lower likelihood</p>
-                        {quadrants.highMed.length === 0 ? (
-                            <p className="text-xs text-muted-foreground italic">None</p>
-                        ) : quadrants.highMed.map((r, i) => (
-                            <p key={i} className="text-xs text-foreground truncate" title={r.text}>• {r.text}</p>
-                        ))}
+                    <div className="rounded-lg border-2 border-amber-200 bg-amber-50 p-3.5 dark:border-amber-900 dark:bg-amber-950/30">
+                        <p className="text-[10px] font-bold uppercase tracking-wide text-amber-700 dark:text-amber-400">Monitor — High impact</p>
+                        <p className="text-[9px] text-muted-foreground mb-2">High impact + lower likelihood</p>
+                        <QuadrantList items={quadrants.highMed} />
                     </div>
-                    <div className="rounded-lg border-2 border-orange-200 bg-orange-50 p-3 dark:border-orange-900 dark:bg-orange-950/30">
-                        <p className="text-[10px] font-semibold uppercase tracking-wide text-orange-700 dark:text-orange-400">Investigate — Likely</p>
-                        <p className="text-[9px] text-muted-foreground mb-1.5">Medium impact + high likelihood</p>
-                        {quadrants.medHigh.length === 0 ? (
-                            <p className="text-xs text-muted-foreground italic">None</p>
-                        ) : quadrants.medHigh.map((r, i) => (
-                            <p key={i} className="text-xs text-foreground truncate" title={r.text}>• {r.text}</p>
-                        ))}
+                    <div className="rounded-lg border-2 border-orange-200 bg-orange-50 p-3.5 dark:border-orange-900 dark:bg-orange-950/30">
+                        <p className="text-[10px] font-bold uppercase tracking-wide text-orange-700 dark:text-orange-400">Investigate — Likely</p>
+                        <p className="text-[9px] text-muted-foreground mb-2">Medium impact + high likelihood</p>
+                        <QuadrantList items={quadrants.medHigh} />
                     </div>
-                    <div className="rounded-lg border-2 border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-900/30">
-                        <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-700 dark:text-slate-400">Accept — Low priority</p>
-                        <p className="text-[9px] text-muted-foreground mb-1.5">Low impact or low likelihood</p>
-                        {quadrants.low.length === 0 ? (
-                            <p className="text-xs text-muted-foreground italic">None</p>
-                        ) : quadrants.low.slice(0, 4).map((r, i) => (
-                            <p key={i} className="text-xs text-foreground truncate" title={r.text}>• {r.text}</p>
-                        ))}
-                        {quadrants.low.length > 4 && (
-                            <p className="text-[10px] text-muted-foreground mt-1">+{quadrants.low.length - 4} more</p>
-                        )}
+                    <div className="rounded-lg border-2 border-slate-200 bg-slate-50 p-3.5 dark:border-slate-700 dark:bg-slate-900/30">
+                        <p className="text-[10px] font-bold uppercase tracking-wide text-slate-700 dark:text-slate-400">Accept — Low priority</p>
+                        <p className="text-[9px] text-muted-foreground mb-2">Low impact or low likelihood</p>
+                        <QuadrantList items={quadrants.low} />
                     </div>
                 </div>
             </CardContent>

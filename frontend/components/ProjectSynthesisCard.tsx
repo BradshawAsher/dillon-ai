@@ -486,7 +486,23 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
 
                             {!synthesis.finalJudgmentSummary ? <div className="rounded-xl border-2 border-warning bg-warning/10 p-5 shadow-md"><div className="flex items-center gap-2"><Scale className="h-5 w-5 text-warning" /><p className="text-sm font-bold uppercase tracking-wide text-warning">Acquisition judgment pending</p></div><p className="mt-3 text-sm leading-6 text-foreground">{synthesis.finalRecommendation ? `n8n returned the recommendation “${synthesis.finalRecommendation},” but did not return its final plain-English judgment yet. Refresh after the next synthesis pass.` : 'This synthesis row has no final judgment text yet. It may still be processing, or the consolidator returned an incomplete payload. Refresh after the next synthesis pass.'}</p></div> : null}
 
-                            <div className="rounded-xl border-2 border-primary/60 bg-primary/10 p-4 shadow-sm"><p className="text-sm font-bold uppercase tracking-wide text-primary">Next step after the synthesis</p><p className="mt-1 text-sm leading-6 text-foreground">Use the Management Question Tracker immediately below this synthesis to turn the open questions into an owner, due date, and follow-up plan. It is the best place to resolve the gaps that could change the acquisition decision.</p></div>
+                            <div className="rounded-xl border-2 border-primary/60 bg-primary/10 p-4 shadow-sm">
+                                <p className="text-sm font-bold uppercase tracking-wide text-primary">Next step after the synthesis</p>
+                                <p className="mt-1 text-sm leading-6 text-foreground">
+                                    Use the Management Question Tracker immediately below this synthesis to turn the open questions into an owner, due date, and follow-up plan. It is the best place to resolve the gaps that could change the acquisition decision.
+                                </p>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const el = document.getElementById('project-synthesis')?.nextElementSibling || document.querySelector('[placeholder="Question for management"]')
+                                        el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                                            ; (el as HTMLElement)?.focus?.()
+                                    }}
+                                    className="mt-3 inline-flex items-center gap-1.5 rounded-md bg-primary px-3.5 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                >
+                                    Go to Management Question Tracker
+                                </button>
+                            </div>
 
                             {(synthesis.valuationBaseEstimate && synthesis.valuationBaseEstimate !== '0') || (synthesis.valuationLowerBound && synthesis.valuationLowerBound !== '0') || (synthesis.valuationUpperBound && synthesis.valuationUpperBound !== '0') ? (
                                 <div>
@@ -703,7 +719,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                 ) : null}
                             </div>
 
-                            <MaterialImpactView synthesis={synthesis} onOpenEvidence={onOpenEvidence} />
+                            <MaterialImpactView synthesis={synthesis} onOpenEvidence={onOpenEvidence} documents={documents} />
                         </div>
                     )
                 })}
