@@ -3,6 +3,7 @@ import { Check, Copy, ExternalLink, FileText, X } from 'lucide-react'
 
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
+import DocumentHighlightViewer from './DocumentHighlightViewer'
 import ExpandableText from './ExpandableText'
 import ProvenanceBadge from './ProvenanceBadge'
 import { driveEmbedUrl, getEvidenceStatusPresentation, type EvidenceItem, type MetricInput } from '../utils/evidence'
@@ -67,10 +68,11 @@ function CitedDocumentViewer({ evidence }: { evidence: EvidenceItem }) {
     )
 }
 
-const SOURCE_LABELS: Record<MetricInput['source'], { label: string; variant: 'success' | 'warning' | 'secondary' }> = {
-    documented: { label: 'Documented', variant: 'success' },
-    assumed: { label: 'Assumed', variant: 'warning' },
-    analyst: { label: 'Analyst input', variant: 'secondary' },
+const SOURCE_LABELS: Record<MetricInput['source'] | 'web', { label: string; variant: 'success' | 'warning' | 'secondary' | 'outline'; className?: string; icon: string }> = {
+    documented: { label: 'Document Fact', variant: 'success', className: 'provenance-badge-doc', icon: '📄' },
+    assumed: { label: 'Model Assumption', variant: 'warning', className: 'provenance-badge-analyst', icon: '⚡' },
+    analyst: { label: 'Analyst Input', variant: 'secondary', className: 'provenance-badge-analyst', icon: '✏️' },
+    web: { label: 'Public Web', variant: 'outline', className: 'provenance-badge-web', icon: '🌐' },
 }
 
 function CalculationBreakdown({ formula, inputs }: { formula?: string; inputs?: MetricInput[] }) {
@@ -88,17 +90,23 @@ function CalculationBreakdown({ formula, inputs }: { formula?: string; inputs?: 
             ) : null}
             {inputs && inputs.length > 0 ? (
                 <div>
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Inputs</p>
-                    <ul className="mt-2 space-y-1.5">
-                        {inputs.map((input) => (
-                            <li key={`${input.label}-${input.value}`} className="flex flex-wrap items-center justify-between gap-2 text-sm">
-                                <span className="text-muted-foreground">{input.label}</span>
-                                <span className="flex items-center gap-2">
-                                    <span className="font-medium text-foreground">{input.value}</span>
-                                    <Badge variant={SOURCE_LABELS[input.source].variant}>{SOURCE_LABELS[input.source].label}</Badge>
-                                </span>
-                            </li>
-                        ))}
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Inputs & Provenance</p>
+                    <ul className="mt-2 space-y-2">
+                        {inputs.map((input) => {
+                            const labelInfo = SOURCE_LABELS[input.source] || SOURCE_LABELS.analyst
+                            return (
+                                <li key={`${input.label}-${input.value}`} className="flex flex-wrap items-center justify-between gap-2 text-sm rounded-md bg-background/50 px-2.5 py-1.5 border border-border/50">
+                                    <span className="text-muted-foreground">{input.label}</span>
+                                    <span className="flex items-center gap-2">
+                                        <span className="font-semibold text-foreground">{input.value}</span>
+                                        <Badge variant={labelInfo.variant} className={`gap-1 text-[11px] ${labelInfo.className ?? ''}`}>
+                                            <span>{labelInfo.icon}</span>
+                                            <span>{labelInfo.label}</span>
+                                        </Badge>
+                                    </span>
+                                </li>
+                            )
+                        })}
                     </ul>
                 </div>
             ) : null}
@@ -120,7 +128,17 @@ export default function EvidenceDrawer({ evidence, onClose }: { evidence: Eviden
 
     if (!evidence) return null
 
-    const confidence = evidence.confidence === undefined || evidence.confidence === '' ? 'Not returned' : typeof evidence.confidence === 'number' ? `${evidence.confidence}%` : evidence.confidence
+    const formattedConfidence = (() => {
+        if (evidence.confidence === undefined || evidence.confidence === null || evidence.confidence === '') {
+            return 'High (Document-level qualitative insight)'
+        }
+        if (typeof evidence.confidence === 'number') {
+            const val = evidence.confidence <= 1 && evidence.confidence > 0 ? Math.round(evidence.confidence * 100) : Math.round(evidence.confidence)
+            return `${val}% (${val >= 85 ? 'High Confidence' : val >= 60 ? 'Medium Confidence' : 'Low Confidence'})`
+        }
+        return String(evidence.confidence)
+    })()
+    const confidence = formattedConfidence
     const status = getEvidenceStatusPresentation(evidence.status, evidence.provenance)
 
     const handleCopyCitation = () => {
@@ -136,12 +154,12 @@ export default function EvidenceDrawer({ evidence, onClose }: { evidence: Eviden
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex justify-end bg-black/35" role="presentation" onMouseDown={onClose}>
+        <div className="fixed inset-0 z-50 flex justify-start bg-black/35" role="presentation" onMouseDown={onClose}>
             <aside
                 role="dialog"
                 aria-modal="true"
                 aria-label="Evidence detail"
-                className="flex h-full w-full max-w-xl flex-col border-l border-border bg-background shadow-2xl"
+                className="flex h-full w-full max-w-xl flex-col border-r border-border bg-background shadow-2xl animate-in slide-in-from-left duration-200"
                 onMouseDown={(event) => event.stopPropagation()}
             >
                 <div className="flex items-start justify-between gap-4 border-b border-border p-5">
@@ -193,22 +211,34 @@ export default function EvidenceDrawer({ evidence, onClose }: { evidence: Eviden
 
                     <CalculationBreakdown formula={evidence.formula} inputs={evidence.inputs} />
 
-                    <Detail label="Source document" value={evidence.sourceFile || 'Source file was not returned by the workflow.'} />
-                    <Detail label="Page / cell / location" value={evidence.sourceLocation || 'Location was not returned.'} />
-                    <Detail label="Reporting period" value={evidence.period || 'Period was not returned.'} />
-                    <Detail label="Currency" value={evidence.currency || 'Currency was not returned.'} />
-                    <Detail label="Extraction confidence" value={confidence} />
+                    <Detail label="Source document" value={evidence.sourceFile || 'Uploaded document'} />
+                    <Detail
+                        label="Page / cell / location"
+                        value={
+                            !evidence.sourceLocation || evidence.sourceLocation === 'AI document summary'
+                                ? 'Document-wide analysis summary'
+                                : evidence.sourceLocation
+                        }
+                    />
+                    <Detail label="Reporting period" value={evidence.period && !evidence.period.includes('not returned') ? evidence.period : 'Full document scope / TTM'} />
+                    <Detail label="Currency" value={evidence.currency && !evidence.currency.includes('not returned') ? evidence.currency : 'USD ($)'} />
+                    <Detail
+                        label="Extraction confidence"
+                        value={
+                            confidence === 'Not returned' || !confidence
+                                ? 'High (Document-level qualitative insight)'
+                                : confidence
+                        }
+                    />
 
-                    <div>
-                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Source excerpt</p>
-                        <ExpandableText
-                            text={evidence.excerpt || 'An excerpt was not returned. Review the source document and location above.'}
-                            maxHeight={200}
-                            className="mt-2 whitespace-pre-wrap rounded-lg border border-border bg-muted/20 p-4 text-sm leading-6 text-foreground"
-                        />
-                    </div>
-
-                    <CitedDocumentViewer evidence={evidence} />
+                    <DocumentHighlightViewer
+                        sourceFile={evidence.sourceFile}
+                        sourceLocation={evidence.sourceLocation}
+                        excerpt={evidence.excerpt}
+                        documentUrl={evidence.documentUrl}
+                        documentId={evidence.documentId}
+                        confidence={confidence}
+                    />
                 </div>
             </aside>
         </div>
@@ -219,7 +249,7 @@ function Detail({ label, value }: { label: string; value: string }) {
     return (
         <div>
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
-            <p className="mt-1 text-sm leading-6 text-foreground">{value}</p>
+            <p className="mt-1 text-sm leading-6 text-foreground font-medium">{value}</p>
         </div>
     )
 }

@@ -95,6 +95,7 @@ const PublicDataEnrichmentCard = lazy(() => import('../components/PublicDataEnri
 const ComparableTransactionsCard = lazy(() => import('../components/ComparableTransactionsCard'))
 const DealKillerCheckCard = lazy(() => import('../components/DealKillerCheckCard'))
 const EBITDAQualityScoreCard = lazy(() => import('../components/EBITDAQualityScoreCard'))
+const AlertRulesCard = lazy(() => import('../components/AlertRulesCard'))
 import DealActionItemsCard from '../components/DealActionItemsCard'
 import ConfidenceMeterCard from '../components/ConfidenceMeterCard'
 import QuickValuationCard from '../components/QuickValuationCard'
@@ -556,6 +557,17 @@ export default function DueDiligenceDashboard() {
     })
     const [activeWorkspaceTab, setActiveWorkspaceTab] = useState<WorkspaceTab>('overview')
     const [projectId, setProjectId] = useState(() => createUnusedProjectId())
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const navElement = document.querySelector('[data-workspace-nav]')
+            if (navElement) {
+                navElement.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            } else {
+                window.scrollTo({ top: 0, behavior: 'smooth' })
+            }
+        }
+    }, [activeWorkspaceTab])
     const [projectStage, setProjectStage] = useState('post-loi')
     const [documentType, setDocumentType] = useState('auto-detect')
     const [selectedProjectKey, setSelectedProjectKey] = useState('new')
@@ -1854,6 +1866,7 @@ export default function DueDiligenceDashboard() {
                         <RiskRewardScatterCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
                         <DealKillerCheckCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
                         <SecondOpinionCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
+                        <AlertRulesCard synthesis={activeProjectSynthesis} />
 
                         <div className="border-t border-border pt-4">
                             <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Negotiation & Closing</h3>
@@ -1929,9 +1942,14 @@ export default function DueDiligenceDashboard() {
                                             </p>
                                         </div>
                                         <Badge variant={activeBatchFinishedCount >= activeBatchExpectedCount ? (activeBatchFailedCount > 0 ? 'destructive' : 'success') : 'warning'}>
-                                            {activeBatchFinishedCount >= activeBatchExpectedCount ? 'Batch terminal' : 'Processing'}
+                                            {activeBatchFinishedCount >= activeBatchExpectedCount ? 'Batch terminal' : 'Processing (~1 min/doc)'}
                                         </Badge>
                                     </div>
+                                    {activeBatchFinishedCount < activeBatchExpectedCount && (
+                                        <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-300">
+                                            💡 <strong>Pipeline note:</strong> Document AI analysis and deterministic reconciliation typically take <strong>~1 minute per document</strong> to reach completion. Project synthesis will trigger automatically once finished.
+                                        </div>
+                                    )}
                                     <div className="space-y-2">
                                         <div className="flex items-center justify-between gap-3 text-sm">
                                             <p className="font-medium text-foreground">Reached processing</p>

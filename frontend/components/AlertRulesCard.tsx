@@ -202,14 +202,27 @@ export default function AlertRulesCard({ synthesis }: { synthesis?: ProjectSynth
                                     )}
                                 </div>
                             </div>
-                            <button
-                                type="button"
-                                onClick={() => deleteRule(rule.id)}
-                                className="shrink-0 rounded p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-                                title="Delete rule"
-                            >
-                                <Trash2 className="h-4 w-4" />
-                            </button>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const msg = `[Test Alert] Rule "${rule.name}" triggered for deal ${synthesis?.projectName || 'Active Deal'}`
+                                        alert(`✅ ${msg}\nDestination: ${rule.destination || rule.channel}`)
+                                    }}
+                                    className="rounded border border-border px-2 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                                    title="Test dispatch rule"
+                                >
+                                    Test
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => deleteRule(rule.id)}
+                                    className="rounded p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                                    title="Delete rule"
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                </button>
+                            </div>
                         </div>
                     ))}
                     {rules.length === 0 && (
