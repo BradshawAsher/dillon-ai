@@ -37,7 +37,6 @@ import DocumentCoverageMatrix from '../components/DocumentCoverageMatrix'
 import DealReadinessGauge from '../components/DealReadinessGauge'
 import DealScorecard from '../components/DealScorecard'
 import NegotiationPlaybook from '../components/NegotiationPlaybook'
-import AlertRulesCard from '../components/AlertRulesCard'
 import DealRulesOfThumb from '../components/DealRulesOfThumb'
 import DealGradeCard from '../components/DealGradeCard'
 import DealAnalysisScoresCard from '../components/DealAnalysisScoresCard'
@@ -567,9 +566,9 @@ export default function DueDiligenceDashboard() {
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
-            const navElement = document.querySelector('[data-workspace-nav]')
-            if (navElement) {
-                navElement.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            const el = document.getElementById('deal-workspace')
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'start' })
             } else {
                 window.scrollTo({ top: 0, behavior: 'smooth' })
             }

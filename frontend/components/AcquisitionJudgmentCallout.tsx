@@ -17,11 +17,31 @@ export default function AcquisitionJudgmentCallout({ synthesis, impact }: { synt
             : 'The project-level judgment will appear here once the consolidator completes its synthesis.'
         : synthesis.finalJudgmentSummary
 
-    const bulletPoints = useMemo(() => {
-        if (!message) return []
-        // Split by sentences that end in period, question mark, or exclamation mark
-        return message.split(/(?<=[.!?])\s+/).map(s => s.trim()).filter(Boolean)
-    }, [message])
+    const parsedSummary = useMemo(() => {
+        if (!message) return { recommendation: '', bullets: [] }
+
+        // Find leading uppercase recommendation phrase ending with a period or exclamation mark
+        // (e.g., "RECOMMEND ESCALATION AND RENEGOTIATION. The target reports...")
+        const uppercaseMatch = message.match(/^([A-Z\s&]{4,}\.)\s*([\s\S]*)/)
+
+        let recommendationText = synthesis?.finalRecommendation || ''
+        let remainderText = message
+
+        if (uppercaseMatch) {
+            recommendationText = uppercaseMatch[1].replace(/\.$/, '').trim()
+            remainderText = uppercaseMatch[2].trim()
+        }
+
+        const bullets = remainderText
+            .split(/(?<=[.!?])\s+/)
+            .map(s => s.trim())
+            .filter(Boolean)
+
+        return {
+            recommendation: recommendationText || synthesis?.finalRecommendation || '',
+            bullets
+        }
+    }, [message, synthesis?.finalRecommendation])
 
     return (
         <Card className={pending ? 'overflow-hidden border-2 border-warning shadow-lg' : 'overflow-hidden border-2 border-primary shadow-lg'}>
@@ -39,8 +59,8 @@ export default function AcquisitionJudgmentCallout({ synthesis, impact }: { synt
                         </div>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                        {synthesis?.finalRecommendation ? (
-                            <Badge variant={getSubmissionInsightTone(synthesis.finalTrafficLight)}>{synthesis.finalRecommendation}</Badge>
+                        {parsedSummary.recommendation ? (
+                            <Badge variant={getSubmissionInsightTone(synthesis?.finalTrafficLight || 'YELLOW')}>{parsedSummary.recommendation}</Badge>
                         ) : null}
                         {impact.completedDocuments > 0 ? (
                             <Badge variant="success">~{formatHours(impact.timeSavedHours)} analyst time saved</Badge>
@@ -49,15 +69,15 @@ export default function AcquisitionJudgmentCallout({ synthesis, impact }: { synt
                 </div>
 
                 <div className="mt-5 rounded-xl border border-primary/25 bg-background/90 p-5 shadow-sm">
-                    {synthesis?.finalRecommendation && !pending && (
+                    {parsedSummary.recommendation && !pending && (
                         <div className="mb-4 pb-3 border-b border-border/60">
                             <p className="text-[10px] uppercase tracking-wider font-extrabold text-muted-foreground mb-1">Acquisition Recommendation</p>
-                            <p className="text-xl sm:text-2xl font-black text-foreground tracking-tight">{synthesis.finalRecommendation}</p>
+                            <p className="text-xl sm:text-2xl font-black text-destructive tracking-tight uppercase leading-relaxed">{parsedSummary.recommendation}</p>
                         </div>
                     )}
-                    {bulletPoints.length > 0 ? (
+                    {parsedSummary.bullets.length > 0 ? (
                         <div className="space-y-3">
-                            {bulletPoints.map((point, index) => (
+                            {parsedSummary.bullets.map((point, index) => (
                                 <div key={index} className="flex items-start gap-2.5">
                                     <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
                                     <p className="text-sm sm:text-base leading-relaxed text-foreground/95 font-medium">{point}</p>

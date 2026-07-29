@@ -36,6 +36,7 @@ const STANDARD_DOC_CATEGORIES = [
 
 export default function DDRequestListCard({ model, synthesis, documents, projectName }: Props) {
     const [copied, setCopied] = useState(false)
+    const [expanded, setExpanded] = useState(false)
     const facts = parseDocumentedFacts(model.documentedFactsJson)
     const hasRevenue = facts.revenue?.status === 'confirmed'
     const hasEbitda = facts.ebitda_sde?.status === 'confirmed'
@@ -172,7 +173,7 @@ export default function DDRequestListCard({ model, synthesis, documents, project
             </CardHeader>
             <CardContent className="p-5">
                 <div className="space-y-2">
-                    {sortedRequests.slice(0, 8).map((item, i) => (
+                    {(expanded ? sortedRequests : sortedRequests.slice(0, 8)).map((item, i) => (
                         <div key={i} className="flex items-start gap-3 rounded-lg border border-border p-3">
                             <span className="mt-0.5 shrink-0 text-xs font-bold tabular-nums text-muted-foreground">{i + 1}</span>
                             <div className="min-w-0 flex-1">
@@ -185,9 +186,13 @@ export default function DDRequestListCard({ model, synthesis, documents, project
                         </div>
                     ))}
                     {sortedRequests.length > 8 && (
-                        <p className="text-xs text-muted-foreground text-center pt-1">
-                            +{sortedRequests.length - 8} more items — copy the full list to see all.
-                        </p>
+                        <button
+                            type="button"
+                            onClick={() => setExpanded(!expanded)}
+                            className="mt-2 flex w-full items-center justify-center gap-1 rounded-md py-1.5 text-xs font-medium text-primary hover:underline transition-colors focus:outline-none"
+                        >
+                            {expanded ? 'Show less items' : `+${sortedRequests.length - 8} more items — click to show all`}
+                        </button>
                     )}
                 </div>
             </CardContent>

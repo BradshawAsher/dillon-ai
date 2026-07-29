@@ -76,21 +76,21 @@ export default function NegotiationPlaybook({ synthesis, model }: Props) {
 
     return (
         <Card className="overflow-hidden">
-            <CardHeader className="pb-2">
+            <CardHeader className="pb-3 border-b border-border bg-card/80">
                 <div className="flex items-center gap-2">
-                    <Handshake className="h-4 w-4 text-primary" />
-                    <CardTitle className="text-sm font-semibold">Negotiation playbook</CardTitle>
+                    <Handshake className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-base font-bold">Negotiation playbook</CardTitle>
                     <Badge variant="secondary" className="text-[10px]">{playbook.length} tactics</Badge>
                 </div>
             </CardHeader>
-            <CardContent className="pb-3">
+            <CardContent className="p-4">
                 <div className="space-y-2">
                     {visible.map((item, i) => (
-                        <div key={i} className="flex items-start gap-3 rounded-md border border-border bg-background p-2.5">
-                            <Target className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${priorityColors[item.priority]}`} />
+                        <div key={i} className="flex items-start gap-3 rounded-md border border-border bg-background p-3.5">
+                            <Target className={`mt-0.5 h-4 w-4 shrink-0 ${priorityColors[item.priority]}`} />
                             <div className="min-w-0 flex-1">
-                                <p className="text-xs font-medium text-foreground">{item.tactic}</p>
-                                <div className="mt-1 flex items-center gap-2">
+                                <p className="text-sm font-semibold leading-relaxed text-foreground">{item.tactic}</p>
+                                <div className="mt-1.5 flex items-center gap-2">
                                     <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
                                         <DollarSign className="h-2.5 w-2.5" />{item.estimatedImpact}
                                     </span>

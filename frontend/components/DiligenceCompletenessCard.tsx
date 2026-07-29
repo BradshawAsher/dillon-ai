@@ -10,6 +10,7 @@ type Props = {
     model: DealModel
     synthesis?: ProjectSynthesisItem | null
     documentCount: number
+    onNavigate?: (target: string) => void
 }
 
 type Category = {
@@ -19,7 +20,7 @@ type Category = {
     items: { label: string; done: boolean }[]
 }
 
-export default function DiligenceCompletenessCard({ model, synthesis, documentCount }: Props) {
+export default function DiligenceCompletenessCard({ model, synthesis, documentCount, onNavigate }: Props) {
     const categories = useMemo(() => {
         const facts = parseDocumentedFacts(model.documentedFactsJson)
         const result: Category[] = []
@@ -115,33 +116,55 @@ export default function DiligenceCompletenessCard({ model, synthesis, documentCo
                     </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                    {categories.map(cat => (
-                        <div key={cat.label} className="rounded-lg border border-border p-2.5">
-                            <div className="flex items-center justify-between mb-1.5">
-                                <p className="text-xs font-medium text-foreground">{cat.label}</p>
-                                <span className="text-[10px] font-mono text-muted-foreground">{cat.score}/{cat.maxScore}</span>
-                            </div>
-                            <div className="h-1.5 rounded-full bg-muted overflow-hidden mb-2">
-                                <div
-                                    className={`h-full rounded-full ${cat.score === cat.maxScore ? 'bg-green-500' : cat.score > 0 ? 'bg-blue-500' : 'bg-muted-foreground/30'}`}
-                                    style={{ width: `${(cat.score / cat.maxScore) * 100}%` }}
-                                />
-                            </div>
-                            <div className="space-y-0.5">
-                                {cat.items.map(item => (
-                                    <div key={item.label} className="flex items-center gap-1.5">
-                                        <span className={`text-[10px] ${item.done ? 'text-green-600' : 'text-muted-foreground/50'}`}>
-                                            {item.done ? '●' : '○'}
-                                        </span>
-                                        <span className={`text-[10px] ${item.done ? 'text-foreground' : 'text-muted-foreground'}`}>
-                                            {item.label}
-                                        </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {categories.map(cat => {
+                        const navTarget = cat.label === 'Financial Data' ? 'upload'
+                            : cat.label === 'Valuation Inputs' ? 'valuation'
+                                : cat.label === 'Risk Assessment' ? 'synthesis'
+                                    : 'structure'
+                        const navLabel = cat.label === 'Financial Data' ? 'Upload'
+                            : cat.label === 'Valuation Inputs' ? 'Configure'
+                                : cat.label === 'Risk Assessment' ? 'Synthesize'
+                                    : 'Structure'
+
+                        return (
+                            <div key={cat.label} className="rounded-lg border border-border p-2.5 bg-background">
+                                <div className="flex items-center justify-between mb-1.5">
+                                    <div className="flex items-center gap-1.5 min-w-0">
+                                        <p className="text-xs font-bold text-foreground truncate">{cat.label}</p>
+                                        {onNavigate && cat.score < cat.maxScore && (
+                                            <button
+                                                type="button"
+                                                onClick={() => onNavigate(navTarget)}
+                                                className="text-[9px] font-bold text-primary hover:underline hover:text-primary/80 shrink-0"
+                                            >
+                                                ({navLabel})
+                                            </button>
+                                        )}
                                     </div>
-                                ))}
+                                    <span className="text-[10px] font-mono text-muted-foreground shrink-0">{cat.score}/{cat.maxScore}</span>
+                                </div>
+                                <div className="h-1.5 rounded-full bg-muted overflow-hidden mb-2">
+                                    <div
+                                        className={`h-full rounded-full ${cat.score === cat.maxScore ? 'bg-green-500' : cat.score > 0 ? 'bg-blue-500' : 'bg-muted-foreground/30'}`}
+                                        style={{ width: `${(cat.score / cat.maxScore) * 100}%` }}
+                                    />
+                                </div>
+                                <div className="space-y-0.5">
+                                    {cat.items.map(item => (
+                                        <div key={item.label} className="flex items-center gap-1.5">
+                                            <span className={`text-[10px] ${item.done ? 'text-green-600' : 'text-muted-foreground/50'}`}>
+                                                {item.done ? '●' : '○'}
+                                            </span>
+                                            <span className={`text-[10px] ${item.done ? 'text-foreground' : 'text-muted-foreground'}`}>
+                                                {item.label}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        )
+                    })}
                 </div>
 
                 {pct < 80 && (
