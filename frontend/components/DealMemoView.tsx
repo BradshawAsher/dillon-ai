@@ -154,19 +154,35 @@ export default function DealMemoView({ model, synthesis, projectName, documents 
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                     <div className="rounded-lg border border-border p-3">
                         <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Revenue</p>
-                        <p className="mt-1 text-lg font-bold">{typeof revenue === 'number' ? money(revenue) : '—'}</p>
+                        {typeof revenue === 'number' ? (
+                            <p className="mt-1 text-lg font-bold text-foreground">{money(revenue)}</p>
+                        ) : (
+                            <p className="mt-1 text-lg font-bold text-muted-foreground/70" title="Illustrative fallback data">$1.2M <span className="text-[10px] font-medium block sm:inline text-muted-foreground">(Illustrative)</span></p>
+                        )}
                     </div>
                     <div className="rounded-lg border border-border p-3">
                         <p className="text-[11px] uppercase tracking-wide text-muted-foreground">EBITDA/SDE</p>
-                        <p className="mt-1 text-lg font-bold">{typeof ebitda === 'number' ? money(ebitda) : '—'}</p>
+                        {typeof ebitda === 'number' ? (
+                            <p className="mt-1 text-lg font-bold text-foreground">{money(ebitda)}</p>
+                        ) : (
+                            <p className="mt-1 text-lg font-bold text-muted-foreground/70" title="Illustrative fallback data">$175K <span className="text-[10px] font-medium block sm:inline text-muted-foreground">(Illustrative)</span></p>
+                        )}
                     </div>
                     <div className="rounded-lg border border-border p-3">
                         <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Price</p>
-                        <p className="mt-1 text-lg font-bold">{typeof price === 'number' ? money(price) : '—'}</p>
+                        {typeof price === 'number' ? (
+                            <p className="mt-1 text-lg font-bold text-foreground">{money(price)}</p>
+                        ) : (
+                            <p className="mt-1 text-lg font-bold text-muted-foreground/70" title="Illustrative fallback data">$1.0M <span className="text-[10px] font-medium block sm:inline text-muted-foreground">(Illustrative)</span></p>
+                        )}
                     </div>
                     <div className="rounded-lg border border-border p-3">
                         <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Multiple</p>
-                        <p className="mt-1 text-lg font-bold">{multiple ? `${multiple}x` : '—'}</p>
+                        {multiple ? (
+                            <p className="mt-1 text-lg font-bold text-foreground">{multiple}x</p>
+                        ) : (
+                            <p className="mt-1 text-lg font-bold text-muted-foreground/70" title="Illustrative fallback data">5.7x <span className="text-[10px] font-medium block sm:inline text-muted-foreground">(Illustrative)</span></p>
+                        )}
                     </div>
                 </div>
 
