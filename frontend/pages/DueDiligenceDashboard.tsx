@@ -326,14 +326,9 @@ function buildReturnsDisplayModel(model: DealModel) {
     const confirmedNumber = (field: string) => facts[field]?.status === 'confirmed' && typeof facts[field]?.value === 'number'
     const hasEbitda = confirmedNumber('ebitda_sde')
     const hasRevenue = confirmedNumber('revenue')
-    const hasPrice = (model.purchasePrice ?? model.askingPrice) !== null
-    if (hasEbitda && hasRevenue && hasPrice) return model
 
-    // Rendering-only values: they give the live workspace a useful first
-    // screen while facts are still loading, but are never saved or treated as
-    // documentary evidence.
-    return {
-        ...model,
+    // Safe illustrative/analyst-model fallback values for any unset (null/undefined) parameters
+    const fallbackBase = {
         askingPrice: model.askingPrice ?? 1_000_000,
         purchasePrice: model.purchasePrice ?? model.askingPrice ?? 1_000_000,
         transactionFees: model.transactionFees ?? 10_000,
@@ -356,12 +351,24 @@ function buildReturnsDisplayModel(model: DealModel) {
         bearExitMultiple: model.bearExitMultiple ?? 3,
         baseExitMultiple: model.baseExitMultiple ?? 4,
         bullExitMultiple: model.bullExitMultiple ?? 5,
-        documentedFactsJson: JSON.stringify({
-            ...facts,
-            revenue: hasRevenue ? facts.revenue : { value: 1_000_000, status: 'illustrative', currency: 'USD', period: 'Display preview', provenance: 'Illustrative preview' },
-            ebitda_sde: hasEbitda ? facts.ebitda_sde : { value: 200_000, status: 'illustrative', currency: 'USD', period: 'Display preview', provenance: 'Illustrative preview' },
-        }),
-    } as DealModel
+    }
+
+    // Merge individual unset parameters so that if some are set but others are missing,
+    // the missing parameters always receive their safe illustrative preview values.
+    const merged = { ...model }
+    for (const [key, val] of Object.entries(fallbackBase)) {
+        if (merged[key as keyof DealModel] == null) {
+            ; (merged as Record<string, unknown>)[key] = val
+        }
+    }
+
+    merged.documentedFactsJson = JSON.stringify({
+        ...facts,
+        revenue: hasRevenue ? facts.revenue : { value: 1_000_000, status: 'illustrative', currency: 'USD', period: 'Display preview', provenance: 'Illustrative preview' },
+        ebitda_sde: hasEbitda ? facts.ebitda_sde : { value: 200_000, status: 'illustrative', currency: 'USD', period: 'Display preview', provenance: 'Illustrative preview' },
+    })
+
+    return merged as DealModel
 }
 
 // Derive the acquisition capital stack (equity / senior debt) and loan term
@@ -1880,8 +1887,8 @@ export default function DueDiligenceDashboard() {
                         />
                         <ClosingChecklistCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} />
                         <SellerQuestionsCard synthesis={activeProjectSynthesis} model={hydratedDealModel} />
+                        <ManagementQuestionTracker projectId={activeProjectId} suggestedQuestions={activeProjectSynthesis?.openQuestions ?? []} />
                         <NegotiationPlaybook synthesis={activeProjectSynthesis} model={hydratedDealModel} />
-                        <AlertRulesCard synthesis={activeProjectSynthesis ?? undefined} />
                         <NegotiationImpactCard model={hydratedDealModel} />
                         <DealTimingCard model={hydratedDealModel} />
                         <AcquisitionTimelineCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />

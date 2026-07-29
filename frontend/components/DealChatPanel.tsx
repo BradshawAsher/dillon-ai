@@ -106,6 +106,28 @@ function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealMo
         }
     }
 
+    const trackerKey = `mergeworks.managementQuestions.${model.projectId || synthesis?.projectId || 'default-project'}`
+    try {
+        if (typeof window !== 'undefined') {
+            const stored = window.localStorage.getItem(trackerKey)
+            if (stored) {
+                const parsed = JSON.parse(stored)
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    parts.push('\n## Analyst Management Tracker & Answers')
+                    parsed.forEach((q, idx) => {
+                        parts.push(`${idx + 1}. Question: ${q.question}`)
+                        if (q.owner) parts.push(`   Owner: ${q.owner}`)
+                        if (q.status) parts.push(`   Status: ${q.status}`)
+                        if (q.response) parts.push(`   Management Response/Answer: ${q.response}`)
+                        if (q.thesisImpact) parts.push(`   Thesis Impact: ${q.thesisImpact}`)
+                    })
+                }
+            }
+        }
+    } catch (e) {
+        // Safe fallback if localStorage is disabled/fails
+    }
+
     if (documents && documents.length > 0) {
         const completed = documents.filter(d => d.status === 'completed')
         parts.push(`\n## Uploaded Documents (${documents.length} total, ${completed.length} completed)`)
@@ -520,8 +542,8 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                     <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                         <div className="max-w-[85%]">
                             <div className={`rounded-lg px-3 py-2 text-sm ${msg.role === 'user'
-                                    ? 'bg-primary text-primary-foreground whitespace-pre-wrap'
-                                    : 'bg-muted text-foreground space-y-0.5'
+                                ? 'bg-primary text-primary-foreground whitespace-pre-wrap'
+                                : 'bg-muted text-foreground space-y-0.5'
                                 }`}>
                                 {msg.role === 'assistant' ? renderSimpleMarkdown(msg.content) : msg.content}
                             </div>
