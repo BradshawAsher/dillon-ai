@@ -31,12 +31,22 @@ export default function DealHealthKPIs({ synthesis, model, impact, documentsCoun
     // Deal risk signal
     if (synthesis) {
         const riskLevel = synthesis.finalRiskLevel.trim().toLowerCase()
+        const trafficLight = (synthesis.finalTrafficLight || '').trim().toLowerCase()
+
+        // Map 'red' / 'yellow' / 'green' signals directly so they are styled correctly
+        let variant: 'success' | 'warning' | 'destructive' | 'default' = 'success'
+        if (trafficLight === 'red' || riskLevel === 'red' || riskLevel === 'critical' || riskLevel === 'high') {
+            variant = 'destructive'
+        } else if (trafficLight === 'yellow' || riskLevel === 'yellow' || riskLevel === 'medium') {
+            variant = 'warning'
+        }
+
         kpis.push({
             label: 'Risk Signal',
             value: synthesis.finalTrafficLight || synthesis.finalRiskLevel || 'Pending',
             subtext: `${synthesis.redFlags.length} red flags`,
             icon: <AlertTriangle className="h-5 w-5" />,
-            variant: riskLevel === 'critical' || riskLevel === 'high' ? 'destructive' : riskLevel === 'medium' ? 'warning' : 'success',
+            variant,
         })
     }
 
@@ -92,12 +102,11 @@ export default function DealHealthKPIs({ synthesis, model, impact, documentsCoun
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
                     {kpis.map((kpi) => (
                         <div key={kpi.label} className="flex items-start gap-3 rounded-lg p-1 transition-transform duration-200 hover:scale-[1.02]">
-                            <div className={`mt-0.5 rounded-lg p-2 ${
-                                kpi.variant === 'success' ? 'bg-success/10 text-success'
+                            <div className={`mt-0.5 rounded-lg p-2 ${kpi.variant === 'success' ? 'bg-success/10 text-success'
                                     : kpi.variant === 'warning' ? 'bg-warning/10 text-warning'
                                         : kpi.variant === 'destructive' ? 'bg-destructive/10 text-destructive'
                                             : 'bg-muted text-muted-foreground'
-                            }`}>
+                                }`}>
                                 {kpi.icon}
                             </div>
                             <div className="min-w-0">
