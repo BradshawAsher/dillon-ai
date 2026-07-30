@@ -1811,7 +1811,7 @@ export default function DueDiligenceDashboard() {
                         documents={activeProjectDocuments}
                         onNavigate={(target) => {
                             if (target === 'upload') {
-                                document.querySelector('[data-project-intake]')?.scrollIntoView({ behavior: 'smooth' })
+                                document.querySelector('[data-project-intake]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
                             } else {
                                 setActiveWorkspaceTab(target as WorkspaceTab)
                             }
@@ -1876,7 +1876,13 @@ export default function DueDiligenceDashboard() {
                         <RiskMatrixCard synthesis={activeProjectSynthesis} />
                         <KeyPersonRiskCard synthesis={activeProjectSynthesis} />
                         <OwnerDependencyCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
-                        <DiligenceCompletenessCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documentCount={activeProjectDocuments.length} />
+                        <DiligenceCompletenessCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documentCount={activeProjectDocuments.length} onNavigate={(target) => {
+                            if (target === 'upload') {
+                                document.querySelector('[data-project-intake]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                            } else {
+                                setActiveWorkspaceTab(target as WorkspaceTab)
+                            }
+                        }} />
                         <RiskRewardScatterCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
                         <DealKillerCheckCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
                         <SecondOpinionCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
