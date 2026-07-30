@@ -8,7 +8,8 @@ OVERVIEW PROBLEMS:
 
 [DONE] Can we also shorten the top diligence risks, negotiation plan, and open questions or at least turn them into a show more show less format like how we did in other parts of the page?
 
-[NOT DONE] Also for the newest project project 6, the ebitda/sde is a documented fact of 25k, but I don't think the citation is right for it since the EBITDA is reconstructed using formulas?
+[DONE] Also for the newest project project 6, the ebitda/sde is a documented fact of 25k, but I don't think the citation is right for it since the EBITDA is reconstructed using formulas?
+(Fixed the underlying aggregation issue so reconstructed facts are deprioritized when an explicitly sourced fact exists in the same period, page numbers are preserved as citation locations, and derived facts are labeled as calculated provenance instead of generic document extraction.)
 
 [DONE] For recurring vs 1-time findings part, if the label is a red flag, can we change the background to be something more red and not green?
 
@@ -80,3 +81,12 @@ NEW PROBLEMS???
 [NOT DONE] For Brad - double check how deterministc match checks work and if we can make it better?
  
 [NOT DONE] For Brad - Migrate n8n tables to something more robust like Supabase and migrate Google Drive to something more robust?
+
+[DONE] Why do valuation, growth, returns, and deal structure not show the assumptions at the very top? Can we set some? I thought we already had some assumptions by default?
+(The tabs now show saved assumptions first plus any display-only preview defaults at the top, so the starting model is visible even before every field is explicitly saved.)
+
+For Brad - test the docs that trisha gave you?
+
+For Brad - go through TODO_CURRENT.md and what's missing?
+
+Add some sort of sentiment analysis or no?

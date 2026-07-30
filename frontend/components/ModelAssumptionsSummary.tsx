@@ -21,45 +21,91 @@ function fmt(value: number | null | undefined, style: 'number' | 'percent' | 'cu
     return String(value)
 }
 
-type AssumptionRow = { label: string; value: string; isSet: boolean }
+type AssumptionRow = { label: string; value: string; isSet: boolean; isPreview?: boolean }
+
+function parseDocumentedFacts(json: string | undefined | null): Record<string, { value?: number }> {
+    if (!json) return {}
+    try {
+        const parsed = JSON.parse(json) as unknown
+        return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+            ? parsed as Record<string, { value?: number }>
+            : {}
+    } catch {
+        return {}
+    }
+}
+
+function currentMargin(model: DealModel) {
+    const facts = parseDocumentedFacts(model.documentedFactsJson)
+    const revenue = typeof facts.revenue?.value === 'number' ? facts.revenue.value : null
+    const ebitda = typeof facts.ebitda_sde?.value === 'number' ? facts.ebitda_sde.value : null
+    return revenue && revenue > 0 && ebitda !== null ? ebitda / revenue : null
+}
+
+function pickNumber(value: number | null | undefined, preview: number) {
+    return { value: value ?? preview, isSet: value !== null && value !== undefined }
+}
 
 function getReturnsAssumptions(model: DealModel): AssumptionRow[] {
+    const holdPeriod = pickNumber(model.holdPeriodYears, 5)
+    const taxRate = pickNumber(model.taxRate, 0.25)
+    const exitMultiple = pickNumber(model.exitMultiple, 4)
+    const equity = pickNumber(model.equityContributionPercent, 0.3)
+    const interest = pickNumber(model.interestRate, 0.1)
+    const amortization = pickNumber(model.amortizationYears, 10)
     return [
-        { label: 'Hold period', value: model.holdPeriodYears ? `${model.holdPeriodYears} yrs` : '—', isSet: model.holdPeriodYears !== null },
-        { label: 'Tax rate', value: fmt(model.taxRate, 'percent'), isSet: model.taxRate !== null },
-        { label: 'Exit multiple', value: model.exitMultiple ? `${model.exitMultiple}x` : '—', isSet: model.exitMultiple !== null },
-        { label: 'Equity %', value: fmt(model.equityContributionPercent, 'percent'), isSet: model.equityContributionPercent !== null },
-        { label: 'Interest rate', value: fmt(model.interestRate, 'percent'), isSet: model.interestRate !== null },
-        { label: 'Amortization', value: model.amortizationYears ? `${model.amortizationYears} yrs` : '—', isSet: model.amortizationYears !== null },
+        { label: 'Hold period', value: `${holdPeriod.value} yrs`, isSet: holdPeriod.isSet, isPreview: !holdPeriod.isSet },
+        { label: 'Tax rate', value: fmt(taxRate.value, 'percent'), isSet: taxRate.isSet, isPreview: !taxRate.isSet },
+        { label: 'Exit multiple', value: `${exitMultiple.value}x`, isSet: exitMultiple.isSet, isPreview: !exitMultiple.isSet },
+        { label: 'Equity %', value: fmt(equity.value, 'percent'), isSet: equity.isSet, isPreview: !equity.isSet },
+        { label: 'Interest rate', value: fmt(interest.value, 'percent'), isSet: interest.isSet, isPreview: !interest.isSet },
+        { label: 'Amortization', value: `${amortization.value} yrs`, isSet: amortization.isSet, isPreview: !amortization.isSet },
     ]
 }
 
 function getGrowthAssumptions(model: DealModel): AssumptionRow[] {
+    const impliedMargin = currentMargin(model)
+    const bearGrowth = pickNumber(model.bearRevenueGrowth, 0)
+    const baseGrowth = pickNumber(model.baseRevenueGrowth, 0.05)
+    const bullGrowth = pickNumber(model.bullRevenueGrowth, 0.1)
+    const bearMargin = pickNumber(model.bearEbitdaMargin, impliedMargin === null ? 0.15 : Math.max(0, impliedMargin - 0.03))
+    const baseMargin = pickNumber(model.baseEbitdaMargin, impliedMargin ?? 0.2)
+    const bullMargin = pickNumber(model.bullEbitdaMargin, impliedMargin === null ? 0.25 : impliedMargin + 0.03)
     return [
-        { label: 'Bear growth', value: fmt(model.bearRevenueGrowth, 'percent'), isSet: model.bearRevenueGrowth !== null },
-        { label: 'Base growth', value: fmt(model.baseRevenueGrowth, 'percent'), isSet: model.baseRevenueGrowth !== null },
-        { label: 'Bull growth', value: fmt(model.bullRevenueGrowth, 'percent'), isSet: model.bullRevenueGrowth !== null },
-        { label: 'Bear margin', value: fmt(model.bearEbitdaMargin, 'percent'), isSet: model.bearEbitdaMargin !== null },
-        { label: 'Base margin', value: fmt(model.baseEbitdaMargin, 'percent'), isSet: model.baseEbitdaMargin !== null },
-        { label: 'Bull margin', value: fmt(model.bullEbitdaMargin, 'percent'), isSet: model.bullEbitdaMargin !== null },
+        { label: 'Bear growth', value: fmt(bearGrowth.value, 'percent'), isSet: bearGrowth.isSet, isPreview: !bearGrowth.isSet },
+        { label: 'Base growth', value: fmt(baseGrowth.value, 'percent'), isSet: baseGrowth.isSet, isPreview: !baseGrowth.isSet },
+        { label: 'Bull growth', value: fmt(bullGrowth.value, 'percent'), isSet: bullGrowth.isSet, isPreview: !bullGrowth.isSet },
+        { label: 'Bear margin', value: fmt(bearMargin.value, 'percent'), isSet: bearMargin.isSet, isPreview: !bearMargin.isSet },
+        { label: 'Base margin', value: fmt(baseMargin.value, 'percent'), isSet: baseMargin.isSet, isPreview: !baseMargin.isSet },
+        { label: 'Bull margin', value: fmt(bullMargin.value, 'percent'), isSet: bullMargin.isSet, isPreview: !bullMargin.isSet },
     ]
 }
 
 function getValuationAssumptions(model: DealModel): AssumptionRow[] {
+    const revenueMultiple = pickNumber(model.revenueMultiple, 2.1)
+    const ebitdaMultiple = pickNumber(model.ebitdaMultiple, 8)
+    const assetHaircut = pickNumber(model.assetHaircutPercent, 0.1)
     return [
-        { label: 'Revenue multiple', value: model.revenueMultiple ? `${model.revenueMultiple}x` : '—', isSet: model.revenueMultiple !== null && model.revenueMultiple !== undefined },
-        { label: 'EBITDA multiple', value: model.ebitdaMultiple ? `${model.ebitdaMultiple}x` : '—', isSet: model.ebitdaMultiple !== null && model.ebitdaMultiple !== undefined },
-        { label: 'Asset haircut', value: fmt(model.assetHaircutPercent, 'percent'), isSet: model.assetHaircutPercent !== null && model.assetHaircutPercent !== undefined },
+        { label: 'Revenue multiple', value: `${revenueMultiple.value}x`, isSet: revenueMultiple.isSet, isPreview: !revenueMultiple.isSet },
+        { label: 'EBITDA multiple', value: `${ebitdaMultiple.value}x`, isSet: ebitdaMultiple.isSet, isPreview: !ebitdaMultiple.isSet },
+        { label: 'Asset haircut', value: fmt(assetHaircut.value, 'percent'), isSet: assetHaircut.isSet, isPreview: !assetHaircut.isSet },
     ]
 }
 
 function getStructureAssumptions(model: DealModel): AssumptionRow[] {
+    const facts = parseDocumentedFacts(model.documentedFactsJson)
+    const ebitda = typeof facts.ebitda_sde?.value === 'number' ? facts.ebitda_sde.value : null
+    const purchasePrice = pickNumber(model.purchasePrice ?? model.askingPrice, ebitda === null ? 1_000_000 : ebitda * 4)
+    const transactionFees = pickNumber(model.transactionFees, purchasePrice.value * 0.01)
+    const workingCapital = pickNumber(model.workingCapitalRequirement, purchasePrice.value * 0.02)
+    const equity = pickNumber(model.equityContributionPercent, 0.3)
+    const sellerNote = pickNumber(model.sellerNoteAmount, 0)
     return [
-        { label: 'Purchase price', value: fmt(model.purchasePrice, 'currency'), isSet: model.purchasePrice !== null },
-        { label: 'Transaction fees', value: fmt(model.transactionFees, 'currency'), isSet: model.transactionFees !== null },
-        { label: 'Working capital', value: fmt(model.workingCapitalRequirement, 'currency'), isSet: model.workingCapitalRequirement !== null },
-        { label: 'Equity %', value: fmt(model.equityContributionPercent, 'percent'), isSet: model.equityContributionPercent !== null },
-        { label: 'Seller note', value: fmt(model.sellerNoteAmount, 'currency'), isSet: model.sellerNoteAmount !== null },
+        { label: 'Purchase price', value: fmt(purchasePrice.value, 'currency'), isSet: purchasePrice.isSet, isPreview: !purchasePrice.isSet },
+        { label: 'Transaction fees', value: fmt(transactionFees.value, 'currency'), isSet: transactionFees.isSet, isPreview: !transactionFees.isSet },
+        { label: 'Working capital', value: fmt(workingCapital.value, 'currency'), isSet: workingCapital.isSet, isPreview: !workingCapital.isSet },
+        { label: 'Equity %', value: fmt(equity.value, 'percent'), isSet: equity.isSet, isPreview: !equity.isSet },
+        { label: 'Seller note', value: fmt(sellerNote.value, 'currency'), isSet: sellerNote.isSet, isPreview: !sellerNote.isSet },
     ]
 }
 
@@ -74,6 +120,7 @@ export default function ModelAssumptionsSummary({ model, area }: Props) {
     const config = areaConfig[area]
     const rows = config.getter(model)
     const setCount = rows.filter((r) => r.isSet).length
+    const previewCount = rows.filter((r) => r.isPreview).length
 
     return (
         <Card className="overflow-hidden border-primary/20 bg-gradient-to-r from-primary/[0.03] to-transparent">
@@ -82,8 +129,9 @@ export default function ModelAssumptionsSummary({ model, area }: Props) {
                     <p className="text-sm font-semibold text-foreground">{config.title}</p>
                     <div className="flex items-center gap-2">
                         <Badge variant={setCount === rows.length ? 'success' : setCount > 0 ? 'warning' : 'destructive'}>
-                            {setCount}/{rows.length} configured
+                            {setCount}/{rows.length} saved
                         </Badge>
+                        {previewCount > 0 ? <Badge variant="outline">{previewCount} preview default{previewCount === 1 ? '' : 's'}</Badge> : null}
                         <Button
                             type="button"
                             size="sm"
@@ -99,13 +147,16 @@ export default function ModelAssumptionsSummary({ model, area }: Props) {
                         </Button>
                     </div>
                 </div>
-                <p className="mt-1 text-xs text-muted-foreground">Current saved values driving the calculations below.</p>
-                <p className="mt-1 text-xs text-muted-foreground">If a card can still render without a saved value, it may be using a clearly labeled preview or fallback assumption until you configure the saved model inputs.</p>
+                <p className="mt-1 text-xs text-muted-foreground">Saved assumptions appear first. When something is still blank, the same preview defaults used by the cards below are shown here so the starting model is visible.</p>
+                <p className="mt-1 text-xs text-muted-foreground">Preview defaults are display-only until you save your own model inputs.</p>
                 <div className="mt-3 grid gap-2 sm:grid-cols-3 lg:grid-cols-6">
                     {rows.map((row) => (
-                        <div key={row.label} className={`rounded-md border px-3 py-2 ${row.isSet ? 'border-border bg-background' : 'border-dashed border-muted-foreground/30 bg-muted/30'}`}>
-                            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{row.label}</p>
-                            <p className={`mt-0.5 text-sm font-semibold ${row.isSet ? 'text-foreground' : 'text-muted-foreground'}`}>{row.value}</p>
+                        <div key={row.label} className={`rounded-md border px-3 py-2 ${row.isSet ? 'border-border bg-background' : 'border-dashed border-primary/30 bg-primary/[0.04]'}`}>
+                            <div className="flex items-start justify-between gap-2">
+                                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{row.label}</p>
+                                {row.isPreview ? <Badge variant="outline" className="h-5 px-1.5 text-[9px]">Preview</Badge> : null}
+                            </div>
+                            <p className={`mt-0.5 text-sm font-semibold ${row.isSet ? 'text-foreground' : 'text-foreground'}`}>{row.value}</p>
                         </div>
                     ))}
                 </div>

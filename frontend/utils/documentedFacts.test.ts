@@ -65,6 +65,27 @@ describe('deriveDocumentedFacts', () => {
             excerpt: 'Revenue was $1,000',
         })
     })
+
+    it('falls back to page_number when row_or_cell is missing', () => {
+        const facts = JSON.stringify([
+            fact({ citation: { source_file: 'q4.pdf', page_number: 7, excerpt: 'Revenue was $1,000' } }),
+        ])
+        expect(deriveDocumentedFacts([doc(facts)]).revenue.citations[0]).toEqual({
+            source_file: 'q4.pdf',
+            row_or_cell: 'Page 7',
+            excerpt: 'Revenue was $1,000',
+        })
+    })
+
+    it('prefers explicit facts over reconstructed ones in the same period', () => {
+        const facts = JSON.stringify([
+            fact({ normalized_value: 25000, period: 'TTM', status: 'confirmed', confidence: 0.95, provenance: 'Calculated from uploaded documents', formula: 'Revenue - OpEx', citation: { source_file: 'calc.pdf', row_or_cell: 'Page 4', excerpt: 'Reconstructed from formula' } }),
+            fact({ metric: 'revenue', normalized_value: 24000, period: 'TTM', status: 'confirmed', confidence: 0.6, citation: { source_file: 'stated.pdf', row_or_cell: 'Page 2', excerpt: 'Revenue stated directly' } }),
+        ])
+        const result = deriveDocumentedFacts([doc(facts)])
+        expect(result.revenue.value).toBe(24000)
+        expect(result.revenue.provenance).toBe('Extracted from uploaded documents')
+    })
 })
 
 describe('deriveDocumentedFactsJson', () => {

@@ -19,6 +19,8 @@ type RawFact = {
     currency?: string
     confidence?: number
     status?: string
+    provenance?: string
+    formula?: string
     citation?: {
         source_file?: string
         page_number?: number | string | null
@@ -61,9 +63,24 @@ function isNumber(value: unknown): value is number {
     return typeof value === 'number' && Number.isFinite(value)
 }
 
+function citationLocation(citation: RawFact['citation']): string | undefined {
+    if (!citation) return undefined
+    if (citation.row_or_cell && citation.row_or_cell.trim().length > 0) return citation.row_or_cell
+    if (citation.page_number !== null && citation.page_number !== undefined && String(citation.page_number).trim().length > 0) {
+        return `Page ${String(citation.page_number).trim()}`
+    }
+    return undefined
+}
+
+function isDerivedFact(fact: RawFact): boolean {
+    const normalized = `${fact.provenance ?? ''} ${fact.formula ?? ''} ${fact.citation?.excerpt ?? ''}`.toLowerCase()
+    return /reconstruct|formula|derived|calculated|implied|computed/.test(normalized)
+}
+
 /**
  * Chooses the best fact for a metric: latest period wins; within the same
- * period a confirmed fact beats an unconfirmed one, then higher confidence.
+ * period a confirmed fact beats an unconfirmed one, explicitly sourced facts
+ * beat reconstructed ones, then higher confidence.
  */
 function isBetter(candidate: RawFact, current: RawFact): boolean {
     const cp = periodRank(candidate.period)
@@ -73,6 +90,10 @@ function isBetter(candidate: RawFact, current: RawFact): boolean {
     const cConfirmed = (candidate.status ?? '').toLowerCase() === 'confirmed'
     const pConfirmed = (current.status ?? '').toLowerCase() === 'confirmed'
     if (cConfirmed !== pConfirmed) return cConfirmed
+
+    const cDerived = isDerivedFact(candidate)
+    const pDerived = isDerivedFact(current)
+    if (cDerived !== pDerived) return !cDerived
 
     return (candidate.confidence ?? 0) > (current.confidence ?? 0)
 }
@@ -118,14 +139,14 @@ export function deriveDocumentedFacts(documents: SubmissionHistoryItem[]): Recor
             status: fact.status ?? 'reported',
             currency: fact.currency ?? 'USD',
             period: fact.period ?? '',
-            provenance: 'Extracted from uploaded documents',
+            provenance: fact.provenance ?? (isDerivedFact(fact) ? 'Calculated from uploaded documents' : 'Extracted from uploaded documents'),
             confidence: isNumber(fact.confidence)
                 ? (fact.confidence <= 1 ? Math.round(fact.confidence * 100) : Math.round(fact.confidence))
                 : 0,
             citations: fact.citation
                 ? [{
                     source_file: fact.citation.source_file,
-                    row_or_cell: fact.citation.row_or_cell,
+                    row_or_cell: citationLocation(fact.citation),
                     excerpt: fact.citation.excerpt,
                 }]
                 : [],
