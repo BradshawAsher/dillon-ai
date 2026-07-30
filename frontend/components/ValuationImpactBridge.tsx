@@ -6,7 +6,8 @@ import { Badge } from '../lib/shadcn/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Input } from '../lib/shadcn/input'
 import { formatCurrencyValue } from '../utils/aiSubmissionData'
-import type { EvidenceItem } from '../utils/evidence'
+import { buildDocumentLinkedEvidence, type EvidenceItem } from '../utils/evidence'
+import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 
 type BridgeItem = {
     id: string
@@ -31,7 +32,7 @@ function classifyMechanism(finding: string) {
 
 function storageKey(projectId: string) { return `mergeworks.valuationImpactBridge.${projectId}` }
 
-export default function ValuationImpactBridge({ synthesis, baseValue, onOpenEvidence }: { synthesis?: ProjectSynthesisItem | null; baseValue: number | null; onOpenEvidence?: (item: EvidenceItem) => void }) {
+export default function ValuationImpactBridge({ synthesis, baseValue, documents = [], onOpenEvidence }: { synthesis?: ProjectSynthesisItem | null; baseValue: number | null; documents?: SubmissionHistoryItem[]; onOpenEvidence?: (item: EvidenceItem) => void }) {
     const suggested = useMemo(() => {
         if (!synthesis) return []
         const structuredConflicts = synthesis.structuredFindings?.crossDocumentConflicts || []

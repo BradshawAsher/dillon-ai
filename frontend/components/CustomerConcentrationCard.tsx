@@ -4,7 +4,8 @@ import { AlertTriangle, PieChart, Users } from 'lucide-react'
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { Badge } from '../lib/shadcn/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
-import type { EvidenceItem } from '../utils/evidence'
+import type { SubmissionHistoryItem } from '../utils/submissionHistory'
+import { buildDocumentLinkedEvidence, type EvidenceItem } from '../utils/evidence'
 
 type ConcentrationFinding = {
     customer: string
@@ -91,7 +92,7 @@ function getRiskLevel(findings: ConcentrationFinding[]): { label: string; varian
     return { label: 'Diversified', variant: 'success' }
 }
 
-export default function CustomerConcentrationCard({ synthesis, onOpenEvidence }: { synthesis: ProjectSynthesisItem; onOpenEvidence?: (item: EvidenceItem) => void }) {
+export default function CustomerConcentrationCard({ synthesis, documents = [], onOpenEvidence }: { synthesis: ProjectSynthesisItem; documents?: SubmissionHistoryItem[]; onOpenEvidence?: (item: EvidenceItem) => void }) {
     const findings = useMemo(() => parseConcentrationFromSynthesis(synthesis), [synthesis])
 
     if (findings.length === 0) return null
@@ -160,35 +161,40 @@ export default function CustomerConcentrationCard({ synthesis, onOpenEvidence }:
                 )}
 
                 <div className="space-y-2">
-                    {findings.map((finding, index) => (
-                        <button
-                            key={index}
-                            type="button"
-                            onClick={() => onOpenEvidence?.({
-                                title: 'Customer concentration finding',
-                                sourceFile: finding.source || synthesis.citations?.[0],
-                                sourceLocation: finding.sourceLocation || 'Synthesis analysis',
-                                excerpt: finding.excerpt || finding.detail,
-                                confidence: finding.confidence ?? undefined,
-                                status: finding.status || (finding.severity === 'critical' ? 'Risk' : 'Needs review'),
-                                provenance: 'Customer concentration analysis',
-                            })}
-                            className="flex w-full items-start gap-3 rounded-lg border border-border p-3 text-left transition-colors hover:border-primary/40"
-                        >
-                            <div className="min-w-0 flex-1">
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <Badge variant={finding.severity === 'critical' ? 'destructive' : finding.severity === 'medium' ? 'warning' : 'secondary'}>
-                                        {finding.severity === 'critical' ? 'Critical' : finding.severity === 'medium' ? 'Medium' : 'Low'}
-                                    </Badge>
-                                    {finding.revenueShare !== null && (
-                                        <Badge variant="outline">{(finding.revenueShare * 100).toFixed(0)}% revenue share</Badge>
-                                    )}
-                                    <span className="text-xs text-muted-foreground">{finding.customer}</span>
+                    {findings.map((finding, index) => {
+                        return (
+                            <button
+                                key={index}
+                                type="button"
+                                onClick={() => onOpenEvidence?.(buildDocumentLinkedEvidence({
+                                    title: 'Customer concentration finding',
+                                    sourceFile: finding.source,
+                                    fallbackSourceFile: synthesis.citations?.[0] || 'Project synthesis',
+                                    sourceLocation: finding.sourceLocation,
+                                    fallbackSourceLocation: 'Synthesis analysis',
+                                    excerpt: finding.excerpt || finding.detail,
+                                    confidence: finding.confidence ?? undefined,
+                                    status: finding.status || (finding.severity === 'critical' ? 'Risk' : 'Needs review'),
+                                    provenance: 'Customer concentration analysis',
+                                    documents,
+                                }))}
+                                className="flex w-full items-start gap-3 rounded-lg border border-border p-3 text-left transition-colors hover:border-primary/40"
+                            >
+                                <div className="min-w-0 flex-1">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <Badge variant={finding.severity === 'critical' ? 'destructive' : finding.severity === 'medium' ? 'warning' : 'secondary'}>
+                                            {finding.severity === 'critical' ? 'Critical' : finding.severity === 'medium' ? 'Medium' : 'Low'}
+                                        </Badge>
+                                        {finding.revenueShare !== null && (
+                                            <Badge variant="outline">{(finding.revenueShare * 100).toFixed(0)}% revenue share</Badge>
+                                        )}
+                                        <span className="text-xs text-muted-foreground">{finding.customer}</span>
+                                    </div>
+                                    <p className="mt-2 text-sm leading-6 text-foreground">{finding.detail}</p>
                                 </div>
-                                <p className="mt-2 text-sm leading-6 text-foreground">{finding.detail}</p>
-                            </div>
-                        </button>
-                    ))}
+                            </button>
+                        )
+                    })}
                 </div>
 
                 <p className="text-xs text-muted-foreground">

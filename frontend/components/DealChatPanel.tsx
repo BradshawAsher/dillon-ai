@@ -180,129 +180,260 @@ function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealMo
     return parts.join('\n')
 }
 
-function generateResponse(question: string, context: string): string {
+type LocalResponse = {
+    matched: boolean
+    content: string
+}
+
+function formatMoney(value: number): string {
+    return `$${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+}
+
+function formatConfidence(value: string | number | null | undefined): string | null {
+    if (value == null || value === '') return null
+    const numeric = typeof value === 'number' ? value : parseFloat(String(value))
+    if (!Number.isFinite(numeric)) return String(value)
+    return numeric <= 1 ? `${Math.round(numeric * 100)}%` : `${Math.round(numeric)}%`
+}
+
+function bulletList(items: string[], limit = items.length): string {
+    return items.slice(0, limit).map(item => `- ${item}`).join('\n')
+}
+
+function getLocalResponse(
+    question: string,
+    details: {
+        synthesis?: ProjectSynthesisItem
+        model: DealModel
+        projectName: string
+        documents?: SubmissionHistoryItem[]
+    }
+): LocalResponse {
     const q = question.toLowerCase()
+    const { synthesis, model, projectName, documents } = details
+    const facts = parseDocumentedFacts(model.documentedFactsJson)
+    const price = model.purchasePrice ?? model.askingPrice
+    const revenue = typeof facts.revenue?.value === 'number' ? facts.revenue.value : model.revenue ?? null
+    const ebitda = typeof facts.ebitda_sde?.value === 'number' ? facts.ebitda_sde.value : model.ebitda ?? null
+    const redFlags = synthesis?.redFlags ?? []
+    const yellowFlags = synthesis?.yellowFlags ?? []
+    const greenFlags = synthesis?.greenFlags ?? []
+    const negotiationLevers = synthesis?.negotiationLevers ?? []
+    const openQuestions = synthesis?.openQuestions ?? []
+    const missingDocuments = synthesis?.missingDocuments ?? []
+    const completedDocuments = synthesis?.documentsCompletedCount ?? documents?.filter(d => d.status === 'completed').length ?? 0
+    const totalDocuments = synthesis?.documentsReceivedCount ?? documents?.length ?? completedDocuments
+    const genericHelp = `I can help you understand this deal. Try asking about:\n\n- **Risks** — "What are the red flags?"\n- **Valuation** — "What multiple am I paying?"\n- **Earnings** — "What's the EBITDA margin?"\n- **Returns** — "What's my IRR?"\n- **Structure** — "How is the deal financed?"\n- **Customers** — "Is there concentration risk?"\n- **Negotiation** — "What levers do I have?"\n- **Confidence** — "How reliable is this valuation?"\n- **Missing info** — "What documents do I still need?"\n- **Next steps** — "What should I do next?"\n- **Overview** — "Give me a summary"\n\nI use the project synthesis and documented facts to answer. For deeper analysis, check the specific tabs.`
 
     if (q.includes('risk') || q.includes('red flag') || q.includes('concern')) {
-        const redFlags = context.match(/Red flags: (.+)/)?.[1]
-        if (redFlags) {
-            return `Based on the synthesis, the key risk areas are:\n\n${redFlags.split('; ').map(f => `- ${f}`).join('\n')}\n\nThese should be investigated further during management meetings and verified against source documents.`
+        if (redFlags.length > 0 || yellowFlags.length > 0) {
+            const sections: string[] = []
+            if (redFlags.length > 0) sections.push(`Red flags:\n${bulletList(redFlags, 5)}`)
+            if (yellowFlags.length > 0) sections.push(`Cautions:\n${bulletList(yellowFlags, 4)}`)
+            return {
+                matched: true,
+                content: `Based on the project synthesis, the key risk areas are:\n\n${sections.join('\n\n')}\n\nThese should be investigated with management and verified against source documents.`
+            }
         }
-        return 'No red flags have been identified yet. This may mean the synthesis hasn\'t completed, or the uploaded documents haven\'t surfaced material concerns. Consider uploading financial statements and tax returns for a more complete picture.'
+        return {
+            matched: true,
+            content: 'No red flags have been identified yet. This may mean the synthesis is still pending or the current documents have not surfaced material concerns.'
+        }
     }
 
     if (q.includes('valuation') || q.includes('price') || q.includes('worth') || q.includes('multiple')) {
-        const price = context.match(/(?:Asking|Purchase) price: \$(.+)/)?.[1]
-        const ebitda = context.match(/EBITDA\/SDE: \$(.+)/)?.[1]
         if (price && ebitda) {
-            const priceNum = parseFloat(price.replace(/,/g, ''))
-            const ebitdaNum = parseFloat(ebitda.replace(/,/g, ''))
-            const multiple = (priceNum / ebitdaNum).toFixed(1)
-            return `The implied entry multiple is ${multiple}x EBITDA/SDE ($${price} / $${ebitda}).\n\nFor small businesses ($1-10M revenue), typical multiples range from 3-6x. A multiple above 6x usually requires strong growth, recurring revenue, or strategic value.\n\nCheck the Valuation tab for method comparisons and the value-risk bridge.`
+            const multiple = (price / ebitda).toFixed(1)
+            const valuationRange = synthesis?.valuationBaseEstimate && synthesis.valuationBaseEstimate !== '0'
+                ? `\n\nCurrent synthesis valuation range: $${synthesis.valuationLowerBound} – $${synthesis.valuationBaseEstimate} – $${synthesis.valuationUpperBound}.`
+                : ''
+            return {
+                matched: true,
+                content: `The implied entry multiple is ${multiple}x EBITDA/SDE (${formatMoney(price)} / ${formatMoney(ebitda)}).${valuationRange}\n\nFor small businesses, typical multiples are often in the 3-6x range, with higher pricing needing stronger growth, lower risk, or strategic value.`
+            }
         }
-        return 'I don\'t have enough financial data to comment on valuation yet. Upload P&L statements and confirm the asking price in the Deal Model to get valuation analysis.'
+        return {
+            matched: true,
+            content: 'I do not have enough confirmed pricing and earnings data to comment on valuation yet. Set the purchase or asking price and confirm EBITDA/SDE to unlock that analysis.'
+        }
     }
 
     if (q.includes('negotiat') || q.includes('lever') || q.includes('offer')) {
-        const levers = context.match(/Negotiation levers: (.+)/)?.[1]
-        if (levers) {
-            return `Identified negotiation levers:\n\n${levers.split('; ').map(l => `- ${l}`).join('\n')}\n\nEach of these represents a potential point to negotiate price or terms. See the Valuation tab\'s value-risk bridge for quantified impacts.`
+        const percentMatch = q.match(/(\d+(?:\.\d+)?)\s*%/)
+        if (percentMatch && price) {
+            const discountPercent = parseFloat(percentMatch[1]) / 100
+            const reducedPrice = price * (1 - discountPercent)
+            const savings = price - reducedPrice
+            const newMultiple = ebitda && ebitda > 0 ? (reducedPrice / ebitda).toFixed(1) : null
+            const leverText = negotiationLevers.length > 0 ? `\n\nCurrent negotiation levers:\n${bulletList(negotiationLevers, 4)}` : ''
+            return {
+                matched: true,
+                content: `A ${percentMatch[1]}% price reduction would lower the deal price from ${formatMoney(price)} to ${formatMoney(reducedPrice)}, saving ${formatMoney(savings)}.${newMultiple ? `\n\nThat would bring the entry multiple down to ${newMultiple}x EBITDA/SDE.` : ''}${leverText}`
+            }
         }
-        return 'No negotiation levers have been identified yet. These typically emerge from the project synthesis after multiple documents have been processed.'
+        if (negotiationLevers.length > 0) {
+            return {
+                matched: true,
+                content: `The project synthesis already identified negotiation levers:\n\n${bulletList(negotiationLevers, 5)}\n\nEach of these can be used to negotiate price, structure, escrow, or closing conditions.`
+            }
+        }
+        if (redFlags.length > 0) {
+            return {
+                matched: true,
+                content: `No explicit negotiation levers were recorded, but these issues can still support negotiation:\n\n${bulletList(redFlags, 3)}\n\nThese usually translate into price reductions, escrow, seller note support, or conditional close terms.`
+            }
+        }
+        return {
+            matched: true,
+            content: 'No negotiation levers have been identified yet. These usually appear in the project synthesis after enough documents are processed.'
+        }
     }
 
     if (q.includes('missing') || q.includes('need') || q.includes('upload') || q.includes('document')) {
-        const missing = context.match(/Missing documents: (.+)/)?.[1]
-        if (missing) {
-            return `Documents still needed for a complete analysis:\n\n${missing.split('; ').map(d => `- ${d}`).join('\n')}\n\nUpload these to improve coverage and enable more confident valuation.`
+        if (missingDocuments.length > 0) {
+            return {
+                matched: true,
+                content: `Documents still needed for a more complete analysis:\n\n${bulletList(missingDocuments, 6)}\n\nUploading these should improve diligence coverage and valuation confidence.`
+            }
         }
-        return 'The analysis doesn\'t indicate specific missing documents right now. Check the Project Checklist on the Overview tab for a full list of recommended diligence materials.'
+        return {
+            matched: true,
+            content: 'The current synthesis does not list specific missing documents. Check the Project Checklist and DD Request List for the standard diligence set.'
+        }
     }
 
     if (q.includes('strength') || q.includes('green') || q.includes('positive') || q.includes('good')) {
-        const greens = context.match(/Green flags: (.+)/)?.[1]
-        if (greens) {
-            return `Positive signals identified:\n\n${greens.split('; ').map(g => `- ${g}`).join('\n')}\n\nThese support the investment thesis but should be verified against source documents.`
+        if (greenFlags.length > 0) {
+            return {
+                matched: true,
+                content: `Positive signals identified:\n\n${bulletList(greenFlags, 5)}\n\nThese support the investment thesis, though they should still be verified against source documents.`
+            }
         }
-        return 'No specific green flags surfaced yet. Upload more documents to build a fuller picture of the deal\'s strengths.'
+        return {
+            matched: true,
+            content: 'No specific green flags are recorded yet. That usually means more corroborating documents are needed before the synthesis can call out strengths confidently.'
+        }
     }
 
     if (q.includes('next') || q.includes('action') || q.includes('should i') || q.includes('recommend')) {
-        const missing = context.match(/Missing documents: (.+)/)?.[1]
-        const open = context.match(/Open questions: (.+)/)?.[1]
-        const parts: string[] = ['Here\'s what I\'d recommend next:\n']
-        if (missing) parts.push(`1. **Upload missing documents:** ${missing.split('; ').slice(0, 3).join(', ')}`)
-        if (open) parts.push(`${missing ? '2' : '1'}. **Resolve open questions:** ${open.split('; ').slice(0, 3).join(', ')}`)
-        parts.push(`${missing && open ? '3' : missing || open ? '2' : '1'}. **Review the Management Question Tracker** on the Synthesis tab to assign owners and due dates to outstanding items.`)
-        parts.push('\nFocus on items that could materially change the valuation or kill the deal.')
-        return parts.join('\n')
+        const steps: string[] = []
+        if (missingDocuments.length > 0) steps.push(`1. Upload missing documents: ${missingDocuments.slice(0, 3).join(', ')}`)
+        if (openQuestions.length > 0) steps.push(`${steps.length + 1}. Resolve open questions: ${openQuestions.slice(0, 3).join(', ')}`)
+        if (redFlags.length > 0) steps.push(`${steps.length + 1}. Pressure-test the red flags with management and decide whether they justify price or term changes.`)
+        if (steps.length === 0) steps.push('1. Review the synthesis and decide whether to move toward LOI, confirmatory diligence, or a management call.')
+        steps.push(`${steps.length + 1}. Use the Management Question Tracker to assign owners and due dates.`)
+        return {
+            matched: true,
+            content: `Here is what I would do next:\n\n${steps.join('\n')}\n\nFocus first on anything that could materially change valuation, financing, or go/no-go judgment.`
+        }
     }
 
     if (q.includes('structure') || q.includes('financing') || q.includes('debt') || q.includes('equity')) {
-        const price = context.match(/(?:Asking|Purchase) price: \$(.+)/)?.[1]
-        return price
-            ? `The deal is priced at $${price}. Check the Deal Structure tab for the full sources-and-uses breakdown, leverage ratios (Debt/EBITDA), DSCR, and downside resilience indicators.\n\nKey considerations: ensure the debt service coverage ratio (DSCR) stays above 1.2x even in a bear scenario, and that the equity contribution leaves enough working capital for day-one operations.`
-            : 'Set up the deal model inputs (asking price, equity contribution, financing terms) to see the full deal structure analysis. Head to the Deal Structure tab to configure these.'
+        return {
+            matched: true,
+            content: price
+                ? `The deal is currently priced at ${formatMoney(price)}. Check the Deal Structure tab for the full sources-and-uses breakdown, leverage ratios, debt service coverage, and downside protection.\n\nA good rule of thumb is to keep DSCR comfortably above 1.2x and leave enough equity and working capital for day-one operations.`
+                : 'Set the asking or purchase price and financing assumptions first, then review the Deal Structure tab for leverage and downside analysis.'
+        }
     }
 
     if (q.includes('return') || q.includes('irr') || q.includes('moic') || q.includes('payback')) {
-        return 'Check the Returns tab for:\n\n- **All-cash returns:** MOIC and IRR across bear/base/bull scenarios\n- **Financed returns:** Leveraged MOIC, cash-on-cash, and DSCR\n- **Payback timeline:** Annual cash flow and cumulative payback period\n\nThe model uses your saved assumptions (hold period, exit multiple, growth rates). Edit them at the bottom of the Returns tab.'
+        return {
+            matched: true,
+            content: 'Check the Returns tab for all-cash and financed return scenarios, including MOIC, IRR, payback, annual cash flow, and debt service coverage. The outputs use your saved deal assumptions.'
+        }
     }
 
     if (q.includes('confidence') || q.includes('how confident') || q.includes('reliable') || q.includes('trust')) {
-        const confidence = context.match(/Confidence: (.+)/)?.[1]
-        const valConf = context.match(/Valuation confidence: (.+)/)?.[1]
-        const parts: string[] = []
-        if (confidence) parts.push(`Overall synthesis confidence: ${confidence}`)
-        if (valConf) parts.push(`Valuation confidence: ${valConf}`)
-        if (parts.length) {
-            parts.push('\nConfidence reflects how much corroborating data the AI found. Scores below 40% mean the estimate uses limited data — verify key figures with management before relying on them.')
-            return parts.join('\n')
+        const confidence = formatConfidence(synthesis?.aiConfidence)
+        const valuationConfidence = formatConfidence(synthesis?.valuationConfidence)
+        if (confidence || valuationConfidence) {
+            const lines = []
+            if (confidence) lines.push(`- Overall synthesis confidence: ${confidence}`)
+            if (valuationConfidence) lines.push(`- Valuation confidence: ${valuationConfidence}`)
+            lines.push('\nConfidence reflects how much corroborating support the AI found across uploaded documents. Low scores mean key figures still need manual verification.')
+            return { matched: true, content: lines.join('\n') }
         }
-        return 'Confidence scores appear once the synthesis completes. They reflect how many documents corroborate key financial figures. Higher confidence = more sources agreeing.'
+        return {
+            matched: true,
+            content: 'Confidence scores appear once synthesis has enough corroborating evidence. More completed documents usually improve reliability.'
+        }
     }
 
     if (q.includes('ebitda') || q.includes('earnings') || q.includes('margin') || q.includes('profit')) {
-        const ebitda = context.match(/EBITDA\/SDE: \$(.+)/)?.[1]
-        const revenue = context.match(/Revenue: \$(.+)/)?.[1]
         if (ebitda && revenue) {
-            const ebitdaNum = parseFloat(ebitda.replace(/,/g, ''))
-            const revNum = parseFloat(revenue.replace(/,/g, ''))
-            const margin = ((ebitdaNum / revNum) * 100).toFixed(1)
-            return `EBITDA/SDE: $${ebitda} on revenue of $${revenue} (${margin}% margin).\n\nFor context:\n- Small businesses typically show 15-25% EBITDA margins\n- Margins below 15% may indicate operational inefficiency or high owner comp\n- Margins above 30% are strong but verify they're sustainable\n\nCheck the EBITDA waterfall on the Overview tab for the breakdown.`
+            const margin = ((ebitda / revenue) * 100).toFixed(1)
+            return {
+                matched: true,
+                content: `EBITDA/SDE is ${formatMoney(ebitda)} on revenue of ${formatMoney(revenue)} (${margin}% margin).\n\nThis is one of the core inputs for valuation, returns, and financing analysis. Review the EBITDA waterfall and add-back quality cards for detail.`
+            }
         }
-        return ebitda ? `EBITDA/SDE: $${ebitda}. Upload P&L statements to see the full margin analysis and add-back quality review.` : 'EBITDA hasn\'t been confirmed yet. Upload income statements or P&L to extract earnings data.'
+        if (ebitda) {
+            return {
+                matched: true,
+                content: `EBITDA/SDE is currently ${formatMoney(ebitda)}. Upload or confirm revenue if you want a clean margin analysis too.`
+            }
+        }
+        return {
+            matched: true,
+            content: 'EBITDA has not been confirmed yet. Upload P&L statements or income statements to extract earnings data.'
+        }
     }
 
     if (q.includes('customer') || q.includes('concentration') || q.includes('client')) {
-        const flags = context.match(/Red flags: (.+)/)?.[1] || ''
-        const concFlag = flags.split('; ').find(f => /customer|concentration|client/i.test(f))
-        if (concFlag) {
-            return `Customer concentration risk detected: "${concFlag}"\n\nThis is one of the most common deal-killers in SMB acquisitions. Key questions:\n- Is the top customer under contract? For how long?\n- What's the renewal history?\n- Could the business survive losing that customer?\n\nConsider negotiating an escrow or earn-out tied to customer retention.`
+        const concentrationItems = [...redFlags, ...yellowFlags, ...openQuestions].filter(item => /customer|concentration|client/i.test(item))
+        if (concentrationItems.length > 0) {
+            return {
+                matched: true,
+                content: `Customer concentration risk appears in the synthesis:\n\n${bulletList(concentrationItems, 4)}\n\nThat is often a major SMB deal risk. Ask about contract term, renewal probability, and how the business performs if the top account churns.`
+            }
         }
-        return 'No customer concentration risk has been flagged. This is a positive signal — but verify by uploading a customer revenue breakdown if available.'
+        return {
+            matched: true,
+            content: 'No customer concentration risk is currently flagged. That is a positive sign, but a customer revenue breakdown is still worth reviewing if available.'
+        }
     }
 
     if (q.includes('timeline') || q.includes('when') || q.includes('how long') || q.includes('progress')) {
-        const docs = context.match(/Documents: (\d+)/)?.[1]
-        return `Deal progress:\n\n- Documents processed: ${docs || 'unknown'}\n- Check the Deal Readiness gauge on Overview for milestone progress\n- The Activity Feed shows real-time processing events\n\nTypical due diligence timelines:\n- Initial review: 1-2 weeks\n- Deep dive: 2-4 weeks\n- Negotiation/closing: 2-6 weeks`
+        return {
+            matched: true,
+            content: `Deal progress:\n\n- Documents completed: ${completedDocuments}/${totalDocuments || completedDocuments || 0}\n- Current synthesis status: ${synthesis?.projectStatus || 'pending'}\n- Check the Activity Feed and submission history for live processing details\n\nTypical diligence timing is still deal-dependent, but open questions and missing documents are usually the main blockers.`
+        }
     }
 
     if (q.includes('sensitiv') || q.includes('what if') || q.includes('scenario')) {
-        return 'The Sensitivity Analysis table on the Returns tab shows how your MOIC and IRR change across different entry and exit multiple combinations.\n\nKey things to look for:\n- Where does MOIC drop below 2.0x? That\'s your risk boundary\n- How wide is the "green zone" (≥3.0x)? Wider = more margin for error\n- Does a 1x lower exit multiple still produce acceptable returns?\n\nThe Growth tab also shows bear/base/bull revenue and EBITDA projections.'
+        return {
+            matched: true,
+            content: 'Use the Sensitivity Analysis on the Returns tab to see how MOIC and IRR shift across entry and exit assumptions. The Growth tab also shows bear, base, and bull projection scenarios.'
+        }
     }
 
     if (q.includes('request') || q.includes('seller') || q.includes('ask for') || q.includes('checklist')) {
-        return 'The DD Request List on the Overview tab auto-generates a prioritized list of items to request from the seller.\n\nIt includes:\n- Standard documents not yet uploaded (P&L, balance sheet, tax returns, etc.)\n- Open questions from the AI synthesis\n- Missing documents identified by the analysis\n\nUse the "Copy list" button to send it directly to the seller or broker.'
+        return {
+            matched: true,
+            content: 'The DD Request List on the Overview tab generates a prioritized seller request list using missing documents and open synthesis questions. It is the fastest place to build your next outreach list.'
+        }
     }
 
     if (q.includes('summary') || q.includes('overview') || q.includes('tell me about')) {
-        const risk = context.match(/Risk level: (.+)/)?.[1] || 'unknown'
-        const traffic = context.match(/Traffic light: (.+)/)?.[1] || 'pending'
-        return `Here\'s a quick summary of ${context.match(/Project: (.+)/)?.[1] || 'this deal'}:\n\n- Overall risk: ${risk} (${traffic})\n- ${context.match(/Red flags/)?.[0] ? 'Has identified concerns' : 'No major red flags yet'}\n- ${context.match(/Revenue/)?.[0] || 'Revenue not yet confirmed'}\n- ${context.match(/EBITDA/)?.[0] || 'EBITDA not yet confirmed'}\n\nAsk me about specific areas like risks, valuation, negotiation, returns, deal structure, or what to do next.`
+        const summaryLines = [
+            `Here is a quick summary of ${projectName}:`,
+            '',
+            `- Overall risk: ${synthesis?.finalRiskLevel || 'Pending'} (${synthesis?.finalTrafficLight || 'Pending'})`,
+            `- Documents completed: ${completedDocuments}/${totalDocuments || completedDocuments || 0}`,
+            `- Red flags: ${redFlags.length}`,
+            `- Negotiation levers: ${negotiationLevers.length}`,
+            `- Open questions: ${openQuestions.length}`,
+            revenue ? `- Revenue: ${formatMoney(revenue)}` : '- Revenue: not yet confirmed',
+            ebitda ? `- EBITDA/SDE: ${formatMoney(ebitda)}` : '- EBITDA/SDE: not yet confirmed',
+        ]
+        return {
+            matched: true,
+            content: `${summaryLines.join('\n')}\n\nAsk me about risk, valuation, negotiation, returns, structure, customer concentration, or next steps if you want a narrower answer.`
+        }
     }
 
-    return `I can help you understand this deal. Try asking about:\n\n- **Risks** — "What are the red flags?"\n- **Valuation** — "What multiple am I paying?"\n- **Earnings** — "What's the EBITDA margin?"\n- **Returns** — "What's my IRR?"\n- **Structure** — "How is the deal financed?"\n- **Customers** — "Is there concentration risk?"\n- **Negotiation** — "What levers do I have?"\n- **Confidence** — "How reliable is this valuation?"\n- **Missing info** — "What documents do I still need?"\n- **Next steps** — "What should I do next?"\n- **Overview** — "Give me a summary"\n\nI use the project synthesis and documented facts to answer. For deeper analysis, check the specific tabs.`
+    return { matched: false, content: genericHelp }
 }
 
 function renderSimpleMarkdown(text: string) {
@@ -360,6 +491,32 @@ function detectReferencedProject(question: string, currentProjectName: string, a
 }
 
 const CHAT_STORAGE_KEY = 'mergeworks.chatHistory'
+const CHAT_PANEL_SIZE_KEY = 'mergeworks.chatPanelSize'
+const DEFAULT_CHAT_PANEL_SIZE = { width: 420, height: 500 }
+const MIN_CHAT_PANEL_WIDTH = 380
+const MIN_CHAT_PANEL_HEIGHT = 420
+
+type ChatPanelSize = {
+    width: number
+    height: number
+}
+
+function clampChatPanelSize(width: number, height: number): ChatPanelSize {
+    if (typeof window === 'undefined') {
+        return {
+            width: DEFAULT_CHAT_PANEL_SIZE.width,
+            height: DEFAULT_CHAT_PANEL_SIZE.height,
+        }
+    }
+
+    const maxWidth = Math.max(MIN_CHAT_PANEL_WIDTH, window.innerWidth - 48)
+    const maxHeight = Math.max(MIN_CHAT_PANEL_HEIGHT, window.innerHeight - 112)
+
+    return {
+        width: Math.min(Math.max(Math.round(width), MIN_CHAT_PANEL_WIDTH), maxWidth),
+        height: Math.min(Math.max(Math.round(height), MIN_CHAT_PANEL_HEIGHT), maxHeight),
+    }
+}
 
 export default function DealChatPanel({ synthesis, model, projectName, documents, allSyntheses, onSuggestProjectSwitch }: Props) {
     const [isOpen, setIsOpen] = useState(false)
@@ -377,10 +534,62 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
     const textareaRef = useRef<HTMLTextAreaElement>(null)
     const [ratings, setRatings] = useState<Record<string, 'up' | 'down'>>({})
     const [suggestedProject, setSuggestedProject] = useState<ProjectSynthesisItem | null>(null)
+    const [panelSize, setPanelSize] = useState<ChatPanelSize>(() => {
+        if (typeof window === 'undefined') return DEFAULT_CHAT_PANEL_SIZE
+        try {
+            const stored = window.localStorage.getItem(CHAT_PANEL_SIZE_KEY)
+            if (stored) {
+                const parsed = JSON.parse(stored) as Partial<ChatPanelSize>
+                if (typeof parsed.width === 'number' && typeof parsed.height === 'number') {
+                    return clampChatPanelSize(parsed.width, parsed.height)
+                }
+            }
+        } catch { }
+        return clampChatPanelSize(DEFAULT_CHAT_PANEL_SIZE.width, DEFAULT_CHAT_PANEL_SIZE.height)
+    })
+    const resizeStateRef = useRef<{ startX: number; startY: number; startWidth: number; startHeight: number } | null>(null)
 
     useEffect(() => {
         try { localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages.slice(-50))) } catch { }
     }, [messages])
+
+    useEffect(() => {
+        try { localStorage.setItem(CHAT_PANEL_SIZE_KEY, JSON.stringify(panelSize)) } catch { }
+    }, [panelSize])
+
+    useEffect(() => {
+        const handleWindowResize = () => {
+            setPanelSize((previous) => {
+                const next = clampChatPanelSize(previous.width, previous.height)
+                return next.width === previous.width && next.height === previous.height ? previous : next
+            })
+        }
+
+        const handlePointerMove = (event: PointerEvent) => {
+            if (!resizeStateRef.current) return
+            const { startX, startY, startWidth, startHeight } = resizeStateRef.current
+            setPanelSize((previous) => {
+                const next = clampChatPanelSize(
+                    startWidth + (startX - event.clientX),
+                    startHeight + (startY - event.clientY),
+                )
+                return next.width === previous.width && next.height === previous.height ? previous : next
+            })
+        }
+
+        const handlePointerUp = () => {
+            resizeStateRef.current = null
+        }
+
+        window.addEventListener('resize', handleWindowResize)
+        window.addEventListener('pointermove', handlePointerMove)
+        window.addEventListener('pointerup', handlePointerUp)
+        return () => {
+            window.removeEventListener('resize', handleWindowResize)
+            window.removeEventListener('pointermove', handlePointerMove)
+            window.removeEventListener('pointerup', handlePointerUp)
+        }
+    }, [])
 
     useEffect(() => {
         function handleKeyDown(e: KeyboardEvent) {
@@ -428,6 +637,30 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
         return suggestions.slice(0, 4)
     }, [synthesis, model])
 
+    const handleResizeStart = useCallback((event: React.PointerEvent<HTMLButtonElement>) => {
+        event.preventDefault()
+        resizeStateRef.current = {
+            startX: event.clientX,
+            startY: event.clientY,
+            startWidth: panelSize.width,
+            startHeight: panelSize.height,
+        }
+    }, [panelSize.height, panelSize.width])
+
+    const handleHalfScreen = useCallback(() => {
+        if (typeof window === 'undefined') return
+        setPanelSize(clampChatPanelSize(window.innerWidth * 0.5, window.innerHeight * 0.5))
+    }, [])
+
+    const handleFullScreen = useCallback(() => {
+        if (typeof window === 'undefined') return
+        setPanelSize(clampChatPanelSize(window.innerWidth - 48, window.innerHeight - 112))
+    }, [])
+
+    const handleResetSize = useCallback(() => {
+        setPanelSize(clampChatPanelSize(DEFAULT_CHAT_PANEL_SIZE.width, DEFAULT_CHAT_PANEL_SIZE.height))
+    }, [])
+
     const handleSend = useCallback(async () => {
         const trimmed = input.trim()
         if (!trimmed) return
@@ -467,11 +700,16 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                 timestamp: Date.now(),
             }])
         } catch {
-            const response = generateResponse(trimmed, context)
+            const fallback = getLocalResponse(trimmed, {
+                synthesis,
+                model,
+                projectName,
+                documents,
+            })
             setMessages(prev => [...prev, {
                 id: `assistant-${Date.now()}`,
                 role: 'assistant',
-                content: response,
+                content: fallback.content,
                 timestamp: Date.now(),
             }])
         } finally {
@@ -506,7 +744,10 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
     }
 
     return (
-        <Card className="fixed bottom-20 right-6 z-50 flex h-[500px] w-[380px] flex-col overflow-hidden shadow-2xl sm:w-[420px]">
+        <Card
+            className="fixed bottom-20 right-6 z-50 flex flex-col overflow-hidden shadow-2xl"
+            style={{ width: `${panelSize.width}px`, height: `${panelSize.height}px` }}
+        >
             <div className="flex items-center justify-between border-b border-border bg-primary/5 px-4 py-3">
                 <div className="flex items-center gap-2">
                     <Bot className="h-5 w-5 text-primary" />
@@ -514,6 +755,27 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                     <span className="text-[10px] text-muted-foreground">Claude</span>
                 </div>
                 <div className="flex items-center gap-1">
+                    <button
+                        onClick={handleHalfScreen}
+                        className="rounded-md px-2 py-1 text-[10px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                        title="Resize chat to half-screen"
+                    >
+                        50%
+                    </button>
+                    <button
+                        onClick={handleFullScreen}
+                        className="rounded-md px-2 py-1 text-[10px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                        title="Resize chat to full-screen"
+                    >
+                        100%
+                    </button>
+                    <button
+                        onClick={handleResetSize}
+                        className="rounded-md px-2 py-1 text-[10px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                        title="Reset chat size"
+                    >
+                        Reset
+                    </button>
                     {messages.length > 0 && (
                         <button
                             onClick={() => { setMessages([]); setRatings({}) }}
@@ -649,7 +911,11 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                 <div ref={messagesEndRef} />
             </div>
 
-            <div className="border-t border-border p-3">
+            <div className="relative border-t border-border p-3 pr-8">
+                <div className="mb-2 flex items-center justify-between text-[10px] text-muted-foreground">
+                    <span>{panelSize.width} × {panelSize.height}</span>
+                    <span className="text-[10px] text-muted-foreground">Drag the bottom-right corner to resize</span>
+                </div>
                 <div className="flex items-end gap-2">
                     <Textarea
                         ref={textareaRef}
@@ -672,6 +938,15 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                     </Button>
                 </div>
                 <p className="mt-1.5 text-[10px] text-muted-foreground">Answers based on uploaded documents and synthesis. Not a substitute for professional advice.</p>
+                <button
+                    type="button"
+                    onPointerDown={handleResizeStart}
+                    className="absolute bottom-1.5 right-1.5 flex h-5 w-5 items-end justify-end rounded-sm text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground"
+                    title="Resize chat panel"
+                    aria-label="Resize chat panel from bottom-right corner"
+                >
+                    <span className="font-mono text-[11px] leading-none">⤡</span>
+                </button>
             </div>
         </Card>
     )

@@ -15,7 +15,7 @@ import { formatCurrencyValue, getSubmissionInsightTone } from '../utils/aiSubmis
 import { downloadTextFile, fileSafeName } from '../utils/downloadFile'
 import { formatHours, type ImpactMetrics } from '../utils/impactMetrics'
 import type { ProjectSummary } from '../utils/projectWorkspace'
-import { findCitedDocument, parseDocumentedFacts, type EvidenceItem } from '../utils/evidence'
+import { buildDocumentLinkedEvidence, parseDocumentedFacts, type EvidenceItem } from '../utils/evidence'
 
 type ProjectSynthesisCardProps = {
     syntheses: ProjectSynthesisItem[]
@@ -388,23 +388,21 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                         }
                         const structuredFinding = structuredGroupMap[groupType]?.[index]
                         const primaryCitation = structuredFinding?.citations?.[0]
-                        const citedDoc = primaryCitation?.sourceFile
-                            ? findCitedDocument(primaryCitation.sourceFile, documents)
-                            : undefined
 
-                        onOpenEvidence({
+                        onOpenEvidence(buildDocumentLinkedEvidence({
                             title: evidenceTitle,
-                            sourceFile: primaryCitation?.sourceFile || citedDoc?.fileName,
-                            sourceLocation: primaryCitation?.sourceLocation || 'Project synthesis',
+                            sourceFile: primaryCitation?.sourceFile,
+                            fallbackSourceFile: 'Project synthesis',
+                            sourceLocation: primaryCitation?.sourceLocation,
+                            fallbackSourceLocation: 'Project synthesis',
                             excerpt: primaryCitation?.excerpt || item,
                             period: primaryCitation?.period,
                             currency: primaryCitation?.currency,
                             confidence: structuredFinding?.confidence ?? primaryCitation?.confidence ?? undefined,
                             status: structuredFinding?.status || primaryCitation?.status || status,
                             provenance: 'Project synthesis',
-                            documentId: citedDoc?.storageFileId,
-                            documentUrl: citedDoc?.storageFileUrl,
-                        })
+                            documents,
+                        }))
                     }
 
                     return (
@@ -709,8 +707,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                         <div className="flex items-center gap-2"><FileText className="h-4 w-4 text-muted-foreground" /><p className="text-sm font-semibold text-foreground">Synthesis citations</p></div>
                                         <div className="mt-3 h-64 space-y-2 overflow-y-auto pr-1">
                                             {(synthesis.citationDetails?.length ? synthesis.citationDetails : (synthesis.citations ?? []).map((sourceFile) => ({ sourceFile, sourceLocation: 'Project-level synthesis', excerpt: synthesis.finalJudgmentSummary, period: '', currency: '', confidence: null, status: 'Synthesized' }))).map((citation, index) => {
-                                                const document = findCitedDocument(citation.sourceFile, documents)
-                                                return <button key={`${citation.sourceFile}-${citation.sourceLocation}-${index}`} type="button" onClick={() => onOpenEvidence?.({ title: 'Project synthesis citation', sourceFile: citation.sourceFile, sourceLocation: citation.sourceLocation || 'Project-level synthesis', excerpt: citation.excerpt || synthesis.finalJudgmentSummary, period: citation.period, currency: citation.currency, confidence: citation.confidence ?? undefined, status: citation.status || 'Synthesized', provenance: 'Project synthesis', documentId: document?.storageFileId, documentUrl: document?.storageFileUrl })} className="w-full rounded-md border border-border bg-background p-3 text-left text-sm text-foreground transition-colors hover:border-primary/40 hover:bg-muted/30">
+                                                return <button key={`${citation.sourceFile}-${citation.sourceLocation}-${index}`} type="button" onClick={() => onOpenEvidence?.(buildDocumentLinkedEvidence({ title: 'Project synthesis citation', sourceFile: citation.sourceFile, fallbackSourceFile: 'Project synthesis', sourceLocation: citation.sourceLocation, fallbackSourceLocation: 'Project-level synthesis', excerpt: citation.excerpt || synthesis.finalJudgmentSummary, period: citation.period, currency: citation.currency, confidence: citation.confidence ?? undefined, status: citation.status || 'Synthesized', provenance: 'Project synthesis', documents }))} className="w-full rounded-md border border-border bg-background p-3 text-left text-sm text-foreground transition-colors hover:border-primary/40 hover:bg-muted/30">
                                                     <span className="font-medium">{citation.sourceFile}</span>{citation.sourceLocation ? <span className="ml-2 text-xs text-muted-foreground">{citation.sourceLocation}</span> : null}<span className="ml-2 text-xs text-primary">View evidence</span>
                                                 </button>
                                             })}

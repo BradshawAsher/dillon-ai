@@ -4,7 +4,8 @@ import { ArrowRight, Scale, ShieldAlert } from 'lucide-react'
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { Badge } from '../lib/shadcn/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
-import type { EvidenceItem } from '../utils/evidence'
+import { buildDocumentLinkedEvidence, type EvidenceItem } from '../utils/evidence'
+import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 
 type ImpactCategory = 'valuation' | 'cash_flow' | 'closing' | 'negotiation' | 'risk'
 
@@ -65,9 +66,6 @@ function getSeverity(sourceGroup: string): 'critical' | 'medium' | 'low' {
     if (sourceGroup === 'yellow-flag' || sourceGroup === 'missing-document' || sourceGroup === 'open-question') return 'medium'
     return 'low'
 }
-
-import { findCitedDocument } from '../utils/evidence'
-import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 
 export default function MaterialImpactView({ synthesis, onOpenEvidence, documents = [] }: { synthesis: ProjectSynthesisItem; onOpenEvidence?: (item: EvidenceItem) => void; documents?: SubmissionHistoryItem[] }) {
     const [selectedCategory, setSelectedCategory] = useState<ImpactCategory | 'all'>('all')
@@ -139,26 +137,24 @@ export default function MaterialImpactView({ synthesis, onOpenEvidence, document
 
             <div className="space-y-2">
                 {filtered.map((finding) => {
-                    const sourceDocName = finding.citation?.sourceFile || synthesis.citations?.[0] || 'Project synthesis'
-                    const matchedDocument = findCitedDocument(sourceDocName, documents)
-
                     return (
                         <button
                             key={finding.id}
                             type="button"
-                            onClick={() => onOpenEvidence?.({
+                            onClick={() => onOpenEvidence?.(buildDocumentLinkedEvidence({
                                 title: `${IMPACT_LABELS[finding.impact]}: finding`,
-                                sourceFile: sourceDocName,
-                                sourceLocation: finding.citation?.sourceLocation || 'Project synthesis',
+                                sourceFile: finding.citation?.sourceFile,
+                                fallbackSourceFile: synthesis.citations?.[0] || 'Project synthesis',
+                                sourceLocation: finding.citation?.sourceLocation,
+                                fallbackSourceLocation: 'Project synthesis',
                                 excerpt: finding.citation?.excerpt || finding.text,
                                 period: finding.citation?.period,
                                 currency: finding.citation?.currency,
                                 status: finding.status || (finding.severity === 'critical' ? 'Risk' : finding.severity === 'medium' ? 'Needs review' : 'Confirmed'),
                                 provenance: 'Material-impact mapping',
                                 confidence: finding.confidence,
-                                documentId: matchedDocument?.storageFileId,
-                                documentUrl: matchedDocument?.storageFileUrl,
-                            })}
+                                documents,
+                            }))}
                             className={`flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-colors hover:border-primary/40 ${IMPACT_STYLES[finding.impact]}`}
                         >
                             <div className="min-w-0 flex-1">

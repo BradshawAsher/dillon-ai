@@ -4,11 +4,13 @@ import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import type { DealModel } from '../hooks/backend/diligence'
 import { Badge } from '../lib/shadcn/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
-import { parseDocumentedFacts, type EvidenceItem } from '../utils/evidence'
+import { buildDocumentLinkedEvidence, parseDocumentedFacts, type EvidenceItem } from '../utils/evidence'
+import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 
 type Props = {
     model: DealModel
     synthesis?: ProjectSynthesisItem
+    documents?: SubmissionHistoryItem[]
     onOpenEvidence?: (evidence: EvidenceItem) => void
 }
 
@@ -89,7 +91,7 @@ function extractQualityItems(synthesis?: ProjectSynthesisItem): ClassifiedItem[]
     return items.filter((item) => item.classification !== 'unclear')
 }
 
-export default function RecurringVsOneTimeCard({ model, synthesis, onOpenEvidence }: Props) {
+export default function RecurringVsOneTimeCard({ model, synthesis, documents = [], onOpenEvidence }: Props) {
     const items = extractQualityItems(synthesis)
     const recurring = items.filter((i) => i.classification === 'recurring')
     const oneTime = items.filter((i) => i.classification === 'one-time')
@@ -158,27 +160,32 @@ export default function RecurringVsOneTimeCard({ model, synthesis, onOpenEvidenc
                             <p className="text-sm text-muted-foreground italic">No recurring-related findings detected.</p>
                         ) : (
                             <div className="space-y-2">
-                                {recurring.map((item, i) => (
-                                    <button
-                                        key={i}
-                                        type="button"
-                                        className={`w-full rounded-md border p-3 text-left text-sm text-foreground transition-colors ${itemStyle(item.source, 'recurring')}`}
-                                        onClick={() => onOpenEvidence?.({
-                                            title: 'Recurring finding',
-                                            sourceFile: item.sourceFile || 'Project synthesis',
-                                            sourceLocation: item.sourceLocation || item.source.replace('-', ' '),
-                                            excerpt: item.excerpt || item.text,
-                                            confidence: item.confidence ?? undefined,
-                                            status: item.status || 'Recurring',
-                                            provenance: 'Quality-of-earnings classification',
-                                        })}
-                                    >
-                                        <div className="flex items-start justify-between gap-2">
-                                            <span>{item.text}</span>
-                                            <Badge variant={sourceVariant(item.source)} className="shrink-0 text-[10px]">{item.source.replace('-', ' ')}</Badge>
-                                        </div>
-                                    </button>
-                                ))}
+                                {recurring.map((item, i) => {
+                                    return (
+                                        <button
+                                            key={i}
+                                            type="button"
+                                            className={`w-full rounded-md border p-3 text-left text-sm text-foreground transition-colors ${itemStyle(item.source, 'recurring')}`}
+                                            onClick={() => onOpenEvidence?.(buildDocumentLinkedEvidence({
+                                                title: 'Recurring finding',
+                                                sourceFile: item.sourceFile,
+                                                fallbackSourceFile: 'Project synthesis',
+                                                sourceLocation: item.sourceLocation,
+                                                fallbackSourceLocation: item.source.replace('-', ' '),
+                                                excerpt: item.excerpt || item.text,
+                                                confidence: item.confidence ?? undefined,
+                                                status: item.status || 'Recurring',
+                                                provenance: 'Quality-of-earnings classification',
+                                                documents,
+                                            }))}
+                                        >
+                                            <div className="flex items-start justify-between gap-2">
+                                                <span>{item.text}</span>
+                                                <Badge variant={sourceVariant(item.source)} className="shrink-0 text-[10px]">{item.source.replace('-', ' ')}</Badge>
+                                            </div>
+                                        </button>
+                                    )
+                                })}
                             </div>
                         )}
                     </div>
@@ -190,27 +197,32 @@ export default function RecurringVsOneTimeCard({ model, synthesis, onOpenEvidenc
                             <p className="text-sm text-muted-foreground italic">No one-time findings detected.</p>
                         ) : (
                             <div className="space-y-2">
-                                {oneTime.map((item, i) => (
-                                    <button
-                                        key={i}
-                                        type="button"
-                                        className={`w-full rounded-md border p-3 text-left text-sm text-foreground transition-colors ${itemStyle(item.source, 'one-time')}`}
-                                        onClick={() => onOpenEvidence?.({
-                                            title: 'One-time finding',
-                                            sourceFile: item.sourceFile || 'Project synthesis',
-                                            sourceLocation: item.sourceLocation || item.source.replace('-', ' '),
-                                            excerpt: item.excerpt || item.text,
-                                            confidence: item.confidence ?? undefined,
-                                            status: item.status || 'One-time',
-                                            provenance: 'Quality-of-earnings classification',
-                                        })}
-                                    >
-                                        <div className="flex items-start justify-between gap-2">
-                                            <span>{item.text}</span>
-                                            <Badge variant={sourceVariant(item.source)} className="shrink-0 text-[10px]">{item.source.replace('-', ' ')}</Badge>
-                                        </div>
-                                    </button>
-                                ))}
+                                {oneTime.map((item, i) => {
+                                    return (
+                                        <button
+                                            key={i}
+                                            type="button"
+                                            className={`w-full rounded-md border p-3 text-left text-sm text-foreground transition-colors ${itemStyle(item.source, 'one-time')}`}
+                                            onClick={() => onOpenEvidence?.(buildDocumentLinkedEvidence({
+                                                title: 'One-time finding',
+                                                sourceFile: item.sourceFile,
+                                                fallbackSourceFile: 'Project synthesis',
+                                                sourceLocation: item.sourceLocation,
+                                                fallbackSourceLocation: item.source.replace('-', ' '),
+                                                excerpt: item.excerpt || item.text,
+                                                confidence: item.confidence ?? undefined,
+                                                status: item.status || 'One-time',
+                                                provenance: 'Quality-of-earnings classification',
+                                                documents,
+                                            }))}
+                                        >
+                                            <div className="flex items-start justify-between gap-2">
+                                                <span>{item.text}</span>
+                                                <Badge variant={sourceVariant(item.source)} className="shrink-0 text-[10px]">{item.source.replace('-', ' ')}</Badge>
+                                            </div>
+                                        </button>
+                                    )
+                                })}
                             </div>
                         )}
                     </div>

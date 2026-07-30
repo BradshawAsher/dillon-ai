@@ -39,7 +39,7 @@ function generateDefaultQuestions(synthesis: ProjectSynthesisItem | undefined, m
             } else if (lower.includes('debt') || lower.includes('liability')) {
                 questions.push('Can you provide a complete schedule of all debt obligations, including balances, rates, maturity dates, and any personal guarantees?')
             } else {
-                questions.push(`Can you provide documentation or context regarding: "${flag.length > 80 ? flag.slice(0, 77) + '...' : flag}"?`)
+                questions.push(`Can you provide documentation or context regarding: "${flag}"?`)
             }
         }
 
@@ -87,6 +87,7 @@ export default function SellerQuestionsCard({ synthesis, model }: Props) {
     const [isAdding, setIsAdding] = useState(false)
     const [newQuestionText, setNewQuestionText] = useState('')
     const [activeEditId, setActiveEditId] = useState<string | null>(null)
+    const [expanded, setExpanded] = useState<Record<string, boolean>>({})
 
     // Hydrate state from localStorage or fallback to defaults
     useEffect(() => {
@@ -241,8 +242,17 @@ export default function SellerQuestionsCard({ synthesis, model }: Props) {
                                         onClick={() => toggleAnswered(q.id)}
                                         className={`cursor-pointer text-sm font-medium ${q.answered ? 'line-through text-muted-foreground' : 'text-foreground'}`}
                                     >
-                                        {q.question}
+                                        {(q.question.length > 160 && !expanded[q.id]) ? `${q.question.slice(0, 160)}…` : q.question}
                                     </p>
+                                    {q.question.length > 160 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setExpanded(prev => ({ ...prev, [q.id]: !prev[q.id] }))}
+                                            className="mt-0.5 text-[10px] text-primary hover:underline"
+                                        >
+                                            {expanded[q.id] ? 'Show less' : 'Show more'}
+                                        </button>
+                                    )}
                                     {q.notes && (
                                         <p className="mt-1 text-xs text-green-600 dark:text-green-400 bg-green-500/5 px-2 py-1 rounded border border-green-500/10 whitespace-pre-wrap">
                                             <strong>Answer:</strong> {q.notes}

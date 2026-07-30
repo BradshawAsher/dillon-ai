@@ -175,19 +175,53 @@ export function buildFactEvidence(args: {
 }): EvidenceItem {
     const fact = args.facts[args.field]
     const citation = fact?.citations?.[0]
-    const sourceFile = citation?.source_file
-    const document = findCitedDocument(sourceFile, args.documents)
 
-    return {
+    return buildDocumentLinkedEvidence({
         title: args.title,
-        sourceFile: sourceFile || 'Source file was not returned',
+        sourceFile: citation?.source_file,
         sourceLocation: citation?.row_or_cell,
         excerpt: citation?.excerpt,
         period: fact?.period,
         currency: fact?.currency,
-        confidence: fact?.confidence ?? document?.aiConfidence,
+        confidence: fact?.confidence,
         status: fact?.status,
         provenance: fact?.provenance || 'Documented',
+        documents: args.documents,
+        fallbackSourceFile: 'Source file was not returned',
+    })
+}
+
+/**
+ * Normalizes evidence objects so every clickable source consistently carries
+ * through a matched document id / URL when one can be resolved.
+ */
+export function buildDocumentLinkedEvidence(args: {
+    title: string
+    documents?: SubmissionHistoryItem[]
+    sourceFile?: string
+    fallbackSourceFile?: string
+    sourceLocation?: string
+    fallbackSourceLocation?: string
+    excerpt?: string
+    period?: string
+    currency?: string
+    confidence?: string | number | null
+    status?: string
+    provenance?: string
+}): EvidenceItem {
+    const resolvedSourceFile = args.sourceFile || args.fallbackSourceFile
+    const document = findCitedDocument(resolvedSourceFile, args.documents ?? [])
+
+    return {
+        title: args.title,
+        sourceFile: resolvedSourceFile,
+        sourceLocation: args.sourceLocation || args.fallbackSourceLocation,
+        excerpt: args.excerpt,
+        period: args.period,
+        currency: args.currency,
+        confidence: args.confidence ?? document?.aiConfidence,
+        status: args.status,
+        provenance: args.provenance,
         documentUrl: document?.storageFileUrl,
         documentId: document?.storageFileId,
     }
