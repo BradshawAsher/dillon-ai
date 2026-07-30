@@ -487,19 +487,41 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                             <div className="rounded-xl border-2 border-primary/60 bg-primary/10 p-4 shadow-sm">
                                 <p className="text-sm font-bold uppercase tracking-wide text-primary">Next step after the synthesis</p>
                                 <p className="mt-1 text-sm leading-6 text-foreground">
-                                    Use the Management Question Tracker immediately below this synthesis to turn the open questions into an owner, due date, and follow-up plan. It is the best place to resolve the gaps that could change the acquisition decision.
+                                    {synthesis.missingDocuments.length > 0
+                                        ? 'Upload the missing diligence materials first so the next synthesis pass has the evidence it needs.'
+                                        : synthesis.openQuestions.length > 0
+                                            ? 'Use the Management Question Tracker immediately below this synthesis to turn the open questions into an owner, due date, and follow-up plan.'
+                                            : synthesis.negotiationLevers.length > 0
+                                                ? 'Review the negotiation levers next and convert the strongest ones into concrete deal terms.'
+                                                : 'Review the acquisition judgment and supporting evidence, then decide whether to proceed, renegotiate, or pause.'}
                                 </p>
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        const el = document.getElementById('project-synthesis')?.nextElementSibling || document.querySelector('[placeholder="Question for management"]')
-                                        el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-                                            ; (el as HTMLElement)?.focus?.()
-                                    }}
-                                    className="mt-3 inline-flex items-center gap-1.5 rounded-md bg-primary px-3.5 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                                >
-                                    Go to Management Question Tracker
-                                </button>
+                                <div className="mt-3 flex flex-wrap gap-2">
+                                    {synthesis.missingDocuments.length > 0 ? <button
+                                        type="button"
+                                        onClick={() => document.querySelector('[data-project-intake]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                                        className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3.5 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                    >
+                                        Go to uploads
+                                    </button> : null}
+                                    {synthesis.openQuestions.length > 0 ? <button
+                                        type="button"
+                                        onClick={() => {
+                                            const el = document.querySelector('[placeholder="Question for management"]')
+                                            el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                                                ; (el as HTMLElement)?.focus?.()
+                                        }}
+                                        className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3.5 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                    >
+                                        Go to Management Question Tracker
+                                    </button> : null}
+                                    {synthesis.missingDocuments.length === 0 && synthesis.negotiationLevers.length > 0 ? <button
+                                        type="button"
+                                        onClick={() => document.getElementById('synthesis-negotiation')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                                        className="inline-flex items-center gap-1.5 rounded-md border border-primary/30 bg-background px-3.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary/5 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                    >
+                                        Review negotiation levers
+                                    </button> : null}
+                                </div>
                             </div>
 
                             {(synthesis.valuationBaseEstimate && synthesis.valuationBaseEstimate !== '0') || (synthesis.valuationLowerBound && synthesis.valuationLowerBound !== '0') || (synthesis.valuationUpperBound && synthesis.valuationUpperBound !== '0') ? (
