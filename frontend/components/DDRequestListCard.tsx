@@ -189,9 +189,9 @@ export default function DDRequestListCard({ model, synthesis, documents, project
                         <button
                             type="button"
                             onClick={() => setExpanded(!expanded)}
-                            className="mt-2 flex w-full items-center justify-center gap-1 rounded-md py-1.5 text-xs font-medium text-primary hover:underline transition-colors focus:outline-none"
+                            className="mt-2 flex w-full items-center justify-center gap-1 rounded-md py-1.5 text-sm font-medium text-primary hover:underline transition-colors focus:outline-none"
                         >
-                            {expanded ? 'Show less items' : `+${sortedRequests.length - 8} more items — click to show all`}
+                            {expanded ? 'Show less of the DD request list' : `Show the rest of the DD request list (+${sortedRequests.length - 8})`}
                         </button>
                     )}
                 </div>
