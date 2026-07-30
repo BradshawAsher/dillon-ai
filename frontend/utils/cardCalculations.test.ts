@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { parseDocumentedFacts } from './evidence'
+import { normalizeEquityFraction } from './dealMath'
 import {
     ALL_FIXTURES,
     FIXTURE_DISTRESSED,
@@ -35,7 +36,7 @@ function dealStackLayers(model: typeof FIXTURE_HEALTHY_DEAL) {
     const price = model.purchasePrice ?? model.askingPrice
     if (!price) return null
 
-    const equityPct = model.equityContributionPercent ?? 25
+    const equityPct = normalizeEquityFraction(model.equityContributionPercent) * 100
     const equity = price * (equityPct / 100)
     const sellerNote = model.sellerNoteAmount ?? 0
     const seniorDebt = price - equity - sellerNote
@@ -217,5 +218,35 @@ describe('Fixture data integrity', () => {
         const facts = parseDocumentedFacts(FIXTURE_MINIMAL_DATA.documentedFactsJson)
         expect(facts.revenue?.value).toBeGreaterThan(0)
         expect(facts.ebitda_sde).toBeUndefined()
+    })
+})
+
+describe('normalizeEquityFraction', () => {
+    it('passes fractions in (0,1] through unchanged', () => {
+        expect(normalizeEquityFraction(0.3)).toBeCloseTo(0.3, 10)
+        expect(normalizeEquityFraction(0.25)).toBeCloseTo(0.25, 10)
+        expect(normalizeEquityFraction(1)).toBeCloseTo(1, 10)
+    })
+
+    it('treats whole-percent values (>1) as percentages and divides by 100', () => {
+        expect(normalizeEquityFraction(25)).toBeCloseTo(0.25, 10)
+        expect(normalizeEquityFraction(40)).toBeCloseTo(0.4, 10)
+        expect(normalizeEquityFraction(100)).toBeCloseTo(1, 10)
+    })
+
+    it('falls back to the 0.3 default for null, undefined, or non-positive input', () => {
+        expect(normalizeEquityFraction(null)).toBe(0.3)
+        expect(normalizeEquityFraction(undefined)).toBe(0.3)
+        expect(normalizeEquityFraction(0)).toBe(0.3)
+        expect(normalizeEquityFraction(-5)).toBe(0.3)
+        expect(normalizeEquityFraction(Number.NaN)).toBe(0.3)
+    })
+
+    it('never returns a mis-scaled 0.003-style fraction from a saved 0.3', () => {
+        // The original bug divided a saved 0.3 by 100 → 0.003 (100x too small).
+        const price = 5_000_000
+        const equity = price * normalizeEquityFraction(0.3)
+        expect(equity).toBeCloseTo(1_500_000, 2)
+        expect(equity).not.toBeCloseTo(15_000, 2)
     })
 })

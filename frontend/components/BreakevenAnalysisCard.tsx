@@ -3,6 +3,7 @@ import { Target } from 'lucide-react'
 
 import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
+import { normalizeEquityFraction } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 
 type Props = {
@@ -29,8 +30,7 @@ export default function BreakevenAnalysisCard({ model }: Props) {
 
         const taxRate = model.taxRate ?? 0.25
         const capex = model.maintenanceCapex ?? 0
-        const equityPct = model.equityContributionPercent ?? 25
-        const equity = price * (equityPct / 100)
+        const equity = price * normalizeEquityFraction(model.equityContributionPercent)
         const debt = price - equity - (model.sellerNoteAmount ?? 0)
         const rate = model.interestRate ?? 0.07
         const amortYears = model.amortizationYears ?? 10

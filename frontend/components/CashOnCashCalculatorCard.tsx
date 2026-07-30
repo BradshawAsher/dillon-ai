@@ -3,6 +3,7 @@ import { Calculator } from 'lucide-react'
 
 import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
+import { normalizeEquityFraction } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 
 type Props = {
@@ -14,7 +15,7 @@ export default function CashOnCashCalculatorCard({ model }: Props) {
     const ebitda = typeof facts.ebitda_sde?.value === 'number' ? facts.ebitda_sde.value : null
     const price = model.purchasePrice ?? model.askingPrice
 
-    const defaultDown = model.equityContributionPercent ? model.equityContributionPercent : 25
+    const defaultDown = Math.round(normalizeEquityFraction(model.equityContributionPercent) * 100)
     const defaultRate = model.interestRate ? model.interestRate * 100 : 7.0
     const defaultTerm = model.amortizationYears ?? 10
 

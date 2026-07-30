@@ -4,6 +4,7 @@ import { Award } from 'lucide-react'
 import type { DealModel } from '../hooks/backend/diligence'
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
+import { normalizeEquityFraction } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 
 type Props = {
@@ -69,7 +70,7 @@ export default function DealScorecardExportCard({ model, synthesis, projectName 
         const topRedFlags = redFlags.slice(0, 3)
 
         // Financing summary
-        const equityPct = model.equityContributionPercent ?? 25
+        const equityPct = Math.round(normalizeEquityFraction(model.equityContributionPercent) * 100)
         const equity = price * (equityPct / 100)
         const sellerNote = model.sellerNoteAmount ?? 0
         const seniorDebt = price - equity - sellerNote

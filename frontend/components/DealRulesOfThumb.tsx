@@ -2,6 +2,7 @@ import { Scale, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react'
 
 import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
+import { normalizeEquityFraction } from '../utils/dealMath'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 
 type Props = {
@@ -69,7 +70,7 @@ export default function DealRulesOfThumb({ model }: Props) {
     }
 
     if (model.interestRate && model.equityContributionPercent && price) {
-        const equity = price * (model.equityContributionPercent / 100)
+        const equity = price * normalizeEquityFraction(model.equityContributionPercent)
         const debt = price - equity
         const dscr = ebitda ? (ebitda * (1 - (model.taxRate ?? 0.25))) / (debt * model.interestRate + debt / (model.amortizationYears ?? 10)) : null
         if (dscr !== null && Number.isFinite(dscr)) {
