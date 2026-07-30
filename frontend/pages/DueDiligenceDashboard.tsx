@@ -1894,7 +1894,6 @@ export default function DueDiligenceDashboard() {
                         <InvestorReadinessCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documentCount={activeProjectDocuments.length} />
                         <TermSheetCard model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
                         <DDRequestListCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} projectName={dealName || suggestedProjectName} />
-                        <DealEmailDraftCard model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
                     </Suspense>
                     <ActivityFeed documents={activeProjectDocuments} />
                     <Suspense fallback={null}><PublicDataEnrichmentCard model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} /></Suspense>
@@ -2469,6 +2468,22 @@ export default function DueDiligenceDashboard() {
                                 retryingRequestId={retryingRequestId}
                                 onOpenProject={handleAuditProjectOpen}
                                 onOpenEvidence={setActiveEvidence}
+                            />
+                        </section>
+
+                    </> : null}
+
+                    {activeWorkspaceTab === 'email' ? <>
+                        <section className="space-y-4">
+                            <SectionHeader
+                                step={1}
+                                title="Email drafts"
+                                description="Ready-to-send updates for the current deal, based on the selected project and synthesis state."
+                            />
+                            <DealEmailDraftCard
+                                model={hydratedDealModel}
+                                synthesis={activeProjectSynthesis}
+                                projectName={dealName || suggestedProjectName}
                             />
                         </section>
 
