@@ -29,7 +29,7 @@ ANALYSIS PROBLEMS:
 
 [DONE] In the negotiation playbook, can we make the text bigger?
 
-[NOT DONE] For the DD request list, can we have a button to show the rest of the list?
+[DONE] For the DD request list, can we have a button to show the rest of the list?
 
 [DONE] Can we move the team update email draft to its own tab?
 
@@ -43,36 +43,40 @@ ANALYSIS PROBLEMS:
 
 NEW PROBLEMS???
 
-[NOT DONE] i also thought for ebitda margin for project 6 for example we calculated the ebitda margin to be 25k but in decision metrics it is unavailable? Also I think the citation is wrong for that as well can we check why? For a lot of the decisino metrics they say not available but have a citation for something why?
+[DONE] i also thought for ebitda margin for project 6 for example we calculated the ebitda margin to be 25k but in decision metrics it is unavailable? Also I think the citation is wrong for that as well can we check why? For a lot of the decisino metrics they say not available but have a citation for something why?
 
 [DONE] Can we make the text for hte risk matrix to be bigger?
-[NOT DONE] Can we make a separate tab for negotiation playbook?
+[DONE] Can we make a separate tab for negotiation playbook?
 
 [DONE] Can we also add a disclaimer that the questions for seller and management-question tracker do not influence outputs for the synthesis or document specific workflow outputs, but only for the chatbot? (everywhere that they are references?)
 
-[NOT DONE] I also think the AI Summary for diligence section seems inaccurate is it cut off somehow?
+[DONE] I also think the AI Summary for diligence section seems inaccurate is it cut off somehow?
 
-[NOT DONE] I think the missing diligence materials in synthesis tab is not synced correctly with what is in the overview part?
+[DONE] I think the missing diligence materials in synthesis tab is not synced correctly with what is in the overview part?
 
-[NOT DONE] Why are assumptions for valuation, returns, growth, deal structure all not shown even though some assumptions are obviously being shown to give the graphs and everything else?
+[DONE] Why are assumptions for valuation, returns, growth, deal structure all not shown even though some assumptions are obviously being shown to give the graphs and everything else?
 
-[NOT DONE] The value risk bridge part is pretty wordy, can we cut down how wordy it is? And evidence value bridge too?
+[DONE] The value risk bridge part is pretty wordy, can we cut down how wordy it is? And evidence value bridge too?
 
 [DONE] What does the evidence linked value bridge due and what happens if the user enters stuff into it? What happens if you save bridge to deal model?  
 (Added buttons and clearer next-step routing in synthesis and overview; evidence drawer now shows cited excerpt first.)
 
 [DONE] For financed acquisition scenario a lot of the stats when you click on it it says some stats are analyst input but i think those are model assumptions, can we clarify that?
 
-[NOT DONE] numbers for yearly 1 month project get cut off on the right, can we fix that?
+[DONE] numbers for yearly 1 month project get cut off on the right, can we fix that?
 
-[NOT DONE] what do a lot of important stats like MOIC, IRR mean? Can we add like an i info logo for a lot of important stats/words to explain what they mean
+[DONE] what do a lot of important stats like MOIC, IRR mean? Can we add like an i info logo for a lot of important stats/words to explain what they mean
 
 [NOT DONE] For Brad - understand what all the graphs even mean?
 
 [DONE] For deal structure, can we still show how this was calculated even if starting assumptions are assumed, and just add disclaimer that this was starting assumptions?
 
-[NOT DONE] In the projects tab, when we open documents in this projects, can we also show which doc counts as what?
+[DONE] In the projects tab, when we open documents in this projects, can we also show which doc counts as what?
 
-[NOT DONE] For audit trail, ebitda extracted (to the right of traffic light) and other long numbers, we need to separate with a comma?
+[DONE] For audit trail, ebitda extracted (to the right of traffic light) and other long numbers, we need to separate with a comma?
 
-[NOT DONE] For all citations, can we put the cited excerpt before the preview for the doc?
+[DONE] For all citations, can we put the cited excerpt before the preview for the doc?
+
+[NOT DONE] For Brad - double check how deterministc match checks work and if we can make it better?
+ 
+[NOT DONE] For Brad - Migrate n8n tables to something more robust like Supabase and migrate Google Drive to something more robust?

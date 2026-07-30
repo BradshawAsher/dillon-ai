@@ -112,7 +112,7 @@ export default function InvestmentMetricsCard({ model }: Props) {
 
     const statusColor = (s: MetricItem['status']) =>
         s === 'positive' ? 'text-green-600 dark:text-green-400' :
-        s === 'negative' ? 'text-red-600 dark:text-red-400' : 'text-foreground'
+            s === 'negative' ? 'text-red-600 dark:text-red-400' : 'text-foreground'
 
     return (
         <Card className="overflow-hidden">
@@ -128,6 +128,10 @@ export default function InvestmentMetricsCard({ model }: Props) {
                 </div>
             </CardHeader>
             <CardContent className="p-4">
+                <div className="mb-3 rounded-lg border border-border bg-muted/20 p-3 text-xs leading-5 text-muted-foreground">
+                    <p><strong>IRR</strong> is the annualized return implied by the full cash-flow stream.</p>
+                    <p><strong>Cash Flow Multiple / MOIC-style multiple</strong> is total cash back divided by cash invested.</p>
+                </div>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                     {metrics.map(m => (
                         <div key={m.label} className="rounded-lg border border-border bg-muted/20 p-3 text-center">

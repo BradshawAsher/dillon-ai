@@ -114,7 +114,7 @@ export default function WeeklyProjectionCard({ model }: Props) {
                                         />
                                     )}
                                 </div>
-                                <span className={`text-[10px] font-mono w-16 text-right ${m.cumulative >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                <span className={`text-[10px] font-mono w-20 sm:w-24 text-right ${m.cumulative >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                     {m.cumulative >= 0 ? '+' : '-'}${Math.abs(m.cumulative).toLocaleString()}
                                 </span>
                             </div>
