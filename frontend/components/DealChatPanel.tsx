@@ -8,6 +8,7 @@ import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import type { DealModel } from '../hooks/backend/diligence'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import { parseDocumentedFacts } from '../utils/evidence'
+import { normalizeEquityFraction } from '../utils/dealMath'
 
 type Message = {
     id: string
@@ -45,7 +46,7 @@ function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealMo
     if (model.holdPeriodYears) parts.push(`- Hold period: ${model.holdPeriodYears} years`)
     if (model.exitMultiple) parts.push(`- Exit multiple: ${model.exitMultiple}x`)
     if (model.taxRate) parts.push(`- Tax rate: ${(model.taxRate * 100).toFixed(0)}%`)
-    if (model.equityContributionPercent) parts.push(`- Equity contribution: ${model.equityContributionPercent}%`)
+    if (model.equityContributionPercent) parts.push(`- Equity contribution: ${Math.round(normalizeEquityFraction(model.equityContributionPercent) * 100)}%`)
     if (model.interestRate) parts.push(`- Interest rate: ${(model.interestRate * 100).toFixed(1)}%`)
     if (model.amortizationYears) parts.push(`- Amortization: ${model.amortizationYears} years`)
     if (model.maintenanceCapex) parts.push(`- Maintenance capex: $${model.maintenanceCapex.toLocaleString()}/yr`)

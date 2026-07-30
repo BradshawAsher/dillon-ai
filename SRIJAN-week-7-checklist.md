@@ -108,8 +108,8 @@ The whole thing leads with the decision, then lets the owner drill into *why*, a
 - **Rate-limit/backoff policy:** we have a 10s submit cooldown, but no comprehensive 429/5xx backoff policy under real load.
 - **n8n shared Error Audit workflow** is blocked by a server-side SQLite schema error, so centralized error handling isn't fully attached.
 
-**Known correctness bug (should fix before pilot):**
-- `equityContributionPercent` is handled inconsistently — whole-percent vs. fraction — between `DealStackCard.tsx` and `CashOnCashCalculatorCard.tsx`. This can silently skew returns math. It's small and I can fix it quickly; flagging because it affects numbers a user would act on.
+**Known correctness bug — FIXED (2026-07-30):**
+- ~~`equityContributionPercent` is handled inconsistently — whole-percent vs. fraction.~~ **Resolved.** Every consumer now routes the saved value through the single `normalizeEquityFraction` helper in `frontend/utils/dealMath.ts` (values ≤1 are fractions, values >1 are whole percents ÷100, null/≤0 → 0.3 default). This eliminates the case where a saved `0.3` was divided by 100 into `0.003` (a 100× understatement of equity). Fixed across 11 cards — DealStackCard, CashOnCashCalculatorCard, BreakevenAnalysisCard, DebtServiceCoverageCard, DealKillerCheckCard, NegotiationImpactCard, TermSheetCard, ValueCreationPlanCard, BenchmarkComparisonCard, DealScorecardExportCard, DealRulesOfThumb — plus the DealChatPanel context string (was rendering `0.3%` instead of `30%`) and the `cardCalculations.test.ts` local helper. Added a dedicated `normalizeEquityFraction` unit-test block. **Verified:** `npm run check` — typecheck clean, 106/106 tests pass, build exits 0 (only the pre-existing large-chunk warning).
 
 **Data quality (needs live validation, not just code):**
 - Reconciliation flags (scale errors, conflicting facts, implausible margins) are implemented but not live-validated.
@@ -129,7 +129,7 @@ The whole thing leads with the decision, then lets the owner drill into *why*, a
 - Project synthesis is still a frontend bridge, and the portfolio has no real backing table. These are the two architecture debts I'd prioritize.
 
 **My recommended next 3, in order:**
-1. Fix the `equityContributionPercent` unit inconsistency (small, affects real output).
+1. ~~Fix the `equityContributionPercent` unit inconsistency.~~ **DONE (2026-07-30)** — see §5.
 2. Get read access to API usage → replace cost *estimates* with metered spend, then implement prompt caching and measure the actual delta.
 3. Move the synthesis bridge server-side and stand up a real project table.
 

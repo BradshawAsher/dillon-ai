@@ -4,6 +4,7 @@ import { FileText, Copy, Check } from 'lucide-react'
 import type { DealModel } from '../hooks/backend/diligence'
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
+import { normalizeEquityFraction } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Button } from '../lib/shadcn/button'
 
@@ -24,7 +25,7 @@ export default function TermSheetCard({ model, synthesis, projectName }: Props) 
 
         if (!price) return null
 
-        const equityPct = model.equityContributionPercent ?? 25
+        const equityPct = Math.round(normalizeEquityFraction(model.equityContributionPercent) * 100)
         const equity = price * (equityPct / 100)
         const sellerNote = model.sellerNoteAmount ?? 0
         const seniorDebt = price - equity - sellerNote

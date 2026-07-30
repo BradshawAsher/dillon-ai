@@ -3,6 +3,7 @@ import { TrendingUp } from 'lucide-react'
 
 import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
+import { normalizeEquityFraction } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 
 type Props = {
@@ -41,8 +42,7 @@ export default function ValueCreationPlanCard({ model }: Props) {
         const workingCapital = model.workingCapitalRequirement ?? (revenue * 0.10)
 
         // Calculate annual cash flow for debt paydown step
-        const equityPct = model.equityContributionPercent ?? 25
-        const equity = price * (equityPct / 100)
+        const equity = price * normalizeEquityFraction(model.equityContributionPercent)
         const debt = price - equity - (model.sellerNoteAmount ?? 0)
         const rate = model.interestRate ?? 0.07
         const amortYears = model.amortizationYears ?? 10

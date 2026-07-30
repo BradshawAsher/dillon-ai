@@ -3,6 +3,7 @@ import { Scale } from 'lucide-react'
 
 import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
+import { normalizeEquityFraction } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 
 type Props = {
@@ -54,7 +55,7 @@ export default function NegotiationImpactCard({ model }: Props) {
             })
         }
 
-        const currentEquityPct = model.equityContributionPercent ?? 25
+        const currentEquityPct = normalizeEquityFraction(model.equityContributionPercent) * 100
         if (currentEquityPct > 10) {
             const reducedEquityPct = Math.max(10, currentEquityPct - 10)
             const currentEquity = price * (currentEquityPct / 100)

@@ -3,6 +3,7 @@ import { BarChart3 } from 'lucide-react'
 
 import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
+import { normalizeEquityFraction } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 
 type Props = {
@@ -42,8 +43,7 @@ export default function BenchmarkComparisonCard({ model }: Props) {
         const annualCF = ebitda * (1 - taxRate) - capex
         const payback = annualCF > 0 ? price / annualCF : null
 
-        const equityPct = model.equityContributionPercent ?? 25
-        const debt = price * (1 - equityPct / 100)
+        const debt = price * (1 - normalizeEquityFraction(model.equityContributionPercent))
         const rate = model.interestRate ?? 0.07
         const amortYears = model.amortizationYears ?? 10
         const monthlyRate = rate / 12

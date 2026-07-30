@@ -3,6 +3,7 @@ import { Layers } from 'lucide-react'
 
 import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
+import { normalizeEquityFraction } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 
 type Props = {
@@ -25,7 +26,7 @@ export default function DealStackCard({ model }: Props) {
         const facts = parseDocumentedFacts(model.documentedFactsJson)
         const ebitda = typeof facts.ebitda_sde?.value === 'number' ? facts.ebitda_sde.value : null
 
-        const equityPct = model.equityContributionPercent ?? 25
+        const equityPct = normalizeEquityFraction(model.equityContributionPercent) * 100
         const equity = price * (equityPct / 100)
         const sellerNote = model.sellerNoteAmount ?? 0
         const seniorDebt = price - equity - sellerNote
