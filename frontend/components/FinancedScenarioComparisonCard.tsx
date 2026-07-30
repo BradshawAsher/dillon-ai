@@ -87,15 +87,15 @@ export default function FinancedScenarioComparisonCard({ model }: { model: DealM
                         <div className="flex items-center justify-between"><p className="font-semibold text-foreground">{scenario.name}</p><Badge variant="outline">{(scenario.growth * 100).toFixed(1)}% growth</Badge></div>
                         <p className="mt-3 text-xs text-muted-foreground">Levered MOIC / IRR</p><p className="mt-1 text-xl font-semibold text-foreground">{moic.toFixed(2)}x / {irr === null ? 'Not available' : `${(irr * 100).toFixed(1)}%`}</p>
                         <div className="mt-4 space-y-2 text-sm"><div className="flex justify-between gap-3"><span className="text-muted-foreground">Year-{holdPeriod} revenue</span><span className="font-medium">{money(yearlyRevenue[yearlyRevenue.length - 1])}</span></div><div className="flex justify-between gap-3"><span className="text-muted-foreground">Exit EBITDA</span><span className="font-medium">{money(exitEbitda)}</span></div><div className="flex justify-between gap-3"><span className="text-muted-foreground">Exit equity proceeds</span><span className="font-medium">{money(exitProceeds)}</span></div><div className="flex justify-between gap-3"><span className="text-muted-foreground">Year-one DSCR</span><span className="font-medium">{yearOneDscr === null ? 'Not available' : `${yearOneDscr.toFixed(2)}x`}</span></div></div>
-                        <p className="mt-4 text-xs leading-5 text-muted-foreground">Growth, EBITDA margin, and exit multiple are scenario assumptions. Financing terms are shared saved assumptions.</p>
+                        <p className="mt-4 text-xs leading-5 text-muted-foreground">Growth, EBITDA margin, and exit multiple are saved model assumptions for each scenario. Financing terms are also shared saved model assumptions, not ad-hoc analyst overrides.</p>
                     </div>
                 })}
             </div>
-            <div className="rounded-lg border border-border bg-muted/10 p-4">
-                <p className="text-sm font-semibold text-foreground">Levered cash-flow paths by scenario</p>
-                <p className="mt-1 text-xs text-muted-foreground">Annual levered free cash flow after debt service, with exit proceeds in the final year. Bear (red), Base (blue), Bull (green).</p>
-                <GrowthLineChart data={scenarioCashFlowChartData} />
-            </div>
+                <div className="rounded-lg border border-border bg-muted/10 p-4">
+                    <p className="text-sm font-semibold text-foreground">Levered cash-flow paths by scenario</p>
+                    <p className="mt-1 text-xs text-muted-foreground">Annual levered free cash flow after debt service, with exit proceeds in the final year. Bear (red), Base (blue), Bull (green).</p>
+                    <GrowthLineChart data={scenarioCashFlowChartData} />
+                </div>
             </div>}
         </CardContent>
     </Card>

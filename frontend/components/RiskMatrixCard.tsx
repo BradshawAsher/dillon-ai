@@ -41,7 +41,7 @@ function QuadrantList({ items }: { items: RiskItem[] }) {
         <div className="space-y-1">
             {visibleItems.map((r, i) => (
                 <div key={i} className="border-b border-border/10 pb-1.5 mb-1.5 last:border-0 last:mb-0">
-                    <p className="text-[11px] font-semibold leading-relaxed text-foreground whitespace-normal">
+                    <p className="text-xs sm:text-sm font-semibold leading-relaxed text-foreground whitespace-normal">
                         • {r.text}
                     </p>
                 </div>
@@ -101,23 +101,23 @@ export default function RiskMatrixCard({ synthesis }: Props) {
             <CardContent className="p-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div className="rounded-lg border-2 border-red-200 bg-red-50 p-3.5 dark:border-red-900 dark:bg-red-950/30">
-                        <p className="text-[10px] font-bold uppercase tracking-wide text-red-700 dark:text-red-400">Critical — Act now</p>
-                        <p className="text-[9px] text-muted-foreground mb-2">High impact + high likelihood</p>
+                        <p className="text-xs font-bold uppercase tracking-wide text-red-700 dark:text-red-400">Critical — Act now</p>
+                        <p className="text-[10px] text-muted-foreground mb-2">High impact + high likelihood</p>
                         <QuadrantList items={quadrants.highHigh} />
                     </div>
                     <div className="rounded-lg border-2 border-amber-200 bg-amber-50 p-3.5 dark:border-amber-900 dark:bg-amber-950/30">
-                        <p className="text-[10px] font-bold uppercase tracking-wide text-amber-700 dark:text-amber-400">Monitor — High impact</p>
-                        <p className="text-[9px] text-muted-foreground mb-2">High impact + lower likelihood</p>
+                        <p className="text-xs font-bold uppercase tracking-wide text-amber-700 dark:text-amber-400">Monitor — High impact</p>
+                        <p className="text-[10px] text-muted-foreground mb-2">High impact + lower likelihood</p>
                         <QuadrantList items={quadrants.highMed} />
                     </div>
                     <div className="rounded-lg border-2 border-orange-200 bg-orange-50 p-3.5 dark:border-orange-900 dark:bg-orange-950/30">
-                        <p className="text-[10px] font-bold uppercase tracking-wide text-orange-700 dark:text-orange-400">Investigate — Likely</p>
-                        <p className="text-[9px] text-muted-foreground mb-2">Medium impact + high likelihood</p>
+                        <p className="text-xs font-bold uppercase tracking-wide text-orange-700 dark:text-orange-400">Investigate — Likely</p>
+                        <p className="text-[10px] text-muted-foreground mb-2">Medium impact + high likelihood</p>
                         <QuadrantList items={quadrants.medHigh} />
                     </div>
                     <div className="rounded-lg border-2 border-slate-200 bg-slate-50 p-3.5 dark:border-slate-700 dark:bg-slate-900/30">
-                        <p className="text-[10px] font-bold uppercase tracking-wide text-slate-700 dark:text-slate-400">Accept — Low priority</p>
-                        <p className="text-[9px] text-muted-foreground mb-2">Low impact or low likelihood</p>
+                        <p className="text-xs font-bold uppercase tracking-wide text-slate-700 dark:text-slate-400">Accept — Low priority</p>
+                        <p className="text-[10px] text-muted-foreground mb-2">Low impact or low likelihood</p>
                         <QuadrantList items={quadrants.low} />
                     </div>
                 </div>
