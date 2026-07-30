@@ -138,7 +138,11 @@ export default function ModelAssumptionsSummary({ model, area }: Props) {
                             variant="outline"
                             className="h-7 gap-1.5 text-xs"
                             onClick={() => {
-                                const el = document.querySelector('[data-deal-model-pending]')
+                                // Scroll to the appropriate editable block per area. Valuation inputs live
+                                // inside the valuation card, so target its special selector; other
+                                // areas use the shared deal-model pending card.
+                                const selector = area === 'valuation' ? '[data-valuation-assumptions]' : '[data-deal-model-pending]'
+                                const el = document.querySelector(selector)
                                 el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
                             }}
                         >

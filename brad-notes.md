@@ -90,3 +90,5 @@ For Brad - test the docs that trisha gave you?
 For Brad - go through TODO_CURRENT.md and what's missing?
 
 Add some sort of sentiment analysis or no?
+
+For Brad - Look through this file and see if the things were actually done or not
