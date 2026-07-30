@@ -7,13 +7,15 @@ render.yaml, and frontend/server.ts remain unchanged as a rollback option.
 
 1. Import the existing GitHub repository into Vercel.
 2. Leave the project's Root Directory at the repository root.
-3. Vercel reads vercel.json, installs the frontend dependencies, builds the
-   Vite app, and exposes the serverless API routes under /api/diligence.
-4. Add this Production and Preview environment variable:
+3. Use Node `22.x` for the Vercel build, matching `frontend/package.json` and
+   `.nvmrc`.
+4. Vercel reads `vercel.json`, installs the frontend dependencies, builds the
+   Vite app, and exposes the serverless API routes under `/api/diligence`.
+5. Add this Production and Preview environment variable:
 
    N8N_WEBHOOK_SECRET=<the existing Render secret>
 
-Do not expose this value with a VITE_ prefix. It is used only by the
+Do not expose this value with a `VITE_` prefix. It is used only by the
 serverless API when it calls n8n.
 
 ## Validate before switching
