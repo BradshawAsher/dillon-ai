@@ -42,13 +42,21 @@ before diagnosing or changing workflow behavior.
 
 ## Run locally
 
-Use a current Node LTS release (Node 22+ recommended).
+Use Node `22.x` for local development and Vercel compatibility.
+
+On Windows, `nvm-windows` is recommended so you can switch to the project Node
+version without affecting other repos.
 
 ```sh
+nvm install 22.16.0
+nvm use 22.16.0
 cd frontend
 npm install
 npm run dev
 ```
+
+If you do not use `nvm`, install a Node `22.x` release directly and then run
+`npm install` from `frontend/`.
 
 Open the URL Vite prints, normally `http://localhost:5173`. Dev mode supports
 hot reload.
@@ -155,9 +163,10 @@ The production dashboard is deployed on Vercel:
 <https://due-diligence-dashboard.vercel.app/>
 
 Import the repository with the Root Directory set to the repository root.
-The committed vercel.json supplies the install, build, and output settings.
-Set N8N_WEBHOOK_SECRET in Vercel for both Preview and Production; never
-expose it with a VITE_ prefix.
+The committed `vercel.json` supplies the install, build, and output settings.
+Vercel should use Node `22.x`, matching `frontend/package.json`.
+Set `N8N_WEBHOOK_SECRET` in Vercel for both Preview and Production; never
+expose it with a `VITE_` prefix.
 
 Use a Vercel preview deployment to validate live history, a test upload,
 batch progress, and project synthesis before promoting a change. See

@@ -13,13 +13,19 @@ stamped as **MergeWorks Dashboard** while this test mode is active.
 
 ## Run it locally
 
-Requirements: Node.js 18+ and npm. Then:
+Requirements: Node.js `22.x` and npm. On Windows, `nvm-windows` is
+recommended.
 
 ```sh
+nvm install 22.16.0
+nvm use 22.16.0
 git clone https://github.com/SrijanChallapalli/Due-Diligence-Dashboard
 cd Due-Diligence-Dashboard/frontend
 npm install
 ```
+
+If you do not use `nvm`, install Node `22.x` directly before running the same
+steps.
 
 Create `frontend/.env` (gitignored) with the webhook secret — without it,
 live mode gets 403s from n8n:
@@ -79,8 +85,12 @@ npm run build       # what Render runs
   doesn't match the n8n Header Auth credential.
 - **History or synthesis shows 500** → confirm `N8N_WEBHOOK_SECRET` is set
   in Vercel for the active environment, then redeploy.
-- **Vercel build fails after a dependency change** → run `npm install` in
-  `frontend/` and commit the updated `package-lock.json`.
+- **Vercel build fails after a dependency change** → make sure you are on
+  Node `22.x`, run `npm install` in `frontend/`, and commit the updated
+  `package-lock.json`.
+- **React / Vite modules suddenly cannot be found locally** → confirm
+  `node -v` is `22.x`, then reinstall dependencies from `frontend/` and
+  restart the TypeScript server in VS Code.
 
 ### Safe n8n debugging rule
 
