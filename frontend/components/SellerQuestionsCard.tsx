@@ -311,6 +311,7 @@ export default function SellerQuestionsCard({ synthesis, model }: Props) {
                     )}
                 </div>
                 <p className="mt-3 text-[10px] text-muted-foreground">Auto-generated from red flags and open questions. Add custom questions, mark answered, and copy/download for management calls.</p>
+                <p className="mt-1 text-[10px] text-muted-foreground">These seller questions and answers help the Deal Assistant chatbot respond with more context. They do not change the project synthesis or document-level workflow outputs.</p>
             </CardContent>
         </Card>
     )

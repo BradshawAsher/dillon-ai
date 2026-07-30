@@ -70,7 +70,7 @@ function CitedDocumentViewer({ evidence }: { evidence: EvidenceItem }) {
 
 const SOURCE_LABELS: Record<MetricInput['source'] | 'web', { label: string; variant: 'success' | 'warning' | 'secondary' | 'outline'; className?: string; icon: string }> = {
     documented: { label: 'Document Fact', variant: 'success', className: 'provenance-badge-doc', icon: '📄' },
-    assumed: { label: 'Model Assumption', variant: 'warning', className: 'provenance-badge-analyst', icon: '⚡' },
+    assumed: { label: 'Saved Model Assumption', variant: 'warning', className: 'provenance-badge-analyst', icon: '⚡' },
     analyst: { label: 'Analyst Input', variant: 'secondary', className: 'provenance-badge-analyst', icon: '✏️' },
     web: { label: 'Public Web', variant: 'outline', className: 'provenance-badge-web', icon: '🌐' },
 }
@@ -230,6 +230,13 @@ export default function EvidenceDrawer({ evidence, onClose }: { evidence: Eviden
                                 : confidence
                         }
                     />
+
+                    {evidence.excerpt ? (
+                        <div className="rounded-md border border-border bg-background/80 p-3">
+                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Cited excerpt</p>
+                            <p className="mt-1 text-sm leading-6 text-foreground whitespace-pre-wrap">{evidence.excerpt}</p>
+                        </div>
+                    ) : null}
 
                     <DocumentHighlightViewer
                         sourceFile={evidence.sourceFile}

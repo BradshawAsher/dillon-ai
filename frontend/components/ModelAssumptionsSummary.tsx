@@ -100,6 +100,7 @@ export default function ModelAssumptionsSummary({ model, area }: Props) {
                     </div>
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">Current saved values driving the calculations below.</p>
+                <p className="mt-1 text-xs text-muted-foreground">If a card can still render without a saved value, it may be using a clearly labeled preview or fallback assumption until you configure the saved model inputs.</p>
                 <div className="mt-3 grid gap-2 sm:grid-cols-3 lg:grid-cols-6">
                     {rows.map((row) => (
                         <div key={row.label} className={`rounded-md border px-3 py-2 ${row.isSet ? 'border-border bg-background' : 'border-dashed border-muted-foreground/30 bg-muted/30'}`}>

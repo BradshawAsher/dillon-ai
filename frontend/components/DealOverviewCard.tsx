@@ -117,7 +117,10 @@ export default function DealOverviewCard({ syntheses, projects, currentProjectId
     const annualOperatingCashFlow = ebitda === null || taxRate === null ? null : ebitda * (1 - taxRate) - (model?.maintenanceCapex ?? (exampleMode ? 1_200_000 : 0))
     const annualRoi = initialInvestment !== null && initialInvestment > 0 && annualOperatingCashFlow !== null ? annualOperatingCashFlow / initialInvestment : null
     const paybackYears = initialInvestment !== null && annualOperatingCashFlow !== null && annualOperatingCashFlow > 0 ? initialInvestment / annualOperatingCashFlow : null
-    const ebitdaMargin = computeEbitdaMargin(ebitda, revenue)
+    const numericFact = (field: string) => typeof (documentedFacts as any)[field]?.value === 'number' ? (documentedFacts as any)[field].value as number : null
+    const displayRevenue = revenue ?? numericFact('revenue')
+    const displayEbitda = ebitda ?? numericFact('ebitda_sde')
+    const ebitdaMargin = computeEbitdaMargin(displayEbitda, displayRevenue)
     const debtToAssets = computeDebtToAssets(debt, assets)
     const revenuePerEmployee = computeRevenuePerEmployee(revenue, employeeCount)
     const metricCurrency = documentedFacts.revenue?.currency || documentedFacts.ebitda_sde?.currency || synthesis?.valuationCurrency || 'USD'
@@ -159,7 +162,7 @@ export default function DealOverviewCard({ syntheses, projects, currentProjectId
         { label: 'Price vs. base value', value: priceGapPercent === null ? 'Not available' : `${Math.abs(priceGapPercent).toFixed(1)}% ${priceGapPercent > 0 ? 'above' : priceGapPercent < 0 ? 'below' : 'at'} base`, detail: 'Asking price ÷ supported base value − 1', source: exampleMode ? 'Example data' : 'Synthesis + assumption', evidence: evidenceForSynthesis('Price vs. supported base value') },
         { label: 'Simple annual ROI', value: annualRoi === null ? 'Not available' : `${(annualRoi * 100).toFixed(1)}%`, detail: 'Annual operating cash flow ÷ initial investment', source: exampleMode ? 'Example data' : 'Documented + assumptions', evidence: evidenceForFact('ebitda_sde', 'Simple annual ROI input evidence') },
         { label: 'Payback period', value: paybackYears === null ? 'Not available' : `${paybackYears.toFixed(1)} years`, detail: 'Initial investment ÷ annual operating cash flow', source: exampleMode ? 'Example data' : 'Documented + assumptions', evidence: evidenceForFact('ebitda_sde', 'Payback-period input evidence') },
-        { label: 'EBITDA margin', value: ebitdaMargin === null ? 'Not available' : `${(ebitdaMargin * 100).toFixed(1)}%`, detail: 'Documented EBITDA/SDE ÷ documented revenue', source: exampleMode ? 'Example data' : 'Documented', evidence: evidenceForFact('ebitda_sde', 'EBITDA margin evidence') },
+        { label: 'EBITDA margin', value: ebitdaMargin === null ? 'Not available' : `${(ebitdaMargin * 100).toFixed(1)}%`, detail: 'EBITDA/SDE ÷ revenue', source: exampleMode ? 'Example data' : (ebitda !== null && revenue !== null ? 'Documented' : 'Estimated'), evidence: evidenceForFact('ebitda_sde', 'EBITDA margin evidence') },
         { label: 'Debt to assets', value: debtToAssets === null ? 'Not available' : `${(debtToAssets * 100).toFixed(1)}%`, detail: 'Documented debt ÷ documented total assets', source: exampleMode ? 'Example data' : 'Documented', evidence: evidenceForFact('debt', 'Debt-to-assets evidence') },
         { label: 'Revenue per employee', value: revenuePerEmployee === null ? 'Not available' : formatCurrencyValue(String(revenuePerEmployee), metricCurrency), detail: 'Documented revenue ÷ documented employee count', source: exampleMode ? 'Example data' : 'Documented', evidence: evidenceForFact('revenue', 'Revenue-per-employee evidence') },
     ]

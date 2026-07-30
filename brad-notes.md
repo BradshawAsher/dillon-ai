@@ -17,17 +17,17 @@ OVERVIEW PROBLEMS:
 
 ANALYSIS PROBLEMS: 
 
-[NOT DONE] Why does the set asking price not load a page?
+[DONE] Why does the set asking price not load a page?
 
 [DONE] For the risk matrix a lot of text is cut out and there is no button to load more?
 
-[NOT DONE] For diligence completeness, can we have a button for each of the 4 sections to resolve them or to take the user to the place to fix that issue in the website?
+[DONE] For diligence completeness, can we have a button for each of the 4 sections to resolve them or to take the user to the place to fix that issue in the website?
 
 
 # More: 
 [DONE] can we also make the questions for seller have places to submit answers in the analysis part too?
 
-[NOT DONE] In the negotiation playbook, can we make the text bigger?
+[DONE] In the negotiation playbook, can we make the text bigger?
 
 [NOT DONE] For the DD request list, can we have a button to show the rest of the list?
 
@@ -37,18 +37,18 @@ ANALYSIS PROBLEMS:
 
 [DONE] Can we also reformat the acquisition judgement to be better and have the judgement spaced out from the rest and the rest be bullet points?
 
-[NOT DONE] If the synthesis page's next step is to use management question tracker or something else, can we add a button to that part of the page?
+[DONE] If the synthesis page's next step is to use management question tracker or something else, can we add a button to that part of the page?
 
-[NOT SURE] Material impact mapping also doesn't show the documents why?
+[DONE] Material impact mapping also doesn't show the documents why?
 
 NEW PROBLEMS???
 
 [NOT DONE] i also thought for ebitda margin for project 6 for example we calculated the ebitda margin to be 25k but in decision metrics it is unavailable? Also I think the citation is wrong for that as well can we check why? For a lot of the decisino metrics they say not available but have a citation for something why?
 
-[NOT DONE] Can we make the text for hte risk matrix to be bigger?
+[DONE] Can we make the text for hte risk matrix to be bigger?
 [NOT DONE] Can we make a separate tab for negotiation playbook?
 
-[NOT DONE] Can we also add a disclaimer that the questions for seller and management-question tracker do not influence outputs for the synthesis or document specific workflow outputs, but only for the chatbot? (everywhere that they are references?)
+[DONE] Can we also add a disclaimer that the questions for seller and management-question tracker do not influence outputs for the synthesis or document specific workflow outputs, but only for the chatbot? (everywhere that they are references?)
 
 [NOT DONE] I also think the AI Summary for diligence section seems inaccurate is it cut off somehow?
 
@@ -58,9 +58,10 @@ NEW PROBLEMS???
 
 [NOT DONE] The value risk bridge part is pretty wordy, can we cut down how wordy it is? And evidence value bridge too?
 
-[NOT DONE] What does the evidence linked value bridge due and what happens if the user enters stuff into it? What happens if you save bridge to deal model?
+[DONE] What does the evidence linked value bridge due and what happens if the user enters stuff into it? What happens if you save bridge to deal model?  
+(Added buttons and clearer next-step routing in synthesis and overview; evidence drawer now shows cited excerpt first.)
 
-[NOT DONE] For financed acquisition scenario a lot of the stats when you click on it it says some stats are analyst input but i think those are model assumptions, can we clarify that?
+[DONE] For financed acquisition scenario a lot of the stats when you click on it it says some stats are analyst input but i think those are model assumptions, can we clarify that?
 
 [NOT DONE] numbers for yearly 1 month project get cut off on the right, can we fix that?
 
@@ -68,7 +69,7 @@ NEW PROBLEMS???
 
 [NOT DONE] For Brad - understand what all the graphs even mean?
 
-[NOT DONE] For deal structure, can we still show how this was calculated even if starting assumptions are assumed, and just add disclaimer that this was starting assumptions?
+[DONE] For deal structure, can we still show how this was calculated even if starting assumptions are assumed, and just add disclaimer that this was starting assumptions?
 
 [NOT DONE] In the projects tab, when we open documents in this projects, can we also show which doc counts as what?
 
