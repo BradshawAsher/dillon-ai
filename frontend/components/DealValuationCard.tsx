@@ -5,7 +5,7 @@ import type { DealModel } from '../hooks/backend/diligence'
 import { Badge } from '../lib/shadcn/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { formatCurrencyValue } from '../utils/aiSubmissionData'
-import { buildDerivedEvidence, buildFactEvidence, findCitedDocument, parseDocumentedFacts, type EvidenceItem } from '../utils/evidence'
+import { buildDerivedEvidence, buildDocumentLinkedEvidence, buildFactEvidence, parseDocumentedFacts, type EvidenceItem } from '../utils/evidence'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import { Input } from '../lib/shadcn/input'
 import { MoneyBarChart } from './DealCharts'
@@ -45,21 +45,20 @@ export default function DealValuationCard({ synthesis, askingPrice, model, onMod
     const synthesisEvidence = (title: string, text: string, index = 0): EvidenceItem => {
         const finding = synthesis?.structuredFindings.crossDocumentConflicts[index]
         const citation = finding?.citations?.[0] || synthesis?.citationDetails?.[0]
-        const sourceFile = citation?.sourceFile || synthesis?.citations?.[0] || 'Project synthesis'
-        const document = findCitedDocument(sourceFile, documents)
-        return {
+        return buildDocumentLinkedEvidence({
             title,
-            sourceFile,
-            sourceLocation: citation?.sourceLocation || 'Project-level synthesis',
+            sourceFile: citation?.sourceFile,
+            fallbackSourceFile: synthesis?.citations?.[0] || 'Project synthesis',
+            sourceLocation: citation?.sourceLocation,
+            fallbackSourceLocation: 'Project-level synthesis',
             excerpt: citation?.excerpt || finding?.text || text,
             period: citation?.period,
             currency: citation?.currency,
             confidence: finding?.confidence ?? citation?.confidence ?? undefined,
             status: finding?.status || citation?.status || 'Synthesized',
             provenance: 'Project synthesis',
-            documentUrl: document?.storageFileUrl,
-            documentId: document?.storageFileId,
-        }
+            documents,
+        })
     }
     const asMoney = (value: number | null | undefined) => value === null || value === undefined ? 'Not documented' : formatCurrencyValue(String(value), 'USD')
 
@@ -215,7 +214,7 @@ export default function DealValuationCard({ synthesis, askingPrice, model, onMod
                             <div className="rounded-xl border border-border bg-muted/20 p-4"><div className="flex items-center gap-2"><TriangleAlert className="h-4 w-4 text-warning" /><p className="text-sm font-semibold">Value-risk bridge</p></div><p className="mt-2 text-sm leading-6 text-muted-foreground">Cross-document conflicts that may affect price. Each is a negotiation lever — use them to justify a lower offer or request additional diligence.</p><ul className="mt-3 space-y-2 text-sm">{synthesis.crossDocumentConflicts.length > 0 ? synthesis.crossDocumentConflicts.map((item, index) => <li key={item}><button type="button" onClick={() => onOpenEvidence?.(synthesisEvidence('Value-risk bridge evidence', item, index))} className="w-full rounded-md border border-border bg-background p-3 text-left transition-colors hover:border-primary/40 hover:bg-muted/30">{item}<span className="mt-2 block text-xs font-medium text-primary">View evidence</span></button></li>) : <li className="text-muted-foreground">No cross-document valuation risks recorded.</li>}</ul></div>
                             <div className="rounded-xl border border-border bg-muted/20 p-4"><p className="text-sm font-semibold">How to read these methods</p><p className="mt-2 text-sm leading-6 text-muted-foreground">Each method gives you a different lens on value. <strong>Asset-based</strong> = floor value if you liquidated today. <strong>Revenue multiple</strong> = market comp for top-line businesses. <strong>EBITDA multiple</strong> = cash-flow-based value, the most common for M&A. The <strong>sensitivity grid</strong> (above) shows what the business could be worth at exit under different growth/margin assumptions — it is NOT a current valuation, it is a forward-looking scenario analysis.</p><div className="mt-4 flex flex-wrap gap-2"><Badge variant="outline">Asset-based = floor</Badge><Badge variant="outline">Revenue = market comp</Badge><Badge variant="outline">EBITDA = cash flow</Badge><Badge variant="outline">Sensitivity = future exit</Badge></div></div>
                         </div>
-                        <ValuationImpactBridge synthesis={synthesis} baseValue={baseValue} onOpenEvidence={onOpenEvidence} />
+                        <ValuationImpactBridge synthesis={synthesis} baseValue={baseValue} documents={documents} onOpenEvidence={onOpenEvidence} />
                     </>
                 )}
             </CardContent>

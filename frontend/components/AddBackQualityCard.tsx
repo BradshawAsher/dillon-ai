@@ -5,7 +5,8 @@ import type { DealModel } from '../hooks/backend/diligence'
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { Badge } from '../lib/shadcn/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
-import { parseDocumentedFacts, type EvidenceItem } from '../utils/evidence'
+import { buildDocumentLinkedEvidence, parseDocumentedFacts, type EvidenceItem } from '../utils/evidence'
+import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 
 type AddBackItem = {
     label: string
@@ -124,7 +125,7 @@ function getOverallQuality(items: AddBackItem[]): { label: string; variant: 'suc
     return { label: 'Well-supported', variant: 'success' }
 }
 
-export default function AddBackQualityCard({ model, synthesis, onOpenEvidence }: { model: DealModel; synthesis?: ProjectSynthesisItem; onOpenEvidence?: (item: EvidenceItem) => void }) {
+export default function AddBackQualityCard({ model, synthesis, documents = [], onOpenEvidence }: { model: DealModel; synthesis?: ProjectSynthesisItem; documents?: SubmissionHistoryItem[]; onOpenEvidence?: (item: EvidenceItem) => void }) {
     const facts = parseDocumentedFacts(model.documentedFactsJson)
     const items = useMemo(() => parseAddBacksFromSynthesis(synthesis, facts), [synthesis, facts])
 
@@ -165,39 +166,44 @@ export default function AddBackQualityCard({ model, synthesis, onOpenEvidence }:
                 )}
 
                 <div className="space-y-2">
-                    {items.map((item, index) => (
-                        <button
-                            key={index}
-                            type="button"
-                            onClick={() => onOpenEvidence?.({
-                                title: 'Add-back quality finding',
-                                sourceFile: item.sourceFile || synthesis?.citations?.[0],
-                                sourceLocation: item.sourceLocation || 'Financial analysis',
-                                excerpt: item.excerpt || item.detail,
-                                confidence: item.confidence ?? undefined,
-                                status: item.status || (item.quality === 'supported' ? 'Confirmed' : item.quality === 'partial' ? 'Needs review' : 'Risk'),
-                                provenance: 'Add-back quality scoring',
-                            })}
-                            className="flex w-full items-start gap-3 rounded-lg border border-border p-3 text-left transition-colors hover:border-primary/40"
-                        >
-                            {item.quality === 'supported' ? (
-                                <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-success" />
-                            ) : item.quality === 'partial' ? (
-                                <CircleAlert className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
-                            ) : (
-                                <CircleAlert className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
-                            )}
-                            <div className="min-w-0 flex-1">
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <Badge variant={item.quality === 'supported' ? 'success' : item.quality === 'partial' ? 'warning' : 'destructive'}>
-                                        {item.quality === 'supported' ? 'Supported' : item.quality === 'partial' ? 'Partial' : 'Unsupported'}
-                                    </Badge>
-                                    {item.amount !== null && <Badge variant="outline">{money(item.amount)}</Badge>}
+                    {items.map((item, index) => {
+                        return (
+                            <button
+                                key={index}
+                                type="button"
+                                onClick={() => onOpenEvidence?.(buildDocumentLinkedEvidence({
+                                    title: 'Add-back quality finding',
+                                    sourceFile: item.sourceFile,
+                                    fallbackSourceFile: synthesis?.citations?.[0] || 'Project synthesis',
+                                    sourceLocation: item.sourceLocation,
+                                    fallbackSourceLocation: 'Financial analysis',
+                                    excerpt: item.excerpt || item.detail,
+                                    confidence: item.confidence ?? undefined,
+                                    status: item.status || (item.quality === 'supported' ? 'Confirmed' : item.quality === 'partial' ? 'Needs review' : 'Risk'),
+                                    provenance: 'Add-back quality scoring',
+                                    documents,
+                                }))}
+                                className="flex w-full items-start gap-3 rounded-lg border border-border p-3 text-left transition-colors hover:border-primary/40"
+                            >
+                                {item.quality === 'supported' ? (
+                                    <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-success" />
+                                ) : item.quality === 'partial' ? (
+                                    <CircleAlert className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+                                ) : (
+                                    <CircleAlert className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+                                )}
+                                <div className="min-w-0 flex-1">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <Badge variant={item.quality === 'supported' ? 'success' : item.quality === 'partial' ? 'warning' : 'destructive'}>
+                                            {item.quality === 'supported' ? 'Supported' : item.quality === 'partial' ? 'Partial' : 'Unsupported'}
+                                        </Badge>
+                                        {item.amount !== null && <Badge variant="outline">{money(item.amount)}</Badge>}
+                                    </div>
+                                    <p className="mt-1.5 text-sm leading-6 text-foreground">{item.detail}</p>
                                 </div>
-                                <p className="mt-1.5 text-sm leading-6 text-foreground">{item.detail}</p>
-                            </div>
-                        </button>
-                    ))}
+                            </button>
+                        )
+                    })}
                 </div>
 
                 <div className="flex flex-wrap gap-3 rounded-lg border border-border bg-muted/20 p-3">

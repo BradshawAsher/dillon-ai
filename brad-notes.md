@@ -25,7 +25,8 @@ For the risk matrix a lot of text is cut out and there is no button to load more
 
 For diligence completeness, can we have a button for each of the 4 sections to resolve them or to take the user to the place to fix that issue in the website?
 
-More: 
+
+# More: 
 can we also make the questions for seller have places to submit answers in the analysis part too?
 
 In the negotiation playbook, can we make the text bigger?
@@ -41,3 +42,34 @@ Can we also reformat the acquisition judgement to be better and have the judgeme
 If the synthesis page's next step is to use management question tracker or something else, can we add a button to that part of the page?
 
 Material impact mapping also doesn't show the documents why?
+
+NEW PROBLEMS???
+
+i also thought for ebitda margin for project 6 for example we calculated the ebitda margin to be 25k but in decision metrics it is unavailable? Also I think the citation is wrong for that as well can we check why? For a lot of the decisino metrics they say not available but have a citation for something why?
+
+Can we make the text for hte risk matrix to be bigger?
+Can we make a separate tab for negotiation playbook?
+
+Can we also add a disclaimer that the questions for seller and management-question tracker do not influence outputs for the synthesis or document specific workflow outputs, but only for the chatbot? (everywhere that they are references?)
+
+I also think the AI Summary for diligence section seems inaccurate is it cut off somehow?
+
+I think the missing diligence materials in synthesis tab is not synced correctly with what is in the overview part?
+
+Why are assumptions for valuation, returns, growth, deal structure all not shown even though some assumptions are obviously being shown to give the graphs and everything else?
+
+The value risk bridge part is pretty wordy, can we cut down how wordy it is? And evidence value bridge too?
+
+What does the evidence linked value bridge due and what happens if the user enters stuff into it? What happens if you save bridge to deal model?
+
+For financed acquisition scenario a lot of the stats when you click on it it says some stats are analyst input but i think those are model assumptions, can we clarify that?
+
+numbers for yearly 1 month project get cut off on the right, can we fix that?
+
+what do a lot of important stats like MOIC, IRR mean? Can we add like an i info logo for a lot of important stats/words to explain what they mean
+
+For Brad - understand what all the graphs even mean?
+
+For deal structure, can we still show how this was calculated even if starting assumptions are assumed, and just add disclaimer that this was starting assumptions?
+
+In the projects tab, when we open documents in this projects, can we also show which doc counts as what?

@@ -1670,7 +1670,15 @@ export default function DueDiligenceDashboard() {
                         {activeProjectSynthesis && <><span className="text-muted-foreground">|</span><span className="text-foreground">Quality: <span className="font-semibold">{activeProjectSynthesis.aiConfidence || '—'}</span></span></>}
                     </div>
                 )}
-                <DealWorkspaceNav activeTab={activeWorkspaceTab} onTabChange={setActiveWorkspaceTab} />
+                <DealWorkspaceNav activeTab={activeWorkspaceTab} onTabChange={(tab) => {
+                    setActiveWorkspaceTab(tab)
+                    const workspace = document.getElementById('deal-workspace')
+                    if (workspace) {
+                        workspace.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                    } else {
+                        window.scrollTo({ top: 0, behavior: 'smooth' })
+                    }
+                }} />
 
                 {activeWorkspaceTab === 'overview' ? <section id="deal-overview" className="space-y-6 scroll-mt-6">
                     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -1759,9 +1767,9 @@ export default function DueDiligenceDashboard() {
                     <MathChecksSection documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} compact title="Project math checks" description="Aggregated deterministic checks across all processed documents." />
                     <DataQualityChecksCard model={hydratedDealModel} />
                     <Suspense fallback={null}><EbitdaReconstructionCard model={hydratedDealModel} onOpenEvidence={setActiveEvidence} /></Suspense>
-                    <AddBackQualityCard model={hydratedDealModel} synthesis={activeProjectSynthesis} onOpenEvidence={setActiveEvidence} />
-                    {activeProjectSynthesis && <RecurringVsOneTimeCard model={hydratedDealModel} synthesis={activeProjectSynthesis} onOpenEvidence={setActiveEvidence} />}
-                    {activeProjectSynthesis && <CustomerConcentrationCard synthesis={activeProjectSynthesis} onOpenEvidence={setActiveEvidence} />}
+                    <AddBackQualityCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} />
+                    {activeProjectSynthesis && <RecurringVsOneTimeCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} />}
+                    {activeProjectSynthesis && <CustomerConcentrationCard synthesis={activeProjectSynthesis} documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} />}
                     <div className="border-t border-border pt-4">
                         <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Context &amp; settings</h3>
                     </div>
