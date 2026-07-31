@@ -3,6 +3,7 @@ import { CalendarDays } from 'lucide-react'
 
 import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
+import { resolveLoanTermYears } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 
 type Props = {
@@ -23,12 +24,14 @@ export default function WeeklyProjectionCard({ model }: Props) {
         const monthlyRevenue = annualRevenue / 12
         const monthlyEbitda = ebitda / 12
         const taxRate = model.taxRate ?? 0.25
-        const capexRate = model.maintenanceCapex ?? 0.02
-        const monthlyCapex = annualRevenue * capexRate / 12
+        // maintenanceCapex is an absolute annual dollar amount; only the fallback
+        // is expressed as 2% of revenue.
+        const annualCapex = model.maintenanceCapex ?? (annualRevenue * 0.02)
+        const monthlyCapex = annualCapex / 12
 
         const debt = model.seniorDebtAmount ?? 0
         const rate = model.interestRate ?? 0.07
-        const term = model.loanTermYears ?? 10
+        const term = resolveLoanTermYears(model.amortizationYears, model.loanTermYears)
         const monthlyDebt = debt > 0 ? (debt * (rate / 12)) / (1 - Math.pow(1 + rate / 12, -term * 12)) : 0
 
         const months = []

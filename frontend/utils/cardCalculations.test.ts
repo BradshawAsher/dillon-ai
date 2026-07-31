@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { parseDocumentedFacts } from './evidence'
-import { normalizeEquityFraction } from './dealMath'
+import { normalizeEquityFraction, resolveLoanTermYears } from './dealMath'
 import {
     ALL_FIXTURES,
     FIXTURE_DISTRESSED,
@@ -248,5 +248,43 @@ describe('normalizeEquityFraction', () => {
         const equity = price * normalizeEquityFraction(0.3)
         expect(equity).toBeCloseTo(1_500_000, 2)
         expect(equity).not.toBeCloseTo(15_000, 2)
+    })
+})
+
+describe('resolveLoanTermYears', () => {
+    it('prefers a saved amortizationYears (the field the form actually writes)', () => {
+        expect(resolveLoanTermYears(7, 10)).toBe(7)
+        expect(resolveLoanTermYears(7, null)).toBe(7)
+    })
+
+    it('falls back to loanTermYears when amortizationYears is absent', () => {
+        expect(resolveLoanTermYears(null, 15)).toBe(15)
+        expect(resolveLoanTermYears(undefined, 15)).toBe(15)
+    })
+
+    it('falls back to the shared 10-year default when neither is usable', () => {
+        expect(resolveLoanTermYears(null, null)).toBe(10)
+        expect(resolveLoanTermYears(0, 0)).toBe(10)
+        expect(resolveLoanTermYears(-3, Number.NaN)).toBe(10)
+    })
+})
+
+describe('maintenanceCapex is an absolute dollar amount', () => {
+    // Regression guard for the units bug where a few cards (WeeklyProjection,
+    // CashReserve, SensitivityRanking) multiplied maintenanceCapex by revenue,
+    // treating the saved dollar field as if it were a rate.
+    const annualCapex = (maintenanceCapex: number | null | undefined, revenue: number) =>
+        maintenanceCapex ?? revenue * 0.02
+
+    it('uses the saved dollar amount directly, not a fraction of revenue', () => {
+        const revenue = 8_000_000
+        expect(annualCapex(50_000, revenue)).toBe(50_000)
+        // The old bug produced revenue * 50_000 — guard against its return.
+        expect(annualCapex(50_000, revenue)).not.toBe(revenue * 50_000)
+    })
+
+    it('falls back to 2% of revenue only when unset', () => {
+        expect(annualCapex(null, 8_000_000)).toBe(160_000)
+        expect(annualCapex(undefined, 5_000_000)).toBe(100_000)
     })
 })

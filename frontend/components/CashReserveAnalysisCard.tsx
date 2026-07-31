@@ -3,6 +3,7 @@ import { Vault } from 'lucide-react'
 
 import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
+import { resolveLoanTermYears } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 
 type Props = {
@@ -29,7 +30,7 @@ export default function CashReserveAnalysisCard({ model }: Props) {
         const monthlyOpex = monthlyRevenue - (ebitda / 12)
         const debt = model.seniorDebtAmount ?? 0
         const rate = model.interestRate ?? 0.07
-        const term = model.loanTermYears ?? 10
+        const term = resolveLoanTermYears(model.amortizationYears, model.loanTermYears)
         const monthlyDebt = debt > 0 ? (debt * (rate / 12)) / (1 - Math.pow(1 + rate / 12, -term * 12)) : 0
 
         const reserves: ReserveItem[] = []
@@ -60,7 +61,10 @@ export default function CashReserveAnalysisCard({ model }: Props) {
             priority: 'recommended',
         })
 
-        const capexReserve = (revenue ?? ebitda / (model.baseEbitdaMargin ?? 0.20)) * (model.maintenanceCapex ?? 0.02)
+        // maintenanceCapex is an absolute annual dollar amount everywhere in the
+        // model; fall back to 2% of revenue only when it is not saved.
+        const revenueBase = revenue ?? ebitda / (model.baseEbitdaMargin ?? 0.20)
+        const capexReserve = model.maintenanceCapex ?? (revenueBase * 0.02)
         reserves.push({
             label: 'Annual maintenance capex fund',
             amount: Math.round(capexReserve),

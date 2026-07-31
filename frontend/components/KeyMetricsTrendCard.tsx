@@ -3,6 +3,7 @@ import { Activity } from 'lucide-react'
 
 import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
+import { resolveLoanTermYears } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 
 type Props = {
@@ -33,7 +34,7 @@ export default function KeyMetricsTrendCard({ model }: Props) {
         const exitMult = model.exitMultiple ?? 4.0
         const debt = model.seniorDebtAmount ?? 0
         const rate = model.interestRate ?? 0.07
-        const term = model.loanTermYears ?? 10
+        const term = resolveLoanTermYears(model.amortizationYears, model.loanTermYears)
 
         const results: MetricProjection[] = []
 

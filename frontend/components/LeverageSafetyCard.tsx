@@ -3,6 +3,7 @@ import { ShieldAlert } from 'lucide-react'
 
 import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
+import { resolveLoanTermYears } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 
 type Props = {
@@ -30,7 +31,7 @@ export default function LeverageSafetyCard({ model }: Props) {
         if (totalDebt <= 0) return null
 
         const rate = model.interestRate ?? 0.07
-        const term = model.loanTermYears ?? 10
+        const term = resolveLoanTermYears(model.amortizationYears, model.loanTermYears)
         const annualDebtService = debt > 0
             ? (debt * (rate / 12)) / (1 - Math.pow(1 + rate / 12, -term * 12)) * 12
             : 0
