@@ -3,6 +3,7 @@ import { ArrowLeftRight } from 'lucide-react'
 
 import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
+import { resolveLoanTermYears } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 
 type Props = {
@@ -30,7 +31,7 @@ export default function FinancingComparisonCard({ model }: Props) {
         if (!price || !ebitda || ebitda <= 0) return null
 
         const rate = model.interestRate ?? 0.07
-        const term = model.loanTermYears ?? 10
+        const term = resolveLoanTermYears(model.amortizationYears, model.loanTermYears)
         const taxRate = model.taxRate ?? 0.25
         const afterTaxEbitda = ebitda * (1 - taxRate)
 

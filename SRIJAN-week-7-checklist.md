@@ -115,6 +115,11 @@ The whole thing leads with the decision, then lets the owner drill into *why*, a
 - Reconciliation flags (scale errors, conflicting facts, implausible margins) are implemented but not live-validated.
 - Mixed / multi-sheet spreadsheet uploads are untested.
 
+**Two more unit-consistency bugs fixed (2026-07-31):** same class as the equity bug — a saved value silently ignored or mis-scaled.
+- **Loan term ignored:** six cards read the derived `loanTermYears` field, but the input form only ever saves `amortizationYears`, so a user's saved term was dropped (fell back to 10yr) unless `withDerivedCapitalStack` had run. Added a single `resolveLoanTermYears(amortizationYears, loanTermYears)` resolver in `dealMath.ts` (saved amortization wins, then derived term, then default) and routed CashReserveAnalysisCard, FinancingScenariosCard, FinancingComparisonCard, KeyMetricsTrendCard, LeverageSafetyCard, and WeeklyProjectionCard through it.
+- **Capex treated as a rate:** WeeklyProjectionCard, CashReserveAnalysisCard, and SensitivityRankingCard multiplied `maintenanceCapex` by revenue, treating the absolute annual-dollar field as a percentage — so any saved capex value blew up the projection (the 0.02 default masked it). All three now treat it as absolute dollars with a 2%-of-revenue fallback only when unset.
+- **Verified:** `npm run check` — typecheck clean, **111/111 tests** (added `resolveLoanTermYears` + capex-units regression blocks), build exit 0.
+
 ---
 
 ## 6. Notes for Trisha + Maple

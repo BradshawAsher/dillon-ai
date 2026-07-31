@@ -34,7 +34,8 @@ function computeMoic(
     if (initial <= 0) return 0
 
     const yearlyRevenue = Array.from({ length: holdPeriod }, (_, y) => revenue * (1 + growthRate) ** (y + 1))
-    const yearlyOcf = yearlyRevenue.map(r => r * ebitdaMargin * (1 - taxRate) - maintenanceCapex * r)
+    // maintenanceCapex is an absolute annual dollar amount, not a rate.
+    const yearlyOcf = yearlyRevenue.map(r => r * ebitdaMargin * (1 - taxRate) - maintenanceCapex)
 
     // Simple debt service cost deduction (approximate annual interest cost on purchase price * leverage)
     const annualInterestCost = purchasePrice * 0.7 * interestRate
@@ -63,7 +64,7 @@ export default function SensitivityRankingCard({ model }: Props) {
         const holdPeriod = model.holdPeriodYears ?? 5
         const intRate = model.interestRate ?? 0.07
         const taxRate = model.taxRate ?? 0.25
-        const capex = model.maintenanceCapex ?? 0.02
+        const capex = model.maintenanceCapex ?? (rev * 0.02)
         const fees = model.transactionFees ?? 0
 
         const baseMoic = computeMoic(ebitda, rev, price, growthRate, ebitdaMargin, exitMult, holdPeriod, intRate, taxRate, capex, fees)

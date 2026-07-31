@@ -3,6 +3,7 @@ import { Landmark } from 'lucide-react'
 
 import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
+import { resolveLoanTermYears } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
 
@@ -35,7 +36,7 @@ export default function FinancingScenariosCard({ model }: Props) {
         if (!ebitda || !price || ebitda <= 0) return null
 
         const rate = model.interestRate ?? 0.07
-        const term = model.loanTermYears ?? 10
+        const term = resolveLoanTermYears(model.amortizationYears, model.loanTermYears)
         const annualPaymentFactor = rate > 0 ? (rate * Math.pow(1 + rate, term)) / (Math.pow(1 + rate, term) - 1) : 1 / term
 
         const configs = [
@@ -76,7 +77,7 @@ export default function FinancingScenariosCard({ model }: Props) {
                         <Landmark className="h-5 w-5 text-primary" />
                         <CardTitle className="text-lg">Financing scenarios</CardTitle>
                     </div>
-                    <Badge variant="outline">{((model.interestRate ?? 0.07) * 100).toFixed(1)}% rate · {model.loanTermYears ?? 10}yr term</Badge>
+                    <Badge variant="outline">{((model.interestRate ?? 0.07) * 100).toFixed(1)}% rate · {resolveLoanTermYears(model.amortizationYears, model.loanTermYears)}yr term</Badge>
                 </div>
             </CardHeader>
             <CardContent className="p-4">

@@ -46,6 +46,8 @@ export const DEAL_MATH_DEFAULTS = {
     exitMultiple: 4,
     /** Exit costs default to 2% of exit enterprise value. */
     exitCostRate: 0.02,
+    /** Amortization/loan term in years, used when none is saved. */
+    loanTermYears: 10,
 } as const
 
 /**
@@ -78,6 +80,35 @@ export function normalizeEquityFraction(value: number | null | undefined): numbe
         return 0.3
     }
     return value > 1 ? value / 100 : value
+}
+
+/**
+ * Resolves the loan/amortization term (in years) a card should use.
+ *
+ * The Deal Model input form only ever saves `amortizationYears` — there is no
+ * `loanTermYears` field a user can set. `loanTermYears` is a *derived* field
+ * that `withDerivedCapitalStack` backfills from `amortizationYears`, and only
+ * when a project already has financing inputs. Cards that read `loanTermYears`
+ * alone therefore silently ignored a user's saved amortization term whenever
+ * the derived stack had not run, falling back to the default instead.
+ *
+ * This resolver is the single place that fixes the precedence:
+ *   - a saved `amortizationYears` (what the form actually writes) wins,
+ *   - then a derived/legacy `loanTermYears`,
+ *   - then the shared default.
+ * Non-positive / non-finite values are ignored at each step.
+ */
+export function resolveLoanTermYears(
+    amortizationYears: number | null | undefined,
+    loanTermYears: number | null | undefined,
+): number {
+    if (isNumber(amortizationYears) && amortizationYears > 0) {
+        return amortizationYears
+    }
+    if (isNumber(loanTermYears) && loanTermYears > 0) {
+        return loanTermYears
+    }
+    return DEAL_MATH_DEFAULTS.loanTermYears
 }
 
 const INPUT_LABELS: Record<string, string> = {
