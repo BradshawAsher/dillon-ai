@@ -48,23 +48,42 @@ export function installRetoolGlobals() {
         init.body = body
       }
 
-      const response = await fetch(url, init)
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 180_000)
+      let response: Response
+      try {
+        response = await fetch(url, { ...init, signal: controller.signal })
+      } catch (err) {
+        clearTimeout(timeoutId)
+        if (err instanceof Error && err.name === 'AbortError') {
+          throw new Error('n8n request timed out after 3 minutes. This usually means the execution limit has been reached or n8n is processing a large batch. Try again later.')
+        }
+        throw err
+      }
+      clearTimeout(timeoutId)
       const text = await response.text()
 
       if (!response.ok) {
+        const lowerText = text.toLowerCase()
         const isExecLimit = response.status === 429
-          || text.includes('execution limit')
-          || text.includes('executions limit')
-          || text.includes('has reached')
-          || (response.status === 503 && text.includes('limit'))
+          || lowerText.includes('execution limit')
+          || lowerText.includes('executions limit')
+          || lowerText.includes('has reached')
+          || lowerText.includes('limit reached')
+          || (response.status === 503 && lowerText.includes('limit'))
         if (isExecLimit) {
-          throw new Error('n8n has reached its daily execution limit. Document processing will resume automatically when the limit resets (usually within 24 hours). Your data is safe — no action needed.')
+          throw new Error('n8n has reached its execution limit for this billing period. Document processing will resume automatically when the limit resets. Your data is safe — no action needed.')
         }
         const isEmpty = text.length === 0 || text === '{}' || text === 'null'
         if (isEmpty && response.status >= 500) {
           throw new Error('n8n is temporarily unavailable (returned empty response). This may indicate the execution limit has been reached. Try again later.')
         }
         throw new Error('n8n responded ' + response.status + ': ' + text.slice(0, 300))
+      }
+
+      // n8n sometimes returns 200 with an error payload when at execution limit
+      if (text.toLowerCase().includes('execution limit') || text.toLowerCase().includes('limit reached')) {
+        throw new Error('n8n has reached its execution limit for this billing period. Document processing will resume automatically when the limit resets. Your data is safe — no action needed.')
       }
 
       try {
