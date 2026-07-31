@@ -1,78 +1,4 @@
-// Fetches project-level synthesis rows written by the n8n consolidator
-// workflow. See docs/n8n-webhooks.md for the webhook this expects and the
-// row fields it understands (based on the project-level schema recommended in
-// frontend/notes/project-handoff.md §14).
-type TextValue = string | number | boolean | null | undefined
-
-type ProjectSynthesisRow = {
-    projectId?: TextValue
-    project_id?: TextValue
-    projectName?: TextValue
-    project_name?: TextValue
-    dealName?: TextValue
-    deal_name?: TextValue
-    companyName?: TextValue
-    company_name?: TextValue
-    projectStatus?: TextValue
-    project_status?: TextValue
-    documentsReceivedCount?: number | string | null
-    documents_received_count?: number | string | null
-    documentsCompletedCount?: number | string | null
-    documents_completed_count?: number | string | null
-    missingDocumentsJson?: unknown
-    missing_documents?: unknown
-    missingDocuments?: unknown
-    crossDocumentConflictsJson?: unknown
-    cross_document_conflicts?: unknown
-    crossDocumentConflicts?: unknown
-    openQuestionsJson?: unknown
-    open_questions?: unknown
-    openQuestions?: unknown
-    negotiationLeversJson?: unknown
-    negotiation_levers?: unknown
-    negotiationLevers?: unknown
-    finalRiskLevel?: TextValue
-    final_risk_level?: TextValue
-    finalTrafficLight?: TextValue
-    final_traffic_light?: TextValue
-    finalRecommendation?: TextValue
-    final_recommendation?: TextValue
-    finalJudgmentJson?: unknown
-    // Legacy spelling retained by the existing n8n Project-Level Fields table.
-    finalJudgementJson?: unknown
-    final_judgment?: unknown
-    finalJudgment?: unknown
-    ai_summary?: TextValue
-    ai_error_message?: TextValue
-    ai_risk_flag?: TextValue
-    ai_processedAt?: TextValue
-    ai_confidence?: TextValue
-    aiConfidence?: TextValue
-    aiCitations?: unknown
-    ai_citations?: unknown
-    valuationLowerBound?: TextValue
-    lower_bound_estimate?: TextValue
-    valuationBaseEstimate?: TextValue
-    base_estimate?: TextValue
-    valuationUpperBound?: TextValue
-    upper_bound_estimate?: TextValue
-    valuationCurrency?: TextValue
-    currency?: TextValue
-    projectProcessedAt?: TextValue
-    project_processed_at?: TextValue
-    id?: number | string | null
-    createdAt?: TextValue
-    updatedAt?: TextValue
-}
-
-type ProjectSynthesisResponse =
-    | ProjectSynthesisRow[]
-    | ProjectSynthesisRow
-    | {
-        rows?: ProjectSynthesisRow[]
-        data?: ProjectSynthesisRow[]
-        items?: ProjectSynthesisRow[]
-    }
+import { supabase } from '../supabaseClient'
 
 type Params = {
     environment?: 'production' | 'test'
@@ -98,11 +24,19 @@ export type ProjectStructuredFindingGroups = {
     missingDocuments: ProjectStructuredFinding[]
 }
 
+export type ProjectCitation = {
+    sourceFile: string
+    sourceLocation: string
+    excerpt: string
+    period: string
+    currency: string
+    confidence: number | null
+    status: string
+}
+
 export type ProjectSynthesisItem = {
     projectId: string
-    /** Human-readable project/deal name, when the workflow supplies one. */
     projectName?: string
-    /** Target company name, when the workflow supplies one. */
     companyName?: string
     projectStatus: string
     documentsReceivedCount: number
@@ -136,107 +70,30 @@ export type ProjectSynthesisItem = {
     updatedAt: string
 }
 
-function getStringValue(value: TextValue) {
-    if (typeof value === 'string') {
-        return value
-    }
+// --- JSON parsing helpers (same logic as before, reads structured JSON from DB) ---
 
-    if (typeof value === 'number' || typeof value === 'boolean') {
-        return String(value)
-    }
-
-    return ''
+function getNumberOrNull(value: unknown) {
+    if (typeof value === 'number' && Number.isFinite(value)) return value
+    if (typeof value === 'string') { const p = Number(value); return Number.isFinite(p) ? p : null }
+    return null
 }
-
-function getFirstStringValue(values: TextValue[]) {
-    for (const value of values) {
-        const stringValue = getStringValue(value)
-
-        if (stringValue.trim().length > 0) {
-            return stringValue
-        }
-    }
-
-    return ''
-}
-
-function getNumberValue(value: number | string | null | undefined) {
-    if (typeof value === 'number') {
-        return value
-    }
-
-    if (typeof value === 'string') {
-        const parsed = Number(value)
-        return Number.isFinite(parsed) ? parsed : 0
-    }
-
-    return 0
-}
-
-function getFirstNumberValue(values: Array<number | string | null | undefined>) {
-    for (const value of values) {
-        const numberValue = getNumberValue(value)
-
-        if (numberValue !== 0 || value === 0 || value === '0') {
-            return numberValue
-        }
-    }
-
-    return 0
-}
-
-// Accepts an array, a JSON-encoded array string, or a delimited plain string,
-// and returns a clean string list. The consolidator's output format may vary
-// while the workflow is iterated on, so stay permissive.
-type ObjectListItemFormatter = (record: Record<string, unknown>) => string
 
 function getRecordString(record: Record<string, unknown>, keys: string[]) {
     for (const key of keys) {
         const value = record[key]
-        if (typeof value === 'string' && value.trim().length > 0) {
-            return value.trim()
-        }
+        if (typeof value === 'string' && value.trim().length > 0) return value.trim()
     }
-
     return ''
-}
-
-export type ProjectCitation = {
-    sourceFile: string
-    sourceLocation: string
-    excerpt: string
-    period: string
-    currency: string
-    confidence: number | null
-    status: string
-}
-
-function getNumberOrNull(value: unknown) {
-    if (typeof value === 'number' && Number.isFinite(value)) {
-        return value
-    }
-
-    if (typeof value === 'string') {
-        const parsed = Number(value)
-        return Number.isFinite(parsed) ? parsed : null
-    }
-
-    return null
 }
 
 function getCitationFromRecord(record: Record<string, unknown>): ProjectCitation | null {
     const sourceFile = getRecordString(record, ['source_file', 'sourceFile', 'file_name', 'fileName'])
-    if (!sourceFile) {
-        return null
-    }
-
+    if (!sourceFile) return null
     const page = record.page_number ?? record.pageNumber
     const explicitLocation = getRecordString(record, ['row_or_cell', 'rowOrCell', 'location'])
     const sourceLocation = explicitLocation || (typeof page === 'number' || typeof page === 'string' ? `Page ${page}` : '')
-
     return {
-        sourceFile,
-        sourceLocation,
+        sourceFile, sourceLocation,
         excerpt: getRecordString(record, ['excerpt']),
         period: getRecordString(record, ['period']),
         currency: getRecordString(record, ['currency']),
@@ -245,125 +102,13 @@ function getCitationFromRecord(record: Record<string, unknown>): ProjectCitation
     }
 }
 
-function getStringListValue(raw: unknown, formatObject?: ObjectListItemFormatter): string[] {
-    let value = raw
-
-    if (typeof value === 'string') {
-        const trimmed = value.trim()
-        if (trimmed.length === 0) {
-            return []
-        }
-        try {
-            value = JSON.parse(trimmed)
-        } catch {
-            return trimmed
-                .split(/\r?\n|;/)
-                .map((item) => item.trim())
-                .filter((item) => item.length > 0)
-        }
-    }
-
-    if (Array.isArray(value)) {
-        return value
-            .map((item) => {
-                if (typeof item === 'string') {
-                    return item
-                }
-                if (item && typeof item === 'object') {
-                    const record = item as Record<string, unknown>
-                    if (formatObject) {
-                        return formatObject(record)
-                    }
-                    const candidate = record.summary ?? record.text ?? record.description ?? record.label
-                    return typeof candidate === 'string' ? candidate : JSON.stringify(item)
-                }
-                return String(item)
-            })
-            .map((item) => item.trim())
-            .filter((item) => item.length > 0)
-    }
-
-    return []
-}
-
-function getFirstStringListValue(values: unknown[], formatObject?: ObjectListItemFormatter): string[] {
-    for (const value of values) {
-        const list = getStringListValue(value, formatObject)
-        if (list.length > 0) {
-            return list
-        }
-    }
-
-    return []
-}
-
-function getJudgmentValues(raw: unknown): { summary: string; json: string } {
-    if (raw == null) {
-        return { summary: '', json: '' }
-    }
-
-    if (typeof raw === 'string') {
-        const trimmed = raw.trim()
-        if (trimmed.length === 0) {
-            return { summary: '', json: '' }
-        }
-        try {
-            const parsed = JSON.parse(trimmed) as unknown
-            return { summary: extractJudgmentSummary(parsed), json: trimmed }
-        } catch {
-            return { summary: trimmed, json: '' }
-        }
-    }
-
-    if (typeof raw === 'object') {
-        return { summary: extractJudgmentSummary(raw), json: JSON.stringify(raw) }
-    }
-
-    return { summary: String(raw), json: '' }
-}
-
-function getCitationDetails(values: unknown[]): ProjectCitation[] {
-    const found: ProjectCitation[] = []
-    const seen = new Set<string>()
-
-    const addCitation = (citation: ProjectCitation | null) => {
-        if (!citation) {
-            return
-        }
-        const key = JSON.stringify(citation)
-        if (!seen.has(key)) {
-            seen.add(key)
-            found.push(citation)
-        }
-    }
-
-    const visit = (value: unknown) => {
-        if (typeof value === 'string') {
-            try { visit(JSON.parse(value)) } catch { /* Plain legacy citations are handled below. */ }
-            return
-        }
-        if (Array.isArray(value)) { value.forEach(visit); return }
-        if (!value || typeof value !== 'object') return
-        const record = value as Record<string, unknown>
-        addCitation(getCitationFromRecord(record))
-        Object.values(record).forEach(visit)
-    }
-
-    values.forEach(visit)
-    return found.slice(0, 30)
-}
-
 function getStructuredFinding(record: Record<string, unknown>, fallbackStatus: string): ProjectStructuredFinding | null {
     const text = getRecordString(record, ['description', 'question', 'takeaway', 'suggestion', 'summary', 'text', 'theme', 'topic', 'label', 'title'])
-    if (!text) {
-        return null
-    }
-
+    if (!text) return null
     const rawCitations = Array.isArray(record.citations) ? record.citations : []
     const citations = rawCitations
         .map((item) => (item && typeof item === 'object' ? getCitationFromRecord(item as Record<string, unknown>) : null))
         .filter((item): item is ProjectCitation => item !== null)
-
     return {
         text,
         confidence: getNumberOrNull(record.confidence_score ?? record.confidence),
@@ -376,47 +121,44 @@ function getStructuredFinding(record: Record<string, unknown>, fallbackStatus: s
 
 function getStructuredFindingsFromRaw(raw: unknown, fallbackStatus: string): ProjectStructuredFinding[] {
     let value = raw
-
     if (typeof value === 'string') {
         const trimmed = value.trim()
-        if (!trimmed) {
-            return []
-        }
-        try {
-            value = JSON.parse(trimmed)
-        } catch {
-            return []
-        }
+        if (!trimmed) return []
+        try { value = JSON.parse(trimmed) } catch { return [] }
     }
-
-    if (!Array.isArray(value)) {
-        return []
-    }
-
+    if (!Array.isArray(value)) return []
     return value
         .map((item) => (item && typeof item === 'object' ? getStructuredFinding(item as Record<string, unknown>, fallbackStatus) : null))
         .filter((item): item is ProjectStructuredFinding => item !== null)
 }
 
-function getFirstJudgmentValues(values: unknown[]) {
-    for (const value of values) {
-        const judgment = getJudgmentValues(value)
-        if (judgment.summary.length > 0 || judgment.json.length > 0) {
-            return judgment
+type ObjectListItemFormatter = (record: Record<string, unknown>) => string
+
+function getStringListValue(raw: unknown, formatObject?: ObjectListItemFormatter): string[] {
+    let value = raw
+    if (typeof value === 'string') {
+        const trimmed = value.trim()
+        if (trimmed.length === 0) return []
+        try { value = JSON.parse(trimmed) } catch {
+            return trimmed.split(/\r?\n|;/).map((item) => item.trim()).filter((item) => item.length > 0)
         }
     }
-
-    return { summary: '', json: '' }
-}
-
-function getJudgmentField(raw: string, field: string): unknown {
-    if (!raw) return undefined
-    try {
-        const parsed = JSON.parse(raw) as Record<string, unknown>
-        return parsed[field]
-    } catch {
-        return undefined
+    if (Array.isArray(value)) {
+        return value
+            .map((item) => {
+                if (typeof item === 'string') return item
+                if (item && typeof item === 'object') {
+                    const record = item as Record<string, unknown>
+                    if (formatObject) return formatObject(record)
+                    const candidate = record.summary ?? record.text ?? record.description ?? record.label
+                    return typeof candidate === 'string' ? candidate : JSON.stringify(item)
+                }
+                return String(item)
+            })
+            .map((item) => item.trim())
+            .filter((item) => item.length > 0)
     }
+    return []
 }
 
 function formatTakeaway(record: Record<string, unknown>) {
@@ -427,52 +169,6 @@ function formatTakeaway(record: Record<string, unknown>) {
 
 function formatFlag(record: Record<string, unknown>) {
     return getRecordString(record, ['description', 'summary', 'text', 'takeaway', 'label'])
-}
-
-function getProjectFlags(raw: string, key: 'red_flags' | 'yellow_flags' | 'green_flags') {
-    const response = getJudgmentField(raw, 'response')
-    if (!response || typeof response !== 'object') return []
-    const flags = (response as Record<string, unknown>).flags
-    if (!flags || typeof flags !== 'object') return []
-    return getStringListValue((flags as Record<string, unknown>)[key], formatFlag)
-}
-
-function getProjectStructuredFlags(raw: string, key: 'red_flags' | 'yellow_flags' | 'green_flags', fallbackStatus: string) {
-    const response = getJudgmentField(raw, 'response')
-    if (!response || typeof response !== 'object') return []
-    const flags = (response as Record<string, unknown>).flags
-    if (!flags || typeof flags !== 'object') return []
-    return getStructuredFindingsFromRaw((flags as Record<string, unknown>)[key], fallbackStatus)
-}
-
-function extractJudgmentSummary(parsed: unknown): string {
-    if (typeof parsed === 'string') {
-        return parsed
-    }
-
-    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-        const record = parsed as Record<string, unknown>
-        const response = record.response
-        if (response && typeof response === 'object') {
-            const responseSummary = getRecordString(response as Record<string, unknown>, ['summary'])
-            if (responseSummary) return responseSummary
-        }
-        const candidate =
-            record.summary ?? record.judgment ?? record.recommendation ?? record.thesis ?? record.conclusion
-        if (typeof candidate === 'string' && candidate.trim().length > 0) {
-            return candidate
-        }
-    }
-
-    return ''
-}
-
-function getJudgmentRecommendation(raw: string) {
-    const recommendation = getJudgmentField(raw, 'final_recommendation')
-    if (recommendation && typeof recommendation === 'object') {
-        return getRecordString(recommendation as Record<string, unknown>, ['recommendation'])
-    }
-    return getStringValue(recommendation as TextValue)
 }
 
 function formatOpenQuestion(record: Record<string, unknown>) {
@@ -497,56 +193,107 @@ function formatConflict(record: Record<string, unknown>) {
     return headline && description ? `${headline}: ${description}` : headline || description
 }
 
-function isProjectSynthesisRow(value: ProjectSynthesisResponse): value is ProjectSynthesisRow {
-    return typeof value === 'object'
-        && value !== null
-        && !Array.isArray(value)
-        && ('projectId' in value || 'project_id' in value)
+function extractJudgmentSummary(parsed: unknown): string {
+    if (typeof parsed === 'string') return parsed
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        const record = parsed as Record<string, unknown>
+        const response = record.response
+        if (response && typeof response === 'object') {
+            const responseSummary = getRecordString(response as Record<string, unknown>, ['summary'])
+            if (responseSummary) return responseSummary
+        }
+        const candidate = record.summary ?? record.judgment ?? record.recommendation ?? record.thesis ?? record.conclusion
+        if (typeof candidate === 'string' && candidate.trim().length > 0) return candidate
+    }
+    return ''
 }
 
-export default async function getProjectSynthesis(req: { params: Params; user: User }) {
-    const path = req.params.environment === 'test'
-        ? 'webhook-test/d19d24da-21d4-40f8-8626-a06a7dd54ac7'
-        : 'webhook/d19d24da-21d4-40f8-8626-a06a7dd54ac7'
+function getJudgmentValues(raw: unknown): { summary: string; json: string } {
+    if (raw == null) return { summary: '', json: '' }
+    if (typeof raw === 'string') {
+        const trimmed = raw.trim()
+        if (trimmed.length === 0) return { summary: '', json: '' }
+        try { const parsed = JSON.parse(trimmed); return { summary: extractJudgmentSummary(parsed), json: trimmed } }
+        catch { return { summary: trimmed, json: '' } }
+    }
+    if (typeof raw === 'object') return { summary: extractJudgmentSummary(raw), json: JSON.stringify(raw) }
+    return { summary: String(raw), json: '' }
+}
 
-    const response = await n8nFinancialAgent.rawRequest<ProjectSynthesisResponse>({
-        path,
-        method: 'GET',
-    })
+function getJudgmentField(raw: string, field: string): unknown {
+    if (!raw) return undefined
+    try { const parsed = JSON.parse(raw) as Record<string, unknown>; return parsed[field] } catch { return undefined }
+}
 
-    const responseData = response.data
-    const rows = Array.isArray(responseData)
-        ? responseData
-        : isProjectSynthesisRow(responseData)
-            ? [responseData]
-            : responseData.rows ?? responseData.data ?? responseData.items ?? []
+function getProjectFlags(raw: string, key: 'red_flags' | 'yellow_flags' | 'green_flags') {
+    const response = getJudgmentField(raw, 'response')
+    if (!response || typeof response !== 'object') return []
+    const flags = (response as Record<string, unknown>).flags
+    if (!flags || typeof flags !== 'object') return []
+    return getStringListValue((flags as Record<string, unknown>)[key], formatFlag)
+}
 
-    // A historical workflow version could create a synthesis row without its
-    // project ID. It cannot be attached to a portfolio project, so keep it out
-    // of the product response rather than rendering an unusable orphan.
+function getProjectStructuredFlags(raw: string, key: 'red_flags' | 'yellow_flags' | 'green_flags', fallbackStatus: string) {
+    const response = getJudgmentField(raw, 'response')
+    if (!response || typeof response !== 'object') return []
+    const flags = (response as Record<string, unknown>).flags
+    if (!flags || typeof flags !== 'object') return []
+    return getStructuredFindingsFromRaw((flags as Record<string, unknown>)[key], fallbackStatus)
+}
+
+function getJudgmentRecommendation(raw: string) {
+    const recommendation = getJudgmentField(raw, 'final_recommendation')
+    if (recommendation && typeof recommendation === 'object') {
+        return getRecordString(recommendation as Record<string, unknown>, ['recommendation'])
+    }
+    return typeof recommendation === 'string' ? recommendation : ''
+}
+
+function getCitationDetails(judgmentJson: string, aiCitations: string): ProjectCitation[] {
+    const found: ProjectCitation[] = []
+    const seen = new Set<string>()
+
+    const addCitation = (citation: ProjectCitation | null) => {
+        if (!citation) return
+        const key = JSON.stringify(citation)
+        if (!seen.has(key)) { seen.add(key); found.push(citation) }
+    }
+
+    const visit = (value: unknown) => {
+        if (typeof value === 'string') { try { visit(JSON.parse(value)) } catch { /* skip */ } return }
+        if (Array.isArray(value)) { value.forEach(visit); return }
+        if (!value || typeof value !== 'object') return
+        const record = value as Record<string, unknown>
+        addCitation(getCitationFromRecord(record))
+        Object.values(record).forEach(visit)
+    }
+
+    visit(aiCitations)
+    visit(judgmentJson)
+    return found.slice(0, 30)
+}
+
+// --- Main export ---
+
+export default async function getProjectSynthesis(req: { params: Params; user: User }): Promise<ProjectSynthesisItem[]> {
+    const { data: rows, error } = await supabase
+        .from('project_syntheses')
+        .select('*')
+        .order('updated_at', { ascending: false })
+        .limit(100)
+
+    if (error) throw new Error(`Supabase read failed: ${error.message}`)
+    if (!rows) return []
+
     return rows
-        .filter((row) => getFirstStringValue([row.projectId, row.project_id]).trim().length > 0)
+        .filter((row) => (row.project_id ?? '').trim().length > 0)
         .map((row): ProjectSynthesisItem => {
-            const judgment = getFirstJudgmentValues([
-                row.finalJudgmentJson,
-                row.finalJudgementJson,
-                row.final_judgment,
-                row.finalJudgment,
-                row.ai_summary,
-            ])
+            const judgment = getJudgmentValues(row.final_judgment_json)
 
-            const missingDocuments = getFirstStringListValue([row.missingDocumentsJson, row.missing_documents, row.missingDocuments])
-            const crossDocumentConflicts = getFirstStringListValue([
-                row.crossDocumentConflictsJson,
-                row.cross_document_conflicts,
-                row.crossDocumentConflicts,
-            ], formatConflict)
-            const openQuestions = getFirstStringListValue([row.openQuestionsJson, row.open_questions, row.openQuestions], formatOpenQuestion)
-            const negotiationLevers = getFirstStringListValue([
-                row.negotiationLeversJson,
-                row.negotiation_levers,
-                row.negotiationLevers,
-            ], formatNegotiationLever)
+            const missingDocuments = getStringListValue(row.missing_documents_json)
+            const crossDocumentConflicts = getStringListValue(row.cross_document_conflicts_json, formatConflict)
+            const openQuestions = getStringListValue(row.open_questions_json, formatOpenQuestion)
+            const negotiationLevers = getStringListValue(row.negotiation_levers_json, formatNegotiationLever)
             const keyTakeaways = getStringListValue(getJudgmentField(judgment.json, 'key_acquisition_takeaways'), formatTakeaway)
             const redFlags = getProjectFlags(judgment.json, 'red_flags')
             const yellowFlags = getProjectFlags(judgment.json, 'yellow_flags')
@@ -557,22 +304,27 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
                 redFlags: getProjectStructuredFlags(judgment.json, 'red_flags', 'Contradicted'),
                 yellowFlags: getProjectStructuredFlags(judgment.json, 'yellow_flags', 'Needs review'),
                 greenFlags: getProjectStructuredFlags(judgment.json, 'green_flags', 'Confirmed'),
-                crossDocumentConflicts: getStructuredFindingsFromRaw(getFirstStringValue([JSON.stringify(row.crossDocumentConflictsJson), JSON.stringify(row.cross_document_conflicts), JSON.stringify(row.crossDocumentConflicts)]), 'Contradicted'),
-                openQuestions: getStructuredFindingsFromRaw(getFirstStringValue([JSON.stringify(row.openQuestionsJson), JSON.stringify(row.open_questions), JSON.stringify(row.openQuestions)]), 'Needs review'),
-                negotiationLevers: getStructuredFindingsFromRaw(getFirstStringValue([JSON.stringify(row.negotiationLeversJson), JSON.stringify(row.negotiation_levers), JSON.stringify(row.negotiationLevers)]), 'Synthesized'),
+                crossDocumentConflicts: getStructuredFindingsFromRaw(row.cross_document_conflicts_json, 'Contradicted'),
+                openQuestions: getStructuredFindingsFromRaw(row.open_questions_json, 'Needs review'),
+                negotiationLevers: getStructuredFindingsFromRaw(row.negotiation_levers_json, 'Synthesized'),
                 missingDocuments: missingDocuments.map((text) => ({ text, confidence: null, severity: 'medium', impact: '', status: 'Needs review', citations: [] })),
             }
 
-            const citationDetails = getCitationDetails([row.aiCitations, row.ai_citations, judgment.json, structuredFindings])
-            const uniqueCitationSources = citationDetails.map((citation) => citation.sourceFile).filter((value, index, values) => values.indexOf(value) === index)
+            const citationDetails = getCitationDetails(judgment.json, row.ai_citations ?? '')
+            const uniqueCitationSources = citationDetails.map((c) => c.sourceFile).filter((v, i, a) => a.indexOf(v) === i)
+
+            const valuationObj = getJudgmentField(judgment.json, 'valuation')
+            const valuationConfidence = valuationObj && typeof valuationObj === 'object'
+                ? String((valuationObj as Record<string, unknown>).confidence_score ?? '')
+                : ''
 
             return {
-                projectId: getFirstStringValue([row.projectId, row.project_id]),
-                projectName: getFirstStringValue([row.projectName, row.project_name, row.dealName, row.deal_name]) || undefined,
-                companyName: getFirstStringValue([row.companyName, row.company_name]) || undefined,
-                projectStatus: getFirstStringValue([row.projectStatus, row.project_status]),
-                documentsReceivedCount: getFirstNumberValue([row.documentsReceivedCount, row.documents_received_count]),
-                documentsCompletedCount: getFirstNumberValue([row.documentsCompletedCount, row.documents_completed_count]),
+                projectId: row.project_id ?? '',
+                projectName: row.project_name || undefined,
+                companyName: row.company_name || undefined,
+                projectStatus: row.project_status ?? '',
+                documentsReceivedCount: row.documents_received_count ?? 0,
+                documentsCompletedCount: row.documents_completed_count ?? 0,
                 missingDocuments,
                 crossDocumentConflicts,
                 openQuestions,
@@ -581,27 +333,25 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
                 redFlags,
                 yellowFlags,
                 greenFlags,
-                citations: uniqueCitationSources.length > 0
-                    ? uniqueCitationSources
-                    : getFirstStringListValue([row.aiCitations, row.ai_citations]),
+                citations: uniqueCitationSources.length > 0 ? uniqueCitationSources : getStringListValue(row.ai_citations),
                 citationDetails,
                 structuredFindings,
-                finalRiskLevel: getFirstStringValue([row.finalRiskLevel, row.final_risk_level, row.ai_risk_flag]),
-                finalTrafficLight: getFirstStringValue([row.finalTrafficLight, row.final_traffic_light, getStringValue(getJudgmentField(judgment.json, 'traffic_light') as TextValue)]),
-                finalRecommendation: getFirstStringValue([row.finalRecommendation, row.final_recommendation, getJudgmentRecommendation(judgment.json)]),
+                finalRiskLevel: row.final_risk_level ?? '',
+                finalTrafficLight: row.final_traffic_light ?? '',
+                finalRecommendation: row.final_recommendation || getJudgmentRecommendation(judgment.json),
                 finalJudgmentSummary: judgment.summary,
                 finalJudgmentJson: judgment.json,
-                aiErrorMessage: getStringValue(row.ai_error_message),
-                aiConfidence: getFirstStringValue([row.ai_confidence, row.aiConfidence]),
-                valuationConfidence: getStringValue(getJudgmentField(judgment.json, 'valuation') && typeof getJudgmentField(judgment.json, 'valuation') === 'object' ? (getJudgmentField(judgment.json, 'valuation') as Record<string, unknown>).confidence_score as TextValue : undefined),
-                valuationLowerBound: getFirstStringValue([row.valuationLowerBound, row.lower_bound_estimate]),
-                valuationBaseEstimate: getFirstStringValue([row.valuationBaseEstimate, row.base_estimate]),
-                valuationUpperBound: getFirstStringValue([row.valuationUpperBound, row.upper_bound_estimate]),
-                valuationCurrency: getFirstStringValue([row.valuationCurrency, row.currency]),
-                projectProcessedAt: getFirstStringValue([row.projectProcessedAt, row.project_processed_at, row.ai_processedAt, row.updatedAt]),
-                id: getFirstNumberValue([row.id]),
-                createdAt: getStringValue(row.createdAt),
-                updatedAt: getStringValue(row.updatedAt),
+                aiErrorMessage: row.ai_error_message ?? '',
+                aiConfidence: row.ai_confidence ?? '',
+                valuationConfidence,
+                valuationLowerBound: row.valuation_lower_bound ?? '',
+                valuationBaseEstimate: row.valuation_base_estimate ?? '',
+                valuationUpperBound: row.valuation_upper_bound ?? '',
+                valuationCurrency: row.valuation_currency ?? '',
+                projectProcessedAt: row.project_processed_at ?? row.updated_at ?? '',
+                id: row.id ?? 0,
+                createdAt: row.created_at ?? '',
+                updatedAt: row.updated_at ?? '',
             }
         })
 }
