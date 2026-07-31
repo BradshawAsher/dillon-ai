@@ -30,7 +30,7 @@ project consolidator has been triggered but has not yet published a final row.
 | --- | --- |
 | Live workflow behavior, nodes, and Data Tables | Pod 1 n8n Cloud/Enterprise workflows; access coordinated with Trisha |
 | Dashboard application | This repository |
-| Submitted documents, document AI output, and synthesis rows | n8n Data Tables |
+| Submitted documents, document AI output, and synthesis rows | **Supabase/Postgres** (primary read layer) + n8n Data Tables (legacy, still written in parallel) |
 | Hosting and environment variables | Vercel deployment configuration |
 
 Do not diagnose or modify workflow behavior from local exports or screenshots.
@@ -42,12 +42,17 @@ does not expose the required workflow, ask Trisha for access before proceeding.
 ```text
 Browser
   -> /api/diligence/* (same-origin Express/Vite layer)
-  -> n8n webhooks
-  -> n8n Data Tables and background workflows
-  -> polling responses back to the dashboard
+  -> Supabase/Postgres (all reads: history, synthesis, deal models, errors, action tracker)
+  -> n8n webhooks (writes only: submit, retry — triggers async AI workflows)
+
+n8n workflows (async background processing)
+  -> write results to BOTH n8n Data Tables AND Supabase in parallel
 ```
 
-The browser never calls n8n directly. The main implementation points are:
+The browser never calls n8n directly. Dashboard polling now reads from
+Supabase (via the backend API) and no longer burns n8n executions.
+
+The main implementation points are:
 
 | Location | Responsibility |
 | --- | --- |
@@ -77,14 +82,17 @@ provides the most accurate progress signal.
 
 ## Environment and deployment
 
-Required server-side environment variable:
+Required server-side environment variables:
 
 ```dotenv
 N8N_WEBHOOK_SECRET=the-header-auth-secret
+SUPABASE_URL=https://sihpsqrunkwkxhhnwoqe.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=<service-role-key-from-supabase-dashboard>
 ```
 
-Optional local settings are documented in the README. Never expose the webhook
-secret through a `VITE_` variable.
+These must be set in both the local `.env` (at `frontend/.env`) and in the
+Vercel project settings for production. Never expose the webhook secret or the
+Supabase service-role key through a `VITE_` variable.
 
 The primary deployment is Vercel. Before promoting a change, use a preview
 deployment and perform the smoke test below.
