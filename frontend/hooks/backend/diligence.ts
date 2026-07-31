@@ -172,8 +172,14 @@ async function fetchJson<T>(input: string, init?: RequestInit): Promise<T> {
     let response: Response
 
     try {
-        response = await fetch(input, init)
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 240_000)
+        response = await fetch(input, { ...init, signal: controller.signal })
+        clearTimeout(timeoutId)
     } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+            throw new Error('Request timed out. This usually means n8n has reached its execution limit or is unavailable. Try again later.')
+        }
         throw new Error(getFriendlyErrorMessage(error))
     }
 

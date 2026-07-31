@@ -1947,6 +1947,28 @@ export default function DueDiligenceDashboard() {
                             </div>
                         ) : null}
 
+                        {!isExampleMode && projectSummaries.length === 0 && !submissionHistoryLoading ? (
+                            <div className="rounded-lg border border-muted bg-muted/30 px-5 py-6 text-center">
+                                <FileSearch className="mx-auto h-10 w-10 text-muted-foreground/60" />
+                                <p className="mt-3 text-base font-semibold text-foreground">No documents processed yet</p>
+                                <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+                                    Queue documents in the <strong>Production</strong> tab to run them through the AI diligence pipeline. Once processed, your findings, synthesis, and project portfolio will appear here.
+                                </p>
+                                <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+                                    Feel free to look around — switch to <strong>Example Data</strong> mode using the toggle above to explore a sample project and see what the output looks like.
+                                </p>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="mt-4"
+                                    onClick={() => setActiveWorkspaceTab('overview')}
+                                >
+                                    <Plus className="mr-1.5 h-4 w-4" />
+                                    Go to Production to upload documents
+                                </Button>
+                            </div>
+                        ) : null}
+
                         {displayedSubmissionBatch ? (
                             <Card className="overflow-hidden">
                                 <CardContent className="space-y-4 p-4">
