@@ -4,34 +4,66 @@ This is a compact operating map of the live workflows backing the dashboard.
 It is intentionally not a workflow export: the live Pod 1 n8n Cloud project is
 the source of truth. Inspect it through n8n MCP before changing behavior.
 
-Last verified: 2026-07-22 via n8n MCP.
+Last verified: 2026-07-31 via n8n MCP.
+
+## Active write workflows
+
+All write workflows now write to **both** n8n Data Tables AND Supabase in
+parallel. The Supabase credential used is ID `2bjegcUtAn2gvy8A`.
 
 | Workflow | Live ID | Purpose | Key dependency |
 | --- | --- | --- | --- |
-| Submit Button Webhook Trigger | `vBnMdx8cvSFIFx6m` | Receives a document submission and starts document processing. | Document Specific Fields table; Per Document AI Analysis |
-| PER DOCUMENT AI ANALYSIS SUBWORKFLOW | `x5xGcD4P1e9WTVUt` | Downloads, parses, analyzes, and updates one document row. | Google Drive; Document Counter |
+| Submit Button Webhook Trigger | `vBnMdx8cvSFIFx6m` | Receives a document submission and starts document processing. | Supabase `documents` + `project_syntheses` + `deal_models`; Per Document AI Analysis |
+| Per Document AI Analysis | `W5Jp7CJIQbNy0qlY` | Downloads, parses, analyzes, and updates one document row. | Google Drive; Supabase `documents`; Document Counter |
 | DOCUMENT COUNTER UTILITY SUBWORKFLOW | `0OVTAMMp2iMx53Aw` | Tracks batch completion and starts project synthesis when considered documents are terminal. | Document Specific Fields; Project-Level Fields; Consolidator |
-| SUBWORKFLOW PROJECT-WIDE CONSOLIDATOR WORKFLOW | `IoSad3rTYJMk4Mon` | Reconciles considered document outputs into a project-level synthesis. | Document Specific Fields; Project-Level Fields |
-| Project Synthesis Webhook | `35Hmd7f0EyXKpc4x` | Serves saved project-level synthesis rows to the dashboard. | Project-Level Fields table |
-| Refresh Button Load History in UI | `bjtY6gjRnLe7YQ4c` | Serves document-submission history to the dashboard. | Document Specific Fields table |
-| Document Consideration Webhook | `lXz9fVKY4RaTlDFM` | Marks a document `isConsidered=false` without deleting it, then refreshes batch readiness. | Document Specific Fields; Document Counter |
-| Workflow Error Audit | `4dqKa3CyLjjaFn8C` | Records uncaught production errors after local recovery has been exhausted. It does not notify humans. | Workflow Error Log table |
+| SUBWORKFLOW PROJECT-WIDE CONSOLIDATOR WORKFLOW | `IoSad3rTYJMk4Mon` | Reconciles considered document outputs into a project-level synthesis. | Supabase `project_syntheses`; Document Specific Fields |
+| Project Documented Facts Bridge | `uAI6pABZWdIy2V17` | Consolidates confirmed per-document facts into one cited Deal Model record. | Supabase `deal_models` |
+| Deal Model Write API | `O2fi0mKmKHxewuN5` | Saves user-entered deal model assumptions. | Supabase `deal_models` |
+| Document Consideration Webhook | `lXz9fVKY4RaTlDFM` | Marks a document `isConsidered=false` without deleting it, then refreshes batch readiness. | Supabase `documents`; Document Counter |
+| Workflow Error Audit | `4dqKa3CyLjjaFn8C` | Records uncaught production errors after local recovery has been exhausted. | Supabase `workflow_errors` |
 
-## Live Data Table contract
+## Archived read-only webhooks (no longer needed)
 
-- **Document Specific Fields** (`rBFHVB1W7ldSiObM`): one row per submitted
-  document. It carries submission metadata, per-document AI output, batch
-  fields, and `isConsidered`.
-- **Project-Level Fields** (`DTrLU8hBUwYzmBig`): one row per project with
-  batch counts, project status, and the final synthesis fields.
-- **Workflow Error Log** (`aSPSRYm0ScfGsV0b`): an append-only audit trail for
-  uncaught production errors. It captures the failed workflow/node, execution
-  ID, error message, and raw error context. It is intentionally not an alert
-  channel.
+These workflows served data to the dashboard via polling. They have been
+replaced by direct Supabase reads in the backend API and were archived on
+2026-07-31 to stop burning n8n executions.
 
-`isConsidered` is backward compatible: rows that predate the field are treated
-as considered. Explicit `false` excludes the document from batch completion,
-project counts, coverage, and future synthesis while retaining it for audit.
+| Workflow | Archived ID | Was used for |
+| --- | --- | --- |
+| Refresh Button Load History in UI | `bjtY6gjRnLe7YQ4c` | Submission history |
+| Project Synthesis Webhook | `35Hmd7f0EyXKpc4x` | Project syntheses |
+| Deal Model Read API | `t0gzUuJ8rmYBhXuv` | Deal model reads |
+| Error Log API | `a5swO2SfagTR190o` | Workflow error log |
+| Workflow Error Log Review | `toZjJcNlFLQddfDK` | Error log review |
+| Project Action Tracker API | `qpxmBSnbeQXdSuwo` | Action tracker reads |
+
+## Supabase tables (primary read layer)
+
+The dashboard backend reads exclusively from Supabase. Schema lives in
+`supabase/migrations/001_initial_schema.sql`. Project ref: `sihpsqrunkwkxhhnwoqe`.
+
+| Table | Supabase | Purpose |
+| --- | --- | --- |
+| `documents` | one row per submitted document | Submission metadata, per-document AI output, batch fields, `is_considered` |
+| `project_syntheses` | one row per project | Project status, synthesis judgment, valuation, flags |
+| `deal_models` | one row per project | User-entered and AI-derived deal model assumptions |
+| `workflow_errors` | append-only | Production error audit trail |
+| `project_action_trackers` | one row per project | User checklists and management questions |
+
+## Legacy n8n Data Table contract (still written in parallel)
+
+- **Document Specific Fields** (`rBFHVB1W7ldSiObM`): mirrors `documents`.
+- **Project-Level Fields** (`DTrLU8hBUwYzmBig`): mirrors `project_syntheses`.
+- **Deal Models** (`eU2nnH4bVmdPocI8`): mirrors `deal_models`.
+- **Workflow Error Log** (`aSPSRYm0ScfGsV0b`): mirrors `workflow_errors`.
+
+These are retained for rollback safety. Once Supabase is confirmed stable,
+they can be removed from the write workflows.
+
+`isConsidered` / `is_considered` is backward compatible: rows that predate the
+field are treated as considered. Explicit `false` excludes the document from
+batch completion, project counts, coverage, and future synthesis while
+retaining it for audit.
 
 ## Operating rules
 

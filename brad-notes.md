@@ -80,7 +80,8 @@ NEW PROBLEMS???
 
 [NOT DONE] For Brad - double check how deterministc match checks work and if we can make it better?
  
-[NOT DONE] For Brad - Migrate n8n tables to something more robust like Supabase and migrate Google Drive to something more robust?
+[DONE] For Brad - Migrate n8n tables to something more robust like Supabase and migrate Google Drive to something more robust?
+(Supabase migration complete 2026-07-31: all reads from Supabase, all writes dual-write to both, 6 read webhooks archived. Google Drive migration still pending.)
 
 [DONE] Why do valuation, growth, returns, and deal structure not show the assumptions at the very top? Can we set some? I thought we already had some assumptions by default?
 (The tabs now show saved assumptions first plus any display-only preview defaults at the top, so the starting model is visible even before every field is explicitly saved.)
@@ -92,3 +93,9 @@ For Brad - go through TODO_CURRENT.md and what's missing?
 Add some sort of sentiment analysis or no?
 
 For Brad - Look through this file and see if the things were actually done or not
+
+URGENT - Data migration — run scripts/migrate-n8n-to-supabase.ts once n8n executions reset (to backfill existing data into Supabase)
+  How to run:
+    cd frontend
+    npx tsx ../scripts/migrate-n8n-to-supabase.ts
+  OR skip the script entirely: export CSVs from n8n Data Tables UI and import into Supabase Table Editor

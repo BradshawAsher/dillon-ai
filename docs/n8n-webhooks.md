@@ -1,16 +1,25 @@
 # n8n webhook contracts
 
-The dashboard talks to n8n exclusively through webhooks on
+> **Architecture change (2026-07-31):** Dashboard reads now go directly to
+> Supabase/Postgres via the backend API. The read webhooks listed below have
+> been **archived** and are no longer called. Only write/trigger webhooks
+> remain active.
+
+The dashboard talks to n8n for **writes only** through webhooks on
 `https://merge-works.app.n8n.cloud/`. All of them require **Header Auth**
 (credential name `x-webhook-secret`, value = the `N8N_WEBHOOK_SECRET` env var).
 
 | Purpose | Method | Path | Status |
 | --- | --- | --- | --- |
 | Submit a document | POST | `webhook/d6884691-1689-479d-b1b3-ee7a8bca7380` | ✅ live |
-| Poll submission history | GET | `webhook/1d02344c-0512-4a40-9c5b-ad8172bc91e8` | ✅ live |
 | Exclude a document from synthesis | POST | `webhook/dd-document-consideration` | ✅ live |
-| **Get project syntheses** | GET | `webhook/d19d24da-21d4-40f8-8626-a06a7dd54ac7` | ✅ live |
-| Mark row nonconsidered / delete | POST | *(not yet assigned)* | 💤 future |
+| Retry a failed document | POST | `webhook/dd-retry-failed-document` | ✅ live |
+| Save deal model | POST | `webhook/dd-deal-models` | ✅ live |
+| ~~Poll submission history~~ | ~~GET~~ | ~~`webhook/1d02344c-...`~~ | 🗄️ archived — reads from Supabase |
+| ~~Get project syntheses~~ | ~~GET~~ | ~~`webhook/d19d24da-...`~~ | 🗄️ archived — reads from Supabase |
+| ~~Deal model read~~ | ~~GET~~ | ~~`webhook/dd-deal-models`~~ | 🗄️ archived — reads from Supabase |
+| ~~Error log~~ | ~~GET~~ | ~~`webhook/dd-workflow-errors`~~ | 🗄️ archived — reads from Supabase |
+| ~~Action tracker~~ | ~~GET~~ | ~~`webhook/dd-project-action-tracker`~~ | 🗄️ archived — reads from Supabase |
 
 ## 1. Project synthesis webhook (create this one next)
 

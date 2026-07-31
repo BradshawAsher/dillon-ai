@@ -1,5 +1,8 @@
 # Fix table reads — target architecture and migration plan
 
+> **STATUS: IMPLEMENTED (2026-07-31)**
+> This plan has been fully executed. See below for what was done and what remains.
+
 ## Goal
 
 Stop burning n8n executions for dashboard reads.
@@ -432,3 +435,42 @@ But the real architectural fix is not just “change the database.” It is:
 3. **use n8n only for orchestration and background processing**
 
 That is the change that removes this outage class.
+
+---
+
+# Implementation status (2026-07-31)
+
+## Completed
+
+| Phase | Status |
+| --- | --- |
+| Phase 1 — Supabase schema created | ✅ `supabase/migrations/001_initial_schema.sql` |
+| Phase 2 — Backend read endpoints | ✅ All 6 read routes use Supabase (`backend/diligence/`) |
+| Phase 3 — n8n write-path integration | ✅ All write workflows write to both n8n Data Tables AND Supabase |
+| Read webhook decommission | ✅ 6 read-only webhooks archived |
+
+## Remaining
+
+| Task | How |
+| --- | --- |
+| Historical data migration | Run `scripts/migrate-n8n-to-supabase.ts` OR export CSVs from n8n Data Tables and import into Supabase Table Editor |
+| Vercel env vars | Add `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` to Vercel project settings |
+| Remove n8n Data Table writes (optional) | Once Supabase is confirmed stable, remove the legacy Data Table nodes from workflows |
+| SSE/Realtime (future) | Layer on Supabase Realtime for instant status updates |
+
+## How to run the migration script
+
+```bash
+cd frontend
+npx tsx ../scripts/migrate-n8n-to-supabase.ts
+```
+
+Prerequisites:
+- `frontend/.env` must have `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and `N8N_WEBHOOK_SECRET`
+- The n8n read webhooks must be temporarily unarchived (they were archived 2026-07-31)
+- n8n must have available executions (the script calls 4 webhooks, one per table)
+
+Alternative (no n8n executions needed):
+1. Go to n8n Cloud → Data Tables
+2. Export each table as CSV
+3. Go to Supabase Dashboard → Table Editor → Import CSV into each table
