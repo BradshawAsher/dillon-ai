@@ -77,52 +77,54 @@ export default function WeeklyProjectionCard({ model }: Props) {
             </CardHeader>
             <CardContent className="p-4 space-y-3">
                 <div className="grid grid-cols-3 gap-2 text-center mb-2">
-                    <div className="rounded-lg bg-muted/50 p-2">
-                        <p className="text-[10px] text-muted-foreground">Year 1 net cash</p>
-                        <p className={`text-sm font-bold ${data.year1NetCash >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    <div className="rounded-lg bg-muted/50 p-2 min-w-0">
+                        <p className="text-[10px] text-muted-foreground truncate">Year 1 net cash</p>
+                        <p className={`text-sm font-bold tabular-nums ${data.year1NetCash >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                             ${Math.abs(data.year1NetCash).toLocaleString()}
                         </p>
                     </div>
-                    <div className="rounded-lg bg-muted/50 p-2">
-                        <p className="text-[10px] text-muted-foreground">Monthly avg</p>
-                        <p className={`text-sm font-bold ${data.monthlyAvg >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    <div className="rounded-lg bg-muted/50 p-2 min-w-0">
+                        <p className="text-[10px] text-muted-foreground truncate">Monthly avg</p>
+                        <p className={`text-sm font-bold tabular-nums ${data.monthlyAvg >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                             ${Math.abs(Math.round(data.monthlyAvg)).toLocaleString()}
                         </p>
                     </div>
-                    <div className="rounded-lg bg-muted/50 p-2">
-                        <p className="text-[10px] text-muted-foreground">Debt service/mo</p>
-                        <p className="text-sm font-bold text-foreground">
+                    <div className="rounded-lg bg-muted/50 p-2 min-w-0">
+                        <p className="text-[10px] text-muted-foreground truncate">Debt service/mo</p>
+                        <p className="text-sm font-bold tabular-nums text-foreground">
                             ${data.monthlyDebt.toLocaleString()}
                         </p>
                     </div>
                 </div>
 
-                <div className="space-y-1">
-                    {data.months.map(m => {
-                        const pct = maxAbs > 0 ? (m.cumulative / maxAbs) * 50 : 0
-                        return (
-                            <div key={m.month} className="flex items-center gap-2">
-                                <span className="text-[10px] font-mono text-muted-foreground w-6 text-right">M{m.month}</span>
-                                <div className="flex-1 h-4 relative bg-muted/30 rounded overflow-hidden">
-                                    <div className="absolute inset-y-0 left-1/2 w-px bg-border" />
-                                    {m.cumulative >= 0 ? (
-                                        <div
-                                            className="absolute inset-y-0 left-1/2 bg-green-500/70 rounded-r"
-                                            style={{ width: `${Math.abs(pct)}%` }}
-                                        />
-                                    ) : (
-                                        <div
-                                            className="absolute inset-y-0 bg-red-500/70 rounded-l"
-                                            style={{ width: `${Math.abs(pct)}%`, right: '50%' }}
-                                        />
-                                    )}
+                <div className="overflow-x-auto -mx-4 px-4">
+                    <div className="space-y-1 min-w-[320px]">
+                        {data.months.map(m => {
+                            const pct = maxAbs > 0 ? (m.cumulative / maxAbs) * 50 : 0
+                            return (
+                                <div key={m.month} className="flex items-center gap-2">
+                                    <span className="text-[10px] font-mono text-muted-foreground w-6 shrink-0 text-right">M{m.month}</span>
+                                    <div className="flex-1 h-4 relative bg-muted/30 rounded overflow-hidden">
+                                        <div className="absolute inset-y-0 left-1/2 w-px bg-border" />
+                                        {m.cumulative >= 0 ? (
+                                            <div
+                                                className="absolute inset-y-0 left-1/2 bg-green-500/70 rounded-r"
+                                                style={{ width: `${Math.abs(pct)}%` }}
+                                            />
+                                        ) : (
+                                            <div
+                                                className="absolute inset-y-0 bg-red-500/70 rounded-l"
+                                                style={{ width: `${Math.abs(pct)}%`, right: '50%' }}
+                                            />
+                                        )}
+                                    </div>
+                                    <span className={`text-[10px] font-mono w-24 shrink-0 text-right tabular-nums ${m.cumulative >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                        {m.cumulative >= 0 ? '+' : '-'}${Math.abs(m.cumulative).toLocaleString()}
+                                    </span>
                                 </div>
-                                <span className={`text-[10px] font-mono w-20 sm:w-24 text-right ${m.cumulative >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                    {m.cumulative >= 0 ? '+' : '-'}${Math.abs(m.cumulative).toLocaleString()}
-                                </span>
-                            </div>
-                        )
-                    })}
+                            )
+                        })}
+                    </div>
                 </div>
 
                 <p className="text-[10px] text-muted-foreground text-center">
