@@ -122,25 +122,16 @@ export default function DiligenceCompletenessCard({ model, synthesis, documentCo
                             : cat.label === 'Valuation Inputs' ? 'valuation'
                                 : cat.label === 'Risk Assessment' ? 'synthesis'
                                     : 'structure'
-                        const navLabel = cat.label === 'Financial Data' ? 'Upload'
-                            : cat.label === 'Valuation Inputs' ? 'Configure'
-                                : cat.label === 'Risk Assessment' ? 'Synthesize'
-                                    : 'Structure'
+                        const navLabel = cat.label === 'Financial Data' ? 'Upload docs'
+                            : cat.label === 'Valuation Inputs' ? 'Set inputs'
+                                : cat.label === 'Risk Assessment' ? 'Run synthesis'
+                                    : 'Configure'
 
                         return (
                             <div key={cat.label} className="rounded-lg border border-border p-2.5 bg-background">
                                 <div className="flex items-center justify-between mb-1.5">
                                     <div className="flex items-center gap-1.5 min-w-0">
                                         <p className="text-xs font-bold text-foreground truncate">{cat.label}</p>
-                                        {onNavigate && cat.score < cat.maxScore && (
-                                            <button
-                                                type="button"
-                                                onClick={() => onNavigate(navTarget)}
-                                                className="text-[9px] font-bold text-primary hover:underline hover:text-primary/80 shrink-0"
-                                            >
-                                                ({navLabel})
-                                            </button>
-                                        )}
                                     </div>
                                     <span className="text-[10px] font-mono text-muted-foreground shrink-0">{cat.score}/{cat.maxScore}</span>
                                 </div>
@@ -162,6 +153,20 @@ export default function DiligenceCompletenessCard({ model, synthesis, documentCo
                                         </div>
                                     ))}
                                 </div>
+                                {onNavigate && cat.score < cat.maxScore && (
+                                    <button
+                                        type="button"
+                                        onClick={() => onNavigate(navTarget)}
+                                        className="mt-2 w-full rounded-md border border-primary/30 bg-primary/5 px-2 py-1.5 text-[10px] font-semibold text-primary hover:bg-primary/10 transition-colors"
+                                    >
+                                        Resolve → {navLabel}
+                                    </button>
+                                )}
+                                {cat.score === cat.maxScore && (
+                                    <div className="mt-2 w-full rounded-md bg-green-500/10 px-2 py-1.5 text-[10px] font-semibold text-green-600 text-center">
+                                        ✓ Complete
+                                    </div>
+                                )}
                             </div>
                         )
                     })}
