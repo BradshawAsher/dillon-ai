@@ -30,5 +30,8 @@
         "/backend/diligence/submissionPayload.ts": []
       }
     }
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.111.0"
   }
 }
