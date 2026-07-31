@@ -482,14 +482,11 @@ export default function DueDiligenceDashboard() {
     const liveSubmissionHistory = (Array.isArray(submissionHistoryData)
         ? submissionHistoryData
         : []) as SubmissionHistoryItem[]
-    const isShowingExampleWorkspace = !submissionHistoryLoading
-        && !submissionHistoryError
-        && liveSubmissionHistory.length === 0
-    const isExampleMode = getDataSource() === 'mock' || isShowingExampleWorkspace
-    const rawSubmissionHistory = isShowingExampleWorkspace
+    const isExampleMode = getDataSource() === 'mock'
+    const rawSubmissionHistory = isExampleMode
         ? exampleSubmissionHistoryRows
         : liveSubmissionHistory
-    const rawProjectSyntheses = isShowingExampleWorkspace
+    const rawProjectSyntheses = isExampleMode
         ? exampleProjectSyntheses
         : (Array.isArray(projectSynthesisData) ? projectSynthesisData : [])
 
