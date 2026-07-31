@@ -99,3 +99,7 @@ URGENT - Data migration — run scripts/migrate-n8n-to-supabase.ts once n8n exec
     cd frontend
     npx tsx ../scripts/migrate-n8n-to-supabase.ts
   OR skip the script entirely: export CSVs from n8n Data Tables UI and import into Supabase Table Editor
+
+  can you look through the TOCHECK doc i have open and see which ones have been done, not done, or done in an adapted manner that we did to format this website
+
+  okay but when the user has not has any documents or project and then i queue in production, can we not show the disclaimer that they dont have any docs if they just literally uploaded one, but if they uploaded one and it didnt work, then we can show the disclaimer again? Also I dont think the error thing shows int he diligence tab latest doc submission batch if the n8n ran out of execution can you fix this
