@@ -7,6 +7,8 @@ import getDealModels from '../../backend/diligence/getDealModels'
 import saveDealModel from '../../backend/diligence/saveDealModel'
 import getSubmissionHistory from '../../backend/diligence/getSubmissionHistory'
 import getWorkflowErrors from '../../backend/diligence/getWorkflowErrors'
+import getProjectActionTracker from '../../backend/diligence/getProjectActionTracker'
+import saveProjectActionTracker from '../../backend/diligence/saveProjectActionTracker'
 import retryFailedDocument from '../../backend/diligence/retryFailedDocument'
 import submitDealPacket from '../../backend/diligence/submitDealPacket'
 import updateSubmissionRow from '../../backend/diligence/updateSubmissionRow'
@@ -14,7 +16,7 @@ import { installRetoolGlobals, readJsonBody, userFromHeaders } from '../_lib/ret
 
 type ApiRequest = IncomingMessage
 
-// Make the Retool-compatible n8n client available before any route runs.
+// n8n client still needed for submit + retry (workflow triggers).
 installRetoolGlobals()
 
 function sendJson(res: ServerResponse, status: number, body: unknown) {
@@ -32,45 +34,46 @@ export default async function handler(req: ApiRequest, res: ServerResponse) {
     const user = userFromHeaders(req.headers)
 
     if (route === 'history' && req.method === 'GET') {
-      const rows = await getSubmissionHistory({ params: { environment }, user })
-      sendJson(res, 200, rows)
+      sendJson(res, 200, await getSubmissionHistory({ params: { environment }, user }))
       return
     }
     if (route === 'workflow-errors' && req.method === 'GET') {
       sendJson(res, 200, await getWorkflowErrors({ params: { environment }, user }))
       return
     }
-
     if (route === 'synthesis' && req.method === 'GET') {
-      const rows = await getProjectSynthesis({ params: { environment }, user })
-      sendJson(res, 200, rows)
+      sendJson(res, 200, await getProjectSynthesis({ params: { environment }, user }))
       return
     }
-
     if (route === 'deal-models' && req.method === 'GET') {
       sendJson(res, 200, await getDealModels({ params: { projectId: requestUrl.searchParams.get('projectId') ?? '' }, user }))
       return
     }
-
     if (route === 'deal-models' && req.method === 'POST') {
       const params = await readJsonBody(req) as Parameters<typeof saveDealModel>[0]['params']
       sendJson(res, 200, await saveDealModel({ params, user }))
       return
     }
-
-    if (route === 'submit' && req.method === 'POST') {
-      const params = await readJsonBody(req) as Parameters<typeof submitDealPacket>[0]['params']
-      const acknowledgement = await submitDealPacket({ params, user })
-      sendJson(res, 200, acknowledgement)
+    if (route === 'project-action-tracker' && req.method === 'GET') {
+      const projectId = requestUrl.searchParams.get('projectId') ?? ''
+      sendJson(res, 200, await getProjectActionTracker({ params: { projectId }, user }))
       return
     }
-
+    if (route === 'project-action-tracker' && req.method === 'POST') {
+      const params = await readJsonBody(req) as Parameters<typeof saveProjectActionTracker>[0]['params']
+      sendJson(res, 200, await saveProjectActionTracker({ params, user }))
+      return
+    }
     if (route === 'submission-consideration' && req.method === 'POST') {
       const params = await readJsonBody(req) as Parameters<typeof updateSubmissionRow>[0]['params']
       sendJson(res, 200, await updateSubmissionRow({ params, user }))
       return
     }
-
+    if (route === 'submit' && req.method === 'POST') {
+      const params = await readJsonBody(req) as Parameters<typeof submitDealPacket>[0]['params']
+      sendJson(res, 200, await submitDealPacket({ params, user }))
+      return
+    }
     if (route === 'retry-failed-document' && req.method === 'POST') {
       const params = await readJsonBody(req) as Parameters<typeof retryFailedDocument>[0]['params']
       sendJson(res, 202, await retryFailedDocument({ params, user }))
