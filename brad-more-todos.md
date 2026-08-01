@@ -94,7 +94,9 @@ Add some sort of sentiment analysis or no?
 
 For Brad - Look through this file and see if the things were actually done or not
 
-URGENT - Data migration — run scripts/migrate-n8n-to-supabase.ts once n8n executions reset (to backfill existing data into Supabase)
+[PARTIALLY DONE] URGENT - Data migration — run scripts/migrate-n8n-to-supabase.ts once n8n executions reset (to backfill existing data into Supabase)
+  Architecture migration DONE 2026-07-31: all backend reads use Supabase, all writes dual-write to both n8n data tables and Supabase, 6 read webhooks archived.
+  STILL NEEDED: Run the one-time backfill script (or CSV import) to copy historical data from n8n data tables into Supabase. The n8n read webhooks were archived, so they would need to be temporarily unarchived for the script to work, OR do CSV export from n8n Data Tables UI and import into Supabase Table Editor.
   How to run:
     cd frontend
     npx tsx ../scripts/migrate-n8n-to-supabase.ts
@@ -102,7 +104,8 @@ URGENT - Data migration — run scripts/migrate-n8n-to-supabase.ts once n8n exec
 
   can you look through the TOCHECK doc i have open and see which ones have been done, not done, or done in an adapted manner that we did to format this website
 
-  okay but when the user has not has any documents or project and then i queue in production, can we not show the disclaimer that they dont have any docs if they just literally uploaded one, but if they uploaded one and it didnt work, then we can show the disclaimer again? Also I dont think the error thing shows int he diligence tab latest doc submission batch if the n8n ran out of execution can you fix this
+[DONE] okay but when the user has not has any documents or project and then i queue in production, can we not show the disclaimer that they dont have any docs if they just literally uploaded one, but if they uploaded one and it didnt work, then we can show the disclaimer again? Also I dont think the error thing shows int he diligence tab latest doc submission batch if the n8n ran out of execution can you fix this
+  (Fixed 2026-08-01: activeSubmissionBatch now persists to sessionStorage so it survives page refreshes — empty state stays hidden while a batch is active. Added stuck-processing detection: documents in processing/queued for >10 minutes get a specific warning about n8n execution limits with retry guidance.)
 
 ## Sample Deal File Support (2026-08-01)
 
@@ -114,7 +117,8 @@ Do NOT lift the 100k character advisory — it is not a rejection gate, it just 
 
 Test multi-sheet Excel uploads end to end (TODO_CURRENT.md already has this open item) — LlamaParse converts sheets to markdown but we have no custom sheet enumeration logic. Business 2 (Iron Tree, 16K-column P&L) and Business 3 (TurnKey, 10-sheet XLSX) are the stress tests.
 
-Add drag-and-drop file type validation in FileDropzone — the HTML accept attribute only constrains the file picker dialog, not drag-and-drop. A user could drag a .numbers file onto the dropzone and it would be accepted. Add a JS-level extension check in handleDrop.
+[DONE] Add drag-and-drop file type validation in FileDropzone — the HTML accept attribute only constrains the file picker dialog, not drag-and-drop. A user could drag a .numbers file onto the dropzone and it would be accepted. Add a JS-level extension check in handleDrop.
+(Fixed 2026-08-01: updateFiles now checks extensions against ACCEPTED_EXTENSIONS set. Rejected files are shown as an error message below the dropzone.)
 
 Per-document flags (ai_red_flags, ai_yellow_flags, ai_green_flags) come back as plain string arrays with no per-flag confidence or severity. To show granular confidence on the document-level analysis tab (not just synthesis), the n8n per-document structured output schema would need to return flags as objects with confidence_score and severity fields instead of plain strings.
 

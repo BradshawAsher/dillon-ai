@@ -4,6 +4,8 @@ import { FileText, Upload } from 'lucide-react'
 import { Button } from '../lib/shadcn/button'
 import { cn } from '../lib/shadcn/utils'
 
+const ACCEPTED_EXTENSIONS = new Set(['.pdf', '.doc', '.docx', '.xlsx', '.xls', '.xlsm', '.xltx', '.csv', '.ppt', '.pptx', '.txt'])
+
 type FileDropzoneProps = {
     selectedFiles: File[]
     onFileSelect: (files: File[]) => void
@@ -13,10 +15,22 @@ type FileDropzoneProps = {
 export default function FileDropzone({ selectedFiles, onFileSelect, className }: FileDropzoneProps) {
     const inputRef = useRef<HTMLInputElement | null>(null)
     const [isDragging, setIsDragging] = useState(false)
+    const [rejectedNames, setRejectedNames] = useState<string[]>([])
 
     const updateFiles = (fileList: FileList | null) => {
-        const nextFiles = Array.from(fileList ?? [])
-        onFileSelect(nextFiles)
+        const all = Array.from(fileList ?? [])
+        const accepted: File[] = []
+        const rejected: string[] = []
+        for (const file of all) {
+            const ext = file.name.includes('.') ? ('.' + file.name.split('.').pop()!.toLowerCase()) : ''
+            if (ACCEPTED_EXTENSIONS.has(ext)) {
+                accepted.push(file)
+            } else {
+                rejected.push(file.name)
+            }
+        }
+        setRejectedNames(rejected)
+        onFileSelect(accepted)
     }
 
     const handleDragOver = (event: DragEvent<HTMLLabelElement>) => {
@@ -89,6 +103,11 @@ export default function FileDropzone({ selectedFiles, onFileSelect, className }:
                     Browse files
                 </Button>
             </label>
+            {rejectedNames.length > 0 ? (
+                <p className="text-sm text-destructive">
+                    Unsupported file type{rejectedNames.length > 1 ? 's' : ''} skipped: {rejectedNames.join(', ')}
+                </p>
+            ) : null}
         </div>
     )
 }

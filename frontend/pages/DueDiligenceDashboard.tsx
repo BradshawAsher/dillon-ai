@@ -579,7 +579,21 @@ export default function DueDiligenceDashboard() {
     const [batchSubmissionMessage, setBatchSubmissionMessage] = useState('')
     const lastUploadAttemptAtRef = useRef(0)
     const [retryingRequestId, setRetryingRequestId] = useState<string | null>(null)
-    const [activeSubmissionBatch, setActiveSubmissionBatch] = useState<SubmissionBatch | null>(null)
+    const [activeSubmissionBatch, setActiveSubmissionBatch] = useState<SubmissionBatch | null>(() => {
+        try {
+            const stored = window.sessionStorage.getItem('mergeworks.activeSubmissionBatch')
+            return stored ? JSON.parse(stored) as SubmissionBatch : null
+        } catch { return null }
+    })
+    useEffect(() => {
+        try {
+            if (activeSubmissionBatch) {
+                window.sessionStorage.setItem('mergeworks.activeSubmissionBatch', JSON.stringify(activeSubmissionBatch))
+            } else {
+                window.sessionStorage.removeItem('mergeworks.activeSubmissionBatch')
+            }
+        } catch {}
+    }, [activeSubmissionBatch])
     const [activeHistoryEnvironment, setActiveHistoryEnvironment] = useState<SubmitEnvironment>('production')
     const [currentTheme, setCurrentTheme] = useState(getStoredTheme)
     const [desktopNotificationPermission, setDesktopNotificationPermission] = useState<NotificationPermission | 'unsupported'>(() => {
@@ -1041,6 +1055,12 @@ export default function DueDiligenceDashboard() {
         ? Math.min(100, Math.round((activeBatchProcessingCount / activeBatchExpectedCount) * 100))
         : 0
     const activeBatchImpact = useMemo(() => computeImpactMetrics(activeBatchRows), [activeBatchRows])
+    const activeBatchStuckRows = activeBatchRows.filter((row) => {
+        const status = row.status.trim().toLowerCase()
+        if (status !== 'processing' && status !== 'running' && status !== 'queued' && status !== 'accepted') return false
+        const startedAt = Date.parse(row.processingStartedAt || row.receivedAt || row.triggerTimestamp || row.createdAt)
+        return !Number.isNaN(startedAt) && Date.now() - startedAt > 600_000
+    })
     const batchInProgressNotificationId = useRef<string | null>(null)
     const batchReachedProcessingNotificationId = useRef<string | null>(null)
     const synthesisInProgressNotificationProjectId = useRef<string | null>(null)
@@ -2035,6 +2055,17 @@ export default function DueDiligenceDashboard() {
                                             <div>
                                                 <p className="font-medium">This batch is taking longer than expected.</p>
                                                 <p className="mt-1 text-muted-foreground">Please reload the page to re-sync the latest n8n status. Reloading will not submit the documents again.</p>
+                                            </div>
+                                        </div>
+                                    ) : null}
+                                    {activeBatchStuckRows.length > 0 ? (
+                                        <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-foreground">
+                                            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+                                            <div>
+                                                <p className="font-medium">{activeBatchStuckRows.length} document{activeBatchStuckRows.length === 1 ? ' appears' : 's appear'} stuck in processing</p>
+                                                <p className="mt-1 text-muted-foreground">
+                                                    {activeBatchStuckRows.map((row) => row.fileName || 'Unnamed').join(', ')} {activeBatchStuckRows.length === 1 ? 'has' : 'have'} been in processing for over 10 minutes. This usually means n8n has reached its execution limit for this billing period. Try reloading the page, and if the status does not change, wait for the n8n execution limit to reset or retry the document{activeBatchStuckRows.length === 1 ? '' : 's'} later.
+                                                </p>
                                             </div>
                                         </div>
                                     ) : null}
