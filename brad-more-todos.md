@@ -80,8 +80,8 @@ NEW PROBLEMS???
 
 [NOT DONE] For Brad - double check how deterministc match checks work and if we can make it better?
  
-[DONE] For Brad - Migrate n8n tables to something more robust like Supabase and migrate Google Drive to something more robust?
-(Supabase migration complete 2026-07-31: all reads from Supabase, all writes dual-write to both, 6 read webhooks archived. Google Drive migration still pending.)
+[PARTIALLY DONE] For Brad - Migrate n8n tables to something more robust like Supabase and migrate Google Drive to something more robust?
+(Supabase migration complete 2026-07-31: all reads from Supabase, all writes dual-write to both, 6 read webhooks archived. The historical n8n-to-Supabase backfill remains outstanding below. Google Drive migration is a separate, still-pending future project.)
 
 [DONE] Why do valuation, growth, returns, and deal structure not show the assumptions at the very top? Can we set some? I thought we already had some assumptions by default?
 (The tabs now show saved assumptions first plus any display-only preview defaults at the top, so the starting model is visible even before every field is explicitly saved.)
@@ -109,6 +109,15 @@ For Brad - Look through this file and see if the things were actually done or no
 
 ## Sample Deal File Support (2026-08-01)
 
+### Next sample-deal validation work (do this order)
+
+- [ ] **Confirm the live AI provider is available.** Credits were reported depleted on 2026-08-01; do not queue the sample batch until the account owner confirms Anthropic credits and execution capacity are available.
+- [ ] **Prepare Business 5 (Medical Spa) ground truth first.** Create the two JSON records described in `test-case-plan.md` for the clean 2-page P&L PDF and the `.xlsm` model. Capture document type, key facts and periods, expected flags, and expected math-check result.
+- [ ] **Run Business 5 as one fresh production project.** Save the returned `extracted_json` / dashboard outputs and score each document using the test-plan rubric. Confirm the `.xlsm` MIME type, P&L completion, and project synthesis completion.
+- [ ] **Record the result before expanding scope.** Log classification, financial-fact accuracy, flag precision/recall, math-check status, and any parser/provider error. Fix a repeatable failure before moving to the next business.
+- [ ] **Progress through the workload ladder:** Business 4 (clean multi-sheet Excel) -> Business 1 (scanned PDF + renamed workbook) -> Business 3 (10-sheet XLSX) -> Business 2 (16K-column stress file). The 100k-character advisory is telemetry, not a failure by itself.
+- [ ] **Skip the two `.numbers` duplicates.** They are unsupported and redundant with the XLSX source; record them as intentionally out of scope rather than a pipeline failure.
+
 [DONE] Add .xlsm and .xltx to FileDropzone accept list
 [DONE] Add MIME type to Blob uploads in retoolRuntime.ts (both frontend and Vercel API copies) so n8n receives correct Content-Type per file part
 [DONE] Show per-finding confidence and severity badges inline on every flag, takeaway, conflict, negotiation lever, missing doc, and open question in the synthesis view
@@ -122,11 +131,11 @@ Test multi-sheet Excel uploads end to end (TODO_CURRENT.md already has this open
 
 Per-document flags (ai_red_flags, ai_yellow_flags, ai_green_flags) come back as plain string arrays with no per-flag confidence or severity. To show granular confidence on the document-level analysis tab (not just synthesis), the n8n per-document structured output schema would need to return flags as objects with confidence_score and severity fields instead of plain strings.
 
-Rename extensionless file "MergeWorks_Financial_Due_Diligence_Model" in Business 1 sample deals to add .xlsx extension before testing.
+- [ ] Rename extensionless file `MergeWorks_Financial_Due_Diligence_Model` in the Business 1 sample-deal folder to add the `.xlsx` extension before that business is tested.
 
 Anthropic credits are depleted as of 2026-08-01 — all AI analysis is blocked until credits are replenished. This affects both per-document analysis (Claude Haiku 4.5) and synthesis (Claude Sonnet 4.6).
 
-Build ground truth JSON files for all 17 testable documents per test-case-plan.md before running the pipeline. Priority: start with Business 5 (Medical Spa, 2 files) as simplest test case.
+Do not build all 17 ground-truth files before the first run: start with the two Business 5 files, validate the evaluation format and pipeline behavior, then create ground truth one business at a time. `test-case-plan.md` remains the scoring authority.
 
 ## Granular Confidence Display
 
