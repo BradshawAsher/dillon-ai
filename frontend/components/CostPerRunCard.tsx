@@ -2,15 +2,18 @@ import { DollarSign } from 'lucide-react'
 
 import { Badge } from '../lib/shadcn/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
+import { MEASURED_COST_PER_DOCUMENT, MEASURED_ROUTING_SAVINGS } from '../utils/costModel'
 
 type Props = {
     documentsProcessed: number
     synthesisRuns: number
 }
 
-const ESTIMATED_COST_PER_DOC = 0.06
+// Per-document cost is measured from token telemetry (see utils/costModel.ts).
+// Synthesis token usage is not yet logged end to end, so it stays an estimate.
+const ESTIMATED_COST_PER_DOC = MEASURED_COST_PER_DOCUMENT
 const ESTIMATED_COST_PER_SYNTHESIS = 0.12
-const ESTIMATED_COST_PER_CHAT = 0.02
+const ROUTING_SAVINGS_PCT = Math.round(MEASURED_ROUTING_SAVINGS * 100)
 
 export default function CostPerRunCard({ documentsProcessed, synthesisRuns }: Props) {
     const estimatedDocCost = documentsProcessed * ESTIMATED_COST_PER_DOC
@@ -26,7 +29,7 @@ export default function CostPerRunCard({ documentsProcessed, synthesisRuns }: Pr
                             <DollarSign className="h-5 w-5 text-primary" />
                             <CardTitle className="text-lg">Estimated cost per run</CardTitle>
                         </div>
-                        <CardDescription>Estimated Anthropic Claude API costs based on document count, synthesis runs, and chat messages. Pod 1 credential is active.</CardDescription>
+                        <CardDescription>Anthropic Claude API costs: per-document cost measured from token telemetry, synthesis runs estimated. Pod 1 credential is active.</CardDescription>
                     </div>
                     <Badge variant="secondary">Pod 1 Active</Badge>
                 </div>
@@ -56,8 +59,8 @@ export default function CostPerRunCard({ documentsProcessed, synthesisRuns }: Pr
                 </div>
                 <div className="mt-4 rounded-md border border-dashed border-border bg-muted/20 p-3">
                     <p className="text-xs text-muted-foreground">
-                        <strong>Provider:</strong> Anthropic Claude (Sonnet 4.6 for chat, per-doc analysis, and synthesis). Estimates based on ~$3/M input, ~$15/M output tokens.
-                        Actual costs depend on document length, retry count, and context size. Chat messages are cheaper due to shorter responses.
+                        <strong>Provider:</strong> Anthropic Claude — Haiku 4.5 for validation/classification passes and Sonnet 4.6 for financial analysis and synthesis. Per-document cost is measured from token telemetry (Haiku 4.5 $1/$5, Sonnet 4.6 $3/$15 per 1M tokens); two-model routing saves ~{ROUTING_SAVINGS_PCT}% versus an all-Sonnet pipeline.
+                        Actual costs vary with document length, retry count, and context size.
                     </p>
                 </div>
             </CardContent>

@@ -10,8 +10,8 @@ These are not AI opinions — they're facts. If Revenue minus COGS does not equa
 
 In the n8n per-document analysis workflow (`[Pod 1] - Financial DD Agent - MCP Test - Robust Per Document AI Analysis`, ID: `W5Jp7CJIQbNy0qlY`):
 
-1. The LLM extracts raw financial numbers from the document (revenue, COGS, gross profit, EBITDA, total assets, total liabilities, equity, etc.)
-2. After extraction, a **deterministic reconciliation step** runs the formulas below
+1. The LLM extracts raw financial numbers from the document (revenue, COGS, gross profit, EBITDA, total assets, total liabilities, equity, etc.) — extraction routes across two models (Haiku 4.5 for validation/classification passes, Sonnet 4.6 for the main financial analysis)
+2. After extraction, a **deterministic reconciliation step** runs the formulas below — this step is pure arithmetic with **no LLM involvement**, so it cannot hallucinate regardless of which model produced the inputs
 3. Results are stored in the document row's `reconciliationJson` field
 
 ## What formulas are checked?

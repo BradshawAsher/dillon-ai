@@ -40,6 +40,21 @@ Pod 1's live n8n Cloud/Enterprise workflows are the workflow source of truth.
 Inspect them through n8n MCP. If MCP access is unavailable, request access
 before diagnosing or changing workflow behavior.
 
+## Measured performance
+
+Numbers below are measured from live n8n execution telemetry, not estimates.
+Re-derive them with the helpers in `frontend/utils/` (`latencyMetrics.ts`,
+`qualityMetrics.ts`, `costModel.ts`) or directly from n8n executions.
+
+- **Per-document latency**: ~p50 71 s / p95 125 s end-to-end (download → parse →
+  LLM extract → deterministic reconciliation → write).
+- **Per-document cost**: ~$0.033, across two model calls. The per-document
+  workflow routes **Haiku 4.5** (validation/classification passes) and
+  **Sonnet 4.6** (financial analysis); this routing costs ~35% less than an
+  all-Sonnet pipeline.
+- **Retry/backoff**: external and sub-workflow calls retry 3× with a 2 s delay
+  (5 s on the model-adjacent nodes).
+
 ## Run locally
 
 Use Node `22.x` for local development and Vercel compatibility.
