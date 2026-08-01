@@ -4,6 +4,14 @@ import { ChevronDown, ChevronUp } from 'lucide-react'
 import { Badge, type BadgeProps } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
 
+type StructuredFinding = {
+  text: string
+  confidence: number | null
+  severity: string
+  impact: string
+  status: string
+}
+
 type ExpandableInsightGroupProps = {
   title: string
   items: string[]
@@ -16,9 +24,34 @@ type ExpandableInsightGroupProps = {
   emptyLabel: string
   defaultOpen?: boolean
   onItemClick?: (item: string, index: number) => void
+  findings?: StructuredFinding[]
 }
 
 const LONG_ITEM_LENGTH = 100
+
+function confidenceBadge(confidence: number | null) {
+  if (confidence === null || confidence === undefined) return null
+  const pct = confidence <= 1 ? Math.round(confidence * 100) : Math.round(confidence)
+  if (pct <= 0) return null
+  const label = pct >= 85 ? 'High' : pct >= 60 ? 'Med' : 'Low'
+  const color = pct >= 85
+    ? 'border-green-500/30 text-green-600 dark:text-green-400'
+    : pct >= 60
+      ? 'border-amber-500/30 text-amber-600 dark:text-amber-400'
+      : 'border-destructive/30 text-destructive'
+  return <span className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-medium leading-none ${color}`}>{label} {pct}%</span>
+}
+
+function severityBadge(severity: string) {
+  if (!severity) return null
+  const lower = severity.toLowerCase()
+  const color = lower === 'critical' || lower === 'high'
+    ? 'border-destructive/30 bg-destructive/10 text-destructive'
+    : lower === 'medium'
+      ? 'border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400'
+      : 'border-border bg-muted/40 text-muted-foreground'
+  return <span className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-medium leading-none ${color}`}>{severity}</span>
+}
 
 export default function ExpandableInsightGroup({
   title,
@@ -32,6 +65,7 @@ export default function ExpandableInsightGroup({
   emptyLabel,
   defaultOpen = false,
   onItemClick,
+  findings,
 }: ExpandableInsightGroupProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen)
   const [expandedItems, setExpandedItems] = useState<Set<number>>(() => new Set())
@@ -76,6 +110,7 @@ export default function ExpandableInsightGroup({
               const isLong = item.length > LONG_ITEM_LENGTH
               const isExpanded = expandedItems.has(index)
               const isClickable = !!onItemClick
+              const finding = findings?.[index]
 
               return (
                 <li
@@ -96,6 +131,13 @@ export default function ExpandableInsightGroup({
                       <span className="mr-2 font-medium text-muted-foreground">{index + 1}.</span>
                       {isLong && !isExpanded ? item.slice(0, LONG_ITEM_LENGTH).replace(/\s\S*$/, '') + '…' : item}
                     </div>
+                    {finding ? (
+                      <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                        {confidenceBadge(finding.confidence)}
+                        {severityBadge(finding.severity)}
+                        {finding.impact ? <span className="text-[10px] text-muted-foreground">{finding.impact}</span> : null}
+                      </div>
+                    ) : null}
                     {isClickable ? (
                       <span className="mt-1 block text-xs font-medium text-primary">View evidence →</span>
                     ) : null}

@@ -103,3 +103,34 @@ URGENT - Data migration — run scripts/migrate-n8n-to-supabase.ts once n8n exec
   can you look through the TOCHECK doc i have open and see which ones have been done, not done, or done in an adapted manner that we did to format this website
 
   okay but when the user has not has any documents or project and then i queue in production, can we not show the disclaimer that they dont have any docs if they just literally uploaded one, but if they uploaded one and it didnt work, then we can show the disclaimer again? Also I dont think the error thing shows int he diligence tab latest doc submission batch if the n8n ran out of execution can you fix this
+
+## Sample Deal File Support (2026-08-01)
+
+[DONE] Add .xlsm and .xltx to FileDropzone accept list
+[DONE] Add MIME type to Blob uploads in retoolRuntime.ts (both frontend and Vercel API copies) so n8n receives correct Content-Type per file part
+[DONE] Show per-finding confidence and severity badges inline on every flag, takeaway, conflict, negotiation lever, missing doc, and open question in the synthesis view
+
+Do NOT lift the 100k character advisory — it is not a rejection gate, it just records a warning. Keep it for analyst awareness.
+
+Test multi-sheet Excel uploads end to end (TODO_CURRENT.md already has this open item) — LlamaParse converts sheets to markdown but we have no custom sheet enumeration logic. Business 2 (Iron Tree, 16K-column P&L) and Business 3 (TurnKey, 10-sheet XLSX) are the stress tests.
+
+Add drag-and-drop file type validation in FileDropzone — the HTML accept attribute only constrains the file picker dialog, not drag-and-drop. A user could drag a .numbers file onto the dropzone and it would be accepted. Add a JS-level extension check in handleDrop.
+
+Per-document flags (ai_red_flags, ai_yellow_flags, ai_green_flags) come back as plain string arrays with no per-flag confidence or severity. To show granular confidence on the document-level analysis tab (not just synthesis), the n8n per-document structured output schema would need to return flags as objects with confidence_score and severity fields instead of plain strings.
+
+Rename extensionless file "MergeWorks_Financial_Due_Diligence_Model" in Business 1 sample deals to add .xlsx extension before testing.
+
+Anthropic credits are depleted as of 2026-08-01 — all AI analysis is blocked until credits are replenished. This affects both per-document analysis (Claude Haiku 4.5) and synthesis (Claude Sonnet 4.6).
+
+Build ground truth JSON files for all 17 testable documents per test-case-plan.md before running the pipeline. Priority: start with Business 5 (Medical Spa, 2 files) as simplest test case.
+
+## Granular Confidence Display
+
+[DONE] Synthesis-level: per-flag/finding confidence and severity now shown inline in ExpandableInsightGroup (red flags, yellow flags, green flags, takeaways, conflicts, negotiation levers, missing docs, open questions)
+[DONE] Valuation confidence already shown as badge on synthesis valuation section (ProjectSynthesisCard lines 530-537)
+[DONE] Per-financial-fact confidence already shown in evidence drawer (EvidenceDrawer.tsx) and document highlight viewer
+
+Still needed:
+- Per-document-level flag confidence: requires n8n structured output schema change (per-document flags are currently string arrays, not objects with confidence)
+- Per-valuation-bound confidence: the AI returns one confidence score for the whole valuation range, not separate confidence for lower/base/upper. If we want per-bound confidence, the n8n structured output schema needs a confidence_score per bound.
+- Quant cards (revenue, EBITDA, etc.) in overview: currently show the value but not the per-fact confidence inline — only visible after clicking through to evidence drawer. Could add a small confidence badge next to each quant card value.
