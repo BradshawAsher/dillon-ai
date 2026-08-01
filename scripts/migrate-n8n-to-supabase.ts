@@ -35,6 +35,16 @@ async function fetchN8n<T>(path: string): Promise<T> {
     return res.json() as Promise<T>
 }
 
+async function fetchDataTable<T>(tableId: string): Promise<T[]> {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    if (WEBHOOK_SECRET) headers['x-webhook-secret'] = WEBHOOK_SECRET
+    const url = new URL('webhook/migration-read-temp', N8N_BASE).toString()
+    const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify({ tableId }) })
+    if (!res.ok) throw new Error(`n8n data table ${tableId} returned ${res.status}`)
+    const data = await res.json() as unknown
+    return (Array.isArray(data) ? data : []) as T[]
+}
+
 function str(v: unknown): string { return typeof v === 'string' ? v : (v == null ? '' : String(v)) }
 function num(v: unknown): number | null {
     if (typeof v === 'number' && Number.isFinite(v)) return v
@@ -49,11 +59,8 @@ function bool(v: unknown): boolean {
 
 // ---------- Documents (submission history) ----------
 async function migrateDocuments() {
-    console.log('Fetching documents from n8n...')
-    const raw = await fetchN8n<unknown>('webhook/1d02344c-0512-4a40-9c5b-ad8172bc91e8')
-    const rows: Record<string, unknown>[] = Array.isArray(raw) ? raw
-        : (raw as { rows?: unknown[]; data?: unknown[] }).rows
-            ?? (raw as { data?: unknown[] }).data ?? []
+    console.log('Fetching documents from n8n data table...')
+    const rows = await fetchDataTable<Record<string, unknown>>('rBFHVB1W7ldSiObM')
 
     console.log(`  Found ${rows.length} document rows`)
     if (rows.length === 0) return
@@ -124,22 +131,23 @@ async function migrateDocuments() {
         is_considered: (r as { isConsidered?: unknown }).isConsidered !== false,
     }))
 
-    // Upsert in batches of 50
-    for (let i = 0; i < mapped.length; i += 50) {
-        const batch = mapped.slice(i, i + 50)
+    const deduped = new Map<string, typeof mapped[0]>()
+    for (const row of mapped) deduped.set(row.request_id, row)
+    const unique = [...deduped.values()]
+    console.log(`  ${mapped.length - unique.length} duplicates removed, ${unique.length} unique documents`)
+
+    for (let i = 0; i < unique.length; i += 50) {
+        const batch = unique.slice(i, i + 50)
         const { error } = await supabase.from('documents').upsert(batch, { onConflict: 'request_id' })
         if (error) { console.error(`  documents batch ${i} error:`, error.message); return }
     }
-    console.log(`  ✓ ${mapped.length} documents migrated`)
+    console.log(`  ✓ ${unique.length} documents migrated`)
 }
 
 // ---------- Project Syntheses ----------
 async function migrateSyntheses() {
-    console.log('Fetching project syntheses from n8n...')
-    const raw = await fetchN8n<unknown>('webhook/d19d24da-21d4-40f8-8626-a06a7dd54ac7')
-    const list: Record<string, unknown>[] = Array.isArray(raw) ? raw
-        : (raw as { rows?: unknown[]; data?: unknown[] }).rows
-            ?? (raw as { data?: unknown[] }).data ?? []
+    console.log('Fetching project syntheses from n8n data table...')
+    const list = await fetchDataTable<Record<string, unknown>>('DTrLU8hBUwYzmBig')
 
     const rows = list.filter(r => str(r.projectId ?? r.project_id).trim().length > 0)
     console.log(`  Found ${rows.length} synthesis rows`)
@@ -187,9 +195,8 @@ async function migrateSyntheses() {
 
 // ---------- Deal Models ----------
 async function migrateDealModels() {
-    console.log('Fetching deal models from n8n...')
-    const raw = await fetchN8n<{ rows?: Record<string, unknown>[] }>('webhook/dd-deal-models')
-    const rows = raw.rows ?? []
+    console.log('Fetching deal models from n8n data table...')
+    const rows = await fetchDataTable<Record<string, unknown>>('eU2nnH4bVmdPocI8')
     console.log(`  Found ${rows.length} deal model rows`)
     if (rows.length === 0) return
 
@@ -239,10 +246,8 @@ async function migrateDealModels() {
 
 // ---------- Workflow Errors ----------
 async function migrateWorkflowErrors() {
-    console.log('Fetching workflow errors from n8n...')
-    const raw = await fetchN8n<unknown>('webhook/dd-workflow-errors')
-    const payload = raw as { errors?: unknown[]; rows?: unknown[]; data?: unknown[] }
-    const rows: Record<string, unknown>[] = (Array.isArray(raw) ? raw : payload.errors ?? payload.rows ?? payload.data ?? []) as Record<string, unknown>[]
+    console.log('Fetching workflow errors from n8n data table...')
+    const rows = await fetchDataTable<Record<string, unknown>>('aSPSRYm0ScfGsV0b')
     console.log(`  Found ${rows.length} error rows`)
     if (rows.length === 0) return
 
