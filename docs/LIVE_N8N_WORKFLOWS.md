@@ -79,9 +79,17 @@ retaining it for audit.
 
 The submit, counter, consolidator, document-consideration, history, and
 project-synthesis workflows retry their external/Data Table/subworkflow calls
-three times with a two-second delay. The per-document analysis workflow already
-uses the same retry policy and routes exhausted processing failures to a terminal
-document status so the batch can continue.
+three times with a two-second delay. The per-document analysis workflow uses the
+same policy (`maxTries: 3`, `waitBetweenTries: 2000ms`), except the two
+model-adjacent nodes back off 5000ms; exhausted processing failures route to a
+terminal document status so the batch can continue.
+
+Measured from live executions (2026-08): per-document analysis runs at ~p50 71 s
+/ p95 125 s wall-clock, and the robust output-recovery path (schema validation →
+Haiku repair pass) has been observed correcting an invalid first-pass result in
+production. Note the shared execution pool: at month-end the account can hit the
+n8n Cloud execution limit — read traffic was moved to direct Supabase queries and
+the legacy read webhooks archived specifically to reduce that execution burn.
 
 The shared Error Audit workflow is published and ready. Attaching it through
 `settings.errorWorkflow` is currently blocked by an n8n server-side SQLite
