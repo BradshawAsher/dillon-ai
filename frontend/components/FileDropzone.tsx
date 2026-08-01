@@ -55,7 +55,7 @@ export default function FileDropzone({ selectedFiles, onFileSelect, className }:
                     type="file"
                     className="sr-only"
                     onChange={handleChange}
-                    accept=".pdf,.doc,.docx,.xlsx,.xls,.csv,.ppt,.pptx,.txt"
+                    accept=".pdf,.doc,.docx,.xlsx,.xls,.xlsm,.xltx,.csv,.ppt,.pptx,.txt"
                     multiple
                 />
 
@@ -72,7 +72,7 @@ export default function FileDropzone({ selectedFiles, onFileSelect, className }:
                         <p className="break-words text-sm text-muted-foreground">
                             {selectedFiles.length > 0
                                 ? selectedFiles.map((file) => `${file.name} (${Math.max(1, Math.round(file.size / 1024))} KB)`).join(' • ')
-                                : 'Supports PDF, Excel, Word, PowerPoint, CSV, and text files. Upload one or more documents into a shared project.'}
+                                : 'Supports PDF, Excel (.xlsx, .xls, .xlsm, .xltx), Word, PowerPoint, CSV, and text files. Upload one or more documents into a shared project.'}
                         </p>
                     </div>
                 </div>

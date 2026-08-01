@@ -641,6 +641,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                     title="Project-level red flags"
                                     icon={<TriangleAlert className="h-4 w-4 text-destructive" />}
                                     items={synthesis.redFlags}
+                                    findings={synthesis.structuredFindings?.redFlags}
                                     emptyLabel="No material project-level red flags returned."
                                     badgeVariant="destructive"
                                     className="border-destructive/30 bg-destructive/5"
@@ -652,6 +653,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                     title="Project-level yellow flags"
                                     icon={<TriangleAlert className="h-4 w-4 text-warning" />}
                                     items={synthesis.yellowFlags}
+                                    findings={synthesis.structuredFindings?.yellowFlags}
                                     emptyLabel="No project-level items requiring follow-up returned."
                                     badgeVariant="warning"
                                     className="border-warning/30 bg-warning/5"
@@ -663,6 +665,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                     title="Project-level green flags"
                                     icon={<Scale className="h-4 w-4 text-success" />}
                                     items={synthesis.greenFlags}
+                                    findings={synthesis.structuredFindings?.greenFlags}
                                     emptyLabel="No project-level supportive indicators returned."
                                     badgeVariant="success"
                                     className="border-success/30 bg-success/5"
@@ -674,6 +677,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                     title="Key acquisition takeaways"
                                     icon={<Scale className="h-4 w-4 text-primary" />}
                                     items={synthesis.keyTakeaways}
+                                    findings={synthesis.structuredFindings?.keyTakeaways}
                                     emptyLabel="No concise takeaways were returned by this synthesis yet."
                                     badgeVariant="success"
                                     className="border-primary/25 bg-primary/5"
@@ -690,6 +694,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                     title="Cross-document conflicts"
                                     icon={<TriangleAlert className="h-4 w-4 text-destructive" />}
                                     items={synthesis.crossDocumentConflicts}
+                                    findings={synthesis.structuredFindings?.crossDocumentConflicts}
                                     emptyLabel="No contradictions detected across the uploaded documents."
                                     badgeVariant="destructive"
                                     className="border-destructive/30 bg-destructive/5"
@@ -701,6 +706,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                     title="Negotiation levers"
                                     icon={<Landmark className="h-4 w-4 text-foreground" />}
                                     items={synthesis.negotiationLevers}
+                                    findings={synthesis.structuredFindings?.negotiationLevers}
                                     emptyLabel="No negotiation levers surfaced yet."
                                     defaultOpen
                                     onItemClick={onOpenEvidence ? (item, index) => handleInsightClick('negotiation-lever', item, index) : undefined}
@@ -709,6 +715,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                     title="Missing diligence materials"
                                     icon={<ShieldAlert className="h-4 w-4 text-warning" />}
                                     items={synthesis.missingDocuments}
+                                    findings={synthesis.structuredFindings?.missingDocuments}
                                     emptyLabel="All core diligence materials appear to be present."
                                     badgeVariant="warning"
                                     className="border-warning/30 bg-warning/5"
@@ -720,6 +727,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                     title="Open questions for management"
                                     icon={<MessageCircleQuestion className="h-4 w-4 text-muted-foreground" />}
                                     items={synthesis.openQuestions}
+                                    findings={synthesis.structuredFindings?.openQuestions}
                                     emptyLabel="No open questions recorded."
                                     defaultOpen
                                     onItemClick={onOpenEvidence ? (item, index) => handleInsightClick('open-question', item, index) : undefined}

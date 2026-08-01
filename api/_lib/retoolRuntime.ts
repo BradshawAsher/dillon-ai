@@ -21,6 +21,26 @@ type RawRequestOptions = {
   formData?: Array<{ key: string; value?: string; file?: string; filename?: string }>
 }
 
+const MIME_MAP: Record<string, string> = {
+  '.pdf': 'application/pdf',
+  '.doc': 'application/msword',
+  '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  '.xls': 'application/vnd.ms-excel',
+  '.xlsm': 'application/vnd.ms-excel.sheet.macroEnabled.12',
+  '.xltx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.template',
+  '.csv': 'text/csv',
+  '.ppt': 'application/vnd.ms-powerpoint',
+  '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  '.txt': 'text/plain',
+}
+
+function mimeFromFilename(filename?: string): string {
+  if (!filename) return 'application/octet-stream'
+  const ext = filename.slice(filename.lastIndexOf('.')).toLowerCase()
+  return MIME_MAP[ext] ?? 'application/octet-stream'
+}
+
 export function installRetoolGlobals() {
   const globals = globalThis as Record<string, unknown>
 
@@ -40,7 +60,8 @@ export function installRetoolGlobals() {
         const body = new FormData()
         for (const entry of options.formData) {
           if (typeof entry.file === 'string') {
-            body.append(entry.key, new Blob([Buffer.from(entry.file, 'base64')]), entry.filename ?? 'upload.bin')
+            const mimeType = mimeFromFilename(entry.filename)
+            body.append(entry.key, new Blob([Buffer.from(entry.file, 'base64')], { type: mimeType }), entry.filename ?? 'upload.bin')
           } else {
             body.append(entry.key, entry.value ?? '')
           }
