@@ -1947,7 +1947,7 @@ export default function DueDiligenceDashboard() {
                             </div>
                         ) : null}
 
-                        {!isExampleMode && projectSummaries.length === 0 && !submissionHistoryLoading ? (
+                        {!isExampleMode && projectSummaries.length === 0 && !submissionHistoryLoading && !submitLoading && !displayedSubmissionBatch ? (
                             <div className="rounded-lg border border-muted bg-muted/30 px-5 py-6 text-center">
                                 <FileSearch className="mx-auto h-10 w-10 text-muted-foreground/60" />
                                 <p className="mt-3 text-base font-semibold text-foreground">No documents processed yet</p>
@@ -1966,6 +1966,18 @@ export default function DueDiligenceDashboard() {
                                     <Plus className="mr-1.5 h-4 w-4" />
                                     Go to Production to upload documents
                                 </Button>
+                            </div>
+                        ) : null}
+
+                        {!isExampleMode && submitError ? (
+                            <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm">
+                                <div className="flex items-start gap-2">
+                                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+                                    <div>
+                                        <p className="font-semibold text-destructive">Document submission failed</p>
+                                        <p className="mt-1 text-foreground">{submitError}</p>
+                                    </div>
+                                </div>
                             </div>
                         ) : null}
 
