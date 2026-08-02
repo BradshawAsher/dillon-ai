@@ -1,0 +1,79 @@
+{
+    "fileName": "_RENEW HEALTH CENTER - FULL YEAR COMPARATIVE P&L (2024-2025).pdf",
+    "business": "Business 5 - Medical Spa (Sameer)",
+    "fileType": "PDF",
+    "groundTruth": {
+        "documentType": "Profit and Loss Statement",
+        "documentTypes": [
+            "Profit and Loss Statement"
+        ],
+        "trafficLight": "YELLOW",
+        "riskLevel": "MEDIUM",
+        "financialFacts": [
+            {
+                "metric": "revenue",
+                "normalizedValue": 960117.77,
+                "period": "Jan-Dec 2025",
+                "rawValue": "$960,117.77"
+            },
+            {
+                "metric": "revenue",
+                "normalizedValue": 550041.54,
+                "period": "Jan-Dec 2024",
+                "rawValue": "$550,041.54"
+            },
+            {
+                "metric": "cogs",
+                "normalizedValue": 8764.55,
+                "period": "Jan-Dec 2025",
+                "rawValue": "$8,764.55"
+            },
+            {
+                "metric": "cogs",
+                "normalizedValue": 8079.98,
+                "period": "Jan-Dec 2024",
+                "rawValue": "$8,079.98"
+            },
+            {
+                "metric": "gross_profit",
+                "normalizedValue": 951353.22,
+                "period": "Jan-Dec 2025",
+                "rawValue": "$951,353.22"
+            },
+            {
+                "metric": "gross_profit",
+                "normalizedValue": 541961.56,
+                "period": "Jan-Dec 2024",
+                "rawValue": "$541,961.56"
+            },
+            {
+                "metric": "net_income",
+                "normalizedValue": 279841.18,
+                "period": "Jan-Dec 2025",
+                "rawValue": "$279,841.18"
+            },
+            {
+                "metric": "net_income",
+                "normalizedValue": 86690.1,
+                "period": "Jan-Dec 2024",
+                "rawValue": "$86,690.10"
+            }
+        ],
+        "expectedRedFlags": [
+            "Very young business - financial history only covers 2024 and 2025, effectively a start-up operating history",
+            "Reported profitability heavily dependent on add-backs / one-time items (analyst normalized SDE ~$580k vs $279.8k reported net income)"
+        ],
+        "expectedYellowFlags": [
+            "Owner dependence - owner works 20-25 hrs/week and still performs clinical day-one processes, contradicts semi-absentee claim",
+            "Regulatory / compliance exposure on medical injections, hormone programs, and regenerative therapy claims",
+            "Single-location customer concentration with seasonality (demand concentrated in a few months)"
+        ],
+        "falsePositiveFlags": [],
+        "missedFlags": [],
+        "valuation": null,
+        "employeeEvidence": null,
+        "expectedMathCheckStatus": "passed",
+        "mathCheckNotes": "Gross profit reconciles exactly both years: 960,117.77 - 8,764.55 = 951,353.22 and 550,041.54 - 8,079.98 = 541,961.56. Cash-basis QuickBooks P&L, no D&A split.",
+        "notes": "Revenue is essentially 100% 'Job Income Medical' (cash-pay services). Gross margin ~99%. Column order in PDF is [Jan-Dec 25 | Jan-Dec 24]."
+    }
+}
