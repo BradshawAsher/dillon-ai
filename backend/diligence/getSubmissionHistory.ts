@@ -20,7 +20,7 @@ export default async function getSubmissionHistory(req: {
   if (error) throw new Error(`Supabase read failed: ${error.message}`)
   if (!rows) return []
 
-  return rows.map((row) => ({
+  return (rows as Array<Record<string, any>>).map((row) => ({
     requestID: row.request_id ?? '',
     dealName: row.deal_name ?? '',
     companyName: row.company_name ?? '',

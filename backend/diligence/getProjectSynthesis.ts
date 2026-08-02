@@ -285,7 +285,7 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
     if (error) throw new Error(`Supabase read failed: ${error.message}`)
     if (!rows) return []
 
-    return rows
+    return (rows as Array<Record<string, any>>)
         .filter((row) => (row.project_id ?? '').trim().length > 0)
         .map((row): ProjectSynthesisItem => {
             const judgment = getJudgmentValues(row.final_judgment_json)

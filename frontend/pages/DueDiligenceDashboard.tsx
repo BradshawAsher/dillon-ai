@@ -197,7 +197,7 @@ import { computeImpactMetrics, formatHours } from '../utils/impactMetrics'
 import { deriveDocumentedFacts } from '../utils/documentedFacts'
 import { fallbackDiligenceFindings, type FindingType, type Severity } from '../utils/diligence'
 import { formatEasternTime } from '../utils/dateTime'
-import { readFileAsBase64 } from '../utils/fileEncoding'
+import { readFileAsBase64, base64ToFile } from '../utils/fileEncoding'
 import { findCitedDocument } from '../utils/evidence'
 
 function getFindingVariant(findingType: FindingType): 'destructive' | 'success' {
@@ -277,6 +277,21 @@ const processingReachedStatuses = new Set([
 ])
 const activeSynthesisStatuses = new Set(['queued', 'pending', 'processing', 'running', 'synthesis_pending', 'synthesizing'])
 const PENDING_EXAMPLE_MODE_SUBMISSION_KEY = 'mergeworks.pendingExampleModeSubmission'
+
+// A file selection queued in Example mode and restored after the workspace
+// reloads into Live n8n mode. Files are carried as base64 so they survive the
+// sessionStorage round-trip.
+type PendingExampleModeSubmission = {
+    environment: SubmitEnvironment
+    selectedProjectKey: string
+    dealName: string
+    askingPrice: string
+    projectId: string
+    projectStage: string
+    documentType: string
+    submissionNotes: string
+    files: Array<{ name: string; size: number; type: string; base64: string }>
+}
 
 function parseIllustrativeFacts(raw: string) {
     try {

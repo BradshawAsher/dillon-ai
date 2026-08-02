@@ -15,7 +15,7 @@ export default async function getDealModels(req: { params: Params; user: User })
   if (error) throw new Error(`Supabase read failed: ${error.message}`)
   if (!rows) return []
 
-  return rows.map((row) => ({
+  return (rows as Array<Record<string, any>>).map((row) => ({
     projectId: row.project_id ?? '',
     askingPrice: row.asking_price ?? null,
     purchasePrice: row.purchase_price ?? null,

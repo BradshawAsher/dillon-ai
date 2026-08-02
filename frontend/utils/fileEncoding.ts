@@ -21,3 +21,18 @@ export async function readFileAsBase64(file: File): Promise<string> {
     reader.readAsDataURL(file)
   })
 }
+
+/**
+ * Reconstructs a File from a base64 payload previously produced by
+ * readFileAsBase64. Used to restore a pending upload after the workspace
+ * switches from Example to Live mode (the selection survives the reload via
+ * sessionStorage).
+ */
+export function base64ToFile(base64: string, name: string, type: string): File {
+  const binary = atob(base64)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i += 1) {
+    bytes[i] = binary.charCodeAt(i)
+  }
+  return new File([bytes], name, { type })
+}
