@@ -25,7 +25,7 @@ export default async function getWorkflowErrors(req: {
   if (error) throw new Error(`Supabase read failed: ${error.message}`)
   if (!rows) return []
 
-  return rows.map((row) => ({
+  return (rows as Array<Record<string, any>>).map((row) => ({
     id: row.id ?? null,
     occurredAt: row.occurred_at ?? '',
     workflowId: row.workflow_id ?? '',

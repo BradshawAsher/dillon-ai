@@ -54,15 +54,20 @@ export default function QuickFilterBar({ synthesis, onJumpTo }: { synthesis: Pro
     const activeFilters = filters.filter((f) => f.count > 0)
     if (activeFilters.length === 0) return null
 
+    const totalFindings = activeFilters.reduce((sum, f) => sum + f.count, 0)
+
     return (
-        <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-medium text-muted-foreground">Jump to:</span>
+        <nav aria-label="Jump to findings" className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-medium text-muted-foreground">
+                Jump to <span className="text-foreground">{totalFindings}</span> finding{totalFindings === 1 ? '' : 's'}:
+            </span>
             {activeFilters.map((filter) => (
                 <button
                     key={filter.id}
                     type="button"
                     onClick={() => onJumpTo(filter.id as 'red-flags' | 'open-questions' | 'missing-docs' | 'conflicts' | 'negotiation')}
-                    className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors hover:border-primary/50 ${
+                    aria-label={`Jump to ${filter.count} ${filter.label.toLowerCase()}`}
+                    className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
                         filter.variant === 'destructive'
                             ? 'border-destructive/30 bg-destructive/5 text-destructive hover:bg-destructive/10'
                             : filter.variant === 'warning'
@@ -75,6 +80,6 @@ export default function QuickFilterBar({ synthesis, onJumpTo }: { synthesis: Pro
                     <span className="ml-0.5 rounded-full bg-background/60 px-1.5 py-0.5 text-[10px] font-bold">{filter.count}</span>
                 </button>
             ))}
-        </div>
+        </nav>
     )
 }

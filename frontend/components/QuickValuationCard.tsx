@@ -71,6 +71,14 @@ export default function QuickValuationCard({ model, synthesis }: Props) {
 
     const price = model.purchasePrice ?? model.askingPrice
 
+    // Blended value: the simple average of each method's midpoint. Gives a
+    // single "all-in" reference point when multiple methods disagree, which is
+    // how most buyers sanity-check a range.
+    const blended = methods.reduce((sum, m) => sum + m.mid, 0) / methods.length
+    const blendedLow = methods.reduce((sum, m) => sum + m.low, 0) / methods.length
+    const blendedHigh = methods.reduce((sum, m) => sum + m.high, 0) / methods.length
+    const pricePremium = price ? ((price - blended) / blended) * 100 : null
+
     return (
         <Card className="overflow-hidden">
             <CardHeader className="border-b border-border bg-card/80 pb-3">
@@ -124,6 +132,23 @@ export default function QuickValuationCard({ model, synthesis }: Props) {
                         )
                     })}
                 </div>
+                {methods.length >= 2 && (
+                    <div className="mt-3 rounded-lg border border-primary/30 bg-primary/5 p-3">
+                        <div className="flex items-center justify-between">
+                            <span className="text-xs font-semibold text-foreground">Blended value (avg of methods)</span>
+                            <span className="text-lg font-bold text-primary">{money(blended)}</span>
+                        </div>
+                        <div className="mt-0.5 flex items-center justify-between text-[10px] text-muted-foreground">
+                            <span>Range: {money(blendedLow)} – {money(blendedHigh)}</span>
+                            {pricePremium !== null && (
+                                <span className={pricePremium > 0 ? 'text-destructive' : 'text-green-600'}>
+                                    {model.purchasePrice ? 'Purchase' : 'Asking'} price is {Math.abs(pricePremium).toFixed(0)}%{' '}
+                                    {pricePremium > 0 ? 'above' : 'below'} blended
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                )}
                 {price && (
                     <div className="mt-3 rounded-md border border-dashed border-border bg-muted/20 p-2">
                         <p className="text-[11px] text-muted-foreground">
