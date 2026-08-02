@@ -1,0 +1,97 @@
+{
+    "fileName": "Financial Modelling Renew Health .xlsm",
+    "business": "Business 5 - Medical Spa (Sameer)",
+    "fileType": "XLSM",
+    "groundTruth": {
+        "documentType": "Financial Due Diligence / Valuation Model",
+        "documentTypes": [
+            "Financial Model",
+            "Profit and Loss Statement",
+            "EBITDA Normalization",
+            "Valuation Model",
+            "Balance Sheet (empty)"
+        ],
+        "trafficLight": "YELLOW",
+        "riskLevel": "MEDIUM",
+        "financialFacts": [
+            {
+                "metric": "revenue",
+                "normalizedValue": 960117.77,
+                "period": "LTM 2025",
+                "rawValue": "$960,117.77"
+            },
+            {
+                "metric": "revenue",
+                "normalizedValue": 550041.54,
+                "period": "FY2024",
+                "rawValue": "$550,041.54"
+            },
+            {
+                "metric": "cogs",
+                "normalizedValue": 8764.55,
+                "period": "LTM 2025",
+                "rawValue": "$8,764.55"
+            },
+            {
+                "metric": "cogs",
+                "normalizedValue": 8079.98,
+                "period": "FY2024",
+                "rawValue": "$8,079.98"
+            },
+            {
+                "metric": "owner_compensation",
+                "normalizedValue": 96000,
+                "period": "LTM 2025",
+                "rawValue": "$96,000.00"
+            },
+            {
+                "metric": "labor_payroll",
+                "normalizedValue": 142533.07,
+                "period": "LTM 2025",
+                "rawValue": "$142,533.07"
+            },
+            {
+                "metric": "adjusted_ebitda_sde",
+                "normalizedValue": 580657,
+                "period": "2026E SDE",
+                "rawValue": "$580,657.00"
+            },
+            {
+                "metric": "reported_ebitda",
+                "normalizedValue": 281750.32,
+                "period": "LTM 2025",
+                "rawValue": "computed: gross profit 951,353.22 - owner comp 96,000 - labor 142,533.07 - opex 432,978.97 + interest 1,909.14"
+            }
+        ],
+        "valuation": {
+            "valuation_lower_bound": null,
+            "valuation_base_estimate": 2612956.5,
+            "valuation_upper_bound": null,
+            "asking_price": "not stated in model",
+            "notes": "Purchase Price = Entry Multiple 4.50x x Adjusted EBITDA 580,657 = 2,612,956.50 (Deal Assumptions B6/B7). Separate line in EBITDA Normalization implies 2.83x x 580,657 = 1,643,259.00 - see expectedYellowFlags inconsistency."
+        },
+        "employeeEvidence": {
+            "employee_count": null,
+            "employee_type": "owner + staff",
+            "employee_as_of_date": null,
+            "notes": "No headcount stated. Company Overview: 'owner and a few workers'. Owner works 20-25 hrs/wk and still performs clinical day-one processes."
+        },
+        "expectedRedFlags": [
+            "Balance Sheet tab is entirely empty (all zeros) - 'missing balance sheet' per deal folder; no assets, liabilities, debt, or equity evidence",
+            "Operating history is extremely short - financials only exist for 2024 and 2025 (a start-up-scale track record)"
+        ],
+        "expectedYellowFlags": [
+            "Valuation multiple inconsistency: EBITDA Normalization implies 2.83x / $1,643,259 while Deal Assumptions use 4.50x / $2,612,956 - model is internally inconsistent",
+            "Reported EBITDA ~$281.8k vs normalized SDE $580.7k - Adjusted SDE depends on $181.7k of add-backs (owner comp 96k, one-time equipment/decor 75,998, Dahlia laundry 9k, charity 657)",
+            "Owner dependence contradicts semi-absentee claim - owner does clinical work 20-25 hrs/wk",
+            "Regulatory/compliance exposure for medical services (injections, hormone programs, regenerative claims)",
+            "Gross margin ~99% with COGS only 8,764 on 960k revenue - substantively all costs sit in operating expenses",
+            "Single-location revenue concentration with seasonality"
+        ],
+        "falsePositiveFlags": [],
+        "missedFlags": [],
+        "expectedMathCheckStatus": "warning",
+        "mathCheckNotes": "Gross profit reconciles (960,117.77 - 8,764.55 = 951,353.22). Equity check not_available - balance sheet is all zeros. SDE bridge does not reconcile cleanly from reported EBITDA + stated add-backs (281,750.32 + 181,655 = 463,405, not 580,657) - flag for analyst review. Debt Service / DSCR cells are formulas, inputs are assumptions, not historical facts.",
+        "notes": "13-sheet macro-enabled template (Instructions, Company Overview, Income Statement, EBITDA Normalization, Balance Sheet, Working Capital, Deal Assumptions, Sources & Uses, Debt Capacity, Free Cash Flow, Returns & Scenarios, Risk Assessment, Submission Summary). Values extracted via openpyxl. Risk Assessment severities stored as Excel dates (2026-01-05..2026-03-05) in source cells - template artifact, treat severity as unset."
+    }
+}

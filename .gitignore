@@ -4,6 +4,8 @@ dist/
 .env.*
 .vercel
 .mcp.json
+.claude
+.agents
 .claude/settings.local.json
 .claude/settings.json
 *.log
@@ -12,3 +14,8 @@ settings-bedrock.json
 settings-vertex.json
 GEMINI.md
 /Pod 1 - Financial Due diligence Agent Sample Deals
+.ai
+.ai/mcp/mcp.json
+.kiro
+.kiro/settings/mcp.json
+
