@@ -276,6 +276,7 @@ const processingReachedStatuses = new Set([
     ...terminalBatchStatuses,
 ])
 const activeSynthesisStatuses = new Set(['queued', 'pending', 'processing', 'running', 'synthesis_pending', 'synthesizing'])
+const PENDING_EXAMPLE_MODE_SUBMISSION_KEY = 'mergeworks.pendingExampleModeSubmission'
 
 function parseIllustrativeFacts(raw: string) {
     try {
@@ -592,7 +593,7 @@ export default function DueDiligenceDashboard() {
             } else {
                 window.sessionStorage.removeItem('mergeworks.activeSubmissionBatch')
             }
-        } catch {}
+        } catch { }
     }, [activeSubmissionBatch])
     const [activeHistoryEnvironment, setActiveHistoryEnvironment] = useState<SubmitEnvironment>('production')
     const [currentTheme, setCurrentTheme] = useState(getStoredTheme)
@@ -619,6 +620,43 @@ export default function DueDiligenceDashboard() {
             { id: '1', type: 'info', title: 'Welcome to MergeWorks', description: 'Upload documents or switch to example data to explore.', timestamp: now, read: false },
         ]
     })
+
+    useEffect(() => {
+        if (isExampleMode || typeof window === 'undefined') return
+
+        let cancelled = false
+        const restorePendingExampleModeSubmission = async () => {
+            let pending: PendingExampleModeSubmission | null = null
+            try {
+                const stored = window.sessionStorage.getItem(PENDING_EXAMPLE_MODE_SUBMISSION_KEY)
+                pending = stored ? JSON.parse(stored) as PendingExampleModeSubmission : null
+            } catch {
+                pending = null
+            }
+            if (!pending) return
+
+            try {
+                setSelectedProjectKey(pending.selectedProjectKey || 'new')
+                setDealName(pending.dealName)
+                setAskingPrice(pending.askingPrice)
+                setProjectId(pending.projectId)
+                setProjectStage(pending.projectStage)
+                setDocumentType(pending.documentType)
+                setSubmissionNotes(pending.submissionNotes)
+                const restoredFiles = pending.files.map((file) => base64ToFile(file.base64, file.name, file.type || 'application/octet-stream'))
+                if (!cancelled) {
+                    setSelectedFiles(restoredFiles)
+                    window.sessionStorage.removeItem(PENDING_EXAMPLE_MODE_SUBMISSION_KEY)
+                    setBatchSubmissionMessage('Switched from Example to Live n8n automatically. Your selected files were restored — press Queue in production again to submit them live.')
+                }
+            } catch {
+                window.sessionStorage.removeItem(PENDING_EXAMPLE_MODE_SUBMISSION_KEY)
+            }
+        }
+
+        void restorePendingExampleModeSubmission()
+        return () => { cancelled = true }
+    }, [isExampleMode])
     const { data: sharedActionTracker, trigger: triggerProjectActionTracker } = useGetProjectActionTracker()
     const { trigger: saveProjectActionTracker } = useSaveProjectActionTracker()
     const activeProjectId = isExampleMode ? 'atlas-001' : projectId
@@ -1345,6 +1383,30 @@ export default function DueDiligenceDashboard() {
 
     const handleSubmit = async (environment: SubmitEnvironment) => {
         if (selectedFiles.length === 0) {
+            return
+        }
+
+        if (isExampleMode && environment === 'production') {
+            const pendingSubmission: PendingExampleModeSubmission = {
+                environment,
+                selectedProjectKey,
+                dealName,
+                askingPrice,
+                projectId,
+                projectStage,
+                documentType,
+                submissionNotes,
+                files: await Promise.all(selectedFiles.map(async (file) => ({
+                    name: file.name,
+                    size: file.size,
+                    type: file.type || 'application/octet-stream',
+                    base64: await readFileAsBase64(file),
+                }))),
+            }
+            try {
+                window.sessionStorage.setItem(PENDING_EXAMPLE_MODE_SUBMISSION_KEY, JSON.stringify(pendingSubmission))
+            } catch { }
+            setDataSource('live')
             return
         }
 

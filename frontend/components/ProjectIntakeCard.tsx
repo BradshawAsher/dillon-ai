@@ -261,6 +261,7 @@ export default function ProjectIntakeCard({
                             {disabled ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                             Queue in test
                         </Button>
+                        <p className="w-full text-xs text-muted-foreground sm:ml-auto sm:w-auto">If you press <strong>Queue in production</strong> while in Example mode, the app will switch you to <strong>Live n8n</strong> first and preserve your selected files.</p>
                     </div>
                 </div>
             </CardContent>
