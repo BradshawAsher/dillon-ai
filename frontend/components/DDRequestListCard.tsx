@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react'
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import { parseDocumentedFacts } from '../utils/evidence'
+import { copyToClipboard } from '../utils/clipboard'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Button } from '../lib/shadcn/button'
 import { Badge } from '../lib/shadcn/badge'
@@ -140,10 +141,11 @@ export default function DDRequestListCard({ model, synthesis, documents, project
         return lines.join('\n')
     }, [sortedRequests, projectName])
 
-    const handleCopy = useCallback(() => {
-        navigator.clipboard.writeText(buildText())
-        setCopied(true)
-        setTimeout(() => setCopied(false), 2000)
+    const handleCopy = useCallback(async () => {
+        if (await copyToClipboard(buildText())) {
+            setCopied(true)
+            setTimeout(() => setCopied(false), 2000)
+        }
     }, [buildText])
 
     if (sortedRequests.length === 0) return null
