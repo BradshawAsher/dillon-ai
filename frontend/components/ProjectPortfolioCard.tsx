@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import { BriefcaseBusiness, Clock3, Download, FileStack, Flag, FolderKanban, Plus, RefreshCw, Search, ShieldAlert } from 'lucide-react'
+import { Archive, ArchiveRestore, BriefcaseBusiness, Clock3, Download, FileStack, Flag, FolderKanban, Plus, RefreshCw, Search, ShieldAlert } from 'lucide-react'
 import ExpandableText from './ExpandableText'
 
 import { Badge } from '../lib/shadcn/badge'
@@ -12,10 +12,12 @@ import { cn } from '../lib/shadcn/utils'
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { downloadSynthesisReport } from './ProjectSynthesisCard'
 import {
+    archiveProjectKey,
     createProjectSummaries,
     formatProjectStage,
     getProjectKey,
     getProjectStatusVariant,
+    unarchiveProjectKey,
 } from '../utils/projectWorkspace'
 import { computeImpactMetrics, formatHours } from '../utils/impactMetrics'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
@@ -60,6 +62,9 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
     const [workstreamFilter, setWorkstreamFilter] = useState('all')
     const [statusFilter, setStatusFilter] = useState('all')
     const [riskFilter, setRiskFilter] = useState('all')
+    const [portfolioTab, setPortfolioTab] = useState<'active' | 'archived'>('active')
+    const [, setArchiveUpdateTick] = useState(0)
+
     const workstreams = [...new Set(rows.map((row) => row.workstream.trim()).filter(Boolean))].sort()
     const filteredRows = rows.filter((row) => {
         const status = row.status.trim().toLowerCase()
@@ -71,15 +76,21 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
             || (riskFilter === 'high' && /red|high/.test(risk))
         return workstreamMatches && statusMatches && riskMatches
     })
-    const projects = createProjectSummaries(filteredRows, null, syntheses)
-    const activeProjectCount = projects.filter((project) => project.activeCount > 0).length
-    const reviewProjectCount = projects.filter((project) => project.reviewCount > 0).length
-    const readyProjectCount = projects.filter((project) => project.statusLabel === 'Ready for synthesis').length
-    const totalDocuments = projects.reduce((sum, project) => sum + project.documentCount, 0)
+    const allProjects = createProjectSummaries(filteredRows, null, syntheses)
+
+    const activeProjects = allProjects.filter((project) => !project.isArchived)
+    const archivedProjects = allProjects.filter((project) => project.isArchived)
+    const targetProjects = portfolioTab === 'active' ? activeProjects : archivedProjects
+
+    const activeProjectCount = activeProjects.filter((project) => project.activeCount > 0).length
+    const reviewProjectCount = activeProjects.filter((project) => project.reviewCount > 0).length
+    const readyProjectCount = activeProjects.filter((project) => project.statusLabel === 'Ready for synthesis').length
+    const totalDocuments = activeProjects.reduce((sum, project) => sum + project.documentCount, 0)
     const normalizedProjectSearch = projectSearch.trim().toLowerCase()
+
     const visibleProjects = normalizedProjectSearch.length === 0
-        ? projects
-        : projects.filter((project) => {
+        ? targetProjects
+        : targetProjects.filter((project) => {
             const searchableProjectText = [
                 project.projectName,
                 project.projectId,
@@ -90,6 +101,16 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
 
             return searchableProjectText.includes(normalizedProjectSearch)
         })
+
+    const handleArchive = (projectKey: string) => {
+        archiveProjectKey(projectKey)
+        setArchiveUpdateTick((prev) => prev + 1)
+    }
+
+    const handleUnarchive = (projectKey: string) => {
+        unarchiveProjectKey(projectKey)
+        setArchiveUpdateTick((prev) => prev + 1)
+    }
 
     return (
         <Card className="overflow-hidden">
@@ -114,23 +135,46 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                         </label>
                     </div>
                 </div>
+
+                <div className="mt-4 flex items-center gap-2 border-t border-border/60 pt-3">
+                    <Button
+                        type="button"
+                        variant={portfolioTab === 'active' ? 'default' : 'ghost'}
+                        size="sm"
+                        onClick={() => setPortfolioTab('active')}
+                        className="gap-2"
+                    >
+                        <FolderKanban className="h-4 w-4" />
+                        Active Projects ({activeProjects.length})
+                    </Button>
+                    <Button
+                        type="button"
+                        variant={portfolioTab === 'archived' ? 'default' : 'ghost'}
+                        size="sm"
+                        onClick={() => setPortfolioTab('archived')}
+                        className="gap-2 text-muted-foreground hover:text-foreground"
+                    >
+                        <Archive className="h-4 w-4" />
+                        Archived Projects ({archivedProjects.length})
+                    </Button>
+                </div>
             </CardHeader>
 
             <CardContent className="space-y-4 p-4">
                 <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                    <SummaryMetric label="Projects" value={projects.length} icon={FolderKanban} />
+                    <SummaryMetric label="Active Projects" value={activeProjects.length} icon={FolderKanban} />
                     <SummaryMetric label="Documents" value={totalDocuments} icon={FileStack} />
-                    <SummaryMetric label="Active projects" value={activeProjectCount} icon={Clock3} />
+                    <SummaryMetric label="In progress" value={activeProjectCount} icon={Clock3} />
                     <SummaryMetric label="Needs review" value={reviewProjectCount} icon={ShieldAlert} />
                 </div>
 
-                {projects.length > 0 ? (
+                {targetProjects.length > 0 ? (
                     <div className="relative">
                         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             value={projectSearch}
                             onChange={(event) => setProjectSearch(event.target.value)}
-                            placeholder="Search projects, IDs, stages, or document names"
+                            placeholder={portfolioTab === 'active' ? 'Search active projects, IDs, stages, or document names' : 'Search archived projects...'}
                             className="pl-9"
                             aria-label="Search project portfolio"
                         />
@@ -145,9 +189,11 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                     </div>
                 ) : null}
 
-                {projects.length === 0 ? (
+                {targetProjects.length === 0 ? (
                     <div className="rounded-lg border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
-                        No projects inferred yet. Once uploads include a project ID or stable deal/company naming, this portfolio view will group them automatically.
+                        {portfolioTab === 'active'
+                            ? 'No active projects found. Once uploads are submitted or unarchived, they will appear here.'
+                            : 'No archived projects yet. You can archive failed or completed projects anytime to keep your active workspace clean.'}
                     </div>
                 ) : visibleProjects.length === 0 ? (
                     <div className="rounded-lg border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
@@ -160,8 +206,6 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                                 const projectImpact = computeImpactMetrics(rows.filter((row) => row.isConsidered && getProjectKey(row) === project.projectKey))
                                 const missingCoverage = project.coverage.filter((item) => !item.matched)
                                 const hasStoppedDocuments = rows.some((row) => getProjectKey(row) === project.projectKey && row.status.trim().toLowerCase() === 'stopped')
-                                // project.documents is sorted latest-first, so keeping the first
-                                // occurrence of each file name keeps the freshest upload.
                                 const visibleDocuments = hideDuplicateDocs
                                     ? project.documents.filter((document, index, all) => {
                                         const normalizedName = document.fileName.trim().toLowerCase()
@@ -190,6 +234,7 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                                         className={cn(
                                             'rounded-xl border bg-background p-4 transition-colors',
                                             project.projectKey === activeProjectKey ? 'border-primary ring-1 ring-primary/20' : 'border-border',
+                                            project.isFailedAbandoned ? 'bg-destructive/5 border-destructive/30' : ''
                                         )}
                                     >
                                         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -215,7 +260,32 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                                             </div>
 
                                             <div className="flex flex-wrap gap-2">
-                                                {onAddDocuments && (
+                                                {portfolioTab === 'active' ? (
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        size="sm"
+                                                        className={project.isFailedAbandoned ? 'border-destructive/40 text-destructive hover:bg-destructive/10' : 'text-muted-foreground hover:text-foreground'}
+                                                        onClick={() => handleArchive(project.projectKey)}
+                                                        title={project.isFailedAbandoned ? 'Archive failed project to clean up active workspace' : 'Archive project'}
+                                                    >
+                                                        <Archive className="h-3.5 w-3.5 mr-1" />
+                                                        {project.isFailedAbandoned ? 'Archive Failed Project' : 'Archive'}
+                                                    </Button>
+                                                ) : (
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        size="sm"
+                                                        className="text-primary border-primary/30 hover:bg-primary/10"
+                                                        onClick={() => handleUnarchive(project.projectKey)}
+                                                    >
+                                                        <ArchiveRestore className="h-3.5 w-3.5 mr-1" />
+                                                        Unarchive
+                                                    </Button>
+                                                )}
+
+                                                {onAddDocuments && portfolioTab === 'active' && (
                                                     <Button
                                                         type="button"
                                                         variant="outline"
@@ -414,7 +484,7 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                     </div>
                 )}
 
-                {readyProjectCount > 0 ? (
+                {readyProjectCount > 0 && portfolioTab === 'active' ? (
                     <div className="rounded-lg border border-success/30 bg-success/10 px-4 py-3 text-sm text-foreground">
                         {readyProjectCount} project{readyProjectCount === 1 ? '' : 's'} appear ready for a second-pass synthesis workflow that reconciles all uploaded materials into one acquisition judgment.
                     </div>
