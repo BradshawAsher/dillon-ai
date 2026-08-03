@@ -6,6 +6,7 @@ import {
     FileSearch,
     FolderKanban,
     Key,
+    Keyboard,
     Loader2,
     Moon,
     Plus,
@@ -480,6 +481,7 @@ function formatElapsedDuration(seconds: number) {
 
 export default function DueDiligenceDashboard() {
     const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false)
+    const [isShortcutsOpen, setIsShortcutsOpen] = useState(false)
     const [isLeftQuickDockVisible, setIsLeftQuickDockVisible] = useState(true)
     const { data: diligenceData, loading: _loading, error, trigger } = useGetDiligenceData()
     const {
@@ -3194,7 +3196,17 @@ export default function DueDiligenceDashboard() {
                             <Key className="h-3.5 w-3.5" />
                             <span className="sr-only">API Key</span>
                         </Button>
-                        <KeyboardShortcutsDialog />
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                            onClick={() => setIsShortcutsOpen(true)}
+                            title="Keyboard shortcuts (?)"
+                        >
+                            <Keyboard className="h-3.5 w-3.5" />
+                            <span className="sr-only">Keyboard shortcuts</span>
+                        </Button>
                         <Button
                             type="button"
                             variant="ghost"
@@ -3265,6 +3277,7 @@ export default function DueDiligenceDashboard() {
                 />
             </Suspense>
             <ApiKeyModal open={isApiKeyModalOpen} onOpenChange={setIsApiKeyModalOpen} />
+            <KeyboardShortcutsDialog open={isShortcutsOpen} onOpenChange={setIsShortcutsOpen} showTrigger={false} />
         </div>
     )
 }
