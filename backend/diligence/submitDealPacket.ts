@@ -33,9 +33,11 @@ export default async function submitDealPacket(req: { params: Params; user: User
     user: req.user,
   })
   const existingDocument = priorSubmissions.find((submission) => {
-    return submission.projectId.trim().toLowerCase() === normalizedProjectId
+    const isSameFile = submission.projectId.trim().toLowerCase() === normalizedProjectId
       && submission.fileName.trim().toLowerCase() === normalizedFileName
       && submission.fileSize === req.params.fileSize
+    const isFinished = submission.status.trim().toLowerCase() === 'completed'
+    return isSameFile && isFinished
   })
 
   if (existingDocument) {

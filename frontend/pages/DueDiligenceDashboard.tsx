@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import {
+    Activity,
     AlertCircle,
     ArrowUpRight,
     Clock3,
@@ -108,6 +109,7 @@ import DealActionItemsCard from '../components/DealActionItemsCard'
 import ConfidenceMeterCard from '../components/ConfidenceMeterCard'
 import QuickValuationCard from '../components/QuickValuationCard'
 import DealRadarCard from '../components/DealRadarCard'
+import { BatchProcessingSidePanel } from '../components/BatchProcessingSidePanel'
 import FinancialHealthCard from '../components/FinancialHealthCard'
 import WhatsMissingCard from '../components/WhatsMissingCard'
 const DealQuickInsights = lazy(() => import('../components/DealQuickInsights'))
@@ -610,13 +612,25 @@ export default function DueDiligenceDashboard() {
             return stored || 'new'
         } catch { return 'new' }
     })
+    const [isBatchDrawerOpen, setIsBatchDrawerOpen] = useState(false)
     useEffect(() => {
         try {
-            if (selectedProjectKey && selectedProjectKey !== 'new') {
+            if (selectedProjectKey) {
                 window.localStorage.setItem('mergeworks.selectedProjectKey', selectedProjectKey)
             }
         } catch { }
     }, [selectedProjectKey])
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.ctrlKey && e.shiftKey && (e.key === 'B' || e.key === 'b')) {
+                e.preventDefault()
+                setIsBatchDrawerOpen((prev) => !prev)
+            }
+        }
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [])
     const [submissionNotes, setSubmissionNotes] = useState('')
     const [isSubmittingFile, setIsSubmittingFile] = useState(false)
     const [batchSubmissionMessage, setBatchSubmissionMessage] = useState('')
@@ -891,6 +905,12 @@ export default function DueDiligenceDashboard() {
         }
 
         const storedKey = typeof window !== 'undefined' ? window.localStorage.getItem('mergeworks.selectedProjectKey') : null
+        if (storedKey === 'new') {
+            setSelectedProjectKey('new')
+            setHasRestoredLatestProject(true)
+            return
+        }
+
         const storedProject = storedKey ? projectSummaries.find((p) => (p.projectKey === storedKey || p.projectId === storedKey) && p.documents.length > 0) : null
         const completedProject = projectSummaries.find((project) => project.completedCount > 0 || (project.documents && project.documents.length > 0 && project.statusLabel !== 'Processing batch...'))
         const targetProject = storedProject || completedProject || projectSummaries[0]
@@ -1211,7 +1231,6 @@ export default function DueDiligenceDashboard() {
         const status = row.status.trim().toLowerCase()
         return terminalBatchStatuses.has(status)
             || Boolean(row.processedAt?.trim() || row.extractedJson?.trim())
-            || activeProjectSynthesisSucceeded
     }).length
 
     const activeBatchProcessingCount = Math.min(
@@ -3212,6 +3231,26 @@ export default function DueDiligenceDashboard() {
                     </div>
                 ) : null}
             </main>
+            {/* ── Fixed Left Edge 3-Line Menu Bar Button for Batch Activity Drawer ── */}
+            <button
+                type="button"
+                onClick={() => setIsBatchDrawerOpen(true)}
+                className={`fixed left-0 top-1/3 z-40 flex items-center gap-2.5 rounded-r-xl border border-l-0 border-border/80 bg-background/90 px-3 py-2.5 shadow-xl backdrop-blur-md transition-all duration-200 hover:bg-muted hover:pr-4 group ${
+                    hasActiveSubmissions || inFlightBatchPlaceholder ? 'border-primary/60 text-primary animate-pulse' : 'text-muted-foreground hover:text-foreground'
+                }`}
+                title="Open Batch Processing Activity (Ctrl+Shift+B)"
+                aria-label="Open batch processing drawer"
+            >
+                <div className="flex flex-col gap-1 w-4">
+                    <span className="h-0.5 w-full bg-current rounded-full transition-transform group-hover:scale-x-110" />
+                    <span className="h-0.5 w-full bg-current rounded-full transition-transform group-hover:scale-x-110" />
+                    <span className="h-0.5 w-full bg-current rounded-full transition-transform group-hover:scale-x-110" />
+                </div>
+                <span className="text-xs font-bold tracking-tight hidden sm:inline">
+                    {hasActiveSubmissions || inFlightBatchPlaceholder ? 'Batch Running…' : 'Activity'}
+                </span>
+            </button>
+
             {/* ── Fixed Bottom-Left Quick Action Toolbar with Dismiss (X) & Reopen Toggle ── */}
             <aside
                 aria-label="Quick Actions"
@@ -3232,6 +3271,17 @@ export default function DueDiligenceDashboard() {
                         >
                             <Key className="h-3.5 w-3.5" />
                             <span className="sr-only">API Key</span>
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className={`h-8 w-8 rounded-full transition-colors ${hasActiveSubmissions || inFlightBatchPlaceholder ? 'text-primary animate-pulse bg-primary/10' : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'}`}
+                            onClick={() => setIsBatchDrawerOpen(true)}
+                            title="Batch processing activity (Ctrl+Shift+B)"
+                        >
+                            <Activity className="h-3.5 w-3.5" />
+                            <span className="sr-only">Batch activity</span>
                         </Button>
                         <Button
                             type="button"
@@ -3282,6 +3332,25 @@ export default function DueDiligenceDashboard() {
                     handleCreateProject()
                     document.querySelector('[data-project-intake]')?.scrollIntoView({ behavior: 'smooth' })
                 }}
+            />
+            <BatchProcessingSidePanel
+                isOpen={isBatchDrawerOpen}
+                onClose={() => setIsBatchDrawerOpen(false)}
+                inFlightBatch={inFlightBatchPlaceholder}
+                activeBatchRows={activeBatchRows}
+                batchProgressPercent={activeBatchProgressPercent}
+                batchProcessingCount={activeBatchProcessingCount}
+                batchExpectedCount={activeBatchExpectedCount}
+                batchFinishedCount={activeBatchFinishedCount}
+                batchFailedCount={activeBatchFailedCount}
+                batchElapsedSeconds={batchElapsedSeconds}
+                batchSubmissionMessage={batchSubmissionMessage}
+                isStoppingBatch={isStoppingBatch}
+                onStopBatch={() => { void handleStopBatch() }}
+                onRetryDocument={(requestID) => { void handleRetryFailedDocument(requestID) }}
+                onRequeueNewProject={handleRequeueNewProject}
+                retryingRequestId={retryingRequestId}
+                submissionHistory={submissionHistory}
             />
             <Suspense fallback={null}>
                 <DealChatPanel
