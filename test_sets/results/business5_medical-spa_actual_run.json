@@ -1,0 +1,76 @@
+{
+  "business": "Business 5 - Medical Spa (Renew Health Center)",
+  "projectId": "project-20260803-539882f7",
+  "evaluatedAt": "2026-08-03T03:51:33.606Z",
+  "documents": [
+    {
+      "fileName": "_RENEW HEALTH CENTER - FULL YEAR COMPARATIVE P&L (2024-2025).pdf",
+      "fileType": "PDF",
+      "status": "completed",
+      "detectedDocumentType": "Profit and Loss Statement",
+      "detectedDocumentTypes": ["Profit and Loss Statement"],
+      "trafficLight": "YELLOW",
+      "riskLevel": "MEDIUM",
+      "intent": "Extract and validate financial performance data from a comparative P&L statement for Renew Health Center LLC covering full years 2024 and 2025.",
+      "financialFacts": [
+        { "metric": "revenue", "normalizedValue": 960117.77, "period": "Jan - Dec 2025", "rawValue": "960,117.77", "confidence": 1.0 },
+        { "metric": "revenue", "normalizedValue": 550041.54, "period": "Jan - Dec 2024", "rawValue": "550,041.54", "confidence": 1.0 },
+        { "metric": "cogs", "normalizedValue": 8764.55, "period": "Jan - Dec 2025", "rawValue": "8,764.55", "confidence": 1.0 },
+        { "metric": "cogs", "normalizedValue": 8079.98, "period": "Jan - Dec 2024", "rawValue": "8,079.98", "confidence": 1.0 },
+        { "metric": "gross_profit", "normalizedValue": 951353.22, "period": "Jan - Dec 2025", "rawValue": "951,353.22", "confidence": 1.0 },
+        { "metric": "gross_profit", "normalizedValue": 541961.56, "period": "Jan - Dec 2024", "rawValue": "541,961.56", "confidence": 1.0 },
+        { "metric": "net_income", "normalizedValue": 279841.18, "period": "Jan - Dec 2025", "rawValue": "279,841.18", "confidence": 1.0 },
+        { "metric": "net_income", "normalizedValue": 86690.10, "period": "Jan - Dec 2024", "rawValue": "86,690.10", "confidence": 1.0 }
+      ],
+      "redFlags": [
+        "Salaries & wages expense jumped 308% YoY ($48,470 to $198,422), with Ryan's Salary newly appearing at $76,500 in 2025",
+        "Payroll Expenses increased from $5,840 to $40,111 (587% increase)",
+        "Cash basis accounting may obscure accrual-basis liabilities, receivables, and working capital health"
+      ],
+      "yellowFlags": [
+        "Operating expense growth (47.5%) significantly outpaced revenue growth (74.5%)",
+        "Bank service charges doubled YoY ($10,528 to $18,236)",
+        "No detail provided on medical income composition"
+      ],
+      "valuation": null,
+      "employeeEvidence": null,
+      "mathCheckStatus": "passed"
+    },
+    {
+      "fileName": "Financial Modelling Renew Health .xlsm",
+      "fileType": "XLSM",
+      "status": "completed",
+      "detectedDocumentType": "Financial Model",
+      "detectedDocumentTypes": ["Financial Model", "Profit and Loss Statement", "EBITDA Normalization", "Valuation Model"],
+      "trafficLight": "RED",
+      "riskLevel": "HIGH",
+      "intent": "M&A financial due-diligence analysis of Renew Health Center using a completed financial modeling template.",
+      "financialFacts": [
+        { "metric": "revenue", "normalizedValue": 960117.77, "period": "LTM 2025", "rawValue": "960,117.77", "confidence": 1.0 },
+        { "metric": "revenue", "normalizedValue": 550041.54, "period": "FY2024", "rawValue": "550,041.54", "confidence": 1.0 },
+        { "metric": "cogs", "normalizedValue": 8764.55, "period": "LTM 2025", "rawValue": "8,764.55", "confidence": 1.0 },
+        { "metric": "cogs", "normalizedValue": 8079.98, "period": "FY2024", "rawValue": "8,079.98", "confidence": 1.0 },
+        { "metric": "adjusted_ebitda_sde", "normalizedValue": 463405.00, "period": "LTM 2025", "rawValue": "463,405.00", "confidence": 0.95 }
+      ],
+      "valuation": {
+        "lower_bound": 2085324,
+        "base_estimate": 2085324,
+        "upper_bound": 2661460,
+        "currency": "USD"
+      },
+      "redFlags": [
+        "Negative IRR in both flat-case (-93.5%) and growth-case (-92.7%) scenarios",
+        "Adjusted EBITDA add-backs represent 64.5% of reported EBITDA (LTM)",
+        "Owner dependence (20–25 hours/week, performs clinical work) creates key-person risk",
+        "Regulatory/compliance concerns explicitly flagged: FDA warnings regarding regenerative medicine products",
+        "Complete balance sheet is missing (all assets, liabilities, equity blank for all periods)"
+      ],
+      "yellowFlags": [
+        "Flat-case MOIC of 1.00x combined with 1.48x DSCR leaves minimal margin for operational variance",
+        "Purchase price of $2.09M at 4.5x entry multiple assumes no multiple compression"
+      ],
+      "employeeEvidence": null,
+      "mathCheckStatus": "warning"
+    }
+  ]
+}
