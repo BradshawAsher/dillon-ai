@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
-import { FolderKanban, Search, X, Plus, Download, CheckCircle2, Clock3, AlertTriangle, ArrowRight } from 'lucide-react'
+import { FolderKanban, Search, X, Plus, Download, ArrowRight, Archive, ArchiveRestore } from 'lucide-react'
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
 import { Input } from '../lib/shadcn/input'
 import type { ProjectSummary } from '../utils/projectWorkspace'
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { downloadSynthesisReport } from './ProjectSynthesisCard'
-import { getProjectStatusVariant } from '../utils/projectWorkspace'
+import { archiveProjectKey, getProjectStatusVariant, unarchiveProjectKey } from '../utils/projectWorkspace'
 
 interface ProjectsSidePanelProps {
     isOpen: boolean
@@ -28,6 +28,8 @@ export function ProjectsSidePanel({
     onOpenIntake,
 }: ProjectsSidePanelProps) {
     const [searchTerm, setSearchTerm] = useState('')
+    const [showArchived, setShowArchived] = useState(false)
+    const [, setUpdateTick] = useState(0)
 
     // Close panel on Escape key
     useEffect(() => {
@@ -42,7 +44,11 @@ export function ProjectsSidePanel({
 
     if (!isOpen) return null
 
-    const filteredProjects = projects.filter((project) => {
+    const activeProjects = projects.filter((project) => !project.isArchived)
+    const archivedProjects = projects.filter((project) => project.isArchived)
+    const currentProjects = showArchived ? archivedProjects : activeProjects
+
+    const filteredProjects = currentProjects.filter((project) => {
         const query = searchTerm.trim().toLowerCase()
         if (!query) return true
         return (
@@ -91,7 +97,7 @@ export function ProjectsSidePanel({
                         <div>
                             <h2 className="text-lg font-bold text-foreground">Project Portfolio</h2>
                             <p className="text-xs text-muted-foreground">
-                                Quick switcher ({projects.length} project{projects.length === 1 ? '' : 's'})
+                                {showArchived ? `Archived (${archivedProjects.length})` : `Active (${activeProjects.length})`}
                             </p>
                         </div>
                     </div>
@@ -107,26 +113,39 @@ export function ProjectsSidePanel({
                     </Button>
                 </div>
 
-                {/* Quick Action & Search */}
+                {/* Quick Action, View Switcher & Search */}
                 <div className="space-y-3 border-b border-border bg-muted/20 p-4">
-                    <Button
-                        type="button"
-                        onClick={() => {
-                            onOpenIntake()
-                            onClose()
-                        }}
-                        className="w-full gap-2 font-semibold shadow-xs"
-                    >
-                        <Plus className="h-4 w-4" />
-                        Queue new project intake
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            type="button"
+                            onClick={() => {
+                                onOpenIntake()
+                                onClose()
+                            }}
+                            className="flex-1 gap-2 font-semibold shadow-xs"
+                        >
+                            <Plus className="h-4 w-4" />
+                            New project intake
+                        </Button>
+                        <Button
+                            type="button"
+                            variant={showArchived ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setShowArchived(!showArchived)}
+                            className="gap-1.5"
+                            title={showArchived ? 'View active projects' : 'View archived projects'}
+                        >
+                            <Archive className="h-3.5 w-3.5" />
+                            {showArchived ? 'Active' : `Archived (${archivedProjects.length})`}
+                        </Button>
+                    </div>
 
                     <div className="relative">
                         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            placeholder="Search by project name, ID, or company..."
+                            placeholder={showArchived ? 'Search archived projects...' : 'Search by project name, ID, or company...'}
                             className="pl-9 text-sm"
                             aria-label="Search projects in side panel"
                         />
@@ -137,7 +156,9 @@ export function ProjectsSidePanel({
                 <div className="flex-1 overflow-y-auto p-4 space-y-3">
                     {filteredProjects.length === 0 ? (
                         <div className="rounded-xl border border-dashed border-border bg-muted/10 p-8 text-center">
-                            <p className="text-sm font-medium text-muted-foreground">No matching projects found</p>
+                            <p className="text-sm font-medium text-muted-foreground">
+                                {showArchived ? 'No archived projects found' : 'No matching active projects found'}
+                            </p>
                         </div>
                     ) : (
                         filteredProjects.map((project) => {
@@ -170,6 +191,11 @@ export function ProjectsSidePanel({
                                                         Active
                                                     </Badge>
                                                 )}
+                                                {project.isFailedAbandoned && (
+                                                    <Badge variant="destructive" className="text-[10px] px-1.5 py-0 h-4">
+                                                        Failed
+                                                    </Badge>
+                                                )}
                                             </div>
                                             <p className="text-xs text-muted-foreground truncate">{project.companyName}</p>
                                         </div>
@@ -199,24 +225,57 @@ export function ProjectsSidePanel({
                                     {/* Footer details */}
                                     <div className="mt-3 flex items-center justify-between border-t border-border/40 pt-2.5 text-xs text-muted-foreground">
                                         <span>{project.documentCount} doc{project.documentCount === 1 ? '' : 's'}</span>
-                                        {project.latestActivity && (
-                                            <span className="truncate max-w-[150px]">{project.latestActivity}</span>
-                                        )}
-                                        {synthesis ? (
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-6 px-2 text-[11px] text-primary hover:bg-primary/10"
-                                                onClick={(e) => {
-                                                    e.stopPropagation()
-                                                    downloadSynthesisReport(synthesis, project.projectName)
-                                                }}
-                                            >
-                                                <Download className="mr-1 h-3 w-3" />
-                                                Report
-                                            </Button>
-                                        ) : null}
+                                        <div className="flex items-center gap-1.5">
+                                            {!showArchived ? (
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-6 px-2 text-[11px] text-muted-foreground hover:text-foreground"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        archiveProjectKey(project.projectKey)
+                                                        setUpdateTick((c) => c + 1)
+                                                    }}
+                                                    title="Archive project"
+                                                >
+                                                    <Archive className="mr-1 h-3 w-3" />
+                                                    Archive
+                                                </Button>
+                                            ) : (
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-6 px-2 text-[11px] text-primary hover:bg-primary/10"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        unarchiveProjectKey(project.projectKey)
+                                                        setUpdateTick((c) => c + 1)
+                                                    }}
+                                                    title="Unarchive project"
+                                                >
+                                                    <ArchiveRestore className="mr-1 h-3 w-3" />
+                                                    Restore
+                                                </Button>
+                                            )}
+
+                                            {synthesis ? (
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-6 px-2 text-[11px] text-primary hover:bg-primary/10"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        downloadSynthesisReport(synthesis, project.projectName)
+                                                    }}
+                                                >
+                                                    <Download className="mr-1 h-3 w-3" />
+                                                    Report
+                                                </Button>
+                                            ) : null}
+                                        </div>
                                     </div>
                                 </div>
                             )

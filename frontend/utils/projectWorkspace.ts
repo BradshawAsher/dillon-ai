@@ -5,6 +5,37 @@ import {
     type SubmissionHistoryItem,
 } from './submissionHistory'
 
+export const CUSTOM_ARCHIVED_PROJECTS_STORAGE = 'mergeworks_archived_projects'
+
+export function getArchivedProjectKeys(): string[] {
+    if (typeof window === 'undefined') return []
+    try {
+        const raw = localStorage.getItem(CUSTOM_ARCHIVED_PROJECTS_STORAGE)
+        return raw ? (JSON.parse(raw) as string[]) : []
+    } catch {
+        return []
+    }
+}
+
+export function archiveProjectKey(key: string): void {
+    if (typeof window === 'undefined' || !key) return
+    const keys = new Set(getArchivedProjectKeys())
+    keys.add(key)
+    localStorage.setItem(CUSTOM_ARCHIVED_PROJECTS_STORAGE, JSON.stringify([...keys]))
+}
+
+export function unarchiveProjectKey(key: string): void {
+    if (typeof window === 'undefined' || !key) return
+    const keys = new Set(getArchivedProjectKeys())
+    keys.delete(key)
+    localStorage.setItem(CUSTOM_ARCHIVED_PROJECTS_STORAGE, JSON.stringify([...keys]))
+}
+
+export function isProjectArchivedKey(key: string): boolean {
+    if (typeof window === 'undefined' || !key) return false
+    return getArchivedProjectKeys().includes(key)
+}
+
 type ProjectCoverageItem = {
     label: string
     count: number
@@ -45,6 +76,8 @@ export type ProjectSummary = {
     coverage: ProjectCoverageItem[]
     recommendation: string
     statusLabel: string
+    isFailedAbandoned: boolean
+    isArchived: boolean
     synthesisFields: ProjectSynthesisField[]
     employeeCount: number | null
     employeeType: string
@@ -213,7 +246,12 @@ function getStatusLabel(args: {
     completedCount: number
     documentCount: number
     hasSynthesis?: boolean
+    isFailedAbandoned?: boolean
 }) {
+    if (args.isFailedAbandoned) {
+        return 'Failed / Abandoned'
+    }
+
     if (args.activeCount > 0) {
         return 'In progress'
     }
@@ -301,7 +339,7 @@ export function getProjectStatusVariant(statusLabel: string): 'success' | 'warni
         return 'success'
     }
 
-    if (normalized === 'needs triage') {
+    if (normalized === 'needs triage' || normalized === 'failed / abandoned') {
         return 'destructive'
     }
 
@@ -317,6 +355,7 @@ export function createProjectSummaries(
     inFlightBatch?: { projectId: string; dealName?: string; projectStage?: string; expectedDocumentCount?: number } | null,
     syntheses?: Array<{ projectId: string; projectProcessedAt?: string; projectStatus?: string }>
 ): ProjectSummary[] {
+    const archivedKeys = new Set(getArchivedProjectKeys())
     const rowsByProject = new Map<string, SubmissionHistoryItem[]>()
 
     rows.forEach((row) => {
@@ -339,6 +378,7 @@ export function createProjectSummaries(
     }
 
     const summaries = [...rowsByProject.entries()].map(([projectKey, projectRows]) => {
+        const isArchived = archivedKeys.has(projectKey)
         const sortedRows = [...projectRows].sort((left, right) => {
             return getTimestampValue(getDisplayTimestamp(right)) - getTimestampValue(getDisplayTimestamp(left))
         })
@@ -367,6 +407,8 @@ export function createProjectSummaries(
                     coverage: buildCoverage([]),
                     recommendation: 'In progress — batch processing is underway.',
                     statusLabel: 'Processing batch...',
+                    isFailedAbandoned: false,
+                    isArchived,
                     synthesisFields: [],
                     employeeCount: null,
                     employeeType: '',
@@ -390,6 +432,7 @@ export function createProjectSummaries(
         const reviewCount = consideredRows.filter((row) => row.needsHumanReview).length
         const redRiskCount = consideredRows.filter((row) => normalizeText(row.trafficLight) === 'red').length
         const highRiskCount = consideredRows.filter((row) => normalizeText(row.riskLevel) === 'high').length
+        const isFailedAbandoned = completedCount === 0 && activeCount === 0 && failedCount > 0
         const coverage = buildCoverage(documentTypes)
         const documents = sortedRows.map((row) => ({
             fileName: row.fileName || 'Unnamed document',
@@ -449,7 +492,10 @@ export function createProjectSummaries(
                 completedCount,
                 documentCount: consideredRows.length,
                 hasSynthesis,
+                isFailedAbandoned,
             }),
+            isFailedAbandoned,
+            isArchived,
             synthesisFields,
             employeeCount: employeeEvidence?.employeeCount ?? null,
             employeeType: employeeEvidence?.employeeType ?? '',
