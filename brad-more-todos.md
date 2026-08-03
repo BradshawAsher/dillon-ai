@@ -115,12 +115,14 @@ Can we add a stop button to the batch submission as well as to the synthesis if 
 
 [Done?] For some reason the batch processing is out of sync and doesnt show that it works even though the synthesis worked?
 
-So i just uploaded a batch of 2 docs for a new project and then i wanted to take a look at an old project while that was working and then now i dont know how in the ui to go to the new project is it possible we can fix this by first adding a placeholder for this in the projects panel so that i can go back to the current batch that is processing
+[Done?] So i just uploaded a batch of 2 docs for a new project and then i wanted to take a look at an old project while that was working and then now i dont know how in the ui to go to the new project is it possible we can fix this by first adding a placeholder for this in the projects panel so that i can go back to the current batch that is processing
 
-[] Can we reduce the duplication in overview tab since the very top memo has lots of duplicate with the deal overview, can we reduce duplication between the two? Maybe for the recommendation for the lower down deal overview, remove the 2 bullet points/key assessment details? Or maybe should we just make a new tab for this or what? How to reduce duplication since overview and synthesis tab say similar things?
+[Done?] Can we reduce the duplication in overview tab since the very top memo has lots of duplicate with the deal overview, can we reduce duplication between the two? Maybe for the recommendation for the lower down deal overview, remove the 2 bullet points/key assessment details? Or maybe should we just make a new tab for this or what? How to reduce duplication since overview and synthesis tab say similar things?
 
-Maybe we should add projects as a separate side panel as well as its own tab so the user can look at them while multitasking with the rest of the site and stuff like that?
+[Done?] Maybe we should add projects as a separate side panel as well as its own tab so the user can look at them while multitasking with the rest of the site and stuff like that?
 
+
+Need to work on this part next ,,,
 so my job for this week is to finish evaluating a test case set in pod 1- financial due diligence agent sample deals which are real past sample deals and claude made a test case plan in test-case-plan.md and there are ground truth for project 5 in test sets -> ground truth (not sure how ground truth they really are), but are you able to compare the results with the run i just did with the ground truth and see how my agent did, and how are we supposed to set up the automated scoring? In fact, I'm supposed to do these things by the end of the week Eval harness shipped · 20-input golden dataset + automated scoring	+30	
 0
 Bonus · eval runs on every deployment (regression check)	+10	
