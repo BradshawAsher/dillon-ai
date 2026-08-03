@@ -16,132 +16,148 @@ import { installRetoolGlobals, readJsonBody, userFromHeaders } from './retoolRun
 // Pick up N8N_WEBHOOK_SECRET etc. from frontend/.env in dev mode, matching
 // the standalone server's behavior.
 try {
-  process.loadEnvFile()
+    process.loadEnvFile()
 } catch {
-  // no .env file — env vars may still come from the shell
+    // no .env file — env vars may still come from the shell
 }
 
 function backendModuleUrl(fileName: string) {
-  const frontendDir = path.dirname(fileURLToPath(import.meta.url))
-  const absolutePath = path.resolve(frontendDir, '../backend/diligence', fileName)
-  return '/@fs/' + absolutePath.replace(/\\/g, '/')
+    const frontendDir = path.dirname(fileURLToPath(import.meta.url))
+    const absolutePath = path.resolve(frontendDir, '../backend/diligence', fileName)
+    return '/@fs/' + absolutePath.replace(/\\/g, '/')
 }
 
 async function handleRequest(
-  server: ViteDevServer,
-  req: Connect.IncomingMessage,
-  res: import('node:http').ServerResponse
+    server: ViteDevServer,
+    req: Connect.IncomingMessage,
+    res: import('node:http').ServerResponse
 ) {
-  const requestUrl = new URL(req.url ?? '/', 'http://localhost')
-  const route = requestUrl.pathname
-  const user = userFromHeaders(req.headers)
+    const requestUrl = new URL(req.url ?? '/', 'http://localhost')
+    const route = requestUrl.pathname
+    const user = userFromHeaders(req.headers)
 
-  if (route === '/history' && req.method === 'GET') {
-    const environment = requestUrl.searchParams.get('environment') === 'test' ? 'test' : 'production'
-    const mod = await server.ssrLoadModule(backendModuleUrl('getSubmissionHistory.ts'))
-    const rows: unknown = await mod.default({ params: { environment }, user })
-    res.setHeader('Content-Type', 'application/json')
-    res.end(JSON.stringify(rows))
-    return
-  }
+    if (route === '/history' && req.method === 'GET') {
+        const environment = requestUrl.searchParams.get('environment') === 'test' ? 'test' : 'production'
+        const mod = await server.ssrLoadModule(backendModuleUrl('getSubmissionHistory.ts'))
+        const rows: unknown = await mod.default({ params: { environment }, user })
+        res.setHeader('Content-Type', 'application/json')
+        res.end(JSON.stringify(rows))
+        return
+    }
 
-  if (route === '/synthesis' && req.method === 'GET') {
-    const environment = requestUrl.searchParams.get('environment') === 'test' ? 'test' : 'production'
-    const mod = await server.ssrLoadModule(backendModuleUrl('getProjectSynthesis.ts'))
-    const rows: unknown = await mod.default({ params: { environment }, user })
-    res.setHeader('Content-Type', 'application/json')
-    res.end(JSON.stringify(rows))
-    return
-  }
+    if (route === '/synthesis' && req.method === 'GET') {
+        const environment = requestUrl.searchParams.get('environment') === 'test' ? 'test' : 'production'
+        const mod = await server.ssrLoadModule(backendModuleUrl('getProjectSynthesis.ts'))
+        const rows: unknown = await mod.default({ params: { environment }, user })
+        res.setHeader('Content-Type', 'application/json')
+        res.end(JSON.stringify(rows))
+        return
+    }
 
-  if (route === '/submit' && req.method === 'POST') {
-    const params = await readJsonBody(req)
-    const mod = await server.ssrLoadModule(backendModuleUrl('submitDealPacket.ts'))
-    const ack: unknown = await mod.default({ params, user })
-    res.setHeader('Content-Type', 'application/json')
-    res.end(JSON.stringify(ack))
-    return
-  }
+    if (route === '/submit' && req.method === 'POST') {
+        const params = await readJsonBody(req)
+        const mod = await server.ssrLoadModule(backendModuleUrl('submitDealPacket.ts'))
+        const ack: unknown = await mod.default({ params, user })
+        res.setHeader('Content-Type', 'application/json')
+        res.end(JSON.stringify(ack))
+        return
+    }
 
-  if (route === '/deal-models' && req.method === 'GET') {
-    const mod = await server.ssrLoadModule(backendModuleUrl('getDealModels.ts'))
-    const rows: unknown = await mod.default({ params: { projectId: requestUrl.searchParams.get('projectId') ?? '' }, user })
-    res.setHeader('Content-Type', 'application/json')
-    res.end(JSON.stringify(rows))
-    return
-  }
+    if (route === '/deal-models' && req.method === 'GET') {
+        const mod = await server.ssrLoadModule(backendModuleUrl('getDealModels.ts'))
+        const rows: unknown = await mod.default({ params: { projectId: requestUrl.searchParams.get('projectId') ?? '' }, user })
+        res.setHeader('Content-Type', 'application/json')
+        res.end(JSON.stringify(rows))
+        return
+    }
 
-  if (route === '/deal-models' && req.method === 'POST') {
-    const params = await readJsonBody(req)
-    const mod = await server.ssrLoadModule(backendModuleUrl('saveDealModel.ts'))
-    const result: unknown = await mod.default({ params, user })
-    res.setHeader('Content-Type', 'application/json')
-    res.end(JSON.stringify(result))
-    return
-  }
+    if (route === '/deal-models' && req.method === 'POST') {
+        const params = await readJsonBody(req)
+        const mod = await server.ssrLoadModule(backendModuleUrl('saveDealModel.ts'))
+        const result: unknown = await mod.default({ params, user })
+        res.setHeader('Content-Type', 'application/json')
+        res.end(JSON.stringify(result))
+        return
+    }
 
-  if (route === '/project-action-tracker' && req.method === 'GET') {
-    const mod = await server.ssrLoadModule(backendModuleUrl('getProjectActionTracker.ts'))
-    const result: unknown = await mod.default({ params: { projectId: requestUrl.searchParams.get('projectId') ?? '' }, user })
-    res.setHeader('Content-Type', 'application/json')
-    res.end(JSON.stringify(result))
-    return
-  }
+    if (route === '/project-action-tracker' && req.method === 'GET') {
+        const mod = await server.ssrLoadModule(backendModuleUrl('getProjectActionTracker.ts'))
+        const result: unknown = await mod.default({ params: { projectId: requestUrl.searchParams.get('projectId') ?? '' }, user })
+        res.setHeader('Content-Type', 'application/json')
+        res.end(JSON.stringify(result))
+        return
+    }
 
-  if (route === '/project-action-tracker' && req.method === 'POST') {
-    const params = await readJsonBody(req)
-    const mod = await server.ssrLoadModule(backendModuleUrl('saveProjectActionTracker.ts'))
-    const result: unknown = await mod.default({ params, user })
-    res.setHeader('Content-Type', 'application/json')
-    res.end(JSON.stringify(result))
-    return
-  }
+    if (route === '/project-action-tracker' && req.method === 'POST') {
+        const params = await readJsonBody(req)
+        const mod = await server.ssrLoadModule(backendModuleUrl('saveProjectActionTracker.ts'))
+        const result: unknown = await mod.default({ params, user })
+        res.setHeader('Content-Type', 'application/json')
+        res.end(JSON.stringify(result))
+        return
+    }
 
-  if (route === '/submission-consideration' && req.method === 'POST') {
-    const params = await readJsonBody(req)
-    const mod = await server.ssrLoadModule(backendModuleUrl('updateSubmissionRow.ts'))
-    const result: unknown = await mod.default({ params, user })
-    res.setHeader('Content-Type', 'application/json')
-    res.end(JSON.stringify(result))
-    return
-  }
-  if (route === '/workflow-errors' && req.method === 'GET') {
-    const environment = requestUrl.searchParams.get('environment') === 'test' ? 'test' : 'production'
-    const mod = await server.ssrLoadModule(backendModuleUrl('getWorkflowErrors.ts'))
-    const rows: unknown = await mod.default({ params: { environment }, user })
-    res.setHeader('Content-Type', 'application/json')
-    res.end(JSON.stringify(rows))
-    return
-  }
+    if (route === '/submission-consideration' && req.method === 'POST') {
+        const params = await readJsonBody(req)
+        const mod = await server.ssrLoadModule(backendModuleUrl('updateSubmissionRow.ts'))
+        const result: unknown = await mod.default({ params, user })
+        res.setHeader('Content-Type', 'application/json')
+        res.end(JSON.stringify(result))
+        return
+    }
+    if (route === '/workflow-errors' && req.method === 'GET') {
+        const environment = requestUrl.searchParams.get('environment') === 'test' ? 'test' : 'production'
+        const mod = await server.ssrLoadModule(backendModuleUrl('getWorkflowErrors.ts'))
+        const rows: unknown = await mod.default({ params: { environment }, user })
+        res.setHeader('Content-Type', 'application/json')
+        res.end(JSON.stringify(rows))
+        return
+    }
 
-  if (route === '/retry-failed-document' && req.method === 'POST') {
-    const params = await readJsonBody(req)
-    const mod = await server.ssrLoadModule(backendModuleUrl('retryFailedDocument.ts'))
-    const result: unknown = await mod.default({ params, user })
-    res.statusCode = 202
-    res.setHeader('Content-Type', 'application/json')
-    res.end(JSON.stringify(result))
-    return
-  }
+    if (route === '/retry-failed-document' && req.method === 'POST') {
+        const params = await readJsonBody(req)
+        const mod = await server.ssrLoadModule(backendModuleUrl('retryFailedDocument.ts'))
+        const result: unknown = await mod.default({ params, user })
+        res.statusCode = 202
+        res.setHeader('Content-Type', 'application/json')
+        res.end(JSON.stringify(result))
+        return
+    }
+    if (route === '/stop-batch' && req.method === 'POST') {
+        const params = await readJsonBody(req)
+        const mod = await server.ssrLoadModule(backendModuleUrl('stopBatchSubmission.ts'))
+        const result: unknown = await mod.default({ params, user })
+        res.setHeader('Content-Type', 'application/json')
+        res.end(JSON.stringify(result))
+        return
+    }
+    if (route === '/stop-synthesis' && req.method === 'POST') {
+        const params = await readJsonBody(req)
+        const mod = await server.ssrLoadModule(backendModuleUrl('stopProjectSynthesis.ts'))
+        const result: unknown = await mod.default({ params, user })
+        res.setHeader('Content-Type', 'application/json')
+        res.end(JSON.stringify(result))
+        return
+    }
 
-  res.statusCode = 404
-  res.setHeader('Content-Type', 'application/json')
-  res.end(JSON.stringify({ error: `Unknown local API route: ${req.method} ${route}` }))
+    res.statusCode = 404
+    res.setHeader('Content-Type', 'application/json')
+    res.end(JSON.stringify({ error: `Unknown local API route: ${req.method} ${route}` }))
 }
 
 export function localBackendApi(): Plugin {
-  return {
-    name: 'local-backend-api',
-    apply: 'serve',
-    configureServer(server) {
-      installRetoolGlobals()
-      server.middlewares.use('/api/diligence', (req, res) => {
-        handleRequest(server, req, res).catch((error: unknown) => {
-          res.statusCode = 500
-          res.setHeader('Content-Type', 'application/json')
-          res.end(JSON.stringify({ error: error instanceof Error ? error.message : String(error) }))
-        })
-      })
-    },
-  }
+    return {
+        name: 'local-backend-api',
+        apply: 'serve',
+        configureServer(server) {
+            installRetoolGlobals()
+            server.middlewares.use('/api/diligence', (req, res) => {
+                handleRequest(server, req, res).catch((error: unknown) => {
+                    res.statusCode = 500
+                    res.setHeader('Content-Type', 'application/json')
+                    res.end(JSON.stringify({ error: error instanceof Error ? error.message : String(error) }))
+                })
+            })
+        },
+    }
 }

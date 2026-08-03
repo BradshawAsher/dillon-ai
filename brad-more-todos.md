@@ -109,6 +109,10 @@ For Brad - Look through this file and see if the things were actually done or no
 
 Still can add a thing where you can have a place for the user to yap about what their company is about, and then can have an AI interview them and just find starting information about the company (or can even have this after the user uploaded docs)
 
+what is the current amount of time that it takes for a batch processing to say that an error occured? Like in the case that our API credit ran out for our n8n backend for the llm chains there is no data that is shared to the frontend which is very frustrating can you help
+
+Can we add a stop button to the batch submission as well as to the synthesis if it leads to an infinite loop, so the user can run it back?
+
 ## Sample Deal File Support (2026-08-01)
 
 ### Next sample-deal validation work (do this order)
