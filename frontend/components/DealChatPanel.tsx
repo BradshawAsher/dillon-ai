@@ -707,10 +707,11 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
         const context = buildContext(synthesis, model, projectName, documents, allSyntheses)
 
         try {
+            const userApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_anthropic_key') || '') : ''
             const res = await fetch('https://merge-works.app.n8n.cloud/webhook/45ffcb0f-7e10-471e-bdf8-b134617e6b3c/dd-chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ question: trimmed, context, sessionId }),
+                body: JSON.stringify({ question: trimmed, context, sessionId, userAnthropicApiKey: userApiKey }),
             })
             if (!res.ok) throw new Error(`HTTP ${res.status}`)
             const data = await res.json()
