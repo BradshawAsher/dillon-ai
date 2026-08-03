@@ -43,12 +43,12 @@ export default function KeyboardShortcutsDialog() {
             </Button>
 
             {isOpen && (
-                <>
+                <div className="fixed inset-0 z-[100] flex items-start justify-center pt-16 sm:pt-24 p-4 bg-black/60 backdrop-blur-sm animate-in fade-in-0 duration-200">
                     <div
-                        className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm animate-in fade-in-0 duration-200"
+                        className="fixed inset-0"
                         onClick={() => setIsOpen(false)}
                     />
-                    <div className="fixed left-1/2 top-12 sm:top-16 z-[100] w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 rounded-2xl border border-primary/20 bg-background p-6 shadow-2xl animate-in fade-in-0 zoom-in-95 duration-200 max-h-[80vh] overflow-y-auto">
+                    <div className="relative z-10 w-full max-w-md rounded-2xl border border-primary/20 bg-card text-card-foreground p-6 shadow-2xl animate-in fade-in-0 zoom-in-95 duration-200 max-h-[80vh] overflow-y-auto">
                         <div className="flex items-center justify-between border-b border-border pb-3">
                             <div className="flex items-center gap-2">
                                 <Keyboard className="h-5 w-5 text-primary" />
@@ -72,7 +72,7 @@ export default function KeyboardShortcutsDialog() {
                                     <span className="text-sm text-muted-foreground font-medium">{shortcut.description}</span>
                                     <div className="flex gap-1 shrink-0">
                                         {shortcut.keys.map(key => (
-                                            <kbd key={key} className="rounded-md border border-border/80 bg-muted px-2 py-0.5 text-xs font-mono font-semibold text-foreground shadow-sm">
+                                            <kbd key={key} className="rounded-md border border-border bg-muted px-2 py-0.5 text-xs font-mono font-semibold text-foreground shadow-sm">
                                                 {key}
                                             </kbd>
                                         ))}
@@ -82,10 +82,10 @@ export default function KeyboardShortcutsDialog() {
                         </div>
 
                         <p className="mt-5 border-t border-border pt-3 text-xs text-muted-foreground">
-                            Press <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] font-mono">?</kbd> anywhere to toggle this shortcuts dialog.
+                            Press <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] font-mono font-semibold text-foreground">?</kbd> anywhere to toggle this shortcuts dialog.
                         </p>
                     </div>
-                </>
+                </div>
             )}
         </>
     )
