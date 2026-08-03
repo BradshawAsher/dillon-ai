@@ -198,6 +198,7 @@ import {
 } from '../utils/submissionHistory'
 import { createProjectSummaries, getProjectKey } from '../utils/projectWorkspace'
 import { claimProject, isOwnedByUser } from '../utils/projectOwnership'
+import { triggerFailureAlert } from '../utils/audioAlert'
 import { computeImpactMetrics, formatHours } from '../utils/impactMetrics'
 import { deriveDocumentedFacts } from '../utils/documentedFacts'
 import { fallbackDiligenceFindings, type FindingType, type Severity } from '../utils/diligence'
@@ -541,6 +542,22 @@ export default function DueDiligenceDashboard() {
         console.log('Filtered Submission History Length (with isolation):', filteredHistory.length)
         return filteredHistory
     }, [rawSubmissionHistory])
+
+    const prevFailedCountRef = useRef<number | null>(null)
+    useEffect(() => {
+        const failedDocs = submissionHistory.filter((row) =>
+            ['failed', 'error', 'rejected'].includes((row.status || '').trim().toLowerCase()) ||
+            (row.errorMessage || row.aiEscalationReason || '').toLowerCase().includes('credit') ||
+            (row.errorMessage || row.aiEscalationReason || '').toLowerCase().includes('balance')
+        )
+        if (prevFailedCountRef.current !== null && failedDocs.length > prevFailedCountRef.current) {
+            triggerFailureAlert(
+                '🔴 AI Processing Error — Due Diligence Pipeline',
+                `${failedDocs.length} document(s) encountered an AI processing failure or credit limit. Check the Diligence tab to retry.`
+            )
+        }
+        prevFailedCountRef.current = failedDocs.length
+    }, [submissionHistory])
 
     const visibleProjectSyntheses = useMemo(() => {
         const isolationEnabled = isDataIsolationEnabled()

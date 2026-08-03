@@ -443,6 +443,27 @@ export default function SubmissionHistoryCard({
                     </div>
                 ) : null}
 
+                {/* Anthropic API Credit Balance & Document Failure Alert */}
+                {failedRowCount > 0 || dedupedRows.some((row) => ['failed', 'error', 'rejected'].includes((row.status || '').trim().toLowerCase()) || (row.errorMessage || row.aiEscalationReason || '').toLowerCase().includes('credit') || (row.errorMessage || row.aiEscalationReason || '').toLowerCase().includes('balance')) ? (
+                    <div role="alert" className="rounded-xl border-2 border-destructive/60 bg-destructive/15 p-4 text-sm text-foreground shadow-sm">
+                        <div className="flex items-start gap-3">
+                            <CircleAlert className="h-5 w-5 shrink-0 text-destructive mt-0.5" />
+                            <div className="space-y-1.5">
+                                <p className="font-bold text-destructive text-base">
+                                    🔴 AI Processing Failed — Anthropic Credit Limit or JSON Schema Issue
+                                </p>
+                                <p className="text-sm text-foreground leading-relaxed">
+                                    One or more documents failed during n8n processing. Common root causes include <strong className="text-destructive font-semibold">Anthropic API credit balance exhausted</strong> (<span className="font-mono text-xs bg-destructive/20 px-1 py-0.5 rounded text-destructive border border-destructive/30">&quot;Your credit balance is too low&quot;</span>) or JSON schema token truncation on large spreadsheets.
+                                </p>
+                                <div className="text-xs text-muted-foreground mt-2 flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
+                                    <span>👉 Recharge credits at <a href="https://console.anthropic.com/settings/billing" target="_blank" rel="noreferrer" className="underline font-semibold text-primary">console.anthropic.com/settings/billing</a></span>
+                                    <span>👉 Then click <strong className="text-foreground">&quot;Retry&quot;</strong> on the affected document row below</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                ) : null}
+
                 {isPolling ? (
                     <div className="flex items-center gap-2 rounded-lg border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-foreground">
                         <Loader2 className="h-4 w-4 animate-spin text-warning" />

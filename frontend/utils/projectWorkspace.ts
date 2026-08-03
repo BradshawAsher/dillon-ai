@@ -210,26 +210,31 @@ function getStatusLabel(args: {
     failedCount: number
     activeCount: number
     reviewCount: number
+    completedCount: number
     documentCount: number
     hasSynthesis?: boolean
 }) {
-    if (args.failedCount > 0) {
-        return 'Needs triage'
-    }
-
     if (args.activeCount > 0) {
         return 'In progress'
+    }
+
+    if (args.failedCount > 0) {
+        return 'Needs triage'
     }
 
     if (args.reviewCount > 0) {
         return 'Needs review'
     }
 
-    if (args.documentCount > 0) {
-        return args.hasSynthesis ? 'Synthesized' : 'Ready for synthesis'
+    if (args.completedCount === 0) {
+        return 'Awaiting processing'
     }
 
-    return 'No documents'
+    if (args.hasSynthesis) {
+        return 'Synthesized'
+    }
+
+    return 'Ready for synthesis'
 }
 
 function formatSynthesisLabel(key: string) {
@@ -309,7 +314,8 @@ export function getProjectStatusVariant(statusLabel: string): 'success' | 'warni
 
 export function createProjectSummaries(
     rows: SubmissionHistoryItem[],
-    inFlightBatch?: { projectId: string; dealName?: string; projectStage?: string; expectedDocumentCount?: number } | null
+    inFlightBatch?: { projectId: string; dealName?: string; projectStage?: string; expectedDocumentCount?: number } | null,
+    syntheses?: Array<{ projectId: string; projectProcessedAt?: string; projectStatus?: string }>
 ) {
     const rowsByProject = new Map<string, SubmissionHistoryItem[]>()
 
@@ -402,6 +408,14 @@ export function createProjectSummaries(
             }))
             .at(0)
 
+        const matchingSynth = syntheses?.find((s) => s.projectId === latestRow.projectId)
+        const hasSynthesis = Boolean(
+            matchingSynth
+            && matchingSynth.projectProcessedAt
+            && matchingSynth.projectStatus !== 'synthesis_refresh_failed'
+            && matchingSynth.projectStatus !== 'synthesis_blocked'
+        )
+
         return {
             projectKey,
             projectId: latestRow.projectId,
@@ -432,7 +446,9 @@ export function createProjectSummaries(
                 failedCount,
                 activeCount,
                 reviewCount,
+                completedCount,
                 documentCount: consideredRows.length,
+                hasSynthesis,
             }),
             synthesisFields,
             employeeCount: employeeEvidence?.employeeCount ?? null,
