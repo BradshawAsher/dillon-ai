@@ -37,6 +37,8 @@ type ProjectSynthesisCardProps = {
     retryingRequestId?: string | null
     onRunSynthesis?: () => void
     runningSynthesis?: boolean
+    onStopSynthesis?: () => void
+    stoppingSynthesis?: boolean
     model?: DealModel
 }
 
@@ -202,7 +204,7 @@ function getSeverityForGroup(groupType: InsightGroupType): SeverityFilter {
     }
 }
 
-export default function ProjectSynthesisCard({ syntheses, projects, currentProjectId, documentAnalysisPending, synthesisPending, synthesisProgress, synthesisStage, loading, error, onRefresh, impact, documents = [], onOpenEvidence, onExcludeDocument, onIncludeDocument, onRetryDocument, retryingRequestId, onRunSynthesis, runningSynthesis = false, model }: ProjectSynthesisCardProps) {
+export default function ProjectSynthesisCard({ syntheses, projects, currentProjectId, documentAnalysisPending, synthesisPending, synthesisProgress, synthesisStage, loading, error, onRefresh, impact, documents = [], onOpenEvidence, onExcludeDocument, onIncludeDocument, onRetryDocument, retryingRequestId, onRunSynthesis, runningSynthesis = false, onStopSynthesis, stoppingSynthesis = false, model }: ProjectSynthesisCardProps) {
     const [synthesisElapsedSeconds, setSynthesisElapsedSeconds] = useState(0)
     const [selectedDocumentRequestId, setSelectedDocumentRequestId] = useState('')
     const [severityFilter, setSeverityFilter] = useState<SeverityFilter>('all')
@@ -216,6 +218,19 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
     const currentProject = projects.find((project) => (project.projectId || project.projectKey) === normalizedProjectId)
     const projectDocuments = documents.filter((document) => document.projectId === normalizedProjectId)
     const failedProjectDocuments = projectDocuments.filter((document) => ['failed', 'error', 'rejected', 'needs_review', 'needs review'].includes(document.status.trim().toLowerCase()))
+    const completedProjectDocumentsWithAnalysis = projectDocuments.filter((document) => {
+        return document.isConsidered
+            && document.status.trim().toLowerCase() === 'completed'
+            && document.extractedJson.trim().length > 0
+    }).length
+    const localSynthesisBlocked = !error
+        && visibleSyntheses.length === 0
+        && !synthesisPending
+        && !documentAnalysisPending
+        && completedProjectDocumentsWithAnalysis === 0
+        && failedProjectDocuments.length > 0
+    const localSynthesisBlockedMessage = failedProjectDocuments.find((document) => document.errorMessage.trim().length > 0)?.errorMessage
+        || 'Every considered document in this project failed before usable analysis was produced.'
     const selectedProjectDocument = projectDocuments.find((document) => document.requestID === selectedDocumentRequestId)
     const documentThesisTakeaways = projectDocuments
         .filter((document) => document.isConsidered && document.status.trim().toLowerCase() === 'completed')
@@ -261,6 +276,11 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                             <RefreshCw className={runningSynthesis ? 'animate-spin' : undefined} />
                             {runningSynthesis ? 'Starting synthesis…' : 'Run synthesis now'}
                         </Button>
+                        {(synthesisPending || documentAnalysisPending) && onStopSynthesis ? (
+                            <Button variant="outline" onClick={onStopSynthesis} disabled={stoppingSynthesis}>
+                                {stoppingSynthesis ? 'Stopping synthesis…' : 'Stop synthesis'}
+                            </Button>
+                        ) : null}
                     </div>
                 </div>
             </CardHeader>
@@ -358,7 +378,30 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                     </div>
                 ) : null}
 
-                {!error && visibleSyntheses.length === 0 && !synthesisPending && !documentAnalysisPending ? (
+                {localSynthesisBlocked ? (
+                    <div role="alert" className="rounded-xl border-2 border-destructive/55 bg-destructive/10 p-5 text-foreground shadow-md">
+                        <p className="text-base font-bold text-destructive">Synthesis blocked — all considered documents failed</p>
+                        <p className="mt-2 text-sm leading-6 text-foreground">{localSynthesisBlockedMessage} Because no considered document produced usable analysis, the project synthesizer should not run until you retry a document or exclude one from synthesis.</p>
+                        <div className="mt-4 space-y-3">
+                            {failedProjectDocuments.map((document) => (
+                                <div key={document.requestID} className="rounded-lg border border-destructive/25 bg-background/75 p-4">
+                                    <p className="break-words text-sm font-semibold text-foreground">{document.fileName || 'Failed document'}</p>
+                                    {document.errorMessage ? <p className="mt-1 text-xs text-muted-foreground">{document.errorMessage}</p> : null}
+                                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                                        <Button type="button" size="lg" className="h-12 font-semibold" disabled={retryingRequestId === document.requestID} onClick={() => onRetryDocument?.(document.requestID)}>
+                                            {retryingRequestId === document.requestID ? 'Retrying document…' : 'Retry document'}
+                                        </Button>
+                                        <Button type="button" size="lg" variant="outline" className="h-12 border-destructive/40 text-destructive hover:bg-destructive/10" onClick={() => onExcludeDocument?.(document.requestID)}>
+                                            Exclude from synthesis
+                                        </Button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                ) : null}
+
+                {!error && visibleSyntheses.length === 0 && !synthesisPending && !documentAnalysisPending && !localSynthesisBlocked ? (
                     <p className="text-sm text-muted-foreground">
                         No project-level syntheses yet. Once the consolidator workflow has processed a project&apos;s documents,
                         its final judgment appears here.

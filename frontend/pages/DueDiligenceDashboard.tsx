@@ -451,6 +451,7 @@ type SubmissionBatch = {
     environment: SubmitEnvironment
     startedAt: number
     endedAt?: number
+    stoppedAt?: number
 }
 
 function formatElapsedDuration(seconds: number) {
@@ -595,6 +596,8 @@ export default function DueDiligenceDashboard() {
     const [batchSubmissionMessage, setBatchSubmissionMessage] = useState('')
     const lastUploadAttemptAtRef = useRef(0)
     const [retryingRequestId, setRetryingRequestId] = useState<string | null>(null)
+    const [isStoppingBatch, setIsStoppingBatch] = useState(false)
+    const [isStoppingSynthesis, setIsStoppingSynthesis] = useState(false)
     const [activeSubmissionBatch, setActiveSubmissionBatch] = useState<SubmissionBatch | null>(() => {
         try {
             const stored = window.sessionStorage.getItem('mergeworks.activeSubmissionBatch')
@@ -1390,6 +1393,57 @@ export default function DueDiligenceDashboard() {
         }
     }
 
+    const handleStopBatch = async () => {
+        if (!displayedSubmissionBatch || activeBatchRows.length === 0) return
+        const stoppableRequestIds = activeBatchRows
+            .filter((row) => isActiveSubmissionStatus(row.status))
+            .map((row) => row.requestID)
+            .filter((requestID) => requestID.trim().length > 0)
+        if (stoppableRequestIds.length === 0) {
+            setBatchSubmissionMessage('No active documents remain in this batch to stop.')
+            return
+        }
+        if (!window.confirm(`Stop ${stoppableRequestIds.length} active document${stoppableRequestIds.length === 1 ? '' : 's'} in this batch? Completed documents will be kept, and synthesis will not run until you retry or re-queue documents.`)) return
+        setIsStoppingBatch(true)
+        try {
+            const response = await fetch('/api/diligence/stop-batch', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ requestIDs: stoppableRequestIds, environment: activeHistoryEnvironment }),
+            })
+            const body = await response.json() as { error?: string; stopped?: number }
+            if (!response.ok) throw new Error(body.error || 'Unable to stop the active batch')
+            setBatchSubmissionMessage(`Stopped ${body.stopped ?? stoppableRequestIds.length} active document${(body.stopped ?? stoppableRequestIds.length) === 1 ? '' : 's'} in this batch.`)
+            setActiveSubmissionBatch((current) => current ? { ...current, stoppedAt: Date.now(), endedAt: Date.now() } : current)
+            await handleRefreshHistory(activeHistoryEnvironment)
+        } catch (error) {
+            setBatchSubmissionMessage(error instanceof Error ? error.message : 'Unable to stop the active batch')
+        } finally {
+            setIsStoppingBatch(false)
+        }
+    }
+
+    const handleStopSynthesis = async () => {
+        if (!activeProjectId) return
+        if (!window.confirm('Stop the current synthesis for this project? This marks the synthesis as stopped so you can retry or re-run it later.')) return
+        setIsStoppingSynthesis(true)
+        try {
+            const response = await fetch('/api/diligence/stop-synthesis', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ projectId: activeProjectId, environment: activeHistoryEnvironment }),
+            })
+            const body = await response.json() as { error?: string }
+            if (!response.ok) throw new Error(body.error || 'Unable to stop synthesis')
+            setBatchSubmissionMessage('Synthesis marked as stopped. You can refresh, retry document analysis, or run synthesis again when ready.')
+            await triggerProjectSynthesis({ environment: activeHistoryEnvironment }, { skipCache: true }).result
+        } catch (error) {
+            setBatchSubmissionMessage(error instanceof Error ? error.message : 'Unable to stop synthesis')
+        } finally {
+            setIsStoppingSynthesis(false)
+        }
+    }
+
     const handleRefreshHistory = async (environment: SubmitEnvironment) => {
         setActiveHistoryEnvironment(environment)
         await triggerSubmissionHistory({ environment }, { skipCache: true }).result
@@ -2089,9 +2143,16 @@ export default function DueDiligenceDashboard() {
                                                 {activeBatchFailedCount > 0 ? ` · ${activeBatchFailedCount} failed` : ''}
                                             </p>
                                         </div>
-                                        <Badge variant={activeBatchFinishedCount >= activeBatchExpectedCount ? (activeBatchFailedCount > 0 ? 'destructive' : 'success') : 'warning'}>
-                                            {activeBatchFinishedCount >= activeBatchExpectedCount ? 'Batch terminal' : 'Processing (~1 min/doc)'}
-                                        </Badge>
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            {activeBatchFinishedCount < activeBatchExpectedCount ? (
+                                                <Button type="button" variant="outline" size="sm" disabled={isStoppingBatch} onClick={handleStopBatch}>
+                                                    {isStoppingBatch ? 'Stopping batch…' : 'Stop batch'}
+                                                </Button>
+                                            ) : null}
+                                            <Badge variant={activeBatchFinishedCount >= activeBatchExpectedCount ? (activeBatchFailedCount > 0 ? 'destructive' : 'success') : 'warning'}>
+                                                {activeBatchFinishedCount >= activeBatchExpectedCount ? 'Batch terminal' : 'Processing (~1 min/doc)'}
+                                            </Badge>
+                                        </div>
                                     </div>
                                     {activeBatchFinishedCount < activeBatchExpectedCount && (
                                         <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-300">
@@ -2586,6 +2647,8 @@ export default function DueDiligenceDashboard() {
                                 onIncludeDocument={handleIncludeDocument}
                                 onRetryDocument={handleRetryFailedDocument}
                                 retryingRequestId={retryingRequestId}
+                                onStopSynthesis={handleStopSynthesis}
+                                stoppingSynthesis={isStoppingSynthesis}
                                 onRefresh={() => {
                                     void triggerProjectSynthesis({ environment: activeHistoryEnvironment }, { skipCache: true }).result
                                 }}
