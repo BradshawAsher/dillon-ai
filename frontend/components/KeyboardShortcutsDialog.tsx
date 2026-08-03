@@ -46,7 +46,7 @@ export default function KeyboardShortcutsDialog() {
             {isOpen && (
                 <>
                     <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" onClick={() => setIsOpen(false)} />
-                    <div className="fixed left-1/2 top-1/2 z-50 w-full max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-lg border border-border bg-popover text-popover-foreground p-6 shadow-xl">
+                    <div className="fixed left-1/2 top-[40%] z-50 w-full max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-lg border border-border bg-popover text-popover-foreground p-6 shadow-xl">
                         <h2 className="text-lg font-semibold text-foreground">Keyboard shortcuts</h2>
                         <div className="mt-4 space-y-3">
                             {SHORTCUTS.map(shortcut => (
