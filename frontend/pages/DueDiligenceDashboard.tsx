@@ -4,11 +4,14 @@ import {
     ArrowUpRight,
     Clock3,
     FileSearch,
+    FolderKanban,
     Loader2,
     Moon,
     Plus,
     Sun,
 } from 'lucide-react'
+
+import { ProjectsSidePanel } from '../components/ProjectsSidePanel'
 
 import SafeSuspense from '../components/SafeSuspense'
 import ExpandableInsightGroup from '../components/ExpandableInsightGroup'
@@ -660,6 +663,17 @@ export default function DueDiligenceDashboard() {
     const [validationById, setValidationById] = useState<Record<string, boolean>>({})
     const [notesById, setNotesById] = useState<Record<string, string>>({})
     const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
+    const [isProjectsPanelOpen, setIsProjectsPanelOpen] = useState(false)
+    useEffect(() => {
+        const handleCtrlShiftP = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'p' || e.key === 'P')) {
+                e.preventDefault()
+                setIsProjectsPanelOpen(prev => !prev)
+            }
+        }
+        window.addEventListener('keydown', handleCtrlShiftP)
+        return () => window.removeEventListener('keydown', handleCtrlShiftP)
+    }, [])
     const [notifications, setNotifications] = useState<Notification[]>(() => {
         const now = new Date()
         return [
@@ -1673,6 +1687,19 @@ export default function DueDiligenceDashboard() {
                                 hasActiveSubmissions={activeProjectDocuments.some(d => isActiveSubmissionStatus(d.status))}
                                 hasErrors={false}
                             />
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="gap-2 border-primary/30 bg-primary/5 hover:bg-primary/10 font-semibold"
+                                onClick={() => setIsProjectsPanelOpen(true)}
+                                title="Open Projects Portfolio Panel (Ctrl+Shift+P)"
+                            >
+                                <FolderKanban className="h-4 w-4 text-primary" />
+                                <span className="hidden sm:inline">Projects</span>
+                                <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
+                                    {projectSummaries.length}
+                                </Badge>
+                            </Button>
                             <Button type="button" variant="outline" className="gap-2 px-4 py-2 text-sm" onClick={() => { const next = currentTheme === 'dark' ? 'light' : currentTheme === 'light' ? 'system' : 'dark'; setCurrentTheme(next); setStoredTheme(next) }}>
                                 {currentTheme === 'dark' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
                                 {currentTheme === 'system' ? 'Auto theme' : currentTheme === 'dark' ? 'Dark mode' : 'Light mode'}
@@ -3011,6 +3038,18 @@ export default function DueDiligenceDashboard() {
                 ) : null}
             </main>
             <EvidenceDrawer evidence={activeEvidence} onClose={() => setActiveEvidence(null)} />
+            <ProjectsSidePanel
+                isOpen={isProjectsPanelOpen}
+                onClose={() => setIsProjectsPanelOpen(false)}
+                projects={projectSummaries}
+                activeProjectKey={selectedProjectKey}
+                syntheses={visibleProjectSyntheses}
+                onSelectProject={(key) => handlePortfolioProjectSelect(key)}
+                onOpenIntake={() => {
+                    handleCreateProject()
+                    document.querySelector('[data-project-intake]')?.scrollIntoView({ behavior: 'smooth' })
+                }}
+            />
             <Suspense fallback={null}>
                 <DealChatPanel
                     synthesis={activeProjectSynthesis}
@@ -3023,6 +3062,8 @@ export default function DueDiligenceDashboard() {
                         if (!targetProject) return
                         handlePortfolioProjectSelect(targetProject.projectKey)
                     }}
+                    onOpenProjectsPanel={() => setIsProjectsPanelOpen(true)}
+                    projectsCount={projectSummaries.length}
                 />
             </Suspense>
             <Suspense fallback={null}>
