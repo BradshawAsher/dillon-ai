@@ -121,6 +121,14 @@ So i just uploaded a batch of 2 docs for a new project and then i wanted to take
 
 Maybe we should add projects as a separate side panel as well as its own tab so the user can look at them while multitasking with the rest of the site and stuff like that?
 
+so my job for this week is to finish evaluating a test case set in pod 1- financial due diligence agent sample deals which are real past sample deals and claude made a test case plan in test-case-plan.md and there are ground truth for project 5 in test sets -> ground truth (not sure how ground truth they really are), but are you able to compare the results with the run i just did with the ground truth and see how my agent did, and how are we supposed to set up the automated scoring? In fact, I'm supposed to do these things by the end of the week Eval harness shipped · 20-input golden dataset + automated scoring	+30	
+0
+Bonus · eval runs on every deployment (regression check)	+10	
+0
+Bonus · used eval to cut cost per run without dropping quality	+10	
+0
+Bonus · eval results tracked over time in a dashboard
+
 ## Sample Deal File Support (2026-08-01)
 
 ### Next sample-deal validation work (do this order)
