@@ -1,0 +1,20 @@
+{
+  "fileName": "ConversionXL LLC_Profit and Loss by Month v2.xlsx",
+  "business": "Business 4 - ConversionXL (SaaS Product)",
+  "fileType": "XLSX",
+  "groundTruth": {
+    "documentType": "Profit and Loss Statement",
+    "documentTypes": ["Profit and Loss Statement"],
+    "trafficLight": "YELLOW",
+    "riskLevel": "MEDIUM",
+    "financialFacts": [
+      { "metric": "revenue", "normalizedValue": 1850000, "period": "TTM 2024", "rawValue": "$1,850,000" },
+      { "metric": "cogs", "normalizedValue": 280000, "period": "TTM 2024", "rawValue": "$280,000" },
+      { "metric": "gross_profit", "normalizedValue": 1570000, "period": "TTM 2024", "rawValue": "$1,570,000" }
+    ],
+    "expectedRedFlags": ["#DIV/0! error cells in monthly tabs"],
+    "expectedYellowFlags": ["48-column monthly breakdown complexity"],
+    "falsePositiveFlags": [],
+    "expectedMathCheckStatus": "passed"
+  }
+}

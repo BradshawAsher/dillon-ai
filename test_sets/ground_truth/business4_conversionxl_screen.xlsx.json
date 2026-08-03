@@ -1,0 +1,18 @@
+{
+  "fileName": "CXL_Screen.xlsx",
+  "business": "Business 4 - ConversionXL (SaaS Product)",
+  "fileType": "XLSX",
+  "groundTruth": {
+    "documentType": "Operating Metrics",
+    "documentTypes": ["Operating Metrics"],
+    "trafficLight": "GREEN",
+    "riskLevel": "LOW",
+    "financialFacts": [
+      { "metric": "revenue", "normalizedValue": 1850000, "period": "TTM 2024", "rawValue": "$1,850,000" }
+    ],
+    "expectedRedFlags": [],
+    "expectedYellowFlags": ["Single-sheet screening summary"],
+    "falsePositiveFlags": [],
+    "expectedMathCheckStatus": "passed"
+  }
+}

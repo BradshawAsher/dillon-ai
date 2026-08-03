@@ -137,6 +137,13 @@ Have antigravity look through TOCHECK-epicdealdone-todos.md and see if everythin
 
 Also have antigravity look through todos in this file if there's anything left to build that needs to be done
 
+Probably have to re-make the estimates in diligence and synthesis tab so the user doesn't have a wrong impression of how long it actually takes? Can we say like it usually takes x minutes per tab/1000 chars and then calculate for them their expected time for each doc as well as for the total synthesis in synthesis tab?
+
+okay so i just pushed 4 docs for a new project and i think the syncing is wrong for when docs have finished in the finished progress tab since none of the docs show as finished but i can see they finished in n8n executions 
+Also can we add a notification to the user as well as a disclaimer in diligence tab when synthesis has started for more clarity?
+
+Why does the synthesis tab only start the clock when you open the synthesis tab, and not synced with the real n8n execution?
+
 ## Sample Deal File Support (2026-08-01)
 
 ### Next sample-deal validation work (do this order)
