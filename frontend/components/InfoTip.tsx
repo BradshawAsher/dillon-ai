@@ -34,8 +34,15 @@ export default function InfoTip({ term, definition }: Props) {
         function handleClick(e: MouseEvent) {
             if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
         }
+        function handleKey(e: KeyboardEvent) {
+            if (e.key === 'Escape') setOpen(false)
+        }
         document.addEventListener('mousedown', handleClick)
-        return () => document.removeEventListener('mousedown', handleClick)
+        document.addEventListener('keydown', handleKey)
+        return () => {
+            document.removeEventListener('mousedown', handleClick)
+            document.removeEventListener('keydown', handleKey)
+        }
     }, [open])
 
     return (
@@ -45,13 +52,16 @@ export default function InfoTip({ term, definition }: Props) {
                 onClick={() => setOpen(o => !o)}
                 onMouseEnter={() => setOpen(true)}
                 onMouseLeave={() => setOpen(false)}
+                onFocus={() => setOpen(true)}
+                onBlur={() => setOpen(false)}
                 className="inline-flex items-center justify-center rounded-full p-0.5 text-muted-foreground/60 hover:text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 aria-label={`What is ${term}?`}
+                aria-expanded={open}
             >
                 <Info className="h-3 w-3" />
             </button>
             {open && (
-                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-50 w-56 rounded-md border border-border bg-popover px-3 py-2 text-xs leading-relaxed text-popover-foreground shadow-md">
+                <span role="tooltip" className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-50 w-56 rounded-md border border-border bg-popover px-3 py-2 text-xs leading-relaxed text-popover-foreground shadow-md">
                     <span className="font-semibold">{term}:</span> {definition}
                 </span>
             )}

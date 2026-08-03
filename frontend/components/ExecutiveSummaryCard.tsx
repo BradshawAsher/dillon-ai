@@ -4,6 +4,7 @@ import { FileText } from 'lucide-react'
 import type { DealModel } from '../hooks/backend/diligence'
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
+import { copyToClipboard } from '../utils/clipboard'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Button } from '../lib/shadcn/button'
 
@@ -69,7 +70,7 @@ export default function ExecutiveSummaryCard({ model, synthesis, projectName }: 
     }, [model, synthesis, projectName])
 
     const handleCopy = useCallback(() => {
-        if (summary) navigator.clipboard.writeText(summary)
+        if (summary) void copyToClipboard(summary)
     }, [summary])
 
     if (!summary) return null
