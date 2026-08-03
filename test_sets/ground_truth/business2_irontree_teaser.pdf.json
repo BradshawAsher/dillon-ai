@@ -1,0 +1,41 @@
+{
+  "fileName": "Iron_Tree_Data_-_Teaser.pdf",
+  "business": "Business 2 - Data-Cyber Company In PA",
+  "fileType": "PDF",
+  "groundTruth": {
+    "documentType": "Other",
+    "documentTypes": [
+      "Other"
+    ],
+    "trafficLight": "GREEN",
+    "riskLevel": "LOW",
+    "financialFacts": [
+      {
+        "metric": "revenue",
+        "normalizedValue": 5200000,
+        "period": "FY2024",
+        "rawValue": "$5,200,000"
+      },
+      {
+        "metric": "ebitda_sde",
+        "normalizedValue": 1400000,
+        "period": "FY2024",
+        "rawValue": "$1,400,000"
+      }
+    ],
+    "expectedRedFlags": [],
+    "expectedYellowFlags": [
+      "High-level overview only; full financial verification requires detailed CIM"
+    ],
+    "falsePositiveFlags": [],
+    "missedFlags": [],
+    "valuation": null,
+    "employeeEvidence": {
+      "count": 24,
+      "type": "headcount",
+      "asOfDate": "2025"
+    },
+    "expectedMathCheckStatus": "passed",
+    "notes": "1-page blind executive teaser summary for Iron Tree cybersecurity and data consulting firm."
+  }
+}

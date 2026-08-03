@@ -1,0 +1,24 @@
+{
+  "fileName": "Financial Modeling for Iron Tree.xltx",
+  "business": "Business 2 - Data-Cyber Company In PA",
+  "fileType": "XLTX",
+  "groundTruth": {
+    "documentType": "Operating Metrics",
+    "documentTypes": [
+      "Operating Metrics"
+    ],
+    "trafficLight": "YELLOW",
+    "riskLevel": "MEDIUM",
+    "financialFacts": [],
+    "expectedRedFlags": [],
+    "expectedYellowFlags": [
+      "#VALUE! formula errors detected across unpopulated template cells"
+    ],
+    "falsePositiveFlags": [],
+    "missedFlags": [],
+    "valuation": null,
+    "employeeEvidence": null,
+    "expectedMathCheckStatus": "warning",
+    "notes": "Template model spreadsheet containing unpopulated cell references resulting in #VALUE! evaluation warnings."
+  }
+}

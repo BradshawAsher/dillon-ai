@@ -1,0 +1,45 @@
+{
+  "fileName": "Iron_Tree_Data_-_CIM.pdf",
+  "business": "Business 2 - Data-Cyber Company In PA",
+  "fileType": "PDF",
+  "groundTruth": {
+    "documentType": "Other",
+    "documentTypes": [
+      "Other",
+      "Operating Metrics"
+    ],
+    "trafficLight": "YELLOW",
+    "riskLevel": "MEDIUM",
+    "financialFacts": [
+      {
+        "metric": "revenue",
+        "normalizedValue": 5200000,
+        "period": "FY2024",
+        "rawValue": "$5,200,000"
+      },
+      {
+        "metric": "ebitda_sde",
+        "normalizedValue": 1420000,
+        "period": "FY2024",
+        "rawValue": "$1,420,000"
+      }
+    ],
+    "expectedRedFlags": [
+      "Top customer accounts for ~38% of total annual revenue (Customer concentration risk)"
+    ],
+    "expectedYellowFlags": [
+      "Image-only embedded charts requiring OCR/multimodal inspection",
+      "Key technical founder dependence"
+    ],
+    "falsePositiveFlags": [],
+    "missedFlags": [],
+    "valuation": null,
+    "employeeEvidence": {
+      "count": 26,
+      "type": "headcount",
+      "asOfDate": "2025"
+    },
+    "expectedMathCheckStatus": "passed",
+    "notes": "46-page Confidential Information Memorandum (CIM) containing customer breakdowns and organizational charts."
+  }
+}
