@@ -1,8 +1,10 @@
-# MergeWorks Active TODO
+# MergeWorks Active TODO (Archived & Fully Audited — August 2026)
 
-`TODO.md` is preserved as the original brainstorming list. This is the clean, active version; completed work from the current build session is intentionally omitted.
+> ℹ️ **NOTE:** This historical todo log has been audited. All remaining active tasks have been migrated to [**`ACTIVE_TODOS.md`**](file:///c:/Users/s-bas/MERGEWORKS%20REAL%20WEBSITE/Due-Diligence-Dashboard/ACTIVE_TODOS.md) for clean tracking.
 
-## New-agent handoff (updated 2026-07-23)
+`TODO.md` and `TODO_CURRENT.md` are preserved as historical development logs.
+
+## New-agent handoff (updated 2026-08-03)
 
 ### Start here
 

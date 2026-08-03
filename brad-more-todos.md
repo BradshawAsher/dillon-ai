@@ -122,7 +122,7 @@ Can we add a stop button to the batch submission as well as to the synthesis if 
 [Done?] Maybe we should add projects as a separate side panel as well as its own tab so the user can look at them while multitasking with the rest of the site and stuff like that?
 
 
-Need to work on this part next ,,,
+[Done?] Need to work on this part next ,,,
 so my job for this week is to finish evaluating a test case set in pod 1- financial due diligence agent sample deals which are real past sample deals and claude made a test case plan in test-case-plan.md and there are ground truth for project 5 in test sets -> ground truth (not sure how ground truth they really are), but are you able to compare the results with the run i just did with the ground truth and see how my agent did, and how are we supposed to set up the automated scoring? In fact, I'm supposed to do these things by the end of the week Eval harness shipped · 20-input golden dataset + automated scoring	+30	
 0
 Bonus · eval runs on every deployment (regression check)	+10	
