@@ -131,6 +131,13 @@ async function handleRequest(
         res.end(JSON.stringify(result))
         return
     }
+    if (route === '/clean-orphans' && (req.method === 'POST' || req.method === 'GET')) {
+        const mod = await server.ssrLoadModule(backendModuleUrl('cleanOrphans.ts'))
+        const result: unknown = await mod.cleanOrphanRecords()
+        res.setHeader('Content-Type', 'application/json')
+        res.end(JSON.stringify(result))
+        return
+    }
     if (route === '/stop-synthesis' && req.method === 'POST') {
         const params = await readJsonBody(req)
         const mod = await server.ssrLoadModule(backendModuleUrl('stopProjectSynthesis.ts'))

@@ -65,10 +65,14 @@ export default function DealHealthKPIs({ synthesis, model, impact, documentsCoun
     // EBITDA margin
     if (revenue && ebitda && revenue > 0) {
         const margin = (ebitda / revenue) * 100
+        const revenueConf = facts.revenue?.confidence ? Math.round(facts.revenue.confidence * (facts.revenue.confidence <= 1 ? 100 : 1)) : null
+        const ebitdaConf = facts.ebitda_sde?.confidence ? Math.round(facts.ebitda_sde.confidence * (facts.ebitda_sde.confidence <= 1 ? 100 : 1)) : null
+        const avgConf = revenueConf && ebitdaConf ? Math.round((revenueConf + ebitdaConf) / 2) : revenueConf || ebitdaConf || null
+
         kpis.push({
             label: 'EBITDA Margin',
             value: `${margin.toFixed(1)}%`,
-            subtext: revenue ? money(revenue) + ' revenue' : undefined,
+            subtext: `${money(revenue)} rev${avgConf ? ` (${avgConf}% conf)` : ''}`,
             icon: <Activity className="h-5 w-5" />,
             variant: margin > 25 ? 'success' : margin > 10 ? 'default' : 'warning',
         })
