@@ -1,9 +1,10 @@
-import { FolderKanban, Key, Loader2, Plus, Upload } from 'lucide-react'
+import { useState } from 'react'
+import { FolderKanban, Key, Loader2, Plus, Upload, X } from 'lucide-react'
 
 import FileDropzone from './FileDropzone'
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Input } from '../lib/shadcn/input'
 import { Label } from '../lib/shadcn/label'
 import {
@@ -87,6 +88,7 @@ export default function ProjectIntakeCard({
     availableProjects,
     selectedFiles,
     disabled,
+    onOpenApiKeyModal,
     onDealNameChange,
     onAskingPriceChange,
     onProjectIdChange,
@@ -98,6 +100,44 @@ export default function ProjectIntakeCard({
     onFileSelect,
     onSubmit,
 }: ProjectIntakeCardProps) {
+    const [showNoKeyPrompt, setShowNoKeyPrompt] = useState(false)
+    const [fileRequiredWarning, setFileRequiredWarning] = useState(false)
+
+    const handleCustomKeySubmit = () => {
+        if (selectedFiles.length === 0) {
+            setFileRequiredWarning(true)
+            document.querySelector('[data-project-intake]')?.scrollIntoView({ behavior: 'smooth' })
+            return
+        }
+        setFileRequiredWarning(false)
+        const key = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_anthropic_key') || '') : ''
+        if (!key) {
+            setShowNoKeyPrompt(true)
+        } else {
+            onSubmit('production')
+        }
+    }
+
+    const handleProductionSubmit = () => {
+        if (selectedFiles.length === 0) {
+            setFileRequiredWarning(true)
+            document.querySelector('[data-project-intake]')?.scrollIntoView({ behavior: 'smooth' })
+            return
+        }
+        setFileRequiredWarning(false)
+        onSubmit('production')
+    }
+
+    const handleTestSubmit = () => {
+        if (selectedFiles.length === 0) {
+            setFileRequiredWarning(true)
+            document.querySelector('[data-project-intake]')?.scrollIntoView({ behavior: 'smooth' })
+            return
+        }
+        setFileRequiredWarning(false)
+        onSubmit('test')
+    }
+
     return (
         <Card className="overflow-hidden" data-project-intake>
             <CardHeader className="border-b border-border bg-card/80">
@@ -205,7 +245,6 @@ export default function ProjectIntakeCard({
                             </SelectContent>
                         </Select>
                     </div>
-
                 </div>
 
                 <div className="space-y-2">
@@ -227,8 +266,15 @@ export default function ProjectIntakeCard({
                     <p className="mt-1 text-sm text-muted-foreground">
                         Each queued batch uses the same project metadata for every selected file, so you can add multiple related documents at once and still keep the project context consistent.
                     </p>
-                    <FileDropzone selectedFiles={selectedFiles} onFileSelect={onFileSelect} className="mt-4" />
+                    <FileDropzone selectedFiles={selectedFiles} onFileSelect={(files) => { setFileRequiredWarning(false); onFileSelect(files) }} className="mt-4" />
                 </div>
+
+                {fileRequiredWarning && selectedFiles.length === 0 && (
+                    <div className="flex items-center gap-2 rounded-md bg-amber-500/10 border border-amber-500/20 p-3 text-xs text-amber-600 dark:text-amber-400 animate-in fade-in-0 duration-200">
+                        <Upload className="h-4 w-4 shrink-0 text-amber-500" />
+                        <span>Please select or drop at least one document file above before queueing.</span>
+                    </div>
+                )}
 
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                     <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
@@ -247,25 +293,18 @@ export default function ProjectIntakeCard({
                         </Button>
                         <Button
                             type="button"
-                            disabled={selectedFiles.length === 0 || disabled}
-                            onClick={() => onSubmit('production')}
+                            disabled={disabled}
+                            onClick={handleProductionSubmit}
                         >
-                            {disabled ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                            {disabled ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : null}
                             Queue in production
                         </Button>
                         <Button
                             type="button"
                             variant="secondary"
                             className="gap-1.5 border border-primary/20"
-                            disabled={selectedFiles.length === 0 || disabled}
-                            onClick={() => {
-                                const key = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_anthropic_key') || '') : ''
-                                if (!key) {
-                                    onOpenApiKeyModal?.()
-                                } else {
-                                    onSubmit('production')
-                                }
-                            }}
+                            disabled={disabled}
+                            onClick={handleCustomKeySubmit}
                             title="Queue using your custom Anthropic API key saved in BYOK settings"
                         >
                             <Key className="h-3.5 w-3.5 text-primary" />
@@ -274,15 +313,77 @@ export default function ProjectIntakeCard({
                         <Button
                             type="button"
                             variant="outline"
-                            disabled={selectedFiles.length === 0 || disabled}
-                            onClick={() => onSubmit('test')}
+                            disabled={disabled}
+                            onClick={handleTestSubmit}
                         >
-                            {disabled ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                            {disabled ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : null}
                             Queue in test
                         </Button>
                         <p className="w-full text-xs text-muted-foreground sm:ml-auto sm:w-auto">If you press <strong>Queue in production</strong> while in Example mode, the app will switch you to <strong>Live n8n</strong> first and preserve your selected files.</p>
                     </div>
                 </div>
+
+                {showNoKeyPrompt && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in-0 duration-200">
+                        <Card className="relative w-full max-w-md shadow-2xl border-primary/20 bg-card text-card-foreground">
+                            <button
+                                type="button"
+                                onClick={() => setShowNoKeyPrompt(false)}
+                                className="absolute right-4 top-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:outline-none"
+                            >
+                                <X className="h-4 w-4 text-muted-foreground" />
+                                <span className="sr-only">Close</span>
+                            </button>
+                            <CardHeader className="pb-3">
+                                <CardTitle className="flex items-center gap-2 text-lg">
+                                    <Key className="h-5 w-5 text-primary" />
+                                    No Custom API Key Saved
+                                </CardTitle>
+                                <CardDescription>
+                                    You clicked <strong>Queue with custom key</strong>, but no custom Anthropic API key is saved in your browser local storage yet.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-3 py-2 text-sm text-muted-foreground">
+                                <p>
+                                    Would you like to enter your custom API key now, or proceed with standard Production queueing using the default Mergeworks system key?
+                                </p>
+                            </CardContent>
+                            <CardFooter className="flex flex-col sm:flex-row items-center justify-end gap-2 border-t border-border pt-4">
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setShowNoKeyPrompt(false)}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                        setShowNoKeyPrompt(false)
+                                        onSubmit('production')
+                                    }}
+                                >
+                                    Queue in Prod (Default Key)
+                                </Button>
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    className="gap-1.5"
+                                    onClick={() => {
+                                        setShowNoKeyPrompt(false)
+                                        onOpenApiKeyModal?.()
+                                    }}
+                                >
+                                    <Key className="h-3.5 w-3.5" />
+                                    Enter Custom Key
+                                </Button>
+                            </CardFooter>
+                        </Card>
+                    </div>
+                )}
             </CardContent>
         </Card>
     )
