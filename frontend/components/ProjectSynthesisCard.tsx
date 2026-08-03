@@ -339,6 +339,26 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                     </div>
                 ) : null}
 
+                {/* 3. Synthesizer Never Started Disclaimer */}
+                {completedProjectDocumentsWithAnalysis === 0 && projectDocuments.length > 0 ? (
+                    <div role="alert" className="rounded-xl border-2 border-warning/60 bg-warning/10 p-4 text-sm text-foreground shadow-sm">
+                        <div className="flex items-start gap-3">
+                            <TriangleAlert className="h-5 w-5 shrink-0 text-warning mt-0.5" />
+                            <div className="space-y-1">
+                                <p className="font-bold text-warning text-base">
+                                    ⚠️ Synthesizer Never Triggered — 0 of {projectDocuments.length} Documents Completed Extraction
+                                </p>
+                                <p className="text-sm text-foreground leading-relaxed">
+                                    The n8n project consolidator workflow (<span className="font-mono text-xs">IoSad3rTYJMk4Mon</span>) requires at least 1 document with completed analysis to generate a judgment. None of the {projectDocuments.length} uploaded file(s) for this project passed document extraction (likely due to Anthropic credit limit or file parsing timeout).
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-2">
+                                    👉 Go to the <strong className="text-foreground">Diligence tab</strong> to review document errors and click <strong className="text-foreground">&quot;Retry&quot;</strong> on the affected files.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                ) : null}
+
                 <AcquisitionJudgmentCallout synthesis={visibleSyntheses[0]} impact={impact} />
                 {error ? (
                     <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-foreground">

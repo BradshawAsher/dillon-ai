@@ -618,6 +618,14 @@ export default function SubmissionHistoryCard({
                                                     <div className="space-y-1">
                                                         <p className="font-medium text-foreground">{row.fileName || 'No file name'}</p>
                                                         <p className="text-xs text-muted-foreground">{row.fileType || 'Unknown file type'}</p>
+                                                        {['failed', 'error', 'rejected'].includes((row.status || '').trim().toLowerCase()) || row.errorMessage ? (
+                                                            <div className="mt-1.5 rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive">
+                                                                <p className="font-semibold flex items-start gap-1">
+                                                                    <CircleAlert className="h-3.5 w-3.5 shrink-0 mt-0.5 text-destructive" />
+                                                                    <span>{row.errorMessage || 'Processing stalled or failed (Anthropic credit limit or format issue).'}</span>
+                                                                </p>
+                                                            </div>
+                                                        ) : null}
                                                         {row.ebitdaExtracted ? (
                                                             <p className="text-xs text-muted-foreground">EBITDA: {row.ebitdaExtracted}</p>
                                                         ) : null}
