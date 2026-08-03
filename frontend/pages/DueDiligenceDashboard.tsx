@@ -152,6 +152,7 @@ const ManagementQuestionTracker = lazy(() => import('../components/ManagementQue
 const SubmissionHistoryCard = lazy(() => import('../components/SubmissionHistoryCard'))
 const DealChatPanel = lazy(() => import('../components/DealChatPanel'))
 const WorkflowErrorLogCard = lazy(() => import('../components/WorkflowErrorLogCard'))
+const EvalDashboardTab = lazy(() => import('../components/EvalDashboardTab'))
 import {
     exampleProjectSyntheses,
     exampleSubmissionHistoryRows,
@@ -162,6 +163,7 @@ import {
     useGetProjectSynthesis,
     useGetWorkflowErrors,
     useGetSubmissionHistory,
+    useGetEvalRuns,
     useSubmitDealPacket,
     useSaveDealModel,
     useSaveProjectActionTracker,
@@ -493,6 +495,7 @@ export default function DueDiligenceDashboard() {
     const { data: dealModelsData, trigger: triggerDealModels } = useGetDealModels()
     const { trigger: triggerSaveDealModel } = useSaveDealModel()
     const { data: workflowErrorData, loading: workflowErrorsLoading, error: workflowErrorsError, trigger: triggerWorkflowErrors } = useGetWorkflowErrors()
+    const { data: evalRunsData } = useGetEvalRuns()
     const { trigger: triggerSubmissionConsideration } = useUpdateSubmissionConsideration()
 
     const diligenceFindings = useMemo(() => {
@@ -2825,6 +2828,10 @@ export default function DueDiligenceDashboard() {
                         </section>
 
                     </> : null}
+
+                    {activeWorkspaceTab === 'evals' ? <section id="evals-harness" className="scroll-mt-6 space-y-6">
+                        <EvalDashboardTab evalRuns={Array.isArray(evalRunsData) ? evalRunsData : []} />
+                    </section> : null}
 
                     {activeWorkspaceTab === 'errors' ? <section id="workflow-errors" className="scroll-mt-6 space-y-6">
                         <WorkflowErrorLogCard

@@ -593,6 +593,23 @@ export function useGetDiligenceData() {
     return useQuery(useCallback(async (): Promise<DiligenceFinding[] | null> => null, []))
 }
 
+export function useGetEvalRuns() {
+    return useQuery(
+        useCallback(async () => {
+            if (USE_MOCKS) return []
+            try {
+                const response = await fetch('/api/diligence/eval-runs', {
+                    headers: identityHeaders(),
+                })
+                if (!response.ok) return []
+                return await response.json()
+            } catch {
+                return []
+            }
+        }, [])
+    )
+}
+
 export const useGetSubmissionHistory = USE_MOCKS ? useMockSubmissionHistory : useLiveSubmissionHistory
 export const useUpdateSubmissionConsideration = useLiveUpdateSubmissionConsideration
 

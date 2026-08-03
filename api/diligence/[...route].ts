@@ -6,6 +6,7 @@ import getProjectSynthesis from '../../backend/diligence/getProjectSynthesis'
 import getDealModels from '../../backend/diligence/getDealModels'
 import saveDealModel from '../../backend/diligence/saveDealModel'
 import getSubmissionHistory from '../../backend/diligence/getSubmissionHistory'
+import getEvalRuns from '../../backend/diligence/getEvalRuns'
 import getWorkflowErrors from '../../backend/diligence/getWorkflowErrors'
 import getProjectActionTracker from '../../backend/diligence/getProjectActionTracker'
 import saveProjectActionTracker from '../../backend/diligence/saveProjectActionTracker'
@@ -35,6 +36,10 @@ export default async function handler(req: ApiRequest, res: ServerResponse) {
     try {
         const user = userFromHeaders(req.headers)
 
+        if (route === 'eval-runs' && req.method === 'GET') {
+            sendJson(res, 200, await getEvalRuns())
+            return
+        }
         if (route === 'history' && req.method === 'GET') {
             sendJson(res, 200, await getSubmissionHistory({ params: { environment }, user }))
             return
