@@ -296,6 +296,49 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
             </CardHeader>
 
             <CardContent className="space-y-6 p-4">
+                {/* 1. Document Scope Disclaimer */}
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-muted/30 px-3.5 py-2.5 text-xs text-foreground">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-medium text-muted-foreground">Synthesis Document Scope:</span>
+                        <Badge variant={completedProjectDocumentsWithAnalysis > 0 ? 'success' : 'secondary'}>
+                            {completedProjectDocumentsWithAnalysis} of {projectDocuments.length} Documents Included
+                        </Badge>
+                        {failedProjectDocuments.length > 0 ? (
+                            <Badge variant="destructive">
+                                {failedProjectDocuments.length} Failed Parsing
+                            </Badge>
+                        ) : null}
+                    </div>
+                    {failedProjectDocuments.length > 0 ? (
+                        <span className="text-muted-foreground">
+                            Partial synthesis generated from completed files. You can retry failed documents in the Diligence tab.
+                        </span>
+                    ) : null}
+                </div>
+
+                {/* 2. Synthesis Failure / n8n Token Error Disclaimer */}
+                {visibleSyntheses[0]?.projectStatus?.trim()?.toLowerCase() === 'synthesis_refresh_failed' || visibleSyntheses[0]?.projectStatus?.trim()?.toLowerCase() === 'synthesis_blocked' ? (
+                    <div role="alert" className="rounded-xl border-2 border-destructive/50 bg-destructive/10 p-4 text-sm text-foreground shadow-sm">
+                        <div className="flex items-start gap-3">
+                            <TriangleAlert className="h-5 w-5 shrink-0 text-destructive mt-0.5" />
+                            <div className="space-y-1">
+                                <p className="font-bold text-destructive text-base">
+                                    Project Synthesis Failed — n8n Provider / Token Limit Reached
+                                </p>
+                                <p className="text-sm text-foreground leading-relaxed">
+                                    {visibleSyntheses.length > 1 ? 'The prior synthesis below remains visible from your earlier run. ' : 'The n8n consolidator workflow was unable to complete project-level judgment. '}
+                                    <span className="font-mono text-xs bg-destructive/15 px-1.5 py-0.5 rounded text-destructive border border-destructive/20">
+                                        {visibleSyntheses[0]?.aiErrorMessage || 'n8n connection tokens or LLM rate limit exceeded.'}
+                                    </span>
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-2">
+                                    <strong className="text-foreground">Current Progress:</strong> {visibleSyntheses[0]?.documentsCompletedCount || completedProjectDocumentsWithAnalysis} document(s) completed analysis, {failedProjectDocuments.length} failed parsing. Once you add n8n tokens or update model settings, click <span className="font-semibold text-foreground">&quot;Run synthesis now&quot;</span> at the top of this tab to re-trigger.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                ) : null}
+
                 <AcquisitionJudgmentCallout synthesis={visibleSyntheses[0]} impact={impact} />
                 {error ? (
                     <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-foreground">
@@ -509,9 +552,24 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                     {failedProjectDocuments.length > 0 ? <div className="mt-4 space-y-3">{failedProjectDocuments.map((document) => <div key={document.requestID} className="rounded-lg border border-destructive/25 bg-background/75 p-4"><p className="break-words text-sm font-semibold text-foreground">{document.fileName || 'Failed document'}</p>{document.errorMessage ? <p className="mt-1 text-xs text-muted-foreground">{document.errorMessage}</p> : null}<div className="mt-3 grid gap-2 sm:grid-cols-2"><Button type="button" size="lg" className="h-12 font-semibold" disabled={retryingRequestId === document.requestID} onClick={() => onRetryDocument?.(document.requestID)}>{retryingRequestId === document.requestID ? 'Retrying document…' : 'Retry document'}</Button><Button type="button" size="lg" variant="outline" className="h-12 border-destructive/40 text-destructive hover:bg-destructive/10" onClick={() => onExcludeDocument?.(document.requestID)}>Exclude from synthesis</Button></div></div>)}</div> : <p className="mt-3 text-sm text-muted-foreground">Open the project document list above to retry or exclude the affected document.</p>}
                                 </div>
                             ) : (
-                                <div role="alert" className="rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm text-foreground">
-                                    <p className="font-medium">Latest synthesis refresh failed after automatic retries.</p>
-                                    <p className="mt-1 text-muted-foreground">{hasPriorSynthesis ? 'The prior synthesis below remains available. ' : 'No new synthesis was produced. '}{synthesis.aiErrorMessage || 'A provider or processing step did not complete.'}</p>
+                                <div role="alert" className="rounded-xl border-2 border-destructive/50 bg-destructive/10 p-4 text-sm text-foreground shadow-sm">
+                                    <div className="flex items-start gap-3">
+                                        <TriangleAlert className="h-5 w-5 shrink-0 text-destructive mt-0.5" />
+                                        <div className="space-y-1">
+                                            <p className="font-bold text-destructive text-base">
+                                                Project Synthesis Failed — n8n Provider / Token Limit Reached
+                                            </p>
+                                            <p className="text-sm text-foreground leading-relaxed">
+                                                {hasPriorSynthesis ? 'The prior synthesis below remains visible from your earlier run. ' : 'The n8n consolidator workflow was unable to complete project-level judgment. '}
+                                                <span className="font-mono text-xs bg-destructive/15 px-1.5 py-0.5 rounded text-destructive border border-destructive/20">
+                                                    {synthesis.aiErrorMessage || 'n8n connection tokens or LLM rate limit exceeded.'}
+                                                </span>
+                                            </p>
+                                            <p className="text-xs text-muted-foreground mt-2">
+                                                <strong className="text-foreground">Current Progress:</strong> {synthesis.documentsCompletedCount || completedProjectDocumentsWithAnalysis} document(s) completed analysis, {failedProjectDocuments.length} failed parsing. Once you add n8n tokens or update model settings, click <span className="font-semibold text-foreground">&quot;Run synthesis now&quot;</span> at the top of this tab to re-trigger.
+                                            </p>
+                                        </div>
+                                    </div>
                                 </div>
                             ) : null}
 

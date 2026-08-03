@@ -144,6 +144,18 @@ Also can we add a notification to the user as well as a disclaimer in diligence 
 
 Why does the synthesis tab only start the clock when you open the synthesis tab, and not synced with the real n8n execution?
 
+Consider doing this?
+Option B: Split into 2 Specialized Sub-Chains (Maximum Scalability)
+Chain 1 (Financials & Math): Focuses exclusively on P&L, balance sheet, and EBITDA adjustments.
+Chain 2 (Qualitative & Thesis): Focuses exclusively on Red Flags, LOI warranties, customer concentration, and valuation thesis.
+Benefit: If qualitative analysis needs minor tweaks, it doesn't invalidate or break numerical financial extraction, and neither chain hits token limits.
+
+For brad - ran out of n8n connect tokens, try switching back to pod 1 anthropic key or using gemini api keys?
+
+Change anthropic models to opus 5 from sonnet 5?
+
+Enable our agent to be model agnostic option so users can bring their own key?
+
 ## Sample Deal File Support (2026-08-01)
 
 ### Next sample-deal validation work (do this order)

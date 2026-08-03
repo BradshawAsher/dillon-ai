@@ -71,7 +71,7 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
             || (riskFilter === 'high' && /red|high/.test(risk))
         return workstreamMatches && statusMatches && riskMatches
     })
-    const projects = createProjectSummaries(filteredRows)
+    const projects = createProjectSummaries(filteredRows, null, syntheses)
     const activeProjectCount = projects.filter((project) => project.activeCount > 0).length
     const reviewProjectCount = projects.filter((project) => project.reviewCount > 0).length
     const readyProjectCount = projects.filter((project) => project.statusLabel === 'Ready for synthesis').length

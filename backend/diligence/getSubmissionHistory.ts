@@ -28,6 +28,15 @@ function deriveSubmissionStatus(row: Record<string, any>) {
         return 'completed'
     }
 
+    const updatedAtMs = row.updated_at ? new Date(row.updated_at).getTime() : 0
+    const createdAtMs = row.created_at ? new Date(row.created_at).getTime() : 0
+    const lastActiveMs = Math.max(updatedAtMs, createdAtMs)
+    const elapsedSeconds = lastActiveMs > 0 ? (Date.now() - lastActiveMs) / 1000 : 0
+
+    if (activeSubmissionStatuses.has(normalizedStatus) && elapsedSeconds > 120 && !hasUsableAnalysis) {
+        return 'failed'
+    }
+
     const hasTerminalFailureMarkers = activeSubmissionStatuses.has(normalizedStatus)
         && hasText(row.processed_at)
         && (hasText(row.error_message) || failedAfterRetries)
@@ -94,7 +103,7 @@ export default async function getSubmissionHistory(req: {
         receivedAt: row.received_at ?? '',
         processingStartedAt: row.processing_started_at ?? '',
         processedAt: row.processed_at ?? '',
-        errorMessage: row.error_message ?? '',
+        errorMessage: row.error_message || (deriveSubmissionStatus(row) === 'failed' ? 'Document processing stalled or stopped (Anthropic API credit limit or n8n node failure).' : ''),
         riskLevel: row.risk_level ?? '',
         category: row.category ?? '',
         trafficLight: row.traffic_light ?? '',
