@@ -48,7 +48,7 @@ export default function KeyboardShortcutsDialog() {
                         className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm animate-in fade-in-0 duration-200"
                         onClick={() => setIsOpen(false)}
                     />
-                    <div className="fixed left-1/2 top-1/2 z-[100] w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-primary/20 bg-background p-6 shadow-2xl animate-in fade-in-0 zoom-in-95 duration-200 max-h-[85vh] overflow-y-auto">
+                    <div className="fixed left-1/2 top-12 sm:top-16 z-[100] w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 rounded-2xl border border-primary/20 bg-background p-6 shadow-2xl animate-in fade-in-0 zoom-in-95 duration-200 max-h-[80vh] overflow-y-auto">
                         <div className="flex items-center justify-between border-b border-border pb-3">
                             <div className="flex items-center gap-2">
                                 <Keyboard className="h-5 w-5 text-primary" />
