@@ -969,14 +969,12 @@ export default function DueDiligenceDashboard() {
 
         if (!latestRow) {
             return null
-        }
-
-        const batchRows = rowsWithBatchId.filter((row) => row.submissionBatchId === latestRow.submissionBatchId)
+        }        const batchRows = rowsWithBatchId.filter((row) => row.submissionBatchId === latestRow.submissionBatchId)
         const timestamps = batchRows
             .map((row) => Date.parse(row.receivedAt || row.triggerTimestamp || row.createdAt))
             .filter((value) => !Number.isNaN(value))
         const terminalTimestamps = batchRows
-            .filter((row) => terminalBatchStatuses.has(row.status.trim().toLowerCase()))
+            .filter((row) => terminalBatchStatuses.has(row.status.trim().toLowerCase()) || Boolean(row.processedAt?.trim() || row.extractedJson?.trim()))
             .map((row) => Date.parse(row.processedAt || row.updatedAt || row.receivedAt))
             .filter((value) => !Number.isNaN(value))
 
@@ -988,26 +986,36 @@ export default function DueDiligenceDashboard() {
             endedAt: terminalTimestamps.length === batchRows.length ? Math.max(...terminalTimestamps) : undefined,
         } satisfies SubmissionBatch
     }, [submissionHistory])
-    const displayedSubmissionBatch = useMemo(() => {
-        if (!activeSubmissionBatch) return latestSavedBatch
-        if (!latestSavedBatch || latestSavedBatch.id !== activeSubmissionBatch.id) return activeSubmissionBatch
-
-        // The submission state is created immediately, while the saved history is
-        // refreshed asynchronously. Prefer the saved terminal timestamp once it
-        // arrives so the elapsed timer freezes at the actual completion time.
-        return {
-            ...activeSubmissionBatch,
-            expectedDocumentCount: Math.max(activeSubmissionBatch.expectedDocumentCount, latestSavedBatch.expectedDocumentCount),
-            startedAt: Math.min(activeSubmissionBatch.startedAt, latestSavedBatch.startedAt),
-            endedAt: latestSavedBatch.endedAt,
-        }
-    }, [activeSubmissionBatch, latestSavedBatch])
     const activeProjectSynthesis = visibleProjectSyntheses.find((synthesis) => synthesis.projectId === activeProjectId)
     const activeProjectSynthesisSucceeded = Boolean(
         activeProjectSynthesis
         && activeProjectSynthesis.projectStatus.trim().toLowerCase() === 'synthesized'
         && (activeProjectSynthesis.finalJudgmentSummary.trim().length > 0 || activeProjectSynthesis.finalRecommendation.trim().length > 0)
     )
+
+    const displayedSubmissionBatch = useMemo(() => {
+        const baseBatch = (() => {
+            if (!activeSubmissionBatch) return latestSavedBatch
+            if (!latestSavedBatch || latestSavedBatch.id !== activeSubmissionBatch.id) return activeSubmissionBatch
+            return {
+                ...activeSubmissionBatch,
+                expectedDocumentCount: Math.max(activeSubmissionBatch.expectedDocumentCount, latestSavedBatch.expectedDocumentCount),
+                startedAt: Math.min(activeSubmissionBatch.startedAt, latestSavedBatch.startedAt),
+                endedAt: latestSavedBatch.endedAt,
+            }
+        })()
+
+        if (!baseBatch) return null
+
+        if (!baseBatch.endedAt && activeProjectSynthesisSucceeded && activeProjectSynthesis?.updatedAt) {
+            const synthesisEndedAt = Date.parse(activeProjectSynthesis.updatedAt)
+            if (!Number.isNaN(synthesisEndedAt)) {
+                return { ...baseBatch, endedAt: synthesisEndedAt }
+            }
+        }
+
+        return baseBatch
+    }, [activeSubmissionBatch, latestSavedBatch, activeProjectSynthesisSucceeded, activeProjectSynthesis])
 
     const handleAskingPriceChange = (value: string) => {
         setAskingPrice(value)
@@ -1085,6 +1093,8 @@ export default function DueDiligenceDashboard() {
     const activeBatchFinishedCount = activeBatchRows.filter((row) => {
         const status = row.status.trim().toLowerCase()
         return terminalBatchStatuses.has(status)
+            || Boolean(row.processedAt?.trim() || row.extractedJson?.trim())
+            || activeProjectSynthesisSucceeded
     }).length
     const activeBatchProcessingCount = activeBatchRows.filter((row) => hasReachedProcessingStage(row.status)).length
     const activeBatchFailedCount = activeBatchRows.filter((row) => {
