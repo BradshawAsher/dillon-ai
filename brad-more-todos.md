@@ -131,6 +131,12 @@ Bonus · used eval to cut cost per run without dropping quality	+10
 0
 Bonus · eval results tracked over time in a dashboard
 
+Is there any way we can make our model self-improving?
+
+Have antigravity look through TOCHECK-epicdealdone-todos.md and see if everything is done, 
+
+Also have antigravity look through todos in this file if there's anything left to build that needs to be done
+
 ## Sample Deal File Support (2026-08-01)
 
 ### Next sample-deal validation work (do this order)

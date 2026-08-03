@@ -248,7 +248,7 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                                                     className="shadow-sm"
                                                     onClick={() => onProjectSelect(project.projectKey)}
                                                 >
-                                                    {project.projectKey === activeProjectKey ? 'Viewing synthesis' : 'View synthesis'}
+                                                    {project.projectKey === activeProjectKey ? 'Viewing project' : 'View this project'}
                                                 </Button>
                                                 {project.projectKey === activeProjectKey ? (
                                                     <Button

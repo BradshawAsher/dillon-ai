@@ -1,5 +1,8 @@
 {
   "private": true,
+  "scripts": {
+    "eval": "npx tsx scripts/run-evals.ts"
+  },
   "retool": {
     "app": {
       "uuid": "a54e2a16-7257-11f1-adf2-d3cdbdaf3f5c",

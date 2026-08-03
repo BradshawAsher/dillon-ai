@@ -734,7 +734,18 @@ export default function DueDiligenceDashboard() {
             projectId: activeProjectId, askingPrice: null, purchasePrice: null, debtAssumed: null, cashAcquired: null, workingCapitalRequirement: null, transactionFees: null, holdPeriodYears: null, taxRate: null, closingCosts: null, maintenanceCapex: null, exitMultiple: null, exitCosts: null, equityContributionPercent: null, interestRate: null, amortizationYears: null, sellerNoteAmount: null, bearRevenueGrowth: null, baseRevenueGrowth: null, bullRevenueGrowth: null, bearEbitdaMargin: null, baseEbitdaMargin: null, bullEbitdaMargin: null, bearExitMultiple: null, baseExitMultiple: null, bullExitMultiple: null, revenueMultiple: null, ebitdaMultiple: null, assetHaircutPercent: null, modelUpdatedAt: '', modelUpdatedBy: '', documentedFactsJson: '', documentedFactsStatus: '',
         }
     }, [activeProjectId, dealModelDraftByProject, dealModelsData, isExampleMode])
-    const activeProjectDocuments = useMemo(() => submissionHistory.filter((row) => getProjectKey(row) === activeProjectId), [activeProjectId, submissionHistory])
+    const activeProjectDocuments = useMemo(() => {
+        return submissionHistory.filter((row) => {
+            const rowProjectKey = getProjectKey(row)
+            return (
+                rowProjectKey === activeProjectId ||
+                rowProjectKey === selectedProjectKey ||
+                row.projectId === activeProjectId ||
+                row.submissionBatchId === activeProjectId ||
+                (projectId && (row.projectId === projectId || rowProjectKey === projectId))
+            )
+        })
+    }, [activeProjectId, projectId, selectedProjectKey, submissionHistory])
     const hydratedDealModel = useMemo(() => withDerivedCapitalStack(isExampleMode ? activeDealModel : hydrateModelFactsFromDocuments(activeDealModel, activeProjectDocuments)), [activeDealModel, activeProjectDocuments, isExampleMode])
     const returnsDisplayModel = useMemo(() => withDerivedCapitalStack(isExampleMode ? hydratedDealModel : buildReturnsDisplayModel(hydratedDealModel)), [hydratedDealModel, isExampleMode])
     const isReturnsIllustrativePreview = !isExampleMode && returnsDisplayModel !== activeDealModel
@@ -1041,7 +1052,15 @@ export default function DueDiligenceDashboard() {
             endedAt: terminalTimestamps.length === batchRows.length ? Math.max(...terminalTimestamps) : undefined,
         } satisfies SubmissionBatch
     }, [submissionHistory])
-    const activeProjectSynthesis = visibleProjectSyntheses.find((synthesis) => synthesis.projectId === activeProjectId)
+    const activeProjectSynthesis = useMemo(() => {
+        return visibleProjectSyntheses.find((synthesis) => {
+            return (
+                synthesis.projectId === activeProjectId ||
+                synthesis.projectId === selectedProjectKey ||
+                (projectId && synthesis.projectId === projectId)
+            )
+        })
+    }, [activeProjectId, projectId, selectedProjectKey, visibleProjectSyntheses])
     const activeProjectSynthesisSucceeded = Boolean(
         activeProjectSynthesis
         && activeProjectSynthesis.projectStatus.trim().toLowerCase() === 'synthesized'
@@ -1372,15 +1391,19 @@ export default function DueDiligenceDashboard() {
         setSubmissionNotes('')
     }
 
-    const handlePortfolioProjectSelect = (projectKey: string) => {
+    const handlePortfolioProjectSelect = (projectKey: string, targetTab: WorkspaceTab = 'synthesis') => {
         setSelectedProjectKey(projectKey)
-        setActiveWorkspaceTab('diligence')
-        const project = projectSummaries.find((candidate) => candidate.projectKey === projectKey)
+        setActiveWorkspaceTab(targetTab)
+        const project = projectSummaries.find((candidate) => candidate.projectKey === projectKey || candidate.projectId === projectKey)
 
         if (project) {
             setProjectId(project.projectId || project.projectKey)
             setDealName(project.projectName)
             setProjectStage(project.stage || 'post-loi')
+        }
+
+        if (typeof window !== 'undefined') {
+            window.localStorage.setItem('mergeworks.selectedProjectKey', projectKey)
         }
 
         window.setTimeout(() => {

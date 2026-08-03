@@ -55,11 +55,12 @@ export type ProjectSummary = {
 }
 
 const requiredCoverageRules = [
-    { label: 'P&L / income statement', keywords: ['p&l', 'income statement', 'profit and loss'] },
-    { label: 'Balance sheet', keywords: ['balance sheet'] },
+    { label: 'P&L / income statement', keywords: ['p&l', 'income statement', 'profit and loss', 'comparative p&l'] },
+    { label: 'Balance sheet', keywords: ['balance sheet', 'bs'] },
+    { label: 'Financial model / valuation', keywords: ['financial model', 'valuation model', 'modelling', 'model'] },
     { label: 'Bank statements', keywords: ['bank', 'statement'] },
     { label: 'General ledger / trial balance', keywords: ['general ledger', 'trial balance', 'gl'] },
-    { label: 'Add-back support', keywords: ['add-back', 'addback', 'adjustment'] },
+    { label: 'Add-back support', keywords: ['add-back', 'addback', 'adjustment', 'ebitda normalization'] },
     { label: 'Customer concentration / revenue detail', keywords: ['customer concentration', 'revenue detail', 'customer', 'sales by customer'] },
 ]
 
@@ -105,6 +106,27 @@ function getTimestampValue(value: string) {
     return Number.isNaN(parsed) ? 0 : parsed
 }
 
+function inferTypeFromFileName(fileName: string) {
+    const name = normalizeText(fileName)
+    const types: string[] = []
+    if (name.includes('p&l') || name.includes('pnl') || name.includes('profit and loss') || name.includes('income statement')) {
+        types.push('Profit and Loss Statement')
+    }
+    if (name.includes('balance sheet')) {
+        types.push('Balance Sheet')
+    }
+    if (name.includes('model') || name.includes('modelling') || name.endsWith('.xlsm') || name.endsWith('.xlsx')) {
+        types.push('Financial Model')
+    }
+    if (name.includes('add-back') || name.includes('ebitda') || name.includes('normalization')) {
+        types.push('EBITDA Normalization')
+    }
+    if (name.includes('customer') || name.includes('concentration')) {
+        types.push('Customer or Revenue Analysis')
+    }
+    return types
+}
+
 function getDocumentTypeLabels(row: SubmissionHistoryItem) {
     try {
         const detected = JSON.parse(row.detectedDocumentTypesJson || '')
@@ -114,16 +136,22 @@ function getDocumentTypeLabels(row: SubmissionHistoryItem) {
     } catch {
         // Older rows do not have multi-type classification yet.
     }
-    if (row.detectedDocumentType?.trim()) {
-        return [row.detectedDocumentType]
+
+    if (row.detectedDocumentType?.trim() && row.detectedDocumentType.trim() !== 'auto-detect') {
+        return [row.detectedDocumentType.trim()]
     }
 
-    if (row.documentType.trim().length > 0) {
-        return [row.documentType]
+    const inferredFromFileName = inferTypeFromFileName(row.fileName)
+    if (inferredFromFileName.length > 0) {
+        return inferredFromFileName
+    }
+
+    if (row.documentType.trim().length > 0 && row.documentType.trim() !== 'auto-detect') {
+        return [row.documentType.trim()]
     }
 
     if (row.fileType.trim().length > 0) {
-        return [row.fileType]
+        return [row.fileType.trim()]
     }
 
     return ['Unknown document']
