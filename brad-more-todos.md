@@ -107,6 +107,8 @@ For Brad - Look through this file and see if the things were actually done or no
 [DONE] okay but when the user has not has any documents or project and then i queue in production, can we not show the disclaimer that they dont have any docs if they just literally uploaded one, but if they uploaded one and it didnt work, then we can show the disclaimer again? Also I dont think the error thing shows int he diligence tab latest doc submission batch if the n8n ran out of execution can you fix this
   (Fixed 2026-08-01: activeSubmissionBatch now persists to sessionStorage so it survives page refreshes — empty state stays hidden while a batch is active. Added stuck-processing detection: documents in processing/queued for >10 minutes get a specific warning about n8n execution limits with retry guidance.)
 
+Still can add a thing where you can have a place for the user to yap about what their company is about, and then can have an AI interview them and just find starting information about the company (or can even have this after the user uploaded docs)
+
 ## Sample Deal File Support (2026-08-01)
 
 ### Next sample-deal validation work (do this order)

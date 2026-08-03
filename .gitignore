@@ -5,7 +5,7 @@ dist/
 .vercel
 .mcp.json
 .claude
-.agents
+.agents 
 .claude/settings.local.json
 .claude/settings.json
 *.log
