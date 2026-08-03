@@ -9,7 +9,9 @@ import {
     Loader2,
     Moon,
     Plus,
+    SlidersHorizontal,
     Sun,
+    X,
 } from 'lucide-react'
 
 import { ApiKeyModal, getSavedApiKey } from '../components/ApiKeyModal'
@@ -478,6 +480,7 @@ function formatElapsedDuration(seconds: number) {
 
 export default function DueDiligenceDashboard() {
     const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false)
+    const [isLeftQuickDockVisible, setIsLeftQuickDockVisible] = useState(true)
     const { data: diligenceData, loading: _loading, error, trigger } = useGetDiligenceData()
     const {
         data: submissionHistoryData,
@@ -3170,26 +3173,53 @@ export default function DueDiligenceDashboard() {
                     </div>
                 ) : null}
             </main>
-            {/* ── Fixed Top-Left Subtle Quick Action Toolbar ── */}
+            {/* ── Fixed Bottom-Left Quick Action Toolbar with Dismiss (X) & Reopen Toggle ── */}
             <aside
                 aria-label="Quick Actions"
-                className={`fixed top-4 left-4 z-40 flex items-center gap-1.5 rounded-full border border-border/60 bg-background/85 p-1 shadow-md backdrop-blur-md transition-all duration-300 ${
+                className={`fixed bottom-4 left-4 z-40 transition-all duration-300 ${
                     activeEvidence ? 'opacity-0 pointer-events-none -translate-x-10 scale-95' : 'opacity-100 translate-x-0 scale-100'
                 }`}
             >
-                <LoginButton />
-                <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 rounded-full text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
-                    onClick={() => setIsApiKeyModalOpen(true)}
-                    title="Configure custom Anthropic API Key (BYOK)"
-                >
-                    <Key className="h-3.5 w-3.5" />
-                    <span className="sr-only">API Key</span>
-                </Button>
-                <KeyboardShortcutsDialog />
+                {isLeftQuickDockVisible ? (
+                    <div className="flex items-center gap-1.5 rounded-full border border-border/80 bg-background/90 p-1.5 shadow-xl backdrop-blur-md animate-in fade-in-0 duration-200">
+                        <LoginButton />
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                            onClick={() => setIsApiKeyModalOpen(true)}
+                            title="Configure custom Anthropic API Key (BYOK)"
+                        >
+                            <Key className="h-3.5 w-3.5" />
+                            <span className="sr-only">API Key</span>
+                        </Button>
+                        <KeyboardShortcutsDialog />
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 rounded-full text-muted-foreground/70 hover:bg-destructive/10 hover:text-destructive transition-colors ml-0.5"
+                            onClick={() => setIsLeftQuickDockVisible(false)}
+                            title="Dismiss quick actions toolbar"
+                        >
+                            <X className="h-3.5 w-3.5" />
+                            <span className="sr-only">Close toolbar</span>
+                        </Button>
+                    </div>
+                ) : (
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="gap-1.5 rounded-full border-border/80 bg-background/90 text-xs font-medium text-muted-foreground shadow-lg backdrop-blur-md hover:text-foreground hover:bg-muted/80 transition-all duration-200"
+                        onClick={() => setIsLeftQuickDockVisible(true)}
+                        title="Re-open quick actions toolbar"
+                    >
+                        <SlidersHorizontal className="h-3.5 w-3.5 text-primary" />
+                        <span>Quick actions</span>
+                    </Button>
+                )}
             </aside>
             <EvidenceDrawer evidence={activeEvidence} onClose={() => setActiveEvidence(null)} />
             <ProjectsSidePanel
