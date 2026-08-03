@@ -83,11 +83,10 @@
 
 
 # BRAD MORE TODO
-1. n8n API Token Access: (ADD)
+
+1.  [DONE?] n8n API Token Access:
 Yes, absolutely! You can add your n8n API Key to frontend/.env as:
-
 dotenv
-
 
 N8N_API_KEY=<your-n8n-api-key>
 With an n8n API key, we can interact directly with the n8n Cloud REST API (https://merge-works.app.n8n.cloud/api/v1/) to:
@@ -96,6 +95,6 @@ List running executions
 View detailed node execution logs & error tracebacks
 Programmatically cancel stalled executions (POST /api/v1/executions/{id}/stop)
 
-3. Bring Your Own Key (BYOK) Scope: (Check if this is supported)
+3. [DONE?] Bring Your Own Key (BYOK) Scope: (Check if this is supported)
 AI Chatbot: Uses the custom key saved in browser localStorage directly for instant Q&A.
 Document & Synthesizer Workflows: Background AI extraction and synthesis run on n8n Cloud. The BYOK key is attached as a request header (x-user-anthropic-key) in the upload payload, allowing custom keys to be forwarded when default team credits are exhausted.
