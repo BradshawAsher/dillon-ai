@@ -3,6 +3,7 @@ import { BookOpen, Check, Copy } from 'lucide-react'
 
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
+import { copyToClipboard } from '../utils/clipboard'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
 
@@ -73,10 +74,11 @@ export default function InvestmentThesisCard({ model, synthesis, projectName }: 
 
     if (!thesis) return null
 
-    const handleCopy = () => {
-        navigator.clipboard.writeText(thesis)
-        setCopied(true)
-        setTimeout(() => setCopied(false), 2000)
+    const handleCopy = async () => {
+        if (await copyToClipboard(thesis)) {
+            setCopied(true)
+            setTimeout(() => setCopied(false), 2000)
+        }
     }
 
     return (

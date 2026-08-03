@@ -24,7 +24,7 @@ const tabs: Array<{ id: WorkspaceTab; label: string }> = [
 
 export type { WorkspaceTab }
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { ChevronLeft, ChevronRight, History, Check } from 'lucide-react'
 
 export default function DealWorkspaceNav({ activeTab, onTabChange }: DealWorkspaceNavProps) {
@@ -119,6 +119,14 @@ export default function DealWorkspaceNav({ activeTab, onTabChange }: DealWorkspa
     const canGoBack = historyIndex > 0
     const canGoForward = historyIndex < navHistory.length - 1
 
+    // Keep the active tab visible in the horizontal scroller — far-right tabs
+    // (Errors, Email Drafts) would otherwise stay off-screen when selected via
+    // history, keyboard shortcut, or a jump from another card.
+    const activeTabRef = useRef<HTMLButtonElement | null>(null)
+    useEffect(() => {
+        activeTabRef.current?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
+    }, [activeTab])
+
     return (
         <nav id="deal-workspace" aria-label="Deal workspace" data-workspace-nav className="sticky top-3 z-20 flex items-center gap-3 rounded-xl border border-border/80 bg-card/90 p-2 shadow-sm backdrop-blur-md transition-shadow duration-200 hover:shadow-md print:hidden">
             {/* Chrome-like back, forward, and history dropdown controls */}
@@ -187,6 +195,7 @@ export default function DealWorkspaceNav({ activeTab, onTabChange }: DealWorkspa
                                 type="button"
                                 role="tab"
                                 aria-selected={isActive}
+                                ref={isActive ? activeTabRef : undefined}
                                 className={isActive
                                     ? 'rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-all duration-200 ease-out'
                                     : 'rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-all duration-200 ease-out hover:bg-muted hover:text-foreground hover:shadow-sm'}
