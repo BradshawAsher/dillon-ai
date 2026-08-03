@@ -421,7 +421,16 @@ export function createProjectSummaries(
             return null
         }
 
-        const consideredRows = sortedRows.filter((row) => row.isConsidered)
+        // Deduplicate rows by file name/request ID so the latest attempt supersedes previous failed attempts
+        const latestRowsByFile = new Map<string, SubmissionHistoryItem>()
+        sortedRows.forEach((row) => {
+            const fileKey = (row.fileName || row.requestID || String(row.id)).trim().toLowerCase()
+            if (!latestRowsByFile.has(fileKey)) {
+                latestRowsByFile.set(fileKey, row)
+            }
+        })
+        const latestUniqueRows = [...latestRowsByFile.values()]
+        const consideredRows = latestUniqueRows.filter((row) => row.isConsidered)
         const documentTypes = [...new Set(consideredRows.flatMap(getDocumentTypeLabels))]
         const completedCount = consideredRows.filter((row) => normalizeSubmissionStatus(row.status) === 'completed').length
         const activeCount = consideredRows.filter((row) => isActiveSubmissionStatus(row.status)).length

@@ -33,7 +33,7 @@ function deriveSubmissionStatus(row: Record<string, any>) {
     const lastActiveMs = Math.max(updatedAtMs, createdAtMs)
     const elapsedSeconds = lastActiveMs > 0 ? (Date.now() - lastActiveMs) / 1000 : 0
 
-    if (activeSubmissionStatuses.has(normalizedStatus) && elapsedSeconds > 20 && !hasUsableAnalysis) {
+    if (activeSubmissionStatuses.has(normalizedStatus) && elapsedSeconds > 300 && !hasUsableAnalysis) {
         return 'failed'
     }
 
@@ -65,45 +65,48 @@ export default async function getSubmissionHistory(req: {
     if (error) throw new Error(`Supabase read failed: ${error.message}`)
     if (!rows) return []
 
-    return (rows as Array<Record<string, any>>).map((row) => ({
-        requestID: row.request_id ?? '',
-        dealName: row.deal_name ?? '',
-        companyName: row.company_name ?? '',
-        workstream: row.workstream ?? '',
-        submissionNotes: row.submission_notes ?? '',
-        analystName: row.analyst_name ?? '',
-        analystEmail: row.analyst_email ?? '',
-        projectId: row.project_id ?? '',
-        projectStage: row.project_stage ?? '',
-        documentType: row.document_type ?? '',
-        detectedDocumentType: row.detected_document_type ?? '',
-        detectedDocumentTypesJson: row.detected_document_types_json ?? '[]',
-        tableStructureStatus: row.table_structure_status ?? '',
-        tableStructureIssues: row.table_structure_issues ?? '',
-        detectedHeaderRow: row.detected_header_row ?? 0,
-        columnMapConfidence: row.column_map_confidence ?? 0,
-        validatedColumnMap: row.validated_column_map ?? '',
-        employeeCount: row.employee_count ?? null,
-        employeeType: row.employee_type ?? '',
-        employeeAsOfDate: row.employee_as_of_date ?? '',
-        employeeConfidence: row.employee_confidence ?? null,
-        employeeCitation: row.employee_citation ?? '',
-        employeeEvidenceStatus: row.employee_evidence_status ?? '',
-        financialFactsJson: row.financial_facts_json ?? '',
-        reconciliationJson: row.reconciliation_json ?? '',
-        mathCheckStatus: row.math_check_status ?? '',
-        submissionBatchId: row.submission_batch_id ?? '',
-        expectedBatchDocumentCount: row.expected_batch_document_count ?? 0,
-        fileName: row.file_name ?? '',
-        fileSize: row.file_size ?? 0,
-        fileType: row.file_type ?? '',
-        triggerTimestamp: row.trigger_timestamp ?? '',
-        status: deriveSubmissionStatus(row),
-        environment: row.environment ?? '',
-        receivedAt: row.received_at ?? '',
-        processingStartedAt: row.processing_started_at ?? '',
-        processedAt: row.processed_at ?? '',
-        errorMessage: row.error_message || (deriveSubmissionStatus(row) === 'failed' ? 'Document processing stalled or stopped (Anthropic API credit limit or n8n node failure).' : ''),
+    return (rows as Array<Record<string, any>>).map((row) => {
+        const derivedStatus = deriveSubmissionStatus(row)
+        const isCompleted = derivedStatus === 'completed'
+        return {
+            requestID: row.request_id ?? '',
+            dealName: row.deal_name ?? '',
+            companyName: row.company_name ?? '',
+            workstream: row.workstream ?? '',
+            submissionNotes: row.submission_notes ?? '',
+            analystName: row.analyst_name ?? '',
+            analystEmail: row.analyst_email ?? '',
+            projectId: row.project_id ?? '',
+            projectStage: row.project_stage ?? '',
+            documentType: row.document_type ?? '',
+            detectedDocumentType: row.detected_document_type ?? '',
+            detectedDocumentTypesJson: row.detected_document_types_json ?? '[]',
+            tableStructureStatus: row.table_structure_status ?? '',
+            tableStructureIssues: row.table_structure_issues ?? '',
+            detectedHeaderRow: row.detected_header_row ?? 0,
+            columnMapConfidence: row.column_map_confidence ?? 0,
+            validatedColumnMap: row.validated_column_map ?? '',
+            employeeCount: row.employee_count ?? null,
+            employeeType: row.employee_type ?? '',
+            employeeAsOfDate: row.employee_as_of_date ?? '',
+            employeeConfidence: row.employee_confidence ?? null,
+            employeeCitation: row.employee_citation ?? '',
+            employeeEvidenceStatus: row.employee_evidence_status ?? '',
+            financialFactsJson: row.financial_facts_json ?? '',
+            reconciliationJson: row.reconciliation_json ?? '',
+            mathCheckStatus: row.math_check_status ?? '',
+            submissionBatchId: row.submission_batch_id ?? '',
+            expectedBatchDocumentCount: row.expected_batch_document_count ?? 0,
+            fileName: row.file_name ?? '',
+            fileSize: row.file_size ?? 0,
+            fileType: row.file_type ?? '',
+            triggerTimestamp: row.trigger_timestamp ?? '',
+            status: derivedStatus,
+            environment: row.environment ?? '',
+            receivedAt: row.received_at ?? '',
+            processingStartedAt: row.processing_started_at ?? '',
+            processedAt: row.processed_at ?? '',
+            errorMessage: isCompleted ? '' : (row.error_message || (derivedStatus === 'failed' ? 'Document processing stalled or stopped (Anthropic API credit limit or n8n node failure).' : '')),
         riskLevel: row.risk_level ?? '',
         category: row.category ?? '',
         trafficLight: row.traffic_light ?? '',
@@ -132,5 +135,6 @@ export default async function getSubmissionHistory(req: {
         id: row.id ?? 0,
         createdAt: row.created_at ?? '',
         updatedAt: row.updated_at ?? '',
-    }))
+        }
+    })
 }

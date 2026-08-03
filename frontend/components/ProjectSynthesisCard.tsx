@@ -216,8 +216,16 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
     const normalizedProjectId = currentProjectId.trim()
     const visibleSyntheses = syntheses.filter((synthesis) => synthesis.projectId === normalizedProjectId)
     const currentProject = projects.find((project) => (project.projectId || project.projectKey) === normalizedProjectId)
-    const projectDocuments = documents.filter((document) => document.projectId === normalizedProjectId)
-    const failedProjectDocuments = projectDocuments.filter((document) => ['failed', 'error', 'rejected', 'needs_review', 'needs review'].includes(document.status.trim().toLowerCase()))
+    const rawProjectDocuments = documents.filter((document) => document.projectId === normalizedProjectId)
+    const latestDocsByFile = new Map<string, SubmissionHistoryItem>()
+    rawProjectDocuments.forEach((doc) => {
+        const fileKey = (doc.fileName || doc.requestID || String(doc.id)).trim().toLowerCase()
+        if (!latestDocsByFile.has(fileKey)) {
+            latestDocsByFile.set(fileKey, doc)
+        }
+    })
+    const projectDocuments = [...latestDocsByFile.values()]
+    const failedProjectDocuments = projectDocuments.filter((document) => ['failed', 'error', 'rejected'].includes(document.status.trim().toLowerCase()))
     const completedProjectDocumentsWithAnalysis = projectDocuments.filter((document) => {
         return document.isConsidered
             && document.status.trim().toLowerCase() === 'completed'

@@ -1,0 +1,271 @@
+import { useEffect } from 'react'
+import { Activity, AlertTriangle, CheckCircle2, Clock, Loader2, RefreshCw, StopCircle, X, ArrowRight, FolderPlus } from 'lucide-react'
+import { Badge } from '../lib/shadcn/badge'
+import { Button } from '../lib/shadcn/button'
+import { Progress } from '../lib/shadcn/progress'
+import type { SubmissionHistoryItem } from '../utils/submissionHistory'
+import { formatSubmissionStatus, isActiveSubmissionStatus } from '../utils/submissionHistory'
+
+interface BatchProcessingSidePanelProps {
+    isOpen: boolean
+    onClose: () => void
+    inFlightBatch: { projectId: string; dealName?: string; projectStage?: string; expectedDocumentCount?: number } | null
+    activeBatchRows: SubmissionHistoryItem[]
+    batchProgressPercent: number
+    batchProcessingCount: number
+    batchExpectedCount: number
+    batchFinishedCount: number
+    batchFailedCount: number
+    batchElapsedSeconds: number
+    batchSubmissionMessage: string
+    isStoppingBatch: boolean
+    onStopBatch: () => void
+    onRetryDocument: (requestID: string) => void
+    onRequeueNewProject?: (requestID?: string) => void
+    retryingRequestId: string | null
+    submissionHistory: SubmissionHistoryItem[]
+}
+
+export function BatchProcessingSidePanel({
+    isOpen,
+    onClose,
+    inFlightBatch,
+    activeBatchRows,
+    batchProgressPercent,
+    batchProcessingCount,
+    batchExpectedCount,
+    batchFinishedCount,
+    batchFailedCount,
+    batchElapsedSeconds,
+    batchSubmissionMessage,
+    isStoppingBatch,
+    onStopBatch,
+    onRetryDocument,
+    onRequeueNewProject,
+    retryingRequestId,
+    submissionHistory,
+}: BatchProcessingSidePanelProps) {
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && isOpen) {
+                onClose()
+            }
+        }
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [isOpen, onClose])
+
+    if (!isOpen) return null
+
+    const formatTime = (seconds: number) => {
+        const mins = Math.floor(seconds / 60)
+        const secs = seconds % 60
+        return `${mins}m ${secs < 10 ? '0' : ''}${secs}s`
+    }
+
+    const activeProcessingRows = submissionHistory.filter((row) => isActiveSubmissionStatus(row.status))
+    
+    // Group by filename/requestID so files that succeeded on a subsequent retry are not counted as failed
+    const latestRowByFile = new Map<string, SubmissionHistoryItem>()
+    submissionHistory.forEach((row) => {
+        const key = (row.fileName || row.requestID || String(row.id)).trim().toLowerCase()
+        if (!latestRowByFile.has(key)) {
+            latestRowByFile.set(key, row)
+        }
+    })
+
+    const failedRows = [...latestRowByFile.values()].filter((row) =>
+        ['failed', 'error', 'rejected'].includes((row.status || '').trim().toLowerCase())
+    )
+
+    return (
+        <>
+            {/* Backdrop */}
+            <div
+                className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs transition-opacity duration-200"
+                onClick={onClose}
+                aria-hidden="true"
+            />
+
+            {/* Left Slide-over Drawer Panel */}
+            <aside
+                className="fixed left-0 top-0 bottom-0 z-50 flex w-full max-w-md sm:max-w-lg flex-col border-r border-border bg-background shadow-2xl transition-transform duration-300 ease-in-out"
+                role="dialog"
+                aria-modal="true"
+                aria-label="Batch processing drawer"
+            >
+                {/* Header */}
+                <div className="flex items-center justify-between border-b border-border p-4 sm:p-5">
+                    <div className="flex items-center gap-2.5">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                            <Activity className="h-5 w-5 animate-pulse" />
+                        </div>
+                        <div>
+                            <h2 className="text-lg font-bold text-foreground">Batch Processing Activity</h2>
+                            <p className="text-xs text-muted-foreground">
+                                Real-time AI extraction & queue status
+                            </p>
+                        </div>
+                    </div>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={onClose}
+                        className="h-8 w-8 rounded-full"
+                        aria-label="Close batch activity panel"
+                    >
+                        <X className="h-4 w-4" />
+                    </Button>
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-5">
+                    {/* Active In-Flight Batch Banner */}
+                    {(inFlightBatch || activeProcessingRows.length > 0) ? (
+                        <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-3">
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm font-bold text-foreground flex items-center gap-2">
+                                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                                    Active Processing Batch
+                                </span>
+                                <Badge variant="secondary" className="gap-1 font-mono text-xs">
+                                    <Clock className="h-3 w-3" />
+                                    {formatTime(batchElapsedSeconds)}
+                                </Badge>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <div className="flex items-center justify-between text-xs font-semibold">
+                                    <span>Progress: {batchFinishedCount} / {batchExpectedCount || activeProcessingRows.length} documents</span>
+                                    <span>{batchProgressPercent}%</span>
+                                </div>
+                                <Progress value={batchProgressPercent} className="h-2" />
+                            </div>
+
+                            {batchSubmissionMessage && (
+                                <p className="text-xs text-muted-foreground bg-background/60 rounded p-2 border border-border/40">
+                                    {batchSubmissionMessage}
+                                </p>
+                            )}
+
+                            <div className="flex items-center justify-end gap-2 pt-1">
+                                <Button
+                                    type="button"
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={onStopBatch}
+                                    disabled={isStoppingBatch}
+                                    className="gap-1.5"
+                                >
+                                    <StopCircle className="h-3.5 w-3.5" />
+                                    {isStoppingBatch ? 'Stopping…' : 'Stop Batch'}
+                                </Button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="rounded-xl border border-dashed border-border bg-muted/10 p-5 text-center space-y-1">
+                            <CheckCircle2 className="h-6 w-6 text-success mx-auto" />
+                            <p className="text-sm font-semibold text-foreground">No active batches running</p>
+                            <p className="text-xs text-muted-foreground">
+                                All submitted documents have finished processing.
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Active Document Items */}
+                    {activeBatchRows.length > 0 && (
+                        <div className="space-y-2">
+                            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                                Current Batch Files ({activeBatchRows.length})
+                            </h3>
+                            <div className="space-y-2">
+                                {activeBatchRows.map((doc) => {
+                                    const statusNorm = (doc.status || '').trim().toLowerCase()
+                                    const isDone = statusNorm === 'completed'
+                                    const isFailed = ['failed', 'error', 'rejected'].includes(statusNorm)
+                                    return (
+                                        <div
+                                            key={`${doc.requestID}-${doc.fileName}`}
+                                            className="flex items-center justify-between rounded-lg border border-border bg-card p-3 text-xs"
+                                        >
+                                            <div className="space-y-0.5 min-w-0 flex-1 pr-2">
+                                                <p className="font-semibold text-foreground truncate">{doc.fileName}</p>
+                                                <p className="text-[11px] text-muted-foreground">{doc.documentType || 'Document'} · {doc.dealName || 'Project'}</p>
+                                            </div>
+                                            <Badge variant={isDone ? 'success' : isFailed ? 'destructive' : 'secondary'} className="shrink-0 text-[10px]">
+                                                {formatSubmissionStatus(doc.status)}
+                                            </Badge>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Failed Files / Quick Actions */}
+                    {failedRows.length > 0 && (
+                        <div className="space-y-2 border-t border-border pt-4">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-xs font-bold uppercase tracking-wider text-destructive flex items-center gap-1.5">
+                                    <AlertTriangle className="h-3.5 w-3.5" />
+                                    Failed Files ({failedRows.length})
+                                </h3>
+                            </div>
+                            <div className="space-y-2">
+                                {failedRows.map((doc) => (
+                                    <div
+                                        key={`${doc.requestID}-${doc.fileName}`}
+                                        className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-xs space-y-2"
+                                    >
+                                        <div className="flex items-start justify-between gap-2">
+                                            <div>
+                                                <p className="font-bold text-foreground">{doc.fileName}</p>
+                                                <p className="text-[11px] text-muted-foreground">{doc.dealName} · {doc.errorMessage || 'Processing stalled or failed'}</p>
+                                            </div>
+                                            <Badge variant="destructive" className="shrink-0 text-[10px]">Failed</Badge>
+                                        </div>
+
+                                        <div className="flex items-center justify-end gap-2 pt-1 border-t border-border/40">
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                className="h-7 text-[11px]"
+                                                disabled={retryingRequestId === doc.requestID}
+                                                onClick={() => onRetryDocument(doc.requestID)}
+                                            >
+                                                <RefreshCw className={`mr-1 h-3 w-3 ${retryingRequestId === doc.requestID ? 'animate-spin' : ''}`} />
+                                                Retry
+                                            </Button>
+                                            {onRequeueNewProject && (
+                                                <Button
+                                                    type="button"
+                                                    variant="secondary"
+                                                    size="sm"
+                                                    className="h-7 text-[11px]"
+                                                    onClick={() => {
+                                                        onRequeueNewProject(doc.requestID)
+                                                        onClose()
+                                                    }}
+                                                >
+                                                    <FolderPlus className="mr-1 h-3 w-3" />
+                                                    Try in new project
+                                                </Button>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Footer hint */}
+                <div className="border-t border-border p-3 text-center bg-muted/10 text-xs text-muted-foreground">
+                    Tip: Press <kbd className="rounded border bg-muted px-1.5 py-0.5 text-[10px] font-mono">Ctrl</kbd> + <kbd className="rounded border bg-muted px-1.5 py-0.5 text-[10px] font-mono">Shift</kbd> + <kbd className="rounded border bg-muted px-1.5 py-0.5 text-[10px] font-mono">B</kbd> to open this drawer anytime.
+                </div>
+            </aside>
+        </>
+    )
+}
