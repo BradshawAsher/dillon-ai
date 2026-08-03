@@ -270,6 +270,10 @@ const terminalBatchStatuses = new Set(['completed', 'failed', 'error', 'rejected
 // exposing it in the project-based live workspace.
 const SHOW_LEGACY_DILIGENCE_BACKUP = false
 const processingReachedStatuses = new Set([
+    'queued',
+    'uploading',
+    'received',
+    'pending',
     'processing',
     'running',
     'human review',
@@ -831,7 +835,7 @@ export default function DueDiligenceDashboard() {
     }, [diligenceFindings, fallbackFinding])
 
     useEffect(() => {
-        if (isExampleMode || projectSummaries.length === 0) {
+        if (hasRestoredLatestProject || isExampleMode || projectSummaries.length === 0) {
             return
         }
 
@@ -840,7 +844,7 @@ export default function DueDiligenceDashboard() {
         const completedProject = projectSummaries.find((project) => project.completedCount > 0 || (project.documents && project.documents.length > 0 && project.statusLabel !== 'Processing batch...'))
         const targetProject = storedProject || completedProject || projectSummaries[0]
 
-        if (targetProject && (selectedProjectKey === 'new' || selectedProjectKey !== targetProject.projectKey || !hasRestoredLatestProject)) {
+        if (targetProject) {
             setSelectedProjectKey(targetProject.projectKey)
             setProjectId(targetProject.projectId || targetProject.projectKey)
             setDealName(targetProject.projectName)
@@ -850,7 +854,7 @@ export default function DueDiligenceDashboard() {
                 window.localStorage.setItem('mergeworks.selectedProjectKey', targetProject.projectKey)
             }
         }
-    }, [hasRestoredLatestProject, isExampleMode, projectSummaries, selectedProjectKey])
+    }, [hasRestoredLatestProject, isExampleMode, projectSummaries])
 
     const hasActiveSubmissions = useMemo(() => {
         return submissionHistory.some((row) => isActiveSubmissionStatus(row.status))
@@ -1141,18 +1145,31 @@ export default function DueDiligenceDashboard() {
 
         return submissionHistory.filter((row) => row.submissionBatchId === displayedSubmissionBatch.id)
     }, [displayedSubmissionBatch, submissionHistory])
+
+    const activeBatchExpectedCount = displayedSubmissionBatch?.expectedDocumentCount ?? activeBatchRows.length
+
     const activeBatchFinishedCount = activeBatchRows.filter((row) => {
         const status = row.status.trim().toLowerCase()
         return terminalBatchStatuses.has(status)
             || Boolean(row.processedAt?.trim() || row.extractedJson?.trim())
             || activeProjectSynthesisSucceeded
     }).length
-    const activeBatchProcessingCount = activeBatchRows.filter((row) => hasReachedProcessingStage(row.status)).length
+
+    const activeBatchProcessingCount = Math.min(
+        activeBatchExpectedCount || activeBatchRows.length,
+        Math.max(
+            activeBatchFinishedCount,
+            activeBatchRows.filter((row) => hasReachedProcessingStage(row.status)).length
+        )
+    )
+
     const activeBatchFailedCount = activeBatchRows.filter((row) => {
         const status = row.status.trim().toLowerCase()
         return status === 'failed' || status === 'error' || status === 'rejected' || status === 'needs_review' || status === 'needs review'
     }).length
+
     const activeBatchCompletedCount = activeBatchRows.filter((row) => row.status.trim().toLowerCase() === 'completed').length
+
     const activeBatchErrors = activeBatchRows
         .filter((row) => row.errorMessage.trim().length > 0 && ['failed', 'error', 'rejected', 'needs_review', 'needs review'].includes(row.status.trim().toLowerCase()))
         .map((row) => ({
@@ -1161,16 +1178,18 @@ export default function DueDiligenceDashboard() {
             requestID: row.requestID,
             canRetry: ['failed', 'error', 'rejected', 'needs_review', 'needs review'].includes(row.status.trim().toLowerCase()),
         }))
+
     const activeBatchAdvisories = activeBatchRows
         .filter((row) => row.status.trim().toLowerCase() === 'completed' && row.errorMessage.trim().length > 0)
         .map((row) => ({ fileName: row.fileName || 'Unnamed document', message: row.errorMessage }))
-    const activeBatchExpectedCount = displayedSubmissionBatch?.expectedDocumentCount ?? 0
+
     const activeBatchProgressPercent = activeBatchExpectedCount > 0
         ? Math.min(100, Math.round((activeBatchFinishedCount / activeBatchExpectedCount) * 100))
         : 0
+
     const activeBatchProcessingPercent = activeBatchExpectedCount > 0
         ? Math.min(100, Math.round((activeBatchProcessingCount / activeBatchExpectedCount) * 100))
-        : 0
+        : (displayedSubmissionBatch ? 100 : 0)
     const activeBatchImpact = useMemo(() => computeImpactMetrics(activeBatchRows), [activeBatchRows])
     const activeBatchStuckRows = activeBatchRows.filter((row) => {
         const status = row.status.trim().toLowerCase()
