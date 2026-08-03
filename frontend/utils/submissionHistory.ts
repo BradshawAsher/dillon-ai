@@ -85,12 +85,21 @@ const activeSubmissionStatuses = new Set([
     'submitted',
 ])
 
+const stoppedSubmissionStatuses = new Set([
+    'stopped',
+    'stopped_by_user',
+])
+
 export function normalizeSubmissionStatus(status: string) {
     return status.trim().toLowerCase()
 }
 
 export function isActiveSubmissionStatus(status: string) {
     return activeSubmissionStatuses.has(normalizeSubmissionStatus(status))
+}
+
+export function isStoppedSubmissionStatus(status: string) {
+    return stoppedSubmissionStatuses.has(normalizeSubmissionStatus(status))
 }
 
 export function formatSubmissionStatus(status: string) {

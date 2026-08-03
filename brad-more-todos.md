@@ -113,6 +113,8 @@ what is the current amount of time that it takes for a batch processing to say t
 
 Can we add a stop button to the batch submission as well as to the synthesis if it leads to an infinite loop, so the user can run it back?
 
+For some reason the batch processing is out of sync and doesnt show that it works even though the synthesis worked?
+
 ## Sample Deal File Support (2026-08-01)
 
 ### Next sample-deal validation work (do this order)
