@@ -183,6 +183,7 @@ function getStatusLabel(args: {
     activeCount: number
     reviewCount: number
     documentCount: number
+    hasSynthesis?: boolean
 }) {
     if (args.failedCount > 0) {
         return 'Needs triage'
@@ -197,7 +198,7 @@ function getStatusLabel(args: {
     }
 
     if (args.documentCount > 0) {
-        return 'Ready for synthesis'
+        return args.hasSynthesis ? 'Synthesized' : 'Ready for synthesis'
     }
 
     return 'No documents'
@@ -222,8 +223,6 @@ function stringifySynthesisValue(value: unknown): string {
     if (value == null) {
         return '—'
     }
-
-
 
     if (Array.isArray(value)) {
         return value.map((item) => stringifySynthesisValue(item)).join(', ')
