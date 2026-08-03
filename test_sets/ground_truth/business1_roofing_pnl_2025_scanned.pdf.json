@@ -1,0 +1,46 @@
+{
+  "fileName": "Werkheiser P&L 2025.pdf",
+  "business": "Business 1 - Roofing Co PA",
+  "fileType": "PDF",
+  "groundTruth": {
+    "documentType": "Profit and Loss Statement",
+    "documentTypes": [
+      "Profit and Loss Statement"
+    ],
+    "trafficLight": "YELLOW",
+    "riskLevel": "MEDIUM",
+    "financialFacts": [
+      {
+        "metric": "revenue",
+        "normalizedValue": 3150000,
+        "period": "FY2025",
+        "rawValue": "$3,150,000"
+      },
+      {
+        "metric": "gross_profit",
+        "normalizedValue": 1260000,
+        "period": "FY2025",
+        "rawValue": "$1,260,000"
+      },
+      {
+        "metric": "net_income",
+        "normalizedValue": 245000,
+        "period": "FY2025",
+        "rawValue": "$245,000"
+      }
+    ],
+    "expectedRedFlags": [
+      "Scanned image quality — potential OCR text extraction degradation"
+    ],
+    "expectedYellowFlags": [
+      "Seasonal revenue fluctuations",
+      "Material cost inflation"
+    ],
+    "falsePositiveFlags": [],
+    "missedFlags": [],
+    "valuation": null,
+    "employeeEvidence": null,
+    "expectedMathCheckStatus": "passed",
+    "notes": "Scanned P&L document requiring OCR text layer extraction. Used to test OCR fallback pipeline accuracy."
+  }
+}

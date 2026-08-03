@@ -1,0 +1,49 @@
+{
+  "fileName": "2) TurnKey Product Management P&L [Google Sheet].xlsx",
+  "business": "Business 3 - TurnKey Product Management",
+  "fileType": "XLSX",
+  "groundTruth": {
+    "documentType": "Profit and Loss Statement",
+    "documentTypes": [
+      "Profit and Loss Statement"
+    ],
+    "trafficLight": "YELLOW",
+    "riskLevel": "MEDIUM",
+    "financialFacts": [
+      {
+        "metric": "revenue",
+        "normalizedValue": 1850000,
+        "period": "TTM",
+        "rawValue": "$1,850,000"
+      },
+      {
+        "metric": "gross_profit",
+        "normalizedValue": 1420000,
+        "period": "TTM",
+        "rawValue": "$1,420,000"
+      },
+      {
+        "metric": "net_income",
+        "normalizedValue": 510000,
+        "period": "TTM",
+        "rawValue": "$510,000"
+      },
+      {
+        "metric": "ebitda_sde",
+        "normalizedValue": 620000,
+        "period": "TTM",
+        "rawValue": "$620,000"
+      }
+    ],
+    "expectedRedFlags": [],
+    "expectedYellowFlags": [
+      "Wide spreadsheet layout across 10 tabs and 49 monthly breakdown columns"
+    ],
+    "falsePositiveFlags": [],
+    "missedFlags": [],
+    "valuation": null,
+    "employeeEvidence": null,
+    "expectedMathCheckStatus": "passed",
+    "notes": "10-sheet monthly P&L matrix exported from Google Sheets with 49 tracking columns."
+  }
+}

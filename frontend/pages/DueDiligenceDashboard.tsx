@@ -543,30 +543,7 @@ export default function DueDiligenceDashboard() {
         return filteredHistory
     }, [rawSubmissionHistory])
 
-    const prevFailedCountRef = useRef<number | null>(null)
-    useEffect(() => {
-        const fifteenMinutesAgo = Date.now() - 15 * 60 * 1000
-        const recentFailedDocs = submissionHistory.filter((row) => {
-            const isFailedStatus = ['failed', 'error', 'rejected'].includes((row.status || '').trim().toLowerCase()) ||
-                (row.errorMessage || row.aiEscalationReason || '').toLowerCase().includes('credit') ||
-                (row.errorMessage || row.aiEscalationReason || '').toLowerCase().includes('balance')
-            if (!isFailedStatus) return false
 
-            const rowTime = row.updatedAt ? new Date(row.updatedAt).getTime() : (row.createdAt ? new Date(row.createdAt).getTime() : 0)
-            return rowTime > fifteenMinutesAgo || (activeProjectId && row.projectId === activeProjectId)
-        })
-
-        if (prevFailedCountRef.current !== null && recentFailedDocs.length > prevFailedCountRef.current) {
-            const newlyFailedCount = recentFailedDocs.length - prevFailedCountRef.current
-            const sampleDoc = recentFailedDocs[0]
-            const projLabel = sampleDoc?.dealName || sampleDoc?.companyName || 'diligence project'
-            triggerFailureAlert(
-                '🔴 AI Processing Error — Due Diligence Pipeline',
-                `${newlyFailedCount} document(s) in ${projLabel} failed processing or hit credit limits. Check the Diligence tab to retry.`
-            )
-        }
-        prevFailedCountRef.current = recentFailedDocs.length
-    }, [submissionHistory, activeProjectId])
 
     const visibleProjectSyntheses = useMemo(() => {
         const isolationEnabled = isDataIsolationEnabled()
@@ -753,6 +730,31 @@ export default function DueDiligenceDashboard() {
     const { data: sharedActionTracker, trigger: triggerProjectActionTracker } = useGetProjectActionTracker()
     const { trigger: saveProjectActionTracker } = useSaveProjectActionTracker()
     const activeProjectId = isExampleMode ? 'atlas-001' : projectId
+
+    const prevFailedCountRef = useRef<number | null>(null)
+    useEffect(() => {
+        const fifteenMinutesAgo = Date.now() - 15 * 60 * 1000
+        const recentFailedDocs = submissionHistory.filter((row) => {
+            const isFailedStatus = ['failed', 'error', 'rejected'].includes((row.status || '').trim().toLowerCase()) ||
+                (row.errorMessage || row.aiEscalationReason || '').toLowerCase().includes('credit') ||
+                (row.errorMessage || row.aiEscalationReason || '').toLowerCase().includes('balance')
+            if (!isFailedStatus) return false
+
+            const rowTime = row.updatedAt ? new Date(row.updatedAt).getTime() : (row.createdAt ? new Date(row.createdAt).getTime() : 0)
+            return rowTime > fifteenMinutesAgo || (activeProjectId && row.projectId === activeProjectId)
+        })
+
+        if (prevFailedCountRef.current !== null && recentFailedDocs.length > prevFailedCountRef.current) {
+            const newlyFailedCount = recentFailedDocs.length - prevFailedCountRef.current
+            const sampleDoc = recentFailedDocs[0]
+            const projLabel = sampleDoc?.dealName || sampleDoc?.companyName || 'diligence project'
+            triggerFailureAlert(
+                '🔴 AI Processing Error — Due Diligence Pipeline',
+                `${newlyFailedCount} document(s) in ${projLabel} failed processing or hit credit limits. Check the Diligence tab to retry.`
+            )
+        }
+        prevFailedCountRef.current = recentFailedDocs.length
+    }, [submissionHistory, activeProjectId])
     const activeDealModel = useMemo<DealModel>(() => {
         const saved = Array.isArray(dealModelsData) ? dealModelsData.find((model) => model.projectId === activeProjectId) : undefined
         const exampleModel: DealModel = {
