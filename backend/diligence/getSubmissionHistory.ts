@@ -21,8 +21,13 @@ function hasText(value: unknown) {
 function deriveSubmissionStatus(row: Record<string, any>) {
     const rawStatus = typeof row.status === 'string' ? row.status.trim() : ''
     const normalizedStatus = rawStatus.toLowerCase()
-    const hasUsableAnalysis = hasText(row.extracted_json)
+    const hasUsableAnalysis = hasText(row.extracted_json) || hasText(row.financial_facts_json) || hasText(row.detected_document_type)
     const failedAfterRetries = String(row.ai_escalation_reason ?? '').trim().toLowerCase() === 'processing_failure'
+
+    if (hasUsableAnalysis || (hasText(row.processed_at) && normalizedStatus !== 'failed' && normalizedStatus !== 'error')) {
+        return 'completed'
+    }
+
     const hasTerminalFailureMarkers = activeSubmissionStatuses.has(normalizedStatus)
         && hasText(row.processed_at)
         && (hasText(row.error_message) || failedAfterRetries)

@@ -523,12 +523,32 @@ function clampChatPanelSize(width: number, height: number): ChatPanelSize {
 
 export default function DealChatPanel({ synthesis, model, projectName, documents, allSyntheses, onSuggestProjectSwitch, onOpenProjectsPanel, projectsCount }: Props) {
     const [isOpen, setIsOpen] = useState(false)
+    const [unreadCount, setUnreadCount] = useState<number>(0)
     const [messages, setMessages] = useState<Message[]>(() => {
         try {
             const stored = localStorage.getItem(CHAT_STORAGE_KEY)
             return stored ? JSON.parse(stored) : []
         } catch { return [] }
     })
+
+    const lastMessageCountRef = useRef(messages.length)
+
+    useEffect(() => {
+        if (isOpen) {
+            setUnreadCount(0)
+        }
+    }, [isOpen])
+
+    useEffect(() => {
+        if (messages.length > lastMessageCountRef.current) {
+            const newMessages = messages.slice(lastMessageCountRef.current)
+            const newAssistantMessages = newMessages.filter(m => m.role === 'assistant')
+            if (newAssistantMessages.length > 0 && !isOpen) {
+                setUnreadCount(prev => prev + newAssistantMessages.length)
+            }
+        }
+        lastMessageCountRef.current = messages.length
+    }, [messages, isOpen])
     const [input, setInput] = useState('')
     const [isTyping, setIsTyping] = useState(false)
     const [typingElapsed, setTypingElapsed] = useState(0)
@@ -750,15 +770,18 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
 
                 <button
                     type="button"
-                    onClick={() => setIsOpen(true)}
+                    onClick={() => {
+                        setIsOpen(true)
+                        setUnreadCount(0)
+                    }}
                     className="pointer-events-auto flex items-center gap-2.5 rounded-full bg-primary px-5 py-3 text-primary-foreground shadow-xl transition-all hover:scale-105 active:scale-95"
                     aria-label="Open AI deal assistant"
                 >
                     <Bot className="h-5 w-5" />
                     <span className="text-sm font-semibold">AI Deal Assistant</span>
-                    {messages.length > 0 && (
-                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary-foreground/20 text-[10px] font-bold">
-                            {messages.filter(m => m.role === 'assistant').length}
+                    {unreadCount > 0 && (
+                        <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white shadow-sm animate-pulse">
+                            {unreadCount}
                         </span>
                     )}
                 </button>

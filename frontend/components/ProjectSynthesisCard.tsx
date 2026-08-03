@@ -242,19 +242,29 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
         return synthesis.finalJudgmentSummary.trim().length > 0 || synthesis.finalRecommendation.trim().length > 0
     })
 
+    const firstDocTimestamp = projectDocuments[0]?.processingStartedAt || projectDocuments[0]?.triggerTimestamp || projectDocuments[0]?.receivedAt
+    const realStartMs = firstDocTimestamp ? Date.parse(firstDocTimestamp) : null
+
     useEffect(() => {
         if (!synthesisPending) {
             setSynthesisElapsedSeconds(0)
             return
         }
 
-        setSynthesisElapsedSeconds(0)
-        const interval = window.setInterval(() => {
-            setSynthesisElapsedSeconds((seconds) => seconds + 1)
-        }, 1000)
+        const updateClock = () => {
+            if (realStartMs && !Number.isNaN(realStartMs)) {
+                const diff = Math.max(0, Math.floor((Date.now() - realStartMs) / 1000))
+                setSynthesisElapsedSeconds(diff)
+            } else {
+                setSynthesisElapsedSeconds((prev) => prev + 1)
+            }
+        }
+
+        updateClock()
+        const interval = window.setInterval(updateClock, 1000)
 
         return () => window.clearInterval(interval)
-    }, [synthesisPending])
+    }, [synthesisPending, realStartMs])
 
     return (
         <Card className="overflow-hidden">
