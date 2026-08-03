@@ -113,7 +113,13 @@ what is the current amount of time that it takes for a batch processing to say t
 
 Can we add a stop button to the batch submission as well as to the synthesis if it leads to an infinite loop, so the user can run it back?
 
-For some reason the batch processing is out of sync and doesnt show that it works even though the synthesis worked?
+[Done?] For some reason the batch processing is out of sync and doesnt show that it works even though the synthesis worked?
+
+So i just uploaded a batch of 2 docs for a new project and then i wanted to take a look at an old project while that was working and then now i dont know how in the ui to go to the new project is it possible we can fix this by first adding a placeholder for this in the projects panel so that i can go back to the current batch that is processing
+
+[] Can we reduce the duplication in overview tab since the very top memo has lots of duplicate with the deal overview, can we reduce duplication between the two? Maybe for the recommendation for the lower down deal overview, remove the 2 bullet points/key assessment details? Or maybe should we just make a new tab for this or what? How to reduce duplication since overview and synthesis tab say similar things?
+
+Maybe we should add projects as a separate side panel as well as its own tab so the user can look at them while multitasking with the rest of the site and stuff like that?
 
 ## Sample Deal File Support (2026-08-01)
 
