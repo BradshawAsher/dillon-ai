@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react'
-import { Keyboard, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Keyboard } from 'lucide-react'
+
 import { Button } from '../lib/shadcn/button'
 
 const SHORTCUTS = [
@@ -43,36 +44,17 @@ export default function KeyboardShortcutsDialog() {
             </Button>
 
             {isOpen && (
-                <div className="fixed inset-0 z-[100] flex items-start justify-center pt-16 sm:pt-24 p-4 bg-black/60 backdrop-blur-sm animate-in fade-in-0 duration-200">
-                    <div
-                        className="fixed inset-0"
-                        onClick={() => setIsOpen(false)}
-                    />
-                    <div className="relative z-10 w-full max-w-md rounded-2xl border border-primary/20 bg-card text-card-foreground p-6 shadow-2xl animate-in fade-in-0 zoom-in-95 duration-200 max-h-[80vh] overflow-y-auto">
-                        <div className="flex items-center justify-between border-b border-border pb-3">
-                            <div className="flex items-center gap-2">
-                                <Keyboard className="h-5 w-5 text-primary" />
-                                <h2 className="text-lg font-semibold text-foreground">Keyboard Shortcuts</h2>
-                            </div>
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
-                                onClick={() => setIsOpen(false)}
-                            >
-                                <X className="h-4 w-4" />
-                                <span className="sr-only">Close</span>
-                            </Button>
-                        </div>
-
+                <>
+                    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" onClick={() => setIsOpen(false)} />
+                    <div className="fixed left-1/2 top-1/2 z-50 w-full max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-lg border border-border bg-popover text-popover-foreground p-6 shadow-xl">
+                        <h2 className="text-lg font-semibold text-foreground">Keyboard shortcuts</h2>
                         <div className="mt-4 space-y-3">
                             {SHORTCUTS.map(shortcut => (
-                                <div key={shortcut.description} className="flex items-center justify-between gap-4 py-1">
-                                    <span className="text-sm text-muted-foreground font-medium">{shortcut.description}</span>
-                                    <div className="flex gap-1 shrink-0">
+                                <div key={shortcut.description} className="flex items-center justify-between">
+                                    <span className="text-sm text-muted-foreground">{shortcut.description}</span>
+                                    <div className="flex gap-1">
                                         {shortcut.keys.map(key => (
-                                            <kbd key={key} className="rounded-md border border-border bg-muted px-2 py-0.5 text-xs font-mono font-semibold text-foreground shadow-sm">
+                                            <kbd key={key} className="rounded border border-border bg-muted px-2 py-0.5 text-xs font-mono text-foreground">
                                                 {key}
                                             </kbd>
                                         ))}
@@ -80,12 +62,9 @@ export default function KeyboardShortcutsDialog() {
                                 </div>
                             ))}
                         </div>
-
-                        <p className="mt-5 border-t border-border pt-3 text-xs text-muted-foreground">
-                            Press <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] font-mono font-semibold text-foreground">?</kbd> anywhere to toggle this shortcuts dialog.
-                        </p>
+                        <p className="mt-4 text-xs text-muted-foreground">Press <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] font-mono">?</kbd> anywhere to toggle this dialog.</p>
                     </div>
-                </div>
+                </>
             )}
         </>
     )
