@@ -1,131 +1,129 @@
-# MergeWorks Due Diligence Dashboard — Team Handoff
+# MergeWorks Due Diligence Dashboard — Team & Project Handoff
+
+*Updated: August 2026*
 
 ## Purpose
 
-This is the current handoff for the MergeWorks team and Trisha. It covers the
-live project-based diligence dashboard, its n8n integration, and the operating
-checks needed to maintain it.
+This document is the operational handoff for the MergeWorks team and engineering handoffs. It covers the live project-based diligence dashboard, its n8n and Supabase integration, evaluation harness, pipeline resiliency features, and operating procedures needed to maintain and scale it.
 
-The [README](../README.md) is the setup and architecture reference. This
-document is the operational handoff: who owns what, how the system behaves,
-and what to verify after a change.
+---
 
-## Product today
+## Product Overview
 
-The dashboard is an internal M&A diligence workspace. An analyst creates or
-selects a project, uploads one or more files, and follows:
+MergeWorks is a document-first, post-LOI M&A diligence workspace. An analyst creates or selects a project, uploads one or more deal documents, and follows:
 
-1. per-document processing and AI extraction;
-2. batch progress;
-3. project portfolio and document coverage; and
-4. project-level synthesis, including risks, negotiation levers, and citations.
+1. **Per-Document Processing & AI Extraction**: n8n runs document-level AI analysis (financial facts, risk flags, classification, citations, and deterministic math checks).
+2. **Batch Progress & 20s Stall Auto-Detection**: Real-time batch progress with automatic 20-second stall detection if n8n halts or hits API credit limits.
+3. **Audio & Chrome Browser Alerts**: Pure Web Audio API two-tone sound alerts and native OS notifications on AI failures.
+4. **Project Portfolio & Dynamic Statuses**: Cross-references live Supabase syntheses to render accurate states (`Extracting documents...`, `Awaiting processing`, `Ready for synthesis`, `Synthesized`).
+5. **Project-Wide Synthesis**: Consolidator workflow synthesizes findings, cross-document conflicts, negotiation levers, and valuation ranges.
+6. **Automated Evaluation Harness (`npm run eval`)**: Full ground-truth benchmarking across 17 test documents and 5 sample deals in `test_sets/ground_truth/`.
 
-The frontend restores the latest document submission and latest project context
-on a Live n8n page load. It also shows a synthesis-starting state while the
-project consolidator has been triggered but has not yet published a final row.
+---
 
-## Ownership and source of truth
+## Ownership & Data Sources
 
-| Area | Source of truth / owner |
-| --- | --- |
-| Live workflow behavior, nodes, and Data Tables | Pod 1 n8n Cloud/Enterprise workflows; access coordinated with Trisha |
-| Dashboard application | This repository |
-| Submitted documents, document AI output, and synthesis rows | **Supabase/Postgres** (primary read layer) + n8n Data Tables (legacy, still written in parallel) |
-| Hosting and environment variables | Vercel deployment configuration |
+| Area | Source of truth / owner | Location |
+| --- | --- | --- |
+| **Live Workflow Behavior** | Pod 1 n8n Cloud project (`2606-ai-fellows-mergeworks`) | `merge-works.app.n8n.cloud` via n8n MCP |
+| **Primary Data Layer** | Supabase Postgres (`sihpsqrunkwkxhhnwoqe`) | Tables: `documents`, `project_syntheses`, `deal_models`, `workflow_errors`, `project_action_trackers` |
+| **Legacy Backup Writes** | n8n Data Tables (written in parallel) | Tables: `Document Specific Fields`, `Project-Level Fields`, `Deal Models` |
+| **Evaluation Suite** | Local test harness | `test_sets/ground_truth/` + `scripts/run-evals.ts` |
+| **Dashboard Web UI** | React + TypeScript + Express API | `frontend/` (Vercel deployment: `https://due-diligence-dashboard.vercel.app`) |
 
-Do not diagnose or modify workflow behavior from local exports or screenshots.
-Use n8n MCP to inspect Pod 1's live workflows. If MCP access is unavailable or
-does not expose the required workflow, ask Trisha for access before proceeding.
+---
 
-## Application architecture
+## System Architecture
 
 ```text
 Browser
-  -> /api/diligence/* (same-origin Express/Vite layer)
-  -> Supabase/Postgres (all reads: history, synthesis, deal models, errors, action tracker)
-  -> n8n webhooks (writes only: submit, retry — triggers async AI workflows)
+  -> /api/diligence/* (Express/Vite server layer)
+  -> Supabase/Postgres (Primary Read Layer for history, synthesis, deal models, action trackers)
+  -> n8n Webhooks (Async Write Layer: document submit, retry, consideration, deal model save)
 
-n8n workflows (async background processing)
-  -> write results to BOTH n8n Data Tables AND Supabase in parallel
+n8n Workflows (Async Background AI Pipeline)
+  -> Reads file from Google Drive / Webhook payload
+  -> Runs LLM Extraction + Deterministic Math Checks (Revenue - COGS = GP, Assets - Liab = Equity)
+  -> Writes results in parallel to Supabase Postgres AND n8n Data Tables
+  -> Counter subworkflow triggers Project Consolidator asynchronously upon batch completion
 ```
 
-The browser never calls n8n directly. Dashboard polling now reads from
-Supabase (via the backend API) and no longer burns n8n executions.
+---
 
-The main implementation points are:
+## Key Workspace Views & Tabs
 
-| Location | Responsibility |
+| Workspace Tab | Purpose & Features |
 | --- | --- |
-| `frontend/pages/DueDiligenceDashboard.tsx` | Dashboard state, uploads, polling, latest-result restoration |
-| `frontend/components/ProjectIntakeCard.tsx` | Project-based file intake |
-| `frontend/components/ProjectPortfolioCard.tsx` | Project cards, synthesis download, project selection |
-| `frontend/components/ProjectSynthesisCard.tsx` | Project synthesis display and report download |
-| `frontend/components/SubmissionHistoryCard.tsx` | Document-level history and AI detail |
-| `backend/diligence/` | n8n request/response normalization |
-| `docs/n8n-webhooks.md` | API and expected n8n response contracts |
-| `docs/LIVE_N8N_WORKFLOWS.md` | Verified live Pod 1 workflow and Data Table map |
+| **Overview** | Executive Deal Memo, Deal Health KPIs, Deal Grade (A–F), Top Risks, Top Levers, Seller Questions, Business Snapshot, Buyer Profile, and Pipeline Error Alert Banner. |
+| **Diligence** | Document Intake Dropzone, Project Portfolio with status indicators, Submission History Table with inline error boxes, Evidence Drawer, and Project Synthesis Card. |
+| **Valuation** | Multimodal method comparison (Asset-based, Revenue multiple, EBITDA/SDE multiple, Blended), Valuation Impact Bridge, Comparable Transactions, and Sensitivity Heatmap. |
+| **Returns** | All-Cash vs. Financed returns modeling, Cash-on-Cash calculator, Annual Cash Flow breakdown, Payback timeline, Debt Service Coverage (DSCR), and Monte Carlo simulation. |
+| **Growth** | 5-Year Revenue & EBITDA projections, Business Value Evolution, Growth Sensitivity Tornado chart, Exit Readiness assessment, and 100-Day Action Plan. |
+| **Deal Structure** | Deal Stack / Sources & Uses visual builder, Leverage Safety margin, Downside Protection, Cash Reserve analysis, and Working Capital requirements. |
+| **Evals & Harness** | Live execution dashboard displaying automated accuracy scores against the 17 ground truth test documents across Classification, Facts, Risk, Valuation, Employees, and Math Checks. |
 
-## Required live workflow behavior
+---
 
-For a successful multi-document flow, confirm the live Pod 1 workflows:
+## Evaluation Suite & Ground Truth Benchmarking
 
-1. accept an upload and create a uniquely identifiable document row;
-2. preserve `projectId`, `submissionBatchId`, and expected batch-document count;
-3. write document status and AI output back to the document row;
-4. start the project consolidator only after the batch is complete; and
-5. publish a project-level synthesis row readable by the synthesis endpoint.
+The workspace includes a complete automated evaluation harness to verify AI extraction quality against sample deals before deploying prompt/workflow changes.
 
-The dashboard recognizes active synthesis statuses including `queued`,
-`pending`, `processing`, `running`, `synthesis_pending`, and `synthesizing`.
-Writing one of these statuses when the document counter starts the consolidator
-provides the most accurate progress signal.
+- **Run Command**:
+  ```bash
+  npm run eval
+  ```
+- **Ground Truth Files**: Located in `test_sets/ground_truth/` (17 JSON specifications).
+- **Scoring Rubric**:
+  - **Document Classification**: 10 pts max
+  - **Financial Facts Extraction**: 10 pts max per metric (1% tolerance = 10 pts, 5% = 5 pts)
+  - **Risk Assessment & Flags**: 20 pts max (Traffic light + Red/Yellow flag recall)
+  - **Valuation Bounds**: 15 pts max
+  - **Employee Evidence**: 5 pts max
+  - **Math Checks**: 10 pts max
+- **Pass Threshold**: **>= 80% (Ship-Ready)** across all 17 documents.
 
-## Environment and deployment
+---
 
-Required server-side environment variables:
+## Environment & Deployment
+
+Required environment variables (`frontend/.env` locally & Vercel project settings):
 
 ```dotenv
-N8N_WEBHOOK_SECRET=the-header-auth-secret
+N8N_WEBHOOK_SECRET=<header-auth-secret>
 SUPABASE_URL=https://sihpsqrunkwkxhhnwoqe.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=<service-role-key-from-supabase-dashboard>
+PORT=3000
 ```
 
-These must be set in both the local `.env` (at `frontend/.env`) and in the
-Vercel project settings for production. Never expose the webhook secret or the
-Supabase service-role key through a `VITE_` variable.
+### Build & Typecheck Commands:
 
-The primary deployment is Vercel. Before promoting a change, use a preview
-deployment and perform the smoke test below.
+```bash
+cd frontend
+npm run typecheck   # Type-checks all React components & API normalizers
+npm run build       # Production bundle build
+npm run check       # Runs typecheck + tests + build in a single gate
+```
 
-## Smoke test after a dashboard or workflow change
+---
 
-1. Open the live dashboard and verify the latest project/document restores.
-2. Upload one small test file to the test environment.
-3. Confirm a history row appears and transitions through processing to a
-   terminal status.
-4. Confirm the document result renders AI summary, flags, citations, and raw
-   extracted JSON as applicable.
-5. For a one-document batch, confirm batch progress reaches completion and the
-   synthesis-starting state appears.
-6. Confirm the project synthesis row appears and its report downloads from both
-   Project Synthesis and Project Portfolio.
-7. Confirm no secret, personal data, or raw document content is exposed in the
-   browser console or deployment logs.
+## Operational Smoke Test (Post-Release)
 
-## Known operating notes
+1. Open **`https://due-diligence-dashboard.vercel.app`**.
+2. Verify existing projects populate with correct status badges (`Synthesized`, `Extracting documents...`, `Awaiting processing`).
+3. Upload a sample document to a new project.
+4. Verify document appears in the history table, displays status transitions, and shows inline errors if n8n hits an API limit.
+5. Confirm audio alert tone plays and desktop Chrome notification fires if a processing error occurs.
+6. Verify Project Synthesis Card renders at the top of the Diligence view once document extraction completes.
+7. Open the **Evals & Harness** tab or run `npm run eval` in terminal to view evaluation scores.
 
-- The active UI is project-centric; the retired Retool sample finding UI is
-  intentionally hidden and retained only as code backup.
-- Long AI sections are collapsible and scroll internally when expanded.
-- A project marked **Needs triage** has a failed/error/rejected document;
-  **Needs review** means document processing succeeded but at least one result
-  requires human review.
-- If a project appears mismatched in synthesis, verify the `projectId` written
-  by the live document and synthesis workflows before changing frontend logic.
+---
 
-## Historical reference
+## Documentation Index
 
-The older Retool-to-VS Code-era document is preserved at
-[docs/archive/OLD_PROJECT_HANDOFF_RETOOL_TO_VSCODE.md](archive/OLD_PROJECT_HANDOFF_RETOOL_TO_VSCODE.md).
-It is historical context only and must not be used as the current workflow
-source of truth.
+- **`README.md`**: Core repository architecture & setup.
+- **`ACTIVE_TODOS.md`**: Current active todo list & pipeline roadmap.
+- **`docs/HOW_TO_RUN.md`**: Local development setup & debugging rules.
+- **`docs/LIVE_N8N_WORKFLOWS.md`**: Verified Pod 1 n8n Cloud workflows & table schema map.
+- **`docs/n8n-webhooks.md`**: API endpoints, payloads, and response contracts.
+- **`test-case-plan.md`**: Test plan for the 5 sample deals & 17 test documents.
+
