@@ -1564,16 +1564,24 @@ export default function DueDiligenceDashboard() {
     }
 
     const handleStopBatch = async () => {
-        if (!displayedSubmissionBatch || activeBatchRows.length === 0) return
-        const stoppableRequestIds = activeBatchRows
+        const candidateRows = activeBatchRows.length > 0
+            ? activeBatchRows
+            : submissionHistory.filter((row) => {
+                const isProjectMatch = (getProjectKey(row) === activeProjectId) || (row.projectId === activeProjectId)
+                return isProjectMatch || isActiveSubmissionStatus(row.status)
+            })
+
+        const stoppableRequestIds = candidateRows
             .filter((row) => isActiveSubmissionStatus(row.status))
             .map((row) => row.requestID)
             .filter((requestID) => requestID.trim().length > 0)
+
         if (stoppableRequestIds.length === 0) {
-            setBatchSubmissionMessage('No active documents remain in this batch to stop.')
+            setBatchSubmissionMessage('No active documents are currently processing to stop.')
             return
         }
-        if (!window.confirm(`Stop ${stoppableRequestIds.length} active document${stoppableRequestIds.length === 1 ? '' : 's'} in this batch? Completed documents will be kept, and synthesis will not run until you retry or re-queue documents.`)) return
+
+        if (!window.confirm(`Stop ${stoppableRequestIds.length} active document${stoppableRequestIds.length === 1 ? '' : 's'}? Completed documents will be kept, and synthesis will not run until you retry or re-queue documents.`)) return
         setIsStoppingBatch(true)
         try {
             const response = await fetch('/api/diligence/stop-batch', {
@@ -1583,8 +1591,9 @@ export default function DueDiligenceDashboard() {
             })
             const body = await response.json() as { error?: string; stopped?: number }
             if (!response.ok) throw new Error(body.error || 'Unable to stop the active batch')
-            setBatchSubmissionMessage(`Stopped ${body.stopped ?? stoppableRequestIds.length} active document${(body.stopped ?? stoppableRequestIds.length) === 1 ? '' : 's'} in this batch.`)
+            setBatchSubmissionMessage(`Stopped ${body.stopped ?? stoppableRequestIds.length} active document${(body.stopped ?? stoppableRequestIds.length) === 1 ? '' : 's'}.`)
             setActiveSubmissionBatch((current) => current ? { ...current, stoppedAt: Date.now(), endedAt: Date.now() } : current)
+            setInFlightBatch(null)
             await handleRefreshHistory(activeHistoryEnvironment)
         } catch (error) {
             setBatchSubmissionMessage(error instanceof Error ? error.message : 'Unable to stop the active batch')
