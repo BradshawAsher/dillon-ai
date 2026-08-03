@@ -1513,6 +1513,10 @@ export default function DueDiligenceDashboard() {
     }
 
     const handleRetryFailedDocument = async (requestID: string) => {
+        const targetRow = submissionHistory.find((r) => r.requestID === requestID || String(r.id) === requestID)
+        const targetProjectId = targetRow?.projectId || activeProjectId
+        const targetDealName = targetRow?.dealName || dealName || 'Retry Document'
+
         setActiveWorkspaceTab('diligence')
         window.setTimeout(() => {
             document.getElementById('deal-workspace')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -1527,13 +1531,36 @@ export default function DueDiligenceDashboard() {
             })
             const body = await response.json() as { error?: string; status?: string }
             if (!response.ok) throw new Error(body.error || 'Unable to queue retry')
-            setBatchSubmissionMessage('Retry queued. The existing document is being processed again.')
+
+            if (targetProjectId) {
+                setInFlightBatch({
+                    projectId: targetProjectId,
+                    dealName: targetDealName,
+                    projectStage: targetRow?.projectStage || 'post-loi',
+                    expectedDocumentCount: 1,
+                })
+                setSelectedProjectKey(targetRow ? getProjectKey(targetRow) : targetProjectId)
+            }
+
+            setBatchSubmissionMessage('Retry queued. The existing document is being processed again in real-time.')
             await triggerSubmissionHistory({ environment: activeHistoryEnvironment }, { skipCache: true }).result
         } catch (error) {
             setBatchSubmissionMessage(error instanceof Error ? error.message : 'Unable to queue retry')
         } finally {
             setRetryingRequestId(null)
         }
+    }
+
+    const handleRequeueNewProject = (requestID?: string) => {
+        const targetRow = requestID ? submissionHistory.find((r) => r.requestID === requestID || String(r.id) === requestID) : null
+        handleCreateProject()
+        if (targetRow) {
+            setDealName(targetRow.dealName ? `${targetRow.dealName} (Retry)` : '')
+            setDocumentType(targetRow.documentType || 'auto-detect')
+            setSubmissionNotes(targetRow.notes || '')
+        }
+        setBatchSubmissionMessage('Pre-filled new project intake form. Drop your document file above to queue under a new project.')
+        document.querySelector('[data-project-intake]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
 
     const handleStopBatch = async () => {
@@ -2820,6 +2847,7 @@ export default function DueDiligenceDashboard() {
                                 onExcludeDocument={handleExcludeDocument}
                                 onIncludeDocument={handleIncludeDocument}
                                 onRetryDocument={handleRetryFailedDocument}
+                                onRequeueNewProject={handleRequeueNewProject}
                                 retryingRequestId={retryingRequestId}
                                 onRunSynthesis={() => { void handleRunSynthesis() }}
                                 runningSynthesis={isCurrentProjectAwaitingSynthesis}
