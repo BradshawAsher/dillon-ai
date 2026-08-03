@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Bot, Send, ThumbsDown, ThumbsUp, X } from 'lucide-react'
+import { Bot, FolderKanban, Send, ThumbsDown, ThumbsUp, X } from 'lucide-react'
 
 import { Button } from '../lib/shadcn/button'
 import { Card } from '../lib/shadcn/card'
@@ -24,6 +24,8 @@ type Props = {
     documents?: SubmissionHistoryItem[]
     allSyntheses?: ProjectSynthesisItem[]
     onSuggestProjectSwitch?: (projectId: string) => void
+    onOpenProjectsPanel?: () => void
+    projectsCount?: number
 }
 
 function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealModel, projectName: string, documents?: SubmissionHistoryItem[], allSyntheses?: ProjectSynthesisItem[]): string {
@@ -519,7 +521,7 @@ function clampChatPanelSize(width: number, height: number): ChatPanelSize {
     }
 }
 
-export default function DealChatPanel({ synthesis, model, projectName, documents, allSyntheses, onSuggestProjectSwitch }: Props) {
+export default function DealChatPanel({ synthesis, model, projectName, documents, allSyntheses, onSuggestProjectSwitch, onOpenProjectsPanel, projectsCount }: Props) {
     const [isOpen, setIsOpen] = useState(false)
     const [messages, setMessages] = useState<Message[]>(() => {
         try {
@@ -728,19 +730,39 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
 
     if (!isOpen) {
         return (
-            <button
-                onClick={() => setIsOpen(true)}
-                className="fixed bottom-20 right-6 z-50 flex items-center gap-2.5 rounded-full bg-primary px-5 py-3 text-primary-foreground shadow-lg transition-transform hover:scale-105 active:scale-95"
-                aria-label="Open AI deal assistant"
-            >
-                <Bot className="h-5 w-5" />
-                <span className="text-sm font-medium">AI Deal Assistant</span>
-                {messages.length > 0 && (
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary-foreground/20 text-[10px] font-bold">
-                        {messages.filter(m => m.role === 'assistant').length}
-                    </span>
-                )}
-            </button>
+            <div className="fixed bottom-20 right-6 z-50 flex flex-col items-end gap-2.5 pointer-events-none">
+                {onOpenProjectsPanel ? (
+                    <button
+                        type="button"
+                        onClick={onOpenProjectsPanel}
+                        className="pointer-events-auto flex items-center gap-2.5 rounded-full border border-border bg-card/95 px-4 py-2.5 text-foreground shadow-xl backdrop-blur-md transition-all hover:scale-105 hover:bg-card active:scale-95"
+                        aria-label="Open Projects Portfolio Drawer"
+                    >
+                        <FolderKanban className="h-4 w-4 text-primary" />
+                        <span className="text-xs font-bold">Projects Portfolio</span>
+                        {typeof projectsCount === 'number' ? (
+                            <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary/10 px-1.5 text-[10px] font-bold text-primary">
+                                {projectsCount}
+                            </span>
+                        ) : null}
+                    </button>
+                ) : null}
+
+                <button
+                    type="button"
+                    onClick={() => setIsOpen(true)}
+                    className="pointer-events-auto flex items-center gap-2.5 rounded-full bg-primary px-5 py-3 text-primary-foreground shadow-xl transition-all hover:scale-105 active:scale-95"
+                    aria-label="Open AI deal assistant"
+                >
+                    <Bot className="h-5 w-5" />
+                    <span className="text-sm font-semibold">AI Deal Assistant</span>
+                    {messages.length > 0 && (
+                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary-foreground/20 text-[10px] font-bold">
+                            {messages.filter(m => m.role === 'assistant').length}
+                        </span>
+                    )}
+                </button>
+            </div>
         )
     }
 
@@ -755,7 +777,21 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                     <span className="text-sm font-semibold text-foreground">Deal Assistant</span>
                     <span className="text-[10px] text-muted-foreground">Claude</span>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5">
+                    {onOpenProjectsPanel ? (
+                        <button
+                            type="button"
+                            onClick={onOpenProjectsPanel}
+                            className="flex items-center gap-1.5 rounded-md border border-border/60 bg-background/80 px-2.5 py-1 text-[11px] font-semibold text-foreground transition-colors hover:bg-muted"
+                            title="Open Projects Portfolio Drawer"
+                        >
+                            <FolderKanban className="h-3.5 w-3.5 text-primary" />
+                            <span>Projects</span>
+                            {typeof projectsCount === 'number' && (
+                                <span className="text-[10px] text-muted-foreground">({projectsCount})</span>
+                            )}
+                        </button>
+                    ) : null}
                     <button
                         onClick={handleHalfScreen}
                         className="rounded-md px-2 py-1 text-[10px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
