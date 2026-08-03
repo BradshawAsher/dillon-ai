@@ -28,6 +28,7 @@ import stopBatchSubmissionImport from '../backend/diligence/stopBatchSubmission'
 import stopProjectSynthesisImport from '../backend/diligence/stopProjectSynthesis'
 import submitDealPacketImport from '../backend/diligence/submitDealPacket'
 import updateSubmissionRowImport from '../backend/diligence/updateSubmissionRow'
+import { cleanOrphanRecords } from '../backend/diligence/cleanOrphans'
 import { installRetoolGlobals, userFromHeaders } from './retoolRuntime'
 
 try {
@@ -245,6 +246,14 @@ app.post('/api/diligence/stop-batch', express.json(), async (req, res) => {
 app.post('/api/diligence/stop-synthesis', express.json(), async (req, res) => {
     try {
         res.json(await stopProjectSynthesis({ params: req.body, user: userFromHeaders(req.headers) }))
+    } catch (error) {
+        res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
+    }
+})
+
+app.all('/api/diligence/clean-orphans', async (_req, res) => {
+    try {
+        res.json(await cleanOrphanRecords())
     } catch (error) {
         res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
     }

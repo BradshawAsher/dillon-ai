@@ -5,11 +5,14 @@ import {
     Clock3,
     FileSearch,
     FolderKanban,
+    Key,
     Loader2,
     Moon,
     Plus,
     Sun,
 } from 'lucide-react'
+
+import { ApiKeyModal, getSavedApiKey } from '../components/ApiKeyModal'
 
 import { ProjectsSidePanel } from '../components/ProjectsSidePanel'
 
@@ -474,6 +477,7 @@ function formatElapsedDuration(seconds: number) {
 }
 
 export default function DueDiligenceDashboard() {
+    const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false)
     const { data: diligenceData, loading: _loading, error, trigger } = useGetDiligenceData()
     const {
         data: submissionHistoryData,
@@ -1785,6 +1789,10 @@ export default function DueDiligenceDashboard() {
                                 onMarkAllRead={handleMarkAllNotificationsRead}
                                 onClear={handleClearNotifications}
                             />
+                            <Button type="button" variant="outline" className="gap-1.5 px-3 py-2 text-sm" onClick={() => setIsApiKeyModalOpen(true)} title="Configure custom Anthropic API Key (BYOK)">
+                                <Key className="h-4 w-4 text-primary" />
+                                <span className="hidden sm:inline">API Key</span>
+                            </Button>
                             <LoginButton />
                         </div>
                         <p className="max-w-4xl text-sm text-muted-foreground">
@@ -3192,6 +3200,7 @@ export default function DueDiligenceDashboard() {
                     onScrollToUpload={() => { document.querySelector('[data-project-intake]')?.scrollIntoView({ behavior: 'smooth' }) }}
                 />
             </Suspense>
+            <ApiKeyModal open={isApiKeyModalOpen} onOpenChange={setIsApiKeyModalOpen} />
         </div>
     )
 }

@@ -80,3 +80,22 @@
 - [ ] **Understand Graph Interpretation**: Review the explanatory tooltips (`i`) on Returns, Growth, Valuation, and Deal Structure charts.
 - [ ] **Review Deterministic Math Checks**: Review [`DETERMINISTIC_MATH_CHECKS.md`](file:///c:/Users/s-bas/MERGEWORKS%20REAL%20WEBSITE/Due-Diligence-Dashboard/DETERMINISTIC_MATH_CHECKS.md) for how Revenue - COGS = GP and Assets - Liab = Equity formulas work.
 - [ ] **Execute Sample Deals Post-Credit Refill**: Once Anthropic API credits are refilled by the admin, queue Business 4 (ConversionXL), Business 1 (Roofing Co), Business 3 (TurnKey), and Business 2 (Iron Tree), then run `npm run eval` to view the evaluation scorecard.
+
+
+# BRAD MORE TODO
+1. n8n API Token Access: (ADD)
+Yes, absolutely! You can add your n8n API Key to frontend/.env as:
+
+dotenv
+
+
+N8N_API_KEY=<your-n8n-api-key>
+With an n8n API key, we can interact directly with the n8n Cloud REST API (https://merge-works.app.n8n.cloud/api/v1/) to:
+
+List running executions
+View detailed node execution logs & error tracebacks
+Programmatically cancel stalled executions (POST /api/v1/executions/{id}/stop)
+
+3. Bring Your Own Key (BYOK) Scope: (Check if this is supported)
+AI Chatbot: Uses the custom key saved in browser localStorage directly for instant Q&A.
+Document & Synthesizer Workflows: Background AI extraction and synthesis run on n8n Cloud. The BYOK key is attached as a request header (x-user-anthropic-key) in the upload payload, allowing custom keys to be forwarded when default team credits are exhausted.
