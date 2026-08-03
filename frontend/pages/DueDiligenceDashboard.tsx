@@ -577,7 +577,24 @@ export default function DueDiligenceDashboard() {
     const [projectId, setProjectId] = useState(() => createUnusedProjectId())
     const [projectStage, setProjectStage] = useState('post-loi')
     const [documentType, setDocumentType] = useState('auto-detect')
-    const [selectedProjectKey, setSelectedProjectKey] = useState('new')
+    const [selectedProjectKey, setSelectedProjectKey] = useState(() => {
+        if (typeof window === 'undefined') return 'new'
+        try {
+            const stored = window.localStorage.getItem('mergeworks.selectedProjectKey')
+            if (stored && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(stored)) {
+                window.localStorage.removeItem('mergeworks.selectedProjectKey')
+                return 'new'
+            }
+            return stored || 'new'
+        } catch { return 'new' }
+    })
+    useEffect(() => {
+        try {
+            if (selectedProjectKey && selectedProjectKey !== 'new') {
+                window.localStorage.setItem('mergeworks.selectedProjectKey', selectedProjectKey)
+            }
+        } catch { }
+    }, [selectedProjectKey])
     const [submissionNotes, setSubmissionNotes] = useState('')
     const [isSubmittingFile, setIsSubmittingFile] = useState(false)
     const [batchSubmissionMessage, setBatchSubmissionMessage] = useState('')
@@ -588,7 +605,13 @@ export default function DueDiligenceDashboard() {
     const [activeSubmissionBatch, setActiveSubmissionBatch] = useState<SubmissionBatch | null>(() => {
         try {
             const stored = window.sessionStorage.getItem('mergeworks.activeSubmissionBatch')
-            return stored ? JSON.parse(stored) as SubmissionBatch : null
+            if (!stored) return null
+            const parsed = JSON.parse(stored) as SubmissionBatch
+            if (parsed?.id && (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(parsed.id) || (Date.now() - (parsed.startedAt || 0) > 3600000))) {
+                window.sessionStorage.removeItem('mergeworks.activeSubmissionBatch')
+                return null
+            }
+            return parsed
         } catch { return null }
     })
     useEffect(() => {
@@ -794,21 +817,26 @@ export default function DueDiligenceDashboard() {
     }, [diligenceFindings, fallbackFinding])
 
     useEffect(() => {
-        if (hasRestoredLatestProject || isExampleMode || projectSummaries.length === 0) {
+        if (isExampleMode || projectSummaries.length === 0) {
             return
         }
 
+        const storedKey = typeof window !== 'undefined' ? window.localStorage.getItem('mergeworks.selectedProjectKey') : null
+        const storedProject = storedKey ? projectSummaries.find((p) => (p.projectKey === storedKey || p.projectId === storedKey) && p.documents.length > 0) : null
         const completedProject = projectSummaries.find((project) => project.completedCount > 0 || (project.documents && project.documents.length > 0 && project.statusLabel !== 'Processing batch...'))
-        const latestProject = completedProject || projectSummaries[0]
+        const targetProject = storedProject || completedProject || projectSummaries[0]
 
-        if (latestProject) {
-            setSelectedProjectKey(latestProject.projectKey)
-            setProjectId(latestProject.projectId || latestProject.projectKey)
-            setDealName(latestProject.projectName)
-            setProjectStage(latestProject.stage || 'post-loi')
+        if (targetProject && (selectedProjectKey === 'new' || selectedProjectKey !== targetProject.projectKey || !hasRestoredLatestProject)) {
+            setSelectedProjectKey(targetProject.projectKey)
+            setProjectId(targetProject.projectId || targetProject.projectKey)
+            setDealName(targetProject.projectName)
+            setProjectStage(targetProject.stage || 'post-loi')
             setHasRestoredLatestProject(true)
+            if (typeof window !== 'undefined') {
+                window.localStorage.setItem('mergeworks.selectedProjectKey', targetProject.projectKey)
+            }
         }
-    }, [hasRestoredLatestProject, isExampleMode, projectSummaries])
+    }, [hasRestoredLatestProject, isExampleMode, projectSummaries, selectedProjectKey])
 
     const hasActiveSubmissions = useMemo(() => {
         return submissionHistory.some((row) => isActiveSubmissionStatus(row.status))

@@ -170,6 +170,19 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                                     : project.documents
                                 const hiddenDuplicateCount = project.documents.length - visibleDocuments.length
                                 const synthesis = syntheses.find((candidate) => candidate.projectId === (project.projectId || project.projectKey))
+                                const effectiveStatusLabel = synthesis ? 'Synthesized' : project.statusLabel
+                                const getVerdictVariant = (rec?: string, light?: string): 'success' | 'warning' | 'destructive' | 'secondary' | 'outline' => {
+                                    const normLight = (light || '').trim().toUpperCase()
+                                    if (normLight === 'RED') return 'destructive'
+                                    if (normLight === 'YELLOW') return 'warning'
+                                    if (normLight === 'GREEN') return 'success'
+
+                                    const normRec = (rec || '').trim().toLowerCase()
+                                    if (normRec.includes('renegotiat') || normRec.includes('caution') || normRec.includes('warn') || normRec.includes('yellow')) return 'warning'
+                                    if (normRec.includes('abort') || normRec.includes('escalat') || normRec.includes('risk') || normRec.includes('red')) return 'destructive'
+                                    if (normRec.includes('proceed') || normRec.includes('buy') || normRec.includes('acquire') || normRec.includes('green')) return 'success'
+                                    return 'outline'
+                                }
 
                                 return (
                                     <div
@@ -183,7 +196,12 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                                             <div className="space-y-1">
                                                 <div className="flex flex-wrap items-center gap-2">
                                                     <h3 className="text-lg font-semibold text-foreground">{project.projectName}</h3>
-                                                    <Badge variant={getProjectStatusVariant(project.statusLabel)}>{project.statusLabel}</Badge>
+                                                    <Badge variant={getProjectStatusVariant(effectiveStatusLabel)}>{effectiveStatusLabel}</Badge>
+                                                    {synthesis?.finalRecommendation ? (
+                                                        <Badge variant={getVerdictVariant(synthesis.finalRecommendation, synthesis.finalTrafficLight)}>
+                                                            Verdict: {synthesis.finalRecommendation}
+                                                        </Badge>
+                                                    ) : null}
                                                     {hasStoppedDocuments ? <Badge variant="secondary">Stopped by user</Badge> : null}
                                                     {project.stage.trim().length > 0 && project.stage !== 'Stage not captured' ? (
                                                         <Badge variant="outline">{formatProjectStage(project.stage)}</Badge>
