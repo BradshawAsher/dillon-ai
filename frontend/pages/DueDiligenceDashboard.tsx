@@ -1920,6 +1920,7 @@ export default function DueDiligenceDashboard() {
                     availableProjects={availableProjects}
                     selectedFiles={selectedFiles}
                     disabled={isSubmittingFile || submitLoading}
+                    onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
                     onDealNameChange={setDealName}
                     onAskingPriceChange={handleAskingPriceChange}
                     onProjectIdChange={setProjectId}

@@ -1,4 +1,4 @@
-import { FolderKanban, Loader2, Plus, Upload } from 'lucide-react'
+import { FolderKanban, Key, Loader2, Plus, Upload } from 'lucide-react'
 
 import FileDropzone from './FileDropzone'
 import { Badge } from '../lib/shadcn/badge'
@@ -35,6 +35,7 @@ type ProjectIntakeCardProps = {
     availableProjects: ProjectOption[]
     selectedFiles: File[]
     disabled: boolean
+    onOpenApiKeyModal?: () => void
     onDealNameChange: (value: string) => void
     onAskingPriceChange: (value: string) => void
     onProjectIdChange: (value: string) => void
@@ -251,6 +252,24 @@ export default function ProjectIntakeCard({
                         >
                             {disabled ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                             Queue in production
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            className="gap-1.5 border border-primary/20"
+                            disabled={selectedFiles.length === 0 || disabled}
+                            onClick={() => {
+                                const key = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_anthropic_key') || '') : ''
+                                if (!key) {
+                                    onOpenApiKeyModal?.()
+                                } else {
+                                    onSubmit('production')
+                                }
+                            }}
+                            title="Queue using your custom Anthropic API key saved in BYOK settings"
+                        >
+                            <Key className="h-3.5 w-3.5 text-primary" />
+                            Queue with custom key
                         </Button>
                         <Button
                             type="button"
