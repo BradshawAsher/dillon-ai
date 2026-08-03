@@ -30,6 +30,7 @@ type ProjectPortfolioCardProps = {
     onExcludeDocument: (requestID: string) => void
     onIncludeDocument: (requestID: string) => void
     onRetryDocument: (requestID: string) => void
+    onRequeueNewProject?: (requestID?: string) => void
     retryingRequestId: string | null
     onRunSynthesis: () => void
     runningSynthesis: boolean
@@ -56,7 +57,7 @@ function SummaryMetric({
     )
 }
 
-export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey, onProjectSelect, onExcludeDocument, onIncludeDocument, onRetryDocument, retryingRequestId, onRunSynthesis, runningSynthesis, onAddDocuments }: ProjectPortfolioCardProps) {
+export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey, onProjectSelect, onExcludeDocument, onIncludeDocument, onRetryDocument, onRequeueNewProject, retryingRequestId, onRunSynthesis, runningSynthesis, onAddDocuments }: ProjectPortfolioCardProps) {
     const [hideDuplicateDocs, setHideDuplicateDocs] = useState(true)
     const [projectSearch, setProjectSearch] = useState('')
     const [workstreamFilter, setWorkstreamFilter] = useState('all')
@@ -392,7 +393,18 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                                                             </div>
                                                             <div className="flex items-center gap-2">
                                                                 <Badge variant={document.isConsidered ? 'outline' : 'secondary'}>{document.isConsidered ? (document.processedAt || 'Pending') : 'Excluded'}</Badge>
-                                                                {canRetry ? <Button type="button" size="sm" variant="outline" disabled={retryingRequestId === document.requestID} onClick={() => onRetryDocument(document.requestID)}>{retryingRequestId === document.requestID ? <RefreshCw className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}Retry</Button> : null}
+                                                                {canRetry ? (
+                                                                    <>
+                                                                        <Button type="button" size="sm" variant="outline" disabled={retryingRequestId === document.requestID} onClick={() => onRetryDocument(document.requestID)}>
+                                                                            {retryingRequestId === document.requestID ? <RefreshCw className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}Retry
+                                                                        </Button>
+                                                                        {onRequeueNewProject && (
+                                                                            <Button type="button" size="sm" variant="secondary" onClick={() => onRequeueNewProject(document.requestID)}>
+                                                                                Try in new project
+                                                                            </Button>
+                                                                        )}
+                                                                    </>
+                                                                ) : null}
                                                                 {document.isConsidered ? <Button type="button" size="sm" variant="outline" onClick={() => onExcludeDocument(document.requestID)}>Exclude</Button> : <Button type="button" size="sm" variant="outline" onClick={() => onIncludeDocument(document.requestID)}>Include again</Button>}
                                                             </div>
                                                         </div>
