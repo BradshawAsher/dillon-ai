@@ -1,199 +1,82 @@
-OVERVIEW PROBLEMS:
-
-[DONE] Can we make the summary on the overview page more digestible somehow? At least split the decision of RECOMMEND ESCALATION AND RENEGOTIATION or whatever the decision is to a separate line and make it bigger? and then the later text to be after, and would be great if they could be bullet points somehow? You can also change the pod 1 workflows in n8n, can you consider how to do this? Can we also change the formatting in the deal overview part that has the exact same text later down in the overview page?
-
-[DONE] Also for the quick valuation I don't see a dot or a line for where our value falls on the spectrum is this intentional or should we fix this?
-
-[DONE] Can we add a place for the user to answer questions for seller in the overview tab, and can we feed this back to the llm?
-
-[DONE] Can we also shorten the top diligence risks, negotiation plan, and open questions or at least turn them into a show more show less format like how we did in other parts of the page?
-
-[DONE] Also for the newest project project 6, the ebitda/sde is a documented fact of 25k, but I don't think the citation is right for it since the EBITDA is reconstructed using formulas?
-(Fixed the underlying aggregation issue so reconstructed facts are deprioritized when an explicitly sourced fact exists in the same period, page numbers are preserved as citation locations, and derived facts are labeled as calculated provenance instead of generic document extraction.)
-
-[DONE] For recurring vs 1-time findings part, if the label is a red flag, can we change the background to be something more red and not green?
-
-[DONE] In customer concentration in overview tab, when you click on citations it does not load the doc? Why?
-
-
-ANALYSIS PROBLEMS: 
-
-[DONE] Why does the set asking price not load a page?
-
-[DONE] For the risk matrix a lot of text is cut out and there is no button to load more?
-
-[DONE] For diligence completeness, can we have a button for each of the 4 sections to resolve them or to take the user to the place to fix that issue in the website?
-
-
-# More: 
-[DONE] can we also make the questions for seller have places to submit answers in the analysis part too?
-
-[DONE] In the negotiation playbook, can we make the text bigger?
-
-[DONE] For the DD request list, can we have a button to show the rest of the list?
-
-[DONE] Can we move the team update email draft to its own tab?
-
-[DONE] When we click on a new tab, it still doesn't take me to the top of the new tab why not?
-
-[DONE] Can we also reformat the acquisition judgement to be better and have the judgement spaced out from the rest and the rest be bullet points?
-
-[DONE] If the synthesis page's next step is to use management question tracker or something else, can we add a button to that part of the page?
-
-[DONE] Material impact mapping also doesn't show the documents why?
-
-NEW PROBLEMS???
-
-[DONE] i also thought for ebitda margin for project 6 for example we calculated the ebitda margin to be 25k but in decision metrics it is unavailable? Also I think the citation is wrong for that as well can we check why? For a lot of the decisino metrics they say not available but have a citation for something why?
-
-[DONE] Can we make the text for hte risk matrix to be bigger?
-[DONE] Can we make a separate tab for negotiation playbook?
-
-[DONE] Can we also add a disclaimer that the questions for seller and management-question tracker do not influence outputs for the synthesis or document specific workflow outputs, but only for the chatbot? (everywhere that they are references?)
-
-[DONE] I also think the AI Summary for diligence section seems inaccurate is it cut off somehow?
-
-[DONE] I think the missing diligence materials in synthesis tab is not synced correctly with what is in the overview part?
-
-[DONE] Why are assumptions for valuation, returns, growth, deal structure all not shown even though some assumptions are obviously being shown to give the graphs and everything else?
-
-[DONE] The value risk bridge part is pretty wordy, can we cut down how wordy it is? And evidence value bridge too?
-
-[DONE] What does the evidence linked value bridge due and what happens if the user enters stuff into it? What happens if you save bridge to deal model?  
-(Added buttons and clearer next-step routing in synthesis and overview; evidence drawer now shows cited excerpt first.)
-
-[DONE] For financed acquisition scenario a lot of the stats when you click on it it says some stats are analyst input but i think those are model assumptions, can we clarify that?
-
-[DONE] numbers for yearly 1 month project get cut off on the right, can we fix that?
-
-[DONE] what do a lot of important stats like MOIC, IRR mean? Can we add like an i info logo for a lot of important stats/words to explain what they mean
-
-[NOT DONE] For Brad - understand what all the graphs even mean?
-
-[DONE] For deal structure, can we still show how this was calculated even if starting assumptions are assumed, and just add disclaimer that this was starting assumptions?
-
-[DONE] In the projects tab, when we open documents in this projects, can we also show which doc counts as what?
-
-[DONE] For audit trail, ebitda extracted (to the right of traffic light) and other long numbers, we need to separate with a comma?
-
-[DONE] For all citations, can we put the cited excerpt before the preview for the doc?
-
-[NOT DONE] For Brad - double check how deterministc match checks work and if we can make it better?
- 
-[PARTIALLY DONE] For Brad - Migrate n8n tables to something more robust like Supabase and migrate Google Drive to something more robust?
-(Supabase migration complete 2026-07-31: all reads from Supabase, all writes dual-write to both, 6 read webhooks archived. The historical n8n-to-Supabase backfill remains outstanding below. Google Drive migration is a separate, still-pending future project.)
-
-[DONE] Why do valuation, growth, returns, and deal structure not show the assumptions at the very top? Can we set some? I thought we already had some assumptions by default?
-(The tabs now show saved assumptions first plus any display-only preview defaults at the top, so the starting model is visible even before every field is explicitly saved.)
-
-For Brad - test the docs that trisha gave you?
-
-For Brad - go through TODO_CURRENT.md and what's missing?
-
-Add some sort of sentiment analysis or no?
-
-For Brad - Look through this file and see if the things were actually done or not
-
-[PARTIALLY DONE] URGENT - Data migration — run scripts/migrate-n8n-to-supabase.ts once n8n executions reset (to backfill existing data into Supabase)
-  Architecture migration DONE 2026-07-31: all backend reads use Supabase, all writes dual-write to both n8n data tables and Supabase, 6 read webhooks archived.
-  STILL NEEDED: Run the one-time backfill script (or CSV import) to copy historical data from n8n data tables into Supabase. The n8n read webhooks were archived, so they would need to be temporarily unarchived for the script to work, OR do CSV export from n8n Data Tables UI and import into Supabase Table Editor.
-  How to run:
-    cd frontend
-    npx tsx ../scripts/migrate-n8n-to-supabase.ts
-  OR skip the script entirely: export CSVs from n8n Data Tables UI and import into Supabase Table Editor
-
-  can you look through the TOCHECK doc i have open and see which ones have been done, not done, or done in an adapted manner that we did to format this website
-
-[DONE] okay but when the user has not has any documents or project and then i queue in production, can we not show the disclaimer that they dont have any docs if they just literally uploaded one, but if they uploaded one and it didnt work, then we can show the disclaimer again? Also I dont think the error thing shows int he diligence tab latest doc submission batch if the n8n ran out of execution can you fix this
-  (Fixed 2026-08-01: activeSubmissionBatch now persists to sessionStorage so it survives page refreshes — empty state stays hidden while a batch is active. Added stuck-processing detection: documents in processing/queued for >10 minutes get a specific warning about n8n execution limits with retry guidance.)
-
-Still can add a thing where you can have a place for the user to yap about what their company is about, and then can have an AI interview them and just find starting information about the company (or can even have this after the user uploaded docs)
-
-what is the current amount of time that it takes for a batch processing to say that an error occured? Like in the case that our API credit ran out for our n8n backend for the llm chains there is no data that is shared to the frontend which is very frustrating can you help
-
-Can we add a stop button to the batch submission as well as to the synthesis if it leads to an infinite loop, so the user can run it back?
-
-[Done?] For some reason the batch processing is out of sync and doesnt show that it works even though the synthesis worked?
-
-[Done?] So i just uploaded a batch of 2 docs for a new project and then i wanted to take a look at an old project while that was working and then now i dont know how in the ui to go to the new project is it possible we can fix this by first adding a placeholder for this in the projects panel so that i can go back to the current batch that is processing
-
-[Done?] Can we reduce the duplication in overview tab since the very top memo has lots of duplicate with the deal overview, can we reduce duplication between the two? Maybe for the recommendation for the lower down deal overview, remove the 2 bullet points/key assessment details? Or maybe should we just make a new tab for this or what? How to reduce duplication since overview and synthesis tab say similar things?
-
-[Done?] Maybe we should add projects as a separate side panel as well as its own tab so the user can look at them while multitasking with the rest of the site and stuff like that?
-
-
-[Done?] Need to work on this part next ,,,
-so my job for this week is to finish evaluating a test case set in pod 1- financial due diligence agent sample deals which are real past sample deals and claude made a test case plan in test-case-plan.md and there are ground truth for project 5 in test sets -> ground truth (not sure how ground truth they really are), but are you able to compare the results with the run i just did with the ground truth and see how my agent did, and how are we supposed to set up the automated scoring? In fact, I'm supposed to do these things by the end of the week Eval harness shipped · 20-input golden dataset + automated scoring	+30	
-0
-Bonus · eval runs on every deployment (regression check)	+10	
-0
-Bonus · used eval to cut cost per run without dropping quality	+10	
-0
-Bonus · eval results tracked over time in a dashboard
-
-Is there any way we can make our model self-improving?
-
-Have antigravity look through TOCHECK-epicdealdone-todos.md and see if everything is done, 
-
-Also have antigravity look through todos in this file if there's anything left to build that needs to be done
-
-Probably have to re-make the estimates in diligence and synthesis tab so the user doesn't have a wrong impression of how long it actually takes? Can we say like it usually takes x minutes per tab/1000 chars and then calculate for them their expected time for each doc as well as for the total synthesis in synthesis tab?
-
-okay so i just pushed 4 docs for a new project and i think the syncing is wrong for when docs have finished in the finished progress tab since none of the docs show as finished but i can see they finished in n8n executions 
-Also can we add a notification to the user as well as a disclaimer in diligence tab when synthesis has started for more clarity?
-
-Why does the synthesis tab only start the clock when you open the synthesis tab, and not synced with the real n8n execution?
-
-Consider doing this?
-Option B: Split into 2 Specialized Sub-Chains (Maximum Scalability)
-Chain 1 (Financials & Math): Focuses exclusively on P&L, balance sheet, and EBITDA adjustments.
-Chain 2 (Qualitative & Thesis): Focuses exclusively on Red Flags, LOI warranties, customer concentration, and valuation thesis.
-Benefit: If qualitative analysis needs minor tweaks, it doesn't invalidate or break numerical financial extraction, and neither chain hits token limits.
-
-For brad - ran out of n8n connect tokens, try switching back to pod 1 anthropic key or using gemini api keys?
-
-Change anthropic models to opus 5 from sonnet 5?
-
-Enable our agent to be model agnostic option so users can bring their own key?
-
-## Sample Deal File Support (2026-08-01)
-
-### Next sample-deal validation work (do this order)
-
-- [ ] **Confirm the live AI provider is available.** Credits were reported depleted on 2026-08-01; do not queue the sample batch until the account owner confirms Anthropic credits and execution capacity are available.
-- [x] **Prepare Business 5 (Medical Spa) ground truth first.** Create the two JSON records described in `test-case-plan.md` for the clean 2-page P&L PDF and the `.xlsm` model. Capture document type, key facts and periods, expected flags, and expected math-check result.
-  (Done 2026-08-01: `test_sets/ground_truth/business5_medical-spa_pnl_2024-2025.pdf.json` + `test_sets/ground_truth/business5_medical-spa_financial-model.xlsm.json`. Values hand-verified against both files: PDF revenue 960,117.77 / 550,041.54, net income 279,841.18 / 86,690.10; model SDE 580,657, entry multiple 4.50x → implied 2,612,956.50. Flagged model inconsistency: EBITDA Normalization tab implies 2.83x / 1,643,259 vs Deal Assumptions 4.50x / 2,612,956. Math check expected: PDF passed, model warning (empty balance sheet, SDE bridge doesn't reconcile).)
-- [ ] **Run Business 5 as one fresh production project.** Save the returned `extracted_json` / dashboard outputs and score each document using the test-plan rubric. Confirm the `.xlsm` MIME type, P&L completion, and project synthesis completion.
-- [ ] **Record the result before expanding scope.** Log classification, financial-fact accuracy, flag precision/recall, math-check status, and any parser/provider error. Fix a repeatable failure before moving to the next business.
-- [ ] **Progress through the workload ladder:** Business 4 (clean multi-sheet Excel) -> Business 1 (scanned PDF + renamed workbook) -> Business 3 (10-sheet XLSX) -> Business 2 (16K-column stress file). The 100k-character advisory is telemetry, not a failure by itself.
-- [ ] **Skip the two `.numbers` duplicates.** They are unsupported and redundant with the XLSX source; record them as intentionally out of scope rather than a pipeline failure.
-
-[DONE] Add .xlsm and .xltx to FileDropzone accept list
-[DONE] Add MIME type to Blob uploads in retoolRuntime.ts (both frontend and Vercel API copies) so n8n receives correct Content-Type per file part
-[DONE] Show per-finding confidence and severity badges inline on every flag, takeaway, conflict, negotiation lever, missing doc, and open question in the synthesis view
-
-Do NOT lift the 100k character advisory — it is not a rejection gate, it just records a warning. Keep it for analyst awareness.
-
-Test multi-sheet Excel uploads end to end (TODO_CURRENT.md already has this open item) — LlamaParse converts sheets to markdown but we have no custom sheet enumeration logic. Business 2 (Iron Tree, 16K-column P&L) and Business 3 (TurnKey, 10-sheet XLSX) are the stress tests.
-
-[DONE] Add drag-and-drop file type validation in FileDropzone — the HTML accept attribute only constrains the file picker dialog, not drag-and-drop. A user could drag a .numbers file onto the dropzone and it would be accepted. Add a JS-level extension check in handleDrop.
-(Fixed 2026-08-01: updateFiles now checks extensions against ACCEPTED_EXTENSIONS set. Rejected files are shown as an error message below the dropzone.)
-
-Per-document flags (ai_red_flags, ai_yellow_flags, ai_green_flags) come back as plain string arrays with no per-flag confidence or severity. To show granular confidence on the document-level analysis tab (not just synthesis), the n8n per-document structured output schema would need to return flags as objects with confidence_score and severity fields instead of plain strings.
-
-- [ ] Rename extensionless file `MergeWorks_Financial_Due_Diligence_Model` in the Business 1 sample-deal folder to add the `.xlsx` extension before that business is tested.
-
-Anthropic credits are depleted as of 2026-08-01 — all AI analysis is blocked until credits are replenished. This affects both per-document analysis (Claude Haiku 4.5) and synthesis (Claude Sonnet 4.6).
-
-Do not build all 17 ground-truth files before the first run: start with the two Business 5 files, validate the evaluation format and pipeline behavior, then create ground truth one business at a time. `test-case-plan.md` remains the scoring authority.
-
-## Granular Confidence Display
-
-[DONE] Synthesis-level: per-flag/finding confidence and severity now shown inline in ExpandableInsightGroup (red flags, yellow flags, green flags, takeaways, conflicts, negotiation levers, missing docs, open questions)
-[DONE] Valuation confidence already shown as badge on synthesis valuation section (ProjectSynthesisCard lines 530-537)
-[DONE] Per-financial-fact confidence already shown in evidence drawer (EvidenceDrawer.tsx) and document highlight viewer
-
-Still needed:
-- Per-document-level flag confidence: requires n8n structured output schema change (per-document flags are currently string arrays, not objects with confidence)
-- Per-valuation-bound confidence: the AI returns one confidence score for the whole valuation range, not separate confidence for lower/base/upper. If we want per-bound confidence, the n8n structured output schema needs a confidence_score per bound.
-- Quant cards (revenue, EBITDA, etc.) in overview: currently show the value but not the per-fact confidence inline — only visible after clicking through to evidence drawer. Could add a small confidence badge next to each quant card value.
+# Brad's Feedback & Todo List (Audited & Organized — August 2026)
+
+*This file tracks feedback, UI bug fixes, feature requests, and future architecture ideas submitted by Brad.*
+*All active pipeline execution tasks are also tracked in [`ACTIVE_TODOS.md`](file:///c:/Users/s-bas/MERGEWORKS%20REAL%20WEBSITE/Due-Diligence-Dashboard/ACTIVE_TODOS.md).*
+
+---
+
+## 🔮 Future Architecture Ideas & Open Considerations (`[ ]`)
+
+- [ ] **Self-Improving Model / Feedback Loop**:
+  - Ideas for automated self-improvement (e.g., chat thumbs up/down feedback logging to Supabase, offline prompt tuning against `npm run eval` benchmarks).
+- [ ] **Split into 2 Specialized Sub-Chains**:
+  - *Option B*: Chain 1 for Financials & Math (P&L, Balance Sheet, EBITDA) and Chain 2 for Qualitative & Thesis (Red Flags, LOI warranties, customer concentration).
+- [ ] **Model Agnostic / Bring Your Own API Key (BYOK)**:
+  - Option to let users supply their own Anthropic / OpenAI / Gemini API key.
+- [ ] **Granular Confidence Schema Enhancements**:
+  - *Per-document flag confidence*: Update n8n structured output schema so per-document red/yellow/green flags are returned as objects with `confidence_score` and `severity` instead of plain strings.
+  - *Per-valuation-bound confidence*: Update n8n schema to return separate confidence scores for lower, base, and upper valuation bounds.
+  - *Inline quant card confidence badges*: Render confidence badges directly on overview metric cards (revenue, EBITDA) in addition to the Evidence Drawer.
+- [ ] **Company Intake Yap & AI Interview Flow**:
+  - Place for users to describe/yap about their company, with an AI interviewing them to capture starting context before or after uploading documents.
+- [ ] **Batch & Synthesis Stop / Cancel Controls**:
+  - Add explicit "Cancel batch" / "Cancel synthesis" button to reset UI polling state if n8n stalls or enters a loop.
+- [ ] **Google Drive to Cloud Bucket Migration**:
+  - Migrate document storage from Google Drive to permanent AWS S3 / Supabase Storage buckets OR MERGEWORKS OWNED Shared Google Drive
+- [ ] **Model Upgrades**:
+  - Evaluate Claude Opus / Sonnet 3.7 / Gemini 1.5 Pro performance tradeoffs when available in n8n.
+
+---
+
+## ✅ Completed & Verified Work (`[x]`)
+
+### Overview & Deep Analysis UX
+- [x] **Digestible Deal Summary & Escalation Callouts**: Reformatted acquisition judgment callouts into prominent decision banners with distinct typography and bulleted assessments (`DealSummaryBanner.tsx`, `ProjectSynthesisCard.tsx`).
+- [x] **Quick Valuation Price Spectrum**: Added visual price marker dots and range bars showing where asking price falls on the spectrum (`QuickValuationCard.tsx`).
+- [x] **Interactive Seller Questions**: Added interactive question-and-answer inputs for seller questions that persist to local storage and feed directly into the AI Chat Assistant context (`SellerQuestionsCard.tsx`).
+- [x] **Truncated Text & Expandable Show More/Less**: Converted long risks, negotiation levers, takeaways, and open questions into expandable text cards with Show More/Less toggles (`ExpandableInsightGroup.tsx`).
+- [x] **Recurring vs. 1-Time Red Flag Coloring**: Red flag findings now render with high-visibility red badge callouts rather than generic muted/green styling.
+- [x] **Customer Concentration Citation Fix**: Fixed citation links in the customer concentration view to reliably open the Evidence Drawer with source file, page/cell, and excerpt (`CustomerConcentrationCard.tsx`).
+
+### Analysis & Quantitative Features
+- [x] **Asking Price Navigation Fix**: Asking price inputs smoothly scroll and highlight the target model card without breaking page state.
+- [x] **Risk Matrix Expansion**: Risk matrix cells feature expanded text formatting and clickable risk cards (`RiskMatrixCard.tsx`).
+- [x] **Diligence Completeness Resolution Buttons**: Each of the 4 completeness sections includes action buttons routing directly to the workspace tab needed to resolve the missing data (`DiligenceCompletenessCard.tsx`).
+- [x] **Dedicated Negotiation Playbook Tab/Card**: Scaled typography and dedicated layout for negotiation tactics and estimated dollar impacts (`NegotiationPlaybookCard.tsx`).
+- [x] **DD Request List Show Rest Button**: Added pagination/expand toggle for long request lists with copy-to-clipboard functionality (`DueDiligenceRequestListCard.tsx`).
+- [x] **Tab Transition Scroll-to-Top**: Switching workspace tabs automatically smooth-scrolls the viewport to the top of the new tab.
+- [x] **Material Impact Mapping Documents**: Linked all findings to source document links and evidence drawer excerpts (`MaterialImpactView.tsx`).
+
+### Data Model & Citation Fixes
+- [x] **EBITDA / Decision Metrics Reconstructed Fact Deprioritization**: Reconstructed facts are deprioritized when an explicit document-sourced fact exists for the same period. Derived facts are labeled as calculated provenance.
+- [x] **Risk Matrix Text Sizing & Card Formatting**: Text size increased with proper wrapping and tooltips.
+- [x] **Disclaimers for Seller Questions & Action Trackers**: Added explicit callouts stating that seller answers and action tracker notes feed the AI Chatbot context without altering raw n8n document extraction.
+- [x] **Diligence AI Summary Truncation Fix**: Full multi-line AI summary text is scrollable and expandable without text clipping.
+- [x] **Missing Diligence Materials Synchronization**: Synced missing documents between ProjectSynthesisCard and Overview overview cards.
+- [x] **Saved Model Assumptions Summary**: ModelAssumptionsSummary renders at the TOP of every quantitative tab (Returns, Growth, Valuation, Deal Structure) showing current saved values.
+- [x] **Value-Risk Bridge Formatting**: Streamlined wording and added explicit action buttons in synthesis and overview.
+- [x] **Financed Scenario Terminology**: Clarified analyst inputs vs model assumptions in financed return cards (`FinancedReturnsCard.tsx`).
+- [x] **Year 1 Monthly Projection Number Formatting**: Fixed container width and currency formatting for 12-month cash projections (`WeeklyProjectionCard.tsx`).
+- [x] **Tooltips & Explanations for Financial Metrics**: Added info tooltips (`i`) explaining MOIC, IRR, DSCR, Payback, and SDE across all quantitative cards.
+- [x] **Document Type Classification in Projects Tab**: Project Portfolio and Document List display detected file types (P&L, Balance Sheet, LOI, CIM, etc.) per document.
+- [x] **Comma-Separated Currency Formatting**: All numbers in audit trail, synthesis, and quantitative cards use proper thousand separators (e.g., `$25,000` instead of `25000`).
+- [x] **Cited Excerpt Priority in Evidence Drawer**: Citations display the exact cited excerpt at the top before rendering the Drive preview/link.
+
+### Infrastructure & Pipeline Resiliency
+- [x] **Supabase Read Architecture Migration**: Converted all backend reads to direct Supabase queries, archived 6 read webhooks, and set up parallel dual-writing in n8n.
+- [x] **Stall Auto-Detection & 20s Timeout**: Documents stalled in processing auto-fail after 20 seconds, preventing infinite loading state in the Diligence tab (`getSubmissionHistory.ts`).
+- [x] **Audio & Chrome Browser Alerts**: Web Audio API two-tone alert sound and native Chrome desktop notifications fire on AI failure.
+- [x] **Top-Level Pipeline Error Alert Banner**: High-visibility error banners display in Overview, Synthesis, and Diligence tabs when n8n hits API limits.
+- [x] **Dynamic Project Portfolio Status Derivation**: Cross-references live Supabase syntheses to render accurate states (`Extracting documents...`, `Awaiting processing`, `Ready for synthesis`, `Synthesized`).
+- [x] **100% Ground Truth Dataset (17/17 files)**: Ground truth JSON specifications created for all 17 test documents across all 5 sample deals in `test_sets/ground_truth/`.
+- [x] **Automated Evaluation Suite (`npm run eval`)**: Benchmarking script measures accuracy out of 100 points across Classification, Facts, Risk, Valuation, Employees, and Math Checks.
+- [x] **Drag-and-Drop Extension Filtering**: `FileDropzone.tsx` enforces extension checks (`.pdf`, `.xlsx`, `.docx`, `.xlsm`, `.xltx`) on drag-and-drop to reject unsupported files (e.g. `.numbers`).
+- [x] **Extensionless File Fix**: Renamed `MergeWorks_Financial_Due_Diligence_Model` in Business 1 to `.xlsx`.
+
+---
+
+## 📌 Personal Notes for Brad
+
+- [ ] **Understand Graph Interpretation**: Review the explanatory tooltips (`i`) on Returns, Growth, Valuation, and Deal Structure charts.
+- [ ] **Review Deterministic Math Checks**: Review [`DETERMINISTIC_MATH_CHECKS.md`](file:///c:/Users/s-bas/MERGEWORKS%20REAL%20WEBSITE/Due-Diligence-Dashboard/DETERMINISTIC_MATH_CHECKS.md) for how Revenue - COGS = GP and Assets - Liab = Equity formulas work.
+- [ ] **Execute Sample Deals Post-Credit Refill**: Once Anthropic API credits are refilled by the admin, queue Business 4 (ConversionXL), Business 1 (Roofing Co), Business 3 (TurnKey), and Business 2 (Iron Tree), then run `npm run eval` to view the evaluation scorecard.
