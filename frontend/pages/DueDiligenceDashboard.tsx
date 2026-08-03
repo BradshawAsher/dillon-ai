@@ -3170,28 +3170,26 @@ export default function DueDiligenceDashboard() {
                     </div>
                 ) : null}
             </main>
-            {/* ── Fixed Left Quick Action Toolbar ── */}
+            {/* ── Fixed Top-Left Subtle Quick Action Toolbar ── */}
             <aside
                 aria-label="Quick Actions"
-                className={`fixed left-3 top-1/2 -translate-y-1/2 z-40 flex flex-col items-center gap-2 rounded-2xl border border-primary/20 bg-background/90 p-2 shadow-2xl backdrop-blur-md transition-all duration-300 ${
-                    activeEvidence ? 'opacity-0 pointer-events-none -translate-x-12 scale-95' : 'opacity-100 translate-x-0 scale-100'
+                className={`fixed top-4 left-4 z-40 flex items-center gap-1.5 rounded-full border border-border/60 bg-background/85 p-1 shadow-md backdrop-blur-md transition-all duration-300 ${
+                    activeEvidence ? 'opacity-0 pointer-events-none -translate-x-10 scale-95' : 'opacity-100 translate-x-0 scale-100'
                 }`}
             >
-                <div className="flex flex-col items-center gap-2.5">
-                    <LoginButton />
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-9 w-9 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors"
-                        onClick={() => setIsApiKeyModalOpen(true)}
-                        title="Configure custom Anthropic API Key (BYOK)"
-                    >
-                        <Key className="h-4 w-4 text-primary" />
-                        <span className="sr-only">API Key</span>
-                    </Button>
-                    <KeyboardShortcutsDialog />
-                </div>
+                <LoginButton />
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 rounded-full text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                    onClick={() => setIsApiKeyModalOpen(true)}
+                    title="Configure custom Anthropic API Key (BYOK)"
+                >
+                    <Key className="h-3.5 w-3.5" />
+                    <span className="sr-only">API Key</span>
+                </Button>
+                <KeyboardShortcutsDialog />
             </aside>
             <EvidenceDrawer evidence={activeEvidence} onClose={() => setActiveEvidence(null)} />
             <ProjectsSidePanel
