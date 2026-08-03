@@ -2256,6 +2256,18 @@ export default function DueDiligenceDashboard() {
 
                     {activeWorkspaceTab === 'diligence' ? <>
 
+                        {!isExampleMode && isCurrentProjectAwaitingSynthesis ? (
+                            <div className="flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-800/50 dark:bg-amber-900/15">
+                                <Loader2 className="mt-0.5 h-5 w-5 shrink-0 animate-spin text-amber-600" />
+                                <div>
+                                    <p className="text-sm font-semibold text-foreground">Project synthesis in progress</p>
+                                    <p className="mt-1 text-sm text-muted-foreground">
+                                        All documents finished processing, so the agent is now consolidating them into one project judgment. This typically takes a couple of minutes and will appear in the <strong>Synthesis</strong> tab — the document-level results below are already available while you wait.
+                                    </p>
+                                </div>
+                            </div>
+                        ) : null}
+
                         {!isExampleMode && projectSummaries.length > 0 ? (
                             <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 sm:flex sm:items-center sm:justify-between sm:gap-4">
                                 <div>

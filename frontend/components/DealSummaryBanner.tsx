@@ -3,6 +3,7 @@ import { Check, Clock3, Copy } from 'lucide-react'
 
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
+import { copyToClipboard } from '../utils/clipboard'
 import { Badge } from '../lib/shadcn/badge'
 
 type Props = {
@@ -43,31 +44,6 @@ function truncate(text: string, max = 70): string {
     return clean.length > max ? `${clean.slice(0, max - 1)}…` : clean
 }
 
-/** Best-effort clipboard copy that also works in non-secure contexts. */
-async function copyText(text: string): Promise<boolean> {
-    try {
-        if (navigator.clipboard?.writeText) {
-            await navigator.clipboard.writeText(text)
-            return true
-        }
-    } catch {
-        // fall through to the legacy path below
-    }
-    try {
-        const textarea = document.createElement('textarea')
-        textarea.value = text
-        textarea.style.position = 'fixed'
-        textarea.style.opacity = '0'
-        document.body.appendChild(textarea)
-        textarea.select()
-        const ok = document.execCommand('copy')
-        document.body.removeChild(textarea)
-        return ok
-    } catch {
-        return false
-    }
-}
-
 export default function DealSummaryBanner({ model, synthesis, projectName }: Props) {
     const [copied, setCopied] = useState(false)
     const facts = parseDocumentedFacts(model.documentedFactsJson)
@@ -102,7 +78,7 @@ export default function DealSummaryBanner({ model, synthesis, projectName }: Pro
         if (price) lines.push(`Price: ${exact(price)}${multiple ? ` (${multiple.toFixed(1)}x)` : ''}`)
         if (drivers.length) lines.push(`Top drivers: ${drivers.map((d) => truncate(d, 90)).join('; ')}`)
         if (synthesis?.finalRecommendation) lines.push(`Verdict: ${synthesis.finalRecommendation}`)
-        const ok = await copyText(lines.join('\n'))
+        const ok = await copyToClipboard(lines.join('\n'))
         if (ok) {
             setCopied(true)
             setTimeout(() => setCopied(false), 2000)

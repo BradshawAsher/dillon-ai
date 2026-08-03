@@ -1,4 +1,5 @@
 import { FileText, Printer, Copy, Check } from 'lucide-react'
+import { copyToClipboard } from '../utils/clipboard'
 import { useState, useCallback } from 'react'
 
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
@@ -112,10 +113,11 @@ export default function DealMemoView({ model, synthesis, projectName, documents 
     const price = model.askingPrice ?? model.purchasePrice
     const multiple = price && ebitda ? (price / Number(ebitda)).toFixed(1) : null
 
-    const handleCopy = useCallback(() => {
-        navigator.clipboard.writeText(buildMemoText(model, synthesis, projectName))
-        setCopied(true)
-        setTimeout(() => setCopied(false), 2000)
+    const handleCopy = useCallback(async () => {
+        if (await copyToClipboard(buildMemoText(model, synthesis, projectName))) {
+            setCopied(true)
+            setTimeout(() => setCopied(false), 2000)
+        }
     }, [model, synthesis, projectName])
 
     const handlePrint = useCallback(() => {

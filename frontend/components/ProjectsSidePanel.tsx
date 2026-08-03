@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { FolderKanban, Search, X, Plus, Download, CheckCircle2, Clock3, AlertTriangle, ArrowRight } from 'lucide-react'
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
 import { Input } from '../lib/shadcn/input'
 import type { ProjectSummary } from '../utils/projectWorkspace'
-import type { SubmissionSynthesis } from '../utils/aiSubmissionData'
+import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { downloadSynthesisReport } from './ProjectSynthesisCard'
 import { getProjectStatusVariant } from '../utils/projectWorkspace'
 
@@ -13,7 +13,7 @@ interface ProjectsSidePanelProps {
     onClose: () => void
     projects: ProjectSummary[]
     activeProjectKey: string
-    syntheses: SubmissionSynthesis[]
+    syntheses: ProjectSynthesisItem[]
     onSelectProject: (projectKey: string) => void
     onOpenIntake: () => void
 }
@@ -27,7 +27,7 @@ export function ProjectsSidePanel({
     onSelectProject,
     onOpenIntake,
 }: ProjectsSidePanelProps) {
-    const [searchTerm, setSearchSearchTerm] = useState('')
+    const [searchTerm, setSearchTerm] = useState('')
 
     // Close panel on Escape key
     useEffect(() => {
@@ -78,6 +78,8 @@ export function ProjectsSidePanel({
             {/* Slide-over Drawer Panel */}
             <aside
                 className="fixed right-0 top-0 bottom-0 z-50 flex w-full max-w-md sm:max-w-lg flex-col border-l border-border bg-background shadow-2xl transition-transform duration-300 ease-in-out"
+                role="dialog"
+                aria-modal="true"
                 aria-label="Projects drawer"
             >
                 {/* Header */}
@@ -123,7 +125,7 @@ export function ProjectsSidePanel({
                         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             value={searchTerm}
-                            onChange={(e) => setSearchSearchTerm(e.target.value)}
+                            onChange={(e) => setSearchTerm(e.target.value)}
                             placeholder="Search by project name, ID, or company..."
                             className="pl-9 text-sm"
                             aria-label="Search projects in side panel"

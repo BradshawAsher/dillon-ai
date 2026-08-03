@@ -1,8 +1,10 @@
-import { DollarSign } from 'lucide-react'
+import { Clock3, DollarSign } from 'lucide-react'
 
 import { Badge } from '../lib/shadcn/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { MEASURED_COST_PER_DOCUMENT, MEASURED_ROUTING_SAVINGS } from '../utils/costModel'
+import { estimateProcessingSeconds, formatDuration } from '../utils/processingTime'
+import InfoTip from './InfoTip'
 
 type Props = {
     documentsProcessed: number
@@ -19,6 +21,12 @@ export default function CostPerRunCard({ documentsProcessed, synthesisRuns }: Pr
     const estimatedDocCost = documentsProcessed * ESTIMATED_COST_PER_DOC
     const estimatedSynthesisCost = synthesisRuns * ESTIMATED_COST_PER_SYNTHESIS
     const totalEstimated = estimatedDocCost + estimatedSynthesisCost
+
+    // Typical wall-clock time for a batch this size, so a multi-minute run does
+    // not read as a stall. Assumes one synthesis when any documents are present.
+    const typicalTime = formatDuration(
+        estimateProcessingSeconds({ documentCount: documentsProcessed, includeSynthesis: documentsProcessed > 0 }).totalSeconds,
+    )
 
     return (
         <Card className="overflow-hidden">
@@ -42,9 +50,12 @@ export default function CostPerRunCard({ documentsProcessed, synthesisRuns }: Pr
                         <p className="mt-1 text-xs text-muted-foreground">~${ESTIMATED_COST_PER_DOC.toFixed(2)}/doc</p>
                     </div>
                     <div className="rounded-lg border border-border bg-background p-3">
-                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Synthesis runs</p>
+                        <div className="flex items-center gap-1">
+                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Synthesis runs</p>
+                            <InfoTip term="Synthesis run" definition="One Sonnet pass that consolidates all of a project's documents into a single judgment. This per-run cost is still an estimate — synthesis token usage is not yet logged end to end." />
+                        </div>
                         <p className="mt-1 text-lg font-semibold text-foreground">{synthesisRuns}</p>
-                        <p className="mt-1 text-xs text-muted-foreground">~${ESTIMATED_COST_PER_SYNTHESIS.toFixed(2)}/run</p>
+                        <p className="mt-1 text-xs text-muted-foreground">~${ESTIMATED_COST_PER_SYNTHESIS.toFixed(2)}/run (est.)</p>
                     </div>
                     <div className="rounded-lg border border-border bg-background p-3">
                         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Doc analysis cost</p>
@@ -57,6 +68,14 @@ export default function CostPerRunCard({ documentsProcessed, synthesisRuns }: Pr
                         <p className="mt-1 text-xs text-muted-foreground">All runs this project</p>
                     </div>
                 </div>
+                {documentsProcessed > 0 && (
+                    <div className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <Clock3 className="h-3.5 w-3.5" />
+                        Typical processing time for {documentsProcessed} document{documentsProcessed === 1 ? '' : 's'} + synthesis:{' '}
+                        <span className="font-medium text-foreground">{typicalTime}</span>
+                        <span className="text-muted-foreground/70">(varies with document length and retries)</span>
+                    </div>
+                )}
                 <div className="mt-4 rounded-md border border-dashed border-border bg-muted/20 p-3">
                     <p className="text-xs text-muted-foreground">
                         <strong>Provider:</strong> Anthropic Claude — Haiku 4.5 for validation/classification passes and Sonnet 4.6 for financial analysis and synthesis. Per-document cost is measured from token telemetry (Haiku 4.5 $1/$5, Sonnet 4.6 $3/$15 per 1M tokens); two-model routing saves ~{ROUTING_SAVINGS_PCT}% versus an all-Sonnet pipeline.

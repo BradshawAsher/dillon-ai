@@ -316,7 +316,7 @@ export function createProjectSummaries(
     rows: SubmissionHistoryItem[],
     inFlightBatch?: { projectId: string; dealName?: string; projectStage?: string; expectedDocumentCount?: number } | null,
     syntheses?: Array<{ projectId: string; projectProcessedAt?: string; projectStatus?: string }>
-) {
+): ProjectSummary[] {
     const rowsByProject = new Map<string, SubmissionHistoryItem[]>()
 
     rows.forEach((row) => {
@@ -456,6 +456,7 @@ export function createProjectSummaries(
             employeeAsOfDate: employeeEvidence?.employeeAsOfDate ?? '',
             employeeEvidenceStatus: employeeEvidence?.employeeEvidenceStatus ?? '',
             employeeCitation: employeeEvidence?.employeeCitation ?? '',
+            employeeConfidence: employeeEvidence?.employeeConfidence ?? null,
         } satisfies ProjectSummary
     }).filter((summary): summary is ProjectSummary => summary !== null)
 
