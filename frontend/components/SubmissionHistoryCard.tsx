@@ -29,6 +29,7 @@ import {
     formatSubmissionStatus,
     hasAiEnrichment,
     isActiveSubmissionStatus,
+    isStoppedSubmissionStatus,
     normalizeSubmissionStatus,
     type SubmissionHistoryItem,
 } from '../utils/submissionHistory'
@@ -38,6 +39,10 @@ function getStatusVariant(status: string): 'success' | 'warning' | 'destructive'
 
     if (normalized === 'completed' || normalized === 'approved') {
         return 'success'
+    }
+
+    if (isStoppedSubmissionStatus(status)) {
+        return 'secondary'
     }
 
     if (
@@ -72,6 +77,10 @@ function StatusIcon({ status }: { status: string }) {
 
     if (normalized === 'error' || normalized === 'failed' || normalized === 'rejected') {
         return <CircleAlert className="h-4 w-4" />
+    }
+
+    if (isStoppedSubmissionStatus(status)) {
+        return <Clock3 className="h-4 w-4" />
     }
 
     return <Clock3 className="h-4 w-4" />
