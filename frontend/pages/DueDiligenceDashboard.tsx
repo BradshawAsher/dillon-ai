@@ -557,8 +557,6 @@ export default function DueDiligenceDashboard() {
         return filteredSyntheses
     }, [rawProjectSyntheses])
 
-    const projectSummaries = useMemo(() => createProjectSummaries(submissionHistory), [submissionHistory])
-
     const fallbackFinding = diligenceFindings[0]
     const [selectedFindingId, setSelectedFindingId] = useState<string>(fallbackFinding?.id ?? '')
     const [selectedFiles, setSelectedFiles] = useState<File[]>([])
@@ -577,17 +575,6 @@ export default function DueDiligenceDashboard() {
     })
     const [activeWorkspaceTab, setActiveWorkspaceTab] = useState<WorkspaceTab>('overview')
     const [projectId, setProjectId] = useState(() => createUnusedProjectId())
-
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            const el = document.getElementById('deal-workspace')
-            if (el) {
-                el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-            } else {
-                window.scrollTo({ top: 0, behavior: 'smooth' })
-            }
-        }
-    }, [activeWorkspaceTab])
     const [projectStage, setProjectStage] = useState('post-loi')
     const [documentType, setDocumentType] = useState('auto-detect')
     const [selectedProjectKey, setSelectedProjectKey] = useState('new')
@@ -613,6 +600,24 @@ export default function DueDiligenceDashboard() {
             }
         } catch { }
     }, [activeSubmissionBatch])
+
+    const inFlightBatchPlaceholder = useMemo(() => {
+        if (activeSubmissionBatch?.id && !activeSubmissionBatch.endedAt && !activeSubmissionBatch.stoppedAt) {
+            return {
+                projectId: activeSubmissionBatch.id,
+                dealName: dealName || activeSubmissionBatch.id,
+                projectStage,
+                expectedDocumentCount: activeSubmissionBatch.expectedDocumentCount,
+            }
+        }
+        return null
+    }, [activeSubmissionBatch, dealName, projectStage])
+
+    const projectSummaries = useMemo(
+        () => createProjectSummaries(submissionHistory, inFlightBatchPlaceholder),
+        [submissionHistory, inFlightBatchPlaceholder]
+    )
+
     const [activeHistoryEnvironment, setActiveHistoryEnvironment] = useState<SubmitEnvironment>('production')
     const [currentTheme, setCurrentTheme] = useState(getStoredTheme)
     const [desktopNotificationPermission, setDesktopNotificationPermission] = useState<NotificationPermission | 'unsupported'>(() => {
@@ -793,12 +798,16 @@ export default function DueDiligenceDashboard() {
             return
         }
 
-        const latestProject = projectSummaries[0]
-        setSelectedProjectKey(latestProject.projectKey)
-        setProjectId(latestProject.projectId || latestProject.projectKey)
-        setDealName(latestProject.projectName)
-        setProjectStage(latestProject.stage || 'post-loi')
-        setHasRestoredLatestProject(true)
+        const completedProject = projectSummaries.find((project) => project.completedCount > 0 || (project.documents && project.documents.length > 0 && project.statusLabel !== 'Processing batch...'))
+        const latestProject = completedProject || projectSummaries[0]
+
+        if (latestProject) {
+            setSelectedProjectKey(latestProject.projectKey)
+            setProjectId(latestProject.projectId || latestProject.projectKey)
+            setDealName(latestProject.projectName)
+            setProjectStage(latestProject.stage || 'post-loi')
+            setHasRestoredLatestProject(true)
+        }
     }, [hasRestoredLatestProject, isExampleMode, projectSummaries])
 
     const hasActiveSubmissions = useMemo(() => {
@@ -1536,12 +1545,16 @@ export default function DueDiligenceDashboard() {
         setBatchSubmissionMessage('')
 
         try {
-            const submissionBatchId = crypto.randomUUID()
+            const targetProjectId = (selectedProjectKey === 'new' || !projectId) ? (suggestedProjectId || `project-${Date.now().toString(36)}`) : projectId
+            setSelectedProjectKey(targetProjectId)
+            setProjectId(targetProjectId)
+
+            const submissionBatchId = targetProjectId
             const expectedBatchDocumentCount = filesToQueue.length
             const failedFileNames: string[] = []
 
             setActiveSubmissionBatch({
-                id: submissionBatchId,
+                id: targetProjectId,
                 expectedDocumentCount: expectedBatchDocumentCount,
                 environment,
                 startedAt: Date.now(),
@@ -1561,7 +1574,7 @@ export default function DueDiligenceDashboard() {
                         companyName: dealName || suggestedProjectName,
                         workstream: '',
                         submissionNotes,
-                        projectId: projectId || suggestedProjectId,
+                        projectId: targetProjectId,
                         projectStage,
                         documentType,
                         submissionBatchId,

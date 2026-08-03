@@ -223,6 +223,8 @@ function stringifySynthesisValue(value: unknown): string {
         return '—'
     }
 
+
+
     if (Array.isArray(value)) {
         return value.map((item) => stringifySynthesisValue(item)).join(', ')
     }
@@ -278,7 +280,10 @@ export function getProjectStatusVariant(statusLabel: string): 'success' | 'warni
     return 'secondary'
 }
 
-export function createProjectSummaries(rows: SubmissionHistoryItem[]) {
+export function createProjectSummaries(
+    rows: SubmissionHistoryItem[],
+    inFlightBatch?: { projectId: string; dealName?: string; projectStage?: string; expectedDocumentCount?: number } | null
+) {
     const rowsByProject = new Map<string, SubmissionHistoryItem[]>()
 
     rows.forEach((row) => {
@@ -293,6 +298,13 @@ export function createProjectSummaries(rows: SubmissionHistoryItem[]) {
         rowsByProject.set(projectKey, [row])
     })
 
+    if (inFlightBatch?.projectId) {
+        const key = getProjectKey({ projectId: inFlightBatch.projectId, dealName: inFlightBatch.dealName || '' } as SubmissionHistoryItem)
+        if (!rowsByProject.has(key)) {
+            rowsByProject.set(key, [])
+        }
+    }
+
     const summaries = [...rowsByProject.entries()].map(([projectKey, projectRows]) => {
         const sortedRows = [...projectRows].sort((left, right) => {
             return getTimestampValue(getDisplayTimestamp(right)) - getTimestampValue(getDisplayTimestamp(left))
@@ -300,6 +312,37 @@ export function createProjectSummaries(rows: SubmissionHistoryItem[]) {
         const latestRow = sortedRows[0]
 
         if (!latestRow) {
+            if (inFlightBatch && getProjectKey({ projectId: inFlightBatch.projectId, dealName: inFlightBatch.dealName || '' } as SubmissionHistoryItem) === projectKey) {
+                const projName = inFlightBatch.dealName?.trim() || inFlightBatch.projectId
+                return {
+                    projectKey,
+                    projectId: inFlightBatch.projectId,
+                    projectName: projName,
+                    companyName: projName,
+                    stage: inFlightBatch.projectStage || 'post-loi',
+                    workstream: 'All workstreams',
+                    latestActivity: 'In progress',
+                    documentCount: inFlightBatch.expectedDocumentCount || 1,
+                    completedCount: 0,
+                    activeCount: inFlightBatch.expectedDocumentCount || 1,
+                    failedCount: 0,
+                    reviewCount: 0,
+                    redRiskCount: 0,
+                    highRiskCount: 0,
+                    documentTypes: ['In-flight submission'],
+                    documents: [],
+                    coverage: buildCoverage([]),
+                    recommendation: 'In progress — batch processing is underway.',
+                    statusLabel: 'Processing batch...',
+                    synthesisFields: [],
+                    employeeCount: null,
+                    employeeType: '',
+                    employeeAsOfDate: '',
+                    employeeEvidenceStatus: '',
+                    employeeCitation: '',
+                    employeeConfidence: null,
+                } satisfies ProjectSummary
+            }
             return null
         }
 
@@ -370,7 +413,6 @@ export function createProjectSummaries(rows: SubmissionHistoryItem[]) {
             employeeAsOfDate: employeeEvidence?.employeeAsOfDate ?? '',
             employeeEvidenceStatus: employeeEvidence?.employeeEvidenceStatus ?? '',
             employeeCitation: employeeEvidence?.employeeCitation ?? '',
-            employeeConfidence: employeeEvidence?.employeeConfidence ?? null,
         } satisfies ProjectSummary
     }).filter((summary): summary is ProjectSummary => summary !== null)
 
