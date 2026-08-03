@@ -33,7 +33,7 @@ function deriveSubmissionStatus(row: Record<string, any>) {
     const lastActiveMs = Math.max(updatedAtMs, createdAtMs)
     const elapsedSeconds = lastActiveMs > 0 ? (Date.now() - lastActiveMs) / 1000 : 0
 
-    if (activeSubmissionStatuses.has(normalizedStatus) && elapsedSeconds > 120 && !hasUsableAnalysis) {
+    if (activeSubmissionStatuses.has(normalizedStatus) && elapsedSeconds > 20 && !hasUsableAnalysis) {
         return 'failed'
     }
 

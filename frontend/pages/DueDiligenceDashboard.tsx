@@ -545,19 +545,28 @@ export default function DueDiligenceDashboard() {
 
     const prevFailedCountRef = useRef<number | null>(null)
     useEffect(() => {
-        const failedDocs = submissionHistory.filter((row) =>
-            ['failed', 'error', 'rejected'].includes((row.status || '').trim().toLowerCase()) ||
-            (row.errorMessage || row.aiEscalationReason || '').toLowerCase().includes('credit') ||
-            (row.errorMessage || row.aiEscalationReason || '').toLowerCase().includes('balance')
-        )
-        if (prevFailedCountRef.current !== null && failedDocs.length > prevFailedCountRef.current) {
+        const fifteenMinutesAgo = Date.now() - 15 * 60 * 1000
+        const recentFailedDocs = submissionHistory.filter((row) => {
+            const isFailedStatus = ['failed', 'error', 'rejected'].includes((row.status || '').trim().toLowerCase()) ||
+                (row.errorMessage || row.aiEscalationReason || '').toLowerCase().includes('credit') ||
+                (row.errorMessage || row.aiEscalationReason || '').toLowerCase().includes('balance')
+            if (!isFailedStatus) return false
+
+            const rowTime = row.updatedAt ? new Date(row.updatedAt).getTime() : (row.createdAt ? new Date(row.createdAt).getTime() : 0)
+            return rowTime > fifteenMinutesAgo || (activeProjectId && row.projectId === activeProjectId)
+        })
+
+        if (prevFailedCountRef.current !== null && recentFailedDocs.length > prevFailedCountRef.current) {
+            const newlyFailedCount = recentFailedDocs.length - prevFailedCountRef.current
+            const sampleDoc = recentFailedDocs[0]
+            const projLabel = sampleDoc?.dealName || sampleDoc?.companyName || 'diligence project'
             triggerFailureAlert(
                 '🔴 AI Processing Error — Due Diligence Pipeline',
-                `${failedDocs.length} document(s) encountered an AI processing failure or credit limit. Check the Diligence tab to retry.`
+                `${newlyFailedCount} document(s) in ${projLabel} failed processing or hit credit limits. Check the Diligence tab to retry.`
             )
         }
-        prevFailedCountRef.current = failedDocs.length
-    }, [submissionHistory])
+        prevFailedCountRef.current = recentFailedDocs.length
+    }, [submissionHistory, activeProjectId])
 
     const visibleProjectSyntheses = useMemo(() => {
         const isolationEnabled = isDataIsolationEnabled()
@@ -1978,6 +1987,41 @@ export default function DueDiligenceDashboard() {
                             Add documents
                         </button>
                     </div>
+
+                    {/* Global Pipeline Workflow Alert Banner for Overview Tab */}
+                    {(submissionHistory.some((row) => ['failed', 'error', 'rejected'].includes((row.status || '').trim().toLowerCase()) || (row.errorMessage || row.aiEscalationReason || '').toLowerCase().includes('credit')) || activeProjectSynthesis?.projectStatus?.trim()?.toLowerCase() === 'synthesis_refresh_failed' || activeProjectSynthesis?.projectStatus?.trim()?.toLowerCase() === 'synthesis_blocked') ? (
+                        <div role="alert" className="rounded-xl border-2 border-destructive/60 bg-destructive/15 p-5 text-sm text-foreground shadow-md">
+                            <div className="flex items-start gap-3.5">
+                                <AlertCircle className="h-6 w-6 shrink-0 text-destructive mt-0.5" />
+                                <div className="space-y-2 flex-1">
+                                    <p className="font-bold text-destructive text-base">
+                                        🔴 AI Pipeline Alert — Errors Detected in n8n Workflows
+                                    </p>
+                                    <div className="text-sm text-foreground space-y-1">
+                                        {submissionHistory.some((row) => ['failed', 'error', 'rejected'].includes((row.status || '').trim().toLowerCase()) || (row.errorMessage || row.aiEscalationReason || '').toLowerCase().includes('credit')) ? (
+                                            <p className="text-destructive font-medium">
+                                                • Document Extraction Workflow: <span className="font-normal text-foreground">One or more files failed processing (e.g. Anthropic API credit balance exhausted or JSON output format limit).</span>
+                                            </p>
+                                        ) : null}
+                                        {activeProjectSynthesis?.projectStatus?.trim()?.toLowerCase() === 'synthesis_refresh_failed' || activeProjectSynthesis?.projectStatus?.trim()?.toLowerCase() === 'synthesis_blocked' ? (
+                                            <p className="text-destructive font-medium">
+                                                • Project Consolidator Workflow: <span className="font-normal text-foreground">Synthesis refresh failed ({activeProjectSynthesis.aiErrorMessage || 'Anthropic API credit limit or parameters error'}).</span>
+                                            </p>
+                                        ) : null}
+                                    </div>
+                                    <div className="pt-2 flex flex-wrap gap-3">
+                                        <Button type="button" size="sm" variant="destructive" onClick={() => setActiveWorkspaceTab('diligence')}>
+                                            Go to Diligence Tab to Retry Documents
+                                        </Button>
+                                        <Button type="button" size="sm" variant="outline" className="border-destructive/40 text-destructive hover:bg-destructive/10" onClick={() => setActiveWorkspaceTab('synthesis')}>
+                                            Go to Synthesis Tab
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ) : null}
+
                     <DealSummaryBanner model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
 
                     <Suspense fallback={null}>
