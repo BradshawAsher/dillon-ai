@@ -19,11 +19,11 @@ async function run() {
   const { createClient } = await import('@supabase/supabase-js')
   const supabase = createClient(supabaseUrl, supabaseKey)
 
-  // Query documents for Project 34 or recent ConversionXL files
+  // Query documents for Project 37 / Project 34 or recent ConversionXL files
   const { data: docs, error } = await supabase
     .from('documents')
     .select('*')
-    .or('project_id.eq.project-20260803-e9997816,deal_name.ilike.%PROJECT 34%,deal_name.ilike.%ConversionXL%')
+    .or('project_id.eq.project-20260804-83178e15,project_id.eq.project-20260803-e9997816,deal_name.ilike.%PROJECT 37%,deal_name.ilike.%PROJECT 34%,deal_name.ilike.%ConversionXL%')
     .order('id', { ascending: false })
 
   if (error) {

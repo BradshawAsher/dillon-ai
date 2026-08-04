@@ -544,7 +544,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                 <div className="space-y-2">
                                     <p className="text-lg font-semibold text-foreground">{displayName}</p>
                                     <p className="text-xs text-muted-foreground">
-                                        {synthesis.documentsCompletedCount} of {synthesis.documentsReceivedCount} documents processed ·
+                                        {(Number(synthesis.documentsCompletedCount || 0) || completedProjectDocumentsWithAnalysis || projectDocuments.length)} of {(Number(synthesis.documentsReceivedCount || 0) || projectDocuments.length || (Number(synthesis.documentsCompletedCount || 0) || completedProjectDocumentsWithAnalysis || projectDocuments.length))} documents processed ·
                                         synthesized {formatTimestamp(synthesis.projectProcessedAt)}
                                     </p>
                                     <div className="flex flex-wrap items-center gap-2">

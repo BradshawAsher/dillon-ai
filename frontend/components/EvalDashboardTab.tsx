@@ -20,7 +20,7 @@ import { Button } from '../lib/shadcn/button'
 
 type EvalDashboardTabProps = {
     evalRuns?: Array<{
-        id: number
+        id: number | string
         run_at: string
         commit_sha: string
         total_documents: number
@@ -29,56 +29,116 @@ type EvalDashboardTabProps = {
         status: string
         report_json: any
     }>
+    onTriggerEvalRuns?: () => void
 }
 
-export default function EvalDashboardTab({ evalRuns = [] }: EvalDashboardTabProps) {
+export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: EvalDashboardTabProps) {
     const [runningEval, setRunningEval] = useState(false)
     const [latestRunMessage, setBatchMessage] = useState('')
 
-    // Fallback data from latest verified Project 5 eval run if DB rows loading
+    // Default report incorporating both Project 4 (ConversionXL) and Project 5 (Medical Spa)
     const defaultReport = {
         evaluatedAt: new Date().toISOString(),
-        totalDocumentsEvaluated: 2,
+        totalDocumentsEvaluated: 6,
         passedDocuments: 1,
-        overallPercentage: 80,
-        status: 'SHIP-READY (PASS)',
+        overallPercentage: 73,
+        status: 'NEEDS-TUNING',
         documentResults: [
+            {
+                fileName: 'WC- Conversion XL OM.pdf',
+                business: 'Business 4 - ConversionXL (SaaS Product)',
+                classificationScore: 3,
+                factsScore: 3.0,
+                riskScore: 13.0,
+                valuationScore: 15,
+                employeeScore: 5,
+                mathScore: 10,
+                totalScore: 49.0,
+                maxScore: 70,
+                percentage: 70,
+                pass: false,
+            },
+            {
+                fileName: 'DD Memo.pdf',
+                business: 'Business 4 - ConversionXL (SaaS Product)',
+                classificationScore: 10,
+                factsScore: 3.0,
+                riskScore: 10.0,
+                valuationScore: 15,
+                employeeScore: 5,
+                mathScore: 10,
+                totalScore: 53.0,
+                maxScore: 70,
+                percentage: 76,
+                pass: false,
+            },
+            {
+                fileName: 'ConversionXL LLC_Profit and Loss by Month v2.xlsx',
+                business: 'Business 4 - ConversionXL (SaaS Product)',
+                classificationScore: 10,
+                factsScore: 1.0,
+                riskScore: 10.0,
+                valuationScore: 15,
+                employeeScore: 5,
+                mathScore: 10,
+                totalScore: 51.0,
+                maxScore: 70,
+                percentage: 73,
+                pass: false,
+            },
+            {
+                fileName: 'CXL_Screen.xlsx',
+                business: 'Business 4 - ConversionXL (SaaS Product)',
+                classificationScore: 3,
+                factsScore: 3.0,
+                riskScore: 5.0,
+                valuationScore: 15,
+                employeeScore: 5,
+                mathScore: 10,
+                totalScore: 41.0,
+                maxScore: 70,
+                percentage: 59,
+                pass: false,
+            },
             {
                 fileName: '_RENEW HEALTH CENTER - FULL YEAR COMPARATIVE P&L (2024-2025).pdf',
                 business: 'Business 5 - Medical Spa (Sameer)',
                 classificationScore: 10,
-                factsScore: 10.0,
-                riskScore: 20.0,
+                factsScore: 6.5,
+                riskScore: 16.0,
                 valuationScore: 15,
                 employeeScore: 5,
                 mathScore: 10,
-                totalScore: 70.0,
+                totalScore: 62.5,
                 maxScore: 70,
-                percentage: 100,
+                percentage: 89,
                 pass: true,
             },
             {
                 fileName: 'Financial Modelling Renew Health .xlsm',
                 business: 'Business 5 - Medical Spa (Sameer)',
                 classificationScore: 7,
-                factsScore: 10.0,
-                riskScore: 18.0,
-                valuationScore: 15,
+                factsScore: 3.6,
+                riskScore: 14.0,
+                valuationScore: 10,
                 employeeScore: 5,
                 mathScore: 10,
-                totalScore: 65.0,
+                totalScore: 49.6,
                 maxScore: 70,
-                percentage: 93,
-                pass: true,
+                percentage: 71,
+                pass: false,
             },
         ],
     }
 
-    const latestRun = evalRuns[0] ? evalRuns[0].report_json : defaultReport
+    const latestRun = evalRuns && evalRuns.length > 0 && evalRuns[0].report_json ? evalRuns[0].report_json : defaultReport
 
     const handleRunHarness = () => {
         setRunningEval(true)
         setBatchMessage('Triggering local evaluation suite...')
+        if (onTriggerEvalRuns) {
+            onTriggerEvalRuns()
+        }
         setTimeout(() => {
             setRunningEval(false)
             setBatchMessage('Evaluation suite completed successfully. All test cases scored.')
@@ -191,84 +251,121 @@ export default function EvalDashboardTab({ evalRuns = [] }: EvalDashboardTabProp
                 </Card>
             </div>
 
-            {/* Document Evaluation Cards */}
+            {/* Document Evaluation Cards Grouped by Project/Business */}
             <Card>
                 <CardHeader>
                     <CardTitle className="text-lg font-bold flex items-center gap-2">
                         <Layers className="h-5 w-5 text-primary" />
-                        Latest Golden Dataset Test Results — Project 5 (Medical Spa)
+                        Latest Golden Dataset Test Results
                     </CardTitle>
                     <CardDescription>
-                        Automated score breakdown per document against ground-truth expectations.
+                        Automated score breakdown per document against ground-truth expectations, categorized by project deal packet.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="rounded-xl border border-border divide-y divide-border/60 overflow-hidden">
-                        {(latestRun.documentResults || defaultReport.documentResults).map((doc: any, index: number) => (
-                            <div key={index} className="p-4 bg-card hover:bg-muted/20 transition-colors space-y-3">
-                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                                    <div className="space-y-0.5 min-w-0">
+                <CardContent className="space-y-6">
+                    {(() => {
+                        const results = latestRun.documentResults || defaultReport.documentResults
+                        const groups: Record<string, typeof results> = {}
+                        results.forEach((doc: any) => {
+                            const bus = doc.business || 'Other Deal Packets'
+                            if (!groups[bus]) groups[bus] = []
+                            groups[bus].push(doc)
+                        })
+
+                        return Object.entries(groups).map(([businessName, docs], groupIdx) => {
+                            const avgScore = Math.round(docs.reduce((sum: number, d: any) => sum + (d.percentage || 0), 0) / (docs.length || 1))
+                            const passCount = docs.filter((d: any) => d.pass).length
+                            const projectPass = avgScore >= 80
+
+                            return (
+                                <div key={groupIdx} className="space-y-3">
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-border/80">
                                         <div className="flex items-center gap-2 flex-wrap">
-                                            <span className="font-bold text-sm text-foreground truncate max-w-md">
-                                                {doc.fileName}
-                                            </span>
-                                            <Badge variant="outline" className="text-[11px]">
-                                                {doc.business}
+                                            <Layers className="h-4 w-4 text-primary shrink-0" />
+                                            <h3 className="font-bold text-sm text-foreground tracking-wide">
+                                                {businessName}
+                                            </h3>
+                                            <Badge
+                                                variant="default"
+                                                className={`text-[11px] font-semibold ${projectPass ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-amber-600 hover:bg-amber-700 text-white'}`}
+                                            >
+                                                Overall: {avgScore}% ({passCount}/{docs.length} Passed)
                                             </Badge>
                                         </div>
-                                        <p className="text-xs text-muted-foreground">
-                                            Classified as: <span className="font-medium text-foreground">{doc.detectedDocumentType || 'P&L / Model'}</span>
-                                        </p>
-                                    </div>
-
-                                    <div className="flex items-center gap-3 shrink-0">
-                                        <div className="text-right">
-                                            <span className="text-lg font-extrabold text-foreground">
-                                                {doc.percentage}%
-                                            </span>
-                                            <span className="text-xs text-muted-foreground block">
-                                                ({doc.totalScore}/{doc.maxScore} pts)
-                                            </span>
-                                        </div>
-                                        <Badge
-                                            variant={doc.pass ? 'default' : 'secondary'}
-                                            className={doc.pass ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}
-                                        >
-                                            {doc.pass ? 'PASS' : 'NEEDS TUNING'}
+                                        <Badge variant="outline" className="text-[11px] font-mono self-start sm:self-auto">
+                                            {docs.length} {docs.length === 1 ? 'document' : 'documents'}
                                         </Badge>
                                     </div>
-                                </div>
 
-                                {/* Score Categories Grid */}
-                                <div className="grid grid-cols-2 sm:grid-cols-6 gap-2 text-xs pt-1">
-                                    <div className="bg-muted/30 p-2 rounded border border-border/40">
-                                        <span className="text-muted-foreground block text-[10px] uppercase font-semibold">Classification</span>
-                                        <span className="font-bold text-foreground">{doc.classificationScore}/10</span>
-                                    </div>
-                                    <div className="bg-muted/30 p-2 rounded border border-border/40">
-                                        <span className="text-muted-foreground block text-[10px] uppercase font-semibold">Facts Extraction</span>
-                                        <span className="font-bold text-emerald-600">{doc.factsScore}/10</span>
-                                    </div>
-                                    <div className="bg-muted/30 p-2 rounded border border-border/40">
-                                        <span className="text-muted-foreground block text-[10px] uppercase font-semibold">Risk Flags</span>
-                                        <span className="font-bold text-foreground">{doc.riskScore}/20</span>
-                                    </div>
-                                    <div className="bg-muted/30 p-2 rounded border border-border/40">
-                                        <span className="text-muted-foreground block text-[10px] uppercase font-semibold">Valuation</span>
-                                        <span className="font-bold text-foreground">{doc.valuationScore}/15</span>
-                                    </div>
-                                    <div className="bg-muted/30 p-2 rounded border border-border/40">
-                                        <span className="text-muted-foreground block text-[10px] uppercase font-semibold">Headcount</span>
-                                        <span className="font-bold text-foreground">{doc.employeeScore}/5</span>
-                                    </div>
-                                    <div className="bg-muted/30 p-2 rounded border border-border/40">
-                                        <span className="text-muted-foreground block text-[10px] uppercase font-semibold">Math Checks</span>
-                                        <span className="font-bold text-emerald-600">{doc.mathScore}/10</span>
-                                    </div>
+                                <div className="rounded-xl border border-border divide-y divide-border/60 overflow-hidden">
+                                    {docs.map((doc: any, index: number) => (
+                                        <div key={index} className="p-4 bg-card hover:bg-muted/20 transition-colors space-y-3">
+                                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                                <div className="space-y-0.5 min-w-0">
+                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                        <span className="font-bold text-sm text-foreground truncate max-w-md">
+                                                            {doc.fileName}
+                                                        </span>
+                                                        <Badge variant="outline" className="text-[11px]">
+                                                            {doc.business}
+                                                        </Badge>
+                                                    </div>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        Classified as: <span className="font-medium text-foreground">{doc.detectedDocumentType || 'P&L / Model'}</span>
+                                                    </p>
+                                                </div>
+
+                                                <div className="flex items-center gap-3 shrink-0">
+                                                    <div className="text-right">
+                                                        <span className="text-lg font-extrabold text-foreground">
+                                                            {doc.percentage}%
+                                                        </span>
+                                                        <span className="text-xs text-muted-foreground block">
+                                                            ({doc.totalScore}/{doc.maxScore} pts)
+                                                        </span>
+                                                    </div>
+                                                    <Badge
+                                                        variant={doc.pass ? 'default' : 'secondary'}
+                                                        className={doc.pass ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}
+                                                    >
+                                                        {doc.pass ? 'PASS' : 'NEEDS TUNING'}
+                                                    </Badge>
+                                                </div>
+                                            </div>
+
+                                            {/* Score Categories Grid */}
+                                            <div className="grid grid-cols-2 sm:grid-cols-6 gap-2 text-xs pt-1">
+                                                <div className="bg-muted/30 p-2 rounded border border-border/40">
+                                                    <span className="text-muted-foreground block text-[10px] uppercase font-semibold">Classification</span>
+                                                    <span className="font-bold text-foreground">{doc.classificationScore}/10</span>
+                                                </div>
+                                                <div className="bg-muted/30 p-2 rounded border border-border/40">
+                                                    <span className="text-muted-foreground block text-[10px] uppercase font-semibold">Facts Extraction</span>
+                                                    <span className="font-bold text-emerald-600">{doc.factsScore}/10</span>
+                                                </div>
+                                                <div className="bg-muted/30 p-2 rounded border border-border/40">
+                                                    <span className="text-muted-foreground block text-[10px] uppercase font-semibold">Risk Flags</span>
+                                                    <span className="font-bold text-foreground">{doc.riskScore}/20</span>
+                                                </div>
+                                                <div className="bg-muted/30 p-2 rounded border border-border/40">
+                                                    <span className="text-muted-foreground block text-[10px] uppercase font-semibold">Valuation</span>
+                                                    <span className="font-bold text-foreground">{doc.valuationScore}/15</span>
+                                                </div>
+                                                <div className="bg-muted/30 p-2 rounded border border-border/40">
+                                                    <span className="text-muted-foreground block text-[10px] uppercase font-semibold">Headcount</span>
+                                                    <span className="font-bold text-foreground">{doc.employeeScore}/5</span>
+                                                </div>
+                                                <div className="bg-muted/30 p-2 rounded border border-border/40">
+                                                    <span className="text-muted-foreground block text-[10px] uppercase font-semibold">Math Checks</span>
+                                                    <span className="font-bold text-emerald-600">{doc.mathScore}/10</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
-                        ))}
-                    </div>
+                        ))
+                    })()}
                 </CardContent>
             </Card>
 
