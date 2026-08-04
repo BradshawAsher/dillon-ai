@@ -2074,7 +2074,7 @@ export default function DueDiligenceDashboard() {
                     </div>
 
                     {/* Global Pipeline Workflow Alert Banner for Overview Tab */}
-                    {(submissionHistory.some((row) => ['failed', 'error', 'rejected'].includes((row.status || '').trim().toLowerCase()) || (row.errorMessage || row.aiEscalationReason || '').toLowerCase().includes('credit')) || activeProjectSynthesis?.projectStatus?.trim()?.toLowerCase() === 'synthesis_refresh_failed' || activeProjectSynthesis?.projectStatus?.trim()?.toLowerCase() === 'synthesis_blocked') ? (
+                    {(activeProjectDocuments.some((row) => ['failed', 'error', 'rejected'].includes((row.status || '').trim().toLowerCase()) || (row.errorMessage || row.aiEscalationReason || '').toLowerCase().includes('credit')) || activeProjectSynthesis?.projectStatus?.trim()?.toLowerCase() === 'synthesis_refresh_failed' || activeProjectSynthesis?.projectStatus?.trim()?.toLowerCase() === 'synthesis_blocked') ? (
                         <div role="alert" className="rounded-xl border-2 border-destructive/60 bg-destructive/15 p-5 text-sm text-foreground shadow-md">
                             <div className="flex items-start gap-3.5">
                                 <AlertCircle className="h-6 w-6 shrink-0 text-destructive mt-0.5" />
@@ -2083,7 +2083,7 @@ export default function DueDiligenceDashboard() {
                                         🔴 AI Pipeline Alert — Errors Detected in n8n Workflows
                                     </p>
                                     <div className="text-sm text-foreground space-y-1">
-                                        {submissionHistory.some((row) => ['failed', 'error', 'rejected'].includes((row.status || '').trim().toLowerCase()) || (row.errorMessage || row.aiEscalationReason || '').toLowerCase().includes('credit')) ? (
+                                        {activeProjectDocuments.some((row) => ['failed', 'error', 'rejected'].includes((row.status || '').trim().toLowerCase()) || (row.errorMessage || row.aiEscalationReason || '').toLowerCase().includes('credit')) ? (
                                             <p className="text-destructive font-medium">
                                                 • Document Extraction Workflow: <span className="font-normal text-foreground">One or more files failed processing (e.g. Anthropic API credit balance exhausted or JSON output format limit).</span>
                                             </p>

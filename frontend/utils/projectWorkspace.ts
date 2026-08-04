@@ -101,15 +101,71 @@ function normalizeText(value: string) {
     return value.trim().toLowerCase()
 }
 
-function getProjectName(row: SubmissionHistoryItem) {
-    return row.dealName || row.companyName || 'Untitled project'
+function isGenericName(name: string): boolean {
+    if (!name || name.trim().length === 0) return true
+    const norm = normalizeText(name)
+    return (
+        /^project[-\s]*\d*$/i.test(norm) ||
+        /^project-\d+-[a-f0-9]+$/i.test(norm) ||
+        /^deal[-\s]*\d*$/i.test(norm) ||
+        /^(new|untitled|default)\s*(project|deal)?$/i.test(norm) ||
+        ['n/a', 'na', 'unknown', 'none'].includes(norm)
+    )
 }
 
-function getCompanyName(row: SubmissionHistoryItem) {
-    const companyName = row.companyName.trim()
-    return companyName.length > 0 && !['n/a', 'na', 'unknown'].includes(normalizeText(companyName))
-        ? companyName
-        : ''
+export function detectCompanyName(row: SubmissionHistoryItem): string {
+    if (row.companyName && !isGenericName(row.companyName)) {
+        return row.companyName.trim()
+    }
+
+    if (row.extractedJson) {
+        try {
+            const parsed = typeof row.extractedJson === 'string' ? JSON.parse(row.extractedJson) : row.extractedJson
+            if (parsed && typeof parsed.company_name === 'string' && !isGenericName(parsed.company_name)) {
+                return parsed.company_name.trim()
+            }
+            if (parsed && typeof parsed.company === 'string' && !isGenericName(parsed.company)) {
+                return parsed.company.trim()
+            }
+        } catch {
+            // ignore
+        }
+    }
+
+    if (row.dealName && !isGenericName(row.dealName)) {
+        return row.dealName.trim()
+    }
+
+    return ''
+}
+
+export function getProjectName(row: SubmissionHistoryItem, allProjectRows?: SubmissionHistoryItem[]) {
+    if (allProjectRows && allProjectRows.length > 0) {
+        for (const r of allProjectRows) {
+            const detected = detectCompanyName(r)
+            if (detected) return detected
+        }
+    }
+
+    const detected = detectCompanyName(row)
+    if (detected) return detected
+
+    return row.dealName?.trim() || row.companyName?.trim() || 'Untitled project'
+}
+
+export function getCompanyName(row: SubmissionHistoryItem, allProjectRows?: SubmissionHistoryItem[]) {
+    if (allProjectRows && allProjectRows.length > 0) {
+        for (const r of allProjectRows) {
+            const detected = detectCompanyName(r)
+            if (detected) return detected
+        }
+    }
+
+    const detected = detectCompanyName(row)
+    if (detected) return detected
+
+    const companyName = row.companyName?.trim() || ''
+    return companyName.length > 0 && !isGenericName(companyName) ? companyName : ''
 }
 
 export function getProjectKey(row: SubmissionHistoryItem) {
@@ -471,8 +527,8 @@ export function createProjectSummaries(
         return {
             projectKey,
             projectId: latestRow.projectId,
-            projectName: getProjectName(latestRow),
-            companyName: getCompanyName(latestRow),
+            projectName: getProjectName(latestRow, sortedRows),
+            companyName: getCompanyName(latestRow, sortedRows),
             stage: latestRow.projectStage,
             workstream: latestRow.workstream || 'All workstreams',
             latestActivity: getDisplayTimestamp(latestRow) || 'Pending',

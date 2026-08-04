@@ -1,0 +1,107 @@
+{
+  "business": "business3_turnkey",
+  "projectId": "project-20260804-70c7d186",
+  "modelUsed": "Google Gemini Chat Model",
+  "evaluatedAt": "2026-08-04T17:37:18.639Z",
+  "documents": [
+    {
+      "fileName": "2) TurnKey Product Management P&L [Google Sheet].xlsx",
+      "fileType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "status": "completed",
+      "detectedDocumentType": "Profit and Loss Statement",
+      "detectedDocumentTypes": [
+        "Profit and Loss Statement",
+        "Operating Metrics",
+        "Customer or Revenue Analysis"
+      ],
+      "trafficLight": "YELLOW",
+      "riskLevel": "MEDIUM",
+      "financialFacts": [
+        {
+          "metric": "revenue",
+          "normalizedValue": 1318775,
+          "period": "2022",
+          "confidence": 1
+        },
+        {
+          "metric": "revenue",
+          "normalizedValue": 1332802,
+          "period": "2023",
+          "confidence": 1
+        },
+        {
+          "metric": "revenue",
+          "normalizedValue": 1517044,
+          "period": "2024",
+          "confidence": 1
+        },
+        {
+          "metric": "ebitda_sde",
+          "normalizedValue": 512551,
+          "period": "TTM",
+          "confidence": 1
+        }
+      ],
+      "redFlags": [
+        "Presence of multiple accounting errors requiring retroactive corrections",
+        "Historical financials explicitly disclaimed by brokerage"
+      ],
+      "yellowFlags": [
+        "Significant reliance on owner discretionary add-backs totaling $285,810 (TTM)",
+        "One-time project costs related to unsuccessful mergers or hiring initiatives",
+        "High volume of client-specific contract renewals"
+      ],
+      "valuation": {
+        "base_estimate": 0
+      },
+      "employeeEvidence": {
+        "count": null
+      },
+      "mathCheckStatus": "not_available"
+    },
+    {
+      "fileName": "1) TurnKey Product Management Business Summary.pdf",
+      "fileType": "application/pdf",
+      "status": "completed",
+      "detectedDocumentType": "Other",
+      "detectedDocumentTypes": [
+        "Operating Metrics",
+        "Customer or Revenue Analysis",
+        "Other"
+      ],
+      "trafficLight": "YELLOW",
+      "riskLevel": "MEDIUM",
+      "financialFacts": [
+        {
+          "metric": "revenue",
+          "normalizedValue": 1510307,
+          "period": "TTM",
+          "confidence": 1
+        },
+        {
+          "metric": "ebitda_sde",
+          "normalizedValue": 512551,
+          "period": "TTM",
+          "confidence": 1
+        }
+      ],
+      "redFlags": [
+        "80% of revenue is dependent on Amazon's third-party seller ecosystem",
+        "Largest client represents 25% of total revenue",
+        "Top 5 clients represent 55% of total MRR"
+      ],
+      "yellowFlags": [
+        "Recent decline in revenue segment for Inner Circle coaching",
+        "Potential transition issues for non-transferable DSP third-party access",
+        "Profitability impacted by irregular payroll timing"
+      ],
+      "valuation": {
+        "base_estimate": 1650000
+      },
+      "employeeEvidence": {
+        "count": 19
+      },
+      "mathCheckStatus": "passed"
+    }
+  ]
+}
