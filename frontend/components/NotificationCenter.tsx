@@ -52,6 +52,8 @@ function getNotificationIcon(type: Notification["type"]) {
       return <AlertCircle className="h-4 w-4 text-destructive" />
     case "info":
       return <Info className="h-4 w-4 text-blue-500" />
+    default:
+      return <Info className="h-4 w-4 text-muted-foreground" />
   }
 }
 
@@ -60,6 +62,7 @@ export default function NotificationCenter({
   onMarkRead,
   onMarkAllRead,
   onClear,
+  onSelectNotification,
 }: NotificationCenterProps) {
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -141,18 +144,29 @@ export default function NotificationCenter({
               </div>
             ) : (
               <ul className="divide-y divide-border">
-                {notifications.map((notification) => (
+                {notifications.map((notification) => {
+                  const handleSelect = () => {
+                    if (!notification.read) {
+                      onMarkRead(notification.id)
+                    }
+                    if (onSelectNotification) {
+                      onSelectNotification(notification)
+                    }
+                  }
+                  return (
                   <li
                     key={notification.id}
-                    className={`flex items-start gap-3 px-4 py-3 transition-colors hover:bg-muted/50 cursor-pointer ${
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`${notification.read ? '' : 'Unread. '}${notification.title}`}
+                    className={`flex items-start gap-3 px-4 py-3 transition-colors hover:bg-muted/50 cursor-pointer focus-visible:outline-none focus-visible:bg-muted/60 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/50 ${
                       !notification.read ? "bg-muted/30" : ""
                     }`}
-                    onClick={() => {
-                      if (!notification.read) {
-                        onMarkRead(notification.id)
-                      }
-                      if (onSelectNotification) {
-                        onSelectNotification(notification)
+                    onClick={handleSelect}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault()
+                        handleSelect()
                       }
                     }}
                   >
@@ -173,7 +187,10 @@ export default function NotificationCenter({
                         >
                           {notification.title}
                         </p>
-                        <span className="text-xs text-muted-foreground whitespace-nowrap flex-shrink-0">
+                        <span
+                          className="text-xs text-muted-foreground whitespace-nowrap flex-shrink-0"
+                          title={notification.timestamp.toLocaleString()}
+                        >
                           {formatRelativeTime(notification.timestamp)}
                         </span>
                       </div>
@@ -189,7 +206,8 @@ export default function NotificationCenter({
                       </div>
                     )}
                   </li>
-                ))}
+                  )
+                })}
               </ul>
             )}
           </div>

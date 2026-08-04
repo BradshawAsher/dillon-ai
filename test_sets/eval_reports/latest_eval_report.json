@@ -1,15 +1,13 @@
 {
-  "evaluatedAt": "2026-08-04T18:47:49.042Z",
+  "evaluatedAt": "2026-08-04T20:39:09.401Z",
   "totalDocumentsEvaluated": 16,
   "passedDocuments": 4,
-  "overallPercentage": 73,
+  "overallPercentage": 74,
   "status": "NEEDS-TUNING",
   "documentResults": [
     {
       "fileName": "Werkheiser_LOI_MergeWorks.docx",
       "business": "Business 1 - Roofing Co PA",
-      "modelUsed": "Gemini 3.1 Flash Lite",
-      "durationSec": 8,
       "classificationScore": 10,
       "factsScore": 3,
       "riskScore": 5,
@@ -24,8 +22,6 @@
     {
       "fileName": "Werkheiser P&L 2025.pdf",
       "business": "Business 1 - Roofing Co PA",
-      "modelUsed": "Gemini 3.1 Flash Lite",
-      "durationSec": 20,
       "classificationScore": 10,
       "factsScore": 3,
       "riskScore": 13,
@@ -40,8 +36,6 @@
     {
       "fileName": "Two years PL ended Dec 31 2024.pdf",
       "business": "Business 1 - Roofing Co PA",
-      "modelUsed": "Gemini 3.1 Flash Lite",
-      "durationSec": 9,
       "classificationScore": 10,
       "factsScore": 3,
       "riskScore": 10,
@@ -56,8 +50,6 @@
     {
       "fileName": "Balance Sheet Jan 2023 to Dec 2024.pdf",
       "business": "Business 1 - Roofing Co PA",
-      "modelUsed": "Gemini 3.1 Flash Lite",
-      "durationSec": 10,
       "classificationScore": 10,
       "factsScore": 3,
       "riskScore": 10,
@@ -72,8 +64,6 @@
     {
       "fileName": "Iron_Tree_Data_-_Teaser.pdf",
       "business": "Business 2 - Data-Cyber Company In PA",
-      "modelUsed": "Google Gemini Chat Model",
-      "durationSec": 24,
       "classificationScore": 10,
       "factsScore": 1.5,
       "riskScore": 10,
@@ -88,8 +78,6 @@
     {
       "fileName": "Iron_Tree_Data_-_CIM.pdf",
       "business": "Business 2 - Data-Cyber Company In PA",
-      "modelUsed": "Google Gemini Chat Model",
-      "durationSec": 94,
       "classificationScore": 10,
       "factsScore": 3,
       "riskScore": 8,
@@ -104,8 +92,6 @@
     {
       "fileName": "Financial Modeling for Iron Tree.xltx",
       "business": "Business 2 - Data-Cyber Company In PA",
-      "modelUsed": "Google Gemini Chat Model",
-      "durationSec": 15,
       "classificationScore": 3,
       "factsScore": 10,
       "riskScore": 10,
@@ -120,8 +106,6 @@
     {
       "fileName": "Adjusted_Financials_-_Iron-Tree_(2026.02)_final.xlsx",
       "business": "Business 2 - Data-Cyber Company In PA",
-      "modelUsed": "Google Gemini Chat Model",
-      "durationSec": 15,
       "classificationScore": 10,
       "factsScore": 0.8,
       "riskScore": 20,
@@ -136,8 +120,6 @@
     {
       "fileName": "2) TurnKey Product Management P&L [Google Sheet].xlsx",
       "business": "Business 3 - TurnKey Product Management",
-      "modelUsed": "Google Gemini Chat Model",
-      "durationSec": 15,
       "classificationScore": 10,
       "factsScore": 1.5,
       "riskScore": 10,
@@ -152,8 +134,6 @@
     {
       "fileName": "1) TurnKey Product Management Business Summary.pdf",
       "business": "Business 3 - TurnKey Product Management",
-      "modelUsed": "Google Gemini Chat Model",
-      "durationSec": 24,
       "classificationScore": 10,
       "factsScore": 3,
       "riskScore": 15,
@@ -168,8 +148,6 @@
     {
       "fileName": "WC- Conversion XL OM.pdf",
       "business": "Business 4 - ConversionXL (SaaS Product)",
-      "modelUsed": "Google Gemini Chat Model (gemini-1.5-flash)",
-      "durationSec": 24,
       "classificationScore": 3,
       "factsScore": 3,
       "riskScore": 13,
@@ -184,8 +162,6 @@
     {
       "fileName": "DD Memo.pdf",
       "business": "Business 4 - ConversionXL (SaaS Product)",
-      "modelUsed": "Google Gemini Chat Model (gemini-1.5-flash)",
-      "durationSec": 24,
       "classificationScore": 10,
       "factsScore": 3,
       "riskScore": 10,
@@ -200,8 +176,6 @@
     {
       "fileName": "ConversionXL LLC_Profit and Loss by Month v2.xlsx",
       "business": "Business 4 - ConversionXL (SaaS Product)",
-      "modelUsed": "Google Gemini Chat Model (gemini-1.5-flash)",
-      "durationSec": 15,
       "classificationScore": 10,
       "factsScore": 1,
       "riskScore": 10,
@@ -216,8 +190,6 @@
     {
       "fileName": "CXL_Screen.xlsx",
       "business": "Business 4 - ConversionXL (SaaS Product)",
-      "modelUsed": "Google Gemini Chat Model (gemini-1.5-flash)",
-      "durationSec": 15,
       "classificationScore": 3,
       "factsScore": 3,
       "riskScore": 5,
@@ -232,33 +204,29 @@
     {
       "fileName": "_RENEW HEALTH CENTER - FULL YEAR COMPARATIVE P&L (2024-2025).pdf",
       "business": "Business 5 - Medical Spa (Sameer)",
-      "modelUsed": "Claude Sonnet 5",
-      "durationSec": 24,
       "classificationScore": 10,
-      "factsScore": 6.5,
+      "factsScore": 10,
       "riskScore": 16,
       "valuationScore": 15,
       "employeeScore": 5,
       "mathScore": 10,
-      "totalScore": 62.5,
+      "totalScore": 66,
       "maxScore": 70,
-      "percentage": 89,
+      "percentage": 94,
       "pass": true
     },
     {
       "fileName": "Financial Modelling Renew Health .xlsm",
       "business": "Business 5 - Medical Spa (Sameer)",
-      "modelUsed": "Claude Sonnet 5",
-      "durationSec": 15,
       "classificationScore": 7,
-      "factsScore": 3.6,
+      "factsScore": 5.4,
       "riskScore": 14,
       "valuationScore": 10,
       "employeeScore": 5,
       "mathScore": 10,
-      "totalScore": 49.625,
+      "totalScore": 51.375,
       "maxScore": 70,
-      "percentage": 71,
+      "percentage": 73,
       "pass": false
     }
   ]

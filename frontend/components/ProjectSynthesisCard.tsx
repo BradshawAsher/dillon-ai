@@ -348,7 +348,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                 ) : null}
 
                 {/* 3. Synthesizer Disclaimer (Only shown when NO valid synthesis output exists AND 0 documents completed) */}
-                {(!visibleSyntheses[0]?.finalRecommendation && !visibleSyntheses[0]?.ai_summary && visibleSyntheses[0]?.projectStatus !== 'synthesized') && completedProjectDocumentsWithAnalysis === 0 && projectDocuments.length > 0 ? (
+                {(!visibleSyntheses[0]?.finalRecommendation && !visibleSyntheses[0]?.finalJudgmentSummary && visibleSyntheses[0]?.projectStatus !== 'synthesized') && completedProjectDocumentsWithAnalysis === 0 && projectDocuments.length > 0 ? (
                     <div role="alert" className="rounded-xl border-2 border-warning/60 bg-warning/10 p-4 text-sm text-foreground shadow-sm">
                         <div className="flex items-start gap-3">
                             <TriangleAlert className="h-5 w-5 shrink-0 text-warning mt-0.5" />
@@ -365,7 +365,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                             </div>
                         </div>
                     </div>
-                ) : (completedProjectDocumentsWithAnalysis < projectDocuments.length && projectDocuments.length > 0 && (visibleSyntheses[0]?.finalRecommendation || visibleSyntheses[0]?.ai_summary)) ? (
+                ) : (completedProjectDocumentsWithAnalysis < projectDocuments.length && projectDocuments.length > 0 && (visibleSyntheses[0]?.finalRecommendation || visibleSyntheses[0]?.finalJudgmentSummary)) ? (
                     <div role="alert" className="rounded-xl border border-primary/30 bg-primary/5 p-3 text-xs text-foreground flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <CheckCircle className="h-4 w-4 text-primary shrink-0" />
