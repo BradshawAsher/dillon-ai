@@ -91,7 +91,9 @@
 
 - For evals and harness tab, fix the cost optimization? Are we reporting exactly the model we are using as well as the tokens spent, and then calculating the cost mathematically, or no?
 
-- Run the 3rd project through and eval, then 2nd, then 1st?
+- Check if the anthropic keys are refilled yet or no?
+
+- May need to switch gemini models for the api key for n8n since you're running low of the tpm rate limits?
 
 
 # BRAD MORE TODO
