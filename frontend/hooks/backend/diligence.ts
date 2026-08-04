@@ -596,7 +596,6 @@ export function useGetDiligenceData() {
 export function useGetEvalRuns() {
     return useQuery(
         useCallback(async () => {
-            if (USE_MOCKS) return []
             try {
                 const response = await fetch('/api/diligence/eval-runs', {
                     headers: identityHeaders(),

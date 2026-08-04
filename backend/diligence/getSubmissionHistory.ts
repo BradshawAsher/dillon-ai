@@ -54,6 +54,57 @@ function deriveSubmissionStatus(row: Record<string, any>) {
     return rawStatus || 'unknown'
 }
 
+async function syncPendingRowsFromN8nDataTable(rows: Array<Record<string, any>>) {
+    const pendingRows = rows.filter(r => activeSubmissionStatuses.has(String(r.status ?? '').trim().toLowerCase()) && !hasText(r.extracted_json))
+    if (pendingRows.length === 0) return
+
+    try {
+        const n8nApiKey = process.env.N8N_API_KEY
+        if (!n8nApiKey) return
+
+        const res = await fetch('https://merge-works.app.n8n.cloud/api/v1/data-tables/rBFHVB1W7ldSiObM/rows?limit=100', {
+            headers: {
+                'X-N8N-API-KEY': n8nApiKey,
+                'Accept': 'application/json'
+            }
+        })
+
+        if (!res.ok) return
+        const json = await res.json()
+        const n8nRows = (json.data || json || []) as Array<Record<string, any>>
+
+        for (const pendingRow of pendingRows) {
+            const reqId = String(pendingRow.request_id ?? pendingRow.requestId ?? '').trim()
+            const fileName = String(pendingRow.file_name ?? pendingRow.fileName ?? '').trim().toLowerCase()
+
+            const match = n8nRows.find(n8nRow => {
+                const n8nReqId = String(n8nRow.requestID ?? '').trim()
+                const n8nFileName = String(n8nRow.fileName ?? '').trim().toLowerCase()
+                return (reqId.length > 0 && n8nReqId === reqId) || (fileName.length > 0 && n8nFileName === fileName && String(n8nRow.status ?? '').toLowerCase() === 'completed')
+            })
+
+            if (match && String(match.status ?? '').toLowerCase() === 'completed') {
+                const updatePayload = {
+                    status: 'completed',
+                    detected_document_type: match.detectedDocumentType || match.documentType || 'Other',
+                    financial_facts_json: match.financialFactsJson || '',
+                    extracted_json: match.ai_extractedJson || '',
+                    processed_at: match.ai_processedAt || new Date().toISOString()
+                }
+
+                Object.assign(pendingRow, updatePayload)
+
+                void supabase
+                    .from('documents')
+                    .update(updatePayload)
+                    .eq('id', pendingRow.id)
+            }
+        }
+    } catch {
+        // Silently continue if n8n read times out
+    }
+}
+
 export default async function getSubmissionHistory(req: {
     params: Params
     user: User
@@ -69,6 +120,8 @@ export default async function getSubmissionHistory(req: {
 
     if (error) throw new Error(`Supabase read failed: ${error.message}`)
     if (!rows) return []
+
+    await syncPendingRowsFromN8nDataTable(rows)
 
     return (rows as Array<Record<string, any>>).map((row) => {
         const derivedStatus = deriveSubmissionStatus(row)

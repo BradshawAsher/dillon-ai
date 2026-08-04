@@ -1,24 +1,111 @@
 {
   "business": "business4_conversionxl",
-  "projectId": "project-20260803-e9997816",
-  "modelUsed": "Google Gemini Chat Model (gemini-3.1-flash-lite)",
-  "evaluatedAt": "2026-08-04T03:15:15.044Z",
+  "projectId": "project-20260804-83178e15",
+  "modelUsed": "Google Gemini Chat Model (gemini-1.5-flash)",
+  "evaluatedAt": "2026-08-04T03:51:11.849Z",
   "documents": [
     {
+      "fileName": "WC- Conversion XL OM.pdf",
+      "fileType": "pdf",
+      "status": "completed",
+      "detectedDocumentType": "Other",
+      "detectedDocumentTypes": [
+        "Operating Metrics",
+        "Other"
+      ],
+      "trafficLight": "YELLOW",
+      "riskLevel": "MEDIUM",
+      "financialFacts": [
+        {
+          "metric": "revenue",
+          "normalizedValue": 3772081,
+          "period": "TTM Mar '26",
+          "confidence": 1
+        },
+        {
+          "metric": "ebitda_sde",
+          "normalizedValue": 1634709,
+          "period": "TTM Mar '26",
+          "confidence": 1
+        }
+      ],
+      "redFlags": [
+        "Seller stated they run two other companies and view CXL as a 'distraction'."
+      ],
+      "yellowFlags": [
+        "36% annual churn rate.",
+        "Revenue projections and financial data provided by seller; independent due diligence not performed by the intermediary.",
+        "Business ownership structure (Estonian holding company owning a Texas LLC) requires a stock sale, which may complicate the acquisition."
+      ],
+      "valuation": {
+        "base_estimate": 7500000
+      },
+      "employeeEvidence": {
+        "count": 16
+      },
+      "mathCheckStatus": "passed"
+    },
+    {
       "fileName": "DD Memo.pdf",
-      "fileType": "application/pdf",
-      "status": "uploading",
+      "fileType": "pdf",
+      "status": "completed",
       "detectedDocumentType": "Other",
       "detectedDocumentTypes": [
         "Other"
       ],
       "trafficLight": "YELLOW",
       "riskLevel": "MEDIUM",
-      "financialFacts": [],
-      "redFlags": [],
-      "yellowFlags": [],
+      "financialFacts": [
+        {
+          "metric": "revenue",
+          "normalizedValue": 3772081,
+          "period": "TTM",
+          "confidence": 1
+        },
+        {
+          "metric": "ebitda_sde",
+          "normalizedValue": 1634709,
+          "period": "TTM",
+          "confidence": 1
+        },
+        {
+          "metric": "net_income",
+          "normalizedValue": 1020000,
+          "period": "TTM",
+          "confidence": 1
+        },
+        {
+          "metric": "cash",
+          "normalizedValue": 513978,
+          "period": "April 2026",
+          "confidence": 1
+        },
+        {
+          "metric": "total_liabilities",
+          "normalizedValue": 25493,
+          "period": "April 2026",
+          "confidence": 1
+        },
+        {
+          "metric": "total_assets",
+          "normalizedValue": 2050000,
+          "period": "April 2026",
+          "confidence": 1
+        }
+      ],
+      "redFlags": [
+        "Contradiction between 36% annual churn and 80% renewal warranty",
+        "High addback concentration (37.6% of SDE, 82% of which is owner salary)",
+        "Undisclosed customer concentration",
+        "Legal entity structure: LOI indicates membership-interest transfer, but entity is a Texas C-Corp requiring stock sale"
+      ],
+      "yellowFlags": [
+        "Rent addback volatility (163K in 2023 to 29K in 2025 to 59K TTM)",
+        "LMS platform is licensed rather than owned",
+        "Potential related-party asset (Wynter Domain Name) needs exclusion confirmation"
+      ],
       "valuation": {
-        "base_estimate": 0
+        "base_estimate": 6500000
       },
       "employeeEvidence": {
         "count": null
@@ -27,17 +114,39 @@
     },
     {
       "fileName": "ConversionXL LLC_Profit and Loss by Month v2.xlsx",
-      "fileType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "status": "uploading",
-      "detectedDocumentType": "Other",
+      "fileType": "xlsx",
+      "status": "completed",
+      "detectedDocumentType": "Profit and Loss Statement",
       "detectedDocumentTypes": [
-        "Other"
+        "Profit and Loss Statement"
       ],
       "trafficLight": "YELLOW",
       "riskLevel": "MEDIUM",
-      "financialFacts": [],
+      "financialFacts": [
+        {
+          "metric": "revenue",
+          "normalizedValue": 3772081,
+          "period": "TTM Mar '26",
+          "confidence": 1
+        },
+        {
+          "metric": "ebitda_sde",
+          "normalizedValue": 1634709,
+          "period": "TTM Mar '26",
+          "confidence": 1
+        },
+        {
+          "metric": "net_income",
+          "normalizedValue": 1020013,
+          "period": "TTM Mar '26",
+          "confidence": 1
+        }
+      ],
       "redFlags": [],
-      "yellowFlags": [],
+      "yellowFlags": [
+        "Rent expense identified as personal cost and potentially non-recurring.",
+        "Absorption methodology described as 'delta neutral' but results in non-zero credits."
+      ],
       "valuation": {
         "base_estimate": 0
       },
@@ -48,22 +157,62 @@
     },
     {
       "fileName": "CXL_Screen.xlsx",
-      "fileType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "status": "uploading",
+      "fileType": "xlsx",
+      "status": "completed",
       "detectedDocumentType": "Other",
       "detectedDocumentTypes": [
-        "Other"
+        "Operating Metrics",
+        "Balance Sheet",
+        "Profit and Loss Statement",
+        "Purchase Agreement or LOI"
       ],
-      "trafficLight": "YELLOW",
-      "riskLevel": "MEDIUM",
-      "financialFacts": [],
-      "redFlags": [],
-      "yellowFlags": [],
+      "trafficLight": "RED",
+      "riskLevel": "HIGH",
+      "financialFacts": [
+        {
+          "metric": "revenue",
+          "normalizedValue": 3772081,
+          "period": "Year 3 (Most Recent)",
+          "confidence": 1
+        },
+        {
+          "metric": "ebitda_sde",
+          "normalizedValue": 1634709,
+          "period": "Year 3 (Most Recent)",
+          "confidence": 1
+        },
+        {
+          "metric": "cash",
+          "normalizedValue": 513978,
+          "period": "Apr 2026",
+          "confidence": 1
+        },
+        {
+          "metric": "total_liabilities",
+          "normalizedValue": 25493,
+          "period": "Apr 2026",
+          "confidence": 1
+        }
+      ],
+      "redFlags": [
+        "Unexplained reduction in rent expense from $163K to $29K",
+        "Potential overstatement of SDE if addbacks are challenged",
+        "Ambiguous status of $601,204 Prepaid Federal Income Tax (Business vs. Seller asset)",
+        "Related-party asset ($35,506 Wynter domain) on balance sheet",
+        "Missing customer concentration data",
+        "Conflict between OM (36% churn) and LOI (>=80% renewal) data"
+      ],
+      "yellowFlags": [
+        "Reliance on contractor/FTE roster without verified change-of-control clauses",
+        "High proportion of owner-comp/addbacks requiring CPA verification",
+        "Third-party dependency on Eurekos LMS",
+        "Legal structure (Texas C-Corp owned by Estonian entity) requires specific stock sale handling"
+      ],
       "valuation": {
-        "base_estimate": 0
+        "base_estimate": 7500000
       },
       "employeeEvidence": {
-        "count": null
+        "count": 16
       },
       "mathCheckStatus": "passed"
     }

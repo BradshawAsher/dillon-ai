@@ -83,6 +83,12 @@
 
 - Use your Gemini Palm API Key for now until anthropic nodes are back?
 
+- We have a huge bug in the diligence and synthesis tab that the batch processing progress finished bar isn't syncing with live n8n progress and does not show any data for most recent doc submission? Always just says pending pending pending etc?
+
+- There is obviously a database sync gap between n8n tables and supabase
+
+- Should we make the ground truth less strict?
+
 
 # BRAD MORE TODO
 

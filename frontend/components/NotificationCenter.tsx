@@ -23,6 +23,7 @@ type NotificationCenterProps = {
   onMarkRead: (id: string) => void
   onMarkAllRead: () => void
   onClear: () => void
+  onSelectNotification?: (notification: Notification) => void
 }
 
 function formatRelativeTime(date: Date): string {
@@ -149,6 +150,9 @@ export default function NotificationCenter({
                     onClick={() => {
                       if (!notification.read) {
                         onMarkRead(notification.id)
+                      }
+                      if (onSelectNotification) {
+                        onSelectNotification(notification)
                       }
                     }}
                   >

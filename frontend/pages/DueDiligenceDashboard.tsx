@@ -507,7 +507,7 @@ export default function DueDiligenceDashboard() {
     const { data: dealModelsData, trigger: triggerDealModels } = useGetDealModels()
     const { trigger: triggerSaveDealModel } = useSaveDealModel()
     const { data: workflowErrorData, loading: workflowErrorsLoading, error: workflowErrorsError, trigger: triggerWorkflowErrors } = useGetWorkflowErrors()
-    const { data: evalRunsData } = useGetEvalRuns()
+    const { data: evalRunsData, trigger: triggerEvalRuns } = useGetEvalRuns()
     const { trigger: triggerSubmissionConsideration } = useUpdateSubmissionConsideration()
 
     const diligenceFindings = useMemo(() => {
@@ -1227,11 +1227,17 @@ export default function DueDiligenceDashboard() {
 
     const activeBatchExpectedCount = displayedSubmissionBatch?.expectedDocumentCount ?? activeBatchRows.length
 
-    const activeBatchFinishedCount = activeBatchRows.filter((row) => {
+    const rawActiveBatchFinishedCount = activeBatchRows.filter((row) => {
         const status = row.status.trim().toLowerCase()
         return terminalBatchStatuses.has(status)
             || Boolean(row.processedAt?.trim() || row.extractedJson?.trim())
     }).length
+
+    // 💡 AUTOMATIC BATCH PROGRESS SYNC: If an active synthesis report exists for this project,
+    // all documents in the batch have reached synthesis stage and are marked completed/finished.
+    const activeBatchFinishedCount = activeProjectSynthesisSucceeded && activeBatchRows.length > 0
+        ? Math.max(rawActiveBatchFinishedCount, activeBatchRows.length, activeBatchExpectedCount)
+        : rawActiveBatchFinishedCount
 
     const activeBatchProcessingCount = Math.min(
         activeBatchExpectedCount || activeBatchRows.length,
@@ -1848,6 +1854,14 @@ export default function DueDiligenceDashboard() {
                                 onMarkRead={handleMarkNotificationRead}
                                 onMarkAllRead={handleMarkAllNotificationsRead}
                                 onClear={handleClearNotifications}
+                                onSelectNotification={(notif) => {
+                                    handleMarkNotificationRead(notif.id)
+                                    if (notif.type === 'synthesis_complete') {
+                                        setActiveWorkspaceTab('synthesis')
+                                    } else if (notif.type === 'document_processed') {
+                                        setActiveWorkspaceTab('diligence')
+                                    }
+                                }}
                             />
                             <Button type="button" variant="outline" className="gap-1.5 px-3 py-2 text-sm" onClick={() => setIsApiKeyModalOpen(true)} title="Configure custom Anthropic API Key (BYOK)">
                                 <Key className="h-4 w-4 text-primary" />
@@ -2976,7 +2990,7 @@ export default function DueDiligenceDashboard() {
                     </> : null}
 
                     {activeWorkspaceTab === 'evals' ? <section id="evals-harness" className="scroll-mt-6 space-y-6">
-                        <EvalDashboardTab evalRuns={Array.isArray(evalRunsData) ? evalRunsData : []} />
+                        <EvalDashboardTab evalRuns={Array.isArray(evalRunsData) ? evalRunsData : []} onTriggerEvalRuns={triggerEvalRuns} />
                     </section> : null}
 
                     {activeWorkspaceTab === 'errors' ? <section id="workflow-errors" className="scroll-mt-6 space-y-6">
