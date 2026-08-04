@@ -3,6 +3,8 @@ import {
     Activity,
     AlertCircle,
     ArrowUpRight,
+    ChevronLeft,
+    ChevronRight,
     Clock3,
     FileSearch,
     FolderKanban,
@@ -509,6 +511,14 @@ export default function DueDiligenceDashboard() {
     const { data: workflowErrorData, loading: workflowErrorsLoading, error: workflowErrorsError, trigger: triggerWorkflowErrors } = useGetWorkflowErrors()
     const { data: evalRunsData, trigger: triggerEvalRuns } = useGetEvalRuns()
     const { trigger: triggerSubmissionConsideration } = useUpdateSubmissionConsideration()
+
+    useEffect(() => {
+        void triggerEvalRuns()
+        const interval = setInterval(() => {
+            void triggerEvalRuns()
+        }, 10_000)
+        return () => clearInterval(interval)
+    }, [triggerEvalRuns])
 
     const diligenceFindings = useMemo(() => {
         if (Array.isArray(diligenceData) && diligenceData.length > 0) {
@@ -1058,7 +1068,31 @@ export default function DueDiligenceDashboard() {
         const rightTimestamp = Date.parse(right.processedAt || right.processingStartedAt || right.receivedAt || right.createdAt || right.triggerTimestamp)
         return (Number.isNaN(rightTimestamp) ? 0 : rightTimestamp) - (Number.isNaN(leftTimestamp) ? 0 : leftTimestamp)
     })[0]
-    const displayedSubmissionRow = liveSubmittedRow ?? latestHistoryRow
+
+    const [selectedBatchDocIndex, setSelectedBatchDocIndex] = useState<number>(0)
+
+    const latestBatchRows = useMemo(() => {
+        const targetProjId = activeProjectId || projectId || liveSubmittedRow?.projectId || latestHistoryRow?.projectId
+        if (!targetProjId) return liveSubmittedRow ? [liveSubmittedRow] : (latestHistoryRow ? [latestHistoryRow] : [])
+        const rows = submissionHistory.filter((r) => r.projectId === targetProjId || r.submissionBatchId === targetProjId)
+        if (rows.length === 0) return liveSubmittedRow ? [liveSubmittedRow] : (latestHistoryRow ? [latestHistoryRow] : [])
+        return [...rows].sort((left, right) => {
+            const leftTime = Date.parse(left.receivedAt || left.createdAt || left.triggerTimestamp) || 0
+            const rightTime = Date.parse(right.receivedAt || right.createdAt || right.triggerTimestamp) || 0
+            return leftTime - rightTime
+        })
+    }, [activeProjectId, projectId, liveSubmittedRow, latestHistoryRow, submissionHistory])
+
+    const previousBatchCountRef = useRef<number>(0)
+    useEffect(() => {
+        if (latestBatchRows.length > previousBatchCountRef.current) {
+            setSelectedBatchDocIndex(latestBatchRows.length - 1)
+            previousBatchCountRef.current = latestBatchRows.length
+        }
+    }, [latestBatchRows.length])
+
+    const safeBatchDocIndex = Math.min(Math.max(0, selectedBatchDocIndex), Math.max(0, latestBatchRows.length - 1))
+    const displayedSubmissionRow = latestBatchRows[safeBatchDocIndex] ?? liveSubmittedRow ?? latestHistoryRow
     const displayedSubmitStatus = displayedSubmissionRow?.status ?? webhookResponse?.status ?? submitResponse?.status ?? 'accepted'
     const displayedSubmitReceivedAt = displayedSubmissionRow?.receivedAt ?? webhookResponse?.receivedAt ?? 'Pending'
     const displayedSubmitRowId = displayedSubmissionRow?.id ?? webhookResponse?.id ?? 'Pending'
@@ -1660,27 +1694,7 @@ export default function DueDiligenceDashboard() {
         }
 
         if (isExampleMode && environment === 'production') {
-            const pendingSubmission: PendingExampleModeSubmission = {
-                environment,
-                selectedProjectKey,
-                dealName,
-                askingPrice,
-                projectId,
-                projectStage,
-                documentType,
-                submissionNotes,
-                files: await Promise.all(selectedFiles.map(async (file) => ({
-                    name: file.name,
-                    size: file.size,
-                    type: file.type || 'application/octet-stream',
-                    base64: await readFileAsBase64(file),
-                }))),
-            }
-            try {
-                window.sessionStorage.setItem(PENDING_EXAMPLE_MODE_SUBMISSION_KEY, JSON.stringify(pendingSubmission))
-            } catch { }
             setDataSource('live')
-            return
         }
 
         const now = Date.now()
@@ -2621,7 +2635,46 @@ export default function DueDiligenceDashboard() {
                                     </div>
                                     {liveSubmitInsight && (liveSubmitInsight.investmentBuyReasoning || liveSubmitInsight.investmentIsFavorable !== null) ? <div className="rounded-xl border-2 border-primary bg-gradient-to-br from-primary/15 via-primary/5 to-background p-5 shadow-md"><div className="flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-bold uppercase tracking-wide text-primary">Investment thesis — start here</p>{liveSubmitInsight.investmentIsFavorable !== null ? <Badge variant={liveSubmitInsight.investmentIsFavorable ? 'success' : 'destructive'}>{liveSubmitInsight.investmentIsFavorable ? 'Favorable indicator' : 'Caution indicator'}</Badge> : null}</div><p className="mt-3 text-sm leading-6 text-foreground">{liveSubmitInsight.investmentBuyReasoning || 'No investment thesis returned yet.'}</p></div> : null}
                                     <div className="rounded-xl border-2 border-primary bg-gradient-to-br from-primary/15 via-primary/5 to-background p-5 shadow-md">
-                                        <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-bold uppercase tracking-wide text-primary">Start here — latest document at a glance</p><Badge variant={getSubmissionStatusVariant(displayedSubmitStatus)}>{formatSubmissionStatus(displayedSubmitStatus)}</Badge></div>
+                                        <div className="flex flex-wrap items-center justify-between gap-2">
+                                            <div className="flex items-center gap-2 flex-wrap min-w-0">
+                                                <p className="text-sm font-bold uppercase tracking-wide text-primary truncate max-w-md">
+                                                    Start here — {displayedSubmissionRow?.fileName || 'latest document'}
+                                                </p>
+                                                <Badge variant={getSubmissionStatusVariant(displayedSubmitStatus)}>
+                                                    {formatSubmissionStatus(displayedSubmitStatus)}
+                                                </Badge>
+                                            </div>
+
+                                            {latestBatchRows.length > 1 && (
+                                                <div className="flex items-center gap-2 bg-background/90 border border-primary/30 px-3 py-1 rounded-xl shadow-xs">
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-7 w-7 p-0 hover:bg-primary/10 text-foreground"
+                                                        disabled={safeBatchDocIndex === 0}
+                                                        onClick={() => setSelectedBatchDocIndex((prev) => Math.max(0, prev - 1))}
+                                                        title="Previous document in batch"
+                                                    >
+                                                        <ChevronLeft className="h-4 w-4" />
+                                                    </Button>
+                                                    <span className="text-xs font-bold text-foreground font-mono">
+                                                        Doc {safeBatchDocIndex + 1} of {latestBatchRows.length}
+                                                    </span>
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-7 w-7 p-0 hover:bg-primary/10 text-foreground"
+                                                        disabled={safeBatchDocIndex >= latestBatchRows.length - 1}
+                                                        onClick={() => setSelectedBatchDocIndex((prev) => Math.min(latestBatchRows.length - 1, prev + 1))}
+                                                        title="Next document in batch"
+                                                    >
+                                                        <ChevronRight className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            )}
+                                        </div>
                                         <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><div className="rounded-lg border border-primary/25 bg-background/90 p-3"><p className="text-xs text-muted-foreground">Risk signal</p><p className="mt-1 text-lg font-bold">{displayedSubmitTrafficLight || displayedSubmitRiskLevel || 'Still processing'}</p></div><div className="rounded-lg border border-primary/25 bg-background/90 p-3"><p className="text-xs text-muted-foreground">AI confidence</p><p className="mt-1 text-lg font-bold">{liveSubmitInsight?.confidencePercent != null ? `${liveSubmitInsight.confidencePercent}%` : displayedSubmitConfidence || 'Pending'}</p></div><div className="rounded-lg border border-primary/25 bg-background/90 p-3"><p className="text-xs text-muted-foreground">Detected document type</p><p className="mt-1 text-lg font-bold">{displayedSubmissionRow?.detectedDocumentType || displayedSubmissionRow?.documentType || documentType || 'Pending'}</p></div><div className="rounded-lg border border-primary/25 bg-background/90 p-3"><p className="text-xs text-muted-foreground">Action needed</p><p className="mt-1 text-lg font-bold">{liveSubmitInsight?.escalationReasons.length ? 'Review flags' : displayedSubmitStatus.toLowerCase() === 'completed' ? 'Ready to use' : 'Wait for analysis'}</p></div></div>
                                         <ExpandableText text={displayedSubmitAiSummary || (liveSubmitInsight?.escalationReasons.length ? "The document has items that need review before relying on its findings." : "This panel will surface the document’s key result as soon as n8n returns it.")} maxHeight={120} className="mt-4" />
                                     </div>

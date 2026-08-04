@@ -122,55 +122,66 @@ export function BatchProcessingSidePanel({
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-5">
                     {/* Active In-Flight Batch Banner */}
-                    {(inFlightBatch || activeProcessingRows.length > 0) ? (
-                        <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-3">
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm font-bold text-foreground flex items-center gap-2">
-                                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                                    Active Processing Batch
-                                </span>
-                                <Badge variant="secondary" className="gap-1 font-mono text-xs">
-                                    <Clock className="h-3 w-3" />
-                                    {formatTime(batchElapsedSeconds)}
-                                </Badge>
-                            </div>
-
-                            <div className="space-y-1.5">
-                                <div className="flex items-center justify-between text-xs font-semibold">
-                                    <span>Progress: {batchFinishedCount} / {batchExpectedCount || activeProcessingRows.length} documents</span>
-                                    <span>{batchProgressPercent}%</span>
+                    {(inFlightBatch || activeProcessingRows.length > 0) ? (() => {
+                        const isFinished = batchExpectedCount > 0 && batchFinishedCount >= batchExpectedCount && activeProcessingRows.length === 0
+                        return (
+                            <div className={`rounded-xl border p-4 space-y-3 ${isFinished ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-primary/30 bg-primary/5'}`}>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm font-bold text-foreground flex items-center gap-2">
+                                        {isFinished ? (
+                                            <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                                        ) : (
+                                            <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                                        )}
+                                        {isFinished ? 'Batch Completed' : 'Active Processing Batch'}
+                                    </span>
+                                    <Badge variant={isFinished ? 'success' : 'secondary'} className="gap-1 font-mono text-xs">
+                                        <Clock className="h-3 w-3" />
+                                        {formatTime(batchElapsedSeconds)}
+                                    </Badge>
                                 </div>
-                                <Progress value={batchProgressPercent} className="h-2" />
-                            </div>
 
-                            {batchSubmissionMessage && (
-                                <p className="text-xs text-muted-foreground bg-background/60 rounded p-2 border border-border/40">
-                                    {batchSubmissionMessage}
-                                </p>
-                            )}
+                                <div className="space-y-1.5">
+                                    <div className="flex items-center justify-between text-xs font-semibold">
+                                        <span>Progress: {batchFinishedCount} / {batchExpectedCount || activeProcessingRows.length} documents</span>
+                                        <span>{batchProgressPercent}%</span>
+                                    </div>
+                                    <Progress value={batchProgressPercent} className="h-2" />
+                                </div>
 
-                            <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 p-2.5 text-[11px] text-amber-900 dark:text-amber-200 space-y-1">
-                                <p className="font-semibold">⚠️ 4-Minute Timeout Rules:</p>
-                                <p className="opacity-90">
-                                    Documents are monitored individually. If a file takes longer than <strong>4 minutes per document</strong> without a response from n8n, it is automatically marked as failed so you can retry or switch keys.
-                                </p>
-                            </div>
+                                {batchSubmissionMessage && (
+                                    <p className="text-xs text-muted-foreground bg-background/60 rounded p-2 border border-border/40">
+                                        {batchSubmissionMessage}
+                                    </p>
+                                )}
 
-                            <div className="flex items-center justify-end gap-2 pt-1">
-                                <Button
-                                    type="button"
-                                    variant="destructive"
-                                    size="sm"
-                                    onClick={onStopBatch}
-                                    disabled={isStoppingBatch}
-                                    className="gap-1.5"
-                                >
-                                    <StopCircle className="h-3.5 w-3.5" />
-                                    {isStoppingBatch ? 'Stopping…' : 'Stop Batch'}
-                                </Button>
+                                {!isFinished && (
+                                    <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 p-2.5 text-[11px] text-amber-900 dark:text-amber-200 space-y-1">
+                                        <p className="font-semibold">⚠️ 4-Minute Timeout Rules:</p>
+                                        <p className="opacity-90">
+                                            Documents are monitored individually. If a file takes longer than <strong>4 minutes per document</strong> without a response from n8n, it is automatically marked as failed so you can retry or switch keys.
+                                        </p>
+                                    </div>
+                                )}
+
+                                {!isFinished && (
+                                    <div className="flex items-center justify-end gap-2 pt-1">
+                                        <Button
+                                            type="button"
+                                            variant="destructive"
+                                            size="sm"
+                                            onClick={onStopBatch}
+                                            disabled={isStoppingBatch}
+                                            className="gap-1.5"
+                                        >
+                                            <StopCircle className="h-3.5 w-3.5" />
+                                            {isStoppingBatch ? 'Stopping…' : 'Stop Batch'}
+                                        </Button>
+                                    </div>
+                                )}
                             </div>
-                        </div>
-                    ) : (
+                        )
+                    })() : (
                         <div className="rounded-xl border border-dashed border-border bg-muted/10 p-5 text-center space-y-1">
                             <CheckCircle2 className="h-6 w-6 text-success mx-auto" />
                             <p className="text-sm font-semibold text-foreground">No active batches running</p>
