@@ -201,7 +201,7 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                         No projects match “{projectSearch}”.
                     </div>
                 ) : (
-                    <div className="max-h-[72rem] overflow-y-auto pr-2">
+                    <div className="h-[calc(100vh-280px)] min-h-[600px] overflow-y-auto pr-2 pb-10">
                         <div className="grid gap-4 xl:grid-cols-2">
                             {visibleProjects.map((project) => {
                                 const projectImpact = computeImpactMetrics(rows.filter((row) => row.isConsidered && getProjectKey(row) === project.projectKey))

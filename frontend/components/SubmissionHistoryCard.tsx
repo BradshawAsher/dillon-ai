@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { CheckCircle2, CircleAlert, Clock3, Download, Loader2, RefreshCw, Search } from 'lucide-react'
+import { CheckCircle2, CircleAlert, Clock3, Download, Loader2, RefreshCw, Search, X } from 'lucide-react'
 
 import ExpandableInsightGroup from './ExpandableInsightGroup'
 import ExpandableText from './ExpandableText'
@@ -274,6 +274,7 @@ export default function SubmissionHistoryCard({
     const [selectedStatus, setSelectedStatus] = useState('all')
     const [hideDuplicates, setHideDuplicates] = useState(true)
     const [selectedRowKey, setSelectedRowKey] = useState('')
+    const [isAlertDismissed, setIsAlertDismissed] = useState(false)
 
     const sortedRows = useMemo(() => {
         return [...rows].sort((left, right) => getRowSortValue(right) - getRowSortValue(left))
@@ -298,9 +299,15 @@ export default function SubmissionHistoryCard({
     const dedupedRows = useMemo(() => {
         const rowsByRequestId = new Map<string, SubmissionHistoryItem>()
         const rowsWithoutRequestId: SubmissionHistoryItem[] = []
+        const failedRowsPreserved: SubmissionHistoryItem[] = []
 
         sortedRows.forEach((row) => {
             const requestId = row.requestID.trim()
+            const status = (row.status || '').trim().toLowerCase()
+
+            if (['failed', 'error', 'rejected'].includes(status) || row.errorMessage) {
+                failedRowsPreserved.push(row)
+            }
 
             if (requestId.length === 0) {
                 rowsWithoutRequestId.push(row)
@@ -317,7 +324,21 @@ export default function SubmissionHistoryCard({
             rowsByRequestId.set(requestId, choosePreferredRow(existingRow, row))
         })
 
-        const uniqueRows = [...rowsByRequestId.values(), ...rowsWithoutRequestId]
+        const seenKeys = new Set<string>()
+        const uniqueRows: SubmissionHistoryItem[] = []
+
+        const addUnique = (row: SubmissionHistoryItem) => {
+            const key = getRowKey(row)
+            if (!seenKeys.has(key)) {
+                seenKeys.add(key)
+                uniqueRows.push(row)
+            }
+        }
+
+        failedRowsPreserved.forEach(addUnique)
+        rowsByRequestId.forEach(addUnique)
+        rowsWithoutRequestId.forEach(addUnique)
+
         return uniqueRows.sort((left, right) => getRowSortValue(right) - getRowSortValue(left))
     }, [sortedRows])
 
@@ -444,25 +465,58 @@ export default function SubmissionHistoryCard({
                 ) : null}
 
                 {/* Anthropic API Credit Balance & Document Failure Alert */}
-                {visibleRows.some((row) => ['failed', 'error', 'rejected'].includes((row.status || '').trim().toLowerCase()) || (row.errorMessage || row.aiEscalationReason || '').toLowerCase().includes('credit') || (row.errorMessage || row.aiEscalationReason || '').toLowerCase().includes('balance')) ? (
-                    <div role="alert" className="rounded-xl border-2 border-destructive/60 bg-destructive/15 p-4 text-sm text-foreground shadow-sm">
-                        <div className="flex items-start gap-3">
-                            <CircleAlert className="h-5 w-5 shrink-0 text-destructive mt-0.5" />
-                            <div className="space-y-1.5">
-                                <p className="font-bold text-destructive text-base">
-                                    🔴 AI Processing Alert — Failed Document in History ({visibleRows.filter((row) => ['failed', 'error', 'rejected'].includes((row.status || '').trim().toLowerCase())).map((r) => r.fileName).filter(Boolean).join(', ') || '1 file'})
-                                </p>
-                                <p className="text-sm text-foreground leading-relaxed">
-                                    One or more previous documents in history failed during n8n processing. Common root causes include <strong className="text-destructive font-semibold">Anthropic API credit balance exhausted</strong> (<span className="font-mono text-xs bg-destructive/20 px-1 py-0.5 rounded text-destructive border border-destructive/30">&quot;Your credit balance is too low&quot;</span>) or format issues.
-                                </p>
-                                <div className="text-xs text-muted-foreground mt-2 flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
-                                    <span>👉 Recharge credits at <a href="https://console.anthropic.com/settings/billing" target="_blank" rel="noreferrer" className="underline font-semibold text-primary">console.anthropic.com/settings/billing</a></span>
-                                    <span>👉 Click <strong className="text-foreground">&quot;Retry&quot;</strong> on the failed row below, or filter by status</span>
+                {(() => {
+                    const failedRows = visibleRows.filter((row) =>
+                        ['failed', 'error', 'rejected'].includes((row.status || '').trim().toLowerCase()) ||
+                        (row.errorMessage || row.aiEscalationReason || '').toLowerCase().includes('credit') ||
+                        (row.errorMessage || row.aiEscalationReason || '').toLowerCase().includes('balance')
+                    )
+
+                    if (failedRows.length === 0) return null
+
+                    if (!isAlertDismissed) {
+                        return (
+                            <div role="alert" className="relative rounded-xl border-2 border-destructive/60 bg-destructive/15 p-4 pr-10 text-sm text-foreground shadow-sm">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsAlertDismissed(true)}
+                                    className="absolute right-3 top-3 rounded-md p-1 text-destructive/80 hover:bg-destructive/20 hover:text-destructive focus:outline-none"
+                                    title="Dismiss warning"
+                                    aria-label="Dismiss warning"
+                                >
+                                    <X className="h-4 w-4" />
+                                </button>
+                                <div className="flex items-start gap-3">
+                                    <CircleAlert className="h-5 w-5 shrink-0 text-destructive mt-0.5" />
+                                    <div className="space-y-1.5">
+                                        <p className="font-bold text-destructive text-base">
+                                            🔴 AI Processing Alert — {failedRows.length} Failed Document{failedRows.length === 1 ? '' : 's'} in History ({failedRows.map((r) => r.fileName).filter(Boolean).join(', ') || '1 file'})
+                                        </p>
+                                        <p className="text-sm text-foreground leading-relaxed">
+                                            One or more previous documents in history failed during n8n processing. Common root causes include <strong className="text-destructive font-semibold">Anthropic API credit balance exhausted</strong> (<span className="font-mono text-xs bg-destructive/20 px-1 py-0.5 rounded text-destructive border border-destructive/30">&quot;Your credit balance is too low&quot;</span>) or format issues.
+                                        </p>
+                                        <div className="text-xs text-muted-foreground mt-2 flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
+                                            <span>👉 Recharge credits at <a href="https://console.anthropic.com/settings/billing" target="_blank" rel="noreferrer" className="underline font-semibold text-primary">console.anthropic.com/settings/billing</a></span>
+                                            <span>👉 Click <strong className="text-foreground">&quot;Retry&quot;</strong> on the failed row below, or filter by status</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
+                        )
+                    }
+
+                    return (
+                        <div className="flex items-center justify-between rounded-lg border border-destructive/30 bg-destructive/10 px-3.5 py-2 text-xs text-foreground">
+                            <div className="flex items-center gap-2">
+                                <CircleAlert className="h-4 w-4 text-destructive shrink-0" />
+                                <span>AI Processing Alert dismissed ({failedRows.length} failed document{failedRows.length === 1 ? '' : 's'} in history).</span>
+                            </div>
+                            <Button type="button" variant="ghost" size="sm" onClick={() => setIsAlertDismissed(false)} className="h-7 text-xs text-destructive hover:bg-destructive/20">
+                                Re-open alert
+                            </Button>
                         </div>
-                    </div>
-                ) : null}
+                    )
+                })()}
 
                 {isPolling ? (
                     <div className="flex items-center gap-2 rounded-lg border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-foreground">
@@ -515,8 +569,8 @@ export default function SubmissionHistoryCard({
                         {sortedRows.length === 0 ? 'No submission history returned yet.' : 'No rows match the current filters.'}
                     </div>
                 ) : (
-                    <div className="grid gap-4 2xl:grid-cols-[minmax(0,0.9fr)_minmax(560px,1.1fr)]">
-                        <div className="max-h-[1800px] overflow-auto rounded-lg border border-border">
+                    <div className="grid gap-4 2xl:grid-cols-[minmax(0,0.9fr)_minmax(560px,1.1fr)] items-start">
+                        <div className="max-h-[2800px] overflow-auto rounded-lg border border-border bg-card">
                             <Table className="min-w-[720px]">
                                 <TableHeader>
                                     <TableRow className="hover:bg-transparent">
