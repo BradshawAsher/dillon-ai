@@ -199,9 +199,11 @@ export function runEvalSuite() {
     for (const resultFile of resultFiles) {
         const runData: ActualRunFile = JSON.parse(fs.readFileSync(path.join(resultsDir, resultFile), 'utf8'))
         for (const actualDoc of runData.documents) {
+            const actualName = actualDoc.fileName.toLowerCase().replace(/[^a-z0-9]/g, '')
             const matchingGtFile = gtFiles.find((f) => {
                 const gtData: GroundTruthDoc = JSON.parse(fs.readFileSync(path.join(groundTruthDir, f), 'utf8'))
-                return gtData.fileName.toLowerCase() === actualDoc.fileName.toLowerCase()
+                const gtName = gtData.fileName.toLowerCase().replace(/[^a-z0-9]/g, '')
+                return gtName === actualName || gtName.includes(actualName) || actualName.includes(gtName)
             })
 
             if (!matchingGtFile) {

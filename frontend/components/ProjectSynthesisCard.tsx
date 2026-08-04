@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Download, FileText, Filter, Landmark, Loader2, MessageCircleQuestion, RefreshCw, Scale, ShieldAlert, TriangleAlert } from 'lucide-react'
+import { CheckCircle, Download, FileText, Filter, Landmark, Loader2, MessageCircleQuestion, RefreshCw, Scale, ShieldAlert, TriangleAlert } from 'lucide-react'
 
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
@@ -347,22 +347,31 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                     </div>
                 ) : null}
 
-                {/* 3. Synthesizer Never Started Disclaimer */}
-                {completedProjectDocumentsWithAnalysis === 0 && projectDocuments.length > 0 ? (
+                {/* 3. Synthesizer Disclaimer (Only shown when NO valid synthesis output exists AND 0 documents completed) */}
+                {(!visibleSyntheses[0]?.finalRecommendation && !visibleSyntheses[0]?.ai_summary && visibleSyntheses[0]?.projectStatus !== 'synthesized') && completedProjectDocumentsWithAnalysis === 0 && projectDocuments.length > 0 ? (
                     <div role="alert" className="rounded-xl border-2 border-warning/60 bg-warning/10 p-4 text-sm text-foreground shadow-sm">
                         <div className="flex items-start gap-3">
                             <TriangleAlert className="h-5 w-5 shrink-0 text-warning mt-0.5" />
                             <div className="space-y-1">
                                 <p className="font-bold text-warning text-base">
-                                    ⚠️ Synthesizer Never Triggered — 0 of {projectDocuments.length} Documents Completed Extraction
+                                    ⚠️ Synthesizer Awaiting Document Extraction — 0 of {projectDocuments.length} Documents Completed
                                 </p>
                                 <p className="text-sm text-foreground leading-relaxed">
-                                    The n8n project consolidator workflow (<span className="font-mono text-xs">IoSad3rTYJMk4Mon</span>) requires at least 1 document with completed analysis to generate a judgment. None of the {projectDocuments.length} uploaded file(s) for this project passed document extraction (likely due to Anthropic credit limit or file parsing timeout).
+                                    The n8n project consolidator workflow requires completed document extraction to generate a judgment. None of the {projectDocuments.length} uploaded file(s) for this project have completed processing yet.
                                 </p>
                                 <p className="text-xs text-muted-foreground mt-2">
-                                    👉 Go to the <strong className="text-foreground">Diligence tab</strong> to review document errors and click <strong className="text-foreground">&quot;Retry&quot;</strong> on the affected files.
+                                    👉 Go to the <strong className="text-foreground">Diligence tab</strong> to review document status and click <strong className="text-foreground">&quot;Retry&quot;</strong> if a file failed.
                                 </p>
                             </div>
+                        </div>
+                    </div>
+                ) : (completedProjectDocumentsWithAnalysis < projectDocuments.length && projectDocuments.length > 0 && (visibleSyntheses[0]?.finalRecommendation || visibleSyntheses[0]?.ai_summary)) ? (
+                    <div role="alert" className="rounded-xl border border-primary/30 bg-primary/5 p-3 text-xs text-foreground flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <CheckCircle className="h-4 w-4 text-primary shrink-0" />
+                            <span>
+                                <strong>Synthesis Active:</strong> Displaying project synthesis. ({completedProjectDocumentsWithAnalysis} of {projectDocuments.length} document records reconciled in database).
+                            </span>
                         </div>
                     </div>
                 ) : null}
