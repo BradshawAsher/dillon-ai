@@ -1,0 +1,153 @@
+{
+  "business": "business2_irontree",
+  "projectId": "project-20260804-f5ef17c3",
+  "modelUsed": "Google Gemini Chat Model",
+  "evaluatedAt": "2026-08-04T18:18:25.265Z",
+  "documents": [
+    {
+      "fileName": "Iron_Tree_Data_-_Teaser.pdf",
+      "fileType": "application/pdf",
+      "status": "completed",
+      "detectedDocumentType": "Other",
+      "detectedDocumentTypes": [
+        "Other",
+        "Operating Metrics"
+      ],
+      "trafficLight": "GREEN",
+      "riskLevel": "LOW",
+      "financialFacts": [
+        {
+          "metric": "ebitda_sde",
+          "normalizedValue": 859131,
+          "period": "Trailing Twelve Months through Jan 2026",
+          "confidence": 1
+        }
+      ],
+      "redFlags": [],
+      "yellowFlags": [
+        "High reliance on word-of-mouth for customer acquisition",
+        "Founder-led business with retirement as reason for sale"
+      ],
+      "valuation": {
+        "base_estimate": 3900000
+      },
+      "employeeEvidence": {
+        "count": 6
+      },
+      "mathCheckStatus": "not_available"
+    },
+    {
+      "fileName": "Iron_Tree_Data_-_CIM.pdf",
+      "fileType": "application/pdf",
+      "status": "completed",
+      "detectedDocumentType": "Other",
+      "detectedDocumentTypes": [
+        "Profit and Loss Statement",
+        "Balance Sheet",
+        "Operating Metrics",
+        "Other"
+      ],
+      "trafficLight": "GREEN",
+      "riskLevel": "LOW",
+      "financialFacts": [
+        {
+          "metric": "revenue",
+          "normalizedValue": 2547186,
+          "period": "TTM Jan 2026",
+          "confidence": 1
+        },
+        {
+          "metric": "ebitda_sde",
+          "normalizedValue": 859131,
+          "period": "TTM Jan 2026",
+          "confidence": 1
+        },
+        {
+          "metric": "net_income",
+          "normalizedValue": 860447,
+          "period": "TTM Jan 2026",
+          "confidence": 1
+        }
+      ],
+      "redFlags": [],
+      "yellowFlags": [
+        "Owner-centric client relationships",
+        "Minimal formal marketing/sales infrastructure",
+        "Geographic concentration in Northeastern Pennsylvania"
+      ],
+      "valuation": {
+        "base_estimate": 0
+      },
+      "employeeEvidence": {
+        "count": 6
+      },
+      "mathCheckStatus": "passed"
+    },
+    {
+      "fileName": "Financial Modeling for Iron Tree.xltx",
+      "fileType": "application/vnd.openxmlformats-officedocument.spreadsheetml.template",
+      "status": "failed",
+      "detectedDocumentType": "Other",
+      "detectedDocumentTypes": [
+        "Other"
+      ],
+      "trafficLight": "YELLOW",
+      "riskLevel": "MEDIUM",
+      "financialFacts": [],
+      "redFlags": [],
+      "yellowFlags": [],
+      "valuation": {
+        "base_estimate": 0
+      },
+      "employeeEvidence": {
+        "count": null
+      },
+      "mathCheckStatus": "passed"
+    },
+    {
+      "fileName": "Adjusted_Financials_-_Iron-Tree_(2026.02)_final.xlsx",
+      "fileType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "status": "completed",
+      "detectedDocumentType": "Profit and Loss Statement",
+      "detectedDocumentTypes": [
+        "Profit and Loss Statement",
+        "Balance Sheet"
+      ],
+      "trafficLight": "YELLOW",
+      "riskLevel": "MEDIUM",
+      "financialFacts": [
+        {
+          "metric": "ebitda_sde",
+          "normalizedValue": 103674.29,
+          "period": "YTD through Feb '26",
+          "confidence": 1
+        },
+        {
+          "metric": "total_assets",
+          "normalizedValue": 849488.34,
+          "period": "As of Feb 28, 2026",
+          "confidence": 1
+        },
+        {
+          "metric": "total_liabilities",
+          "normalizedValue": 442465.62,
+          "period": "As of Feb 28, 2026",
+          "confidence": 1
+        }
+      ],
+      "redFlags": [],
+      "yellowFlags": [
+        "Significant owner-personal expenses identified in GL (e.g., auto repairs, business meetings, meals).",
+        "Reliance on owner spouse wages for operational labor.",
+        "Inconsistencies between QuickBooks and adjusted financial figures requiring further validation."
+      ],
+      "valuation": {
+        "base_estimate": 0
+      },
+      "employeeEvidence": {
+        "count": null
+      },
+      "mathCheckStatus": "passed"
+    }
+  ]
+}

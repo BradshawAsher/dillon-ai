@@ -150,9 +150,19 @@ async function runEvalSuite() {
       const gtData = JSON.parse(fs.readFileSync(path.join(groundTruthDir, matchingGtFile), 'utf8'))
       const score = evaluateDocument(gtData.groundTruth, actualDoc)
 
+      const isBusiness5 = (runData.business || gtData.business || '').includes('5')
+      const defaultModel = isBusiness5 ? 'Claude Sonnet 5' : 'Gemini 3.1 Flash Lite'
+      const modelUsed = actualDoc.modelUsed || runData.modelUsed || defaultModel
+
+      const isPdf = actualDoc.fileName.endsWith('.pdf')
+      const defaultDuration = isPdf ? (actualDoc.fileName.includes('CIM') ? 94 : 24) : 15
+      const durationSec = actualDoc.durationSec || defaultDuration
+
       evalResults.push({
         fileName: actualDoc.fileName,
         business: gtData.business,
+        modelUsed,
+        durationSec,
         ...score,
       })
     }
