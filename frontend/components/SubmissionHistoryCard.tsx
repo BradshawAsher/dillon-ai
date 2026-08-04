@@ -475,12 +475,17 @@ export default function SubmissionHistoryCard({
                     if (failedRows.length === 0) return null
 
                     if (!isAlertDismissed) {
+                        const fileNamesList = failedRows.map((r) => r.fileName).filter(Boolean)
+                        const fileSummary = fileNamesList.length <= 3
+                            ? fileNamesList.join(', ')
+                            : `${fileNamesList.slice(0, 3).join(', ')}... (+${fileNamesList.length - 3} more)`
+
                         return (
-                            <div role="alert" className="relative rounded-xl border-2 border-destructive/60 bg-destructive/15 p-4 pr-10 text-sm text-foreground shadow-sm">
+                            <div role="alert" className="relative rounded-xl border-2 border-destructive/60 bg-destructive/15 p-3.5 pr-10 text-sm text-foreground shadow-xs max-h-36 overflow-y-auto">
                                 <button
                                     type="button"
                                     onClick={() => setIsAlertDismissed(true)}
-                                    className="absolute right-3 top-3 rounded-md p-1 text-destructive/80 hover:bg-destructive/20 hover:text-destructive focus:outline-none"
+                                    className="absolute right-3 top-3 rounded-md p-1 text-destructive/80 hover:bg-destructive/20 hover:text-destructive focus:outline-none z-10"
                                     title="Dismiss warning"
                                     aria-label="Dismiss warning"
                                 >
@@ -488,14 +493,14 @@ export default function SubmissionHistoryCard({
                                 </button>
                                 <div className="flex items-start gap-3">
                                     <CircleAlert className="h-5 w-5 shrink-0 text-destructive mt-0.5" />
-                                    <div className="space-y-1.5">
-                                        <p className="font-bold text-destructive text-base">
-                                            🔴 AI Processing Alert — {failedRows.length} Failed Document{failedRows.length === 1 ? '' : 's'} in History ({failedRows.map((r) => r.fileName).filter(Boolean).join(', ') || '1 file'})
+                                    <div className="space-y-1.5 min-w-0 flex-1">
+                                        <p className="font-bold text-destructive text-base truncate">
+                                            🔴 AI Processing Alert — {failedRows.length} Failed Document{failedRows.length === 1 ? '' : 's'} in History {fileSummary ? `(${fileSummary})` : ''}
                                         </p>
-                                        <p className="text-sm text-foreground leading-relaxed">
-                                            One or more previous documents in history failed during n8n processing. Common root causes include <strong className="text-destructive font-semibold">Anthropic API credit balance exhausted</strong> (<span className="font-mono text-xs bg-destructive/20 px-1 py-0.5 rounded text-destructive border border-destructive/30">&quot;Your credit balance is too low&quot;</span>) or format issues.
+                                        <p className="text-xs text-foreground leading-relaxed">
+                                            One or more previous documents in history failed during n8n processing. Common root causes include <strong className="text-destructive font-semibold">Anthropic API credit balance exhausted</strong> (<span className="font-mono text-[11px] bg-destructive/20 px-1 py-0.5 rounded text-destructive border border-destructive/30">&quot;Your credit balance is too low&quot;</span>) or format issues.
                                         </p>
-                                        <div className="text-xs text-muted-foreground mt-2 flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
+                                        <div className="text-xs text-muted-foreground mt-1.5 flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
                                             <span>👉 Recharge credits at <a href="https://console.anthropic.com/settings/billing" target="_blank" rel="noreferrer" className="underline font-semibold text-primary">console.anthropic.com/settings/billing</a></span>
                                             <span>👉 Click <strong className="text-foreground">&quot;Retry&quot;</strong> on the failed row below, or filter by status</span>
                                         </div>
