@@ -33,7 +33,12 @@ function deriveSubmissionStatus(row: Record<string, any>) {
     const lastActiveMs = Math.max(updatedAtMs, createdAtMs)
     const elapsedSeconds = lastActiveMs > 0 ? (Date.now() - lastActiveMs) / 1000 : 0
 
-    if (activeSubmissionStatuses.has(normalizedStatus) && elapsedSeconds > 300 && !hasUsableAnalysis) {
+    const batchCount = typeof row.expected_batch_document_count === 'number' && row.expected_batch_document_count > 0
+        ? row.expected_batch_document_count
+        : 1
+    const perDocTimeoutSeconds = Math.max(240, batchCount * 240)
+
+    if (activeSubmissionStatuses.has(normalizedStatus) && elapsedSeconds > perDocTimeoutSeconds && !hasUsableAnalysis) {
         return 'failed'
     }
 

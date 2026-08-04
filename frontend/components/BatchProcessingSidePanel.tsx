@@ -149,6 +149,13 @@ export function BatchProcessingSidePanel({
                                 </p>
                             )}
 
+                            <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 p-2.5 text-[11px] text-amber-900 dark:text-amber-200 space-y-1">
+                                <p className="font-semibold">⚠️ 4-Minute Timeout Rules:</p>
+                                <p className="opacity-90">
+                                    Documents are monitored individually. If a file takes longer than <strong>4 minutes per document</strong> without a response from n8n, it is automatically marked as failed so you can retry or switch keys.
+                                </p>
+                            </div>
+
                             <div className="flex items-center justify-end gap-2 pt-1">
                                 <Button
                                     type="button"

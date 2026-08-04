@@ -2422,8 +2422,9 @@ export default function DueDiligenceDashboard() {
                                         </div>
                                     </div>
                                     {activeBatchFinishedCount < activeBatchExpectedCount && (
-                                        <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-300">
-                                            💡 <strong>Pipeline note:</strong> Document AI analysis and deterministic reconciliation typically take <strong>~1 minute per document</strong> to reach completion. Project synthesis will trigger automatically once finished.
+                                        <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-300 space-y-1">
+                                            <p>💡 <strong>Pipeline Note:</strong> Document AI extraction typically takes <strong>~1–2 minutes per document</strong>. Project synthesis will trigger automatically once finished.</p>
+                                            <p className="text-[11px] opacity-90">⚠️ <strong>4-Minute Timeout Rules:</strong> Documents are monitored individually. If an individual file takes longer than <strong>4 minutes per document</strong> without a response from n8n, it is automatically flagged as failed so you can retry or configure a custom key.</p>
                                         </div>
                                     )}
                                     <div className="space-y-2">
