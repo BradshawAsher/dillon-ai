@@ -105,6 +105,10 @@
 
 - Also look through all the tabs for each submission and see if anything is broken or no
 
+- Need to expand the eval set to be like the golden test set we takled about, mostly more happy path, messy path, edge case, and red team packets
+
+- Why we are not showing investment thesis for latest doc submission?
+
 
 # BRAD MORE TODO
 
