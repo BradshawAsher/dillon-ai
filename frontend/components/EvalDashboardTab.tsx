@@ -5,6 +5,7 @@ import {
     BarChart3,
     CheckCircle2,
     Clock,
+    Cpu,
     DollarSign,
     FileCheck,
     FileText,
@@ -36,17 +37,83 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
     const [runningEval, setRunningEval] = useState(false)
     const [latestRunMessage, setBatchMessage] = useState('')
 
-    // Default report incorporating Business 3 (TurnKey), Business 4 (ConversionXL), and Business 5 (Medical Spa)
+    // Default report incorporating Business 2 (Iron Tree), Business 3 (TurnKey), Business 4 (ConversionXL), and Business 5 (Medical Spa)
     const defaultReport = {
         evaluatedAt: new Date().toISOString(),
-        totalDocumentsEvaluated: 8,
-        passedDocuments: 2,
-        overallPercentage: 73,
+        totalDocumentsEvaluated: 12,
+        passedDocuments: 3,
+        overallPercentage: 74,
         status: 'NEEDS-TUNING',
         documentResults: [
             {
+                fileName: 'Iron_Tree_Data_-_Teaser.pdf',
+                business: 'Business 2 - Iron Tree Data Networks',
+                modelUsed: 'Gemini 3.1 Flash Lite',
+                durationSec: 24,
+                classificationScore: 10,
+                factsScore: 1.5,
+                riskScore: 10.0,
+                valuationScore: 15,
+                employeeScore: 5,
+                mathScore: 5,
+                totalScore: 46.5,
+                maxScore: 70,
+                percentage: 66,
+                pass: false,
+            },
+            {
+                fileName: 'Iron_Tree_Data_-_CIM.pdf',
+                business: 'Business 2 - Iron Tree Data Networks',
+                modelUsed: 'Gemini 3.1 Flash Lite',
+                durationSec: 94,
+                classificationScore: 10,
+                factsScore: 2.0,
+                riskScore: 14.0,
+                valuationScore: 15,
+                employeeScore: 5,
+                mathScore: 5,
+                totalScore: 51.0,
+                maxScore: 70,
+                percentage: 73,
+                pass: false,
+            },
+            {
+                fileName: 'Financial Modeling for Iron Tree.xltx',
+                business: 'Business 2 - Iron Tree Data Networks',
+                modelUsed: 'Gemini 3.1 Flash Lite',
+                durationSec: 15,
+                classificationScore: 7,
+                factsScore: 1.5,
+                riskScore: 10.0,
+                valuationScore: 15,
+                employeeScore: 5,
+                mathScore: 10,
+                totalScore: 48.5,
+                maxScore: 70,
+                percentage: 69,
+                pass: false,
+            },
+            {
+                fileName: 'Adjusted_Financials_-_Iron-Tree_(2026.02)_final.xlsx',
+                business: 'Business 2 - Iron Tree Data Networks',
+                modelUsed: 'Gemini 3.1 Flash Lite',
+                durationSec: 10,
+                classificationScore: 10,
+                factsScore: 6.0,
+                riskScore: 15.0,
+                valuationScore: 15,
+                employeeScore: 5,
+                mathScore: 10,
+                totalScore: 61.0,
+                maxScore: 70,
+                percentage: 87,
+                pass: true,
+            },
+            {
                 fileName: '1) TurnKey Product Management Business Summary.pdf',
                 business: 'Business 3 - TurnKey Product Management',
+                modelUsed: 'Gemini 3.1 Flash Lite',
+                durationSec: 18,
                 classificationScore: 10,
                 factsScore: 3.0,
                 riskScore: 15.0,
@@ -61,6 +128,8 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
             {
                 fileName: '2) TurnKey Product Management P&L [Google Sheet].xlsx',
                 business: 'Business 3 - TurnKey Product Management',
+                modelUsed: 'Gemini 3.1 Flash Lite',
+                durationSec: 12,
                 classificationScore: 10,
                 factsScore: 1.5,
                 riskScore: 10.0,
@@ -75,6 +144,8 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
             {
                 fileName: 'WC- Conversion XL OM.pdf',
                 business: 'Business 4 - ConversionXL (SaaS Product)',
+                modelUsed: 'Gemini 3.1 Flash Lite',
+                durationSec: 38,
                 classificationScore: 3,
                 factsScore: 3.0,
                 riskScore: 13.0,
@@ -89,6 +160,8 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
             {
                 fileName: 'DD Memo.pdf',
                 business: 'Business 4 - ConversionXL (SaaS Product)',
+                modelUsed: 'Gemini 3.1 Flash Lite',
+                durationSec: 28,
                 classificationScore: 10,
                 factsScore: 3.0,
                 riskScore: 10.0,
@@ -103,6 +176,8 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
             {
                 fileName: 'ConversionXL LLC_Profit and Loss by Month v2.xlsx',
                 business: 'Business 4 - ConversionXL (SaaS Product)',
+                modelUsed: 'Gemini 3.1 Flash Lite',
+                durationSec: 15,
                 classificationScore: 10,
                 factsScore: 1.0,
                 riskScore: 10.0,
@@ -117,6 +192,8 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
             {
                 fileName: 'CXL_Screen.xlsx',
                 business: 'Business 4 - ConversionXL (SaaS Product)',
+                modelUsed: 'Gemini 3.1 Flash Lite',
+                durationSec: 14,
                 classificationScore: 3,
                 factsScore: 3.0,
                 riskScore: 5.0,
@@ -131,6 +208,8 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
             {
                 fileName: '_RENEW HEALTH CENTER - FULL YEAR COMPARATIVE P&L (2024-2025).pdf',
                 business: 'Business 5 - Medical Spa (Sameer)',
+                modelUsed: 'Claude Sonnet 5',
+                durationSec: 24,
                 classificationScore: 10,
                 factsScore: 6.5,
                 riskScore: 16.0,
@@ -145,6 +224,8 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
             {
                 fileName: 'Financial Modelling Renew Health .xlsm',
                 business: 'Business 5 - Medical Spa (Sameer)',
+                modelUsed: 'Claude Sonnet 5',
+                durationSec: 32,
                 classificationScore: 7,
                 factsScore: 3.6,
                 riskScore: 14.0,
@@ -304,25 +385,57 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
                             const avgScore = Math.round(docs.reduce((sum: number, d: any) => sum + (d.percentage || 0), 0) / (docs.length || 1))
                             const passCount = docs.filter((d: any) => d.pass).length
                             const projectPass = avgScore >= 80
+                            const modelName = docs[0]?.modelUsed || (businessName.includes('5') ? 'Claude Sonnet 5' : 'Gemini 3.1 Flash Lite')
+                            const totalDurationSec = docs.reduce((sum: number, d: any) => sum + (d.durationSec || 15), 0)
 
                             return (
-                                <div key={groupIdx} className="space-y-3">
-                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-border/80">
-                                        <div className="flex items-center gap-2 flex-wrap">
-                                            <Layers className="h-4 w-4 text-primary shrink-0" />
-                                            <h3 className="font-bold text-sm text-foreground tracking-wide">
-                                                {businessName}
-                                            </h3>
-                                            <Badge
-                                                variant="default"
-                                                className={`text-[11px] font-semibold ${projectPass ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-amber-600 hover:bg-amber-700 text-white'}`}
-                                            >
-                                                Overall: {avgScore}% ({passCount}/{docs.length} Passed)
-                                            </Badge>
+                                <div key={groupIdx} className="space-y-3 pt-2">
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-muted/40 border border-border/80 shadow-xs">
+                                        <div className="flex items-center gap-2.5 min-w-0">
+                                            <div className="p-2 rounded-lg bg-primary/10 text-primary shrink-0">
+                                                <Layers className="h-5 w-5" />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <h3 className="font-bold text-base text-foreground tracking-tight">
+                                                        {businessName}
+                                                    </h3>
+                                                    <Badge variant="outline" className="text-[11px] font-medium gap-1 bg-background/80 text-foreground">
+                                                        <Cpu className="h-3 w-3 text-primary" />
+                                                        Model: {modelName}
+                                                    </Badge>
+                                                </div>
+                                                <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
+                                                    <span>{docs.length} {docs.length === 1 ? 'document' : 'documents'} evaluated</span>
+                                                    <span>•</span>
+                                                    <span className="flex items-center gap-1 font-medium text-foreground">
+                                                        <Clock className="h-3 w-3 text-blue-500" />
+                                                        Total Time: {totalDurationSec}s ({Math.round((totalDurationSec / 60) * 10) / 10}m)
+                                                    </span>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <Badge variant="outline" className="text-[11px] font-mono self-start sm:self-auto">
-                                            {docs.length} {docs.length === 1 ? 'document' : 'documents'}
-                                        </Badge>
+
+                                        <div className="flex items-center gap-2.5 self-start sm:self-auto shrink-0">
+                                            <div className="text-right hidden sm:block">
+                                                <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                                                    Overall Score
+                                                </div>
+                                                <div className="text-xs text-muted-foreground font-medium">
+                                                    {passCount}/{docs.length} Passed
+                                                </div>
+                                            </div>
+                                            <div className={`px-3.5 py-1.5 rounded-xl border font-black text-xl flex items-center gap-2 shadow-xs ${
+                                                projectPass 
+                                                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400' 
+                                                    : 'bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400'
+                                            }`}>
+                                                <span>{avgScore}%</span>
+                                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider bg-background/80 border border-border/60">
+                                                    {projectPass ? 'Pass' : 'Needs Tuning'}
+                                                </span>
+                                            </div>
+                                        </div>
                                     </div>
 
                                 <div className="rounded-xl border border-border divide-y divide-border/60 overflow-hidden">
@@ -334,8 +447,13 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
                                                         <span className="font-bold text-sm text-foreground truncate max-w-md">
                                                             {doc.fileName}
                                                         </span>
-                                                        <Badge variant="outline" className="text-[11px]">
-                                                            {doc.business}
+                                                        <Badge variant="outline" className="text-[11px] gap-1 text-muted-foreground bg-muted/30">
+                                                            <Cpu className="h-3 w-3 text-primary" />
+                                                            {doc.modelUsed || modelName}
+                                                        </Badge>
+                                                        <Badge variant="outline" className="text-[11px] gap-1 text-muted-foreground bg-muted/30">
+                                                            <Clock className="h-3 w-3 text-blue-500" />
+                                                            {doc.durationSec || 15}s
                                                         </Badge>
                                                     </div>
                                                     <p className="text-xs text-muted-foreground">
