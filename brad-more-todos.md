@@ -109,6 +109,14 @@
 
 - Why we are not showing investment thesis for latest doc submission?
 
+- Have to do this: Track A · Ran cost analysis on your workflow · identified top 3 spend drivers
+
+- Add the old edge cases to test sets and make them a little more complicated? Add the ground truth for them too and automated scoring.
+
+- Have to make sure to do these 2:
+  - Track B · Eval harness shipped · 20-input golden dataset + automated pass/
+  - Track B · Eval runs on every deployment (regression check)
+
 
 # BRAD MORE TODO
 
