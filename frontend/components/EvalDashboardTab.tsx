@@ -364,8 +364,9 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
                                     ))}
                                 </div>
                             </div>
-                        ))
-                    })()}
+                        )
+                    })
+                })()}
                 </CardContent>
             </Card>
 
