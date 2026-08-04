@@ -1,10 +1,38 @@
 {
-  "evaluatedAt": "2026-08-04T03:58:03.239Z",
-  "totalDocumentsEvaluated": 6,
-  "passedDocuments": 1,
+  "evaluatedAt": "2026-08-04T17:37:24.741Z",
+  "totalDocumentsEvaluated": 8,
+  "passedDocuments": 2,
   "overallPercentage": 73,
   "status": "NEEDS-TUNING",
   "documentResults": [
+    {
+      "fileName": "2) TurnKey Product Management P&L [Google Sheet].xlsx",
+      "business": "Business 3 - TurnKey Product Management",
+      "classificationScore": 10,
+      "factsScore": 1.5,
+      "riskScore": 10,
+      "valuationScore": 15,
+      "employeeScore": 5,
+      "mathScore": 5,
+      "totalScore": 46.5,
+      "maxScore": 70,
+      "percentage": 66,
+      "pass": false
+    },
+    {
+      "fileName": "1) TurnKey Product Management Business Summary.pdf",
+      "business": "Business 3 - TurnKey Product Management",
+      "classificationScore": 10,
+      "factsScore": 3,
+      "riskScore": 15,
+      "valuationScore": 15,
+      "employeeScore": 5,
+      "mathScore": 10,
+      "totalScore": 58,
+      "maxScore": 70,
+      "percentage": 83,
+      "pass": true
+    },
     {
       "fileName": "WC- Conversion XL OM.pdf",
       "business": "Business 4 - ConversionXL (SaaS Product)",

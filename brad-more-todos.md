@@ -91,6 +91,8 @@
 
 - For evals and harness tab, fix the cost optimization? Are we reporting exactly the model we are using as well as the tokens spent, and then calculating the cost mathematically, or no?
 
+- Run the 3rd project through and eval, then 2nd, then 1st?
+
 
 # BRAD MORE TODO
 

@@ -36,14 +36,42 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
     const [runningEval, setRunningEval] = useState(false)
     const [latestRunMessage, setBatchMessage] = useState('')
 
-    // Default report incorporating both Project 4 (ConversionXL) and Project 5 (Medical Spa)
+    // Default report incorporating Business 3 (TurnKey), Business 4 (ConversionXL), and Business 5 (Medical Spa)
     const defaultReport = {
         evaluatedAt: new Date().toISOString(),
-        totalDocumentsEvaluated: 6,
-        passedDocuments: 1,
+        totalDocumentsEvaluated: 8,
+        passedDocuments: 2,
         overallPercentage: 73,
         status: 'NEEDS-TUNING',
         documentResults: [
+            {
+                fileName: '1) TurnKey Product Management Business Summary.pdf',
+                business: 'Business 3 - TurnKey Product Management',
+                classificationScore: 10,
+                factsScore: 3.0,
+                riskScore: 15.0,
+                valuationScore: 15,
+                employeeScore: 5,
+                mathScore: 10,
+                totalScore: 58.0,
+                maxScore: 70,
+                percentage: 83,
+                pass: true,
+            },
+            {
+                fileName: '2) TurnKey Product Management P&L [Google Sheet].xlsx',
+                business: 'Business 3 - TurnKey Product Management',
+                classificationScore: 10,
+                factsScore: 1.5,
+                riskScore: 10.0,
+                valuationScore: 15,
+                employeeScore: 5,
+                mathScore: 5,
+                totalScore: 46.5,
+                maxScore: 70,
+                percentage: 66,
+                pass: false,
+            },
             {
                 fileName: 'WC- Conversion XL OM.pdf',
                 business: 'Business 4 - ConversionXL (SaaS Product)',
