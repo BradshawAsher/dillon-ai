@@ -1592,11 +1592,11 @@ export default function DueDiligenceDashboard() {
             if (!response.ok) throw new Error(body.error || 'Unable to queue retry')
 
             if (targetProjectId) {
-                setInFlightBatch({
-                    projectId: targetProjectId,
-                    dealName: targetDealName,
-                    projectStage: targetRow?.projectStage || 'post-loi',
+                setActiveSubmissionBatch({
+                    id: targetProjectId,
                     expectedDocumentCount: 1,
+                    environment: activeHistoryEnvironment,
+                    startedAt: Date.now(),
                 })
                 setSelectedProjectKey(targetRow ? getProjectKey(targetRow) : targetProjectId)
             }
@@ -1616,7 +1616,7 @@ export default function DueDiligenceDashboard() {
         if (targetRow) {
             setDealName(targetRow.dealName ? `${targetRow.dealName} (Retry)` : '')
             setDocumentType(targetRow.documentType || 'auto-detect')
-            setSubmissionNotes(targetRow.notes || '')
+            setSubmissionNotes(targetRow.submissionNotes || '')
         }
         setBatchSubmissionMessage('Pre-filled new project intake form. Drop your document file above to queue under a new project.')
         document.querySelector('[data-project-intake]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -1652,7 +1652,6 @@ export default function DueDiligenceDashboard() {
             if (!response.ok) throw new Error(body.error || 'Unable to stop the active batch')
             setBatchSubmissionMessage(`Stopped ${body.stopped ?? stoppableRequestIds.length} active document${(body.stopped ?? stoppableRequestIds.length) === 1 ? '' : 's'}.`)
             setActiveSubmissionBatch((current) => current ? { ...current, stoppedAt: Date.now(), endedAt: Date.now() } : current)
-            setInFlightBatch(null)
             await handleRefreshHistory(activeHistoryEnvironment)
         } catch (error) {
             setBatchSubmissionMessage(error instanceof Error ? error.message : 'Unable to stop the active batch')
