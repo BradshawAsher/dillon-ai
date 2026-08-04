@@ -1,0 +1,71 @@
+{
+  "business": "business4_conversionxl",
+  "projectId": "project-20260803-e9997816",
+  "modelUsed": "Google Gemini Chat Model (gemini-3.1-flash-lite)",
+  "evaluatedAt": "2026-08-04T03:15:15.044Z",
+  "documents": [
+    {
+      "fileName": "DD Memo.pdf",
+      "fileType": "application/pdf",
+      "status": "uploading",
+      "detectedDocumentType": "Other",
+      "detectedDocumentTypes": [
+        "Other"
+      ],
+      "trafficLight": "YELLOW",
+      "riskLevel": "MEDIUM",
+      "financialFacts": [],
+      "redFlags": [],
+      "yellowFlags": [],
+      "valuation": {
+        "base_estimate": 0
+      },
+      "employeeEvidence": {
+        "count": null
+      },
+      "mathCheckStatus": "passed"
+    },
+    {
+      "fileName": "ConversionXL LLC_Profit and Loss by Month v2.xlsx",
+      "fileType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "status": "uploading",
+      "detectedDocumentType": "Other",
+      "detectedDocumentTypes": [
+        "Other"
+      ],
+      "trafficLight": "YELLOW",
+      "riskLevel": "MEDIUM",
+      "financialFacts": [],
+      "redFlags": [],
+      "yellowFlags": [],
+      "valuation": {
+        "base_estimate": 0
+      },
+      "employeeEvidence": {
+        "count": null
+      },
+      "mathCheckStatus": "passed"
+    },
+    {
+      "fileName": "CXL_Screen.xlsx",
+      "fileType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "status": "uploading",
+      "detectedDocumentType": "Other",
+      "detectedDocumentTypes": [
+        "Other"
+      ],
+      "trafficLight": "YELLOW",
+      "riskLevel": "MEDIUM",
+      "financialFacts": [],
+      "redFlags": [],
+      "yellowFlags": [],
+      "valuation": {
+        "base_estimate": 0
+      },
+      "employeeEvidence": {
+        "count": null
+      },
+      "mathCheckStatus": "passed"
+    }
+  ]
+}
