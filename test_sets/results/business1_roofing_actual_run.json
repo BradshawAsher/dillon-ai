@@ -1,0 +1,209 @@
+{
+  "business": "business1_roofing",
+  "projectId": "project-20260804-f801bec6",
+  "modelUsed": "Google Gemini Chat Model",
+  "evaluatedAt": "2026-08-04T18:47:43.913Z",
+  "documents": [
+    {
+      "fileName": "Werkheiser_LOI_MergeWorks.docx",
+      "fileType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "status": "completed",
+      "modelUsed": "Gemini 3.1 Flash Lite",
+      "durationSec": 8,
+      "detectedDocumentType": "Purchase Agreement or LOI",
+      "detectedDocumentTypes": [
+        "Purchase Agreement or LOI",
+        "Operating Metrics"
+      ],
+      "trafficLight": "YELLOW",
+      "riskLevel": "HIGH",
+      "financialFacts": [
+        {
+          "metric": "revenue",
+          "normalizedValue": 3420798,
+          "period": "2025",
+          "confidence": 1
+        },
+        {
+          "metric": "net_income",
+          "normalizedValue": 3134,
+          "period": "2025",
+          "confidence": 1
+        },
+        {
+          "metric": "equity",
+          "normalizedValue": 624642,
+          "period": "December 2025",
+          "confidence": 1
+        }
+      ],
+      "redFlags": [
+        "Revenue declining from $4M+ to $3.42M",
+        "Near-zero net income ($3,134) on $3.4M revenue",
+        "Below-industry revenue per employee",
+        "Payback period > 10 years at ask price"
+      ],
+      "yellowFlags": [
+        "SDE add-backs unverified",
+        "Key-person risk",
+        "Enterprise value (7.9-9x SDE) significantly above benchmark (3-5x)"
+      ],
+      "valuation": {
+        "base_estimate": 4255000
+      },
+      "employeeEvidence": {
+        "count": 37
+      },
+      "mathCheckStatus": "not_available"
+    },
+    {
+      "fileName": "Werkheiser P&L 2025.pdf",
+      "fileType": "application/pdf",
+      "status": "completed",
+      "modelUsed": "Gemini 3.1 Flash Lite",
+      "durationSec": 20,
+      "detectedDocumentType": "Profit and Loss Statement",
+      "detectedDocumentTypes": [
+        "Profit and Loss Statement"
+      ],
+      "trafficLight": "YELLOW",
+      "riskLevel": "MEDIUM",
+      "financialFacts": [
+        {
+          "metric": "revenue",
+          "normalizedValue": 3420797.58,
+          "period": "Jan - Dec 25",
+          "confidence": 1
+        },
+        {
+          "metric": "cogs",
+          "normalizedValue": 1769899.37,
+          "period": "Jan - Dec 25",
+          "confidence": 1
+        },
+        {
+          "metric": "gross_profit",
+          "normalizedValue": 1650898.21,
+          "period": "Jan - Dec 25",
+          "confidence": 1
+        },
+        {
+          "metric": "net_income",
+          "normalizedValue": 3134.52,
+          "period": "Jan - Dec 25",
+          "confidence": 1
+        }
+      ],
+      "redFlags": [],
+      "yellowFlags": [
+        "Net Income margin is extremely thin relative to Total Income (0.09%).",
+        "Multiple negative line items reported in revenue and expense categories (e.g., Sales Tax, Equipment Rental, Dues and Subscriptions)."
+      ],
+      "valuation": {
+        "base_estimate": 0
+      },
+      "employeeEvidence": {
+        "count": null
+      },
+      "mathCheckStatus": "passed"
+    },
+    {
+      "fileName": "Two years PL ended Dec 31 2024.pdf",
+      "fileType": "application/pdf",
+      "status": "completed",
+      "modelUsed": "Gemini 3.1 Flash Lite",
+      "durationSec": 9,
+      "detectedDocumentType": "Profit and Loss Statement",
+      "detectedDocumentTypes": [
+        "Profit and Loss Statement"
+      ],
+      "trafficLight": "YELLOW",
+      "riskLevel": "MEDIUM",
+      "financialFacts": [
+        {
+          "metric": "revenue",
+          "normalizedValue": 7211130.82,
+          "period": "Jan 2023 - Dec 2024",
+          "confidence": 1
+        },
+        {
+          "metric": "cogs",
+          "normalizedValue": 3537979.05,
+          "period": "Jan 2023 - Dec 2024",
+          "confidence": 1
+        },
+        {
+          "metric": "gross_profit",
+          "normalizedValue": 3673151.77,
+          "period": "Jan 2023 - Dec 2024",
+          "confidence": 1
+        },
+        {
+          "metric": "net_income",
+          "normalizedValue": 199923.88,
+          "period": "Jan 2023 - Dec 2024",
+          "confidence": 1
+        }
+      ],
+      "redFlags": [],
+      "yellowFlags": [
+        "High volatility in monthly net income including multiple months with substantial losses (e.g., June 2024 loss of $416,998.99).",
+        "Inconsistent operational expense reporting patterns.",
+        "Negative Sales Tax reported as income deduction."
+      ],
+      "valuation": {
+        "base_estimate": 0
+      },
+      "employeeEvidence": {
+        "count": null
+      },
+      "mathCheckStatus": "passed"
+    },
+    {
+      "fileName": "Balance Sheet Jan 2023 to Dec 2024.pdf",
+      "fileType": "application/pdf",
+      "status": "completed",
+      "modelUsed": "Gemini 3.1 Flash Lite",
+      "durationSec": 10,
+      "detectedDocumentType": "Balance Sheet",
+      "detectedDocumentTypes": [
+        "Balance Sheet"
+      ],
+      "trafficLight": "YELLOW",
+      "riskLevel": "MEDIUM",
+      "financialFacts": [
+        {
+          "metric": "total_assets",
+          "normalizedValue": 967003.85,
+          "period": "As of December 31, 2024",
+          "confidence": 1
+        },
+        {
+          "metric": "total_liabilities",
+          "normalizedValue": 159719.02,
+          "period": "As of December 31, 2024",
+          "confidence": 1
+        },
+        {
+          "metric": "equity",
+          "normalizedValue": 807284.83,
+          "period": "As of December 31, 2024",
+          "confidence": 1
+        }
+      ],
+      "redFlags": [],
+      "yellowFlags": [
+        "Significant fluctuations in shareholder distributions and net income across periods.",
+        "Negative values in various liability and equity line items suggesting unusual accounting adjustments or reversals.",
+        "Payroll Exchange balance volatility."
+      ],
+      "valuation": {
+        "base_estimate": 0
+      },
+      "employeeEvidence": {
+        "count": null
+      },
+      "mathCheckStatus": "passed"
+    }
+  ]
+}
