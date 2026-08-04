@@ -91,9 +91,19 @@
 
 - For evals and harness tab, fix the cost optimization? Are we reporting exactly the model we are using as well as the tokens spent, and then calculating the cost mathematically, or no?
 
-- Check if the anthropic keys are refilled yet or no?
+- Check if the anthropic keys are refilled yet or no? [BRAD TODO]
 
 - May need to switch gemini models for the api key for n8n since you're running low of the tpm rate limits?
+
+- Need to work on the video assignment for this week?
+
+- For Brad - need to keep testing the website and trying different documents, can always expand the eval suite and trying to break the system, and also i think a lot of financial facts like ebitda and sde are not filled even though we put 4 long docs through? Why?
+
+- Add even more granular confidence score so every fact on the page has a confidence score?
+
+- Check where the explanations for vocab like MOIC and IRR are?
+
+- Also look through all the tabs for each submission and see if anything is broken or no
 
 
 # BRAD MORE TODO
