@@ -1,9 +1,24 @@
 {
-  "evaluatedAt": "2026-08-04T20:39:09.401Z",
+  "evaluatedAt": "2026-08-05T17:38:05.691Z",
   "totalDocumentsEvaluated": 16,
   "passedDocuments": 4,
   "overallPercentage": 74,
   "status": "NEEDS-TUNING",
+  "regressionThreshold": 70,
+  "regressionPassed": true,
+  "categoryAverages": {
+    "classification": 85,
+    "facts": 36,
+    "risk": 56,
+    "valuation": 98,
+    "employee": 100,
+    "math": 88
+  },
+  "weakestDimension": "facts",
+  "groundTruthSpecs": 17,
+  "uncoveredGroundTruth": [
+    "business1_roofing_model.xlsx.json"
+  ],
   "documentResults": [
     {
       "fileName": "Werkheiser_LOI_MergeWorks.docx",

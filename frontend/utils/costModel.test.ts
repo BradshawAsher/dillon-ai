@@ -3,11 +3,13 @@ import { describe, expect, it } from 'vitest'
 import {
     estimateAllSonnetCost,
     estimateCallCost,
+    estimateMonthlyCost,
     estimatePerDocumentCost,
     MEASURED_COST_PER_DOCUMENT,
     MEASURED_ROUTING_SAVINGS,
     routingSavingsFraction,
     SAMPLE_DOCUMENT_LEGS,
+    topSpendDrivers,
 } from './costModel'
 
 describe('estimateCallCost', () => {
@@ -49,5 +51,50 @@ describe('derived constants', () => {
     it('expose the measured per-document cost and savings', () => {
         expect(MEASURED_COST_PER_DOCUMENT).toBeCloseTo(0.0326, 3)
         expect(MEASURED_ROUTING_SAVINGS).toBeGreaterThan(0.3)
+    })
+})
+
+describe('topSpendDrivers', () => {
+    it('ranks Sonnet output as the top spend driver for the measured sample', () => {
+        const drivers = topSpendDrivers(SAMPLE_DOCUMENT_LEGS)
+        expect(drivers[0].label).toBe('Sonnet 4.6 output')
+        expect(drivers[0].model).toBe('sonnet-4-6')
+        expect(drivers[0].direction).toBe('output')
+    })
+
+    it('returns at most `limit` drivers with shares that sum within the whole', () => {
+        const drivers = topSpendDrivers(SAMPLE_DOCUMENT_LEGS, 3)
+        expect(drivers.length).toBe(3)
+        for (const d of drivers) {
+            expect(d.share).toBeGreaterThan(0)
+            expect(d.share).toBeLessThanOrEqual(1)
+        }
+        // descending by cost
+        expect(drivers[0].costUsd).toBeGreaterThanOrEqual(drivers[1].costUsd)
+        expect(drivers[1].costUsd).toBeGreaterThanOrEqual(drivers[2].costUsd)
+    })
+
+    it('folds repeated model+direction legs together', () => {
+        const drivers = topSpendDrivers(
+            [
+                { model: 'sonnet-4-6', inputTokens: 1000, outputTokens: 0 },
+                { model: 'sonnet-4-6', inputTokens: 1000, outputTokens: 0 },
+            ],
+            5,
+        )
+        const sonnetInput = drivers.find((d) => d.model === 'sonnet-4-6' && d.direction === 'input')
+        expect(sonnetInput?.tokens).toBe(2000)
+        expect(sonnetInput?.share).toBe(1)
+    })
+})
+
+describe('estimateMonthlyCost', () => {
+    it('sums documents and syntheses at monthly throughput', () => {
+        const monthly = estimateMonthlyCost(100, 20)
+        expect(monthly).toBeCloseTo(100 * MEASURED_COST_PER_DOCUMENT + 20 * 0.12, 6)
+    })
+
+    it('never returns a negative projection', () => {
+        expect(estimateMonthlyCost(-10, -5)).toBe(0)
     })
 })

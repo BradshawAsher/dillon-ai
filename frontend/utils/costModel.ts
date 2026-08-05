@@ -64,3 +64,78 @@ export const MEASURED_COST_PER_DOCUMENT = estimatePerDocumentCost(SAMPLE_DOCUMEN
 
 /** Default measured Haiku-routing saving vs. all-Sonnet, as a fraction (0..1). */
 export const MEASURED_ROUTING_SAVINGS = routingSavingsFraction(SAMPLE_DOCUMENT_LEGS)
+
+export type SpendDriver = {
+    /** Human label, e.g. "Sonnet 4.6 output". */
+    label: string
+    model: AnthropicModel
+    direction: 'input' | 'output'
+    tokens: number
+    costUsd: number
+    /** Share of total run cost, 0..1. */
+    share: number
+}
+
+/**
+ * Breaks a run's legs into individual cost contributors (each model's input and
+ * output separately) ranked most-expensive first. Answers "where does the money
+ * actually go?" — Track A's top-spend-drivers question.
+ */
+export function topSpendDrivers(legs: ModelLeg[], limit = 3): SpendDriver[] {
+    const modelLabel: Record<AnthropicModel, string> = {
+        'haiku-4-5': 'Haiku 4.5',
+        'sonnet-4-6': 'Sonnet 4.6',
+    }
+    const contributors: Omit<SpendDriver, 'share'>[] = []
+    for (const leg of legs) {
+        const rate = MODEL_RATES[leg.model]
+        contributors.push({
+            label: `${modelLabel[leg.model]} input`,
+            model: leg.model,
+            direction: 'input',
+            tokens: leg.inputTokens,
+            costUsd: (leg.inputTokens / 1_000_000) * rate.inputPerMTok,
+        })
+        contributors.push({
+            label: `${modelLabel[leg.model]} output`,
+            model: leg.model,
+            direction: 'output',
+            tokens: leg.outputTokens,
+            costUsd: (leg.outputTokens / 1_000_000) * rate.outputPerMTok,
+        })
+    }
+
+    // Fold duplicate model+direction legs together (a document can call the same
+    // model more than once) before ranking.
+    const merged = new Map<string, Omit<SpendDriver, 'share'>>()
+    for (const c of contributors) {
+        const key = `${c.model}:${c.direction}`
+        const existing = merged.get(key)
+        if (existing) {
+            existing.tokens += c.tokens
+            existing.costUsd += c.costUsd
+        } else {
+            merged.set(key, { ...c })
+        }
+    }
+
+    const total = [...merged.values()].reduce((sum, c) => sum + c.costUsd, 0)
+    return [...merged.values()]
+        .map((c) => ({ ...c, share: total > 0 ? c.costUsd / total : 0 }))
+        .sort((a, b) => b.costUsd - a.costUsd)
+        .slice(0, limit)
+}
+
+/**
+ * Projects monthly spend at a given throughput. Documents use the measured
+ * per-document cost; each project synthesis adds an (estimated) Sonnet pass.
+ */
+export function estimateMonthlyCost(
+    documentsPerMonth: number,
+    synthesesPerMonth: number,
+    costPerSynthesis = 0.12,
+): number {
+    const docs = Math.max(0, documentsPerMonth)
+    const syntheses = Math.max(0, synthesesPerMonth)
+    return docs * MEASURED_COST_PER_DOCUMENT + syntheses * costPerSynthesis
+}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { evaluateDocument, extractYear, type ActualRunDoc, type GroundTruth } from '../../scripts/evalScoring'
+import { evaluateDocument, extractYear, summarizeResults, type ActualRunDoc, type DocScore, type GroundTruth } from '../../scripts/evalScoring'
 
 function baseGroundTruth(overrides: Partial<GroundTruth> = {}): GroundTruth {
     return {
@@ -99,5 +99,54 @@ describe('evaluateDocument component scores', () => {
 
     it('flags a passing document at/above the 80% threshold', () => {
         expect(evaluateDocument(baseGroundTruth(), baseActual()).pass).toBe(true)
+    })
+})
+
+function scoreWith(percentage: number, overrides: Partial<DocScore> = {}): DocScore {
+    return {
+        classificationScore: 10,
+        factsScore: 10,
+        riskScore: 20,
+        valuationScore: 15,
+        employeeScore: 5,
+        mathScore: 10,
+        totalScore: 70,
+        maxScore: 70,
+        percentage,
+        pass: percentage >= 80,
+        ...overrides,
+    }
+}
+
+describe('summarizeResults', () => {
+    it('passes the regression gate when overall meets the threshold', () => {
+        const summary = summarizeResults([scoreWith(90), scoreWith(80)], 70)
+        expect(summary.overallPercentage).toBe(85)
+        expect(summary.regressionPassed).toBe(true)
+        expect(summary.passedDocuments).toBe(2)
+    })
+
+    it('fails the regression gate when overall drops below the threshold', () => {
+        const summary = summarizeResults([scoreWith(60), scoreWith(50)], 70)
+        expect(summary.overallPercentage).toBe(55)
+        expect(summary.regressionPassed).toBe(false)
+    })
+
+    it('identifies the weakest dimension from category averages', () => {
+        // valuation deliberately low across both docs
+        const summary = summarizeResults([
+            scoreWith(80, { valuationScore: 0 }),
+            scoreWith(80, { valuationScore: 0 }),
+        ], 70)
+        expect(summary.categoryAverages.valuation).toBe(0)
+        expect(summary.weakestDimension).toBe('valuation')
+        expect(summary.categoryAverages.classification).toBe(100)
+    })
+
+    it('treats an empty suite as a non-blocking pass', () => {
+        const summary = summarizeResults([], 70)
+        expect(summary.totalDocumentsEvaluated).toBe(0)
+        expect(summary.regressionPassed).toBe(true)
+        expect(summary.weakestDimension).toBeNull()
     })
 })

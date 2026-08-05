@@ -1,8 +1,8 @@
-import { Clock3, DollarSign } from 'lucide-react'
+import { Clock3, DollarSign, TrendingUp } from 'lucide-react'
 
 import { Badge } from '../lib/shadcn/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
-import { MEASURED_COST_PER_DOCUMENT, MEASURED_ROUTING_SAVINGS } from '../utils/costModel'
+import { estimateMonthlyCost, MEASURED_COST_PER_DOCUMENT, MEASURED_ROUTING_SAVINGS, SAMPLE_DOCUMENT_LEGS, topSpendDrivers } from '../utils/costModel'
 import { estimateProcessingSeconds, formatDuration } from '../utils/processingTime'
 import InfoTip from './InfoTip'
 
@@ -27,6 +27,11 @@ export default function CostPerRunCard({ documentsProcessed, synthesisRuns }: Pr
     const typicalTime = formatDuration(
         estimateProcessingSeconds({ documentCount: documentsProcessed, includeSynthesis: documentsProcessed > 0 }).totalSeconds,
     )
+
+    // Track A: where the money actually goes per document, and a monthly
+    // projection at the current throughput so spend is legible at scale.
+    const spendDrivers = topSpendDrivers(SAMPLE_DOCUMENT_LEGS, 3)
+    const monthlyAtCurrentPace = estimateMonthlyCost(documentsProcessed, synthesisRuns, ESTIMATED_COST_PER_SYNTHESIS)
 
     return (
         <Card className="overflow-hidden">
@@ -76,6 +81,33 @@ export default function CostPerRunCard({ documentsProcessed, synthesisRuns }: Pr
                         <span className="text-muted-foreground/70">(varies with document length and retries)</span>
                     </div>
                 )}
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-lg border border-border bg-background p-3">
+                        <div className="flex items-center gap-1.5">
+                            <TrendingUp className="h-3.5 w-3.5 text-primary" />
+                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Top spend drivers (per doc)</p>
+                            <InfoTip term="Spend drivers" definition="The largest cost contributors in a typical document run, split by model and by input vs. output tokens. Output tokens cost the most, so they usually dominate." />
+                        </div>
+                        <ol className="mt-2 space-y-1.5">
+                            {spendDrivers.map((driver, i) => (
+                                <li key={driver.label} className="flex items-center justify-between gap-2 text-xs">
+                                    <span className="flex items-center gap-1.5 text-foreground">
+                                        <span className="text-muted-foreground">{i + 1}.</span>
+                                        {driver.label}
+                                    </span>
+                                    <span className="font-medium text-foreground">{Math.round(driver.share * 100)}%</span>
+                                </li>
+                            ))}
+                        </ol>
+                    </div>
+                    <div className="rounded-lg border border-border bg-background p-3">
+                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Projected monthly spend</p>
+                        <p className="mt-1 text-lg font-semibold text-foreground">${monthlyAtCurrentPace.toFixed(2)}<span className="text-xs font-normal text-muted-foreground">/mo</span></p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                            At scale: 1,000 docs/mo ≈ <span className="font-medium text-foreground">${estimateMonthlyCost(1000, 200, ESTIMATED_COST_PER_SYNTHESIS).toFixed(0)}</span> (with ~200 syntheses)
+                        </p>
+                    </div>
+                </div>
                 <div className="mt-4 rounded-md border border-dashed border-border bg-muted/20 p-3">
                     <p className="text-xs text-muted-foreground">
                         <strong>Provider:</strong> Anthropic Claude — Haiku 4.5 for validation/classification passes and Sonnet 4.6 for financial analysis and synthesis. Per-document cost is measured from token telemetry (Haiku 4.5 $1/$5, Sonnet 4.6 $3/$15 per 1M tokens); two-model routing saves ~{ROUTING_SAVINGS_PCT}% versus an all-Sonnet pipeline.

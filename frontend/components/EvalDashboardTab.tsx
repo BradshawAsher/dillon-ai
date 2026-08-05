@@ -306,6 +306,30 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
 
     const latestRun = evalRuns && evalRuns.length > 0 && evalRuns[0].report_json ? evalRuns[0].report_json : defaultReport
 
+    // Per-dimension averages (% of each dimension's max) so the weakest area to
+    // tune is visible at a glance, plus the CI regression-gate verdict.
+    const REGRESSION_THRESHOLD = 70
+    const DIMENSIONS: Array<{ key: string; field: string; label: string; max: number }> = [
+        { key: 'classification', field: 'classificationScore', label: 'Classification', max: 10 },
+        { key: 'facts', field: 'factsScore', label: 'Financial facts', max: 10 },
+        { key: 'risk', field: 'riskScore', label: 'Risk & flags', max: 20 },
+        { key: 'valuation', field: 'valuationScore', label: 'Valuation', max: 15 },
+        { key: 'employee', field: 'employeeScore', label: 'Employee', max: 5 },
+        { key: 'math', field: 'mathScore', label: 'Math checks', max: 10 },
+    ]
+    const docResults: Array<Record<string, number>> = Array.isArray(latestRun.documentResults) ? latestRun.documentResults : []
+    const categoryAverages = DIMENSIONS.map((dim) => {
+        const avgPct = docResults.length > 0
+            ? Math.round((docResults.reduce((sum, r) => sum + (Number(r[dim.field]) || 0), 0) / docResults.length / dim.max) * 100)
+            : 0
+        return { ...dim, avgPct }
+    })
+    const weakestKey = docResults.length > 0
+        ? categoryAverages.reduce((min, d) => (d.avgPct < min.avgPct ? d : min)).key
+        : null
+    const overallPct = latestRun.overallPercentage ?? 0
+    const regressionPassed = docResults.length === 0 || overallPct >= REGRESSION_THRESHOLD
+
     const handleRunHarness = () => {
         setRunningEval(true)
         setBatchMessage('Triggering local evaluation suite...')
@@ -423,6 +447,35 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Category averages + regression gate */}
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-3">
+                    <div>
+                        <CardTitle className="text-base">Score by dimension</CardTitle>
+                        <CardDescription>Average across {docResults.length} scored document{docResults.length === 1 ? '' : 's'} — lowest is where tuning helps most.</CardDescription>
+                    </div>
+                    <Badge variant={regressionPassed ? 'success' : 'destructive'}>
+                        Regression gate: {regressionPassed ? 'PASS' : 'FAIL'} (&ge;{REGRESSION_THRESHOLD}%)
+                    </Badge>
+                </CardHeader>
+                <CardContent className="space-y-2.5">
+                    {categoryAverages.map((dim) => (
+                        <div key={dim.key} className="flex items-center gap-3">
+                            <span className={`w-32 shrink-0 text-xs ${dim.key === weakestKey ? 'font-semibold text-amber-600' : 'text-muted-foreground'}`}>
+                                {dim.label}{dim.key === weakestKey ? ' ⚠' : ''}
+                            </span>
+                            <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
+                                <div
+                                    className={`h-full rounded-full ${dim.avgPct >= 80 ? 'bg-emerald-500' : dim.avgPct >= 60 ? 'bg-amber-500' : 'bg-red-500'}`}
+                                    style={{ width: `${dim.avgPct}%` }}
+                                />
+                            </div>
+                            <span className="w-10 shrink-0 text-right text-xs font-medium text-foreground">{dim.avgPct}%</span>
+                        </div>
+                    ))}
+                </CardContent>
+            </Card>
 
             {/* Document Evaluation Cards Grouped by Project/Business */}
             <Card>

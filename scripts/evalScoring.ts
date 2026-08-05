@@ -66,6 +66,71 @@ export type DocScore = {
     pass: boolean
 }
 
+/** Per-dimension max points, used to express category averages as percentages. */
+export const DIMENSION_MAX = {
+    classification: 10,
+    facts: 10,
+    risk: 20,
+    valuation: 15,
+    employee: 5,
+    math: 10,
+} as const
+
+export type EvalSummary = {
+    totalDocumentsEvaluated: number
+    passedDocuments: number
+    overallPercentage: number
+    status: string
+    regressionThreshold: number
+    regressionPassed: boolean
+    /** Average score per dimension, as a percentage of that dimension's max. */
+    categoryAverages: Record<keyof typeof DIMENSION_MAX, number>
+    /** Weakest dimension (lowest category average) — where to focus tuning. */
+    weakestDimension: keyof typeof DIMENSION_MAX | null
+}
+
+/**
+ * Rolls per-document scores into an overall summary plus a per-dimension
+ * breakdown, and decides whether the suite clears the regression threshold.
+ * Pure so it can be unit-tested and reused by the CI gate.
+ */
+export function summarizeResults(results: DocScore[], minScore = 70): EvalSummary {
+    const total = results.length
+    const passed = results.filter((r) => r.pass).length
+    const overallPercentage = total > 0 ? Math.round(results.reduce((sum, r) => sum + r.percentage, 0) / total) : 0
+
+    const sum = { classification: 0, facts: 0, risk: 0, valuation: 0, employee: 0, math: 0 }
+    for (const r of results) {
+        sum.classification += r.classificationScore
+        sum.facts += r.factsScore
+        sum.risk += r.riskScore
+        sum.valuation += r.valuationScore
+        sum.employee += r.employeeScore
+        sum.math += r.mathScore
+    }
+
+    const categoryAverages = {} as Record<keyof typeof DIMENSION_MAX, number>
+    let weakestDimension: keyof typeof DIMENSION_MAX | null = null
+    for (const key of Object.keys(DIMENSION_MAX) as Array<keyof typeof DIMENSION_MAX>) {
+        const pct = total > 0 ? Math.round((sum[key] / total / DIMENSION_MAX[key]) * 100) : 0
+        categoryAverages[key] = pct
+        if (total > 0 && (weakestDimension === null || pct < categoryAverages[weakestDimension])) {
+            weakestDimension = key
+        }
+    }
+
+    return {
+        totalDocumentsEvaluated: total,
+        passedDocuments: passed,
+        overallPercentage,
+        status: overallPercentage >= 80 ? 'SHIP-READY (PASS)' : 'NEEDS-TUNING',
+        regressionThreshold: minScore,
+        regressionPassed: total === 0 || overallPercentage >= minScore,
+        categoryAverages,
+        weakestDimension,
+    }
+}
+
 /** Pulls a 4-digit year (20xx) out of a period label, or '' if none. */
 export function extractYear(period?: string): string {
     const match = (period ?? '').match(/(20\d{2})/)
