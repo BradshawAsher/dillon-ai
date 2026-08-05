@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+}
+
 @layer components {
     .dashboard-header-mesh {
         @apply relative overflow-hidden border-b border-border/80 bg-card/90 backdrop-blur-md;

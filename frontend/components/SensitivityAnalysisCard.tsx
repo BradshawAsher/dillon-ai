@@ -1,4 +1,4 @@
-import { Grid3X3 } from 'lucide-react'
+import { Grid3X3, AlertTriangle, CheckCircle2 } from 'lucide-react'
 
 import type { DealModel } from '../hooks/backend/diligence'
 import { calculateIrr } from '../utils/dealMath'
@@ -22,47 +22,81 @@ function moicLabel(v: number | null) {
 
 export default function SensitivityAnalysisCard({ model }: Props) {
     const facts = parseDocumentedFacts(model.documentedFactsJson)
-    const ebitda = (facts.ebitda_sde?.status === 'confirmed' || facts.ebitda_sde?.status === 'illustrative') && typeof facts.ebitda_sde.value === 'number' ? facts.ebitda_sde.value : null
 
-    if (ebitda === null || ebitda <= 0) {
-        return (
-            <Card className="overflow-hidden">
-                <CardHeader className="border-b border-border bg-card/80">
-                    <div className="flex items-center gap-2">
-                        <Grid3X3 className="h-5 w-5 text-primary" />
-                        <CardTitle className="text-xl">Sensitivity analysis</CardTitle>
-                    </div>
-                    <CardDescription>Shows how returns change across entry and exit multiple combinations.</CardDescription>
-                </CardHeader>
-                <CardContent className="p-5">
-                    <p className="rounded-lg border border-dashed border-border bg-muted/20 p-4 text-sm text-muted-foreground">
-                        Requires documented EBITDA/SDE to compute the sensitivity table.
-                    </p>
-                </CardContent>
-            </Card>
-        )
+    // Resolve EBITDA / SDE value & status
+    let ebitda: number = 200_000
+    let ebitdaIsConfirmed = false
+    let ebitdaStatusLabel = 'Illustrative default ($200k)'
+
+    if (facts.ebitda_sde?.status === 'confirmed' && typeof facts.ebitda_sde.value === 'number' && facts.ebitda_sde.value > 0) {
+        ebitda = facts.ebitda_sde.value
+        ebitdaIsConfirmed = true
+        ebitdaStatusLabel = 'Confirmed documented fact'
+    } else if (typeof facts.ebitda_sde?.value === 'number' && facts.ebitda_sde.value > 0) {
+        ebitda = facts.ebitda_sde.value
+        ebitdaStatusLabel = `Unconfirmed fact (${facts.ebitda_sde.status || 'pending'})`
+    } else if (typeof model.ebitda === 'number' && model.ebitda > 0) {
+        ebitda = model.ebitda
+        ebitdaStatusLabel = 'Model assumption'
+    } else if (facts.revenue?.status === 'confirmed' && typeof facts.revenue.value === 'number' && facts.revenue.value > 0) {
+        ebitda = facts.revenue.value * (model.baseEbitdaMargin ?? 0.2)
+        ebitdaStatusLabel = 'Estimated from confirmed revenue'
+    } else if (typeof facts.revenue?.value === 'number' && facts.revenue.value > 0) {
+        ebitda = facts.revenue.value * (model.baseEbitdaMargin ?? 0.2)
+        ebitdaStatusLabel = 'Estimated from unconfirmed revenue'
+    } else if ((model.purchasePrice ?? model.askingPrice) && (model.purchasePrice ?? model.askingPrice)! > 0) {
+        const price = (model.purchasePrice ?? model.askingPrice)!
+        ebitda = price / (model.ebitdaMultiple ?? model.baseExitMultiple ?? 4.0)
+        ebitdaStatusLabel = 'Estimated from asking/purchase price'
     }
 
+    // Resolve Revenue value & status
+    let revenue: number = 1_000_000
+    let revenueIsConfirmed = false
+    let revenueStatusLabel = 'Illustrative default ($1.0M)'
+
+    if (facts.revenue?.status === 'confirmed' && typeof facts.revenue.value === 'number' && facts.revenue.value > 0) {
+        revenue = facts.revenue.value
+        revenueIsConfirmed = true
+        revenueStatusLabel = 'Confirmed documented fact'
+    } else if (typeof facts.revenue?.value === 'number' && facts.revenue.value > 0) {
+        revenue = facts.revenue.value
+        revenueStatusLabel = `Unconfirmed fact (${facts.revenue.status || 'pending'})`
+    } else if (ebitda > 0 && model.baseEbitdaMargin && model.baseEbitdaMargin > 0) {
+        revenue = ebitda / model.baseEbitdaMargin
+        revenueStatusLabel = 'Derived from EBITDA & margin'
+    }
+
+    // Resolve Purchase / Entry Price & Multiple
+    const currentEntry = model.purchasePrice ?? model.askingPrice ?? (ebitda * (model.ebitdaMultiple ?? 4.0))
+    const entryIsConfirmed = model.purchasePrice !== null && model.purchasePrice !== undefined
+    const entryStatusLabel = entryIsConfirmed
+        ? 'Confirmed purchase price'
+        : model.askingPrice ? 'Unconfirmed asking price' : 'Illustrative default'
+
+    const currentEntryMultiple = ebitda > 0 ? currentEntry / ebitda : null
+
+    // Base parameters
     const holdPeriod = model.holdPeriodYears ?? 5
     const taxRate = model.taxRate ?? 0.25
     const capex = model.maintenanceCapex ?? 0
     const fees = model.transactionFees ?? 0
     const wc = model.workingCapitalRequirement ?? 0
     const exitCosts = model.exitCosts ?? 0
-    const baseMargin = model.baseEbitdaMargin ?? (ebitda / (facts.revenue?.value && typeof facts.revenue.value === 'number' ? facts.revenue.value : ebitda / 0.2))
+    const baseMargin = model.baseEbitdaMargin ?? (revenue > 0 ? ebitda / revenue : 0.20)
     const baseGrowth = model.baseRevenueGrowth ?? 0.05
 
     const entryMultiples = [2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5]
     const exitMultiples = [3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0]
+    const currentExitMultiple = model.exitMultiple ?? model.baseExitMultiple ?? null
 
-    const currentEntry = model.purchasePrice ?? model.askingPrice
-    const currentEntryMultiple = currentEntry && ebitda ? currentEntry / ebitda : null
-    const currentExitMultiple = model.exitMultiple ?? null
+    const hasUnconfirmedInputs = !ebitdaIsConfirmed || !revenueIsConfirmed || !entryIsConfirmed
 
     function computeCell(entryMult: number, exitMult: number): { moic: number | null; irr: number | null } {
-        const price = ebitda! * entryMult
+        const price = ebitda * entryMult
         const initial = price + fees + wc
-        const revenue = facts.revenue?.value && typeof facts.revenue.value === 'number' ? facts.revenue.value : ebitda! / baseMargin
+        if (initial <= 0) return { moic: null, irr: null }
+
         const yearlyRevenue = Array.from({ length: holdPeriod }, (_, y) => revenue * (1 + baseGrowth) ** (y + 1))
         const yearlyOcf = yearlyRevenue.map(r => r * baseMargin * (1 - taxRate) - capex)
         const exitEbitda = yearlyRevenue[holdPeriod - 1] * baseMargin
@@ -97,16 +131,79 @@ export default function SensitivityAnalysisCard({ model }: Props) {
                             <Grid3X3 className="h-5 w-5 text-primary" />
                             <CardTitle className="text-xl">Sensitivity analysis</CardTitle>
                         </div>
-                        <CardDescription className="mt-1">MOIC and IRR across entry/exit multiple combinations ({holdPeriod}-year hold, {(baseGrowth * 100).toFixed(0)}% growth, {(baseMargin * 100).toFixed(0)}% margin)</CardDescription>
+                        <CardDescription className="mt-1">
+                            MOIC and IRR across entry/exit multiple combinations ({holdPeriod}-year hold, {(baseGrowth * 100).toFixed(0)}% growth, {(baseMargin * 100).toFixed(0)}% margin)
+                        </CardDescription>
                     </div>
-                    {currentEntryMultiple && (
-                        <Badge variant="outline" className="text-xs">
-                            Current: {currentEntryMultiple.toFixed(1)}x entry
+                    <div className="flex items-center gap-2">
+                        <Badge variant={hasUnconfirmedInputs ? 'warning' : 'success'} className="text-xs">
+                            {hasUnconfirmedInputs ? '⚠ Illustrative / Unconfirmed inputs' : '✓ Verified inputs'}
                         </Badge>
-                    )}
+                        {currentEntryMultiple && (
+                            <Badge variant="outline" className="text-xs">
+                                Current: {currentEntryMultiple.toFixed(1)}x entry
+                            </Badge>
+                        )}
+                    </div>
                 </div>
             </CardHeader>
             <CardContent className="p-5">
+                {/* Inputs & Confirmation Status Disclaimer Banner */}
+                <div className={`mb-4 rounded-lg border p-3.5 text-xs ${hasUnconfirmedInputs ? 'border-amber-300/60 bg-amber-50/50 dark:border-amber-800/60 dark:bg-amber-950/20' : 'border-emerald-300/60 bg-emerald-50/50 dark:border-emerald-800/60 dark:bg-emerald-950/20'}`}>
+                    <div className="flex items-center justify-between font-semibold mb-1.5">
+                        <div className="flex items-center gap-1.5">
+                            {hasUnconfirmedInputs ? (
+                                <span className="text-amber-700 dark:text-amber-400 font-bold flex items-center gap-1">
+                                    <AlertTriangle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                                    Sensitivity Analysis — Data Status Disclaimer
+                                </span>
+                            ) : (
+                                <span className="text-emerald-700 dark:text-emerald-400 font-bold flex items-center gap-1">
+                                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                                    Sensitivity Analysis — Confirmed Data
+                                </span>
+                            )}
+                        </div>
+                        <span className="text-[11px] text-muted-foreground font-normal">
+                            Input status summary
+                        </span>
+                    </div>
+
+                    <p className="text-muted-foreground leading-relaxed mb-2.5">
+                        {hasUnconfirmedInputs
+                            ? 'The matrix below calculates projected returns across valuation multiples. Some underlying financial numbers are currently illustrative or unconfirmed — see the breakdown of confirmed vs unconfirmed inputs below:'
+                            : 'The matrix below calculates projected returns using fully confirmed financial facts from documented records.'}
+                    </p>
+
+                    <div className="grid gap-2 sm:grid-cols-3">
+                        <div className="flex flex-col gap-0.5 rounded-md border border-border/60 bg-background/80 p-2.5 shadow-2xs">
+                            <span className="text-[10px] text-muted-foreground uppercase font-medium">EBITDA / SDE</span>
+                            <span className="font-semibold text-foreground text-sm">${ebitda.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
+                            <Badge variant={ebitdaIsConfirmed ? 'success' : 'warning'} className="w-fit text-[9px] px-1.5 py-0 mt-0.5 font-bold">
+                                {ebitdaIsConfirmed ? '✓ Confirmed' : `⚠ ${ebitdaStatusLabel}`}
+                            </Badge>
+                        </div>
+
+                        <div className="flex flex-col gap-0.5 rounded-md border border-border/60 bg-background/80 p-2.5 shadow-2xs">
+                            <span className="text-[10px] text-muted-foreground uppercase font-medium">Starting Revenue</span>
+                            <span className="font-semibold text-foreground text-sm">${revenue.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
+                            <Badge variant={revenueIsConfirmed ? 'success' : 'warning'} className="w-fit text-[9px] px-1.5 py-0 mt-0.5 font-bold">
+                                {revenueIsConfirmed ? '✓ Confirmed' : `⚠ ${revenueStatusLabel}`}
+                            </Badge>
+                        </div>
+
+                        <div className="flex flex-col gap-0.5 rounded-md border border-border/60 bg-background/80 p-2.5 shadow-2xs">
+                            <span className="text-[10px] text-muted-foreground uppercase font-medium">Entry Price / Multiple</span>
+                            <span className="font-semibold text-foreground text-sm">
+                                ${currentEntry.toLocaleString('en-US', { maximumFractionDigits: 0 })} ({currentEntryMultiple ? `${currentEntryMultiple.toFixed(1)}x` : '—'})
+                            </span>
+                            <Badge variant={entryIsConfirmed ? 'success' : 'warning'} className="w-fit text-[9px] px-1.5 py-0 mt-0.5 font-bold">
+                                {entryIsConfirmed ? '✓ Confirmed' : `⚠ ${entryStatusLabel}`}
+                            </Badge>
+                        </div>
+                    </div>
+                </div>
+
                 <div className="overflow-x-auto">
                     <table className="w-full border-collapse text-xs">
                         <thead>
@@ -156,3 +253,4 @@ export default function SensitivityAnalysisCard({ model }: Props) {
         </Card>
     )
 }
+

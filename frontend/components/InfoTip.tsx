@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 type Props = {
     term: string
     definition: string
+    align?: 'center' | 'left' | 'right'
 }
 
 export const FINANCIAL_TERMS: Record<string, string> = {
@@ -23,9 +24,17 @@ export const FINANCIAL_TERMS: Record<string, string> = {
     'Working capital': 'Cash tied up in day-to-day operations (inventory, receivables minus payables). The buyer usually needs to fund a working capital balance at close.',
     'Capex': 'Capital Expenditure — spending on equipment, facilities, or other long-lived assets needed to maintain or grow the business.',
     'Seller note': 'A portion of the purchase price the seller agrees to receive later (like a loan from seller to buyer). Reduces cash needed at close.',
+    'Initial investment': 'Total cash required at close, combining purchase price, closing fees, and initial working capital reserve.',
+    'Operating cash flow': 'Annual cash generated after paying taxes and required maintenance capex, available to the investor or for debt service.',
+    'Simple annual ROI': 'Annual operating cash flow divided by total initial investment. Shows the uncompounded annual cash yield before exit.',
+    'Payback period': 'The number of years of operating cash flows required to fully recover your initial cash investment.',
+    'Cumulative cash flow': 'Total operating cash flow generated across the entire planned hold period before terminal sale proceeds.',
+    'Net exit proceeds': 'Expected cash received from selling the business at exit (Exit Multiple × Final EBITDA minus transaction costs).',
+    'Levered cash flow': 'Annual cash flow available to equity investors after paying operating expenses, taxes, capex, and annual debt service.',
+    'Debt balance': 'The remaining principal balance on senior debt at the end of the hold period that must be paid off upon sale.',
 }
 
-export default function InfoTip({ term, definition }: Props) {
+export default function InfoTip({ term, definition, align = 'center' }: Props) {
     const [open, setOpen] = useState(false)
     const ref = useRef<HTMLSpanElement>(null)
 
@@ -45,6 +54,12 @@ export default function InfoTip({ term, definition }: Props) {
         }
     }, [open])
 
+    const alignmentClasses = {
+        center: 'left-1/2 -translate-x-1/2',
+        left: 'left-0 translate-x-0',
+        right: 'right-0 translate-x-0',
+    }
+
     return (
         <span ref={ref} className="relative inline-flex items-center">
             <button
@@ -61,8 +76,12 @@ export default function InfoTip({ term, definition }: Props) {
                 <Info className="h-3 w-3" />
             </button>
             {open && (
-                <span role="tooltip" className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-50 w-56 rounded-md border border-border bg-popover px-3 py-2 text-xs leading-relaxed text-popover-foreground shadow-md">
-                    <span className="font-semibold">{term}:</span> {definition}
+                <span
+                    role="tooltip"
+                    className={`absolute bottom-full mb-1.5 z-50 w-60 rounded-lg border border-border bg-popover px-3 py-2 text-xs leading-relaxed text-popover-foreground shadow-xl pointer-events-none ${alignmentClasses[align]}`}
+                >
+                    <span className="font-semibold block mb-0.5 text-foreground">{term}</span>
+                    <span className="text-muted-foreground">{definition}</span>
                 </span>
             )}
         </span>

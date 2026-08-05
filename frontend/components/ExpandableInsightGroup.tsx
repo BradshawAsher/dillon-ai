@@ -31,7 +31,9 @@ const LONG_ITEM_LENGTH = 100
 
 function confidenceBadge(confidence: number | null) {
   if (confidence === null || confidence === undefined) return null
-  const pct = confidence <= 1 ? Math.round(confidence * 100) : Math.round(confidence)
+  const num = typeof confidence === 'number' ? confidence : Number(confidence)
+  if (!Number.isFinite(num)) return null
+  const pct = num <= 1 && num > 0 ? Math.round(num * 100) : Math.round(num)
   if (pct <= 0) return null
   const label = pct >= 85 ? 'High' : pct >= 60 ? 'Med' : 'Low'
   const color = pct >= 85

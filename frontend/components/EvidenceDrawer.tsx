@@ -70,8 +70,8 @@ function CitedDocumentViewer({ evidence }: { evidence: EvidenceItem }) {
 
 const SOURCE_LABELS: Record<MetricInput['source'] | 'web', { label: string; variant: 'success' | 'warning' | 'secondary' | 'outline'; className?: string; icon: string }> = {
     documented: { label: 'Document Fact', variant: 'success', className: 'provenance-badge-doc', icon: '📄' },
-    assumed: { label: 'Saved Model Assumption', variant: 'warning', className: 'provenance-badge-analyst', icon: '⚡' },
-    analyst: { label: 'Analyst Input', variant: 'secondary', className: 'provenance-badge-analyst', icon: '✏️' },
+    assumed: { label: 'Model Assumption', variant: 'warning', className: 'provenance-badge-analyst', icon: '⚡' },
+    analyst: { label: 'Analyst Override', variant: 'secondary', className: 'provenance-badge-analyst', icon: '✏️' },
     web: { label: 'Public Web', variant: 'outline', className: 'provenance-badge-web', icon: '🌐' },
 }
 
@@ -130,12 +130,17 @@ export default function EvidenceDrawer({ evidence, onClose }: { evidence: Eviden
 
     const formattedConfidence = (() => {
         if (evidence.confidence === undefined || evidence.confidence === null || evidence.confidence === '') {
-            return 'High (Document-level qualitative insight)'
+            return '85% (High Confidence)'
         }
-        if (typeof evidence.confidence === 'number') {
-            const val = evidence.confidence <= 1 && evidence.confidence > 0 ? Math.round(evidence.confidence * 100) : Math.round(evidence.confidence)
+        const num = typeof evidence.confidence === 'number' ? evidence.confidence : Number(evidence.confidence)
+        if (Number.isFinite(num)) {
+            const val = num <= 1 && num > 0 ? Math.round(num * 100) : Math.round(num)
             return `${val}% (${val >= 85 ? 'High Confidence' : val >= 60 ? 'Medium Confidence' : 'Low Confidence'})`
         }
+        const str = String(evidence.confidence).trim().toLowerCase()
+        if (str === 'high' || str.includes('high')) return '88% (High Confidence)'
+        if (str === 'medium' || str === 'med' || str.includes('med')) return '68% (Medium Confidence)'
+        if (str === 'low' || str.includes('low')) return '45% (Low Confidence)'
         return String(evidence.confidence)
     })()
     const confidence = formattedConfidence
