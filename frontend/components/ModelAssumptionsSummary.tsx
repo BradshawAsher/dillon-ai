@@ -155,12 +155,19 @@ export default function ModelAssumptionsSummary({ model, area }: Props) {
                 <p className="mt-1 text-xs text-muted-foreground">Preview defaults are display-only until you save your own model inputs.</p>
                 <div className="mt-3 grid gap-2 sm:grid-cols-3 lg:grid-cols-6">
                     {rows.map((row) => (
-                        <div key={row.label} className={`rounded-md border px-3 py-2 ${row.isSet ? 'border-border bg-background' : 'border-dashed border-primary/30 bg-primary/[0.04]'}`}>
+                        <div key={row.label} className={`rounded-md border px-3 py-2 ${row.isSet ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-dashed border-amber-500/40 bg-amber-500/5'}`}>
                             <div className="flex items-start justify-between gap-2">
                                 <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{row.label}</p>
-                                {row.isPreview ? <Badge variant="outline" className="h-5 px-1.5 text-[9px]">Preview</Badge> : null}
+                                {row.isSet ? (
+                                    <Badge variant="success" className="h-4 px-1 text-[9px]">✓ Saved</Badge>
+                                ) : (
+                                    <Badge variant="warning" className="h-4 px-1 text-[9px]">⚠ Assumed</Badge>
+                                )}
                             </div>
-                            <p className={`mt-0.5 text-sm font-semibold ${row.isSet ? 'text-foreground' : 'text-foreground'}`}>{row.value}</p>
+                            <p className="mt-1 text-sm font-bold text-foreground">{row.value}</p>
+                            <p className={`mt-0.5 text-[10px] font-semibold ${row.isSet ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                                {row.isSet ? '✓ Verified Analyst Input' : '⚠ Default Preview Assumption'}
+                            </p>
                         </div>
                     ))}
                 </div>

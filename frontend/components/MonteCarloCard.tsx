@@ -4,6 +4,7 @@ import { Dice5 } from 'lucide-react'
 import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
+import { Badge } from '../lib/shadcn/badge'
 
 type Props = {
     model: DealModel
@@ -29,8 +30,10 @@ function normalFromUniform(u1: number, u2: number) {
 const SIMULATIONS = 1000
 
 export default function MonteCarloCard({ model }: Props) {
+    const facts = parseDocumentedFacts(model.documentedFactsJson)
+    const ebitdaIsConfirmed = facts.ebitda_sde?.status === 'confirmed' && typeof facts.ebitda_sde.value === 'number'
+
     const result = useMemo(() => {
-        const facts = parseDocumentedFacts(model.documentedFactsJson)
         const ebitda = typeof facts.ebitda_sde?.value === 'number' ? facts.ebitda_sde.value : null
         const revenue = typeof facts.revenue?.value === 'number' ? facts.revenue.value : null
         const price = model.purchasePrice ?? model.askingPrice
@@ -107,7 +110,7 @@ export default function MonteCarloCard({ model }: Props) {
         }
 
         return { p10, p25, p50, p75, p90, lossProb, doubleProb, tripleProb, buckets, totalInvestment }
-    }, [model])
+    }, [model, facts])
 
     if (!result) return null
 
@@ -116,15 +119,33 @@ export default function MonteCarloCard({ model }: Props) {
     return (
         <Card className="overflow-hidden">
             <CardHeader className="border-b border-border bg-card/80 pb-3">
-                <div className="flex items-center gap-2">
-                    <Dice5 className="h-4 w-4 text-primary" />
-                    <CardTitle className="text-lg">Monte Carlo simulation</CardTitle>
+                <div className="flex items-center justify-between">
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <Dice5 className="h-4 w-4 text-primary" />
+                            <CardTitle className="text-lg">Monte Carlo simulation</CardTitle>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                            {SIMULATIONS.toLocaleString()} scenarios varying growth, margin, and exit multiple
+                        </p>
+                    </div>
+                    <Badge variant={ebitdaIsConfirmed ? 'success' : 'warning'} className="w-fit text-[10px] px-2.5 py-0.5 font-bold">
+                        {ebitdaIsConfirmed ? '✓ Verified Source Baseline' : '⚠ Illustrative Simulation'}
+                    </Badge>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                    {SIMULATIONS.toLocaleString()} scenarios varying growth, margin, and exit multiple
-                </p>
             </CardHeader>
             <CardContent className="p-4 space-y-4">
+                {/* Data Source & Trustability Notice */}
+                <div className={`rounded-lg border p-3 text-xs leading-relaxed ${ebitdaIsConfirmed ? 'border-emerald-300/60 bg-emerald-50/40 dark:border-emerald-800/60 dark:bg-emerald-950/20' : 'border-amber-300/60 bg-amber-50/40 dark:border-amber-800/60 dark:bg-amber-950/20'}`}>
+                    <p className="font-bold text-foreground mb-1">
+                        {ebitdaIsConfirmed ? '✓ Simulation Data Trustability & Source:' : '⚠ Simulation Data Source Notice:'}
+                    </p>
+                    <p className="text-muted-foreground text-[11px] leading-relaxed">
+                        {ebitdaIsConfirmed
+                            ? 'This 1,000-scenario simulation anchors on confirmed starting financial facts (EBITDA/SDE), stochastically varying growth (±3%), margin (±3%), and exit multiple (±1.0x).'
+                            : 'This simulation uses illustrative preview starting figures. Upload source financial documents to anchor the simulation on confirmed facts.'}
+                    </p>
+                </div>
                 <div className="space-y-2">
                     <p className="text-xs font-medium text-foreground">MOIC distribution</p>
                     <div className="flex items-end gap-1 h-16">

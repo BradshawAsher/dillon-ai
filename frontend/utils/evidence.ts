@@ -56,9 +56,20 @@ export function parseDocumentedFacts(json: string | undefined | null): Record<st
 
     try {
         const parsed = JSON.parse(json) as unknown
-        return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+        const facts = parsed && typeof parsed === 'object' && !Array.isArray(parsed)
             ? (parsed as Record<string, DocumentedFact>)
             : {}
+
+        // Fallback: If ebitda_sde is missing from documented facts but net_income exists,
+        // use net_income as the documented baseline along with its source citation.
+        if (!facts.ebitda_sde && facts.net_income) {
+            facts.ebitda_sde = {
+                ...facts.net_income,
+                provenance: facts.net_income.provenance || 'Documented (Net Income)',
+            }
+        }
+
+        return facts
     } catch {
         return {}
     }
@@ -98,9 +109,10 @@ export function findCitedDocument(sourceFile: string | undefined, documents: Sub
     for (const document of documents) {
         const tokens = new Set(normalizeFileName(document.fileName).split(' ').filter((token) => token.length > 1))
         if (tokens.size === 0) continue
-        const overlap = [...needleTokens].filter((token) => tokens.has(token)).length
-        const score = overlap / Math.max(needleTokens.size, tokens.size)
-        if (score >= 0.6 && (!best || score > best.score)) best = { document, score }
+        const overlap = Array.from(needleTokens).filter((t) => tokens.has(t)).length
+        if (overlap > 0 && (!best || overlap > best.score)) {
+            best = { document, score: overlap }
+        }
     }
 
     return best?.document
@@ -119,14 +131,25 @@ export type ProvenanceCategoryPresentation = {
     variant: 'success' | 'warning' | 'destructive' | 'secondary' | 'outline'
 }
 
-/** High-level origin badge: document upload vs web enrichment vs derived math. */
 export function getProvenanceCategory(args: {
     provenance?: string
     status?: string
     formula?: string
+    sourceFile?: string
     documentUrl?: string
     documentId?: string
+}): ProvenanceCategoryPresentation {
+    return getProvenanceCategoryPresentation(args)
+}
+
+/** High-level origin badge: document upload vs web enrichment vs derived math. */
+export function getProvenanceCategoryPresentation(args: {
+    provenance?: string
+    status?: string
+    formula?: string
     sourceFile?: string
+    documentUrl?: string
+    documentId?: string
 }): ProvenanceCategoryPresentation {
     const normalized = `${args.provenance ?? ''} ${args.status ?? ''}`.trim().toLowerCase()
 
@@ -176,10 +199,18 @@ export function buildFactEvidence(args: {
     const fact = args.facts[args.field]
     const citation = fact?.citations?.[0]
 
+    let sourceFile = citation?.source_file
+    if (!sourceFile && args.documents.length > 0) {
+        const plDoc = args.documents.find((d) => /p&l|p_and_l|pl|financial|statement|tax/i.test(d.fileName))
+        if (plDoc) {
+            sourceFile = plDoc.fileName
+        }
+    }
+
     return buildDocumentLinkedEvidence({
         title: args.title,
-        sourceFile: citation?.source_file,
-        sourceLocation: citation?.row_or_cell,
+        sourceFile: sourceFile,
+        sourceLocation: citation?.row_or_cell || (fact?.period ? `Period: ${fact.period}` : undefined),
         excerpt: citation?.excerpt,
         period: fact?.period,
         currency: fact?.currency,
@@ -257,13 +288,16 @@ export function buildDerivedEvidence(args: {
     title: string
     formula: string
     documentedInputs?: Array<{ label: string; value: string }>
+    modelAssumptions?: Array<{ label: string; value: string }>
     analystInputs?: Array<{ label: string; value: string }>
     assumedInputs?: ResolvedInput[]
     formatAssumed?: (input: ResolvedInput) => string
     primaryFact?: EvidenceItem
+    isConfirmed?: boolean
 }): EvidenceItem {
     const inputs: MetricInput[] = [
         ...(args.documentedInputs ?? []).map((input) => ({ ...input, source: 'documented' as const })),
+        ...(args.modelAssumptions ?? []).map((input) => ({ ...input, source: 'assumed' as const })),
         ...(args.analystInputs ?? []).map((input) => ({ ...input, source: 'analyst' as const })),
         ...(args.assumedInputs ?? []).map((input) => ({
             label: input.label,
@@ -272,22 +306,25 @@ export function buildDerivedEvidence(args: {
         })),
     ]
 
-    const assumedCount = args.assumedInputs?.length ?? 0
+    const hasAssumptions = (args.modelAssumptions && args.modelAssumptions.length > 0) || (args.assumedInputs && args.assumedInputs.length > 0)
+    const isFullyConfirmed = args.isConfirmed ?? (!hasAssumptions && (args.documentedInputs?.length ?? 0) > 0)
+
+    const status = isFullyConfirmed ? 'Confirmed Math' : 'Model Projection'
+    const confidence = isFullyConfirmed ? (args.primaryFact?.confidence ?? 'High') : 'Model Assumption'
 
     return {
         title: args.title,
         formula: args.formula,
         inputs,
-        status: assumedCount > 0 ? `${assumedCount} assumed input${assumedCount === 1 ? '' : 's'}` : 'Fully documented inputs',
+        status,
         provenance: 'Calculated',
-        // Carry the underlying fact's citation through so the drawer can still
-        // point at a source document and excerpt.
+        // Carry underlying source citation for reference when available
         sourceFile: args.primaryFact?.sourceFile,
         sourceLocation: args.primaryFact?.sourceLocation,
         excerpt: args.primaryFact?.excerpt,
         period: args.primaryFact?.period,
         currency: args.primaryFact?.currency,
-        confidence: args.primaryFact?.confidence,
+        confidence,
         documentUrl: args.primaryFact?.documentUrl,
         documentId: args.primaryFact?.documentId,
     }

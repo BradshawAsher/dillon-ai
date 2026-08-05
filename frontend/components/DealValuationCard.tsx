@@ -28,10 +28,12 @@ function parseMoney(value: string) {
 }
 
 export default function DealValuationCard({ synthesis, askingPrice, model, onModelChange, documents = [], onOpenEvidence }: DealValuationCardProps) {
-    const askingPriceValue = parseMoney(askingPrice) ?? model?.askingPrice ?? null
+    const rawAskingPrice = parseMoney(askingPrice) ?? model?.askingPrice ?? null
+    const askingPriceValue = rawAskingPrice !== null && rawAskingPrice > 0 ? rawAskingPrice : null
+    const effectiveAskingPrice = askingPriceValue
     const baseValue = synthesis ? parseMoney(synthesis.valuationBaseEstimate) : null
-    const premiumPercent = askingPriceValue !== null && baseValue !== null && baseValue > 0
-        ? ((askingPriceValue - baseValue) / baseValue) * 100
+    const premiumPercent = effectiveAskingPrice !== null && baseValue !== null && baseValue > 0
+        ? ((effectiveAskingPrice - baseValue) / baseValue) * 100
         : null
     const cases = synthesis ? [
         { label: 'Downside case', value: synthesis.valuationLowerBound, description: 'Current lower supported estimate' },
@@ -62,9 +64,6 @@ export default function DealValuationCard({ synthesis, askingPrice, model, onMod
     }
     const asMoney = (value: number | null | undefined) => value === null || value === undefined ? 'Not documented' : formatCurrencyValue(String(value), 'USD')
 
-    // Keep the comparison useful before a dossier is complete. These values are
-    // display-only anchors, never saved back to the Deal Model or presented as
-    // workflow-extracted facts.
     const illustrativeRevenue = baseValue !== null && baseValue > 0 ? baseValue / 2.1 : 25_000_000
     const resolvedRevenue = revenue ?? illustrativeRevenue
     const resolvedEbitda = ebitda ?? resolvedRevenue * 0.18
@@ -115,10 +114,16 @@ export default function DealValuationCard({ synthesis, askingPrice, model, onMod
             }),
         },
     ]
-    const hasIllustrativeMethods = methods.some((method) => method.illustrative)
+    const illustrativeMethods = methods.filter((m) => m.illustrative)
+    const illustrativeCount = illustrativeMethods.length
+    const hasIllustrativeMethods = illustrativeCount > 0
     const available = methods.map((method) => method.value)
-    const methodChartData = methods
-        .map((method) => ({ label: method.label, value: method.value, barLabel: method.illustrative ? 'Illustrative' : '' }))
+    const methodChartData = methods.map((method) => ({
+        label: method.label,
+        value: method.value,
+        barLabel: method.illustrative ? '⚠ Assumed' : '✓ Verified',
+        isIllustrative: method.illustrative,
+    }))
     const blended = available.length ? available.reduce((a, b) => a + b, 0) / available.length : null
     const holdPeriodYears = model?.holdPeriodYears ?? 5
     const baseRevenueGrowth: number | null = model?.baseRevenueGrowth ?? null
@@ -150,23 +155,183 @@ export default function DealValuationCard({ synthesis, askingPrice, model, onMod
                 <div className="rounded-xl border-2 border-primary bg-gradient-to-br from-primary/15 via-primary/5 to-background p-5 shadow-md">
                     <p className="text-sm font-bold uppercase tracking-wide text-primary">Start here — valuation at a glance</p>
                     <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                        <div className="rounded-lg border border-primary/25 bg-background/90 p-3"><p className="text-xs text-muted-foreground">Supported base value</p><p className="mt-1 text-lg font-bold">{baseValue === null ? (blended === null ? 'Still calculating' : formatCurrencyValue(String(blended), 'USD')) : formatCurrencyValue(String(baseValue), synthesis?.valuationCurrency || 'USD')}</p></div>
-                        <div className="rounded-lg border border-primary/25 bg-background/90 p-3"><p className="text-xs text-muted-foreground">Price position</p><p className="mt-1 text-lg font-bold">{premiumPercent === null ? 'Set asking price' : `${Math.abs(premiumPercent).toFixed(1)}% ${premiumPercent > 0 ? 'premium' : premiumPercent < 0 ? 'discount' : 'at base'}`}</p></div>
-                        <div className="rounded-lg border border-primary/25 bg-background/90 p-3"><p className="text-xs text-muted-foreground">Decision signal</p><p className="mt-1 text-lg font-bold">{premiumPercent === null ? 'Compare price' : premiumPercent > 10 ? 'Price needs support' : premiumPercent < -10 ? 'Potential cushion' : 'Near supported value'}</p></div>
+                        <div className="rounded-lg border border-primary/25 bg-background/90 p-3">
+                            <div className="flex items-center justify-between gap-1">
+                                <p className="text-xs text-muted-foreground">Supported base value</p>
+                                {baseValue !== null ? (
+                                    <Badge variant="success" className="text-[9px] px-1.5 py-0">✓ Verified</Badge>
+                                ) : (
+                                    <Badge variant="warning" className="text-[9px] px-1.5 py-0">⚠ Illustrative</Badge>
+                                )}
+                            </div>
+                            <p className="mt-1 text-lg font-bold">{baseValue === null ? (blended === null ? 'Still calculating' : formatCurrencyValue(String(blended), 'USD')) : formatCurrencyValue(String(baseValue), synthesis?.valuationCurrency || 'USD')}</p>
+                            <p className={`mt-1 text-[10px] font-semibold ${baseValue !== null ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                                {baseValue !== null ? '✓ AI Synthesis Source-Backed' : '⚠ Derived from Method Blend'}
+                            </p>
+                        </div>
+                        <div className="rounded-lg border border-primary/25 bg-background/90 p-3">
+                            <div className="flex items-center justify-between gap-1">
+                                <p className="text-xs text-muted-foreground">Price position</p>
+                                {effectiveAskingPrice !== null ? (
+                                    <Badge variant="success" className="text-[9px] px-1.5 py-0">✓ Verified</Badge>
+                                ) : (
+                                    <Badge variant="secondary" className="text-[9px] px-1.5 py-0">Not Set</Badge>
+                                )}
+                            </div>
+                            <p className="mt-1 text-lg font-bold">{premiumPercent === null ? 'Set asking price' : `${Math.abs(premiumPercent).toFixed(1)}% ${premiumPercent > 0 ? 'premium' : premiumPercent < 0 ? 'discount' : 'at base'}`}</p>
+                            <p className={`mt-1 text-[10px] font-semibold ${effectiveAskingPrice !== null ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'}`}>
+                                {effectiveAskingPrice !== null ? '✓ Compared against seller asking price' : '⚠ Asking price input required'}
+                            </p>
+                        </div>
+                        <div className="rounded-lg border border-primary/25 bg-background/90 p-3">
+                            <div className="flex items-center justify-between gap-1">
+                                <p className="text-xs text-muted-foreground">Decision signal</p>
+                                {premiumPercent !== null ? (
+                                    <Badge variant="success" className="text-[9px] px-1.5 py-0">✓ Verified Signal</Badge>
+                                ) : (
+                                    <Badge variant="secondary" className="text-[9px] px-1.5 py-0">Pending</Badge>
+                                )}
+                            </div>
+                            <p className="mt-1 text-lg font-bold">{premiumPercent === null ? 'Compare price' : premiumPercent > 10 ? 'Price needs support' : premiumPercent < -10 ? 'Potential cushion' : 'Near supported value'}</p>
+                            <p className={`mt-1 text-[10px] font-semibold ${premiumPercent !== null ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'}`}>
+                                {premiumPercent !== null ? '✓ Dynamic M&A Valuation Risk Signal' : '⚠ Requires Base Value + Asking Price'}
+                            </p>
+                        </div>
                     </div>
-                    <p className="mt-3 text-sm leading-6 text-muted-foreground">{premiumPercent === null ? 'Enter the asking price to see whether the seller is above or below the current supported value.' : premiumPercent > 0 ? 'The seller is asking more than the current supported base value. Use the method comparison and risk bridge to decide whether the premium is justified.' : 'The asking price is at or below the current supported base value. Confirm that the underlying assumptions and diligence risks still support that conclusion.'}</p>
+                    <p className="mt-3 text-sm leading-6 text-muted-foreground">{premiumPercent === null ? 'Enter the asking price in Intake or Deal Model to see whether the seller is above or below the current supported value.' : premiumPercent > 0 ? 'The seller is asking more than the current supported base value. Use the method comparison and risk bridge to decide whether the premium is justified.' : 'The asking price is at or below the current supported base value. Confirm that the underlying assumptions and diligence risks still support that conclusion.'}</p>
                 </div>
-                <div className="rounded-lg border border-primary/25 bg-primary/5 p-4" data-valuation-assumptions><p className="text-sm font-semibold">Valuation assumptions</p><div className="mt-3 grid gap-3 sm:grid-cols-3">{([['revenueMultiple', 'Revenue multiple'], ['ebitdaMultiple', 'EBITDA / SDE multiple'], ['assetHaircutPercent', 'Asset haircut (decimal)']] as Array<[keyof DealModel, string]>).map(([field, label]) => <label key={field} className="space-y-1"><span className="text-xs text-muted-foreground">{label}</span><Input inputMode="decimal" value={model?.[field] ?? ''} onChange={e => onModelChange?.(field, e.target.value)} placeholder="Not set" /></label>)}</div></div>
-                {hasIllustrativeMethods ? <div role="alert" className="rounded-lg border-2 border-destructive/60 bg-destructive/10 p-4 text-sm text-foreground shadow-sm"><div className="flex items-center gap-2 text-destructive"><TriangleAlert className="h-5 w-5 shrink-0" /><p className="font-bold uppercase tracking-wide">Illustrative valuation bars — not source-backed</p></div><p className="mt-2 font-medium">One or more valuation methods use display-only starting inputs.</p><p className="mt-1 text-muted-foreground">Inputs: 18% EBITDA margin, 2.1× revenue, 8.0× EBITDA/SDE, 10% asset haircut, and a revenue anchor inferred from the supported base value when available. Confirmed facts and your saved assumptions replace these automatically.</p></div> : null}
-                <div className="grid gap-3 sm:grid-cols-3">{methods.map(method => <div key={method.label} className="rounded-lg border border-border bg-background p-3"><div className="flex items-center justify-between gap-2"><p className="text-xs text-muted-foreground">{method.label}</p>{method.illustrative ? <Badge variant="warning" className="text-[10px]">Illustrative</Badge> : <Badge variant="success" className="text-[10px]">Documented + saved</Badge>}</div><p className="mt-1 font-semibold">{formatCurrencyValue(String(method.value), 'USD')}</p>{onOpenEvidence ? <button type="button" onClick={() => onOpenEvidence(method.evidence)} aria-label={`Show how ${method.label} was calculated`} className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">How this was calculated</button> : null}</div>)}</div>
-                <MoneyBarChart title="Valuation-method comparison" description={hasIllustrativeMethods ? 'All three methods are shown. Bars marked Illustrative use display-only starting assumptions until confirmed facts or saved assumptions arrive.' : 'All methods use confirmed source facts and saved analyst assumptions.'} data={methodChartData} />
-                {blended !== null ? <div className="rounded-lg border border-success/25 bg-success/5 p-4"><p className="text-sm font-semibold">{hasIllustrativeMethods ? 'Illustrative blended reference value' : 'Blended supported value'}: {formatCurrencyValue(String(blended), 'USD')}</p>{askingPriceValue !== null ? <p className="mt-1 text-sm text-muted-foreground">Asking price is {(((askingPriceValue - blended) / blended) * 100).toFixed(1)}% {(askingPriceValue - blended) >= 0 ? 'above' : 'below'} this blend.</p> : null}</div> : null}
+                <div className="rounded-lg border border-primary/25 bg-primary/5 p-4" data-valuation-assumptions>
+                    <div className="flex items-center justify-between">
+                        <p className="text-sm font-semibold text-foreground">Valuation assumptions</p>
+                        <span className="text-xs text-muted-foreground">Analyst-controlled multipliers used in method calculations</span>
+                    </div>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                        {([['revenueMultiple', 'Revenue multiple'], ['ebitdaMultiple', 'EBITDA / SDE multiple'], ['assetHaircutPercent', 'Asset haircut (decimal)']] as Array<[keyof DealModel, string]>).map(([field, label]) => {
+                            const isSaved = model?.[field] !== null && model?.[field] !== undefined && model?.[field] !== ''
+                            return (
+                                <label key={field} className="space-y-1">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs text-muted-foreground">{label}</span>
+                                        {isSaved ? (
+                                            <Badge variant="success" className="text-[9px] px-1.5 py-0">✓ Saved</Badge>
+                                        ) : (
+                                            <Badge variant="warning" className="text-[9px] px-1.5 py-0">⚠ Default</Badge>
+                                        )}
+                                    </div>
+                                    <Input inputMode="decimal" value={model?.[field] ?? ''} onChange={e => onModelChange?.(field, e.target.value)} placeholder="Not set" />
+                                    <p className="text-[10px] text-muted-foreground">
+                                        {isSaved ? '✓ Saved analyst assumption' : '⚠ Using default starting assumption'}
+                                    </p>
+                                </label>
+                            )
+                        })}
+                    </div>
+                </div>
+                {hasIllustrativeMethods ? (
+                    <div role="alert" className="rounded-lg border-2 border-warning/60 bg-warning/10 p-4 text-sm text-foreground shadow-xs">
+                        <div className="flex items-center gap-2 text-warning">
+                            <TriangleAlert className="h-5 w-5 shrink-0" />
+                            <p className="font-bold uppercase tracking-wide">Illustrative valuation bars — {illustrativeCount} of 3 methods using fallback inputs</p>
+                        </div>
+                        <p className="mt-2 font-medium">Exactly {illustrativeCount} of 3 valuation methods ({illustrativeMethods.map((m) => m.label).join(', ')}) currently use display-only starting inputs because confirmed financial facts are pending.</p>
+                        <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                            Active Parameters: {revenue !== null ? `Confirmed Revenue: ${asMoney(revenue)}` : `Illustrative Revenue Anchor: ${asMoney(resolvedRevenue)}`}{' · '}
+                            {ebitda !== null ? `Confirmed EBITDA: ${asMoney(ebitda)}` : `Derived EBITDA (${baseEbitdaMargin ? (baseEbitdaMargin * 100).toFixed(0) : '18'}% margin)`}{' · '}
+                            Revenue Multiple: {resolvedRevenueMultiple}×{' · '}
+                            EBITDA Multiple: {resolvedEbitdaMultiple}×{' · '}
+                            Asset Haircut: {(resolvedAssetHaircut * 100).toFixed(0)}%.
+                            Confirming financial facts in Project Dossier automatically locks in source-backed numbers.
+                        </p>
+                    </div>
+                ) : null}
+                <div className="grid gap-3 sm:grid-cols-3">
+                    {methods.map(method => (
+                        <div
+                            key={method.label}
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => onOpenEvidence?.(method.evidence)}
+                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpenEvidence?.(method.evidence) } }}
+                            className="group cursor-pointer rounded-lg border border-border bg-background p-3.5 transition-all hover:border-primary/50 hover:bg-muted/30 hover:shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        >
+                            <div className="flex items-center justify-between gap-2">
+                                <p className="text-xs font-medium text-muted-foreground group-hover:text-foreground">{method.label}</p>
+                                {method.illustrative ? <Badge variant="warning" className="text-[10px]">Illustrative</Badge> : <Badge variant="success" className="text-[10px]">Documented + saved</Badge>}
+                            </div>
+                            <p className="mt-1.5 font-bold text-base text-foreground">{formatCurrencyValue(String(method.value), 'USD')}</p>
+                            <p className={`mt-1 text-[10px] font-semibold ${method.illustrative ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                                {method.illustrative ? '⚠ Assumed Placeholder Anchor' : '✓ Verified Source Facts + Saved Model'}
+                            </p>
+                            <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary group-hover:underline">
+                                How this was calculated →
+                            </span>
+                        </div>
+                    ))}
+                </div>
+                <MoneyBarChart title="Valuation-method comparison" description={hasIllustrativeMethods ? `${illustrativeCount} of 3 methods are shown as Assumed. Bars marked Verified use confirmed source facts and saved model assumptions.` : 'All methods use confirmed source facts and saved analyst assumptions.'} data={methodChartData} />
+                {blended !== null ? <div className="rounded-lg border border-success/25 bg-success/5 p-4"><p className="text-sm font-semibold">{hasIllustrativeMethods ? 'Illustrative blended reference value' : 'Blended supported value'}: {formatCurrencyValue(String(blended), 'USD')}</p>{effectiveAskingPrice !== null ? <p className="mt-1 text-sm text-muted-foreground">Asking price is {(((effectiveAskingPrice - blended) / blended) * 100).toFixed(1)}% {(effectiveAskingPrice - blended) >= 0 ? 'above' : 'below'} this blend.</p> : null}</div> : null}
                 <div className="rounded-xl border border-border bg-muted/20 p-4">
-                    <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-semibold">Exit-value sensitivity</p><p className="mt-1 text-xs text-muted-foreground">Enterprise value at year {holdPeriodYears}, varying revenue growth, EBITDA margin, and exit multiple around the saved base case.</p></div><Badge variant="outline">Scenario assumptions</Badge></div>
-                    {!canCalculateSensitivity ? <p className="mt-3 text-sm leading-6 text-muted-foreground">Set confirmed revenue plus base revenue growth, EBITDA margin, and exit multiple in Growth / Deal Model assumptions to calculate the grid. The current EBITDA margin can be derived from confirmed revenue and EBITDA/SDE.</p> : <div className="mt-4 grid gap-4 xl:grid-cols-3">{sensitivityGrowthCases.map((growth) => {
-                        const projectedRevenue = revenue * Math.pow(1 + growth, holdPeriodYears)
-                        return <div key={growth} className="overflow-hidden rounded-lg border border-border bg-background"><div className="border-b border-border px-3 py-2"><p className="text-xs font-semibold">Revenue growth: {(growth * 100).toFixed(1)}%</p><p className="text-xs text-muted-foreground">Year-{holdPeriodYears} revenue: {formatCurrencyValue(String(projectedRevenue), 'USD')}</p></div><div className="overflow-x-auto"><table className="w-full min-w-[300px] text-xs"><thead><tr className="border-b border-border text-muted-foreground"><th className="px-3 py-2 text-left font-medium">Margin / multiple</th>{sensitivityMultiples.map((multiple) => <th key={multiple} className="px-2 py-2 text-right font-medium">{multiple.toFixed(1)}x</th>)}</tr></thead><tbody>{sensitivityMargins.map((margin) => <tr key={margin} className="border-b border-border last:border-0"><td className="px-3 py-2 font-medium">{(margin * 100).toFixed(1)}%</td>{sensitivityMultiples.map((multiple) => <td key={multiple} className="px-2 py-2 text-right">{formatCurrencyValue(String(projectedRevenue * margin * multiple), 'USD')}</td>)}</tr>)}</tbody></table></div></div>
-                    })}</div>}
+                    <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <p className="text-sm font-semibold text-foreground">Exit-value sensitivity</p>
+                                {revenue !== null ? (
+                                    <Badge variant="success" className="text-[10px]">✓ Verified Revenue Baseline ({asMoney(revenue)})</Badge>
+                                ) : (
+                                    <Badge variant="warning" className="text-[10px]">⚠ Assumed Revenue Anchor ({asMoney(resolvedRevenue)})</Badge>
+                                )}
+                            </div>
+                            <p className="mt-1 text-xs text-muted-foreground">Enterprise value at year {holdPeriodYears}, varying revenue growth, EBITDA margin, and exit multiple around the base case.</p>
+                        </div>
+                        <Badge variant={revenue !== null && baseRevenueGrowth !== null ? 'success' : 'warning'}>
+                            {revenue !== null && baseRevenueGrowth !== null ? '✓ Verified Scenario Grid' : '⚠ Assumed Scenario Model'}
+                        </Badge>
+                    </div>
+                    <div className="mt-4 grid gap-4 xl:grid-cols-3">
+                        {sensitivityGrowthCases.map((growth) => {
+                            const effectiveRevenue = revenue ?? resolvedRevenue
+                            const projectedRevenue = effectiveRevenue * Math.pow(1 + growth, holdPeriodYears)
+                            return (
+                                <div key={growth} className="overflow-hidden rounded-lg border border-border bg-background shadow-xs">
+                                    <div className="border-b border-border px-3.5 py-2.5 flex items-center justify-between bg-muted/30">
+                                        <div>
+                                            <p className="text-xs font-bold text-foreground">Revenue growth: {(growth * 100).toFixed(1)}%</p>
+                                            <p className="text-[11px] text-muted-foreground">Year-{holdPeriodYears} revenue: {formatCurrencyValue(String(projectedRevenue), 'USD')}</p>
+                                        </div>
+                                        {revenue !== null ? (
+                                            <Badge variant="success" className="text-[9px] px-1.5 py-0 font-bold">✓ Verified</Badge>
+                                        ) : (
+                                            <Badge variant="warning" className="text-[9px] px-1.5 py-0 font-bold">⚠ Assumed Anchor</Badge>
+                                        )}
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[300px] text-xs">
+                                            <thead>
+                                                <tr className="border-b border-border bg-muted/20 text-muted-foreground">
+                                                    <th className="px-3 py-2 text-left font-semibold">Margin / multiple</th>
+                                                    {sensitivityMultiples.map((multiple) => (
+                                                        <th key={multiple} className="px-2 py-2 text-right font-semibold">{multiple.toFixed(1)}x</th>
+                                                    ))}
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {sensitivityMargins.map((margin) => (
+                                                    <tr key={margin} className="border-b border-border last:border-0 hover:bg-muted/10">
+                                                        <td className="px-3 py-2 font-bold text-foreground">{(margin * 100).toFixed(1)}%</td>
+                                                        {sensitivityMultiples.map((multiple) => (
+                                                            <td key={multiple} className="px-2 py-2 text-right font-extrabold tabular-nums text-foreground">
+                                                                {formatCurrencyValue(String(projectedRevenue * margin * multiple), 'USD')}
+                                                            </td>
+                                                        ))}
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            )
+                        })}
+                    </div>
                 </div>
                 {!synthesis ? (
                     <div className="rounded-xl border-2 border-dashed border-border bg-muted/20 p-6 space-y-3">
@@ -192,12 +357,34 @@ export default function DealValuationCard({ synthesis, askingPrice, model, onMod
                                     return <Badge variant="outline" className={`ml-auto ${color}`}>{label} confidence ({pct}%)</Badge>
                                 })()}</div>
                                 <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                                    {cases.map((item) => <div key={item.label} className="rounded-lg border border-border bg-background p-3"><p className="text-xs text-muted-foreground">{item.label}</p><p className="mt-1 text-lg font-semibold text-foreground">{formatCurrencyValue(item.value, synthesis.valuationCurrency) || 'Pending'}</p><p className="mt-1 text-xs text-muted-foreground">{item.description}</p></div>)}
+                                    {cases.map((item) => (
+                                        <div key={item.label} className="rounded-lg border border-border bg-background p-3">
+                                            <div className="flex items-center justify-between gap-1">
+                                                <p className="text-xs text-muted-foreground">{item.label}</p>
+                                                <Badge variant="success" className="text-[9px] px-1.5 py-0">✓ Verified</Badge>
+                                            </div>
+                                            <p className="mt-1 text-lg font-bold text-foreground">{formatCurrencyValue(item.value, synthesis.valuationCurrency) || 'Pending'}</p>
+                                            <p className="mt-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">✓ Verified AI Synthesis Output</p>
+                                            <p className="mt-1 text-xs text-muted-foreground">{item.description}</p>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
                             <div className="rounded-xl border border-border bg-background p-4">
                                 <div className="flex items-center gap-2"><ChartNoAxesCombined className="h-4 w-4 text-muted-foreground" /><p className="text-sm font-semibold">Asking-price comparison</p></div>
-                                {askingPriceValue !== null && baseValue !== null && premiumPercent !== null ? <><p className="mt-4 text-2xl font-semibold text-foreground">{formatCurrencyValue(String(askingPriceValue), synthesis.valuationCurrency || 'USD')}</p><p className={premiumPercent > 0 ? 'mt-1 text-sm text-destructive' : 'mt-1 text-sm text-success'}>{Math.abs(premiumPercent).toFixed(1)}% {premiumPercent > 0 ? 'above' : premiumPercent < 0 ? 'below' : 'equal to'} the supported base valuation.</p></> : <p className="mt-4 text-sm leading-6 text-muted-foreground">Enter an asking price in Project dossier intake to calculate the premium or discount.</p>}
+                                {effectiveAskingPrice !== null && baseValue !== null && premiumPercent !== null ? (
+                                    <>
+                                        <p className="mt-4 text-2xl font-semibold text-foreground">{formatCurrencyValue(String(effectiveAskingPrice), synthesis.valuationCurrency || 'USD')}</p>
+                                        <p className={premiumPercent > 0 ? 'mt-1 text-sm font-semibold text-destructive' : 'mt-1 text-sm font-semibold text-emerald-600'}>
+                                            {Math.abs(premiumPercent).toFixed(1)}% {premiumPercent > 0 ? 'above' : premiumPercent < 0 ? 'below' : 'equal to'} the supported base valuation.
+                                        </p>
+                                    </>
+                                ) : (
+                                    <div className="mt-4 rounded-lg border border-dashed border-border bg-muted/40 p-3">
+                                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Asking Price Not Set</p>
+                                        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Enter an asking price in Project Dossier Intake or Deal Model to calculate seller premium or cushion.</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -211,7 +398,46 @@ export default function DealValuationCard({ synthesis, askingPrice, model, onMod
                             </p>
                         </div>
                         <div className="grid gap-3 xl:grid-cols-2">
-                            <div className="rounded-xl border border-border bg-muted/20 p-4"><div className="flex items-center gap-2"><TriangleAlert className="h-4 w-4 text-warning" /><p className="text-sm font-semibold">Value-risk bridge</p></div><p className="mt-2 text-sm leading-6 text-muted-foreground">Use these conflicts as talking points for price, diligence conditions, or structure changes.</p><ul className="mt-3 space-y-2 text-sm">{synthesis.crossDocumentConflicts.length > 0 ? synthesis.crossDocumentConflicts.map((item, index) => <li key={item}><button type="button" onClick={() => onOpenEvidence?.(synthesisEvidence('Value-risk bridge evidence', item, index))} className="w-full rounded-md border border-border bg-background p-3 text-left transition-colors hover:border-primary/40 hover:bg-muted/30">{item}<span className="mt-2 block text-xs font-medium text-primary">View evidence</span></button></li>) : <li className="text-muted-foreground">No cross-document valuation risks recorded.</li>}</ul></div>
+                            <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4">
+                                <div className="flex items-center justify-between gap-2">
+                                    <div className="flex items-center gap-2">
+                                        <TriangleAlert className="h-4 w-4 text-destructive" />
+                                        <p className="text-sm font-semibold text-foreground">Value-risk bridge</p>
+                                    </div>
+                                    {synthesis.crossDocumentConflicts.length > 0 ? (
+                                        <Badge variant="destructive" className="text-[10px] uppercase font-bold">
+                                            {synthesis.crossDocumentConflicts.length} Cross-Document Conflict{synthesis.crossDocumentConflicts.length === 1 ? '' : 's'}
+                                        </Badge>
+                                    ) : null}
+                                </div>
+                                <p className="mt-2 text-sm leading-6 text-muted-foreground">Use these conflicts as talking points for price, diligence conditions, or structure changes.</p>
+                                <ul className="mt-3 space-y-2 text-sm">
+                                    {synthesis.crossDocumentConflicts.length > 0 ? synthesis.crossDocumentConflicts.map((item, index) => {
+                                        const finding = synthesis.structuredFindings?.crossDocumentConflicts?.[index]
+                                        const statusLabel = finding?.status || 'Contradicted'
+                                        const severityLabel = finding?.severity || 'High'
+                                        return (
+                                            <li key={item}>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => onOpenEvidence?.(synthesisEvidence('Value-risk bridge evidence', item, index))}
+                                                    className="w-full rounded-md border border-destructive/30 bg-background p-3 text-left transition-all hover:border-destructive/60 hover:bg-destructive/10 hover:shadow-xs"
+                                                >
+                                                    <div className="flex items-center justify-between gap-2 mb-1.5">
+                                                        <Badge variant="destructive" className="text-[10px] font-extrabold uppercase tracking-wide">
+                                                            {statusLabel} · {severityLabel} Risk
+                                                        </Badge>
+                                                        <span className="text-xs font-semibold text-primary underline-offset-2 hover:underline">
+                                                            View Evidence →
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-sm font-medium text-foreground leading-snug">{item}</p>
+                                                </button>
+                                            </li>
+                                        )
+                                    }) : <li className="text-muted-foreground">No cross-document valuation risks recorded.</li>}
+                                </ul>
+                            </div>
                             <div className="rounded-xl border border-border bg-muted/20 p-4"><p className="text-sm font-semibold">How to read these methods</p><p className="mt-2 text-sm leading-6 text-muted-foreground">Each method gives you a different lens on value. <strong>Asset-based</strong> = floor value if you liquidated today. <strong>Revenue multiple</strong> = market comp for top-line businesses. <strong>EBITDA multiple</strong> = cash-flow-based value, the most common for M&A. The <strong>sensitivity grid</strong> (above) shows what the business could be worth at exit under different growth/margin assumptions — it is NOT a current valuation, it is a forward-looking scenario analysis.</p><div className="mt-4 flex flex-wrap gap-2"><Badge variant="outline">Asset-based = floor</Badge><Badge variant="outline">Revenue = market comp</Badge><Badge variant="outline">EBITDA = cash flow</Badge><Badge variant="outline">Sensitivity = future exit</Badge></div></div>
                         </div>
                         <ValuationImpactBridge synthesis={synthesis} baseValue={baseValue} documents={documents} onOpenEvidence={onOpenEvidence} />

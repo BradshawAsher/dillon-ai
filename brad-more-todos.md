@@ -97,6 +97,8 @@
 
 - Need to work on the video assignment for this week?
 
+- For brad, going through all the tabs, went through diligence, synthesis, valuation, working on returns tab
+
 - For Brad - need to keep testing the website and trying different documents, can always expand the eval suite and trying to break the system, and also i think a lot of financial facts like ebitda and sde are not filled even though we put 4 long docs through? Why?
 
 - Add even more granular confidence score so every fact on the page has a confidence score?

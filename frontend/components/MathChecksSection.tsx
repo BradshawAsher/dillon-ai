@@ -95,18 +95,18 @@ export default function MathChecksSection({ documents, onOpenEvidence, compact, 
 
     if (compact) {
         return (
-            <div className="rounded-lg border border-border p-4">
-                <div className="flex items-center justify-between mb-2">
+            <div className="rounded-xl border border-border bg-card/80 p-5 shadow-xs">
+                <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                        <Calculator className="h-4 w-4 text-primary" />
-                        <span className="text-sm font-semibold">{title || 'Math checks'}</span>
+                        <Calculator className="h-5 w-5 text-primary" />
+                        <span className="text-base font-bold text-foreground">{title || 'Math checks'}</span>
                     </div>
-                    <Badge variant={overallStatus === 'warning' ? 'destructive' : overallStatus === 'passed' ? 'success' : 'secondary'} className="text-[10px]">
+                    <Badge variant={overallStatus === 'warning' ? 'destructive' : overallStatus === 'passed' ? 'success' : 'secondary'} className="text-xs px-2.5 py-0.5 font-bold">
                         {passCount}/{totalChecks} passed
                     </Badge>
                 </div>
-                {description && <p className="text-xs text-muted-foreground mb-2">{description}</p>}
-                <div className="grid gap-2 grid-cols-2 sm:grid-cols-3">
+                {description && <p className="text-sm text-muted-foreground mb-4">{description}</p>}
+                <div className="grid gap-3.5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                     {allChecks.slice(0, 6).map((check, i) => (
                         <button
                             key={`${check.key}-${i}`}
@@ -123,28 +123,44 @@ export default function MathChecksSection({ documents, onOpenEvidence, compact, 
                                 documentId: check.sourceFileId,
                                 documentUrl: check.sourceFileUrl,
                             })}
-                            className="rounded-md border border-border p-2 text-left transition-colors hover:border-primary/40 hover:bg-muted/30"
+                            className="rounded-xl border border-border/80 bg-background/90 p-4 text-left transition-all hover:border-primary/60 hover:bg-muted/30 hover:shadow-xs flex flex-col justify-between"
                         >
-                            <div className="flex items-center gap-1">
-                                {check.metric.withinTolerance === true && <CheckCircle2 className="h-3 w-3 text-green-600 dark:text-green-400" />}
-                                {check.metric.withinTolerance === false && <XCircle className="h-3 w-3 text-red-600 dark:text-red-400" />}
-                                {check.metric.withinTolerance === undefined && <AlertTriangle className="h-3 w-3 text-muted-foreground" />}
-                                <span className="text-[10px] font-medium text-muted-foreground truncate">{formatLabel(check.key)}</span>
+                            <div>
+                                <div className="flex items-center gap-2 mb-1.5">
+                                    {check.metric.withinTolerance === true && <CheckCircle2 className="h-4.5 w-4.5 text-emerald-600 dark:text-emerald-400 shrink-0" />}
+                                    {check.metric.withinTolerance === false && <XCircle className="h-4.5 w-4.5 text-destructive shrink-0" />}
+                                    {check.metric.withinTolerance === undefined && <AlertTriangle className="h-4.5 w-4.5 text-amber-500 shrink-0" />}
+                                    <span className="text-sm font-bold text-foreground truncate">{formatLabel(check.key)}</span>
+                                </div>
+                                <p className="mt-1 text-xl sm:text-2xl font-extrabold tabular-nums text-foreground">
+                                    {typeof check.metric.value === 'number' ? `$${check.metric.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : '—'}
+                                </p>
+                                {check.metric.formula && (
+                                    <p className="mt-1 text-xs text-muted-foreground font-mono truncate" title={check.metric.formula}>{check.metric.formula}</p>
+                                )}
                             </div>
-                            <p className="mt-0.5 text-xs font-semibold tabular-nums">
-                                {typeof check.metric.value === 'number' ? check.metric.value.toLocaleString(undefined, { maximumFractionDigits: 0 }) : '—'}
-                            </p>
-                            {check.metric.formula && (
-                                <p className="mt-0.5 text-[9px] text-muted-foreground truncate" title={check.metric.formula}>{check.metric.formula}</p>
-                            )}
-                            {typeof check.metric.actual === 'number' && check.metric.withinTolerance === false && (
-                                <p className="mt-0.5 text-[9px] text-destructive">Actual: {check.metric.actual.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
-                            )}
+                            <div className="mt-3 pt-2.5 border-t border-border/40">
+                                {check.metric.withinTolerance === true && (
+                                    <Badge variant="success" className="text-xs font-bold px-2.5 py-0.5">
+                                        ✓ Verified Match
+                                    </Badge>
+                                )}
+                                {check.metric.withinTolerance === false && (
+                                    <Badge variant="destructive" className="text-xs font-bold px-2.5 py-0.5">
+                                        ✗ Mismatch{typeof check.metric.actual === 'number' ? `: $${check.metric.actual.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : ''}
+                                    </Badge>
+                                )}
+                                {check.metric.withinTolerance === undefined && (
+                                    <Badge variant="outline" className="text-xs font-semibold px-2.5 py-0.5 bg-muted/40 text-muted-foreground border-border">
+                                        ℹ Calculated Fact
+                                    </Badge>
+                                )}
+                            </div>
                         </button>
                     ))}
                 </div>
                 {allChecks.length > 6 && (
-                    <p className="mt-2 text-[10px] text-muted-foreground">+{allChecks.length - 6} more checks across {completedDocs.length} documents</p>
+                    <p className="mt-3 text-xs text-muted-foreground font-medium">+{allChecks.length - 6} more checks across {completedDocs.length} documents</p>
                 )}
             </div>
         )
@@ -182,7 +198,7 @@ export default function MathChecksSection({ documents, onOpenEvidence, compact, 
                                         {recon.status === 'passed' ? 'Passed' : recon.status === 'warning' ? 'Needs review' : 'Partial'}
                                     </Badge>
                                 </div>
-                                <div className="grid gap-2 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
+                                <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                                     {Object.entries(recon.metrics).map(([key, metric]) => (
                                         <button
                                             key={key}
@@ -199,26 +215,34 @@ export default function MathChecksSection({ documents, onOpenEvidence, compact, 
                                                 documentId: doc.storageFileId,
                                                 documentUrl: doc.storageFileUrl,
                                             })}
-                                            className="rounded-lg border border-border p-2.5 text-left transition-colors hover:border-primary/40 hover:bg-muted/30"
+                                            className="rounded-2xl border-2 border-border p-6 sm:p-7 text-left transition-all hover:border-primary/60 hover:bg-muted/40 hover:shadow-lg"
                                         >
-                                            <div className="flex items-center gap-1.5">
-                                                {metric.withinTolerance === true && <CheckCircle2 className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />}
-                                                {metric.withinTolerance === false && <XCircle className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />}
-                                                {metric.withinTolerance === undefined && <AlertTriangle className="h-3.5 w-3.5 text-muted-foreground" />}
-                                                <span className="text-[11px] font-medium text-muted-foreground">{formatLabel(key)}</span>
+                                            <div className="flex items-center gap-2.5">
+                                                {metric.withinTolerance === true && <CheckCircle2 className="h-6 w-6 text-emerald-600 shrink-0" />}
+                                                {metric.withinTolerance === false && <XCircle className="h-6 w-6 text-destructive shrink-0" />}
+                                                {metric.withinTolerance === undefined && <AlertTriangle className="h-6 w-6 text-primary shrink-0" />}
+                                                <span className="text-base font-black text-foreground truncate">{formatLabel(key)}</span>
                                             </div>
-                                            <p className="mt-1 text-sm font-bold tabular-nums">
-                                                {typeof metric.value === 'number' ? metric.value.toLocaleString(undefined, { maximumFractionDigits: 0 }) : '—'}
+                                            <p className="mt-3 text-3xl sm:text-4xl font-black tabular-nums tracking-tight text-foreground">
+                                                {typeof metric.value === 'number' ? `$${metric.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : '—'}
                                             </p>
                                             {metric.formula && (
-                                                <p className="mt-0.5 text-[10px] text-muted-foreground font-mono">{metric.formula}</p>
+                                                <p className="mt-1.5 text-xs sm:text-sm text-muted-foreground font-mono font-bold truncate" title={metric.formula}>{metric.formula}</p>
                                             )}
-                                            {typeof metric.actual === 'number' && metric.withinTolerance !== undefined && (
-                                                <p className={`mt-0.5 text-[10px] ${metric.withinTolerance ? 'text-green-600 dark:text-green-400' : 'text-destructive'}`}>
-                                                    {metric.withinTolerance ? '✓ ' : '✗ '}
-                                                    Actual: {metric.actual.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                                                    {metric.withinTolerance === false && typeof metric.value === 'number' ? ` (${((Math.abs(metric.actual - metric.value) / metric.value) * 100).toFixed(1)}% off)` : ''}
-                                                </p>
+                                            {metric.withinTolerance === true && (
+                                                <Badge variant="success" className="mt-3.5 text-sm font-extrabold px-3 py-1 sm:text-base">
+                                                    ✓ VERIFIED MATCH
+                                                </Badge>
+                                            )}
+                                            {metric.withinTolerance === false && (
+                                                <Badge variant="destructive" className="mt-3.5 text-sm font-extrabold px-3 py-1 sm:text-base">
+                                                    ✗ MISMATCH {typeof metric.actual === 'number' ? `(Reported: $${metric.actual.toLocaleString(undefined, { maximumFractionDigits: 0 })})` : ''}
+                                                </Badge>
+                                            )}
+                                            {metric.withinTolerance === undefined && (
+                                                <Badge variant="secondary" className="mt-3.5 text-sm font-extrabold px-3 py-1 sm:text-base">
+                                                    ℹ CALCULATED FACT (No Stated Target)
+                                                </Badge>
                                             )}
                                         </button>
                                     ))}
