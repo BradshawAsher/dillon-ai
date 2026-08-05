@@ -294,6 +294,7 @@ export function buildDerivedEvidence(args: {
     formatAssumed?: (input: ResolvedInput) => string
     primaryFact?: EvidenceItem
     isConfirmed?: boolean
+    statusLabel?: string
 }): EvidenceItem {
     const inputs: MetricInput[] = [
         ...(args.documentedInputs ?? []).map((input) => ({ ...input, source: 'documented' as const })),
@@ -309,7 +310,7 @@ export function buildDerivedEvidence(args: {
     const hasAssumptions = (args.modelAssumptions && args.modelAssumptions.length > 0) || (args.assumedInputs && args.assumedInputs.length > 0)
     const isFullyConfirmed = args.isConfirmed ?? (!hasAssumptions && (args.documentedInputs?.length ?? 0) > 0)
 
-    const status = isFullyConfirmed ? 'Confirmed Math' : 'Model Projection'
+    const status = args.statusLabel ?? (isFullyConfirmed ? 'Confirmed Math' : 'Illustrative EBITDA')
     const confidence = isFullyConfirmed ? (args.primaryFact?.confidence ?? 'High') : 'Model Assumption'
 
     return {
@@ -318,14 +319,15 @@ export function buildDerivedEvidence(args: {
         inputs,
         status,
         provenance: 'Calculated',
-        // Carry underlying source citation for reference when available
-        sourceFile: args.primaryFact?.sourceFile,
-        sourceLocation: args.primaryFact?.sourceLocation,
-        excerpt: args.primaryFact?.excerpt,
-        period: args.primaryFact?.period,
+        // Only attach source document citation if the calculation is actually grounded in confirmed facts.
+        // For illustrative preview examples, do NOT attach a document citation!
+        sourceFile: isFullyConfirmed ? args.primaryFact?.sourceFile : undefined,
+        sourceLocation: isFullyConfirmed ? args.primaryFact?.sourceLocation : undefined,
+        excerpt: isFullyConfirmed ? args.primaryFact?.excerpt : undefined,
+        period: isFullyConfirmed ? args.primaryFact?.period : undefined,
         currency: args.primaryFact?.currency,
         confidence,
-        documentUrl: args.primaryFact?.documentUrl,
-        documentId: args.primaryFact?.documentId,
+        documentUrl: isFullyConfirmed ? args.primaryFact?.documentUrl : undefined,
+        documentId: isFullyConfirmed ? args.primaryFact?.documentId : undefined,
     }
 }

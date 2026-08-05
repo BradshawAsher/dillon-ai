@@ -126,13 +126,14 @@ export default function FinancedReturnsCard({ model, documents = [], onOpenEvide
         { label: 'Working capital reserve', value: money(wc) },
         { label: 'Seller note', value: money(sellerNote) },
     ]
-    const evidence = (title: string, formula: string, isConfirmed = false) => buildDerivedEvidence({
+    const evidence = (title: string, formula: string, isConfirmed = false, statusLabel?: string) => buildDerivedEvidence({
         title,
         formula,
         documentedInputs,
         modelAssumptions,
         primaryFact: ebitdaEvidence,
         isConfirmed,
+        statusLabel: statusLabel ?? (isConfirmed ? 'Confirmed Math' : 'Illustrative EBITDA'),
     })
 
     return (
@@ -168,7 +169,7 @@ export default function FinancedReturnsCard({ model, documents = [], onOpenEvide
                             label="Equity at close"
                             value={money(equity!)}
                             detail="uses − debt − seller note"
-                            evidence={evidence('Equity at close', 'equity = total uses − senior debt − seller note', priceIsConfirmed)}
+                            evidence={evidence('Equity at close', 'equity = total uses − senior debt − seller note', priceIsConfirmed, priceIsConfirmed ? 'Confirmed Price' : 'Illustrative Price')}
                             onOpenEvidence={onOpenEvidence}
                             infoTerm="Equity contribution"
                             alignTip="left"
@@ -178,7 +179,7 @@ export default function FinancedReturnsCard({ model, documents = [], onOpenEvide
                             label="Annual debt service"
                             value={money(annualDebtService!)}
                             detail="amortizing loan payment"
-                            evidence={evidence('Annual debt service', 'annual debt service is the level payment calculated from senior debt, interest rate, and amortization term', priceIsConfirmed)}
+                            evidence={evidence('Annual debt service', 'annual debt service is the level payment calculated from senior debt, interest rate, and amortization term', priceIsConfirmed, priceIsConfirmed ? 'Confirmed Debt' : 'Illustrative Model')}
                             onOpenEvidence={onOpenEvidence}
                             infoTerm="Amortization"
                             alignTip="left"
@@ -188,7 +189,7 @@ export default function FinancedReturnsCard({ model, documents = [], onOpenEvide
                             label="Cash after debt service"
                             value={money(cashAfterDebt!)}
                             detail="year-one operating cash flow − debt service"
-                            evidence={evidence('Cash after debt service', 'cash after debt service = EBITDA/SDE × (1 − tax rate) − maintenance capex − annual debt service', ebitdaIsConfirmed && priceIsConfirmed)}
+                            evidence={evidence('Cash after debt service', 'cash after debt service = EBITDA/SDE × (1 − tax rate) − maintenance capex − annual debt service', ebitdaIsConfirmed && priceIsConfirmed, ebitdaIsConfirmed ? 'Verified EBITDA' : 'Illustrative EBITDA')}
                             onOpenEvidence={onOpenEvidence}
                             infoTerm="Levered cash flow"
                             alignTip="center"
@@ -198,7 +199,7 @@ export default function FinancedReturnsCard({ model, documents = [], onOpenEvide
                             label="Cash-on-cash return"
                             value={coc === null ? 'Not available' : `${(coc * 100).toFixed(1)}%`}
                             detail="cash after debt ÷ equity"
-                            evidence={evidence('Cash-on-cash return', 'cash-on-cash return = cash after debt service ÷ equity at close', ebitdaIsConfirmed && priceIsConfirmed)}
+                            evidence={evidence('Cash-on-cash return', 'cash-on-cash return = cash after debt service ÷ equity at close', ebitdaIsConfirmed && priceIsConfirmed, ebitdaIsConfirmed && priceIsConfirmed ? 'Verified CoC' : 'Illustrative Model')}
                             onOpenEvidence={onOpenEvidence}
                             infoTerm="Cash-on-cash"
                             alignTip="right"
@@ -208,7 +209,7 @@ export default function FinancedReturnsCard({ model, documents = [], onOpenEvide
                             label="Debt-service coverage (DSCR)"
                             value={dscr === null ? 'Not available' : `${dscr.toFixed(2)}x`}
                             detail="operating cash flow ÷ debt service"
-                            evidence={evidence('Debt-service coverage ratio', 'DSCR = operating cash flow ÷ annual debt service', ebitdaIsConfirmed)}
+                            evidence={evidence('Debt-service coverage ratio', 'DSCR = operating cash flow ÷ annual debt service', ebitdaIsConfirmed, ebitdaIsConfirmed ? 'Verified DSCR' : 'Illustrative EBITDA')}
                             onOpenEvidence={onOpenEvidence}
                             infoTerm="DSCR"
                             alignTip="left"
@@ -218,7 +219,7 @@ export default function FinancedReturnsCard({ model, documents = [], onOpenEvide
                             label="Debt balance at exit"
                             value={debtBalanceAtExit === null ? 'Add hold period' : money(debtBalanceAtExit)}
                             detail="remaining amortizing debt at sale"
-                            evidence={evidence('Debt balance at exit', 'remaining debt is calculated after scheduled level payments through the hold period', priceIsConfirmed)}
+                            evidence={evidence('Debt balance at exit', 'remaining debt is calculated after scheduled level payments through the hold period', priceIsConfirmed, priceIsConfirmed ? 'Confirmed Debt' : 'Illustrative Model')}
                             onOpenEvidence={onOpenEvidence}
                             infoTerm="Debt balance"
                             alignTip="left"
@@ -228,7 +229,7 @@ export default function FinancedReturnsCard({ model, documents = [], onOpenEvide
                             label="Net equity proceeds at exit"
                             value={exitEquityProceeds === null ? 'Add exit inputs' : money(exitEquityProceeds)}
                             detail="exit value − costs − debt − seller note"
-                            evidence={evidence('Net equity proceeds at exit', 'net exit proceeds = EBITDA/SDE × exit multiple − exit costs − debt balance − seller note', ebitdaIsConfirmed && priceIsConfirmed)}
+                            evidence={evidence('Net equity proceeds at exit', 'net exit proceeds = EBITDA/SDE × exit multiple − exit costs − debt balance − seller note', ebitdaIsConfirmed && priceIsConfirmed, ebitdaIsConfirmed ? 'Verified EBITDA' : 'Illustrative EBITDA')}
                             onOpenEvidence={onOpenEvidence}
                             infoTerm="Net exit proceeds"
                             alignTip="center"
@@ -238,7 +239,7 @@ export default function FinancedReturnsCard({ model, documents = [], onOpenEvide
                             label="Total MOIC / IRR"
                             value={!exitReady ? 'Add exit inputs' : `${totalMoic?.toFixed(2) ?? '—'}x / ${irr === null ? 'Not available' : `${(irr * 100).toFixed(1)}%`}`}
                             detail="levered cash flows including sale"
-                            evidence={evidence('Levered MOIC and IRR', 'MOIC is total post-close levered cash flows ÷ initial equity; IRR is solved from the full cash-flow timeline', ebitdaIsConfirmed && priceIsConfirmed)}
+                            evidence={evidence('Levered MOIC and IRR', 'MOIC is total post-close levered cash flows ÷ initial equity; IRR is solved from the full cash-flow timeline', ebitdaIsConfirmed && priceIsConfirmed, ebitdaIsConfirmed && priceIsConfirmed ? 'Verified Exit' : 'Illustrative Preview')}
                             onOpenEvidence={onOpenEvidence}
                             infoTerm="MOIC"
                             alignTip="right"
