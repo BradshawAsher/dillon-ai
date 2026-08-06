@@ -1,9 +1,9 @@
 # Eval Regression Report
 
-- **Generated:** 2026-08-05T17:38:05.691Z
+- **Generated:** 2026-08-06T18:33:03.783Z
 - **Overall:** 74% (4/16 docs passing) — NEEDS-TUNING
 - **Regression gate:** threshold 70% → ✅ PASS
-- **Ground-truth coverage:** 16/17 specs scored
+- **Ground-truth coverage:** 16/26 specs scored
 
 ## Category averages (% of max)
 
@@ -40,3 +40,12 @@
 ## Ground-truth specs with no run result
 
 - business1_roofing_model.xlsx.json
+- testing_combined_happy_path.docx.json
+- testing_customer_concentration.docx.json
+- testing_financial_performance.docx.json
+- testing_seller_addbacks.docx.json
+- widgetco_1_pnl.xlsx.json
+- widgetco_2_balance_sheet.xlsx.json
+- widgetco_3_customer_concentration.xlsx.json
+- widgetco_4_fixed_assets.xlsx.json
+- widgetco_5_ar_aging.xlsx.json

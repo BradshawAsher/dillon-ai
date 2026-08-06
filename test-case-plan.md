@@ -73,7 +73,9 @@ Execution Queue:
 
 ---
 
-## Test Matrix — All Documents (17 Total)
+## Test Matrix — All Documents (26 Total Specifications)
+
+### A. Core Sample Deals (17 Documents)
 
 | # | Business | File | Type | Status |
 |---|---|---|---|---|
@@ -96,6 +98,20 @@ Execution Queue:
 | 17 | Medical Spa | `Financial Modelling Renew Health.xlsm` | XLSM | [x] Executed & Evaluated |
 
 Skipped (unsupported format): TurnKey `.numbers` file, ConversionXL `.numbers` file.
+
+### B. "WidgetCo" Forensic Suite & Testing Suite (9 Documents)
+
+| # | Business | File | Type | Focus Capability | Status |
+|---|---|---|---|---|---|
+| 18 | WidgetCo | `WidgetCo - 1_P&L_Statement.xlsx` | XLSX | Margin compression & arithmetic checks | [x] Ground Truth Ready |
+| 19 | WidgetCo | `WidgetCo - 2_Balance_Sheet.xlsx` | XLSX | Cash drain & working capital trap | [x] Ground Truth Ready |
+| 20 | WidgetCo | `WidgetCo - 3_Customer_Concentration.xlsx` | XLSX | >20% Customer concentration threshold | [x] Ground Truth Ready |
+| 21 | WidgetCo | `WidgetCo - 4_Fixed_Asset_Register.xlsx` | XLSX | Hidden CapEx & asset obsolescence | [x] Ground Truth Ready |
+| 22 | WidgetCo | `WidgetCo - 5_AR_Aging_Report.xlsx` | XLSX | Bad debt & >120 days overdue AR | [x] Ground Truth Ready |
+| 23 | MergeWorks Testing | `MergeWorks Testing - 1 Combined Happy Path.docx` | DOCX | Combined P&L, concentration, & add-backs | [x] Ground Truth Ready |
+| 24 | MergeWorks Testing | `MergeWorks Testing - 2 Customer Concentration Table.docx` | DOCX | Customer concentration risk classification | [x] Ground Truth Ready |
+| 25 | MergeWorks Testing | `MergeWorks Testing - 3 Financial Performance CSV.docx` | DOCX | P&L math checks & margin trend analysis | [x] Ground Truth Ready |
+| 26 | MergeWorks Testing | `MergeWorks Testing - 4 Seller Add-Back Notes.docx` | DOCX | Add-back intent & legitimacy classification | [x] Ground Truth Ready |
 
 ## Ground Truth Template
 

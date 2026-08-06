@@ -1,0 +1,31 @@
+{
+  "fileName": "MergeWorks Testing - 2 Customer Concentration Table.docx",
+  "business": "MergeWorks Testing Suite",
+  "fileType": "DOCX",
+  "groundTruth": {
+    "documentType": "Customer Concentration Report",
+    "documentTypes": [
+      "Customer Concentration Report"
+    ],
+    "trafficLight": "YELLOW",
+    "riskLevel": "MEDIUM",
+    "financialFacts": [
+      {
+        "metric": "revenue",
+        "normalizedValue": 220000,
+        "period": "Annual",
+        "rawValue": "$220,000 (18.3% Client A Anchor)"
+      }
+    ],
+    "expectedRedFlags": [],
+    "expectedYellowFlags": [
+      "Moderate customer concentration: Client A (The Anchor) represents 18.3% of total revenue"
+    ],
+    "falsePositiveFlags": [],
+    "missedFlags": [],
+    "valuation": null,
+    "employeeEvidence": null,
+    "expectedMathCheckStatus": "passed",
+    "notes": "Testing suite file: Isolated DOCX test for customer concentration risk classification."
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "fileName": "MergeWorks Testing - 4 Seller Add-Back Notes.docx",
+  "business": "MergeWorks Testing Suite",
+  "fileType": "DOCX",
+  "groundTruth": {
+    "documentType": "Seller Add-Back Schedule",
+    "documentTypes": [
+      "Seller Add-Back Schedule"
+    ],
+    "trafficLight": "YELLOW",
+    "riskLevel": "MEDIUM",
+    "financialFacts": [],
+    "expectedRedFlags": [
+      "Unvouched family consulting fee add-back ($50,000 paid to owner brother with no work performed)"
+    ],
+    "expectedYellowFlags": [
+      "Personal auto lease add-back for CEO family ($25,000)",
+      "One-time software migration fee ($15,000)"
+    ],
+    "falsePositiveFlags": [],
+    "missedFlags": [],
+    "valuation": null,
+    "employeeEvidence": null,
+    "expectedMathCheckStatus": "passed",
+    "notes": "Testing suite file: Isolated DOCX test for seller add-back intent and legitimacy classification."
+  }
+}
