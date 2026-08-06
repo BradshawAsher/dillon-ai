@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { copyToClipboard } from '../utils/clipboard'
 import { Check, Copy, ExternalLink, FileText, X } from 'lucide-react'
 
 import { Badge } from '../lib/shadcn/badge'
@@ -153,9 +154,12 @@ export default function EvidenceDrawer({ evidence, onClose }: { evidence: Eviden
             `**Status:** ${status.label}\n` +
             `**Excerpt:** "${evidence.excerpt || 'No excerpt available'}"`
 
-        navigator.clipboard.writeText(text)
-        setCopied(true)
-        setTimeout(() => setCopied(false), 2000)
+        void copyToClipboard(text).then((ok) => {
+            if (ok) {
+                setCopied(true)
+                setTimeout(() => setCopied(false), 2000)
+            }
+        })
     }
 
     return (

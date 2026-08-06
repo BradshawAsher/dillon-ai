@@ -6,6 +6,7 @@ import {
     findCitedDocument,
     getEvidenceStatusPresentation,
     getProvenanceCategory,
+    getProvenanceCategoryPresentation,
     parseDocumentedFacts,
 } from './evidence'
 
@@ -123,5 +124,34 @@ describe('findCitedDocument', () => {
 
     it('returns undefined when nothing overlaps enough', () => {
         expect(findCitedDocument('completely unrelated citation', [doc('tax-memo.pdf')])).toBeUndefined()
+    })
+})
+
+describe('getProvenanceCategoryPresentation', () => {
+    it('classifies web enrichment', () => {
+        expect(getProvenanceCategoryPresentation({ provenance: 'Public web enrichment' }).category).toBe('web')
+    })
+
+    it('classifies calculated metrics (formula or reconciliation)', () => {
+        expect(getProvenanceCategoryPresentation({ formula: 'a / b' }).category).toBe('calculated')
+        expect(getProvenanceCategoryPresentation({ status: 'Deterministic math check' }).category).toBe('calculated')
+    })
+
+    it('classifies synthesized and analyst-input origins', () => {
+        expect(getProvenanceCategoryPresentation({ provenance: 'Project synthesis' }).category).toBe('synthesized')
+        expect(getProvenanceCategoryPresentation({ status: 'illustrative assumption' }).category).toBe('analyst')
+    })
+
+    it('classifies document-backed evidence', () => {
+        expect(getProvenanceCategoryPresentation({ sourceFile: 'pnl.pdf' }).category).toBe('document')
+        expect(getProvenanceCategoryPresentation({ documentId: 'abc' }).category).toBe('document')
+    })
+
+    it('treats a "not returned" source file as unknown, not document', () => {
+        expect(getProvenanceCategoryPresentation({ sourceFile: 'Source file was not returned' }).category).toBe('unknown')
+    })
+
+    it('getProvenanceCategory delegates to the presentation helper', () => {
+        expect(getProvenanceCategory({ formula: 'x' })).toEqual(getProvenanceCategoryPresentation({ formula: 'x' }))
     })
 })

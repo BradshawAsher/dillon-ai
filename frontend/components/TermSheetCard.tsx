@@ -5,6 +5,7 @@ import type { DealModel } from '../hooks/backend/diligence'
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { normalizeEquityFraction } from '../utils/dealMath'
+import { copyToClipboard } from '../utils/clipboard'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Button } from '../lib/shadcn/button'
 
@@ -91,10 +92,11 @@ export default function TermSheetCard({ model, synthesis, projectName }: Props) 
 
     if (!termSheet) return null
 
-    const handleCopy = () => {
-        navigator.clipboard.writeText(termSheet.text)
-        setCopied(true)
-        setTimeout(() => setCopied(false), 2000)
+    const handleCopy = async () => {
+        if (await copyToClipboard(termSheet.text)) {
+            setCopied(true)
+            setTimeout(() => setCopied(false), 2000)
+        }
     }
 
     return (

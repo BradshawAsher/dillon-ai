@@ -29,7 +29,11 @@ export async function readFileAsBase64(file: File): Promise<string> {
  * sessionStorage).
  */
 export function base64ToFile(base64: string, name: string, type: string): File {
-  const binary = atob(base64)
+  // Tolerate a full data-URI ("data:...;base64,AAAA") as well as a bare
+  // base64 payload, so callers don't have to strip the prefix themselves.
+  const commaIndex = base64.indexOf(',')
+  const payload = base64.startsWith('data:') && commaIndex >= 0 ? base64.slice(commaIndex + 1) : base64
+  const binary = atob(payload)
   const bytes = new Uint8Array(binary.length)
   for (let i = 0; i < binary.length; i += 1) {
     bytes[i] = binary.charCodeAt(i)
