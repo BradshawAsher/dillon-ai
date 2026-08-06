@@ -1,10 +1,11 @@
-import { useMemo, useCallback } from 'react'
-import { Award } from 'lucide-react'
+import { useMemo, useCallback, useState } from 'react'
+import { Award, Check, Copy } from 'lucide-react'
 
 import type { DealModel } from '../hooks/backend/diligence'
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { normalizeEquityFraction } from '../utils/dealMath'
+import { copyToClipboard } from '../utils/clipboard'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 
 type Props = {
@@ -143,7 +144,9 @@ export default function DealScorecardExportCard({ model, synthesis, projectName 
         }
     }, [model, synthesis, projectName])
 
-    const copyToClipboard = useCallback(() => {
+    const [copied, setCopied] = useState(false)
+
+    const handleCopy = useCallback(async () => {
         if (!scorecard) return
 
         const lines = [
@@ -169,7 +172,10 @@ export default function DealScorecardExportCard({ model, synthesis, projectName 
             `Grade: ${scorecard.grade}`,
         ]
 
-        navigator.clipboard.writeText(lines.join('\n'))
+        if (await copyToClipboard(lines.join('\n'))) {
+            setCopied(true)
+            setTimeout(() => setCopied(false), 2000)
+        }
     }, [scorecard, projectName])
 
     if (!scorecard) return null
@@ -189,10 +195,13 @@ export default function DealScorecardExportCard({ model, synthesis, projectName 
                         <CardTitle className="text-lg">Deal scorecard</CardTitle>
                     </div>
                     <button
-                        onClick={copyToClipboard}
-                        className="rounded-md border border-border px-2.5 py-1 text-[10px] font-medium text-muted-foreground hover:bg-muted transition-colors"
+                        type="button"
+                        onClick={handleCopy}
+                        aria-label="Copy deal scorecard to clipboard"
+                        className="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-[10px] font-medium text-muted-foreground hover:bg-muted transition-colors"
                     >
-                        Copy to Clipboard
+                        {copied ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
+                        {copied ? 'Copied!' : 'Copy to Clipboard'}
                     </button>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">

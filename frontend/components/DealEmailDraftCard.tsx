@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { copyToClipboard } from '../utils/clipboard'
 import { Check, Copy, Mail } from 'lucide-react'
 
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
@@ -63,10 +64,11 @@ export default function DealEmailDraftCard({ model, synthesis, projectName }: Pr
         return { subject, body: lines.join('\n') }
     }, [model, synthesis, projectName])
 
-    const handleCopy = () => {
-        navigator.clipboard.writeText(`Subject: ${email.subject}\n\n${email.body}`)
-        setCopied(true)
-        setTimeout(() => setCopied(false), 2000)
+    const handleCopy = async () => {
+        if (await copyToClipboard(`Subject: ${email.subject}\n\n${email.body}`)) {
+            setCopied(true)
+            setTimeout(() => setCopied(false), 2000)
+        }
     }
 
     return (
@@ -80,9 +82,11 @@ export default function DealEmailDraftCard({ model, synthesis, projectName }: Pr
                     <div className="flex items-center gap-2">
                         <Badge variant="secondary">Email ready</Badge>
                         <button
+                            type="button"
                             onClick={handleCopy}
                             className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                             title="Copy email to clipboard"
+                            aria-label={copied ? 'Email copied to clipboard' : 'Copy email to clipboard'}
                         >
                             {copied ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
                         </button>

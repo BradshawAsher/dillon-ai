@@ -3,6 +3,7 @@ import { Check, CheckSquare, Copy, Download, MessageSquareText, Plus, Square, Tr
 
 import type { ProjectSynthesisItem, DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
+import { copyToClipboard } from '../utils/clipboard'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
 import {
@@ -136,11 +137,12 @@ export default function SellerQuestionsCard({ synthesis, model }: Props) {
         updateAndSaveQuestions(defaultQuestions)
     }
 
-    const handleCopy = () => {
+    const handleCopy = async () => {
         const text = questions.map((q, i) => `${i + 1}. [${q.answered ? 'X' : ' '}] ${q.question}`).join('\n')
-        navigator.clipboard.writeText(text)
-        setCopied(true)
-        setTimeout(() => setCopied(false), 2000)
+        if (await copyToClipboard(text)) {
+            setCopied(true)
+            setTimeout(() => setCopied(false), 2000)
+        }
     }
 
     const handleDownloadMarkdown = () => {
@@ -169,23 +171,30 @@ export default function SellerQuestionsCard({ synthesis, model }: Props) {
                     <div className="flex items-center gap-2">
                         <Badge variant="secondary">{answeredCount}/{questions.length} answered</Badge>
                         <button
+                            type="button"
                             onClick={() => setIsAdding(!isAdding)}
                             className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                             title="Add custom question"
+                            aria-label="Add custom question"
+                            aria-expanded={isAdding}
                         >
                             <Plus className="h-4 w-4" />
                         </button>
                         <button
+                            type="button"
                             onClick={handleCopy}
                             className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                             title="Copy all questions"
+                            aria-label={copied ? 'Questions copied to clipboard' : 'Copy all questions to clipboard'}
                         >
                             {copied ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
                         </button>
                         <button
+                            type="button"
                             onClick={handleDownloadMarkdown}
                             className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                             title="Download Markdown report"
+                            aria-label="Download questions as Markdown report"
                         >
                             <Download className="h-3.5 w-3.5" />
                         </button>

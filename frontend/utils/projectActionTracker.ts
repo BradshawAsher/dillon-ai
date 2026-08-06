@@ -24,7 +24,10 @@ export function getStoredActionItems(projectId: string): CustomActionItem[] | nu
     try {
         const raw = localStorage.getItem(`${ACTION_ITEMS_STORAGE_KEY_PREFIX}${projectId}`)
         if (!raw) return null
-        return JSON.parse(raw) as CustomActionItem[]
+        const parsed = JSON.parse(raw) as unknown
+        // Guard against corrupted storage: callers `.map`/`.filter` over this,
+        // so a non-array must read as "nothing stored" rather than crash.
+        return Array.isArray(parsed) ? (parsed as CustomActionItem[]) : null
     } catch {
         return null
     }
@@ -42,7 +45,8 @@ export function getStoredSellerQuestions(projectId: string): CustomSellerQuestio
     try {
         const raw = localStorage.getItem(`${SELLER_QUESTIONS_STORAGE_KEY_PREFIX}${projectId}`)
         if (!raw) return null
-        return JSON.parse(raw) as CustomSellerQuestion[]
+        const parsed = JSON.parse(raw) as unknown
+        return Array.isArray(parsed) ? (parsed as CustomSellerQuestion[]) : null
     } catch {
         return null
     }
@@ -56,10 +60,16 @@ export function saveStoredSellerQuestions(projectId: string, questions: CustomSe
     }
 }
 
+/** Escapes a value for a single Markdown table cell: pipes and newlines both
+ * break a table row, so neutralize them. */
+function escapeTableCell(value: string): string {
+    return value.replace(/\|/g, '\\|').replace(/\r?\n/g, ' ')
+}
+
 export function exportQuestionsMarkdown(projectName: string, questions: CustomSellerQuestion[]): string {
     const dateStr = new Date().toISOString().split('T')[0]
     let md = `# Diligence Questions for Seller / Management\n`
-    md += `**Project:** ${projectName}\n`
+    md += `**Project:** ${escapeTableCell(projectName)}\n`
     md += `**Date:** ${dateStr}\n\n`
     md += `| # | Status | Question | Owner / Notes |\n`
     md += `|---|---|---|---|\n`
@@ -67,7 +77,7 @@ export function exportQuestionsMarkdown(projectName: string, questions: CustomSe
     questions.forEach((q, index) => {
         const status = q.answered ? '[x] Answered' : '[ ] Open'
         const notes = q.notes || '-'
-        md += `| ${index + 1} | ${status} | ${q.question.replace(/\|/g, '\\|')} | ${notes.replace(/\|/g, '\\|')} |\n`
+        md += `| ${index + 1} | ${status} | ${escapeTableCell(q.question)} | ${escapeTableCell(notes)} |\n`
     })
 
     return md
