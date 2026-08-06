@@ -79,7 +79,33 @@ export function sendBrowserNotification(title: string, body: string) {
     }
 }
 
+export function playCompletionSound() {
+    try {
+        const ctx = getAudioContext()
+        if (!ctx) return
+        const now = ctx.currentTime
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.type = 'sine'
+        osc.frequency.setValueAtTime(523.25, now) // C5
+        osc.frequency.exponentialRampToValueAtTime(659.25, now + 0.15) // E5
+        gain.gain.setValueAtTime(0.2, now)
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3)
+        osc.connect(gain)
+        gain.connect(ctx.destination)
+        osc.start(now)
+        osc.stop(now + 0.3)
+    } catch (e) {
+        console.warn('Unable to play completion sound:', e)
+    }
+}
+
+export function playErrorSound() {
+    playErrorAlertSound()
+}
+
 export function triggerFailureAlert(title: string, message: string) {
     playErrorAlertSound()
     sendBrowserNotification(title, message)
 }
+

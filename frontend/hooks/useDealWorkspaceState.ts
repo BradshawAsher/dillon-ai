@@ -1,17 +1,10 @@
 import { useState, useEffect } from 'react'
+import { createUnusedProjectId } from '../utils/diligenceDashboardUtils'
+import type { WorkspaceTab } from '../components/DealWorkspaceNav'
 
-export type WorkspaceTab = 'overview' | 'diligence' | 'synthesis' | 'returns' | 'valuation' | 'growth' | 'structure' | 'negotiation' | 'analysis' | 'evals' | 'memo'
+export type { WorkspaceTab }
 
-export function createUnusedProjectId(usedProjectIds: Iterable<string> = []) {
-    const used = new Set(Array.from(usedProjectIds).map((id) => id.trim().toLowerCase()))
-    let counter = 1
-    let candidate = `project-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-a1`
-    while (used.has(candidate.toLowerCase())) {
-        counter++
-        candidate = `project-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-a${counter}`
-    }
-    return candidate
-}
+export { createUnusedProjectId }
 
 export function useDealWorkspaceState() {
     const [activeWorkspaceTab, setActiveWorkspaceTab] = useState<WorkspaceTab>('overview')
@@ -22,10 +15,6 @@ export function useDealWorkspaceState() {
         if (typeof window === 'undefined') return 'new'
         try {
             const stored = window.localStorage.getItem('mergeworks.selectedProjectKey')
-            if (stored && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(stored)) {
-                window.localStorage.removeItem('mergeworks.selectedProjectKey')
-                return 'new'
-            }
             return stored || 'new'
         } catch {
             return 'new'
@@ -33,9 +22,31 @@ export function useDealWorkspaceState() {
     })
     const [isBatchDrawerOpen, setIsBatchDrawerOpen] = useState(false)
     const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false)
+    const [isProjectsPanelOpen, setIsProjectsPanelOpen] = useState(false)
+    const [isShortcutsOpen, setIsShortcutsOpen] = useState(false)
+    const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
     const [submissionNotes, setSubmissionNotes] = useState('')
     const [dealName, setDealName] = useState('')
     const [askingPrice, setAskingPrice] = useState('')
+    const [activeEvidence, setActiveEvidence] = useState<any>(null)
+    const [askingPriceByProject, setAskingPriceByProject] = useState<Record<string, string>>(() => {
+        if (typeof window === 'undefined') return {}
+        try {
+            const stored = window.localStorage.getItem('mergeworks.askingPriceByProject')
+            return stored ? (JSON.parse(stored) as Record<string, string>) : {}
+        } catch {
+            return {}
+        }
+    })
+    const [projectChecklistById, setProjectChecklistById] = useState<Record<string, any>>(() => {
+        if (typeof window === 'undefined') return {}
+        try {
+            const stored = window.localStorage.getItem('mergeworks.projectChecklistById')
+            return stored ? (JSON.parse(stored) as Record<string, any>) : {}
+        } catch {
+            return {}
+        }
+    })
 
     useEffect(() => {
         try {
@@ -44,6 +55,18 @@ export function useDealWorkspaceState() {
             }
         } catch {}
     }, [selectedProjectKey])
+
+    useEffect(() => {
+        try {
+            window.localStorage.setItem('mergeworks.askingPriceByProject', JSON.stringify(askingPriceByProject))
+        } catch {}
+    }, [askingPriceByProject])
+
+    useEffect(() => {
+        try {
+            window.localStorage.setItem('mergeworks.projectChecklistById', JSON.stringify(projectChecklistById))
+        } catch {}
+    }, [projectChecklistById])
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -71,11 +94,23 @@ export function useDealWorkspaceState() {
         setIsBatchDrawerOpen,
         isApiKeyModalOpen,
         setIsApiKeyModalOpen,
+        isProjectsPanelOpen,
+        setIsProjectsPanelOpen,
+        isShortcutsOpen,
+        setIsShortcutsOpen,
+        commandPaletteOpen,
+        setCommandPaletteOpen,
         submissionNotes,
         setSubmissionNotes,
         dealName,
         setDealName,
         askingPrice,
         setAskingPrice,
+        activeEvidence,
+        setActiveEvidence,
+        askingPriceByProject,
+        setAskingPriceByProject,
+        projectChecklistById,
+        setProjectChecklistById,
     }
 }

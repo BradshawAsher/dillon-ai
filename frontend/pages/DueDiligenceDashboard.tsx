@@ -2,496 +2,158 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import {
     Activity,
     AlertCircle,
-    ArrowUpRight,
-    ChevronLeft,
-    ChevronRight,
-    Clock3,
-    FileSearch,
-    FolderKanban,
     Key,
     Keyboard,
     Loader2,
-    Moon,
-    Plus,
     SlidersHorizontal,
-    Sun,
     X,
 } from 'lucide-react'
 
-import { ApiKeyModal, getSavedApiKey } from '../components/ApiKeyModal'
-
+import { ApiKeyModal } from '../components/ApiKeyModal'
 import { ProjectsSidePanel } from '../components/ProjectsSidePanel'
-
-import SafeSuspense from '../components/SafeSuspense'
-import ExpandableInsightGroup from '../components/ExpandableInsightGroup'
-import ExpandableText from '../components/ExpandableText'
-import DealOverviewCard from '../components/DealOverviewCard'
-import DealModelReadinessCard from '../components/DealModelReadinessCard'
-import DataQualityChecksCard from '../components/DataQualityChecksCard'
-const EbitdaReconstructionCard = lazy(() => import('../components/EbitdaReconstructionCard'))
-import CustomerConcentrationCard from '../components/CustomerConcentrationCard'
-import FinancialCompletenessCard from '../components/FinancialCompletenessCard'
-import AddBackQualityCard from '../components/AddBackQualityCard'
-import QuickFilterBar from '../components/QuickFilterBar'
-const BuyerProfileCard = lazy(() => import('../components/BuyerProfileCard'))
-const CostPerRunCard = lazy(() => import('../components/CostPerRunCard'))
-const IndustryBenchmarksCard = lazy(() => import('../components/IndustryBenchmarksCard'))
-const WhatsNewCard = lazy(() => import('../components/WhatsNewCard'))
-import LoginButton, { getStoredAuth, isDataIsolationEnabled } from '../components/AuthGate'
-const CommandPalette = lazy(() => import('../components/CommandPalette'))
-import ExportDealButton, { buildMarkdownReport, buildJsonExport, downloadFile } from '../components/ExportDealButton'
-import KeyboardShortcutsDialog from '../components/KeyboardShortcutsDialog'
-import NotificationCenter, { type Notification } from '../components/NotificationCenter'
-import ActivityFeed from '../components/ActivityFeed'
 import DealHealthKPIs from '../components/DealHealthKPIs'
-import NextActionsCard from '../components/NextActionsCard'
-import DocumentCoverageMatrix from '../components/DocumentCoverageMatrix'
-import DealReadinessGauge from '../components/DealReadinessGauge'
-import DealScorecard from '../components/DealScorecard'
-import NegotiationPlaybook from '../components/NegotiationPlaybook'
-import DealRulesOfThumb from '../components/DealRulesOfThumb'
-import DealGradeCard from '../components/DealGradeCard'
-import DealAnalysisScoresCard from '../components/DealAnalysisScoresCard'
-import DealStatsGridCard from '../components/DealStatsGridCard'
-const OpportunityScoreCard = lazy(() => import('../components/OpportunityScoreCard'))
-const RiskAdjustedValuationCard = lazy(() => import('../components/RiskAdjustedValuationCard'))
-const BusinessSnapshotCard = lazy(() => import('../components/BusinessSnapshotCard'))
-const FinancingScenariosCard = lazy(() => import('../components/FinancingScenariosCard'))
-const InvestmentMetricsCard = lazy(() => import('../components/InvestmentMetricsCard'))
-const IndustryPercentileCard = lazy(() => import('../components/IndustryPercentileCard'))
-const DealTypeAnalysisCard = lazy(() => import('../components/DealTypeAnalysisCard'))
-const DealFitCard = lazy(() => import('../components/DealFitCard'))
-const AssetCompositionCard = lazy(() => import('../components/AssetCompositionCard'))
-const ValuationGapCard = lazy(() => import('../components/ValuationGapCard'))
-const CashOnCashCalculatorCard = lazy(() => import('../components/CashOnCashCalculatorCard'))
-const BusinessValueEvolutionCard = lazy(() => import('../components/BusinessValueEvolutionCard'))
-const RevenueBridgeCard = lazy(() => import('../components/RevenueBridgeCard'))
-const BaseReturnMetricsCard = lazy(() => import('../components/BaseReturnMetricsCard'))
-const GrowthSensitivityCard = lazy(() => import('../components/GrowthSensitivityCard'))
-const DealStackCard = lazy(() => import('../components/DealStackCard'))
-const MonteCarloCard = lazy(() => import('../components/MonteCarloCard'))
-const NegotiationImpactCard = lazy(() => import('../components/NegotiationImpactCard'))
-const BreakevenAnalysisCard = lazy(() => import('../components/BreakevenAnalysisCard'))
-const PaybackTimelineCard = lazy(() => import('../components/PaybackTimelineCard'))
-const OwnerDependencyCard = lazy(() => import('../components/OwnerDependencyCard'))
-const TermSheetCard = lazy(() => import('../components/TermSheetCard'))
-const BenchmarkComparisonCard = lazy(() => import('../components/BenchmarkComparisonCard'))
-const AnnualCashFlowCard = lazy(() => import('../components/AnnualCashFlowCard'))
-const ExitReadinessCard = lazy(() => import('../components/ExitReadinessCard'))
-const DebtServiceCoverageCard = lazy(() => import('../components/DebtServiceCoverageCard'))
-const DealTimingCard = lazy(() => import('../components/DealTimingCard'))
-const ValueCreationPlanCard = lazy(() => import('../components/ValueCreationPlanCard'))
-const DiligenceCompletenessCard = lazy(() => import('../components/DiligenceCompletenessCard'))
-const WeeklyProjectionCard = lazy(() => import('../components/WeeklyProjectionCard'))
-const LeverageSafetyCard = lazy(() => import('../components/LeverageSafetyCard'))
-const DealOnAPageCard = lazy(() => import('../components/DealOnAPageCard'))
-const SensitivityRankingCard = lazy(() => import('../components/SensitivityRankingCard'))
-const AcquisitionTimelineCard = lazy(() => import('../components/AcquisitionTimelineCard'))
-const RiskRewardScatterCard = lazy(() => import('../components/RiskRewardScatterCard'))
-const QuickWinsCard = lazy(() => import('../components/QuickWinsCard'))
-const DownsideProtectionCard = lazy(() => import('../components/DownsideProtectionCard'))
-const InvestorReadinessCard = lazy(() => import('../components/InvestorReadinessCard'))
-const CashReserveAnalysisCard = lazy(() => import('../components/CashReserveAnalysisCard'))
-const First100DaysCard = lazy(() => import('../components/First100DaysCard'))
-const DealScorecardExportCard = lazy(() => import('../components/DealScorecardExportCard'))
-const MarketPositionCard = lazy(() => import('../components/MarketPositionCard'))
-const WhatIfScenariosCard = lazy(() => import('../components/WhatIfScenariosCard'))
-const KeyMetricsTrendCard = lazy(() => import('../components/KeyMetricsTrendCard'))
-const FinancingComparisonCard = lazy(() => import('../components/FinancingComparisonCard'))
-const OperatingLeverageCard = lazy(() => import('../components/OperatingLeverageCard'))
-const WorkingCapitalCard = lazy(() => import('../components/WorkingCapitalCard'))
-const TaxImpactCard = lazy(() => import('../components/TaxImpactCard'))
-const SecondOpinionCard = lazy(() => import('../components/SecondOpinionCard'))
-const PublicDataEnrichmentCard = lazy(() => import('../components/PublicDataEnrichmentCard'))
-const ComparableTransactionsCard = lazy(() => import('../components/ComparableTransactionsCard'))
-const DealKillerCheckCard = lazy(() => import('../components/DealKillerCheckCard'))
-const EBITDAQualityScoreCard = lazy(() => import('../components/EBITDAQualityScoreCard'))
-const AlertRulesCard = lazy(() => import('../components/AlertRulesCard'))
-import DealActionItemsCard from '../components/DealActionItemsCard'
-import ConfidenceMeterCard from '../components/ConfidenceMeterCard'
-import QuickValuationCard from '../components/QuickValuationCard'
-import DealRadarCard from '../components/DealRadarCard'
-import { BatchProcessingSidePanel } from '../components/BatchProcessingSidePanel'
-import FinancialHealthCard from '../components/FinancialHealthCard'
-import WhatsMissingCard from '../components/WhatsMissingCard'
-const DealQuickInsights = lazy(() => import('../components/DealQuickInsights'))
-const InvestmentThesisCard = lazy(() => import('../components/InvestmentThesisCard'))
-const RiskMatrixCard = lazy(() => import('../components/RiskMatrixCard'))
-const DecisionFrameworkCard = lazy(() => import('../components/DecisionFrameworkCard'))
-const KeyPersonRiskCard = lazy(() => import('../components/KeyPersonRiskCard'))
-const ClosingChecklistCard = lazy(() => import('../components/ClosingChecklistCard'))
-const SellerQuestionsCard = lazy(() => import('../components/SellerQuestionsCard'))
-const AssumptionGapsCard = lazy(() => import('../components/AssumptionGapsCard'))
-const TimeToCloseCard = lazy(() => import('../components/TimeToCloseCard'))
-const MarketCompsCard = lazy(() => import('../components/MarketCompsCard'))
-const DealEmailDraftCard = lazy(() => import('../components/DealEmailDraftCard'))
-import StrengthsWeaknessesCard from '../components/StrengthsWeaknessesCard'
-import DealSummaryBanner from '../components/DealSummaryBanner'
-import DDRequestListCard from '../components/DDRequestListCard'
-import DealStageIndicator from '../components/DealStageIndicator'
-import MathChecksSection from '../components/MathChecksSection'
-import PipelineStatusIndicator from '../components/PipelineStatusIndicator'
-import RiskSummaryCard from '../components/RiskSummaryCard'
-import ProjectComparisonCard from '../components/ProjectComparisonCard'
-const DealTimelineCard = lazy(() => import('../components/DealTimelineCard'))
-const DealMemoView = lazy(() => import('../components/DealMemoView'))
-import ModelAssumptionsSummary from '../components/ModelAssumptionsSummary'
-import RecurringVsOneTimeCard from '../components/RecurringVsOneTimeCard'
+import DealEmailDraftCard from '../components/DealEmailDraftCard'
+const CommandPalette = lazy(() => import('../components/CommandPalette'))
 const SystemArchitectureCard = lazy(() => import('../components/SystemArchitectureCard'))
-import EvidenceDrawer, { type EvidenceItem } from '../components/EvidenceDrawer'
-import ProjectChecklistCard, { type ProjectChecklistState } from '../components/ProjectChecklistCard'
+import LoginButton, { getStoredAuth, isDataIsolationEnabled } from '../components/AuthGate'
+import { buildMarkdownReport, buildJsonExport, downloadFile } from '../components/ExportDealButton'
+import KeyboardShortcutsDialog from '../components/KeyboardShortcutsDialog'
+import { type Notification } from '../components/NotificationCenter'
+import { BatchProcessingSidePanel } from '../components/BatchProcessingSidePanel'
+import EvidenceDrawer from '../components/EvidenceDrawer'
 import { OverviewWorkspaceView } from '../components/views/OverviewWorkspaceView'
 import { DiligenceWorkspaceView } from '../components/views/DiligenceWorkspaceView'
 import { ReturnsWorkspaceView } from '../components/views/ReturnsWorkspaceView'
-import { useDealWorkspaceState } from '../hooks/useDealWorkspaceState'
-import DealWorkspaceNav, { type WorkspaceTab } from '../components/DealWorkspaceNav'
+import { ValuationWorkspaceView } from '../components/views/ValuationWorkspaceView'
+import { GrowthWorkspaceView } from '../components/views/GrowthWorkspaceView'
+import { StructureWorkspaceView } from '../components/views/StructureWorkspaceView'
+import { NegotiationWorkspaceView } from '../components/views/NegotiationWorkspaceView'
+import { AnalysisWorkspaceView } from '../components/views/AnalysisWorkspaceView'
+import { DocumentsWorkspaceView } from '../components/views/DocumentsWorkspaceView'
+import { WorkspaceHeader } from '../components/views/WorkspaceHeader'
+import { useDealWorkspaceState, type WorkspaceTab } from '../hooks/useDealWorkspaceState'
+import DealWorkspaceNav from '../components/DealWorkspaceNav'
 import SectionHeader from '../components/SectionHeader'
 
-const EbitdaProjectionCard = lazy(() => import('../components/EbitdaProjectionCard'))
-const DealModelPendingCard = lazy(() => import('../components/DealModelPendingCard'))
-const AllCashReturnsCard = lazy(() => import('../components/AllCashReturnsCard'))
-const FinancedReturnsCard = lazy(() => import('../components/FinancedReturnsCard'))
-const FinancedScenarioComparisonCard = lazy(() => import('../components/FinancedScenarioComparisonCard'))
-const SensitivityAnalysisCard = lazy(() => import('../components/SensitivityAnalysisCard'))
-const HoldPeriodSensitivity = lazy(() => import('../components/HoldPeriodSensitivity'))
-const ScenarioComparisonCard = lazy(() => import('../components/ScenarioComparisonCard'))
-const DealStructureVisualCard = lazy(() => import('../components/DealStructureVisualCard'))
-const DealValuationCard = lazy(() => import('../components/DealValuationCard'))
-const GrowthDecisionSummary = lazy(() => import('../components/GrowthDecisionSummary'))
-const ReturnsDecisionSummary = lazy(() => import('../components/ReturnsDecisionSummary'))
 const ProjectIntakeCard = lazy(() => import('../components/ProjectIntakeCard'))
-const ProjectPortfolioCard = lazy(() => import('../components/ProjectPortfolioCard'))
 const ProjectSynthesisCard = lazy(() => import('../components/ProjectSynthesisCard'))
-const ManagementQuestionTracker = lazy(() => import('../components/ManagementQuestionTracker'))
+import ManagementQuestionTracker from '../components/ManagementQuestionTracker'
 const SubmissionHistoryCard = lazy(() => import('../components/SubmissionHistoryCard'))
 const DealChatPanel = lazy(() => import('../components/DealChatPanel'))
 const WorkflowErrorLogCard = lazy(() => import('../components/WorkflowErrorLogCard'))
 const EvalDashboardTab = lazy(() => import('../components/EvalDashboardTab'))
+import LatestSubmissionSection from '../components/dashboard/LatestSubmissionSection'
+import { BatchProgressCard } from '../components/dashboard/BatchProgressCard'
+import LegacyDiligenceBackupCard from '../components/dashboard/LegacyDiligenceBackupCard'
+
 import {
     exampleProjectSyntheses,
     exampleSubmissionHistoryRows,
     type DealModel,
     useGetDiligenceData,
     useGetDealModels,
-    useGetProjectActionTracker,
     useGetProjectSynthesis,
     useGetWorkflowErrors,
     useGetSubmissionHistory,
     useGetEvalRuns,
     useSubmitDealPacket,
     useSaveDealModel,
-    useSaveProjectActionTracker,
     useUpdateSubmissionConsideration,
 } from '../hooks/backend/diligence'
-import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { getStoredTheme, setStoredTheme } from '../lib/darkMode'
 import { getDataSource, setDataSource } from '../lib/dataSource'
-import { Progress } from '../lib/shadcn/progress'
-import { Switch } from '../lib/shadcn/switch'
-import { Textarea } from '../lib/shadcn/textarea'
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '../lib/shadcn/table'
-import { cn } from '../lib/shadcn/utils'
+    buildReturnsDisplayModel,
+    createUnusedProjectId,
+    hydrateModelFactsFromDocuments,
+    isDuplicateProjectDocument,
+    PENDING_EXAMPLE_MODE_SUBMISSION_KEY,
+    withDerivedCapitalStack,
+    type PendingExampleModeSubmission,
+    type SubmissionBatch,
+    type SubmitEnvironment,
+} from '../utils/diligenceDashboardUtils'
+import { fallbackDiligenceFindings } from '../utils/diligence'
 import {
-    getAiSubmissionViewModel,
-    getSubmissionInsightTone,
-    splitReadableText,
-} from '../utils/aiSubmissionData'
+    createProjectSummaries,
+    getProjectKey,
+} from '../utils/projectWorkspace'
+import { isActiveSubmissionStatus, type SubmissionHistoryItem } from '../utils/submissionHistory'
+import { isOwnedByUser, claimProject } from '../utils/projectOwnership'
 import {
-    type SubmissionHistoryItem,
-    formatSubmissionStatus,
-    isActiveSubmissionStatus,
-} from '../utils/submissionHistory'
-import { createProjectSummaries, getProjectKey } from '../utils/projectWorkspace'
-import { claimProject, isOwnedByUser } from '../utils/projectOwnership'
-import { triggerFailureAlert } from '../utils/audioAlert'
-import { computeImpactMetrics, formatHours } from '../utils/impactMetrics'
-import { deriveDocumentedFacts } from '../utils/documentedFacts'
-import { fallbackDiligenceFindings, type FindingType, type Severity } from '../utils/diligence'
-import { formatEasternTime } from '../utils/dateTime'
-import { readFileAsBase64, base64ToFile } from '../utils/fileEncoding'
-import { findCitedDocument } from '../utils/evidence'
+    playCompletionSound,
+    playErrorSound,
+    triggerFailureAlert,
+} from '../utils/audioAlert'
+import { computeImpactMetrics } from '../utils/impactMetrics'
+import { getAiSubmissionViewModel } from '../utils/aiSubmissionData'
+import { base64ToFile, readFileAsBase64 } from '../utils/fileEncoding'
 
-function getFindingVariant(findingType: FindingType): 'destructive' | 'success' {
-    return findingType === 'Red Flag' ? 'destructive' : 'success'
-}
-
-function getSeverityVariant(severity: Severity): 'destructive' | 'warning' | 'secondary' | 'outline' {
-    if (severity === 'Critical') {
-        return 'destructive'
-    }
-
-    if (severity === 'High') {
-        return 'warning'
-    }
-
-    if (severity === 'Medium') {
-        return 'secondary'
-    }
-
-    return 'outline'
-}
-
-function getSubmissionStatusVariant(status: string): 'success' | 'warning' | 'destructive' | 'secondary' | 'outline' {
-    const normalized = status.trim().toLowerCase()
-
-    if (normalized === 'completed' || normalized === 'approved') {
-        return 'success'
-    }
-
-    if (
-        normalized === 'accepted'
-        || normalized === 'queued'
-        || normalized === 'processing'
-        || normalized === 'submitted'
-        || normalized === 'human review'
-        || normalized === 'human_review'
-        || normalized === 'needs review'
-    ) {
-        return 'warning'
-    }
-
-    if (normalized === 'error' || normalized === 'failed' || normalized === 'rejected') {
-        return 'destructive'
-    }
-
-    return 'secondary'
-}
-
-function createUnusedProjectId(usedProjectIds: Iterable<string> = []) {
-    const used = new Set(
-        Array.from(usedProjectIds, (id) => id.trim().toLowerCase()).filter((id) => id.length > 0)
-    )
-
-    let candidate = ''
-    do {
-        const randomSuffix = typeof crypto.randomUUID === 'function'
-            ? crypto.randomUUID().slice(0, 8)
-            : Math.random().toString(36).slice(2, 10)
-        candidate = 'project-' + new Date().toISOString().slice(0, 10).replaceAll('-', '') + '-' + randomSuffix
-    } while (used.has(candidate.toLowerCase()))
-
-    return candidate
-}
-
-const terminalBatchStatuses = new Set(['completed', 'failed', 'error', 'rejected', 'needs_review', 'needs review'])
-// Retains the retired Retool sample implementation as a code backup without
-// exposing it in the project-based live workspace.
 const SHOW_LEGACY_DILIGENCE_BACKUP = false
-const processingReachedStatuses = new Set([
-    'queued',
-    'uploading',
-    'received',
-    'pending',
-    'processing',
-    'running',
-    'human review',
-    'human_review',
-    'needs review',
-    'approved',
-    ...terminalBatchStatuses,
-])
-const activeSynthesisStatuses = new Set(['queued', 'pending', 'processing', 'running', 'synthesis_pending', 'synthesizing'])
-const PENDING_EXAMPLE_MODE_SUBMISSION_KEY = 'mergeworks.pendingExampleModeSubmission'
 
-// A file selection queued in Example mode and restored after the workspace
-// reloads into Live n8n mode. Files are carried as base64 so they survive the
-// sessionStorage round-trip.
-type PendingExampleModeSubmission = {
-    environment: SubmitEnvironment
-    selectedProjectKey: string
-    dealName: string
-    askingPrice: string
-    projectId: string
-    projectStage: string
-    documentType: string
-    submissionNotes: string
-    files: Array<{ name: string; size: number; type: string; base64: string }>
-}
-
-function parseIllustrativeFacts(raw: string) {
-    try {
-        const parsed = JSON.parse(raw) as Record<string, { value?: number; status?: string }>
-        const confirmed = (key: string) => parsed[key]?.status === 'confirmed' && typeof parsed[key]?.value === 'number' ? parsed[key].value ?? null : null
-        return { revenue: confirmed('revenue'), ebitda: confirmed('ebitda_sde') }
-    } catch {
-        return { revenue: null, ebitda: null }
-    }
-}
-
-function hydrateModelFactsFromDocuments(model: DealModel, documents: SubmissionHistoryItem[]) {
-    // Start from any facts already on the model (object keyed by field).
-    let merged: Record<string, Record<string, unknown>> = {}
-    try {
-        const parsed = JSON.parse(model.documentedFactsJson || '{}') as unknown
-        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) merged = parsed as Record<string, Record<string, unknown>>
-    } catch { }
-
-    // Derive facts from the documents' real financialFactsJson shape (an array
-    // of { metric, normalized_value, ... }). The previous implementation
-    // assumed a field-keyed object and skipped arrays, so it never merged
-    // anything from live n8n data.
-    const derived = deriveDocumentedFacts(documents)
-
-    for (const [field, fact] of Object.entries(derived)) {
-        const current = merged[field]
-        const currentConfirmed = current?.status === 'confirmed' && typeof current.value === 'number'
-        // Keep an already-confirmed model fact; otherwise fill from documents.
-        if (currentConfirmed) continue
-        merged[field] = { ...fact }
-    }
-
-    return JSON.stringify(merged) === (model.documentedFactsJson || '{}') ? model : {
-        ...model,
-        documentedFactsJson: JSON.stringify(merged),
-        documentedFactsStatus: model.documentedFactsStatus || 'Temporarily hydrated from completed documents',
-    }
-}
-
-function buildReturnsDisplayModel(model: DealModel) {
-    let facts: Record<string, Record<string, unknown>> = {}
-    try {
-        const parsed = JSON.parse(model.documentedFactsJson || '{}') as unknown
-        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) facts = parsed as Record<string, Record<string, unknown>>
-    } catch { }
-    const confirmedNumber = (field: string) => facts[field]?.status === 'confirmed' && typeof facts[field]?.value === 'number'
-    const hasEbitda = confirmedNumber('ebitda_sde')
-    const hasRevenue = confirmedNumber('revenue')
-
-    // Safe illustrative/analyst-model fallback values for any unset (null/undefined) parameters
-    const fallbackBase = {
-        askingPrice: model.askingPrice ?? 1_000_000,
-        purchasePrice: model.purchasePrice ?? model.askingPrice ?? 1_000_000,
-        transactionFees: model.transactionFees ?? 10_000,
-        workingCapitalRequirement: model.workingCapitalRequirement ?? 20_000,
-        holdPeriodYears: model.holdPeriodYears ?? 5,
-        taxRate: model.taxRate ?? 0.25,
-        maintenanceCapex: model.maintenanceCapex ?? 10_000,
-        exitMultiple: model.exitMultiple ?? 4,
-        exitCosts: model.exitCosts ?? 16_000,
-        equityContributionPercent: model.equityContributionPercent ?? 0.3,
-        interestRate: model.interestRate ?? 0.1,
-        amortizationYears: model.amortizationYears ?? 10,
-        sellerNoteAmount: model.sellerNoteAmount ?? 0,
-        bearRevenueGrowth: model.bearRevenueGrowth ?? 0,
-        baseRevenueGrowth: model.baseRevenueGrowth ?? 0.05,
-        bullRevenueGrowth: model.bullRevenueGrowth ?? 0.1,
-        bearEbitdaMargin: model.bearEbitdaMargin ?? 0.15,
-        baseEbitdaMargin: model.baseEbitdaMargin ?? 0.2,
-        bullEbitdaMargin: model.bullEbitdaMargin ?? 0.25,
-        bearExitMultiple: model.bearExitMultiple ?? 3,
-        baseExitMultiple: model.baseExitMultiple ?? 4,
-        bullExitMultiple: model.bullExitMultiple ?? 5,
-    }
-
-    // Merge individual unset parameters so that if some are set but others are missing,
-    // the missing parameters always receive their safe illustrative preview values.
-    const merged = { ...model }
-    for (const [key, val] of Object.entries(fallbackBase)) {
-        if (merged[key as keyof DealModel] == null) {
-            ; (merged as Record<string, unknown>)[key] = val
-        }
-    }
-
-    merged.documentedFactsJson = JSON.stringify({
-        ...facts,
-        revenue: hasRevenue ? facts.revenue : { value: 1_000_000, status: 'illustrative', currency: 'USD', period: 'Display preview', provenance: 'Illustrative preview' },
-        ebitda_sde: hasEbitda ? facts.ebitda_sde : { value: 200_000, status: 'illustrative', currency: 'USD', period: 'Display preview', provenance: 'Illustrative preview' },
-    })
-
-    return merged as DealModel
-}
-
-// Derive the acquisition capital stack (equity / senior debt) and loan term
-// from the analyst's saved financing inputs so financing, leverage, and
-// returns cards reflect the entered structure instead of silently reading
-// `undefined` (which made every card model the deal as 100% equity / 10yr).
-// Only computed once the analyst has actually supplied financing terms, so
-// projects without financing keep their existing "not defined" fallbacks.
-// Uses the saved fraction convention for equityContributionPercent (0.3 = 30%),
-// matching the Deal Model inputs and FinancedReturnsCard.
-function withDerivedCapitalStack(model: DealModel): DealModel {
-    const price = model.purchasePrice ?? model.askingPrice
-    const hasFinancingInputs =
-        model.equityContributionPercent != null ||
-        model.sellerNoteAmount != null ||
-        model.debtAssumed != null
-    if (price == null || price <= 0 || !hasFinancingInputs) return model
-
-    const equityPct = model.equityContributionPercent ?? 0.3
-    const equity = Math.max(0, price * equityPct)
-    const sellerNote = model.sellerNoteAmount ?? 0
-    const seniorDebt = Math.max(0, price - equity - sellerNote)
-
+function deriveBatchProgress(rows: SubmissionHistoryItem[]) {
+    const finishedCount = rows.filter(r => !isActiveSubmissionStatus(r.status)).length
+    const processingCount = rows.filter(r => isActiveSubmissionStatus(r.status)).length
+    const failedCount = rows.filter(r => ['failed', 'error', 'rejected'].includes(r.status.trim().toLowerCase())).length
+    const completedCount = rows.filter(r => r.status.trim().toLowerCase() === 'completed').length
     return {
-        ...model,
-        equityAmount: equity,
-        seniorDebtAmount: seniorDebt,
-        loanTermYears: model.amortizationYears ?? model.loanTermYears ?? null,
+        expectedCount: rows.length,
+        finishedCount,
+        processingCount,
+        failedCount,
+        completedCount,
+        stuckRows: [],
+        errors: rows.filter(r => r.errorMessage).map(r => ({ fileName: r.fileName, errorMessage: r.errorMessage, requestID: r.requestID })),
+        advisories: [],
     }
 }
 
-function IllustrativeModelPreviewNotice() {
-    return <div role="alert" className="rounded-lg border-2 border-destructive/60 bg-destructive/10 p-4 text-sm text-foreground shadow-sm"><div className="flex items-center gap-2 text-destructive"><AlertCircle className="h-5 w-5 shrink-0" /><p className="font-bold uppercase tracking-wide">Illustrative model preview — not source-backed</p></div><p className="mt-2 font-medium">This card uses display-only starting values because this project is still missing confirmed revenue/EBITDA or a saved price.</p><p className="mt-1 text-muted-foreground">Nothing in this preview is saved to the project; returned facts and your inputs replace it automatically.</p></div>
-}
-
-function hasReachedProcessingStage(status: string) {
-    return processingReachedStatuses.has(status.trim().toLowerCase())
-}
-
-function isDuplicateProjectDocument(file: File, projectId: string, rows: SubmissionHistoryItem[]) {
-    const normalizedProjectId = projectId.trim().toLowerCase()
-    const normalizedFileName = file.name.trim().toLowerCase()
-
-    return rows.some((row) => {
-        return row.projectId.trim().toLowerCase() === normalizedProjectId
-            && row.fileName.trim().toLowerCase() === normalizedFileName
-            && row.fileSize === file.size
-    })
-}
-
-type SubmitWebhookResponse = {
-    requestID?: string
-    status?: string
-    receivedAt?: string
-    id?: number
-    createdAt?: string
-    updatedAt?: string
-}
-
-type SubmitEnvironment = 'production' | 'test'
-
-type SubmissionBatch = {
-    id: string
-    expectedDocumentCount: number
-    environment: SubmitEnvironment
-    startedAt: number
-    endedAt?: number
-    stoppedAt?: number
-}
-
-function formatElapsedDuration(seconds: number) {
-    const minutes = Math.floor(seconds / 60)
-    const remainingSeconds = seconds % 60
-
-    return minutes > 0
-        ? `${minutes}m ${remainingSeconds}s`
-        : `${remainingSeconds}s`
+function deriveSynthesisProgress(status?: string, awaiting?: boolean) {
+    if (awaiting) return { value: 65, stage: 'Consolidating project findings...' }
+    const norm = (status || '').trim().toLowerCase()
+    if (['synthesized', 'completed', 'success'].includes(norm)) return { value: 100, stage: 'Synthesis complete' }
+    return { value: 0, stage: 'Awaiting documents' }
 }
 
 export default function DueDiligenceDashboard() {
-    const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false)
-    const [isShortcutsOpen, setIsShortcutsOpen] = useState(false)
+    const {
+        activeWorkspaceTab,
+        setActiveWorkspaceTab,
+        projectId,
+        setProjectId,
+        projectStage,
+        setProjectStage,
+        documentType,
+        setDocumentType,
+        selectedProjectKey,
+        setSelectedProjectKey,
+        isBatchDrawerOpen,
+        setIsBatchDrawerOpen,
+        isApiKeyModalOpen,
+        setIsApiKeyModalOpen,
+        isProjectsPanelOpen,
+        setIsProjectsPanelOpen,
+        isShortcutsOpen,
+        setIsShortcutsOpen,
+        commandPaletteOpen,
+        setCommandPaletteOpen,
+        submissionNotes,
+        setSubmissionNotes,
+        dealName,
+        setDealName,
+        askingPrice,
+        setAskingPrice,
+        activeEvidence,
+        setActiveEvidence,
+        askingPriceByProject,
+        setAskingPriceByProject,
+        projectChecklistById,
+        setProjectChecklistById,
+    } = useDealWorkspaceState()
+
     const [isLeftQuickDockVisible, setIsLeftQuickDockVisible] = useState(true)
-    const { data: diligenceData, loading: _loading, error, trigger } = useGetDiligenceData()
+    const { data: diligenceData, error } = useGetDiligenceData()
     const {
         data: submissionHistoryData,
         loading: submissionHistoryLoading,
@@ -516,136 +178,53 @@ export default function DueDiligenceDashboard() {
     const { data: evalRunsData, trigger: triggerEvalRuns } = useGetEvalRuns()
     const { trigger: triggerSubmissionConsideration } = useUpdateSubmissionConsideration()
 
+    // Fetch initial backend data on mount and set up periodic refresh
     useEffect(() => {
+        void triggerSubmissionHistory({ environment: 'production' })
+        void triggerProjectSynthesis({ environment: 'production' })
+        void triggerDealModels()
+        void triggerWorkflowErrors({ environment: 'production' })
         void triggerEvalRuns()
+
         const interval = setInterval(() => {
+            void triggerSubmissionHistory({ environment: 'production' })
+            void triggerProjectSynthesis({ environment: 'production' })
             void triggerEvalRuns()
         }, 10_000)
         return () => clearInterval(interval)
-    }, [triggerEvalRuns])
+    }, [triggerSubmissionHistory, triggerProjectSynthesis, triggerDealModels, triggerWorkflowErrors, triggerEvalRuns])
 
     const diligenceFindings = useMemo(() => {
         if (Array.isArray(diligenceData) && diligenceData.length > 0) {
             return diligenceData
         }
-
         return fallbackDiligenceFindings
     }, [diligenceData])
 
-    const liveSubmissionHistory = (Array.isArray(submissionHistoryData)
-        ? submissionHistoryData
-        : []) as SubmissionHistoryItem[]
+    const liveSubmissionHistory = (Array.isArray(submissionHistoryData) ? submissionHistoryData : []) as SubmissionHistoryItem[]
     const isExampleMode = getDataSource() === 'mock'
-    const rawSubmissionHistory = isExampleMode
-        ? exampleSubmissionHistoryRows
-        : liveSubmissionHistory
-    const rawProjectSyntheses = isExampleMode
-        ? exampleProjectSyntheses
-        : (Array.isArray(projectSynthesisData) ? projectSynthesisData : [])
+    const rawSubmissionHistory = isExampleMode ? exampleSubmissionHistoryRows : liveSubmissionHistory
+    const rawProjectSyntheses = isExampleMode ? exampleProjectSyntheses : (Array.isArray(projectSynthesisData) ? projectSynthesisData : [])
 
     const submissionHistory = useMemo(() => {
         const isolationEnabled = isDataIsolationEnabled()
         const user = getStoredAuth()
-        console.log('Data Isolation Enabled:', isolationEnabled)
-        console.log('Authenticated User:', user)
-        console.log('Raw Submission History Length:', rawSubmissionHistory.length)
-
-        if (!isolationEnabled) {
-            console.log('Data isolation is OFF. Returning raw submission history.')
+        if (!isolationEnabled || !user || user.role === 'admin') {
             return rawSubmissionHistory
         }
-        if (!user || user.role === 'admin') {
-            console.log('User is not logged in or is admin. Returning raw submission history.')
-            return rawSubmissionHistory
-        }
-        const filteredHistory = rawSubmissionHistory.filter(row => {
-            const key = getProjectKey(row)
-            const owned = isOwnedByUser(key, user.email)
-            // console.log(`Project: ${key}, Owned by User: ${owned}`) // Too verbose, enable if needed
-            return owned
-        })
-        console.log('Filtered Submission History Length (with isolation):', filteredHistory.length)
-        return filteredHistory
+        return rawSubmissionHistory.filter((row: SubmissionHistoryItem) => isOwnedByUser(getProjectKey(row), user.email))
     }, [rawSubmissionHistory])
-
-
 
     const visibleProjectSyntheses = useMemo(() => {
         const isolationEnabled = isDataIsolationEnabled()
         const user = getStoredAuth()
-        console.log('Data Isolation Enabled (Syntheses):', isolationEnabled)
-        console.log('Authenticated User (Syntheses):', user)
-        console.log('Raw Project Syntheses Length:', rawProjectSyntheses.length)
-
-        if (!isolationEnabled) {
-            console.log('Data isolation is OFF. Returning raw project syntheses.')
+        if (!isolationEnabled || !user || user.role === 'admin') {
             return rawProjectSyntheses
         }
-        if (!user || user.role === 'admin') {
-            console.log('User is not logged in or is admin. Returning raw project syntheses.')
-            return rawProjectSyntheses
-        }
-        const filteredSyntheses = rawProjectSyntheses.filter(s => {
-            const key = s.projectId || ''
-            const owned = isOwnedByUser(key, user.email)
-            // console.log(`Synthesis Project: ${key}, Owned by User: ${owned}`) // Too verbose, enable if needed
-            return owned
-        })
-        console.log('Filtered Project Syntheses Length (with isolation):', filteredSyntheses.length)
-        return filteredSyntheses
+        return rawProjectSyntheses.filter((s: any) => isOwnedByUser(s.projectId || '', user.email))
     }, [rawProjectSyntheses])
 
-    const fallbackFinding = diligenceFindings[0]
-    const [selectedFindingId, setSelectedFindingId] = useState<string>(fallbackFinding?.id ?? '')
     const [selectedFiles, setSelectedFiles] = useState<File[]>([])
-    const [dealName, setDealName] = useState('')
-    const [askingPrice, setAskingPrice] = useState('')
-    const [askingPriceByProject, setAskingPriceByProject] = useState<Record<string, string>>(() => {
-        if (typeof window === 'undefined') return {}
-
-        try {
-            const stored = window.localStorage.getItem('mergeworks.askingPriceByProject')
-            const parsed = stored ? JSON.parse(stored) : {}
-            return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed as Record<string, string> : {}
-        } catch {
-            return {}
-        }
-    })
-    const [activeWorkspaceTab, setActiveWorkspaceTab] = useState<WorkspaceTab>('overview')
-    const [projectId, setProjectId] = useState(() => createUnusedProjectId())
-    const [projectStage, setProjectStage] = useState('post-loi')
-    const [documentType, setDocumentType] = useState('auto-detect')
-    const [selectedProjectKey, setSelectedProjectKey] = useState(() => {
-        if (typeof window === 'undefined') return 'new'
-        try {
-            const stored = window.localStorage.getItem('mergeworks.selectedProjectKey')
-            if (stored && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(stored)) {
-                window.localStorage.removeItem('mergeworks.selectedProjectKey')
-                return 'new'
-            }
-            return stored || 'new'
-        } catch { return 'new' }
-    })
-    const [isBatchDrawerOpen, setIsBatchDrawerOpen] = useState(false)
-    useEffect(() => {
-        try {
-            if (selectedProjectKey) {
-                window.localStorage.setItem('mergeworks.selectedProjectKey', selectedProjectKey)
-            }
-        } catch { }
-    }, [selectedProjectKey])
-
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.ctrlKey && e.shiftKey && (e.key === 'B' || e.key === 'b')) {
-                e.preventDefault()
-                setIsBatchDrawerOpen((prev) => !prev)
-            }
-        }
-        window.addEventListener('keydown', handleKeyDown)
-        return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [])
-    const [submissionNotes, setSubmissionNotes] = useState('')
     const [isSubmittingFile, setIsSubmittingFile] = useState(false)
     const [batchSubmissionMessage, setBatchSubmissionMessage] = useState('')
     const lastUploadAttemptAtRef = useRef(0)
@@ -657,13 +236,14 @@ export default function DueDiligenceDashboard() {
             const stored = window.sessionStorage.getItem('mergeworks.activeSubmissionBatch')
             if (!stored) return null
             const parsed = JSON.parse(stored) as SubmissionBatch
-            if (parsed?.id && (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(parsed.id) || (Date.now() - (parsed.startedAt || 0) > 3600000))) {
+            if (parsed?.id && (Date.now() - (parsed.startedAt || 0) > 3600000)) {
                 window.sessionStorage.removeItem('mergeworks.activeSubmissionBatch')
                 return null
             }
             return parsed
         } catch { return null }
     })
+
     useEffect(() => {
         try {
             if (activeSubmissionBatch) {
@@ -679,7 +259,7 @@ export default function DueDiligenceDashboard() {
             const batchRows = submissionHistory.filter((r) => r.submissionBatchId === activeSubmissionBatch.id || r.projectId === activeSubmissionBatch.id)
             const hasPendingBatchRows = batchRows.some((r) => isActiveSubmissionStatus(r.status))
             if (!hasPendingBatchRows && batchRows.length > 0) {
-                return null // Batch has completed
+                return null
             }
 
             return {
@@ -697,42 +277,68 @@ export default function DueDiligenceDashboard() {
         [submissionHistory, inFlightBatchPlaceholder]
     )
 
+    const availableProjects = useMemo(() => {
+        return projectSummaries.map((ps: any) => ({
+            key: ps.projectKey,
+            label: ps.projectName,
+            name: ps.projectName,
+            id: ps.projectId || ps.projectKey,
+        }))
+    }, [projectSummaries])
+
     const [activeHistoryEnvironment, setActiveHistoryEnvironment] = useState<SubmitEnvironment>('production')
     const [currentTheme, setCurrentTheme] = useState(getStoredTheme)
     const [desktopNotificationPermission, setDesktopNotificationPermission] = useState<NotificationPermission | 'unsupported'>(() => {
         if (typeof window === 'undefined' || !('Notification' in window)) return 'unsupported'
         return Notification.permission
     })
-    const [activeEvidence, setActiveEvidence] = useState<EvidenceItem | null>(null)
-    const [projectChecklistById, setProjectChecklistById] = useState<Record<string, ProjectChecklistState>>(() => {
-        try { return JSON.parse(window.localStorage.getItem('mergeworks.projectChecklistById') || '{}') as Record<string, ProjectChecklistState> } catch { return {} }
-    })
-    const [actionTrackerProjectId, setActionTrackerProjectId] = useState('')
+
     const [dealModelDraftByProject, setDealModelDraftByProject] = useState<Record<string, DealModel>>({})
-    const completionAudioContext = useRef<AudioContext | null>(null)
     const dealModelSaveTimeout = useRef<number | null>(null)
-    const checklistSaveTimeout = useRef<number | null>(null)
     const [hasRestoredLatestProject, setHasRestoredLatestProject] = useState(false)
-    const [validationById, setValidationById] = useState<Record<string, boolean>>({})
-    const [notesById, setNotesById] = useState<Record<string, string>>({})
-    const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
-    const [isProjectsPanelOpen, setIsProjectsPanelOpen] = useState(false)
+
+    // Automatically select the latest run/project if no explicit project is currently selected
     useEffect(() => {
-        const handleCtrlShiftP = (e: KeyboardEvent) => {
-            if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'p' || e.key === 'P')) {
-                e.preventDefault()
-                setIsProjectsPanelOpen(prev => !prev)
-            }
+        if (hasRestoredLatestProject || projectSummaries.length === 0) return
+        const matchingProject = projectSummaries.find((p: any) => p.projectKey === selectedProjectKey || p.projectId === selectedProjectKey)
+        if (selectedProjectKey !== 'new' && matchingProject) {
+            setDealName(matchingProject.projectName)
+            setProjectId(matchingProject.projectId || matchingProject.projectKey)
+            setProjectStage(matchingProject.stage || 'post-loi')
+            setHasRestoredLatestProject(true)
+            return
         }
-        window.addEventListener('keydown', handleCtrlShiftP)
-        return () => window.removeEventListener('keydown', handleCtrlShiftP)
-    }, [])
+
+        const newestProject = projectSummaries[0]
+        if (newestProject) {
+            setSelectedProjectKey(newestProject.projectKey)
+            setProjectId(newestProject.projectId || newestProject.projectKey)
+            setDealName(newestProject.projectName)
+            setProjectStage(newestProject.stage || 'post-loi')
+        }
+        setHasRestoredLatestProject(true)
+    }, [hasRestoredLatestProject, projectSummaries, selectedProjectKey, setDealName, setProjectId, setProjectStage, setSelectedProjectKey])
+
+    // Keep project fields in sync whenever selectedProjectKey changes
+    useEffect(() => {
+        if (selectedProjectKey === 'new') return
+        const matchingProject = projectSummaries.find((p: any) => p.projectKey === selectedProjectKey || p.projectId === selectedProjectKey)
+        if (!matchingProject) return
+        setDealName(matchingProject.projectName)
+        setProjectId(matchingProject.projectId || matchingProject.projectKey)
+        setProjectStage(matchingProject.stage || 'post-loi')
+    }, [projectSummaries, selectedProjectKey, setDealName, setProjectId, setProjectStage])
+
     const [notifications, setNotifications] = useState<Notification[]>(() => {
         const now = new Date()
         return [
             { id: '1', type: 'info', title: 'Welcome to MergeWorks', description: 'Upload documents or switch to example data to explore.', timestamp: now, read: false },
         ]
     })
+
+    const handleMarkNotificationRead = (id: string) => setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
+    const handleMarkAllNotificationsRead = () => setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+    const handleClearNotifications = () => setNotifications([])
 
     useEffect(() => {
         if (isExampleMode || typeof window === 'undefined') return
@@ -769,9 +375,8 @@ export default function DueDiligenceDashboard() {
 
         void restorePendingExampleModeSubmission()
         return () => { cancelled = true }
-    }, [isExampleMode])
-    const { data: sharedActionTracker, trigger: triggerProjectActionTracker } = useGetProjectActionTracker()
-    const { trigger: saveProjectActionTracker } = useSaveProjectActionTracker()
+    }, [isExampleMode, setAskingPrice, setDealName, setDocumentType, setProjectId, setProjectStage, setSelectedProjectKey, setSubmissionNotes])
+
     const activeProjectId = isExampleMode ? 'atlas-001' : projectId
 
     const prevFailedCountRef = useRef<number | null>(null)
@@ -798,6 +403,7 @@ export default function DueDiligenceDashboard() {
         }
         prevFailedCountRef.current = recentFailedDocs.length
     }, [submissionHistory, activeProjectId])
+
     const activeDealModel = useMemo<DealModel>(() => {
         const saved = Array.isArray(dealModelsData) ? dealModelsData.find((model) => model.projectId === activeProjectId) : undefined
         const exampleModel: DealModel = {
@@ -805,623 +411,218 @@ export default function DueDiligenceDashboard() {
         }
         if (isExampleMode) return exampleModel
         return dealModelDraftByProject[activeProjectId] ?? saved ?? {
-            projectId: activeProjectId, askingPrice: null, purchasePrice: null, debtAssumed: null, cashAcquired: null, workingCapitalRequirement: null, transactionFees: null, holdPeriodYears: null, taxRate: null, closingCosts: null, maintenanceCapex: null, exitMultiple: null, exitCosts: null, equityContributionPercent: null, interestRate: null, amortizationYears: null, sellerNoteAmount: null, bearRevenueGrowth: null, baseRevenueGrowth: null, bullRevenueGrowth: null, bearEbitdaMargin: null, baseEbitdaMargin: null, bullEbitdaMargin: null, bearExitMultiple: null, baseExitMultiple: null, bullExitMultiple: null, revenueMultiple: null, ebitdaMultiple: null, assetHaircutPercent: null, modelUpdatedAt: '', modelUpdatedBy: '', documentedFactsJson: '', documentedFactsStatus: '',
+            projectId: activeProjectId,
+            askingPrice: askingPrice.trim().length > 0 ? Number(askingPrice.replace(/[^0-9.]/g, '')) || null : null,
+            purchasePrice: null, debtAssumed: null, cashAcquired: null, workingCapitalRequirement: null,
+            transactionFees: null, holdPeriodYears: null, taxRate: null, closingCosts: null,
+            maintenanceCapex: null, exitMultiple: null, exitCosts: null, equityContributionPercent: null,
+            interestRate: null, amortizationYears: null, sellerNoteAmount: null, bearRevenueGrowth: null,
+            baseRevenueGrowth: null, bullRevenueGrowth: null, bearEbitdaMargin: null, baseEbitdaMargin: null,
+            bullEbitdaMargin: null, bearExitMultiple: null, baseExitMultiple: null, bullExitMultiple: null,
+            revenueMultiple: null, ebitdaMultiple: null, assetHaircutPercent: null, modelUpdatedAt: '',
+            modelUpdatedBy: '', documentedFactsJson: '', documentedFactsStatus: '',
         }
-    }, [activeProjectId, dealModelDraftByProject, dealModelsData, isExampleMode])
+    }, [activeProjectId, askingPrice, dealModelDraftByProject, dealModelsData, isExampleMode])
+
     const activeProjectDocuments = useMemo(() => {
-        return submissionHistory.filter((row) => {
-            const rowProjectKey = getProjectKey(row)
-            return (
-                rowProjectKey === activeProjectId ||
-                rowProjectKey === selectedProjectKey ||
-                row.projectId === activeProjectId ||
-                row.submissionBatchId === activeProjectId ||
-                (projectId && (row.projectId === projectId || rowProjectKey === projectId))
-            )
-        })
-    }, [activeProjectId, projectId, selectedProjectKey, submissionHistory])
-    const hydratedDealModel = useMemo(() => withDerivedCapitalStack(isExampleMode ? activeDealModel : hydrateModelFactsFromDocuments(activeDealModel, activeProjectDocuments)), [activeDealModel, activeProjectDocuments, isExampleMode])
-    const returnsDisplayModel = useMemo(() => withDerivedCapitalStack(isExampleMode ? hydratedDealModel : buildReturnsDisplayModel(hydratedDealModel)), [hydratedDealModel, isExampleMode])
-    const isReturnsIllustrativePreview = !isExampleMode && returnsDisplayModel !== activeDealModel
-    const isGrowthIllustrativePreview = !isExampleMode && returnsDisplayModel !== hydratedDealModel
+        return submissionHistory.filter((row) => getProjectKey(row) === activeProjectId)
+    }, [activeProjectId, submissionHistory])
 
-    useEffect(() => {
-        setAskingPrice(askingPriceByProject[activeProjectId] ?? '')
-    }, [activeProjectId, askingPriceByProject])
+    const hydratedDealModel = useMemo(
+        () => hydrateModelFactsFromDocuments(activeDealModel, activeProjectDocuments),
+        [activeDealModel, activeProjectDocuments]
+    )
 
-    useEffect(() => {
+    const returnsDisplayModel = useMemo(
+        () => withDerivedCapitalStack(isExampleMode ? hydratedDealModel : buildReturnsDisplayModel(hydratedDealModel)),
+        [hydratedDealModel, isExampleMode]
+    )
+
+    const isReturnsIllustrativePreview = useMemo(() => {
+        if (isExampleMode) return false
         try {
-            window.localStorage.setItem('mergeworks.askingPriceByProject', JSON.stringify(askingPriceByProject))
-        } catch {
-            // Local persistence is a convenience only; the workspace remains usable if storage is unavailable.
-        }
-    }, [askingPriceByProject])
+            const facts = JSON.parse(hydratedDealModel.documentedFactsJson || '{}')
+            const hasConfirmedEbitda = facts.ebitda_sde?.status === 'confirmed' && typeof facts.ebitda_sde?.value === 'number'
+            const hasConfirmedPrice = hydratedDealModel.askingPrice != null || hydratedDealModel.purchasePrice != null
+            return !(hasConfirmedEbitda && hasConfirmedPrice)
+        } catch { return true }
+    }, [hydratedDealModel, isExampleMode])
 
-    useEffect(() => {
-        try { window.localStorage.setItem('mergeworks.projectChecklistById', JSON.stringify(projectChecklistById)) } catch { }
-    }, [projectChecklistById])
-
-    // The tracker is shared through n8n when it is reachable; local storage remains a
-    // deliberately safe fallback for offline/demo use.
-    useEffect(() => {
-        if (!activeProjectId || isExampleMode) return
-        setActionTrackerProjectId('')
-        void triggerProjectActionTracker({ projectId: activeProjectId }).result.then((tracker) => {
-            // A missing row is the normal first-use case. It is safe to create it
-            // from the browser's current checklist; a returned row is hydrated below.
-            if (tracker === null) setActionTrackerProjectId(activeProjectId)
-        })
-    }, [activeProjectId, isExampleMode, triggerProjectActionTracker])
-
-    useEffect(() => {
-        if (!sharedActionTracker?.projectId || sharedActionTracker.projectId !== activeProjectId) return
+    const isGrowthIllustrativePreview = useMemo(() => {
+        if (isExampleMode) return false
         try {
-            const sharedChecklist = JSON.parse(sharedActionTracker.checklistJson || '{}') as ProjectChecklistState
-            if (!sharedChecklist || typeof sharedChecklist !== 'object' || Array.isArray(sharedChecklist)) return
-            setProjectChecklistById((current) => ({ ...current, [activeProjectId]: { ...(current[activeProjectId] ?? {}), ...sharedChecklist } }))
-        } catch {
-            // A malformed remote value must not prevent the local checklist from being used.
+            const facts = JSON.parse(hydratedDealModel.documentedFactsJson || '{}')
+            const hasConfirmedRevenue = facts.revenue?.status === 'confirmed' && typeof facts.revenue?.value === 'number'
+            const hasConfirmedEbitda = facts.ebitda_sde?.status === 'confirmed' && typeof facts.ebitda_sde?.value === 'number'
+            return !(hasConfirmedRevenue || hasConfirmedEbitda)
+        } catch { return true }
+    }, [hydratedDealModel, isExampleMode])
+
+    const activeProjectSynthesis = useMemo(() => {
+        return visibleProjectSyntheses.find((s: any) => s.projectId === activeProjectId) ?? null
+    }, [activeProjectId, visibleProjectSyntheses])
+
+    const suggestedProjectName = useMemo(() => {
+        if (selectedFiles.length > 0) {
+            return selectedFiles[0].name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ')
         }
-        setActionTrackerProjectId(activeProjectId)
-    }, [activeProjectId, sharedActionTracker])
+        return dealName || 'New Project'
+    }, [dealName, selectedFiles])
 
-    useEffect(() => {
-        if (isExampleMode || actionTrackerProjectId !== activeProjectId) return
-        const checklistJson = JSON.stringify(projectChecklistById[activeProjectId] ?? {})
-        if (checklistSaveTimeout.current) window.clearTimeout(checklistSaveTimeout.current)
-        checklistSaveTimeout.current = window.setTimeout(() => {
-            void saveProjectActionTracker({
-                projectId: activeProjectId,
-                checklistJson,
-                questionsJson: sharedActionTracker?.questionsJson || '[]',
-            }).result
-        }, 500)
-        return () => { if (checklistSaveTimeout.current) window.clearTimeout(checklistSaveTimeout.current) }
-    }, [actionTrackerProjectId, activeProjectId, isExampleMode, projectChecklistById, saveProjectActionTracker, sharedActionTracker?.questionsJson])
+    const suggestedProjectId = useMemo(() => {
+        const used = projectSummaries.map((p: any) => p.projectId || p.projectKey)
+        return createUnusedProjectId(used)
+    }, [projectSummaries])
 
-    useEffect(() => {
-        void trigger({})
-        void triggerSubmissionHistory({ environment: 'production' })
-        void triggerProjectSynthesis({ environment: 'production' })
-        void triggerWorkflowErrors({ environment: 'production' })
-        void triggerDealModels({})
-    }, [trigger, triggerDealModels, triggerProjectSynthesis, triggerSubmissionHistory, triggerWorkflowErrors])
-
-    useEffect(() => {
-        if (!Array.isArray(dealModelsData)) return
-        setAskingPriceByProject((current) => ({
-            ...current,
-            ...Object.fromEntries(dealModelsData.filter((model) => model.projectId && model.askingPrice !== null).map((model) => [model.projectId, String(model.askingPrice)])),
-        }))
-    }, [dealModelsData])
-
-    useEffect(() => {
-        if (!fallbackFinding) {
-            return
+    const handleAskingPriceChange = (value: string) => {
+        setAskingPrice(value)
+        if (activeProjectId) {
+            setAskingPriceByProject((current) => ({ ...current, [activeProjectId]: value }))
         }
+    }
 
-        setSelectedFindingId((current) => {
-            if (current.length > 0 && diligenceFindings.some((finding) => finding.id === current)) {
-                return current
-            }
-
-            return fallbackFinding.id
+    const handleDealModelChange = (updated: Partial<DealModel>) => {
+        setDealModelDraftByProject((current) => {
+            const existing = current[activeProjectId] ?? activeDealModel
+            const next = { ...existing, ...updated }
+            if (dealModelSaveTimeout.current) window.clearTimeout(dealModelSaveTimeout.current)
+            dealModelSaveTimeout.current = window.setTimeout(() => {
+                void triggerSaveDealModel(next)
+            }, 800)
+            return { ...current, [activeProjectId]: next }
         })
+    }
 
-        setValidationById((current) => {
-            const nextEntries = diligenceFindings.map((finding) => [finding.id, current[finding.id] ?? finding.validated] as const)
-            return Object.fromEntries(nextEntries)
-        })
+    const handleDealModelDefaults = () => {
+        handleDealModelChange(returnsDisplayModel)
+    }
 
-        setNotesById((current) => {
-            const nextEntries = diligenceFindings.map((finding) => [finding.id, current[finding.id] ?? finding.analystNotes] as const)
-            return Object.fromEntries(nextEntries)
-        })
-    }, [diligenceFindings, fallbackFinding])
-
-    useEffect(() => {
-        if (hasRestoredLatestProject || isExampleMode || projectSummaries.length === 0) {
-            return
-        }
-
-        const storedKey = typeof window !== 'undefined' ? window.localStorage.getItem('mergeworks.selectedProjectKey') : null
-        if (storedKey === 'new') {
-            setSelectedProjectKey('new')
-            setHasRestoredLatestProject(true)
-            return
-        }
-
-        const storedProject = storedKey ? projectSummaries.find((p) => (p.projectKey === storedKey || p.projectId === storedKey) && p.documents.length > 0) : null
-        const completedProject = projectSummaries.find((project) => project.completedCount > 0 || (project.documents && project.documents.length > 0 && project.statusLabel !== 'Processing batch...'))
-        const targetProject = storedProject || completedProject || projectSummaries[0]
-
-        if (targetProject) {
-            setSelectedProjectKey(targetProject.projectKey)
-            setProjectId(targetProject.projectId || targetProject.projectKey)
-            setDealName(targetProject.projectName)
-            setProjectStage(targetProject.stage || 'post-loi')
-            setHasRestoredLatestProject(true)
-            if (typeof window !== 'undefined') {
-                window.localStorage.setItem('mergeworks.selectedProjectKey', targetProject.projectKey)
-            }
-        }
-    }, [hasRestoredLatestProject, isExampleMode, projectSummaries])
+    const impact = useMemo(() => computeImpactMetrics(submissionHistory), [submissionHistory])
+    const activeProjectImpact = useMemo(() => computeImpactMetrics(activeProjectDocuments), [activeProjectDocuments])
 
     const hasActiveSubmissions = useMemo(() => {
         return submissionHistory.some((row) => isActiveSubmissionStatus(row.status))
     }, [submissionHistory])
 
-    // A document can be complete while the project-level consolidator is still
-    // running. Keep polling its independent status so the synthesis panel
-    // updates without requiring a manual refresh.
-    const hasActiveProjectSynthesis = useMemo(() => {
-        return visibleProjectSyntheses.some((row) => activeSynthesisStatuses.has(row.projectStatus.trim().toLowerCase()))
-    }, [visibleProjectSyntheses])
-
     const isCurrentProjectProcessingDocuments = useMemo(() => {
-        const currentProjectId = projectId.trim()
-        const currentProject = projectSummaries.find((project) => (project.projectId || project.projectKey) === currentProjectId)
-        return (currentProject?.activeCount ?? 0) > 0
-    }, [projectId, projectSummaries])
+        return activeProjectDocuments.some((doc) => {
+            const st = (doc.status || '').trim().toLowerCase()
+            return ['queued', 'uploading', 'received', 'pending', 'processing', 'running'].includes(st)
+        })
+    }, [activeProjectDocuments])
 
     const isCurrentProjectAwaitingSynthesis = useMemo(() => {
-        const currentProjectId = projectId.trim()
-        if (currentProjectId.length === 0) {
-            return false
+        if (isExampleMode || activeProjectDocuments.length === 0) return false
+        const hasPendingDoc = activeProjectDocuments.some((d) => ['processing', 'pending', 'queued', 'running'].includes((d.status || '').trim().toLowerCase()))
+        if (hasPendingDoc) return false
+        const synthStatus = (activeProjectSynthesis?.projectStatus || '').trim().toLowerCase()
+        if (['synthesized', 'completed', 'success'].includes(synthStatus)) return false
+        if ((activeProjectSynthesis?.finalRecommendation || '').trim().length > 0) return false
+        return true
+    }, [activeProjectDocuments, activeProjectSynthesis, isExampleMode])
+
+    const activeProjectSynthesisSucceeded = useMemo(() => {
+        if (!activeProjectSynthesis) return false
+        const st = (activeProjectSynthesis.projectStatus || '').trim().toLowerCase()
+        return ['synthesized', 'completed', 'success'].includes(st) || (activeProjectSynthesis.finalRecommendation || '').trim().length > 0
+    }, [activeProjectSynthesis])
+
+    const currentSynthesisProgress = useMemo(
+        () => deriveSynthesisProgress(activeProjectSynthesis?.projectStatus, isCurrentProjectAwaitingSynthesis),
+        [activeProjectSynthesis?.projectStatus, isCurrentProjectAwaitingSynthesis]
+    )
+
+    const activeBatchRows = useMemo(() => {
+        if (activeSubmissionBatch?.id) {
+            const matchingBatch = submissionHistory.filter((row) => row.submissionBatchId === activeSubmissionBatch.id || row.projectId === activeSubmissionBatch.id)
+            if (matchingBatch.length > 0) return matchingBatch
         }
+        return submissionHistory.filter((row) => (getProjectKey(row) === activeProjectId) || (row.projectId === activeProjectId))
+    }, [activeProjectId, activeSubmissionBatch, submissionHistory])
 
-        const currentProject = projectSummaries.find((project) => (project.projectId || project.projectKey) === currentProjectId)
-        // The document-counter workflow starts synthesis once every document
-        // reaches a terminal success state. Human-review flags should not hide
-        // that transition from the UI.
-        if (!currentProject || currentProject.documentCount === 0 || currentProject.activeCount > 0 || currentProject.failedCount > 0) {
-            return false
-        }
+    const batchProgress = useMemo(() => deriveBatchProgress(activeBatchRows), [activeBatchRows])
+    const activeBatchExpectedCount = activeSubmissionBatch?.expectedDocumentCount || batchProgress.expectedCount
+    const activeBatchFinishedCount = batchProgress.finishedCount
+    const activeBatchProcessingCount = batchProgress.processingCount
+    const activeBatchFailedCount = batchProgress.failedCount
+    const activeBatchCompletedCount = batchProgress.completedCount
+    const activeBatchStuckRows = batchProgress.stuckRows
+    const activeBatchErrors = batchProgress.errors
+    const activeBatchAdvisories = batchProgress.advisories
+    const activeBatchProcessingPercent = Math.min(100, Math.round((activeBatchProcessingCount / (activeBatchExpectedCount || 1)) * 100))
+    const activeBatchProgressPercent = Math.min(100, Math.round((activeBatchFinishedCount / (activeBatchExpectedCount || 1)) * 100))
 
-        const currentSyntheses = visibleProjectSyntheses.filter((row) => row.projectId === currentProjectId)
-        const hasActiveSynthesis = currentSyntheses.some((row) => activeSynthesisStatuses.has(row.projectStatus.trim().toLowerCase()))
-
-        if (hasActiveSynthesis) {
-            return true
-        }
-
-        const hasFinalJudgment = currentSyntheses.some((row) => {
-            return row.finalJudgmentSummary.trim().length > 0 || row.finalRecommendation.trim().length > 0
-        })
-
-        return !hasFinalJudgment
-    }, [projectId, projectSummaries, visibleProjectSyntheses])
-
-    const currentSynthesisProgress = useMemo(() => {
-        const currentProject = projectSummaries.find((project) => (project.projectId || project.projectKey) === projectId.trim())
-        const completed = currentProject?.completedCount ?? 0
-        const received = currentProject?.documentCount ?? 0
-
-        if (received > 0 && completed < received) {
-            return {
-                value: Math.round((completed / received) * 70),
-                stage: 'Document analysis: ' + completed + '/' + received + ' complete',
-            }
-        }
-
-        if (isCurrentProjectAwaitingSynthesis) {
-            return { value: 82, stage: 'Synthesizing the latest project documents' }
-        }
-
-        return { value: 0, stage: 'Waiting for project documents' }
-    }, [isCurrentProjectAwaitingSynthesis, projectId, projectSummaries])
-
-    const shouldPollN8n = hasActiveSubmissions || hasActiveProjectSynthesis || isCurrentProjectAwaitingSynthesis
-    const hasDuplicateSubmissionMessage = batchSubmissionMessage.toLowerCase().includes('already been added')
-
+    const [batchNowTimestamp, setBatchNowTimestamp] = useState(() => Date.now())
     useEffect(() => {
-        if (!shouldPollN8n) {
-            return
-        }
+        if (!activeSubmissionBatch?.startedAt || activeBatchFinishedCount >= activeBatchExpectedCount) return
+        const timer = setInterval(() => setBatchNowTimestamp(Date.now()), 1000)
+        return () => clearInterval(timer)
+    }, [activeBatchExpectedCount, activeBatchFinishedCount, activeSubmissionBatch?.startedAt])
 
-        const intervalId = window.setInterval(() => {
-            void triggerSubmissionHistory({ environment: activeHistoryEnvironment }, { skipCache: true }).result
-            void triggerProjectSynthesis({ environment: activeHistoryEnvironment }, { skipCache: true }).result
-        }, 5000)
-
-        return () => {
-            window.clearInterval(intervalId)
-        }
-    }, [activeHistoryEnvironment, shouldPollN8n, triggerProjectSynthesis, triggerSubmissionHistory])
-
-    if (!fallbackFinding) {
-        return null
-    }
-
-    const selectedFinding = diligenceFindings.find((finding) => finding.id === selectedFindingId) ?? fallbackFinding
-    const openFindingEvidence = (finding: typeof selectedFinding) => {
-        const citation = finding.sourceCitation.toLowerCase()
-        const document = findCitedDocument(finding.sourceCitation, submissionHistory)
-        setActiveEvidence({
-            title: finding.summary,
-            sourceFile: document?.fileName || finding.sourceCitation,
-            sourceLocation: finding.sourceCitation,
-            excerpt: finding.sourceExcerpt,
-            confidence: finding.confidenceScore,
-            status: validationById[finding.id] ? 'Validated' : 'Pending analyst review',
-            provenance: finding.workstream,
-            documentUrl: document?.storageFileUrl,
-            documentId: document?.storageFileId,
-        })
-    }
-    const validatedCount = diligenceFindings.filter((finding) => validationById[finding.id]).length
-    const highPriorityCount = diligenceFindings.filter(
-        (finding) => finding.severity === 'Critical' || finding.severity === 'High'
-    ).length
-    const impact = useMemo(() => computeImpactMetrics(submissionHistory), [submissionHistory])
-    const activeProjectImpact = useMemo(() => {
-        const normalizedProjectId = activeProjectId.trim()
-        return computeImpactMetrics(submissionHistory.filter((row) => getProjectKey(row) === normalizedProjectId))
-    }, [activeProjectId, submissionHistory])
-    const reviewProjectCount = projectSummaries.filter((project) => project.reviewCount > 0).length
-    const activeProjectCount = projectSummaries.filter((project) => project.activeCount > 0).length
-    const readyProjectCount = projectSummaries.filter((project) => project.statusLabel === 'Ready for synthesis').length
-    const suggestedProjectName = dealName.length > 0 ? dealName : `Project ${projectSummaries.length + 1}`
-    const suggestedProjectId = projectId.length > 0 ? projectId : `project-${projectSummaries.length + 1}`
-    const availableProjects = projectSummaries.map((project) => ({
-        key: project.projectKey,
-        label: project.projectName,
-    }))
-    const webhookResponse = submitResponse?.response as SubmitWebhookResponse | undefined
-    const submitEnvironment = (submitResponse?.environment === 'test' ? 'test' : 'production') as SubmitEnvironment
-    const latestSubmittedRequestId = webhookResponse?.requestID ?? ''
-    const liveSubmittedRow = latestSubmittedRequestId.length > 0
-        ? submissionHistory.find((row) => row.requestID === latestSubmittedRequestId)
-        : undefined
-    const latestHistoryRow = [...submissionHistory].sort((left, right) => {
-        const leftTimestamp = Date.parse(left.processedAt || left.processingStartedAt || left.receivedAt || left.createdAt || left.triggerTimestamp)
-        const rightTimestamp = Date.parse(right.processedAt || right.processingStartedAt || right.receivedAt || right.createdAt || right.triggerTimestamp)
-        return (Number.isNaN(rightTimestamp) ? 0 : rightTimestamp) - (Number.isNaN(leftTimestamp) ? 0 : leftTimestamp)
-    })[0]
-
-    const [selectedBatchDocIndex, setSelectedBatchDocIndex] = useState<number>(0)
+    const batchElapsedSeconds = activeSubmissionBatch?.startedAt ? Math.max(0, Math.floor(((activeSubmissionBatch.endedAt || batchNowTimestamp) - activeSubmissionBatch.startedAt) / 1000)) : 0
+    const activeBatchImpact = useMemo(() => computeImpactMetrics(activeBatchRows), [activeBatchRows])
 
     const latestBatchRows = useMemo(() => {
-        const targetProjId = activeProjectId || projectId || liveSubmittedRow?.projectId || latestHistoryRow?.projectId
-        if (!targetProjId) return liveSubmittedRow ? [liveSubmittedRow] : (latestHistoryRow ? [latestHistoryRow] : [])
-        const rows = submissionHistory.filter((r) => r.projectId === targetProjId || r.submissionBatchId === targetProjId)
-        if (rows.length === 0) return liveSubmittedRow ? [liveSubmittedRow] : (latestHistoryRow ? [latestHistoryRow] : [])
-        return [...rows].sort((left, right) => {
-            const leftTime = Date.parse(left.receivedAt || left.createdAt || left.triggerTimestamp) || 0
-            const rightTime = Date.parse(right.receivedAt || right.createdAt || right.triggerTimestamp) || 0
-            return leftTime - rightTime
-        })
-    }, [activeProjectId, projectId, liveSubmittedRow, latestHistoryRow, submissionHistory])
+        return submissionHistory
+            .filter((row) => getProjectKey(row) === activeProjectId)
+            .sort((a, b) => new Date(b.createdAt || b.updatedAt || 0).getTime() - new Date(a.createdAt || a.updatedAt || 0).getTime())
+    }, [activeProjectId, submissionHistory])
 
-    const previousBatchCountRef = useRef<number>(0)
-    useEffect(() => {
-        if (latestBatchRows.length > previousBatchCountRef.current) {
-            setSelectedBatchDocIndex(latestBatchRows.length - 1)
-            previousBatchCountRef.current = latestBatchRows.length
-        }
-    }, [latestBatchRows.length])
+    const [selectedBatchDocIndex, setSelectedBatchDocIndex] = useState(0)
+    const safeBatchDocIndex = Math.min(selectedBatchDocIndex, Math.max(0, latestBatchRows.length - 1))
+    const displayedSubmissionRow = latestBatchRows[safeBatchDocIndex]
+    const liveSubmittedRow = displayedSubmissionRow
 
-    const safeBatchDocIndex = Math.min(Math.max(0, selectedBatchDocIndex), Math.max(0, latestBatchRows.length - 1))
-    const displayedSubmissionRow = latestBatchRows[safeBatchDocIndex] ?? liveSubmittedRow ?? latestHistoryRow
-    const displayedSubmitStatus = displayedSubmissionRow?.status ?? webhookResponse?.status ?? submitResponse?.status ?? 'accepted'
-    const displayedSubmitReceivedAt = displayedSubmissionRow?.receivedAt ?? webhookResponse?.receivedAt ?? 'Pending'
-    const displayedSubmitRowId = displayedSubmissionRow?.id ?? webhookResponse?.id ?? 'Pending'
-    const displayedSubmitRiskLevel = displayedSubmissionRow?.riskLevel ?? ''
+    const webhookResponse = useMemo(() => {
+        if (!submitResponse) return null
+        return submitResponse
+    }, [submitResponse])
+
+    const displayedSubmitStatus = displayedSubmissionRow?.status ?? (webhookResponse as any)?.status ?? (submitLoading ? 'queued' : '')
+    const displayedSubmitRowId = displayedSubmissionRow ? String(displayedSubmissionRow.id) : ((webhookResponse as any)?.id ? String((webhookResponse as any).id) : 'Pending')
+    const displayedSubmitReceivedAt = displayedSubmissionRow?.receivedAt ?? (webhookResponse as any)?.receivedAt ?? (webhookResponse as any)?.createdAt ?? ''
     const displayedSubmitTrafficLight = displayedSubmissionRow?.trafficLight ?? ''
-    const displayedSubmitCategory = displayedSubmissionRow?.category ?? ''
-    const displayedSubmitAiSummary = displayedSubmissionRow?.aiSummary ?? ''
-    const displayedSubmitVariance = displayedSubmissionRow?.aiVariance ?? ''
+    const displayedSubmitRiskLevel = displayedSubmissionRow?.riskLevel ?? ''
+    const displayedSubmitCategory = displayedSubmissionRow?.documentType ?? ''
     const displayedSubmitConfidence = displayedSubmissionRow?.aiConfidence ?? ''
-    const displayedSubmitEscalationReason = displayedSubmissionRow?.aiEscalationReason ?? ''
+    const displayedSubmitVariance = ''
+    const displayedSubmitValuationCurrency = displayedSubmissionRow?.valuationCurrency ?? 'USD'
+    const displayedSubmitAiSummary = displayedSubmissionRow?.aiSummary ?? ''
     const liveSubmitInsight = displayedSubmissionRow ? getAiSubmissionViewModel(displayedSubmissionRow) : null
-    const liveSubmitCitations = useMemo(() => {
-        const seen = new Set<string>()
-        return (liveSubmitInsight?.citations ?? []).filter((citation) => {
-            const key = `${citation.sourceFile.trim().toLowerCase()}|${citation.rowOrCell.trim().toLowerCase()}`
-            if (seen.has(key)) return false
-            seen.add(key)
-            return true
-        })
-    }, [liveSubmitInsight])
-    const displayedSubmitValuationCurrency = displayedSubmissionRow?.valuationCurrency ?? ''
-    const latestSavedBatch = useMemo(() => {
-        const rowsWithBatchId = submissionHistory.filter((row) => row.submissionBatchId.trim().length > 0)
+    const liveSubmitCitations = useMemo(() => liveSubmitInsight?.citations ?? [], [liveSubmitInsight])
+    const submitEnvironment = activeHistoryEnvironment
 
-        if (rowsWithBatchId.length === 0) {
-            return null
-        }
+    const highPriorityCount = diligenceFindings.filter((f) => f.severity === 'Critical' || f.severity === 'High').length
+    const validatedCount = Object.values(projectChecklistById).filter((item: any) => item?.completed).length
 
-        const latestRow = [...rowsWithBatchId].sort((left, right) => {
-            const leftTimestamp = Date.parse(left.processedAt || left.processingStartedAt || left.receivedAt || left.createdAt || left.triggerTimestamp)
-            const rightTimestamp = Date.parse(right.processedAt || right.processingStartedAt || right.receivedAt || right.createdAt || right.triggerTimestamp)
-            return (Number.isNaN(rightTimestamp) ? 0 : rightTimestamp) - (Number.isNaN(leftTimestamp) ? 0 : leftTimestamp)
-        })[0]
-
-        if (!latestRow) {
-            return null
-        }        const batchRows = rowsWithBatchId.filter((row) => row.submissionBatchId === latestRow.submissionBatchId)
-        const timestamps = batchRows
-            .map((row) => Date.parse(row.receivedAt || row.triggerTimestamp || row.createdAt))
-            .filter((value) => !Number.isNaN(value))
-        const terminalTimestamps = batchRows
-            .filter((row) => terminalBatchStatuses.has(row.status.trim().toLowerCase()) || Boolean(row.processedAt?.trim() || row.extractedJson?.trim()))
-            .map((row) => Date.parse(row.processedAt || row.updatedAt || row.receivedAt))
-            .filter((value) => !Number.isNaN(value))
-
-        return {
-            id: latestRow.submissionBatchId,
-            expectedDocumentCount: Math.max(batchRows.length, ...batchRows.map((row) => row.expectedBatchDocumentCount || 0)),
-            environment: latestRow.environment === 'test' ? 'test' : 'production',
-            startedAt: timestamps.length > 0 ? Math.min(...timestamps) : Date.now(),
-            endedAt: terminalTimestamps.length === batchRows.length ? Math.max(...terminalTimestamps) : undefined,
-        } satisfies SubmissionBatch
-    }, [submissionHistory])
-    const activeProjectSynthesis = useMemo(() => {
-        return visibleProjectSyntheses.find((synthesis) => {
-            return (
-                synthesis.projectId === activeProjectId ||
-                synthesis.projectId === selectedProjectKey ||
-                (projectId && synthesis.projectId === projectId)
-            )
-        })
-    }, [activeProjectId, projectId, selectedProjectKey, visibleProjectSyntheses])
-    const activeProjectSynthesisSucceeded = Boolean(
-        activeProjectSynthesis
-        && activeProjectSynthesis.projectStatus.trim().toLowerCase() === 'synthesized'
-        && (activeProjectSynthesis.finalJudgmentSummary.trim().length > 0 || activeProjectSynthesis.finalRecommendation.trim().length > 0)
-    )
-
-    const displayedSubmissionBatch = useMemo(() => {
-        const baseBatch = (() => {
-            if (!activeSubmissionBatch) return latestSavedBatch
-            if (!latestSavedBatch || latestSavedBatch.id !== activeSubmissionBatch.id) return activeSubmissionBatch
-            return {
-                ...activeSubmissionBatch,
-                expectedDocumentCount: Math.max(activeSubmissionBatch.expectedDocumentCount, latestSavedBatch.expectedDocumentCount),
-                startedAt: Math.min(activeSubmissionBatch.startedAt, latestSavedBatch.startedAt),
-                endedAt: latestSavedBatch.endedAt,
-            }
-        })()
-
-        if (!baseBatch) return null
-
-        if (!baseBatch.endedAt && activeProjectSynthesisSucceeded && activeProjectSynthesis?.updatedAt) {
-            const synthesisEndedAt = Date.parse(activeProjectSynthesis.updatedAt)
-            if (!Number.isNaN(synthesisEndedAt)) {
-                return { ...baseBatch, endedAt: synthesisEndedAt }
-            }
-        }
-
-        return baseBatch
-    }, [activeSubmissionBatch, latestSavedBatch, activeProjectSynthesisSucceeded, activeProjectSynthesis])
-
-    const handleAskingPriceChange = (value: string) => {
-        setAskingPrice(value)
-        setAskingPriceByProject((current) => ({ ...current, [activeProjectId]: value }))
-        if (dealModelSaveTimeout.current !== null) window.clearTimeout(dealModelSaveTimeout.current)
-        dealModelSaveTimeout.current = window.setTimeout(() => {
-            void triggerSaveDealModel({ projectId: activeProjectId, askingPrice: value }).result
-        }, 500)
-    }
-
-    const handleDealModelChange = (field: keyof DealModel, value: string) => {
-        const numericValue = value.trim() === '' ? null : Number(value)
-        if (numericValue !== null && !Number.isFinite(numericValue)) return
-        const currentAskingPrice = askingPrice.trim() === '' ? activeDealModel.askingPrice : Number(askingPrice)
-        const updated = { ...activeDealModel, askingPrice: typeof currentAskingPrice === 'number' && Number.isFinite(currentAskingPrice) ? currentAskingPrice : null, [field]: numericValue } as DealModel
-        setDealModelDraftByProject((current) => ({ ...current, [activeProjectId]: updated }))
-        void triggerSaveDealModel(updated).result
-    }
-    const handleDealModelDefaults = (values: Partial<DealModel>) => {
-        // Do not write a null "default" into another null field. In the live
-        // hydration path, a project can have revenue before EBITDA; repeatedly
-        // writing those unresolved nulls would cause a React update loop.
-        const missingOnly = Object.fromEntries(Object.entries(values).filter(([field, value]) => value !== null && value !== undefined && (activeDealModel[field as keyof DealModel] === null || activeDealModel[field as keyof DealModel] === undefined))) as Partial<DealModel>
-        if (Object.keys(missingOnly).length === 0) return
-        const updated = { ...activeDealModel, ...missingOnly } as DealModel
-        setDealModelDraftByProject((current) => ({ ...current, [activeProjectId]: updated }))
-        void triggerSaveDealModel(updated).result
-    }
-
-    useEffect(() => {
-        if (isExampleMode) return
-        const { revenue, ebitda } = parseIllustrativeFacts(activeDealModel.documentedFactsJson)
-        if (revenue === null && ebitda === null) return
-
-        // These are deliberately generic scenario inputs, not claims about a
-        // target or its industry. They unlock a first-pass model and retain
-        // null/user-entered values as the source of truth when available.
-        const purchasePrice = activeDealModel.askingPrice ?? (ebitda === null ? null : ebitda * 4)
-        const currentMargin = revenue !== null && ebitda !== null && revenue > 0 ? ebitda / revenue : null
-        const defaults: Partial<DealModel> = {
-            purchasePrice,
-            transactionFees: purchasePrice === null ? null : purchasePrice * 0.01,
-            workingCapitalRequirement: purchasePrice === null ? null : purchasePrice * 0.02,
-            holdPeriodYears: 5,
-            taxRate: 0.25,
-            maintenanceCapex: ebitda === null ? null : ebitda * 0.03,
-            exitMultiple: 4,
-            exitCosts: purchasePrice === null ? null : purchasePrice * 0.01,
-            equityContributionPercent: 0.3,
-            interestRate: 0.1,
-            amortizationYears: 10,
-            sellerNoteAmount: 0,
-            bearRevenueGrowth: 0,
-            baseRevenueGrowth: 0.05,
-            bullRevenueGrowth: 0.1,
-            bearEbitdaMargin: currentMargin === null ? 0.15 : Math.max(0, currentMargin - 0.03),
-            baseEbitdaMargin: currentMargin ?? 0.2,
-            bullEbitdaMargin: currentMargin === null ? 0.25 : currentMargin + 0.03,
-            bearExitMultiple: 3,
-            baseExitMultiple: 4,
-            bullExitMultiple: 5,
-            revenueMultiple: 1,
-            ebitdaMultiple: 4,
-            assetHaircutPercent: 0.1,
-        }
-        handleDealModelDefaults(defaults)
-    }, [activeDealModel, activeProjectId, isExampleMode])
-    const activeBatchRows = useMemo(() => {
-        if (!displayedSubmissionBatch) {
-            return []
-        }
-
-        return submissionHistory.filter((row) => row.submissionBatchId === displayedSubmissionBatch.id)
-    }, [displayedSubmissionBatch, submissionHistory])
-
-    const activeBatchExpectedCount = displayedSubmissionBatch?.expectedDocumentCount ?? activeBatchRows.length
-
-    const rawActiveBatchFinishedCount = activeBatchRows.filter((row) => {
-        const status = row.status.trim().toLowerCase()
-        return terminalBatchStatuses.has(status)
-            || Boolean(row.processedAt?.trim() || row.extractedJson?.trim())
-    }).length
-
-    // 💡 AUTOMATIC BATCH PROGRESS SYNC: If an active synthesis report exists for this project,
-    // all documents in the batch have reached synthesis stage and are marked completed/finished.
-    const activeBatchFinishedCount = activeProjectSynthesisSucceeded && activeBatchRows.length > 0
-        ? Math.max(rawActiveBatchFinishedCount, activeBatchRows.length, activeBatchExpectedCount)
-        : rawActiveBatchFinishedCount
-
-    const activeBatchProcessingCount = Math.min(
-        activeBatchExpectedCount || activeBatchRows.length,
-        Math.max(
-            activeBatchFinishedCount,
-            activeBatchRows.filter((row) => hasReachedProcessingStage(row.status)).length
-        )
-    )
-
-    const activeBatchFailedCount = activeBatchRows.filter((row) => {
-        const status = row.status.trim().toLowerCase()
-        return status === 'failed' || status === 'error' || status === 'rejected' || status === 'needs_review' || status === 'needs review'
-    }).length
-
-    const activeBatchCompletedCount = activeBatchRows.filter((row) => row.status.trim().toLowerCase() === 'completed').length
-
-    const activeBatchErrors = activeBatchRows
-        .filter((row) => row.errorMessage.trim().length > 0 && ['failed', 'error', 'rejected', 'needs_review', 'needs review'].includes(row.status.trim().toLowerCase()))
-        .map((row) => ({
-            fileName: row.fileName || 'Unnamed document',
-            message: row.errorMessage,
-            requestID: row.requestID,
-            canRetry: ['failed', 'error', 'rejected', 'needs_review', 'needs review'].includes(row.status.trim().toLowerCase()),
-        }))
-
-    const activeBatchAdvisories = activeBatchRows
-        .filter((row) => row.status.trim().toLowerCase() === 'completed' && row.errorMessage.trim().length > 0)
-        .map((row) => ({ fileName: row.fileName || 'Unnamed document', message: row.errorMessage }))
-
-    const activeBatchProgressPercent = activeBatchExpectedCount > 0
-        ? Math.min(100, Math.round((activeBatchFinishedCount / activeBatchExpectedCount) * 100))
-        : 0
-
-    const activeBatchProcessingPercent = activeBatchExpectedCount > 0
-        ? Math.min(100, Math.round((activeBatchProcessingCount / activeBatchExpectedCount) * 100))
-        : (displayedSubmissionBatch ? 100 : 0)
-    const activeBatchImpact = useMemo(() => computeImpactMetrics(activeBatchRows), [activeBatchRows])
-    const activeBatchStuckRows = activeBatchRows.filter((row) => {
-        const status = row.status.trim().toLowerCase()
-        if (status !== 'processing' && status !== 'running' && status !== 'queued' && status !== 'accepted') return false
-        const startedAt = Date.parse(row.processingStartedAt || row.receivedAt || row.triggerTimestamp || row.createdAt)
-        return !Number.isNaN(startedAt) && Date.now() - startedAt > 600_000
-    })
     const batchInProgressNotificationId = useRef<string | null>(null)
-    const batchReachedProcessingNotificationId = useRef<string | null>(null)
     const synthesisInProgressNotificationProjectId = useRef<string | null>(null)
 
-    const playCompletionSound = () => {
-        const AudioContextConstructor = window.AudioContext || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
-        if (!AudioContextConstructor) return
-        const context = completionAudioContext.current ?? new AudioContextConstructor()
-        completionAudioContext.current = context
-        const playTone = () => {
-            const oscillator = context.createOscillator()
-            const gain = context.createGain()
-            oscillator.type = 'sine'
-            oscillator.frequency.setValueAtTime(880, context.currentTime)
-            oscillator.frequency.setValueAtTime(1175, context.currentTime + 0.13)
-            gain.gain.setValueAtTime(0.0001, context.currentTime)
-            gain.gain.exponentialRampToValueAtTime(0.14, context.currentTime + 0.02)
-            gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.32)
-            oscillator.connect(gain).connect(context.destination)
-            oscillator.start()
-            oscillator.stop(context.currentTime + 0.34)
+    useEffect(() => {
+        if (!activeSubmissionBatch || activeBatchExpectedCount === 0) return
+        if (activeBatchFinishedCount < activeBatchExpectedCount && activeBatchProcessingCount > 0) {
+            if (batchInProgressNotificationId.current === activeSubmissionBatch.id) return
+            batchInProgressNotificationId.current = activeSubmissionBatch.id
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification('Document batch is processing', { body: `All ${activeBatchExpectedCount} documents have reached processing. Analysis is still running.` })
+            }
         }
-        if (context.state === 'running') playTone()
-        else void context.resume().then(playTone).catch(() => undefined)
-    }
-
-    const playErrorSound = () => {
-        const AudioContextConstructor = window.AudioContext || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
-        if (!AudioContextConstructor) return
-        const context = completionAudioContext.current ?? new AudioContextConstructor()
-        completionAudioContext.current = context
-        const playTone = () => {
-            ;[0, 0.18].forEach((offset) => {
-                const oscillator = context.createOscillator()
-                const gain = context.createGain()
-                oscillator.type = 'square'
-                oscillator.frequency.setValueAtTime(300, context.currentTime + offset)
-                oscillator.frequency.exponentialRampToValueAtTime(190, context.currentTime + offset + 0.13)
-                gain.gain.setValueAtTime(0.0001, context.currentTime + offset)
-                gain.gain.exponentialRampToValueAtTime(0.09, context.currentTime + offset + 0.015)
-                gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + offset + 0.15)
-                oscillator.connect(gain).connect(context.destination)
-                oscillator.start(context.currentTime + offset)
-                oscillator.stop(context.currentTime + offset + 0.16)
-            })
-        }
-        if (context.state === 'running') playTone()
-        else void context.resume().then(playTone).catch(() => undefined)
-    }
-
-    const [batchElapsedSeconds, setBatchElapsedSeconds] = useState(0)
+    }, [activeBatchExpectedCount, activeBatchFinishedCount, activeBatchProcessingCount, activeSubmissionBatch])
 
     useEffect(() => {
-        if (!displayedSubmissionBatch) {
-            setBatchElapsedSeconds(0)
-            return
-        }
-
-        const updateElapsedTime = () => {
-            const endTime = displayedSubmissionBatch.endedAt ?? Date.now()
-            setBatchElapsedSeconds(Math.max(0, Math.floor((endTime - displayedSubmissionBatch.startedAt) / 1000)))
-        }
-
-        updateElapsedTime()
-
-        if (activeBatchFinishedCount >= activeBatchExpectedCount) {
-            return
-        }
-
-        const intervalId = window.setInterval(updateElapsedTime, 1000)
-        return () => window.clearInterval(intervalId)
-    }, [activeBatchExpectedCount, activeBatchFinishedCount, displayedSubmissionBatch])
-
-    useEffect(() => {
-        if (!displayedSubmissionBatch || activeBatchExpectedCount === 0) return
-        if (activeBatchProcessingCount < activeBatchExpectedCount || activeBatchFinishedCount >= activeBatchExpectedCount) return
-        if (batchReachedProcessingNotificationId.current === displayedSubmissionBatch.id) return
-        batchReachedProcessingNotificationId.current = displayedSubmissionBatch.id
-        if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification('Document batch is processing', { body: `All ${activeBatchExpectedCount} documents have reached processing. Analysis is still running.` })
-        }
-    }, [activeBatchExpectedCount, activeBatchFinishedCount, activeBatchProcessingCount, displayedSubmissionBatch])
-
-    useEffect(() => {
-        if (!displayedSubmissionBatch || activeBatchExpectedCount === 0) return
+        if (!activeSubmissionBatch || activeBatchExpectedCount === 0) return
         if (activeBatchFinishedCount < activeBatchExpectedCount) {
-            batchInProgressNotificationId.current = displayedSubmissionBatch.id
+            batchInProgressNotificationId.current = activeSubmissionBatch.id
             return
         }
-        if (batchInProgressNotificationId.current !== displayedSubmissionBatch.id) return
+        if (batchInProgressNotificationId.current !== activeSubmissionBatch.id) return
         batchInProgressNotificationId.current = null
         playCompletionSound()
         if ('Notification' in window && Notification.permission === 'granted') {
             new Notification('Document batch complete', { body: `${activeBatchFinishedCount}/${activeBatchExpectedCount} documents have reached a final status.` })
         }
         setNotifications(prev => [{ id: `batch-${Date.now()}`, type: 'document_processed', title: 'Document batch complete', description: `${activeBatchFinishedCount}/${activeBatchExpectedCount} documents processed.`, timestamp: new Date(), read: false }, ...prev])
-    }, [activeBatchExpectedCount, activeBatchFinishedCount, displayedSubmissionBatch])
+    }, [activeBatchExpectedCount, activeBatchFinishedCount, activeSubmissionBatch])
 
     useEffect(() => {
         if (isCurrentProjectAwaitingSynthesis) {
@@ -1453,43 +654,21 @@ export default function DueDiligenceDashboard() {
         }
         window.addEventListener('keydown', handleCtrlK)
         return () => window.removeEventListener('keydown', handleCtrlK)
-    }, [])
-
-    const handleMarkNotificationRead = (id: string) => setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
-    const handleMarkAllNotificationsRead = () => setNotifications(prev => prev.map(n => ({ ...n, read: true })))
-    const handleClearNotifications = () => setNotifications([])
+    }, [setCommandPaletteOpen])
 
     useEffect(() => {
-        if (selectedProjectKey === 'new') {
-            return
+        function handleCtrlShiftP(e: KeyboardEvent) {
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'p' || e.key === 'P')) {
+                e.preventDefault()
+                setIsProjectsPanelOpen(prev => !prev)
+            }
         }
-
-        const matchingProject = projectSummaries.find((project) => project.projectKey === selectedProjectKey)
-
-        if (!matchingProject) {
-            return
-        }
-
-        setDealName(matchingProject.projectName)
-        setProjectId(matchingProject.projectId || matchingProject.projectKey)
-        setProjectStage(matchingProject.stage || 'post-loi')
-    }, [projectSummaries, selectedProjectKey])
-
-    useEffect(() => {
-        if (selectedProjectKey !== 'new') {
-            return
-        }
-
-        const usedProjectIds = projectSummaries.map((project) => project.projectId || project.projectKey)
-        const normalizedCurrentId = projectId.trim().toLowerCase()
-
-        if (normalizedCurrentId.length === 0 || usedProjectIds.some((id) => id.trim().toLowerCase() === normalizedCurrentId)) {
-            setProjectId(createUnusedProjectId(usedProjectIds))
-        }
-    }, [projectId, projectSummaries, selectedProjectKey])
+        window.addEventListener('keydown', handleCtrlShiftP)
+        return () => window.removeEventListener('keydown', handleCtrlShiftP)
+    }, [setIsProjectsPanelOpen])
 
     const handleCreateProject = () => {
-        const usedProjectIds = projectSummaries.map((project) => project.projectId || project.projectKey)
+        const usedProjectIds = projectSummaries.map((project: any) => project.projectId || project.projectKey)
 
         setSelectedProjectKey('new')
         setBatchSubmissionMessage('')
@@ -1503,7 +682,7 @@ export default function DueDiligenceDashboard() {
     const handlePortfolioProjectSelect = (projectKey: string, targetTab: WorkspaceTab = 'synthesis') => {
         setSelectedProjectKey(projectKey)
         setActiveWorkspaceTab(targetTab)
-        const project = projectSummaries.find((candidate) => candidate.projectKey === projectKey || candidate.projectId === projectKey)
+        const project = projectSummaries.find((candidate: any) => candidate.projectKey === projectKey || candidate.projectId === projectKey)
 
         if (project) {
             setProjectId(project.projectId || project.projectKey)
@@ -1526,10 +705,10 @@ export default function DueDiligenceDashboard() {
         if (result) await handleRefreshHistory(activeHistoryEnvironment)
     }
 
-    const handleAuditProjectOpen = (projectId: string) => {
-        const project = projectSummaries.find((candidate) => (candidate.projectId || candidate.projectKey) === projectId)
-        setSelectedProjectKey(project?.projectKey || projectId)
-        setProjectId(project?.projectId || projectId)
+    const handleAuditProjectOpen = (targetProjectId: string) => {
+        const project = projectSummaries.find((candidate: any) => (candidate.projectId || candidate.projectKey) === targetProjectId)
+        setSelectedProjectKey(project?.projectKey || targetProjectId)
+        setProjectId(project?.projectId || targetProjectId)
         if (project) {
             setDealName(project.projectName)
             setProjectStage(project.stage || 'post-loi')
@@ -1541,7 +720,7 @@ export default function DueDiligenceDashboard() {
     }
 
     const handleOpenProjectSynthesis = (targetProjectId: string) => {
-        const project = projectSummaries.find((candidate) => (candidate.projectId || candidate.projectKey) === targetProjectId)
+        const project = projectSummaries.find((candidate: any) => (candidate.projectId || candidate.projectKey) === targetProjectId)
         setSelectedProjectKey(project?.projectKey || targetProjectId)
         setProjectId(project?.projectId || targetProjectId)
         if (project) {
@@ -1576,15 +755,14 @@ export default function DueDiligenceDashboard() {
             const result = await triggerSubmissionConsideration({ requestID: sourceDocument.requestID, action: 'considered', environment: activeHistoryEnvironment }).result
             if (!result) throw new Error('Unable to start synthesis')
             await handleRefreshHistory(activeHistoryEnvironment)
-        } catch (error) {
-            setBatchSubmissionMessage(error instanceof Error ? error.message : 'Unable to start synthesis')
+        } catch (err) {
+            setBatchSubmissionMessage(err instanceof Error ? err.message : 'Unable to start synthesis')
         }
     }
 
     const handleRetryFailedDocument = async (requestID: string) => {
         const targetRow = submissionHistory.find((r) => r.requestID === requestID || String(r.id) === requestID)
         const targetProjectId = targetRow?.projectId || activeProjectId
-        const targetDealName = targetRow?.dealName || dealName || 'Retry Document'
 
         setActiveWorkspaceTab('diligence')
         window.setTimeout(() => {
@@ -1613,8 +791,8 @@ export default function DueDiligenceDashboard() {
 
             setBatchSubmissionMessage('Retry queued. The existing document is being processed again in real-time.')
             await triggerSubmissionHistory({ environment: activeHistoryEnvironment }, { skipCache: true }).result
-        } catch (error) {
-            setBatchSubmissionMessage(error instanceof Error ? error.message : 'Unable to queue retry')
+        } catch (err) {
+            setBatchSubmissionMessage(err instanceof Error ? err.message : 'Unable to queue retry')
         } finally {
             setRetryingRequestId(null)
         }
@@ -1643,7 +821,7 @@ export default function DueDiligenceDashboard() {
         const stoppableRequestIds = candidateRows
             .filter((row) => isActiveSubmissionStatus(row.status))
             .map((row) => row.requestID)
-            .filter((requestID) => requestID.trim().length > 0)
+            .filter((reqId) => reqId.trim().length > 0)
 
         if (stoppableRequestIds.length === 0) {
             setBatchSubmissionMessage('No active documents are currently processing to stop.')
@@ -1663,8 +841,8 @@ export default function DueDiligenceDashboard() {
             setBatchSubmissionMessage(`Stopped ${body.stopped ?? stoppableRequestIds.length} active document${(body.stopped ?? stoppableRequestIds.length) === 1 ? '' : 's'}.`)
             setActiveSubmissionBatch((current) => current ? { ...current, stoppedAt: Date.now(), endedAt: Date.now() } : current)
             await handleRefreshHistory(activeHistoryEnvironment)
-        } catch (error) {
-            setBatchSubmissionMessage(error instanceof Error ? error.message : 'Unable to stop the active batch')
+        } catch (err) {
+            setBatchSubmissionMessage(err instanceof Error ? err.message : 'Unable to stop the active batch')
         } finally {
             setIsStoppingBatch(false)
         }
@@ -1684,8 +862,8 @@ export default function DueDiligenceDashboard() {
             if (!response.ok) throw new Error(body.error || 'Unable to stop synthesis')
             setBatchSubmissionMessage('Synthesis marked as stopped. You can refresh, retry document analysis, or run synthesis again when ready.')
             await triggerProjectSynthesis({ environment: activeHistoryEnvironment }, { skipCache: true }).result
-        } catch (error) {
-            setBatchSubmissionMessage(error instanceof Error ? error.message : 'Unable to stop synthesis')
+        } catch (err) {
+            setBatchSubmissionMessage(err instanceof Error ? err.message : 'Unable to stop synthesis')
         } finally {
             setIsStoppingSynthesis(false)
         }
@@ -1698,9 +876,7 @@ export default function DueDiligenceDashboard() {
     }
 
     const handleSubmit = async (environment: SubmitEnvironment) => {
-        if (selectedFiles.length === 0) {
-            return
-        }
+        if (selectedFiles.length === 0) return
 
         if (isExampleMode && environment === 'production') {
             setDataSource('live')
@@ -1819,12 +995,8 @@ export default function DueDiligenceDashboard() {
             const resolvedKey = projectId || suggestedProjectId
             setSelectedProjectKey(resolvedKey)
             setSelectedFiles([])
-            if (dealName.length === 0) {
-                setDealName(suggestedProjectName)
-            }
-            if (projectId.length === 0) {
-                setProjectId(suggestedProjectId)
-            }
+            if (dealName.length === 0) setDealName(suggestedProjectName)
+            if (projectId.length === 0) setProjectId(suggestedProjectId)
             const currentUser = getStoredAuth()
             if (currentUser?.email && resolvedKey) {
                 claimProject(resolvedKey, currentUser.email)
@@ -1835,167 +1007,75 @@ export default function DueDiligenceDashboard() {
         }
     }
 
+    const openFindingEvidence = (finding: any) => {
+        setActiveEvidence({
+            title: finding.summary,
+            sourceFile: finding.owner,
+            sourceLocation: finding.sourceCitation,
+            excerpt: finding.sourceExcerpt,
+            status: finding.findingType,
+            provenance: 'Retool Legacy',
+        })
+    }
+
+    const hasDuplicateSubmissionMessage = batchSubmissionMessage.toLowerCase().includes('duplicate') || batchSubmissionMessage.toLowerCase().includes('already been added')
+
     return (
         <div className="min-h-screen bg-background text-foreground">
-            <header className="dashboard-header-mesh">
-                <div className="mx-auto flex max-w-[1440px] flex-col gap-4 px-4 py-5 sm:px-6 lg:flex-row lg:items-start lg:justify-between lg:px-8">
-                    <div className="space-y-2">
-                        <p className="text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
-                            Internal M&amp;A Due Diligence Workspace
-                        </p>
-                        <div className="flex flex-wrap items-center gap-3">
-                            <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
-                                Project-based diligence cockpit
-                            </h1>
-                            <DealStageIndicator />
-                            <PipelineStatusIndicator
-                                isPolling={!isExampleMode}
-                                hasActiveSubmissions={activeProjectDocuments.some(d => isActiveSubmissionStatus(d.status))}
-                                hasErrors={false}
-                            />
-                            <Button
-                                type="button"
-                                variant="outline"
-                                className="gap-2 border-primary/30 bg-primary/5 hover:bg-primary/10 font-semibold"
-                                onClick={() => setIsProjectsPanelOpen(true)}
-                                title="Open Projects Portfolio Panel (Ctrl+Shift+P)"
-                            >
-                                <FolderKanban className="h-4 w-4 text-primary" />
-                                <span className="hidden sm:inline">Projects</span>
-                                <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
-                                    {projectSummaries.length}
-                                </Badge>
-                            </Button>
-                            <Button type="button" variant="outline" className="gap-2 px-4 py-2 text-sm" onClick={() => { const next = currentTheme === 'dark' ? 'light' : currentTheme === 'light' ? 'system' : 'dark'; setCurrentTheme(next); setStoredTheme(next) }}>
-                                {currentTheme === 'dark' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-                                {currentTheme === 'system' ? 'Auto theme' : currentTheme === 'dark' ? 'Dark mode' : 'Light mode'}
-                            </Button>
-                            <ExportDealButton model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
-                            <KeyboardShortcutsDialog />
-                            <NotificationCenter
-                                notifications={notifications}
-                                onMarkRead={handleMarkNotificationRead}
-                                onMarkAllRead={handleMarkAllNotificationsRead}
-                                onClear={handleClearNotifications}
-                                onSelectNotification={(notif) => {
-                                    handleMarkNotificationRead(notif.id)
-                                    if (notif.type === 'synthesis_complete') {
-                                        setActiveWorkspaceTab('synthesis')
-                                    } else if (notif.type === 'document_processed') {
-                                        setActiveWorkspaceTab('diligence')
-                                    }
-                                }}
-                            />
-                            <Button type="button" variant="outline" className="gap-1.5 px-3 py-2 text-sm" onClick={() => setIsApiKeyModalOpen(true)} title="Configure custom Anthropic API Key (BYOK)">
-                                <Key className="h-4 w-4 text-primary" />
-                                <span className="hidden sm:inline">API Key</span>
-                            </Button>
-                            <LoginButton />
-                        </div>
-                        <p className="max-w-4xl text-sm text-muted-foreground">
-                            Shift from one-off document extraction to project-level diligence. Group uploads into a shared project,
-                            poll n8n for document progress, and prepare the agent to reconcile multiple files into one acquisition judgment.
-                        </p>
-                    </div>
+            <WorkspaceHeader
+                isExampleMode={isExampleMode}
+                activeProjectDocuments={activeProjectDocuments}
+                setIsProjectsPanelOpen={setIsProjectsPanelOpen}
+                projectSummaries={projectSummaries}
+                currentTheme={currentTheme}
+                setCurrentTheme={setCurrentTheme}
+                setStoredTheme={setStoredTheme}
+                hydratedDealModel={hydratedDealModel}
+                activeProjectSynthesis={activeProjectSynthesis ?? undefined}
+                dealName={dealName}
+                suggestedProjectName={suggestedProjectName}
+                notifications={notifications}
+                handleMarkNotificationRead={handleMarkNotificationRead}
+                handleMarkAllNotificationsRead={handleMarkAllNotificationsRead}
+                handleClearNotifications={handleClearNotifications}
+                setActiveWorkspaceTab={setActiveWorkspaceTab}
+                setIsApiKeyModalOpen={setIsApiKeyModalOpen}
+                isActiveSubmissionStatus={isActiveSubmissionStatus}
+            />
 
-                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                        <div className="rounded-lg border border-border bg-background px-4 py-3">
-                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Projects</p>
-                            <p className="mt-1 text-2xl font-semibold text-foreground">{projectSummaries.length}</p>
-                            <p className="mt-1 text-xs text-muted-foreground">Grouped from polled submissions</p>
-                        </div>
-                        <div className="rounded-lg border border-border bg-background px-4 py-3">
-                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Active projects</p>
-                            <p className="mt-1 text-2xl font-semibold text-foreground">{activeProjectCount}</p>
-                            <p className="mt-1 text-xs text-muted-foreground">Still ingesting or processing</p>
-                        </div>
-                        <div className="rounded-lg border border-border bg-background px-4 py-3">
-                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Needs review</p>
-                            <p className="mt-1 text-2xl font-semibold text-foreground">{reviewProjectCount}</p>
-                            <p className="mt-1 text-xs text-muted-foreground">Human follow-up required</p>
-                        </div>
-                        <div className="rounded-lg border border-border bg-background px-4 py-3">
-                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Ready for synthesis</p>
-                            <p className="mt-1 text-2xl font-semibold text-foreground">{readyProjectCount}</p>
-                            <p className="mt-1 text-xs text-muted-foreground">Project dossier has enough coverage</p>
-                        </div>
-                    </div>
-                </div>
-
-                {desktopNotificationPermission === 'default' ? (
-                    <div className="mx-auto max-w-[1440px] px-4 pb-5 sm:px-6 lg:px-8">
-                        <div className="flex flex-col gap-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                            <div>
-                                <p className="text-sm font-semibold text-foreground">Enable completion notifications</p>
-                                <p className="mt-1 text-sm text-muted-foreground">Get a desktop alert and chime when a document batch or project synthesis finishes, even while you are elsewhere in the workspace.</p>
-                            </div>
-                            <Button type="button" size="sm" className="shrink-0" onClick={() => { void enableDesktopNotifications() }}>Enable notifications</Button>
-                        </div>
-                    </div>
-                ) : null}
-
+            {isExampleMode ? (
                 <div className="mx-auto max-w-[1440px] px-4 pb-5 sm:px-6 lg:px-8">
-                    <div className="grid gap-3 rounded-xl border border-primary/20 bg-primary/[0.04] p-3 sm:grid-cols-3">
-                        <div className="rounded-lg bg-background/60 px-4 py-3">
-                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Documents analyzed</p>
-                            <p className="mt-1 text-2xl font-semibold text-foreground">{impact.completedDocuments}</p>
-                            <p className="mt-1 text-xs text-muted-foreground">Extracted and reconciled by the agent</p>
-                        </div>
-                        <div className="rounded-lg bg-background/60 px-4 py-3">
-                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Analyst time saved</p>
-                            <p className="mt-1 text-2xl font-semibold text-success">
-                                {impact.completedDocuments > 0 ? `~${formatHours(impact.timeSavedHours)}` : '—'}
-                            </p>
-                            <p className="mt-1 text-xs text-muted-foreground">
-                                {impact.completedDocuments > 0
-                                    ? `${formatHours(impact.analystHours)} manual review vs ${impact.agentMinutes >= 1 ? `${Math.round(impact.agentMinutes)}m` : '<1m'} agent${impact.fasterMultiple && impact.fasterMultiple >= 2 ? ` · ${Math.round(impact.fasterMultiple)}× faster` : ''}`
-                                    : 'Based on ~40 min manual review per document'}
+                    <div className="rounded-xl border-2 border-primary/35 bg-primary/10 px-5 py-5 shadow-sm sm:flex sm:items-center sm:justify-between sm:gap-6">
+                        <div className="max-w-3xl">
+                            <p className="text-lg font-semibold text-foreground">Viewing sample data in Example mode</p>
+                            <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                                Test document uploads, batch tracking, and synthesis output with sample records.
                             </p>
                         </div>
-                        <div className="rounded-lg bg-background/60 px-4 py-3">
-                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Avg AI confidence</p>
-                            <p className="mt-1 text-2xl font-semibold text-foreground">
-                                {impact.avgConfidence !== null ? `${impact.avgConfidence}%` : '—'}
-                            </p>
-                            <p className="mt-1 text-xs text-muted-foreground">Mean extraction confidence across completed docs</p>
-                        </div>
+                        <Button size="lg" className="mt-4 w-full shrink-0 sm:mt-0 sm:w-auto" onClick={() => setDataSource('mock')}>
+                            Open example workspace
+                        </Button>
                     </div>
                 </div>
-                {!isExampleMode ? (
-                    <div className="mx-auto max-w-[1440px] px-4 pb-5 sm:px-6 lg:px-8">
-                        <div className="rounded-xl border-2 border-primary/35 bg-primary/10 px-5 py-5 shadow-sm sm:flex sm:items-center sm:justify-between sm:gap-6">
-                            <div className="max-w-3xl">
-                                <p className="text-lg font-semibold text-foreground">New to the dashboard?</p>
-                                <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                                    Explore a completed diligence project with document analysis, batch progress, and final synthesis before submitting live data.
-                                </p>
-                            </div>
-                            <Button size="lg" className="mt-4 w-full shrink-0 sm:mt-0 sm:w-auto" onClick={() => setDataSource('mock')}>
-                                Open example workspace
-                            </Button>
+            ) : (
+                <div className="mx-auto max-w-[1440px] px-4 pb-5 sm:px-6 lg:px-8">
+                    <div className="rounded-xl border-2 border-success/35 bg-success/10 px-5 py-5 shadow-sm sm:flex sm:items-center sm:justify-between sm:gap-6">
+                        <div className="max-w-3xl">
+                            <p className="text-lg font-semibold text-foreground">Ready to try it with your own documents?</p>
+                            <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                                Switch to Live n8n to queue a real project document and follow its document-level analysis through project synthesis.
+                            </p>
                         </div>
+                        <Button size="lg" className="mt-4 w-full shrink-0 sm:mt-0 sm:w-auto" onClick={() => setDataSource('live')}>
+                            Go to Live n8n
+                        </Button>
                     </div>
-                ) : (
-                    <div className="mx-auto max-w-[1440px] px-4 pb-5 sm:px-6 lg:px-8">
-                        <div className="rounded-xl border-2 border-success/35 bg-success/10 px-5 py-5 shadow-sm sm:flex sm:items-center sm:justify-between sm:gap-6">
-                            <div className="max-w-3xl">
-                                <p className="text-lg font-semibold text-foreground">Ready to try it with your own documents?</p>
-                                <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                                    Switch to Live n8n to queue a real project document and follow its document-level analysis through project synthesis.
-                                </p>
-                            </div>
-                            <Button size="lg" className="mt-4 w-full shrink-0 sm:mt-0 sm:w-auto" onClick={() => setDataSource('live')}>
-                                Go to Live n8n
-                            </Button>
-                        </div>
-                    </div>
-                )}
-            </header>
+                </div>
+            )}
 
-            {/* ── Top-level Deal Health KPI strip (duplicated for at-a-glance visibility) ── */}
             <div className="mx-auto max-w-[1440px] px-4 pt-4 sm:px-6 lg:px-8">
                 <DealHealthKPIs
-                    synthesis={activeProjectSynthesis}
+                    synthesis={activeProjectSynthesis ?? undefined}
                     model={hydratedDealModel}
                     impact={activeProjectImpact}
                     documentsCount={activeProjectDocuments.length}
@@ -2027,9 +1107,7 @@ export default function DueDiligenceDashboard() {
                     onSelectedProjectKeyChange={setSelectedProjectKey}
                     onCreateProject={handleCreateProject}
                     onFileSelect={setSelectedFiles}
-                    onSubmit={(environment) => {
-                        void handleSubmit(environment)
-                    }}
+                    onSubmit={(environment) => { void handleSubmit(environment) }}
                 />
 
                 {submitError ? (
@@ -2045,77 +1123,30 @@ export default function DueDiligenceDashboard() {
                             <div>
                                 <p className={hasDuplicateSubmissionMessage ? 'font-semibold text-destructive' : 'font-semibold'}>{hasDuplicateSubmissionMessage ? 'Duplicate document blocked' : 'Upload notice'}</p>
                                 <p className="mt-1 leading-6 text-foreground">{batchSubmissionMessage}</p>
-                                {hasDuplicateSubmissionMessage ? <p className="mt-1 text-xs text-muted-foreground">No duplicate was sent to n8n. Choose a different file or switch to another project to upload it.</p> : null}
                             </div>
                         </div>
                     </div>
                 ) : null}
 
-                {activeProjectId && (
-                    <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border/80 bg-card/75 px-4 py-2 text-xs shadow-sm backdrop-blur-md transition-shadow duration-200 hover:shadow-md print:hidden">
-                        <span className="font-medium text-foreground truncate max-w-[200px]">{dealName || suggestedProjectName}</span>
-                        <span className="text-muted-foreground">|</span>
-                        <span className={`font-medium ${activeProjectSynthesis?.finalTrafficLight === 'RED' ? 'text-red-600' : activeProjectSynthesis?.finalTrafficLight === 'YELLOW' ? 'text-amber-600' : activeProjectSynthesis?.finalTrafficLight === 'GREEN' ? 'text-green-600' : 'text-muted-foreground'}`}>
-                            {activeProjectSynthesis?.finalTrafficLight === 'RED' ? `⚠ ${activeProjectSynthesis.redFlags.length} red flags` : activeProjectSynthesis?.finalTrafficLight === 'YELLOW' ? `△ ${activeProjectSynthesis.yellowFlags?.length ?? 0} cautions` : activeProjectSynthesis?.finalTrafficLight === 'GREEN' ? '✓ Low risk' : '— Pending'}
-                        </span>
-                        {(() => {
-                            const facts = hydratedDealModel.documentedFactsJson ? (() => { try { return JSON.parse(hydratedDealModel.documentedFactsJson) } catch { return {} } })() : {}
-                            const ebitda = typeof facts.ebitda_sde?.value === 'number' ? facts.ebitda_sde.value : null
-                            const revenue = typeof facts.revenue?.value === 'number' ? facts.revenue.value : null
-                            const price = hydratedDealModel.purchasePrice ?? hydratedDealModel.askingPrice
-                            const entryMult = price && ebitda && ebitda > 0 ? (price / ebitda).toFixed(1) + 'x' : null
-                            const margin = revenue && ebitda && revenue > 0 ? ((ebitda / revenue) * 100).toFixed(0) + '%' : null
-                            return <>
-                                {entryMult && <><span className="text-muted-foreground">|</span><span className="text-foreground">Entry: <span className="font-semibold">{entryMult}</span></span></>}
-                                {margin && <><span className="text-muted-foreground">|</span><span className="text-foreground">Margin: <span className="font-semibold">{margin}</span></span></>}
-                            </>
-                        })()}
-                        <span className="text-muted-foreground">|</span>
-                        <span className="text-foreground">Docs: <span className="font-semibold">{activeProjectDocuments.length}</span></span>
-                        {activeProjectSynthesis && <><span className="text-muted-foreground">|</span><span className="text-foreground">Quality: <span className="font-semibold">{activeProjectSynthesis.aiConfidence || '—'}</span></span></>}
-                    </div>
-                )}
-                {(() => {
-                    const hasPendingDocs = activeProjectDocuments.some((d) => {
-                        const st = (d.status || '').trim().toLowerCase()
-                        return ['processing', 'pending', 'uploading', 'in_progress', 'queued', 'analyzing', 'running'].includes(st)
-                    })
-                    const hasCompletedDocs = activeProjectDocuments.some((d) => {
-                        const st = (d.status || '').trim().toLowerCase()
-                        return ['completed', 'succeeded', 'success', 'processed', 'analysed', 'extracted', 'failed', 'error', 'rejected'].includes(st)
-                    })
-                    const isDiligenceComplete = activeProjectDocuments.length > 0 && !hasPendingDocs && hasCompletedDocs
-
-                    const isSynthesisReady = Boolean(
-                        activeProjectSynthesis &&
-                        !isCurrentProjectAwaitingSynthesis &&
-                        (['synthesized', 'completed', 'success'].includes((activeProjectSynthesis.projectStatus || '').trim().toLowerCase()) ||
-                         (activeProjectSynthesis.finalRecommendation || '').trim().length > 0 ||
-                         (activeProjectSynthesis.finalJudgmentSummary || '').trim().length > 0)
-                    )
-
-                    return (
-                        <DealWorkspaceNav
-                            activeTab={activeWorkspaceTab}
-                            isDiligenceComplete={isDiligenceComplete}
-                            isSynthesisReady={isSynthesisReady}
-                            onTabChange={(tab) => {
-                                setActiveWorkspaceTab(tab)
-                                const workspace = document.getElementById('deal-workspace')
-                                if (workspace) {
-                                    workspace.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                                } else {
-                                    window.scrollTo({ top: 0, behavior: 'smooth' })
-                                }
-                            }}
-                        />
-                    )
-                })()}
+                <DealWorkspaceNav
+                    activeTab={activeWorkspaceTab}
+                    isDiligenceComplete={activeProjectDocuments.length > 0 && !isCurrentProjectProcessingDocuments}
+                    isSynthesisReady={Boolean(activeProjectSynthesis && !isCurrentProjectAwaitingSynthesis)}
+                    onTabChange={(tab) => {
+                        setActiveWorkspaceTab(tab)
+                        const workspace = document.getElementById('deal-workspace')
+                        if (workspace) {
+                            workspace.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                        } else {
+                            window.scrollTo({ top: 0, behavior: 'smooth' })
+                        }
+                    }}
+                />
 
                 {activeWorkspaceTab === 'overview' ? (
                     <OverviewWorkspaceView
                         hydratedDealModel={hydratedDealModel}
-                        activeProjectSynthesis={activeProjectSynthesis}
+                        activeProjectSynthesis={activeProjectSynthesis ?? undefined}
                         dealName={dealName}
                         suggestedProjectName={suggestedProjectName}
                         activeProjectDocuments={activeProjectDocuments}
@@ -2124,130 +1155,33 @@ export default function DueDiligenceDashboard() {
                     />
                 ) : null}
 
-
-
-
-                {activeWorkspaceTab === 'analysis' ? <section id="deal-analysis" className="space-y-6 scroll-mt-6">
-                    <div className="pt-1">
-                        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Snapshot &amp; scoring</h3>
-                    </div>
-                    <SafeSuspense label="analysis">
-                        <DealOnAPageCard model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
-                        <DealScorecardExportCard model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
-                        <BusinessSnapshotCard model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
-                        <OpportunityScoreCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
-                        <RiskAdjustedValuationCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
-                    </SafeSuspense>
-                    <NextActionsCard
-                        model={hydratedDealModel}
-                        synthesis={activeProjectSynthesis}
-                        documents={activeProjectDocuments}
-                        onNavigate={(target) => {
-                            if (target === 'upload') {
-                                document.querySelector('[data-project-intake]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                            } else {
-                                setActiveWorkspaceTab(target as WorkspaceTab)
-                            }
-                        }}
+                {activeWorkspaceTab === 'analysis' ? (
+                    <AnalysisWorkspaceView
+                        hydratedDealModel={hydratedDealModel}
+                        activeProjectSynthesis={activeProjectSynthesis ?? undefined}
+                        dealName={dealName}
+                        suggestedProjectName={suggestedProjectName}
+                        activeProjectDocuments={activeProjectDocuments}
+                        activeProjectImpact={activeProjectImpact}
+                        activeProjectId={activeProjectId}
+                        setActiveWorkspaceTab={setActiveWorkspaceTab}
                     />
-                    <DealReadinessGauge
-                        model={hydratedDealModel}
-                        synthesis={activeProjectSynthesis}
-                        documentsCount={activeProjectDocuments.length}
-                        completedDocuments={activeProjectImpact.completedDocuments}
-                    />
-                    <DocumentCoverageMatrix documents={activeProjectDocuments} />
-                    <DealScorecard
-                        model={hydratedDealModel}
-                        synthesis={activeProjectSynthesis}
-                        impact={activeProjectImpact}
-                        documentsCount={activeProjectDocuments.length}
-                    />
-                    <DealRulesOfThumb model={hydratedDealModel} />
-                    <ConfidenceMeterCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} />
-                    <div className="border-t border-border pt-4">
-                        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Health, benchmarks &amp; modeling</h3>
-                    </div>
-                    <FinancialHealthCard model={hydratedDealModel} />
-                    <EBITDAQualityScoreCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
-                    <BenchmarkComparisonCard model={hydratedDealModel} />
-                    <MarketPositionCard model={hydratedDealModel} />
-                    <Suspense fallback={null}><AssumptionGapsCard model={hydratedDealModel} /></Suspense>
-                    <WhatsMissingCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} />
-                    <Suspense fallback={null}><MarketCompsCard model={hydratedDealModel} /></Suspense>
-                    <Suspense fallback={null}>
-                        <FinancingScenariosCard model={hydratedDealModel} />
-                        <InvestmentMetricsCard model={hydratedDealModel} />
-                        <IndustryPercentileCard model={hydratedDealModel} />
-                        <DealTypeAnalysisCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
-                        <DealFitCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
-                        <AssetCompositionCard model={hydratedDealModel} />
-                        <ValuationGapCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
-                        <CashOnCashCalculatorCard model={hydratedDealModel} />
-                        <BusinessValueEvolutionCard model={hydratedDealModel} />
-                        <RevenueBridgeCard model={hydratedDealModel} />
-                        <BaseReturnMetricsCard model={hydratedDealModel} />
-                        <GrowthSensitivityCard model={hydratedDealModel} />
-                        <MonteCarloCard model={hydratedDealModel} />
-                        <BreakevenAnalysisCard model={hydratedDealModel} />
-                    </Suspense>
-
-                    <Suspense fallback={null}>
-                        <div className="border-t border-border pt-4">
-                            <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Analysis & Insights</h3>
-                        </div>
-                        <DealQuickInsights model={hydratedDealModel} synthesis={activeProjectSynthesis} />
-                        <InvestmentThesisCard model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
-                        <DecisionFrameworkCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
-                        <QuickWinsCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
-                        <StrengthsWeaknessesCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
-
-                        <div className="border-t border-border pt-4">
-                            <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Risk Assessment</h3>
-                        </div>
-                        <RiskSummaryCard synthesis={activeProjectSynthesis} />
-                        <RiskMatrixCard synthesis={activeProjectSynthesis} />
-                        <KeyPersonRiskCard synthesis={activeProjectSynthesis} />
-                        <OwnerDependencyCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
-                        <DiligenceCompletenessCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documentCount={activeProjectDocuments.length} onNavigate={(target) => {
-                            if (target === 'upload') {
-                                document.querySelector('[data-project-intake]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                            } else {
-                                setActiveWorkspaceTab(target as WorkspaceTab)
-                            }
-                        }} />
-                        <RiskRewardScatterCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
-                        <DealKillerCheckCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
-                        <SecondOpinionCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
-                        <AlertRulesCard synthesis={activeProjectSynthesis} />
-
-                        <div className="border-t border-border pt-4">
-                            <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Negotiation & Closing</h3>
-                        </div>
-                        <TimeToCloseCard
-                            documentsCount={activeProjectDocuments.length}
-                            completedDocuments={activeProjectDocuments.filter(d => d.status === 'completed').length}
-                            hasSynthesis={!!activeProjectSynthesis}
-                            hasValuation={!!activeProjectSynthesis?.valuationBaseEstimate && activeProjectSynthesis.valuationBaseEstimate !== '0'}
-                            hasFinancing={hydratedDealModel.equityContributionPercent != null}
-                        />
-                        <ClosingChecklistCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} />
-                        <SellerQuestionsCard synthesis={activeProjectSynthesis} model={hydratedDealModel} />
-                        <ManagementQuestionTracker projectId={activeProjectId} suggestedQuestions={activeProjectSynthesis?.openQuestions ?? []} />
-                        <NegotiationPlaybook synthesis={activeProjectSynthesis} model={hydratedDealModel} />
-                        <NegotiationImpactCard model={hydratedDealModel} />
-                        <DealTimingCard model={hydratedDealModel} />
-                        <AcquisitionTimelineCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
-                        <InvestorReadinessCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documentCount={activeProjectDocuments.length} />
-                        <TermSheetCard model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
-                        <DDRequestListCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} projectName={dealName || suggestedProjectName} />
-                    </Suspense>
-                    <ActivityFeed documents={activeProjectDocuments} />
-                    <Suspense fallback={null}><PublicDataEnrichmentCard model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} /></Suspense>
-                </section> : null}
+                ) : null}
 
                 <Suspense fallback={<div className="flex items-center justify-center gap-2 rounded-lg border border-border bg-muted/20 p-8"><Loader2 className="h-5 w-5 animate-spin text-primary" /><span className="text-sm text-muted-foreground">Loading tab…</span></div>}>
-                    {activeWorkspaceTab === 'valuation' ? <section className="space-y-6"><ModelAssumptionsSummary model={hydratedDealModel} area="valuation" /><DealValuationCard synthesis={activeProjectSynthesis} askingPrice={askingPrice} model={hydratedDealModel} onModelChange={handleDealModelChange} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><SafeSuspense label="valuation"><ValuationGapCard model={hydratedDealModel} synthesis={activeProjectSynthesis} /><ComparableTransactionsCard model={hydratedDealModel} /></SafeSuspense><SensitivityAnalysisCard model={returnsDisplayModel} /><MathChecksSection documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} compact title="Data integrity checks" description="Verifies the financial numbers feeding into valuation methods." /></section> : null}
+                    {activeWorkspaceTab === 'valuation' ? (
+                        <ValuationWorkspaceView
+                            hydratedDealModel={hydratedDealModel}
+                            activeProjectSynthesis={activeProjectSynthesis ?? undefined}
+                            askingPrice={askingPrice}
+                            handleDealModelChange={handleDealModelChange}
+                            submissionHistory={submissionHistory}
+                            setActiveEvidence={setActiveEvidence}
+                            returnsDisplayModel={returnsDisplayModel}
+                            activeProjectDocuments={activeProjectDocuments}
+                        />
+                    ) : null}
+
                     {activeWorkspaceTab === 'returns' ? (
                         <ReturnsWorkspaceView
                             activeDealModel={activeDealModel}
@@ -2260,9 +1194,41 @@ export default function DueDiligenceDashboard() {
                             handleDealModelDefaults={handleDealModelDefaults}
                         />
                     ) : null}
-                    {activeWorkspaceTab === 'growth' ? <section className="space-y-6"><ModelAssumptionsSummary model={activeDealModel} area="growth" />{isGrowthIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<GrowthDecisionSummary model={returnsDisplayModel} /><ScenarioComparisonCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><EbitdaProjectionCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><SafeSuspense label="growth"><BusinessValueEvolutionCard model={returnsDisplayModel} /><RevenueBridgeCard model={returnsDisplayModel} /><GrowthSensitivityCard model={returnsDisplayModel} /><ExitReadinessCard model={returnsDisplayModel} synthesis={activeProjectSynthesis} /><ValueCreationPlanCard model={returnsDisplayModel} /><First100DaysCard model={returnsDisplayModel} synthesis={activeProjectSynthesis} /><KeyMetricsTrendCard model={returnsDisplayModel} /><OperatingLeverageCard model={returnsDisplayModel} /></SafeSuspense><MathChecksSection documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} compact title="Revenue & margin checks" description="Verifies starting revenue and margin figures used in growth projections." /><DealModelPendingCard area="growth" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
-                    {activeWorkspaceTab === 'structure' ? <section className="space-y-6"><ModelAssumptionsSummary model={activeDealModel} area="structure" /><DealStructureVisualCard model={hydratedDealModel} onOpenEvidence={setActiveEvidence} /><SafeSuspense label="structure"><DealStackCard model={hydratedDealModel} /><LeverageSafetyCard model={hydratedDealModel} /><DownsideProtectionCard model={hydratedDealModel} /><CashReserveAnalysisCard model={hydratedDealModel} /><FinancingComparisonCard model={hydratedDealModel} /><WorkingCapitalCard model={hydratedDealModel} /></SafeSuspense><DealModelPendingCard area="structure" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
-                    {activeWorkspaceTab === 'negotiation' ? <section className="space-y-6"><SectionHeader step={1} title="Negotiation playbook" description="Seller questions, management follow-up, leverage, timing, and request-list workflow in one place." /><SellerQuestionsCard synthesis={activeProjectSynthesis} model={hydratedDealModel} /><ManagementQuestionTracker projectId={activeProjectId} suggestedQuestions={activeProjectSynthesis?.openQuestions ?? []} /><NegotiationPlaybook synthesis={activeProjectSynthesis} model={hydratedDealModel} /><NegotiationImpactCard model={hydratedDealModel} /><DealTimingCard model={hydratedDealModel} /><AcquisitionTimelineCard model={hydratedDealModel} synthesis={activeProjectSynthesis} /><InvestorReadinessCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documentCount={activeProjectDocuments.length} /><TermSheetCard model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} /><DDRequestListCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} projectName={dealName || suggestedProjectName} /></section> : null}
+
+                    {activeWorkspaceTab === 'growth' ? (
+                        <GrowthWorkspaceView
+                            activeDealModel={activeDealModel}
+                            isGrowthIllustrativePreview={isGrowthIllustrativePreview}
+                            returnsDisplayModel={returnsDisplayModel}
+                            submissionHistory={submissionHistory}
+                            setActiveEvidence={setActiveEvidence}
+                            activeProjectSynthesis={activeProjectSynthesis ?? undefined}
+                            activeProjectDocuments={activeProjectDocuments}
+                            handleDealModelChange={handleDealModelChange}
+                            handleDealModelDefaults={handleDealModelDefaults}
+                        />
+                    ) : null}
+
+                    {activeWorkspaceTab === 'structure' ? (
+                        <StructureWorkspaceView
+                            activeDealModel={activeDealModel}
+                            hydratedDealModel={hydratedDealModel}
+                            setActiveEvidence={setActiveEvidence}
+                            handleDealModelChange={handleDealModelChange}
+                            handleDealModelDefaults={handleDealModelDefaults}
+                        />
+                    ) : null}
+
+                    {activeWorkspaceTab === 'negotiation' ? (
+                        <NegotiationWorkspaceView
+                            activeProjectSynthesis={activeProjectSynthesis ?? undefined}
+                            hydratedDealModel={hydratedDealModel}
+                            activeProjectId={activeProjectId}
+                            activeProjectDocuments={activeProjectDocuments}
+                            dealName={dealName}
+                            suggestedProjectName={suggestedProjectName}
+                        />
+                    ) : null}
 
                     {activeWorkspaceTab === 'diligence' ? (
                         <div className="space-y-6">
@@ -2283,7 +1249,7 @@ export default function DueDiligenceDashboard() {
                                 setActiveWorkspaceTab={setActiveWorkspaceTab}
                                 hydratedDealModel={hydratedDealModel}
                                 activeProjectDocuments={activeProjectDocuments}
-                                activeProjectSynthesis={activeProjectSynthesis}
+                                activeProjectSynthesis={activeProjectSynthesis ?? undefined}
                                 dealName={dealName}
                                 suggestedProjectName={suggestedProjectName}
                                 projectChecklistById={projectChecklistById}
@@ -2291,612 +1257,95 @@ export default function DueDiligenceDashboard() {
                                 impact={impact}
                             />
 
-                        {!isExampleMode && isCurrentProjectAwaitingSynthesis ? (
-                            <div className="flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-800/50 dark:bg-amber-900/15">
-                                <Loader2 className="mt-0.5 h-5 w-5 shrink-0 animate-spin text-amber-600" />
-                                <div>
-                                    <p className="text-sm font-semibold text-foreground">Project synthesis in progress</p>
-                                    <p className="mt-1 text-sm text-muted-foreground">
-                                        All documents finished processing, so the agent is now consolidating them into one project judgment. This typically takes a couple of minutes and will appear in the <strong>Synthesis</strong> tab — the document-level results below are already available while you wait.
-                                    </p>
-                                </div>
-                            </div>
-                        ) : null}
-
-                        {!isExampleMode && projectSummaries.length > 0 ? (
-                            <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 sm:flex sm:items-center sm:justify-between sm:gap-4">
-                                <div>
-                                    <p className="text-sm font-semibold text-foreground">Review the current project-level result</p>
-                                    <p className="mt-1 text-sm text-muted-foreground">
-                                        Project Synthesis consolidates the selected project&apos;s documents, risks, and negotiation levers. The Project Portfolio provides its document-level context.
-                                    </p>
-                                </div>
-                                <Button
-                                    type="button"
-                                    size="lg"
-                                    className="mt-3 w-full shrink-0 sm:mt-0 sm:w-auto"
-                                    onClick={() => document.getElementById('project-synthesis')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                                >
-                                    View project synthesis
-                                </Button>
-                            </div>
-                        ) : null}
-
-                        {isExampleMode ? (
-                            <div className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm text-foreground">
-                                <p className="font-medium">Example workspace</p>
-                                <p className="mt-1 text-muted-foreground">
-                                    This sample project illustrates the document analysis, portfolio, and final synthesis views. It is not live n8n data.
-                                </p>
-                            </div>
-                        ) : null}
-
-                        {!isExampleMode && projectSummaries.length === 0 && !submissionHistoryLoading && !submitLoading && !displayedSubmissionBatch ? (
-                            <div className="rounded-lg border border-muted bg-muted/30 px-5 py-6 text-center">
-                                <FileSearch className="mx-auto h-10 w-10 text-muted-foreground/60" />
-                                <p className="mt-3 text-base font-semibold text-foreground">No documents processed yet</p>
-                                <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-                                    Queue documents in the <strong>Production</strong> tab to run them through the AI diligence pipeline. Once processed, your findings, synthesis, and project portfolio will appear here.
-                                </p>
-                                <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-                                    Feel free to look around — switch to <strong>Example Data</strong> mode using the toggle above to explore a sample project and see what the output looks like.
-                                </p>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    className="mt-4"
-                                    onClick={() => setActiveWorkspaceTab('overview')}
-                                >
-                                    <Plus className="mr-1.5 h-4 w-4" />
-                                    Go to Production to upload documents
-                                </Button>
-                            </div>
-                        ) : null}
-
-                        {!isExampleMode && submitError ? (
-                            <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm">
-                                <div className="flex items-start gap-2">
-                                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+                            {!isExampleMode && isCurrentProjectAwaitingSynthesis ? (
+                                <div className="flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-800/50 dark:bg-amber-900/15">
+                                    <Loader2 className="mt-0.5 h-5 w-5 shrink-0 animate-spin text-amber-600" />
                                     <div>
-                                        <p className="font-semibold text-destructive">Document submission failed</p>
-                                        <p className="mt-1 text-foreground">{submitError}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        ) : null}
-
-                        {displayedSubmissionBatch ? (
-                            <Card className="overflow-hidden">
-                                <CardContent className="space-y-4 p-4">
-                                    <div className="flex flex-wrap items-center justify-between gap-2">
-                                        <div>
-                                            <p className="text-sm font-semibold text-foreground">{activeSubmissionBatch ? 'Batch processing progress' : 'Most recent batch processing progress'}</p>
-                                            <p className="text-sm text-muted-foreground">
-                                                Finished {activeBatchFinishedCount}/{activeBatchExpectedCount} documents
-                                                {activeBatchFailedCount > 0 ? ` · ${activeBatchFailedCount} failed` : ''}
-                                            </p>
-                                        </div>
-                                        <div className="flex flex-wrap items-center gap-2">
-                                            {activeBatchFinishedCount < activeBatchExpectedCount ? (
-                                                <Button type="button" variant="outline" size="sm" disabled={isStoppingBatch} onClick={handleStopBatch}>
-                                                    {isStoppingBatch ? 'Stopping batch…' : 'Stop batch'}
-                                                </Button>
-                                            ) : null}
-                                            <Badge variant={activeBatchFinishedCount >= activeBatchExpectedCount ? (activeBatchFailedCount > 0 ? 'destructive' : 'success') : 'warning'}>
-                                                {activeBatchFinishedCount >= activeBatchExpectedCount ? 'Batch terminal' : 'Processing (~1 min/doc)'}
-                                            </Badge>
-                                        </div>
-                                    </div>
-                                    {activeBatchFinishedCount < activeBatchExpectedCount && (
-                                        <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-300 space-y-1">
-                                            <p>💡 <strong>Pipeline Note:</strong> Document AI extraction typically takes <strong>~1–2 minutes per document</strong>. Project synthesis will trigger automatically once finished.</p>
-                                            <p className="text-[11px] opacity-90">⚠️ <strong>4-Minute Timeout Rules:</strong> Documents are monitored individually. If an individual file takes longer than <strong>4 minutes per document</strong> without a response from n8n, it is automatically flagged as failed so you can retry or configure a custom key.</p>
-                                        </div>
-                                    )}
-                                    <div className="space-y-2">
-                                        <div className="flex items-center justify-between gap-3 text-sm">
-                                            <p className="font-medium text-foreground">Reached processing</p>
-                                            <p className="text-muted-foreground">{activeBatchProcessingCount}/{activeBatchExpectedCount} documents</p>
-                                        </div>
-                                        <Progress value={activeBatchProcessingPercent} className="h-2.5" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <div className="flex items-center justify-between gap-3 text-sm">
-                                            <p className="font-medium text-foreground">Finished</p>
-                                            <div className="flex flex-wrap items-center justify-end gap-2">
-                                                <p className="text-muted-foreground">{activeBatchFinishedCount}/{activeBatchExpectedCount} documents</p>
-                                                <Badge variant={activeBatchFinishedCount >= activeBatchExpectedCount ? 'success' : 'secondary'} className="gap-1.5 px-2.5 py-1 font-mono text-xs">
-                                                    <Clock3 className="h-3.5 w-3.5" />
-                                                    {formatElapsedDuration(batchElapsedSeconds)} elapsed
-                                                </Badge>
-                                            </div>
-                                        </div>
-                                        <Progress value={activeBatchProgressPercent} className="h-2.5 [&>span]:bg-success" />
-                                    </div>
-                                    <div className="rounded-md border border-success/25 bg-success/5 px-3 py-2 text-sm">
-                                        <p className="font-medium text-foreground">Batch analyst time saved</p>
-                                        <p className="mt-1 text-muted-foreground">
-                                            {activeBatchImpact.completedDocuments > 0
-                                                ? `~${formatHours(activeBatchImpact.timeSavedHours)} saved across ${activeBatchImpact.completedDocuments} completed document${activeBatchImpact.completedDocuments === 1 ? '' : 's'} (40m manual-review baseline per document).`
-                                                : 'Time saved will appear as documents complete (40m manual-review baseline per document).'}
+                                        <p className="text-sm font-semibold text-foreground">Project synthesis in progress</p>
+                                        <p className="mt-1 text-sm text-muted-foreground">
+                                            All documents finished processing, so the agent is now consolidating them into one project judgment.
                                         </p>
                                     </div>
-                                    {batchElapsedSeconds >= 300 && activeBatchFinishedCount < activeBatchExpectedCount ? (
-                                        <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-foreground">
-                                            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
-                                            <div>
-                                                <p className="font-medium">This batch is taking longer than expected.</p>
-                                                <p className="mt-1 text-muted-foreground">Please reload the page to re-sync the latest n8n status. Reloading will not submit the documents again.</p>
-                                            </div>
-                                        </div>
-                                    ) : null}
-                                    {activeBatchStuckRows.length > 0 ? (
-                                        <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-foreground">
-                                            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
-                                            <div>
-                                                <p className="font-medium">{activeBatchStuckRows.length} document{activeBatchStuckRows.length === 1 ? ' appears' : 's appear'} stuck in processing</p>
-                                                <p className="mt-1 text-muted-foreground">
-                                                    {activeBatchStuckRows.map((row) => row.fileName || 'Unnamed').join(', ')} {activeBatchStuckRows.length === 1 ? 'has' : 'have'} been in processing for over 10 minutes. This usually means n8n has reached its execution limit for this billing period. Try reloading the page, and if the status does not change, wait for the n8n execution limit to reset or retry the document{activeBatchStuckRows.length === 1 ? '' : 's'} later.
-                                                </p>
-                                            </div>
-                                        </div>
-                                    ) : null}
-                                    {activeBatchErrors.length > 0 ? (
-                                        <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-foreground">
-                                            <p className="font-medium">Document processing issue{activeBatchErrors.length === 1 ? '' : 's'}</p>
-                                            <ul className="mt-1 space-y-1 text-muted-foreground">
-                                                {activeBatchErrors.map((item) => (
-                                                    <li key={`${item.fileName}-${item.message}`} className="flex flex-wrap items-center justify-between gap-2">
-                                                        <span>{item.fileName}: {item.message}</span>
-                                                        {item.canRetry && item.requestID ? (
-                                                            <Button type="button" size="sm" variant="outline" disabled={retryingRequestId === item.requestID} onClick={() => handleRetryFailedDocument(item.requestID)}>
-                                                                {retryingRequestId === item.requestID ? 'Retrying…' : 'Retry document'}
-                                                            </Button>
-                                                        ) : null}
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    ) : null}
-                                    {activeBatchAdvisories.length > 0 ? (
-                                        <div className="rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-sm text-foreground">
-                                            <p className="font-medium">Document advisory</p>
-                                            <ul className="mt-1 space-y-1 text-muted-foreground">
-                                                {activeBatchAdvisories.map((item) => <li key={`${item.fileName}-${item.message}`}>{item.fileName}: {item.message}</li>)}
-                                            </ul>
-                                        </div>
-                                    ) : null}
-                                    <p className="text-xs text-muted-foreground">
-                                        {activeBatchFinishedCount >= activeBatchExpectedCount
-                                            ? activeBatchFailedCount > 0
-                                                ? 'All accepted documents are terminal. Review failed documents before relying on synthesis.'
-                                                : 'All accepted documents are complete. The project synthesis can now run.'
-                                            : `Waiting for ${activeBatchExpectedCount - activeBatchFinishedCount} more document${activeBatchExpectedCount - activeBatchFinishedCount === 1 ? '' : 's'} to reach a terminal status.`}
-                                    </p>
-                                    {activeBatchFinishedCount >= activeBatchExpectedCount && activeBatchCompletedCount > 0 ? (
-                                        <div className="rounded-md border border-primary/35 bg-primary/10 p-4 text-sm text-foreground shadow-sm">
-                                            <p className="font-semibold">{activeBatchFailedCount > 0 ? 'Usable documents are ready for synthesis.' : 'All documents are ready for synthesis.'}</p>
-                                            <p className="mt-1 text-muted-foreground">{activeBatchFailedCount > 0 ? `${activeBatchFailedCount} failed document${activeBatchFailedCount === 1 ? '' : 's'} will be left out; you can retry or exclude them from the Synthesis tab.` : 'Review the complete project-level picture and final acquisition judgment.'}</p>
-                                            <Button
-                                                type="button"
-                                                size="lg"
-                                                className="mt-4 h-14 w-full text-base font-semibold shadow-md"
-                                                onClick={() => handleOpenProjectSynthesis(activeProjectId)}
-                                            >
-                                                Open project synthesis
-                                            </Button>
-                                        </div>
-                                    ) : null}
-                                </CardContent>
-                            </Card>
-                        ) : null}
+                                </div>
+                            ) : null}
 
-                        {isExampleMode && !submitResponse ? (
-                            <Card className="overflow-hidden border-primary/30">
-                                <CardHeader className="border-b border-primary/20 bg-primary/5">
-                                    <div className="flex flex-wrap items-center justify-between gap-3">
-                                        <div>
-                                            <CardDescription>Example latest project document submission</CardDescription>
-                                            <CardTitle className="text-lg">{exampleSubmissionHistoryRows[0].fileName}</CardTitle>
-                                        </div>
-                                        <Badge variant="success">Completed</Badge>
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="space-y-3 p-4">
-                                    <p className="text-sm text-muted-foreground">
-                                        This is the document-level result that appears after a queued upload completes, before the project-wide synthesis is reviewed.
-                                    </p>
-                                    <div className="grid gap-3 sm:grid-cols-3">
-                                        <div className="rounded-lg border border-border bg-background p-3">
-                                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Risk</p>
-                                            <p className="mt-1 text-sm font-semibold text-foreground">{exampleSubmissionHistoryRows[0].riskLevel}</p>
-                                        </div>
-                                        <div className="rounded-lg border border-border bg-background p-3">
-                                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Confidence</p>
-                                            <p className="mt-1 text-sm font-semibold text-foreground">{exampleSubmissionHistoryRows[0].aiConfidence}%</p>
-                                        </div>
-                                        <div className="rounded-lg border border-border bg-background p-3">
-                                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Project</p>
-                                            <p className="mt-1 text-sm font-semibold text-foreground">{exampleSubmissionHistoryRows[0].projectId}</p>
-                                        </div>
-                                    </div>
-                                    <div className="rounded-lg border border-border bg-muted/30 p-3">
-                                        <ExpandableText text={exampleSubmissionHistoryRows[0].aiSummary} maxHeight={120} />
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        ) : null}
+                            {activeSubmissionBatch ? (
+                                <BatchProgressCard
+                                    activeSubmissionBatch={activeSubmissionBatch}
+                                    activeBatchFinishedCount={activeBatchFinishedCount}
+                                    activeBatchExpectedCount={activeBatchExpectedCount}
+                                    activeBatchFailedCount={activeBatchFailedCount}
+                                    isStoppingBatch={isStoppingBatch}
+                                    handleStopBatch={() => { void handleStopBatch() }}
+                                    activeBatchProcessingCount={activeBatchProcessingCount}
+                                    activeBatchProcessingPercent={activeBatchProcessingPercent}
+                                    activeBatchProgressPercent={activeBatchProgressPercent}
+                                    batchElapsedSeconds={batchElapsedSeconds}
+                                    activeBatchImpact={activeBatchImpact}
+                                    activeBatchStuckRows={activeBatchStuckRows}
+                                    activeBatchErrors={activeBatchErrors}
+                                    activeBatchAdvisories={activeBatchAdvisories}
+                                    activeBatchCompletedCount={activeBatchCompletedCount}
+                                    activeProjectId={activeProjectId}
+                                    retryingRequestId={retryingRequestId ?? undefined}
+                                    handleRetryFailedDocument={(requestID) => { void handleRetryFailedDocument(requestID) }}
+                                    handleOpenProjectSynthesis={handleOpenProjectSynthesis}
+                                />
+                            ) : null}
 
-                        {!isExampleMode && (submitResponse || displayedSubmissionRow) ? (
-                            <Card className="overflow-hidden">
-                                <CardHeader className="border-b border-border bg-card/80">
-                                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                                        <div className="space-y-1">
-                                            <CardTitle className="text-xl">Latest project document submission</CardTitle>
-                                            <CardDescription>
-                                                The most recent document was accepted quickly, then the UI switched to polling for the live n8n row and extracted outputs.
-                                            </CardDescription>
-                                        </div>
-                                        <div className="flex flex-wrap items-center gap-2">
-                                            {displayedSubmissionRow && ['failed', 'error', 'rejected', 'needs_review', 'needs review'].includes(displayedSubmitStatus.trim().toLowerCase()) && displayedSubmissionRow.requestID ? (
-                                                <Button type="button" variant="outline" disabled={retryingRequestId === displayedSubmissionRow.requestID} onClick={() => handleRetryFailedDocument(displayedSubmissionRow.requestID)}>
-                                                    {retryingRequestId === displayedSubmissionRow.requestID ? 'Retrying document…' : 'Retry document'}
-                                                </Button>
-                                            ) : null}
-                                            <Badge variant={getSubmissionStatusVariant(displayedSubmitStatus)}>
-                                                {formatSubmissionStatus(displayedSubmitStatus)}
-                                            </Badge>
-                                            <Badge variant={submitEnvironment === 'test' ? 'warning' : 'outline'}>
-                                                {submitEnvironment}
-                                            </Badge>
-                                            <Badge variant={displayedSubmissionRow ? 'success' : 'secondary'}>
-                                                {liveSubmittedRow ? 'Live project row found' : 'Most recent saved submission'}
-                                            </Badge>
-                                        </div>
-                                    </div>
-                                </CardHeader>
+                            {!isExampleMode && (submitResponse || displayedSubmissionRow) ? (
+                                <LatestSubmissionSection
+                                    displayedSubmissionRow={displayedSubmissionRow}
+                                    displayedSubmitStatus={displayedSubmitStatus}
+                                    submitEnvironment={submitEnvironment}
+                                    liveSubmittedRow={liveSubmittedRow}
+                                    latestBatchRows={latestBatchRows}
+                                    safeBatchDocIndex={safeBatchDocIndex}
+                                    setSelectedBatchDocIndex={setSelectedBatchDocIndex}
+                                    retryingRequestId={retryingRequestId ?? undefined}
+                                    handleRetryFailedDocument={(reqId) => { void handleRetryFailedDocument(reqId) }}
+                                    handleOpenProjectSynthesis={handleOpenProjectSynthesis}
+                                    projectId={projectId}
+                                    projectStage={projectStage}
+                                    documentType={documentType}
+                                    submitResponse={submitResponse}
+                                    webhookResponse={webhookResponse}
+                                    displayedSubmitRowId={displayedSubmitRowId}
+                                    displayedSubmitReceivedAt={displayedSubmitReceivedAt}
+                                    displayedSubmitTrafficLight={displayedSubmitTrafficLight}
+                                    displayedSubmitRiskLevel={displayedSubmitRiskLevel}
+                                    displayedSubmitCategory={displayedSubmitCategory}
+                                    displayedSubmitConfidence={displayedSubmitConfidence}
+                                    displayedSubmitVariance={displayedSubmitVariance}
+                                    displayedSubmitValuationCurrency={displayedSubmitValuationCurrency}
+                                    displayedSubmitAiSummary={displayedSubmitAiSummary}
+                                    liveSubmitCitations={liveSubmitCitations}
+                                    activeProjectSynthesis={activeProjectSynthesis ?? undefined}
+                                    isCurrentProjectAwaitingSynthesis={isCurrentProjectAwaitingSynthesis}
+                                    setActiveEvidence={setActiveEvidence}
+                                />
+                            ) : null}
+                        </div>
+                    ) : null}
 
-                                <CardContent className="space-y-4 p-4">
-                                    <div className="flex flex-wrap items-center gap-3">
-                                        <Button type="button" variant="default" onClick={() => handleOpenProjectSynthesis(displayedSubmissionRow?.projectId || projectId)} disabled={!(displayedSubmissionRow?.projectId || projectId)}>
-                                            View this project&apos;s synthesis
-                                        </Button>
-                                        <Button type="button" variant="outline" onClick={() => { const el = document.getElementById('upload-section'); el?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}>
-                                            Upload more files for this project
-                                        </Button>
-                                        {displayedSubmitStatus && !['completed', 'failed', 'error'].includes(displayedSubmitStatus.trim().toLowerCase()) && (
-                                            <Badge variant="secondary" className="gap-1.5">
-                                                <Clock3 className="h-3 w-3" />
-                                                Est. ~1 min remaining
-                                            </Badge>
-                                        )}
-                                    </div>
-                                    {liveSubmitInsight && (liveSubmitInsight.investmentBuyReasoning || liveSubmitInsight.investmentIsFavorable !== null) ? <div className="rounded-xl border-2 border-primary bg-gradient-to-br from-primary/15 via-primary/5 to-background p-5 shadow-md"><div className="flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-bold uppercase tracking-wide text-primary">Investment thesis — start here</p>{liveSubmitInsight.investmentIsFavorable !== null ? <Badge variant={liveSubmitInsight.investmentIsFavorable ? 'success' : 'destructive'}>{liveSubmitInsight.investmentIsFavorable ? 'Favorable indicator' : 'Caution indicator'}</Badge> : null}</div><p className="mt-3 text-sm leading-6 text-foreground">{liveSubmitInsight.investmentBuyReasoning || 'No investment thesis returned yet.'}</p></div> : null}
-                                    <div className="rounded-xl border-2 border-primary bg-gradient-to-br from-primary/15 via-primary/5 to-background p-5 shadow-md">
-                                        <div className="flex flex-wrap items-center justify-between gap-2">
-                                            <div className="flex items-center gap-2 flex-wrap min-w-0">
-                                                <p className="text-sm font-bold uppercase tracking-wide text-primary truncate max-w-md">
-                                                    Start here — {displayedSubmissionRow?.fileName || 'latest document'}
-                                                </p>
-                                                <Badge variant={getSubmissionStatusVariant(displayedSubmitStatus)}>
-                                                    {formatSubmissionStatus(displayedSubmitStatus)}
-                                                </Badge>
-                                            </div>
+                    {activeWorkspaceTab === 'documents' ? (
+                        <DocumentsWorkspaceView
+                            submissionHistory={submissionHistory}
+                            visibleProjectSyntheses={visibleProjectSyntheses}
+                            selectedProjectKey={selectedProjectKey}
+                            handlePortfolioProjectSelect={handlePortfolioProjectSelect}
+                            handleExcludeDocument={handleExcludeDocument}
+                            handleIncludeDocument={handleIncludeDocument}
+                            handleRetryFailedDocument={handleRetryFailedDocument}
+                            handleRequeueNewProject={handleRequeueNewProject}
+                            retryingRequestId={retryingRequestId}
+                            handleRunSynthesis={handleRunSynthesis}
+                            isCurrentProjectAwaitingSynthesis={isCurrentProjectAwaitingSynthesis}
+                            setSelectedProjectKey={setSelectedProjectKey}
+                        />
+                    ) : null}
 
-                                            {latestBatchRows.length > 1 && (
-                                                <div className="flex items-center gap-2 bg-background/90 border border-primary/30 px-3 py-1 rounded-xl shadow-xs">
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="h-7 w-7 p-0 hover:bg-primary/10 text-foreground"
-                                                        disabled={safeBatchDocIndex === 0}
-                                                        onClick={() => setSelectedBatchDocIndex((prev) => Math.max(0, prev - 1))}
-                                                        title="Previous document in batch"
-                                                    >
-                                                        <ChevronLeft className="h-4 w-4" />
-                                                    </Button>
-                                                    <span className="text-xs font-bold text-foreground font-mono">
-                                                        Doc {safeBatchDocIndex + 1} of {latestBatchRows.length}
-                                                    </span>
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="h-7 w-7 p-0 hover:bg-primary/10 text-foreground"
-                                                        disabled={safeBatchDocIndex >= latestBatchRows.length - 1}
-                                                        onClick={() => setSelectedBatchDocIndex((prev) => Math.min(latestBatchRows.length - 1, prev + 1))}
-                                                        title="Next document in batch"
-                                                    >
-                                                        <ChevronRight className="h-4 w-4" />
-                                                    </Button>
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><div className="rounded-lg border border-primary/25 bg-background/90 p-3"><p className="text-xs text-muted-foreground">Risk signal</p><p className="mt-1 text-lg font-bold">{displayedSubmitTrafficLight || displayedSubmitRiskLevel || 'Still processing'}</p></div><div className="rounded-lg border border-primary/25 bg-background/90 p-3"><p className="text-xs text-muted-foreground">AI confidence</p><p className="mt-1 text-lg font-bold">{liveSubmitInsight?.confidencePercent != null ? `${liveSubmitInsight.confidencePercent}%` : displayedSubmitConfidence || 'Pending'}</p></div><div className="rounded-lg border border-primary/25 bg-background/90 p-3"><p className="text-xs text-muted-foreground">Detected document type</p><p className="mt-1 text-lg font-bold">{displayedSubmissionRow?.detectedDocumentType || displayedSubmissionRow?.documentType || documentType || 'Pending'}</p></div><div className="rounded-lg border border-primary/25 bg-background/90 p-3"><p className="text-xs text-muted-foreground">Action needed</p><p className="mt-1 text-lg font-bold">{liveSubmitInsight?.escalationReasons.length ? 'Review flags' : displayedSubmitStatus.toLowerCase() === 'completed' ? 'Ready to use' : 'Wait for analysis'}</p></div></div>
-                                        <ExpandableText text={displayedSubmitAiSummary || (liveSubmitInsight?.escalationReasons.length ? "The document has items that need review before relying on its findings." : "This panel will surface the document’s key result as soon as n8n returns it.")} maxHeight={120} className="mt-4" />
-                                    </div>
-                                    <p className="text-xs text-muted-foreground">
-                                        {submitResponse
-                                            ? `${submitResponse.method} to ${submitResponse.target} at ${submitResponse.submittedAt}`
-                                            : 'Restored from the most recent n8n submission history row.'}
-                                    </p>
-
-                                    <details className="group rounded-lg border border-border bg-muted/20">
-                                        <summary className="flex cursor-pointer items-center justify-between px-3 py-2.5 text-sm font-medium text-foreground">
-                                            <span>Submission metadata — IDs, timestamps, file</span>
-                                            <span className="text-xs text-primary group-open:hidden">Show</span>
-                                            <span className="hidden text-xs text-primary group-open:inline">Hide</span>
-                                        </summary>
-                                        <div className="grid gap-2 p-3 pt-0 sm:grid-cols-2 xl:grid-cols-4">
-                                            <div className="rounded-md border border-border bg-card px-3 py-2">
-                                                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Request ID</p>
-                                                <p className="mt-1 break-all font-mono text-foreground">{webhookResponse?.requestID ?? displayedSubmissionRow?.requestID ?? 'Pending'}</p>
-                                            </div>
-                                            <div className="rounded-md border border-border bg-card px-3 py-2">
-                                                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Project ID</p>
-                                                <p className="mt-1 break-all font-mono text-foreground">{displayedSubmissionRow?.projectId || projectId || 'Not set'}</p>
-                                            </div>
-                                            <div className="rounded-md border border-border bg-card px-3 py-2">
-                                                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Project Stage</p>
-                                                <p className="mt-1 text-foreground">{displayedSubmissionRow?.projectStage || projectStage || 'Not set'}</p>
-                                            </div>
-                                            <div className="rounded-md border border-border bg-card px-3 py-2">
-                                                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Document Type</p>
-                                                <p className="mt-1 text-foreground">{displayedSubmissionRow?.documentType || documentType || 'Not set'}</p>
-                                            </div>
-                                            <div className="rounded-md border border-border bg-card px-3 py-2">
-                                                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">n8n Row ID</p>
-                                                <p className="mt-1 font-mono text-foreground">{displayedSubmitRowId}</p>
-                                            </div>
-                                            <div className="rounded-md border border-border bg-card px-3 py-2">
-                                                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Received At</p>
-                                                <p className="mt-1 text-foreground">{formatEasternTime(displayedSubmitReceivedAt)}</p>
-                                            </div>
-                                            <div className="rounded-md border border-border bg-card px-3 py-2">
-                                                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Deal / Project</p>
-                                                <p className="mt-1 text-foreground">{submitResponse?.payload?.dealName || displayedSubmissionRow?.dealName || 'Pending'}</p>
-                                            </div>
-                                            <div className="rounded-md border border-border bg-card px-3 py-2">
-                                                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">File Name</p>
-                                                <p className="mt-1 break-all text-foreground">{submitResponse?.payload?.fileName ?? displayedSubmissionRow?.fileName ?? 'Pending'}</p>
-                                            </div>
-                                        </div>
-                                    </details>
-
-                                    {displayedSubmissionRow ? (
-                                        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-                                            <div className="rounded-md border border-border bg-card px-3 py-2 xl:col-span-2">
-                                                <div className="flex flex-wrap items-center justify-between gap-2">
-                                                    <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Live progress</p>
-                                                    {displayedSubmitTrafficLight ? (
-                                                        <Badge variant={getSubmissionInsightTone(displayedSubmitTrafficLight)}>
-                                                            {displayedSubmitTrafficLight}
-                                                        </Badge>
-                                                    ) : null}
-                                                </div>
-                                                <p className="mt-1 text-foreground">Processing started: {displayedSubmissionRow.processingStartedAt || 'Pending'}</p>
-                                                <p className="mt-1 text-foreground">Processed at: {displayedSubmissionRow.processedAt || 'Pending'}</p>
-                                            </div>
-                                            <div className="rounded-md border border-border bg-card px-3 py-2">
-                                                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Risk Level</p>
-                                                <p className="mt-1 text-foreground">{displayedSubmitRiskLevel || 'Pending'}</p>
-                                            </div>
-                                            <div className="rounded-md border border-border bg-card px-3 py-2">
-                                                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Category</p>
-                                                <p className="mt-1 text-foreground">{displayedSubmitCategory || 'Pending'}</p>
-                                            </div>
-                                            <div className="rounded-md border border-border bg-card px-3 py-2">
-                                                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Confidence</p>
-                                                <p className="mt-1 text-foreground">
-                                                    {liveSubmitInsight?.confidencePercent != null
-                                                        ? `${liveSubmitInsight.confidencePercent}%`
-                                                        : displayedSubmitConfidence || 'Pending'}
-                                                </p>
-                                                {liveSubmitInsight?.confidencePercent != null ? (
-                                                    <Progress value={liveSubmitInsight.confidencePercent} className="mt-2 h-2" />
-                                                ) : null}
-                                            </div>
-                                            <div className="rounded-md border border-border bg-card px-3 py-2">
-                                                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Variance</p>
-                                                <p className="mt-1 text-foreground">{displayedSubmitVariance ? `${displayedSubmitVariance}%` : 'Pending'}</p>
-                                            </div>
-                                            <div className="rounded-md border border-border bg-card px-3 py-2">
-                                                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">EBITDA Extracted</p>
-                                                <p className="mt-1 text-foreground">{displayedSubmissionRow.ebitdaExtracted || 'Pending'}</p>
-                                            </div>
-                                            {(liveSubmitInsight?.escalationReasons.length || displayedSubmitAiSummary) ? (
-                                                <div className="grid gap-3 xl:col-span-4 xl:grid-cols-2">
-                                                    {liveSubmitInsight?.escalationReasons.length ? (
-                                                        <div>
-                                                            <ExpandableInsightGroup
-                                                                title="Escalation reasons"
-                                                                items={liveSubmitInsight.escalationReasons.flatMap((reason) => splitReadableText(reason))}
-                                                                badgeVariant="warning"
-                                                                className="border-warning/30 bg-warning/10"
-                                                                itemClassName="border-warning/30"
-                                                                emptyLabel="No escalation reasons returned."
-                                                                defaultOpen
-                                                                onItemClick={(item) => {
-                                                                    setActiveEvidence({
-                                                                        title: 'Escalation reason',
-                                                                        sourceFile: displayedSubmissionRow?.fileName || 'Uploaded document',
-                                                                        sourceLocation: 'Escalation analysis',
-                                                                        excerpt: item,
-                                                                        status: 'Needs review',
-                                                                        provenance: 'Document-level escalation',
-                                                                        documentId: displayedSubmissionRow?.storageFileId,
-                                                                        documentUrl: displayedSubmissionRow?.storageFileUrl,
-                                                                    })
-                                                                }}
-                                                            />
-                                                        </div>
-                                                    ) : null}
-                                                    {displayedSubmitAiSummary ? (
-                                                        <div>
-                                                            <ExpandableInsightGroup
-                                                                title="AI Summary"
-                                                                items={splitReadableText(displayedSubmitAiSummary)}
-                                                                defaultOpen
-                                                                className="border-border bg-card"
-                                                                itemClassName="border-border"
-                                                                emptyLabel="No AI summary returned."
-                                                                onItemClick={(item) => {
-                                                                    setActiveEvidence({
-                                                                        title: 'AI Summary finding',
-                                                                        sourceFile: displayedSubmissionRow?.fileName || 'Uploaded document',
-                                                                        sourceLocation: 'AI document summary',
-                                                                        excerpt: item,
-                                                                        status: 'Synthesized',
-                                                                        provenance: 'Document-level AI summary',
-                                                                        documentId: displayedSubmissionRow?.storageFileId,
-                                                                        documentUrl: displayedSubmissionRow?.storageFileUrl,
-                                                                    })
-                                                                }}
-                                                            />
-                                                        </div>
-                                                    ) : null}
-                                                </div>
-                                            ) : null}
-                                            {liveSubmitInsight ? (
-                                                <div className="grid gap-3 xl:col-span-4 xl:grid-cols-2">
-                                                    {[
-                                                        {
-                                                            title: 'Red flags',
-                                                            flags: liveSubmitInsight.redFlags,
-                                                            badge: 'destructive' as const,
-                                                            sectionClass: 'border-destructive/30 bg-destructive/5',
-                                                            itemClass: 'border-destructive/20',
-                                                        },
-                                                        {
-                                                            title: 'Yellow flags',
-                                                            flags: liveSubmitInsight.yellowFlags,
-                                                            badge: 'warning' as const,
-                                                            sectionClass: 'border-warning/30 bg-warning/5',
-                                                            itemClass: 'border-warning/20',
-                                                        },
-                                                        {
-                                                            title: 'Green flags',
-                                                            flags: liveSubmitInsight.greenFlags,
-                                                            badge: 'success' as const,
-                                                            sectionClass: 'border-success/30 bg-success/5',
-                                                            itemClass: 'border-success/20',
-                                                        },
-                                                    ].map((group) => (
-                                                        <ExpandableInsightGroup
-                                                            key={group.title}
-                                                            title={group.title}
-                                                            items={group.flags}
-                                                            badgeVariant={group.badge}
-                                                            className={group.sectionClass}
-                                                            itemClassName={group.itemClass}
-                                                            emptyLabel="None"
-                                                            defaultOpen
-                                                            onItemClick={(item) => {
-                                                                setActiveEvidence({
-                                                                    title: `${group.title.replace(' flags', ' flag')}: finding`,
-                                                                    sourceFile: displayedSubmissionRow?.fileName || 'Uploaded document',
-                                                                    sourceLocation: group.title,
-                                                                    excerpt: item,
-                                                                    status: group.badge === 'destructive' ? 'Risk' : group.badge === 'warning' ? 'Caution' : 'Confirmed',
-                                                                    provenance: `Document-level ${group.title.toLowerCase()} analysis`,
-                                                                    documentId: displayedSubmissionRow?.storageFileId,
-                                                                    documentUrl: displayedSubmissionRow?.storageFileUrl,
-                                                                })
-                                                            }}
-                                                        />
-                                                    ))}
-                                                </div>
-                                            ) : null}
-                                            {liveSubmitCitations.length ? <div className="xl:col-span-4 rounded-lg border border-primary/25 bg-primary/5 p-4"><div className="flex items-center justify-between gap-2"><p className="text-sm font-semibold text-foreground">Document citations</p><Badge variant="outline">{liveSubmitCitations.length} locations</Badge></div><p className="mt-1 text-xs text-muted-foreground">Each line identifies the exact section n8n used; click it to view source evidence when available.</p><div className="mt-3 h-64 space-y-2 overflow-y-auto pr-1">{liveSubmitCitations.map((citation, index) => <button key={`${citation.sourceFile}-${citation.rowOrCell}-${index}`} type="button" onClick={() => setActiveEvidence({ title: 'Document analysis citation', sourceFile: citation.sourceFile || displayedSubmissionRow?.fileName || 'Uploaded document', sourceLocation: citation.rowOrCell || 'Document analysis', excerpt: citation.rowOrCell ? `Source location: ${citation.rowOrCell}` : 'No additional excerpt was returned for this citation.', status: 'Confirmed', provenance: 'Document-level analysis', documentId: displayedSubmissionRow?.storageFileId, documentUrl: displayedSubmissionRow?.storageFileUrl })} className="flex w-full flex-wrap items-center justify-between gap-2 rounded-md border border-primary/20 bg-background px-3 py-2 text-left text-sm text-foreground transition-colors hover:border-primary/50 hover:bg-muted/30"><span><span className="font-medium">{citation.sourceFile || displayedSubmissionRow?.fileName || 'Uploaded document'}</span><span className="mx-2 text-muted-foreground">·</span><span className="text-muted-foreground">{citation.rowOrCell || 'Document analysis'}</span></span><span className="text-xs font-medium text-primary">View evidence</span></button>)}</div></div> : null}
-                                            {(liveSubmitInsight?.formattedValuationLowerBound && liveSubmitInsight.formattedValuationLowerBound !== '$0') || (liveSubmitInsight?.formattedValuationBaseEstimate && liveSubmitInsight.formattedValuationBaseEstimate !== '$0') || (liveSubmitInsight?.formattedValuationUpperBound && liveSubmitInsight.formattedValuationUpperBound !== '$0') ? (
-                                                <div className="xl:col-span-4">
-                                                    <div className="mb-2 flex items-center gap-2">
-                                                        <Badge variant="outline" className="text-xs">{displayedSubmissionRow?.aiConfidence ? `${displayedSubmissionRow.aiConfidence}% confidence` : 'AI estimate'}</Badge>
-                                                        {displayedSubmitValuationCurrency ? <Badge variant="secondary">{displayedSubmitValuationCurrency}</Badge> : null}
-                                                    </div>
-                                                    <div className="grid gap-2 md:grid-cols-3">
-                                                        <div className="rounded-md border border-border bg-card px-3 py-2">
-                                                            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Lower Bound</p>
-                                                            <p className="mt-1 text-sm text-foreground">{liveSubmitInsight?.formattedValuationLowerBound || 'Pending'}</p>
-                                                        </div>
-                                                        <div className="rounded-md border border-border bg-card px-3 py-2">
-                                                            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Base Estimate</p>
-                                                            <p className="mt-1 text-sm text-foreground">{liveSubmitInsight?.formattedValuationBaseEstimate || 'Pending'}</p>
-                                                        </div>
-                                                        <div className="rounded-md border border-border bg-card px-3 py-2">
-                                                            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Upper Bound</p>
-                                                            <p className="mt-1 text-sm text-foreground">{liveSubmitInsight?.formattedValuationUpperBound || 'Pending'}</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ) : null}
-                                            {liveSubmitInsight && (liveSubmitInsight.investmentBuyReasoning || liveSubmitInsight.investmentIsFavorable !== null) ? (
-                                                <div className="rounded-md border border-border bg-card px-3 py-2 xl:col-span-4">
-                                                    <div className="flex flex-wrap items-center justify-between gap-2">
-                                                        <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Investment Thesis</p>
-                                                        {liveSubmitInsight.investmentIsFavorable !== null ? (
-                                                            <Badge variant={liveSubmitInsight.investmentIsFavorable ? 'success' : 'destructive'}>
-                                                                {liveSubmitInsight.investmentIsFavorable ? 'Favorable indicator' : 'Not favorable'}
-                                                            </Badge>
-                                                        ) : null}
-                                                    </div>
-                                                    <ExpandableText text={liveSubmitInsight.investmentBuyReasoning || 'No buy reasoning returned yet.'} maxHeight={120} className="mt-3 whitespace-pre-wrap text-sm leading-6 text-foreground" />
-                                                </div>
-                                            ) : null}
-                                            {displayedSubmissionRow?.reconciliationJson ? (
-                                                <div className="xl:col-span-4">
-                                                    <MathChecksSection documents={[displayedSubmissionRow]} onOpenEvidence={setActiveEvidence} compact title="Document math checks" description="Deterministic arithmetic verifications on this document's extracted numbers." />
-                                                </div>
-                                            ) : null}
-                                        </div>
-                                    ) : null}
-                                    <div className="flex flex-wrap items-center gap-3 border-t border-border pt-4">
-                                        <Button type="button" variant="default" onClick={() => handleOpenProjectSynthesis(displayedSubmissionRow?.projectId || projectId)} disabled={!(displayedSubmissionRow?.projectId || projectId)}>
-                                            View this project&apos;s synthesis
-                                            {activeProjectSynthesis ? <Badge variant="success" className="ml-2">Ready</Badge> : isCurrentProjectAwaitingSynthesis ? <Badge variant="warning" className="ml-2">Running</Badge> : null}
-                                        </Button>
-                                        <Button type="button" variant="outline" onClick={() => { const el = document.getElementById('upload-section'); el?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}>
-                                            Upload more files
-                                        </Button>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        ) : null}
-                    </div>
-                ) : null}
-
-                    {activeWorkspaceTab === 'documents' ? <>
-                        <section id="project-portfolio" className="scroll-mt-6 space-y-4">
-                            <SectionHeader
-                                step={1}
-                                title="Document portfolio"
-                                description="Every uploaded document grouped by project, with coverage and duplicates."
-                            />
-                            <ProjectPortfolioCard
-                                rows={submissionHistory}
-                                syntheses={visibleProjectSyntheses}
-                                activeProjectKey={selectedProjectKey}
-                                onProjectSelect={handlePortfolioProjectSelect}
-                                onExcludeDocument={handleExcludeDocument}
-                                onIncludeDocument={handleIncludeDocument}
-                                onRetryDocument={handleRetryFailedDocument}
-                                onRequeueNewProject={handleRequeueNewProject}
-                                retryingRequestId={retryingRequestId}
-                                onRunSynthesis={() => { void handleRunSynthesis() }}
-                                runningSynthesis={isCurrentProjectAwaitingSynthesis}
-                                onAddDocuments={(projectKey) => {
-                                    setSelectedProjectKey(projectKey)
-                                    setTimeout(() => {
-                                        document.querySelector('[data-project-intake]')?.scrollIntoView({ behavior: 'smooth' })
-                                    }, 100)
-                                }}
-                            />
-                        </section>
-
-                    </> : null}
-
-                    {activeWorkspaceTab === 'synthesis' ? <>
+                    {activeWorkspaceTab === 'synthesis' ? (
                         <section id="project-synthesis" className="scroll-mt-6 space-y-4">
                             <SectionHeader
                                 step={1}
@@ -2931,12 +1380,10 @@ export default function DueDiligenceDashboard() {
                                 projectId={activeProjectId}
                                 suggestedQuestions={activeProjectSynthesis?.openQuestions ?? []}
                             />
-                            <MathChecksSection documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} title="Project-wide deterministic checks" description="Aggregated arithmetic verifications from all processed documents in this project." />
                         </section>
+                    ) : null}
 
-                    </> : null}
-
-                    {activeWorkspaceTab === 'history' ? <>
+                    {activeWorkspaceTab === 'history' ? (
                         <section className="space-y-4">
                             <SectionHeader
                                 step={1}
@@ -2948,12 +1395,8 @@ export default function DueDiligenceDashboard() {
                                 loading={submissionHistoryLoading}
                                 error={submissionHistoryError}
                                 activeEnvironment={activeHistoryEnvironment}
-                                onRefreshProduction={() => {
-                                    void handleRefreshHistory('production')
-                                }}
-                                onRefreshTest={() => {
-                                    void handleRefreshHistory('test')
-                                }}
+                                onRefreshProduction={() => { void handleRefreshHistory('production') }}
+                                onRefreshTest={() => { void handleRefreshHistory('test') }}
                                 isPolling={hasActiveSubmissions}
                                 onRetryFailedDocument={handleRetryFailedDocument}
                                 retryingRequestId={retryingRequestId}
@@ -2961,10 +1404,9 @@ export default function DueDiligenceDashboard() {
                                 onOpenEvidence={setActiveEvidence}
                             />
                         </section>
+                    ) : null}
 
-                    </> : null}
-
-                    {activeWorkspaceTab === 'email' ? <>
+                    {activeWorkspaceTab === 'email' ? (
                         <section className="space-y-4">
                             <SectionHeader
                                 step={1}
@@ -2973,271 +1415,42 @@ export default function DueDiligenceDashboard() {
                             />
                             <DealEmailDraftCard
                                 model={hydratedDealModel}
-                                synthesis={activeProjectSynthesis}
+                                synthesis={activeProjectSynthesis ?? undefined}
                                 projectName={dealName || suggestedProjectName}
                             />
                         </section>
+                    ) : null}
 
-                    </> : null}
+                    {activeWorkspaceTab === 'evals' ? (
+                        <section id="evals-harness" className="scroll-mt-6 space-y-6">
+                            <EvalDashboardTab evalRuns={Array.isArray(evalRunsData) ? evalRunsData : []} onTriggerEvalRuns={triggerEvalRuns} />
+                        </section>
+                    ) : null}
 
-                    {activeWorkspaceTab === 'evals' ? <section id="evals-harness" className="scroll-mt-6 space-y-6">
-                        <EvalDashboardTab evalRuns={Array.isArray(evalRunsData) ? evalRunsData : []} onTriggerEvalRuns={triggerEvalRuns} />
-                    </section> : null}
-
-                    {activeWorkspaceTab === 'errors' ? <section id="workflow-errors" className="scroll-mt-6 space-y-6">
-                        <WorkflowErrorLogCard
-                            rows={Array.isArray(workflowErrorData) ? workflowErrorData : []}
-                            loading={workflowErrorsLoading}
-                            error={workflowErrorsError}
-                            onRefresh={() => { void triggerWorkflowErrors({ environment: activeHistoryEnvironment }) }}
-                        />
-                        <SystemArchitectureCard />
-                    </section> : null}
+                    {activeWorkspaceTab === 'errors' ? (
+                        <section id="workflow-errors" className="scroll-mt-6 space-y-6">
+                            <WorkflowErrorLogCard
+                                rows={Array.isArray(workflowErrorData) ? workflowErrorData : []}
+                                loading={workflowErrorsLoading}
+                                error={workflowErrorsError}
+                                onRefresh={() => { void triggerWorkflowErrors({ environment: activeHistoryEnvironment }) }}
+                            />
+                            <SystemArchitectureCard />
+                        </section>
+                    ) : null}
                 </Suspense>
 
                 {SHOW_LEGACY_DILIGENCE_BACKUP ? (
-                    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-                        <Card className="overflow-hidden">
-                            <CardHeader className="border-b border-border bg-card/80">
-                                <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-                                    <div className="space-y-1">
-                                        <div className="flex flex-wrap items-center gap-2">
-                                            <CardTitle className="text-xl">Legacy sample extraction findings</CardTitle>
-                                            <Badge variant="outline">Static placeholder</Badge>
-                                        </div>
-                                        <CardDescription>
-                                            This panel is legacy demo data from the retired Retool query, not live n8n output. Use the project portfolio,
-                                            synthesis, and submission history panels above for current workflow results.
-                                        </CardDescription>
-                                    </div>
-
-                                    <div className="grid gap-3 sm:grid-cols-3">
-                                        <div className="rounded-lg border border-border bg-background px-4 py-3">
-                                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Total findings</p>
-                                            <p className="mt-1 text-2xl font-semibold text-foreground">{diligenceFindings.length}</p>
-                                            <p className="mt-1 text-xs text-muted-foreground">Query: getDiligenceData</p>
-                                        </div>
-                                        <div className="rounded-lg border border-border bg-background px-4 py-3">
-                                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">High priority</p>
-                                            <p className="mt-1 text-2xl font-semibold text-foreground">{highPriorityCount}</p>
-                                        </div>
-                                        <div className="rounded-lg border border-border bg-background px-4 py-3">
-                                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Validated</p>
-                                            <p className="mt-1 text-2xl font-semibold text-foreground">{validatedCount}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </CardHeader>
-
-                            <CardContent className="p-0">
-                                {error ? (
-                                    <div className="flex items-center gap-2 border-b border-border bg-destructive/10 px-4 py-3 text-sm text-destructive">
-                                        <AlertCircle className="h-4 w-4" />
-                                        Unable to refresh live diligence data. Showing fallback records.
-                                    </div>
-                                ) : null}
-                                <Table className="min-w-[720px]">
-                                    <TableHeader>
-                                        <TableRow className="hover:bg-transparent">
-                                            <TableHead className="w-[180px]">Finding Type</TableHead>
-                                            <TableHead className="w-[140px]">Severity</TableHead>
-                                            <TableHead>Summary</TableHead>
-                                            <TableHead className="w-[180px]">Workstream</TableHead>
-                                            <TableHead className="w-[140px]">Confidence</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {diligenceFindings.map((finding) => {
-                                            const isSelected = selectedFinding.id === finding.id
-                                            const isValidated = validationById[finding.id]
-                                            const noteValue = notesById[finding.id] ?? finding.analystNotes
-
-                                            return (
-                                                <TableRow
-                                                    key={finding.id}
-                                                    role="button"
-                                                    tabIndex={0}
-                                                    aria-selected={isSelected}
-                                                    className={cn(
-                                                        'cursor-pointer border-b border-border/80 align-top',
-                                                        isSelected && 'bg-accent/60 hover:bg-accent/60'
-                                                    )}
-                                                    onClick={() => { setSelectedFindingId(finding.id); openFindingEvidence(finding) }}
-                                                    onKeyDown={(event) => {
-                                                        if (event.key === 'Enter' || event.key === ' ') {
-                                                            event.preventDefault()
-                                                            setSelectedFindingId(finding.id)
-                                                            openFindingEvidence(finding)
-                                                        }
-                                                    }}
-                                                >
-                                                    <TableCell>
-                                                        <div className="flex flex-col gap-2">
-                                                            <Badge variant={getFindingVariant(finding.findingType)}>{finding.findingType}</Badge>
-                                                            {isValidated ? <Badge variant="success">Validated</Badge> : <Badge variant="outline">Needs review</Badge>}
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <Badge variant={getSeverityVariant(finding.severity)}>{finding.severity}</Badge>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <div className="space-y-2">
-                                                            <p className="font-medium leading-6 text-foreground">{finding.summary}</p>
-                                                            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                                                                <span>Owner: {finding.owner}</span>
-                                                                <span>•</span>
-                                                                <span>{finding.sourceCitation}</span>
-                                                            </div>
-                                                            <p className="line-clamp-2 text-sm text-muted-foreground">{noteValue}</p>
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <div className="space-y-1 text-sm text-foreground">
-                                                            <p>{finding.workstream}</p>
-                                                            <p className="text-xs text-muted-foreground">Source: {finding.owner}</p>
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <div className="space-y-2">
-                                                            <div className="flex items-center justify-between text-sm">
-                                                                <span className="text-muted-foreground">Score</span>
-                                                                <span className="font-medium text-foreground">{finding.confidenceScore}%</span>
-                                                            </div>
-                                                            <Progress value={finding.confidenceScore} className="h-2.5" />
-                                                        </div>
-                                                    </TableCell>
-                                                </TableRow>
-                                            )
-                                        })}
-                                    </TableBody>
-                                </Table>
-                            </CardContent>
-                        </Card>
-
-                        <div className="space-y-6">
-                            <Card className="overflow-hidden">
-                                <CardHeader className="border-b border-border bg-card/80">
-                                    <div className="space-y-1">
-                                        <CardDescription>Selected finding detail</CardDescription>
-                                        <CardTitle className="text-lg leading-7">{selectedFinding.summary}</CardTitle>
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="space-y-5 p-5">
-                                    <div className="flex flex-wrap gap-2">
-                                        <Badge variant={getFindingVariant(selectedFinding.findingType)}>{selectedFinding.findingType}</Badge>
-                                        <Badge variant={getSeverityVariant(selectedFinding.severity)}>{selectedFinding.severity}</Badge>
-                                        <Badge variant={validationById[selectedFinding.id] ? 'success' : 'outline'}>
-                                            {validationById[selectedFinding.id] ? 'Validated' : 'Pending analyst review'}
-                                        </Badge>
-                                        <Button type="button" size="sm" variant="outline" onClick={() => openFindingEvidence(selectedFinding)}>View evidence</Button>
-                                    </div>
-
-                                    <div className="space-y-3 rounded-lg border border-border bg-background p-4">
-                                        <div>
-                                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Source citation</p>
-                                            <p className="mt-1 text-sm text-foreground">{selectedFinding.sourceCitation}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Source excerpt</p>
-                                            <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-foreground">{selectedFinding.sourceExcerpt}</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="rounded-lg border border-border bg-background p-4">
-                                        <div className="flex items-center justify-between">
-                                            <p className="text-sm font-medium text-foreground">Confidence Score</p>
-                                            <p className="text-sm font-semibold text-foreground">{selectedFinding.confidenceScore}%</p>
-                                        </div>
-                                        <Progress value={selectedFinding.confidenceScore} className="mt-3 h-2.5" />
-                                        <p className="mt-3 text-sm text-muted-foreground">
-                                            Use this as a document-level extraction confidence score. In the project-based roadmap, these will roll into a project-level confidence assessment.
-                                        </p>
-                                    </div>
-
-                                    <div className="rounded-lg border border-border bg-background p-4">
-                                        <div className="flex items-center justify-between gap-3">
-                                            <div>
-                                                <p className="text-sm font-medium text-foreground">Analyst validation</p>
-                                                <p className="text-sm text-muted-foreground">Mark whether this finding should feed project-level synthesis.</p>
-                                            </div>
-                                            <Switch
-                                                checked={validationById[selectedFinding.id] ?? false}
-                                                onCheckedChange={(checked) => {
-                                                    setValidationById((current) => ({
-                                                        ...current,
-                                                        [selectedFinding.id]: checked,
-                                                    }))
-                                                }}
-                                                aria-label={`Toggle validation for ${selectedFinding.summary}`}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="rounded-lg border border-border bg-background p-4">
-                                        <p className="text-sm font-medium text-foreground">Analyst notes</p>
-                                        <p className="mt-1 text-sm text-muted-foreground">
-                                            Capture how this document-level point should affect the final acquisition narrative or negotiation strategy.
-                                        </p>
-                                        <Textarea
-                                            value={notesById[selectedFinding.id] ?? selectedFinding.analystNotes}
-                                            onChange={(event) => {
-                                                const nextValue = event.target.value
-                                                setNotesById((current) => ({
-                                                    ...current,
-                                                    [selectedFinding.id]: nextValue,
-                                                }))
-                                            }}
-                                            className="mt-3 min-h-[120px]"
-                                            placeholder="Document-level takeaway, cross-check needed, or potential negotiation lever."
-                                        />
-                                    </div>
-                                </CardContent>
-                            </Card>
-
-                            <Card className="overflow-hidden">
-                                <CardHeader className="border-b border-border bg-card/80">
-                                    <div className="flex items-start gap-3">
-                                        <div className="rounded-full bg-secondary p-2 text-secondary-foreground">
-                                            <FileSearch className="h-4 w-4" />
-                                        </div>
-                                        <div>
-                                            <CardTitle className="text-lg">What still needs to happen</CardTitle>
-                                            <CardDescription>
-                                                UI is now aligned to a project-based diligence model, but the backend workflow still needs one more layer of project synthesis.
-                                            </CardDescription>
-                                        </div>
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="space-y-4 p-5 text-sm text-foreground">
-                                    <div className="rounded-lg border border-border bg-background p-4">
-                                        <p className="font-medium">Today</p>
-                                        <p className="mt-2 text-muted-foreground">
-                                            Each upload is processed independently, then polling surfaces the latest n8n row, AI findings, valuation, and investment-thesis metadata.
-                                        </p>
-                                    </div>
-                                    <div className="rounded-lg border border-border bg-background p-4">
-                                        <p className="font-medium">Next backend milestone</p>
-                                        <p className="mt-2 text-muted-foreground">
-                                            Build a project-level workflow that waits until enough project documents are present, reconciles overlaps and contradictions, and writes one final project judgment back to n8n.
-                                        </p>
-                                    </div>
-                                    <div className="rounded-lg border border-border bg-background p-4">
-                                        <p className="font-medium">Why this matters post-LOI</p>
-                                        <p className="mt-2 text-muted-foreground">
-                                            Negotiation leverage usually comes from gaps between documents, not from any single file. This UI now makes that project-centric operating model visible to analysts.
-                                        </p>
-                                    </div>
-                                    <Button variant="outline" className="w-full justify-between">
-                                        <span>Project-based diligence roadmap is now reflected in the workspace</span>
-                                        <ArrowUpRight className="h-4 w-4" />
-                                    </Button>
-                                </CardContent>
-                            </Card>
-                        </div>
-                    </div>
+                    <LegacyDiligenceBackupCard
+                        diligenceFindings={diligenceFindings}
+                        highPriorityCount={highPriorityCount}
+                        validatedCount={validatedCount}
+                        error={error}
+                        openFindingEvidence={openFindingEvidence}
+                    />
                 ) : null}
             </main>
-            {/* ── Fixed Left Edge 3-Line Menu Bar Button for Batch Activity Drawer ── */}
+
             <button
                 type="button"
                 onClick={() => setIsBatchDrawerOpen(true)}
@@ -3257,7 +1470,6 @@ export default function DueDiligenceDashboard() {
                 </span>
             </button>
 
-            {/* ── Fixed Bottom-Left Quick Action Toolbar with Dismiss (X) & Reopen Toggle ── */}
             <aside
                 aria-label="Quick Actions"
                 className={`fixed bottom-4 left-4 z-40 transition-all duration-300 ${
@@ -3326,7 +1538,9 @@ export default function DueDiligenceDashboard() {
                     </Button>
                 )}
             </aside>
+
             <EvidenceDrawer evidence={activeEvidence} onClose={() => setActiveEvidence(null)} />
+
             <ProjectsSidePanel
                 isOpen={isProjectsPanelOpen}
                 onClose={() => setIsProjectsPanelOpen(false)}
@@ -3339,6 +1553,7 @@ export default function DueDiligenceDashboard() {
                     document.querySelector('[data-project-intake]')?.scrollIntoView({ behavior: 'smooth' })
                 }}
             />
+
             <BatchProcessingSidePanel
                 isOpen={isBatchDrawerOpen}
                 onClose={() => setIsBatchDrawerOpen(false)}
@@ -3358,15 +1573,16 @@ export default function DueDiligenceDashboard() {
                 retryingRequestId={retryingRequestId}
                 submissionHistory={submissionHistory}
             />
+
             <Suspense fallback={null}>
                 <DealChatPanel
-                    synthesis={activeProjectSynthesis}
+                    synthesis={activeProjectSynthesis ?? undefined}
                     model={hydratedDealModel}
                     projectName={dealName || suggestedProjectName}
                     documents={activeProjectDocuments}
                     allSyntheses={visibleProjectSyntheses}
                     onSuggestProjectSwitch={(targetProjectId) => {
-                        const targetProject = projectSummaries.find((project) => (project.projectId || project.projectKey) === targetProjectId)
+                        const targetProject = projectSummaries.find((p: any) => (p.projectId || p.projectKey) === targetProjectId)
                         if (!targetProject) return
                         handlePortfolioProjectSelect(targetProject.projectKey)
                     }}
@@ -3374,20 +1590,22 @@ export default function DueDiligenceDashboard() {
                     projectsCount={projectSummaries.length}
                 />
             </Suspense>
+
             <Suspense fallback={null}>
                 <CommandPalette
                     open={commandPaletteOpen}
                     onClose={() => setCommandPaletteOpen(false)}
                     onSelectTab={(tab) => setActiveWorkspaceTab(tab as WorkspaceTab)}
                     onToggleTheme={() => { const next = currentTheme === 'dark' ? 'light' : currentTheme === 'light' ? 'system' : 'dark'; setCurrentTheme(next); setStoredTheme(next) }}
-                    onExportMarkdown={() => { const name = dealName || suggestedProjectName; const safeName = name.replace(/[^a-zA-Z0-9-_]/g, '_').slice(0, 50) || 'deal'; downloadFile(buildMarkdownReport(hydratedDealModel, activeProjectSynthesis, name), `${safeName}_summary.md`, 'text/markdown') }}
-                    onExportJson={() => { const name = dealName || suggestedProjectName; const safeName = name.replace(/[^a-zA-Z0-9-_]/g, '_').slice(0, 50) || 'deal'; downloadFile(JSON.stringify(buildJsonExport(hydratedDealModel, activeProjectSynthesis, name), null, 2), `${safeName}_export.json`, 'application/json') }}
+                    onExportMarkdown={() => { const name = dealName || suggestedProjectName; const safeName = name.replace(/[^a-zA-Z0-9-_]/g, '_').slice(0, 50) || 'deal'; downloadFile(buildMarkdownReport(hydratedDealModel, activeProjectSynthesis ?? undefined, name), `${safeName}_summary.md`, 'text/markdown') }}
+                    onExportJson={() => { const name = dealName || suggestedProjectName; const safeName = name.replace(/[^a-zA-Z0-9-_]/g, '_').slice(0, 50) || 'deal'; downloadFile(JSON.stringify(buildJsonExport(hydratedDealModel, activeProjectSynthesis ?? undefined, name), null, 2), `${safeName}_export.json`, 'application/json') }}
                     onShowShortcuts={() => { }}
                     onOpenChat={() => { }}
-                    onCopySummary={() => { const name = dealName || suggestedProjectName; navigator.clipboard.writeText(buildMarkdownReport(hydratedDealModel, activeProjectSynthesis, name)) }}
+                    onCopySummary={() => { const name = dealName || suggestedProjectName; navigator.clipboard.writeText(buildMarkdownReport(hydratedDealModel, activeProjectSynthesis ?? undefined, name)) }}
                     onScrollToUpload={() => { document.querySelector('[data-project-intake]')?.scrollIntoView({ behavior: 'smooth' }) }}
                 />
             </Suspense>
+
             <ApiKeyModal open={isApiKeyModalOpen} onOpenChange={setIsApiKeyModalOpen} />
             <KeyboardShortcutsDialog open={isShortcutsOpen} onOpenChange={setIsShortcutsOpen} showTrigger={false} />
         </div>
