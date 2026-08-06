@@ -140,6 +140,10 @@ import RecurringVsOneTimeCard from '../components/RecurringVsOneTimeCard'
 const SystemArchitectureCard = lazy(() => import('../components/SystemArchitectureCard'))
 import EvidenceDrawer, { type EvidenceItem } from '../components/EvidenceDrawer'
 import ProjectChecklistCard, { type ProjectChecklistState } from '../components/ProjectChecklistCard'
+import { OverviewWorkspaceView } from '../components/views/OverviewWorkspaceView'
+import { DiligenceWorkspaceView } from '../components/views/DiligenceWorkspaceView'
+import { ReturnsWorkspaceView } from '../components/views/ReturnsWorkspaceView'
+import { useDealWorkspaceState } from '../hooks/useDealWorkspaceState'
 import DealWorkspaceNav, { type WorkspaceTab } from '../components/DealWorkspaceNav'
 import SectionHeader from '../components/SectionHeader'
 
@@ -672,6 +676,12 @@ export default function DueDiligenceDashboard() {
 
     const inFlightBatchPlaceholder = useMemo(() => {
         if (activeSubmissionBatch?.id && !activeSubmissionBatch.endedAt && !activeSubmissionBatch.stoppedAt) {
+            const batchRows = submissionHistory.filter((r) => r.submissionBatchId === activeSubmissionBatch.id || r.projectId === activeSubmissionBatch.id)
+            const hasPendingBatchRows = batchRows.some((r) => isActiveSubmissionStatus(r.status))
+            if (!hasPendingBatchRows && batchRows.length > 0) {
+                return null // Batch has completed
+            }
+
             return {
                 projectId: activeSubmissionBatch.id,
                 dealName: dealName || activeSubmissionBatch.id,
@@ -680,7 +690,7 @@ export default function DueDiligenceDashboard() {
             }
         }
         return null
-    }, [activeSubmissionBatch, dealName, projectStage])
+    }, [activeSubmissionBatch, dealName, projectStage, submissionHistory])
 
     const projectSummaries = useMemo(
         () => createProjectSummaries(submissionHistory, inFlightBatchPlaceholder),
@@ -2065,164 +2075,57 @@ export default function DueDiligenceDashboard() {
                         {activeProjectSynthesis && <><span className="text-muted-foreground">|</span><span className="text-foreground">Quality: <span className="font-semibold">{activeProjectSynthesis.aiConfidence || '—'}</span></span></>}
                     </div>
                 )}
-                <DealWorkspaceNav activeTab={activeWorkspaceTab} onTabChange={(tab) => {
-                    setActiveWorkspaceTab(tab)
-                    const workspace = document.getElementById('deal-workspace')
-                    if (workspace) {
-                        workspace.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                    } else {
-                        window.scrollTo({ top: 0, behavior: 'smooth' })
-                    }
-                }} />
+                {(() => {
+                    const hasPendingDocs = activeProjectDocuments.some((d) => {
+                        const st = (d.status || '').trim().toLowerCase()
+                        return ['processing', 'pending', 'uploading', 'in_progress', 'queued', 'analyzing', 'running'].includes(st)
+                    })
+                    const hasCompletedDocs = activeProjectDocuments.some((d) => {
+                        const st = (d.status || '').trim().toLowerCase()
+                        return ['completed', 'succeeded', 'success', 'processed', 'analysed', 'extracted', 'failed', 'error', 'rejected'].includes(st)
+                    })
+                    const isDiligenceComplete = activeProjectDocuments.length > 0 && !hasPendingDocs && hasCompletedDocs
 
-                {activeWorkspaceTab === 'overview' ? <section id="deal-overview" className="space-y-6 scroll-mt-6">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                        <button
-                            onClick={() => document.querySelector('[data-project-intake]')?.scrollIntoView({ behavior: 'smooth' })}
-                            className="flex items-center gap-1.5 rounded-md border border-border bg-card/80 px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                        >
-                            <Plus className="h-3.5 w-3.5" />
-                            Add documents
-                        </button>
-                    </div>
+                    const isSynthesisReady = Boolean(
+                        activeProjectSynthesis &&
+                        !isCurrentProjectAwaitingSynthesis &&
+                        (['synthesized', 'completed', 'success'].includes((activeProjectSynthesis.projectStatus || '').trim().toLowerCase()) ||
+                         (activeProjectSynthesis.finalRecommendation || '').trim().length > 0 ||
+                         (activeProjectSynthesis.finalJudgmentSummary || '').trim().length > 0)
+                    )
 
-                    {/* Global Pipeline Workflow Alert Banner for Overview Tab */}
-                    {(activeProjectDocuments.some((row) => ['failed', 'error', 'rejected'].includes((row.status || '').trim().toLowerCase()) || (row.errorMessage || row.aiEscalationReason || '').toLowerCase().includes('credit')) || activeProjectSynthesis?.projectStatus?.trim()?.toLowerCase() === 'synthesis_refresh_failed' || activeProjectSynthesis?.projectStatus?.trim()?.toLowerCase() === 'synthesis_blocked') ? (
-                        <div role="alert" className="rounded-xl border-2 border-destructive/60 bg-destructive/15 p-5 text-sm text-foreground shadow-md">
-                            <div className="flex items-start gap-3.5">
-                                <AlertCircle className="h-6 w-6 shrink-0 text-destructive mt-0.5" />
-                                <div className="space-y-2 flex-1">
-                                    <p className="font-bold text-destructive text-base">
-                                        🔴 AI Pipeline Alert — Errors Detected in n8n Workflows
-                                    </p>
-                                    <div className="text-sm text-foreground space-y-1">
-                                        {activeProjectDocuments.some((row) => ['failed', 'error', 'rejected'].includes((row.status || '').trim().toLowerCase()) || (row.errorMessage || row.aiEscalationReason || '').toLowerCase().includes('credit')) ? (
-                                            <p className="text-destructive font-medium">
-                                                • Document Extraction Workflow: <span className="font-normal text-foreground">One or more files failed processing (e.g. Anthropic API credit balance exhausted or JSON output format limit).</span>
-                                            </p>
-                                        ) : null}
-                                        {activeProjectSynthesis?.projectStatus?.trim()?.toLowerCase() === 'synthesis_refresh_failed' || activeProjectSynthesis?.projectStatus?.trim()?.toLowerCase() === 'synthesis_blocked' ? (
-                                            <p className="text-destructive font-medium">
-                                                • Project Consolidator Workflow: <span className="font-normal text-foreground">Synthesis refresh failed ({activeProjectSynthesis.aiErrorMessage || 'Anthropic API credit limit or parameters error'}).</span>
-                                            </p>
-                                        ) : null}
-                                    </div>
-                                    <div className="pt-2 flex flex-wrap gap-3">
-                                        <Button type="button" size="sm" variant="destructive" onClick={() => setActiveWorkspaceTab('diligence')}>
-                                            Go to Diligence Tab to Retry Documents
-                                        </Button>
-                                        <Button type="button" size="sm" variant="outline" className="border-destructive/40 text-destructive hover:bg-destructive/10" onClick={() => setActiveWorkspaceTab('synthesis')}>
-                                            Go to Synthesis Tab
-                                        </Button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    ) : null}
-
-                    <DealSummaryBanner model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
-
-                    <Suspense fallback={null}>
-                        <DealMemoView model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} documents={activeProjectDocuments} />
-                    </Suspense>
-                    <DealHealthKPIs
-                        synthesis={activeProjectSynthesis}
-                        model={hydratedDealModel}
-                        impact={activeProjectImpact}
-                        documentsCount={activeProjectDocuments.length}
-                    />
-                    <div className="border-t border-border pt-4">
-                        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Scoring &amp; valuation</h3>
-                    </div>
-                    <DealGradeCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
-                    <DealAnalysisScoresCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
-                    <DealStatsGridCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
-                    <QuickValuationCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
-                    <DealRadarCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documentsCount={activeProjectDocuments.length} />
-                    <div className="border-t border-border pt-4">
-                        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Next steps</h3>
-                    </div>
-                    <DealActionItemsCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} />
-                    <SellerQuestionsCard synthesis={activeProjectSynthesis} model={hydratedDealModel} />
-
-
-                    <div className="border-t border-border pt-4">
-                        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Portfolio &amp; deal overview</h3>
-                    </div>
-                    {projectSummaries.length > 1 && (
-                        <ProjectComparisonCard
-                            projects={projectSummaries.map(ps => ({
-                                projectId: ps.projectId || ps.projectKey,
-                                projectName: ps.projectName || ps.companyName || ps.projectKey,
-                                model: (Array.isArray(dealModelsData) ? dealModelsData.find(m => m.projectId === (ps.projectId || ps.projectKey)) : undefined) ?? { projectId: ps.projectId || ps.projectKey, askingPrice: null, purchasePrice: null, debtAssumed: null, cashAcquired: null, workingCapitalRequirement: null, transactionFees: null, holdPeriodYears: null, taxRate: null, closingCosts: null, maintenanceCapex: null, exitMultiple: null, exitCosts: null, equityContributionPercent: null, interestRate: null, amortizationYears: null, sellerNoteAmount: null, bearRevenueGrowth: null, baseRevenueGrowth: null, bullRevenueGrowth: null, bearEbitdaMargin: null, baseEbitdaMargin: null, bullEbitdaMargin: null, bearExitMultiple: null, baseExitMultiple: null, bullExitMultiple: null, revenueMultiple: null, ebitdaMultiple: null, assetHaircutPercent: null, modelUpdatedAt: '', modelUpdatedBy: '', documentedFactsJson: '', documentedFactsStatus: '' },
-                                synthesis: visibleProjectSyntheses.find(s => s.projectId === (ps.projectId || ps.projectKey)),
-                                documentsCount: ps.documentCount,
-                                completedDocuments: ps.completedCount,
-                            }))}
-                            activeProjectId={activeProjectId}
-                            onSelectProject={(id) => { setSelectedProjectKey(id) }}
+                    return (
+                        <DealWorkspaceNav
+                            activeTab={activeWorkspaceTab}
+                            isDiligenceComplete={isDiligenceComplete}
+                            isSynthesisReady={isSynthesisReady}
+                            onTabChange={(tab) => {
+                                setActiveWorkspaceTab(tab)
+                                const workspace = document.getElementById('deal-workspace')
+                                if (workspace) {
+                                    workspace.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                                } else {
+                                    window.scrollTo({ top: 0, behavior: 'smooth' })
+                                }
+                            }}
                         />
-                    )}
-                    <DealOverviewCard
-                        syntheses={visibleProjectSyntheses}
-                        projects={projectSummaries}
-                        currentProjectId={activeProjectId}
-                        askingPrice={askingPrice}
-                        onAskingPriceChange={handleAskingPriceChange}
-                        impact={activeProjectImpact}
-                        model={activeDealModel}
-                        documents={submissionHistory.filter((row) => getProjectKey(row) === activeProjectId)}
-                        onOpenEvidence={setActiveEvidence}
-                        exampleMode={isExampleMode}
+                    )
+                })()}
+
+                {activeWorkspaceTab === 'overview' ? (
+                    <OverviewWorkspaceView
+                        hydratedDealModel={hydratedDealModel}
+                        activeProjectSynthesis={activeProjectSynthesis}
+                        dealName={dealName}
+                        suggestedProjectName={suggestedProjectName}
+                        activeProjectDocuments={activeProjectDocuments}
+                        activeProjectImpact={activeProjectImpact}
+                        setActiveWorkspaceTab={setActiveWorkspaceTab}
                     />
-                    <QuickFilterBar
-                        synthesis={activeProjectSynthesis}
-                        onJumpTo={(target) => {
-                            setActiveWorkspaceTab('synthesis')
-                            setTimeout(() => {
-                                const el = document.getElementById(`synthesis-${target}`)
-                                el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                            }, 150)
-                        }}
-                    />
-                    <div className="border-t border-border pt-4">
-                        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Financial data quality</h3>
-                    </div>
-                    <DealModelReadinessCard
-                        model={hydratedDealModel}
-                        documents={activeProjectDocuments}
-                        onOpenEvidence={setActiveEvidence}
-                    />
-                    <FinancialCompletenessCard model={hydratedDealModel} documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} />
-                    <MathChecksSection documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} compact title="Project math checks" description="Aggregated deterministic checks across all processed documents." />
-                    <DataQualityChecksCard model={hydratedDealModel} />
-                    <Suspense fallback={null}><EbitdaReconstructionCard model={hydratedDealModel} onOpenEvidence={setActiveEvidence} /></Suspense>
-                    <AddBackQualityCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} />
-                    {activeProjectSynthesis && <RecurringVsOneTimeCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} />}
-                    {activeProjectSynthesis && <CustomerConcentrationCard synthesis={activeProjectSynthesis} documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} />}
-                    <div className="border-t border-border pt-4">
-                        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Context &amp; settings</h3>
-                    </div>
-                    <Suspense fallback={null}>
-                        <DealTimelineCard
-                            documents={activeProjectDocuments}
-                            synthesis={activeProjectSynthesis}
-                            projectName={dealName || suggestedProjectName}
-                        />
-                        <BuyerProfileCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
-                        <IndustryBenchmarksCard />
-                        <CostPerRunCard documentsProcessed={impact.completedDocuments} synthesisRuns={visibleProjectSyntheses.length} />
-                    </Suspense>
-                    <ProjectChecklistCard
-                        projectId={activeProjectId}
-                        state={projectChecklistById[activeProjectId] ?? {}}
-                        onChange={(next) => setProjectChecklistById((current) => ({ ...current, [activeProjectId]: next }))}
-                        missingDocuments={activeProjectSynthesis?.missingDocuments ?? []}
-                        employeeConfirmed={Boolean(projectSummaries.find((project) => (project.projectId || project.projectKey) === activeProjectId)?.employeeCount) || isExampleMode}
-                        hasAskingPrice={askingPrice.trim().length > 0 || activeDealModel.askingPrice !== null}
-                    />
-                    <Suspense fallback={null}><WhatsNewCard /></Suspense>
-                </section> : null}
+                ) : null}
+
+
+
 
                 {activeWorkspaceTab === 'analysis' ? <section id="deal-analysis" className="space-y-6 scroll-mt-6">
                     <div className="pt-1">
@@ -2345,12 +2248,48 @@ export default function DueDiligenceDashboard() {
 
                 <Suspense fallback={<div className="flex items-center justify-center gap-2 rounded-lg border border-border bg-muted/20 p-8"><Loader2 className="h-5 w-5 animate-spin text-primary" /><span className="text-sm text-muted-foreground">Loading tab…</span></div>}>
                     {activeWorkspaceTab === 'valuation' ? <section className="space-y-6"><ModelAssumptionsSummary model={hydratedDealModel} area="valuation" /><DealValuationCard synthesis={activeProjectSynthesis} askingPrice={askingPrice} model={hydratedDealModel} onModelChange={handleDealModelChange} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><SafeSuspense label="valuation"><ValuationGapCard model={hydratedDealModel} synthesis={activeProjectSynthesis} /><ComparableTransactionsCard model={hydratedDealModel} /></SafeSuspense><SensitivityAnalysisCard model={returnsDisplayModel} /><MathChecksSection documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} compact title="Data integrity checks" description="Verifies the financial numbers feeding into valuation methods." /></section> : null}
-                    {activeWorkspaceTab === 'returns' ? <section className="space-y-6"><ModelAssumptionsSummary model={activeDealModel} area="returns" /><ReturnsDecisionSummary model={returnsDisplayModel} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<AllCashReturnsCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<FinancedReturnsCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} />{isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<FinancedScenarioComparisonCard model={returnsDisplayModel} /><SafeSuspense label="returns"><BaseReturnMetricsCard model={returnsDisplayModel} /><CashOnCashCalculatorCard model={returnsDisplayModel} /><MonteCarloCard model={returnsDisplayModel} /><BreakevenAnalysisCard model={returnsDisplayModel} /><PaybackTimelineCard model={returnsDisplayModel} /><AnnualCashFlowCard model={returnsDisplayModel} /><DebtServiceCoverageCard model={returnsDisplayModel} /><WeeklyProjectionCard model={returnsDisplayModel} /><SensitivityRankingCard model={returnsDisplayModel} /><WhatIfScenariosCard model={returnsDisplayModel} /><TaxImpactCard model={returnsDisplayModel} /></SafeSuspense><SensitivityAnalysisCard model={returnsDisplayModel} /><HoldPeriodSensitivity model={returnsDisplayModel} /><MathChecksSection documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} compact title="Input data checks" description="Verifies EBITDA and revenue figures used in returns calculations." /><DealModelPendingCard area="returns" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
+                    {activeWorkspaceTab === 'returns' ? (
+                        <ReturnsWorkspaceView
+                            activeDealModel={activeDealModel}
+                            returnsDisplayModel={returnsDisplayModel}
+                            isReturnsIllustrativePreview={isReturnsIllustrativePreview}
+                            submissionHistory={submissionHistory}
+                            setActiveEvidence={setActiveEvidence}
+                            activeProjectDocuments={activeProjectDocuments}
+                            handleDealModelChange={handleDealModelChange}
+                            handleDealModelDefaults={handleDealModelDefaults}
+                        />
+                    ) : null}
                     {activeWorkspaceTab === 'growth' ? <section className="space-y-6"><ModelAssumptionsSummary model={activeDealModel} area="growth" />{isGrowthIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}<GrowthDecisionSummary model={returnsDisplayModel} /><ScenarioComparisonCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><EbitdaProjectionCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} /><SafeSuspense label="growth"><BusinessValueEvolutionCard model={returnsDisplayModel} /><RevenueBridgeCard model={returnsDisplayModel} /><GrowthSensitivityCard model={returnsDisplayModel} /><ExitReadinessCard model={returnsDisplayModel} synthesis={activeProjectSynthesis} /><ValueCreationPlanCard model={returnsDisplayModel} /><First100DaysCard model={returnsDisplayModel} synthesis={activeProjectSynthesis} /><KeyMetricsTrendCard model={returnsDisplayModel} /><OperatingLeverageCard model={returnsDisplayModel} /></SafeSuspense><MathChecksSection documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} compact title="Revenue & margin checks" description="Verifies starting revenue and margin figures used in growth projections." /><DealModelPendingCard area="growth" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
                     {activeWorkspaceTab === 'structure' ? <section className="space-y-6"><ModelAssumptionsSummary model={activeDealModel} area="structure" /><DealStructureVisualCard model={hydratedDealModel} onOpenEvidence={setActiveEvidence} /><SafeSuspense label="structure"><DealStackCard model={hydratedDealModel} /><LeverageSafetyCard model={hydratedDealModel} /><DownsideProtectionCard model={hydratedDealModel} /><CashReserveAnalysisCard model={hydratedDealModel} /><FinancingComparisonCard model={hydratedDealModel} /><WorkingCapitalCard model={hydratedDealModel} /></SafeSuspense><DealModelPendingCard area="structure" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} /></section> : null}
                     {activeWorkspaceTab === 'negotiation' ? <section className="space-y-6"><SectionHeader step={1} title="Negotiation playbook" description="Seller questions, management follow-up, leverage, timing, and request-list workflow in one place." /><SellerQuestionsCard synthesis={activeProjectSynthesis} model={hydratedDealModel} /><ManagementQuestionTracker projectId={activeProjectId} suggestedQuestions={activeProjectSynthesis?.openQuestions ?? []} /><NegotiationPlaybook synthesis={activeProjectSynthesis} model={hydratedDealModel} /><NegotiationImpactCard model={hydratedDealModel} /><DealTimingCard model={hydratedDealModel} /><AcquisitionTimelineCard model={hydratedDealModel} synthesis={activeProjectSynthesis} /><InvestorReadinessCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documentCount={activeProjectDocuments.length} /><TermSheetCard model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} /><DDRequestListCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} projectName={dealName || suggestedProjectName} /></section> : null}
 
-                    {activeWorkspaceTab === 'diligence' ? <>
+                    {activeWorkspaceTab === 'diligence' ? (
+                        <div className="space-y-6">
+                            <DiligenceWorkspaceView
+                                projectSummaries={projectSummaries}
+                                dealModelsData={dealModelsData}
+                                visibleProjectSyntheses={visibleProjectSyntheses}
+                                activeProjectId={activeProjectId}
+                                setSelectedProjectKey={setSelectedProjectKey}
+                                askingPrice={askingPrice}
+                                handleAskingPriceChange={handleAskingPriceChange}
+                                activeProjectImpact={activeProjectImpact}
+                                activeDealModel={activeDealModel}
+                                submissionHistory={submissionHistory}
+                                getProjectKey={getProjectKey}
+                                setActiveEvidence={setActiveEvidence}
+                                isExampleMode={isExampleMode}
+                                setActiveWorkspaceTab={setActiveWorkspaceTab}
+                                hydratedDealModel={hydratedDealModel}
+                                activeProjectDocuments={activeProjectDocuments}
+                                activeProjectSynthesis={activeProjectSynthesis}
+                                dealName={dealName}
+                                suggestedProjectName={suggestedProjectName}
+                                projectChecklistById={projectChecklistById}
+                                setProjectChecklistById={setProjectChecklistById}
+                                impact={impact}
+                            />
 
                         {!isExampleMode && isCurrentProjectAwaitingSynthesis ? (
                             <div className="flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-800/50 dark:bg-amber-900/15">
@@ -2924,8 +2863,8 @@ export default function DueDiligenceDashboard() {
                                 </CardContent>
                             </Card>
                         ) : null}
-
-                    </> : null}
+                    </div>
+                ) : null}
 
                     {activeWorkspaceTab === 'documents' ? <>
                         <section id="project-portfolio" className="scroll-mt-6 space-y-4">

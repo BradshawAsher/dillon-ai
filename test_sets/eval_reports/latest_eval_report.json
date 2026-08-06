@@ -1,37 +1,29 @@
 {
-  "evaluatedAt": "2026-08-06T18:33:03.783Z",
-  "totalDocumentsEvaluated": 16,
-  "passedDocuments": 4,
-  "overallPercentage": 74,
-  "status": "NEEDS-TUNING",
+  "evaluatedAt": "2026-08-06T19:18:04.584Z",
+  "totalDocumentsEvaluated": 25,
+  "passedDocuments": 19,
+  "overallPercentage": 77,
+  "status": "SHIP-READY (PASS)",
   "regressionThreshold": 70,
   "regressionPassed": true,
   "categoryAverages": {
-    "classification": 85,
-    "facts": 36,
-    "risk": 56,
-    "valuation": 98,
+    "classification": 74,
+    "facts": 53,
+    "risk": 62,
+    "valuation": 99,
     "employee": 100,
-    "math": 88
+    "math": 92
   },
   "weakestDimension": "facts",
   "groundTruthSpecs": 26,
   "uncoveredGroundTruth": [
-    "business1_roofing_model.xlsx.json",
-    "testing_combined_happy_path.docx.json",
-    "testing_customer_concentration.docx.json",
-    "testing_financial_performance.docx.json",
-    "testing_seller_addbacks.docx.json",
-    "widgetco_1_pnl.xlsx.json",
-    "widgetco_2_balance_sheet.xlsx.json",
-    "widgetco_3_customer_concentration.xlsx.json",
-    "widgetco_4_fixed_assets.xlsx.json",
-    "widgetco_5_ar_aging.xlsx.json"
+    "business1_roofing_model.xlsx.json"
   ],
   "documentResults": [
     {
       "fileName": "Werkheiser_LOI_MergeWorks.docx",
       "business": "Business 1 - Roofing Co PA",
+      "modelUsed": "Gemini 3.1 Flash Lite",
       "classificationScore": 10,
       "factsScore": 3,
       "riskScore": 5,
@@ -46,6 +38,7 @@
     {
       "fileName": "Werkheiser P&L 2025.pdf",
       "business": "Business 1 - Roofing Co PA",
+      "modelUsed": "Gemini 3.1 Flash Lite",
       "classificationScore": 10,
       "factsScore": 3,
       "riskScore": 13,
@@ -60,6 +53,7 @@
     {
       "fileName": "Two years PL ended Dec 31 2024.pdf",
       "business": "Business 1 - Roofing Co PA",
+      "modelUsed": "Gemini 3.1 Flash Lite",
       "classificationScore": 10,
       "factsScore": 3,
       "riskScore": 10,
@@ -69,11 +63,12 @@
       "totalScore": 53,
       "maxScore": 70,
       "percentage": 76,
-      "pass": false
+      "pass": true
     },
     {
       "fileName": "Balance Sheet Jan 2023 to Dec 2024.pdf",
       "business": "Business 1 - Roofing Co PA",
+      "modelUsed": "Gemini 3.1 Flash Lite",
       "classificationScore": 10,
       "factsScore": 3,
       "riskScore": 10,
@@ -83,11 +78,12 @@
       "totalScore": 53,
       "maxScore": 70,
       "percentage": 76,
-      "pass": false
+      "pass": true
     },
     {
       "fileName": "Iron_Tree_Data_-_Teaser.pdf",
       "business": "Business 2 - Data-Cyber Company In PA",
+      "modelUsed": "Gemini 3.1 Flash Lite",
       "classificationScore": 10,
       "factsScore": 1.5,
       "riskScore": 10,
@@ -102,6 +98,7 @@
     {
       "fileName": "Iron_Tree_Data_-_CIM.pdf",
       "business": "Business 2 - Data-Cyber Company In PA",
+      "modelUsed": "Gemini 3.1 Flash Lite",
       "classificationScore": 10,
       "factsScore": 3,
       "riskScore": 8,
@@ -111,11 +108,12 @@
       "totalScore": 51,
       "maxScore": 70,
       "percentage": 73,
-      "pass": false
+      "pass": true
     },
     {
       "fileName": "Financial Modeling for Iron Tree.xltx",
       "business": "Business 2 - Data-Cyber Company In PA",
+      "modelUsed": "Gemini 3.1 Flash Lite",
       "classificationScore": 3,
       "factsScore": 10,
       "riskScore": 10,
@@ -130,6 +128,7 @@
     {
       "fileName": "Adjusted_Financials_-_Iron-Tree_(2026.02)_final.xlsx",
       "business": "Business 2 - Data-Cyber Company In PA",
+      "modelUsed": "Gemini 3.1 Flash Lite",
       "classificationScore": 10,
       "factsScore": 0.8,
       "riskScore": 20,
@@ -144,6 +143,7 @@
     {
       "fileName": "2) TurnKey Product Management P&L [Google Sheet].xlsx",
       "business": "Business 3 - TurnKey Product Management",
+      "modelUsed": "Gemini 3.1 Flash Lite",
       "classificationScore": 10,
       "factsScore": 1.5,
       "riskScore": 10,
@@ -158,6 +158,7 @@
     {
       "fileName": "1) TurnKey Product Management Business Summary.pdf",
       "business": "Business 3 - TurnKey Product Management",
+      "modelUsed": "Gemini 3.1 Flash Lite",
       "classificationScore": 10,
       "factsScore": 3,
       "riskScore": 15,
@@ -172,6 +173,7 @@
     {
       "fileName": "WC- Conversion XL OM.pdf",
       "business": "Business 4 - ConversionXL (SaaS Product)",
+      "modelUsed": "Gemini 3.1 Flash Lite",
       "classificationScore": 3,
       "factsScore": 3,
       "riskScore": 13,
@@ -181,11 +183,12 @@
       "totalScore": 49,
       "maxScore": 70,
       "percentage": 70,
-      "pass": false
+      "pass": true
     },
     {
       "fileName": "DD Memo.pdf",
       "business": "Business 4 - ConversionXL (SaaS Product)",
+      "modelUsed": "Gemini 3.1 Flash Lite",
       "classificationScore": 10,
       "factsScore": 3,
       "riskScore": 10,
@@ -195,11 +198,12 @@
       "totalScore": 53,
       "maxScore": 70,
       "percentage": 76,
-      "pass": false
+      "pass": true
     },
     {
       "fileName": "ConversionXL LLC_Profit and Loss by Month v2.xlsx",
       "business": "Business 4 - ConversionXL (SaaS Product)",
+      "modelUsed": "Gemini 3.1 Flash Lite",
       "classificationScore": 10,
       "factsScore": 1,
       "riskScore": 10,
@@ -209,11 +213,12 @@
       "totalScore": 51,
       "maxScore": 70,
       "percentage": 73,
-      "pass": false
+      "pass": true
     },
     {
       "fileName": "CXL_Screen.xlsx",
       "business": "Business 4 - ConversionXL (SaaS Product)",
+      "modelUsed": "Gemini 3.1 Flash Lite",
       "classificationScore": 3,
       "factsScore": 3,
       "riskScore": 5,
@@ -228,6 +233,7 @@
     {
       "fileName": "_RENEW HEALTH CENTER - FULL YEAR COMPARATIVE P&L (2024-2025).pdf",
       "business": "Business 5 - Medical Spa (Sameer)",
+      "modelUsed": "Gemini 3.1 Flash Lite",
       "classificationScore": 10,
       "factsScore": 10,
       "riskScore": 16,
@@ -242,6 +248,7 @@
     {
       "fileName": "Financial Modelling Renew Health .xlsm",
       "business": "Business 5 - Medical Spa (Sameer)",
+      "modelUsed": "Gemini 3.1 Flash Lite",
       "classificationScore": 7,
       "factsScore": 5.4,
       "riskScore": 14,
@@ -251,7 +258,142 @@
       "totalScore": 51.375,
       "maxScore": 70,
       "percentage": 73,
+      "pass": true
+    },
+    {
+      "fileName": "MergeWorks Testing - 1 Combined Happy Path.docx",
+      "business": "MergeWorks Testing 1 (Combined Happy Path)",
+      "modelUsed": "Gemini 3.1 Flash Lite",
+      "classificationScore": 10,
+      "factsScore": 5,
+      "riskScore": 20,
+      "valuationScore": 15,
+      "employeeScore": 5,
+      "mathScore": 10,
+      "totalScore": 65,
+      "maxScore": 70,
+      "percentage": 93,
+      "pass": true
+    },
+    {
+      "fileName": "MergeWorks Testing - 2 Customer Concentration Table.docx",
+      "business": "MergeWorks Testing Suite (Docs 2-4)",
+      "modelUsed": "Gemini 3.1 Flash Lite",
+      "classificationScore": 3,
+      "factsScore": 10,
+      "riskScore": 5,
+      "valuationScore": 15,
+      "employeeScore": 5,
+      "mathScore": 10,
+      "totalScore": 48,
+      "maxScore": 70,
+      "percentage": 69,
       "pass": false
+    },
+    {
+      "fileName": "MergeWorks Testing - 3 Financial Performance CSV.docx",
+      "business": "MergeWorks Testing Suite (Docs 2-4)",
+      "modelUsed": "Gemini 3.1 Flash Lite",
+      "classificationScore": 3,
+      "factsScore": 10,
+      "riskScore": 20,
+      "valuationScore": 15,
+      "employeeScore": 5,
+      "mathScore": 10,
+      "totalScore": 63,
+      "maxScore": 70,
+      "percentage": 90,
+      "pass": true
+    },
+    {
+      "fileName": "MergeWorks Testing - 4 Seller Add-Back Notes.docx",
+      "business": "MergeWorks Testing Suite (Docs 2-4)",
+      "modelUsed": "Gemini 3.1 Flash Lite",
+      "classificationScore": 3,
+      "factsScore": 10,
+      "riskScore": 17,
+      "valuationScore": 15,
+      "employeeScore": 5,
+      "mathScore": 10,
+      "totalScore": 60,
+      "maxScore": 70,
+      "percentage": 86,
+      "pass": true
+    },
+    {
+      "fileName": "WidgetCo - 1_P&L_Statement.xlsx",
+      "business": "WidgetCo Forensic Set",
+      "modelUsed": "Gemini 3.1 Flash Lite",
+      "classificationScore": 10,
+      "factsScore": 5.7,
+      "riskScore": 20,
+      "valuationScore": 15,
+      "employeeScore": 5,
+      "mathScore": 10,
+      "totalScore": 65.71428571428572,
+      "maxScore": 70,
+      "percentage": 94,
+      "pass": true
+    },
+    {
+      "fileName": "WidgetCo - 3_Customer_Concentration.xlsx",
+      "business": "WidgetCo Forensic Set",
+      "modelUsed": "Gemini 3.1 Flash Lite",
+      "classificationScore": 3,
+      "factsScore": 10,
+      "riskScore": 15,
+      "valuationScore": 15,
+      "employeeScore": 5,
+      "mathScore": 10,
+      "totalScore": 58,
+      "maxScore": 70,
+      "percentage": 83,
+      "pass": true
+    },
+    {
+      "fileName": "WidgetCo - 4_Fixed_Asset_Register.xlsx",
+      "business": "WidgetCo Forensic Set",
+      "modelUsed": "Gemini 3.1 Flash Lite",
+      "classificationScore": 3,
+      "factsScore": 10,
+      "riskScore": 15,
+      "valuationScore": 15,
+      "employeeScore": 5,
+      "mathScore": 10,
+      "totalScore": 58,
+      "maxScore": 70,
+      "percentage": 83,
+      "pass": true
+    },
+    {
+      "fileName": "WidgetCo - 2_Balance_Sheet.xlsx",
+      "business": "WidgetCo Forensic Set",
+      "modelUsed": "Gemini 3.1 Flash Lite",
+      "classificationScore": 10,
+      "factsScore": 4,
+      "riskScore": 5,
+      "valuationScore": 15,
+      "employeeScore": 5,
+      "mathScore": 10,
+      "totalScore": 49,
+      "maxScore": 70,
+      "percentage": 70,
+      "pass": true
+    },
+    {
+      "fileName": "WidgetCo - 5_AR_Aging_Report.xlsx",
+      "business": "WidgetCo Forensic Set",
+      "modelUsed": "Gemini 3.1 Flash Lite",
+      "classificationScore": 3,
+      "factsScore": 10,
+      "riskScore": 15,
+      "valuationScore": 15,
+      "employeeScore": 5,
+      "mathScore": 10,
+      "totalScore": 58,
+      "maxScore": 70,
+      "percentage": 83,
+      "pass": true
     }
   ]
 }

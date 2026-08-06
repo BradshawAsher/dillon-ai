@@ -34,7 +34,13 @@ export function computeImpactMetrics(rows: SubmissionHistoryItem[]): ImpactMetri
         const start = parseTime(row.processingStartedAt || row.receivedAt || row.triggerTimestamp)
         const end = parseTime(row.processedAt || row.updatedAt)
         if (!Number.isNaN(start) && !Number.isNaN(end) && end > start) {
-            agentMs += end - start
+            const rawDuration = end - start
+            // Capping threshold: 10 hours (36,000,000ms). If a document record sat
+            // idle for days before re-processing, cap its runtime at 1 minute to prevent
+            // offline gap skew from making analyst time saved 0.
+            const MAX_REALISTIC_AGENT_MS = 10 * 3600 * 1000
+            const duration = rawDuration > MAX_REALISTIC_AGENT_MS ? 60 * 1000 : rawDuration
+            agentMs += duration
         }
     }
     const agentMinutes = agentMs / 60000

@@ -1,0 +1,12 @@
+{
+  "business": "MergeWorks Testing 1 (Combined Happy Path)",
+  "projectId": "project-20260806-bccecb90",
+  "evaluatedAt": "2026-08-06T18:56:52.653Z",
+  "documents": [
+    {
+      "fileName": "MergeWorks Testing - 1 Combined Happy Path.docx",
+      "extractedJson": "{\"intent\":\"M&A Financial Due Diligence Analysis\",\"confidence\":1,\"risk_flag\":\"MEDIUM\",\"traffic_light\":\"YELLOW\",\"category\":\"Financial and Operational Review\",\"response\":{\"summary\":\"The document provides financial performance data for 2023-2025, customer concentration details, and seller add-backs. Note that while gross profit is stated, EBITDA is not provided as a total, only as itemized add-back adjustments. Significant add-backs include $50,000 in 'Consulting Fees' with no work performed, representing a potential governance risk.\",\"flags\":{\"yellow_flags\":[\"Gross margin is trending downward (60% in 2023 to 50% in 2025).\",\"Seller add-backs include non-operational expenses such as personal auto leases and payments to relatives with no work performed.\"]},\"citations\":[{\"source_file\":\"MergeWorks Testing - 1 Combined Happy Path.docx\"}]},\"escalation\":{\"is_escalated\":false},\"document_type\":\"Profit and Loss Statement\",\"financial_facts\":[{\"metric\":\"revenue\",\"raw_value\":\"1,000,000\",\"normalized_value\":1000000,\"period\":\"2023\",\"currency\":\"USD\",\"confidence\":1,\"status\":\"confirmed\",\"citation\":{\"source_file\":\"MergeWorks Testing - 1 Combined Happy Path.docx\",\"row_or_cell\":\"Year 2023 Revenue\"}},{\"metric\":\"revenue\",\"raw_value\":\"1,100,000\",\"normalized_value\":1100000,\"period\":\"2024\",\"currency\":\"USD\",\"confidence\":1,\"status\":\"confirmed\",\"citation\":{\"source_file\":\"MergeWorks Testing - 1 Combined Happy Path.docx\",\"row_or_cell\":\"Year 2024 Revenue\"}},{\"metric\":\"revenue\",\"raw_value\":\"1,200,000\",\"normalized_value\":1200000,\"period\":\"2025\",\"currency\":\"USD\",\"confidence\":1,\"status\":\"confirmed\",\"citation\":{\"source_file\":\"MergeWorks Testing - 1 Combined Happy Path.docx\",\"row_or_cell\":\"Year 2025 Revenue\"}}],\"document_types\":[\"Profit and Loss Statement\",\"Customer or Revenue Analysis\"]}",
+      "status": "completed"
+    }
+  ]
+}
