@@ -99,6 +99,11 @@
 
 - For brad, going through all the tabs, went through diligence, synthesis, valuation, working on returns tab (on levered cash flow timeline)
 
+- For brad - need to rerun all the evals docs again through the n8n pipeline using the anthropic api keys instead of your gemini api keys
+
+- And maybe if the user wants to find more facts and flags we can set up a button to find more facts and red flags or tell them to ask the chatbot what do you think?
+  - Since our agent doesn't get all the facts/flags but the classification is usually right
+
 - Have to understand how the evals work to present on saturday (for brad)
 
 - For Brad - need to keep testing the website and trying different documents, can always expand the eval suite and trying to break the system, and also i think a lot of financial facts like ebitda and sde are not filled even though we put 4 long docs through? Why?

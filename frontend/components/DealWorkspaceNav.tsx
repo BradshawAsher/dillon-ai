@@ -3,6 +3,8 @@ type WorkspaceTab = 'overview' | 'analysis' | 'diligence' | 'synthesis' | 'valua
 type DealWorkspaceNavProps = {
     activeTab: WorkspaceTab
     onTabChange: (tab: WorkspaceTab) => void
+    isDiligenceComplete?: boolean
+    isSynthesisReady?: boolean
 }
 
 const tabs: Array<{ id: WorkspaceTab; label: string }> = [
@@ -27,7 +29,7 @@ export type { WorkspaceTab }
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { ChevronLeft, ChevronRight, History, Check } from 'lucide-react'
 
-export default function DealWorkspaceNav({ activeTab, onTabChange }: DealWorkspaceNavProps) {
+export default function DealWorkspaceNav({ activeTab, onTabChange, isDiligenceComplete = false, isSynthesisReady = false }: DealWorkspaceNavProps) {
     const [navHistory, setNavHistory] = useState<WorkspaceTab[]>(() => {
         try {
             const stored = localStorage.getItem('mergeworks.tabHistory')
@@ -189,6 +191,23 @@ export default function DealWorkspaceNav({ activeTab, onTabChange }: DealWorkspa
                 <div className="flex min-w-max gap-1" role="tablist" aria-label="Deal workspace sections">
                     {tabs.map((tab) => {
                         const isActive = activeTab === tab.id
+                        const isDiligenceHighlighted = tab.id === 'diligence' && isDiligenceComplete
+                        const isSynthesisHighlighted = tab.id === 'synthesis' && isSynthesisReady
+
+                        let buttonClass = isActive
+                            ? 'rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-all duration-200 ease-out'
+                            : 'rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-all duration-200 ease-out hover:bg-muted hover:text-foreground hover:shadow-sm'
+
+                        if (isDiligenceHighlighted) {
+                            buttonClass = isActive
+                                ? 'rounded-lg bg-emerald-600 px-3 py-2 text-sm font-bold text-white shadow-sm ring-2 ring-emerald-500/50 flex items-center gap-1.5 transition-all duration-200'
+                                : 'rounded-lg bg-emerald-500/15 dark:bg-emerald-500/25 border border-emerald-500/50 px-3 py-2 text-sm font-bold text-emerald-700 dark:text-emerald-300 shadow-xs shadow-emerald-500/20 hover:bg-emerald-500/30 flex items-center gap-1.5 transition-all duration-200'
+                        } else if (isSynthesisHighlighted) {
+                            buttonClass = isActive
+                                ? 'rounded-lg bg-violet-600 px-3 py-2 text-sm font-bold text-white shadow-sm ring-2 ring-violet-500/50 flex items-center gap-1.5 transition-all duration-200'
+                                : 'rounded-lg bg-violet-500/15 dark:bg-violet-500/25 border border-violet-500/50 px-3 py-2 text-sm font-bold text-violet-700 dark:text-violet-300 shadow-xs shadow-violet-500/20 hover:bg-violet-500/30 flex items-center gap-1.5 transition-all duration-200'
+                        }
+
                         return (
                             <button
                                 key={tab.id}
@@ -196,12 +215,28 @@ export default function DealWorkspaceNav({ activeTab, onTabChange }: DealWorkspa
                                 role="tab"
                                 aria-selected={isActive}
                                 ref={isActive ? activeTabRef : undefined}
-                                className={isActive
-                                    ? 'rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-all duration-200 ease-out'
-                                    : 'rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-all duration-200 ease-out hover:bg-muted hover:text-foreground hover:shadow-sm'}
+                                className={buttonClass}
                                 onClick={() => onTabChange(tab.id)}
                             >
-                                {tab.label}
+                                <span>{tab.label}</span>
+                                {isDiligenceHighlighted && (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 dark:bg-emerald-500/30 px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-emerald-800 dark:text-emerald-200">
+                                        <span className="relative flex h-1.5 w-1.5">
+                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                                        </span>
+                                        Done
+                                    </span>
+                                )}
+                                {isSynthesisHighlighted && (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-violet-500/20 dark:bg-violet-500/30 px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-violet-800 dark:text-violet-200">
+                                        <span className="relative flex h-1.5 w-1.5">
+                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span>
+                                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-violet-500"></span>
+                                        </span>
+                                        Ready
+                                    </span>
+                                )}
                             </button>
                         )
                     })}
