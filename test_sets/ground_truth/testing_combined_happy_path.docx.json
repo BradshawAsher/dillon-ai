@@ -1,0 +1,63 @@
+{
+  "fileName": "MergeWorks Testing - 1 Combined Happy Path.docx",
+  "business": "MergeWorks Testing Suite",
+  "fileType": "DOCX",
+  "groundTruth": {
+    "documentType": "Profit and Loss Statement",
+    "documentTypes": [
+      "Profit and Loss Statement",
+      "Customer Concentration Report"
+    ],
+    "trafficLight": "YELLOW",
+    "riskLevel": "MEDIUM",
+    "financialFacts": [
+      {
+        "metric": "revenue",
+        "normalizedValue": 1000000,
+        "period": "2023",
+        "rawValue": "$1,000,000"
+      },
+      {
+        "metric": "revenue",
+        "normalizedValue": 1100000,
+        "period": "2024",
+        "rawValue": "$1,100,000"
+      },
+      {
+        "metric": "revenue",
+        "normalizedValue": 1200000,
+        "period": "2025",
+        "rawValue": "$1,200,000"
+      },
+      {
+        "metric": "gross_profit",
+        "normalizedValue": 600000,
+        "period": "2023",
+        "rawValue": "$600,000"
+      },
+      {
+        "metric": "gross_profit",
+        "normalizedValue": 605000,
+        "period": "2024",
+        "rawValue": "$605,000"
+      },
+      {
+        "metric": "gross_profit",
+        "normalizedValue": 600000,
+        "period": "2025",
+        "rawValue": "$600,000"
+      }
+    ],
+    "expectedRedFlags": [],
+    "expectedYellowFlags": [
+      "Gross margin compressed from 60% in 2023 to 50% in 2025",
+      "Unvouched family consulting fee add-back ($50,000 paid to owner brother)"
+    ],
+    "falsePositiveFlags": [],
+    "missedFlags": [],
+    "valuation": null,
+    "employeeEvidence": null,
+    "expectedMathCheckStatus": "passed",
+    "notes": "Testing suite file: Multi-table DOCX testing combined P&L, customer concentration, and seller add-backs."
+  }
+}

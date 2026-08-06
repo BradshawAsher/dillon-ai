@@ -1,0 +1,24 @@
+{
+  "fileName": "WidgetCo - 4_Fixed_Asset_Register.xlsx",
+  "business": "WidgetCo Forensic Set",
+  "fileType": "XLSX",
+  "groundTruth": {
+    "documentType": "Fixed Asset Register",
+    "documentTypes": [
+      "Fixed Asset Register"
+    ],
+    "trafficLight": "YELLOW",
+    "riskLevel": "MEDIUM",
+    "financialFacts": [],
+    "expectedRedFlags": [],
+    "expectedYellowFlags": [
+      "Hidden CapEx & asset obsolescence risk: Industrial Printer (EQ-101) is 12 years old and fully depreciated ($0 book value), requiring imminent capital replacement"
+    ],
+    "falsePositiveFlags": [],
+    "missedFlags": [],
+    "valuation": null,
+    "employeeEvidence": null,
+    "expectedMathCheckStatus": "passed",
+    "notes": "Forensic test file #4: Tests fixed asset register parsing and asset obsolescence / capex liability detection."
+  }
+}
