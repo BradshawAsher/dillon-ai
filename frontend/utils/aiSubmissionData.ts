@@ -208,7 +208,7 @@ export function formatCurrencyValue(value: string, currency: string) {
 
   if (!Number.isFinite(numericValue)) {
     const cleaned = trimmedValue.replace(/[$,\s]/g, '')
-    const abbrevMatch = cleaned.match(/^([0-9.]+)\s*(M|K|B|m|k|b)$/i)
+    const abbrevMatch = cleaned.match(/^(-?[0-9.]+)\s*(M|K|B|m|k|b)$/i)
     if (abbrevMatch) {
       const base = parseFloat(abbrevMatch[1])
       const suffix = abbrevMatch[2].toUpperCase()

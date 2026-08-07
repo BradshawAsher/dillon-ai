@@ -29,6 +29,8 @@ export function getSubmissionStatusVariant(status: string): 'success' | 'warning
         return 'warning'
     }
     if (normalized === 'error' || normalized === 'failed' || normalized === 'rejected') return 'destructive'
+    // A user/system-halted batch is an attention state, not a neutral one.
+    if (normalized === 'stopped' || normalized === 'stopped_by_user') return 'warning'
     return 'secondary'
 }
 
@@ -271,9 +273,15 @@ export function isDuplicateProjectDocument(file: File, projectId: string, rows: 
 }
 
 export function formatElapsedDuration(seconds: number) {
-    const minutes = Math.floor(seconds / 60)
-    const remainingSeconds = seconds % 60
+    // Guard against negative/NaN inputs (clock skew, unset timestamps).
+    const totalSeconds = Number.isFinite(seconds) && seconds > 0 ? Math.floor(seconds) : 0
+    const hours = Math.floor(totalSeconds / 3600)
+    const minutes = Math.floor((totalSeconds % 3600) / 60)
+    const remainingSeconds = totalSeconds % 60
 
+    if (hours > 0) {
+        return `${hours}h ${minutes}m ${remainingSeconds}s`
+    }
     return minutes > 0
         ? `${minutes}m ${remainingSeconds}s`
         : `${remainingSeconds}s`
