@@ -5,6 +5,7 @@ import {
     estimateCallCost,
     estimateMonthlyCost,
     estimatePerDocumentCost,
+    sumMeasuredCost,
     MEASURED_COST_PER_DOCUMENT,
     MEASURED_ROUTING_SAVINGS,
     routingSavingsFraction,
@@ -96,5 +97,34 @@ describe('estimateMonthlyCost', () => {
 
     it('never returns a negative projection', () => {
         expect(estimateMonthlyCost(-10, -5)).toBe(0)
+    })
+})
+
+describe('sumMeasuredCost', () => {
+    it('aggregates document and synthesis cost/tokens', () => {
+        const s = sumMeasuredCost({
+            documents: [{ costUsd: 0.03, totalTokens: 4000 }, { costUsd: 0.05, totalTokens: 6000 }],
+            synthesis: { costUsd: 0.12, totalTokens: 8000 },
+        })
+        expect(s.docCost).toBeCloseTo(0.08, 6)
+        expect(s.docTokens).toBe(10000)
+        expect(s.synthesisCost).toBeCloseTo(0.12, 6)
+        expect(s.totalCost).toBeCloseTo(0.20, 6)
+        expect(s.totalTokens).toBe(18000)
+        expect(s.hasMeasured).toBe(true)
+    })
+
+    it('reports hasMeasured=false when nothing is logged', () => {
+        const s = sumMeasuredCost({ documents: [{}, {}], synthesis: null })
+        expect(s.totalCost).toBe(0)
+        expect(s.totalTokens).toBe(0)
+        expect(s.hasMeasured).toBe(false)
+    })
+
+    it('handles a missing synthesis', () => {
+        const s = sumMeasuredCost({ documents: [{ costUsd: 0.03, totalTokens: 4000 }] })
+        expect(s.synthesisCost).toBe(0)
+        expect(s.totalCost).toBeCloseTo(0.03, 6)
+        expect(s.hasMeasured).toBe(true)
     })
 })

@@ -13,6 +13,7 @@ import BuyerProfileCard from '../BuyerProfileCard'
 import IndustryBenchmarksCard from '../IndustryBenchmarksCard'
 import CostPerRunCard from '../CostPerRunCard'
 import ProjectChecklistCard from '../ProjectChecklistCard'
+import { sumMeasuredCost } from '../../utils/costModel'
 
 const EbitdaReconstructionCard = React.lazy(() => import('../EbitdaReconstructionCard'))
 const DealTimelineCard = React.lazy(() => import('../DealTimelineCard'))
@@ -175,19 +176,18 @@ export function DiligenceWorkspaceView({
                 <BuyerProfileCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
                 <IndustryBenchmarksCard />
                 {(() => {
-                    const actualDocCost = activeProjectDocuments.reduce((sum, doc) => sum + (doc.costUsd ?? 0), 0)
-                    const actualDocTokens = activeProjectDocuments.reduce((sum, doc) => sum + (doc.totalTokens ?? 0), 0)
-                    const actualSynthCost = activeProjectSynthesis?.costUsd ?? 0
-                    const actualSynthTokens = activeProjectSynthesis?.totalTokens ?? 0
-                    const actualTotalTokens = actualDocTokens + actualSynthTokens
+                    const measured = sumMeasuredCost({
+                        documents: activeProjectDocuments,
+                        synthesis: activeProjectSynthesis,
+                    })
 
                     return (
                         <CostPerRunCard
                             documentsProcessed={impact.completedDocuments}
                             synthesisRuns={visibleProjectSyntheses.length}
-                            actualDocCost={actualDocCost}
-                            actualSynthesisCost={actualSynthCost}
-                            actualTotalTokens={actualTotalTokens}
+                            actualDocCost={measured.docCost}
+                            actualSynthesisCost={measured.synthesisCost}
+                            actualTotalTokens={measured.totalTokens}
                         />
                     )
                 })()}

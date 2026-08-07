@@ -65,7 +65,7 @@ export function WorkspaceHeader({
                         <PipelineStatusIndicator
                             isPolling={!isExampleMode}
                             hasActiveSubmissions={activeProjectDocuments.some((d) => isActiveSubmissionStatus(d.status))}
-                            hasErrors={false}
+                            hasErrors={activeProjectDocuments.some((d) => ['failed', 'error', 'rejected'].includes(String(d.status ?? '').trim().toLowerCase()))}
                         />
                         <Button
                             type="button"
@@ -73,6 +73,7 @@ export function WorkspaceHeader({
                             className="gap-2 border-primary/30 bg-primary/5 hover:bg-primary/10 font-semibold"
                             onClick={() => setIsProjectsPanelOpen(true)}
                             title="Open Projects Portfolio Panel (Ctrl+Shift+P)"
+                            aria-label={`Open projects portfolio panel (${projectSummaries.length} projects)`}
                         >
                             <FolderKanban className="h-4 w-4 text-primary" />
                             <span className="hidden sm:inline">Projects</span>
@@ -89,6 +90,7 @@ export function WorkspaceHeader({
                                 setCurrentTheme(next)
                                 setStoredTheme(next)
                             }}
+                            aria-label={`Switch color theme (currently ${currentTheme === 'system' ? 'auto' : currentTheme})`}
                         >
                             {currentTheme === 'dark' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
                             {currentTheme === 'system' ? 'Auto theme' : currentTheme === 'dark' ? 'Dark mode' : 'Light mode'}
@@ -135,7 +137,7 @@ export function WorkspaceHeader({
                     <div className="rounded-lg border border-border bg-background px-4 py-3">
                         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Active projects</p>
                         <p className="mt-1 text-2xl font-semibold text-foreground">
-                            {projectSummaries.filter((p) => p.completedCount < p.documentCount).length}
+                            {projectSummaries.filter((p) => (p.activeCount ?? 0) > 0).length}
                         </p>
                         <p className="mt-1 text-xs text-muted-foreground">In processing pipeline</p>
                     </div>
@@ -149,7 +151,7 @@ export function WorkspaceHeader({
                     <div className="rounded-lg border border-border bg-background px-4 py-3">
                         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Synthesis verdict</p>
                         <p className="mt-1 text-2xl font-semibold text-foreground">
-                            {activeProjectSynthesis?.verdict || 'Pending'}
+                            {activeProjectSynthesis?.finalRecommendation || activeProjectSynthesis?.finalTrafficLight || 'Pending'}
                         </p>
                         <p className="mt-1 text-xs text-muted-foreground">Current project state</p>
                     </div>

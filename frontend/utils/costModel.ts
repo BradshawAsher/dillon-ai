@@ -126,6 +126,48 @@ export function topSpendDrivers(legs: ModelLeg[], limit = 3): SpendDriver[] {
         .slice(0, limit)
 }
 
+export type MeasuredCostInput = {
+    /** Per-document telemetry rows. */
+    documents: Array<{ costUsd?: number; totalTokens?: number }>
+    /** The project's synthesis row, when one exists. */
+    synthesis?: { costUsd?: number; totalTokens?: number } | null
+}
+
+export type MeasuredCostSummary = {
+    docCost: number
+    docTokens: number
+    synthesisCost: number
+    synthesisTokens: number
+    totalCost: number
+    totalTokens: number
+    /** True when any real token telemetry was found (vs. all zeros). */
+    hasMeasured: boolean
+}
+
+/**
+ * Aggregates real logged token/cost telemetry across a project's documents and
+ * its synthesis. Returns zeros with hasMeasured=false when nothing has been
+ * logged yet, so callers can fall back to estimates. Keeps the reduce logic in
+ * one tested place instead of inline in the view.
+ */
+export function sumMeasuredCost(input: MeasuredCostInput): MeasuredCostSummary {
+    const docCost = input.documents.reduce((sum, d) => sum + (d.costUsd ?? 0), 0)
+    const docTokens = input.documents.reduce((sum, d) => sum + (d.totalTokens ?? 0), 0)
+    const synthesisCost = input.synthesis?.costUsd ?? 0
+    const synthesisTokens = input.synthesis?.totalTokens ?? 0
+    const totalCost = docCost + synthesisCost
+    const totalTokens = docTokens + synthesisTokens
+    return {
+        docCost,
+        docTokens,
+        synthesisCost,
+        synthesisTokens,
+        totalCost,
+        totalTokens,
+        hasMeasured: totalTokens > 0 || totalCost > 0,
+    }
+}
+
 /**
  * Projects monthly spend at a given throughput. Documents use the measured
  * per-document cost; each project synthesis adds an (estimated) Sonnet pass.
