@@ -23,6 +23,10 @@ import {
     getSubmissionInsightTone,
 } from '../utils/aiSubmissionData'
 import { formatEasternTime } from '../utils/dateTime'
+import {
+    calculateDocumentCost,
+    formatConfidencePercent,
+} from '../utils/diligenceDashboardUtils'
 import { downloadTextFile, fileSafeName } from '../utils/downloadFile'
 import { computeImpactMetrics, formatHours, HUMAN_MINUTES_PER_DOCUMENT } from '../utils/impactMetrics'
 import {
@@ -856,7 +860,7 @@ export default function SubmissionHistoryCard({
                                                     </p>
                                                 </div>
 
-                                                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                                                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
                                                     <div className="rounded-lg border border-border bg-background p-3">
                                                         <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                                                             Risk Level
@@ -874,6 +878,14 @@ export default function SubmissionHistoryCard({
                                                             Traffic Light
                                                         </p>
                                                         <p className="mt-1 text-sm text-foreground">{selectedRow.trafficLight || 'Pending'}</p>
+                                                    </div>
+                                                    <div className="rounded-lg border border-border bg-background p-3">
+                                                        <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                                                            Extraction Cost
+                                                        </p>
+                                                        <p className="mt-1 text-sm font-bold text-emerald-600 dark:text-emerald-400 font-mono">
+                                                            ${calculateDocumentCost(selectedRow).toFixed(4)}
+                                                        </p>
                                                     </div>
                                                     <div className="rounded-lg border border-border bg-background p-3">
                                                         <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">

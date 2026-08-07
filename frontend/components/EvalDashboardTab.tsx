@@ -921,14 +921,30 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
                             groups[b].push(d)
                         })
 
-                        const defaultValuations: Record<string, { bear: string; base: string; bull: string; perDoc: string; perDocActual: string; synth: string; synthActual: string; perDocCost: number; synthCost: number; perDocAttempts: string; synthAttempts: string }> = {
+                        const defaultValuations: Record<string, {
+                            bear: string;
+                            base: string;
+                            bull: string;
+                            perDocPrimary: string;
+                            perDocBackup: string;
+                            perDocActual: string;
+                            synthPrimary: string;
+                            synthBackup: string;
+                            synthActual: string;
+                            perDocCost: number;
+                            synthCost: number;
+                            perDocAttempts: string;
+                            synthAttempts: string;
+                        }> = {
                             'Business 1a - Werkheiser Commercial Cleaning (OpenAI 5.6 Terra)': {
                                 bear: '$2,184,000',
                                 base: '$2,730,000',
                                 bull: '$3,276,000',
-                                perDoc: 'OpenAI 5.6 Terra',
+                                perDocPrimary: 'OpenAI 5.6 Terra',
+                                perDocBackup: 'OpenAI 5.6 Sol',
                                 perDocActual: 'OpenAI 5.6 Terra',
-                                synth: 'OpenAI 5.6 Terra',
+                                synthPrimary: 'OpenAI 5.6 Terra',
+                                synthBackup: 'OpenAI 5.6 Sol',
                                 synthActual: 'OpenAI 5.6 Terra',
                                 perDocCost: 0.0018,
                                 synthCost: 0.0142,
@@ -939,9 +955,11 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
                                 bear: '$2,184,000',
                                 base: '$2,730,000',
                                 bull: '$3,276,000',
-                                perDoc: 'Gemini 3.1 Flash Lite',
+                                perDocPrimary: 'Gemini 3.1 Flash Lite',
+                                perDocBackup: 'Gemini 3.1 Flash Lite',
                                 perDocActual: 'Gemini 3.1 Flash Lite',
-                                synth: 'Gemini 3.1 Flash Lite',
+                                synthPrimary: 'Gemini 3.1 Flash Lite',
+                                synthBackup: 'Gemini 3.1 Flash Lite',
                                 synthActual: 'Gemini 3.1 Flash Lite',
                                 perDocCost: 0.0003,
                                 synthCost: 0.0012,
@@ -952,9 +970,11 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
                                 bear: '$2,184,000',
                                 base: '$2,730,000',
                                 bull: '$3,276,000',
-                                perDoc: 'Gemini 3.1 Flash Lite',
+                                perDocPrimary: 'Gemini 3.1 Flash Lite',
+                                perDocBackup: 'Gemini 3.1 Flash Lite',
                                 perDocActual: 'Gemini 3.1 Flash Lite',
-                                synth: 'Gemini 3.1 Flash Lite',
+                                synthPrimary: 'Gemini 3.1 Flash Lite',
+                                synthBackup: 'Gemini 3.1 Flash Lite',
                                 synthActual: 'Gemini 3.1 Flash Lite',
                                 perDocCost: 0.0003,
                                 synthCost: 0.0012,
@@ -965,9 +985,11 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
                                 bear: '$3,655,000',
                                 base: '$4,255,000',
                                 bull: '$4,875,358',
-                                perDoc: 'Gemini 3.1 Flash Lite',
+                                perDocPrimary: 'Gemini 3.1 Flash Lite',
+                                perDocBackup: 'Gemini 3.1 Flash Lite',
                                 perDocActual: 'Gemini 3.1 Flash Lite',
-                                synth: 'Gemini 3.1 Flash Lite',
+                                synthPrimary: 'Gemini 3.1 Flash Lite',
+                                synthBackup: 'Gemini 3.1 Flash Lite',
                                 synthActual: 'Gemini 3.1 Flash Lite',
                                 perDocCost: 0.0003,
                                 synthCost: 0.0012,
@@ -978,9 +1000,11 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
                                 bear: '$2,800,000',
                                 base: '$3,500,000',
                                 bull: '$4,200,000',
-                                perDoc: 'Gemini 3.1 Flash Lite',
+                                perDocPrimary: 'Gemini 3.1 Flash Lite',
+                                perDocBackup: 'Gemini 3.1 Flash Lite',
                                 perDocActual: 'Gemini 3.1 Flash Lite',
-                                synth: 'Gemini 3.1 Flash Lite',
+                                synthPrimary: 'Gemini 3.1 Flash Lite',
+                                synthBackup: 'Gemini 3.1 Flash Lite',
                                 synthActual: 'Gemini 3.1 Flash Lite',
                                 perDocCost: 0.0003,
                                 synthCost: 0.0012,
@@ -991,9 +1015,11 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
                                 bear: '$1,800,000',
                                 base: '$2,400,000',
                                 bull: '$3,000,000',
-                                perDoc: 'Gemini 3.1 Flash Lite',
+                                perDocPrimary: 'Gemini 3.1 Flash Lite',
+                                perDocBackup: 'Gemini 3.1 Flash Lite',
                                 perDocActual: 'Gemini 3.1 Flash Lite',
-                                synth: 'Gemini 3.1 Flash Lite',
+                                synthPrimary: 'Gemini 3.1 Flash Lite',
+                                synthBackup: 'Gemini 3.1 Flash Lite',
                                 synthActual: 'Gemini 3.1 Flash Lite',
                                 perDocCost: 0.0003,
                                 synthCost: 0.0012,
@@ -1004,9 +1030,11 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
                                 bear: '$4,200,000',
                                 base: '$5,100,000',
                                 bull: '$6,000,000',
-                                perDoc: 'Claude Sonnet 5',
+                                perDocPrimary: 'Claude Sonnet 5',
+                                perDocBackup: 'Claude Opus 5',
                                 perDocActual: 'Claude Sonnet 5',
-                                synth: 'Claude Sonnet 5',
+                                synthPrimary: 'Claude Sonnet 5',
+                                synthBackup: 'Claude Opus 5',
                                 synthActual: 'Claude Sonnet 5',
                                 perDocCost: 0.0084,
                                 synthCost: 0.0312,
@@ -1017,9 +1045,11 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
                                 bear: '$1,200,000',
                                 base: '$1,500,000',
                                 bull: '$1,800,000',
-                                perDoc: 'Gemini 3.1 Flash Lite',
+                                perDocPrimary: 'Gemini 3.1 Flash Lite',
+                                perDocBackup: 'Gemini 3.1 Flash Lite',
                                 perDocActual: 'Gemini 3.1 Flash Lite',
-                                synth: 'Gemini 3.1 Flash Lite',
+                                synthPrimary: 'Gemini 3.1 Flash Lite',
+                                synthBackup: 'Gemini 3.1 Flash Lite',
                                 synthActual: 'Gemini 3.1 Flash Lite',
                                 perDocCost: 0.0003,
                                 synthCost: 0.0012,
@@ -1030,9 +1060,11 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
                                 bear: '$2,000,000',
                                 base: '$2,500,000',
                                 bull: '$3,000,000',
-                                perDoc: 'Gemini 3.1 Flash Lite',
+                                perDocPrimary: 'Gemini 3.1 Flash Lite',
+                                perDocBackup: 'Gemini 3.1 Flash Lite',
                                 perDocActual: 'Gemini 3.1 Flash Lite',
-                                synth: 'Gemini 3.1 Flash Lite',
+                                synthPrimary: 'Gemini 3.1 Flash Lite',
+                                synthBackup: 'Gemini 3.1 Flash Lite',
                                 synthActual: 'Gemini 3.1 Flash Lite',
                                 perDocCost: 0.0003,
                                 synthCost: 0.0012,
@@ -1043,9 +1075,11 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
                                 bear: '$1,800,000',
                                 base: '$2,400,000',
                                 bull: '$3,000,000',
-                                perDoc: 'Gemini 3.1 Flash Lite',
+                                perDocPrimary: 'Gemini 3.1 Flash Lite',
+                                perDocBackup: 'Gemini 3.1 Flash Lite',
                                 perDocActual: 'Gemini 3.1 Flash Lite',
-                                synth: 'Gemini 3.1 Flash Lite',
+                                synthPrimary: 'Gemini 3.1 Flash Lite',
+                                synthBackup: 'Gemini 3.1 Flash Lite',
                                 synthActual: 'Gemini 3.1 Flash Lite',
                                 perDocCost: 0.0003,
                                 synthCost: 0.0012,
@@ -1064,9 +1098,11 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
                                 bear: docs[0]?.valuationBear || '$2,184,000',
                                 base: docs[0]?.valuationBase || '$2,730,000',
                                 bull: docs[0]?.valuationBull || '$3,276,000',
-                                perDoc: docs[0]?.perDocModel || docs[0]?.modelUsed || 'Gemini 3.1 Flash Lite',
+                                perDocPrimary: docs[0]?.perDocModel || 'Gemini 3.1 Flash Lite',
+                                perDocBackup: 'Gemini 3.1 Flash Lite',
                                 perDocActual: 'Gemini 3.1 Flash Lite',
-                                synth: docs[0]?.synthModel || docs[0]?.modelUsed || 'Gemini 3.1 Flash Lite',
+                                synthPrimary: docs[0]?.synthModel || 'Gemini 3.1 Flash Lite',
+                                synthBackup: 'Gemini 3.1 Flash Lite',
                                 synthActual: 'Gemini 3.1 Flash Lite',
                                 perDocCost: 0.0003,
                                 synthCost: 0.0012,
@@ -1106,13 +1142,15 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
                                         <div className="flex flex-wrap items-center gap-2">
                                             <Badge variant="secondary" className="text-xs font-medium gap-1 bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-300/40">
                                                 <Cpu className="h-3 w-3 text-blue-500 shrink-0" />
-                                                <span>Per-Doc: {val.perDocActual}</span>
+                                                <span>Per-Doc: Primary [{val.perDocPrimary}] | Backup [{val.perDocBackup}]</span>
+                                                <span className="font-mono text-[10px] font-bold text-blue-800 dark:text-blue-200">→ Used: {val.perDocActual}</span>
                                                 <span className="font-mono text-[10px] opacity-80">({val.perDocAttempts} pass)</span>
                                                 <span className="font-mono text-[10px] font-bold text-emerald-600 dark:text-emerald-400">${val.perDocCost.toFixed(4)}/doc</span>
                                             </Badge>
                                             <Badge variant="secondary" className="text-xs font-medium gap-1 bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-300/40">
                                                 <Sparkles className="h-3 w-3 text-purple-500 shrink-0" />
-                                                <span>Synthesis: {val.synthActual}</span>
+                                                <span>Synthesis: Primary [{val.synthPrimary}] | Backup [{val.synthBackup}]</span>
+                                                <span className="font-mono text-[10px] font-bold text-purple-800 dark:text-purple-200">→ Used: {val.synthActual}</span>
                                                 <span className="font-mono text-[10px] opacity-80">({val.synthAttempts} pass)</span>
                                                 <span className="font-mono text-[10px] font-bold text-emerald-600 dark:text-emerald-400">${val.synthCost.toFixed(4)}</span>
                                             </Badge>

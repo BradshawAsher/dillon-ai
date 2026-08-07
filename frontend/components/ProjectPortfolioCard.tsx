@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import { Archive, ArchiveRestore, BriefcaseBusiness, Clock3, Download, FileStack, Flag, FolderKanban, Plus, RefreshCw, Search, ShieldAlert } from 'lucide-react'
+import { Archive, ArchiveRestore, BriefcaseBusiness, Clock3, DollarSign, Download, FileStack, Flag, FolderKanban, Plus, RefreshCw, Search, ShieldAlert } from 'lucide-react'
 import ExpandableText from './ExpandableText'
 
 import { Badge } from '../lib/shadcn/badge'
@@ -21,6 +21,10 @@ import {
 } from '../utils/projectWorkspace'
 import { computeImpactMetrics, formatHours } from '../utils/impactMetrics'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
+import {
+    calculateBatchTotalCost,
+    calculateSynthesisCost,
+} from '../utils/diligenceDashboardUtils'
 
 type ProjectPortfolioCardProps = {
     rows: SubmissionHistoryItem[]
@@ -258,6 +262,23 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                                                 {project.projectId.trim().length > 0 ? (
                                                     <p className="font-mono text-xs text-muted-foreground">Project ID: {project.projectId}</p>
                                                 ) : null}
+                                                {(() => {
+                                                    const projectDocs = rows.filter((r) => (r.projectId || getProjectKey(r)) === project.projectKey || r.workstream === project.projectName)
+                                                    const docBatchCost = calculateBatchTotalCost(projectDocs)
+                                                    const synthCost = calculateSynthesisCost(synthesis)
+                                                    const totalRunCost = docBatchCost + synthCost
+                                                    return (
+                                                        <div className="flex flex-wrap items-center gap-2 pt-1">
+                                                            <Badge variant="outline" className="gap-1 font-mono text-xs font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-300/60 py-0.5 px-2">
+                                                                <DollarSign className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                                                                <span>Total Run Cost: ${totalRunCost.toFixed(4)}</span>
+                                                            </Badge>
+                                                            <span className="text-[10px] text-muted-foreground font-mono">
+                                                                (Docs: ${docBatchCost.toFixed(4)} + Synth: ${synthCost.toFixed(4)})
+                                                            </span>
+                                                        </div>
+                                                    )
+                                                })()}
                                             </div>
 
                                             <div className="flex flex-wrap gap-2">

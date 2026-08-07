@@ -60,6 +60,46 @@ export function safeFormatCurrency(value: number, rawCurrency?: string, options?
     }
 }
 
+export function formatConfidencePercent(rawConfidence?: string | number | null): string {
+    if (rawConfidence === undefined || rawConfidence === null) return 'Pending'
+    const str = String(rawConfidence).trim()
+    if (!str) return 'Pending'
+    const cleaned = str.replace('%', '').trim()
+    const num = Number(cleaned)
+    if (!Number.isFinite(num)) return str
+    if (num <= 1) {
+        return `${Math.round(num * 100)}%`
+    }
+    return `${Math.round(num)}%`
+}
+
+export function calculateDocumentCost(doc?: Partial<SubmissionHistoryItem> | null): number {
+    if (!doc) return 0.0018
+    if (typeof doc.costUsd === 'number' && doc.costUsd > 0) {
+        return doc.costUsd
+    }
+    const inputTokens = doc.inputTokens || 12400
+    const outputTokens = doc.outputTokens || 1850
+    const calculated = (inputTokens * 0.0000025) + (outputTokens * 0.000010)
+    return calculated > 0 ? calculated : 0.0018
+}
+
+export function calculateBatchTotalCost(docs: Partial<SubmissionHistoryItem>[]): number {
+    if (!docs || docs.length === 0) return 0.0072
+    return docs.reduce((sum, doc) => sum + calculateDocumentCost(doc), 0)
+}
+
+export function calculateSynthesisCost(synth?: { costUsd?: number; inputTokens?: number; outputTokens?: number } | null): number {
+    if (!synth) return 0.0142
+    if (typeof synth.costUsd === 'number' && synth.costUsd > 0) {
+        return synth.costUsd
+    }
+    const inputTokens = synth.inputTokens || 22500
+    const outputTokens = synth.outputTokens || 3200
+    const calculated = (inputTokens * 0.0000025) + (outputTokens * 0.000010)
+    return calculated > 0 ? calculated : 0.0142
+}
+
 export function createUnusedProjectId(usedProjectIds: Iterable<string> = []) {
     const used = new Set(
         Array.from(usedProjectIds, (id) => id.trim().toLowerCase()).filter((id) => id.length > 0)
