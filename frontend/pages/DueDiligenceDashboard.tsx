@@ -572,8 +572,18 @@ export default function DueDiligenceDashboard() {
 
     const activeBatchRows = useMemo(() => {
         if (activeSubmissionBatch?.id) {
-            const matchingBatch = submissionHistory.filter((row) => row.submissionBatchId === activeSubmissionBatch.id || row.projectId === activeSubmissionBatch.id)
-            if (matchingBatch.length > 0) return matchingBatch
+            return submissionHistory.filter((row) => {
+                if (row.submissionBatchId === activeSubmissionBatch.id || row.projectId === activeSubmissionBatch.id) {
+                    return true
+                }
+                if (activeSubmissionBatch.startedAt && row.createdAt) {
+                    const rowCreatedMs = new Date(row.createdAt).getTime()
+                    if (rowCreatedMs >= activeSubmissionBatch.startedAt - 5000 && (getProjectKey(row) === activeProjectId || row.projectId === activeProjectId)) {
+                        return true
+                    }
+                }
+                return false
+            })
         }
         return submissionHistory.filter((row) => (getProjectKey(row) === activeProjectId) || (row.projectId === activeProjectId))
     }, [activeProjectId, activeSubmissionBatch, submissionHistory])
@@ -602,10 +612,13 @@ export default function DueDiligenceDashboard() {
 
     const latestBatchRows = useMemo(() => {
         const batchId = activeSubmissionBatch?.id
-        const rows = submissionHistory.filter((row) => {
-            if (batchId && (row.submissionBatchId === batchId || row.projectId === batchId)) return true
-            return getProjectKey(row) === activeProjectId || row.projectId === activeProjectId
-        })
+        if (batchId) {
+            const batchRows = submissionHistory.filter((row) => row.submissionBatchId === batchId || row.projectId === batchId)
+            if (batchRows.length > 0) {
+                return batchRows.sort((a, b) => new Date(b.createdAt || b.updatedAt || 0).getTime() - new Date(a.createdAt || a.updatedAt || 0).getTime())
+            }
+        }
+        const rows = submissionHistory.filter((row) => getProjectKey(row) === activeProjectId || row.projectId === activeProjectId)
         return rows.sort((a, b) => new Date(b.createdAt || b.updatedAt || 0).getTime() - new Date(a.createdAt || a.updatedAt || 0).getTime())
     }, [activeProjectId, activeSubmissionBatch?.id, submissionHistory])
 

@@ -67,6 +67,10 @@ export type SubmissionHistoryItem = {
     investmentIsFavorable: boolean | null
     investmentBuyReasoning: string
     isConsidered: boolean
+    inputTokens?: number
+    outputTokens?: number
+    totalTokens?: number
+    costUsd?: number
     projectLevelFields?: Record<string, string | number | boolean | null | undefined>
     projectSynthesisSummary?: string
     projectSynthesisRecommendation?: string
