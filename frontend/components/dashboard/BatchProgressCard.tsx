@@ -50,7 +50,7 @@ export function BatchProgressCard({
     handleRetryFailedDocument,
     handleOpenProjectSynthesis,
 }: BatchProgressCardProps) {
-    const isFinished = activeBatchFinishedCount >= activeBatchExpectedCount
+    const isFinished = activeBatchExpectedCount > 0 && activeBatchFinishedCount >= activeBatchExpectedCount
     const isStopped = Boolean(activeSubmissionBatch.stoppedAt)
 
     return (

@@ -178,20 +178,13 @@ export default function DueDiligenceDashboard() {
     const { data: evalRunsData, trigger: triggerEvalRuns } = useGetEvalRuns()
     const { trigger: triggerSubmissionConsideration } = useUpdateSubmissionConsideration()
 
-    // Fetch initial backend data on mount and set up periodic refresh
+    // Fetch initial backend data on mount
     useEffect(() => {
         void triggerSubmissionHistory({ environment: 'production' })
         void triggerProjectSynthesis({ environment: 'production' })
         void triggerDealModels()
         void triggerWorkflowErrors({ environment: 'production' })
         void triggerEvalRuns()
-
-        const interval = setInterval(() => {
-            void triggerSubmissionHistory({ environment: 'production' })
-            void triggerProjectSynthesis({ environment: 'production' })
-            void triggerEvalRuns()
-        }, 10_000)
-        return () => clearInterval(interval)
     }, [triggerSubmissionHistory, triggerProjectSynthesis, triggerDealModels, triggerWorkflowErrors, triggerEvalRuns])
 
     const diligenceFindings = useMemo(() => {
@@ -511,21 +504,66 @@ export default function DueDiligenceDashboard() {
         })
     }, [activeProjectDocuments])
 
+    // Periodic refresh effect (3s polling when batch/processing active, 10s idle)
+    useEffect(() => {
+        const pollInterval = (activeSubmissionBatch || hasActiveSubmissions || isCurrentProjectProcessingDocuments) ? 3_000 : 10_000
+
+        const interval = setInterval(() => {
+            void triggerSubmissionHistory({ environment: 'production' })
+            void triggerProjectSynthesis({ environment: 'production' })
+            void triggerEvalRuns()
+        }, pollInterval)
+        return () => clearInterval(interval)
+    }, [
+        triggerSubmissionHistory,
+        triggerProjectSynthesis,
+        triggerEvalRuns,
+        activeSubmissionBatch,
+        hasActiveSubmissions,
+        isCurrentProjectProcessingDocuments,
+    ])
+
     const isCurrentProjectAwaitingSynthesis = useMemo(() => {
         if (isExampleMode || activeProjectDocuments.length === 0) return false
-        const hasPendingDoc = activeProjectDocuments.some((d) => ['processing', 'pending', 'queued', 'running'].includes((d.status || '').trim().toLowerCase()))
-        if (hasPendingDoc) return false
-        const synthStatus = (activeProjectSynthesis?.projectStatus || '').trim().toLowerCase()
-        if (['synthesized', 'completed', 'success'].includes(synthStatus)) return false
-        if ((activeProjectSynthesis?.finalRecommendation || '').trim().length > 0) return false
+
+        const hasPendingDoc = activeProjectDocuments.some((d) =>
+            ['processing', 'pending', 'queued', 'running'].includes((d.status || '').trim().toLowerCase())
+        )
+        if (hasPendingDoc) return true
+
+        const completedDocCount = activeProjectDocuments.filter((d) =>
+            ['completed', 'approved'].includes((d.status || '').trim().toLowerCase())
+        ).length
+
+        if (completedDocCount === 0) return true
+        if (!activeProjectSynthesis) return true
+
+        const synthDocCount = Number(
+            activeProjectSynthesis.documentsCompletedCount ??
+            activeProjectSynthesis.documentsReceivedCount ?? 0
+        )
+
+        if (completedDocCount > synthDocCount) return true
+
+        const synthStatus = (activeProjectSynthesis.projectStatus || '').trim().toLowerCase()
+        if (['processing', 'pending', 'queued', 'running', 'synthesis_in_progress'].includes(synthStatus)) return true
+
+        if (
+            ['synthesized', 'completed', 'success'].includes(synthStatus) &&
+            ((activeProjectSynthesis.finalRecommendation || '').trim().length > 0 ||
+                (activeProjectSynthesis.finalJudgmentSummary || '').trim().length > 0)
+        ) {
+            return false
+        }
+
         return true
     }, [activeProjectDocuments, activeProjectSynthesis, isExampleMode])
 
     const activeProjectSynthesisSucceeded = useMemo(() => {
-        if (!activeProjectSynthesis) return false
+        if (!activeProjectSynthesis || isCurrentProjectAwaitingSynthesis) return false
         const st = (activeProjectSynthesis.projectStatus || '').trim().toLowerCase()
         return ['synthesized', 'completed', 'success'].includes(st) || (activeProjectSynthesis.finalRecommendation || '').trim().length > 0
-    }, [activeProjectSynthesis])
+    }, [activeProjectSynthesis, isCurrentProjectAwaitingSynthesis])
 
     const currentSynthesisProgress = useMemo(
         () => deriveSynthesisProgress(activeProjectSynthesis?.projectStatus, isCurrentProjectAwaitingSynthesis),
@@ -563,14 +601,17 @@ export default function DueDiligenceDashboard() {
     const activeBatchImpact = useMemo(() => computeImpactMetrics(activeBatchRows), [activeBatchRows])
 
     const latestBatchRows = useMemo(() => {
-        return submissionHistory
-            .filter((row) => getProjectKey(row) === activeProjectId)
-            .sort((a, b) => new Date(b.createdAt || b.updatedAt || 0).getTime() - new Date(a.createdAt || a.updatedAt || 0).getTime())
-    }, [activeProjectId, submissionHistory])
+        const batchId = activeSubmissionBatch?.id
+        const rows = submissionHistory.filter((row) => {
+            if (batchId && (row.submissionBatchId === batchId || row.projectId === batchId)) return true
+            return getProjectKey(row) === activeProjectId || row.projectId === activeProjectId
+        })
+        return rows.sort((a, b) => new Date(b.createdAt || b.updatedAt || 0).getTime() - new Date(a.createdAt || a.updatedAt || 0).getTime())
+    }, [activeProjectId, activeSubmissionBatch?.id, submissionHistory])
 
     const [selectedBatchDocIndex, setSelectedBatchDocIndex] = useState(0)
     const safeBatchDocIndex = Math.min(selectedBatchDocIndex, Math.max(0, latestBatchRows.length - 1))
-    const displayedSubmissionRow = latestBatchRows[safeBatchDocIndex]
+    const displayedSubmissionRow = latestBatchRows[safeBatchDocIndex] ?? activeProjectDocuments[0] ?? submissionHistory[0]
     const liveSubmittedRow = displayedSubmissionRow
 
     const webhookResponse = useMemo(() => {
@@ -1232,46 +1273,14 @@ export default function DueDiligenceDashboard() {
 
                     {activeWorkspaceTab === 'diligence' ? (
                         <div className="space-y-6">
-                            <DiligenceWorkspaceView
-                                projectSummaries={projectSummaries}
-                                dealModelsData={dealModelsData}
-                                visibleProjectSyntheses={visibleProjectSyntheses}
-                                activeProjectId={activeProjectId}
-                                setSelectedProjectKey={setSelectedProjectKey}
-                                askingPrice={askingPrice}
-                                handleAskingPriceChange={handleAskingPriceChange}
-                                activeProjectImpact={activeProjectImpact}
-                                activeDealModel={activeDealModel}
-                                submissionHistory={submissionHistory}
-                                getProjectKey={getProjectKey}
-                                setActiveEvidence={setActiveEvidence}
-                                isExampleMode={isExampleMode}
-                                setActiveWorkspaceTab={setActiveWorkspaceTab}
-                                hydratedDealModel={hydratedDealModel}
-                                activeProjectDocuments={activeProjectDocuments}
-                                activeProjectSynthesis={activeProjectSynthesis ?? undefined}
-                                dealName={dealName}
-                                suggestedProjectName={suggestedProjectName}
-                                projectChecklistById={projectChecklistById}
-                                setProjectChecklistById={setProjectChecklistById}
-                                impact={impact}
-                            />
-
-                            {!isExampleMode && isCurrentProjectAwaitingSynthesis ? (
-                                <div className="flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-800/50 dark:bg-amber-900/15">
-                                    <Loader2 className="mt-0.5 h-5 w-5 shrink-0 animate-spin text-amber-600" />
-                                    <div>
-                                        <p className="text-sm font-semibold text-foreground">Project synthesis in progress</p>
-                                        <p className="mt-1 text-sm text-muted-foreground">
-                                            All documents finished processing, so the agent is now consolidating them into one project judgment.
-                                        </p>
-                                    </div>
-                                </div>
-                            ) : null}
-
-                            {activeSubmissionBatch ? (
+                            {(activeSubmissionBatch || activeBatchProcessingCount > 0) ? (
                                 <BatchProgressCard
-                                    activeSubmissionBatch={activeSubmissionBatch}
+                                    activeSubmissionBatch={activeSubmissionBatch ?? {
+                                        id: activeProjectId,
+                                        expectedDocumentCount: activeBatchExpectedCount,
+                                        environment: 'production',
+                                        startedAt: Date.now(),
+                                    }}
                                     activeBatchFinishedCount={activeBatchFinishedCount}
                                     activeBatchExpectedCount={activeBatchExpectedCount}
                                     activeBatchFailedCount={activeBatchFailedCount}
@@ -1293,7 +1302,19 @@ export default function DueDiligenceDashboard() {
                                 />
                             ) : null}
 
-                            {!isExampleMode && (submitResponse || displayedSubmissionRow) ? (
+                            {!isExampleMode && isCurrentProjectAwaitingSynthesis ? (
+                                <div className="flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-800/50 dark:bg-amber-900/15">
+                                    <Loader2 className="mt-0.5 h-5 w-5 shrink-0 animate-spin text-amber-600" />
+                                    <div>
+                                        <p className="text-sm font-semibold text-foreground">Project synthesis in progress</p>
+                                        <p className="mt-1 text-sm text-muted-foreground">
+                                            All documents finished processing, so the agent is now consolidating them into one project judgment.
+                                        </p>
+                                    </div>
+                                </div>
+                            ) : null}
+
+                            {!isExampleMode && (submitResponse || displayedSubmissionRow || activeProjectDocuments.length > 0) ? (
                                 <LatestSubmissionSection
                                     displayedSubmissionRow={displayedSubmissionRow}
                                     displayedSubmitStatus={displayedSubmitStatus}
@@ -1325,6 +1346,31 @@ export default function DueDiligenceDashboard() {
                                     setActiveEvidence={setActiveEvidence}
                                 />
                             ) : null}
+
+                            <DiligenceWorkspaceView
+                                projectSummaries={projectSummaries}
+                                dealModelsData={dealModelsData}
+                                visibleProjectSyntheses={visibleProjectSyntheses}
+                                activeProjectId={activeProjectId}
+                                setSelectedProjectKey={setSelectedProjectKey}
+                                askingPrice={askingPrice}
+                                handleAskingPriceChange={handleAskingPriceChange}
+                                activeProjectImpact={activeProjectImpact}
+                                activeDealModel={activeDealModel}
+                                submissionHistory={submissionHistory}
+                                getProjectKey={getProjectKey}
+                                setActiveEvidence={setActiveEvidence}
+                                isExampleMode={isExampleMode}
+                                setActiveWorkspaceTab={setActiveWorkspaceTab}
+                                hydratedDealModel={hydratedDealModel}
+                                activeProjectDocuments={activeProjectDocuments}
+                                activeProjectSynthesis={activeProjectSynthesis ?? undefined}
+                                dealName={dealName}
+                                suggestedProjectName={suggestedProjectName}
+                                projectChecklistById={projectChecklistById}
+                                setProjectChecklistById={setProjectChecklistById}
+                                impact={impact}
+                            />
                         </div>
                     ) : null}
 
