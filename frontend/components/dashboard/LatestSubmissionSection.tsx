@@ -1,5 +1,5 @@
 import React from 'react'
-import { ChevronLeft, ChevronRight, Clock3 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Clock3, DollarSign } from 'lucide-react'
 
 import ExpandableText from '../ExpandableText'
 import ExpandableInsightGroup from '../ExpandableInsightGroup'
@@ -18,6 +18,11 @@ import {
     type SubmissionHistoryItem,
 } from '../../utils/submissionHistory'
 import { formatEasternTime } from '../../utils/dateTime'
+import {
+    formatConfidencePercent,
+    calculateDocumentCost,
+    calculateBatchTotalCost,
+} from '../../utils/diligenceDashboardUtils'
 
 function getSubmissionStatusVariant(status: string): 'success' | 'warning' | 'destructive' | 'secondary' | 'outline' {
     const normalized = (status || '').trim().toLowerCase()
@@ -33,10 +38,11 @@ export type LatestSubmissionSectionProps = {
     submitEnvironment: string
     liveSubmittedRow?: SubmissionHistoryItem
     latestBatchRows: SubmissionHistoryItem[]
-    safeBatchDocIndex: number
-    setSelectedBatchDocIndex: React.Dispatch<React.SetStateAction<number>>
-    retryingRequestId?: string
-    handleRetryFailedDocument?: (requestId: string) => void
+    selectedBatchDocIndex?: number | null
+    safeBatchDocIndex?: number
+    setSelectedBatchDocIndex: React.Dispatch<React.SetStateAction<number>> | React.Dispatch<React.SetStateAction<number | null>> | any
+    retryingRequestId?: string | null
+    handleRetryFailedDocument?: (requestID: string) => void
     handleOpenProjectSynthesis: (projectId: string) => void
     projectId: string
     projectStage?: string
@@ -64,7 +70,8 @@ export default function LatestSubmissionSection({
     submitEnvironment,
     liveSubmittedRow,
     latestBatchRows,
-    safeBatchDocIndex,
+    selectedBatchDocIndex,
+    safeBatchDocIndex: propSafeBatchDocIndex,
     setSelectedBatchDocIndex,
     retryingRequestId,
     handleRetryFailedDocument,
@@ -95,6 +102,15 @@ export default function LatestSubmissionSection({
     const confidence = displayedSubmitConfidence || displayedSubmissionRow?.aiConfidence || ''
     const aiSummary = displayedSubmitAiSummary || displayedSubmissionRow?.aiSummary || ''
 
+    const safeBatchDocIndex = typeof propSafeBatchDocIndex === 'number' ? propSafeBatchDocIndex : Math.min(
+        latestBatchRows.length - 1,
+        Math.max(0, typeof selectedBatchDocIndex === 'number' ? selectedBatchDocIndex : (latestBatchRows.length > 0 ? latestBatchRows.length - 1 : 0))
+    )
+
+    const docCost = calculateDocumentCost(displayedSubmissionRow)
+    const batchTotalCost = calculateBatchTotalCost(latestBatchRows)
+    const formattedConfidence = formatConfidencePercent(confidence)
+
     return (
         <Card className="overflow-hidden">
             <CardHeader className="border-b border-border bg-card/80">
@@ -106,6 +122,12 @@ export default function LatestSubmissionSection({
                         </CardDescription>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
+                        {latestBatchRows.length > 0 && (
+                            <Badge variant="outline" className="gap-1 font-mono text-xs font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-300/60 py-1 px-2.5">
+                                <DollarSign className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                                <span>Batch Total: ${batchTotalCost.toFixed(4)} ({latestBatchRows.length} doc{latestBatchRows.length > 1 ? 's' : ''}, incl. retries)</span>
+                            </Badge>
+                        )}
                         {displayedSubmissionRow && ['failed', 'error', 'rejected', 'needs_review', 'needs review'].includes(displayedSubmitStatus.trim().toLowerCase()) && displayedSubmissionRow.requestID && handleRetryFailedDocument ? (
                             <Button type="button" variant="outline" disabled={retryingRequestId === displayedSubmissionRow.requestID} onClick={() => handleRetryFailedDocument(displayedSubmissionRow.requestID)}>
                                 {retryingRequestId === displayedSubmissionRow.requestID ? 'Retrying document…' : 'Retry document'}
@@ -175,7 +197,7 @@ export default function LatestSubmissionSection({
                                     disabled={safeBatchDocIndex === 0}
                                     onClick={() => {
                                         setUserHasNavigatedBatchDocs?.(true)
-                                        setSelectedBatchDocIndex((prev) => Math.max(0, (typeof prev === 'number' ? prev : safeBatchDocIndex) - 1))
+                                        setSelectedBatchDocIndex((prev: any) => Math.max(0, (typeof prev === 'number' ? prev : safeBatchDocIndex) - 1))
                                     }}
                                     title="Previous document in batch"
                                 >
@@ -192,7 +214,7 @@ export default function LatestSubmissionSection({
                                     disabled={safeBatchDocIndex >= latestBatchRows.length - 1}
                                     onClick={() => {
                                         setUserHasNavigatedBatchDocs?.(true)
-                                        setSelectedBatchDocIndex((prev) => Math.min(latestBatchRows.length - 1, (typeof prev === 'number' ? prev : safeBatchDocIndex) + 1))
+                                        setSelectedBatchDocIndex((prev: any) => Math.min(latestBatchRows.length - 1, (typeof prev === 'number' ? prev : safeBatchDocIndex) + 1))
                                     }}
                                     title="Next document in batch"
                                 >
@@ -202,18 +224,24 @@ export default function LatestSubmissionSection({
                         )}
                     </div>
 
-                    <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
                         <div className="rounded-lg border border-primary/25 bg-background/90 p-3">
                             <p className="text-xs text-muted-foreground">Risk signal</p>
                             <p className="mt-1 text-lg font-bold">{trafficLight || riskLevel || 'Still processing'}</p>
                         </div>
                         <div className="rounded-lg border border-primary/25 bg-background/90 p-3">
                             <p className="text-xs text-muted-foreground">AI confidence</p>
-                            <p className="mt-1 text-lg font-bold">{liveSubmitInsight?.confidencePercent != null ? `${liveSubmitInsight.confidencePercent}%` : confidence || 'Pending'}</p>
+                            <p className="mt-1 text-lg font-bold">{formattedConfidence}</p>
                         </div>
                         <div className="rounded-lg border border-primary/25 bg-background/90 p-3">
                             <p className="text-xs text-muted-foreground">Detected document type</p>
-                            <p className="mt-1 text-lg font-bold">{displayedSubmissionRow?.detectedDocumentType || displayedSubmissionRow?.documentType || documentType || 'Pending'}</p>
+                            <p className="mt-1 text-lg font-bold truncate" title={displayedSubmissionRow?.detectedDocumentType || displayedSubmissionRow?.documentType || documentType || 'Pending'}>
+                                {displayedSubmissionRow?.detectedDocumentType || displayedSubmissionRow?.documentType || documentType || 'Pending'}
+                            </p>
+                        </div>
+                        <div className="rounded-lg border border-primary/25 bg-background/90 p-3">
+                            <p className="text-xs text-muted-foreground">Extraction Cost</p>
+                            <p className="mt-1 text-lg font-bold text-emerald-600 dark:text-emerald-400 font-mono">${docCost.toFixed(4)}</p>
                         </div>
                         <div className="rounded-lg border border-primary/25 bg-background/90 p-3">
                             <p className="text-xs text-muted-foreground">Action needed</p>
@@ -297,13 +325,8 @@ export default function LatestSubmissionSection({
                         <div className="rounded-md border border-border bg-card px-3 py-2">
                             <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Confidence</p>
                             <p className="mt-1 text-foreground">
-                                {liveSubmitInsight?.confidencePercent != null
-                                    ? `${liveSubmitInsight.confidencePercent}%`
-                                    : confidence || 'Pending'}
+                                {formattedConfidence}
                             </p>
-                            {liveSubmitInsight?.confidencePercent != null ? (
-                                <Progress value={liveSubmitInsight.confidencePercent} className="mt-2 h-2" />
-                            ) : null}
                         </div>
                         <div className="rounded-md border border-border bg-card px-3 py-2">
                             <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Variance</p>
