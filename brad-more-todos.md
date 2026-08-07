@@ -108,6 +108,12 @@
 
 - For Brad - need to keep testing the website and trying different documents, can always expand the eval suite and trying to break the system, and also i think a lot of financial facts like ebitda and sde are not filled even though we put 4 long docs through? Why?
 
+- Diligence and synthesis tabs are out of sync because we were refactoring the website
+
+- In eval and harness tab, have a button to view each business/project and to view each individual doc (either takes you to audit trail for that, or to diligence tab for most recent doc submission option for that doc results + sets the project being viewed to that project)
+
+- Change your fixed window + scrolling to more of fixed window + 20 per page, or 50 per page, or view all, like big websites like AWS when you have to look at IAM and admin permissinos stuff?
+
 - Add even more granular confidence score so every fact on the page has a confidence score?
 
 - Check where the explanations for vocab like MOIC and IRR are?

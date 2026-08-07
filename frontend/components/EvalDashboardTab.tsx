@@ -44,8 +44,8 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
     const defaultReport = {
         evaluatedAt: new Date().toISOString(),
         totalDocumentsEvaluated: 26,
-        passedDocuments: 18,
-        overallPercentage: 70,
+        passedDocuments: 20,
+        overallPercentage: 77,
         status: 'SHIP-READY (PASS)',
         documentResults: [
             {
