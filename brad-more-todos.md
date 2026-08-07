@@ -111,12 +111,22 @@
 - Diligence and synthesis tabs are out of sync because we were refactoring the website
 
 
-- Try seeing why Sonnet, Opus, and Fable are failing for the synthesizer workflow?
+- Try seeing why Sonnet, Opus, and Fable are failing for the synthesizer workflow? Try seeing if they can work somehow for the fun of it by changing params?
 
 - Try using OpenAI nodes instead of our current setup and compare performance?
 
 
 - Why is anthropic nodes for per doc the only one that will generate an investment thesis?
+
+- Have more robust fallbacks for per doc workflows? 
+How to Properly Do Fallbacks in n8n (Based on Your Canvas)
+Looking at your canvas layout, you have already built a robust error-handling architecture using n8n’s error branching:
+
+The Error Flow Loop: Notice the top routing wires on your canvas (labeled "Classify LLM/Provider Error" looping into wait and retry nodes). This is the correct way to handle failures.
+
+The Right Way to Fallback: Instead of stacking parsers serially, use an If/Else node or n8n’s built-in Error Trigger / On Error routing. If Anthropic throws a provider error, catch that specific error branch, route it to a secondary LLM node (like a Google Gemini or OpenAI model) with its own parser, and let it re-run the extraction cleanly.
+- If both anthropic fail, then fallback to openai or gemini?
+
 
 - Need to rerun all your test docs with the anthropic for per doc and openai for synthesizer
 
