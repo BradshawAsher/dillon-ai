@@ -119,6 +119,8 @@
 
 Also is there a way in the evals and harness we can show the price for this run for both the doc part and the synthesizer part? Is there also a way we can see which model was actually used since if the structured output parser failed then it would call the backup model, also the per doc workflow runs 3 times before it is marked as an absolute fail are we able to count how many times it took and add all the costs together if it ran multiple times? Also this for the synthesizer workflow? Doo you understand this?
 
+- Make sure cost per run is being calculated right and being shown in all the places it needs to be shown, and takes all the factors as described in the bullet point above?
+
 - In eval and harness tab, have a button to view each business/project and to view each individual doc (either takes you to audit trail for that, or to diligence tab for most recent doc submission option for that doc results + sets the project being viewed to that project)
 
 - Change your fixed window + scrolling to more of fixed window + 20 per page, or 50 per page, or view all, like big websites like AWS when you have to look at IAM and admin permissinos stuff?
