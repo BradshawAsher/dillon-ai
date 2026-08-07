@@ -545,23 +545,24 @@ export default function DueDiligenceDashboard() {
         if (completedDocCount === 0) return true
         if (!activeProjectSynthesis) return true
 
+        const synthStatus = (activeProjectSynthesis.projectStatus || '').trim().toLowerCase()
+        const hasFinishedSynthResults = ['synthesized', 'completed', 'success'].includes(synthStatus) &&
+            ((activeProjectSynthesis.finalRecommendation || '').trim().length > 0 ||
+                (activeProjectSynthesis.finalJudgmentSummary || '').trim().length > 0 ||
+                (activeProjectSynthesis.finalJudgmentJson || '').trim().length > 0)
+
+        if (hasFinishedSynthResults) {
+            return false
+        }
+
+        if (['processing', 'pending', 'queued', 'running', 'synthesis_in_progress'].includes(synthStatus)) return true
+
         const synthDocCount = Number(
             activeProjectSynthesis.documentsCompletedCount ??
             activeProjectSynthesis.documentsReceivedCount ?? 0
         )
 
-        if (completedDocCount > synthDocCount) return true
-
-        const synthStatus = (activeProjectSynthesis.projectStatus || '').trim().toLowerCase()
-        if (['processing', 'pending', 'queued', 'running', 'synthesis_in_progress'].includes(synthStatus)) return true
-
-        if (
-            ['synthesized', 'completed', 'success'].includes(synthStatus) &&
-            ((activeProjectSynthesis.finalRecommendation || '').trim().length > 0 ||
-                (activeProjectSynthesis.finalJudgmentSummary || '').trim().length > 0)
-        ) {
-            return false
-        }
+        if (synthDocCount > 0 && completedDocCount > synthDocCount) return true
 
         return true
     }, [activeProjectDocuments, activeProjectSynthesis, isExampleMode])
@@ -579,18 +580,7 @@ export default function DueDiligenceDashboard() {
 
     const activeBatchRows = useMemo(() => {
         if (activeSubmissionBatch?.id) {
-            return submissionHistory.filter((row) => {
-                if (row.submissionBatchId === activeSubmissionBatch.id || row.projectId === activeSubmissionBatch.id) {
-                    return true
-                }
-                if (activeSubmissionBatch.startedAt && row.createdAt) {
-                    const rowCreatedMs = new Date(row.createdAt).getTime()
-                    if (rowCreatedMs >= activeSubmissionBatch.startedAt - 5000 && (getProjectKey(row) === activeProjectId || row.projectId === activeProjectId)) {
-                        return true
-                    }
-                }
-                return false
-            })
+            return submissionHistory.filter((row) => row.submissionBatchId === activeSubmissionBatch.id)
         }
         return submissionHistory.filter((row) => (getProjectKey(row) === activeProjectId) || (row.projectId === activeProjectId))
     }, [activeProjectId, activeSubmissionBatch, submissionHistory])
@@ -620,7 +610,7 @@ export default function DueDiligenceDashboard() {
     const latestBatchRows = useMemo(() => {
         const batchId = activeSubmissionBatch?.id
         if (batchId) {
-            const batchRows = submissionHistory.filter((row) => row.submissionBatchId === batchId || row.projectId === batchId)
+            const batchRows = submissionHistory.filter((row) => row.submissionBatchId === batchId)
             if (batchRows.length > 0) {
                 return batchRows.sort((a, b) => new Date(a.createdAt || a.receivedAt || a.updatedAt || 0).getTime() - new Date(b.createdAt || b.receivedAt || b.updatedAt || 0).getTime())
             }
@@ -1016,15 +1006,15 @@ export default function DueDiligenceDashboard() {
             setSelectedProjectKey(targetProjectId)
             setProjectId(targetProjectId)
 
-            const submissionBatchId = targetProjectId
+            const submissionBatchId = `batch-${now}-${Math.random().toString(36).substring(2, 7)}`
             const expectedBatchDocumentCount = filesToQueue.length
             const failedFileNames: string[] = []
 
             setActiveSubmissionBatch({
-                id: targetProjectId,
+                id: submissionBatchId,
                 expectedDocumentCount: expectedBatchDocumentCount,
                 environment,
-                startedAt: Date.now(),
+                startedAt: now,
             })
 
             for (const file of filesToQueue) {

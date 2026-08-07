@@ -7,9 +7,11 @@ import { Badge } from '../lib/shadcn/badge'
 import { computeAllCashReturns } from '../utils/dealMath'
 import { parseDocumentedFacts } from '../utils/evidence'
 
+import { safeFormatCurrency } from '../utils/diligenceDashboardUtils'
+
 function money(value: number | null, currency = 'USD') {
     if (value === null || !Number.isFinite(value)) return 'Needs input'
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: 0 }).format(value)
+    return safeFormatCurrency(value, currency)
 }
 
 export default function ReturnsDecisionSummary({ model }: { model: DealModel }) {

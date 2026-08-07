@@ -1,6 +1,7 @@
 import { Info } from 'lucide-react'
 
 import type { ResolvedInput } from '../utils/dealMath'
+import { safeFormatCurrency } from '../utils/diligenceDashboardUtils'
 
 type AssumptionNoticeProps = {
     assumedInputs: ResolvedInput[]
@@ -24,11 +25,7 @@ function formatAssumedValue(input: ResolvedInput, currency: string) {
         return 'zero'
     }
 
-    return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency,
-        maximumFractionDigits: 0,
-    }).format(input.value)
+    return safeFormatCurrency(input.value, currency)
 }
 
 /**

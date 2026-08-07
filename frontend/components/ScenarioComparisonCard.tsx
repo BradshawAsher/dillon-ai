@@ -4,11 +4,12 @@ import type { DealModel } from '../hooks/backend/diligence'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { calculateIrr } from '../utils/dealMath'
 import { buildDerivedEvidence, buildFactEvidence, parseDocumentedFacts, type EvidenceItem } from '../utils/evidence'
+import { safeFormatCurrency } from '../utils/diligenceDashboardUtils'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import { GrowthLineChart } from './DealCharts'
 
 function facts(model: DealModel) { try { return JSON.parse(model.documentedFactsJson || '{}') as Record<string, { value?: number; status?: string; currency?: string }> } catch { return {} } }
-function money(value: number, currency: string) { return new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: 0 }).format(value) }
+function money(value: number, currency: string) { return safeFormatCurrency(value, currency) }
 
 type ScenarioComparisonCardProps = {
     model: DealModel

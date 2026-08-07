@@ -11,6 +11,8 @@ import AssumptionNotice from './AssumptionNotice'
 import { CashFlowChart, CumulativeCashFlowChart } from './DealCharts'
 import InfoTip, { FINANCIAL_TERMS } from './InfoTip'
 
+import { safeFormatCurrency } from '../utils/diligenceDashboardUtils'
+
 type AllCashReturnsCardProps = {
     model: DealModel
     documents?: SubmissionHistoryItem[]
@@ -18,7 +20,7 @@ type AllCashReturnsCardProps = {
 }
 
 function money(value: number, currency = 'USD') {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: 0 }).format(value)
+    return safeFormatCurrency(value, currency)
 }
 
 export default function AllCashReturnsCard({ model, documents = [], onOpenEvidence }: AllCashReturnsCardProps) {

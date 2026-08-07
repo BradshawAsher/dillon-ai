@@ -21,9 +21,11 @@ const assumptionLabels: Array<[keyof DealModel, string]> = [
     ['exitMultiple', 'Exit multiple'],
 ]
 
+import { safeFormatCurrency } from '../utils/diligenceDashboardUtils'
+
 function formatFact(value: number | undefined, currency?: string) {
     if (typeof value !== 'number' || !Number.isFinite(value)) return 'Not returned'
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: currency || 'USD', maximumFractionDigits: 0 }).format(value)
+    return safeFormatCurrency(value, currency)
 }
 
 export default function DealModelReadinessCard({ model, documents, onOpenEvidence }: { model: DealModel; documents: SubmissionHistoryItem[]; onOpenEvidence: (evidence: EvidenceItem) => void }) {

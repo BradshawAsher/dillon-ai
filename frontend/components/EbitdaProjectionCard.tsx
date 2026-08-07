@@ -3,6 +3,7 @@ import { TrendingUp } from 'lucide-react'
 import type { DealModel } from '../hooks/backend/diligence'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { buildDerivedEvidence, buildFactEvidence, parseDocumentedFacts, type EvidenceItem } from '../utils/evidence'
+import { safeFormatCurrency } from '../utils/diligenceDashboardUtils'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import { EbitdaLineChart } from './DealCharts'
 
@@ -44,7 +45,7 @@ export default function EbitdaProjectionCard({ model, documents = [], onOpenEvid
     const evidenceItem = buildDerivedEvidence({
         title: 'EBITDA projection',
         formula: 'For each year and scenario: EBITDA = Revenue x (1 + growth rate)^year x EBITDA margin',
-        documentedInputs: [{ label: 'Starting revenue', value: revenue === null ? 'Not documented' : new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: 0 }).format(revenue) }],
+        documentedInputs: [{ label: 'Starting revenue', value: revenue === null ? 'Not documented' : safeFormatCurrency(revenue, currency) }],
         analystInputs: [
             ...(bearMargin !== null ? [{ label: 'Bear EBITDA margin', value: `${(bearMargin * 100).toFixed(1)}%` }] : []),
             ...(baseMargin !== null ? [{ label: 'Base EBITDA margin', value: `${(baseMargin * 100).toFixed(1)}%` }] : []),

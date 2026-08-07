@@ -87,6 +87,7 @@ const activeSubmissionStatuses = new Set([
     'received',
     'running',
     'submitted',
+    'uploading',
 ])
 
 const stoppedSubmissionStatuses = new Set([

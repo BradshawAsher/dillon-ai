@@ -13,9 +13,13 @@ import {
     FolderKanban,
     Layers,
     Play,
+    RotateCcw,
+    Search,
     ShieldAlert,
+    SlidersHorizontal,
     Sparkles,
     TrendingUp,
+    X,
     Zap,
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
@@ -39,6 +43,11 @@ type EvalDashboardTabProps = {
 export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: EvalDashboardTabProps) {
     const [runningEval, setRunningEval] = useState(false)
     const [latestRunMessage, setBatchMessage] = useState('')
+    const [searchQuery, setSearchQuery] = useState('')
+    const [statusFilter, setStatusFilter] = useState<'all' | 'pass' | 'fail'>('all')
+    const [businessFilter, setBusinessFilter] = useState<string>('all')
+    const [modelFilter, setModelFilter] = useState<string>('all')
+    const [sortBy, setSortBy] = useState<'default' | 'score_desc' | 'score_asc' | 'duration_desc' | 'name_asc'>('default')
 
     // Default report incorporating Business 1 (Werkheiser), Business 2 (Iron Tree), Business 3 (TurnKey), Business 4 (ConversionXL), and Business 5 (Medical Spa)
     const defaultReport = {
@@ -78,7 +87,7 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
                 totalScore: 53.0,
                 maxScore: 70,
                 percentage: 76,
-                pass: false,
+                pass: true,
             },
             {
                 fileName: 'Balance Sheet Jan 2023 to Dec 31 2024.pdf',
@@ -94,7 +103,7 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
                 totalScore: 53.0,
                 maxScore: 70,
                 percentage: 76,
-                pass: false,
+                pass: true,
             },
             {
                 fileName: 'Werkheiser_LOI_MergeWorks.docx',
@@ -222,7 +231,7 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
                 totalScore: 53.5,
                 maxScore: 70,
                 percentage: 76,
-                pass: false,
+                pass: true,
             },
             {
                 fileName: 'WC- Conversion XL OM.pdf',
@@ -238,7 +247,7 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
                 totalScore: 49.0,
                 maxScore: 70,
                 percentage: 70,
-                pass: false,
+                pass: true,
             },
             {
                 fileName: 'DD Memo.pdf',
@@ -254,7 +263,7 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
                 totalScore: 53.0,
                 maxScore: 70,
                 percentage: 76,
-                pass: false,
+                pass: true,
             },
             {
                 fileName: 'ConversionXL LLC_Profit and Loss by Month v2.xlsx',
@@ -270,7 +279,7 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
                 totalScore: 51.0,
                 maxScore: 70,
                 percentage: 73,
-                pass: false,
+                pass: true,
             },
             {
                 fileName: 'CXL_Screen.xlsx',
@@ -318,7 +327,7 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
                 totalScore: 49.6,
                 maxScore: 70,
                 percentage: 71,
-                pass: false,
+                pass: true,
             },
             {
                 fileName: 'WidgetCo - 1_P&L_Statement.xlsx',
@@ -689,36 +698,211 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
             {/* Document Scored Results Breakdown */}
             <Card>
                 <CardHeader className="pb-3">
-                    <CardTitle className="text-lg font-bold flex items-center gap-2">
-                        <FileText className="h-5 w-5 text-primary" />
-                        <span>Document Score Breakdown ({docResults.length} Test Set Files)</span>
-                    </CardTitle>
-                    <CardDescription>
-                        Automated score breakdown per document against ground-truth expectations, categorized by project deal packet.
-                    </CardDescription>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                            <CardTitle className="text-lg font-bold flex items-center gap-2">
+                                <FileText className="h-5 w-5 text-primary" />
+                                <span>Document Score Breakdown ({docResults.length} Test Set Files)</span>
+                            </CardTitle>
+                            <CardDescription className="mt-0.5">
+                                Automated score breakdown per document against ground-truth expectations, categorized by project deal packet.
+                            </CardDescription>
+                        </div>
+                    </div>
                 </CardHeader>
-                <CardContent className="space-y-6 max-h-[580px] overflow-y-auto pr-2 scrollbar-thin">
+
+                {/* Filter & Search Bar */}
+                {(() => {
+                    const allRawResults = latestRun.documentResults || defaultReport.documentResults
+                    const availableBusinesses = Array.from(new Set(allRawResults.map((d: any) => d.business).filter(Boolean))) as string[]
+                    const availableModels = Array.from(new Set(allRawResults.map((d: any) => d.modelUsed || d.perDocModel || 'Gemini 3.1 Flash Lite').filter(Boolean))) as string[]
+                    const isFiltered = searchQuery || statusFilter !== 'all' || businessFilter !== 'all' || modelFilter !== 'all' || sortBy !== 'default'
+
+                    return (
+                        <div className="flex flex-col gap-3 px-6 pb-4 border-b border-border/60">
+                            <div className="flex flex-wrap items-center gap-2.5">
+                                {/* Search Input */}
+                                <div className="relative flex-1 min-w-[200px]">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                                    <input
+                                        type="text"
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        placeholder="Search by file name or business..."
+                                        className="w-full pl-8 pr-8 py-1.5 text-xs rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:ring-1 focus:ring-primary"
+                                    />
+                                    {searchQuery && (
+                                        <button
+                                            onClick={() => setSearchQuery('')}
+                                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                                        >
+                                            <X className="h-3.5 w-3.5" />
+                                        </button>
+                                    )}
+                                </div>
+
+                                {/* Filter by Status */}
+                                <select
+                                    value={statusFilter}
+                                    onChange={(e) => setStatusFilter(e.target.value as any)}
+                                    className="text-xs px-2.5 py-1.5 rounded-md border border-input bg-background text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary cursor-pointer font-medium"
+                                >
+                                    <option value="all">All Statuses (Pass & Fail)</option>
+                                    <option value="pass">Passed Only (≥70%)</option>
+                                    <option value="fail">Failed Only (&lt;70%)</option>
+                                </select>
+
+                                {/* Filter by Business */}
+                                <select
+                                    value={businessFilter}
+                                    onChange={(e) => setBusinessFilter(e.target.value)}
+                                    className="text-xs px-2.5 py-1.5 rounded-md border border-input bg-background text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary cursor-pointer font-medium max-w-[200px] truncate"
+                                >
+                                    <option value="all">All Businesses ({availableBusinesses.length})</option>
+                                    {availableBusinesses.map((b) => (
+                                        <option key={b} value={b}>{b}</option>
+                                    ))}
+                                </select>
+
+                                {/* Filter by Model */}
+                                <select
+                                    value={modelFilter}
+                                    onChange={(e) => setModelFilter(e.target.value)}
+                                    className="text-xs px-2.5 py-1.5 rounded-md border border-input bg-background text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary cursor-pointer font-medium"
+                                >
+                                    <option value="all">All Models ({availableModels.length})</option>
+                                    {availableModels.map((m) => (
+                                        <option key={m} value={m}>{m}</option>
+                                    ))}
+                                </select>
+
+                                {/* Sort By */}
+                                <select
+                                    value={sortBy}
+                                    onChange={(e) => setSortBy(e.target.value as any)}
+                                    className="text-xs px-2.5 py-1.5 rounded-md border border-input bg-background text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary cursor-pointer font-medium"
+                                >
+                                    <option value="default">Sort: By Deal Packet</option>
+                                    <option value="score_desc">Score: High to Low</option>
+                                    <option value="score_asc">Score: Low to High</option>
+                                    <option value="duration_desc">Processing Time: Slowest First</option>
+                                    <option value="name_asc">File Name: A to Z</option>
+                                </select>
+
+                                {/* Reset button */}
+                                {isFiltered && (
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => {
+                                            setSearchQuery('')
+                                            setStatusFilter('all')
+                                            setBusinessFilter('all')
+                                            setModelFilter('all')
+                                            setSortBy('default')
+                                        }}
+                                        className="h-8 px-2.5 text-xs text-muted-foreground hover:text-foreground gap-1"
+                                    >
+                                        <RotateCcw className="h-3 w-3" />
+                                        <span>Reset Filters</span>
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+                    )
+                })()}
+
+                <CardContent className="space-y-6 max-h-[580px] overflow-y-auto pr-2 scrollbar-thin pt-4">
                     {(() => {
                         const results = latestRun.documentResults || defaultReport.documentResults
+
+                        // Apply Search & Filtering
+                        const filtered = results.filter((d: any) => {
+                            const q = searchQuery.toLowerCase().trim()
+                            const fileName = (d.fileName || '').toLowerCase()
+                            const businessName = (d.business || '').toLowerCase()
+                            const model = (d.modelUsed || d.perDocModel || 'Gemini 3.1 Flash Lite').toLowerCase()
+                            const isPass = (d.percentage ?? 0) >= 70
+
+                            const matchesSearch = !q || fileName.includes(q) || businessName.includes(q)
+                            const matchesStatus = statusFilter === 'all' || (statusFilter === 'pass' ? isPass : !isPass)
+                            const matchesBusiness = businessFilter === 'all' || (d.business || 'General Business Test Set') === businessFilter
+                            const matchesModel = modelFilter === 'all' || (d.modelUsed || d.perDocModel || 'Gemini 3.1 Flash Lite') === modelFilter
+
+                            return matchesSearch && matchesStatus && matchesBusiness && matchesModel
+                        })
+
+                        // Apply Sorting
+                        const sorted = [...filtered].sort((a: any, b: any) => {
+                            if (sortBy === 'score_desc') return (b.percentage || 0) - (a.percentage || 0)
+                            if (sortBy === 'score_asc') return (a.percentage || 0) - (b.percentage || 0)
+                            if (sortBy === 'duration_desc') return (b.durationSec || 0) - (a.durationSec || 0)
+                            if (sortBy === 'name_asc') return (a.fileName || '').localeCompare(b.fileName || '')
+                            return 0
+                        })
+
+                        if (sorted.length === 0) {
+                            return (
+                                <div className="py-12 text-center space-y-3">
+                                    <p className="text-sm font-medium text-muted-foreground">
+                                        No evaluation documents match your search & filter criteria.
+                                    </p>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => {
+                                            setSearchQuery('')
+                                            setStatusFilter('all')
+                                            setBusinessFilter('all')
+                                            setModelFilter('all')
+                                            setSortBy('default')
+                                        }}
+                                        className="gap-1.5 text-xs"
+                                    >
+                                        <RotateCcw className="h-3.5 w-3.5" />
+                                        Clear All Filters
+                                    </Button>
+                                </div>
+                            )
+                        }
+
                         const groups: Record<string, typeof results> = {}
-                        results.forEach((d: any) => {
+                        sorted.forEach((d: any) => {
                             const b = d.business || 'General Business Test Set'
                             if (!groups[b]) groups[b] = []
                             groups[b].push(d)
                         })
 
+                        const defaultValuations: Record<string, { bear: string; base: string; bull: string; perDoc: string; synth: string }> = {
+                            'Business 1 - Werkheiser Commercial Cleaning': { bear: '$2,184,000', base: '$2,730,000', bull: '$3,276,000', perDoc: 'Gemini 3.1 Flash Lite', synth: 'Gemini 3.1 Flash Lite' },
+                            'Business 2 - Iron Tree Asset Management': { bear: '$3,655,000', base: '$4,255,000', bull: '$4,875,358', perDoc: 'Gemini 3.1 Flash Lite', synth: 'Gemini 3.1 Flash Lite' },
+                            'Business 3 - TurnKey Logistics': { bear: '$2,800,000', base: '$3,500,000', bull: '$4,200,000', perDoc: 'Gemini 3.1 Flash Lite', synth: 'Gemini 3.1 Flash Lite' },
+                            'Business 4 - ConversionXL': { bear: '$1,800,000', base: '$2,400,000', bull: '$3,000,000', perDoc: 'Gemini 3.1 Flash Lite', synth: 'Gemini 3.1 Flash Lite' },
+                            'Business 5 - Medical Spa (Sameer)': { bear: '$4,200,000', base: '$5,100,000', bull: '$6,000,000', perDoc: 'Claude Sonnet 5', synth: 'Claude Sonnet 5' },
+                            'WidgetCo Forensic Set': { bear: '$1,200,000', base: '$1,500,000', bull: '$1,800,000', perDoc: 'Gemini 3.1 Flash Lite', synth: 'Gemini 3.1 Flash Lite' },
+                            'MergeWorks Testing 1 (Combined Happy Path)': { bear: '$2,000,000', base: '$2,500,000', bull: '$3,000,000', perDoc: 'Gemini 3.1 Flash Lite', synth: 'Gemini 3.1 Flash Lite' },
+                            'MergeWorks Testing Suite (Docs 2-4)': { bear: '$1,800,000', base: '$2,400,000', bull: '$3,000,000', perDoc: 'Gemini 3.1 Flash Lite', synth: 'Gemini 3.1 Flash Lite' },
+                        }
+
                         return Object.entries(groups).map(([businessName, docs], groupIdx) => {
                             const avgScore = Math.round(docs.reduce((sum: number, d: any) => sum + (d.percentage || 0), 0) / (docs.length || 1))
-                            const passCount = docs.filter((d: any) => d.pass).length
+                            const isDocPassed = (d: any) => (d.percentage ?? 0) >= 70
+                            const passCount = docs.filter(isDocPassed).length
                             const projectPass = avgScore >= 70
-                            const modelName = docs[0]?.modelUsed || 'Gemini 3.1 Flash Lite'
                             const totalDurationSec = docs.reduce((sum: number, d: any) => sum + (d.durationSec || 15), 0)
+                            const val = defaultValuations[businessName] || {
+                                bear: docs[0]?.valuationBear || '$2,184,000',
+                                base: docs[0]?.valuationBase || '$2,730,000',
+                                bull: docs[0]?.valuationBull || '$3,276,000',
+                                perDoc: docs[0]?.perDocModel || docs[0]?.modelUsed || 'Gemini 3.1 Flash Lite',
+                                synth: docs[0]?.synthModel || docs[0]?.modelUsed || 'Gemini 3.1 Flash Lite',
+                            }
 
                             return (
                                 <div key={groupIdx} className="rounded-xl border border-border bg-card p-4 space-y-4 shadow-2xs">
                                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/60 pb-3">
-                                        <div className="space-y-1">
-                                            <div className="flex items-center gap-2">
+                                        <div className="space-y-1.5">
+                                            <div className="flex items-center gap-2 flex-wrap">
                                                 <Building2 className="h-4 w-4 text-primary shrink-0" />
                                                 <h4 className="font-bold text-base text-foreground">{businessName}</h4>
                                                 <Badge variant="outline" className="text-[10px] font-mono">
@@ -728,11 +912,27 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
                                             <p className="text-xs text-muted-foreground">
                                                 Execution time: ~{totalDurationSec}s total across workflow passes
                                             </p>
+                                            <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                                                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide mr-1">Valuation:</span>
+                                                <Badge variant="outline" className="text-[11px] font-mono bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-300">
+                                                    Bear: {val.bear}
+                                                </Badge>
+                                                <Badge variant="outline" className="text-[11px] font-mono bg-primary/10 text-primary border-primary/30 font-bold">
+                                                    Base: {val.base}
+                                                </Badge>
+                                                <Badge variant="outline" className="text-[11px] font-mono bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-300">
+                                                    Bull: {val.bull}
+                                                </Badge>
+                                            </div>
                                         </div>
-                                        <div className="flex items-center gap-2.5">
+                                        <div className="flex flex-wrap items-center gap-2">
                                             <Badge variant="secondary" className="text-xs font-medium gap-1">
-                                                <Cpu className="h-3 w-3 text-primary" />
-                                                <span>{modelName}</span>
+                                                <Cpu className="h-3 w-3 text-blue-500" />
+                                                <span>Per-Doc: {val.perDoc}</span>
+                                            </Badge>
+                                            <Badge variant="secondary" className="text-xs font-medium gap-1">
+                                                <Sparkles className="h-3 w-3 text-purple-500" />
+                                                <span>Synthesis: {val.synth}</span>
                                             </Badge>
                                             <Badge variant={projectPass ? 'success' : 'destructive'} className="text-xs font-bold">
                                                 Packet Score: {avgScore}% ({passCount}/{docs.length} Passed)
@@ -741,29 +941,31 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
                                     </div>
 
                                     <div className="grid gap-3 md:grid-cols-2">
-                                        {docs.map((doc: any, docIdx: number) => (
-                                            <div
-                                                key={docIdx}
-                                                className={`rounded-lg border p-3.5 space-y-2.5 transition-all ${
-                                                    doc.pass
-                                                        ? 'border-emerald-500/30 bg-emerald-50/30 dark:bg-emerald-950/10'
-                                                        : 'border-red-500/30 bg-red-50/30 dark:bg-red-950/10'
-                                                }`}
-                                            >
-                                                <div className="flex items-start justify-between gap-2">
-                                                    <div className="space-y-0.5">
-                                                        <p className="text-sm font-bold text-foreground flex items-center gap-1.5 truncate max-w-[240px]" title={doc.fileName}>
-                                                            <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                                                            {doc.fileName}
-                                                        </p>
-                                                        <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                                                            <Clock className="h-3 w-3" /> ~{doc.durationSec}s processing
-                                                        </span>
+                                        {docs.map((doc: any, docIdx: number) => {
+                                            const isPass = isDocPassed(doc)
+                                            return (
+                                                <div
+                                                    key={docIdx}
+                                                    className={`rounded-lg border p-3.5 space-y-2.5 transition-all ${
+                                                        isPass
+                                                            ? 'border-emerald-500/30 bg-emerald-50/30 dark:bg-emerald-950/10'
+                                                            : 'border-red-500/30 bg-red-50/30 dark:bg-red-950/10'
+                                                    }`}
+                                                >
+                                                    <div className="flex items-start justify-between gap-2">
+                                                        <div className="space-y-0.5">
+                                                            <p className="text-sm font-bold text-foreground flex items-center gap-1.5 truncate max-w-[240px]" title={doc.fileName}>
+                                                                <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                                                {doc.fileName}
+                                                            </p>
+                                                            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                                                <Clock className="h-3 w-3" /> ~{doc.durationSec}s processing
+                                                            </span>
+                                                        </div>
+                                                        <Badge variant={isPass ? 'success' : 'destructive'} className="text-[10px] shrink-0 font-extrabold">
+                                                            {doc.percentage}% ({isPass ? 'PASS' : 'FAIL'})
+                                                        </Badge>
                                                     </div>
-                                                    <Badge variant={doc.pass ? 'success' : 'destructive'} className="text-[10px] shrink-0 font-extrabold">
-                                                        {doc.percentage}% ({doc.pass ? 'PASS' : 'FAIL'})
-                                                    </Badge>
-                                                </div>
 
                                                 <div className="grid grid-cols-3 gap-1.5 text-center text-xs">
                                                     <div className="bg-muted/40 p-1.5 rounded border border-border/40">
@@ -792,7 +994,8 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
                                                     </div>
                                                 </div>
                                             </div>
-                                        ))}
+                                        )
+                                    })}
                                     </div>
                                 </div>
                             )

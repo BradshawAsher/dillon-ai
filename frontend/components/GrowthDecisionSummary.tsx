@@ -2,8 +2,10 @@ import type { DealModel } from '../hooks/backend/diligence'
 import { Card, CardContent } from '../lib/shadcn/card'
 import { parseDocumentedFacts } from '../utils/evidence'
 
+import { safeFormatCurrency } from '../utils/diligenceDashboardUtils'
+
 function money(value: number, currency = 'USD') {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: 0 }).format(value)
+    return safeFormatCurrency(value, currency)
 }
 
 export default function GrowthDecisionSummary({ model }: { model: DealModel }) {
