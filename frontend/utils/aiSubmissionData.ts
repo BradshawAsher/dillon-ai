@@ -224,21 +224,18 @@ export function formatCurrencyValue(value: string, currency: string) {
     }
   }
 
-  const trimmedCurrency = currency.trim()
+  const trimmedCurrency = (currency || '').trim()
+  const validCurrencyCode = /^[A-Za-z]{3}$/.test(trimmedCurrency) ? trimmedCurrency.toUpperCase() : 'USD'
 
-  if (trimmedCurrency.length === 3) {
-    try {
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: trimmedCurrency,
-        maximumFractionDigits: 0,
-      }).format(numericValue)
-    } catch {
-      return `${trimmedCurrency} ${numericValue.toLocaleString()}`
-    }
+  try {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: validCurrencyCode,
+      maximumFractionDigits: 0,
+    }).format(numericValue)
+  } catch {
+    return `$${numericValue.toLocaleString()}`
   }
-
-  return numericValue.toLocaleString()
 }
 
 function getConfidencePercent(row: SubmissionHistoryItem, extractedObject: ParsedJson | null) {

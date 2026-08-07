@@ -32,6 +32,34 @@ export function getSubmissionStatusVariant(status: string): 'success' | 'warning
     return 'secondary'
 }
 
+export function sanitizeCurrencyCode(currency?: string): string {
+    if (!currency || typeof currency !== 'string') return 'USD'
+    const trimmed = currency.trim().toUpperCase()
+    if (/^[A-Z]{3}$/.test(trimmed)) {
+        try {
+            new Intl.NumberFormat('en-US', { style: 'currency', currency: trimmed })
+            return trimmed
+        } catch {
+            return 'USD'
+        }
+    }
+    return 'USD'
+}
+
+export function safeFormatCurrency(value: number, rawCurrency?: string, options?: Intl.NumberFormatOptions): string {
+    const currency = sanitizeCurrencyCode(rawCurrency)
+    try {
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency,
+            maximumFractionDigits: 0,
+            ...options,
+        }).format(value)
+    } catch {
+        return `$${value.toLocaleString()}`
+    }
+}
+
 export function createUnusedProjectId(usedProjectIds: Iterable<string> = []) {
     const used = new Set(
         Array.from(usedProjectIds, (id) => id.trim().toLowerCase()).filter((id) => id.length > 0)
