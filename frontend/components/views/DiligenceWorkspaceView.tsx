@@ -174,7 +174,23 @@ export function DiligenceWorkspaceView({
                 <DealTimelineCard documents={activeProjectDocuments} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
                 <BuyerProfileCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
                 <IndustryBenchmarksCard />
-                <CostPerRunCard documentsProcessed={impact.completedDocuments} synthesisRuns={visibleProjectSyntheses.length} />
+                {(() => {
+                    const actualDocCost = activeProjectDocuments.reduce((sum, doc) => sum + (doc.costUsd ?? 0), 0)
+                    const actualDocTokens = activeProjectDocuments.reduce((sum, doc) => sum + (doc.totalTokens ?? 0), 0)
+                    const actualSynthCost = activeProjectSynthesis?.costUsd ?? 0
+                    const actualSynthTokens = activeProjectSynthesis?.totalTokens ?? 0
+                    const actualTotalTokens = actualDocTokens + actualSynthTokens
+
+                    return (
+                        <CostPerRunCard
+                            documentsProcessed={impact.completedDocuments}
+                            synthesisRuns={visibleProjectSyntheses.length}
+                            actualDocCost={actualDocCost}
+                            actualSynthesisCost={actualSynthCost}
+                            actualTotalTokens={actualTotalTokens}
+                        />
+                    )
+                })()}
             </Suspense>
             <ProjectChecklistCard
                 projectId={activeProjectId}

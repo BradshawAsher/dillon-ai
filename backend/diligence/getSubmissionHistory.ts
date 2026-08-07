@@ -89,7 +89,11 @@ async function syncPendingRowsFromN8nDataTable(rows: Array<Record<string, any>>)
                     detected_document_type: match.detectedDocumentType || match.documentType || 'Other',
                     financial_facts_json: match.financialFactsJson || '',
                     extracted_json: match.ai_extractedJson || '',
-                    processed_at: match.ai_processedAt || new Date().toISOString()
+                    processed_at: match.ai_processedAt || new Date().toISOString(),
+                    input_tokens: match.inputTokens || 0,
+                    output_tokens: match.outputTokens || 0,
+                    total_tokens: match.totalTokens || 0,
+                    cost_usd: match.costUsd || 0,
                 }
 
                 Object.assign(pendingRow, updatePayload)
@@ -190,6 +194,10 @@ export default async function getSubmissionHistory(req: {
         investmentIsFavorable: row.investment_is_favorable ?? null,
         investmentBuyReasoning: row.investment_buy_reasoning ?? '',
         isConsidered: row.is_considered !== false,
+        inputTokens: Number(row.input_tokens ?? 0),
+        outputTokens: Number(row.output_tokens ?? 0),
+        totalTokens: Number(row.total_tokens ?? 0),
+        costUsd: Number(row.cost_usd ?? 0),
         id: row.id ?? 0,
         createdAt: row.created_at ?? '',
         updatedAt: row.updated_at ?? '',

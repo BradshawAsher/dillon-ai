@@ -9,17 +9,27 @@ import InfoTip from './InfoTip'
 type Props = {
     documentsProcessed: number
     synthesisRuns: number
+    actualDocCost?: number
+    actualSynthesisCost?: number
+    actualTotalTokens?: number
 }
 
 // Per-document cost is measured from token telemetry (see utils/costModel.ts).
-// Synthesis token usage is not yet logged end to end, so it stays an estimate.
 const ESTIMATED_COST_PER_DOC = MEASURED_COST_PER_DOCUMENT
 const ESTIMATED_COST_PER_SYNTHESIS = 0.12
 const ROUTING_SAVINGS_PCT = Math.round(MEASURED_ROUTING_SAVINGS * 100)
 
-export default function CostPerRunCard({ documentsProcessed, synthesisRuns }: Props) {
-    const estimatedDocCost = documentsProcessed * ESTIMATED_COST_PER_DOC
-    const estimatedSynthesisCost = synthesisRuns * ESTIMATED_COST_PER_SYNTHESIS
+export default function CostPerRunCard({
+    documentsProcessed,
+    synthesisRuns,
+    actualDocCost,
+    actualSynthesisCost,
+    actualTotalTokens,
+}: Props) {
+    const hasLiveDocCost = typeof actualDocCost === 'number' && actualDocCost > 0
+    const hasLiveSynthCost = typeof actualSynthesisCost === 'number' && actualSynthesisCost > 0
+    const estimatedDocCost = hasLiveDocCost ? actualDocCost : documentsProcessed * ESTIMATED_COST_PER_DOC
+    const estimatedSynthesisCost = hasLiveSynthCost ? actualSynthesisCost : synthesisRuns * ESTIMATED_COST_PER_SYNTHESIS
     const totalEstimated = estimatedDocCost + estimatedSynthesisCost
 
     // Typical wall-clock time for a batch this size, so a multi-minute run does
@@ -40,11 +50,19 @@ export default function CostPerRunCard({ documentsProcessed, synthesisRuns }: Pr
                     <div className="space-y-1">
                         <div className="flex items-center gap-2">
                             <DollarSign className="h-5 w-5 text-primary" />
-                            <CardTitle className="text-lg">Estimated cost per run</CardTitle>
+                            <CardTitle className="text-lg">
+                                {hasLiveDocCost || hasLiveSynthCost ? 'Cost per run (live token usage)' : 'Estimated cost per run'}
+                            </CardTitle>
                         </div>
-                        <CardDescription>Anthropic Claude API costs: per-document cost measured from token telemetry, synthesis runs estimated. Pod 1 credential is active.</CardDescription>
+                        <CardDescription>
+                            {hasLiveDocCost || hasLiveSynthCost
+                                ? `Calculated directly from live token telemetry (${actualTotalTokens ? `${actualTotalTokens.toLocaleString()} total tokens logged` : 'from n8n executions'}).`
+                                : 'Anthropic Claude API costs: per-document cost measured from token telemetry, synthesis runs estimated. Pod 1 credential is active.'}
+                        </CardDescription>
                     </div>
-                    <Badge variant="secondary">Pod 1 Active</Badge>
+                    <Badge variant={hasLiveDocCost || hasLiveSynthCost ? 'success' : 'secondary'}>
+                        {hasLiveDocCost || hasLiveSynthCost ? 'Live Token Telemetry' : 'Pod 1 Active'}
+                    </Badge>
                 </div>
             </CardHeader>
             <CardContent className="p-4">
@@ -52,24 +70,30 @@ export default function CostPerRunCard({ documentsProcessed, synthesisRuns }: Pr
                     <div className="rounded-lg border border-border bg-background p-3">
                         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Documents processed</p>
                         <p className="mt-1 text-lg font-semibold text-foreground">{documentsProcessed}</p>
-                        <p className="mt-1 text-xs text-muted-foreground">~${ESTIMATED_COST_PER_DOC.toFixed(2)}/doc</p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                            {hasLiveDocCost ? `$${(actualDocCost / (documentsProcessed || 1)).toFixed(3)}/doc (live)` : `~${ESTIMATED_COST_PER_DOC.toFixed(2)}/doc`}
+                        </p>
                     </div>
                     <div className="rounded-lg border border-border bg-background p-3">
                         <div className="flex items-center gap-1">
                             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Synthesis runs</p>
-                            <InfoTip term="Synthesis run" definition="One Sonnet pass that consolidates all of a project's documents into a single judgment. This per-run cost is still an estimate — synthesis token usage is not yet logged end to end." />
+                            <InfoTip term="Synthesis run" definition="One Sonnet pass that consolidates all of a project's documents into a single judgment." />
                         </div>
                         <p className="mt-1 text-lg font-semibold text-foreground">{synthesisRuns}</p>
-                        <p className="mt-1 text-xs text-muted-foreground">~${ESTIMATED_COST_PER_SYNTHESIS.toFixed(2)}/run (est.)</p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                            {hasLiveSynthCost ? `$${actualSynthesisCost.toFixed(3)}/run (live)` : `~${ESTIMATED_COST_PER_SYNTHESIS.toFixed(2)}/run (est.)`}
+                        </p>
                     </div>
                     <div className="rounded-lg border border-border bg-background p-3">
                         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Doc analysis cost</p>
-                        <p className="mt-1 text-lg font-semibold text-foreground">${estimatedDocCost.toFixed(2)}</p>
-                        <p className="mt-1 text-xs text-muted-foreground">Per-document extraction + reconciliation</p>
+                        <p className="mt-1 text-lg font-semibold text-foreground">${estimatedDocCost.toFixed(3)}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">{hasLiveDocCost ? 'Sum of live document runs' : 'Per-document extraction + reconciliation'}</p>
                     </div>
                     <div className="rounded-lg border border-border bg-background p-3">
-                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Total estimated</p>
-                        <p className="mt-1 text-lg font-semibold text-success">${totalEstimated.toFixed(2)}</p>
+                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                            {hasLiveDocCost || hasLiveSynthCost ? 'Total live cost' : 'Total estimated'}
+                        </p>
+                        <p className="mt-1 text-lg font-semibold text-success">${totalEstimated.toFixed(3)}</p>
                         <p className="mt-1 text-xs text-muted-foreground">All runs this project</p>
                     </div>
                 </div>

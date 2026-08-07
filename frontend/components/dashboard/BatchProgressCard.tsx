@@ -99,16 +99,53 @@ export function BatchProgressCard({
                     </div>
                 </div>
 
-                <div className="space-y-2">
-                    <div className="flex items-center justify-between text-xs text-muted-foreground font-medium">
-                        <span>Overall completion ({activeBatchProgressPercent}%)</span>
-                        <span>{activeBatchProcessingPercent}% queued/processing</span>
-                    </div>
-                    <div className="h-2 w-full bg-muted rounded-full overflow-hidden flex">
-                        <div className="bg-success transition-all duration-300 h-full" style={{ width: `${activeBatchProgressPercent}%` }} />
-                        <div className="bg-primary/50 animate-pulse transition-all duration-300 h-full" style={{ width: `${Math.max(0, activeBatchProcessingPercent - activeBatchProgressPercent)}%` }} />
-                    </div>
-                </div>
+                {(() => {
+                    const reachedProcessingCount = activeBatchFinishedCount + activeBatchProcessingCount
+                    const reachedProcessingPercent = Math.min(100, Math.round((reachedProcessingCount / (activeBatchExpectedCount || 1)) * 100))
+                    const finishedPercent = Math.min(100, Math.round((activeBatchFinishedCount / (activeBatchExpectedCount || 1)) * 100))
+
+                    return (
+                        <div className="space-y-3 pt-1">
+                            {/* Bar 1: Reached Processing */}
+                            <div className="space-y-1.5">
+                                <div className="flex items-center justify-between text-xs font-medium">
+                                    <span className="text-muted-foreground flex items-center gap-1.5">
+                                        <span className="h-2 w-2 rounded-full bg-primary inline-block" />
+                                        Reached Processing
+                                    </span>
+                                    <span className="font-semibold text-foreground">
+                                        {reachedProcessingCount} / {activeBatchExpectedCount} ({reachedProcessingPercent}%)
+                                    </span>
+                                </div>
+                                <div className="h-2.5 w-full bg-muted/60 rounded-full overflow-hidden">
+                                    <div
+                                        className="bg-primary transition-all duration-500 h-full rounded-full"
+                                        style={{ width: `${reachedProcessingPercent}%` }}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Bar 2: Reached Finished */}
+                            <div className="space-y-1.5">
+                                <div className="flex items-center justify-between text-xs font-medium">
+                                    <span className="text-muted-foreground flex items-center gap-1.5">
+                                        <span className="h-2 w-2 rounded-full bg-emerald-500 inline-block" />
+                                        Reached Finished
+                                    </span>
+                                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                                        {activeBatchFinishedCount} / {activeBatchExpectedCount} ({finishedPercent}%)
+                                    </span>
+                                </div>
+                                <div className="h-2.5 w-full bg-muted/60 rounded-full overflow-hidden">
+                                    <div
+                                        className="bg-emerald-500 transition-all duration-500 h-full rounded-full"
+                                        style={{ width: `${finishedPercent}%` }}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    )
+                })()}
 
                 {activeBatchImpact?.timeSavedHours ? (
                     <p className="text-xs text-muted-foreground flex items-center gap-1.5">

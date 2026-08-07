@@ -65,6 +65,10 @@ export type ProjectSynthesisItem = {
     valuationUpperBound: string
     valuationCurrency: string
     projectProcessedAt: string
+    inputTokens?: number
+    outputTokens?: number
+    totalTokens?: number
+    costUsd?: number
     id: number
     createdAt: string
     updatedAt: string
@@ -349,6 +353,10 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
                 valuationUpperBound: row.valuation_upper_bound ?? '',
                 valuationCurrency: row.valuation_currency ?? '',
                 projectProcessedAt: row.project_processed_at ?? row.updated_at ?? '',
+                inputTokens: Number(row.input_tokens ?? 0),
+                outputTokens: Number(row.output_tokens ?? 0),
+                totalTokens: Number(row.total_tokens ?? 0),
+                costUsd: Number(row.cost_usd ?? 0),
                 id: row.id ?? 0,
                 createdAt: row.created_at ?? '',
                 updatedAt: row.updated_at ?? '',
