@@ -92,6 +92,13 @@ import { base64ToFile, readFileAsBase64 } from '../utils/fileEncoding'
 
 const SHOW_LEGACY_DILIGENCE_BACKUP = false
 
+function findLastIndex<T>(arr: T[], predicate: (item: T) => boolean): number {
+    for (let i = arr.length - 1; i >= 0; i--) {
+        if (predicate(arr[i])) return i
+    }
+    return -1
+}
+
 function deriveBatchProgress(rows: SubmissionHistoryItem[]) {
     const finishedCount = rows.filter(r => !isActiveSubmissionStatus(r.status)).length
     const processingCount = rows.filter(r => isActiveSubmissionStatus(r.status)).length
@@ -615,15 +622,37 @@ export default function DueDiligenceDashboard() {
         if (batchId) {
             const batchRows = submissionHistory.filter((row) => row.submissionBatchId === batchId || row.projectId === batchId)
             if (batchRows.length > 0) {
-                return batchRows.sort((a, b) => new Date(b.createdAt || b.updatedAt || 0).getTime() - new Date(a.createdAt || a.updatedAt || 0).getTime())
+                return batchRows.sort((a, b) => new Date(a.createdAt || a.receivedAt || a.updatedAt || 0).getTime() - new Date(b.createdAt || b.receivedAt || b.updatedAt || 0).getTime())
             }
         }
         const rows = submissionHistory.filter((row) => getProjectKey(row) === activeProjectId || row.projectId === activeProjectId)
-        return rows.sort((a, b) => new Date(b.createdAt || b.updatedAt || 0).getTime() - new Date(a.createdAt || a.updatedAt || 0).getTime())
+        return rows.sort((a, b) => new Date(a.createdAt || a.receivedAt || a.updatedAt || 0).getTime() - new Date(b.createdAt || b.receivedAt || b.updatedAt || 0).getTime())
     }, [activeProjectId, activeSubmissionBatch?.id, submissionHistory])
 
-    const [selectedBatchDocIndex, setSelectedBatchDocIndex] = useState(0)
-    const safeBatchDocIndex = Math.min(selectedBatchDocIndex, Math.max(0, latestBatchRows.length - 1))
+    const [selectedBatchDocIndex, setSelectedBatchDocIndex] = useState<number>(0)
+    const [userHasNavigatedBatchDocs, setUserHasNavigatedBatchDocs] = useState(false)
+
+    // Auto-select the latest completed document (or active processing document) if the user hasn't manually overridden
+    useEffect(() => {
+        if (userHasNavigatedBatchDocs || latestBatchRows.length === 0) return
+
+        const lastCompletedIdx = findLastIndex(latestBatchRows, (doc: SubmissionHistoryItem) => doc.status.trim().toLowerCase() === 'completed')
+        if (lastCompletedIdx !== -1) {
+            setSelectedBatchDocIndex(lastCompletedIdx)
+            return
+        }
+
+        const firstProcessingIndex = latestBatchRows.findIndex((doc: SubmissionHistoryItem) => isActiveSubmissionStatus(doc.status))
+        if (firstProcessingIndex !== -1) {
+            setSelectedBatchDocIndex(firstProcessingIndex)
+            return
+        }
+
+        setSelectedBatchDocIndex(0)
+    }, [latestBatchRows, userHasNavigatedBatchDocs])
+
+    const safeBatchDocIndex = Math.min(Math.max(0, selectedBatchDocIndex), Math.max(0, latestBatchRows.length - 1))
+
     const displayedSubmissionRow = latestBatchRows[safeBatchDocIndex] ?? activeProjectDocuments[0] ?? submissionHistory[0]
     const liveSubmittedRow = displayedSubmissionRow
 
@@ -1336,6 +1365,7 @@ export default function DueDiligenceDashboard() {
                                     latestBatchRows={latestBatchRows}
                                     safeBatchDocIndex={safeBatchDocIndex}
                                     setSelectedBatchDocIndex={setSelectedBatchDocIndex}
+                                    setUserHasNavigatedBatchDocs={setUserHasNavigatedBatchDocs}
                                     retryingRequestId={retryingRequestId ?? undefined}
                                     handleRetryFailedDocument={(reqId) => { void handleRetryFailedDocument(reqId) }}
                                     handleOpenProjectSynthesis={handleOpenProjectSynthesis}
