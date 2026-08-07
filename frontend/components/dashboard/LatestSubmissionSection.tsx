@@ -87,7 +87,8 @@ export default function LatestSubmissionSection({
     activeProjectSynthesis,
     isCurrentProjectAwaitingSynthesis,
     setActiveEvidence,
-}: LatestSubmissionSectionProps) {
+    setUserHasNavigatedBatchDocs,
+}: LatestSubmissionSectionProps & { setUserHasNavigatedBatchDocs?: (navigated: boolean) => void }) {
     const liveSubmitInsight = displayedSubmissionRow ? getAiSubmissionViewModel(displayedSubmissionRow) : null
     const trafficLight = displayedSubmitTrafficLight || displayedSubmissionRow?.trafficLight || ''
     const riskLevel = displayedSubmitRiskLevel || displayedSubmissionRow?.riskLevel || ''
@@ -172,7 +173,10 @@ export default function LatestSubmissionSection({
                                     size="sm"
                                     className="h-7 w-7 p-0 hover:bg-primary/10 text-foreground"
                                     disabled={safeBatchDocIndex === 0}
-                                    onClick={() => setSelectedBatchDocIndex((prev) => Math.max(0, prev - 1))}
+                                    onClick={() => {
+                                        setUserHasNavigatedBatchDocs?.(true)
+                                        setSelectedBatchDocIndex((prev) => Math.max(0, (typeof prev === 'number' ? prev : safeBatchDocIndex) - 1))
+                                    }}
                                     title="Previous document in batch"
                                 >
                                     <ChevronLeft className="h-4 w-4" />
@@ -186,7 +190,10 @@ export default function LatestSubmissionSection({
                                     size="sm"
                                     className="h-7 w-7 p-0 hover:bg-primary/10 text-foreground"
                                     disabled={safeBatchDocIndex >= latestBatchRows.length - 1}
-                                    onClick={() => setSelectedBatchDocIndex((prev) => Math.min(latestBatchRows.length - 1, prev + 1))}
+                                    onClick={() => {
+                                        setUserHasNavigatedBatchDocs?.(true)
+                                        setSelectedBatchDocIndex((prev) => Math.min(latestBatchRows.length - 1, (typeof prev === 'number' ? prev : safeBatchDocIndex) + 1))
+                                    }}
                                     title="Next document in batch"
                                 >
                                     <ChevronRight className="h-4 w-4" />
