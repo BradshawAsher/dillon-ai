@@ -115,11 +115,10 @@
 
 - Try using OpenAI nodes instead of our current setup and compare performance?
 
-- Just ran the project 1 roofing werkhesier through the pipeline using openai 5.6 terra for both the per doc and synthesizer workflows, can we run the eval on that and add that to evals and harness tab?
 
-Also is there a way in the evals and harness we can show the price for this run for both the doc part and the synthesizer part? Is there also a way we can see which model was actually used since if the structured output parser failed then it would call the backup model, also the per doc workflow runs 3 times before it is marked as an absolute fail are we able to count how many times it took and add all the costs together if it ran multiple times? Also this for the synthesizer workflow? Doo you understand this?
+- Why is anthropic nodes for per doc the only one that will generate an investment thesis?
 
-- Make sure cost per run is being calculated right and being shown in all the places it needs to be shown, and takes all the factors as described in the bullet point above?
+- Need to rerun all your test docs with the anthropic for per doc and openai for synthesizer
 
 - In eval and harness tab, have a button to view each business/project and to view each individual doc (either takes you to audit trail for that, or to diligence tab for most recent doc submission option for that doc results + sets the project being viewed to that project)
 
