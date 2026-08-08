@@ -139,6 +139,8 @@ The Right Way to Fallback: Instead of stacking parsers serially, use an If/Else 
 
 - Are we separating error handling well? Like regular "we hit an issue" vs we hit a rate limit
 
+- Why is the vercel evals and harness date up to date with the npm run dev?
+
 - Find a real domain name on Porkbun and then swap to cloudflare for this
 
 - Make successful deployment ready for businesses meeting for them to try it
