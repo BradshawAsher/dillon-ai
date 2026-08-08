@@ -81,19 +81,8 @@
 - [ ] **Review Deterministic Math Checks**: Review [`DETERMINISTIC_MATH_CHECKS.md`](file:///c:/Users/s-bas/MERGEWORKS%20REAL%20WEBSITE/Due-Diligence-Dashboard/DETERMINISTIC_MATH_CHECKS.md) for how Revenue - COGS = GP and Assets - Liab = Equity formulas work.
 - [ ] **Execute Sample Deals Post-Credit Refill**: Once Anthropic API credits are refilled by the admin, queue Business 4 (ConversionXL), Business 1 (Roofing Co), Business 3 (TurnKey), and Business 2 (Iron Tree), then run `npm run eval` to view the evaluation scorecard.
 
-- Use your Gemini Palm API Key for now until anthropic nodes are back?
-
-- We have a huge bug in the diligence and synthesis tab that the batch processing progress finished bar isn't syncing with live n8n progress and does not show any data for most recent doc submission? Always just says pending pending pending etc?
-
-- There is obviously a database sync gap between n8n tables and supabase
 
 - Should we make the ground truth less strict?
-
-- For evals and harness tab, fix the cost optimization? Are we reporting exactly the model we are using as well as the tokens spent, and then calculating the cost mathematically, or no?
-
-- Check if the anthropic keys are refilled yet or no? [BRAD TODO]
-
-- May need to switch gemini models for the api key for n8n since you're running low of the tpm rate limits?
 
 - Need to work on the video assignment for this week?
 
@@ -104,17 +93,10 @@
 - And maybe if the user wants to find more facts and flags we can set up a button to find more facts and red flags or tell them to ask the chatbot what do you think?
   - Since our agent doesn't get all the facts/flags but the classification is usually right
 
-- Have to understand how the evals work to present on saturday (for brad)
-
 - For Brad - need to keep testing the website and trying different documents, can always expand the eval suite and trying to break the system, and also i think a lot of financial facts like ebitda and sde are not filled even though we put 4 long docs through? Why?
-
-- Diligence and synthesis tabs are out of sync because we were refactoring the website
 
 
 - Try seeing why Sonnet, Opus, and Fable are failing for the synthesizer workflow? Try seeing if they can work somehow for the fun of it by changing params?
-
-- Try using OpenAI nodes instead of our current setup and compare performance?
-
 
 - Why is anthropic nodes for per doc the only one that will generate an investment thesis?
 
@@ -127,7 +109,7 @@ The Error Flow Loop: Notice the top routing wires on your canvas (labeled "Class
 The Right Way to Fallback: Instead of stacking parsers serially, use an If/Else node or n8n’s built-in Error Trigger / On Error routing. If Anthropic throws a provider error, catch that specific error branch, route it to a secondary LLM node (like a Google Gemini or OpenAI model) with its own parser, and let it re-run the extraction cleanly.
 - If both anthropic fail, then fallback to openai or gemini?
 
-- How does deepseek pricing and performance compare to gemini?
+- Try using deepseek models since they are even cheaper than gemini?
 
 - add an faqs section?
 
@@ -139,11 +121,33 @@ The Right Way to Fallback: Instead of stacking parsers serially, use an If/Else 
 
 - Still need to finish video project by the end of the week?
 
-- Add an FAQs section?
 
 - Prep for business meeting 3 and a website and walkthrough ready for them to try as well as prepare to be more professional with what to show when and example questions to ask and example questions to be ready to address
 
 - Do we have to do some security stuff like SEC compliance and stuff like that?
+1. Data Security & Privacy Frameworks (The Tech Stuff)
+Financial due diligence documents contain highly confidential corporate numbers, cap tables, and private financial statements. Professional tools require strict security controls:
+
+SOC 2 Type II Compliance: The gold standard for B2B SaaS. It proves your cloud infrastructure, database controls (like Supabase), and automated pipelines (like n8n) securely handle sensitive customer data.
+
+Encryption: Ensuring data is encrypted both in transit (HTTPS/TLS) and at rest (database-level encryption).
+
+Data Residency: Guaranteeing that private financial data doesn't get leaked or stored insecurely when passed through third-party Large Language Model (LLM) APIs.
+
+2. Financial Regulatory & Fiduciary Boundaries (The Legal Stuff)
+Even though your tool uses AI to automate analysis, financial software must include strict liability disclaimers:
+
+"Not Investment Advice" Disclaimers: Clear legal notices stating that the dashboard's automated EBITDA reconstructions, risk flags, and deal summaries are for informational/analytical assistance only and do not constitute official financial, legal, or tax advice.
+
+Audit Trails & Explainability: Professional M&A teams cannot blindly trust an AI agent. Compliance-grade tools must maintain immutable logs (which your dashboard handles via its workflow error logs and submission histories) showing exact source attribution—linking every extracted metric back to the exact page of the original uploaded document.
+
+3. SEC & Regulatory Data Usage
+If your app pulls public data to benchmark deals:
+
+SEC EDGAR API Rules: When scraping or querying corporate filings from the SEC, developers must follow polite-pool guidelines (such as including a valid User-Agent header with contact info and respecting rate limits) to stay compliant with federal public data access rules.
+
+4. Professional Liability (E&O Insurance)
+If an enterprise financial advisory firm uses a due diligence tool and a critical AI hallucination misses a massive financial liability during a multi-million dollar acquisition, the software provider could face legal liability. Commercial financial platforms carry Errors & Omissions (E&O) / Professional Liability Insurance to protect against software bugs or inaccurate AI outputs.
 
 - Have to make a landing page and walkthrough page like the example walkthrough for our project USE supademo
 
@@ -151,13 +155,11 @@ The Right Way to Fallback: Instead of stacking parsers serially, use an If/Else 
 
 - How to get more flags from the agent backend?
 
-- Still working on why vercel is not synced with the localhost
+- How to increase accuracy?
 
-- Is the vercel not working as well as the npm run dev? Make sure to test the vercel website from now on maybe or check it every once in a while?
+- Is vercel now synced with localhost?
 
 - Are we separating error handling well? Like regular "we hit an issue" vs we hit a rate limit
-
-- Why is the vercel evals and harness date up to date with the npm run dev?
 
 - Find a real domain name on Porkbun and then swap to cloudflare for this
 
@@ -167,6 +169,7 @@ The Right Way to Fallback: Instead of stacking parsers serially, use an If/Else 
 
 - Do we really have live regression checks working? How do we do that?
 
+- Is there a way I can automate the pushing of docs under different projects to save time? Or can I upload multiple projects at a time?
 
 - Need to rerun all your test docs with the anthropic for per doc and openai for synthesizer
 
@@ -184,13 +187,6 @@ The Right Way to Fallback: Instead of stacking parsers serially, use an If/Else 
 
 - Why we are not showing investment thesis for latest doc submission?
 
-- Have to do this: Track A · Ran cost analysis on your workflow · identified top 3 spend drivers
-
-- Add the old edge cases to test sets and make them a little more complicated? Add the ground truth for them too and automated scoring.
-
-- Have to make sure to do these 2:
-  - Track B · Eval harness shipped · 20-input golden dataset + automated pass/
-  - Track B · Eval runs on every deployment (regression check)
 
 
 # BRAD MORE TODO

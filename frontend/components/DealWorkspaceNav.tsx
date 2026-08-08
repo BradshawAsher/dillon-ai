@@ -1,4 +1,4 @@
-type WorkspaceTab = 'overview' | 'analysis' | 'diligence' | 'synthesis' | 'valuation' | 'returns' | 'growth' | 'structure' | 'negotiation' | 'documents' | 'history' | 'errors' | 'email' | 'evals'
+type WorkspaceTab = 'overview' | 'analysis' | 'diligence' | 'synthesis' | 'valuation' | 'returns' | 'growth' | 'structure' | 'negotiation' | 'documents' | 'history' | 'errors' | 'email' | 'evals' | 'faqs'
 
 type DealWorkspaceNavProps = {
     activeTab: WorkspaceTab
@@ -19,6 +19,7 @@ const tabs: Array<{ id: WorkspaceTab; label: string }> = [
     { id: 'negotiation', label: 'Negotiation' },
     { id: 'documents', label: 'Projects' },
     { id: 'evals', label: 'Evals & Harness' },
+    { id: 'faqs', label: 'FAQs & Guide' },
     { id: 'history', label: 'Audit Trail' },
     { id: 'email', label: 'Email Drafts' },
     { id: 'errors', label: 'Errors' },

@@ -43,6 +43,7 @@ const SubmissionHistoryCard = lazy(() => import('../components/SubmissionHistory
 const DealChatPanel = lazy(() => import('../components/DealChatPanel'))
 const WorkflowErrorLogCard = lazy(() => import('../components/WorkflowErrorLogCard'))
 const EvalDashboardTab = lazy(() => import('../components/EvalDashboardTab'))
+const TechnicalFaqWorkspaceTab = lazy(() => import('../components/TechnicalFaqWorkspaceTab'))
 import LatestSubmissionSection from '../components/dashboard/LatestSubmissionSection'
 import { BatchProgressCard } from '../components/dashboard/BatchProgressCard'
 import LegacyDiligenceBackupCard from '../components/dashboard/LegacyDiligenceBackupCard'
@@ -1516,6 +1517,12 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                     {activeWorkspaceTab === 'evals' ? (
                         <section id="evals-harness" className="scroll-mt-6 space-y-6">
                             <EvalDashboardTab evalRuns={Array.isArray(evalRunsData) ? evalRunsData : []} onTriggerEvalRuns={triggerEvalRuns} />
+                        </section>
+                    ) : null}
+
+                    {activeWorkspaceTab === 'faqs' ? (
+                        <section id="dashboard-faqs" className="scroll-mt-6 space-y-6">
+                            <TechnicalFaqWorkspaceTab onSwitchTab={(tab) => setActiveWorkspaceTab(tab as WorkspaceTab)} />
                         </section>
                     ) : null}
 
