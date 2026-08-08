@@ -21,6 +21,7 @@ export function useDealWorkspaceState() {
         }
     })
     const [isBatchDrawerOpen, setIsBatchDrawerOpen] = useState(false)
+    const [isFaqSidebarOpen, setIsFaqSidebarOpen] = useState(true)
     const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false)
     const [isProjectsPanelOpen, setIsProjectsPanelOpen] = useState(false)
     const [isShortcutsOpen, setIsShortcutsOpen] = useState(false)
@@ -92,6 +93,8 @@ export function useDealWorkspaceState() {
         setSelectedProjectKey,
         isBatchDrawerOpen,
         setIsBatchDrawerOpen,
+        isFaqSidebarOpen,
+        setIsFaqSidebarOpen,
         isApiKeyModalOpen,
         setIsApiKeyModalOpen,
         isProjectsPanelOpen,
