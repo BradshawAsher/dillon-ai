@@ -536,7 +536,20 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
         { key: 'employee', field: 'employeeScore', label: 'Employee', max: 5 },
         { key: 'math', field: 'mathScore', label: 'Math checks', max: 10 },
     ]
-    const docResults: Array<Record<string, any>> = Array.isArray(latestRun.documentResults) ? latestRun.documentResults : []
+    const allDocResults: Array<Record<string, any>> = Array.isArray(latestRun.documentResults) ? latestRun.documentResults : []
+    const docResults = allDocResults.filter((d) => {
+        if (businessFilter !== 'all' && d.business !== businessFilter) return false
+        if (statusFilter === 'pass' && !d.pass) return false
+        if (statusFilter === 'fail' && d.pass) return false
+        if (searchQuery) {
+            const q = searchQuery.toLowerCase().trim()
+            const fn = (d.fileName || '').toLowerCase()
+            const bn = (d.business || '').toLowerCase()
+            if (!fn.includes(q) && !bn.includes(q)) return false
+        }
+        return true
+    })
+
     const categoryAverages = DIMENSIONS.map((dim) => {
         const avgPct = docResults.length > 0
             ? Math.round((docResults.reduce((sum, r) => sum + (Number(r[dim.field]) || 0), 0) / docResults.length / dim.max) * 100)

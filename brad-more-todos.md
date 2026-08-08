@@ -137,9 +137,21 @@ The Right Way to Fallback: Instead of stacking parsers serially, use an If/Else 
 
 - Are we setting good realistic caps for max file size but still dont max out really big excel file?
 
-- Have to make a landing page and walkthrough page like the example walkthrough for our project
+- Still need to finish video project by the end of the week?
 
-- How to get more flags from the user?
+- Add an FAQs section?
+
+- Prep for business meeting 3 and a website and walkthrough ready for them to try as well as prepare to be more professional with what to show when and example questions to ask and example questions to be ready to address
+
+- Do we have to do some security stuff like SEC compliance and stuff like that?
+
+- Have to make a landing page and walkthrough page like the example walkthrough for our project USE supademo
+
+- Get github mcp?
+
+- How to get more flags from the agent backend?
+
+- Still working on why vercel is not synced with the localhost
 
 - Is the vercel not working as well as the npm run dev? Make sure to test the vercel website from now on maybe or check it every once in a while?
 
