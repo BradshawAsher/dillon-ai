@@ -769,7 +769,7 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
                                 Verified $/Run Reduction: Up to 95% Cost Savings Achieved
                             </p>
                             <p className="text-muted-foreground">
-                                Baseline (Claude Sonnet 5 / GPT-5): <strong>$0.0480 / run</strong> &rarr; Optimized Hybrid (Gemini Flash Lite / OpenAI 5.6 Terra): <strong>$0.0024–$0.0214 / run</strong>.
+                                Baseline (Legacy Sonnet 5 / GPT-5 Unoptimized): <strong>$0.0480 / run</strong> &rarr; Active Hybrid (Claude Sonnet 5 + OpenAI 5.6 Terra): <strong>$0.0214–$0.0226 / run</strong> (<strong>53% savings</strong>) / Gemini Flash Lite: <strong>$0.0024 / run</strong> (<strong>95% savings</strong>).
                             </p>
                         </div>
                         <Badge variant="outline" className="font-mono font-bold text-xs bg-emerald-600 text-white shrink-0 self-start sm:self-center">

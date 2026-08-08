@@ -127,65 +127,67 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
             {/* Header / Navigation Bar */}
             <header className="sticky top-0 z-40 border-b border-border/80 bg-background/80 backdrop-blur-md">
                 <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-                    <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary via-indigo-600 to-purple-600 text-white shadow-md shadow-primary/20">
+                    <div className="flex items-center gap-3 shrink-0">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary via-indigo-600 to-purple-600 text-white shadow-md shadow-primary/20">
                             <Sparkles className="h-5 w-5" />
                         </div>
-                        <div>
+                        <div className="flex flex-col justify-center">
                             <div className="flex items-center gap-2">
-                                <span className="text-lg font-black tracking-tight text-foreground">MergeWorks</span>
-                                <Badge variant="outline" className="border-primary/40 bg-primary/10 text-[10px] font-bold text-primary">
+                                <span className="text-xl font-black tracking-tight text-foreground leading-none">MergeWorks</span>
+                                <Badge variant="outline" className="border-primary/40 bg-primary/10 text-[10px] font-bold text-primary px-1.5 py-0.5 leading-none shrink-0">
                                     AI DUE DILIGENCE
                                 </Badge>
                             </div>
-                            <p className="text-[11px] text-muted-foreground">Autonomous M&amp;A Deal Intelligence</p>
+                            <span className="text-[11px] font-semibold text-muted-foreground mt-1 leading-none whitespace-nowrap">
+                                Autonomous M&amp;A Deal Intelligence
+                            </span>
                         </div>
                     </div>
 
-                    <nav className="hidden items-center gap-1 rounded-full border border-border/60 bg-muted/30 p-1 text-xs font-semibold text-muted-foreground md:flex">
+                    <nav className="hidden xl:flex items-center gap-1 rounded-full border border-border/60 bg-muted/30 p-1 text-xs font-semibold text-muted-foreground ml-2">
                         <button
                             type="button"
                             onClick={() => scrollToSection('features')}
-                            className="rounded-full px-3.5 py-1.5 transition-all hover:bg-background hover:text-foreground hover:shadow-2xs"
+                            className="rounded-full px-3 py-1 transition-all hover:bg-background hover:text-foreground hover:shadow-2xs whitespace-nowrap"
                         >
                             Features
                         </button>
                         <button
                             type="button"
                             onClick={() => scrollToSection('live-preview')}
-                            className="rounded-full px-3.5 py-1.5 transition-all hover:bg-background hover:text-foreground hover:shadow-2xs"
+                            className="rounded-full px-3 py-1 transition-all hover:bg-background hover:text-foreground hover:shadow-2xs whitespace-nowrap"
                         >
                             Live Preview
                         </button>
                         <button
                             type="button"
                             onClick={() => scrollToSection('evidence')}
-                            className="rounded-full px-3.5 py-1.5 transition-all hover:bg-background hover:text-foreground hover:shadow-2xs"
+                            className="rounded-full px-3 py-1 transition-all hover:bg-background hover:text-foreground hover:shadow-2xs whitespace-nowrap"
                         >
                             Fact Citation
                         </button>
                         <button
                             type="button"
                             onClick={() => scrollToSection('pipeline')}
-                            className="rounded-full px-3.5 py-1.5 transition-all hover:bg-background hover:text-foreground hover:shadow-2xs"
+                            className="rounded-full px-3 py-1 transition-all hover:bg-background hover:text-foreground hover:shadow-2xs whitespace-nowrap"
                         >
                             M&amp;A Pipeline
                         </button>
                         <button
                             type="button"
                             onClick={() => scrollToSection('cost-model')}
-                            className="rounded-full px-3.5 py-1.5 transition-all hover:bg-background hover:text-foreground hover:shadow-2xs"
+                            className="rounded-full px-3 py-1 transition-all hover:bg-background hover:text-foreground hover:shadow-2xs whitespace-nowrap"
                         >
                             Cost Model
                         </button>
                     </nav>
 
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-2 shrink-0 ml-auto sm:ml-0">
                         <Button
                             type="button"
                             variant="ghost"
                             size="sm"
-                            className="hidden text-xs sm:inline-flex"
+                            className="hidden lg:inline-flex text-xs font-semibold"
                             onClick={() => setShowAccessModal(true)}
                         >
                             Apply for Access
@@ -194,20 +196,20 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
                             type="button"
                             variant="outline"
                             size="sm"
-                            className="text-xs border-primary/30 text-primary hover:bg-primary/10"
+                            className="hidden sm:inline-flex text-xs font-semibold border-primary/30 text-primary hover:bg-primary/10 shrink-0"
                             onClick={() => setShowWalkthroughModal(true)}
                         >
-                            <Play className="mr-1.5 h-3.5 w-3.5 fill-current" />
+                            <Play className="mr-1.5 h-3.5 w-3.5 fill-current shrink-0" />
                             Guided Walkthrough
                         </Button>
                         <Button
                             type="button"
                             size="sm"
-                            className="bg-gradient-to-r from-primary to-indigo-600 font-semibold text-white shadow-sm hover:from-primary/90 hover:to-indigo-600/90"
+                            className="bg-gradient-to-r from-primary to-indigo-600 font-bold text-white shadow-sm hover:from-primary/90 hover:to-indigo-600/90 shrink-0 whitespace-nowrap text-xs px-4"
                             onClick={onLaunchDashboard}
                         >
-                            Launch App Dashboard
-                            <ArrowRight className="ml-1.5 h-4 w-4" />
+                            <span>Launch App Dashboard</span>
+                            <ArrowRight className="ml-1.5 h-4 w-4 shrink-0" />
                         </Button>
                     </div>
                 </div>
