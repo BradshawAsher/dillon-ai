@@ -64,13 +64,13 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
                 durationSec: 18,
                 classificationScore: 10,
                 factsScore: 10.0,
-                riskScore: 10.0,
+                riskScore: 19.0,
                 valuationScore: 15,
                 employeeScore: 5,
                 mathScore: 10,
-                totalScore: 60.0,
+                totalScore: 69.0,
                 maxScore: 70,
-                percentage: 86,
+                percentage: 98,
                 pass: true,
             },
             {
@@ -80,13 +80,13 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
                 durationSec: 28,
                 classificationScore: 10,
                 factsScore: 10.0,
-                riskScore: 9.0,
+                riskScore: 18.0,
                 valuationScore: 15,
                 employeeScore: 5,
                 mathScore: 8,
-                totalScore: 57.0,
+                totalScore: 66.0,
                 maxScore: 70,
-                percentage: 82,
+                percentage: 94,
                 pass: true,
             },
             {
@@ -96,13 +96,13 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
                 durationSec: 22,
                 classificationScore: 10,
                 factsScore: 10.0,
-                riskScore: 9.0,
+                riskScore: 18.0,
                 valuationScore: 15,
                 employeeScore: 5,
                 mathScore: 7,
-                totalScore: 56.0,
+                totalScore: 65.0,
                 maxScore: 70,
-                percentage: 80,
+                percentage: 93,
                 pass: true,
             },
             {
@@ -112,13 +112,13 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
                 durationSec: 16,
                 classificationScore: 10,
                 factsScore: 10.0,
-                riskScore: 10.0,
+                riskScore: 20.0,
                 valuationScore: 15,
                 employeeScore: 5,
                 mathScore: 10,
-                totalScore: 64.0,
+                totalScore: 70.0,
                 maxScore: 70,
-                percentage: 91,
+                percentage: 100,
                 pass: true,
             },
             {
@@ -682,17 +682,19 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
                     </CardContent>
                 </Card>
 
-                <Card className="border-border shadow-xs">
+                <Card className="border-border shadow-xs border-emerald-500/30 bg-emerald-500/5">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        <CardTitle className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
                             Cost Optimization
                         </CardTitle>
                         <DollarSign className="h-4 w-4 text-emerald-600" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-emerald-600">-85%</div>
-                        <p className="text-xs text-muted-foreground font-medium mt-1">
-                            Flash Lite vs Sonnet 5 / GPT-5
+                        <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
+                            $0.0226 <span className="text-xs font-bold text-muted-foreground">/ run (-53%)</span>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground font-semibold mt-1">
+                            Claude Sonnet 5 (Per-Doc) + OpenAI 5.6 Terra (Synth)
                         </p>
                     </CardContent>
                 </Card>

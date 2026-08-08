@@ -232,14 +232,14 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
                             <span>88.7% Cost Savings vs Legacy Models · 100% Citation Guarantee</span>
                         </div>
 
-                        <h1 className="text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl lg:text-6xl leading-[1.1]">
+                        <h1 className="text-4xl font-black tracking-tight text-foreground sm:text-5xl lg:text-6xl leading-[1.15]">
                             Autonomous M&amp;A Due Diligence.{' '}
-                            <span className="bg-gradient-to-r from-primary via-indigo-500 to-purple-600 bg-clip-text text-transparent">
+                            <span className="block sm:inline text-indigo-700 dark:text-indigo-300 font-black bg-indigo-500/10 dark:bg-indigo-500/25 px-2 py-0.5 rounded-xl border border-indigo-500/30 shadow-2xs">
                                 Evidence-Backed Deal Intelligence in Seconds.
                             </span>
                         </h1>
 
-                        <p className="mx-auto max-w-2xl text-base text-muted-foreground sm:text-lg leading-relaxed">
+                        <p className="mx-auto max-w-3xl text-base sm:text-xl font-semibold text-foreground dark:text-slate-100 leading-relaxed pt-2">
                             Transform 2-year P&amp;Ls, balance sheets, and customer rosters into audit-grade valuation ranges, EBITDA reconstructions, and Investment Committee memos with 100% citation transparency.
                         </p>
 
