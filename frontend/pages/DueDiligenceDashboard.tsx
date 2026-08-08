@@ -1130,14 +1130,14 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                     </div>
                     <div className="mt-4 flex flex-wrap items-center gap-2.5 shrink-0 sm:mt-0">
                         <Button
-                            size="md"
+                            size="default"
                             variant={isExampleMode ? 'default' : 'outline'}
                             onClick={() => setDataSource('mock')}
                         >
                             Example Mode
                         </Button>
                         <Button
-                            size="md"
+                            size="default"
                             variant={!isExampleMode ? 'default' : 'outline'}
                             onClick={() => setDataSource('live')}
                         >
@@ -1145,7 +1145,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                         </Button>
                         {onReturnToLanding && (
                             <Button
-                                size="md"
+                                size="default"
                                 variant="outline"
                                 className="gap-2 border-primary/40 bg-background text-primary hover:bg-primary/10 font-bold"
                                 onClick={onReturnToLanding}
