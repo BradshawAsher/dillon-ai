@@ -133,6 +133,10 @@ The Right Way to Fallback: Instead of stacking parsers serially, use an If/Else 
 
 - Make successful deployment ready for businesses meeting for them to try it
 
+- How does your eval & harness work? Does it work on the synthesis or per doc for each doc in the project?
+
+- Do we really have live regression checks working? How do we do that?
+
 
 - Need to rerun all your test docs with the anthropic for per doc and openai for synthesizer
 
