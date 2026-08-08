@@ -127,6 +127,12 @@ The Error Flow Loop: Notice the top routing wires on your canvas (labeled "Class
 The Right Way to Fallback: Instead of stacking parsers serially, use an If/Else node or n8n’s built-in Error Trigger / On Error routing. If Anthropic throws a provider error, catch that specific error branch, route it to a secondary LLM node (like a Google Gemini or OpenAI model) with its own parser, and let it re-run the extraction cleanly.
 - If both anthropic fail, then fallback to openai or gemini?
 
+- How does deepseek pricing and performance compare to gemini?
+
+- add an faqs section?
+
+- Make successful deployment ready for businesses meeting for them to try it
+
 
 - Need to rerun all your test docs with the anthropic for per doc and openai for synthesizer
 
