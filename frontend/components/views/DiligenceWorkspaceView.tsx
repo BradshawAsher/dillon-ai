@@ -1,4 +1,7 @@
 import React, { Suspense } from 'react'
+import { Globe } from 'lucide-react'
+import { Badge } from '../../lib/shadcn/badge'
+import { Button } from '../../lib/shadcn/button'
 import ProjectComparisonCard from '../ProjectComparisonCard'
 import DealOverviewCard from '../DealOverviewCard'
 import QuickFilterBar from '../QuickFilterBar'
@@ -42,6 +45,7 @@ type DiligenceWorkspaceViewProps = {
     projectChecklistById: Record<string, any>
     setProjectChecklistById: React.Dispatch<React.SetStateAction<Record<string, any>>>
     impact: any
+    onReturnToLanding?: () => void
 }
 
 export function DiligenceWorkspaceView({
@@ -67,11 +71,33 @@ export function DiligenceWorkspaceView({
     projectChecklistById,
     setProjectChecklistById,
     impact,
+    onReturnToLanding,
 }: DiligenceWorkspaceViewProps) {
     return (
         <section id="deal-diligence" className="space-y-6 scroll-mt-6">
-            <div className="border-t border-border pt-4">
-                <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Portfolio &amp; deal overview</h3>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4 shadow-2xs">
+                <div className="space-y-0.5">
+                    <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 font-mono text-xs">
+                            DATA &amp; DILIGENCE TAB
+                        </Badge>
+                        <h3 className="text-base font-bold text-foreground">Extracted Financial Statements &amp; Audit Trail</h3>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                        Inspect extracted line items, evidence citations, mathematical checks, and risk analysis for this deal packet.
+                    </p>
+                </div>
+                {onReturnToLanding && (
+                    <Button
+                        type="button"
+                        variant="outline"
+                        className="gap-2 border-primary/40 bg-background hover:bg-primary/10 text-primary font-bold text-xs shrink-0 shadow-2xs"
+                        onClick={onReturnToLanding}
+                    >
+                        <Globe className="h-4 w-4 text-primary" />
+                        <span>Go to Landing Page</span>
+                    </Button>
+                )}
             </div>
             {projectSummaries.length > 1 && (
                 <ProjectComparisonCard

@@ -1,5 +1,5 @@
 import React from 'react'
-import { FolderKanban, Moon, Sun, Key } from 'lucide-react'
+import { FolderKanban, Moon, Sun, Key, Globe } from 'lucide-react'
 import { Badge } from '../../lib/shadcn/badge'
 import { Button } from '../../lib/shadcn/button'
 import DealStageIndicator from '../DealStageIndicator'
@@ -28,6 +28,7 @@ type WorkspaceHeaderProps = {
     setActiveWorkspaceTab: (tab: any) => void
     setIsApiKeyModalOpen: (open: boolean) => void
     isActiveSubmissionStatus: (status: any) => boolean
+    onReturnToLanding?: () => void
 }
 
 export function WorkspaceHeader({
@@ -49,6 +50,7 @@ export function WorkspaceHeader({
     setActiveWorkspaceTab,
     setIsApiKeyModalOpen,
     isActiveSubmissionStatus,
+    onReturnToLanding,
 }: WorkspaceHeaderProps) {
     return (
         <header className="dashboard-header-mesh">
@@ -67,6 +69,18 @@ export function WorkspaceHeader({
                             hasActiveSubmissions={activeProjectDocuments.some((d) => isActiveSubmissionStatus(d.status))}
                             hasErrors={activeProjectDocuments.some((d) => ['failed', 'error', 'rejected'].includes(String(d.status ?? '').trim().toLowerCase()))}
                         />
+                        {onReturnToLanding && (
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="gap-2 border-primary/30 bg-primary/5 hover:bg-primary/10 font-semibold"
+                                onClick={onReturnToLanding}
+                                title="Return to Product Landing Page"
+                            >
+                                <Globe className="h-4 w-4 text-primary" />
+                                <span className="hidden sm:inline">Landing Page</span>
+                            </Button>
+                        )}
                         <Button
                             type="button"
                             variant="outline"
