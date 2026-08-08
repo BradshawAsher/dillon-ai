@@ -190,53 +190,53 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
                         </div>
                     </div>
 
-                    <nav className="hidden xl:flex items-center gap-1 rounded-full border border-border/60 bg-muted/30 p-1 text-xs font-semibold text-muted-foreground ml-2">
+                    <nav className="hidden lg:flex items-center gap-0.5 sm:gap-1 rounded-full border border-border/60 bg-muted/30 p-1 text-xs font-semibold text-muted-foreground mx-auto">
                         <button
                             type="button"
                             onClick={() => scrollToSection('hero')}
-                            className="rounded-full px-3 py-1 transition-all hover:bg-background hover:text-foreground hover:shadow-2xs whitespace-nowrap"
+                            className="rounded-full px-2.5 sm:px-3 py-1 transition-all hover:bg-background hover:text-foreground hover:shadow-2xs whitespace-nowrap"
                         >
                             Hero
                         </button>
                         <button
                             type="button"
                             onClick={() => scrollToSection('features')}
-                            className="rounded-full px-3 py-1 transition-all hover:bg-background hover:text-foreground hover:shadow-2xs whitespace-nowrap"
+                            className="rounded-full px-2.5 sm:px-3 py-1 transition-all hover:bg-background hover:text-foreground hover:shadow-2xs whitespace-nowrap"
                         >
                             Features
                         </button>
                         <button
                             type="button"
                             onClick={() => scrollToSection('live-preview')}
-                            className="rounded-full px-3 py-1 transition-all hover:bg-background hover:text-foreground hover:shadow-2xs whitespace-nowrap"
+                            className="rounded-full px-2.5 sm:px-3 py-1 transition-all hover:bg-background hover:text-foreground hover:shadow-2xs whitespace-nowrap"
                         >
                             Live Preview
                         </button>
                         <button
                             type="button"
                             onClick={() => scrollToSection('evidence')}
-                            className="rounded-full px-3 py-1 transition-all hover:bg-background hover:text-foreground hover:shadow-2xs whitespace-nowrap"
+                            className="rounded-full px-2.5 sm:px-3 py-1 transition-all hover:bg-background hover:text-foreground hover:shadow-2xs whitespace-nowrap"
                         >
                             Fact Citation
                         </button>
                         <button
                             type="button"
                             onClick={() => scrollToSection('pipeline')}
-                            className="rounded-full px-3 py-1 transition-all hover:bg-background hover:text-foreground hover:shadow-2xs whitespace-nowrap"
+                            className="rounded-full px-2.5 sm:px-3 py-1 transition-all hover:bg-background hover:text-foreground hover:shadow-2xs whitespace-nowrap"
                         >
                             M&amp;A Pipeline
                         </button>
                         <button
                             type="button"
                             onClick={() => scrollToSection('cost-model')}
-                            className="rounded-full px-3 py-1 transition-all hover:bg-background hover:text-foreground hover:shadow-2xs whitespace-nowrap"
+                            className="rounded-full px-2.5 sm:px-3 py-1 transition-all hover:bg-background hover:text-foreground hover:shadow-2xs whitespace-nowrap"
                         >
                             Cost Model
                         </button>
                         <button
                             type="button"
                             onClick={() => scrollToSection('faqs')}
-                            className="rounded-full px-3 py-1 transition-all hover:bg-background hover:text-foreground hover:shadow-2xs whitespace-nowrap text-primary font-bold bg-primary/10"
+                            className="rounded-full px-2.5 sm:px-3 py-1 transition-all hover:bg-background hover:text-foreground hover:shadow-2xs whitespace-nowrap text-primary font-bold bg-primary/10"
                         >
                             FAQs
                         </button>
