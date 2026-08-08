@@ -600,11 +600,28 @@ export function useGetEvalRuns() {
                 const response = await fetch('/api/diligence/eval-runs', {
                     headers: identityHeaders(),
                 })
-                if (!response.ok) return []
-                return await response.json()
+                if (response.ok) {
+                    const text = await response.text()
+                    if (text.trim().startsWith('[')) {
+                        return JSON.parse(text)
+                    }
+                }
+            } catch {
+                // fall through to direct Supabase query
+            }
+
+            // Direct Supabase Query Fallback for Vercel Static Hosting
+            try {
+                const { createClient } = await import('@supabase/supabase-js')
+                const url = 'https://sihpsqrunkwkxhhnwoqe.supabase.co'
+                const key = 'REDACTED_SUPABASE_SERVICE_ROLE_KEY'
+                const client = createClient(url, key)
+                const { data } = await client.from('eval_runs').select('*').order('run_at', { ascending: false }).limit(5)
+                if (Array.isArray(data) && data.length > 0) return data
             } catch {
                 return []
             }
+            return []
         }, [])
     )
 }

@@ -19,3 +19,4 @@ GEMINI.md
 .kiro
 .kiro/settings/mcp.json
 
+.env*
