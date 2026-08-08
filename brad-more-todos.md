@@ -131,6 +131,16 @@ The Right Way to Fallback: Instead of stacking parsers serially, use an If/Else 
 
 - add an faqs section?
 
+- Need to grow your eval and harness set, 20 distinct projects, we currently have like 7. Trisha said she will add some, but we will need to collect our own or make gemini make it for you
+
+- Environment separation for prod API keys separate from testing API keys? Have we done this?
+
+- Are we setting good realistic caps for max file size but still dont max out really big excel file?
+
+- Are we separating error handling well? Like regular "we hit an issue" vs we hit a rate limit
+
+- Find a real domain name on Porkbun and then swap to cloudflare for this
+
 - Make successful deployment ready for businesses meeting for them to try it
 
 - How does your eval & harness work? Does it work on the synthesis or per doc for each doc in the project?
