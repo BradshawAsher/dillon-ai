@@ -5,7 +5,9 @@ import {
     ArrowRight,
     BarChart3,
     CheckCircle2,
+    ChevronDown,
     ChevronRight,
+    ChevronUp,
     Clock,
     Cpu,
     DollarSign,
@@ -41,6 +43,50 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
     const [walkthroughStep, setWalkthroughStep] = useState(1)
     const [previewTab, setPreviewTab] = useState<'valuation' | 'citations' | 'risks' | 'cost'>('valuation')
     const [activeFactIndex, setActiveFactIndex] = useState(0)
+    const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0)
+
+    const faqs = [
+        {
+            question: 'What is MergeWorks AI Due Diligence?',
+            answer: 'MergeWorks is an autonomous M&A deal intelligence platform that analyzes 2-year P&Ls, balance sheets, customer rosters, and LOIs. It automatically generates audit-grade valuation ranges, EBITDA reconstructions, and Investment Committee memos with 100% citation transparency.',
+            badge: 'GETTING STARTED',
+        },
+        {
+            question: 'How do I analyze a deal as a beginner?',
+            answer: 'It takes less than 30 seconds! Click "Launch App Dashboard" at the top of the page. You can either drag & drop your deal documents (PDF, Excel, Word) into the intake dropzone or click "Example Mode" at the bottom right to explore a pre-analyzed sample deal packet.',
+            badge: 'BEGINNER GUIDE',
+        },
+        {
+            question: 'How does MergeWorks ensure 0 numeric hallucinations?',
+            answer: 'Every single extracted figure (revenue, EBITDA add-backs, customer concentration percentages) is tied to an explicit document line item or cell reference (e.g. "Apex_Commercial_PL_2025.pdf: Line 4"). You can click any number to inspect its original document source.',
+            badge: '100% CITATION GUARANTEE',
+        },
+        {
+            question: 'What document formats and file types are supported?',
+            answer: 'MergeWorks accepts native PDFs, scanned PDF documents, Excel spreadsheets (.xlsx, .xltx), Word documents (.docx), and CSV financial tables.',
+            badge: 'FILE SUPPORT',
+        },
+        {
+            question: 'How are Bear, Base, and Bull valuation multiples calculated?',
+            answer: 'Our multi-doc synthesis engine cross-analyzes customer concentration risks, revenue growth rates, and owner add-back quality against industry benchmarks to generate a conservative Bear (3.5x), realistic Base (4.2x), and upside Bull (5.0x) valuation range.',
+            badge: 'VALUATION MATH',
+        },
+        {
+            question: 'What is the difference between Example Mode and Live n8n Mode?',
+            answer: 'Example Mode allows you to test and navigate full deal memos, EBITDA tables, and risk flags instantly using pre-computed sample data. Live n8n Mode connects directly to our live AI workflow engine to parse real uploaded files.',
+            badge: 'DATA MODES',
+        },
+        {
+            question: 'Is my confidential financial data secure?',
+            answer: 'Yes. All file uploads are handled with strict tenant isolation, encrypted in transit and at rest, and never used to train public language models.',
+            badge: 'PRIVACY & SECURITY',
+        },
+        {
+            question: 'Where can I see cost benchmarks and accuracy evaluations?',
+            answer: 'You can view our Track A Cost Model section on this page or navigate to the "Eval & Harness" tab in the App Dashboard to view automated golden dataset pass rates and cost breakdowns.',
+            badge: 'EVALS & HARNESS',
+        },
+    ]
 
     // Access request form state
     const [accessForm, setAccessForm] = useState({ name: '', email: '', firm: '', role: '' })
@@ -186,6 +232,13 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
                             className="rounded-full px-3 py-1 transition-all hover:bg-background hover:text-foreground hover:shadow-2xs whitespace-nowrap"
                         >
                             Cost Model
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => scrollToSection('faqs')}
+                            className="rounded-full px-3 py-1 transition-all hover:bg-background hover:text-foreground hover:shadow-2xs whitespace-nowrap text-primary font-bold bg-primary/10"
+                        >
+                            FAQs
                         </button>
                     </nav>
 
@@ -724,6 +777,63 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
                 </div>
             </section>
 
+            {/* FREQUENTLY ASKED QUESTIONS (FAQ) SECTION */}
+            <section id="faqs" className="py-16 sm:py-24 bg-muted/20 border-b border-border/50">
+                <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 space-y-10">
+                    <div className="text-center space-y-3 max-w-3xl mx-auto">
+                        <Badge variant="outline" className="border-primary/40 bg-primary/10 text-primary font-mono text-xs">
+                            BEGINNER &amp; USER GUIDE
+                        </Badge>
+                        <h2 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
+                            Frequently Asked Questions (FAQs)
+                        </h2>
+                        <p className="text-sm text-muted-foreground sm:text-base">
+                            Everything you need to know about navigating MergeWorks, uploading deal packets, and reviewing audit-grade M&amp;A due diligence.
+                        </p>
+                    </div>
+
+                    <div className="space-y-3.5 max-w-3xl mx-auto">
+                        {faqs.map((faq, idx) => (
+                            <div key={idx} className="rounded-xl border border-border bg-card shadow-2xs overflow-hidden transition-all">
+                                <button
+                                    type="button"
+                                    onClick={() => setOpenFaqIndex(openFaqIndex === idx ? null : idx)}
+                                    className="w-full p-5 text-left flex items-center justify-between gap-4 font-bold text-sm sm:text-base text-foreground hover:bg-muted/30 cursor-pointer"
+                                >
+                                    <span className="flex items-center gap-3">
+                                        <HelpCircle className="h-5 w-5 text-primary shrink-0" />
+                                        <span>{faq.question}</span>
+                                    </span>
+                                    {openFaqIndex === idx ? <ChevronUp className="h-5 w-5 text-primary shrink-0" /> : <ChevronDown className="h-5 w-5 text-muted-foreground shrink-0" />}
+                                </button>
+                                {openFaqIndex === idx && (
+                                    <div className="px-5 pb-5 pt-2 text-xs sm:text-sm text-muted-foreground leading-relaxed border-t border-border/40 bg-muted/10 space-y-3">
+                                        <p>{faq.answer}</p>
+                                        {faq.badge && (
+                                            <Badge variant="secondary" className="text-[10px] font-mono font-bold">
+                                                {faq.badge}
+                                            </Badge>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="text-center pt-4">
+                        <p className="text-xs text-muted-foreground mb-3">Still have questions about analyzing your deal packet?</p>
+                        <Button
+                            type="button"
+                            onClick={onLaunchDashboard}
+                            className="bg-primary text-white font-bold text-xs shadow-md"
+                        >
+                            <span>Try Sample Deal Packet in App Dashboard</span>
+                            <ArrowRight className="ml-1.5 h-4 w-4" />
+                        </Button>
+                    </div>
+                </div>
+            </section>
+
             {/* FOOTER */}
             <footer className="border-t border-border bg-card py-12">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-6">
@@ -738,6 +848,7 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
                         <a href="#features" className="hover:text-foreground">Features</a>
                         <a href="#live-preview" className="hover:text-foreground">Live Preview</a>
                         <a href="#cost-model" className="hover:text-foreground">Cost Model</a>
+                        <a href="#faqs" className="hover:text-foreground font-semibold text-primary">FAQs</a>
                         <button type="button" onClick={() => setShowWalkthroughModal(true)} className="hover:text-foreground">Walkthrough</button>
                     </div>
 
