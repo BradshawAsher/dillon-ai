@@ -16,6 +16,7 @@ import stopProjectSynthesis from '../../backend/diligence/stopProjectSynthesis'
 import submitDealPacket from '../../backend/diligence/submitDealPacket'
 import updateSubmissionRow from '../../backend/diligence/updateSubmissionRow'
 import { installRetoolGlobals, readJsonBody, userFromHeaders } from '../_lib/retoolRuntime'
+import { getClientIp, rateLimit } from '../_lib/rateLimit'
 
 type ApiRequest = IncomingMessage
 
@@ -32,6 +33,18 @@ export default async function handler(req: ApiRequest, res: ServerResponse) {
     const requestUrl = new URL(req.url ?? '/', 'https://dashboard.local')
     const route = requestUrl.pathname.replace(/^\/api\/diligence\/?/, '')
     const environment = requestUrl.searchParams.get('environment') === 'test' ? 'test' : 'production'
+    const method = req.method ?? 'GET'
+
+    // Throttle abusive callers before doing any work — the trigger routes
+    // (submit/retry) spend money on n8n + LLM runs, so they get the tightest cap.
+    const limit = rateLimit(getClientIp(req.headers), route, method)
+    res.setHeader('X-RateLimit-Limit', String(limit.limit))
+    res.setHeader('X-RateLimit-Remaining', String(limit.remaining))
+    if (!limit.allowed) {
+        res.setHeader('Retry-After', String(limit.retryAfterSec))
+        sendJson(res, 429, { error: `Rate limit exceeded. Retry in ${limit.retryAfterSec}s.` })
+        return
+    }
 
     try {
         const user = userFromHeaders(req.headers)

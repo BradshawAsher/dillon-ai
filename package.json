@@ -1,7 +1,8 @@
 {
   "private": true,
   "scripts": {
-    "eval": "npx tsx scripts/run-evals.ts"
+    "eval": "npx tsx scripts/run-evals.ts",
+    "eval:failures": "npx tsx scripts/failure-report.ts"
   },
   "retool": {
     "app": {
