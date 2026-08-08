@@ -155,6 +155,17 @@ If an enterprise financial advisory firm uses a due diligence tool and a critica
 
 - How to get more flags from the agent backend?
 
+- Finding more datasets:
+Yes, there are several public repositories, open datasets, and disclosure platforms where you can find sample business deals, financial statements, and corporate filings to build out your evaluation dataset:
+
+SEC EDGAR (U.S. Securities and Exchange Commission): The official database for public company filings (10-Ks, 10-Qs, and 8-Ks). You can pull real corporate balance sheets, income statements, and merger disclosures to test your agent against complex financial data.
+
+Kaggle: Hosts various structured financial datasets, M&A datasets, and corporate financial report collections that can be downloaded and converted into mock PDFs or spreadsheets.
+
+Open-Source Financial Benchmark Datasets: Look for academic or industry-released financial QA benchmarks (such as FinQA or ConvFinQA), which provide raw financial text paired with verified ground-truth numerical answers.
+
+Investor Relations Pages of Public Companies: You can download investor presentation decks, quarterly earnings reports, and M&A press releases directly from corporate websites to test unstructured document parsing.
+
 - How to increase accuracy?
 
 - Is vercel now synced with localhost?

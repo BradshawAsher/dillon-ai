@@ -172,7 +172,7 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
         <div className="min-h-screen bg-background text-foreground font-sans antialiased selection:bg-primary/20 selection:text-primary">
             {/* Header / Navigation Bar */}
             <header className="sticky top-0 z-40 border-b border-border/80 bg-background/80 backdrop-blur-md">
-                <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+                <div className="w-full flex items-center justify-between px-3 py-2.5 sm:px-6">
                     <div className="flex items-center gap-3 shrink-0">
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary via-indigo-600 to-purple-600 text-white shadow-md shadow-primary/20">
                             <Sparkles className="h-5 w-5" />
@@ -190,7 +190,7 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
                         </div>
                     </div>
 
-                    <nav className="hidden lg:flex items-center gap-0.5 sm:gap-1 rounded-full border border-border/60 bg-muted/30 p-1 text-xs font-semibold text-muted-foreground mx-auto">
+                    <nav className="hidden lg:flex items-center gap-0.5 sm:gap-1 rounded-full border border-border/60 bg-muted/30 p-1 text-xs font-semibold text-muted-foreground ml-6 lg:ml-8 mr-auto">
                         <button
                             type="button"
                             onClick={() => scrollToSection('hero')}
@@ -242,7 +242,7 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
                         </button>
                     </nav>
 
-                    <div className="flex items-center gap-2 shrink-0 ml-auto sm:ml-0">
+                    <div className="flex items-center gap-2 shrink-0 ml-auto">
                         <Button
                             type="button"
                             variant="ghost"
@@ -280,54 +280,55 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
                 <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.12),transparent_50%)]" />
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="mx-auto max-w-4xl text-center space-y-6">
-                        <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3.5 py-1 text-xs font-bold text-primary shadow-xs">
-                            <Zap className="h-3.5 w-3.5 fill-primary" />
-                            <span>88.7% Cost Savings vs Legacy Models · 100% Citation Guarantee</span>
-                        </div>
-
-                        <h1 className="text-4xl font-black tracking-tight text-foreground sm:text-5xl lg:text-6xl leading-[1.15]">
-                            Autonomous M&amp;A Due Diligence.{' '}
-                            <span className="block sm:inline text-indigo-700 dark:text-indigo-300 font-black bg-indigo-500/10 dark:bg-indigo-500/25 px-2 py-0.5 rounded-xl border border-indigo-500/30 shadow-2xs">
-                                Evidence-Backed Deal Intelligence in Seconds.
-                            </span>
+                        <h1 className="text-4xl font-black tracking-tight text-foreground sm:text-6xl lg:text-7xl leading-[1.08]">
+                            Instant M&amp;A Due Diligence
                         </h1>
-
-                        <p className="mx-auto max-w-3xl text-base sm:text-xl font-semibold text-foreground dark:text-slate-100 leading-relaxed pt-2">
-                            Transform 2-year P&amp;Ls, balance sheets, and customer rosters into audit-grade valuation ranges, EBITDA reconstructions, and Investment Committee memos with 100% citation transparency.
+                        <p className="text-xl sm:text-2xl font-black text-indigo-600 dark:text-indigo-400 max-w-2xl mx-auto pt-1 leading-snug">
+                            Evidence-Backed Valuations &amp; Deal Memos in Seconds
                         </p>
 
-                        {/* THREE CLEAR CTAs */}
-                        <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+                        {/* PRIMARY STANDOUT CTA */}
+                        <div className="pt-2 flex flex-col items-center justify-center gap-3">
                             <Button
                                 type="button"
                                 size="lg"
-                                className="w-full sm:w-auto bg-gradient-to-r from-primary via-indigo-600 to-purple-600 px-8 py-6 text-base font-bold text-white shadow-lg shadow-primary/25 hover:opacity-95"
+                                className="w-full sm:w-auto bg-gradient-to-r from-primary via-indigo-600 to-purple-600 px-10 py-7 text-lg sm:text-xl font-black text-white shadow-xl shadow-primary/30 hover:scale-[1.03] transition-all cursor-pointer rounded-2xl"
                                 onClick={onLaunchDashboard}
                             >
-                                Launch App Dashboard
-                                <ArrowRight className="ml-2 h-5 w-5" />
+                                <Sparkles className="mr-2.5 h-6 w-6 text-amber-300 animate-pulse" />
+                                <span>Launch App Dashboard</span>
+                                <ArrowRight className="ml-2.5 h-6 w-6" />
                             </Button>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="lg"
-                                className="w-full sm:w-auto border-border px-6 py-6 text-base font-semibold"
-                                onClick={() => setShowAccessModal(true)}
-                            >
-                                <Lock className="mr-2 h-4 w-4 text-muted-foreground" />
-                                Apply for Access
-                            </Button>
-                            <Button
-                                type="button"
-                                variant="secondary"
-                                size="lg"
-                                className="w-full sm:w-auto bg-muted px-6 py-6 text-base font-semibold text-foreground hover:bg-muted/80"
-                                onClick={() => setShowWalkthroughModal(true)}
-                            >
-                                <Play className="mr-2 h-4 w-4 fill-primary text-primary" />
-                                Guided Walkthrough
-                            </Button>
+
+                            {/* Secondary Actions */}
+                            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="default"
+                                    className="border-border/80 text-sm font-bold px-5 py-2.5 shadow-2xs hover:bg-muted"
+                                    onClick={() => setShowWalkthroughModal(true)}
+                                >
+                                    <Play className="mr-2 h-4 w-4 fill-primary text-primary" />
+                                    Guided Walkthrough
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="default"
+                                    className="border-border/80 text-sm font-bold px-5 py-2.5 shadow-2xs hover:bg-muted"
+                                    onClick={() => setShowAccessModal(true)}
+                                >
+                                    <Lock className="mr-2 h-4 w-4 text-muted-foreground" />
+                                    Apply for Access
+                                </Button>
+                            </div>
                         </div>
+
+                        {/* Description Paragraph Below CTAs */}
+                        <p className="mx-auto max-w-2xl text-xs sm:text-sm font-medium text-muted-foreground leading-relaxed pt-2">
+                            Transform deal packets into audit-grade EBITDA reconstructions, valuation ranges, and IC memos with 100% citation transparency.
+                        </p>
 
                         {/* Trust Highlights */}
                         <div className="pt-8 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-xs font-semibold text-muted-foreground border-t border-border/40 max-w-3xl mx-auto">
@@ -341,7 +342,7 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
                             </div>
                             <div className="flex items-center gap-1.5">
                                 <Cpu className="h-4 w-4 text-indigo-600" />
-                                <span>Gemini 3.1 Flash Lite &amp; OpenAI 5.6 Hybrid</span>
+                                <span>Claude Sonnet 5 &amp; OpenAI 5.6 Hybrid Engine</span>
                             </div>
                         </div>
                     </div>
@@ -751,25 +752,26 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
 
                         <Card className="border-border bg-card">
                             <CardHeader>
-                                <Badge variant="outline" className="w-fit text-[10px]">FLAGSHIP (SONNET 5 / GPT-5)</Badge>
-                                <CardTitle className="text-3xl font-black text-foreground">$0.0480 <span className="text-xs font-normal text-muted-foreground">/ run</span></CardTitle>
-                                <CardDescription className="text-xs">Full context window on every document</CardDescription>
+                                <Badge variant="outline" className="w-fit text-[10px]">UNOPTIMIZED BRUTE FORCE</Badge>
+                                <CardTitle className="text-3xl font-black text-foreground">$0.1800 <span className="text-xs font-normal text-muted-foreground">/ run</span></CardTitle>
+                                <CardDescription className="text-xs">Brute-force multi-doc dump into single prompt</CardDescription>
                             </CardHeader>
                             <CardContent className="text-xs text-muted-foreground space-y-2">
-                                <p>• Expensive for bulk portfolio scans</p>
                                 <p>• High output token costs ($10.00/1M)</p>
+                                <p>• Redundant context repetition across files</p>
                             </CardContent>
                         </Card>
 
                         <Card className="border-primary/50 bg-primary/5 shadow-lg">
                             <CardHeader>
                                 <Badge variant="success" className="w-fit text-[10px] font-bold">MERGEWORKS HYBRID (OPTIMIZED)</Badge>
-                                <CardTitle className="text-3xl font-black text-primary">$0.0024 <span className="text-xs font-normal text-muted-foreground">/ run</span></CardTitle>
-                                <CardDescription className="text-xs">Gemini 3.1 Flash Lite + OpenAI 5.6 Failovers</CardDescription>
+                                <CardTitle className="text-3xl font-black text-primary">$0.0210 <span className="text-xs font-normal text-muted-foreground">/ run</span></CardTitle>
+                                <CardDescription className="text-xs">Sonnet 5 (Per-Doc OCR) + OpenAI 5.6 (Synthesizer)</CardDescription>
                             </CardHeader>
                             <CardContent className="text-xs text-foreground space-y-2 font-medium">
-                                <p className="text-emerald-600 font-bold">✓ 95% Savings vs Sonnet 5</p>
-                                <p>✓ Zero numeric hallucination score</p>
+                                <p className="text-emerald-600 font-bold">✓ 88%+ Savings vs Unoptimized Runs</p>
+                                <p className="text-emerald-600 font-bold">✓ 99.9% Savings vs Manual Review ($0.021 vs $1,200)</p>
+                                <p>✓ Zero numeric hallucination score with 100% citations</p>
                                 <p>✓ Sub-15 second end-to-end execution</p>
                             </CardContent>
                         </Card>
