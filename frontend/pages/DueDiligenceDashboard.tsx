@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import {
     Activity,
     AlertCircle,
+    Globe,
     Key,
     Keyboard,
     Loader2,
@@ -123,7 +124,7 @@ function deriveSynthesisProgress(status?: string, awaiting?: boolean) {
     return { value: 0, stage: 'Awaiting documents' }
 }
 
-export default function DueDiligenceDashboard() {
+export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnToLanding?: () => void } = {}) {
     const {
         activeWorkspaceTab,
         setActiveWorkspaceTab,
@@ -1114,37 +1115,48 @@ export default function DueDiligenceDashboard() {
                 setActiveWorkspaceTab={setActiveWorkspaceTab}
                 setIsApiKeyModalOpen={setIsApiKeyModalOpen}
                 isActiveSubmissionStatus={isActiveSubmissionStatus}
+                onReturnToLanding={onReturnToLanding}
             />
 
-            {isExampleMode ? (
-                <div className="mx-auto max-w-[1440px] px-4 pb-5 sm:px-6 lg:px-8">
-                    <div className="rounded-xl border-2 border-primary/35 bg-primary/10 px-5 py-5 shadow-sm sm:flex sm:items-center sm:justify-between sm:gap-6">
-                        <div className="max-w-3xl">
-                            <p className="text-lg font-semibold text-foreground">Viewing sample data in Example mode</p>
-                            <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                                Test document uploads, batch tracking, and synthesis output with sample records.
-                            </p>
-                        </div>
-                        <Button size="lg" className="mt-4 w-full shrink-0 sm:mt-0 sm:w-auto" onClick={() => setDataSource('mock')}>
-                            Open example workspace
+            <div className="mx-auto max-w-[1440px] px-4 pb-5 sm:px-6 lg:px-8">
+                <div className="rounded-xl border-2 border-primary/35 bg-primary/10 px-5 py-5 shadow-sm sm:flex sm:items-center sm:justify-between sm:gap-6">
+                    <div className="max-w-3xl">
+                        <p className="text-lg font-semibold text-foreground">
+                            Workspace Data Source: {isExampleMode ? 'Example Mode (Mock Data)' : 'Live n8n Mode (Production Engine)'}
+                        </p>
+                        <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                            Switch between live n8n workflow execution and mock example records, or return to the product Landing Page.
+                        </p>
+                    </div>
+                    <div className="mt-4 flex flex-wrap items-center gap-2.5 shrink-0 sm:mt-0">
+                        <Button
+                            size="md"
+                            variant={isExampleMode ? 'default' : 'outline'}
+                            onClick={() => setDataSource('mock')}
+                        >
+                            Example Mode
                         </Button>
+                        <Button
+                            size="md"
+                            variant={!isExampleMode ? 'default' : 'outline'}
+                            onClick={() => setDataSource('live')}
+                        >
+                            Live n8n
+                        </Button>
+                        {onReturnToLanding && (
+                            <Button
+                                size="md"
+                                variant="outline"
+                                className="gap-2 border-primary/40 bg-background text-primary hover:bg-primary/10 font-bold"
+                                onClick={onReturnToLanding}
+                            >
+                                <Globe className="h-4 w-4 text-primary" />
+                                <span>Landing Page</span>
+                            </Button>
+                        )}
                     </div>
                 </div>
-            ) : (
-                <div className="mx-auto max-w-[1440px] px-4 pb-5 sm:px-6 lg:px-8">
-                    <div className="rounded-xl border-2 border-success/35 bg-success/10 px-5 py-5 shadow-sm sm:flex sm:items-center sm:justify-between sm:gap-6">
-                        <div className="max-w-3xl">
-                            <p className="text-lg font-semibold text-foreground">Ready to try it with your own documents?</p>
-                            <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                                Switch to Live n8n to queue a real project document and follow its document-level analysis through project synthesis.
-                            </p>
-                        </div>
-                        <Button size="lg" className="mt-4 w-full shrink-0 sm:mt-0 sm:w-auto" onClick={() => setDataSource('live')}>
-                            Go to Live n8n
-                        </Button>
-                    </div>
-                </div>
-            )}
+            </div>
 
             <div className="mx-auto max-w-[1440px] px-4 pt-4 sm:px-6 lg:px-8">
                 <DealHealthKPIs
@@ -1403,6 +1415,7 @@ export default function DueDiligenceDashboard() {
                                 projectChecklistById={projectChecklistById}
                                 setProjectChecklistById={setProjectChecklistById}
                                 impact={impact}
+                                onReturnToLanding={onReturnToLanding}
                             />
                         </div>
                     ) : null}

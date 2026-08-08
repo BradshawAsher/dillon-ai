@@ -137,6 +137,10 @@ The Right Way to Fallback: Instead of stacking parsers serially, use an If/Else 
 
 - Are we setting good realistic caps for max file size but still dont max out really big excel file?
 
+- Have to make a landing page and walkthrough page like the example walkthrough for our project
+
+- How to get more flags from the user?
+
 - Are we separating error handling well? Like regular "we hit an issue" vs we hit a rate limit
 
 - Why is the vercel evals and harness date up to date with the npm run dev?
