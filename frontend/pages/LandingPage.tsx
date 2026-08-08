@@ -147,6 +147,13 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
                     <nav className="hidden xl:flex items-center gap-1 rounded-full border border-border/60 bg-muted/30 p-1 text-xs font-semibold text-muted-foreground ml-2">
                         <button
                             type="button"
+                            onClick={() => scrollToSection('hero')}
+                            className="rounded-full px-3 py-1 transition-all hover:bg-background hover:text-foreground hover:shadow-2xs whitespace-nowrap"
+                        >
+                            Hero
+                        </button>
+                        <button
+                            type="button"
                             onClick={() => scrollToSection('features')}
                             className="rounded-full px-3 py-1 transition-all hover:bg-background hover:text-foreground hover:shadow-2xs whitespace-nowrap"
                         >
@@ -216,7 +223,7 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
             </header>
 
             {/* HERO SECTION (Above the Fold) */}
-            <section className="relative overflow-hidden border-b border-border/50 bg-gradient-to-b from-primary/5 via-background to-background py-16 sm:py-24">
+            <section id="hero" className="relative overflow-hidden border-b border-border/50 bg-gradient-to-b from-primary/5 via-background to-background py-16 sm:py-24">
                 <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.12),transparent_50%)]" />
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="mx-auto max-w-4xl text-center space-y-6">

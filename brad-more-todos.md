@@ -141,6 +141,8 @@ The Right Way to Fallback: Instead of stacking parsers serially, use an If/Else 
 
 - How to get more flags from the user?
 
+- Is the vercel not working as well as the npm run dev? Make sure to test the vercel website from now on maybe or check it every once in a while?
+
 - Are we separating error handling well? Like regular "we hit an issue" vs we hit a rate limit
 
 - Why is the vercel evals and harness date up to date with the npm run dev?
