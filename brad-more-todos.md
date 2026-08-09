@@ -187,6 +187,10 @@ The Right Way to Fallback: Instead of stacking parsers serially, use an If/Else 
 
 - How are we calculating the flags in general? Should we auto add all flags for per doc and then have synthesizer find more or reduce duplicates?
 
+- Why the mergeworks testing projects in evals tab not finished synthesis in UI?
+
+- Also some projects that failed or didn't reached synthesis in the projects tab don't display this right, can we fix this?
+
 - Change your fixed window + scrolling to more of fixed window + 20 per page, or 50 per page, or view all, like big websites like AWS when you have to look at IAM and admin permissinos stuff?
 
 - Add even more granular confidence score so every fact on the page has a confidence score?

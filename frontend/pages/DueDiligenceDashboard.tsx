@@ -651,10 +651,24 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     useEffect(() => {
         if (!pendingTargetDocFileName || latestBatchRows.length === 0) return
 
+        // Verify latestBatchRows actually belong to the current activeProjectId before trying to match
+        const sampleRow = latestBatchRows[0]
+        if (sampleRow && getProjectKey(sampleRow) !== activeProjectId && sampleRow.projectId !== activeProjectId) {
+            return
+        }
+
         const normTarget = pendingTargetDocFileName.toLowerCase().trim()
+        const targetClean = normTarget.replace(/\.[^/.]+$/, '').replace(/[^a-z0-9]/g, '')
+
         const idx = latestBatchRows.findIndex((row) => {
             const fn = (row.fileName || (row as any).originalFilename || '').toLowerCase().trim()
-            return fn === normTarget || fn.includes(normTarget) || normTarget.includes(fn)
+            const fnClean = fn.replace(/\.[^/.]+$/, '').replace(/[^a-z0-9]/g, '')
+            return (
+                fn === normTarget ||
+                fn.includes(normTarget) ||
+                normTarget.includes(fn) ||
+                (targetClean.length > 2 && fnClean.length > 2 && (fnClean.includes(targetClean) || targetClean.includes(fnClean)))
+            )
         })
 
         if (idx >= 0) {
@@ -665,11 +679,11 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         }
 
         setPendingTargetDocFileName(null)
-    }, [pendingTargetDocFileName, latestBatchRows])
+    }, [pendingTargetDocFileName, latestBatchRows, activeProjectId])
 
     // Auto-select the latest completed document (or active processing document) if the user hasn't manually overridden
     useEffect(() => {
-        if (userHasNavigatedBatchDocs || latestBatchRows.length === 0) return
+        if (userHasNavigatedBatchDocs || pendingTargetDocFileName || latestBatchRows.length === 0) return
 
         const lastCompletedIdx = findLastIndex(latestBatchRows, (doc: SubmissionHistoryItem) => doc.status.trim().toLowerCase() === 'completed')
         if (lastCompletedIdx !== -1) {
@@ -684,7 +698,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         }
 
         setSelectedBatchDocIndex(0)
-    }, [latestBatchRows, userHasNavigatedBatchDocs])
+    }, [latestBatchRows, userHasNavigatedBatchDocs, pendingTargetDocFileName])
 
     const safeBatchDocIndex = Math.min(Math.max(0, selectedBatchDocIndex), Math.max(0, latestBatchRows.length - 1))
 
@@ -800,12 +814,16 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     const handlePortfolioProjectSelect = (projectKey: string, targetTab: WorkspaceTab = 'synthesis') => {
         setSelectedProjectKey(projectKey)
         setActiveWorkspaceTab(targetTab)
+        setActiveSubmissionBatch(null)
+        setUserHasNavigatedBatchDocs(false)
         const project = projectSummaries.find((candidate: any) => candidate.projectKey === projectKey || candidate.projectId === projectKey)
 
         if (project) {
             setProjectId(project.projectId || project.projectKey)
             setDealName(project.projectName)
             setProjectStage(project.stage || 'post-loi')
+        } else {
+            setProjectId(projectKey)
         }
 
         if (typeof window !== 'undefined') {
@@ -813,7 +831,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         }
 
         window.setTimeout(() => {
-            document.getElementById('project-synthesis')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            const elId = targetTab === 'diligence' ? 'diligence-workspace' : 'project-synthesis'
+            document.getElementById(elId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
         }, 0)
     }
 
@@ -832,7 +851,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             matchingProject = projectSummaries.find((p: any) => {
                 const pk = (p.projectKey || '').toLowerCase()
                 const pn = (p.projectName || '').toLowerCase()
-                return raw.includes(pk) || raw.includes(pn) || pk.includes(raw) || pn.includes(raw)
+                const cn = (p.companyName || '').toLowerCase()
+                return (pk && raw.includes(pk)) || (pn && raw.includes(pn)) || (cn && raw.includes(cn)) || (pk && pk.includes(raw)) || (pn && pn.includes(raw))
             })
         }
 
@@ -840,7 +860,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             let fallbackKey = ''
             if (raw.includes('werkheiser') || raw.includes('business 1')) {
                 fallbackKey = 'werkheiser-commercial-cleaning'
-            } else if (raw.includes('iron tree') || raw.includes('irontree') || raw.includes('business 2')) {
+            } else if (raw.includes('iron tree') || raw.includes('irontree') || raw.includes('business 2') || raw.includes('cyber')) {
                 fallbackKey = 'irontree-tree-service'
             } else if (raw.includes('turnkey') || raw.includes('business 3')) {
                 fallbackKey = 'turnkey-logistics-group'
@@ -848,6 +868,10 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 fallbackKey = 'cxl-digital-agency'
             } else if (raw.includes('medspa') || raw.includes('medical spa') || raw.includes('business 5')) {
                 fallbackKey = 'medspa-wellness-clinic'
+            } else if (raw.includes('widgetco') || raw.includes('forensic')) {
+                fallbackKey = 'widgetco-forensic-suite'
+            } else if (raw.includes('mergeworks') || raw.includes('testing')) {
+                fallbackKey = 'mergeworks-testing-suite'
             }
 
             if (fallbackKey) {
@@ -861,6 +885,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
     const handleEvalDocSelect = (docFileName: string, targetIdentifier?: string) => {
         handleEvalProjectSelect(targetIdentifier || docFileName || 'werkheiser-commercial-cleaning', 'diligence')
+        setUserHasNavigatedBatchDocs(true)
         setPendingTargetDocFileName(docFileName)
         setActiveEvidence(null)
 
