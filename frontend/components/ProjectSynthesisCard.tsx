@@ -14,7 +14,7 @@ import { Progress } from '../lib/shadcn/progress'
 import { formatCurrencyValue, getSubmissionInsightTone } from '../utils/aiSubmissionData'
 import { downloadTextFile, fileSafeName } from '../utils/downloadFile'
 import { formatHours, type ImpactMetrics } from '../utils/impactMetrics'
-import type { ProjectSummary } from '../utils/projectWorkspace'
+import { getProjectKey, type ProjectSummary } from '../utils/projectWorkspace'
 import { buildDocumentLinkedEvidence, parseDocumentedFacts, type EvidenceItem } from '../utils/evidence'
 
 type ProjectSynthesisCardProps = {
@@ -216,9 +216,18 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
     const normalizedProjectId = currentProjectId.trim()
     const visibleSyntheses = syntheses.filter((synthesis) => synthesis.projectId === normalizedProjectId)
     const currentProject = projects.find((project) => (project.projectId || project.projectKey) === normalizedProjectId)
-    const rawProjectDocuments = documents.filter((document) => document.projectId === normalizedProjectId)
+    const rawProjectDocuments = documents.filter((document) => {
+        const pk = getProjectKey(document)
+        return (
+            document.projectId === normalizedProjectId ||
+            (document as any).projectKey === normalizedProjectId ||
+            pk === normalizedProjectId ||
+            (currentProject && (pk === currentProject.projectKey || pk === currentProject.projectId || document.projectId === currentProject.projectId || (document as any).projectKey === currentProject.projectKey))
+        )
+    })
+    const effectiveProjectDocuments = rawProjectDocuments.length > 0 ? rawProjectDocuments : documents
     const latestDocsByFile = new Map<string, SubmissionHistoryItem>()
-    rawProjectDocuments.forEach((doc) => {
+    effectiveProjectDocuments.forEach((doc) => {
         const fileKey = (doc.fileName || doc.requestID || String(doc.id)).trim().toLowerCase()
         if (!latestDocsByFile.has(fileKey)) {
             latestDocsByFile.set(fileKey, doc)

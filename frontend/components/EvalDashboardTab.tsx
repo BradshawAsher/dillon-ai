@@ -46,13 +46,18 @@ type EvalDashboardTabProps = {
 const mapBusinessToProjectKey = (businessName: string, docItem?: any): string => {
     if (docItem?.projectId) return docItem.projectId
     if (docItem?.projectKey) return docItem.projectKey
-    const norm = (businessName || '').toLowerCase()
-    if (norm.includes('werkheiser')) return 'werkheiser-commercial-cleaning'
-    if (norm.includes('iron tree') || norm.includes('irontree')) return 'irontree-tree-service'
-    if (norm.includes('turnkey')) return 'turnkey-logistics-group'
-    if (norm.includes('conversionxl') || norm.includes('cxl')) return 'cxl-digital-agency'
-    if (norm.includes('medical spa') || norm.includes('medspa')) return 'medspa-wellness-clinic'
-    return 'werkheiser-commercial-cleaning'
+    const norm = (businessName || '').toLowerCase().trim()
+    if (!norm) return 'werkheiser-commercial-cleaning'
+
+    if (norm.includes('werkheiser') || norm.includes('business 1')) return 'werkheiser-commercial-cleaning'
+    if (norm.includes('iron tree') || norm.includes('irontree') || norm.includes('business 2') || norm.includes('cyber')) return 'irontree-tree-service'
+    if (norm.includes('turnkey') || norm.includes('business 3')) return 'turnkey-logistics-group'
+    if (norm.includes('conversionxl') || norm.includes('cxl') || norm.includes('business 4')) return 'cxl-digital-agency'
+    if (norm.includes('medical spa') || norm.includes('medspa') || norm.includes('business 5')) return 'medspa-wellness-clinic'
+    if (norm.includes('widgetco') || norm.includes('forensic')) return 'widgetco-forensic-suite'
+    if (norm.includes('mergeworks') || norm.includes('testing')) return 'mergeworks-testing-suite'
+
+    return norm.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'werkheiser-commercial-cleaning'
 }
 
 export default function EvalDashboardTab({
@@ -1371,7 +1376,7 @@ export default function EvalDashboardTab({
                                                             variant="ghost"
                                                             className="h-7 text-[11px] font-semibold text-muted-foreground hover:bg-muted hover:text-foreground gap-1 px-2 cursor-pointer"
                                                             onClick={() => {
-                                                                const targetKey = mapBusinessToProjectKey(businessName)
+                                                                const targetKey = doc.projectId || doc.projectKey || docs[0]?.projectId || docs[0]?.projectKey || mapBusinessToProjectKey(businessName, doc)
                                                                 if (onSelectProject) {
                                                                     onSelectProject(targetKey, 'diligence')
                                                                 }
@@ -1388,7 +1393,7 @@ export default function EvalDashboardTab({
                                                             variant="outline"
                                                             className="h-7 text-[11px] font-bold border-primary/40 text-primary hover:bg-primary/10 gap-1 px-2 cursor-pointer"
                                                             onClick={() => {
-                                                                const targetKey = mapBusinessToProjectKey(businessName)
+                                                                const targetKey = doc.projectId || doc.projectKey || docs[0]?.projectId || docs[0]?.projectKey || mapBusinessToProjectKey(businessName, doc)
                                                                 if (onSelectDoc) {
                                                                     onSelectDoc(doc.fileName, targetKey)
                                                                 }
