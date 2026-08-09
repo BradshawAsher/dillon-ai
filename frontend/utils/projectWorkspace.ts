@@ -182,6 +182,54 @@ export function getProjectKey(row: SubmissionHistoryItem) {
     return fallback.length > 2 ? fallback : row.requestID || `row-${row.id}`
 }
 
+export function isSystemTestProbeFile(fileName: string): boolean {
+    if (!fileName) return false
+    const norm = fileName.toLowerCase().trim()
+    return norm.includes('webhook trigger') || norm.includes('test word doc') || norm.includes('test doc for webhook')
+}
+
+export function isRowMatchingProject(row: SubmissionHistoryItem, targetProjectId: string, projectSummaries: any[] = []): boolean {
+    if (!targetProjectId) return false
+    if (isSystemTestProbeFile(row.fileName || '')) return false
+    const rawTarget = targetProjectId.toLowerCase().trim()
+
+    const explicitPid = (row.projectId || '').toLowerCase().trim()
+    const pk = getProjectKey(row).toLowerCase().trim()
+    const rowDeal = normalizeText(row.dealName || '').toLowerCase().trim()
+    const rowCompany = normalizeText(row.companyName || '').toLowerCase().trim()
+
+    if (explicitPid === rawTarget || pk === rawTarget) return true
+
+    const project = projectSummaries.find((p: any) => {
+        const pKey = (p.projectKey || '').toLowerCase().trim()
+        const pId = (p.projectId || '').toLowerCase().trim()
+        return pKey === rawTarget || pId === rawTarget
+    })
+
+    if (project) {
+        const pKey = (project.projectKey || '').toLowerCase().trim()
+        const pId = (project.projectId || '').toLowerCase().trim()
+        const pName = normalizeText(project.projectName || '').toLowerCase().trim()
+        const cName = normalizeText(project.companyName || '').toLowerCase().trim()
+
+        if (explicitPid && (explicitPid === pKey || explicitPid === pId)) return true
+        if (pk && (pk === pKey || pk === pId)) return true
+
+        if (pName && (rowDeal.includes(pName) || pName.includes(rowDeal))) return true
+        if (cName && (rowCompany.includes(cName) || cName.includes(rowCompany))) return true
+    }
+
+    if (rawTarget.includes('turnkey')) return rowDeal.includes('turnkey') || rowCompany.includes('turnkey')
+    if (rawTarget.includes('werkheiser')) return rowDeal.includes('werkheiser') || rowCompany.includes('werkheiser')
+    if (rawTarget.includes('irontree') || rawTarget.includes('iron tree')) return rowDeal.includes('iron') || rowCompany.includes('iron')
+    if (rawTarget.includes('cxl') || rawTarget.includes('conversionxl')) return rowDeal.includes('conversion') || rowCompany.includes('conversion')
+    if (rawTarget.includes('medspa') || rawTarget.includes('medical spa')) return rowDeal.includes('spa') || rowCompany.includes('spa')
+    if (rawTarget.includes('widgetco') || rawTarget.includes('forensic')) return rowDeal.includes('widgetco') || rowCompany.includes('widgetco')
+    if (rawTarget.includes('mergeworks') || rawTarget.includes('testing')) return rowDeal.includes('testing') || rowCompany.includes('testing')
+
+    return false
+}
+
 function getDisplayTimestamp(row: SubmissionHistoryItem) {
     return row.processedAt || row.processingStartedAt || row.receivedAt || row.updatedAt || row.createdAt || row.triggerTimestamp
 }

@@ -60,6 +60,31 @@ const mapBusinessToProjectKey = (businessName: string, docItem?: any): string =>
     return norm.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'werkheiser-commercial-cleaning'
 }
 
+function getDocDurationSec(doc: any): number {
+    if (typeof doc?.durationSec === 'number' && doc.durationSec > 0) {
+        return doc.durationSec
+    }
+    if (typeof doc?.duration_sec === 'number' && doc.duration_sec > 0) {
+        return doc.duration_sec
+    }
+    if (typeof doc?.processingTimeSec === 'number' && doc.processingTimeSec > 0) {
+        return doc.processingTimeSec
+    }
+    const startStr = doc?.processingStartedAt || doc?.receivedAt || doc?.triggerTimestamp || doc?.createdAt
+    const endStr = doc?.processedAt || doc?.updatedAt
+    if (startStr && endStr) {
+        const startMs = Date.parse(startStr)
+        const endMs = Date.parse(endStr)
+        if (!Number.isNaN(startMs) && !Number.isNaN(endMs) && endMs > startMs) {
+            const diffSec = Math.round((endMs - startMs) / 1000)
+            if (diffSec > 0 && diffSec < 3600) {
+                return diffSec
+            }
+        }
+    }
+    return 18
+}
+
 export default function EvalDashboardTab({
     evalRuns = [],
     onTriggerEvalRuns,
@@ -1005,7 +1030,7 @@ export default function EvalDashboardTab({
                         const sorted = [...filtered].sort((a: any, b: any) => {
                             if (sortBy === 'score_desc') return (b.percentage || 0) - (a.percentage || 0)
                             if (sortBy === 'score_asc') return (a.percentage || 0) - (b.percentage || 0)
-                            if (sortBy === 'duration_desc') return (b.durationSec || 0) - (a.durationSec || 0)
+                            if (sortBy === 'duration_desc') return getDocDurationSec(b) - getDocDurationSec(a)
                             if (sortBy === 'name_asc') return (a.fileName || '').localeCompare(b.fileName || '')
                             return 0
                         })
@@ -1214,7 +1239,7 @@ export default function EvalDashboardTab({
                             const isDocPassed = (d: any) => (d.percentage ?? 0) >= 70
                             const passCount = docs.filter(isDocPassed).length
                             const projectPass = avgScore >= 70
-                            const totalDurationSec = docs.reduce((sum: number, d: any) => sum + (d.durationSec || 15), 0)
+                            const totalDurationSec = docs.reduce((sum: number, d: any) => sum + getDocDurationSec(d), 0)
                             const val = defaultValuations[businessName] || {
                                 bear: docs[0]?.valuationBear || '$2,184,000',
                                 base: docs[0]?.valuationBase || '$2,730,000',
@@ -1322,7 +1347,7 @@ export default function EvalDashboardTab({
                                                                 {doc.fileName}
                                                             </p>
                                                             <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                                                                <Clock className="h-3 w-3" /> ~{doc.durationSec}s processing
+                                                                <Clock className="h-3 w-3" /> ~{getDocDurationSec(doc)}s processing
                                                             </span>
                                                         </div>
                                                         <Badge variant={isPass ? 'success' : 'destructive'} className="text-[10px] shrink-0 font-extrabold">
@@ -1385,23 +1410,6 @@ export default function EvalDashboardTab({
                                                         >
                                                             <Building2 className="h-3 w-3 shrink-0" />
                                                             <span>View Project</span>
-                                                        </Button>
-
-                                                        <Button
-                                                            type="button"
-                                                            size="sm"
-                                                            variant="outline"
-                                                            className="h-7 text-[11px] font-bold border-primary/40 text-primary hover:bg-primary/10 gap-1 px-2 cursor-pointer"
-                                                            onClick={() => {
-                                                                const targetKey = doc.projectId || doc.projectKey || docs[0]?.projectId || docs[0]?.projectKey || mapBusinessToProjectKey(businessName, doc)
-                                                                if (onSelectDoc) {
-                                                                    onSelectDoc(doc.fileName, targetKey)
-                                                                }
-                                                            }}
-                                                            title={`View extracted facts and citations for ${doc.fileName}`}
-                                                        >
-                                                            <FileText className="h-3 w-3 shrink-0" />
-                                                            <span>View Doc Results</span>
                                                         </Button>
                                                     </div>
                                                 </div>

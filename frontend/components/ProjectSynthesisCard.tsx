@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { CheckCircle, Download, FileText, Filter, Landmark, Loader2, MessageCircleQuestion, RefreshCw, Scale, ShieldAlert, TriangleAlert } from 'lucide-react'
 
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
@@ -258,6 +258,57 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
     const hasPriorSynthesis = visibleSyntheses.some((synthesis) => {
         return synthesis.finalJudgmentSummary.trim().length > 0 || synthesis.finalRecommendation.trim().length > 0
     })
+
+    const derivedCitations = useMemo(() => {
+        const synthesis = visibleSyntheses[0]
+        if (synthesis?.citationDetails && synthesis.citationDetails.length > 0) {
+            return synthesis.citationDetails
+        }
+        if (synthesis?.citations && synthesis.citations.length > 0) {
+            return synthesis.citations.map((sourceFile) => ({
+                sourceFile,
+                sourceLocation: 'Project synthesis',
+                excerpt: synthesis.finalJudgmentSummary,
+                period: '',
+                currency: '',
+                confidence: null,
+                status: 'Synthesized',
+            }))
+        }
+        const docCitations: Array<{ sourceFile: string; sourceLocation: string; excerpt: string; period: string; currency: string; confidence: number | null; status: string }> = []
+        projectDocuments.forEach((doc) => {
+            try {
+                if (doc.aiCitations) {
+                    const parsed = JSON.parse(doc.aiCitations)
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        parsed.forEach((c: any) => {
+                            docCitations.push({
+                                sourceFile: c.source_file || doc.fileName,
+                                sourceLocation: c.row_or_cell || c.location || 'Document excerpt',
+                                excerpt: c.excerpt || doc.aiSummary || 'Document citation',
+                                period: c.period || '',
+                                currency: c.currency || 'USD',
+                                confidence: doc.aiConfidence ? Number(doc.aiConfidence) : null,
+                                status: doc.status || 'Completed',
+                            })
+                        })
+                    }
+                }
+            } catch { /* ignore parse error */ }
+            if (docCitations.length === 0 && doc.fileName) {
+                docCitations.push({
+                    sourceFile: doc.fileName,
+                    sourceLocation: 'Document citation',
+                    excerpt: doc.aiSummary || 'Document analyzed in project synthesis',
+                    period: '',
+                    currency: 'USD',
+                    confidence: doc.aiConfidence ? Number(doc.aiConfidence) : null,
+                    status: doc.status || 'Completed',
+                })
+            }
+        })
+        return docCitations
+    }, [visibleSyntheses, projectDocuments])
 
     const firstDocTimestamp = projectDocuments[0]?.processingStartedAt || projectDocuments[0]?.triggerTimestamp || projectDocuments[0]?.receivedAt
     const realStartMs = firstDocTimestamp ? Date.parse(firstDocTimestamp) : null
@@ -889,18 +940,18 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                     defaultOpen
                                     onItemClick={onOpenEvidence ? (item, index) => handleInsightClick('open-question', item, index) : undefined}
                                 /></div> : null}
-                                {(synthesis.citationDetails?.length ?? synthesis.citations?.length ?? 0) > 0 ? (
-                                    <div className="rounded-lg border border-border bg-muted/20 p-4">
-                                        <div className="flex items-center gap-2"><FileText className="h-4 w-4 text-muted-foreground" /><p className="text-sm font-semibold text-foreground">Synthesis citations</p></div>
-                                        <div className="mt-3 h-64 space-y-2 overflow-y-auto pr-1">
-                                            {(synthesis.citationDetails?.length ? synthesis.citationDetails : (synthesis.citations ?? []).map((sourceFile) => ({ sourceFile, sourceLocation: 'Project-level synthesis', excerpt: synthesis.finalJudgmentSummary, period: '', currency: '', confidence: null, status: 'Synthesized' }))).map((citation, index) => {
-                                                return <button key={`${citation.sourceFile}-${citation.sourceLocation}-${index}`} type="button" onClick={() => onOpenEvidence?.(buildDocumentLinkedEvidence({ title: 'Project synthesis citation', sourceFile: citation.sourceFile, fallbackSourceFile: 'Project synthesis', sourceLocation: citation.sourceLocation, fallbackSourceLocation: 'Project-level synthesis', excerpt: citation.excerpt || synthesis.finalJudgmentSummary, period: citation.period, currency: citation.currency, confidence: citation.confidence ?? undefined, status: citation.status || 'Synthesized', provenance: 'Project synthesis', documents }))} className="w-full rounded-md border border-border bg-background p-3 text-left text-sm text-foreground transition-colors hover:border-primary/40 hover:bg-muted/30">
-                                                    <span className="font-medium">{citation.sourceFile}</span>{citation.sourceLocation ? <span className="ml-2 text-xs text-muted-foreground">{citation.sourceLocation}</span> : null}<span className="ml-2 text-xs text-primary">View evidence</span>
-                                                </button>
-                                            })}
-                                        </div>
-                                    </div>
-                                ) : null}
+                                {derivedCitations.length > 0 ? (
+                                     <div className="rounded-lg border border-border bg-muted/20 p-4">
+                                         <div className="flex items-center gap-2"><FileText className="h-4 w-4 text-muted-foreground" /><p className="text-sm font-semibold text-foreground">Synthesis citations</p></div>
+                                         <div className="mt-3 h-64 space-y-2 overflow-y-auto pr-1">
+                                             {derivedCitations.map((citation, index) => {
+                                                 return <button key={`${citation.sourceFile}-${citation.sourceLocation}-${index}`} type="button" onClick={() => onOpenEvidence?.(buildDocumentLinkedEvidence({ title: 'Project synthesis citation', sourceFile: citation.sourceFile, fallbackSourceFile: 'Project synthesis', sourceLocation: citation.sourceLocation, fallbackSourceLocation: 'Project-level synthesis', excerpt: citation.excerpt || synthesis?.finalJudgmentSummary || '', period: citation.period, currency: citation.currency, confidence: citation.confidence ?? undefined, status: citation.status || 'Synthesized', provenance: 'Project synthesis', documents }))} className="w-full rounded-md border border-border bg-background p-3 text-left text-sm text-foreground transition-colors hover:border-primary/40 hover:bg-muted/30">
+                                                     <span className="font-medium">{citation.sourceFile}</span>{citation.sourceLocation ? <span className="ml-2 text-xs text-muted-foreground">{citation.sourceLocation}</span> : null}<span className="ml-2 text-xs text-primary">View evidence</span>
+                                                 </button>
+                                             })}
+                                         </div>
+                                     </div>
+                                 ) : null}
                             </div>
 
                             <MaterialImpactView synthesis={synthesis} onOpenEvidence={onOpenEvidence} documents={documents} />
