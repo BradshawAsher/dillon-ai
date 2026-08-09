@@ -21,7 +21,7 @@ export function useDealWorkspaceState() {
         }
     })
     const [isBatchDrawerOpen, setIsBatchDrawerOpen] = useState(false)
-    const [isFaqSidebarOpen, setIsFaqSidebarOpen] = useState(true)
+    const [isFaqSidebarOpen, setIsFaqSidebarOpen] = useState(false)
     const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false)
     const [isProjectsPanelOpen, setIsProjectsPanelOpen] = useState(false)
     const [isShortcutsOpen, setIsShortcutsOpen] = useState(false)

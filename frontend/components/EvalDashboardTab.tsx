@@ -8,6 +8,7 @@ import {
     Clock,
     Cpu,
     DollarSign,
+    ExternalLink,
     FileCheck,
     FileText,
     FolderKanban,
@@ -38,9 +39,28 @@ type EvalDashboardTabProps = {
         report_json: any
     }>
     onTriggerEvalRuns?: () => void
+    onSelectProject?: (projectKey: string, targetTab?: string) => void
+    onSelectDoc?: (docFileName: string, projectKey?: string) => void
 }
 
-export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: EvalDashboardTabProps) {
+const mapBusinessToProjectKey = (businessName: string, docItem?: any): string => {
+    if (docItem?.projectId) return docItem.projectId
+    if (docItem?.projectKey) return docItem.projectKey
+    const norm = (businessName || '').toLowerCase()
+    if (norm.includes('werkheiser')) return 'werkheiser-commercial-cleaning'
+    if (norm.includes('iron tree') || norm.includes('irontree')) return 'irontree-tree-service'
+    if (norm.includes('turnkey')) return 'turnkey-logistics-group'
+    if (norm.includes('conversionxl') || norm.includes('cxl')) return 'cxl-digital-agency'
+    if (norm.includes('medical spa') || norm.includes('medspa')) return 'medspa-wellness-clinic'
+    return 'werkheiser-commercial-cleaning'
+}
+
+export default function EvalDashboardTab({
+    evalRuns = [],
+    onTriggerEvalRuns,
+    onSelectProject,
+    onSelectDoc,
+}: EvalDashboardTabProps) {
     const [runningEval, setRunningEval] = useState(false)
     const [latestRunMessage, setBatchMessage] = useState('')
     const [searchQuery, setSearchQuery] = useState('')
@@ -1217,6 +1237,23 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
                                                 <Badge variant="outline" className="text-[10px] font-mono">
                                                     {docs.length} Doc{docs.length > 1 ? 's' : ''}
                                                 </Badge>
+                                                <Button
+                                                    type="button"
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className="gap-1.5 border-primary/50 bg-primary/10 text-primary hover:bg-primary hover:text-white font-extrabold text-xs px-3.5 py-1.5 shadow-2xs hover:shadow-sm transition-all cursor-pointer rounded-lg ml-2"
+                                                    onClick={() => {
+                                                        const docProjectId = docs[0]?.projectId || docs[0]?.projectKey
+                                                        const targetKey = docProjectId || mapBusinessToProjectKey(businessName, docs[0])
+                                                        if (onSelectProject) {
+                                                            onSelectProject(targetKey, 'synthesis')
+                                                        }
+                                                    }}
+                                                    title={`View full deal memo and workspace for ${businessName}`}
+                                                >
+                                                    <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+                                                    <span>View Project Workspace</span>
+                                                </Button>
                                             </div>
                                             <p className="text-xs text-muted-foreground">
                                                 Execution time: ~{totalDurationSec}s total across workflow passes
@@ -1325,6 +1362,42 @@ export default function EvalDashboardTab({ evalRuns = [], onTriggerEvalRuns }: E
                                                                 ${docCost.toFixed(4)}
                                                             </span>
                                                         </div>
+                                                    </div>
+
+                                                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/40">
+                                                        <Button
+                                                            type="button"
+                                                            size="sm"
+                                                            variant="ghost"
+                                                            className="h-7 text-[11px] font-semibold text-muted-foreground hover:bg-muted hover:text-foreground gap-1 px-2 cursor-pointer"
+                                                            onClick={() => {
+                                                                const targetKey = mapBusinessToProjectKey(businessName)
+                                                                if (onSelectProject) {
+                                                                    onSelectProject(targetKey, 'diligence')
+                                                                }
+                                                            }}
+                                                            title={`Switch active workspace to ${businessName}`}
+                                                        >
+                                                            <Building2 className="h-3 w-3 shrink-0" />
+                                                            <span>View Project</span>
+                                                        </Button>
+
+                                                        <Button
+                                                            type="button"
+                                                            size="sm"
+                                                            variant="outline"
+                                                            className="h-7 text-[11px] font-bold border-primary/40 text-primary hover:bg-primary/10 gap-1 px-2 cursor-pointer"
+                                                            onClick={() => {
+                                                                const targetKey = mapBusinessToProjectKey(businessName)
+                                                                if (onSelectDoc) {
+                                                                    onSelectDoc(doc.fileName, targetKey)
+                                                                }
+                                                            }}
+                                                            title={`View extracted facts and citations for ${doc.fileName}`}
+                                                        >
+                                                            <FileText className="h-3 w-3 shrink-0" />
+                                                            <span>View Doc Results</span>
+                                                        </Button>
                                                     </div>
                                                 </div>
                                             )
