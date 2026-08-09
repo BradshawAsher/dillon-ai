@@ -55,6 +55,8 @@ const mapBusinessToProjectKey = (businessName: string, docItem?: any): string =>
     if (norm.includes('conversionxl') || norm.includes('cxl') || norm.includes('business 4')) return 'cxl-digital-agency'
     if (norm.includes('medical spa') || norm.includes('medspa') || norm.includes('business 5')) return 'medspa-wellness-clinic'
     if (norm.includes('widgetco') || norm.includes('forensic')) return 'widgetco-forensic-suite'
+    if (norm.includes('testing 1') || norm.includes('happy path')) return 'mergeworks-testing-1'
+    if (norm.includes('testing suite') || norm.includes('docs 2-4')) return 'mergeworks-testing-suite'
     if (norm.includes('mergeworks') || norm.includes('testing')) return 'mergeworks-testing-suite'
 
     return norm.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'werkheiser-commercial-cleaning'
