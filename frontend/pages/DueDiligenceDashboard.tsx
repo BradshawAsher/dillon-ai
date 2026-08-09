@@ -645,6 +645,27 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
     const [selectedBatchDocIndex, setSelectedBatchDocIndex] = useState<number>(0)
     const [userHasNavigatedBatchDocs, setUserHasNavigatedBatchDocs] = useState(false)
+    const [pendingTargetDocFileName, setPendingTargetDocFileName] = useState<string | null>(null)
+
+    // Sync selectedBatchDocIndex when a target document is requested via handleEvalDocSelect
+    useEffect(() => {
+        if (!pendingTargetDocFileName || latestBatchRows.length === 0) return
+
+        const normTarget = pendingTargetDocFileName.toLowerCase().trim()
+        const idx = latestBatchRows.findIndex((row) => {
+            const fn = (row.fileName || (row as any).originalFilename || '').toLowerCase().trim()
+            return fn === normTarget || fn.includes(normTarget) || normTarget.includes(fn)
+        })
+
+        if (idx >= 0) {
+            setSelectedBatchDocIndex(idx)
+            setUserHasNavigatedBatchDocs(true)
+        } else {
+            setSelectedBatchDocIndex(0)
+        }
+
+        setPendingTargetDocFileName(null)
+    }, [pendingTargetDocFileName, latestBatchRows])
 
     // Auto-select the latest completed document (or active processing document) if the user hasn't manually overridden
     useEffect(() => {
@@ -840,21 +861,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
     const handleEvalDocSelect = (docFileName: string, targetIdentifier?: string) => {
         handleEvalProjectSelect(targetIdentifier || docFileName || 'werkheiser-commercial-cleaning', 'diligence')
-
-        const normDocName = (docFileName || '').toLowerCase().trim()
-        const matchingIndex = activeProjectDocuments.findIndex((row: any) => {
-            const fn = (row.fileName || row.originalFilename || '').toLowerCase().trim()
-            return fn === normDocName || fn.includes(normDocName) || normDocName.includes(fn)
-        })
-
-        if (matchingIndex >= 0) {
-            setSelectedBatchDocIndex(matchingIndex)
-            setUserHasNavigatedBatchDocs(true)
-        } else {
-            setSelectedBatchDocIndex(0)
-        }
-
-        // Do not auto-slide open evidence drawer
+        setPendingTargetDocFileName(docFileName)
         setActiveEvidence(null)
 
         window.setTimeout(() => {
