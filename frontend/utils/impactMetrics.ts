@@ -26,7 +26,11 @@ function parseTime(value: string) {
 }
 
 export function computeImpactMetrics(rows: SubmissionHistoryItem[]): ImpactMetrics {
-    const completed = rows.filter((row) => normalizeSubmissionStatus(row.status) === 'completed')
+    const completed = rows.filter((row) => {
+        const st = normalizeSubmissionStatus(row.status)
+        return ['completed', 'approved', 'success', 'synthesized', 'done', 'processed'].includes(st) ||
+            (row.extractedJson && row.extractedJson.trim().length > 0 && row.extractedJson.trim() !== 'null')
+    })
     const completedDocuments = completed.length
 
     let agentMs = 0

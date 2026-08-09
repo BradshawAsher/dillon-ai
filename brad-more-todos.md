@@ -189,6 +189,8 @@ The Right Way to Fallback: Instead of stacking parsers serially, use an If/Else 
 
 - Why the mergeworks testing projects in evals tab not finished synthesis in UI?
 
+- View project workspace button and view doc results in evals and harness tab doesn't work right?
+
 - Also some projects that failed or didn't reached synthesis in the projects tab don't display this right, can we fix this?
 
 - Change your fixed window + scrolling to more of fixed window + 20 per page, or 50 per page, or view all, like big websites like AWS when you have to look at IAM and admin permissinos stuff?

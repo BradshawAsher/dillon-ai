@@ -83,6 +83,8 @@ import { fallbackDiligenceFindings } from '../utils/diligence'
 import {
     createProjectSummaries,
     getProjectKey,
+    isRowMatchingProject,
+    isSystemTestProbeFile,
 } from '../utils/projectWorkspace'
 import { isActiveSubmissionStatus, type SubmissionHistoryItem } from '../utils/submissionHistory'
 import { isOwnedByUser, claimProject } from '../utils/projectOwnership'
@@ -449,8 +451,21 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     }, [activeProjectId, askingPrice, dealModelDraftByProject, dealModelsData, isExampleMode])
 
     const activeProjectDocuments = useMemo(() => {
-        return submissionHistory.filter((row) => getProjectKey(row) === activeProjectId)
-    }, [activeProjectId, submissionHistory])
+        const matching = submissionHistory.filter((row) => isRowMatchingProject(row, activeProjectId, projectSummaries))
+        const sorted = [...matching].sort((a, b) => {
+            const timeA = new Date(a.processedAt || a.createdAt || a.receivedAt || a.updatedAt || 0).getTime()
+            const timeB = new Date(b.processedAt || b.createdAt || b.receivedAt || b.updatedAt || 0).getTime()
+            return timeB - timeA
+        })
+        const uniqueDocs = new Map<string, SubmissionHistoryItem>()
+        sorted.forEach((row) => {
+            const fileKey = (row.fileName || row.requestID || String(row.id)).trim().toLowerCase()
+            if (!uniqueDocs.has(fileKey)) {
+                uniqueDocs.set(fileKey, row)
+            }
+        })
+        return [...uniqueDocs.values()]
+    }, [activeProjectId, submissionHistory, projectSummaries])
 
     const hydratedDealModel = useMemo(
         () => hydrateModelFactsFromDocuments(activeDealModel, activeProjectDocuments),
@@ -602,12 +617,48 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         [activeProjectSynthesis?.projectStatus, isCurrentProjectAwaitingSynthesis]
     )
 
+    const latestBatchRows = useMemo(() => {
+        const batchId = activeSubmissionBatch?.id
+        if (batchId) {
+            const batchRows = submissionHistory.filter((row) => row.submissionBatchId === batchId && !isSystemTestProbeFile(row.fileName))
+            if (batchRows.length > 0) {
+                const uniqueBatch = new Map<string, SubmissionHistoryItem>()
+                batchRows.forEach((row) => {
+                    const key = (row.fileName || row.requestID || String(row.id)).trim().toLowerCase()
+                    if (!uniqueBatch.has(key)) uniqueBatch.set(key, row)
+                })
+                return [...uniqueBatch.values()].sort((a, b) => new Date(a.createdAt || a.receivedAt || a.updatedAt || 0).getTime() - new Date(b.createdAt || b.receivedAt || b.updatedAt || 0).getTime())
+            }
+        }
+
+        const projectRows = submissionHistory.filter((row) => !isSystemTestProbeFile(row.fileName) && isRowMatchingProject(row, activeProjectId, projectSummaries))
+        if (projectRows.length === 0) return []
+
+        const sorted = [...projectRows].sort((a, b) => {
+            const timeA = new Date(a.processedAt || a.createdAt || a.receivedAt || a.updatedAt || 0).getTime()
+            const timeB = new Date(b.processedAt || b.createdAt || b.receivedAt || b.updatedAt || 0).getTime()
+            return timeB - timeA
+        })
+
+        const uniqueDocs = new Map<string, SubmissionHistoryItem>()
+        sorted.forEach((row) => {
+            const fileKey = (row.fileName || row.requestID || String(row.id)).trim().toLowerCase()
+            if (!uniqueDocs.has(fileKey)) {
+                uniqueDocs.set(fileKey, row)
+            }
+        })
+
+        const result = [...uniqueDocs.values()]
+        return result.sort((a, b) => new Date(a.createdAt || a.receivedAt || a.updatedAt || 0).getTime() - new Date(b.createdAt || b.receivedAt || b.updatedAt || 0).getTime())
+    }, [activeProjectId, activeSubmissionBatch?.id, submissionHistory, projectSummaries])
+
     const activeBatchRows = useMemo(() => {
         if (activeSubmissionBatch?.id) {
-            return submissionHistory.filter((row) => row.submissionBatchId === activeSubmissionBatch.id)
+            const batchRows = submissionHistory.filter((row) => row.submissionBatchId === activeSubmissionBatch.id && !isSystemTestProbeFile(row.fileName))
+            if (batchRows.length > 0) return batchRows
         }
-        return submissionHistory.filter((row) => (getProjectKey(row) === activeProjectId) || (row.projectId === activeProjectId))
-    }, [activeProjectId, activeSubmissionBatch, submissionHistory])
+        return latestBatchRows
+    }, [activeSubmissionBatch?.id, latestBatchRows, submissionHistory])
 
     const batchProgress = useMemo(() => deriveBatchProgress(activeBatchRows), [activeBatchRows])
     const activeBatchExpectedCount = activeSubmissionBatch?.expectedDocumentCount || batchProgress.expectedCount
@@ -630,18 +681,6 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
     const batchElapsedSeconds = activeSubmissionBatch?.startedAt ? Math.max(0, Math.floor(((activeSubmissionBatch.endedAt || batchNowTimestamp) - activeSubmissionBatch.startedAt) / 1000)) : 0
     const activeBatchImpact = useMemo(() => computeImpactMetrics(activeBatchRows), [activeBatchRows])
-
-    const latestBatchRows = useMemo(() => {
-        const batchId = activeSubmissionBatch?.id
-        if (batchId) {
-            const batchRows = submissionHistory.filter((row) => row.submissionBatchId === batchId)
-            if (batchRows.length > 0) {
-                return batchRows.sort((a, b) => new Date(a.createdAt || a.receivedAt || a.updatedAt || 0).getTime() - new Date(b.createdAt || b.receivedAt || b.updatedAt || 0).getTime())
-            }
-        }
-        const rows = submissionHistory.filter((row) => getProjectKey(row) === activeProjectId || row.projectId === activeProjectId)
-        return rows.sort((a, b) => new Date(a.createdAt || a.receivedAt || a.updatedAt || 0).getTime() - new Date(b.createdAt || b.receivedAt || b.updatedAt || 0).getTime())
-    }, [activeProjectId, activeSubmissionBatch?.id, submissionHistory])
 
     const [selectedBatchDocIndex, setSelectedBatchDocIndex] = useState<number>(0)
     const [userHasNavigatedBatchDocs, setUserHasNavigatedBatchDocs] = useState(false)
@@ -1586,7 +1625,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                                 error={projectSynthesisError}
                                 model={hydratedDealModel}
                                 impact={activeProjectImpact}
-                                documents={submissionHistory.filter((row) => getProjectKey(row) === activeProjectId)}
+                                documents={submissionHistory.filter((row) => isRowMatchingProject(row, activeProjectId, projectSummaries))}
                                 onOpenEvidence={setActiveEvidence}
                                 onExcludeDocument={handleExcludeDocument}
                                 onIncludeDocument={handleIncludeDocument}
