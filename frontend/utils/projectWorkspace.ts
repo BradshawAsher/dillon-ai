@@ -195,11 +195,17 @@ export function isRowMatchingProject(row: SubmissionHistoryItem, targetProjectId
 
     const explicitPid = (row.projectId || '').toLowerCase().trim()
     const pk = getProjectKey(row).toLowerCase().trim()
-    const rowDeal = normalizeText(row.dealName || '').toLowerCase().trim()
-    const rowCompany = normalizeText(row.companyName || '').toLowerCase().trim()
+    const rowBatch = (row.submissionBatchId || '').toLowerCase().trim()
 
-    if (explicitPid === rawTarget || pk === rawTarget) return true
+    // 1. Direct exact match on projectId, projectKey, or submissionBatchId
+    if (explicitPid === rawTarget || pk === rawTarget || (rowBatch && rowBatch === rawTarget)) return true
 
+    // 2. If targetProjectId is a specific instance ID (e.g. "project-20260807-2168c446"), match ONLY rows sharing that explicit PID/PK
+    if (rawTarget.startsWith('project-') || rawTarget.startsWith('batch-') || rawTarget.startsWith('sub-')) {
+        return explicitPid === rawTarget || pk === rawTarget
+    }
+
+    // 3. For general canonical key matching (e.g. "werkheiser-commercial-cleaning"):
     const project = projectSummaries.find((p: any) => {
         const pKey = (p.projectKey || '').toLowerCase().trim()
         const pId = (p.projectId || '').toLowerCase().trim()
@@ -209,23 +215,14 @@ export function isRowMatchingProject(row: SubmissionHistoryItem, targetProjectId
     if (project) {
         const pKey = (project.projectKey || '').toLowerCase().trim()
         const pId = (project.projectId || '').toLowerCase().trim()
-        const pName = normalizeText(project.projectName || '').toLowerCase().trim()
-        const cName = normalizeText(project.companyName || '').toLowerCase().trim()
-
         if (explicitPid && (explicitPid === pKey || explicitPid === pId)) return true
         if (pk && (pk === pKey || pk === pId)) return true
-
-        if (pName && (rowDeal.includes(pName) || pName.includes(rowDeal))) return true
-        if (cName && (rowCompany.includes(cName) || cName.includes(rowCompany))) return true
     }
 
-    if (rawTarget.includes('turnkey')) return rowDeal.includes('turnkey') || rowCompany.includes('turnkey')
-    if (rawTarget.includes('werkheiser')) return rowDeal.includes('werkheiser') || rowCompany.includes('werkheiser')
-    if (rawTarget.includes('irontree') || rawTarget.includes('iron tree')) return rowDeal.includes('iron') || rowCompany.includes('iron')
-    if (rawTarget.includes('cxl') || rawTarget.includes('conversionxl')) return rowDeal.includes('conversion') || rowCompany.includes('conversion')
-    if (rawTarget.includes('medspa') || rawTarget.includes('medical spa')) return rowDeal.includes('spa') || rowCompany.includes('spa')
-    if (rawTarget.includes('widgetco') || rawTarget.includes('forensic')) return rowDeal.includes('widgetco') || rowCompany.includes('widgetco')
-    if (rawTarget.includes('mergeworks') || rawTarget.includes('testing')) return rowDeal.includes('testing') || rowCompany.includes('testing')
+    if (rawTarget.includes('turnkey') && (explicitPid.includes('turnkey') || pk.includes('turnkey'))) return true
+    if (rawTarget.includes('werkheiser') && (explicitPid.includes('werkheiser') || pk.includes('werkheiser'))) return true
+    if (rawTarget.includes('irontree') && (explicitPid.includes('iron') || pk.includes('iron'))) return true
+    if (rawTarget.includes('cxl') && (explicitPid.includes('cxl') || pk.includes('conversion'))) return true
 
     return false
 }

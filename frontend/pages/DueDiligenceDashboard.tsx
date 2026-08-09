@@ -323,18 +323,9 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     const dealModelSaveTimeout = useRef<number | null>(null)
     const [hasRestoredLatestProject, setHasRestoredLatestProject] = useState(false)
 
-    // Automatically select the latest run/project if no explicit project is currently selected
+    // Automatically default to the most recently submitted project on initial page load / refresh
     useEffect(() => {
         if (hasRestoredLatestProject || projectSummaries.length === 0) return
-        const matchingProject = projectSummaries.find((p: any) => p.projectKey === selectedProjectKey || p.projectId === selectedProjectKey)
-        if (selectedProjectKey !== 'new' && matchingProject) {
-            setDealName(matchingProject.projectName)
-            setProjectId(matchingProject.projectId || matchingProject.projectKey)
-            setProjectStage(matchingProject.stage || 'post-loi')
-            setHasRestoredLatestProject(true)
-            return
-        }
-
         const newestProject = projectSummaries[0]
         if (newestProject) {
             setSelectedProjectKey(newestProject.projectKey)
@@ -343,7 +334,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             setProjectStage(newestProject.stage || 'post-loi')
         }
         setHasRestoredLatestProject(true)
-    }, [hasRestoredLatestProject, projectSummaries, selectedProjectKey, setDealName, setProjectId, setProjectStage, setSelectedProjectKey])
+    }, [hasRestoredLatestProject, projectSummaries, setDealName, setProjectId, setProjectStage, setSelectedProjectKey])
 
     // Keep project fields in sync whenever selectedProjectKey changes
     useEffect(() => {

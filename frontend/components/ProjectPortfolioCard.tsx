@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import { Archive, ArchiveRestore, BriefcaseBusiness, Clock3, DollarSign, Download, FileStack, Flag, FolderKanban, Plus, RefreshCw, Search, ShieldAlert } from 'lucide-react'
+import { Archive, ArchiveRestore, BriefcaseBusiness, CheckCircle, Clock3, DollarSign, Download, FileStack, Flag, FolderKanban, Plus, RefreshCw, Search, ShieldAlert, TriangleAlert } from 'lucide-react'
 import ExpandableText from './ExpandableText'
 
 import { Badge } from '../lib/shadcn/badge'
@@ -219,6 +219,30 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                                     : project.documents
                                 const hiddenDuplicateCount = project.documents.length - visibleDocuments.length
                                 const synthesis = syntheses.find((candidate) => candidate.projectId === (project.projectId || project.projectKey))
+                                const hasFailedOrIncompleteDocs = project.documents.some((d) => ['failed', 'error', 'rejected'].includes(d.status.trim().toLowerCase())) || project.documents.some((d) => ['processing', 'queued', 'pending'].includes(d.status.trim().toLowerCase()))
+                                const allDocsCompleted = project.documents.length > 0 && project.documents.every((d) => d.status.trim().toLowerCase() === 'completed')
+                                const hasLiveSynthesis = synthesis !== undefined && (synthesis.projectStatus === 'synthesized' || synthesis.finalJudgmentSummary.trim().length > 0)
+
+                                const cardHealthBorder = hasFailedOrIncompleteDocs
+                                    ? 'border-destructive/80 bg-destructive/5 dark:bg-destructive/10 ring-1 ring-destructive/30'
+                                    : (allDocsCompleted && !hasLiveSynthesis)
+                                        ? 'border-amber-500/80 bg-amber-500/5 dark:bg-amber-950/20 ring-1 ring-amber-500/30'
+                                        : 'border-emerald-500/80 bg-emerald-500/5 dark:bg-emerald-950/20 ring-1 ring-emerald-500/30'
+
+                                const healthBadge = hasFailedOrIncompleteDocs ? (
+                                    <Badge variant="destructive" className="gap-1 shadow-xs">
+                                        <ShieldAlert className="h-3 w-3" /> Batch Incomplete / Errors
+                                    </Badge>
+                                ) : (allDocsCompleted && !hasLiveSynthesis) ? (
+                                    <Badge variant="warning" className="gap-1 bg-amber-500/20 text-amber-800 dark:text-amber-200 border-amber-500/50 shadow-xs">
+                                        <Clock3 className="h-3 w-3" /> Docs Processed · Synthesis Pending
+                                    </Badge>
+                                ) : (
+                                    <Badge variant="success" className="gap-1 bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 border-emerald-500/50 shadow-xs">
+                                        <CheckCircle className="h-3 w-3" /> Fully Synthesized
+                                    </Badge>
+                                )
+
                                 const effectiveStatusLabel = synthesis ? 'Synthesized' : project.statusLabel
                                 const getVerdictVariant = (rec?: string, light?: string): 'success' | 'warning' | 'destructive' | 'secondary' | 'outline' => {
                                     const normLight = (light || '').trim().toUpperCase()
@@ -237,16 +261,16 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                                     <div
                                         key={project.projectKey}
                                         className={cn(
-                                            'rounded-xl border bg-background p-4 transition-colors',
-                                            project.projectKey === activeProjectKey ? 'border-primary ring-1 ring-primary/20' : 'border-border',
-                                            project.isFailedAbandoned ? 'bg-destructive/5 border-destructive/30' : ''
+                                            'rounded-xl border bg-background p-4 transition-all shadow-xs hover:shadow-md',
+                                            cardHealthBorder,
+                                            project.projectKey === activeProjectKey ? 'ring-2 ring-primary' : ''
                                         )}
                                     >
                                         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                                             <div className="space-y-1">
                                                 <div className="flex flex-wrap items-center gap-2">
                                                     <h3 className="text-lg font-semibold text-foreground">{project.projectName}</h3>
-                                                    <Badge variant={getProjectStatusVariant(effectiveStatusLabel)}>{effectiveStatusLabel}</Badge>
+                                                    {healthBadge}
                                                     {synthesis?.finalRecommendation ? (
                                                         <Badge variant={getVerdictVariant(synthesis.finalRecommendation, synthesis.finalTrafficLight)}>
                                                             Verdict: {synthesis.finalRecommendation}
