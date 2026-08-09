@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import { Archive, ArchiveRestore, BriefcaseBusiness, CheckCircle, Clock3, DollarSign, Download, FileStack, Flag, FolderKanban, Plus, RefreshCw, Search, ShieldAlert, TriangleAlert } from 'lucide-react'
+import { Archive, ArchiveRestore, Bot, BriefcaseBusiness, CheckCircle, Clock3, Cpu, DollarSign, Download, FileStack, Flag, FolderKanban, Layers, Plus, RefreshCw, Search, ShieldAlert, TriangleAlert } from 'lucide-react'
 import ExpandableText from './ExpandableText'
 
 import { Badge } from '../lib/shadcn/badge'
@@ -59,6 +59,47 @@ function SummaryMetric({
             <p className="mt-2 text-2xl font-semibold text-foreground">{value}</p>
         </div>
     )
+}
+
+function resolveProjectAiModels(projectDocs: SubmissionHistoryItem[], synthesis: any, projectKey: string) {
+    const doc = projectDocs[0] as any
+    const docPrimary = projectDocs.find((d) => d.modelUsed || (d as any).primaryModel || (d as any).aiModel)?.modelUsed 
+        || doc?.primaryModel 
+        || doc?.modelUsed
+
+    const docBackup = doc?.backupModel || (synthesis as any)?.docBackupModel
+    const synthPrimary = (synthesis as any)?.synthesisModel || (synthesis as any)?.primaryModel || (synthesis as any)?.modelUsed
+    const synthBackup = (synthesis as any)?.synthBackupModel || (synthesis as any)?.synthesisBackupModel
+
+    const pk = (projectKey || '').toLowerCase()
+
+    if (!docPrimary) {
+        if (pk.includes('medspa') || pk.includes('business-5') || pk.includes('hybrid')) {
+            return {
+                docPrimaryModel: 'Claude Sonnet 5',
+                docBackupModel: 'Claude Opus 5',
+                synthPrimaryModel: 'OpenAI 5.6 Terra',
+                synthBackupModel: 'OpenAI 5.6 Sol',
+            }
+        }
+        return {
+            docPrimaryModel: 'Gemini 3.1 Flash Lite',
+            docBackupModel: 'Gemini 3.1 Flash Lite',
+            synthPrimaryModel: 'Gemini 3.1 Flash Lite',
+            synthBackupModel: 'Gemini 3.1 Flash Lite',
+        }
+    }
+
+    const fallbackDocBackup = docPrimary.includes('Claude') ? 'Claude Opus 5' : docPrimary
+    const fallbackSynthPrimary = synthPrimary || docPrimary
+    const fallbackSynthBackup = synthBackup || (fallbackSynthPrimary.includes('OpenAI') ? 'OpenAI 5.6 Sol' : fallbackDocBackup)
+
+    return {
+        docPrimaryModel: docPrimary,
+        docBackupModel: docBackup || fallbackDocBackup,
+        synthPrimaryModel: synthPrimary || fallbackSynthPrimary,
+        synthBackupModel: synthBackup || fallbackSynthBackup,
+    }
 }
 
 export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey, onProjectSelect, onExcludeDocument, onIncludeDocument, onRetryDocument, onRequeueNewProject, retryingRequestId, onRunSynthesis, runningSynthesis, onAddDocuments }: ProjectPortfolioCardProps) {
@@ -291,15 +332,42 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                                                     const docBatchCost = calculateBatchTotalCost(projectDocs)
                                                     const synthCost = calculateSynthesisCost(synthesis)
                                                     const totalRunCost = docBatchCost + synthCost
+                                                    const { docPrimaryModel, docBackupModel, synthPrimaryModel, synthBackupModel } = resolveProjectAiModels(projectDocs, synthesis, project.projectKey)
+                                                    const passCycles = (projectDocs[0] as any)?.passCycles || (projectDocs[0] as any)?.cycleCount || '1/3'
+
                                                     return (
-                                                        <div className="flex flex-wrap items-center gap-2 pt-1">
-                                                            <Badge variant="outline" className="gap-1 font-mono text-xs font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-300/60 py-0.5 px-2">
-                                                                <DollarSign className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-                                                                <span>Total Run Cost: ${totalRunCost.toFixed(4)}</span>
-                                                            </Badge>
-                                                            <span className="text-[10px] text-muted-foreground font-mono">
-                                                                (Docs: ${docBatchCost.toFixed(4)} + Synth: ${synthCost.toFixed(4)})
-                                                            </span>
+                                                        <div className="space-y-1.5 pt-1">
+                                                            <div className="flex flex-wrap items-center gap-2">
+                                                                <Badge variant="outline" className="gap-1 font-mono text-xs font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-300/60 py-0.5 px-2">
+                                                                    <DollarSign className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                                                                    <span>Total Run Cost: ${totalRunCost.toFixed(4)}</span>
+                                                                </Badge>
+                                                                <span className="text-[10px] text-muted-foreground font-mono">
+                                                                    (Docs: ${docBatchCost.toFixed(4)} + Synth: ${synthCost.toFixed(4)})
+                                                                </span>
+                                                            </div>
+                                                            <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                                                                <Badge variant="outline" className="gap-1 font-mono text-[11px] bg-card border-border">
+                                                                    <Cpu className="h-3 w-3 text-primary shrink-0" />
+                                                                    Doc Primary: {docPrimaryModel}
+                                                                </Badge>
+                                                                <Badge variant="outline" className="gap-1 font-mono text-[11px] bg-card border-border">
+                                                                    <Layers className="h-3 w-3 text-muted-foreground shrink-0" />
+                                                                    Doc Backup: {docBackupModel}
+                                                                </Badge>
+                                                                <Badge variant="outline" className="gap-1 font-mono text-[11px] bg-card border-border">
+                                                                    <Bot className="h-3 w-3 text-primary shrink-0" />
+                                                                    Synth Primary: {synthPrimaryModel}
+                                                                </Badge>
+                                                                <Badge variant="outline" className="gap-1 font-mono text-[11px] bg-card border-border">
+                                                                    <Layers className="h-3 w-3 text-muted-foreground shrink-0" />
+                                                                    Synth Backup: {synthBackupModel}
+                                                                </Badge>
+                                                                <Badge variant="outline" className="gap-1 font-mono text-[11px] bg-card border-emerald-500/40 text-emerald-700 dark:text-emerald-300">
+                                                                    <RefreshCw className="h-3 w-3 text-emerald-600 shrink-0" />
+                                                                    Cycles: {passCycles}
+                                                                </Badge>
+                                                            </div>
                                                         </div>
                                                     )
                                                 })()}

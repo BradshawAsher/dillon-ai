@@ -1,4 +1,5 @@
-import { AlertTriangle, CheckCircle2, Clock3, RefreshCw, ShieldCheck } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import { AlertTriangle, Bot, CheckCircle2, Clock3, Cpu, Layers, RefreshCw, ShieldCheck, Trash2 } from 'lucide-react'
 
 import type { WorkflowErrorItem } from '../../backend/diligence/getWorkflowErrors'
 import { Badge } from '../lib/shadcn/badge'
@@ -83,9 +84,39 @@ function guidanceFor(row: WorkflowErrorItem) {
 }
 
 export default function WorkflowErrorLogCard({ rows, loading, error, onRefresh }: Props) {
-    const sortedRows = [...rows].sort((a, b) => parseTime(b.occurredAt) - parseTime(a.occurredAt))
-    const last24hCount = rows.filter((row) => inLastHours(row.occurredAt, 24)).length
-    const workflowSummaries = groupByWorkflow(rows)
+    const [clearedErrorIds, setClearedErrorIds] = useState<Set<string>>(() => {
+        if (typeof window === 'undefined') return new Set()
+        try {
+            const stored = window.localStorage.getItem('mergeworks.cleared_workflow_error_ids')
+            return stored ? new Set(JSON.parse(stored)) : new Set()
+        } catch {
+            return new Set()
+        }
+    })
+
+    const activeRows = useMemo(() => {
+        return rows.filter((r) => {
+            const key = String(r.id || r.executionId || `${r.workflowId}-${r.occurredAt}`)
+            return !clearedErrorIds.has(key)
+        })
+    }, [rows, clearedErrorIds])
+
+    const handleClearAllAlerts = () => {
+        if (!window.confirm('Are you sure you want to permanently clear all old error alerts from the audit trail view?')) return
+        const allKeys = new Set(clearedErrorIds)
+        rows.forEach((r) => {
+            const key = String(r.id || r.executionId || `${r.workflowId}-${r.occurredAt}`)
+            allKeys.add(key)
+        })
+        setClearedErrorIds(allKeys)
+        try {
+            window.localStorage.setItem('mergeworks.cleared_workflow_error_ids', JSON.stringify([...allKeys]))
+        } catch {}
+    }
+
+    const sortedRows = [...activeRows].sort((a, b) => parseTime(b.occurredAt) - parseTime(a.occurredAt))
+    const last24hCount = activeRows.filter((row) => inLastHours(row.occurredAt, 24)).length
+    const workflowSummaries = groupByWorkflow(activeRows)
     const repeatedWorkflows = workflowSummaries.filter((item) => item.count >= 2)
     const latest = sortedRows[0]
 
@@ -96,16 +127,24 @@ export default function WorkflowErrorLogCard({ rows, loading, error, onRefresh }
                     <div>
                         <CardTitle className="flex items-center gap-2 text-xl">
                             <AlertTriangle className="h-5 w-5 text-warning" />
-                            Workflow reliability
+                            Workflow reliability &amp; AI Processing Alerts
                         </CardTitle>
                         <CardDescription className="mt-1">
                             Uncaught production failures recorded after automated retries and recovery paths are exhausted.
                         </CardDescription>
                     </div>
-                    <Button type="button" size="sm" variant="outline" disabled={loading} onClick={onRefresh}>
-                        <RefreshCw className={loading ? 'animate-spin' : ''} />
-                        Refresh errors
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        {activeRows.length > 0 && (
+                            <Button type="button" size="sm" variant="destructive" onClick={handleClearAllAlerts} title="Permanently delete all old alerts from audit trail view">
+                                <Trash2 className="h-4 w-4 mr-1" />
+                                Delete all alerts
+                            </Button>
+                        )}
+                        <Button type="button" size="sm" variant="outline" disabled={loading} onClick={onRefresh}>
+                            <RefreshCw className={loading ? 'animate-spin' : ''} />
+                            Refresh errors
+                        </Button>
+                    </div>
                 </div>
             </CardHeader>
 
@@ -124,7 +163,7 @@ export default function WorkflowErrorLogCard({ rows, loading, error, onRefresh }
                     <div className="grid gap-3 md:grid-cols-4">
                         <div className="rounded-lg border border-border bg-muted/20 p-3">
                             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Total uncaught</p>
-                            <p className="mt-1 text-2xl font-semibold text-foreground">{rows.length}</p>
+                            <p className="mt-1 text-2xl font-semibold text-foreground">{activeRows.length}</p>
                         </div>
                         <div className="rounded-lg border border-border bg-muted/20 p-3">
                             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Last 24h</p>
@@ -141,7 +180,7 @@ export default function WorkflowErrorLogCard({ rows, loading, error, onRefresh }
                     </div>
                 ) : null}
 
-                {!error && rows.length === 0 ? (
+                {!error && activeRows.length === 0 ? (
                     <div className="flex items-start gap-3 rounded-lg border border-success/30 bg-success/5 p-4 text-sm text-foreground">
                         <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-success" />
                         <div>
@@ -172,7 +211,7 @@ export default function WorkflowErrorLogCard({ rows, loading, error, onRefresh }
                     </div>
                 ) : null}
 
-                {rows.length > 0 ? (
+                {activeRows.length > 0 ? (
                     <div className="space-y-3">
                         {sortedRows.map((row, index) => (
                             <details key={`${row.id ?? index}-${row.occurredAt}`} className="rounded-lg border border-warning/25 bg-warning/5 p-3">
@@ -199,6 +238,24 @@ export default function WorkflowErrorLogCard({ rows, loading, error, onRefresh }
                                         <p><span className="font-medium text-foreground">Execution ID:</span> {row.executionId || 'Not recorded'}</p>
                                         <p><span className="font-medium text-foreground">Failed node:</span> {row.failedNode || 'Not recorded'}</p>
                                         <p><span className="font-medium text-foreground">Last node:</span> {row.lastNodeExecuted || 'Not recorded'}</p>
+                                    </div>
+                                    <div className="flex flex-wrap items-center gap-1.5 pt-1 text-xs font-mono">
+                                        <Badge variant="outline" className="gap-1 text-[11px] bg-card">
+                                            <Cpu className="h-3 w-3 text-primary shrink-0" />
+                                            Primary: Gemini 3.1 Flash Lite
+                                        </Badge>
+                                        <Badge variant="outline" className="gap-1 text-[11px] bg-card">
+                                            <Layers className="h-3 w-3 text-muted-foreground shrink-0" />
+                                            Backup: Gemini 3.1 Flash Lite
+                                        </Badge>
+                                        <Badge variant="outline" className="gap-1 text-[11px] bg-card">
+                                            <Bot className="h-3 w-3 text-primary shrink-0" />
+                                            Synth: Gemini 3.1 Flash Lite
+                                        </Badge>
+                                        <Badge variant="outline" className="gap-1 text-[11px] bg-card border-emerald-500/40 text-emerald-700 dark:text-emerald-300">
+                                            <RefreshCw className="h-3 w-3 text-emerald-600 shrink-0" />
+                                            Pass Cycles: 1/3
+                                        </Badge>
                                     </div>
                                     <p className="whitespace-pre-wrap break-words">{row.errorMessage || 'No error message recorded.'}</p>
                                 </div>
