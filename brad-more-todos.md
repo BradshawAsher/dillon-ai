@@ -111,7 +111,6 @@ The Right Way to Fallback: Instead of stacking parsers serially, use an If/Else 
 
 - Try using deepseek models since they are even cheaper than gemini?
 
-- add an faqs section?
 
 - Need to grow your eval and harness set, 20 distinct projects, we currently have like 7. Trisha said she will add some, but we will need to collect our own or make gemini make it for you
 
@@ -125,29 +124,29 @@ The Right Way to Fallback: Instead of stacking parsers serially, use an If/Else 
 - Prep for business meeting 3 and a website and walkthrough ready for them to try as well as prepare to be more professional with what to show when and example questions to ask and example questions to be ready to address
 
 - Do we have to do some security stuff like SEC compliance and stuff like that?
-1. Data Security & Privacy Frameworks (The Tech Stuff)
-Financial due diligence documents contain highly confidential corporate numbers, cap tables, and private financial statements. Professional tools require strict security controls:
+  1. Data Security & Privacy Frameworks (The Tech Stuff)
+  Financial due diligence documents contain highly confidential corporate numbers, cap tables, and private financial statements. Professional tools require strict security controls:
 
-SOC 2 Type II Compliance: The gold standard for B2B SaaS. It proves your cloud infrastructure, database controls (like Supabase), and automated pipelines (like n8n) securely handle sensitive customer data.
+  SOC 2 Type II Compliance: The gold standard for B2B SaaS. It proves your cloud infrastructure, database controls (like Supabase), and automated pipelines (like n8n) securely handle sensitive customer data.
 
-Encryption: Ensuring data is encrypted both in transit (HTTPS/TLS) and at rest (database-level encryption).
+  Encryption: Ensuring data is encrypted both in transit (HTTPS/TLS) and at rest (database-level encryption).
 
-Data Residency: Guaranteeing that private financial data doesn't get leaked or stored insecurely when passed through third-party Large Language Model (LLM) APIs.
+  Data Residency: Guaranteeing that private financial data doesn't get leaked or stored insecurely when passed through third-party Large Language Model (LLM) APIs.
 
-2. Financial Regulatory & Fiduciary Boundaries (The Legal Stuff)
-Even though your tool uses AI to automate analysis, financial software must include strict liability disclaimers:
+  2. Financial Regulatory & Fiduciary Boundaries (The Legal Stuff)
+  Even though your tool uses AI to automate analysis, financial software must include strict liability disclaimers:
 
-"Not Investment Advice" Disclaimers: Clear legal notices stating that the dashboard's automated EBITDA reconstructions, risk flags, and deal summaries are for informational/analytical assistance only and do not constitute official financial, legal, or tax advice.
+  "Not Investment Advice" Disclaimers: Clear legal notices stating that the dashboard's automated EBITDA reconstructions, risk flags, and deal summaries are for informational/analytical assistance only and do not constitute official financial, legal, or tax advice.
 
-Audit Trails & Explainability: Professional M&A teams cannot blindly trust an AI agent. Compliance-grade tools must maintain immutable logs (which your dashboard handles via its workflow error logs and submission histories) showing exact source attribution—linking every extracted metric back to the exact page of the original uploaded document.
+  Audit Trails & Explainability: Professional M&A teams cannot blindly trust an AI agent. Compliance-grade tools must maintain immutable logs (which your dashboard handles via its workflow error logs and submission histories) showing exact source attribution—linking every extracted metric back to the exact page of the original uploaded document.
 
-3. SEC & Regulatory Data Usage
-If your app pulls public data to benchmark deals:
+  3. SEC & Regulatory Data Usage
+  If your app pulls public data to benchmark deals:
 
-SEC EDGAR API Rules: When scraping or querying corporate filings from the SEC, developers must follow polite-pool guidelines (such as including a valid User-Agent header with contact info and respecting rate limits) to stay compliant with federal public data access rules.
+  SEC EDGAR API Rules: When scraping or querying corporate filings from the SEC, developers must follow polite-pool guidelines (such as including a valid User-Agent header with contact info and respecting rate limits) to stay compliant with federal public data access rules.
 
-4. Professional Liability (E&O Insurance)
-If an enterprise financial advisory firm uses a due diligence tool and a critical AI hallucination misses a massive financial liability during a multi-million dollar acquisition, the software provider could face legal liability. Commercial financial platforms carry Errors & Omissions (E&O) / Professional Liability Insurance to protect against software bugs or inaccurate AI outputs.
+  4. Professional Liability (E&O Insurance)
+  If an enterprise financial advisory firm uses a due diligence tool and a critical AI hallucination misses a massive financial liability during a multi-million dollar acquisition, the software provider could face legal liability. Commercial financial platforms carry Errors & Omissions (E&O) / Professional Liability Insurance to protect against software bugs or inaccurate AI outputs.
 
 - Have to make a landing page and walkthrough page like the example walkthrough for our project USE supademo
 
@@ -156,15 +155,15 @@ If an enterprise financial advisory firm uses a due diligence tool and a critica
 - How to get more flags from the agent backend?
 
 - Finding more datasets:
-Yes, there are several public repositories, open datasets, and disclosure platforms where you can find sample business deals, financial statements, and corporate filings to build out your evaluation dataset:
+  Yes, there are several public repositories, open datasets, and disclosure platforms where you can find sample business deals, financial statements, and corporate filings to build out your evaluation dataset:
 
-SEC EDGAR (U.S. Securities and Exchange Commission): The official database for public company filings (10-Ks, 10-Qs, and 8-Ks). You can pull real corporate balance sheets, income statements, and merger disclosures to test your agent against complex financial data.
+  SEC EDGAR (U.S. Securities and Exchange Commission): The official database for public company filings (10-Ks, 10-Qs, and 8-Ks). You can pull real corporate balance sheets, income statements, and merger disclosures to test your agent against complex financial data.
 
-Kaggle: Hosts various structured financial datasets, M&A datasets, and corporate financial report collections that can be downloaded and converted into mock PDFs or spreadsheets.
+  Kaggle: Hosts various structured financial datasets, M&A datasets, and corporate financial report collections that can be downloaded and converted into mock PDFs or spreadsheets.
 
-Open-Source Financial Benchmark Datasets: Look for academic or industry-released financial QA benchmarks (such as FinQA or ConvFinQA), which provide raw financial text paired with verified ground-truth numerical answers.
+  Open-Source Financial Benchmark Datasets: Look for academic or industry-released financial QA benchmarks (such as FinQA or ConvFinQA), which provide raw financial text paired with verified ground-truth numerical answers.
 
-Investor Relations Pages of Public Companies: You can download investor presentation decks, quarterly earnings reports, and M&A press releases directly from corporate websites to test unstructured document parsing.
+  Investor Relations Pages of Public Companies: You can download investor presentation decks, quarterly earnings reports, and M&A press releases directly from corporate websites to test unstructured document parsing.
 
 - How to increase accuracy?
 
@@ -185,6 +184,8 @@ Investor Relations Pages of Public Companies: You can download investor presenta
 - Need to rerun all your test docs with the anthropic for per doc and openai for synthesizer
 
 - In eval and harness tab, have a button to view each business/project and to view each individual doc (either takes you to audit trail for that, or to diligence tab for most recent doc submission option for that doc results + sets the project being viewed to that project)
+
+- How are we calculating the flags in general? Should we auto add all flags for per doc and then have synthesizer find more or reduce duplicates?
 
 - Change your fixed window + scrolling to more of fixed window + 20 per page, or 50 per page, or view all, like big websites like AWS when you have to look at IAM and admin permissinos stuff?
 

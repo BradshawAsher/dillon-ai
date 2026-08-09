@@ -842,45 +842,20 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         handleEvalProjectSelect(targetIdentifier || docFileName || 'werkheiser-commercial-cleaning', 'diligence')
 
         const normDocName = (docFileName || '').toLowerCase().trim()
-        const matchingRow = submissionHistory.find((row: any) => {
+        const matchingIndex = activeProjectDocuments.findIndex((row: any) => {
             const fn = (row.fileName || row.originalFilename || '').toLowerCase().trim()
             return fn === normDocName || fn.includes(normDocName) || normDocName.includes(fn)
         })
 
-        if (matchingRow) {
-            const parsedJson = typeof matchingRow.extractedJson === 'string'
-                ? (() => { try { return JSON.parse(matchingRow.extractedJson) } catch { return {} } })()
-                : (matchingRow.extractedJson || {})
-
-            setActiveEvidence({
-                fileName: matchingRow.fileName || docFileName,
-                projectId: matchingRow.projectId,
-                requestID: matchingRow.requestID,
-                extractedJson: parsedJson,
-                facts: Array.isArray(parsedJson.facts) ? parsedJson.facts : (Array.isArray((matchingRow as any).facts) ? (matchingRow as any).facts : []),
-                source: 'eval-doc-select',
-            })
+        if (matchingIndex >= 0) {
+            setSelectedBatchDocIndex(matchingIndex)
+            setUserHasNavigatedBatchDocs(true)
         } else {
-            setActiveEvidence({
-                fileName: docFileName,
-                projectId: targetIdentifier || 'werkheiser-commercial-cleaning',
-                facts: [
-                    {
-                        label: 'Document Extraction Status',
-                        value: '100% Extracted & Verified',
-                        citation: `${docFileName}: Line 1`,
-                        note: 'File ground-truth evaluation passed with zero numeric hallucinations.',
-                    },
-                    {
-                        label: 'Evaluation Gate Verdict',
-                        value: 'SHIP-READY (PASS)',
-                        citation: `${docFileName}: Ground-Truth Specs`,
-                        note: 'Extracted fields reconciled against M&A audit standards.',
-                    }
-                ],
-                source: 'eval-doc-select',
-            })
+            setSelectedBatchDocIndex(0)
         }
+
+        // Do not auto-slide open evidence drawer
+        setActiveEvidence(null)
 
         window.setTimeout(() => {
             document.getElementById('diligence-workspace')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
