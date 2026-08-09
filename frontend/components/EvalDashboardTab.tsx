@@ -49,15 +49,15 @@ const mapBusinessToProjectKey = (businessName: string, docItem?: any): string =>
     const norm = (businessName || '').toLowerCase().trim()
     if (!norm) return 'werkheiser-commercial-cleaning'
 
-    if (norm.includes('werkheiser') || norm.includes('business 1')) return 'werkheiser-commercial-cleaning'
-    if (norm.includes('iron tree') || norm.includes('irontree') || norm.includes('business 2') || norm.includes('cyber')) return 'irontree-tree-service'
-    if (norm.includes('turnkey') || norm.includes('business 3')) return 'turnkey-logistics-group'
-    if (norm.includes('conversionxl') || norm.includes('cxl') || norm.includes('business 4')) return 'cxl-digital-agency'
-    if (norm.includes('medical spa') || norm.includes('medspa') || norm.includes('business 5')) return 'medspa-wellness-clinic'
+    if (norm.includes('werkheiser') || norm.includes('business 1')) return 'project-20260807-f82ade4b'
+    if (norm.includes('iron tree') || norm.includes('irontree') || norm.includes('business 2') || norm.includes('cyber')) return 'project-20260804-275438e0'
+    if (norm.includes('turnkey') || norm.includes('business 3')) return 'project-20260804-70c7d186'
+    if (norm.includes('conversionxl') || norm.includes('cxl') || norm.includes('business 4')) return 'project-20260804-83178e15'
+    if (norm.includes('medical spa') || norm.includes('medspa') || norm.includes('business 5')) return 'project-20260803-cc15b25a'
     if (norm.includes('widgetco') || norm.includes('forensic')) return 'widgetco-forensic-suite'
-    if (norm.includes('testing 1') || norm.includes('happy path')) return 'mergeworks-testing-1'
-    if (norm.includes('testing suite') || norm.includes('docs 2-4')) return 'mergeworks-testing-suite'
-    if (norm.includes('mergeworks') || norm.includes('testing')) return 'mergeworks-testing-suite'
+    if (norm.includes('testing 1') || norm.includes('happy path')) return 'project-20260806-bccecb90'
+    if (norm.includes('testing suite') || norm.includes('docs 2-4')) return 'project-20260806-b2e118a3'
+    if (norm.includes('mergeworks') || norm.includes('testing')) return 'project-20260806-b2e118a3'
 
     return norm.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'werkheiser-commercial-cleaning'
 }

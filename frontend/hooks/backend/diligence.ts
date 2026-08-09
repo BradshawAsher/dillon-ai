@@ -680,7 +680,7 @@ export const exampleProjectSyntheses: ProjectSynthesisItem[] = [
     },
     {
         ...mockSynthesisRow,
-        projectId: 'mergeworks-testing-1',
+        projectId: 'project-20260806-bccecb90',
         documentsReceivedCount: 1,
         documentsCompletedCount: 1,
         keyTakeaways: [
@@ -701,7 +701,7 @@ export const exampleProjectSyntheses: ProjectSynthesisItem[] = [
     },
     {
         ...mockSynthesisRow,
-        projectId: 'mergeworks-testing-suite',
+        projectId: 'project-20260806-b2e118a3',
         documentsReceivedCount: 3,
         documentsCompletedCount: 3,
         keyTakeaways: [
