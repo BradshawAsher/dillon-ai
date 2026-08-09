@@ -572,11 +572,11 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             ['completed', 'approved'].includes((d.status || '').trim().toLowerCase())
         ).length
 
-        if (completedDocCount === 0) return true
-        if (!activeProjectSynthesis) return true
+        if (completedDocCount === 0) return false
+        if (!activeProjectSynthesis) return false
 
         const synthStatus = (activeProjectSynthesis.projectStatus || '').trim().toLowerCase()
-        const hasFinishedSynthResults = ['synthesized', 'completed', 'success'].includes(synthStatus) &&
+        const hasFinishedSynthResults = ['synthesized', 'completed', 'success'].includes(synthStatus) ||
             ((activeProjectSynthesis.finalRecommendation || '').trim().length > 0 ||
                 (activeProjectSynthesis.finalJudgmentSummary || '').trim().length > 0 ||
                 (activeProjectSynthesis.finalJudgmentJson || '').trim().length > 0)
@@ -587,14 +587,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
         if (['processing', 'pending', 'queued', 'running', 'synthesis_in_progress'].includes(synthStatus)) return true
 
-        const synthDocCount = Number(
-            activeProjectSynthesis.documentsCompletedCount ??
-            activeProjectSynthesis.documentsReceivedCount ?? 0
-        )
-
-        if (synthDocCount > 0 && completedDocCount > synthDocCount) return true
-
-        return true
+        return false
     }, [activeProjectDocuments, activeProjectSynthesis, isExampleMode])
 
     const activeProjectSynthesisSucceeded = useMemo(() => {
