@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { filterFaqs } from '../utils/faq'
 import {
     HelpCircle,
     Search,
@@ -29,7 +30,9 @@ interface TechnicalFaqWorkspaceTabProps {
 export default function TechnicalFaqWorkspaceTab({ onSwitchTab }: TechnicalFaqWorkspaceTabProps) {
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedCategory, setSelectedCategory] = useState<'all' | 'getting-started' | 'navigation' | 'buttons' | 'data-modes' | 'troubleshooting'>('all')
-    const [openIndex, setOpenIndex] = useState<number | null>(0)
+    // Track the open FAQ by question text so filtering doesn't leave the wrong
+    // item expanded (index would point at a different question after a filter).
+    const [openKey, setOpenKey] = useState<string | null>(null)
 
     const technicalFaqs = [
         {
@@ -108,14 +111,7 @@ export default function TechnicalFaqWorkspaceTab({ onSwitchTab }: TechnicalFaqWo
         },
     ]
 
-    const filteredFaqs = technicalFaqs.filter((faq) => {
-        if (selectedCategory !== 'all' && faq.category !== selectedCategory) return false
-        if (searchQuery) {
-            const q = searchQuery.toLowerCase().trim()
-            return faq.question.toLowerCase().includes(q) || faq.answer.toLowerCase().includes(q)
-        }
-        return true
-    })
+    const filteredFaqs = filterFaqs(technicalFaqs, { category: selectedCategory, query: searchQuery })
 
     return (
         <div className="space-y-6">
@@ -217,6 +213,7 @@ export default function TechnicalFaqWorkspaceTab({ onSwitchTab }: TechnicalFaqWo
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder="Search button or feature..."
+                                aria-label="Search technical FAQs"
                                 className="w-full pl-8 pr-8 py-1.5 text-xs rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:ring-1 focus:ring-primary"
                             />
                             {searchQuery && (
@@ -243,6 +240,7 @@ export default function TechnicalFaqWorkspaceTab({ onSwitchTab }: TechnicalFaqWo
                             <button
                                 key={cat.id}
                                 type="button"
+                                aria-pressed={selectedCategory === cat.id}
                                 onClick={() => setSelectedCategory(cat.id as any)}
                                 className={`text-xs px-3 py-1 rounded-full transition-all cursor-pointer font-semibold ${
                                     selectedCategory === cat.id
@@ -266,11 +264,14 @@ export default function TechnicalFaqWorkspaceTab({ onSwitchTab }: TechnicalFaqWo
                             </Button>
                         </div>
                     ) : (
-                        filteredFaqs.map((faq, idx) => (
-                            <div key={idx} className="rounded-xl border border-border/80 bg-card shadow-2xs overflow-hidden">
+                        filteredFaqs.map((faq) => {
+                            const isOpen = openKey === faq.question
+                            return (
+                            <div key={faq.question} className="rounded-xl border border-border/80 bg-card shadow-2xs overflow-hidden">
                                 <button
                                     type="button"
-                                    onClick={() => setOpenIndex(openIndex === idx ? null : idx)}
+                                    aria-expanded={isOpen}
+                                    onClick={() => setOpenKey(isOpen ? null : faq.question)}
                                     className="w-full p-4 text-left flex items-center justify-between gap-3 font-bold text-sm text-foreground hover:bg-muted/30 cursor-pointer"
                                 >
                                     <div className="flex items-center gap-2.5">
@@ -279,10 +280,10 @@ export default function TechnicalFaqWorkspaceTab({ onSwitchTab }: TechnicalFaqWo
                                         </Badge>
                                         <span>{faq.question}</span>
                                     </div>
-                                    {openIndex === idx ? <ChevronUp className="h-4 w-4 text-primary shrink-0" /> : <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />}
+                                    {isOpen ? <ChevronUp className="h-4 w-4 text-primary shrink-0" /> : <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />}
                                 </button>
 
-                                {openIndex === idx && (
+                                {isOpen && (
                                     <div className="px-4 pb-4 pt-2 text-xs text-muted-foreground leading-relaxed border-t border-border/40 bg-muted/10 space-y-3">
                                         <p className="whitespace-pre-line text-foreground/90 font-medium">{faq.answer}</p>
                                         {faq.targetTab && onSwitchTab && (
@@ -300,7 +301,8 @@ export default function TechnicalFaqWorkspaceTab({ onSwitchTab }: TechnicalFaqWo
                                     </div>
                                 )}
                             </div>
-                        ))
+                            )
+                        })
                     )}
                 </CardContent>
             </Card>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
     HelpCircle,
     Search,
@@ -21,6 +21,7 @@ import { Input } from '../lib/shadcn/input'
 import { Badge } from '../lib/shadcn/badge'
 import { Card, CardContent } from '../lib/shadcn/card'
 import { type WorkspaceTab } from '../hooks/useDealWorkspaceState'
+import { filterFaqs } from '../utils/faq'
 
 interface DashboardFaqSidebarProps {
     isOpen: boolean
@@ -37,7 +38,10 @@ export default function DashboardFaqSidebar({
     const [selectedCategory, setSelectedCategory] = useState<
         'all' | 'getting-started' | 'diligence' | 'citations' | 'valuation' | 'troubleshooting'
     >('all')
-    const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0)
+    // Track the open FAQ by its question text, not a list index — otherwise
+    // filtering/searching leaves the wrong item expanded (the index now points
+    // at a different question).
+    const [openFaqKey, setOpenFaqKey] = useState<string | null>(null)
 
     const dashboardFaqs: Array<{
         category: 'getting-started' | 'diligence' | 'citations' | 'valuation' | 'troubleshooting'
@@ -129,15 +133,20 @@ export default function DashboardFaqSidebar({
         { id: 'troubleshooting', label: 'Troubleshooting' },
     ]
 
-    const filteredFaqs = dashboardFaqs.filter((faq) => {
-        const matchesCategory = selectedCategory === 'all' || faq.category === selectedCategory
-        const matchesSearch =
-            searchQuery.trim() === '' ||
-            faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            faq.answer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            faq.categoryLabel.toLowerCase().includes(searchQuery.toLowerCase())
-        return matchesCategory && matchesSearch
-    })
+    const filteredFaqs = filterFaqs(dashboardFaqs, { category: selectedCategory, query: searchQuery })
+
+    // Auto-open the first FAQ on mount, and close on Escape (drawer convention).
+    useEffect(() => {
+        if (isOpen) setOpenFaqKey((current) => current ?? dashboardFaqs[0]?.question ?? null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOpen])
+
+    useEffect(() => {
+        if (!isOpen) return
+        const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+        document.addEventListener('keydown', handleKey)
+        return () => document.removeEventListener('keydown', handleKey)
+    }, [isOpen, onClose])
 
     if (!isOpen) return null
 
@@ -151,6 +160,8 @@ export default function DashboardFaqSidebar({
 
             {/* Sidebar drawer */}
             <aside
+                role="dialog"
+                aria-modal="true"
                 aria-label="FAQs and Guidance Sidebar"
                 className="fixed right-0 top-0 bottom-0 z-50 flex w-full flex-col border-l border-border bg-background shadow-2xl transition-transform duration-300 sm:w-[420px]"
             >
@@ -192,6 +203,7 @@ export default function DashboardFaqSidebar({
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="pl-9 text-xs h-9"
+                            aria-label="Search FAQs"
                         />
                         {searchQuery && (
                             <button
@@ -210,6 +222,7 @@ export default function DashboardFaqSidebar({
                             <button
                                 key={cat.id}
                                 type="button"
+                                aria-pressed={selectedCategory === cat.id}
                                 onClick={() => setSelectedCategory(cat.id as any)}
                                 className={`rounded-full px-2.5 py-1 transition-all whitespace-nowrap text-[11px] font-medium shrink-0 ${
                                     selectedCategory === cat.id
@@ -232,11 +245,11 @@ export default function DashboardFaqSidebar({
                             <p className="text-[11px]">Try clearing your search or category filter.</p>
                         </div>
                     ) : (
-                        filteredFaqs.map((faq, idx) => {
-                            const isOpen = openFaqIndex === idx
+                        filteredFaqs.map((faq) => {
+                            const isOpen = openFaqKey === faq.question
                             return (
                                 <Card
-                                    key={idx}
+                                    key={faq.question}
                                     className={`border transition-all ${
                                         isOpen
                                             ? 'border-primary/40 bg-primary/5 shadow-xs'
@@ -245,7 +258,8 @@ export default function DashboardFaqSidebar({
                                 >
                                     <button
                                         type="button"
-                                        onClick={() => setOpenFaqIndex(isOpen ? null : idx)}
+                                        aria-expanded={isOpen}
+                                        onClick={() => setOpenFaqKey(isOpen ? null : faq.question)}
                                         className="w-full p-3.5 text-left flex items-start justify-between gap-3 text-xs font-bold text-foreground cursor-pointer"
                                     >
                                         <div className="space-y-1 pr-1">

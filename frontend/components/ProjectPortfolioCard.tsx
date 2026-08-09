@@ -63,8 +63,8 @@ function SummaryMetric({
 
 function resolveProjectAiModels(projectDocs: SubmissionHistoryItem[], synthesis: any, projectKey: string) {
     const doc = projectDocs[0] as any
-    const docPrimary = projectDocs.find((d) => d.modelUsed || (d as any).primaryModel || (d as any).aiModel)?.modelUsed 
-        || doc?.primaryModel 
+    const docPrimary = (projectDocs.find((d) => (d as any).modelUsed || (d as any).primaryModel || (d as any).aiModel) as any)?.modelUsed
+        || doc?.primaryModel
         || doc?.modelUsed
 
     const docBackup = doc?.backupModel || (synthesis as any)?.docBackupModel
