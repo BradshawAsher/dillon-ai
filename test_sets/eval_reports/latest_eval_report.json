@@ -1,8 +1,8 @@
 {
-  "evaluatedAt": "2026-08-10T02:59:00.107Z",
+  "evaluatedAt": "2026-08-10T04:01:33.006Z",
   "totalDocumentsEvaluated": 25,
-  "passedDocuments": 21,
-  "overallPercentage": 78,
+  "passedDocuments": 23,
+  "overallPercentage": 79,
   "status": "SHIP-READY (PASS)",
   "regressionThreshold": 70,
   "regressionPassed": true,
@@ -13,7 +13,7 @@
     "valuation": 99,
     "employee": 100,
     "math": 92,
-    "recommendation": 80
+    "recommendation": 95
   },
   "weakestDimension": "facts",
   "groundTruthSpecs": 26,
@@ -31,10 +31,10 @@
       "valuationScore": 15,
       "employeeScore": 5,
       "mathScore": 5,
-      "recommendationScore": 5,
-      "totalScore": 48,
+      "recommendationScore": 9.5,
+      "totalScore": 52.5,
       "maxScore": 80,
-      "percentage": 60,
+      "percentage": 66,
       "pass": false
     },
     {
@@ -47,10 +47,10 @@
       "valuationScore": 15,
       "employeeScore": 5,
       "mathScore": 10,
-      "recommendationScore": 10,
-      "totalScore": 66,
+      "recommendationScore": 9.5,
+      "totalScore": 65.5,
       "maxScore": 80,
-      "percentage": 83,
+      "percentage": 82,
       "pass": true
     },
     {
@@ -63,10 +63,10 @@
       "valuationScore": 15,
       "employeeScore": 5,
       "mathScore": 10,
-      "recommendationScore": 10,
-      "totalScore": 63,
+      "recommendationScore": 9.5,
+      "totalScore": 62.5,
       "maxScore": 80,
-      "percentage": 79,
+      "percentage": 78,
       "pass": true
     },
     {
@@ -79,10 +79,10 @@
       "valuationScore": 15,
       "employeeScore": 5,
       "mathScore": 10,
-      "recommendationScore": 10,
-      "totalScore": 63,
+      "recommendationScore": 9.5,
+      "totalScore": 62.5,
       "maxScore": 80,
-      "percentage": 79,
+      "percentage": 78,
       "pass": true
     },
     {
@@ -95,10 +95,10 @@
       "valuationScore": 15,
       "employeeScore": 5,
       "mathScore": 5,
-      "recommendationScore": 10,
-      "totalScore": 56.5,
+      "recommendationScore": 9.5,
+      "totalScore": 56,
       "maxScore": 80,
-      "percentage": 71,
+      "percentage": 70,
       "pass": true
     },
     {
@@ -111,10 +111,10 @@
       "valuationScore": 15,
       "employeeScore": 5,
       "mathScore": 10,
-      "recommendationScore": 5,
-      "totalScore": 56,
+      "recommendationScore": 9.5,
+      "totalScore": 60.5,
       "maxScore": 80,
-      "percentage": 70,
+      "percentage": 76,
       "pass": true
     },
     {
@@ -127,10 +127,10 @@
       "valuationScore": 15,
       "employeeScore": 5,
       "mathScore": 5,
-      "recommendationScore": 10,
-      "totalScore": 58,
+      "recommendationScore": 9.5,
+      "totalScore": 57.5,
       "maxScore": 80,
-      "percentage": 73,
+      "percentage": 72,
       "pass": true
     },
     {
@@ -143,8 +143,8 @@
       "valuationScore": 15,
       "employeeScore": 5,
       "mathScore": 10,
-      "recommendationScore": 10,
-      "totalScore": 70.75,
+      "recommendationScore": 9.5,
+      "totalScore": 70.25,
       "maxScore": 80,
       "percentage": 88,
       "pass": true
@@ -159,10 +159,10 @@
       "valuationScore": 15,
       "employeeScore": 5,
       "mathScore": 5,
-      "recommendationScore": 10,
-      "totalScore": 56.5,
+      "recommendationScore": 9.5,
+      "totalScore": 56,
       "maxScore": 80,
-      "percentage": 71,
+      "percentage": 70,
       "pass": true
     },
     {
@@ -175,10 +175,10 @@
       "valuationScore": 15,
       "employeeScore": 5,
       "mathScore": 10,
-      "recommendationScore": 5,
-      "totalScore": 63,
+      "recommendationScore": 9.5,
+      "totalScore": 67.5,
       "maxScore": 80,
-      "percentage": 79,
+      "percentage": 84,
       "pass": true
     },
     {
@@ -191,10 +191,10 @@
       "valuationScore": 15,
       "employeeScore": 5,
       "mathScore": 10,
-      "recommendationScore": 10,
-      "totalScore": 59,
+      "recommendationScore": 9.5,
+      "totalScore": 58.5,
       "maxScore": 80,
-      "percentage": 74,
+      "percentage": 73,
       "pass": true
     },
     {
@@ -207,10 +207,10 @@
       "valuationScore": 15,
       "employeeScore": 5,
       "mathScore": 10,
-      "recommendationScore": 10,
-      "totalScore": 63,
+      "recommendationScore": 9.5,
+      "totalScore": 62.5,
       "maxScore": 80,
-      "percentage": 79,
+      "percentage": 78,
       "pass": true
     },
     {
@@ -223,8 +223,8 @@
       "valuationScore": 15,
       "employeeScore": 5,
       "mathScore": 10,
-      "recommendationScore": 10,
-      "totalScore": 61,
+      "recommendationScore": 9.5,
+      "totalScore": 60.5,
       "maxScore": 80,
       "percentage": 76,
       "pass": true
@@ -239,10 +239,10 @@
       "valuationScore": 15,
       "employeeScore": 5,
       "mathScore": 10,
-      "recommendationScore": 5,
-      "totalScore": 46,
+      "recommendationScore": 9.5,
+      "totalScore": 50.5,
       "maxScore": 80,
-      "percentage": 57,
+      "percentage": 63,
       "pass": false
     },
     {
@@ -255,10 +255,10 @@
       "valuationScore": 15,
       "employeeScore": 5,
       "mathScore": 10,
-      "recommendationScore": 10,
-      "totalScore": 76,
+      "recommendationScore": 9.5,
+      "totalScore": 75.5,
       "maxScore": 80,
-      "percentage": 95,
+      "percentage": 94,
       "pass": true
     },
     {
@@ -271,10 +271,10 @@
       "valuationScore": 10,
       "employeeScore": 5,
       "mathScore": 10,
-      "recommendationScore": 5,
-      "totalScore": 56.375,
+      "recommendationScore": 9.5,
+      "totalScore": 60.875,
       "maxScore": 80,
-      "percentage": 70,
+      "percentage": 76,
       "pass": true
     },
     {
@@ -287,10 +287,10 @@
       "valuationScore": 15,
       "employeeScore": 5,
       "mathScore": 10,
-      "recommendationScore": 10,
-      "totalScore": 75,
+      "recommendationScore": 9.5,
+      "totalScore": 74.5,
       "maxScore": 80,
-      "percentage": 94,
+      "percentage": 93,
       "pass": true
     },
     {
@@ -303,11 +303,11 @@
       "valuationScore": 15,
       "employeeScore": 5,
       "mathScore": 10,
-      "recommendationScore": 5,
-      "totalScore": 53,
+      "recommendationScore": 9.5,
+      "totalScore": 57.5,
       "maxScore": 80,
-      "percentage": 66,
-      "pass": false
+      "percentage": 72,
+      "pass": true
     },
     {
       "fileName": "MergeWorks Testing - 3 Financial Performance CSV.docx",
@@ -319,8 +319,8 @@
       "valuationScore": 15,
       "employeeScore": 5,
       "mathScore": 10,
-      "recommendationScore": 10,
-      "totalScore": 73,
+      "recommendationScore": 9.5,
+      "totalScore": 72.5,
       "maxScore": 80,
       "percentage": 91,
       "pass": true
@@ -335,10 +335,10 @@
       "valuationScore": 15,
       "employeeScore": 5,
       "mathScore": 10,
-      "recommendationScore": 10,
-      "totalScore": 70,
+      "recommendationScore": 9.5,
+      "totalScore": 69.5,
       "maxScore": 80,
-      "percentage": 88,
+      "percentage": 87,
       "pass": true
     },
     {
@@ -351,10 +351,10 @@
       "valuationScore": 15,
       "employeeScore": 5,
       "mathScore": 10,
-      "recommendationScore": 10,
-      "totalScore": 75.71428571428572,
+      "recommendationScore": 9.5,
+      "totalScore": 75.21428571428572,
       "maxScore": 80,
-      "percentage": 95,
+      "percentage": 94,
       "pass": true
     },
     {
@@ -367,10 +367,10 @@
       "valuationScore": 15,
       "employeeScore": 5,
       "mathScore": 10,
-      "recommendationScore": 5,
-      "totalScore": 63,
+      "recommendationScore": 9.5,
+      "totalScore": 67.5,
       "maxScore": 80,
-      "percentage": 79,
+      "percentage": 84,
       "pass": true
     },
     {
@@ -383,10 +383,10 @@
       "valuationScore": 15,
       "employeeScore": 5,
       "mathScore": 10,
-      "recommendationScore": 5,
-      "totalScore": 63,
+      "recommendationScore": 9.5,
+      "totalScore": 67.5,
       "maxScore": 80,
-      "percentage": 79,
+      "percentage": 84,
       "pass": true
     },
     {
@@ -399,11 +399,11 @@
       "valuationScore": 15,
       "employeeScore": 5,
       "mathScore": 10,
-      "recommendationScore": 5,
-      "totalScore": 54,
+      "recommendationScore": 9.5,
+      "totalScore": 58.5,
       "maxScore": 80,
-      "percentage": 68,
-      "pass": false
+      "percentage": 73,
+      "pass": true
     },
     {
       "fileName": "WidgetCo - 5_AR_Aging_Report.xlsx",
@@ -415,10 +415,10 @@
       "valuationScore": 15,
       "employeeScore": 5,
       "mathScore": 10,
-      "recommendationScore": 5,
-      "totalScore": 63,
+      "recommendationScore": 9.5,
+      "totalScore": 67.5,
       "maxScore": 80,
-      "percentage": 79,
+      "percentage": 84,
       "pass": true
     }
   ]

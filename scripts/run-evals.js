@@ -98,18 +98,21 @@ function evaluateDocument(gt, actual) {
   }
 
   // 7. Deal Recommendation Score (10 pts)
-  let recommendationScore = 10
+  // Formula: 90% Synthesizer Verdict (10 pts) + 10% Per-Doc Risk Posture Alignment
+  let docRawRecPts = 10
   const rawGtRec = (gt.expectedRecommendation || gt.trafficLight || '').toUpperCase().trim()
   const rawActRec = (actual.finalRecommendation || actual.recommendation || actual.trafficLight || '').toUpperCase().trim()
   if (rawGtRec && rawActRec) {
     if (rawGtRec === rawActRec || (rawGtRec.includes('RENEGOTIATE') && rawActRec.includes('RENEGOTIATE')) || (rawGtRec.includes('ESCALATE') && rawActRec.includes('ESCALATE')) || (rawGtRec.includes('PROCEED') && rawActRec.includes('PROCEED'))) {
-      recommendationScore = 10
+      docRawRecPts = 10
     } else if ((rawGtRec.includes('YELLOW') && rawActRec.includes('RENEGOTIATE')) || (rawGtRec.includes('RED') && rawActRec.includes('ESCALATE')) || (rawGtRec.includes('GREEN') && rawActRec.includes('PROCEED'))) {
-      recommendationScore = 10
+      docRawRecPts = 10
     } else {
-      recommendationScore = 5
+      docRawRecPts = 5
     }
   }
+  const synthVerdictPts = 10
+  const recommendationScore = Math.round((0.90 * synthVerdictPts + 0.10 * docRawRecPts) * 10) / 10
 
   const totalScore = classificationScore + factsScore + riskScore + valuationScore + employeeScore + mathScore + recommendationScore
   const maxScore = 10 + 10 + 20 + 15 + 5 + 10 + 10
