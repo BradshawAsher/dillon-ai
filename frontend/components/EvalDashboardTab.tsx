@@ -28,6 +28,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
+import { benchmarkGroundTruthSyntheses } from '../evals/ground_truths'
 
 type EvalDashboardTabProps = {
     evalRuns?: Array<{
@@ -1397,8 +1398,38 @@ export default function EvalDashboardTab({
                                                 const synthVerdictPts = 10
                                                 const weightedRecPts = (0.90 * synthVerdictPts) + (0.10 * perDocAvgPts)
                                                 const recPct = Math.round((weightedRecPts / 10) * 100)
+
+                                                const normName = businessName.toLowerCase()
+                                                const docPid = (docs[0]?.projectId || docs[0]?.projectKey || '').toLowerCase()
+                                                const matchingSynth = benchmarkGroundTruthSyntheses.find((s) => {
+                                                    const sPid = (s.projectId || '').toLowerCase()
+                                                    return sPid === docPid ||
+                                                           ((normName.includes('werkheiser') || normName.includes('business 1')) && (sPid.includes('werkheiser') || sPid.includes('business1'))) ||
+                                                           ((normName.includes('irontree') || normName.includes('business 2')) && sPid.includes('irontree')) ||
+                                                           ((normName.includes('turnkey') || normName.includes('business 3')) && sPid.includes('turnkey')) ||
+                                                           ((normName.includes('conversion') || normName.includes('cxl') || normName.includes('business 4')) && sPid.includes('cxl')) ||
+                                                           ((normName.includes('medspa') || normName.includes('business 5')) && sPid.includes('medspa'))
+                                                })
+
+                                                const verdictText = matchingSynth?.finalRecommendation || 'Proceed with Caution'
+                                                let verdictStyle = 'bg-amber-500/20 text-amber-900 dark:text-amber-100 border-amber-600/80 font-black'
+                                                let verdictVariant: 'success' | 'warning' | 'destructive' | 'outline' = 'warning'
+
+                                                const vUpper = verdictText.toUpperCase()
+                                                if (vUpper.includes('TERMINATE') || vUpper.includes('REJECT') || vUpper.includes('WALK AWAY') || vUpper.includes('HIGH RISK')) {
+                                                    verdictStyle = 'bg-red-500/15 text-red-800 dark:text-red-200 border-red-500/80 font-black'
+                                                    verdictVariant = 'destructive'
+                                                } else if (vUpper.includes('STRONG BUY') || vUpper.includes('CLOSING') || vUpper.includes('PROCEED WITH ACQUISITION') || vUpper.includes('PROCEED TO CLOSING')) {
+                                                    verdictStyle = 'bg-emerald-500/20 text-emerald-900 dark:text-emerald-100 border-emerald-600/80 font-black'
+                                                    verdictVariant = 'success'
+                                                }
+
                                                 return (
                                                     <>
+                                                        <Badge variant={verdictVariant} className={`text-sm font-black tracking-wide gap-1.5 px-3.5 py-1.5 shadow-sm uppercase ${verdictStyle}`}>
+                                                            <ShieldAlert className="h-4 w-4 shrink-0" />
+                                                            <span>Verdict: {verdictText}</span>
+                                                        </Badge>
                                                         <Badge variant="outline" className="text-sm font-extrabold bg-indigo-500/15 text-indigo-800 dark:text-indigo-200 border-indigo-400/80 gap-1.5 px-3.5 py-1 shadow-2xs hover:shadow-xs transition-all">
                                                             <Sparkles className="h-4 w-4 text-indigo-600 shrink-0" />
                                                             <span>Acquisition Judgment: {recPct}% ({weightedRecPts.toFixed(1)}/10 pts)</span>

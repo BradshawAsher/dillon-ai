@@ -248,15 +248,20 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
     const normalizedProjectId = currentProjectId.trim()
     const savedHistory = useMemo(() => getSavedSynthesisHistory(normalizedProjectId), [normalizedProjectId])
 
+    const currentProject = projects.find((project) => (project.projectId || project.projectKey) === normalizedProjectId)
+    const targetName = (currentProject?.projectName || currentProject?.companyName || normalizedProjectId).toLowerCase()
+
     const rawVisibleSyntheses = useMemo(() => {
         const map = new Map<string | number, ProjectSynthesisItem>()
         syntheses.forEach((item) => {
-            if (
+            const itemPid = (item.projectId || '').toLowerCase()
+            const isMatch =
                 item.projectId === normalizedProjectId ||
                 isRowMatchingProject({ projectId: item.projectId } as any, normalizedProjectId, projects) ||
-                (normalizedProjectId.includes('business1') && (item.projectId.includes('werkheiser') || item.projectId.includes('business1'))) ||
-                (normalizedProjectId.includes('werkheiser') && (item.projectId.includes('business1') || item.projectId.includes('werkheiser')))
-            ) {
+                ((targetName.includes('werkheiser') || targetName.includes('business 1') || normalizedProjectId.includes('werkheiser') || normalizedProjectId.includes('business1')) &&
+                 (itemPid.includes('werkheiser') || itemPid.includes('business1') || itemPid.includes('commercial')))
+
+            if (isMatch) {
                 map.set(item.id || item.createdAt || Math.random(), item)
             }
         })
@@ -268,7 +273,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
             const timeB = new Date(b.createdAt || b.projectProcessedAt || b.updatedAt || 0).getTime()
             return timeB - timeA
         })
-    }, [syntheses, normalizedProjectId, projects, savedHistory])
+    }, [syntheses, normalizedProjectId, projects, savedHistory, targetName])
 
     useEffect(() => {
         if (rawVisibleSyntheses[0] && normalizedProjectId) {
@@ -276,14 +281,17 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
         }
     }, [rawVisibleSyntheses, normalizedProjectId])
 
-    const currentProject = projects.find((project) => (project.projectId || project.projectKey) === normalizedProjectId)
     const rawProjectDocuments = documents.filter((document) => {
-        const pk = getProjectKey(document)
+        const itemPid = (document.projectId || '').toLowerCase()
+        const pk = getProjectKey(document).toLowerCase()
         return (
+            isRowMatchingProject(document, normalizedProjectId, projects) ||
             document.projectId === normalizedProjectId ||
             (document as any).projectKey === normalizedProjectId ||
             pk === normalizedProjectId ||
-            (currentProject && (pk === currentProject.projectKey || pk === currentProject.projectId || document.projectId === currentProject.projectId || (document as any).projectKey === currentProject.projectKey))
+            (currentProject && (pk === currentProject.projectKey || pk === currentProject.projectId || document.projectId === currentProject.projectId || (document as any).projectKey === currentProject.projectKey)) ||
+            ((targetName.includes('werkheiser') || targetName.includes('business 1') || normalizedProjectId.includes('werkheiser') || normalizedProjectId.includes('business1')) &&
+             (itemPid.includes('werkheiser') || itemPid.includes('business1') || itemPid.includes('commercial') || pk.includes('werkheiser') || pk.includes('business1')))
         )
     })
     const effectiveProjectDocuments = rawProjectDocuments.length > 0 ? rawProjectDocuments : documents
