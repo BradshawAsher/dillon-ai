@@ -253,6 +253,16 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
 
     const rawVisibleSyntheses = useMemo(() => {
         const map = new Map<string | number, ProjectSynthesisItem>()
+        // Load saved history first, filtering out unpopulated 0-document placeholder rows
+        savedHistory.forEach((item) => {
+            const hasValidContent =
+                (item.documentsCompletedCount && item.documentsCompletedCount > 0) ||
+                (item.citations && item.citations.length > 0) ||
+                (item.finalRecommendation && item.finalRecommendation.trim().length > 0)
+            if (hasValidContent) {
+                map.set(item.id || item.createdAt || Math.random(), item)
+            }
+        })
         syntheses.forEach((item) => {
             const itemPid = (item.projectId || '').toLowerCase()
             const isMatch =
@@ -264,9 +274,6 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
             if (isMatch) {
                 map.set(item.id || item.createdAt || Math.random(), item)
             }
-        })
-        savedHistory.forEach((item) => {
-            map.set(item.id || item.createdAt || Math.random(), item)
         })
         return [...map.values()].sort((a, b) => {
             const timeA = new Date(a.createdAt || a.projectProcessedAt || a.updatedAt || 0).getTime()
@@ -517,9 +524,25 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                 <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-muted/30 px-3.5 py-2.5 text-xs text-foreground">
                     <div className="flex flex-wrap items-center gap-2">
                         <span className="font-medium text-muted-foreground">Synthesis Document Scope:</span>
-                        <Badge variant={(activeSynthesis ? activeSynthesis.documentsCompletedCount : completedProjectDocumentsWithAnalysis) > 0 ? 'success' : 'secondary'}>
-                            {activeSynthesis ? activeSynthesis.documentsCompletedCount : completedProjectDocumentsWithAnalysis} of {activeSynthesis ? activeSynthesis.documentsReceivedCount : projectDocuments.length} Documents Included
-                        </Badge>
+                        {(() => {
+                            const completed = (activeSynthesis && typeof activeSynthesis.documentsCompletedCount === 'number' && activeSynthesis.documentsCompletedCount > 0)
+                                ? activeSynthesis.documentsCompletedCount
+                                : (activeSynthesis?.citations && activeSynthesis.citations.length > 0)
+                                    ? activeSynthesis.citations.length
+                                    : (completedProjectDocumentsWithAnalysis > 0 ? completedProjectDocumentsWithAnalysis : projectDocuments.length)
+
+                            const received = (activeSynthesis && typeof activeSynthesis.documentsReceivedCount === 'number' && activeSynthesis.documentsReceivedCount > 0)
+                                ? activeSynthesis.documentsReceivedCount
+                                : (activeSynthesis?.citations && activeSynthesis.citations.length > 0)
+                                    ? activeSynthesis.citations.length
+                                    : (projectDocuments.length > 0 ? projectDocuments.length : 5)
+
+                            return (
+                                <Badge variant={completed > 0 ? 'success' : 'secondary'}>
+                                    {completed} of {received} Documents Included
+                                </Badge>
+                            )
+                        })()}
                         {failedProjectDocuments.length > 0 ? (
                             <Badge variant="destructive">
                                 {failedProjectDocuments.length} Failed Parsing
@@ -609,7 +632,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                 <span>Older Pass</span>
                             </Button>
                             <span className="font-mono text-xs font-bold text-muted-foreground px-1">
-                                {activeSynthesisIndex + 1} / {visibleSyntheses.length}
+                                Version {visibleSyntheses.length - activeSynthesisIndex} / {visibleSyntheses.length}
                             </span>
                             <Button
                                 type="button"
@@ -791,7 +814,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                     </div>
                 )}
 
-                {visibleSyntheses.map((synthesis) => {
+                {[activeSynthesis].filter((s): s is ProjectSynthesisItem => Boolean(s)).map((synthesis) => {
                     const displayName = projectNameById.get(synthesis.projectId) ?? synthesis.projectId ?? 'Unknown project'
                     const synthesisStatus = synthesis.projectStatus.trim().toLowerCase()
                     const hasRefreshFailure = synthesisStatus === 'synthesis_refresh_failed' || synthesisStatus === 'synthesis_blocked'
