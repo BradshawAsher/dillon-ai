@@ -164,6 +164,15 @@ export default function ProjectIntakeCard({
             </CardHeader>
 
             <CardContent className="space-y-4 p-4">
+                {selectedProjectKey !== 'new' && (
+                    <div className="rounded-lg border border-emerald-500/40 bg-emerald-50/60 dark:bg-emerald-950/20 p-3 text-xs text-emerald-900 dark:text-emerald-300 flex items-start gap-2 shadow-2xs">
+                        <FolderKanban className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                        <div>
+                            <strong>📁 Adding files to existing project:</strong> <span className="font-bold underline">{dealName || selectedProjectKey}</span>
+                            <p className="mt-0.5 text-2xs opacity-85">New files uploaded here will automatically attach to this project and re-trigger project synthesis upon completion without overwriting existing files.</p>
+                        </div>
+                    </div>
+                )}
                 <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
                     <div className="space-y-2">
                         <Label>Project selection</Label>

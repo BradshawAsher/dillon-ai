@@ -41,6 +41,7 @@ import SectionHeader from '../components/SectionHeader'
 
 const ProjectIntakeCard = lazy(() => import('../components/ProjectIntakeCard'))
 const ProjectSynthesisCard = lazy(() => import('../components/ProjectSynthesisCard'))
+import ProjectComparisonCard from '../components/ProjectComparisonCard'
 import ManagementQuestionTracker from '../components/ManagementQuestionTracker'
 const SubmissionHistoryCard = lazy(() => import('../components/SubmissionHistoryCard'))
 const DealChatPanel = lazy(() => import('../components/DealChatPanel'))
@@ -1593,6 +1594,64 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                             isCurrentProjectAwaitingSynthesis={isCurrentProjectAwaitingSynthesis}
                             setSelectedProjectKey={setSelectedProjectKey}
                         />
+                    ) : null}
+
+                    {activeWorkspaceTab === 'compare' ? (
+                        <section id="project-comparison" className="scroll-mt-6 space-y-4">
+                            <SectionHeader
+                                step={1}
+                                title="Multi-Project Deal Comparison Matrix"
+                                description="Compare financial metrics, valuation multiples, and acquisition risk postures side-by-side across all deal projects."
+                            />
+                            <ProjectComparisonCard
+                                projects={projectSummaries.map((ps) => ({
+                                    projectId: ps.projectId || ps.projectKey,
+                                    projectName: ps.projectName || ps.companyName || ps.projectKey,
+                                    model: (Array.isArray(dealModelsData) ? dealModelsData.find((m: any) => m.projectId === (ps.projectId || ps.projectKey)) : undefined) ?? {
+                                        projectId: ps.projectId || ps.projectKey,
+                                        askingPrice: null,
+                                        purchasePrice: null,
+                                        debtAssumed: null,
+                                        cashAcquired: null,
+                                        workingCapitalRequirement: null,
+                                        transactionFees: null,
+                                        holdPeriodYears: null,
+                                        taxRate: null,
+                                        closingCosts: null,
+                                        maintenanceCapex: null,
+                                        exitMultiple: null,
+                                        exitCosts: null,
+                                        equityContributionPercent: null,
+                                        interestRate: null,
+                                        amortizationYears: null,
+                                        sellerNoteAmount: null,
+                                        bearRevenueGrowth: null,
+                                        baseRevenueGrowth: null,
+                                        bullRevenueGrowth: null,
+                                        bearEbitdaMargin: null,
+                                        baseEbitdaMargin: null,
+                                        bullEbitdaMargin: null,
+                                        bearExitMultiple: null,
+                                        baseExitMultiple: null,
+                                        bullExitMultiple: null,
+                                        revenueMultiple: null,
+                                        ebitdaMultiple: null,
+                                        assetHaircutPercent: null,
+                                        modelUpdatedAt: '',
+                                        modelUpdatedBy: '',
+                                        documentedFactsJson: '',
+                                        documentedFactsStatus: '',
+                                    },
+                                    synthesis: visibleProjectSyntheses.find((s) => s.projectId === (ps.projectId || ps.projectKey)),
+                                    documentsCount: ps.documentCount,
+                                    completedDocuments: ps.completedCount,
+                                }))}
+                                activeProjectId={activeProjectId}
+                                onSelectProject={(id: string) => {
+                                    setSelectedProjectKey(id)
+                                }}
+                            />
+                        </section>
                     ) : null}
 
                     {activeWorkspaceTab === 'synthesis' ? (

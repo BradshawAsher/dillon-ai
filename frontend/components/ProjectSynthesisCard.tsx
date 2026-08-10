@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { CheckCircle, Download, FileText, Filter, Landmark, Loader2, MessageCircleQuestion, RefreshCw, Scale, ShieldAlert, TriangleAlert } from 'lucide-react'
+import { CheckCircle, Download, FileText, Filter, FolderPlus, Landmark, Loader2, MessageCircleQuestion, RefreshCw, Scale, ShieldAlert, TriangleAlert } from 'lucide-react'
 
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
@@ -405,6 +405,28 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                         <Button onClick={onRunSynthesis} disabled={!onRunSynthesis || runningSynthesis || documentAnalysisPending}>
                             <RefreshCw className={runningSynthesis ? 'animate-spin' : undefined} />
                             {runningSynthesis ? 'Starting synthesis…' : 'Run synthesis now'}
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            className="gap-1.5 font-bold border border-primary/30"
+                            onClick={() => {
+                                const el = document.getElementById('upload-section') || document.querySelector('[data-project-intake]')
+                                if (el) {
+                                    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                                } else {
+                                    window.scrollTo({ top: 0, behavior: 'smooth' })
+                                }
+                                setTimeout(() => {
+                                    const createBtn = document.querySelector('[data-project-intake] button') as HTMLButtonElement | null
+                                    if (createBtn) createBtn.click()
+                                    alert("✨ Creating New Project: The project intake form is initialized for a brand new project. Enter your deal name and upload your files!")
+                                }, 150)
+                            }}
+                            title="Initialize project intake form for a brand new project"
+                        >
+                            <FolderPlus className="h-4 w-4 text-primary shrink-0" />
+                            <span>Make New Project</span>
                         </Button>
                         {(synthesisPending || documentAnalysisPending) && onStopSynthesis ? (
                             <Button variant="outline" onClick={onStopSynthesis} disabled={stoppingSynthesis}>
