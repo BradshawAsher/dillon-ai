@@ -1,70 +1,71 @@
 {
-  "fileName": "WidgetCo - 1_P&L_Statement.xlsx",
-  "business": "WidgetCo Forensic Set",
-  "fileType": "XLSX",
-  "groundTruth": {
-    "documentType": "Profit and Loss Statement",
-    "documentTypes": [
-      "Profit and Loss Statement"
-    ],
-    "trafficLight": "YELLOW",
-    "riskLevel": "HIGH",
-    "financialFacts": [
-      {
-        "metric": "revenue",
-        "normalizedValue": 1000000,
-        "period": "2023",
-        "rawValue": "$1,000,000"
-      },
-      {
-        "metric": "revenue",
-        "normalizedValue": 1200000,
-        "period": "2024",
-        "rawValue": "$1,200,000"
-      },
-      {
-        "metric": "revenue",
-        "normalizedValue": 1500000,
-        "period": "2025",
-        "rawValue": "$1,500,000"
-      },
-      {
-        "metric": "gross_profit",
-        "normalizedValue": 600000,
-        "period": "2023",
-        "rawValue": "$600,000"
-      },
-      {
-        "metric": "gross_profit",
-        "normalizedValue": 600000,
-        "period": "2024",
-        "rawValue": "$600,000"
-      },
-      {
-        "metric": "gross_profit",
-        "normalizedValue": 600000,
-        "period": "2025",
-        "rawValue": "$600,000"
-      },
-      {
-        "metric": "ebitda_sde",
-        "normalizedValue": 280000,
-        "period": "2025",
-        "rawValue": "$280,000"
-      }
-    ],
-    "expectedRedFlags": [
-      "Gross margin severe compression from 60% in 2023 to 40% in 2025"
-    ],
-    "expectedYellowFlags": [
-      "Gross profit stagnant at $600k despite 50% revenue growth",
-      "One-time legal settlement add-back inflation ($100k in 2025)"
-    ],
-    "falsePositiveFlags": [],
-    "missedFlags": [],
-    "valuation": null,
-    "employeeEvidence": null,
-    "expectedMathCheckStatus": "passed",
-    "notes": "Forensic test file #1: Tests arithmetic checks (Revenue - COGS = Gross Profit) and margin compression detection."
-  }
+    "fileName": "WidgetCo - 1_P&L_Statement.xlsx",
+    "business": "WidgetCo Forensic Set",
+    "fileType": "XLSX",
+    "groundTruth": {
+        "documentType": "Profit and Loss Statement",
+        "documentTypes": [
+            "Profit and Loss Statement"
+        ],
+        "trafficLight": "YELLOW",
+        "riskLevel": "HIGH",
+        "financialFacts": [
+            {
+                "metric": "revenue",
+                "normalizedValue": 1000000,
+                "period": "2023",
+                "rawValue": "$1,000,000"
+            },
+            {
+                "metric": "revenue",
+                "normalizedValue": 1200000,
+                "period": "2024",
+                "rawValue": "$1,200,000"
+            },
+            {
+                "metric": "revenue",
+                "normalizedValue": 1500000,
+                "period": "2025",
+                "rawValue": "$1,500,000"
+            },
+            {
+                "metric": "gross_profit",
+                "normalizedValue": 600000,
+                "period": "2023",
+                "rawValue": "$600,000"
+            },
+            {
+                "metric": "gross_profit",
+                "normalizedValue": 600000,
+                "period": "2024",
+                "rawValue": "$600,000"
+            },
+            {
+                "metric": "gross_profit",
+                "normalizedValue": 600000,
+                "period": "2025",
+                "rawValue": "$600,000"
+            },
+            {
+                "metric": "ebitda_sde",
+                "normalizedValue": 280000,
+                "period": "2025",
+                "rawValue": "$280,000"
+            }
+        ],
+        "expectedRedFlags": [
+            "Gross margin severe compression from 60% in 2023 to 40% in 2025"
+        ],
+        "expectedYellowFlags": [
+            "Gross profit stagnant at $600k despite 50% revenue growth",
+            "One-time legal settlement add-back inflation ($100k in 2025)"
+        ],
+        "falsePositiveFlags": [],
+        "missedFlags": [],
+        "valuation": null,
+        "employeeEvidence": null,
+        "expectedMathCheckStatus": "passed",
+        "notes": "Forensic test file #1: Tests arithmetic checks (Revenue - COGS = Gross Profit) and margin compression detection.",
+        "expectedRecommendation": "RENEGOTIATE"
+    }
 }

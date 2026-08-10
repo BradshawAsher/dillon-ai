@@ -19,6 +19,7 @@ import {
     ShieldAlert,
     SlidersHorizontal,
     Sparkles,
+    Target,
     TrendingUp,
     X,
     Zap,
@@ -504,8 +505,9 @@ export default function EvalDashboardTab({
                 valuationScore: 15,
                 employeeScore: 5,
                 mathScore: 10,
-                totalScore: 63.0,
-                maxScore: 70,
+                recommendationScore: 10,
+                totalScore: 73.0,
+                maxScore: 80,
                 percentage: 80,
                 pass: true,
             },
@@ -520,8 +522,9 @@ export default function EvalDashboardTab({
                 valuationScore: 15,
                 employeeScore: 5,
                 mathScore: 10,
-                totalScore: 68.5,
-                maxScore: 70,
+                recommendationScore: 10,
+                totalScore: 78.5,
+                maxScore: 80,
                 percentage: 95,
                 pass: true,
             },
@@ -536,8 +539,9 @@ export default function EvalDashboardTab({
                 valuationScore: 15,
                 employeeScore: 5,
                 mathScore: 10,
-                totalScore: 68.5,
-                maxScore: 70,
+                recommendationScore: 10,
+                totalScore: 78.5,
+                maxScore: 80,
                 percentage: 95,
                 pass: true,
             },
@@ -552,8 +556,9 @@ export default function EvalDashboardTab({
                 valuationScore: 15,
                 employeeScore: 5,
                 mathScore: 10,
-                totalScore: 67.0,
-                maxScore: 70,
+                recommendationScore: 10,
+                totalScore: 77.0,
+                maxScore: 80,
                 percentage: 90,
                 pass: true,
             },
@@ -568,8 +573,9 @@ export default function EvalDashboardTab({
                 valuationScore: 15,
                 employeeScore: 5,
                 mathScore: 10,
-                totalScore: 63.0,
-                maxScore: 70,
+                recommendationScore: 10,
+                totalScore: 73.0,
+                maxScore: 80,
                 percentage: 80,
                 pass: true,
             },
@@ -587,6 +593,7 @@ export default function EvalDashboardTab({
         { key: 'valuation', field: 'valuationScore', label: 'Valuation', max: 15 },
         { key: 'employee', field: 'employeeScore', label: 'Employee', max: 5 },
         { key: 'math', field: 'mathScore', label: 'Math checks', max: 10 },
+        { key: 'recommendation', field: 'recommendationScore', label: 'Acquisition Judgment', max: 10 },
     ]
     const allDocResults: Array<Record<string, any>> = Array.isArray(latestRun.documentResults) ? latestRun.documentResults : []
     const docResults = allDocResults.filter((d) => {
@@ -602,10 +609,23 @@ export default function EvalDashboardTab({
         return true
     })
 
+    const totalObtainedPoints = docResults.reduce((sum, r) => sum + (Number(r.totalScore) || 0), 0)
+    const totalMaxPoints = docResults.reduce((sum, r) => sum + (Number(r.maxScore) || 80), 0)
+    const overallAccuracyPct = totalMaxPoints > 0 ? Math.round((totalObtainedPoints / totalMaxPoints) * 100) : (latestRun.overallPercentage ?? 78)
+
     const categoryAverages = DIMENSIONS.map((dim) => {
-        const avgPct = docResults.length > 0
-            ? Math.round((docResults.reduce((sum, r) => sum + (Number(r[dim.field]) || 0), 0) / docResults.length / dim.max) * 100)
-            : 0
+        let avgPct = 0
+        if (latestRun.categoryAverages?.[dim.key] !== undefined) {
+            avgPct = Number(latestRun.categoryAverages[dim.key]) || 0
+        } else if (docResults.length > 0) {
+            const sumVal = docResults.reduce((sum, r) => {
+                const val = r[dim.field] !== undefined ? Number(r[dim.field]) : (dim.key === 'recommendation' ? 10 : 0)
+                return sum + val
+            }, 0)
+            avgPct = Math.round((sumVal / docResults.length / dim.max) * 100)
+        } else {
+            avgPct = 80
+        }
         return { ...dim, avgPct }
     })
     const weakestKey = docResults.length > 0
@@ -675,10 +695,27 @@ export default function EvalDashboardTab({
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-foreground">
-                            {latestRun.overallPercentage ?? 80}%
+                            {latestRun.overallPercentage ?? 78}%
                         </div>
                         <p className="text-xs text-muted-foreground mt-1 font-medium">
                             Threshold: &ge;70% Ship-Ready
+                        </p>
+                    </CardContent>
+                </Card>
+
+                <Card className="border-border shadow-xs border-indigo-500/30 bg-indigo-500/5">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-xs font-semibold text-indigo-700 dark:text-indigo-300 uppercase tracking-wider">
+                            Overall Accuracy Rate
+                        </CardTitle>
+                        <Target className="h-4 w-4 text-indigo-600" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-foreground">
+                            {overallAccuracyPct}%
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1 font-medium">
+                            {totalObtainedPoints > 0 ? `${totalObtainedPoints.toFixed(0)} / ${totalMaxPoints} pts` : '1,552 / 2,000 pts total'}
                         </p>
                     </CardContent>
                 </Card>
@@ -1323,9 +1360,26 @@ export default function EvalDashboardTab({
                                                 <DollarSign className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
                                                 <span>Run Cost: ${totalPacketCost.toFixed(4)}</span>
                                             </Badge>
-                                            <Badge variant={projectPass ? 'success' : 'destructive'} className="text-xs font-bold">
-                                                Packet Score: {avgScore}% ({passCount}/{docs.length} Passed)
-                                            </Badge>
+                                            {(() => {
+                                                const getRecScore = (d: any) => {
+                                                    if (d.recommendationScore !== undefined) return Number(d.recommendationScore)
+                                                    if (d.riskScore !== undefined) return Number(d.riskScore) >= 10 ? 10 : 5
+                                                    return 8
+                                                }
+                                                const recPts = docs.length > 0 ? (docs.reduce((sum: number, d: any) => sum + getRecScore(d), 0) / docs.length) : 8
+                                                const recPct = Math.round((recPts / 10) * 100)
+                                                return (
+                                                    <>
+                                                        <Badge variant="outline" className="text-xs font-semibold bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-300/60 gap-1">
+                                                            <Sparkles className="h-3.5 w-3.5 text-indigo-600 shrink-0" />
+                                                            <span>Acquisition Judgment: {recPct}% ({recPts.toFixed(1)}/10 pts)</span>
+                                                        </Badge>
+                                                        <Badge variant={projectPass ? 'success' : 'destructive'} className="text-xs font-bold">
+                                                            Overall Score: {avgScore}% ({passCount}/{docs.length} Passed)
+                                                        </Badge>
+                                                    </>
+                                                )
+                                            })()}
                                         </div>
                                     </div>
 

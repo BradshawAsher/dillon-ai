@@ -1,19 +1,36 @@
 {
-  "fileName": "Balance Sheet Jan 2023 to Dec 2024.pdf",
-  "business": "Business 1 - Roofing Co PA",
-  "fileType": "PDF",
-  "groundTruth": {
-    "documentType": "Balance Sheet",
-    "documentTypes": ["Balance Sheet"],
-    "trafficLight": "YELLOW",
-    "riskLevel": "MEDIUM",
-    "financialFacts": [
-      { "metric": "total_assets", "normalizedValue": 1250000, "period": "FY2024", "rawValue": "$1,250,000" },
-      { "metric": "total_liabilities", "normalizedValue": 620000, "period": "FY2024", "rawValue": "$620,000" }
-    ],
-    "expectedRedFlags": ["Working capital pressure"],
-    "expectedYellowFlags": ["High accounts payable aging"],
-    "falsePositiveFlags": [],
-    "expectedMathCheckStatus": "passed"
-  }
+    "fileName": "Balance Sheet Jan 2023 to Dec 2024.pdf",
+    "business": "Business 1 - Roofing Co PA",
+    "fileType": "PDF",
+    "groundTruth": {
+        "documentType": "Balance Sheet",
+        "documentTypes": [
+            "Balance Sheet"
+        ],
+        "trafficLight": "YELLOW",
+        "riskLevel": "MEDIUM",
+        "financialFacts": [
+            {
+                "metric": "total_assets",
+                "normalizedValue": 1250000,
+                "period": "FY2024",
+                "rawValue": "$1,250,000"
+            },
+            {
+                "metric": "total_liabilities",
+                "normalizedValue": 620000,
+                "period": "FY2024",
+                "rawValue": "$620,000"
+            }
+        ],
+        "expectedRedFlags": [
+            "Working capital pressure"
+        ],
+        "expectedYellowFlags": [
+            "High accounts payable aging"
+        ],
+        "falsePositiveFlags": [],
+        "expectedMathCheckStatus": "passed",
+        "expectedRecommendation": "RENEGOTIATE"
+    }
 }

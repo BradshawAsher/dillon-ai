@@ -1,33 +1,34 @@
 {
-  "fileName": "WidgetCo - 3_Customer_Concentration.xlsx",
-  "business": "WidgetCo Forensic Set",
-  "fileType": "XLSX",
-  "groundTruth": {
-    "documentType": "Customer Concentration Report",
-    "documentTypes": [
-      "Customer Concentration Report"
-    ],
-    "trafficLight": "RED",
-    "riskLevel": "HIGH",
-    "financialFacts": [
-      {
-        "metric": "revenue",
-        "normalizedValue": 525000,
-        "period": "Annual",
-        "rawValue": "$525,000 (35.0% BigCorp Inc)"
-      }
-    ],
-    "expectedRedFlags": [
-      "Critical customer concentration risk: BigCorp Inc accounts for 35.0% of total revenue (>20% threshold)"
-    ],
-    "expectedYellowFlags": [
-      "Top 2 customers account for 50.0% of total revenue"
-    ],
-    "falsePositiveFlags": [],
-    "missedFlags": [],
-    "valuation": null,
-    "employeeEvidence": null,
-    "expectedMathCheckStatus": "passed",
-    "notes": "Forensic test file #3: Tests concentration risk threshold detection (>20% triggers RED risk flag)."
-  }
+    "fileName": "WidgetCo - 3_Customer_Concentration.xlsx",
+    "business": "WidgetCo Forensic Set",
+    "fileType": "XLSX",
+    "groundTruth": {
+        "documentType": "Customer Concentration Report",
+        "documentTypes": [
+            "Customer Concentration Report"
+        ],
+        "trafficLight": "RED",
+        "riskLevel": "HIGH",
+        "financialFacts": [
+            {
+                "metric": "revenue",
+                "normalizedValue": 525000,
+                "period": "Annual",
+                "rawValue": "$525,000 (35.0% BigCorp Inc)"
+            }
+        ],
+        "expectedRedFlags": [
+            "Critical customer concentration risk: BigCorp Inc accounts for 35.0% of total revenue (>20% threshold)"
+        ],
+        "expectedYellowFlags": [
+            "Top 2 customers account for 50.0% of total revenue"
+        ],
+        "falsePositiveFlags": [],
+        "missedFlags": [],
+        "valuation": null,
+        "employeeEvidence": null,
+        "expectedMathCheckStatus": "passed",
+        "notes": "Forensic test file #3: Tests concentration risk threshold detection (>20% triggers RED risk flag).",
+        "expectedRecommendation": "ESCALATE"
+    }
 }

@@ -26,6 +26,7 @@ export type GroundTruth = {
         employee_count?: number | null
     } | null
     expectedMathCheckStatus: string
+    expectedRecommendation?: string
 }
 
 export type ActualRunDoc = {
@@ -51,6 +52,8 @@ export type ActualRunDoc = {
         count?: number | null
     } | null
     mathCheckStatus: string
+    finalRecommendation?: string
+    recommendation?: string
 }
 
 export type DocScore = {
@@ -60,6 +63,7 @@ export type DocScore = {
     valuationScore: number // max 15
     employeeScore: number // max 5
     mathScore: number // max 10
+    recommendationScore: number // max 10
     totalScore: number
     maxScore: number
     percentage: number
@@ -74,6 +78,7 @@ export const DIMENSION_MAX = {
     valuation: 15,
     employee: 5,
     math: 10,
+    recommendation: 10,
 } as const
 
 export type EvalSummary = {
@@ -99,7 +104,7 @@ export function summarizeResults(results: DocScore[], minScore = 70): EvalSummar
     const passed = results.filter((r) => r.pass).length
     const overallPercentage = total > 0 ? Math.round(results.reduce((sum, r) => sum + r.percentage, 0) / total) : 0
 
-    const sum = { classification: 0, facts: 0, risk: 0, valuation: 0, employee: 0, math: 0 }
+    const sum = { classification: 0, facts: 0, risk: 0, valuation: 0, employee: 0, math: 0, recommendation: 0 }
     for (const r of results) {
         sum.classification += r.classificationScore
         sum.facts += r.factsScore
@@ -107,6 +112,7 @@ export function summarizeResults(results: DocScore[], minScore = 70): EvalSummar
         sum.valuation += r.valuationScore
         sum.employee += r.employeeScore
         sum.math += r.mathScore
+        sum.recommendation += r.recommendationScore ?? 10
     }
 
     const categoryAverages = {} as Record<keyof typeof DIMENSION_MAX, number>
@@ -218,8 +224,22 @@ export function evaluateDocument(gt: GroundTruth, actual: ActualRunDoc): DocScor
     // 6. Math Score (10 pts)
     const mathScore = gt.expectedMathCheckStatus.toLowerCase() === actual.mathCheckStatus?.toLowerCase() ? 10 : 5
 
-    const totalScore = classificationScore + factsScore + riskScore + valuationScore + employeeScore + mathScore
-    const maxScore = 10 + 10 + 20 + 15 + 5 + 10
+    // 7. Recommendation Score (10 pts)
+    let recommendationScore = 10
+    const rawGtRec = (gt.expectedRecommendation || gt.trafficLight || '').toUpperCase().trim()
+    const rawActRec = (actual.finalRecommendation || actual.recommendation || actual.trafficLight || '').toUpperCase().trim()
+    if (rawGtRec && rawActRec) {
+        if (rawGtRec === rawActRec || (rawGtRec.includes('RENEGOTIATE') && rawActRec.includes('RENEGOTIATE')) || (rawGtRec.includes('ESCALATE') && rawActRec.includes('ESCALATE')) || (rawGtRec.includes('PROCEED') && rawActRec.includes('PROCEED'))) {
+            recommendationScore = 10
+        } else if ((rawGtRec.includes('YELLOW') && rawActRec.includes('RENEGOTIATE')) || (rawGtRec.includes('RED') && rawActRec.includes('ESCALATE')) || (rawGtRec.includes('GREEN') && rawActRec.includes('PROCEED'))) {
+            recommendationScore = 10
+        } else {
+            recommendationScore = 5
+        }
+    }
+
+    const totalScore = classificationScore + factsScore + riskScore + valuationScore + employeeScore + mathScore + recommendationScore
+    const maxScore = 10 + 10 + 20 + 15 + 5 + 10 + 10
     const percentage = Math.round((totalScore / maxScore) * 100)
 
     return {
@@ -229,6 +249,7 @@ export function evaluateDocument(gt: GroundTruth, actual: ActualRunDoc): DocScor
         valuationScore,
         employeeScore,
         mathScore,
+        recommendationScore,
         totalScore,
         maxScore,
         percentage,

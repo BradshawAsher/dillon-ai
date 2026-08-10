@@ -1,48 +1,49 @@
 {
-  "fileName": "1) TurnKey Product Management Business Summary.pdf",
-  "business": "Business 3 - TurnKey Product Management",
-  "fileType": "PDF",
-  "groundTruth": {
-    "documentType": "Other",
-    "documentTypes": [
-      "Other",
-      "Operating Metrics"
-    ],
-    "trafficLight": "GREEN",
-    "riskLevel": "LOW",
-    "financialFacts": [
-      {
-        "metric": "revenue",
-        "normalizedValue": 1850000,
-        "period": "TTM",
-        "rawValue": "$1,850,000"
-      },
-      {
-        "metric": "ebitda_sde",
-        "normalizedValue": 620000,
-        "period": "TTM",
-        "rawValue": "$620,000"
-      }
-    ],
-    "expectedRedFlags": [],
-    "expectedYellowFlags": [
-      "Amazon marketplace platform dependency — changes to seller policies or algorithms impact agency client spend"
-    ],
-    "falsePositiveFlags": [],
-    "missedFlags": [],
-    "valuation": {
-      "valuationLowerBound": 1800000,
-      "valuationBaseEstimate": 2100000,
-      "valuationUpperBound": 2400000,
-      "askingPrice": 2100000,
-      "currency": "USD"
-    },
-    "employeeEvidence": {
-      "count": 14,
-      "type": "headcount",
-      "asOfDate": "2024"
-    },
-    "expectedMathCheckStatus": "passed",
-    "notes": "48-page broker document detailing TurnKey Amazon E-Commerce management service business."
-  }
+    "fileName": "1) TurnKey Product Management Business Summary.pdf",
+    "business": "Business 3 - TurnKey Product Management",
+    "fileType": "PDF",
+    "groundTruth": {
+        "documentType": "Other",
+        "documentTypes": [
+            "Other",
+            "Operating Metrics"
+        ],
+        "trafficLight": "GREEN",
+        "riskLevel": "LOW",
+        "financialFacts": [
+            {
+                "metric": "revenue",
+                "normalizedValue": 1850000,
+                "period": "TTM",
+                "rawValue": "$1,850,000"
+            },
+            {
+                "metric": "ebitda_sde",
+                "normalizedValue": 620000,
+                "period": "TTM",
+                "rawValue": "$620,000"
+            }
+        ],
+        "expectedRedFlags": [],
+        "expectedYellowFlags": [
+            "Amazon marketplace platform dependency — changes to seller policies or algorithms impact agency client spend"
+        ],
+        "falsePositiveFlags": [],
+        "missedFlags": [],
+        "valuation": {
+            "valuationLowerBound": 1800000,
+            "valuationBaseEstimate": 2100000,
+            "valuationUpperBound": 2400000,
+            "askingPrice": 2100000,
+            "currency": "USD"
+        },
+        "employeeEvidence": {
+            "count": 14,
+            "type": "headcount",
+            "asOfDate": "2024"
+        },
+        "expectedMathCheckStatus": "passed",
+        "notes": "48-page broker document detailing TurnKey Amazon E-Commerce management service business.",
+        "expectedRecommendation": "PROCEED"
+    }
 }

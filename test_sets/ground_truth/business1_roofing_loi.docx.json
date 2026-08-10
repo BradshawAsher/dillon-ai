@@ -1,37 +1,38 @@
 {
-  "fileName": "Werkheiser_LOI_MergeWorks.docx",
-  "business": "Business 1 - Roofing Co PA",
-  "fileType": "DOCX",
-  "groundTruth": {
-    "documentType": "Purchase Agreement or LOI",
-    "documentTypes": [
-      "Purchase Agreement or LOI"
-    ],
-    "trafficLight": "GREEN",
-    "riskLevel": "LOW",
-    "financialFacts": [
-      {
-        "metric": "revenue",
-        "normalizedValue": 3150000,
-        "period": "TTM",
-        "rawValue": "$3,150,000"
-      }
-    ],
-    "expectedRedFlags": [],
-    "expectedYellowFlags": [
-      "Exclusivity clause limits concurrent discussions"
-    ],
-    "falsePositiveFlags": [],
-    "missedFlags": [],
-    "valuation": {
-      "valuationLowerBound": 4500000,
-      "valuationBaseEstimate": 4875000,
-      "valuationUpperBound": 5200000,
-      "askingPrice": 4875000,
-      "currency": "USD"
-    },
-    "employeeEvidence": null,
-    "expectedMathCheckStatus": "passed",
-    "notes": "Letter of Intent containing enterprise valuation of $4,875,000 across 6 structured tables."
-  }
+    "fileName": "Werkheiser_LOI_MergeWorks.docx",
+    "business": "Business 1 - Roofing Co PA",
+    "fileType": "DOCX",
+    "groundTruth": {
+        "documentType": "Purchase Agreement or LOI",
+        "documentTypes": [
+            "Purchase Agreement or LOI"
+        ],
+        "trafficLight": "GREEN",
+        "riskLevel": "LOW",
+        "financialFacts": [
+            {
+                "metric": "revenue",
+                "normalizedValue": 3150000,
+                "period": "TTM",
+                "rawValue": "$3,150,000"
+            }
+        ],
+        "expectedRedFlags": [],
+        "expectedYellowFlags": [
+            "Exclusivity clause limits concurrent discussions"
+        ],
+        "falsePositiveFlags": [],
+        "missedFlags": [],
+        "valuation": {
+            "valuationLowerBound": 4500000,
+            "valuationBaseEstimate": 4875000,
+            "valuationUpperBound": 5200000,
+            "askingPrice": 4875000,
+            "currency": "USD"
+        },
+        "employeeEvidence": null,
+        "expectedMathCheckStatus": "passed",
+        "notes": "Letter of Intent containing enterprise valuation of $4,875,000 across 6 structured tables.",
+        "expectedRecommendation": "PROCEED"
+    }
 }

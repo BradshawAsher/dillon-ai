@@ -120,6 +120,8 @@ The Right Way to Fallback: Instead of stacking parsers serially, use an If/Else 
 
 - Still need to finish video project by the end of the week?
 
+- Finish setting up another 10 pts for evals for the final deal recommendation (10 pts), make sure setup in UI and backend
+
 
 - Prep for business meeting 3 and a website and walkthrough ready for them to try as well as prepare to be more professional with what to show when and example questions to ask and example questions to be ready to address
 
