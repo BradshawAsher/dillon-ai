@@ -28,6 +28,12 @@ jobs:
           EVAL_MIN_SCORE: "70"
         run: npx tsx scripts/run-evals.ts
 
+      - name: Render GitHub Actions Surface-Level Summary
+        if: always()
+        run: |
+          cat test_sets/eval_reports/latest_eval_report.md >> $GITHUB_STEP_SUMMARY
+          cat FAILURE_CASES.md >> $GITHUB_STEP_SUMMARY
+
       - name: Upload Eval Report
         # Upload even when the gate fails so regressions can be inspected.
         if: always()
@@ -37,3 +43,4 @@ jobs:
           path: |
             test_sets/eval_reports/latest_eval_report.json
             test_sets/eval_reports/latest_eval_report.md
+            FAILURE_CASES.md
