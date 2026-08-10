@@ -90,9 +90,6 @@
 
 - For brad - need to rerun all the evals docs again through the n8n pipeline using the anthropic api keys instead of your gemini api keys
 
-- And maybe if the user wants to find more facts and flags we can set up a button to find more facts and red flags or tell them to ask the chatbot what do you think?
-  - Since our agent doesn't get all the facts/flags but the classification is usually right
-
 - For Brad - need to keep testing the website and trying different documents, can always expand the eval suite and trying to break the system, and also i think a lot of financial facts like ebitda and sde are not filled even though we put 4 long docs through? Why?
 
 
@@ -116,36 +113,14 @@ The Right Way to Fallback: Instead of stacking parsers serially, use an If/Else 
 
 - Environment separation for prod API keys separate from testing API keys? Have we done this?
 
-- Are we setting good realistic caps for max file size but still dont max out really big excel file?
 
 - Still need to finish video project by the end of the week?
 
 - Prep for business meeting 3 and a website and walkthrough ready for them to try as well as prepare to be more professional with what to show when and example questions to ask and example questions to be ready to address
 
-- Do we have to do some security stuff like SEC compliance and stuff like that?
-  1. Data Security & Privacy Frameworks (The Tech Stuff)
-  Financial due diligence documents contain highly confidential corporate numbers, cap tables, and private financial statements. Professional tools require strict security controls:
+- On supabase you are maxed out on egress is this a problem? Do we have to implement caching or something?
 
-  SOC 2 Type II Compliance: The gold standard for B2B SaaS. It proves your cloud infrastructure, database controls (like Supabase), and automated pipelines (like n8n) securely handle sensitive customer data.
-
-  Encryption: Ensuring data is encrypted both in transit (HTTPS/TLS) and at rest (database-level encryption).
-
-  Data Residency: Guaranteeing that private financial data doesn't get leaked or stored insecurely when passed through third-party Large Language Model (LLM) APIs.
-
-  2. Financial Regulatory & Fiduciary Boundaries (The Legal Stuff)
-  Even though your tool uses AI to automate analysis, financial software must include strict liability disclaimers:
-
-  "Not Investment Advice" Disclaimers: Clear legal notices stating that the dashboard's automated EBITDA reconstructions, risk flags, and deal summaries are for informational/analytical assistance only and do not constitute official financial, legal, or tax advice.
-
-  Audit Trails & Explainability: Professional M&A teams cannot blindly trust an AI agent. Compliance-grade tools must maintain immutable logs (which your dashboard handles via its workflow error logs and submission histories) showing exact source attribution—linking every extracted metric back to the exact page of the original uploaded document.
-
-  3. SEC & Regulatory Data Usage
-  If your app pulls public data to benchmark deals:
-
-  SEC EDGAR API Rules: When scraping or querying corporate filings from the SEC, developers must follow polite-pool guidelines (such as including a valid User-Agent header with contact info and respecting rate limits) to stay compliant with federal public data access rules.
-
-  4. Professional Liability (E&O Insurance)
-  If an enterprise financial advisory firm uses a due diligence tool and a critical AI hallucination misses a massive financial liability during a multi-million dollar acquisition, the software provider could face legal liability. Commercial financial platforms carry Errors & Omissions (E&O) / Professional Liability Insurance to protect against software bugs or inaccurate AI outputs.
+- Enable RLS for your database or no?
 
 - Have to make a landing page and walkthrough page like the example walkthrough for our project USE supademo
 
@@ -164,29 +139,15 @@ The Right Way to Fallback: Instead of stacking parsers serially, use an If/Else 
 
   Investor Relations Pages of Public Companies: You can download investor presentation decks, quarterly earnings reports, and M&A press releases directly from corporate websites to test unstructured document parsing.
 
-- How to increase accuracy?
-
-- Is vercel now synced with localhost?
-
 - Are we separating error handling well? Like regular "we hit an issue" vs we hit a rate limit
 
 - Find a real domain name on Porkbun and then swap to cloudflare for this
 
 - Make successful deployment ready for businesses meeting for them to try it
 
-- How does your eval & harness work? Does it work on the synthesis or per doc for each doc in the project?
-
-- Do we really have live regression checks working? How do we do that?
-
 - Is there a way I can automate the pushing of docs under different projects to save time? Or can I upload multiple projects at a time?
 
 - Need to rerun all your test docs with the anthropic for per doc and openai for synthesizer
-
-- In eval and harness tab, have a button to view each business/project and to view each individual doc (either takes you to audit trail for that, or to diligence tab for most recent doc submission option for that doc results + sets the project being viewed to that project)
-
-- How are we calculating the flags in general? Should we auto add all flags for per doc and then have synthesizer find more or reduce duplicates?
-
-- View project workspace button and view doc results in evals and harness tab doesn't work right?
 
 - Change your fixed window + scrolling to more of fixed window + 20 per page, or 50 per page, or view all, like big websites like AWS when you have to look at IAM and admin permissinos stuff?
 
