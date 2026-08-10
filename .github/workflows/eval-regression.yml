@@ -25,7 +25,7 @@ jobs:
       # EVAL_MIN_SCORE — run-evals.ts exits non-zero on regression.
       - name: Execute Automated Eval Harness
         env:
-          EVAL_MIN_SCORE: "70"
+          EVAL_MIN_SCORE: "80"
         run: npx tsx scripts/run-evals.ts
 
       - name: Render GitHub Actions Surface-Level Summary

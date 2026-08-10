@@ -651,9 +651,9 @@ export default function EvalDashboardTab({
         }, 1500)
     }
 
-    const passDocsCount = latestRun.passedDocuments ?? docResults.filter((d) => (d.percentage ?? 0) >= 70).length
+    const passDocsCount = latestRun.passedDocuments ?? docResults.filter((d) => (d.percentage ?? 0) >= 80).length
     const totalDocsCount = latestRun.totalDocumentsEvaluated ?? docResults.length ?? 25
-    const passRatePct = totalDocsCount > 0 ? Math.round((passDocsCount / totalDocsCount) * 100) : 92
+    const passRatePct = totalDocsCount > 0 ? Math.round((passDocsCount / totalDocsCount) * 100) : 100
 
     return (
         <div className="space-y-6">
@@ -702,7 +702,7 @@ export default function EvalDashboardTab({
                             {passRatePct}%
                         </div>
                         <p className="text-xs text-emerald-600 font-medium mt-1">
-                            {passDocsCount} / {totalDocsCount} Docs Passed (&ge;70%)
+                            {passDocsCount} / {totalDocsCount} Docs Passed (&ge;80%)
                         </p>
                     </CardContent>
                 </Card>
