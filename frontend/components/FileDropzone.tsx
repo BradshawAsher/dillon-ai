@@ -5,6 +5,7 @@ import { Button } from '../lib/shadcn/button'
 import { cn } from '../lib/shadcn/utils'
 
 const ACCEPTED_EXTENSIONS = new Set(['.pdf', '.doc', '.docx', '.xlsx', '.xls', '.xlsm', '.xltx', '.csv', '.ppt', '.pptx', '.txt'])
+const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024 // 50 MB per file — accommodates large Excel financial models
 
 type FileDropzoneProps = {
     selectedFiles: File[]
@@ -16,20 +17,25 @@ export default function FileDropzone({ selectedFiles, onFileSelect, className }:
     const inputRef = useRef<HTMLInputElement | null>(null)
     const [isDragging, setIsDragging] = useState(false)
     const [rejectedNames, setRejectedNames] = useState<string[]>([])
+    const [oversizedNames, setOversizedNames] = useState<string[]>([])
 
     const updateFiles = (fileList: FileList | null) => {
         const all = Array.from(fileList ?? [])
         const accepted: File[] = []
         const rejected: string[] = []
+        const oversized: string[] = []
         for (const file of all) {
             const ext = file.name.includes('.') ? ('.' + file.name.split('.').pop()!.toLowerCase()) : ''
-            if (ACCEPTED_EXTENSIONS.has(ext)) {
-                accepted.push(file)
-            } else {
+            if (!ACCEPTED_EXTENSIONS.has(ext)) {
                 rejected.push(file.name)
+            } else if (file.size > MAX_FILE_SIZE_BYTES) {
+                oversized.push(`${file.name} (${(file.size / (1024 * 1024)).toFixed(1)} MB)`)
+            } else {
+                accepted.push(file)
             }
         }
         setRejectedNames(rejected)
+        setOversizedNames(oversized)
         onFileSelect(accepted)
     }
 
@@ -106,6 +112,11 @@ export default function FileDropzone({ selectedFiles, onFileSelect, className }:
             {rejectedNames.length > 0 ? (
                 <p className="text-sm text-destructive">
                     Unsupported file type{rejectedNames.length > 1 ? 's' : ''} skipped: {rejectedNames.join(', ')}
+                </p>
+            ) : null}
+            {oversizedNames.length > 0 ? (
+                <p className="text-sm text-destructive">
+                    Oversized file{oversizedNames.length > 1 ? 's' : ''} skipped (&gt;50 MB limit): {oversizedNames.join(', ')}
                 </p>
             ) : null}
         </div>
