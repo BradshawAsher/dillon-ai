@@ -1313,9 +1313,9 @@ export default function EvalDashboardTab({
                                                 </Badge>
                                                 <Button
                                                     type="button"
-                                                    size="sm"
-                                                    variant="outline"
-                                                    className="gap-1.5 border-primary/50 bg-primary/10 text-primary hover:bg-primary hover:text-white font-extrabold text-xs px-3 py-1.5 shadow-2xs hover:shadow-sm transition-all cursor-pointer rounded-lg ml-2"
+                                                    size="default"
+                                                    variant="default"
+                                                    className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 font-black text-sm px-4 py-2 shadow-md hover:shadow-lg transition-all cursor-pointer rounded-xl ml-2 active:scale-95 ring-2 ring-primary/30 shrink-0"
                                                     onClick={() => {
                                                         const docProjectId = docs[0]?.projectId || docs[0]?.projectKey
                                                         const targetKey = docProjectId || mapBusinessToProjectKey(businessName, docs[0])
@@ -1325,15 +1325,15 @@ export default function EvalDashboardTab({
                                                     }}
                                                     title={`View full deal memo and workspace for ${businessName}`}
                                                 >
-                                                    <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+                                                    <ExternalLink className="h-4 w-4 shrink-0" />
                                                     <span>View Workspace</span>
                                                 </Button>
 
                                                 <Button
                                                     type="button"
-                                                    size="sm"
+                                                    size="default"
                                                     variant="outline"
-                                                    className="gap-1.5 border-emerald-600/50 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-600 hover:text-white font-extrabold text-xs px-3 py-1.5 shadow-2xs hover:shadow-sm transition-all cursor-pointer rounded-lg"
+                                                    className="gap-2 border-emerald-600/70 bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-600 hover:text-white font-extrabold text-xs px-3.5 py-2 shadow-xs hover:shadow-md transition-all cursor-pointer rounded-xl shrink-0"
                                                     onClick={() => {
                                                         const docProjectId = docs[0]?.projectId || docs[0]?.projectKey
                                                         const targetKey = docProjectId || mapBusinessToProjectKey(businessName, docs[0])
@@ -1347,8 +1347,8 @@ export default function EvalDashboardTab({
                                                     }}
                                                     title={`Add another financial file to ${businessName}`}
                                                 >
-                                                    <Plus className="h-3.5 w-3.5 shrink-0" />
-                                                    <span>Add More Files to Project</span>
+                                                    <Plus className="h-4 w-4 shrink-0" />
+                                                    <span>Add More Files</span>
                                                 </Button>
                                             </div>
                                             <p className="text-xs text-muted-foreground">

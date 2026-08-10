@@ -204,17 +204,78 @@ function getSeverityForGroup(groupType: InsightGroupType): SeverityFilter {
     }
 }
 
+function getSavedSynthesisHistory(projectId: string): ProjectSynthesisItem[] {
+    try {
+        const raw = window.sessionStorage.getItem('mergeworks.synthesisHistoryByProject')
+        if (!raw) return []
+        const map = JSON.parse(raw) as Record<string, ProjectSynthesisItem[]>
+        return map[projectId] || []
+    } catch {
+        return []
+    }
+}
+
+function saveSynthesisToHistory(projectId: string, synthesis: ProjectSynthesisItem) {
+    try {
+        if (!projectId || !synthesis) return
+        const raw = window.sessionStorage.getItem('mergeworks.synthesisHistoryByProject')
+        const map = (raw ? JSON.parse(raw) : {}) as Record<string, ProjectSynthesisItem[]>
+        const existing = map[projectId] || []
+        const isDuplicate = existing.some((item) =>
+            (item.id && item.id === synthesis.id) ||
+            (item.createdAt && item.createdAt === synthesis.createdAt && item.documentsReceivedCount === synthesis.documentsReceivedCount)
+        )
+        if (!isDuplicate) {
+            map[projectId] = [synthesis, ...existing]
+            window.sessionStorage.setItem('mergeworks.synthesisHistoryByProject', JSON.stringify(map))
+        }
+    } catch {
+        // ignore storage errors
+    }
+}
+
 export default function ProjectSynthesisCard({ syntheses, projects, currentProjectId, documentAnalysisPending, synthesisPending, synthesisProgress, synthesisStage, loading, error, onRefresh, impact, documents = [], onOpenEvidence, onExcludeDocument, onIncludeDocument, onRetryDocument, retryingRequestId, onRunSynthesis, runningSynthesis = false, onStopSynthesis, stoppingSynthesis = false, model }: ProjectSynthesisCardProps) {
     const [synthesisElapsedSeconds, setSynthesisElapsedSeconds] = useState(0)
     const [selectedDocumentRequestId, setSelectedDocumentRequestId] = useState('')
     const [severityFilter, setSeverityFilter] = useState<SeverityFilter>('all')
     const [typeFilter, setTypeFilter] = useState<TypeFilter>('all')
+    const [activeSynthesisIndex, setActiveSynthesisIndex] = useState(0)
+
     const projectNameById = new Map(
         projects.map((project) => [project.projectId || project.projectKey, formatProjectDisplayName(project)])
     )
 
     const normalizedProjectId = currentProjectId.trim()
-    const rawVisibleSyntheses = syntheses.filter((synthesis) => synthesis.projectId === normalizedProjectId || isRowMatchingProject({ projectId: synthesis.projectId } as any, normalizedProjectId, projects))
+    const savedHistory = useMemo(() => getSavedSynthesisHistory(normalizedProjectId), [normalizedProjectId])
+
+    const rawVisibleSyntheses = useMemo(() => {
+        const map = new Map<string | number, ProjectSynthesisItem>()
+        syntheses.forEach((item) => {
+            if (
+                item.projectId === normalizedProjectId ||
+                isRowMatchingProject({ projectId: item.projectId } as any, normalizedProjectId, projects) ||
+                (normalizedProjectId.includes('business1') && (item.projectId.includes('werkheiser') || item.projectId.includes('business1'))) ||
+                (normalizedProjectId.includes('werkheiser') && (item.projectId.includes('business1') || item.projectId.includes('werkheiser')))
+            ) {
+                map.set(item.id || item.createdAt || Math.random(), item)
+            }
+        })
+        savedHistory.forEach((item) => {
+            map.set(item.id || item.createdAt || Math.random(), item)
+        })
+        return [...map.values()].sort((a, b) => {
+            const timeA = new Date(a.createdAt || a.projectProcessedAt || a.updatedAt || 0).getTime()
+            const timeB = new Date(b.createdAt || b.projectProcessedAt || b.updatedAt || 0).getTime()
+            return timeB - timeA
+        })
+    }, [syntheses, normalizedProjectId, projects, savedHistory])
+
+    useEffect(() => {
+        if (rawVisibleSyntheses[0] && normalizedProjectId) {
+            saveSynthesisToHistory(normalizedProjectId, rawVisibleSyntheses[0])
+        }
+    }, [rawVisibleSyntheses, normalizedProjectId])
+
     const currentProject = projects.find((project) => (project.projectId || project.projectKey) === normalizedProjectId)
     const rawProjectDocuments = documents.filter((document) => {
         const pk = getProjectKey(document)
@@ -289,8 +350,6 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
             updatedAt: new Date().toISOString(),
         }
     }, [rawVisibleSyntheses, projectDocuments, documentThesisTakeaways, currentProjectName, normalizedProjectId])
-
-    const [activeSynthesisIndex, setActiveSynthesisIndex] = useState(0)
 
     // Reset synthesis version index when selected project changes
     useEffect(() => {
@@ -450,8 +509,8 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                 <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-muted/30 px-3.5 py-2.5 text-xs text-foreground">
                     <div className="flex flex-wrap items-center gap-2">
                         <span className="font-medium text-muted-foreground">Synthesis Document Scope:</span>
-                        <Badge variant={completedProjectDocumentsWithAnalysis > 0 ? 'success' : 'secondary'}>
-                            {completedProjectDocumentsWithAnalysis} of {projectDocuments.length} Documents Included
+                        <Badge variant={(activeSynthesis ? activeSynthesis.documentsCompletedCount : completedProjectDocumentsWithAnalysis) > 0 ? 'success' : 'secondary'}>
+                            {activeSynthesis ? activeSynthesis.documentsCompletedCount : completedProjectDocumentsWithAnalysis} of {activeSynthesis ? activeSynthesis.documentsReceivedCount : projectDocuments.length} Documents Included
                         </Badge>
                         {failedProjectDocuments.length > 0 ? (
                             <Badge variant="destructive">

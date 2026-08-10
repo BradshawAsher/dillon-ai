@@ -588,13 +588,64 @@ function useLiveUpdateSubmissionConsideration() {
         return fetchJson<{ ok: boolean }>('/api/diligence/submission-consideration', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', ...identityHeaders() },
-            body: JSON.stringify({ requestID: params.requestID, action: params.action === 'considered' ? 'considered' : 'nonconsidered', environment }),
         })
     }, []))
 }
 
+const mockSynthesisRowV1: ProjectSynthesisItem = {
+    projectId: 'werkheiser-commercial-cleaning',
+    projectStatus: 'synthesized',
+    documentsReceivedCount: 4,
+    documentsCompletedCount: 4,
+    missingDocuments: [],
+    crossDocumentConflicts: [],
+    openQuestions: [
+        'Is the top-customer renewal executed or still in commercial review?',
+        'Verify owner salary allocation ($505k SDE add-back) against W-2 records.',
+    ],
+    negotiationLevers: [
+        'Initial 4-document review complete across P&L, Balance Sheet, and LOI.',
+        'SDE estimated at $1.18M prior to detailed financial model ingestion.',
+    ],
+    keyTakeaways: [
+        'Initial 4-document synthesis for Werkheiser Commercial Cleaning.',
+        'TTM Revenue of $2.73M and base SDE of $1.18M estimated from tax returns and P&L.',
+        'Awaiting full 13-sheet financial model for definitive valuation reconciliation.',
+    ],
+    redFlags: [],
+    yellowFlags: ['Owner salary add-backs constitute major portion of SDE.'],
+    greenFlags: ['92% annual customer contract retention rate over 3 years.'],
+    citations: [
+        'Werkheiser P&L 2025.pdf',
+        'Two years PL ended Dec 31 2024.pdf',
+        'Balance Sheet Jan 2023 to Dec 31 2024.pdf',
+        'Werkheiser_LOI_MergeWorks.docx',
+    ],
+    citationDetails: [],
+    structuredFindings: {
+        keyTakeaways: [], redFlags: [], yellowFlags: [], greenFlags: [], crossDocumentConflicts: [], openQuestions: [], negotiationLevers: [], missingDocuments: [],
+    },
+    finalRiskLevel: 'Low',
+    finalTrafficLight: 'Green',
+    finalRecommendation: 'Proceed with Acquisition (Initial 4-Doc Pass)',
+    finalJudgmentSummary: 'Initial 4-document review before financial model ingestion — verified $2.73M revenue and $1.18M estimated SDE.',
+    finalJudgmentJson: '',
+    aiErrorMessage: '',
+    aiConfidence: '0.88',
+    valuationConfidence: '0.85',
+    valuationLowerBound: '$3.20M',
+    valuationBaseEstimate: '$3.55M',
+    valuationUpperBound: '$3.90M',
+    valuationCurrency: 'USD',
+    projectProcessedAt: new Date(Date.now() - 86400000).toISOString(),
+    id: 101,
+    createdAt: new Date(Date.now() - 86400000).toISOString(),
+    updatedAt: new Date(Date.now() - 86400000).toISOString(),
+}
+
 export const exampleProjectSyntheses: ProjectSynthesisItem[] = [
     mockSynthesisRow,
+    mockSynthesisRowV1,
     {
         ...mockSynthesisRow,
         projectId: 'irontree-tree-service',

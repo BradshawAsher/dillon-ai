@@ -330,10 +330,14 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         if (hasRestoredLatestProject || projectSummaries.length === 0) return
         const newestProject = projectSummaries[0]
         if (newestProject) {
-            setSelectedProjectKey(newestProject.projectKey)
-            setProjectId(newestProject.projectId || newestProject.projectKey)
-            setDealName(newestProject.projectName)
-            setProjectStage(newestProject.stage || 'post-loi')
+            const currentStoredKey = typeof window !== 'undefined' ? window.localStorage.getItem('mergeworks.selectedProjectKey') : null
+            // If localStorage holds an old project key or 'new', override with the newest project
+            if (!currentStoredKey || currentStoredKey === 'new' || !projectSummaries.some((p: any) => p.projectKey === currentStoredKey || p.projectId === currentStoredKey)) {
+                setSelectedProjectKey(newestProject.projectKey)
+                setProjectId(newestProject.projectId || newestProject.projectKey)
+                setDealName(newestProject.projectName)
+                setProjectStage(newestProject.stage || 'post-loi')
+            }
         }
         setHasRestoredLatestProject(true)
     }, [hasRestoredLatestProject, projectSummaries, setDealName, setProjectId, setProjectStage, setSelectedProjectKey])
@@ -1675,7 +1679,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                             <ProjectSynthesisCard
                                 syntheses={visibleProjectSyntheses}
                                 projects={projectSummaries}
-                                currentProjectId={isExampleMode ? 'atlas-001' : projectId}
+                                currentProjectId={activeProjectId}
                                 documentAnalysisPending={isCurrentProjectProcessingDocuments}
                                 synthesisPending={isCurrentProjectAwaitingSynthesis}
                                 synthesisProgress={isExampleMode ? 100 : currentSynthesisProgress.value}
