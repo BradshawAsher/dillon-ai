@@ -7,6 +7,7 @@ import {
     Key,
     Keyboard,
     Loader2,
+    ShieldCheck,
     SlidersHorizontal,
     X,
 } from 'lucide-react'
@@ -1847,6 +1848,17 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                     document.querySelector('[data-project-intake]')?.scrollIntoView({ behavior: 'smooth' })
                 }}
             />
+
+            {/* Legal Disclaimer & Compliance Footer */}
+            <footer className="mt-12 border-t border-border/60 pt-5 pb-8 px-4 text-center text-xs text-muted-foreground flex flex-col lg:flex-row items-center justify-between gap-3 bg-muted/20 rounded-lg">
+                <div className="flex items-center gap-2 font-semibold text-foreground/80">
+                    <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0" />
+                    <span>256-bit TLS Encryption • Zero-Retention Pipeline • RLS Database Protection</span>
+                </div>
+                <p className="max-w-2xl text-left text-2xs opacity-85 leading-normal">
+                    <strong>Disclaimer:</strong> MergeWorks is an AI-assisted financial due diligence platform. Extracted metrics, EBITDA reconstructions, and risk flags are generated for informational analysis only and do not constitute formal legal, accounting, tax, or investment advice. Always consult certified CPAs and M&A deal advisors before executing acquisitions.
+                </p>
+            </footer>
 
             <BatchProcessingSidePanel
                 isOpen={isBatchDrawerOpen}

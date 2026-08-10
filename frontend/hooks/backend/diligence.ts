@@ -859,6 +859,21 @@ export function useGetDiligenceData() {
 export function useGetEvalRuns() {
     return useQuery(
         useCallback(async () => {
+            // Check 5-minute browser cache first to minimize Supabase egress
+            const CACHE_KEY = 'mergeworks_eval_runs_cache'
+            const CACHE_TTL_MS = 5 * 60 * 1000 // 5 minutes
+            try {
+                const cached = sessionStorage.getItem(CACHE_KEY)
+                if (cached) {
+                    const parsed = JSON.parse(cached)
+                    if (parsed.timestamp && Date.now() - parsed.timestamp < CACHE_TTL_MS && Array.isArray(parsed.data)) {
+                        return parsed.data
+                    }
+                }
+            } catch {
+                // ignore cache read error
+            }
+
             try {
                 const response = await fetch('/api/diligence/eval-runs', {
                     headers: identityHeaders(),
@@ -866,7 +881,9 @@ export function useGetEvalRuns() {
                 if (response.ok) {
                     const text = await response.text()
                     if (text.trim().startsWith('[')) {
-                        return JSON.parse(text)
+                        const data = JSON.parse(text)
+                        try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ timestamp: Date.now(), data })) } catch {}
+                        return data
                     }
                 }
             } catch {
@@ -879,8 +896,11 @@ export function useGetEvalRuns() {
                 const url = 'https://sihpsqrunkwkxhhnwoqe.supabase.co'
                 const key = 'REDACTED_SUPABASE_SERVICE_ROLE_KEY'
                 const client = createClient(url, key)
-                const { data } = await client.from('eval_runs').select('*').order('run_at', { ascending: false }).limit(5)
-                if (Array.isArray(data) && data.length > 0) return data
+                const { data } = await client.from('eval_runs').select('*').order('run_at', { ascending: false }).limit(2)
+                if (Array.isArray(data) && data.length > 0) {
+                    try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ timestamp: Date.now(), data })) } catch {}
+                    return data
+                }
             } catch {
                 return []
             }
