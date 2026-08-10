@@ -676,7 +676,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
         // Verify latestBatchRows actually belong to the current activeProjectId before trying to match
         const sampleRow = latestBatchRows[0]
-        if (sampleRow && getProjectKey(sampleRow) !== activeProjectId && sampleRow.projectId !== activeProjectId) {
+        if (sampleRow && !isRowMatchingProject(sampleRow, activeProjectId, projectSummaries)) {
             return
         }
 
@@ -702,7 +702,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         }
 
         setPendingTargetDocFileName(null)
-    }, [pendingTargetDocFileName, latestBatchRows, activeProjectId])
+    }, [pendingTargetDocFileName, latestBatchRows, activeProjectId, projectSummaries])
 
     // Auto-select the latest completed document (or active processing document) if the user hasn't manually overridden
     useEffect(() => {
@@ -913,7 +913,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         setActiveEvidence(null)
 
         window.setTimeout(() => {
-            document.getElementById('diligence-workspace')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            const elem = document.getElementById('diligence-workspace') || document.getElementById('deal-workspace')
+            elem?.scrollIntoView({ behavior: 'smooth', block: 'start' })
         }, 50)
     }
 
@@ -1365,6 +1366,9 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                         </div>
                     </div>
                 ) : null}
+
+                <div id="diligence-workspace" className="scroll-mt-6" />
+                <div id="deal-workspace" className="scroll-mt-6" />
 
                 <DealWorkspaceNav
                     activeTab={activeWorkspaceTab}
