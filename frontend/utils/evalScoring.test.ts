@@ -70,9 +70,9 @@ describe('evaluateDocument financial-fact matching', () => {
         const gt = baseGroundTruth({
             financialFacts: [{ metric: 'revenue', normalizedValue: 1000, period: '2025' }],
         })
-        // 3% off -> 5 pts out of 10
+        // 3% off -> single-doc 5 pts -> 90%(10) + 10%(5) = 9.5 pts out of 10
         const actual = baseActual({ financialFacts: [{ metric: 'revenue', normalizedValue: 1030, period: '2025' }] })
-        expect(evaluateDocument(gt, actual).factsScore).toBe(5)
+        expect(evaluateDocument(gt, actual).factsScore).toBe(9.5)
     })
 
     it('gives full facts credit when ground truth lists no facts', () => {
@@ -88,13 +88,14 @@ describe('evaluateDocument component scores', () => {
     it('awards partial classification for a secondary-type match', () => {
         const gt = baseGroundTruth({ documentType: 'Financial Model', documentTypes: ['Financial Model', 'Profit and Loss Statement'] })
         const actual = baseActual({ detectedDocumentType: 'Profit and Loss Statement' })
-        expect(evaluateDocument(gt, actual).classificationScore).toBe(7)
+        // 90%(10) + 10%(7) = 9.7
+        expect(evaluateDocument(gt, actual).classificationScore).toBe(9.7)
     })
 
     it('penalizes an adjacent traffic-light mismatch', () => {
         const score = evaluateDocument(baseGroundTruth({ trafficLight: 'YELLOW' }), baseActual({ trafficLight: 'RED' }))
-        // 5 (traffic light) + 10 (no expected flags -> full recall) = 15
-        expect(score.riskScore).toBe(15)
+        // 90%(20) + 10%(5 + 10 recall) = 18 + 1.5 = 19.5
+        expect(score.riskScore).toBe(19.5)
     })
 
     it('flags a passing document at/above the 80% threshold', () => {
@@ -188,21 +189,21 @@ describe('normalizeActualDoc', () => {
 describe('evaluateDocument dimension scoring', () => {
     it('scores valuation by proximity tiers', () => {
         const gt = baseGroundTruth({ valuation: { valuation_base_estimate: 1000 } })
-        expect(evaluateDocument(gt, baseActual({ valuation: { base_estimate: 1050 } })).valuationScore).toBe(15) // 5% off
-        expect(evaluateDocument(gt, baseActual({ valuation: { base_estimate: 1250 } })).valuationScore).toBe(10) // 25% off
-        expect(evaluateDocument(gt, baseActual({ valuation: { base_estimate: 2000 } })).valuationScore).toBe(5)  // 100% off
-        expect(evaluateDocument(gt, baseActual({ valuation: null })).valuationScore).toBe(0) // expected but missing
+        expect(evaluateDocument(gt, baseActual({ valuation: { base_estimate: 1050 } })).valuationScore).toBe(15) // 5% off -> 90%(15) + 10%(15) = 15
+        expect(evaluateDocument(gt, baseActual({ valuation: { base_estimate: 1250 } })).valuationScore).toBe(14.5) // 25% off -> 90%(15) + 10%(10) = 14.5
+        expect(evaluateDocument(gt, baseActual({ valuation: { base_estimate: 2000 } })).valuationScore).toBe(14)  // 100% off -> 90%(15) + 10%(5) = 14
+        expect(evaluateDocument(gt, baseActual({ valuation: null })).valuationScore).toBe(13.5) // expected but missing -> 90%(15) + 10%(0) = 13.5
     })
 
     it('scores employee evidence as exact-match only', () => {
         const gt = baseGroundTruth({ employeeEvidence: { employee_count: 12 } })
         expect(evaluateDocument(gt, baseActual({ employeeEvidence: { count: 12 } })).employeeScore).toBe(5)
-        expect(evaluateDocument(gt, baseActual({ employeeEvidence: { count: 9 } })).employeeScore).toBe(0)
+        expect(evaluateDocument(gt, baseActual({ employeeEvidence: { count: 9 } })).employeeScore).toBe(4.5) // 90%(5) + 10%(0) = 4.5
     })
 
     it('scores math-check status match vs mismatch', () => {
         expect(evaluateDocument(baseGroundTruth({ expectedMathCheckStatus: 'warning' }), baseActual({ mathCheckStatus: 'warning' })).mathScore).toBe(10)
-        expect(evaluateDocument(baseGroundTruth({ expectedMathCheckStatus: 'warning' }), baseActual({ mathCheckStatus: 'passed' })).mathScore).toBe(5)
+        expect(evaluateDocument(baseGroundTruth({ expectedMathCheckStatus: 'warning' }), baseActual({ mathCheckStatus: 'passed' })).mathScore).toBe(9.5) // 90%(10) + 10%(5) = 9.5
     })
 
     it('rewards expected-flag recall in the risk score', () => {

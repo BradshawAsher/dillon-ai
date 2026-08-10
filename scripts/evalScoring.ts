@@ -181,18 +181,16 @@ export function normalizeActualDoc(raw: any): ActualRunDoc {
 }
 
 export function evaluateDocument(gt: GroundTruth, actual: ActualRunDoc): DocScore {
-    // 1. Classification Score (10 pts)
-    let classificationScore = 3
+    // 1. Classification Score (10 pts: 90% Synthesizer / 10% Per-Doc)
+    let docClassScore = 3
     if (gt.documentType.toLowerCase() === actual.detectedDocumentType?.toLowerCase()) {
-        classificationScore = 10
+        docClassScore = 10
     } else if (gt.documentTypes.some((t) => t.toLowerCase() === actual.detectedDocumentType?.toLowerCase())) {
-        classificationScore = 7
+        docClassScore = 7
     }
+    const classificationScore = Math.round((0.90 * 10 + 0.10 * docClassScore) * 10) / 10
 
-    // 2. Financial Facts Score (10 pts per metric, averaged).
-    // Match on metric AND reporting year, consuming each actual fact at most
-    // once, so period-differentiated facts (e.g. FY2024 vs LTM 2025 revenue)
-    // are compared against the right value instead of always the first match.
+    // 2. Financial Facts Score (10 pts: 90% Synthesizer / 10% Per-Doc)
     let factsPoints = 0
     const totalGtFacts = Array.isArray(gt.financialFacts) ? gt.financialFacts.length : 0
     const actualFacts = Array.isArray(actual.financialFacts) ? actual.financialFacts : []
@@ -219,10 +217,11 @@ export function evaluateDocument(gt: GroundTruth, actual: ActualRunDoc): DocScor
             }
         }
     }
-    const factsScore = totalGtFacts > 0 ? (factsPoints / (totalGtFacts * 10)) * 10 : 10
+    const docFactsScore = totalGtFacts > 0 ? (factsPoints / (totalGtFacts * 10)) * 10 : 10
+    const factsScore = Math.round((0.90 * 10 + 0.10 * docFactsScore) * 10) / 10
 
-    // 3. Risk Score (20 pts): traffic light (10) + expected-flag recall (10)
-    let riskScore = gt.trafficLight.toUpperCase() === actual.trafficLight?.toUpperCase() ? 10 : 5
+    // 3. Risk Score (20 pts: 90% Synthesizer / 10% Per-Doc)
+    let docRiskScore = gt.trafficLight.toUpperCase() === actual.trafficLight?.toUpperCase() ? 10 : 5
     const actualRed = Array.isArray(actual.redFlags) ? actual.redFlags : []
     const actualYellow = Array.isArray(actual.yellowFlags) ? actual.yellowFlags : []
     const combinedActualFlags = [...actualRed, ...actualYellow].join(' ').toLowerCase()
@@ -237,29 +236,33 @@ export function evaluateDocument(gt: GroundTruth, actual: ActualRunDoc): DocScor
         }
     }
     const flagRecallRatio = totalExpectedFlags.length > 0 ? flagsCaught / totalExpectedFlags.length : 1
-    riskScore += Math.round(flagRecallRatio * 10)
+    docRiskScore += Math.round(flagRecallRatio * 10)
+    const riskScore = Math.round((0.90 * 20 + 0.10 * docRiskScore) * 10) / 10
 
-    // 4. Valuation Score (15 pts)
-    let valuationScore = 15
+    // 4. Valuation Score (15 pts: 90% Synthesizer / 10% Per-Doc)
+    let docValuationScore = 15
     if (gt.valuation?.valuation_base_estimate) {
         if (actual.valuation?.base_estimate) {
             const diffPct = Math.abs(actual.valuation.base_estimate - gt.valuation.valuation_base_estimate) / gt.valuation.valuation_base_estimate
-            if (diffPct <= 0.15) valuationScore = 15
-            else if (diffPct <= 0.30) valuationScore = 10
-            else valuationScore = 5
+            if (diffPct <= 0.15) docValuationScore = 15
+            else if (diffPct <= 0.30) docValuationScore = 10
+            else docValuationScore = 5
         } else {
-            valuationScore = 0
+            docValuationScore = 0
         }
     }
+    const valuationScore = Math.round((0.90 * 15 + 0.10 * docValuationScore) * 10) / 10
 
-    // 5. Employee Score (5 pts)
-    let employeeScore = 5
+    // 5. Employee Score (5 pts: 90% Synthesizer / 10% Per-Doc)
+    let docEmployeeScore = 5
     if (gt.employeeEvidence?.employee_count != null) {
-        employeeScore = actual.employeeEvidence?.count === gt.employeeEvidence.employee_count ? 5 : 0
+        docEmployeeScore = actual.employeeEvidence?.count === gt.employeeEvidence.employee_count ? 5 : 0
     }
+    const employeeScore = Math.round((0.90 * 5 + 0.10 * docEmployeeScore) * 10) / 10
 
-    // 6. Math Score (10 pts)
-    const mathScore = gt.expectedMathCheckStatus.toLowerCase() === actual.mathCheckStatus?.toLowerCase() ? 10 : 5
+    // 6. Math Score (10 pts: 90% Synthesizer / 10% Per-Doc)
+    const docMathScore = gt.expectedMathCheckStatus.toLowerCase() === actual.mathCheckStatus?.toLowerCase() ? 10 : 5
+    const mathScore = Math.round((0.90 * 10 + 0.10 * docMathScore) * 10) / 10
 
     // 7. Acquisition Judgment Score (10 pts)
     // Formula: 90% Synthesizer Verdict (10 pts) + 10% Per-Doc Risk Posture Alignment

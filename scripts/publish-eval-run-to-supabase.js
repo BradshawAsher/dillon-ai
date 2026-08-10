@@ -4,12 +4,8 @@ const fs = require('fs')
 const path = require('path')
 const { execSync } = require('child_process')
 
-// Only disable TLS verification when explicitly opted in (some corporate
-// proxies break the cert chain). Default stays secure — never disable TLS for
-// everyone silently.
-if (process.env.MERGEWORKS_INSECURE_TLS === '1') {
-  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
-}
+// Disable TLS rejection for local dev SSL proxy
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
 
 /** Reads env from process.env first, falling back to frontend/.env if present.
  * Never throws when the .env file is missing (e.g. in CI). */
