@@ -1,0 +1,89 @@
+import type { ProjectSynthesisItem } from '../../hooks/backend/diligence'
+
+export const werkheiserGroundTruthPass2: ProjectSynthesisItem = {
+    id: 1,
+    projectId: 'werkheiser-commercial-cleaning',
+    projectStatus: 'synthesized',
+    documentsReceivedCount: 5,
+    documentsCompletedCount: 5,
+    missingDocuments: [],
+    crossDocumentConflicts: [],
+    openQuestions: [
+        'Is the top-customer renewal executed or still in commercial review?',
+        'Verify owner salary allocation ($505k SDE add-back) against W-2 records.',
+    ],
+    negotiationLevers: [
+        'Use customer concentration (39% of revenue in top account) to request $350k escrow holdback.',
+        'Seller note terms can be tied to 12-month retention of key commercial accounts.',
+    ],
+    keyTakeaways: [
+        'Comprehensive 5-document synthesis for Werkheiser Commercial Cleaning.',
+        'TTM Revenue of $4.88M and adjusted SDE of $1.82M fully reconciled across P&L, Balance Sheet, LOI, and 13-sheet Financial Model.',
+        'High cash flow generation with 28.5% net margin profile.',
+    ],
+    redFlags: [],
+    yellowFlags: [
+        'Top customer represents 39% of total revenue.',
+        'Owner salary add-backs constitute major portion of SDE.',
+    ],
+    greenFlags: [
+        '92% annual customer contract retention rate over 3 years.',
+        'Clean balance sheet with minimal short-term debt liability.',
+    ],
+    citations: [
+        'Werkheiser P&L 2025.pdf',
+        'Two years PL ended Dec 31 2024.pdf',
+        'Balance Sheet Jan 2023 to Dec 31 2024.pdf',
+        'Werkheiser_LOI_MergeWorks.docx',
+        'MergeWorks_Financial_Due_Diligence_Model.xlsx',
+    ],
+    citationDetails: [],
+    structuredFindings: {
+        keyTakeaways: [], redFlags: [], yellowFlags: [], greenFlags: [], crossDocumentConflicts: [], openQuestions: [], negotiationLevers: [], missingDocuments: [],
+    },
+    finalRiskLevel: 'Low',
+    finalTrafficLight: 'Green',
+    finalRecommendation: 'Proceed with Acquisition Escrow Condition (5-Doc Ingestion Complete)',
+    finalJudgmentSummary: 'Strong cash-flowing commercial cleaning acquisition with $4.88M revenue and $1.82M SDE. Recommend $350k escrow holdback for top customer concentration.',
+    finalJudgmentJson: '',
+    aiErrorMessage: '',
+    aiConfidence: '0.92',
+    valuationConfidence: '0.90',
+    valuationLowerBound: '$4.20M',
+    valuationBaseEstimate: '$4.88M',
+    valuationUpperBound: '$5.50M',
+    valuationCurrency: 'USD',
+    projectProcessedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+}
+
+export const werkheiserGroundTruthPass1: ProjectSynthesisItem = {
+    ...werkheiserGroundTruthPass2,
+    id: 101,
+    documentsReceivedCount: 4,
+    documentsCompletedCount: 4,
+    negotiationLevers: [
+        'Initial 4-document review complete across P&L, Balance Sheet, and LOI.',
+        'SDE estimated at $1.18M prior to detailed financial model ingestion.',
+    ],
+    keyTakeaways: [
+        'Initial 4-document synthesis for Werkheiser Commercial Cleaning.',
+        'TTM Revenue of $2.73M and base SDE of $1.18M estimated from tax returns and P&L.',
+        'Awaiting full 13-sheet financial model for definitive valuation reconciliation.',
+    ],
+    citations: [
+        'Werkheiser P&L 2025.pdf',
+        'Two years PL ended Dec 31 2024.pdf',
+        'Balance Sheet Jan 2023 to Dec 31 2024.pdf',
+        'Werkheiser_LOI_MergeWorks.docx',
+    ],
+    finalRecommendation: 'Proceed with Acquisition (Initial 4-Doc Pass)',
+    finalJudgmentSummary: 'Initial 4-document review before financial model ingestion — verified $2.73M revenue and $1.18M estimated SDE.',
+    valuationLowerBound: '$3.20M',
+    valuationBaseEstimate: '$3.55M',
+    valuationUpperBound: '$3.90M',
+    projectProcessedAt: new Date(Date.now() - 86400000).toISOString(),
+    createdAt: new Date(Date.now() - 86400000).toISOString(),
+    updatedAt: new Date(Date.now() - 86400000).toISOString(),
+}

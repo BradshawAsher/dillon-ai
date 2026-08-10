@@ -148,11 +148,16 @@ The Right Way to Fallback: Instead of stacking parsers serially, use an If/Else 
 
 - Maybe have a button for the user to click that they are comfortable with making an acquisition judgement with only these docs, and will that change the results of our synthesizer since I think our synthesizer is a little conservative, maybe because it wants to get all the docs in the checklist before making a decision
 
-- test
+- The thing to see multiple syntheses and be able to go back and forth if you update the synthesis still doesn't work, like want to be able to show all the versions of the synthesis since synthesis will reupdate after adding new docs [THIS IS STILL VERY BUGGY]
 
 - For all the 5 businesses that trisha gave us that were acquired eventually, why does our model say renegotiate or don't proceed?
 
+- Check to see if the acquisition judgements for the projects in eval and harness are accurate since currently they are all like positive? Are you sure they are all positive?
+
+
 - Need to rerun all your test docs with the anthropic for per doc and openai for synthesizer
+
+- Right now the bullet points for acquisition judgement are parsed in the frontend, it may be good to do it on the backend so things are not cut off?
 
 - Change your fixed window + scrolling to more of fixed window + 20 per page, or 50 per page, or view all, like big websites like AWS when you have to look at IAM and admin permissinos stuff?
 
