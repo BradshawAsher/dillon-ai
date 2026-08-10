@@ -99,56 +99,7 @@ export function DiligenceWorkspaceView({
                     </Button>
                 )}
             </div>
-            {projectSummaries.length > 1 && (
-                <ProjectComparisonCard
-                    projects={projectSummaries.map((ps) => ({
-                        projectId: ps.projectId || ps.projectKey,
-                        projectName: ps.projectName || ps.companyName || ps.projectKey,
-                        model: (Array.isArray(dealModelsData) ? dealModelsData.find((m: any) => m.projectId === (ps.projectId || ps.projectKey)) : undefined) ?? {
-                            projectId: ps.projectId || ps.projectKey,
-                            askingPrice: null,
-                            purchasePrice: null,
-                            debtAssumed: null,
-                            cashAcquired: null,
-                            workingCapitalRequirement: null,
-                            transactionFees: null,
-                            holdPeriodYears: null,
-                            taxRate: null,
-                            closingCosts: null,
-                            maintenanceCapex: null,
-                            exitMultiple: null,
-                            exitCosts: null,
-                            equityContributionPercent: null,
-                            interestRate: null,
-                            amortizationYears: null,
-                            sellerNoteAmount: null,
-                            bearRevenueGrowth: null,
-                            baseRevenueGrowth: null,
-                            bullRevenueGrowth: null,
-                            bearEbitdaMargin: null,
-                            baseEbitdaMargin: null,
-                            bullEbitdaMargin: null,
-                            bearExitMultiple: null,
-                            baseExitMultiple: null,
-                            bullExitMultiple: null,
-                            revenueMultiple: null,
-                            ebitdaMultiple: null,
-                            assetHaircutPercent: null,
-                            modelUpdatedAt: '',
-                            modelUpdatedBy: '',
-                            documentedFactsJson: '',
-                            documentedFactsStatus: '',
-                        },
-                        synthesis: visibleProjectSyntheses.find((s) => s.projectId === (ps.projectId || ps.projectKey)),
-                        documentsCount: ps.documentCount,
-                        completedDocuments: ps.completedCount,
-                    }))}
-                    activeProjectId={activeProjectId}
-                    onSelectProject={(id: string) => {
-                        setSelectedProjectKey(id)
-                    }}
-                />
-            )}
+
             <DealOverviewCard
                 syntheses={visibleProjectSyntheses}
                 projects={projectSummaries}

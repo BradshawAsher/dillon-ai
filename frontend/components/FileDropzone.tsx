@@ -16,6 +16,7 @@ type FileDropzoneProps = {
 export default function FileDropzone({ selectedFiles, onFileSelect, className }: FileDropzoneProps) {
     const inputRef = useRef<HTMLInputElement | null>(null)
     const [isDragging, setIsDragging] = useState(false)
+    const [hasNumbersFile, setHasNumbersFile] = useState(false)
     const [rejectedNames, setRejectedNames] = useState<string[]>([])
     const [oversizedNames, setOversizedNames] = useState<string[]>([])
 
@@ -24,9 +25,14 @@ export default function FileDropzone({ selectedFiles, onFileSelect, className }:
         const accepted: File[] = []
         const rejected: string[] = []
         const oversized: string[] = []
+        let numbersDetected = false
+
         for (const file of all) {
             const ext = file.name.includes('.') ? ('.' + file.name.split('.').pop()!.toLowerCase()) : ''
-            if (!ACCEPTED_EXTENSIONS.has(ext)) {
+            if (ext === '.numbers') {
+                numbersDetected = true
+                rejected.push(file.name)
+            } else if (!ACCEPTED_EXTENSIONS.has(ext)) {
                 rejected.push(file.name)
             } else if (file.size > MAX_FILE_SIZE_BYTES) {
                 oversized.push(`${file.name} (${(file.size / (1024 * 1024)).toFixed(1)} MB)`)
@@ -34,6 +40,7 @@ export default function FileDropzone({ selectedFiles, onFileSelect, className }:
                 accepted.push(file)
             }
         }
+        setHasNumbersFile(numbersDetected)
         setRejectedNames(rejected)
         setOversizedNames(oversized)
         onFileSelect(accepted)
@@ -109,6 +116,11 @@ export default function FileDropzone({ selectedFiles, onFileSelect, className }:
                     Browse files
                 </Button>
             </label>
+            {hasNumbersFile ? (
+                <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-800/50 dark:bg-amber-950/30 dark:text-amber-300">
+                    <strong>🍎 Apple .numbers File Detected:</strong> Apple Numbers uses a proprietary package format. Please open the file in Apple Numbers and select <strong>File &rarr; Export To &rarr; Excel (.xlsx)</strong> or <strong>PDF</strong> before uploading.
+                </div>
+            ) : null}
             {rejectedNames.length > 0 ? (
                 <p className="text-sm text-destructive">
                     Unsupported file type{rejectedNames.length > 1 ? 's' : ''} skipped: {rejectedNames.join(', ')}

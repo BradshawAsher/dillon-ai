@@ -118,9 +118,6 @@ The Right Way to Fallback: Instead of stacking parsers serially, use an If/Else 
 
 - Prep for business meeting 3 and a website and walkthrough ready for them to try as well as prepare to be more professional with what to show when and example questions to ask and example questions to be ready to address
 
-- On supabase you are maxed out on egress is this a problem? Do we have to implement caching or something?
-
-- Enable RLS for your database or no?
 
 - Have to make a landing page and walkthrough page like the example walkthrough for our project USE supademo
 
@@ -128,7 +125,7 @@ The Right Way to Fallback: Instead of stacking parsers serially, use an If/Else 
 
 - How to get more flags from the agent backend?
 
-- Finding more datasets:
+- # Finding more datasets:
   Yes, there are several public repositories, open datasets, and disclosure platforms where you can find sample business deals, financial statements, and corporate filings to build out your evaluation dataset:
 
   SEC EDGAR (U.S. Securities and Exchange Commission): The official database for public company filings (10-Ks, 10-Qs, and 8-Ks). You can pull real corporate balance sheets, income statements, and merger disclosures to test your agent against complex financial data.
@@ -138,6 +135,8 @@ The Right Way to Fallback: Instead of stacking parsers serially, use an If/Else 
   Open-Source Financial Benchmark Datasets: Look for academic or industry-released financial QA benchmarks (such as FinQA or ConvFinQA), which provide raw financial text paired with verified ground-truth numerical answers.
 
   Investor Relations Pages of Public Companies: You can download investor presentation decks, quarterly earnings reports, and M&A press releases directly from corporate websites to test unstructured document parsing.
+
+  _______________________________________-
 
 - Are we separating error handling well? Like regular "we hit an issue" vs we hit a rate limit
 

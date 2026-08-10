@@ -151,8 +151,13 @@ export default function LatestSubmissionSection({
                     <Button type="button" variant="default" onClick={() => handleOpenProjectSynthesis(displayedSubmissionRow?.projectId || projectId)} disabled={!(displayedSubmissionRow?.projectId || projectId)}>
                         View this project&apos;s synthesis
                     </Button>
-                    <Button type="button" variant="outline" onClick={() => { const el = document.getElementById('upload-section'); el?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}>
-                        Upload more files for this project
+                    <Button type="button" variant="outline" className="gap-1.5 font-bold" onClick={() => {
+                        const targetProj = displayedSubmissionRow?.companyName || displayedSubmissionRow?.dealName || projectId || 'this project'
+                        const el = document.getElementById('upload-section')
+                        el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                        alert(`📁 Adding files to existing project: "${targetProj}"\nYour newly uploaded document will automatically merge into this project's synthesis deliverable.`)
+                    }}>
+                        Add more files for this project
                     </Button>
                     {displayedSubmitStatus && !['completed', 'failed', 'error'].includes(displayedSubmitStatus.trim().toLowerCase()) && (
                         <Badge variant="secondary" className="gap-1.5">
@@ -162,17 +167,34 @@ export default function LatestSubmissionSection({
                     )}
                 </div>
 
-                {liveSubmitInsight && (liveSubmitInsight.investmentBuyReasoning || liveSubmitInsight.investmentIsFavorable !== null) ? (
-                    <div className="rounded-xl border-2 border-primary bg-gradient-to-br from-primary/15 via-primary/5 to-background p-5 shadow-md">
+                {liveSubmitInsight ? (
+                    <div className="rounded-xl border-2 border-primary bg-gradient-to-br from-primary/15 via-primary/5 to-background p-5 shadow-md space-y-2">
                         <div className="flex flex-wrap items-center justify-between gap-2">
-                            <p className="text-sm font-bold uppercase tracking-wide text-primary">Investment thesis — start here</p>
+                            <div className="flex items-center gap-2">
+                                <p className="text-sm font-bold uppercase tracking-wide text-primary">Document Investment Thesis — Start Here</p>
+                                <Badge variant="outline" className="text-[10px]">Single-Doc Scope</Badge>
+                            </div>
                             {liveSubmitInsight.investmentIsFavorable !== null ? (
                                 <Badge variant={liveSubmitInsight.investmentIsFavorable ? 'success' : 'destructive'}>
                                     {liveSubmitInsight.investmentIsFavorable ? 'Favorable indicator' : 'Caution indicator'}
                                 </Badge>
                             ) : null}
                         </div>
-                        <p className="mt-3 text-sm leading-6 text-foreground">{liveSubmitInsight.investmentBuyReasoning || 'No investment thesis returned yet.'}</p>
+
+                        {liveSubmitInsight.investmentBuyReasoning && liveSubmitInsight.investmentBuyReasoning.trim().length > 0 ? (
+                            <>
+                                <p className="mt-2 text-sm leading-6 text-foreground">{liveSubmitInsight.investmentBuyReasoning}</p>
+                                <div className="rounded-md border border-amber-300/40 bg-amber-50/50 p-2.5 dark:border-amber-800/40 dark:bg-amber-950/20 text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2 mt-2">
+                                    <span className="shrink-0 font-bold">⚠️ Single-Doc Scope:</span>
+                                    <span>This decision was made purely from this individual document alone. Please wait for <strong>Project Synthesis</strong> for the definitive acquisition decision.</span>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="rounded-md border border-muted bg-muted/30 p-3 text-xs text-muted-foreground flex items-start gap-2 mt-1">
+                                <span className="shrink-0 font-semibold text-foreground">ℹ️ Insufficient Data:</span>
+                                <span>There is not enough narrative data in this individual document to produce an investment thesis. Please wait for <strong>Project Synthesis</strong> to run for the definitive investment thesis.</span>
+                            </div>
+                        )}
                     </div>
                 ) : null}
 
@@ -506,17 +528,34 @@ export default function LatestSubmissionSection({
                                 </div>
                             </div>
                         ) : null}
-                        {liveSubmitInsight && (liveSubmitInsight.investmentBuyReasoning || liveSubmitInsight.investmentIsFavorable !== null) ? (
-                            <div className="rounded-md border border-border bg-card px-3 py-2 xl:col-span-4">
+                        {liveSubmitInsight ? (
+                            <div className="rounded-md border border-border bg-card p-3.5 xl:col-span-4 space-y-2">
                                 <div className="flex flex-wrap items-center justify-between gap-2">
-                                    <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Investment Thesis</p>
+                                    <div className="flex items-center gap-2">
+                                        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Document-Level Investment Thesis</p>
+                                        <Badge variant="outline" className="text-[10px]">Single-File Intake</Badge>
+                                    </div>
                                     {liveSubmitInsight.investmentIsFavorable !== null ? (
                                         <Badge variant={liveSubmitInsight.investmentIsFavorable ? 'success' : 'destructive'}>
                                             {liveSubmitInsight.investmentIsFavorable ? 'Favorable indicator' : 'Not favorable'}
                                         </Badge>
                                     ) : null}
                                 </div>
-                                <ExpandableText text={liveSubmitInsight.investmentBuyReasoning || 'No buy reasoning returned yet.'} maxHeight={120} className="mt-3 whitespace-pre-wrap text-sm leading-6 text-foreground" />
+
+                                {liveSubmitInsight.investmentBuyReasoning && liveSubmitInsight.investmentBuyReasoning.trim().length > 0 ? (
+                                    <>
+                                        <ExpandableText text={liveSubmitInsight.investmentBuyReasoning} maxHeight={120} className="whitespace-pre-wrap text-sm leading-6 text-foreground" />
+                                        <div className="rounded-md border border-amber-300/40 bg-amber-50/50 p-2.5 dark:border-amber-800/40 dark:bg-amber-950/20 text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2 mt-2">
+                                            <span className="shrink-0 font-bold">⚠️ Single-Doc Scope:</span>
+                                            <span>This preliminary thesis was derived purely from this individual document in isolation. Please await <strong>Project Synthesis</strong> for the final, cross-document acquisition verdict.</span>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="rounded-md border border-muted bg-muted/30 p-3 text-xs text-muted-foreground flex items-start gap-2 mt-1">
+                                        <span className="shrink-0 font-semibold text-foreground">ℹ️ Insufficient Data:</span>
+                                        <span>There is not enough narrative data in this individual document to produce a standalone investment thesis. Please wait for <strong>Project Synthesis</strong> to consolidate all deal files into a definitive investment thesis.</span>
+                                    </div>
+                                )}
                             </div>
                         ) : null}
                         {displayedSubmissionRow?.reconciliationJson ? (
@@ -532,8 +571,13 @@ export default function LatestSubmissionSection({
                         View this project&apos;s synthesis
                         {activeProjectSynthesis ? <Badge variant="success" className="ml-2">Ready</Badge> : isCurrentProjectAwaitingSynthesis ? <Badge variant="warning" className="ml-2">Running</Badge> : null}
                     </Button>
-                    <Button type="button" variant="outline" onClick={() => { const el = document.getElementById('upload-section'); el?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}>
-                        Upload more files
+                    <Button type="button" variant="outline" className="gap-1.5 font-bold" onClick={() => {
+                        const targetProj = displayedSubmissionRow?.companyName || displayedSubmissionRow?.dealName || projectId || 'this project'
+                        const el = document.getElementById('upload-section')
+                        el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                        alert(`📁 Adding files to existing project: "${targetProj}"\nYour newly uploaded document will automatically merge into this project's synthesis deliverable.`)
+                    }}>
+                        Add more files for this project
                     </Button>
                 </div>
             </CardContent>
