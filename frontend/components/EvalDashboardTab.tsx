@@ -1401,17 +1401,20 @@ export default function EvalDashboardTab({
                                                             type="button"
                                                             size="sm"
                                                             variant="ghost"
-                                                            className="h-7 text-[11px] font-semibold text-muted-foreground hover:bg-muted hover:text-foreground gap-1 px-2 cursor-pointer"
+                                                            className="h-7 text-[11px] font-semibold text-primary hover:bg-primary/10 hover:text-primary gap-1 px-2 cursor-pointer"
                                                             onClick={() => {
                                                                 const targetKey = doc.projectId || doc.projectKey || docs[0]?.projectId || docs[0]?.projectKey || mapBusinessToProjectKey(businessName, doc)
-                                                                if (onSelectProject) {
+                                                                const targetDocName = doc.fileName || doc.originalFilename || ''
+                                                                if (onSelectDoc) {
+                                                                    onSelectDoc(targetDocName, targetKey)
+                                                                } else if (onSelectProject) {
                                                                     onSelectProject(targetKey, 'diligence')
                                                                 }
                                                             }}
-                                                            title={`Switch active workspace to ${businessName}`}
+                                                            title={`Switch active workspace to ${doc.fileName || businessName}`}
                                                         >
-                                                            <Building2 className="h-3 w-3 shrink-0" />
-                                                            <span>View Project</span>
+                                                            <FileText className="h-3 w-3 shrink-0 text-primary" />
+                                                            <span>View this doc</span>
                                                         </Button>
                                                     </div>
                                                 </div>
