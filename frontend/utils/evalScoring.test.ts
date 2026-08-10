@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { evaluateDocument, extractYear, summarizeResults, type ActualRunDoc, type DocScore, type GroundTruth } from '../../scripts/evalScoring'
+import { evaluateDocument, extractYear, normalizeActualDoc, summarizeResults, type ActualRunDoc, type DocScore, type GroundTruth } from '../../scripts/evalScoring'
 
 function baseGroundTruth(overrides: Partial<GroundTruth> = {}): GroundTruth {
     return {
@@ -149,5 +149,72 @@ describe('summarizeResults', () => {
         expect(summary.totalDocumentsEvaluated).toBe(0)
         expect(summary.regressionPassed).toBe(true)
         expect(summary.weakestDimension).toBeNull()
+    })
+})
+
+describe('normalizeActualDoc', () => {
+    it('passes through a row that already matches ActualRunDoc', () => {
+        const row = baseActual({ fileName: 'x.pdf' })
+        expect(normalizeActualDoc(row)).toBe(row)
+    })
+
+    it('parses a snake_case extractedJson blob with nested flags', () => {
+        const raw = {
+            fileName: 'model.xlsx',
+            extractedJson: JSON.stringify({
+                document_type: 'Financial Model',
+                traffic_light: 'RED',
+                risk_flag: 'HIGH',
+                financial_facts: [{ metric: 'revenue', normalized_value: '960117.77', period: 'FY2025' }],
+                response: { flags: { red_flags: ['Concentration risk'], yellow_flags: ['Owner dependence'] } },
+                valuation: { base_estimate: 2000000 },
+            }),
+        }
+        const doc = normalizeActualDoc(raw)
+        expect(doc.detectedDocumentType).toBe('Financial Model')
+        expect(doc.trafficLight).toBe('RED')
+        expect(doc.financialFacts[0].normalizedValue).toBeCloseTo(960117.77, 2)
+        expect(doc.redFlags).toEqual(['Concentration risk'])
+        expect(doc.yellowFlags).toEqual(['Owner dependence'])
+        expect(doc.valuation?.base_estimate).toBe(2000000)
+    })
+
+    it('applies safe defaults and never throws on malformed JSON', () => {
+        const doc = normalizeActualDoc({ fileName: 'broken.pdf', extractedJson: '{not json' })
+        expect(doc.fileName).toBe('broken.pdf')
+    })
+})
+
+describe('evaluateDocument dimension scoring', () => {
+    it('scores valuation by proximity tiers', () => {
+        const gt = baseGroundTruth({ valuation: { valuation_base_estimate: 1000 } })
+        expect(evaluateDocument(gt, baseActual({ valuation: { base_estimate: 1050 } })).valuationScore).toBe(15) // 5% off
+        expect(evaluateDocument(gt, baseActual({ valuation: { base_estimate: 1250 } })).valuationScore).toBe(10) // 25% off
+        expect(evaluateDocument(gt, baseActual({ valuation: { base_estimate: 2000 } })).valuationScore).toBe(5)  // 100% off
+        expect(evaluateDocument(gt, baseActual({ valuation: null })).valuationScore).toBe(0) // expected but missing
+    })
+
+    it('scores employee evidence as exact-match only', () => {
+        const gt = baseGroundTruth({ employeeEvidence: { employee_count: 12 } })
+        expect(evaluateDocument(gt, baseActual({ employeeEvidence: { count: 12 } })).employeeScore).toBe(5)
+        expect(evaluateDocument(gt, baseActual({ employeeEvidence: { count: 9 } })).employeeScore).toBe(0)
+    })
+
+    it('scores math-check status match vs mismatch', () => {
+        expect(evaluateDocument(baseGroundTruth({ expectedMathCheckStatus: 'warning' }), baseActual({ mathCheckStatus: 'warning' })).mathScore).toBe(10)
+        expect(evaluateDocument(baseGroundTruth({ expectedMathCheckStatus: 'warning' }), baseActual({ mathCheckStatus: 'passed' })).mathScore).toBe(5)
+    })
+
+    it('rewards expected-flag recall in the risk score', () => {
+        const gt = baseGroundTruth({ trafficLight: 'YELLOW', expectedRedFlags: ['customer concentration risk'] })
+        const caught = evaluateDocument(gt, baseActual({ trafficLight: 'YELLOW', redFlags: ['High customer concentration noted'] }))
+        const missed = evaluateDocument(gt, baseActual({ trafficLight: 'YELLOW', redFlags: [] }))
+        expect(caught.riskScore).toBeGreaterThan(missed.riskScore)
+    })
+
+    it('gives full acquisition-judgment credit when recommendations align', () => {
+        const gt = baseGroundTruth({ expectedRecommendation: 'PROCEED WITH ACQUISITION' })
+        const aligned = evaluateDocument(gt, baseActual({ finalRecommendation: 'PROCEED WITH ACQUISITION' }))
+        expect(aligned.recommendationScore).toBe(10)
     })
 })
