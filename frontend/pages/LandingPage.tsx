@@ -707,8 +707,8 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
                             { step: '03', title: 'Evidence Mapping', desc: 'Attaches file line numbers & cell references to every extracted number.' },
                             { step: '04', title: 'Portfolio Synthesis', desc: 'Cross-document financial reconciliation & EBITDA reconstruction.' },
                             { step: '05', title: 'IC Verdict & Memo', desc: 'Bear/Base/Bull valuation ranges & downloadable deal memo.' },
-                        ].map((s, idx) => (
-                            <Card key={idx} className="border-border shadow-xs bg-card hover:border-primary/50 transition-colors">
+                        ].map((s) => (
+                            <Card key={s.step} className="border-border shadow-xs bg-card hover:border-primary/50 transition-colors">
                                 <CardHeader className="pb-2">
                                     <span className="font-mono text-xs font-extrabold text-primary">{s.step}</span>
                                     <CardTitle className="text-sm font-bold text-foreground">{s.title}</CardTitle>
@@ -796,9 +796,10 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
 
                     <div className="space-y-3.5 max-w-3xl mx-auto">
                         {faqs.map((faq, idx) => (
-                            <div key={idx} className="rounded-xl border border-border bg-card shadow-2xs overflow-hidden transition-all">
+                            <div key={faq.question} className="rounded-xl border border-border bg-card shadow-2xs overflow-hidden transition-all">
                                 <button
                                     type="button"
+                                    aria-expanded={openFaqIndex === idx}
                                     onClick={() => setOpenFaqIndex(openFaqIndex === idx ? null : idx)}
                                     className="w-full p-5 text-left flex items-center justify-between gap-4 font-bold text-sm sm:text-base text-foreground hover:bg-muted/30 cursor-pointer"
                                 >

@@ -1,7 +1,7 @@
 import * as fs from 'fs'
 import * as path from 'path'
 
-import { evaluateDocument, summarizeResults, type ActualRunDoc, type DocScore, type EvalSummary } from './evalScoring'
+import { evaluateDocument, normalizeActualDoc, summarizeResults, type ActualRunDoc, type DocScore, type EvalSummary } from './evalScoring'
 
 type GroundTruthDoc = {
     fileName: string
@@ -43,36 +43,7 @@ export function runEvalSuite() {
     for (const resultFile of resultFiles) {
         const runData: ActualRunFile = JSON.parse(fs.readFileSync(path.join(resultsDir, resultFile), 'utf8'))
         for (const rawDoc of runData.documents) {
-            let actualDoc: ActualRunDoc = rawDoc
-            if ((rawDoc as any).extractedJson) {
-                try {
-                    const parsed = typeof (rawDoc as any).extractedJson === 'string' ? JSON.parse((rawDoc as any).extractedJson) : (rawDoc as any).extractedJson
-                    const redFlags = parsed.response?.flags?.red_flags || parsed.response?.flags?.redFlags || parsed.redFlags || []
-                    const yellowFlags = parsed.response?.flags?.yellow_flags || parsed.response?.flags?.yellowFlags || parsed.yellowFlags || []
-                    actualDoc = {
-                        fileName: rawDoc.fileName,
-                        fileType: rawDoc.fileType || 'XLSX',
-                        status: rawDoc.status || 'completed',
-                        detectedDocumentType: parsed.document_type || parsed.documentType || parsed.category || 'Other',
-                        detectedDocumentTypes: parsed.document_types || parsed.documentTypes || [parsed.document_type || 'Other'],
-                        trafficLight: parsed.traffic_light || parsed.trafficLight || 'GREEN',
-                        riskLevel: parsed.risk_flag || parsed.riskLevel || 'LOW',
-                        financialFacts: (parsed.financial_facts || parsed.financialFacts || []).map((f: any) => ({
-                            metric: f.metric,
-                            normalizedValue: Number(f.normalized_value ?? f.normalizedValue) || 0,
-                            period: f.period,
-                            confidence: f.confidence
-                        })),
-                        redFlags: Array.isArray(redFlags) ? redFlags : [],
-                        yellowFlags: Array.isArray(yellowFlags) ? yellowFlags : [],
-                        valuation: parsed.valuation || null,
-                        employeeEvidence: parsed.employee_evidence || parsed.employeeEvidence || null,
-                        mathCheckStatus: parsed.mathCheckStatus || 'passed'
-                    }
-                } catch (e) {
-                    console.warn(`Failed to parse extractedJson for ${rawDoc.fileName}:`, e)
-                }
-            }
+            const actualDoc: ActualRunDoc = normalizeActualDoc(rawDoc)
 
             const actualName = actualDoc.fileName.toLowerCase().replace(/[^a-z0-9]/g, '')
             const matchingGtFile = gtFiles.find((f) => {

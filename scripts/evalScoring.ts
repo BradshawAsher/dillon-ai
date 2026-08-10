@@ -143,6 +143,43 @@ export function extractYear(period?: string): string {
     return match ? match[1] : ''
 }
 
+/**
+ * Normalizes a raw result row into the ActualRunDoc shape the scorer expects.
+ * Production rows carry an `extractedJson` blob (snake_case or camelCase, with
+ * flags nested under response.flags); older rows already match ActualRunDoc.
+ * Kept here so the parsing is unit-tested rather than inlined in run-evals.
+ */
+export function normalizeActualDoc(raw: any): ActualRunDoc {
+    if (!raw?.extractedJson) return raw as ActualRunDoc
+    try {
+        const parsed = typeof raw.extractedJson === 'string' ? JSON.parse(raw.extractedJson) : raw.extractedJson
+        const redFlags = parsed.response?.flags?.red_flags || parsed.response?.flags?.redFlags || parsed.redFlags || []
+        const yellowFlags = parsed.response?.flags?.yellow_flags || parsed.response?.flags?.yellowFlags || parsed.yellowFlags || []
+        return {
+            fileName: raw.fileName,
+            fileType: raw.fileType || 'XLSX',
+            status: raw.status || 'completed',
+            detectedDocumentType: parsed.document_type || parsed.documentType || parsed.category || 'Other',
+            detectedDocumentTypes: parsed.document_types || parsed.documentTypes || [parsed.document_type || 'Other'],
+            trafficLight: parsed.traffic_light || parsed.trafficLight || 'GREEN',
+            riskLevel: parsed.risk_flag || parsed.riskLevel || 'LOW',
+            financialFacts: (parsed.financial_facts || parsed.financialFacts || []).map((f: any) => ({
+                metric: f.metric,
+                normalizedValue: Number(f.normalized_value ?? f.normalizedValue) || 0,
+                period: f.period,
+                confidence: f.confidence,
+            })),
+            redFlags: Array.isArray(redFlags) ? redFlags : [],
+            yellowFlags: Array.isArray(yellowFlags) ? yellowFlags : [],
+            valuation: parsed.valuation || null,
+            employeeEvidence: parsed.employee_evidence || parsed.employeeEvidence || null,
+            mathCheckStatus: parsed.mathCheckStatus || 'passed',
+        }
+    } catch {
+        return raw as ActualRunDoc
+    }
+}
+
 export function evaluateDocument(gt: GroundTruth, actual: ActualRunDoc): DocScore {
     // 1. Classification Score (10 pts)
     let classificationScore = 3
