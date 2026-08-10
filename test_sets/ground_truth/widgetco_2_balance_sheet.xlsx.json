@@ -1,58 +1,59 @@
 {
-  "fileName": "WidgetCo - 2_Balance_Sheet.xlsx",
-  "business": "WidgetCo Forensic Set",
-  "fileType": "XLSX",
-  "groundTruth": {
-    "documentType": "Balance Sheet",
-    "documentTypes": [
-      "Balance Sheet"
-    ],
-    "trafficLight": "RED",
-    "riskLevel": "HIGH",
-    "financialFacts": [
-      {
-        "metric": "cash",
-        "normalizedValue": 100000,
-        "period": "2025",
-        "rawValue": "$100,000"
-      },
-      {
-        "metric": "accounts_receivable",
-        "normalizedValue": 400000,
-        "period": "2025",
-        "rawValue": "$400,000"
-      },
-      {
-        "metric": "inventory",
-        "normalizedValue": 200000,
-        "period": "2025",
-        "rawValue": "$200,000"
-      },
-      {
-        "metric": "total_current_assets",
-        "normalizedValue": 700000,
-        "period": "2025",
-        "rawValue": "$700,000"
-      },
-      {
-        "metric": "total_liabilities",
-        "normalizedValue": 500000,
-        "period": "2025",
-        "rawValue": "$500,000"
-      }
-    ],
-    "expectedRedFlags": [
-      "Critical cash drain: Cash declined 80% from $500k in 2023 to $100k in 2025",
-      "Accounts receivable doubled from $200k to $400k indicating severe revenue collection failure"
-    ],
-    "expectedYellowFlags": [
-      "Total liabilities increased from $300k to $500k"
-    ],
-    "falsePositiveFlags": [],
-    "missedFlags": [],
-    "valuation": null,
-    "employeeEvidence": null,
-    "expectedMathCheckStatus": "passed",
-    "notes": "Forensic test file #2: Tests working capital trends and revenue collection trap detection."
-  }
+    "fileName": "WidgetCo - 2_Balance_Sheet.xlsx",
+    "business": "WidgetCo Forensic Set",
+    "fileType": "XLSX",
+    "groundTruth": {
+        "documentType": "Balance Sheet",
+        "documentTypes": [
+            "Balance Sheet"
+        ],
+        "trafficLight": "RED",
+        "riskLevel": "HIGH",
+        "financialFacts": [
+            {
+                "metric": "cash",
+                "normalizedValue": 100000,
+                "period": "2025",
+                "rawValue": "$100,000"
+            },
+            {
+                "metric": "accounts_receivable",
+                "normalizedValue": 400000,
+                "period": "2025",
+                "rawValue": "$400,000"
+            },
+            {
+                "metric": "inventory",
+                "normalizedValue": 200000,
+                "period": "2025",
+                "rawValue": "$200,000"
+            },
+            {
+                "metric": "total_current_assets",
+                "normalizedValue": 700000,
+                "period": "2025",
+                "rawValue": "$700,000"
+            },
+            {
+                "metric": "total_liabilities",
+                "normalizedValue": 500000,
+                "period": "2025",
+                "rawValue": "$500,000"
+            }
+        ],
+        "expectedRedFlags": [
+            "Critical cash drain: Cash declined 80% from $500k in 2023 to $100k in 2025",
+            "Accounts receivable doubled from $200k to $400k indicating severe revenue collection failure"
+        ],
+        "expectedYellowFlags": [
+            "Total liabilities increased from $300k to $500k"
+        ],
+        "falsePositiveFlags": [],
+        "missedFlags": [],
+        "valuation": null,
+        "employeeEvidence": null,
+        "expectedMathCheckStatus": "passed",
+        "notes": "Forensic test file #2: Tests working capital trends and revenue collection trap detection.",
+        "expectedRecommendation": "ESCALATE"
+    }
 }

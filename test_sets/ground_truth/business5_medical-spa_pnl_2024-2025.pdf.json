@@ -74,6 +74,7 @@
         "employeeEvidence": null,
         "expectedMathCheckStatus": "passed",
         "mathCheckNotes": "Gross profit reconciles exactly both years: 960,117.77 - 8,764.55 = 951,353.22 and 550,041.54 - 8,079.98 = 541,961.56. Cash-basis QuickBooks P&L, no D&A split.",
-        "notes": "Revenue is essentially 100% 'Job Income Medical' (cash-pay services). Gross margin ~99%. Column order in PDF is [Jan-Dec 25 | Jan-Dec 24]."
+        "notes": "Revenue is essentially 100% 'Job Income Medical' (cash-pay services). Gross margin ~99%. Column order in PDF is [Jan-Dec 25 | Jan-Dec 24].",
+        "expectedRecommendation": "RENEGOTIATE"
     }
 }

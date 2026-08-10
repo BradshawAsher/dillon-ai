@@ -92,6 +92,7 @@
         "missedFlags": [],
         "expectedMathCheckStatus": "warning",
         "mathCheckNotes": "Gross profit reconciles (960,117.77 - 8,764.55 = 951,353.22). Equity check not_available - balance sheet is all zeros. SDE bridge does not reconcile cleanly from reported EBITDA + stated add-backs (281,750.32 + 181,655 = 463,405, not 580,657) - flag for analyst review. Debt Service / DSCR cells are formulas, inputs are assumptions, not historical facts.",
-        "notes": "13-sheet macro-enabled template (Instructions, Company Overview, Income Statement, EBITDA Normalization, Balance Sheet, Working Capital, Deal Assumptions, Sources & Uses, Debt Capacity, Free Cash Flow, Returns & Scenarios, Risk Assessment, Submission Summary). Values extracted via openpyxl. Risk Assessment severities stored as Excel dates (2026-01-05..2026-03-05) in source cells - template artifact, treat severity as unset."
+        "notes": "13-sheet macro-enabled template (Instructions, Company Overview, Income Statement, EBITDA Normalization, Balance Sheet, Working Capital, Deal Assumptions, Sources & Uses, Debt Capacity, Free Cash Flow, Returns & Scenarios, Risk Assessment, Submission Summary). Values extracted via openpyxl. Risk Assessment severities stored as Excel dates (2026-01-05..2026-03-05) in source cells - template artifact, treat severity as unset.",
+        "expectedRecommendation": "RENEGOTIATE"
     }
 }

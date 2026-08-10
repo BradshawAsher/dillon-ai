@@ -1,26 +1,27 @@
 {
-  "fileName": "WidgetCo - 5_AR_Aging_Report.xlsx",
-  "business": "WidgetCo Forensic Set",
-  "fileType": "XLSX",
-  "groundTruth": {
-    "documentType": "Accounts Receivable Aging Report",
-    "documentTypes": [
-      "Accounts Receivable Aging Report"
-    ],
-    "trafficLight": "RED",
-    "riskLevel": "HIGH",
-    "financialFacts": [],
-    "expectedRedFlags": [
-      "Bad debt and uncollectible revenue risk: MidMarket LLC ($80k, 131 days) and SmallBiz Co ($50k, 146 days) are severely overdue (>120 days)"
-    ],
-    "expectedYellowFlags": [
-      "Over $130,000 in AR is past 120 days outstanding"
-    ],
-    "falsePositiveFlags": [],
-    "missedFlags": [],
-    "valuation": null,
-    "employeeEvidence": null,
-    "expectedMathCheckStatus": "passed",
-    "notes": "Forensic test file #5: Tests AR aging analysis and bad debt / revenue quality risk detection."
-  }
+    "fileName": "WidgetCo - 5_AR_Aging_Report.xlsx",
+    "business": "WidgetCo Forensic Set",
+    "fileType": "XLSX",
+    "groundTruth": {
+        "documentType": "Accounts Receivable Aging Report",
+        "documentTypes": [
+            "Accounts Receivable Aging Report"
+        ],
+        "trafficLight": "RED",
+        "riskLevel": "HIGH",
+        "financialFacts": [],
+        "expectedRedFlags": [
+            "Bad debt and uncollectible revenue risk: MidMarket LLC ($80k, 131 days) and SmallBiz Co ($50k, 146 days) are severely overdue (>120 days)"
+        ],
+        "expectedYellowFlags": [
+            "Over $130,000 in AR is past 120 days outstanding"
+        ],
+        "falsePositiveFlags": [],
+        "missedFlags": [],
+        "valuation": null,
+        "employeeEvidence": null,
+        "expectedMathCheckStatus": "passed",
+        "notes": "Forensic test file #5: Tests AR aging analysis and bad debt / revenue quality risk detection.",
+        "expectedRecommendation": "ESCALATE"
+    }
 }

@@ -1,18 +1,32 @@
 {
-  "fileName": "WC- Conversion XL OM.pdf",
-  "business": "Business 4 - ConversionXL (SaaS Product)",
-  "fileType": "PDF",
-  "groundTruth": {
-    "documentType": "Customer or Revenue Analysis",
-    "documentTypes": ["Customer or Revenue Analysis", "Operating Metrics"],
-    "trafficLight": "YELLOW",
-    "riskLevel": "MEDIUM",
-    "financialFacts": [
-      { "metric": "revenue", "normalizedValue": 1850000, "period": "TTM 2024", "rawValue": "$1,850,000" }
-    ],
-    "expectedRedFlags": ["Customer churn concentration"],
-    "expectedYellowFlags": ["Spacing artifacts in text", "Key person dependency on founder"],
-    "falsePositiveFlags": [],
-    "expectedMathCheckStatus": "passed"
-  }
+    "fileName": "WC- Conversion XL OM.pdf",
+    "business": "Business 4 - ConversionXL (SaaS Product)",
+    "fileType": "PDF",
+    "groundTruth": {
+        "documentType": "Customer or Revenue Analysis",
+        "documentTypes": [
+            "Customer or Revenue Analysis",
+            "Operating Metrics"
+        ],
+        "trafficLight": "YELLOW",
+        "riskLevel": "MEDIUM",
+        "financialFacts": [
+            {
+                "metric": "revenue",
+                "normalizedValue": 1850000,
+                "period": "TTM 2024",
+                "rawValue": "$1,850,000"
+            }
+        ],
+        "expectedRedFlags": [
+            "Customer churn concentration"
+        ],
+        "expectedYellowFlags": [
+            "Spacing artifacts in text",
+            "Key person dependency on founder"
+        ],
+        "falsePositiveFlags": [],
+        "expectedMathCheckStatus": "passed",
+        "expectedRecommendation": "RENEGOTIATE"
+    }
 }

@@ -1,19 +1,36 @@
 {
-  "fileName": "DD Memo.pdf",
-  "business": "Business 4 - ConversionXL (SaaS Product)",
-  "fileType": "PDF",
-  "groundTruth": {
-    "documentType": "Other",
-    "documentTypes": ["Other", "Operating Metrics"],
-    "trafficLight": "YELLOW",
-    "riskLevel": "MEDIUM",
-    "financialFacts": [
-      { "metric": "revenue", "normalizedValue": 1850000, "period": "TTM 2024", "rawValue": "$1,850,000" },
-      { "metric": "net_income", "normalizedValue": 320000, "period": "TTM 2024", "rawValue": "$320,000" }
-    ],
-    "expectedRedFlags": [],
-    "expectedYellowFlags": ["Conditional Go recommendation", "Vendor dependency"],
-    "falsePositiveFlags": [],
-    "expectedMathCheckStatus": "passed"
-  }
+    "fileName": "DD Memo.pdf",
+    "business": "Business 4 - ConversionXL (SaaS Product)",
+    "fileType": "PDF",
+    "groundTruth": {
+        "documentType": "Other",
+        "documentTypes": [
+            "Other",
+            "Operating Metrics"
+        ],
+        "trafficLight": "YELLOW",
+        "riskLevel": "MEDIUM",
+        "financialFacts": [
+            {
+                "metric": "revenue",
+                "normalizedValue": 1850000,
+                "period": "TTM 2024",
+                "rawValue": "$1,850,000"
+            },
+            {
+                "metric": "net_income",
+                "normalizedValue": 320000,
+                "period": "TTM 2024",
+                "rawValue": "$320,000"
+            }
+        ],
+        "expectedRedFlags": [],
+        "expectedYellowFlags": [
+            "Conditional Go recommendation",
+            "Vendor dependency"
+        ],
+        "falsePositiveFlags": [],
+        "expectedMathCheckStatus": "passed",
+        "expectedRecommendation": "RENEGOTIATE"
+    }
 }

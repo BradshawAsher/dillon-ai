@@ -1,61 +1,62 @@
 {
-  "fileName": "MergeWorks Testing - 3 Financial Performance CSV.docx",
-  "business": "MergeWorks Testing Suite (Docs 2-4)",
-  "fileType": "DOCX",
-  "groundTruth": {
-    "documentType": "Profit and Loss Statement",
-    "documentTypes": [
-      "Profit and Loss Statement"
-    ],
-    "trafficLight": "YELLOW",
-    "riskLevel": "MEDIUM",
-    "financialFacts": [
-      {
-        "metric": "revenue",
-        "normalizedValue": 1000000,
-        "period": "2023",
-        "rawValue": "$1,000,000"
-      },
-      {
-        "metric": "revenue",
-        "normalizedValue": 1100000,
-        "period": "2024",
-        "rawValue": "$1,100,000"
-      },
-      {
-        "metric": "revenue",
-        "normalizedValue": 1200000,
-        "period": "2025",
-        "rawValue": "$1,200,000"
-      },
-      {
-        "metric": "gross_profit",
-        "normalizedValue": 600000,
-        "period": "2023",
-        "rawValue": "$600,000"
-      },
-      {
-        "metric": "gross_profit",
-        "normalizedValue": 605000,
-        "period": "2024",
-        "rawValue": "$605,000"
-      },
-      {
-        "metric": "gross_profit",
-        "normalizedValue": 600000,
-        "period": "2025",
-        "rawValue": "$600,000"
-      }
-    ],
-    "expectedRedFlags": [],
-    "expectedYellowFlags": [
-      "Gross margin compressed from 60.0% in 2023 to 50.0% in 2025 despite revenue growth"
-    ],
-    "falsePositiveFlags": [],
-    "missedFlags": [],
-    "valuation": null,
-    "employeeEvidence": null,
-    "expectedMathCheckStatus": "passed",
-    "notes": "Testing suite file: Isolated DOCX test for P&L arithmetic validation and margin compression."
-  }
+    "fileName": "MergeWorks Testing - 3 Financial Performance CSV.docx",
+    "business": "MergeWorks Testing Suite (Docs 2-4)",
+    "fileType": "DOCX",
+    "groundTruth": {
+        "documentType": "Profit and Loss Statement",
+        "documentTypes": [
+            "Profit and Loss Statement"
+        ],
+        "trafficLight": "YELLOW",
+        "riskLevel": "MEDIUM",
+        "financialFacts": [
+            {
+                "metric": "revenue",
+                "normalizedValue": 1000000,
+                "period": "2023",
+                "rawValue": "$1,000,000"
+            },
+            {
+                "metric": "revenue",
+                "normalizedValue": 1100000,
+                "period": "2024",
+                "rawValue": "$1,100,000"
+            },
+            {
+                "metric": "revenue",
+                "normalizedValue": 1200000,
+                "period": "2025",
+                "rawValue": "$1,200,000"
+            },
+            {
+                "metric": "gross_profit",
+                "normalizedValue": 600000,
+                "period": "2023",
+                "rawValue": "$600,000"
+            },
+            {
+                "metric": "gross_profit",
+                "normalizedValue": 605000,
+                "period": "2024",
+                "rawValue": "$605,000"
+            },
+            {
+                "metric": "gross_profit",
+                "normalizedValue": 600000,
+                "period": "2025",
+                "rawValue": "$600,000"
+            }
+        ],
+        "expectedRedFlags": [],
+        "expectedYellowFlags": [
+            "Gross margin compressed from 60.0% in 2023 to 50.0% in 2025 despite revenue growth"
+        ],
+        "falsePositiveFlags": [],
+        "missedFlags": [],
+        "valuation": null,
+        "employeeEvidence": null,
+        "expectedMathCheckStatus": "passed",
+        "notes": "Testing suite file: Isolated DOCX test for P&L arithmetic validation and margin compression.",
+        "expectedRecommendation": "RENEGOTIATE"
+    }
 }

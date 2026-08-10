@@ -1,50 +1,51 @@
 {
-  "fileName": "Adjusted_Financials_-_Iron-Tree_(2026.02)_final.xlsx",
-  "business": "Business 2 - Data-Cyber Company In PA",
-  "fileType": "XLSX",
-  "groundTruth": {
-    "documentType": "Profit and Loss Statement",
-    "documentTypes": [
-      "Profit and Loss Statement",
-      "Quality of Earnings"
-    ],
-    "trafficLight": "YELLOW",
-    "riskLevel": "MEDIUM",
-    "financialFacts": [
-      {
-        "metric": "revenue",
-        "normalizedValue": 5200000,
-        "period": "FY2024",
-        "rawValue": "$5,200,000"
-      },
-      {
-        "metric": "ebitda_sde",
-        "normalizedValue": 1420000,
-        "period": "FY2024",
-        "rawValue": "$1,420,000"
-      },
-      {
-        "metric": "gross_profit",
-        "normalizedValue": 3120000,
-        "period": "FY2024",
-        "rawValue": "$3,120,000"
-      },
-      {
-        "metric": "net_income",
-        "normalizedValue": 890000,
-        "period": "FY2024",
-        "rawValue": "$890,000"
-      }
-    ],
-    "expectedRedFlags": [],
-    "expectedYellowFlags": [
-      "Massive spreadsheet structure: 19,920 General Ledger rows and 16,302 P&L columns requiring windowed parsing"
-    ],
-    "falsePositiveFlags": [],
-    "missedFlags": [],
-    "valuation": null,
-    "employeeEvidence": null,
-    "expectedMathCheckStatus": "passed",
-    "notes": "7 sheets containing granular 19.9k-row GL and 16.3k-column monthly P&L matrix."
-  }
+    "fileName": "Adjusted_Financials_-_Iron-Tree_(2026.02)_final.xlsx",
+    "business": "Business 2 - Data-Cyber Company In PA",
+    "fileType": "XLSX",
+    "groundTruth": {
+        "documentType": "Profit and Loss Statement",
+        "documentTypes": [
+            "Profit and Loss Statement",
+            "Quality of Earnings"
+        ],
+        "trafficLight": "YELLOW",
+        "riskLevel": "MEDIUM",
+        "financialFacts": [
+            {
+                "metric": "revenue",
+                "normalizedValue": 5200000,
+                "period": "FY2024",
+                "rawValue": "$5,200,000"
+            },
+            {
+                "metric": "ebitda_sde",
+                "normalizedValue": 1420000,
+                "period": "FY2024",
+                "rawValue": "$1,420,000"
+            },
+            {
+                "metric": "gross_profit",
+                "normalizedValue": 3120000,
+                "period": "FY2024",
+                "rawValue": "$3,120,000"
+            },
+            {
+                "metric": "net_income",
+                "normalizedValue": 890000,
+                "period": "FY2024",
+                "rawValue": "$890,000"
+            }
+        ],
+        "expectedRedFlags": [],
+        "expectedYellowFlags": [
+            "Massive spreadsheet structure: 19,920 General Ledger rows and 16,302 P&L columns requiring windowed parsing"
+        ],
+        "falsePositiveFlags": [],
+        "missedFlags": [],
+        "valuation": null,
+        "employeeEvidence": null,
+        "expectedMathCheckStatus": "passed",
+        "notes": "7 sheets containing granular 19.9k-row GL and 16.3k-column monthly P&L matrix.",
+        "expectedRecommendation": "RENEGOTIATE"
+    }
 }

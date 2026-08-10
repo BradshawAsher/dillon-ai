@@ -1,56 +1,57 @@
 {
-  "fileName": "MergeWorks_Financial_Due_Diligence_Model.xlsx",
-  "business": "Business 1 - Roofing Co PA",
-  "fileType": "XLSX",
-  "groundTruth": {
-    "documentType": "Operating Metrics",
-    "documentTypes": [
-      "Operating Metrics",
-      "Profit and Loss Statement"
-    ],
-    "trafficLight": "GREEN",
-    "riskLevel": "LOW",
-    "financialFacts": [
-      {
-        "metric": "revenue",
-        "normalizedValue": 3772081,
-        "period": "TTM",
-        "rawValue": "$3,772,081"
-      },
-      {
-        "metric": "ebitda_sde",
-        "normalizedValue": 1634709,
-        "period": "TTM",
-        "rawValue": "$1,634,709"
-      },
-      {
-        "metric": "gross_profit",
-        "normalizedValue": 3550523,
-        "period": "TTM",
-        "rawValue": "$3,550,523"
-      },
-      {
-        "metric": "net_income",
-        "normalizedValue": 1020013,
-        "period": "TTM",
-        "rawValue": "$1,020,013"
-      }
-    ],
-    "expectedRedFlags": [],
-    "expectedYellowFlags": [
-      "Owner salary add-backs constitute major portion of SDE (~$505k)"
-    ],
-    "falsePositiveFlags": [],
-    "missedFlags": [],
-    "valuation": {
-      "valuationLowerBound": 4500000,
-      "valuationBaseEstimate": 4875000,
-      "valuationUpperBound": 5500000,
-      "askingPrice": 4875000,
-      "currency": "USD"
-    },
-    "employeeEvidence": null,
-    "expectedMathCheckStatus": "passed",
-    "notes": "13-sheet comprehensive financial due diligence workbook. SDE normalized at $1,634,709."
-  }
+    "fileName": "MergeWorks_Financial_Due_Diligence_Model.xlsx",
+    "business": "Business 1 - Roofing Co PA",
+    "fileType": "XLSX",
+    "groundTruth": {
+        "documentType": "Operating Metrics",
+        "documentTypes": [
+            "Operating Metrics",
+            "Profit and Loss Statement"
+        ],
+        "trafficLight": "GREEN",
+        "riskLevel": "LOW",
+        "financialFacts": [
+            {
+                "metric": "revenue",
+                "normalizedValue": 3772081,
+                "period": "TTM",
+                "rawValue": "$3,772,081"
+            },
+            {
+                "metric": "ebitda_sde",
+                "normalizedValue": 1634709,
+                "period": "TTM",
+                "rawValue": "$1,634,709"
+            },
+            {
+                "metric": "gross_profit",
+                "normalizedValue": 3550523,
+                "period": "TTM",
+                "rawValue": "$3,550,523"
+            },
+            {
+                "metric": "net_income",
+                "normalizedValue": 1020013,
+                "period": "TTM",
+                "rawValue": "$1,020,013"
+            }
+        ],
+        "expectedRedFlags": [],
+        "expectedYellowFlags": [
+            "Owner salary add-backs constitute major portion of SDE (~$505k)"
+        ],
+        "falsePositiveFlags": [],
+        "missedFlags": [],
+        "valuation": {
+            "valuationLowerBound": 4500000,
+            "valuationBaseEstimate": 4875000,
+            "valuationUpperBound": 5500000,
+            "askingPrice": 4875000,
+            "currency": "USD"
+        },
+        "employeeEvidence": null,
+        "expectedMathCheckStatus": "passed",
+        "notes": "13-sheet comprehensive financial due diligence workbook. SDE normalized at $1,634,709.",
+        "expectedRecommendation": "PROCEED"
+    }
 }

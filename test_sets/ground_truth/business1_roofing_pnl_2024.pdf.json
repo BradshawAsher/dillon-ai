@@ -1,19 +1,36 @@
 {
-  "fileName": "Two years PL ended Dec 31 2024.pdf",
-  "business": "Business 1 - Roofing Co PA",
-  "fileType": "PDF",
-  "groundTruth": {
-    "documentType": "Profit and Loss Statement",
-    "documentTypes": ["Profit and Loss Statement"],
-    "trafficLight": "YELLOW",
-    "riskLevel": "MEDIUM",
-    "financialFacts": [
-      { "metric": "revenue", "normalizedValue": 2847563, "period": "FY2024", "rawValue": "$2,847,563" },
-      { "metric": "net_income", "normalizedValue": 185000, "period": "FY2024", "rawValue": "$185,000" }
-    ],
-    "expectedRedFlags": ["Owner key-person risk"],
-    "expectedYellowFlags": ["Seasonal revenue variation"],
-    "falsePositiveFlags": [],
-    "expectedMathCheckStatus": "passed"
-  }
+    "fileName": "Two years PL ended Dec 31 2024.pdf",
+    "business": "Business 1 - Roofing Co PA",
+    "fileType": "PDF",
+    "groundTruth": {
+        "documentType": "Profit and Loss Statement",
+        "documentTypes": [
+            "Profit and Loss Statement"
+        ],
+        "trafficLight": "YELLOW",
+        "riskLevel": "MEDIUM",
+        "financialFacts": [
+            {
+                "metric": "revenue",
+                "normalizedValue": 2847563,
+                "period": "FY2024",
+                "rawValue": "$2,847,563"
+            },
+            {
+                "metric": "net_income",
+                "normalizedValue": 185000,
+                "period": "FY2024",
+                "rawValue": "$185,000"
+            }
+        ],
+        "expectedRedFlags": [
+            "Owner key-person risk"
+        ],
+        "expectedYellowFlags": [
+            "Seasonal revenue variation"
+        ],
+        "falsePositiveFlags": [],
+        "expectedMathCheckStatus": "passed",
+        "expectedRecommendation": "RENEGOTIATE"
+    }
 }
