@@ -122,6 +122,7 @@ The Right Way to Fallback: Instead of stacking parsers serially, use an If/Else 
 
 - Finish setting up another 10 pts for evals for the final deal recommendation (10 pts), make sure setup in UI and backend
 
+- Ask how the each score by dimension dimensions are being calcualted so you can see if there are errors in the formulas and/or if you can try to change them to up the accuracies.
 
 - Prep for business meeting 3 and a website and walkthrough ready for them to try as well as prepare to be more professional with what to show when and example questions to ask and example questions to be ready to address
 
