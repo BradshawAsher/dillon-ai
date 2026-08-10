@@ -28,5 +28,14 @@ If the user asks to change project synthesis behavior, the agent should:
 1. inspect the relevant Pod 1 workflow through n8n MCP;
 2. verify the current webhook and Data Table contract;
 3. make the authorized live workflow and/or application change;
-4. confirm the application consumes the returned fields correctly; and
-5. update repository documentation with the confirmed contract.
+## Clarification & Ambiguity Protocol
+
+- If a user prompt contains underspecified requirements or ambiguity (e.g., model defaults, scope of ground truth edits vs workspace views, UI badges vs global state), ALWAYS ask for clarification before modifying existing benchmark files or global states.
+- Do not make broad assumptions on benchmark evaluation datasets or UI model assignments without confirming user intent.
+
+## Empirical Truth & Honest Status Protocol
+
+- NEVER claim a bug, badge, or code change is fixed or updated without empirical verification (e.g., running `git diff` or inspecting the actual rendered state).
+- Be 100% honest, transparent, and direct about the exact state of any code change. If you are unsure whether a fix took effect or if a fallback value might override it, explicitly state your uncertainty rather than making false claims of success or outputting celebratory fluff.
+
+

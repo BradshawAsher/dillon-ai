@@ -118,10 +118,18 @@ export function WorkspaceHeader({
                             onClear={handleClearNotifications}
                             onSelectNotification={(notif) => {
                                 handleMarkNotificationRead(notif.id)
-                                if (notif.type === 'synthesis_complete') {
+                                if (notif.type === 'synthesis_complete' || notif.type === 'synthesis' || notif.message.toLowerCase().includes('synthesis')) {
                                     setActiveWorkspaceTab('synthesis')
-                                } else if (notif.type === 'document_processed') {
+                                    setTimeout(() => {
+                                        const el = document.getElementById('project-synthesis') || document.getElementById('deal-workspace')
+                                        el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                                    }, 100)
+                                } else if (notif.type === 'document_processed' || notif.type === 'document' || notif.message.toLowerCase().includes('document')) {
                                     setActiveWorkspaceTab('diligence')
+                                    setTimeout(() => {
+                                        const el = document.getElementById('deal-diligence') || document.getElementById('deal-workspace')
+                                        el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                                    }, 100)
                                 }
                             }}
                         />

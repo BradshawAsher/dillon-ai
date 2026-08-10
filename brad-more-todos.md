@@ -144,7 +144,13 @@ The Right Way to Fallback: Instead of stacking parsers serially, use an If/Else 
 
 - Make successful deployment ready for businesses meeting for them to try it
 
-- Is there a way I can automate the pushing of docs under different projects to save time? Or can I upload multiple projects at a time?
+- Is there a way I can automate the pushing of docs under different projects to save time? Or can I upload multiple projects at a time? Like this might require a side panel of like docs in progress or something?
+
+- Need to rerun the business 1 since the excel sheet for mergeworks financial modeling didn't go through? is there a way we can insert a new doc for this project and re-run the eval for it?
+
+- Maybe have a button for the user to click that they are comfortable with making an acquisition judgement with only these docs, and will that change the results of our synthesizer since I think our synthesizer is a little conservative, maybe because it wants to get all the docs in the checklist before making a decision
+
+- For all the 5 businesses that trisha gave us that were acquired eventually, why does our model say renegotiate or don't proceed?
 
 - Need to rerun all your test docs with the anthropic for per doc and openai for synthesizer
 

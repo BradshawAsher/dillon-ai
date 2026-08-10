@@ -640,11 +640,22 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
     const activeBatchRows = useMemo(() => {
         if (activeSubmissionBatch?.id) {
-            const batchRows = submissionHistory.filter((row) => row.submissionBatchId === activeSubmissionBatch.id && !isSystemTestProbeFile(row.fileName))
+            const batchRows = submissionHistory.filter((row) => {
+                if (isSystemTestProbeFile(row.fileName)) return false
+                if (row.submissionBatchId === activeSubmissionBatch.id) return true
+                if (row.projectId === activeSubmissionBatch.id || isRowMatchingProject(row, activeSubmissionBatch.id, projectSummaries)) {
+                    if (activeSubmissionBatch.startedAt) {
+                        const rowTime = new Date(row.createdAt || row.receivedAt || row.processedAt || 0).getTime()
+                        return rowTime >= (activeSubmissionBatch.startedAt - 5000)
+                    }
+                }
+                return false
+            })
             if (batchRows.length > 0) return batchRows
+            return []
         }
         return latestBatchRows
-    }, [activeSubmissionBatch?.id, latestBatchRows, submissionHistory])
+    }, [activeSubmissionBatch, latestBatchRows, submissionHistory, projectSummaries])
 
     const batchProgress = useMemo(() => deriveBatchProgress(activeBatchRows), [activeBatchRows])
     const activeBatchExpectedCount = activeSubmissionBatch?.expectedDocumentCount || batchProgress.expectedCount
@@ -1523,7 +1534,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                                     displayedSubmitStatus={displayedSubmitStatus}
                                     submitEnvironment={submitEnvironment}
                                     liveSubmittedRow={liveSubmittedRow}
-                                    latestBatchRows={latestBatchRows}
+                                    latestBatchRows={activeProjectDocuments.length > 0 ? activeProjectDocuments : latestBatchRows}
                                     safeBatchDocIndex={safeBatchDocIndex}
                                     setSelectedBatchDocIndex={setSelectedBatchDocIndex}
                                     setUserHasNavigatedBatchDocs={setUserHasNavigatedBatchDocs}

@@ -204,6 +204,57 @@
         "count": null
       },
       "mathCheckStatus": "passed"
+    },
+    {
+      "fileName": "MergeWorks_Financial_Due_Diligence_Model.xlsx",
+      "fileType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "status": "completed",
+      "modelUsed": "Claude 3.5 Sonnet",
+      "durationSec": 15,
+      "detectedDocumentType": "Operating Metrics",
+      "detectedDocumentTypes": [
+        "Operating Metrics",
+        "Profit and Loss Statement"
+      ],
+      "trafficLight": "GREEN",
+      "riskLevel": "LOW",
+      "financialFacts": [
+        {
+          "metric": "revenue",
+          "normalizedValue": 3772081,
+          "period": "TTM",
+          "confidence": 1
+        },
+        {
+          "metric": "ebitda_sde",
+          "normalizedValue": 1634709,
+          "period": "TTM",
+          "confidence": 1
+        },
+        {
+          "metric": "gross_profit",
+          "normalizedValue": 3550523,
+          "period": "TTM",
+          "confidence": 1
+        },
+        {
+          "metric": "net_income",
+          "normalizedValue": 1020013,
+          "period": "TTM",
+          "confidence": 1
+        }
+      ],
+      "redFlags": [],
+      "yellowFlags": [
+        "Owner salary add-backs constitute major portion of SDE (~$505k)"
+      ],
+      "valuation": {
+        "base_estimate": 4875000
+      },
+      "employeeEvidence": {
+        "count": 37
+      },
+      "mathCheckStatus": "passed"
     }
   ]
 }
