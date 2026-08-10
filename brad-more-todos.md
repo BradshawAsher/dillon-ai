@@ -148,6 +148,8 @@ The Right Way to Fallback: Instead of stacking parsers serially, use an If/Else 
 
 - Maybe have a button for the user to click that they are comfortable with making an acquisition judgement with only these docs, and will that change the results of our synthesizer since I think our synthesizer is a little conservative, maybe because it wants to get all the docs in the checklist before making a decision
 
+- test
+
 - For all the 5 businesses that trisha gave us that were acquired eventually, why does our model say renegotiate or don't proceed?
 
 - Need to rerun all your test docs with the anthropic for per doc and openai for synthesizer
