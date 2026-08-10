@@ -518,7 +518,41 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                                                                         )}
                                                                     </>
                                                                 ) : null}
-                                                                {document.isConsidered ? <Button type="button" size="sm" variant="outline" onClick={() => onExcludeDocument(document.requestID)}>Exclude</Button> : <Button type="button" size="sm" variant="outline" onClick={() => onIncludeDocument(document.requestID)}>Include again</Button>}
+                                                                {document.isConsidered ? (
+                                                                    <Button
+                                                                        type="button"
+                                                                        size="sm"
+                                                                        variant="outline"
+                                                                        onClick={() => {
+                                                                            const autoReRun = window.confirm(
+                                                                                `⚠️ Exclude document from synthesis?\n\nExcluding "${document.fileName}" will update the project scope.\n\nDo you want to re-run project synthesis now without this document?`
+                                                                            )
+                                                                            onExcludeDocument(document.requestID)
+                                                                            if (autoReRun && onRunSynthesis) {
+                                                                                onRunSynthesis()
+                                                                            }
+                                                                        }}
+                                                                    >
+                                                                        Exclude
+                                                                    </Button>
+                                                                ) : (
+                                                                    <Button
+                                                                        type="button"
+                                                                        size="sm"
+                                                                        variant="outline"
+                                                                        onClick={() => {
+                                                                            const autoReRun = window.confirm(
+                                                                                `✨ Include document back into synthesis?\n\nIncluding "${document.fileName}" will add it back to the project scope.\n\nDo you want to re-run project synthesis now with this document?`
+                                                                            )
+                                                                            onIncludeDocument(document.requestID)
+                                                                            if (autoReRun && onRunSynthesis) {
+                                                                                onRunSynthesis()
+                                                                            }
+                                                                        }}
+                                                                    >
+                                                                        Include again
+                                                                    </Button>
+                                                                )}
                                                             </div>
                                                         </div>
                                                     )

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { CheckCircle, Download, FileText, Filter, FolderPlus, Landmark, Loader2, MessageCircleQuestion, RefreshCw, Scale, ShieldAlert, TriangleAlert } from 'lucide-react'
+import { CheckCircle, ChevronLeft, ChevronRight, Download, FileText, Filter, FolderPlus, Landmark, Layers, Loader2, MessageCircleQuestion, RefreshCw, Scale, ShieldAlert, TriangleAlert } from 'lucide-react'
 
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
@@ -290,8 +290,16 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
         }
     }, [rawVisibleSyntheses, projectDocuments, documentThesisTakeaways, currentProjectName, normalizedProjectId])
 
+    const [activeSynthesisIndex, setActiveSynthesisIndex] = useState(0)
+
+    // Reset synthesis version index when selected project changes
+    useEffect(() => {
+        setActiveSynthesisIndex(0)
+    }, [normalizedProjectId])
+
     const isFallbackSynthesis = rawVisibleSyntheses.length === 0 && fallbackSynthesis !== null
     const visibleSyntheses = rawVisibleSyntheses.length > 0 ? rawVisibleSyntheses : (fallbackSynthesis ? [fallbackSynthesis] : [])
+    const activeSynthesis = visibleSyntheses[activeSynthesisIndex] || visibleSyntheses[0]
 
     const failedProjectDocuments = projectDocuments.filter((document) => ['failed', 'error', 'rejected'].includes(document.status.trim().toLowerCase()))
     const completedProjectDocumentsWithAnalysis = projectDocuments.filter((document) => {
@@ -510,7 +518,49 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                     </div>
                 ) : null}
 
-                <AcquisitionJudgmentCallout synthesis={visibleSyntheses[0]} impact={impact} />
+                {visibleSyntheses.length > 1 ? (
+                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/10 p-3.5 text-xs text-foreground shadow-xs">
+                        <div className="flex items-center gap-2">
+                            <Layers className="h-4 w-4 text-primary shrink-0" />
+                            <span className="font-bold text-sm">Synthesis Version History:</span>
+                            <Badge variant="default" className="font-mono text-xs px-2 py-0.5">
+                                Version {visibleSyntheses.length - activeSynthesisIndex} of {visibleSyntheses.length}
+                                {activeSynthesisIndex === 0 ? ' (Latest Pass)' : ' (Historical Pass)'}
+                            </Badge>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                disabled={activeSynthesisIndex >= visibleSyntheses.length - 1}
+                                onClick={() => setActiveSynthesisIndex((prev) => Math.min(prev + 1, visibleSyntheses.length - 1))}
+                                className="gap-1 font-semibold"
+                                title="View earlier synthesis pass"
+                            >
+                                <ChevronLeft className="h-4 w-4" />
+                                <span>Older Pass</span>
+                            </Button>
+                            <span className="font-mono text-xs font-bold text-muted-foreground px-1">
+                                {activeSynthesisIndex + 1} / {visibleSyntheses.length}
+                            </span>
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                disabled={activeSynthesisIndex <= 0}
+                                onClick={() => setActiveSynthesisIndex((prev) => Math.max(prev - 1, 0))}
+                                className="gap-1 font-semibold"
+                                title="View newer synthesis pass"
+                            >
+                                <span>Newer Pass</span>
+                                <ChevronRight className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    </div>
+                ) : null}
+
+                <AcquisitionJudgmentCallout synthesis={activeSynthesis} impact={impact} />
                 {error ? (
                     <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-foreground">
                         <p className="font-medium">Synthesis endpoint not reachable yet.</p>
@@ -540,7 +590,41 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                                         <Badge variant="outline">{document.status || 'Pending'}</Badge>
                                         {!document.isConsidered ? <Badge variant="secondary">Excluded</Badge> : null}
                                         <Button type="button" size="sm" variant="outline" onClick={() => setSelectedDocumentRequestId(document.requestID)}>View analysis</Button>
-                                        {document.isConsidered ? <Button type="button" size="sm" variant="outline" onClick={() => onExcludeDocument?.(document.requestID)}>Exclude from synthesis</Button> : <Button type="button" size="sm" variant="outline" onClick={() => onIncludeDocument?.(document.requestID)}>Include again</Button>}
+                                        {document.isConsidered ? (
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => {
+                                                    const autoReRun = window.confirm(
+                                                        `⚠️ Exclude document from synthesis?\n\nExcluding "${document.fileName}" will update the project scope.\n\nDo you want to re-run project synthesis now without this document?`
+                                                    )
+                                                    onExcludeDocument?.(document.requestID)
+                                                    if (autoReRun && onRunSynthesis) {
+                                                        onRunSynthesis()
+                                                    }
+                                                }}
+                                            >
+                                                Exclude from synthesis
+                                            </Button>
+                                        ) : (
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => {
+                                                    const autoReRun = window.confirm(
+                                                        `✨ Include document back into synthesis?\n\nIncluding "${document.fileName}" will add it back to the project scope.\n\nDo you want to re-run project synthesis now with this document?`
+                                                    )
+                                                    onIncludeDocument?.(document.requestID)
+                                                    if (autoReRun && onRunSynthesis) {
+                                                        onRunSynthesis()
+                                                    }
+                                                }}
+                                            >
+                                                Include again
+                                            </Button>
+                                        )}
                                         {['failed', 'error', 'rejected'].includes(document.status.trim().toLowerCase()) ? <Button type="button" size="sm" variant="outline" disabled={retryingRequestId === document.requestID} onClick={() => onRetryDocument?.(document.requestID)}>{retryingRequestId === document.requestID ? 'Retrying…' : 'Retry document'}</Button> : null}
                                     </div>
                                 </div>
