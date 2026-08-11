@@ -125,7 +125,9 @@ The Right Way to Fallback: Instead of stacking parsers serially, use an If/Else 
 
 - How to get more flags from the agent backend?
 
-- # Finding more datasets:
+- # Finding more datasets [MAY BE EASIER JUST TO FABRICATE FICTIONAL DATA]
+
+
   Yes, there are several public repositories, open datasets, and disclosure platforms where you can find sample business deals, financial statements, and corporate filings to build out your evaluation dataset:
 
   SEC EDGAR (U.S. Securities and Exchange Commission): The official database for public company filings (10-Ks, 10-Qs, and 8-Ks). You can pull real corporate balance sheets, income statements, and merger disclosures to test your agent against complex financial data.
