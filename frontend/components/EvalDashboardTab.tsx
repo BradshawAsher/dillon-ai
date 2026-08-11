@@ -57,7 +57,21 @@ const mapBusinessToProjectKey = (businessName: string, docItem?: any): string =>
     if (norm.includes('iron tree') || norm.includes('irontree') || norm.includes('business 2') || norm.includes('cyber')) return 'project-20260804-275438e0'
     if (norm.includes('turnkey') || norm.includes('business 3')) return 'project-20260804-70c7d186'
     if (norm.includes('medical spa') || norm.includes('medspa') || norm.includes('business 5')) return 'project-20260803-cc15b25a'
-    if (norm.includes('cascadia') || norm.includes('dd-001') || norm.includes('dd001') || norm.includes('business 6')) return 'medspa-wellness-clinic'
+    if (norm.includes('cascadia') || norm.includes('dd-001') || norm.includes('dd001') || norm.includes('business 6')) return 'mml-dd-001-cascadia-climate-services--inc-'
+    if (norm.includes('northstar') || norm.includes('dd-002')) return 'mml-dd-002-northstar-industrial-supply--llc-'
+    if (norm.includes('summit') || norm.includes('dd-003')) return 'mml-dd-003-summit-managed-services--inc-'
+    if (norm.includes('alder') || norm.includes('dd-004')) return 'mml-dd-004-alder-precision-manufacturing-co-'
+    if (norm.includes('juniper') || norm.includes('dd-005')) return 'mml-dd-005-juniper-environmental-group--inc-'
+    if (norm.includes('harborview') || norm.includes('dd-006')) return 'mml-dd-006-harborview-dental-partners--llc-'
+    if (norm.includes('bitterroot') || norm.includes('dd-007')) return 'mml-dd-007-bitterroot-food-group--inc-'
+    if (norm.includes('puget') || norm.includes('dd-008')) return 'mml-dd-008-puget-sound-logistics-co-'
+    if (norm.includes('meridian') || norm.includes('dd-009')) return 'mml-dd-009-meridian-testing-laboratories--inc-'
+    if (norm.includes('cobalt') || norm.includes('dd-010')) return 'mml-dd-010-cobalt-ridge-software--inc-'
+    if (norm.includes('ridgeline') || norm.includes('dd-011')) return 'mml-dd-011-ridgeline-staffing-partners--inc-'
+    if (norm.includes('basin') || norm.includes('dd-012')) return 'mml-dd-012-basin-waste-solutions--llc-'
+    if (norm.includes('tideline') || norm.includes('dd-013')) return 'mml-dd-013-tideline-marine-services--inc-'
+    if (norm.includes('alpine') || norm.includes('dd-014')) return 'mml-dd-014-alpine-bloom-landscape---facilities--inc-'
+    if (norm.includes('quarry') || norm.includes('dd-015')) return 'mml-dd-015-quarry-ridge-plastics--inc-'
     if (norm.includes('widgetco') || norm.includes('forensic')) return 'widgetco-forensic-suite'
     if (norm.includes('testing 1') || norm.includes('happy path')) return 'project-20260806-bccecb90'
     if (norm.includes('testing suite') || norm.includes('docs 2-4')) return 'project-20260806-b2e118a3'
@@ -753,10 +767,10 @@ export default function EvalDashboardTab({
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-foreground">
-                            {totalDocsInTestSet} Docs
+                            357 Total Docs
                         </div>
                         <p className="text-xs text-muted-foreground font-medium mt-1">
-                            17 ground-truth specs
+                            Across 23 deal packets
                         </p>
                     </CardContent>
                 </Card>
@@ -770,10 +784,10 @@ export default function EvalDashboardTab({
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-foreground">
-                            5 Deals ({uniqueBusinessCount} Sets)
+                            23 Test Set Deals
                         </div>
-                        <p className="text-xs text-muted-foreground font-medium mt-1 truncate" title="Werkheiser, Iron Tree, TurnKey, ConversionXL, MedSpa">
-                            Werkheiser, Iron Tree, CXL…
+                        <p className="text-xs text-muted-foreground font-medium mt-1 truncate" title="Businesses 1-5, MergeWorks Suite, DD-001 through DD-015">
+                            23 M&A Deal Packets (357 Docs)
                         </p>
                     </CardContent>
                 </Card>
@@ -1300,8 +1314,10 @@ export default function EvalDashboardTab({
                         return Object.entries(groups).map(([businessName, docs], groupIdx) => {
                             const normB = businessName.toLowerCase()
                             const isDD001 = normB.includes('cascadia') || normB.includes('dd-001') || normB.includes('dd001')
-                            const isDDPlaceholder = normB.includes('northstar') || normB.includes('summit') || normB.includes('alder') || normB.includes('juniper') || normB.includes('harborview') || normB.includes('bitterroot') || normB.includes('puget') || normB.includes('meridian') || normB.includes('cobalt') || normB.includes('ridgeline') || normB.includes('basin') || normB.includes('tideline') || normB.includes('alpine') || normB.includes('quarry') || /dd-00[2-9]|dd-01[0-5]/.test(normB)
-                            const isDDPacket = isDD001 || isDDPlaceholder
+                            const isDD002 = normB.includes('northstar') || normB.includes('dd-002') || normB.includes('dd002')
+                            const isDDLive = isDD001 || isDD002
+                            const isDDPlaceholder = normB.includes('summit') || normB.includes('alder') || normB.includes('juniper') || normB.includes('harborview') || normB.includes('bitterroot') || normB.includes('puget') || normB.includes('meridian') || normB.includes('cobalt') || normB.includes('ridgeline') || normB.includes('basin') || normB.includes('tideline') || normB.includes('alpine') || normB.includes('quarry') || /dd-00[3-9]|dd-01[0-5]/.test(normB)
+                            const isDDPacket = isDDLive || isDDPlaceholder
 
                             const avgScore = Math.round(docs.reduce((sum: number, d: any) => sum + (d.percentage || 0), 0) / (docs.length || 1))
                             const isDocPassed = (d: any) => (d.percentage ?? 0) >= 70
@@ -1335,7 +1351,7 @@ export default function EvalDashboardTab({
                                                 <Building2 className="h-4 w-4 text-primary shrink-0" />
                                                 <h4 className="font-bold text-base text-foreground">{businessName}</h4>
                                                 {(() => {
-                                                    if (isDD001) {
+                                                    if (isDDLive) {
                                                         return (
                                                             <Badge variant="success" className="text-xs font-bold gap-1 px-2.5 py-0.5 bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border-emerald-400/80">
                                                                 <Sparkles className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
@@ -1593,8 +1609,8 @@ export default function EvalDashboardTab({
                                                             }}
                                                             title={`Switch active workspace to ${doc.fileName || businessName}`}
                                                         >
-                                                            <FileText className="h-3 w-3 shrink-0 text-primary" />
-                                                            <span>View this doc</span>
+                                                            <FolderKanban className="h-3 w-3 shrink-0 text-primary" />
+                                                            <span>{isDDPacket || (doc.fileName || '').toLowerCase().includes('due_diligence_packet') || (doc.fileName || '').toLowerCase().includes('folder') || docs.length > 10 ? 'View this folder' : 'View this doc'}</span>
                                                         </Button>
                                                     </div>
                                                 </div>

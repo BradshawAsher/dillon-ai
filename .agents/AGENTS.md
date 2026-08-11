@@ -43,5 +43,11 @@ If the user asks to change project synthesis behavior, the agent should:
 - ALWAYS trace data, UI, and workflow errors to their architectural root cause across n8n workflows, Supabase Data Tables, and frontend state management.
 - NEVER apply superficial string/if-statement patches or band-aids that mask underlying state corruption. If a company name or synthesis version is corrupted upstream, resolve the issue at the data source (n8n/Supabase/Extraction pipeline) first.
 
+## Mandatory Implementation Plan Protocol
+
+- Before making any medium or hard code change, state refactor, or database update, the agent MUST write a detailed `implementation_plan.md` artifact outlining the empirical root cause, target files, exact replacements, and regression verification plan.
+- Never apply multi-file fixes or state refactors without first verifying potential side-effects across the codebase.
+
+
 
 
