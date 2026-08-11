@@ -1320,8 +1320,9 @@ export default function EvalDashboardTab({
                             const isDD005 = normB.includes('juniper') || normB.includes('dd-005') || normB.includes('dd005')
                             const isDD006 = normB.includes('harborview') || normB.includes('dd-006') || normB.includes('dd006')
                             const isDD007 = normB.includes('bitterroot') || normB.includes('dd-007') || normB.includes('dd007')
-                            const isDDLive = isDD001 || isDD002 || isDD003 || isDD004 || isDD005 || isDD006 || isDD007
-                            const isDDPlaceholder = normB.includes('puget') || normB.includes('meridian') || normB.includes('cobalt') || normB.includes('ridgeline') || normB.includes('basin') || normB.includes('tideline') || normB.includes('alpine') || normB.includes('quarry') || /dd-00[8-9]|dd-01[0-5]/.test(normB)
+                            const isDD008 = normB.includes('puget') || normB.includes('dd-008') || normB.includes('dd008')
+                            const isDDLive = isDD001 || isDD002 || isDD003 || isDD004 || isDD005 || isDD006 || isDD007 || isDD008
+                            const isDDPlaceholder = normB.includes('meridian') || normB.includes('cobalt') || normB.includes('ridgeline') || normB.includes('basin') || normB.includes('tideline') || normB.includes('alpine') || normB.includes('quarry') || /dd-009|dd-01[0-5]/.test(normB)
                             const isDDPacket = isDDLive || isDDPlaceholder
 
                             const avgScore = Math.round(docs.reduce((sum: number, d: any) => sum + (d.percentage || 0), 0) / (docs.length || 1))

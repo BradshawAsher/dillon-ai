@@ -141,6 +141,10 @@ S suite 2-4 or Widget Co, only the DDs do you understand? DO YOU UNDERSTAND???
 
 - Understand how the AI Deal Assistant works and if we can make it better?
 
+- Are we updating the extraction cost in diligence latest batch submission results or in synthesis tab after we finish finding the cost? Since right now in diligence it just relies on the placeholder $0.0495 per doc? Also can we add a synthesis cost and total cost to synthesis tab similarly to how we did in the evals and harness tab to be more transparent about the cost?
+
+- Do we have top 5 customer concentration in the deal packets as well as the LOI clauses? Does LOI clauses mean we are expected to have the old LOI as part of the packet so the synthesizer can judge whether to renegotiate or something like that?
+
 - Will have to change the cost optimization stat in evals and harness later
 
 - Is there a way I can automate the pushing of docs under different projects to save time? Or can I upload multiple projects at a time? Like this might require a side panel of like docs in progress or something?
