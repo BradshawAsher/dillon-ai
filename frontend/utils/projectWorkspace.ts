@@ -130,6 +130,10 @@ export function detectCompanyName(row: SubmissionHistoryItem): string {
         return 'Northstar Industrial Supply, LLC'
     }
 
+    if (fn.includes('summit') || summary.includes('summit') || pid.includes('summit') || deal.includes('summit') || pid === 'dd-003') {
+        return 'Summit Managed Services, Inc.'
+    }
+
     if (row.extractedJson) {
         try {
             const parsed = typeof row.extractedJson === 'string' ? JSON.parse(row.extractedJson) : row.extractedJson

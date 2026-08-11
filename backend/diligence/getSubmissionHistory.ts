@@ -36,7 +36,7 @@ function deriveSubmissionStatus(row: Record<string, any>) {
     const batchCount = typeof row.expected_batch_document_count === 'number' && row.expected_batch_document_count > 0
         ? row.expected_batch_document_count
         : 1
-    const perDocTimeoutSeconds = Math.max(240, batchCount * 240)
+    const perDocTimeoutSeconds = Math.max(600, batchCount * 300)
 
     if (activeSubmissionStatuses.has(normalizedStatus) && elapsedSeconds > perDocTimeoutSeconds) {
         return 'failed'
