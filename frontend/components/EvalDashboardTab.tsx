@@ -1369,7 +1369,7 @@ export default function EvalDashboardTab({
                                                     title={`Open interactive per-doc results viewer for ${businessName}`}
                                                 >
                                                     <Eye className="h-4 w-4 shrink-0" />
-                                                    <span>Inspect {docs.length > 10 ? '22' : docs.length} Docs</span>
+                                                    <span>Inspect {isDDPacket ? '22 Docs' : docs.length === 1 ? '1 Folder' : `${docs.length} Docs`}</span>
                                                 </Button>
 
                                                 <Button

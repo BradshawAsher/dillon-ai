@@ -317,7 +317,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
              (itemPid.includes('werkheiser') || itemPid.includes('business1') || itemPid.includes('commercial') || pk.includes('werkheiser') || pk.includes('business1')))
         )
     })
-    const effectiveProjectDocuments = rawProjectDocuments.length > 0 ? rawProjectDocuments : documents
+    const effectiveProjectDocuments = rawProjectDocuments
     const latestDocsByFile = new Map<string, SubmissionHistoryItem>()
     effectiveProjectDocuments.forEach((doc) => {
         const fileKey = (doc.fileName || doc.requestID || String(doc.id)).trim().toLowerCase()

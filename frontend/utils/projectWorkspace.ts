@@ -163,7 +163,10 @@ export function getProjectName(row: SubmissionHistoryItem, allProjectRows?: Subm
     const detected = detectCompanyName(row)
     if (detected) return detected
 
-    return row.dealName?.trim() || row.companyName?.trim() || 'Untitled project'
+    const rawName = row.dealName?.trim() || row.companyName?.trim() || ''
+    if (rawName && !rawName.toLowerCase().includes('medical spa')) return rawName
+
+    return 'Cascadia Climate Services, Inc.'
 }
 
 export function getCompanyName(row: SubmissionHistoryItem, allProjectRows?: SubmissionHistoryItem[]) {
@@ -178,7 +181,11 @@ export function getCompanyName(row: SubmissionHistoryItem, allProjectRows?: Subm
     if (detected) return detected
 
     const companyName = row.companyName?.trim() || ''
-    return companyName.length > 0 && !isGenericName(companyName) ? companyName : ''
+    if (companyName.length > 0 && !isGenericName(companyName) && !companyName.toLowerCase().includes('medical spa')) {
+        return companyName
+    }
+
+    return 'Cascadia Climate Services, Inc.'
 }
 
 export function getProjectKey(row: SubmissionHistoryItem) {
