@@ -162,6 +162,10 @@ export function detectCompanyName(row: SubmissionHistoryItem): string {
         return 'Cobalt Ridge Software, Inc.'
     }
 
+    if (fn.includes('ridgeline') || summary.includes('ridgeline') || pid.includes('ridgeline') || deal.includes('ridgeline') || pid === 'dd-011') {
+        return 'Ridgeline Staffing Partners, Inc.'
+    }
+
     if (row.extractedJson) {
         try {
             const parsed = typeof row.extractedJson === 'string' ? JSON.parse(row.extractedJson) : row.extractedJson

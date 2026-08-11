@@ -1323,8 +1323,9 @@ export default function EvalDashboardTab({
                             const isDD008 = normB.includes('puget') || normB.includes('dd-008') || normB.includes('dd008')
                             const isDD009 = normB.includes('meridian') || normB.includes('dd-009') || normB.includes('dd009')
                             const isDD010 = normB.includes('cobalt') || normB.includes('dd-010') || normB.includes('dd010')
-                            const isDDLive = isDD001 || isDD002 || isDD003 || isDD004 || isDD005 || isDD006 || isDD007 || isDD008 || isDD009 || isDD010
-                            const isDDPlaceholder = normB.includes('ridgeline') || normB.includes('basin') || normB.includes('tideline') || normB.includes('alpine') || normB.includes('quarry') || /dd-01[1-5]/.test(normB)
+                            const isDD011 = normB.includes('ridgeline') || normB.includes('dd-011') || normB.includes('dd011')
+                            const isDDLive = isDD001 || isDD002 || isDD003 || isDD004 || isDD005 || isDD006 || isDD007 || isDD008 || isDD009 || isDD010 || isDD011
+                            const isDDPlaceholder = normB.includes('basin') || normB.includes('tideline') || normB.includes('alpine') || normB.includes('quarry') || /dd-01[2-5]/.test(normB)
                             const isDDPacket = isDDLive || isDDPlaceholder
 
                             const avgScore = Math.round(docs.reduce((sum: number, d: any) => sum + (d.percentage || 0), 0) / (docs.length || 1))
