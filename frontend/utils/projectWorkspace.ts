@@ -166,6 +166,14 @@ export function detectCompanyName(row: SubmissionHistoryItem): string {
         return 'Ridgeline Staffing Partners, Inc.'
     }
 
+    if (fn.includes('basin') || summary.includes('basin') || pid.includes('basin') || deal.includes('basin') || pid === 'dd-012') {
+        return 'Basin Waste Solutions, LLC'
+    }
+
+    if (fn.includes('tideline') || summary.includes('tideline') || pid.includes('tideline') || deal.includes('tideline') || pid === 'dd-013') {
+        return 'Tideline Marine Services, Inc.'
+    }
+
     if (row.extractedJson) {
         try {
             const parsed = typeof row.extractedJson === 'string' ? JSON.parse(row.extractedJson) : row.extractedJson

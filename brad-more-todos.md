@@ -145,6 +145,8 @@ S suite 2-4 or Widget Co, only the DDs do you understand? DO YOU UNDERSTAND???
 
 - Do we have top 5 customer concentration in the deal packets as well as the LOI clauses? Does LOI clauses mean we are expected to have the old LOI as part of the packet so the synthesizer can judge whether to renegotiate or something like that?
 
+- All projects in projects since DD-001 cascadia should be doc primary sonnet 5, doc backup opus 5, synth primary openai 5.6 terra, synth backup openai 5.6 sol
+
 - [For brad] Resync mcp servers for new AIs you use to have same setup that gemini uses
 
 - Will have to change the cost optimization stat in evals and harness later
