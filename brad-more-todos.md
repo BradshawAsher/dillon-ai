@@ -125,20 +125,13 @@ The Right Way to Fallback: Instead of stacking parsers serially, use an If/Else 
 
 - How to get more flags from the agent backend?
 
-- # Finding more datasets [MAY BE EASIER JUST TO FABRICATE FICTIONAL DATA]
+- Finish pushing through the new 15 packets that you've got, and we may need to get more packets since a lot of the packets we have are mostly renegotiate?
 
+- Should we make like tutorials and interactive walkthroughs especially for new users, like how AWS or GCP tutorials work?
 
-  Yes, there are several public repositories, open datasets, and disclosure platforms where you can find sample business deals, financial statements, and corporate filings to build out your evaluation dataset:
+- later for eval and harness tab we may have to scale the size of the minicards representing each doc in that project/business by the total # of docs in that project so projects with 22 docs don't take up a lot of space
+S suite 2-4 or Widget Co, only the DDs do you understand? DO YOU UNDERSTAND???
 
-  SEC EDGAR (U.S. Securities and Exchange Commission): The official database for public company filings (10-Ks, 10-Qs, and 8-Ks). You can pull real corporate balance sheets, income statements, and merger disclosures to test your agent against complex financial data.
-
-  Kaggle: Hosts various structured financial datasets, M&A datasets, and corporate financial report collections that can be downloaded and converted into mock PDFs or spreadsheets.
-
-  Open-Source Financial Benchmark Datasets: Look for academic or industry-released financial QA benchmarks (such as FinQA or ConvFinQA), which provide raw financial text paired with verified ground-truth numerical answers.
-
-  Investor Relations Pages of Public Companies: You can download investor presentation decks, quarterly earnings reports, and M&A press releases directly from corporate websites to test unstructured document parsing.
-
-  _______________________________________-
 
 - Are we separating error handling well? Like regular "we hit an issue" vs we hit a rate limit
 

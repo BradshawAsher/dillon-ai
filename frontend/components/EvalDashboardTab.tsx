@@ -55,8 +55,8 @@ const mapBusinessToProjectKey = (businessName: string, docItem?: any): string =>
     if (norm.includes('werkheiser') || norm.includes('business 1')) return 'project-20260807-f82ade4b'
     if (norm.includes('iron tree') || norm.includes('irontree') || norm.includes('business 2') || norm.includes('cyber')) return 'project-20260804-275438e0'
     if (norm.includes('turnkey') || norm.includes('business 3')) return 'project-20260804-70c7d186'
-    if (norm.includes('conversionxl') || norm.includes('cxl') || norm.includes('business 4')) return 'project-20260804-83178e15'
     if (norm.includes('medical spa') || norm.includes('medspa') || norm.includes('business 5')) return 'project-20260803-cc15b25a'
+    if (norm.includes('cascadia') || norm.includes('dd-001') || norm.includes('dd001') || norm.includes('business 6')) return 'medspa-wellness-clinic'
     if (norm.includes('widgetco') || norm.includes('forensic')) return 'widgetco-forensic-suite'
     if (norm.includes('testing 1') || norm.includes('happy path')) return 'project-20260806-bccecb90'
     if (norm.includes('testing suite') || norm.includes('docs 2-4')) return 'project-20260806-b2e118a3'
@@ -103,6 +103,8 @@ export default function EvalDashboardTab({
     const [businessFilter, setBusinessFilter] = useState<string>('all')
     const [modelFilter, setModelFilter] = useState<string>('all')
     const [sortBy, setSortBy] = useState<'default' | 'score_desc' | 'score_asc' | 'duration_desc' | 'name_asc'>('default')
+    const [selectedDocViewerBusiness, setSelectedDocViewerBusiness] = useState<string | null>(null)
+    const [viewerSearchQuery, setViewerSearchQuery] = useState('')
 
     // Default report incorporating Business 1 (Werkheiser), Business 2 (Iron Tree), Business 3 (TurnKey), Business 4 (ConversionXL), and Business 5 (Medical Spa)
     const defaultReport = {
@@ -1232,6 +1234,21 @@ export default function EvalDashboardTab({
                                 perDocAttempts: '1/3',
                                 synthAttempts: '1/3',
                             },
+                            'Business 6 - Cascadia Climate Services (DD-001)': {
+                                bear: '$8,500,000',
+                                base: '$11,000,000',
+                                bull: '$13,500,000',
+                                perDocPrimary: 'Claude Sonnet 5',
+                                perDocBackup: 'Claude Opus 5',
+                                perDocActual: 'Claude Sonnet 5',
+                                synthPrimary: 'OpenAI 5.6 Terra',
+                                synthBackup: 'OpenAI 5.6 Sol',
+                                synthActual: 'OpenAI 5.6 Terra',
+                                perDocCost: 0.0495,
+                                synthCost: 0.0312,
+                                perDocAttempts: '1/3',
+                                synthAttempts: '1/3',
+                            },
                             'WidgetCo Forensic Set': {
                                 bear: '$1,200,000',
                                 base: '$1,500,000',
@@ -1309,9 +1326,47 @@ export default function EvalDashboardTab({
                                             <div className="flex items-center gap-2 flex-wrap">
                                                 <Building2 className="h-4 w-4 text-primary shrink-0" />
                                                 <h4 className="font-bold text-base text-foreground">{businessName}</h4>
-                                                <Badge variant="outline" className="text-[10px] font-mono">
-                                                    {docs.length} Doc{docs.length > 1 ? 's' : ''}
-                                                </Badge>
+                                                {(() => {
+                                                    const isDD001 = businessName.includes('DD-001') || businessName.includes('Cascadia')
+                                                    const isDDPlaceholder = /DD-00[2-9]|DD-01[0-5]/.test(businessName)
+
+                                                    if (isDD001) {
+                                                        return (
+                                                            <Badge variant="success" className="text-xs font-bold gap-1 px-2.5 py-0.5 bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border-emerald-400/80">
+                                                                <Sparkles className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                                                                22 Documents Included (Live Pipeline Run)
+                                                            </Badge>
+                                                        )
+                                                    }
+                                                    if (isDDPlaceholder) {
+                                                        return (
+                                                            <Badge variant="secondary" className="text-xs font-bold gap-1 px-2.5 py-0.5 bg-amber-500/15 text-amber-800 dark:text-amber-200 border-amber-400/80">
+                                                                <Clock className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                                                                22 Documents (Placeholder — Not ran through pipeline yet)
+                                                            </Badge>
+                                                        )
+                                                    }
+                                                    return (
+                                                        <Badge variant="outline" className="text-[10px] font-mono">
+                                                            {docs.length} Doc{docs.length > 1 ? 's' : ''} Included
+                                                        </Badge>
+                                                    )
+                                                })()}
+                                                <Button
+                                                    type="button"
+                                                    size="default"
+                                                    variant="secondary"
+                                                    className="gap-2 border-indigo-500/40 bg-indigo-500/15 text-indigo-900 dark:text-indigo-200 hover:bg-indigo-600 hover:text-white font-extrabold text-xs px-3.5 py-2 shadow-xs transition-all cursor-pointer rounded-xl shrink-0"
+                                                    onClick={() => {
+                                                        setSelectedDocViewerBusiness(businessName)
+                                                        setViewerSearchQuery('')
+                                                    }}
+                                                    title={`Open interactive per-doc results viewer for ${businessName}`}
+                                                >
+                                                    <Eye className="h-4 w-4 shrink-0" />
+                                                    <span>Inspect {docs.length > 10 ? '22' : docs.length} Docs</span>
+                                                </Button>
+
                                                 <Button
                                                     type="button"
                                                     size="default"
@@ -1352,6 +1407,12 @@ export default function EvalDashboardTab({
                                                     <span>Add More Files</span>
                                                 </Button>
                                             </div>
+                                            {/DD-00[2-9]|DD-01[0-5]/.test(businessName) ? (
+                                                <div className="flex items-center gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3.5 py-1.5 text-xs font-semibold text-amber-800 dark:text-amber-200 mt-1">
+                                                    <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                                                    <span>Placeholder benchmark dataset — 22 documents in packet. Not ran through the live n8n pipeline yet.</span>
+                                                </div>
+                                            ) : null}
                                             <p className="text-xs text-muted-foreground">
                                                 Execution time: ~{totalDurationSec}s total across workflow passes
                                             </p>
@@ -1443,14 +1504,14 @@ export default function EvalDashboardTab({
                                         </div>
                                     </div>
 
-                                    <div className="grid gap-3 md:grid-cols-2">
+                                    <div className={`grid gap-3 ${docs.length > 10 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'md:grid-cols-2'}`}>
                                         {docs.map((doc: any, docIdx: number) => {
                                             const isPass = isDocPassed(doc)
                                             const docCost = doc.costUsd || val.perDocCost
                                             return (
                                                 <div
                                                     key={docIdx}
-                                                    className={`rounded-lg border p-3.5 space-y-2.5 transition-all ${
+                                                    className={`rounded-lg border transition-all ${docs.length > 10 ? 'p-2.5 space-y-1.5' : 'p-3.5 space-y-2.5'} ${
                                                         isPass
                                                             ? 'border-emerald-500/30 bg-emerald-50/30 dark:bg-emerald-950/10'
                                                             : 'border-red-500/30 bg-red-50/30 dark:bg-red-950/10'

@@ -38,4 +38,10 @@ If the user asks to change project synthesis behavior, the agent should:
 - NEVER claim a bug, badge, or code change is fixed or updated without empirical verification (e.g., running `git diff` or inspecting the actual rendered state).
 - Be 100% honest, transparent, and direct about the exact state of any code change. If you are unsure whether a fix took effect or if a fallback value might override it, explicitly state your uncertainty rather than making false claims of success or outputting celebratory fluff.
 
+## Root Cause First Protocol
+
+- ALWAYS trace data, UI, and workflow errors to their architectural root cause across n8n workflows, Supabase Data Tables, and frontend state management.
+- NEVER apply superficial string/if-statement patches or band-aids that mask underlying state corruption. If a company name or synthesis version is corrupted upstream, resolve the issue at the data source (n8n/Supabase/Extraction pipeline) first.
+
+
 

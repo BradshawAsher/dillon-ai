@@ -1,16 +1,16 @@
 # Eval Regression Report
 
-- **Generated:** 2026-08-11T01:53:34.657Z
-- **Overall:** 97% (41/41 docs passing) — SHIP-READY (PASS)
+- **Generated:** 2026-08-11T02:57:03.018Z
+- **Overall:** 97% (43/43 docs passing) — SHIP-READY (PASS)
 - **Regression gate:** threshold 70% → ✅ PASS
-- **Ground-truth coverage:** 41/41 specs scored
+- **Ground-truth coverage:** 43/41 specs scored
 
 ## Category averages (% of max)
 
 | Dimension | Avg |
 | --- | --- |
 | classification | 97% |
-| facts (weakest) | 93% |
+| facts (weakest) | 94% |
 | risk | 98% |
 | valuation | 100% |
 | employee | 100% |
@@ -38,6 +38,8 @@
 | CXL_Screen.xlsx | 96% | PASS |
 | _RENEW HEALTH CENTER - FULL YEAR COMPARATIVE P&L (2024-2025).pdf | 99% | PASS |
 | Financial Modelling Renew Health .xlsm | 97% | PASS |
+| fixed_asset_register.xlsx | 97% | PASS |
+| customer_concentration.xlsx | 96% | PASS |
 | MergeWorks Testing - 1 Combined Happy Path.docx | 99% | PASS |
 | MergeWorks Testing - 2 Customer Concentration Table.docx | 97% | PASS |
 | MergeWorks Testing - 3 Financial Performance CSV.docx | 99% | PASS |

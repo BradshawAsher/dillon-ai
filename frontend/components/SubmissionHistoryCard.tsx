@@ -26,6 +26,7 @@ import { formatEasternTime } from '../utils/dateTime'
 import {
     calculateDocumentCost,
     formatConfidencePercent,
+    formatDocumentCostDisplay,
 } from '../utils/diligenceDashboardUtils'
 import { downloadTextFile, fileSafeName } from '../utils/downloadFile'
 import { computeImpactMetrics, formatHours, HUMAN_MINUTES_PER_DOCUMENT } from '../utils/impactMetrics'
@@ -884,7 +885,7 @@ export default function SubmissionHistoryCard({
                                                             Extraction Cost
                                                         </p>
                                                         <p className="mt-1 text-sm font-bold text-emerald-600 dark:text-emerald-400 font-mono">
-                                                            ${calculateDocumentCost(selectedRow).toFixed(4)}
+                                                            {formatDocumentCostDisplay(selectedRow).formatted}
                                                         </p>
                                                     </div>
                                                     <div className="rounded-lg border border-border bg-background p-3">

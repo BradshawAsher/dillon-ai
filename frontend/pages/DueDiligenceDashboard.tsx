@@ -566,20 +566,23 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         isCurrentProjectProcessingDocuments,
     ])
 
-    const isCurrentProjectAwaitingSynthesis = useMemo(() => {
+    const isCurrentProjectExtractingDocs = useMemo(() => {
         if (isExampleMode || activeProjectDocuments.length === 0) return false
-
-        const hasPendingDoc = activeProjectDocuments.some((d) =>
+        return activeProjectDocuments.some((d) =>
             ['processing', 'pending', 'queued', 'running'].includes((d.status || '').trim().toLowerCase())
         )
-        if (hasPendingDoc) return true
+    }, [activeProjectDocuments, isExampleMode])
+
+    const isCurrentProjectAwaitingSynthesis = useMemo(() => {
+        if (isExampleMode || activeProjectDocuments.length === 0) return false
+        if (isCurrentProjectExtractingDocs) return false
 
         const completedDocCount = activeProjectDocuments.filter((d) =>
             ['completed', 'approved'].includes((d.status || '').trim().toLowerCase())
         ).length
 
         if (completedDocCount === 0) return false
-        if (!activeProjectSynthesis) return false
+        if (!activeProjectSynthesis) return true
 
         const synthStatus = (activeProjectSynthesis.projectStatus || '').trim().toLowerCase()
         const hasFinishedSynthResults = ['synthesized', 'completed', 'success'].includes(synthStatus) ||
@@ -591,10 +594,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             return false
         }
 
-        if (['processing', 'pending', 'queued', 'running', 'synthesis_in_progress'].includes(synthStatus)) return true
-
-        return false
-    }, [activeProjectDocuments, activeProjectSynthesis, isExampleMode])
+        return true
+    }, [activeProjectDocuments, activeProjectSynthesis, isCurrentProjectExtractingDocs, isExampleMode])
 
     const activeProjectSynthesisSucceeded = useMemo(() => {
         if (!activeProjectSynthesis || isCurrentProjectAwaitingSynthesis) return false
@@ -721,24 +722,30 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         setPendingTargetDocFileName(null)
     }, [pendingTargetDocFileName, latestBatchRows, activeProjectId, projectSummaries])
 
+    // Reset userHasNavigatedBatchDocs when active project or submission batch changes
+    useEffect(() => {
+        setUserHasNavigatedBatchDocs(false)
+    }, [activeProjectId, activeSubmissionBatch?.id])
+
     // Auto-select the latest completed document (or active processing document) if the user hasn't manually overridden
     useEffect(() => {
-        if (userHasNavigatedBatchDocs || pendingTargetDocFileName || latestBatchRows.length === 0) return
+        const targetList = activeProjectDocuments.length > 0 ? activeProjectDocuments : latestBatchRows
+        if (userHasNavigatedBatchDocs || pendingTargetDocFileName || targetList.length === 0) return
 
-        const lastCompletedIdx = findLastIndex(latestBatchRows, (doc: SubmissionHistoryItem) => doc.status.trim().toLowerCase() === 'completed')
+        const lastCompletedIdx = findLastIndex(targetList, (doc: SubmissionHistoryItem) => (doc.status || '').trim().toLowerCase() === 'completed')
         if (lastCompletedIdx !== -1) {
             setSelectedBatchDocIndex(lastCompletedIdx)
             return
         }
 
-        const firstProcessingIndex = latestBatchRows.findIndex((doc: SubmissionHistoryItem) => isActiveSubmissionStatus(doc.status))
+        const firstProcessingIndex = targetList.findIndex((doc: SubmissionHistoryItem) => isActiveSubmissionStatus(doc.status))
         if (firstProcessingIndex !== -1) {
             setSelectedBatchDocIndex(firstProcessingIndex)
             return
         }
 
         setSelectedBatchDocIndex(0)
-    }, [latestBatchRows, userHasNavigatedBatchDocs, pendingTargetDocFileName])
+    }, [activeProjectDocuments, latestBatchRows, userHasNavigatedBatchDocs, pendingTargetDocFileName])
 
     const safeBatchDocIndex = Math.min(Math.max(0, selectedBatchDocIndex), Math.max(0, latestBatchRows.length - 1))
 
@@ -1518,6 +1525,18 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                                     handleRetryFailedDocument={(requestID) => { void handleRetryFailedDocument(requestID) }}
                                     handleOpenProjectSynthesis={handleOpenProjectSynthesis}
                                 />
+                            ) : null}
+
+                            {!isExampleMode && isCurrentProjectExtractingDocs ? (
+                                <div className="flex items-start gap-3 rounded-lg border border-blue-300 bg-blue-50 p-4 dark:border-blue-800/50 dark:bg-blue-900/15">
+                                    <Loader2 className="mt-0.5 h-5 w-5 shrink-0 animate-spin text-blue-600 dark:text-blue-400" />
+                                    <div>
+                                        <p className="text-sm font-semibold text-foreground">Document extraction in progress</p>
+                                        <p className="mt-1 text-sm text-muted-foreground">
+                                            Per-document extraction is currently running for uploaded files. Project synthesis will trigger automatically once all documents finish processing.
+                                        </p>
+                                    </div>
+                                </div>
                             ) : null}
 
                             {!isExampleMode && isCurrentProjectAwaitingSynthesis ? (

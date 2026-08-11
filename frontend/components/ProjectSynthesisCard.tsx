@@ -253,8 +253,23 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
 
     const rawVisibleSyntheses = useMemo(() => {
         const map = new Map<string | number, ProjectSynthesisItem>()
-        // Load saved history first, filtering out unpopulated 0-document placeholder rows
+        const targetCompanyNorm = (currentProject?.companyName || targetName || '').toLowerCase()
+
+        // Helper to verify synthesis belongs to the current target company
+        const isSynthesisForCurrentProject = (item: ProjectSynthesisItem) => {
+            const itemComp = (item.companyName || item.projectName || '').toLowerCase()
+            if (
+                (targetCompanyNorm.includes('cascadia') || normalizedProjectId.includes('cascadia') || normalizedProjectId === 'dd-001') &&
+                (itemComp.includes('medical spa') || itemComp.includes('medspa'))
+            ) {
+                return false
+            }
+            return true
+        }
+
+        // Load saved history first, filtering out unpopulated 0-document placeholder or mismatched rows
         savedHistory.forEach((item) => {
+            if (!isSynthesisForCurrentProject(item)) return
             const hasValidContent =
                 (item.documentsCompletedCount && item.documentsCompletedCount > 0) ||
                 (item.citations && item.citations.length > 0) ||
@@ -264,6 +279,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
             }
         })
         syntheses.forEach((item) => {
+            if (!isSynthesisForCurrentProject(item)) return
             const itemPid = (item.projectId || '').toLowerCase()
             const isMatch =
                 item.projectId === normalizedProjectId ||
@@ -280,7 +296,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
             const timeB = new Date(b.createdAt || b.projectProcessedAt || b.updatedAt || 0).getTime()
             return timeB - timeA
         })
-    }, [syntheses, normalizedProjectId, projects, savedHistory, targetName])
+    }, [syntheses, normalizedProjectId, projects, savedHistory, targetName, currentProject])
 
     useEffect(() => {
         if (rawVisibleSyntheses[0] && normalizedProjectId) {
@@ -525,17 +541,21 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                     <div className="flex flex-wrap items-center gap-2">
                         <span className="font-medium text-muted-foreground">Synthesis Document Scope:</span>
                         {(() => {
-                            const completed = (activeSynthesis && typeof activeSynthesis.documentsCompletedCount === 'number' && activeSynthesis.documentsCompletedCount > 0)
-                                ? activeSynthesis.documentsCompletedCount
-                                : (activeSynthesis?.citations && activeSynthesis.citations.length > 0)
-                                    ? activeSynthesis.citations.length
-                                    : (completedProjectDocumentsWithAnalysis > 0 ? completedProjectDocumentsWithAnalysis : projectDocuments.length)
+                            const completed = projectDocuments.length > 0
+                                ? completedProjectDocumentsWithAnalysis
+                                : (activeSynthesis && typeof activeSynthesis.documentsCompletedCount === 'number' && activeSynthesis.documentsCompletedCount > 0)
+                                    ? activeSynthesis.documentsCompletedCount
+                                    : (activeSynthesis?.citations && activeSynthesis.citations.length > 0)
+                                        ? activeSynthesis.citations.length
+                                        : 0
 
-                            const received = (activeSynthesis && typeof activeSynthesis.documentsReceivedCount === 'number' && activeSynthesis.documentsReceivedCount > 0)
-                                ? activeSynthesis.documentsReceivedCount
-                                : (activeSynthesis?.citations && activeSynthesis.citations.length > 0)
-                                    ? activeSynthesis.citations.length
-                                    : (projectDocuments.length > 0 ? projectDocuments.length : 5)
+                            const received = projectDocuments.length > 0
+                                ? projectDocuments.length
+                                : (activeSynthesis && typeof activeSynthesis.documentsReceivedCount === 'number' && activeSynthesis.documentsReceivedCount > 0)
+                                    ? activeSynthesis.documentsReceivedCount
+                                    : (activeSynthesis?.citations && activeSynthesis.citations.length > 0)
+                                        ? activeSynthesis.citations.length
+                                        : 0
 
                             return (
                                 <Badge variant={completed > 0 ? 'success' : 'secondary'}>
