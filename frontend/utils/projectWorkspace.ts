@@ -109,6 +109,9 @@ function isGenericName(name: string): boolean {
         /^project-\d+-[a-f0-9]+$/i.test(norm) ||
         /^deal[-\s]*\d*$/i.test(norm) ||
         /^(new|untitled|default)\s*(project|deal)?$/i.test(norm) ||
+        norm.includes('confidential information memorandum') ||
+        norm.includes('confidential_information_memorandum') ||
+        norm.includes('balance sheet jan') ||
         ['n/a', 'na', 'unknown', 'none'].includes(norm)
     )
 }
@@ -121,6 +124,10 @@ export function detectCompanyName(row: SubmissionHistoryItem): string {
 
     if (fn.includes('cascadia') || summary.includes('cascadia') || pid.includes('cascadia') || deal.includes('cascadia') || pid === 'dd-001') {
         return 'Cascadia Climate Services, Inc.'
+    }
+
+    if (fn.includes('northstar') || summary.includes('northstar') || pid.includes('northstar') || deal.includes('northstar') || pid === 'dd-002') {
+        return 'Northstar Industrial Supply, LLC'
     }
 
     if (row.extractedJson) {
@@ -219,6 +226,28 @@ export function isRowMatchingProject(row: SubmissionHistoryItem, targetProjectId
 
     // 1. Direct exact match on projectId, projectKey, or submissionBatchId
     if (explicitPid === rawTarget || pk === rawTarget || (rowBatch && rowBatch === rawTarget)) return true
+
+    // Match Cascadia Climate Services files for DD-001 project key
+    if (rawTarget.includes('cascadia') || rawTarget.includes('dd-001') || rawTarget.includes('dd001')) {
+        const fn = (row.fileName || '').toLowerCase()
+        const comp = (row.companyName || '').toLowerCase()
+        if (
+            explicitPid.includes('cascadia') ||
+            explicitPid.includes('dd-001') ||
+            comp.includes('cascadia') ||
+            fn.includes('cascadia') ||
+            fn.includes('dd-001') ||
+            fn.includes('statement_') ||
+            fn.includes('confidential_information_memorandum') ||
+            fn.includes('monthly_pnl') ||
+            fn.includes('general_ledger') ||
+            fn.includes('trial_balance') ||
+            fn.includes('data_room_index') ||
+            fn.includes('management_qa')
+        ) {
+            return true
+        }
+    }
 
     // 2. If targetProjectId is a specific instance ID (e.g. "project-20260807-f82ade4b"), match explicit PID/PK or mapped business name
     if (rawTarget.startsWith('project-') || rawTarget.startsWith('batch-') || rawTarget.startsWith('sub-')) {
