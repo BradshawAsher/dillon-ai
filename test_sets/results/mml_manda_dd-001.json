@@ -1,0 +1,58 @@
+{
+  "business": "Cascadia Climate Services, Inc. (Commercial & Residential HVAC Services)",
+  "projectId": "mml-dd-001-cascadia-climate-services--inc-",
+  "evaluatedAt": "2026-08-11T01:52:39.960Z",
+  "documents": [
+    {
+      "fileName": "DD-001_Cascadia_Climate_Services__Inc__due_diligence_packet.pdf",
+      "modelUsed": "Gemini 3.1 Flash Lite",
+      "status": "completed",
+      "detectedDocumentType": "Quality of Earnings Report",
+      "trafficLight": "RED",
+      "riskLevel": "HIGH",
+      "confidence": 0.94,
+      "extractedFacts": [
+        {
+          "metric": "revenue",
+          "normalizedValue": 11057939,
+          "period": "TTM",
+          "rawValue": "$11,057,939"
+        },
+        {
+          "metric": "ebitda",
+          "normalizedValue": 1085904,
+          "period": "TTM",
+          "rawValue": "$1,085,904"
+        },
+        {
+          "metric": "adjusted_ebitda",
+          "normalizedValue": 1260400,
+          "period": "TTM",
+          "rawValue": "$1,260,400"
+        }
+      ],
+      "redFlags": [
+        "One-time strategic consulting: Unsupported. Payments to North Peak Consulting are level monthly amounts that begin before and continue after the claimed project window."
+      ],
+      "yellowFlags": [
+        "Owner vehicle & personal fleet expense: Partially supportable. $41,500 of the $84,000 TTM claim relates to two personally-titled vehicles; the remainder is operating fleet cost that continues post-close.",
+        "ERP implementation project: Supportable. Three sequential project invoices in Mar-May 2025 with no activity before or after; go-live confirmed in management Q&A.",
+        "Excess owner compensation: Partially supportable. Owner comp of $350,000 versus a $275,000 market replacement GM salary supports a $75,000 add-back, not $125,000.",
+        "Customer concentration: Largest customer, Elkhorn Property Group, is 18.7% of FY2025 revenue; top 5 are 64.4%.",
+        "Seasonality and net working capital swing: FY2025 monthly EBITDA ranges from $6,601 to $200,693; cash ranges from $1,696,088 to $2,303,034. The NWC peg must be set on a 12-month average, not a period-end snapshot."
+      ],
+      "greenFlags": [
+        "Verified TTM Revenue of $11.06M across VDR financials.",
+        "Reported TTM EBITDA of $1.09M reconciled against tax returns and bank statements."
+      ],
+      "valuation": {
+        "valuationLowerBound": 4411400,
+        "valuationBaseEstimate": 5671800,
+        "valuationUpperBound": 6932200,
+        "askingPrice": 7964520,
+        "currency": "USD"
+      },
+      "mathCheckPassed": true
+    }
+  ]
+}

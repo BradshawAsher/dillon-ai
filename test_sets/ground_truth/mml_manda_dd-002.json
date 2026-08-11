@@ -1,0 +1,57 @@
+{
+  "fileName": "DD-002_Northstar_Industrial_Supply__LLC_due_diligence_packet.pdf",
+  "business": "Northstar Industrial Supply, LLC (Specialty Industrial Distribution (fasteners & fluid power))",
+  "fileType": "PDF",
+  "groundTruth": {
+    "documentType": "Due Diligence Data Room Packet",
+    "documentTypes": [
+      "Profit and Loss Statement",
+      "Quality of Earnings Report",
+      "Balance Sheet"
+    ],
+    "trafficLight": "YELLOW",
+    "riskLevel": "MEDIUM",
+    "financialFacts": [
+      {
+        "metric": "revenue",
+        "normalizedValue": 15456034,
+        "period": "TTM",
+        "rawValue": "$15,456,034"
+      },
+      {
+        "metric": "ebitda",
+        "normalizedValue": 703035,
+        "period": "TTM",
+        "rawValue": "$703,035"
+      },
+      {
+        "metric": "adjusted_ebitda",
+        "normalizedValue": 938887,
+        "period": "TTM",
+        "rawValue": "$938,887"
+      }
+    ],
+    "expectedRedFlags": [
+      "Vendor rebate 'timing' normalization: Unsupported. The Q4-2025 rebate credit is an annual, recurring volume rebate booked in one month; adding it back double-counts recurring margin.",
+      "Obsolete inventory write-off: Largely unsupportable as one-time. Slow-moving stock builds every year; only ~$26,000 relates to a discontinued supplier line."
+    ],
+    "expectedYellowFlags": [
+      "Above-market related-party warehouse rent: Partially supportable. Rent of $408,000/yr versus a $288,000/yr market rate supports a $120,000 add-back, not $168,000.",
+      "Owner compensation normalization: Supportable. Owner comp of $290,000 versus a $200,000 market GM cost; the $90,000 delta is documented and reasonable.",
+      "Customer concentration: Largest customer, Granite Medical Center, is 16.3% of FY2025 revenue; top 5 are 51.7%.",
+      "Seasonality and net working capital swing: FY2025 monthly EBITDA ranges from $-3,562 to $122,818; cash ranges from $18,670,470 to $27,144,095. The NWC peg must be set on a 12-month average, not a period-end snapshot."
+    ],
+    "falsePositiveFlags": [],
+    "missedFlags": [],
+    "valuation": {
+      "valuationLowerBound": 3286104.5,
+      "valuationBaseEstimate": 4224991.5,
+      "valuationUpperBound": 5163878.5,
+      "askingPrice": 5655175,
+      "currency": "USD"
+    },
+    "expectedMathCheckStatus": "passed",
+    "notes": "MML M&A Benchmark Deal DD-002: Northstar Industrial Supply, LLC (Specialty Industrial Distribution (fasteners & fluid power)). Seller claims $1.13M EBITDA vs $0.94M buyer-supported ($192k overstatement).",
+    "expectedRecommendation": "PROCEED WITH REPRICE"
+  }
+}

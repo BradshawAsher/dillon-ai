@@ -1,0 +1,59 @@
+{
+  "business": "Meridian Testing Laboratories, Inc. (Environmental & Materials Testing Laboratory)",
+  "projectId": "mml-dd-009-meridian-testing-laboratories--inc-",
+  "evaluatedAt": "2026-08-11T01:52:39.982Z",
+  "documents": [
+    {
+      "fileName": "DD-009_Meridian_Testing_Laboratories__Inc__due_diligence_packet.pdf",
+      "modelUsed": "Gemini 3.1 Flash Lite",
+      "status": "completed",
+      "detectedDocumentType": "Quality of Earnings Report",
+      "trafficLight": "YELLOW",
+      "riskLevel": "MEDIUM",
+      "confidence": 0.94,
+      "extractedFacts": [
+        {
+          "metric": "revenue",
+          "normalizedValue": 10748723,
+          "period": "TTM",
+          "rawValue": "$10,748,723"
+        },
+        {
+          "metric": "ebitda",
+          "normalizedValue": 2548705,
+          "period": "TTM",
+          "rawValue": "$2,548,705"
+        },
+        {
+          "metric": "adjusted_ebitda",
+          "normalizedValue": 2892719,
+          "period": "TTM",
+          "rawValue": "$2,892,719"
+        }
+      ],
+      "redFlags": [
+        "Customer concentration: Largest customer, Skagit Logistics, is 20.1% of FY2025 revenue; top 5 are 57.0%."
+      ],
+      "yellowFlags": [
+        "Owner compensation normalization: Substantially supportable. $103,000 of the $118,000 claim exceeds market compensation for the technical director role the owner actually performs.",
+        "ISO 17025 reaccreditation project: Fully supportable. Reaccreditation is a discrete multi-year cycle event and the ledger shows activity only in April and June 2025.",
+        "Former CFO severance: Fully supportable as a non-recurring cost. Two payments in May and June 2025 with nothing before or after.",
+        "Laboratory relocation and build-out: Fully supportable. The move to the Nampa facility occurred in July and August 2025 and the costs are confined to those two months.",
+        "Replacement CFO run-rate cost (buyer adjustment): Buyer-identified downward adjustment of $41,000. The CFO role has been vacant since June 2025, so the TTM carries only a partial year of that cost. Run-rate EBITDA must absorb a full year of the replacement.",
+        "Seasonality and net working capital swing: FY2025 monthly EBITDA ranges from $147,308 to $257,113; cash ranges from $3,652,291 to $4,819,753. The NWC peg must be set on a 12-month average, not a period-end snapshot."
+      ],
+      "greenFlags": [
+        "Verified TTM Revenue of $10.75M across VDR financials.",
+        "Reported TTM EBITDA of $2.55M reconciled against tax returns and bank statements."
+      ],
+      "valuation": {
+        "valuationLowerBound": 10124516.5,
+        "valuationBaseEstimate": 13017235.5,
+        "valuationUpperBound": 15909954.5,
+        "askingPrice": 14743525,
+        "currency": "USD"
+      },
+      "mathCheckPassed": true
+    }
+  ]
+}

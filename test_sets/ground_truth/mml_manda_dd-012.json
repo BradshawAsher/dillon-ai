@@ -1,0 +1,58 @@
+{
+  "fileName": "DD-012_Basin_Waste_Solutions__LLC_due_diligence_packet.pdf",
+  "business": "Basin Waste Solutions, LLC (Roll-Off Waste Hauling & Recycling)",
+  "fileType": "PDF",
+  "groundTruth": {
+    "documentType": "Due Diligence Data Room Packet",
+    "documentTypes": [
+      "Profit and Loss Statement",
+      "Quality of Earnings Report",
+      "Balance Sheet"
+    ],
+    "trafficLight": "YELLOW",
+    "riskLevel": "MEDIUM",
+    "financialFacts": [
+      {
+        "metric": "revenue",
+        "normalizedValue": 10551183,
+        "period": "TTM",
+        "rawValue": "$10,551,183"
+      },
+      {
+        "metric": "ebitda",
+        "normalizedValue": 1447557,
+        "period": "TTM",
+        "rawValue": "$1,447,557"
+      },
+      {
+        "metric": "adjusted_ebitda",
+        "normalizedValue": 2069689,
+        "period": "TTM",
+        "rawValue": "$2,069,689"
+      }
+    ],
+    "expectedRedFlags": [
+      "Landfill cell development expensed rather than capitalised (not on seller bridge): Buyer-identified add-back in the SELLER's favour. Roughly $186,000 of cell development and permitting cost was expensed through account 6520 when it is long-lived asset construction that should have been capitalised and amortised over the cell's airspace. Correcting the treatment INCREASES supported adjusted EBITDA.",
+      "Customer concentration: Largest customer, Anvil Holdings, is 21.0% of FY2025 revenue; top 5 are 57.0%."
+    ],
+    "expectedYellowFlags": [
+      "Owner compensation above market: Partially supportable. The owner is genuinely semi-retired and a general manager is already in place at market pay. About $164,000 of the $228,000 claim is supportable; the balance reflects dispatch and customer-service work that still has to be done by someone.",
+      "Shareholder personal expenses: Fully supportable. Account 6790 is a clean, separately tracked account for personal charges run through the company. Every dollar in it is non-business and will not continue under new ownership.",
+      "Equipment lease presented as non-recurring: Unsupported. The seller describes this as a temporary rental during a fleet transition, but account 6220 posts in all 36 months and the trucks are in active revenue service.",
+      "Discontinued recycling sort line (not on seller bridge): Buyer-identified add-back in the SELLER's favour. The company shut its manual sort line and the associated costs in account 6770 stop after the closure. The seller did not claim this. Supported adjusted EBITDA should be INCREASED by roughly $214,000.",
+      "Seasonality and net working capital swing: FY2025 monthly EBITDA ranges from $45,257 to $169,828; cash ranges from $1,900,196 to $2,437,884. The NWC peg must be set on a 12-month average, not a period-end snapshot."
+    ],
+    "falsePositiveFlags": [],
+    "missedFlags": [],
+    "valuation": {
+      "valuationLowerBound": 7243911.5,
+      "valuationBaseEstimate": 9313600.5,
+      "valuationUpperBound": 11383289.5,
+      "askingPrice": 9217785,
+      "currency": "USD"
+    },
+    "expectedMathCheckStatus": "passed",
+    "notes": "MML M&A Benchmark Deal DD-012: Basin Waste Solutions, LLC (Roll-Off Waste Hauling & Recycling). Seller claims $1.84M EBITDA vs $2.07M buyer-supported ($-226k overstatement).",
+    "expectedRecommendation": "PROCEED"
+  }
+}

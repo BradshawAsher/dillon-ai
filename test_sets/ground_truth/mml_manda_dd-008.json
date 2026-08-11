@@ -1,0 +1,57 @@
+{
+  "fileName": "DD-008_Puget_Sound_Logistics_Co__due_diligence_packet.pdf",
+  "business": "Puget Sound Logistics Co. (Regional LTL Trucking & Third-Party Logistics)",
+  "fileType": "PDF",
+  "groundTruth": {
+    "documentType": "Due Diligence Data Room Packet",
+    "documentTypes": [
+      "Profit and Loss Statement",
+      "Quality of Earnings Report",
+      "Balance Sheet"
+    ],
+    "trafficLight": "RED",
+    "riskLevel": "HIGH",
+    "financialFacts": [
+      {
+        "metric": "revenue",
+        "normalizedValue": 16550594,
+        "period": "TTM",
+        "rawValue": "$16,550,594"
+      },
+      {
+        "metric": "ebitda",
+        "normalizedValue": 2127111,
+        "period": "TTM",
+        "rawValue": "$2,127,111"
+      },
+      {
+        "metric": "adjusted_ebitda",
+        "normalizedValue": 2084101,
+        "period": "TTM",
+        "rawValue": "$2,084,101"
+      }
+    ],
+    "expectedRedFlags": [
+      "Gain on disposal of tractors (in reported EBITDA): Buyer-identified downward adjustment of $186,000. Two equipment disposal gains in June and September 2025 are credited to account 6740, which sits above the EBITDA line and inflates reported EBITDA. Gains on asset sales are not operating income and must be removed.",
+      "Driver sign-on bonuses - non-recurring: Unsupported. Sign-on bonuses post in every one of the 36 months. In a structurally tight driver market this is a permanent cost of maintaining seated trucks, not a one-time recruiting push.",
+      "Customer concentration: Largest customer, Harbor Utilities, is 21.1% of FY2025 revenue; top 5 are 74.7%."
+    ],
+    "expectedYellowFlags": [
+      "Excess owner compensation: Partially supportable. $96,000 of the $145,000 claim exceeds the cost of a market-rate general manager; the balance replaces a real operating role.",
+      "ELD and telematics implementation: Fully supportable. A two-month implementation in January and February 2025 with no other activity in the account.",
+      "Seasonality and net working capital swing: FY2025 monthly EBITDA ranges from $77,693 to $298,616; cash ranges from $3,752,311 to $4,577,430. The NWC peg must be set on a 12-month average, not a period-end snapshot."
+    ],
+    "falsePositiveFlags": [],
+    "missedFlags": [],
+    "valuation": {
+      "valuationLowerBound": 7294353.5,
+      "valuationBaseEstimate": 9378454.5,
+      "valuationUpperBound": 11462555.5,
+      "askingPrice": 12585555,
+      "currency": "USD"
+    },
+    "expectedMathCheckStatus": "passed",
+    "notes": "MML M&A Benchmark Deal DD-008: Puget Sound Logistics Co. (Regional LTL Trucking & Third-Party Logistics). Seller claims $2.52M EBITDA vs $2.08M buyer-supported ($433k overstatement).",
+    "expectedRecommendation": "PROCEED WITH REPRICE"
+  }
+}

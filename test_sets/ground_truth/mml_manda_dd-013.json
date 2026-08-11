@@ -1,0 +1,56 @@
+{
+  "fileName": "DD-013_Tideline_Marine_Services__Inc__due_diligence_packet.pdf",
+  "business": "Tideline Marine Services, Inc. (Commercial Marine Repair & Dock Services)",
+  "fileType": "PDF",
+  "groundTruth": {
+    "documentType": "Due Diligence Data Room Packet",
+    "documentTypes": [
+      "Profit and Loss Statement",
+      "Quality of Earnings Report",
+      "Balance Sheet"
+    ],
+    "trafficLight": "RED",
+    "riskLevel": "HIGH",
+    "financialFacts": [
+      {
+        "metric": "revenue",
+        "normalizedValue": 9670995,
+        "period": "TTM",
+        "rawValue": "$9,670,995"
+      },
+      {
+        "metric": "ebitda",
+        "normalizedValue": 1126669,
+        "period": "TTM",
+        "rawValue": "$1,126,669"
+      },
+      {
+        "metric": "adjusted_ebitda",
+        "normalizedValue": 1131759,
+        "period": "TTM",
+        "rawValue": "$1,131,759"
+      }
+    ],
+    "expectedRedFlags": [
+      "Legal fees on the disputed drydock account: Largely unsupported. The seller treats these as one-time litigation costs, but they have run every month for over a year and the dispute is unresolved. Only about $23,000 relates to a discrete matter that has actually closed.",
+      "Customer concentration: Largest customer, Portage Bay Manufacturing, is 22.9% of FY2025 revenue; top 5 are 67.9%."
+    ],
+    "expectedYellowFlags": [
+      "Owner compensation above market: Partially supportable. About $166,000 of the $246,000 claim exceeds the cost of a yard manager to replace the owner's operating role.",
+      "ABS and USCG recertification project: Fully supportable. A discrete recertification cycle in April and May 2025 over and above the routine licensing that runs monthly.",
+      "Seasonality and net working capital swing: FY2025 monthly EBITDA ranges from $26,147 to $224,784; cash ranges from $1,712,164 to $2,113,946. The NWC peg must be set on a 12-month average, not a period-end snapshot."
+    ],
+    "falsePositiveFlags": [],
+    "missedFlags": [],
+    "valuation": {
+      "valuationLowerBound": 3961156.5,
+      "valuationBaseEstimate": 5092915.5,
+      "valuationUpperBound": 6224674.5,
+      "askingPrice": 7667345,
+      "currency": "USD"
+    },
+    "expectedMathCheckStatus": "passed",
+    "notes": "MML M&A Benchmark Deal DD-013: Tideline Marine Services, Inc. (Commercial Marine Repair & Dock Services). Seller claims $1.53M EBITDA vs $1.13M buyer-supported ($402k overstatement).",
+    "expectedRecommendation": "WALK AWAY / RESTRUCTURE"
+  }
+}

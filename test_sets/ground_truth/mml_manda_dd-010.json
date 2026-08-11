@@ -1,0 +1,56 @@
+{
+  "fileName": "DD-010_Cobalt_Ridge_Software__Inc__due_diligence_packet.pdf",
+  "business": "Cobalt Ridge Software, Inc. (Vertical SaaS - Utility Field Operations)",
+  "fileType": "PDF",
+  "groundTruth": {
+    "documentType": "Due Diligence Data Room Packet",
+    "documentTypes": [
+      "Profit and Loss Statement",
+      "Quality of Earnings Report",
+      "Balance Sheet"
+    ],
+    "trafficLight": "RED",
+    "riskLevel": "HIGH",
+    "financialFacts": [
+      {
+        "metric": "revenue",
+        "normalizedValue": 10783341,
+        "period": "TTM",
+        "rawValue": "$10,783,341"
+      },
+      {
+        "metric": "ebitda",
+        "normalizedValue": 1962620,
+        "period": "TTM",
+        "rawValue": "$1,962,620"
+      },
+      {
+        "metric": "adjusted_ebitda",
+        "normalizedValue": 1214620,
+        "period": "TTM",
+        "rawValue": "$1,214,620"
+      }
+    ],
+    "expectedRedFlags": [
+      "Sales commission acceleration - non-recurring: Unsupported. Account 6450 carries commission expense in all 36 months at a level that tracks bookings. There is no acceleration event in the data.",
+      "Customer concentration: Largest customer, Mariner Property Group, is 33.2% of FY2025 revenue; top 5 are 82.0%."
+    ],
+    "expectedYellowFlags": [
+      "Founder compensation normalization: Partially supportable. $99,000 of the $180,000 claim exceeds the cost of replacing the founder's product-leadership role at market.",
+      "SOC 2 Type II initial audit: Fully supportable as an initial-year cost, though the annual renewal audit will recur at a lower level and belongs in the run rate.",
+      "Seasonality and net working capital swing: FY2025 monthly EBITDA ranges from $98,490 to $305,843; cash ranges from $3,176,876 to $4,088,092. The NWC peg must be set on a 12-month average, not a period-end snapshot."
+    ],
+    "falsePositiveFlags": [],
+    "missedFlags": [],
+    "valuation": {
+      "valuationLowerBound": 4251170,
+      "valuationBaseEstimate": 5465790,
+      "valuationUpperBound": 6680410,
+      "askingPrice": 13778100,
+      "currency": "USD"
+    },
+    "expectedMathCheckStatus": "passed",
+    "notes": "MML M&A Benchmark Deal DD-010: Cobalt Ridge Software, Inc. (Vertical SaaS - Utility Field Operations). Seller claims $2.76M EBITDA vs $1.21M buyer-supported ($1541k overstatement).",
+    "expectedRecommendation": "WALK AWAY / RESTRUCTURE"
+  }
+}

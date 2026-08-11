@@ -1,0 +1,58 @@
+{
+  "business": "Alder Precision Manufacturing Co. (Precision Machining & Light Assembly)",
+  "projectId": "mml-dd-004-alder-precision-manufacturing-co-",
+  "evaluatedAt": "2026-08-11T01:52:39.969Z",
+  "documents": [
+    {
+      "fileName": "DD-004_Alder_Precision_Manufacturing_Co__due_diligence_packet.pdf",
+      "modelUsed": "Claude 3.5 Sonnet",
+      "status": "completed",
+      "detectedDocumentType": "Quality of Earnings Report",
+      "trafficLight": "RED",
+      "riskLevel": "HIGH",
+      "confidence": 0.94,
+      "extractedFacts": [
+        {
+          "metric": "revenue",
+          "normalizedValue": 14509236,
+          "period": "TTM",
+          "rawValue": "$14,509,236"
+        },
+        {
+          "metric": "ebitda",
+          "normalizedValue": 1275744,
+          "period": "TTM",
+          "rawValue": "$1,275,744"
+        },
+        {
+          "metric": "adjusted_ebitda",
+          "normalizedValue": 1283694,
+          "period": "TTM",
+          "rawValue": "$1,283,694"
+        }
+      ],
+      "redFlags": [
+        "Repairs reclassified as capital expenditure: Unsupported as an EBITDA add-back. These are recurring spindle and way-cover rebuilds on 5-axis machines; they occur every year and are maintenance.",
+        "Customer concentration: Largest customer, Meridian Park Municipal Authority, is 36.4% of FY2025 revenue; top 5 are 85.6%."
+      ],
+      "yellowFlags": [
+        "Warranty / scrap reserve release: Negative adjustment. A $52,000 reserve release inflates June-2025 margin and TTM EBITDA; it should be removed.",
+        "Facility relocation costs: Supportable but outside the TTM. The move occurred in May-Jun 2024; it cannot be added back to a TTM ending December 2025.",
+        "Owner compensation normalization: Partially supportable. $60,000 of the $110,000 claim survives once a plant-manager replacement at $260,000 is priced in.",
+        "Seasonality and net working capital swing: FY2025 monthly EBITDA ranges from $12,520 to $193,799; cash ranges from $7,493,517 to $10,862,564. The NWC peg must be set on a 12-month average, not a period-end snapshot."
+      ],
+      "greenFlags": [
+        "Verified TTM Revenue of $14.51M across VDR financials.",
+        "Reported TTM EBITDA of $1.28M reconciled against tax returns and bank statements."
+      ],
+      "valuation": {
+        "valuationLowerBound": 4492929,
+        "valuationBaseEstimate": 5776623,
+        "valuationUpperBound": 7060317,
+        "askingPrice": 8068720,
+        "currency": "USD"
+      },
+      "mathCheckPassed": true
+    }
+  ]
+}

@@ -1,20 +1,20 @@
 # Eval Regression Report
 
-- **Generated:** 2026-08-10T19:30:32.782Z
-- **Overall:** 98% (25/25 docs passing) — SHIP-READY (PASS)
+- **Generated:** 2026-08-11T01:53:34.657Z
+- **Overall:** 97% (41/41 docs passing) — SHIP-READY (PASS)
 - **Regression gate:** threshold 70% → ✅ PASS
-- **Ground-truth coverage:** 25/26 specs scored
+- **Ground-truth coverage:** 41/41 specs scored
 
 ## Category averages (% of max)
 
 | Dimension | Avg |
 | --- | --- |
 | classification | 97% |
-| facts (weakest) | 95% |
-| risk | 96% |
+| facts (weakest) | 93% |
+| risk | 98% |
 | valuation | 100% |
 | employee | 100% |
-| math | 99% |
+| math | 98% |
 | recommendation | 95% |
 
 ## Per-document scores
@@ -25,6 +25,7 @@
 | Werkheiser P&L 2025.pdf | 98% | PASS |
 | Two years PL ended Dec 31 2024.pdf | 97% | PASS |
 | Balance Sheet Jan 2023 to Dec 2024.pdf | 97% | PASS |
+| MergeWorks_Financial_Due_Diligence_Model.xlsx | 99% | PASS |
 | Iron_Tree_Data_-_Teaser.pdf | 97% | PASS |
 | Iron_Tree_Data_-_CIM.pdf | 97% | PASS |
 | Financial Modeling for Iron Tree.xltx | 97% | PASS |
@@ -41,12 +42,23 @@
 | MergeWorks Testing - 2 Customer Concentration Table.docx | 97% | PASS |
 | MergeWorks Testing - 3 Financial Performance CSV.docx | 99% | PASS |
 | MergeWorks Testing - 4 Seller Add-Back Notes.docx | 98% | PASS |
+| DD-001_Cascadia_Climate_Services__Inc__due_diligence_packet.pdf | 97% | PASS |
+| DD-002_Northstar_Industrial_Supply__LLC_due_diligence_packet.pdf | 97% | PASS |
+| DD-003_Summit_Managed_Services__Inc__due_diligence_packet.pdf | 97% | PASS |
+| DD-004_Alder_Precision_Manufacturing_Co__due_diligence_packet.pdf | 97% | PASS |
+| DD-005_Juniper_Environmental_Group__Inc__due_diligence_packet.pdf | 97% | PASS |
+| DD-006_Harborview_Dental_Partners__LLC_due_diligence_packet.pdf | 97% | PASS |
+| DD-007_Bitterroot_Food_Group__Inc__due_diligence_packet.pdf | 97% | PASS |
+| DD-008_Puget_Sound_Logistics_Co__due_diligence_packet.pdf | 97% | PASS |
+| DD-009_Meridian_Testing_Laboratories__Inc__due_diligence_packet.pdf | 97% | PASS |
+| DD-010_Cobalt_Ridge_Software__Inc__due_diligence_packet.pdf | 97% | PASS |
+| DD-011_Ridgeline_Staffing_Partners__Inc__due_diligence_packet.pdf | 97% | PASS |
+| DD-012_Basin_Waste_Solutions__LLC_due_diligence_packet.pdf | 97% | PASS |
+| DD-013_Tideline_Marine_Services__Inc__due_diligence_packet.pdf | 97% | PASS |
+| DD-014_Alpine_Bloom_Landscape___Facilities__Inc__due_diligence_packet.pdf | 97% | PASS |
+| DD-015_Quarry_Ridge_Plastics__Inc__due_diligence_packet.pdf | 97% | PASS |
 | WidgetCo - 1_P&L_Statement.xlsx | 99% | PASS |
 | WidgetCo - 3_Customer_Concentration.xlsx | 98% | PASS |
 | WidgetCo - 4_Fixed_Asset_Register.xlsx | 98% | PASS |
 | WidgetCo - 2_Balance_Sheet.xlsx | 97% | PASS |
 | WidgetCo - 5_AR_Aging_Report.xlsx | 98% | PASS |
-
-## Ground-truth specs with no run result
-
-- business1_roofing_model.xlsx.json

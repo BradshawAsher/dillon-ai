@@ -1,0 +1,57 @@
+{
+  "fileName": "DD-003_Summit_Managed_Services__Inc__due_diligence_packet.pdf",
+  "business": "Summit Managed Services, Inc. (Managed IT Services (MSP))",
+  "fileType": "PDF",
+  "groundTruth": {
+    "documentType": "Due Diligence Data Room Packet",
+    "documentTypes": [
+      "Profit and Loss Statement",
+      "Quality of Earnings Report",
+      "Balance Sheet"
+    ],
+    "trafficLight": "YELLOW",
+    "riskLevel": "MEDIUM",
+    "financialFacts": [
+      {
+        "metric": "revenue",
+        "normalizedValue": 9274367,
+        "period": "TTM",
+        "rawValue": "$9,274,367"
+      },
+      {
+        "metric": "ebitda",
+        "normalizedValue": 1779373,
+        "period": "TTM",
+        "rawValue": "$1,779,373"
+      },
+      {
+        "metric": "adjusted_ebitda",
+        "normalizedValue": 1820373,
+        "period": "TTM",
+        "rawValue": "$1,820,373"
+      }
+    ],
+    "expectedRedFlags": [
+      "Contractor-to-employee reclassification: Negative adjustment required. Eleven full-time-equivalent 1099 engineers work exclusively for Summit; burdening them as W-2 reduces EBITDA by approximately $67,000 annually and creates payroll-tax exposure.",
+      "Annual prepay cash treated as revenue: Monthly revenue and the balance sheet are misstated even though the annual total is unaffected. January and July prepayments are booked to revenue on receipt, so MRR is overstated in those months and understated in the following five, and account 2400 Deferred Revenue never moves. The TTM EBITDA effect is approximately zero; the working-capital peg and the MRR growth curve are both wrong."
+    ],
+    "expectedYellowFlags": [
+      "Founder's non-recurring legal settlement: Supportable. A single settlement with a former employee, closed and released; no comparable charges in any other period.",
+      "Owner compensation normalization: Mostly supportable. $45,000 of the $60,000 claim is supported once a market CTO-level replacement is priced in.",
+      "Customer concentration: Largest customer, Meridian Park Development Co., is 13.0% of FY2025 revenue; top 5 are 47.1%.",
+      "Seasonality and net working capital swing: FY2025 monthly EBITDA ranges from $41,358 to $280,804; cash ranges from $2,074,880 to $2,874,063. The NWC peg must be set on a 12-month average, not a period-end snapshot."
+    ],
+    "falsePositiveFlags": [],
+    "missedFlags": [],
+    "valuation": {
+      "valuationLowerBound": 6371305.5,
+      "valuationBaseEstimate": 8191678.5,
+      "valuationUpperBound": 10012051.5,
+      "askingPrice": 9511865,
+      "currency": "USD"
+    },
+    "expectedMathCheckStatus": "passed",
+    "notes": "MML M&A Benchmark Deal DD-003: Summit Managed Services, Inc. (Managed IT Services (MSP)). Seller claims $1.90M EBITDA vs $1.82M buyer-supported ($82k overstatement).",
+    "expectedRecommendation": "PROCEED"
+  }
+}

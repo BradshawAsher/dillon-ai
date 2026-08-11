@@ -1,0 +1,56 @@
+{
+  "business": "Juniper Environmental Group, Inc. (Environmental Remediation & Site Services)",
+  "projectId": "mml-dd-005-juniper-environmental-group--inc-",
+  "evaluatedAt": "2026-08-11T01:52:39.971Z",
+  "documents": [
+    {
+      "fileName": "DD-005_Juniper_Environmental_Group__Inc__due_diligence_packet.pdf",
+      "modelUsed": "Gemini 3.1 Flash Lite",
+      "status": "completed",
+      "detectedDocumentType": "Quality of Earnings Report",
+      "trafficLight": "RED",
+      "riskLevel": "HIGH",
+      "confidence": 0.94,
+      "extractedFacts": [
+        {
+          "metric": "revenue",
+          "normalizedValue": 13903524,
+          "period": "TTM",
+          "rawValue": "$13,903,524"
+        },
+        {
+          "metric": "ebitda",
+          "normalizedValue": 1548306,
+          "period": "TTM",
+          "rawValue": "$1,548,306"
+        },
+        {
+          "metric": "adjusted_ebitda",
+          "normalizedValue": 1548306,
+          "period": "TTM",
+          "rawValue": "$1,548,306"
+        }
+      ],
+      "redFlags": [
+        "'One-time' consulting and advisory: Unsupported and related-party. Level monthly payments across all 36 months to an entity affiliated with the seller's family.",
+        "Undisclosed related-party equipment rent: Disclosure failure, not an add-back. $216,000/yr of equipment rent is paid to an owner-affiliated entity and was not disclosed in the CIM.",
+        "Customer concentration: Largest customer, Quilcene Distribution, is 26.9% of FY2025 revenue; top 5 are 85.1%."
+      ],
+      "yellowFlags": [
+        "Seasonality and net working capital swing: FY2025 monthly EBITDA ranges from $51,040 to $194,086; cash ranges from $1,670,645 to $2,265,875. The NWC peg must be set on a 12-month average, not a period-end snapshot."
+      ],
+      "greenFlags": [
+        "Verified TTM Revenue of $13.90M across VDR financials.",
+        "Reported TTM EBITDA of $1.55M reconciled against tax returns and bank statements."
+      ],
+      "valuation": {
+        "valuationLowerBound": 5419071,
+        "valuationBaseEstimate": 6967377,
+        "valuationUpperBound": 8515683,
+        "askingPrice": 9391530,
+        "currency": "USD"
+      },
+      "mathCheckPassed": true
+    }
+  ]
+}
