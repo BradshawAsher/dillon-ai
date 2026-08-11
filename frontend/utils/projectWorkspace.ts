@@ -150,6 +150,10 @@ export function detectCompanyName(row: SubmissionHistoryItem): string {
         return 'Bitterroot Food Group, Inc.'
     }
 
+    if (fn.includes('puget') || summary.includes('puget') || pid.includes('puget') || deal.includes('puget') || pid === 'dd-008') {
+        return 'Puget Sound Logistics Co.'
+    }
+
     if (row.extractedJson) {
         try {
             const parsed = typeof row.extractedJson === 'string' ? JSON.parse(row.extractedJson) : row.extractedJson
@@ -279,8 +283,8 @@ export function isRowMatchingProject(row: SubmissionHistoryItem, targetProjectId
         })
         if (project) {
             const pName = (project.projectName || project.companyName || '').toLowerCase()
-            if ((pName.includes('werkheiser') || pName.includes('business 1') || pName.includes('commercial')) &&
-                (explicitPid.includes('werkheiser') || explicitPid.includes('business1') || pk.includes('werkheiser') || pk.includes('business1'))) {
+            const rowCompany = (detectCompanyName(row) || row.companyName || row.dealName || '').toLowerCase()
+            if (pName.length > 2 && rowCompany.length > 2 && (pName.includes(rowCompany) || rowCompany.includes(pName))) {
                 return true
             }
         }

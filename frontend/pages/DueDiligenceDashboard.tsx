@@ -342,15 +342,30 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         setHasRestoredLatestProject(true)
     }, [hasRestoredLatestProject, projectSummaries, setDealName, setProjectId, setProjectStage, setSelectedProjectKey])
 
-    // Keep project fields in sync whenever selectedProjectKey changes
+    // Keep project fields in sync whenever selectedProjectKey changes, auto-resolving orphaned keys
     useEffect(() => {
-        if (selectedProjectKey === 'new') return
-        const matchingProject = projectSummaries.find((p: any) => p.projectKey === selectedProjectKey || p.projectId === selectedProjectKey)
-        if (!matchingProject) return
-        setDealName(matchingProject.projectName)
-        setProjectId(matchingProject.projectId || matchingProject.projectKey)
-        setProjectStage(matchingProject.stage || 'post-loi')
-    }, [projectSummaries, selectedProjectKey, setDealName, setProjectId, setProjectStage])
+        if (selectedProjectKey === 'new' || projectSummaries.length === 0) return
+        let matchingProject = projectSummaries.find((p: any) => p.projectKey === selectedProjectKey || p.projectId === selectedProjectKey)
+
+        // If selectedProjectKey is an orphaned raw key (e.g. project-20260811-xxx that was re-associated in Supabase), resolve to matching company or newest project
+        if (!matchingProject) {
+            matchingProject = projectSummaries.find((p: any) =>
+                (p.companyName && selectedProjectKey.toLowerCase().includes(p.companyName.toLowerCase())) ||
+                (p.projectName && selectedProjectKey.toLowerCase().includes(p.projectName.toLowerCase()))
+            ) || projectSummaries[0]
+
+            if (matchingProject) {
+                console.log(`[ProjectSync] Auto-resolving orphaned project key "${selectedProjectKey}" -> "${matchingProject.projectKey}"`)
+                setSelectedProjectKey(matchingProject.projectKey)
+            }
+        }
+
+        if (matchingProject) {
+            setDealName(matchingProject.projectName)
+            setProjectId(matchingProject.projectId || matchingProject.projectKey)
+            setProjectStage(matchingProject.stage || 'post-loi')
+        }
+    }, [projectSummaries, selectedProjectKey, setDealName, setProjectId, setProjectStage, setSelectedProjectKey])
 
     const [notifications, setNotifications] = useState<Notification[]>(() => {
         const now = new Date()
