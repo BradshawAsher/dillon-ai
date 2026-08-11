@@ -154,6 +154,14 @@ export function detectCompanyName(row: SubmissionHistoryItem): string {
         return 'Puget Sound Logistics Co.'
     }
 
+    if (fn.includes('meridian') || summary.includes('meridian') || pid.includes('meridian') || deal.includes('meridian') || pid === 'dd-009') {
+        return 'Meridian Testing Laboratories, Inc.'
+    }
+
+    if (fn.includes('cobalt') || summary.includes('cobalt') || pid.includes('cobalt') || deal.includes('cobalt') || pid === 'dd-010') {
+        return 'Cobalt Ridge Software, Inc.'
+    }
+
     if (row.extractedJson) {
         try {
             const parsed = typeof row.extractedJson === 'string' ? JSON.parse(row.extractedJson) : row.extractedJson
