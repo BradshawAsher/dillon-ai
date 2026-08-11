@@ -174,6 +174,14 @@ export function detectCompanyName(row: SubmissionHistoryItem): string {
         return 'Tideline Marine Services, Inc.'
     }
 
+    if (fn.includes('alpine') || summary.includes('alpine') || pid.includes('alpine') || deal.includes('alpine') || pid === 'dd-014') {
+        return 'Alpine Bloom Landscape & Facilities, Inc.'
+    }
+
+    if (fn.includes('quarry') || summary.includes('quarry') || pid.includes('quarry') || deal.includes('quarry') || pid === 'dd-015') {
+        return 'Quarry Ridge Plastics, Inc.'
+    }
+
     if (row.extractedJson) {
         try {
             const parsed = typeof row.extractedJson === 'string' ? JSON.parse(row.extractedJson) : row.extractedJson
