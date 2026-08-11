@@ -7,6 +7,18 @@ import {
 
 export const CUSTOM_ARCHIVED_PROJECTS_STORAGE = 'mergeworks_archived_projects'
 
+export function getDisplayTimestamp(row: SubmissionHistoryItem): string {
+    return row.processedAt || row.processingStartedAt || row.receivedAt || row.updatedAt || row.createdAt || row.triggerTimestamp || ''
+}
+
+export function getTimestampValue(value: string | undefined | null): number {
+    if (!value || typeof value !== 'string') return 0
+    const trimmed = value.trim()
+    if (!trimmed || trimmed === 'Pending' || trimmed === 'In progress') return Date.now()
+    const parsed = Date.parse(trimmed)
+    return Number.isNaN(parsed) ? 0 : parsed
+}
+
 export function getArchivedProjectKeys(): string[] {
     if (typeof window === 'undefined') return []
     try {

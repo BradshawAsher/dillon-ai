@@ -325,22 +325,32 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     const dealModelSaveTimeout = useRef<number | null>(null)
     const [hasRestoredLatestProject, setHasRestoredLatestProject] = useState(false)
 
-    // Automatically default to the most recently submitted project on initial page load / refresh
+    // Automatically restore active project or default to the most recently submitted live project on initial page load / refresh once backend query completes
     useEffect(() => {
+        if (submissionHistoryLoading || projectSynthesisLoading) return
         if (hasRestoredLatestProject || projectSummaries.length === 0) return
-        const newestProject = projectSummaries[0]
-        if (newestProject) {
-            const currentStoredKey = typeof window !== 'undefined' ? window.localStorage.getItem('mergeworks.selectedProjectKey') : null
-            // If localStorage holds an old project key or 'new', override with the newest project
-            if (!currentStoredKey || currentStoredKey === 'new' || !projectSummaries.some((p: any) => p.projectKey === currentStoredKey || p.projectId === currentStoredKey)) {
-                setSelectedProjectKey(newestProject.projectKey)
-                setProjectId(newestProject.projectId || newestProject.projectKey)
-                setDealName(newestProject.projectName)
-                setProjectStage(newestProject.stage || 'post-loi')
+
+        const storedActiveKey = typeof window !== 'undefined'
+            ? (window.localStorage.getItem('mergeworks.activeProjectKey') || window.localStorage.getItem('mergeworks.selectedProjectKey'))
+            : null
+
+        const matchingStoredProject = storedActiveKey
+            ? projectSummaries.find((p: any) => p.projectKey === storedActiveKey || p.projectId === storedActiveKey)
+            : null
+
+        const targetProject = matchingStoredProject || projectSummaries[0]
+        if (targetProject) {
+            setSelectedProjectKey(targetProject.projectKey)
+            setProjectId(targetProject.projectId || targetProject.projectKey)
+            setDealName(targetProject.projectName)
+            setProjectStage(targetProject.stage || 'post-loi')
+            if (typeof window !== 'undefined') {
+                window.localStorage.setItem('mergeworks.activeProjectKey', targetProject.projectKey)
+                window.localStorage.setItem('mergeworks.selectedProjectKey', targetProject.projectKey)
             }
         }
         setHasRestoredLatestProject(true)
-    }, [hasRestoredLatestProject, projectSummaries, setDealName, setProjectId, setProjectStage, setSelectedProjectKey])
+    }, [submissionHistoryLoading, projectSynthesisLoading, hasRestoredLatestProject, projectSummaries, setDealName, setProjectId, setProjectStage, setSelectedProjectKey])
 
     // Keep project fields in sync whenever selectedProjectKey changes, auto-resolving orphaned keys
     useEffect(() => {
@@ -889,6 +899,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         }
 
         if (typeof window !== 'undefined') {
+            window.localStorage.setItem('mergeworks.activeProjectKey', projectKey)
             window.localStorage.setItem('mergeworks.selectedProjectKey', projectKey)
         }
 
@@ -1190,6 +1201,10 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             const targetProjectId = (selectedProjectKey === 'new' || !projectId) ? (suggestedProjectId || `project-${Date.now().toString(36)}`) : projectId
             setSelectedProjectKey(targetProjectId)
             setProjectId(targetProjectId)
+            if (typeof window !== 'undefined') {
+                window.localStorage.setItem('mergeworks.activeProjectKey', targetProjectId)
+                window.localStorage.setItem('mergeworks.selectedProjectKey', targetProjectId)
+            }
 
             const submissionBatchId = `batch-${now}-${Math.random().toString(36).substring(2, 7)}`
             const expectedBatchDocumentCount = filesToQueue.length
