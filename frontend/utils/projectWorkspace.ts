@@ -146,6 +146,10 @@ export function detectCompanyName(row: SubmissionHistoryItem): string {
         return 'Harborview Dental Partners, LLC'
     }
 
+    if (fn.includes('bitterroot') || summary.includes('bitterroot') || pid.includes('bitterroot') || deal.includes('bitterroot') || pid === 'dd-007') {
+        return 'Bitterroot Food Group, Inc.'
+    }
+
     if (row.extractedJson) {
         try {
             const parsed = typeof row.extractedJson === 'string' ? JSON.parse(row.extractedJson) : row.extractedJson

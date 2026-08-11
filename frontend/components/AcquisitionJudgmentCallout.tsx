@@ -14,6 +14,8 @@ function cleanCompleteSentence(str: string): string {
     let cleaned = str.trim()
     // Clean leading bullets, dashes, or markdown
     cleaned = cleaned.replace(/^[-•*#\s]+/, '')
+    // Strip leading transitional conjunctions (e.g. "And ", "Also ", "Furthermore ")
+    cleaned = cleaned.replace(/^(?:and|also|furthermore|however|moreover|additionally|plus)\b\s*/i, '')
     if (!cleaned) return ''
     cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1)
 

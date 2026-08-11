@@ -139,6 +139,8 @@ S suite 2-4 or Widget Co, only the DDs do you understand? DO YOU UNDERSTAND???
 
 - Make successful deployment ready for businesses meeting for them to try it
 
+- Understand how the AI Deal Assistant works and if we can make it better?
+
 - Will have to change the cost optimization stat in evals and harness later
 
 - Is there a way I can automate the pushing of docs under different projects to save time? Or can I upload multiple projects at a time? Like this might require a side panel of like docs in progress or something?
