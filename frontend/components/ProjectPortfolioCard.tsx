@@ -328,13 +328,18 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                                                     return (
                                                         <div className="space-y-1.5 pt-1">
                                                             <div className="flex flex-wrap items-center gap-2">
+                                                                <Badge variant="outline" className="gap-1 font-mono text-xs font-bold bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-300/60 py-0.5 px-2">
+                                                                    <FileText className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+                                                                    <span>Total Per-Doc Cost: ${docBatchCost.toFixed(4)}</span>
+                                                                </Badge>
+                                                                <Badge variant="outline" className="gap-1 font-mono text-xs font-bold bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-300/60 py-0.5 px-2">
+                                                                    <Sparkles className="h-3.5 w-3.5 text-purple-600 shrink-0" />
+                                                                    <span>Total Synthesis Cost: ${synthCost.toFixed(4)}</span>
+                                                                </Badge>
                                                                 <Badge variant="outline" className="gap-1 font-mono text-xs font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-300/60 py-0.5 px-2">
                                                                     <DollarSign className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
                                                                     <span>Total Run Cost: ${totalRunCost.toFixed(4)}</span>
                                                                 </Badge>
-                                                                <span className="text-[10px] text-muted-foreground font-mono">
-                                                                    (Docs: ${docBatchCost.toFixed(4)} + Synth: ${synthCost.toFixed(4)})
-                                                                </span>
                                                             </div>
                                                             <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
                                                                 <Badge variant="outline" className="gap-1 font-mono text-[11px] bg-card border-border">

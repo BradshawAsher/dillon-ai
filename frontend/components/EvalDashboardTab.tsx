@@ -43,6 +43,7 @@ type EvalDashboardTabProps = {
         status: string
         report_json: any
     }>
+    syntheses?: any[]
     onTriggerEvalRuns?: () => void
     onSelectProject?: (projectKey: string, targetTab?: string) => void
     onSelectDoc?: (docFileName: string, projectKey?: string) => void
@@ -1339,9 +1340,12 @@ export default function EvalDashboardTab({
                             const projectPass = avgScore >= 80
                             const totalDurationSec = docs.reduce((sum: number, d: any) => sum + getDocDurationSec(d), 0)
 
+                            const targetProjectKey = docs[0]?.projectId || docs[0]?.projectKey || mapBusinessToProjectKey(businessName, docs[0])
+                            const matchingSynth = syntheses?.find((s) => s.projectId === targetProjectKey)
+
                             const realExtractionTotal = calculateBatchTotalCost(docs)
                             const realPerDocCost = docs.length > 0 ? (realExtractionTotal / docs.length) : 0.0495
-                            const realSynthCost = calculateSynthesisCost(null)
+                            const realSynthCost = calculateSynthesisCost(matchingSynth ?? null)
 
                             const defaultVal = defaultValuations[businessName]
                             const val = defaultVal || {
@@ -1474,19 +1478,23 @@ export default function EvalDashboardTab({
                                                 <Cpu className="h-3 w-3 text-blue-500 shrink-0" />
                                                 <span>Per-Doc: Primary [{val.perDocPrimary}] | Backup [{val.perDocBackup}]</span>
                                                 <span className="font-mono text-[10px] font-bold text-blue-800 dark:text-blue-200">→ Used: {val.perDocActual}</span>
-                                                <span className="font-mono text-[10px] opacity-80">({val.perDocAttempts} pass)</span>
-                                                <span className="font-mono text-[10px] font-bold text-emerald-600 dark:text-emerald-400">${val.perDocCost.toFixed(4)}/doc</span>
                                             </Badge>
                                             <Badge variant="secondary" className="text-xs font-medium gap-1 bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-300/40">
                                                 <Sparkles className="h-3 w-3 text-purple-500 shrink-0" />
                                                 <span>Synthesis: Primary [{val.synthPrimary}] | Backup [{val.synthBackup}]</span>
                                                 <span className="font-mono text-[10px] font-bold text-purple-800 dark:text-purple-200">→ Used: {val.synthActual}</span>
-                                                <span className="font-mono text-[10px] opacity-80">({val.synthAttempts} pass)</span>
-                                                <span className="font-mono text-[10px] font-bold text-emerald-600 dark:text-emerald-400">${val.synthCost.toFixed(4)}</span>
+                                            </Badge>
+                                            <Badge variant="outline" className="text-xs font-mono font-bold bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-300/60 gap-1">
+                                                <FileText className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+                                                <span>Total Per-Doc Cost: ${realExtractionTotal.toFixed(4)}</span>
+                                            </Badge>
+                                            <Badge variant="outline" className="text-xs font-mono font-bold bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-300/60 gap-1">
+                                                <Sparkles className="h-3.5 w-3.5 text-purple-600 shrink-0" />
+                                                <span>Total Synthesis Cost: ${realSynthCost.toFixed(4)}</span>
                                             </Badge>
                                             <Badge variant="outline" className="text-xs font-mono font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-300/60 gap-1">
                                                 <DollarSign className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-                                                <span>Run Cost: ${totalPacketCost.toFixed(4)}</span>
+                                                <span>Total Run Cost: ${totalPacketCost.toFixed(4)}</span>
                                             </Badge>
                                             {(() => {
                                                 const getDocRec = (d: any) => {
