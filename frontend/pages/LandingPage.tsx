@@ -327,7 +327,7 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
 
                         {/* Description Paragraph Below CTAs */}
                         <p className="mx-auto max-w-2xl text-xs sm:text-sm font-medium text-muted-foreground leading-relaxed pt-2">
-                            Transform deal packets into audit-grade EBITDA reconstructions, valuation ranges, and IC memos with 100% citation transparency.
+                            Engineered for dual M&amp;A workflows: <strong>Pre-LOI Valuation Discovery</strong> (Normalized EBITDA &amp; Fair Value) and <strong>Post-LOI Deal Negotiation</strong> (Cross-Document Reconciliation &amp; Price Adjustments).
                         </p>
 
                         {/* Trust Highlights */}
@@ -349,56 +349,104 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
                 </div>
             </section>
 
-            {/* KEY FEATURES SECTION */}
+            {/* DUAL CORE WORKFLOW PURPOSES SECTION */}
             <section id="features" className="py-16 sm:py-20 border-b border-border/50 bg-background">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-12">
                     <div className="text-center space-y-3 max-w-3xl mx-auto">
                         <Badge variant="outline" className="border-primary/40 bg-primary/10 text-primary font-mono text-xs">
-                            PLATFORM CAPABILITIES
+                            DUAL CORE AGENT PURPOSES
                         </Badge>
                         <h2 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
-                            Engineered for M&amp;A Advisors &amp; Private Equity
+                            End-to-End M&amp;A Financial Intelligence
                         </h2>
                         <p className="text-sm text-muted-foreground leading-relaxed">
-                            Replace manual associate document review with audit-grade AI automation that scales across your entire acquisition pipeline.
+                            Engineered for private equity, search funds, and M&amp;A advisors across both critical stages of the deal lifecycle.
                         </p>
                     </div>
 
-                    <div className="grid gap-6 md:grid-cols-3">
-                        <Card className="border-border shadow-xs bg-card hover:border-primary/50 transition-all">
-                            <CardHeader>
-                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary mb-2">
-                                    <FileCheck className="h-5 w-5" />
+                    <div className="grid gap-8 lg:grid-cols-2">
+                        {/* Purpose 1: Pre-LOI Valuation Discovery */}
+                        <Card className="border-2 border-indigo-500/20 shadow-md bg-gradient-to-br from-indigo-50/50 via-card to-card dark:from-indigo-950/20 dark:via-card dark:to-card hover:border-indigo-500/40 transition-all overflow-hidden">
+                            <CardHeader className="border-b border-border/60 bg-indigo-500/5 pb-4">
+                                <div className="flex items-center justify-between gap-2">
+                                    <Badge variant="outline" className="border-indigo-500/40 bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 font-bold text-xs px-2.5 py-1">
+                                        PHASE 1: PRE-LOI WORKFLOW
+                                    </Badge>
+                                    <BarChart3 className="h-5 w-5 text-indigo-600" />
                                 </div>
-                                <CardTitle className="text-lg font-bold text-foreground">Zero Numeric Hallucination</CardTitle>
-                                <CardDescription className="text-xs">
-                                    Guaranteed mathematical accuracy. Every extracted number is cross-checked against source financial statements with exact line item citations.
+                                <CardTitle className="text-xl font-bold text-foreground mt-2">
+                                    Pre-LOI Valuation Discovery &amp; Normalized EBITDA
+                                </CardTitle>
+                                <CardDescription className="text-xs text-muted-foreground">
+                                    Audit target earnings and calculate fair valuation bounds before issuing a Letter of Intent.
                                 </CardDescription>
                             </CardHeader>
+                            <CardContent className="pt-5 space-y-4 text-xs">
+                                <div className="space-y-2">
+                                    <div className="font-semibold text-foreground flex items-center gap-1.5">
+                                        <FileSearch className="h-4 w-4 text-indigo-600 shrink-0" />
+                                        <span>Primary Inputs</span>
+                                    </div>
+                                    <p className="text-muted-foreground pl-5">
+                                        P&amp;L Statements, Balance Sheets, Trial Balances, Tax Returns (Form 1120/1065), CIMs, and Teasers.
+                                    </p>
+                                </div>
+
+                                <div className="space-y-2 pt-2 border-t border-border/40">
+                                    <div className="font-semibold text-foreground flex items-center gap-1.5">
+                                        <Zap className="h-4 w-4 text-indigo-600 shrink-0" />
+                                        <span>Core Agent Capabilities</span>
+                                    </div>
+                                    <ul className="space-y-1.5 pl-5 text-muted-foreground list-disc">
+                                        <li><strong>Normalized EBITDA Reconstruction</strong>: Audits seller bridges to uncover unaudited forward-looking add-backs.</li>
+                                        <li><strong>Fair Value Bounds</strong>: Computes mathematically defensible Bear, Base, and Bull valuation ranges.</li>
+                                        <li><strong>Deterministic Math Checks</strong>: Pure arithmetic cross-verification across revenue, gross profit, and EBITDA.</li>
+                                        <li><strong>Deal Grading (A–F)</strong>: Automated letter grade and 2×2 risk matrix across data quality and earnings durability.</li>
+                                    </ul>
+                                </div>
+                            </CardContent>
                         </Card>
 
-                        <Card className="border-border shadow-xs bg-card hover:border-primary/50 transition-all">
-                            <CardHeader>
-                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-600 mb-2">
-                                    <BarChart3 className="h-5 w-5" />
+                        {/* Purpose 2: Post-LOI Deal Negotiation */}
+                        <Card className="border-2 border-purple-500/20 shadow-md bg-gradient-to-br from-purple-50/50 via-card to-card dark:from-purple-950/20 dark:via-card dark:to-card hover:border-purple-500/40 transition-all overflow-hidden">
+                            <CardHeader className="border-b border-border/60 bg-purple-500/5 pb-4">
+                                <div className="flex items-center justify-between gap-2">
+                                    <Badge variant="outline" className="border-purple-500/40 bg-purple-500/10 text-purple-700 dark:text-purple-300 font-bold text-xs px-2.5 py-1">
+                                        PHASE 2: POST-LOI WORKFLOW
+                                    </Badge>
+                                    <DollarSign className="h-5 w-5 text-purple-600" />
                                 </div>
-                                <CardTitle className="text-lg font-bold text-foreground">EBITDA Reconstruction</CardTitle>
-                                <CardDescription className="text-xs">
-                                    Automated add-back quality scoring. Reconciles reported net income with owner excess compensation, one-time legal fees, and personal expenses.
+                                <CardTitle className="text-xl font-bold text-foreground mt-2">
+                                    Post-LOI Deal Negotiation &amp; Cross-Doc Reconciliation
+                                </CardTitle>
+                                <CardDescription className="text-xs text-muted-foreground">
+                                    Reconcile proposed LOI terms against audited accounting records to generate dollar-for-dollar price adjustment levers.
                                 </CardDescription>
                             </CardHeader>
-                        </Card>
+                            <CardContent className="pt-5 space-y-4 text-xs">
+                                <div className="space-y-2">
+                                    <div className="font-semibold text-foreground flex items-center gap-1.5">
+                                        <FileCheck className="h-4 w-4 text-purple-600 shrink-0" />
+                                        <span>Primary Inputs</span>
+                                    </div>
+                                    <p className="text-muted-foreground pl-5">
+                                        All Phase 1 Accounting Files + <strong>Proposed LOI / Term Sheet</strong>, Bank Reconciliations, and AR Aging.
+                                    </p>
+                                </div>
 
-                        <Card className="border-border shadow-xs bg-card hover:border-primary/50 transition-all">
-                            <CardHeader>
-                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 mb-2">
-                                    <DollarSign className="h-5 w-5" />
+                                <div className="space-y-2 pt-2 border-t border-border/40">
+                                    <div className="font-semibold text-foreground flex items-center gap-1.5">
+                                        <Zap className="h-4 w-4 text-purple-600 shrink-0" />
+                                        <span>Core Agent Capabilities</span>
+                                    </div>
+                                    <ul className="space-y-1.5 pl-5 text-muted-foreground list-disc">
+                                        <li><strong>Price vs. Value Delta Analysis</strong>: Quantifies exact overpayment exposure (LOI Price − Supported Valuation).</li>
+                                        <li><strong>Cross-Document Reconciliation</strong>: Reconciles bank cash against balance sheet cash and inventory subledgers.</li>
+                                        <li><strong>Dollar-for-Dollar Negotiation Levers</strong>: Formulates specific price reduction, earn-out, and escrow clauses.</li>
+                                        <li><strong>Automated Buyer Memos</strong>: Auto-generates Investment Committee Memos, Management Q&amp;A Lists, and Seller Email Drafts.</li>
+                                    </ul>
                                 </div>
-                                <CardTitle className="text-lg font-bold text-foreground">Bear / Base / Bull Valuation</CardTitle>
-                                <CardDescription className="text-xs">
-                                    Generates risk-adjusted valuation multiples ($2.18M–$3.27M) based on customer concentration, working capital buffers, and industry benchmarks.
-                                </CardDescription>
-                            </CardHeader>
+                            </CardContent>
                         </Card>
                     </div>
                 </div>

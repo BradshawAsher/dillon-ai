@@ -1,8 +1,20 @@
-# Due Diligence Dashboard
+# Due Diligence Dashboard & Financial Agent
 
-Internal M&A / financial due-diligence workspace. Documents are uploaded into
-projects, processed asynchronously by n8n, and displayed in a React dashboard
-through polling.
+An AI-powered M&A intelligence workspace for private equity sponsors, search funds, and M&A advisors. Documents are uploaded into deal projects, processed asynchronously by n8n workflows, and synthesized in a React dashboard.
+
+## Dual Core Agent Capabilities
+
+The Financial Due Diligence Agent automates two core M&A workflow stages (see [`PURPOSE.md`](PURPOSE.md) for full breakdown):
+
+1. **Phase 1: Pre-LOI Valuation Discovery & Normalized EBITDA Extraction**
+   - Extracts revenue, gross profit, and reported EBITDA from raw financial statements (P&L, Trial Balance, Tax Returns).
+   - Audits seller EBITDA bridges to uncover unsupported forward-looking assertions or non-recurring items.
+   - Computes mathematically defensible fair value bounds (**Base, Downside, Upside**).
+
+2. **Phase 2: Post-LOI Deal Negotiation & Cross-Document Reconciliation**
+   - Reconciles proposed LOI purchase prices against audited valuation estimates to quantify overpayment exposure.
+   - Cross-checks bank statement cash, inventory subledgers, and tax filings to detect cross-document accounting discrepancies.
+   - Auto-generates dollar-for-dollar purchase price reduction levers, working capital peg adjustments, closing escrows, and Deal Memos.
 
 ## Current architecture
 
@@ -225,6 +237,7 @@ The configured deployment URL is:
 | `backend/diligence/` | Submit, history, and synthesis normalizers |
 | `docs/n8n-webhooks.md` | n8n webhook contracts and troubleshooting |
 | `docs/HOW_TO_RUN.md` | Additional operating notes |
+| `PURPOSE.md` | Dual core capabilities: Pre-LOI Discovery & Post-LOI Negotiation |
 | `DETERMINISTIC_MATH_CHECKS.md` | How deterministic math checks work |
 
 ## Retool provenance
