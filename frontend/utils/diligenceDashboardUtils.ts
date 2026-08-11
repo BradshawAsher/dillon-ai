@@ -76,14 +76,42 @@ export function formatConfidencePercent(rawConfidence?: string | number | null):
 }
 
 export function calculateDocumentCost(doc?: Partial<SubmissionHistoryItem> | null): number {
-    if (!doc) return 0.0018
+    if (!doc) return 0.0495
     if (typeof doc.costUsd === 'number' && doc.costUsd > 0) {
         return doc.costUsd
     }
-    const inputTokens = doc.inputTokens || 12400
-    const outputTokens = doc.outputTokens || 1850
-    const calculated = (inputTokens * 0.0000025) + (outputTokens * 0.000010)
-    return calculated > 0 ? calculated : 0.0018
+
+    if (doc.inputTokens && doc.outputTokens) {
+        const calculated = (doc.inputTokens * 0.000003) + (doc.outputTokens * 0.000015)
+        if (calculated > 0) return calculated
+    }
+
+    // Dynamic content-based estimation for documents
+    const fileName = (doc.fileName || '').toLowerCase()
+    const extractedStr = typeof doc.extractedJson === 'string' ? doc.extractedJson : JSON.stringify(doc.extractedJson || {})
+    const summaryStr = doc.aiSummary || doc.summary || ''
+
+    // Output tokens estimated from extracted JSON character length
+    const outputChars = extractedStr.length + summaryStr.length
+    const estimatedOutputTokens = Math.max(800, Math.round(outputChars / 3.8))
+
+    // Base input tokens derived from file type & density
+    let baseInputTokens = 12000
+    if (fileName.includes('cim') || fileName.includes('memorandum') || fileName.includes('teaser') || fileName.includes('due_diligence_packet')) {
+        baseInputTokens = 22000
+    } else if (fileName.includes('general_ledger') || fileName.includes('trial_balance') || fileName.includes('pnl') || fileName.includes('balance_sheet')) {
+        baseInputTokens = 14000
+    } else if (fileName.includes('form_1120') || fileName.includes('reconciliation') || fileName.includes('qa')) {
+        baseInputTokens = 11000
+    } else if (fileName.includes('bank') || fileName.includes('statement') || fileName.includes('aging') || fileName.includes('master')) {
+        baseInputTokens = 8500
+    }
+
+    const estimatedInputTokens = baseInputTokens + Math.min(10000, Math.round(extractedStr.length / 4))
+
+    // Claude Sonnet 5 rates ($3.00/1M input, $15.00/1M output)
+    const cost = (estimatedInputTokens / 1_000_000 * 3.0) + (estimatedOutputTokens / 1_000_000 * 15.0)
+    return Math.max(0.015, Number(cost.toFixed(4)))
 }
 
 export function isDocumentCostEstimated(doc?: Partial<SubmissionHistoryItem> | null): boolean {
@@ -106,15 +134,28 @@ export function calculateBatchTotalCost(docs: Partial<SubmissionHistoryItem>[]):
     return docs.reduce((sum, doc) => sum + calculateDocumentCost(doc), 0)
 }
 
-export function calculateSynthesisCost(synth?: { costUsd?: number; inputTokens?: number; outputTokens?: number } | null): number {
-    if (!synth) return 0.0142
+export function calculateSynthesisCost(synth?: { costUsd?: number; inputTokens?: number; outputTokens?: number; finalJudgmentSummary?: string; projectSynthesisJson?: string } | null): number {
+    if (!synth) return 0.0312
     if (typeof synth.costUsd === 'number' && synth.costUsd > 0) {
         return synth.costUsd
     }
-    const inputTokens = synth.inputTokens || 22500
-    const outputTokens = synth.outputTokens || 3200
-    const calculated = (inputTokens * 0.0000025) + (outputTokens * 0.000010)
-    return calculated > 0 ? calculated : 0.0142
+
+    if (synth.inputTokens && synth.outputTokens) {
+        const calculated = (synth.inputTokens * 0.0000025) + (synth.outputTokens * 0.000010)
+        if (calculated > 0) return calculated
+    }
+
+    // Dynamic content-based estimation for synthesis
+    const synthText = (synth?.finalJudgmentSummary || '') + (synth?.projectSynthesisJson || '')
+    const outputChars = synthText.length
+    const estimatedOutputTokens = Math.max(1200, Math.round(outputChars / 3.6))
+
+    // Synthesis reads all 22 extracted docs (~22k-30k tokens input context)
+    const estimatedInputTokens = Math.max(18000, 20000 + Math.round(outputChars / 2))
+
+    // OpenAI 5.6 Terra rates ($2.50/1M input, $10.00/1M output)
+    const cost = (estimatedInputTokens / 1_000_000 * 2.50) + (estimatedOutputTokens / 1_000_000 * 10.0)
+    return Math.max(0.02, Number(cost.toFixed(4)))
 }
 
 export function createUnusedProjectId(usedProjectIds: Iterable<string> = []) {

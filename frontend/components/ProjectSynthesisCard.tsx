@@ -16,6 +16,7 @@ import { downloadTextFile, fileSafeName } from '../utils/downloadFile'
 import { formatHours, type ImpactMetrics } from '../utils/impactMetrics'
 import { getProjectKey, isRowMatchingProject, type ProjectSummary } from '../utils/projectWorkspace'
 import { buildDocumentLinkedEvidence, parseDocumentedFacts, type EvidenceItem } from '../utils/evidence'
+import { calculateBatchTotalCost, calculateSynthesisCost } from '../utils/diligenceDashboardUtils'
 
 type ProjectSynthesisCardProps = {
     syntheses: ProjectSynthesisItem[]
@@ -574,23 +575,31 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                         </Badge>
                     </div>
 
-                    <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-card px-3.5 py-2 text-xs text-foreground shadow-2xs">
-                        <div className="flex items-center gap-1.5 font-semibold text-muted-foreground">
-                            <Landmark className="h-3.5 w-3.5 text-primary shrink-0" />
-                            <span>Execution Cost:</span>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-1.5">
-                            <Badge variant="outline" className="text-[10px] font-mono px-1.5 py-0.5">
-                                Extraction: ${( (projectDocuments.length || 22) * 0.0495 ).toFixed(4)}
-                            </Badge>
-                            <Badge variant="outline" className="text-[10px] font-mono px-1.5 py-0.5">
-                                Synth: ${(activeSynthesis?.costUsd || 0.0312).toFixed(4)}
-                            </Badge>
-                            <Badge variant="success" className="text-[10px] font-mono font-bold px-2 py-0.5 bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border-emerald-400/80">
-                                Total: ${( ((projectDocuments.length || 22) * 0.0495) + (activeSynthesis?.costUsd || 0.0312) ).toFixed(4)}
-                            </Badge>
-                        </div>
-                    </div>
+                    {(() => {
+                        const batchExtractionCost = calculateBatchTotalCost(projectDocuments)
+                        const synthesisCost = calculateSynthesisCost(activeSynthesis)
+                        const totalCost = batchExtractionCost + synthesisCost
+
+                        return (
+                            <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-card px-3.5 py-2 text-xs text-foreground shadow-2xs">
+                                <div className="flex items-center gap-1.5 font-semibold text-muted-foreground">
+                                    <Landmark className="h-3.5 w-3.5 text-primary shrink-0" />
+                                    <span>Execution Cost:</span>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                    <Badge variant="outline" className="text-[10px] font-mono px-1.5 py-0.5">
+                                        Extraction: ${batchExtractionCost.toFixed(4)}
+                                    </Badge>
+                                    <Badge variant="outline" className="text-[10px] font-mono px-1.5 py-0.5">
+                                        Synth: ${synthesisCost.toFixed(4)}
+                                    </Badge>
+                                    <Badge variant="success" className="text-[10px] font-mono font-bold px-2 py-0.5 bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border-emerald-400/80">
+                                        Total: ${totalCost.toFixed(4)}
+                                    </Badge>
+                                </div>
+                            </div>
+                        )
+                    })()}
                 </div>
 
                 {failedProjectDocuments.length > 0 ? (

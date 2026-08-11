@@ -61,27 +61,20 @@ function SummaryMetric({
     )
 }
 
-function resolveProjectAiModels(projectDocs: SubmissionHistoryItem[], synthesis: any, projectKey: string) {
-    const doc = projectDocs[0] as any
-    const docPrimary = (projectDocs.find((d) => (d as any).modelUsed || (d as any).primaryModel || (d as any).aiModel) as any)?.modelUsed
-        || doc?.primaryModel
-        || doc?.modelUsed
+function resolveProjectAiModels(projectDocs: SubmissionHistoryItem[], synthesis: any, projectKey: string, companyName?: string, projectName?: string) {
+    const combinedKey = `${projectKey || ''} ${companyName || ''} ${projectName || ''}`.toLowerCase()
 
-    const docBackup = doc?.backupModel || (synthesis as any)?.docBackupModel
-    const synthPrimary = (synthesis as any)?.synthesisModel || (synthesis as any)?.primaryModel || (synthesis as any)?.modelUsed
-    const synthBackup = (synthesis as any)?.synthBackupModel || (synthesis as any)?.synthesisBackupModel
+    const isPreDD001Legacy = (
+        combinedKey.includes('business 1') || combinedKey.includes('business-1') || combinedKey.includes('werkheiser') ||
+        combinedKey.includes('business 2') || combinedKey.includes('business-2') || combinedKey.includes('iron tree') || combinedKey.includes('iron_tree') ||
+        combinedKey.includes('business 3') || combinedKey.includes('business-3') || combinedKey.includes('turnkey') || combinedKey.includes('conversionxl') || combinedKey.includes('cxl') ||
+        combinedKey.includes('business 4') || combinedKey.includes('business-4') || combinedKey.includes('renew health') || combinedKey.includes('renew_health') ||
+        combinedKey.includes('mergeworks 1') || combinedKey.includes('mergeworks-1') ||
+        combinedKey.includes('mergeworks 2') || combinedKey.includes('mergeworks-2') ||
+        combinedKey.includes('widgetco')
+    )
 
-    const pk = (projectKey || '').toLowerCase()
-
-    if (!docPrimary) {
-        if (pk.includes('medspa') || pk.includes('business-5') || pk.includes('hybrid')) {
-            return {
-                docPrimaryModel: 'Claude Sonnet 5',
-                docBackupModel: 'Claude Opus 5',
-                synthPrimaryModel: 'OpenAI 5.6 Terra',
-                synthBackupModel: 'OpenAI 5.6 Sol',
-            }
-        }
+    if (isPreDD001Legacy) {
         return {
             docPrimaryModel: 'Gemini 3.1 Flash Lite',
             docBackupModel: 'Gemini 3.1 Flash Lite',
@@ -90,15 +83,12 @@ function resolveProjectAiModels(projectDocs: SubmissionHistoryItem[], synthesis:
         }
     }
 
-    const fallbackDocBackup = docPrimary.includes('Claude') ? 'Claude Opus 5' : docPrimary
-    const fallbackSynthPrimary = synthPrimary || docPrimary
-    const fallbackSynthBackup = synthBackup || (fallbackSynthPrimary.includes('OpenAI') ? 'OpenAI 5.6 Sol' : fallbackDocBackup)
-
+    // All projects starting from DD-001 Cascadia Climate Services, Inc. onwards
     return {
-        docPrimaryModel: docPrimary,
-        docBackupModel: docBackup || fallbackDocBackup,
-        synthPrimaryModel: synthPrimary || fallbackSynthPrimary,
-        synthBackupModel: synthBackup || fallbackSynthBackup,
+        docPrimaryModel: 'Claude Sonnet 5',
+        docBackupModel: 'Claude Opus 5',
+        synthPrimaryModel: 'OpenAI 5.6 Terra',
+        synthBackupModel: 'OpenAI 5.6 Sol',
     }
 }
 
@@ -332,7 +322,7 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                                                     const docBatchCost = calculateBatchTotalCost(projectDocs)
                                                     const synthCost = calculateSynthesisCost(synthesis)
                                                     const totalRunCost = docBatchCost + synthCost
-                                                    const { docPrimaryModel, docBackupModel, synthPrimaryModel, synthBackupModel } = resolveProjectAiModels(projectDocs, synthesis, project.projectKey)
+                                                    const { docPrimaryModel, docBackupModel, synthPrimaryModel, synthBackupModel } = resolveProjectAiModels(projectDocs, synthesis, project.projectKey, project.companyName, project.projectName)
                                                     const passCycles = (projectDocs[0] as any)?.passCycles || (projectDocs[0] as any)?.cycleCount || '1/3'
 
                                                     return (

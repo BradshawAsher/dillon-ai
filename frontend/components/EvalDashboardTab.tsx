@@ -30,6 +30,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../li
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
 import { benchmarkGroundTruthSyntheses } from '../evals/ground_truths'
+import { calculateBatchTotalCost, calculateSynthesisCost, calculateDocumentCost } from '../utils/diligenceDashboardUtils'
 
 type EvalDashboardTabProps = {
     evalRuns?: Array<{
@@ -1338,6 +1339,10 @@ export default function EvalDashboardTab({
                             const projectPass = avgScore >= 70
                             const totalDurationSec = docs.reduce((sum: number, d: any) => sum + getDocDurationSec(d), 0)
 
+                            const realExtractionTotal = calculateBatchTotalCost(docs)
+                            const realPerDocCost = docs.length > 0 ? (realExtractionTotal / docs.length) : 0.0495
+                            const realSynthCost = calculateSynthesisCost(null)
+
                             const defaultVal = defaultValuations[businessName]
                             const val = defaultVal || {
                                 bear: docs[0]?.valuationBear || '$8,500,000',
@@ -1349,12 +1354,12 @@ export default function EvalDashboardTab({
                                 synthPrimary: isDDPacket ? 'OpenAI 5.6 Terra' : (docs[0]?.synthModel || 'Gemini 3.1 Flash Lite'),
                                 synthBackup: isDDPacket ? 'OpenAI 5.6 Sol' : 'Gemini 3.1 Flash Lite',
                                 synthActual: isDDPacket ? 'OpenAI 5.6 Terra' : 'Gemini 3.1 Flash Lite',
-                                perDocCost: isDDPacket ? 0.0495 : 0.0003,
-                                synthCost: isDDPacket ? 0.0312 : 0.0012,
+                                perDocCost: isDDPacket ? realPerDocCost : 0.0003,
+                                synthCost: isDDPacket ? realSynthCost : 0.0012,
                                 perDocAttempts: '1/3',
                                 synthAttempts: '1/3',
                             }
-                            const totalPacketCost = (val.perDocCost * (isDDPacket ? 22 : docs.length)) + val.synthCost
+                            const totalPacketCost = isDDPacket ? (realExtractionTotal + realSynthCost) : ((val.perDocCost * docs.length) + val.synthCost)
 
                             return (
                                 <div key={groupIdx} className="rounded-xl border border-border bg-card p-4 space-y-4 shadow-2xs">
