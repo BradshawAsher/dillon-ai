@@ -134,6 +134,18 @@ export function detectCompanyName(row: SubmissionHistoryItem): string {
         return 'Summit Managed Services, Inc.'
     }
 
+    if (fn.includes('alder') || summary.includes('alder') || pid.includes('alder') || deal.includes('alder') || pid === 'dd-004') {
+        return 'Alder Precision Manufacturing Co.'
+    }
+
+    if (fn.includes('juniper') || summary.includes('juniper') || pid.includes('juniper') || deal.includes('juniper') || pid === 'dd-005') {
+        return 'Juniper Environmental Group, Inc.'
+    }
+
+    if (fn.includes('harborview') || summary.includes('harborview') || pid.includes('harborview') || deal.includes('harborview') || pid === 'dd-006') {
+        return 'Harborview Dental Partners, LLC'
+    }
+
     if (row.extractedJson) {
         try {
             const parsed = typeof row.extractedJson === 'string' ? JSON.parse(row.extractedJson) : row.extractedJson

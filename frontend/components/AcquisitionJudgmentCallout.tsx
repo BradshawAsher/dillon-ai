@@ -9,6 +9,28 @@ import { formatHours, type ImpactMetrics } from '../utils/impactMetrics'
 
 import { useMemo } from 'react'
 
+function cleanCompleteSentence(str: string): string {
+    if (!str) return ''
+    let cleaned = str.trim()
+    // Clean leading bullets, dashes, or markdown
+    cleaned = cleaned.replace(/^[-•*#\s]+/, '')
+    if (!cleaned) return ''
+    cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1)
+
+    // Ensure sentence ends with valid punctuation
+    if (!/[.!?]$/.test(cleaned)) {
+        // If string ends with an incomplete word fragment at end of a long sentence, trim to last space
+        if (cleaned.length > 30) {
+            const lastSpaceIndex = cleaned.lastIndexOf(' ')
+            if (lastSpaceIndex > 15 && cleaned.length - lastSpaceIndex < 12) {
+                cleaned = cleaned.substring(0, lastSpaceIndex).trim()
+            }
+        }
+        cleaned += '.'
+    }
+    return cleaned
+}
+
 export default function AcquisitionJudgmentCallout({ synthesis, impact }: { synthesis?: ProjectSynthesisItem; impact: ImpactMetrics }) {
     const pending = !synthesis || !synthesis.finalJudgmentSummary
     const message = pending
@@ -18,14 +40,31 @@ export default function AcquisitionJudgmentCallout({ synthesis, impact }: { synt
         : synthesis.finalJudgmentSummary
 
     const parsedSummary = useMemo(() => {
+        // 1. First check if n8n returned structured key_acquisition_takeaways
+        const structuredTakeaways: any[] = (synthesis as any)?.finalJudgementJson?.key_acquisition_takeaways || (synthesis as any)?.key_acquisition_takeaways || []
+
+        if (Array.isArray(structuredTakeaways) && structuredTakeaways.length > 0) {
+            const bullets = structuredTakeaways
+                .map((t: any) => {
+                    const text = typeof t === 'string' ? t : (t.takeaway ? `${t.takeaway}${t.impact ? ` (${t.impact})` : ''}` : (t.description || ''))
+                    return cleanCompleteSentence(text)
+                })
+                .filter(Boolean)
+
+            if (bullets.length > 0) {
+                return {
+                    recommendation: synthesis?.finalRecommendation || 'PROCEED WITH CAUTION',
+                    bullets
+                }
+            }
+        }
+
         if (!message) return { recommendation: '', bullets: [] }
 
-        // Clean leading "Summary", "Summary:", "### Summary", or generic title markers
+        // 2. Fallback: Parse message string safely with sentence boundary protection
         let cleanMessage = message.trim()
         cleanMessage = cleanMessage.replace(/^(?:###\s+)?Summary:?\s*/i, '').trim()
 
-        // Find leading uppercase recommendation phrase ending with a period or exclamation mark
-        // (e.g., "RECOMMEND ESCALATION AND RENEGOTIATION. The target reports...")
         const uppercaseMatch = cleanMessage.match(/^([A-Z\s&,-]{4,}\.?)\s*([\s\S]*)/)
 
         let recommendationText = synthesis?.finalRecommendation || ''
@@ -37,15 +76,15 @@ export default function AcquisitionJudgmentCallout({ synthesis, impact }: { synt
         }
 
         const bullets = remainderText
-            .split(/(?<=[.!?])\s+/)
-            .map(s => s.trim())
-            .filter(Boolean)
+            .split(/(?<!\d\.\d+)(?<=[.!?])\s+(?=[A-Z0-9"\u201C\u201D])/)
+            .map(s => cleanCompleteSentence(s))
+            .filter(b => b.length > 10)
 
         return {
             recommendation: recommendationText || synthesis?.finalRecommendation || '',
             bullets
         }
-    }, [message, synthesis?.finalRecommendation])
+    }, [message, synthesis])
 
     const getActionColor = (text: string) => {
         const lower = text.toLowerCase();
