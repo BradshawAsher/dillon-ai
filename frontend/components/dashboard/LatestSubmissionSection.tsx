@@ -22,6 +22,7 @@ import {
     formatConfidencePercent,
     calculateDocumentCost,
     calculateBatchTotalCost,
+    formatDocumentCostDisplay,
 } from '../../utils/diligenceDashboardUtils'
 
 function getSubmissionStatusVariant(status: string): 'success' | 'warning' | 'destructive' | 'secondary' | 'outline' {
@@ -263,7 +264,9 @@ export default function LatestSubmissionSection({
                         </div>
                         <div className="rounded-lg border border-primary/25 bg-background/90 p-3">
                             <p className="text-xs text-muted-foreground">Extraction Cost</p>
-                            <p className="mt-1 text-lg font-bold text-emerald-600 dark:text-emerald-400 font-mono">${docCost.toFixed(4)}</p>
+                            <p className="mt-1 text-lg font-bold text-emerald-600 dark:text-emerald-400 font-mono">
+                                {formatDocumentCostDisplay(displayedSubmissionRow).formatted}
+                            </p>
                         </div>
                         <div className="rounded-lg border border-primary/25 bg-background/90 p-3">
                             <p className="text-xs text-muted-foreground">Action needed</p>

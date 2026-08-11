@@ -27,7 +27,7 @@ type ExpandableInsightGroupProps = {
   findings?: StructuredFinding[]
 }
 
-const LONG_ITEM_LENGTH = 100
+const LONG_ITEM_LENGTH = 350
 
 function confidenceBadge(confidence: number | null) {
   if (confidence === null || confidence === undefined) return null

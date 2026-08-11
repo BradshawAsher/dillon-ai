@@ -1,0 +1,1574 @@
+{
+  "business": "Business 5 - Medical Spa / Cascadia Live Run",
+  "projectId": "medspa-wellness-clinic",
+  "evaluatedAt": "2026-08-11T02:47:20.926Z",
+  "documents": [
+    {
+      "fileName": "data_room_index.csv",
+      "documentType": "auto-detect",
+      "status": "completed",
+      "confidence": 0.4,
+      "factsExtracted": [],
+      "redFlags": [
+        "[]"
+      ],
+      "yellowFlags": [
+        "[\"This document is only an index of files",
+        " no financial figures, EBITDA, or employee counts are present in the supplied text, limiting substantive due-diligence analysis to inventory-level observations only.\",\"Several critical categories (financials, revenue, cash, tax, management documents) are referenced only by filename and have not been reviewed in this document",
+        " their content is unverified from this index alone.\"]"
+      ],
+      "greenFlags": [
+        "[\"The data room appears organized into clear categories (financials, revenue, cash, tax, management), suggesting a structured due-diligence package was assembled.\",\"Source documents are attributed to identifiable providers (Company accounting system vs. Seller), which supports traceability of information sources.\"]"
+      ],
+      "summary": "The supplied document is a data room index (data_room_index.csv) listing 21 files across financials, revenue, cash, tax, and management folders, with metadata such as document_id, folder, file_name, relative_path, format, size_bytes, and provided_by. It is an inventory/manifest and does not itself contain any financial statement values, EBITDA figures, employee counts, or valuation data. No financial facts, EBITDA, or headcount are explicitly stated within this index document.",
+      "riskLevel": "Low",
+      "trafficLight": "Green",
+      "modelUsed": "Claude 3.5 Sonnet / n8n Live Pipeline"
+    },
+    {
+      "fileName": "trial_balance.csv",
+      "documentType": "auto-detect",
+      "status": "completed",
+      "confidence": 0.9,
+      "factsExtracted": [
+        {
+          "metric": "revenue",
+          "raw_value": "212357.76 + 361974.24",
+          "normalized_value": 574332,
+          "period": "2023-01",
+          "currency": "USD",
+          "confidence": 0.95,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "trial_balance.csv",
+            "page_number": null,
+            "row_or_cell": "accounts 4000,4100 period 2023-01",
+            "excerpt": "Revenue - Service & Maintenance 212357.76; Revenue - Installation / Projects 361974.24"
+          }
+        },
+        {
+          "metric": "revenue",
+          "raw_value": "357399.64 + 470918.36",
+          "normalized_value": 828318,
+          "period": "2025-12",
+          "currency": "USD",
+          "confidence": 0.95,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "trial_balance.csv",
+            "page_number": null,
+            "row_or_cell": "accounts 4000,4100 period 2025-12",
+            "excerpt": "Revenue - Service & Maintenance 357399.64; Revenue - Installation / Projects 470918.36"
+          }
+        },
+        {
+          "metric": "cash",
+          "raw_value": "985000.0",
+          "normalized_value": 985000,
+          "period": "2022-12",
+          "currency": "USD",
+          "confidence": 0.9,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "trial_balance.csv",
+            "page_number": null,
+            "row_or_cell": "account 1000 period 2022-12",
+            "excerpt": "Operating Cash - Primary Account debit 985000.0"
+          }
+        },
+        {
+          "metric": "debt",
+          "raw_value": "1450000.0",
+          "normalized_value": 1450000,
+          "period": "2022-12",
+          "currency": "USD",
+          "confidence": 0.9,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "trial_balance.csv",
+            "page_number": null,
+            "row_or_cell": "account 2700 period 2022-12",
+            "excerpt": "Notes Payable - Bank Term Loan credit 1450000.0"
+          }
+        },
+        {
+          "metric": "equity",
+          "raw_value": "250000.0 + 2160000.0",
+          "normalized_value": 2410000,
+          "period": "2022-12",
+          "currency": "USD",
+          "confidence": 0.85,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "trial_balance.csv",
+            "page_number": null,
+            "row_or_cell": "accounts 3000,3100 period 2022-12",
+            "excerpt": "Common Stock & Paid-In Capital 250000.0; Retained Earnings / Distributions 2160000.0"
+          }
+        }
+      ],
+      "redFlags": [
+        "[]"
+      ],
+      "yellowFlags": [
+        "[\"No explicit EBITDA, net income, or subtotal figures are presented in this trial balance",
+        " only individual account-level debits/credits are provided, requiring cross-document reconciliation.\",\"Flat, unchanging monthly values for several accounts (Officer/Owner Compensation at $29,167.00, Consulting Fees at $20,000.00, Vehicle Expense - Owner Vehicles at $7,000.00, and Depreciation Expense at $32,812.00) recur across nearly all periods, suggesting possible standardized/estimated journal entries rather than actuals.\",\"Notes Payable - Bank Term Loan shows an identical $18,500.00 debit every month from 2023-01 onward with no corresponding interest allocation breakdown tied to the note balance, and the loan's opening balance/paydown scheduling is not detailed in this document.\",\"Consulting Fees of $20,000.00/month is paid consistently alongside Officer/Owner Compensation, which may represent related-party or owner-linked payments",
+        " this document alone does not clarify the relationship.\",\"A new recurring opex line, 'Software Implementation - ERP Project,' appears only starting 2025-03 (21000.0, 19500.0, 17500.0), indicating a one-time or transitional project cost not present in prior periods.\"]"
+      ],
+      "greenFlags": [
+        "[\"Revenue shows a clear multi-year upward trend across both revenue streams (Service & Maintenance and Installation/Projects) from 2023 through 2025 based on the reported monthly credit balances.\",\"The trial balance provides granular, consistently structured account-level detail across 37 consecutive monthly periods (2022-12 through 2025-12), supporting traceability of individual line items.\"]"
+      ],
+      "summary": "This is a monthly trial balance covering periods 2022-12 through 2025-12, listing account-level debit/credit balances and activity across asset, liability, equity, revenue, COGS, opex, and tax accounts. Revenue is split between 'Service & Maintenance' and 'Installation / Projects' lines, with COGS broken into materials, direct labor, and subcontract/freight. Recurring monthly opex includes owner compensation (~$29,167/month), consulting fees ($20,000/month flat), vehicle expenses for owner vehicles ($7,000/month flat), and depreciation ($32,812/month flat). Notes Payable - Bank Term Loan shows a constant $18,500 monthly debit beginning 2023-01, and an ERP software implementation cost appears starting 2025-03. No consolidated income statement, balance sheet, or EBITDA figure is explicitly presented; only underlying GL account activity is provided.",
+      "riskLevel": "Low",
+      "trafficLight": "Green",
+      "modelUsed": "Claude 3.5 Sonnet / n8n Live Pipeline"
+    },
+    {
+      "fileName": "monthly_pnl.xlsx",
+      "documentType": "auto-detect",
+      "status": "completed",
+      "confidence": 0.95,
+      "factsExtracted": [
+        {
+          "metric": "revenue",
+          "raw_value": "11057939",
+          "normalized_value": 11057939,
+          "period": "TTM_2025",
+          "currency": "USD",
+          "confidence": 0.98,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "monthly_pnl.xlsx",
+            "page_number": null,
+            "row_or_cell": "Total revenue, TTM_2025",
+            "excerpt": "Total revenue TTM_2025: 11057939"
+          }
+        },
+        {
+          "metric": "revenue",
+          "raw_value": "9414779",
+          "normalized_value": 9414779,
+          "period": "FY2023",
+          "currency": "USD",
+          "confidence": 0.98,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "monthly_pnl.xlsx",
+            "page_number": null,
+            "row_or_cell": "Total revenue, FY2023",
+            "excerpt": "Total revenue FY2023: 9414779"
+          }
+        },
+        {
+          "metric": "revenue",
+          "raw_value": "10170614",
+          "normalized_value": 10170614,
+          "period": "FY2024",
+          "currency": "USD",
+          "confidence": 0.98,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "monthly_pnl.xlsx",
+            "page_number": null,
+            "row_or_cell": "Total revenue, FY2024",
+            "excerpt": "Total revenue FY2024: 10170614"
+          }
+        },
+        {
+          "metric": "revenue",
+          "raw_value": "11057939",
+          "normalized_value": 11057939,
+          "period": "FY2025",
+          "currency": "USD",
+          "confidence": 0.98,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "monthly_pnl.xlsx",
+            "page_number": null,
+            "row_or_cell": "Total revenue, FY2025",
+            "excerpt": "Total revenue FY2025: 11057939"
+          }
+        },
+        {
+          "metric": "cogs",
+          "raw_value": "6715679",
+          "normalized_value": 6715679,
+          "period": "TTM_2025",
+          "currency": "USD",
+          "confidence": 0.98,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "monthly_pnl.xlsx",
+            "page_number": null,
+            "row_or_cell": "Total cost of revenue, TTM_2025",
+            "excerpt": "Total cost of revenue TTM_2025: 6715679"
+          }
+        },
+        {
+          "metric": "gross_profit",
+          "raw_value": "4342260",
+          "normalized_value": 4342260,
+          "period": "TTM_2025",
+          "currency": "USD",
+          "confidence": 0.98,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "monthly_pnl.xlsx",
+            "page_number": null,
+            "row_or_cell": "Gross profit, TTM_2025",
+            "excerpt": "Gross profit TTM_2025: 4342260"
+          }
+        },
+        {
+          "metric": "gross_profit",
+          "raw_value": "3651670",
+          "normalized_value": 3651670,
+          "period": "FY2023",
+          "currency": "USD",
+          "confidence": 0.98,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "monthly_pnl.xlsx",
+            "page_number": null,
+            "row_or_cell": "Gross profit, FY2023",
+            "excerpt": "Gross profit FY2023: 3651670"
+          }
+        },
+        {
+          "metric": "gross_profit",
+          "raw_value": "3960765",
+          "normalized_value": 3960765,
+          "period": "FY2024",
+          "currency": "USD",
+          "confidence": 0.98,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "monthly_pnl.xlsx",
+            "page_number": null,
+            "row_or_cell": "Gross profit, FY2024",
+            "excerpt": "Gross profit FY2024: 3960765"
+          }
+        },
+        {
+          "metric": "ebitda_sde",
+          "raw_value": "1085904",
+          "normalized_value": 1085904,
+          "period": "TTM_2025",
+          "currency": "USD",
+          "confidence": 0.98,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "monthly_pnl.xlsx",
+            "page_number": null,
+            "row_or_cell": "EBITDA (as reported), TTM_2025",
+            "excerpt": "EBITDA (as reported) TTM_2025: 1085904"
+          }
+        },
+        {
+          "metric": "ebitda_sde",
+          "raw_value": "629277",
+          "normalized_value": 629277,
+          "period": "FY2023",
+          "currency": "USD",
+          "confidence": 0.98,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "monthly_pnl.xlsx",
+            "page_number": null,
+            "row_or_cell": "EBITDA (as reported), FY2023",
+            "excerpt": "EBITDA (as reported) FY2023: 629277"
+          }
+        },
+        {
+          "metric": "ebitda_sde",
+          "raw_value": "842695",
+          "normalized_value": 842695,
+          "period": "FY2024",
+          "currency": "USD",
+          "confidence": 0.98,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "monthly_pnl.xlsx",
+            "page_number": null,
+            "row_or_cell": "EBITDA (as reported), FY2024",
+            "excerpt": "EBITDA (as reported) FY2024: 842695"
+          }
+        },
+        {
+          "metric": "net_income",
+          "raw_value": "492157",
+          "normalized_value": 492157,
+          "period": "TTM_2025",
+          "currency": "USD",
+          "confidence": 0.98,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "monthly_pnl.xlsx",
+            "page_number": null,
+            "row_or_cell": "Net income, TTM_2025",
+            "excerpt": "Net income TTM_2025: 492157"
+          }
+        },
+        {
+          "metric": "net_income",
+          "raw_value": "104590",
+          "normalized_value": 104590,
+          "period": "FY2023",
+          "currency": "USD",
+          "confidence": 0.98,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "monthly_pnl.xlsx",
+            "page_number": null,
+            "row_or_cell": "Net income, FY2023",
+            "excerpt": "Net income FY2023: 104590"
+          }
+        },
+        {
+          "metric": "net_income",
+          "raw_value": "286606",
+          "normalized_value": 286606,
+          "period": "FY2024",
+          "currency": "USD",
+          "confidence": 0.98,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "monthly_pnl.xlsx",
+            "page_number": null,
+            "row_or_cell": "Net income, FY2024",
+            "excerpt": "Net income FY2024: 286606"
+          }
+        }
+      ],
+      "redFlags": [
+        "[]"
+      ],
+      "yellowFlags": [
+        "[\"Negative EBITDA and net income occurred in several early months (Jan-Feb 2023, Jan-Feb 2024, Jan-Mar 2025), indicating possible seasonality that should be investigated for cash flow planning.\",\"One-time ERP Software Implementation expense ($58,000) recorded in Mar-May 2025 only, not present in prior periods",
+        " this non-recurring cost affects period-over-period comparability of operating expenses and EBITDA.\"]"
+      ],
+      "greenFlags": [
+        "[\"Revenue grew year-over-year: FY2023 $9.41M to FY2024 $10.17M to FY2025 $11.06M.\",\"EBITDA (as reported) grew substantially from $629K (FY2023) to $842K (FY2024) to $1.09M (FY2025).\",\"Net income turned consistently positive on an annual basis, improving from $104.6K (FY2023) to $492.2K (FY2025).\"]"
+      ],
+      "summary": "This monthly P&L covers FY2023 through FY2025 (with TTM_2025 aggregate) for a service and installation business, showing revenue growth from $9.41M (FY2023) to $11.06M (FY2025/TTM), with EBITDA as reported growing from $629K (FY2023) to $1.09M (FY2025/TTM). Net income improved from $104.6K to $492.2K over the same period. Gross margins remained relatively stable (~38-39%). Notable one-time item: a Software Implementation - ERP Project expense of $58,000 appears only in Q1 2025 (Mar-May), suggesting a non-recurring cost.",
+      "riskLevel": "Low",
+      "trafficLight": "Green",
+      "modelUsed": "Claude 3.5 Sonnet / n8n Live Pipeline"
+    },
+    {
+      "fileName": "monthly_balance_sheet.xlsx",
+      "documentType": "auto-detect",
+      "status": "completed",
+      "confidence": 0.9,
+      "factsExtracted": [
+        {
+          "metric": "cash",
+          "raw_value": "2251793.08",
+          "normalized_value": 2251793.08,
+          "period": "2025-12",
+          "currency": "USD",
+          "confidence": 0.98,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "monthly_balance_sheet.xlsx",
+            "page_number": null,
+            "row_or_cell": "1000 Operating Cash - Primary Account, 2025-12",
+            "excerpt": "1000 Operating Cash - Primary Account ... 2251793.08"
+          }
+        },
+        {
+          "metric": "total_assets",
+          "raw_value": "3889407.88",
+          "normalized_value": 3889407.88,
+          "period": "2025-12",
+          "currency": "USD",
+          "confidence": 0.98,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "monthly_balance_sheet.xlsx",
+            "page_number": null,
+            "row_or_cell": "Total assets, 2025-12",
+            "excerpt": "Total assets ... 3889407.88"
+          }
+        },
+        {
+          "metric": "total_liabilities",
+          "raw_value": "993564.88",
+          "normalized_value": 993564.88,
+          "period": "2025-12",
+          "currency": "USD",
+          "confidence": 0.98,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "monthly_balance_sheet.xlsx",
+            "page_number": null,
+            "row_or_cell": "Total liabilities, 2025-12",
+            "excerpt": "Total liabilities ... 993564.88"
+          }
+        },
+        {
+          "metric": "equity",
+          "raw_value": "2895843",
+          "normalized_value": 2895843,
+          "period": "2025-12",
+          "currency": "USD",
+          "confidence": 0.98,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "monthly_balance_sheet.xlsx",
+            "page_number": null,
+            "row_or_cell": "Total equity, 2025-12",
+            "excerpt": "Total equity ... 2895843"
+          }
+        },
+        {
+          "metric": "debt",
+          "raw_value": "784000",
+          "normalized_value": 784000,
+          "period": "2025-12",
+          "currency": "USD",
+          "confidence": 0.98,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "monthly_balance_sheet.xlsx",
+            "page_number": null,
+            "row_or_cell": "2700 Notes Payable - Bank Term Loan, 2025-12",
+            "excerpt": "2700 Notes Payable - Bank Term Loan ... 784000"
+          }
+        },
+        {
+          "metric": "working_capital",
+          "raw_value": "3160639.88 - 209564.88",
+          "normalized_value": 2951075,
+          "period": "2025-12",
+          "currency": "USD",
+          "confidence": 0.9,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "monthly_balance_sheet.xlsx",
+            "page_number": null,
+            "row_or_cell": "Total current assets / Total current liabilities, 2025-12",
+            "excerpt": "Total current assets 3160639.88; Total current liabilities 209564.88"
+          }
+        }
+      ],
+      "redFlags": [
+        "[]"
+      ],
+      "yellowFlags": [
+        "[\"Document contains only balance sheet data",
+        " no income statement or cash flow statement is included to corroborate profitability or cash flow trends.\",\"Inventory (1400) remains flat at exactly 285000 for all 36 months, which may indicate a static/non-updated balance rather than true inventory movement.\"]"
+      ],
+      "greenFlags": [
+        "[\"Balance sheet check row confirms assets equal liabilities plus equity with zero variance across all 36 months.\",\"Operating cash balance grew from $1,103,905.05 (Jan 2023) to $2,251,793.08 (Dec 2025).\",\"Bank term loan debt declined consistently from $1,431,500 (Jan 2023) to $784,000 (Dec 2025), indicating steady deleveraging.\",\"Total equity increased from $2,345,471.08 (Jan 2023) to $2,895,843 (Dec 2025).\"]"
+      ],
+      "summary": "This is a monthly balance sheet covering January 2023 through December 2025, reporting cash, accounts receivable, inventory, fixed assets, liabilities, debt, and equity balances. The balance sheet balances exactly each month (assets = liabilities + equity, with a CHECK row confirming zero variance throughout). Cash increased from approximately $1.10M in Jan 2023 to $2.25M in Dec 2025. Bank term loan debt declined steadily from $1,431,500 to $784,000 over the period, indicating consistent debt amortization. Total equity grew from approximately $2.35M to $2.90M, driven by retained earnings and cumulative current-period earnings.",
+      "riskLevel": "Low",
+      "trafficLight": "Green",
+      "modelUsed": "Claude 3.5 Sonnet / n8n Live Pipeline"
+    },
+    {
+      "fileName": "general_ledger.csv",
+      "documentType": "auto-detect",
+      "status": "completed",
+      "confidence": 0.85,
+      "factsExtracted": [
+        {
+          "metric": "revenue",
+          "raw_value": "43254.99",
+          "normalized_value": 43254.99,
+          "period": "2023-01",
+          "currency": "USD",
+          "confidence": 0.9,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "general_ledger.csv",
+            "page_number": null,
+            "row_or_cell": "JE000001",
+            "excerpt": "Revenue - Installation / Projects credit 43254.99, Customer invoice INV-202301-00001, Elkhorn Property Group"
+          }
+        },
+        {
+          "metric": "cash",
+          "raw_value": "985000.0",
+          "normalized_value": 985000,
+          "period": "2022-12",
+          "currency": "USD",
+          "confidence": 0.9,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "general_ledger.csv",
+            "page_number": null,
+            "row_or_cell": "JE000000",
+            "excerpt": "1000 Operating Cash - Primary Account debit 985000.0, Opening balance carried forward"
+          }
+        },
+        {
+          "metric": "debt",
+          "raw_value": "1450000.0",
+          "normalized_value": 1450000,
+          "period": "2022-12",
+          "currency": "USD",
+          "confidence": 0.9,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "general_ledger.csv",
+            "page_number": null,
+            "row_or_cell": "JE000000",
+            "excerpt": "2700 Notes Payable - Bank Term Loan credit 1450000.0, Opening balance carried forward"
+          }
+        },
+        {
+          "metric": "equity",
+          "raw_value": "250000.0",
+          "normalized_value": 250000,
+          "period": "2022-12",
+          "currency": "USD",
+          "confidence": 0.9,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "general_ledger.csv",
+            "page_number": null,
+            "row_or_cell": "JE000000",
+            "excerpt": "3000 Common Stock & Paid-In Capital credit 250000.0, Opening balance carried forward"
+          }
+        }
+      ],
+      "redFlags": [
+        "[]"
+      ],
+      "yellowFlags": [
+        "[\"General ledger does not explicitly state EBITDA, SDE, or a consolidated income statement",
+        " standalone GL detail requires cross-referencing to P&L/financial statements for full validation.\",\"No employee headcount, FTE, or contractor count is explicitly stated anywhere in this document.\",\"A new recurring expense line 'Software Implementation - ERP Project' (account 6420) appears starting 2025-03 (~$17,500-$21,000/month), representing a new cost category not present in prior periods",
+        " may indicate a one-time system implementation affecting comparability of SG&A trends.\",\"Officer/Owner Compensation is recorded at a flat $29,167/month throughout the entire period, which is a related-party expense that may require normalization in a QoE analysis.\"]"
+      ],
+      "greenFlags": [
+        "[\"Revenue journal entries are consistently double-entry balanced (AR debit / Revenue credit) across the full 36-month period with no apparent gaps in monthly invoicing activity.\",\"Monthly cash receipt batches, AP disbursement runs, payroll funding, and debt service entries appear consistently recorded each month from January 2023 through December 2025, indicating disciplined bookkeeping cadence.\",\"Bank term loan (Notes Payable - Bank Term Loan) shows a consistent $18,500 monthly principal reduction from the $1,450,000 opening balance, with a declining interest expense trend consistent with amortization.\"]"
+      ],
+      "summary": "This document is a detailed general ledger (JE000000 through JE001888) covering opening balances as of 2022-12-31 and transaction activity from January 2023 through December 2025 (36 months). It contains thousands of customer invoice journal entries (revenue recognition to Revenue - Installation/Projects and Revenue - Service & Maintenance accounts against Accounts Receivable - Trade), monthly lockbox cash receipt batches, monthly accrual entries for cost of revenue (materials, direct labor, subcontract/freight) and SG&A expenses (salaries, payroll taxes, rent, insurance, vehicle, professional fees, marketing, officer compensation, consulting fees, and beginning March 2025 a new 'Software Implementation - ERP Project' expense line), monthly depreciation entries, AP disbursement runs, payroll funding entries, monthly bank term loan debt service (principal and interest) to Cascade First Bank, income tax provisions and quarterly estimated tax payments, and periodic shareholder distributions. The ledger supports derivation of revenue trends, AR turnover, cost structure, and debt amortization, but does not itself state EBITDA, a valuation, or explicit employee headcount.",
+      "riskLevel": "Low",
+      "trafficLight": "Green",
+      "modelUsed": "Claude 3.5 Sonnet / n8n Live Pipeline"
+    },
+    {
+      "fileName": "fixed_asset_register.xlsx",
+      "documentType": "auto-detect",
+      "status": "completed",
+      "confidence": 0.9,
+      "factsExtracted": [
+        {
+          "metric": "total_assets",
+          "raw_value": "728768",
+          "normalized_value": 728768,
+          "period": "Not specified",
+          "currency": "USD",
+          "confidence": 0.7,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "fixed_asset_register.xlsx",
+            "page_number": null,
+            "row_or_cell": "TOTAL row, net_book_value column",
+            "excerpt": "TOTAL Total fixed assets ... 728768"
+          }
+        }
+      ],
+      "redFlags": [
+        "[]"
+      ],
+      "yellowFlags": [
+        "[\"Document contains only fixed asset data",
+        " no income statement, balance sheet, or cash flow data provided for cross-validation.\",\"Assets show high accumulated depreciation relative to cost (approximately 77% of total cost depreciated), indicating an aging asset base that may require near-term capital expenditure.\"]"
+      ],
+      "greenFlags": [
+        "[\"Asset register is detailed and consistent, with itemized cost, accumulated depreciation, and net book value reconciling to the stated totals.\"]"
+      ],
+      "summary": "The document is a fixed asset register listing 14 individual fixed assets across categories including service vehicles, machinery, leasehold improvements, computer equipment, furniture, and tooling. Total cost is $3,150,000 with accumulated depreciation of $2,421,232, resulting in net book value of $728,768. No revenue, profit, or other core financial statement facts are present.",
+      "riskLevel": "Low",
+      "trafficLight": "Green",
+      "modelUsed": "Claude 3.5 Sonnet / n8n Live Pipeline"
+    },
+    {
+      "fileName": "chart_of_accounts.csv",
+      "documentType": "auto-detect",
+      "status": "completed",
+      "confidence": 0.55,
+      "factsExtracted": [],
+      "redFlags": [
+        "[]"
+      ],
+      "yellowFlags": [
+        "[\"Account 6210 'Rent - Facilities (Related Party)' indicates a related-party transaction line exists in the general ledger structure, but no amounts are provided in this document to assess materiality.\",\"Account 6790 'Shareholder Personal & Non-Business Expenses' indicates the company's chart of accounts explicitly tracks non-business shareholder expenses run through the P&L, which may require add-back analysis once amounts are available.\",\"Account 6010 'Officer / Owner Compensation' and 6410 'Vehicle Expense - Owner Vehicles' suggest owner-related compensation and perquisites are tracked separately, relevant for normalization once financial data is available.\",\"This document is a chart of accounts only and contains no monetary balances, so no financial facts, EBITDA, or valuation metrics could be extracted.\"]"
+      ],
+      "greenFlags": [
+        "[\"The chart of accounts is well-structured with clear separation between Balance Sheet and Income Statement accounts, and includes distinct categories for COGS, Opex, and non-operating items, suggesting organized bookkeeping.\"]"
+      ],
+      "summary": "The supplied document is a chart of accounts listing account codes, names, account types (Asset, Liability, Equity, Revenue, COGS, Opex, Other, Tax), and the associated financial statement (BS or IS) for each account. It contains no explicit monetary values, balances, or reporting periods, so no financial facts, EBITDA, employee counts, or valuation can be extracted. Several account names suggest potential areas of interest for further due diligence, such as related-party rent, owner compensation, shareholder personal expenses, discontinued line wind-down costs, and severance costs, but no amounts are given.",
+      "riskLevel": "Low",
+      "trafficLight": "Green",
+      "modelUsed": "Claude 3.5 Sonnet / n8n Live Pipeline"
+    },
+    {
+      "fileName": "ar_aging.xlsx",
+      "documentType": "auto-detect",
+      "status": "completed",
+      "confidence": 0.95,
+      "factsExtracted": [
+        {
+          "metric": "working_capital",
+          "raw_value": "623846.8",
+          "normalized_value": 623846.8,
+          "period": "2025-12-31",
+          "currency": "USD",
+          "confidence": 0.9,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "ar_aging.xlsx",
+            "page_number": null,
+            "row_or_cell": "TOTAL row, total column",
+            "excerpt": "TOTAL\tAccounts receivable at 2025-12-31\t383504.4\t185988.6\t54353.8\t0\t623846.8"
+          }
+        }
+      ],
+      "redFlags": [
+        "[]"
+      ],
+      "yellowFlags": [
+        "[\"Significant customer concentration: top 2 customers (Yarrow Industries and Elkhorn Property Group) account for approximately 35.8% of total AR balance\",\"38.5% of total AR ($240,342.40) is aged beyond current (31-90 days), indicating potential collection delays\"]"
+      ],
+      "greenFlags": [
+        "[\"No receivables reported in the over-90-day aging bucket, suggesting no severely delinquent accounts as of this period\"]"
+      ],
+      "summary": "The AR aging schedule as of 2025-12-31 reports total accounts receivable of $623,846.80 across 28 customers, with $383,504.40 (61.5%) current (0-30 days), $185,988.60 (29.8%) in 31-60 days, and $54,353.80 (8.7%) in 61-90 days. No balances are reported in the over-90-day bucket. The top two customers, Yarrow Industries ($113,522.23) and Elkhorn Property Group ($110,328.49), together represent approximately 36% of total AR, indicating customer concentration risk.",
+      "riskLevel": "Low",
+      "trafficLight": "Green",
+      "modelUsed": "Claude 3.5 Sonnet / n8n Live Pipeline"
+    },
+    {
+      "fileName": "invoice_detail.csv",
+      "documentType": "auto-detect",
+      "status": "completed",
+      "confidence": 0.9,
+      "factsExtracted": [],
+      "redFlags": [
+        "[]"
+      ],
+      "yellowFlags": [
+        "[\"File contains only transaction-level invoice detail with no aggregated revenue totals, EBITDA, or profitability metrics",
+        " cross-document reconciliation would be required to derive period totals.\",\"No employee headcount or FTE data present in this document.\",\"No balance sheet, cash flow, or debt information present in this document.\"]"
+      ],
+      "greenFlags": [
+        "[\"Data is granular and consistently structured (invoice_id, date, period, customer_id, customer_name, segment, revenue_account, amount) across the full 2023-01 to 2025-12 range with no visible missing periods.\",\"Two clearly defined revenue segments (Installation / Retrofit and Service & Maintenance) enable segment-level revenue analysis.\",\"Customer names and IDs are consistently mapped across the dataset (e.g., C0001 = Elkhorn Property Group throughout).\"]"
+      ],
+      "summary": "This is an invoice detail export covering INV-202301-00001 through INV-202512-01612, spanning periods 2023-01 through 2025-12. It lists individual invoices by customer (28 distinct customer IDs, e.g. Elkhorn Property Group, Pinnacle Development Co., Yarrow Industries), segment (Installation / Retrofit vs. Service & Maintenance), revenue account code (4100 or 4000), and invoice amount. No summary totals, EBITDA, balance sheet, or headcount data are present in this file; it supports customer/revenue concentration and segment-mix analysis but not profitability or valuation conclusions on its own.",
+      "riskLevel": "Low",
+      "trafficLight": "Green",
+      "modelUsed": "Claude 3.5 Sonnet / n8n Live Pipeline"
+    },
+    {
+      "fileName": "customer_master.csv",
+      "documentType": "auto-detect",
+      "status": "completed",
+      "confidence": 0.9,
+      "factsExtracted": [],
+      "redFlags": [
+        "[]"
+      ],
+      "yellowFlags": [
+        "[\"Customer concentration: top customer (Elkhorn Property Group) represents 19.49% of target annual share.\",\"Top three customers (Elkhorn Property Group, Pinnacle Development Co., Yarrow Industries) combined represent approximately 46.85% of target annual share.\",\"All 28 customers are located in a single state (WA), indicating geographic concentration.\",\"Document contains no explicit revenue, EBITDA, or other financial statement figures to corroborate the target_annual_share_pct metric.\"]"
+      ],
+      "greenFlags": [
+        "[\"Customer relationships span from 2012 to 2022, suggesting a mix of long-tenured and newer customers.\",\"Customer base is diversified across two business segments (Installation / Retrofit and Service & Maintenance).\"]"
+      ],
+      "summary": "This file is a customer master listing 28 customers (C0001-C0028) with segment, state, relationship start date, payment terms, and target annual share percentage. All customers are located in WA and fall into two segments: Installation / Retrofit and Service & Maintenance. The top customer, Elkhorn Property Group, represents 19.49% of target annual share, and the top three customers combined represent approximately 46.85% of target annual share, indicating meaningful customer concentration risk. No revenue dollar amounts, invoice-level data, or other financial statement figures are present in this document.",
+      "riskLevel": "Low",
+      "trafficLight": "Green",
+      "modelUsed": "Claude 3.5 Sonnet / n8n Live Pipeline"
+    },
+    {
+      "fileName": "customer_concentration.xlsx",
+      "documentType": "auto-detect",
+      "status": "completed",
+      "confidence": 0.9,
+      "factsExtracted": [
+        {
+          "metric": "revenue",
+          "raw_value": "2071228.67",
+          "normalized_value": 2071228.67,
+          "period": "2025",
+          "currency": "USD",
+          "confidence": 0.95,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "customer_concentration.xlsx",
+            "row_or_cell": "C0001 row, 2025 column",
+            "excerpt": "Elkhorn Property Group, 2025: 2071228.67"
+          }
+        },
+        {
+          "metric": "revenue",
+          "raw_value": "2021469.98",
+          "normalized_value": 2021469.98,
+          "period": "2025",
+          "currency": "USD",
+          "confidence": 0.95,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "customer_concentration.xlsx",
+            "row_or_cell": "C0003 row, 2025 column",
+            "excerpt": "Yarrow Industries, 2025: 2021469.98"
+          }
+        },
+        {
+          "metric": "revenue",
+          "raw_value": "1374501.09",
+          "normalized_value": 1374501.09,
+          "period": "2025",
+          "currency": "USD",
+          "confidence": 0.95,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "customer_concentration.xlsx",
+            "row_or_cell": "C0002 row, 2025 column",
+            "excerpt": "Pinnacle Development Co., 2025: 1374501.09"
+          }
+        }
+      ],
+      "redFlags": [
+        "[\"Top 3 customers (Elkhorn Property Group, Yarrow Industries, Pinnacle Development Co.) account for approximately 49.44% of total 2025 revenue, indicating high customer concentration risk.\",\"Top single customer (Elkhorn Property Group) accounts for 18.73% of 2025 revenue (2071228.67), a significant reliance on one account.\"]"
+      ],
+      "yellowFlags": [
+        "[\"Customer C0007 (Blue Heron Municipal Authority) revenue declined from 422617.52 (2023) to 284259.11 (2025), a downward trend.\",\"Customer C0008 (Quilcene Property Group) revenue declined from 330911.65 (2023) to 220686.55 (2025), a downward trend.\",\"Customer C0011 (Larkspur Logistics) revenue declined from 164504.87 (2023) to 73637.34 (2025), a downward trend.\",\"Customer C0015 (Kingfisher Systems) revenue declined from 83307.24 (2023) to 51229.45 (2025), a downward trend.\",\"Customer C0018 (Kestrel Partners LLC) revenue declined from 65727.72 (2023) to 43917.53 (2025), a downward trend.\"]"
+      ],
+      "greenFlags": [
+        "[\"Customer C0013 (Portage Bay Works) grew significantly from 194722.02 (2023) to 837471.62 (2025), indicating strong customer growth.\",\"Customer C0003 (Yarrow Industries) grew from 1298167.18 (2023) to 2021469.98 (2025), a strong upward trend.\"]"
+      ],
+      "summary": "The document lists 28 customers with revenue contributions across 2023-2025. The top customer (Elkhorn Property Group) represents 18.73% of 2025 revenue and 19.55% in 2023. The top three customers (Elkhorn Property Group, Yarrow Industries, Pinnacle Development Co.) together represented 49.44% of 2025 revenue, 49.63% in 2024, and 48.22% in 2023, indicating material customer concentration risk.",
+      "riskLevel": "Low",
+      "trafficLight": "Green",
+      "modelUsed": "Claude 3.5 Sonnet / n8n Live Pipeline"
+    },
+    {
+      "fileName": "statement_2025-12.pdf",
+      "documentType": "auto-detect",
+      "status": "completed",
+      "confidence": 0.9,
+      "factsExtracted": [
+        {
+          "metric": "cash",
+          "raw_value": "2,259,216",
+          "normalized_value": 2259216,
+          "period": "2025-12-31",
+          "currency": "USD",
+          "confidence": 0.95,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "statement_2025-12.pdf",
+            "page_number": 1,
+            "row_or_cell": "Ending balance",
+            "excerpt": "Ending balance 2,259,216"
+          }
+        }
+      ],
+      "redFlags": [
+        "[]"
+      ],
+      "yellowFlags": [
+        "[\"Document is explicitly labeled as a fictional benchmark/synthetic data document, not a real company or filing.\",\"Transaction detail is summarized by category only",
+        " per-item detail is not provided in this statement.\",\"Single-month bank statement provides limited visibility into broader financial trends or profitability.\"]"
+      ],
+      "greenFlags": [
+        "[\"Positive net cash position with ending balance of $2,259,216.\",\"Deposits ($822,549) exceeded total withdrawals ($872,184) is not the case",
+        " deposits were less than total outflows for the period, but ending balance remains substantial.\"]"
+      ],
+      "summary": "This document is a business checking account statement for Cascadia Climate Services, Inc. covering the period 2025-12-01 to 2025-12-31. It shows customer deposits of $822,549, withdrawals of $763,110 for vendors and payroll, and $109,074 for loan payments, tax payments, and owner distributions, ending with a balance of $2,259,216. The document explicitly states it is a fictional benchmark/synthetic data document, not a real filing.",
+      "riskLevel": "Low",
+      "trafficLight": "Green",
+      "modelUsed": "Claude 3.5 Sonnet / n8n Live Pipeline"
+    },
+    {
+      "fileName": "statement_2025-11.pdf",
+      "documentType": "auto-detect",
+      "status": "completed",
+      "confidence": 0.9,
+      "factsExtracted": [
+        {
+          "metric": "cash",
+          "raw_value": "2,308,851",
+          "normalized_value": 2308851,
+          "period": "2025-11-30",
+          "currency": "USD",
+          "confidence": 0.95,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "statement_2025-11.pdf",
+            "page_number": 1,
+            "row_or_cell": "Ending balance",
+            "excerpt": "Ending balance 2,308,851"
+          }
+        }
+      ],
+      "redFlags": [
+        "[]"
+      ],
+      "yellowFlags": [
+        "[\"Document is a single-month bank statement",
+        " no income statement, balance sheet, or supporting financial statements are included to corroborate cash flow activity.\",\"Transactions are summarized by category only",
+        " per-item detail is not provided in this document.\",\"Document is explicitly marked as a fictional/synthetic benchmark document, not a real filing.\"]"
+      ],
+      "greenFlags": [
+        "[\"Ending balance of $2,308,851 indicates positive cash position at period end.\",\"Deposits ($874,398) exceeded withdrawals plus other payments ($762,752 + $23,734 = $786,486) for the statement period.\"]"
+      ],
+      "summary": "This is a business checking account statement for Cascadia Climate Services, Inc. covering the period 2025-11-01 to 2025-11-30. It shows customer deposits cleared of $874,398, withdrawals for checks/ACH (vendors and payroll) of $762,752, and loan payments/tax payments/owner distributions of $23,734, with an ending balance of $2,308,851. The document is explicitly labeled as a fictional benchmark/synthetic document, not a real filing.",
+      "riskLevel": "Low",
+      "trafficLight": "Green",
+      "modelUsed": "Claude 3.5 Sonnet / n8n Live Pipeline"
+    },
+    {
+      "fileName": "statement_2025-10.pdf",
+      "documentType": "auto-detect",
+      "status": "completed",
+      "confidence": 0.9,
+      "factsExtracted": [
+        {
+          "metric": "cash",
+          "raw_value": "2,220,939",
+          "normalized_value": 2220939,
+          "period": "2025-10-31",
+          "currency": "USD",
+          "confidence": 0.95,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "statement_2025-10.pdf",
+            "page_number": 1,
+            "row_or_cell": "Ending balance",
+            "excerpt": "Ending balance ... 2,220,939"
+          }
+        }
+      ],
+      "redFlags": [
+        "[]"
+      ],
+      "yellowFlags": [
+        "[\"Document explicitly states it is a fictional/synthetic benchmark document, not a real filing.\",\"Per-item transaction detail is not included and is only available on request from the institution, limiting granular verification.\"]"
+      ],
+      "greenFlags": [
+        "[\"Ending balance exceeds monthly withdrawals, indicating positive net cash position for the period.\",\"Deposits ($995,454) exceeded total withdrawals ($818,736 + $23,852 = $842,588) during the statement period.\"]"
+      ],
+      "summary": "This document is a business checking account statement for Cascadia Climate Services, Inc. covering the period 2025-10-01 to 2025-10-31. It shows customer deposits cleared of $995,454, withdrawals for checks/ACH (vendors and payroll) of $818,736, and loan payments/tax payments/owner distributions of $23,852, resulting in an ending balance of $2,220,939. The document is explicitly marked as a fictional benchmark/synthetic dataset.",
+      "riskLevel": "Low",
+      "trafficLight": "Green",
+      "modelUsed": "Claude 3.5 Sonnet / n8n Live Pipeline"
+    },
+    {
+      "fileName": "bank_transactions.csv",
+      "documentType": "auto-detect",
+      "status": "completed",
+      "confidence": 0.9,
+      "factsExtracted": [
+        {
+          "metric": "cash",
+          "raw_value": "1061793.8",
+          "normalized_value": 1061793.8,
+          "period": "2023-01",
+          "currency": "USD",
+          "confidence": 0.85,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "bank_transactions.csv",
+            "page_number": null,
+            "row_or_cell": "2023-01, deposit",
+            "excerpt": "Customer deposits cleared (net of items in transit) 1061793.8"
+          }
+        },
+        {
+          "metric": "cash",
+          "raw_value": "822549.0",
+          "normalized_value": 822549,
+          "period": "2025-12",
+          "currency": "USD",
+          "confidence": 0.85,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "bank_transactions.csv",
+            "page_number": null,
+            "row_or_cell": "2025-12, deposit",
+            "excerpt": "Customer deposits cleared (net of items in transit) 822549.0"
+          }
+        },
+        {
+          "metric": "cash",
+          "raw_value": "-109073.96",
+          "normalized_value": -109073.96,
+          "period": "2025-12",
+          "currency": "USD",
+          "confidence": 0.85,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "bank_transactions.csv",
+            "page_number": null,
+            "row_or_cell": "2025-12, withdrawal",
+            "excerpt": "Loan payments, tax payments and owner distributions -109073.96"
+          }
+        }
+      ],
+      "redFlags": [
+        "[]"
+      ],
+      "yellowFlags": [
+        "[\"Loan payments, tax payments, and owner distributions are aggregated into a single line item with no breakdown, limiting ability to isolate discretionary owner distributions from debt service or tax obligations.\",\"No opening or closing account balances are provided, so absolute cash position cannot be confirmed from this document alone.\",\"Deposits are described as 'net of items in transit,' meaning gross customer billings/collections are not independently verifiable from this data.\",\"No employee, headcount, or entity-name information is present in this document.\"]"
+      ],
+      "greenFlags": [
+        "[\"Deposits and vendor/payroll withdrawals are reported consistently across all 36 months with no gaps in the time series.\",\"Deposits generally exceed vendor/payroll withdrawals in most months, suggesting positive operating cash flow before loan/tax/distribution items in many periods.\"]"
+      ],
+      "summary": "This document is a 36-month bank transaction summary (Jan 2023 - Dec 2025) showing three recurring monthly line items per period: customer deposits cleared (net of items in transit), checks/ACH presented for vendors and payroll, and loan payments/tax payments/owner distributions. Monthly deposits ranged from approximately $618,863 (Feb 2024) to $1,140,755 (Aug 2025), generally trending upward over the period with seasonal fluctuation. Vendor/payroll withdrawals track closely with deposits in most months. Loan payments, tax payments, and owner distributions are combined into a single withdrawal line, ranging from approximately -$23,734 to -$109,782 per month, with no breakdown provided between loan principal, taxes, and owner distributions. No balance sheet, income statement, or headcount data is present in this file.",
+      "riskLevel": "Low",
+      "trafficLight": "Green",
+      "modelUsed": "Claude 3.5 Sonnet / n8n Live Pipeline"
+    },
+    {
+      "fileName": "bank_reconciliation.xlsx",
+      "documentType": "auto-detect",
+      "status": "completed",
+      "confidence": 0.9,
+      "factsExtracted": [
+        {
+          "metric": "cash",
+          "raw_value": "2259216.08",
+          "normalized_value": 2259216.08,
+          "period": "2025-12",
+          "currency": "USD",
+          "confidence": 0.95,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "bank_reconciliation.xlsx",
+            "page_number": null,
+            "row_or_cell": "2025-12, bank_statement_ending_balance",
+            "excerpt": "2025-12\t2259216.08\t24632\t-32055\t2251793.08\t2251793.08\t0"
+          }
+        },
+        {
+          "metric": "cash",
+          "raw_value": "2251793.08",
+          "normalized_value": 2251793.08,
+          "period": "2025-12",
+          "currency": "USD",
+          "confidence": 0.95,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "bank_reconciliation.xlsx",
+            "page_number": null,
+            "row_or_cell": "2025-12, general_ledger_cash_1000",
+            "excerpt": "2025-12\t2259216.08\t24632\t-32055\t2251793.08\t2251793.08\t0"
+          }
+        }
+      ],
+      "redFlags": [
+        "[]"
+      ],
+      "yellowFlags": [
+        "[]"
+      ],
+      "greenFlags": [
+        "[\"All 36 monthly periods (2023-01 through 2025-12) show zero unexplained variance between adjusted bank balance and general ledger cash balance, indicating consistent and well-maintained cash reconciliation controls.\"]"
+      ],
+      "summary": "This document is a monthly bank reconciliation from January 2023 through December 2025, comparing bank statement ending balances to general ledger cash balances after adjusting for deposits in transit and outstanding checks. Across all 36 months, the adjusted bank balance exactly matches the general ledger cash balance, resulting in an unexplained variance of 0 for every period. The most recent period (2025-12) shows a bank statement ending balance of $2,259,216.08 and an adjusted/GL cash balance of $2,251,793.08.",
+      "riskLevel": "Low",
+      "trafficLight": "Green",
+      "modelUsed": "Claude 3.5 Sonnet / n8n Live Pipeline"
+    },
+    {
+      "fileName": "FY2025_form_1120_simulation.pdf",
+      "documentType": "auto-detect",
+      "status": "completed",
+      "confidence": 0.9,
+      "factsExtracted": [
+        {
+          "metric": "revenue",
+          "raw_value": "11,057,939",
+          "normalized_value": 11057939,
+          "period": "FY2025",
+          "currency": "USD",
+          "confidence": 0.98,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "FY2025_form_1120_simulation.pdf",
+            "page_number": 1,
+            "row_or_cell": "Line 1a - Gross receipts or sales",
+            "excerpt": "1a Gross receipts or sales 11,057,939"
+          }
+        },
+        {
+          "metric": "cogs",
+          "raw_value": "6,715,679",
+          "normalized_value": 6715679,
+          "period": "FY2025",
+          "currency": "USD",
+          "confidence": 0.98,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "FY2025_form_1120_simulation.pdf",
+            "page_number": 1,
+            "row_or_cell": "Line 2 - Cost of goods sold",
+            "excerpt": "2 Cost of goods sold (Form 1125-A) 6,715,679"
+          }
+        },
+        {
+          "metric": "gross_profit",
+          "raw_value": "4,342,260",
+          "normalized_value": 4342260,
+          "period": "FY2025",
+          "currency": "USD",
+          "confidence": 0.98,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "FY2025_form_1120_simulation.pdf",
+            "page_number": 1,
+            "row_or_cell": "Line 3 - Gross profit",
+            "excerpt": "3 Gross profit 4,342,260"
+          }
+        },
+        {
+          "metric": "net_income",
+          "raw_value": "564,788",
+          "normalized_value": 564788,
+          "period": "FY2025",
+          "currency": "USD",
+          "confidence": 0.95,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "FY2025_form_1120_simulation.pdf",
+            "page_number": 1,
+            "row_or_cell": "Line 30 - Taxable income",
+            "excerpt": "30 Taxable income 564,788"
+          }
+        },
+        {
+          "metric": "total_assets",
+          "raw_value": "3,889,408",
+          "normalized_value": 3889408,
+          "period": "FY2025",
+          "currency": "USD",
+          "confidence": 0.95,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "FY2025_form_1120_simulation.pdf",
+            "page_number": 1,
+            "row_or_cell": "Total assets end of year",
+            "excerpt": "Total assets end of year 3,889,408"
+          }
+        }
+      ],
+      "redFlags": [
+        "[]"
+      ],
+      "yellowFlags": [
+        "[\"Document explicitly labeled SIMULATION/FICTIONAL/SYNTHETIC and not for filing or reliance - underlying figures are not representative of a real business\",\"Prepared by CPA firm with no audit, review, or compilation performed, per the preparer's statement on page 2\",\"Other deductions include vehicle expenses for 'Owner Vehicles' ($84,000) which may represent a personal/related-party expense add-back consideration\",\"Consulting fees ($240,000) and ERP software implementation costs ($58,000) are included in other deductions and may represent non-recurring or one-time items relevant to normalized earnings\"]"
+      ],
+      "greenFlags": [
+        "[\"Positive taxable income of $564,788 reported for the tax year\",\"Detailed breakdown of other deductions provided in supporting statement\"]"
+      ],
+      "summary": "This is a simulated FY2025 U.S. Corporation Income Tax Return (Form 1120 structure) for Cascadia Climate Services, Inc. The document reports gross receipts of $11,057,939, cost of goods sold of $6,715,679, gross profit of $4,342,260, total deductions of $3,777,472, and taxable income of $564,788. Total tax reported is $118,605. Total assets at year end were $3,889,408. The document explicitly states it is fictional/synthetic and prepared without audit, review, or compilation.",
+      "riskLevel": "Low",
+      "trafficLight": "Green",
+      "modelUsed": "Claude 3.5 Sonnet / n8n Live Pipeline"
+    },
+    {
+      "fileName": "FY2024_form_1120_simulation.pdf",
+      "documentType": "auto-detect",
+      "status": "completed",
+      "confidence": 0.9,
+      "factsExtracted": [
+        {
+          "metric": "revenue",
+          "raw_value": "10,170,614",
+          "normalized_value": 10170614,
+          "period": "FY2024",
+          "currency": "USD",
+          "confidence": 0.95,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "FY2024_form_1120_simulation.pdf",
+            "page_number": 1,
+            "row_or_cell": "Line 1a/1c - Gross receipts or sales / Balance",
+            "excerpt": "Gross receipts or sales 10,170,614"
+          }
+        },
+        {
+          "metric": "cogs",
+          "raw_value": "6,209,849",
+          "normalized_value": 6209849,
+          "period": "FY2024",
+          "currency": "USD",
+          "confidence": 0.95,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "FY2024_form_1120_simulation.pdf",
+            "page_number": 1,
+            "row_or_cell": "Line 2 - Cost of goods sold (Form 1125-A)",
+            "excerpt": "Cost of goods sold (Form 1125-A) 6,209,849"
+          }
+        },
+        {
+          "metric": "gross_profit",
+          "raw_value": "3,960,765",
+          "normalized_value": 3960765,
+          "period": "FY2024",
+          "currency": "USD",
+          "confidence": 0.95,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "FY2024_form_1120_simulation.pdf",
+            "page_number": 1,
+            "row_or_cell": "Line 3 - Gross profit",
+            "excerpt": "Gross profit 3,960,765"
+          }
+        },
+        {
+          "metric": "net_income",
+          "raw_value": "299,794",
+          "normalized_value": 299794,
+          "period": "FY2024",
+          "currency": "USD",
+          "confidence": 0.9,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "FY2024_form_1120_simulation.pdf",
+            "page_number": 1,
+            "row_or_cell": "Line 30 - Taxable income",
+            "excerpt": "Taxable income 299,794"
+          }
+        },
+        {
+          "metric": "total_assets",
+          "raw_value": "3,813,243",
+          "normalized_value": 3813243,
+          "period": "FY2024 year end",
+          "currency": "USD",
+          "confidence": 0.9,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "FY2024_form_1120_simulation.pdf",
+            "page_number": 1,
+            "row_or_cell": "Total assets end of year",
+            "excerpt": "Total assets end of year 3,813,243"
+          }
+        }
+      ],
+      "redFlags": [
+        "[]"
+      ],
+      "yellowFlags": [
+        "[\"Document is explicitly labeled SIMULATION - NOT FOR FILING and contains no real taxpayer data",
+        " findings are illustrative only.\",\"Preparer (Harbor & Vale CPAs PLLC) explicitly states no audit, review, or compilation was performed on the underlying trial balance.\",\"EBITDA/SDE is not explicitly reported in this document",
+        " no adjustments for interest, depreciation, or officer compensation are aggregated into a single EBITDA figure.\"]"
+      ],
+      "greenFlags": [
+        "[\"Taxable income is positive ($299,794) and total tax liability is explicitly stated ($62,957), indicating a profitable filing position for the tax year.\",\"Detailed breakdown of other deductions is provided via Statement 1, supporting transparency of expense composition.\"]"
+      ],
+      "summary": "This document is a simulated FY2024 U.S. Form 1120 corporate tax return for Cascadia Climate Services, Inc. It reports gross receipts of $10,170,614, cost of goods sold of $6,209,849, gross profit/total income of $3,960,765, total deductions of $3,660,971, taxable income of $299,794, and total tax of $62,957. Total assets at year end were $3,813,243. A supporting statement details other deductions of $1,006,333, including insurance, vehicle expenses, consulting fees, professional fees, marketing, and office costs, with adjustments for non-deductible meals/entertainment and penalties. The document explicitly states it is a simulation, not for filing, and was prepared without audit, review, or compilation.",
+      "riskLevel": "Low",
+      "trafficLight": "Green",
+      "modelUsed": "Claude 3.5 Sonnet / n8n Live Pipeline"
+    },
+    {
+      "fileName": "book_tax_reconciliation.xlsx",
+      "documentType": "auto-detect",
+      "status": "completed",
+      "confidence": 0.9,
+      "factsExtracted": [
+        {
+          "metric": "revenue",
+          "raw_value": "9414779",
+          "normalized_value": 9414779,
+          "period": "2023",
+          "currency": "USD",
+          "confidence": 0.95,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "book_tax_reconciliation.xlsx",
+            "page_number": null,
+            "row_or_cell": "tax_year 2023, book_revenue",
+            "excerpt": "book_revenue: 9414779"
+          }
+        },
+        {
+          "metric": "revenue",
+          "raw_value": "10170614",
+          "normalized_value": 10170614,
+          "period": "2024",
+          "currency": "USD",
+          "confidence": 0.95,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "book_tax_reconciliation.xlsx",
+            "page_number": null,
+            "row_or_cell": "tax_year 2024, book_revenue",
+            "excerpt": "book_revenue: 10170614"
+          }
+        },
+        {
+          "metric": "revenue",
+          "raw_value": "11057939",
+          "normalized_value": 11057939,
+          "period": "2025",
+          "currency": "USD",
+          "confidence": 0.95,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "book_tax_reconciliation.xlsx",
+            "page_number": null,
+            "row_or_cell": "tax_year 2025, book_revenue",
+            "excerpt": "book_revenue: 11057939"
+          }
+        },
+        {
+          "metric": "net_income",
+          "raw_value": "132393",
+          "normalized_value": 132393,
+          "period": "2023",
+          "currency": "USD",
+          "confidence": 0.9,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "book_tax_reconciliation.xlsx",
+            "page_number": null,
+            "row_or_cell": "tax_year 2023, book_income_before_tax",
+            "excerpt": "book_income_before_tax: 132393"
+          }
+        },
+        {
+          "metric": "net_income",
+          "raw_value": "362792",
+          "normalized_value": 362792,
+          "period": "2024",
+          "currency": "USD",
+          "confidence": 0.9,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "book_tax_reconciliation.xlsx",
+            "page_number": null,
+            "row_or_cell": "tax_year 2024, book_income_before_tax",
+            "excerpt": "book_income_before_tax: 362792"
+          }
+        },
+        {
+          "metric": "net_income",
+          "raw_value": "622984",
+          "normalized_value": 622984,
+          "period": "2025",
+          "currency": "USD",
+          "confidence": 0.9,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "book_tax_reconciliation.xlsx",
+            "page_number": null,
+            "row_or_cell": "tax_year 2025, book_income_before_tax",
+            "excerpt": "book_income_before_tax: 622984"
+          }
+        }
+      ],
+      "redFlags": [
+        "[]"
+      ],
+      "yellowFlags": [
+        "[\"Document contains only book-to-tax reconciliation data",
+        " no balance sheet, cash flow, or supporting schedules provided to corroborate figures.\"]"
+      ],
+      "greenFlags": [
+        "[\"Book revenue and book income before tax increase consistently across 2023, 2024, and 2025.\",\"Federal tax calculation at 21% is consistently applied and appears arithmetically aligned with taxable income per return.\"]"
+      ],
+      "summary": "The document is a book-to-tax reconciliation covering tax years 2023-2025, showing book revenue, book income before tax, standard tax adjustments (meals/entertainment, penalties, tax depreciation differences), taxable income per return, and federal tax at 21%. Revenue and book income grow year over year across the three periods, with no internal inconsistencies noted.",
+      "riskLevel": "Low",
+      "trafficLight": "Green",
+      "modelUsed": "Claude 3.5 Sonnet / n8n Live Pipeline"
+    },
+    {
+      "fileName": "seller_adjusted_ebitda_bridge.xlsx",
+      "documentType": "auto-detect",
+      "status": "completed",
+      "confidence": 0.85,
+      "factsExtracted": [
+        {
+          "metric": "ebitda_sde",
+          "raw_value": "1085904",
+          "normalized_value": 1085904,
+          "period": "TTM ended 2025-12",
+          "currency": "USD",
+          "confidence": 0.9,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "seller_adjusted_ebitda_bridge.xlsx",
+            "page_number": null,
+            "row_or_cell": "EBITDA per financial statements (TTM ended 2025-12)",
+            "excerpt": "EBITDA per financial statements (TTM ended 2025-12) 1085904 Per attached monthly P&L"
+          }
+        },
+        {
+          "metric": "ebitda_sde",
+          "raw_value": "1592904",
+          "normalized_value": 1592904,
+          "period": "TTM ended 2025-12",
+          "currency": "USD",
+          "confidence": 0.75,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "seller_adjusted_ebitda_bridge.xlsx",
+            "page_number": null,
+            "row_or_cell": "Seller's Adjusted EBITDA",
+            "excerpt": "Seller's Adjusted EBITDA 1592904 Management's representation - unaudited"
+          }
+        }
+      ],
+      "redFlags": [
+        "[]"
+      ],
+      "yellowFlags": [
+        "[\"Seller's Adjusted EBITDA is explicitly labeled 'Management's representation - unaudited', indicating no independent verification of add-backs.\",\"Add-backs total $507,000, representing a 46.69% increase over EBITDA per financial statements, which is a significant adjustment relative to the base figure.\",\"One-time strategic consulting ($240,000) and ERP implementation project ($58,000) are labeled non-recurring but no supporting documentation or invoices are provided in this file to substantiate the amounts or timing.\"]"
+      ],
+      "greenFlags": [
+        "[]"
+      ],
+      "summary": "Document is a seller-prepared, unaudited EBITDA bridge reconciling reported EBITDA per financial statements (TTM ended 2025-12) of $1,085,904 to a Seller's Adjusted EBITDA of $1,592,904 via four add-backs totaling $507,000: owner vehicle/personal fleet expense ($84,000), one-time strategic consulting ($240,000), ERP implementation project ($58,000), and excess owner compensation ($125,000). All add-backs are characterized by the seller as non-recurring or owner-discretionary and are management's unaudited representation.",
+      "riskLevel": "Low",
+      "trafficLight": "Green",
+      "modelUsed": "Claude 3.5 Sonnet / n8n Live Pipeline"
+    },
+    {
+      "fileName": "management_qa.pdf",
+      "documentType": "auto-detect",
+      "status": "completed",
+      "confidence": 0.85,
+      "factsExtracted": [],
+      "redFlags": [
+        "[\"Financial statements have never been audited or reviewed (Q2) - all figures are internally prepared and unverified.\",\"Requested payroll tax filings and workers' compensation loss runs are not yet in the data room (Q9), representing a missing critical compliance document.\",\"Owner's personal vehicle expenses (account 6410) are run through company books and will be removed at close (Q11), indicating non-operating costs embedded in historical financials.\",\"EBITDA bridge add-backs and consulting/advisory fee non-recurrence are supported only by management assertion, not third-party documentation, despite management claiming support exists (Q3, Q10).\"]"
+      ],
+      "yellowFlags": [
+        "[\"Ownership is concentrated 100% in founder and spouse with no outside investors (Q1) - key-person/succession risk.\",\"Revenue recognition policy is invoicing upon work-order closure, which may not align with accrual-based GAAP timing (Q6).\",\"Maintenance capex is described qualitatively as 'very little' with no dollar figure provided (Q8).\",\"Customer contract renews annually via MSA with no long-term protections disclosed (Q4).\"]"
+      ],
+      "greenFlags": [
+        "[\"Management states no material related-party transactions in the last three years (Q5).\",\"Management states no outstanding contingent liabilities, disputes, or regulatory matters known (Q7).\"]"
+      ],
+      "summary": "This document is a management Q&A log responding to buyer diligence requests for Cascadia Climate Services, Inc. Management discloses that financial statements are internally prepared and have never been audited or reviewed. Several add-backs and expense classifications (owner vehicle expenses, consulting fees, EBITDA bridge adjustments) rely solely on management's unverified assertions. Revenue is recognized on invoicing at work-order closure rather than a stated accrual policy detail. Payroll tax filings and workers' compensation loss runs are explicitly stated as not yet available in the data room. No related-party transactions, contingent liabilities, or disputes were disclosed by management, though these are self-reported and unverified.",
+      "riskLevel": "Low",
+      "trafficLight": "Green",
+      "modelUsed": "Claude 3.5 Sonnet / n8n Live Pipeline"
+    },
+    {
+      "fileName": "confidential_information_memorandum.pdf",
+      "documentType": "auto-detect",
+      "status": "completed",
+      "confidence": 0.9,
+      "factsExtracted": [
+        {
+          "metric": "revenue",
+          "raw_value": "9,414,779",
+          "normalized_value": 9414779,
+          "period": "FY2023",
+          "currency": "USD",
+          "confidence": 0.95,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "confidential_information_memorandum.pdf",
+            "page_number": 1,
+            "row_or_cell": "Revenue, FY2023",
+            "excerpt": "Revenue 9,414,779"
+          }
+        },
+        {
+          "metric": "revenue",
+          "raw_value": "10,170,614",
+          "normalized_value": 10170614,
+          "period": "FY2024",
+          "currency": "USD",
+          "confidence": 0.95,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "confidential_information_memorandum.pdf",
+            "page_number": 1,
+            "row_or_cell": "Revenue, FY2024",
+            "excerpt": "Revenue 10,170,614"
+          }
+        },
+        {
+          "metric": "revenue",
+          "raw_value": "11,057,939",
+          "normalized_value": 11057939,
+          "period": "FY2025",
+          "currency": "USD",
+          "confidence": 0.95,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "confidential_information_memorandum.pdf",
+            "page_number": 1,
+            "row_or_cell": "Revenue, FY2025",
+            "excerpt": "Revenue 11,057,939"
+          }
+        },
+        {
+          "metric": "gross_profit",
+          "raw_value": "3,651,670",
+          "normalized_value": 3651670,
+          "period": "FY2023",
+          "currency": "USD",
+          "confidence": 0.95,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "confidential_information_memorandum.pdf",
+            "page_number": 1,
+            "row_or_cell": "Gross profit, FY2023",
+            "excerpt": "Gross profit 3,651,670"
+          }
+        },
+        {
+          "metric": "gross_profit",
+          "raw_value": "3,960,765",
+          "normalized_value": 3960765,
+          "period": "FY2024",
+          "currency": "USD",
+          "confidence": 0.95,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "confidential_information_memorandum.pdf",
+            "page_number": 1,
+            "row_or_cell": "Gross profit, FY2024",
+            "excerpt": "Gross profit 3,960,765"
+          }
+        },
+        {
+          "metric": "gross_profit",
+          "raw_value": "4,342,260",
+          "normalized_value": 4342260,
+          "period": "FY2025",
+          "currency": "USD",
+          "confidence": 0.95,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "confidential_information_memorandum.pdf",
+            "page_number": 1,
+            "row_or_cell": "Gross profit, FY2025",
+            "excerpt": "Gross profit 4,342,260"
+          }
+        },
+        {
+          "metric": "ebitda_sde",
+          "raw_value": "629,277",
+          "normalized_value": 629277,
+          "period": "FY2023",
+          "currency": "USD",
+          "confidence": 0.95,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "confidential_information_memorandum.pdf",
+            "page_number": 1,
+            "row_or_cell": "EBITDA (as reported), FY2023",
+            "excerpt": "EBITDA (as reported) 629,277"
+          }
+        },
+        {
+          "metric": "ebitda_sde",
+          "raw_value": "842,695",
+          "normalized_value": 842695,
+          "period": "FY2024",
+          "currency": "USD",
+          "confidence": 0.95,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "confidential_information_memorandum.pdf",
+            "page_number": 1,
+            "row_or_cell": "EBITDA (as reported), FY2024",
+            "excerpt": "EBITDA (as reported) 842,695"
+          }
+        },
+        {
+          "metric": "ebitda_sde",
+          "raw_value": "1,085,904",
+          "normalized_value": 1085904,
+          "period": "FY2025",
+          "currency": "USD",
+          "confidence": 0.95,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "confidential_information_memorandum.pdf",
+            "page_number": 1,
+            "row_or_cell": "EBITDA (as reported), FY2025",
+            "excerpt": "EBITDA (as reported) 1,085,904"
+          }
+        },
+        {
+          "metric": "ebitda_sde",
+          "raw_value": "1,592,904",
+          "normalized_value": 1592904,
+          "period": "TTM ended 31-Dec-2025",
+          "currency": "USD",
+          "confidence": 0.9,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "confidential_information_memorandum.pdf",
+            "page_number": 1,
+            "row_or_cell": "Seller's Adjusted EBITDA",
+            "excerpt": "Seller's Adjusted EBITDA (TTM ended 31-Dec-2025): $1,592,904."
+          }
+        },
+        {
+          "metric": "net_income",
+          "raw_value": "104,590",
+          "normalized_value": 104590,
+          "period": "FY2023",
+          "currency": "USD",
+          "confidence": 0.95,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "confidential_information_memorandum.pdf",
+            "page_number": 1,
+            "row_or_cell": "Net income, FY2023",
+            "excerpt": "Net income 104,590"
+          }
+        },
+        {
+          "metric": "net_income",
+          "raw_value": "286,606",
+          "normalized_value": 286606,
+          "period": "FY2024",
+          "currency": "USD",
+          "confidence": 0.95,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "confidential_information_memorandum.pdf",
+            "page_number": 1,
+            "row_or_cell": "Net income, FY2024",
+            "excerpt": "Net income 286,606"
+          }
+        },
+        {
+          "metric": "net_income",
+          "raw_value": "492,157",
+          "normalized_value": 492157,
+          "period": "FY2025",
+          "currency": "USD",
+          "confidence": 0.95,
+          "status": "confirmed",
+          "citation": {
+            "source_file": "confidential_information_memorandum.pdf",
+            "page_number": 1,
+            "row_or_cell": "Net income, FY2025",
+            "excerpt": "Net income 492,157"
+          }
+        }
+      ],
+      "redFlags": [
+        "[]"
+      ],
+      "yellowFlags": [
+        "[\"Seller's Adjusted EBITDA of $1,592,904 (TTM ended 31-Dec-2025) is materially higher than as-reported EBITDA of $1,085,904 for FY2025, and the adjustment bridge is not included in this document.\",\"Top two customers (Elkhorn Property Group at 18.7% and Yarrow Industries at 18.3%) together represent approximately 37% of FY2025 revenue, contradicting management's characterization of the customer base as well diversified.\",\"Management states seasonality drives a working-capital swing, and that technician recruiting constrains install throughput.\",\"All figures are unaudited and prepared by management",
+        " document has not been reviewed or audited by an independent accounting firm.\",\"Employee headcount is not disclosed in this document.\"]"
+      ],
+      "greenFlags": [
+        "[\"Revenue grew each year from FY2023 ($9,414,779) to FY2025 ($11,057,939).\",\"EBITDA margin improved from 6.7% in FY2023 to 9.8% in FY2025.\",\"Net income grew from $104,590 in FY2023 to $492,157 in FY2025.\",\"Owner is willing to support a transition period per management disclosure.\"]"
+      ],
+      "summary": "This Confidential Information Memorandum for Cascadia Climate Services, Inc., a fictional Puget Sound HVAC contractor, presents unaudited historical financials for FY2023-FY2025 showing revenue growth from $9.41M to $11.06M and EBITDA (as reported) growth from $629K to $1.09M. A seller-adjusted TTM EBITDA of $1,592,904 is referenced but the adjustment bridge is not included in this document. Customer concentration is notable: the top two customers account for approximately 37% of FY2025 revenue, despite management's assertion that the customer base is well diversified.",
+      "riskLevel": "Low",
+      "trafficLight": "Green",
+      "modelUsed": "Claude 3.5 Sonnet / n8n Live Pipeline"
+    }
+  ]
+}

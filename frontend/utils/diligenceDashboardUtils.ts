@@ -86,6 +86,21 @@ export function calculateDocumentCost(doc?: Partial<SubmissionHistoryItem> | nul
     return calculated > 0 ? calculated : 0.0018
 }
 
+export function isDocumentCostEstimated(doc?: Partial<SubmissionHistoryItem> | null): boolean {
+    if (!doc) return true
+    return !(typeof doc.costUsd === 'number' && doc.costUsd > 0)
+}
+
+export function formatDocumentCostDisplay(doc?: Partial<SubmissionHistoryItem> | null): { formatted: string; isEstimate: boolean; rawCost: number } {
+    const cost = calculateDocumentCost(doc)
+    const isEstimate = isDocumentCostEstimated(doc)
+    return {
+        formatted: isEstimate ? `Est. $${cost.toFixed(4)}` : `$${cost.toFixed(4)}`,
+        isEstimate,
+        rawCost: cost,
+    }
+}
+
 export function calculateBatchTotalCost(docs: Partial<SubmissionHistoryItem>[]): number {
     if (!docs || docs.length === 0) return 0.0072
     return docs.reduce((sum, doc) => sum + calculateDocumentCost(doc), 0)
