@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import { Archive, ArchiveRestore, Bot, BriefcaseBusiness, CheckCircle, Clock3, Cpu, DollarSign, Download, FileStack, Flag, FolderKanban, Layers, Plus, RefreshCw, Search, ShieldAlert, TriangleAlert } from 'lucide-react'
+import { Archive, ArchiveRestore, Bot, BriefcaseBusiness, CheckCircle, Clock3, Cpu, DollarSign, Download, FileStack, FileText, Flag, FolderKanban, Layers, Plus, RefreshCw, Search, ShieldAlert, Sparkles, TriangleAlert } from 'lucide-react'
 import ExpandableText from './ExpandableText'
 
 import { Badge } from '../lib/shadcn/badge'

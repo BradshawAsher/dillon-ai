@@ -353,18 +353,6 @@ export function isRowMatchingProject(row: SubmissionHistoryItem, targetProjectId
     return false
 }
 
-function getDisplayTimestamp(row: SubmissionHistoryItem) {
-    return row.processedAt || row.processingStartedAt || row.receivedAt || row.updatedAt || row.createdAt || row.triggerTimestamp
-}
-
-function getTimestampValue(value: string) {
-    if (value.length === 0) {
-        return 0
-    }
-
-    const parsed = Date.parse(value)
-    return Number.isNaN(parsed) ? 0 : parsed
-}
 
 function inferTypeFromFileName(fileName: string) {
     const name = normalizeText(fileName)
