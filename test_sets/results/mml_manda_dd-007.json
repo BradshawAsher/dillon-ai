@@ -1,0 +1,59 @@
+{
+  "business": "Bitterroot Food Group, Inc. (Specialty Food Manufacturing & Co-Packing)",
+  "projectId": "mml-dd-007-bitterroot-food-group--inc-",
+  "evaluatedAt": "2026-08-11T01:52:39.976Z",
+  "documents": [
+    {
+      "fileName": "DD-007_Bitterroot_Food_Group__Inc__due_diligence_packet.pdf",
+      "modelUsed": "Gemini 3.1 Flash Lite",
+      "status": "completed",
+      "detectedDocumentType": "Quality of Earnings Report",
+      "trafficLight": "RED",
+      "riskLevel": "HIGH",
+      "confidence": 0.94,
+      "extractedFacts": [
+        {
+          "metric": "revenue",
+          "normalizedValue": 14325332,
+          "period": "TTM",
+          "rawValue": "$14,325,332"
+        },
+        {
+          "metric": "ebitda",
+          "normalizedValue": 1561714,
+          "period": "TTM",
+          "rawValue": "$1,561,714"
+        },
+        {
+          "metric": "adjusted_ebitda",
+          "normalizedValue": 1687702,
+          "period": "TTM",
+          "rawValue": "$1,687,702"
+        }
+      ],
+      "redFlags": [
+        "Commodity hedging loss - non-recurring: Unsupported. Account 6730 posts a loss in all 36 months. Hedging is a permanent feature of a business that buys agricultural inputs on floating prices, and the cost of the programme is an operating cost.",
+        "Inventory obsolescence write-off - one-time: Largely unsupported. Write-offs recur every month. Only the $41,000 November 2025 spike above the trailing run rate is genuinely unusual; the remaining $83,000 is normal shrink and short-code loss.",
+        "Customer concentration: Largest customer, Ravenna Foods Inc., is 23.4% of FY2025 revenue; top 5 are 84.2%."
+      ],
+      "yellowFlags": [
+        "Family members on payroll: Partially supportable. Three family members are on payroll; two hold no operating role and their $119,000 of combined compensation is a genuine add-back. The third runs the co-packing schedule and must be replaced.",
+        "SQF food-safety certification project: Fully supportable. Initial SQF certification is a discrete project, and the ledger shows activity only in February and May 2025.",
+        "Unrecorded accrued PTO liability (buyer adjustment): Buyer-identified downward adjustment of $88,000. Account 2200 shows no movement consistent with a PTO accrual, so earned but untaken leave is being expensed only when taken. Run-rate EBITDA must absorb the accrual.",
+        "Seasonality and net working capital swing: FY2025 monthly EBITDA ranges from $48,247 to $187,721; cash ranges from $11,327,571 to $16,867,169. The NWC peg must be set on a 12-month average, not a period-end snapshot."
+      ],
+      "greenFlags": [
+        "Verified TTM Revenue of $14.33M across VDR financials.",
+        "Reported TTM EBITDA of $1.56M reconciled against tax returns and bank statements."
+      ],
+      "valuation": {
+        "valuationLowerBound": 5906957,
+        "valuationBaseEstimate": 7594659,
+        "valuationUpperBound": 9282361,
+        "askingPrice": 10588570,
+        "currency": "USD"
+      },
+      "mathCheckPassed": true
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "fileName": "DD-014_Alpine_Bloom_Landscape___Facilities__Inc__due_diligence_packet.pdf",
+  "business": "Alpine Bloom Landscape & Facilities, Inc. (Commercial Landscaping, Irrigation & Snow Removal)",
+  "fileType": "PDF",
+  "groundTruth": {
+    "documentType": "Due Diligence Data Room Packet",
+    "documentTypes": [
+      "Profit and Loss Statement",
+      "Quality of Earnings Report",
+      "Balance Sheet"
+    ],
+    "trafficLight": "RED",
+    "riskLevel": "HIGH",
+    "financialFacts": [
+      {
+        "metric": "revenue",
+        "normalizedValue": 9472609,
+        "period": "TTM",
+        "rawValue": "$9,472,609"
+      },
+      {
+        "metric": "ebitda",
+        "normalizedValue": 1625603,
+        "period": "TTM",
+        "rawValue": "$1,625,603"
+      },
+      {
+        "metric": "adjusted_ebitda",
+        "normalizedValue": 1754551,
+        "period": "TTM",
+        "rawValue": "$1,754,551"
+      }
+    ],
+    "expectedRedFlags": [
+      "Related-party equipment lease above market: Partially supportable. The equipment is leased from an entity the owner controls. Only the above-market element of roughly $92,000 is a genuine adjustment; the buyer still has to pay a market rate for mowers, loaders and plow trucks it needs to operate.",
+      "Heavy winter overtime claimed as non-recurring: Unsupported. Snow is the business. The seller adds back overtime from a heavy winter while keeping all of the snow revenue that overtime generated, which is a one-sided normalisation.",
+      "Loss of Selkirk Health portfolio (buyer adjustment): Buyer-identified downward adjustment. Management discloses in the Q&A that its largest grounds-maintenance customer gave notice of non-renewal after the TTM period closed. The roughly $171,000 of contribution that account carried is not in the forward business and must come out of the number a buyer capitalises."
+    ],
+    "expectedYellowFlags": [
+      "Owner compensation above market: Partially supportable. About $146,000 of the $222,000 claim exceeds the cost of an operations manager and an estimator to cover the owner's role.",
+      "Fleet telematics rollout: Fully supportable. A discrete two-month installation with no other activity in the account across the three-year ledger.",
+      "Customer concentration: Largest customer, Blue Heron Development Co., is 15.8% of FY2025 revenue; top 5 are 62.8%.",
+      "Seasonality and net working capital swing: FY2025 monthly EBITDA ranges from $-38,415 to $223,052; cash ranges from $2,722,435 to $3,636,021. The NWC peg must be set on a 12-month average, not a period-end snapshot."
+    ],
+    "falsePositiveFlags": [],
+    "missedFlags": [],
+    "valuation": {
+      "valuationLowerBound": 6140928.5,
+      "valuationBaseEstimate": 7895479.5,
+      "valuationUpperBound": 9650030.5,
+      "askingPrice": 11362015,
+      "currency": "USD"
+    },
+    "expectedMathCheckStatus": "passed",
+    "notes": "MML M&A Benchmark Deal DD-014: Alpine Bloom Landscape & Facilities, Inc. (Commercial Landscaping, Irrigation & Snow Removal). Seller claims $2.27M EBITDA vs $1.75M buyer-supported ($518k overstatement).",
+    "expectedRecommendation": "PROCEED WITH REPRICE"
+  }
+}

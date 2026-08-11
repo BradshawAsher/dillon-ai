@@ -1,0 +1,55 @@
+{
+  "fileName": "DD-005_Juniper_Environmental_Group__Inc__due_diligence_packet.pdf",
+  "business": "Juniper Environmental Group, Inc. (Environmental Remediation & Site Services)",
+  "fileType": "PDF",
+  "groundTruth": {
+    "documentType": "Due Diligence Data Room Packet",
+    "documentTypes": [
+      "Profit and Loss Statement",
+      "Quality of Earnings Report",
+      "Balance Sheet"
+    ],
+    "trafficLight": "RED",
+    "riskLevel": "HIGH",
+    "financialFacts": [
+      {
+        "metric": "revenue",
+        "normalizedValue": 13903524,
+        "period": "TTM",
+        "rawValue": "$13,903,524"
+      },
+      {
+        "metric": "ebitda",
+        "normalizedValue": 1548306,
+        "period": "TTM",
+        "rawValue": "$1,548,306"
+      },
+      {
+        "metric": "adjusted_ebitda",
+        "normalizedValue": 1548306,
+        "period": "TTM",
+        "rawValue": "$1,548,306"
+      }
+    ],
+    "expectedRedFlags": [
+      "'One-time' consulting and advisory: Unsupported and related-party. Level monthly payments across all 36 months to an entity affiliated with the seller's family.",
+      "Undisclosed related-party equipment rent: Disclosure failure, not an add-back. $216,000/yr of equipment rent is paid to an owner-affiliated entity and was not disclosed in the CIM.",
+      "Customer concentration: Largest customer, Quilcene Distribution, is 26.9% of FY2025 revenue; top 5 are 85.1%."
+    ],
+    "expectedYellowFlags": [
+      "Seasonality and net working capital swing: FY2025 monthly EBITDA ranges from $51,040 to $194,086; cash ranges from $1,670,645 to $2,265,875. The NWC peg must be set on a 12-month average, not a period-end snapshot."
+    ],
+    "falsePositiveFlags": [],
+    "missedFlags": [],
+    "valuation": {
+      "valuationLowerBound": 5419071,
+      "valuationBaseEstimate": 6967377,
+      "valuationUpperBound": 8515683,
+      "askingPrice": 9391530,
+      "currency": "USD"
+    },
+    "expectedMathCheckStatus": "passed",
+    "notes": "MML M&A Benchmark Deal DD-005: Juniper Environmental Group, Inc. (Environmental Remediation & Site Services). Seller claims $1.88M EBITDA vs $1.55M buyer-supported ($330k overstatement).",
+    "expectedRecommendation": "WALK AWAY / RESTRUCTURE"
+  }
+}

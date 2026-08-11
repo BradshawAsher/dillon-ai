@@ -1,0 +1,59 @@
+{
+  "business": "Harborview Dental Partners, LLC (Multi-Site Dental Group (4 clinics))",
+  "projectId": "mml-dd-006-harborview-dental-partners--llc",
+  "evaluatedAt": "2026-08-11T01:52:39.973Z",
+  "documents": [
+    {
+      "fileName": "DD-006_Harborview_Dental_Partners__LLC_due_diligence_packet.pdf",
+      "modelUsed": "Claude 3.5 Sonnet",
+      "status": "completed",
+      "detectedDocumentType": "Quality of Earnings Report",
+      "trafficLight": "RED",
+      "riskLevel": "HIGH",
+      "confidence": 0.94,
+      "extractedFacts": [
+        {
+          "metric": "revenue",
+          "normalizedValue": 18643514,
+          "period": "TTM",
+          "rawValue": "$18,643,514"
+        },
+        {
+          "metric": "ebitda",
+          "normalizedValue": 1951378,
+          "period": "TTM",
+          "rawValue": "$1,951,378"
+        },
+        {
+          "metric": "adjusted_ebitda",
+          "normalizedValue": 2417578,
+          "period": "TTM",
+          "rawValue": "$2,417,578"
+        }
+      ],
+      "redFlags": [
+        "Owner-dentist compensation above market: Partially supportable. The two owner-dentists produce clinically and must be replaced by associates at market rates. Only $180,000 of the $310,000 claim exceeds the cost of replacement associate coverage.",
+        "De novo clinic start-up losses (Silverdale): Partially supportable. The Silverdale clinic opened in month 4 of FY2024 and is still EBITDA-negative in the most recent quarter. Only the genuine pre-opening costs of roughly $102,000 are non-recurring; the balance is ongoing operating loss.",
+        "De novo launch marketing campaign: Unsupported. Management describes this as a one-time launch campaign, but account 6610 posts in all 36 months at a steady rate. This is ordinary patient-acquisition cost for a growth-oriented group.",
+        "Customer concentration: Largest customer, Quarry School District, is 23.5% of FY2025 revenue; top 5 are 79.7%."
+      ],
+      "yellowFlags": [
+        "Practice-management software conversion: Fully supportable. A discrete two-month conversion in March and April 2025 with no prior-period or subsequent activity in the account.",
+        "Associate separation settlement (not on seller bridge): Buyer-identified add-back in the SELLER's favour. A single $96,000 settlement and separation payment in August 2025 is genuinely non-recurring, and the seller omitted it from its own bridge. Supported adjusted EBITDA should be increased by $96,000.",
+        "Seasonality and net working capital swing: FY2025 monthly EBITDA ranges from $101,781 to $221,596; cash ranges from $1,836,634 to $2,499,377. The NWC peg must be set on a 12-month average, not a period-end snapshot."
+      ],
+      "greenFlags": [
+        "Verified TTM Revenue of $18.64M across VDR financials.",
+        "Reported TTM EBITDA of $1.95M reconciled against tax returns and bank statements."
+      ],
+      "valuation": {
+        "valuationLowerBound": 8461523,
+        "valuationBaseEstimate": 10879101,
+        "valuationUpperBound": 13296679,
+        "askingPrice": 13686890,
+        "currency": "USD"
+      },
+      "mathCheckPassed": true
+    }
+  ]
+}

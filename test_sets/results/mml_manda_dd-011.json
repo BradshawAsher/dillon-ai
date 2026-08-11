@@ -1,0 +1,59 @@
+{
+  "business": "Ridgeline Staffing Partners, Inc. (Light-Industrial & Skilled-Trades Staffing)",
+  "projectId": "mml-dd-011-ridgeline-staffing-partners--inc-",
+  "evaluatedAt": "2026-08-11T01:52:39.986Z",
+  "documents": [
+    {
+      "fileName": "DD-011_Ridgeline_Staffing_Partners__Inc__due_diligence_packet.pdf",
+      "modelUsed": "Gemini 3.1 Flash Lite",
+      "status": "completed",
+      "detectedDocumentType": "Quality of Earnings Report",
+      "trafficLight": "RED",
+      "riskLevel": "HIGH",
+      "confidence": 0.94,
+      "extractedFacts": [
+        {
+          "metric": "revenue",
+          "normalizedValue": 17056251,
+          "period": "TTM",
+          "rawValue": "$17,056,251"
+        },
+        {
+          "metric": "ebitda",
+          "normalizedValue": 1455110,
+          "period": "TTM",
+          "rawValue": "$1,455,110"
+        },
+        {
+          "metric": "adjusted_ebitda",
+          "normalizedValue": 1645104,
+          "period": "TTM",
+          "rawValue": "$1,645,104"
+        }
+      ],
+      "redFlags": [
+        "Owner compensation above market: Partially supportable. The owner runs sales for the two largest accounts and would have to be replaced by a branch president and a senior recruiter. Only about $168,000 of the $306,000 claim exceeds the cost of that replacement team.",
+        "Subcontracted recruiting support (claimed one-time): Unsupported. Management presents this as a temporary bridge during a hiring gap, but account 6460 posts in all 36 months at a steady rate and is still running in December 2025.",
+        "Workers' compensation accrual shortfall (buyer adjustment): Buyer-identified downward adjustment. Workers' compensation expense in account 6120 has been held essentially flat for three years while revenue and field headcount grew 25%. Normalising the accrual to the current experience modifier and payroll base reduces supported adjusted EBITDA by roughly $162,000.",
+        "Customer concentration: Largest customer, Cedar Municipal Authority, is 21.8% of FY2025 revenue; top 5 are 66.7%."
+      ],
+      "yellowFlags": [
+        "Applicant tracking system implementation: Fully supportable. A discrete two-month implementation in May and June 2025 with no activity in the account in any other month.",
+        "Tri-Cities branch closure severance: Fully supportable. One posting in February 2025 tied to the closure of a single branch, with no recurrence in the ten months since.",
+        "Seasonality and net working capital swing: FY2025 monthly EBITDA ranges from $-26,602 to $209,610; cash ranges from $2,432,917 to $3,107,714. The NWC peg must be set on a 12-month average, not a period-end snapshot."
+      ],
+      "greenFlags": [
+        "Verified TTM Revenue of $17.06M across VDR financials.",
+        "Reported TTM EBITDA of $1.46M reconciled against tax returns and bank statements."
+      ],
+      "valuation": {
+        "valuationLowerBound": 5757864,
+        "valuationBaseEstimate": 7402968,
+        "valuationUpperBound": 9048072,
+        "askingPrice": 10577550,
+        "currency": "USD"
+      },
+      "mathCheckPassed": true
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "business": "Quarry Ridge Plastics, Inc. (Injection Moulding & Contract Manufacturing)",
+  "projectId": "mml-dd-015-quarry-ridge-plastics--inc-",
+  "evaluatedAt": "2026-08-11T01:52:39.995Z",
+  "documents": [
+    {
+      "fileName": "DD-015_Quarry_Ridge_Plastics__Inc__due_diligence_packet.pdf",
+      "modelUsed": "Gemini 3.1 Flash Lite",
+      "status": "completed",
+      "detectedDocumentType": "Quality of Earnings Report",
+      "trafficLight": "RED",
+      "riskLevel": "HIGH",
+      "confidence": 0.94,
+      "extractedFacts": [
+        {
+          "metric": "revenue",
+          "normalizedValue": 13392596,
+          "period": "TTM",
+          "rawValue": "$13,392,596"
+        },
+        {
+          "metric": "ebitda",
+          "normalizedValue": 1330993,
+          "period": "TTM",
+          "rawValue": "$1,330,993"
+        },
+        {
+          "metric": "adjusted_ebitda",
+          "normalizedValue": 1503957,
+          "period": "TTM",
+          "rawValue": "$1,503,957"
+        }
+      ],
+      "redFlags": [
+        "One-time tooling and NRE revenue treated as recurring (buyer adjustment): Buyer-identified downward adjustment. Segment 4200 carries tooling and non-recurring engineering revenue earned once at the start of a programme. FY2025 included an unusually heavy tooling year, and roughly $138,000 of contribution will not repeat unless equivalent new programmes are won.",
+        "Customer concentration: Largest customer, Glacier Point Fabrication, is 24.0% of FY2025 revenue; top 5 are 72.9%."
+      ],
+      "yellowFlags": [
+        "Owner compensation above market: Partially supportable. About $198,000 of the $282,000 claim exceeds the cost of a plant manager to replace the owner's operating role.",
+        "Obsolete resin and finished-goods write-off: Partially supportable. A write-off occurs in this business most years. The FY2025 charge is larger than usual, so only the excess over the normal run-rate of roughly $59,000 is a genuine one-time item.",
+        "Resin commodity hedging loss: Unsupported. Account 6730 posts every month for three years. A standing hedging programme against resin price exposure is an ordinary and continuing cost of operating a moulding business.",
+        "Environmental permitting and stormwater compliance: Fully supportable. A discrete permit renewal and stormwater study in September and October 2025 with no other activity in the account.",
+        "Seasonality and net working capital swing: FY2025 monthly EBITDA ranges from $-50,229 to $165,348; cash ranges from $8,730,478 to $12,323,057. The NWC peg must be set on a 12-month average, not a period-end snapshot."
+      ],
+      "greenFlags": [
+        "Verified TTM Revenue of $13.39M across VDR financials.",
+        "Reported TTM EBITDA of $1.33M reconciled against tax returns and bank statements."
+      ],
+      "valuation": {
+        "valuationLowerBound": 5263849.5,
+        "valuationBaseEstimate": 6767806.5,
+        "valuationUpperBound": 8271763.5,
+        "askingPrice": 10775965,
+        "currency": "USD"
+      },
+      "mathCheckPassed": true
+    }
+  ]
+}

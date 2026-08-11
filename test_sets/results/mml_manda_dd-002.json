@@ -1,0 +1,58 @@
+{
+  "business": "Northstar Industrial Supply, LLC (Specialty Industrial Distribution (fasteners & fluid power))",
+  "projectId": "mml-dd-002-northstar-industrial-supply--llc",
+  "evaluatedAt": "2026-08-11T01:52:39.964Z",
+  "documents": [
+    {
+      "fileName": "DD-002_Northstar_Industrial_Supply__LLC_due_diligence_packet.pdf",
+      "modelUsed": "Claude 3.5 Sonnet",
+      "status": "completed",
+      "detectedDocumentType": "Quality of Earnings Report",
+      "trafficLight": "YELLOW",
+      "riskLevel": "MEDIUM",
+      "confidence": 0.94,
+      "extractedFacts": [
+        {
+          "metric": "revenue",
+          "normalizedValue": 15456034,
+          "period": "TTM",
+          "rawValue": "$15,456,034"
+        },
+        {
+          "metric": "ebitda",
+          "normalizedValue": 703035,
+          "period": "TTM",
+          "rawValue": "$703,035"
+        },
+        {
+          "metric": "adjusted_ebitda",
+          "normalizedValue": 938887,
+          "period": "TTM",
+          "rawValue": "$938,887"
+        }
+      ],
+      "redFlags": [
+        "Vendor rebate 'timing' normalization: Unsupported. The Q4-2025 rebate credit is an annual, recurring volume rebate booked in one month; adding it back double-counts recurring margin.",
+        "Obsolete inventory write-off: Largely unsupportable as one-time. Slow-moving stock builds every year; only ~$26,000 relates to a discontinued supplier line."
+      ],
+      "yellowFlags": [
+        "Above-market related-party warehouse rent: Partially supportable. Rent of $408,000/yr versus a $288,000/yr market rate supports a $120,000 add-back, not $168,000.",
+        "Owner compensation normalization: Supportable. Owner comp of $290,000 versus a $200,000 market GM cost; the $90,000 delta is documented and reasonable.",
+        "Customer concentration: Largest customer, Granite Medical Center, is 16.3% of FY2025 revenue; top 5 are 51.7%.",
+        "Seasonality and net working capital swing: FY2025 monthly EBITDA ranges from $-3,562 to $122,818; cash ranges from $18,670,470 to $27,144,095. The NWC peg must be set on a 12-month average, not a period-end snapshot."
+      ],
+      "greenFlags": [
+        "Verified TTM Revenue of $15.46M across VDR financials.",
+        "Reported TTM EBITDA of $0.70M reconciled against tax returns and bank statements."
+      ],
+      "valuation": {
+        "valuationLowerBound": 3286104.5,
+        "valuationBaseEstimate": 4224991.5,
+        "valuationUpperBound": 5163878.5,
+        "askingPrice": 5655175,
+        "currency": "USD"
+      },
+      "mathCheckPassed": true
+    }
+  ]
+}
