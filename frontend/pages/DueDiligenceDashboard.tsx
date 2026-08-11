@@ -327,6 +327,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
     // Automatically restore active project or default to the most recently submitted live project on initial page load / refresh once backend query completes
     useEffect(() => {
+        if (!isExampleMode && submissionHistoryData === null) return
         if (submissionHistoryLoading || projectSynthesisLoading) return
         if (hasRestoredLatestProject || projectSummaries.length === 0) return
 
@@ -340,17 +341,27 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
         const targetProject = matchingStoredProject || projectSummaries[0]
         if (targetProject) {
-            setSelectedProjectKey(targetProject.projectKey)
-            setProjectId(targetProject.projectId || targetProject.projectKey)
-            setDealName(targetProject.projectName)
-            setProjectStage(targetProject.stage || 'post-loi')
+            if (selectedProjectKey !== targetProject.projectKey) {
+                setSelectedProjectKey(targetProject.projectKey)
+            }
+            const targetPid = targetProject.projectId || targetProject.projectKey
+            if (projectId !== targetPid) {
+                setProjectId(targetPid)
+            }
+            if (dealName !== targetProject.projectName) {
+                setDealName(targetProject.projectName)
+            }
+            const targetStage = targetProject.stage || 'post-loi'
+            if (projectStage !== targetStage) {
+                setProjectStage(targetStage)
+            }
             if (typeof window !== 'undefined') {
                 window.localStorage.setItem('mergeworks.activeProjectKey', targetProject.projectKey)
                 window.localStorage.setItem('mergeworks.selectedProjectKey', targetProject.projectKey)
             }
         }
         setHasRestoredLatestProject(true)
-    }, [submissionHistoryLoading, projectSynthesisLoading, hasRestoredLatestProject, projectSummaries, setDealName, setProjectId, setProjectStage, setSelectedProjectKey])
+    }, [submissionHistoryLoading, projectSynthesisLoading, hasRestoredLatestProject, projectSummaries, dealName, projectId, projectStage, selectedProjectKey, setDealName, setProjectId, setProjectStage, setSelectedProjectKey])
 
     // Keep project fields in sync whenever selectedProjectKey changes, auto-resolving orphaned keys
     useEffect(() => {
@@ -371,11 +382,19 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         }
 
         if (matchingProject) {
-            setDealName(matchingProject.projectName)
-            setProjectId(matchingProject.projectId || matchingProject.projectKey)
-            setProjectStage(matchingProject.stage || 'post-loi')
+            if (dealName !== matchingProject.projectName) {
+                setDealName(matchingProject.projectName)
+            }
+            const targetPid = matchingProject.projectId || matchingProject.projectKey
+            if (projectId !== targetPid) {
+                setProjectId(targetPid)
+            }
+            const targetStage = matchingProject.stage || 'post-loi'
+            if (projectStage !== targetStage) {
+                setProjectStage(targetStage)
+            }
         }
-    }, [projectSummaries, selectedProjectKey, setDealName, setProjectId, setProjectStage, setSelectedProjectKey])
+    }, [dealName, projectId, projectStage, projectSummaries, selectedProjectKey, setDealName, setProjectId, setProjectStage, setSelectedProjectKey])
 
     const [notifications, setNotifications] = useState<Notification[]>(() => {
         const now = new Date()
