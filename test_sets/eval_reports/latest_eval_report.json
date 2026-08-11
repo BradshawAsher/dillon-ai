@@ -1,10 +1,10 @@
 {
-  "evaluatedAt": "2026-08-11T21:57:54.915Z",
+  "evaluatedAt": "2026-08-11T22:00:39.614Z",
   "totalDocumentsEvaluated": 43,
   "passedDocuments": 43,
   "overallPercentage": 97,
   "status": "SHIP-READY (PASS)",
-  "regressionThreshold": 70,
+  "regressionThreshold": 80,
   "regressionPassed": true,
   "categoryAverages": {
     "classification": 97,

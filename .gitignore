@@ -20,3 +20,5 @@ GEMINI.md
 .kiro/settings/mcp.json
 /NEW mml-manda-dd-benchmark (2)
 .env*
+scratch/
+
