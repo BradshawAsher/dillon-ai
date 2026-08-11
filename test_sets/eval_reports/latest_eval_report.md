@@ -1,6 +1,6 @@
 # Eval Regression Report
 
-- **Generated:** 2026-08-11T19:02:22.750Z
+- **Generated:** 2026-08-11T19:11:50.573Z
 - **Overall:** 97% (43/43 docs passing) — SHIP-READY (PASS)
 - **Regression gate:** threshold 70% → ✅ PASS
 - **Ground-truth coverage:** 43/41 specs scored
