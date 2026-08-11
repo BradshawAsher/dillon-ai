@@ -147,6 +147,8 @@ S suite 2-4 or Widget Co, only the DDs do you understand? DO YOU UNDERSTAND???
 
 - All projects in projects since DD-001 cascadia should be doc primary sonnet 5, doc backup opus 5, synth primary openai 5.6 terra, synth backup openai 5.6 sol
 
+- In projects tab and evals tab maybe should we have an option to "open high level summary" so the user can see like a high level summary without having to click view synthesis and stuff like that
+
 - [For brad] Resync mcp servers for new AIs you use to have same setup that gemini uses
 
 - Will have to change the cost optimization stat in evals and harness later

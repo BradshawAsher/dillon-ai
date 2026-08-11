@@ -3,8 +3,16 @@
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
 
-const url = 'https://sihpsqrunkwkxhhnwoqe.supabase.co'
-const key = 'REDACTED_SUPABASE_SERVICE_ROLE_KEY'
+require('dotenv').config({ path: '.env.local' })
+require('dotenv').config()
+
+const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || 'https://sihpsqrunkwkxhhnwoqe.supabase.co'
+const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || ''
+
+if (!key) {
+  console.error('Error: SUPABASE_SERVICE_ROLE_KEY or VITE_SUPABASE_ANON_KEY environment variable is required.')
+  process.exit(1)
+}
 
 const headers = {
   apikey: key,

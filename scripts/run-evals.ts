@@ -74,7 +74,7 @@ export function runEvalSuite() {
     // these keeps the "20-input golden dataset" target honest.
     const uncoveredGtFiles = gtFiles.filter((f) => !matchedGtFiles.has(f))
 
-    const summary = summarizeResults(evalResults, Number(process.env.EVAL_MIN_SCORE ?? 70))
+    const summary = summarizeResults(evalResults, Number(process.env.EVAL_MIN_SCORE ?? 80))
 
     const summaryReport = {
         evaluatedAt: new Date().toISOString(),

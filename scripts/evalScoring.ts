@@ -296,6 +296,6 @@ export function evaluateDocument(gt: GroundTruth, actual: ActualRunDoc): DocScor
         totalScore,
         maxScore,
         percentage,
-        pass: percentage >= 70,
+        pass: percentage >= 80,
     }
 }

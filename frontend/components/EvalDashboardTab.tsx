@@ -1334,9 +1334,9 @@ export default function EvalDashboardTab({
                             const isDDPacket = isDDLive || isDDPlaceholder
 
                             const avgScore = Math.round(docs.reduce((sum: number, d: any) => sum + (d.percentage || 0), 0) / (docs.length || 1))
-                            const isDocPassed = (d: any) => (d.percentage ?? 0) >= 70
+                            const isDocPassed = (d: any) => (d.percentage ?? 0) >= 80
                             const passCount = docs.filter(isDocPassed).length
-                            const projectPass = avgScore >= 70
+                            const projectPass = avgScore >= 80
                             const totalDurationSec = docs.reduce((sum: number, d: any) => sum + getDocDurationSec(d), 0)
 
                             const realExtractionTotal = calculateBatchTotalCost(docs)
