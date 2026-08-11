@@ -11,15 +11,7 @@ export function useDealWorkspaceState() {
     const [projectId, setProjectId] = useState(() => createUnusedProjectId())
     const [projectStage, setProjectStage] = useState('post-loi')
     const [documentType, setDocumentType] = useState('auto-detect')
-    const [selectedProjectKey, setSelectedProjectKey] = useState(() => {
-        if (typeof window === 'undefined') return 'new'
-        try {
-            const stored = window.localStorage.getItem('mergeworks.selectedProjectKey')
-            return stored || 'new'
-        } catch {
-            return 'new'
-        }
-    })
+    const [selectedProjectKey, setSelectedProjectKey] = useState('new')
     const [isBatchDrawerOpen, setIsBatchDrawerOpen] = useState(false)
     const [isFaqSidebarOpen, setIsFaqSidebarOpen] = useState(false)
     const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false)
