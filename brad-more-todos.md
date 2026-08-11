@@ -123,14 +123,7 @@ The Right Way to Fallback: Instead of stacking parsers serially, use an If/Else 
 
 - Get github mcp?
 
-- How to get more flags from the agent backend?
-
-- Finish pushing through the new 15 packets that you've got, and we may need to get more packets since a lot of the packets we have are mostly renegotiate?
-
 - Should we make like tutorials and interactive walkthroughs especially for new users, like how AWS or GCP tutorials work?
-
-- later for eval and harness tab we may have to scale the size of the minicards representing each doc in that project/business by the total # of docs in that project so projects with 22 docs don't take up a lot of space
-S suite 2-4 or Widget Co, only the DDs do you understand? DO YOU UNDERSTAND???
 
 
 - Are we separating error handling well? Like regular "we hit an issue" vs we hit a rate limit
@@ -145,7 +138,11 @@ S suite 2-4 or Widget Co, only the DDs do you understand? DO YOU UNDERSTAND???
 
 - Do we have top 5 customer concentration in the deal packets as well as the LOI clauses? Does LOI clauses mean we are expected to have the old LOI as part of the packet so the synthesizer can judge whether to renegotiate or something like that?
 
-- All projects in projects since DD-001 cascadia should be doc primary sonnet 5, doc backup opus 5, synth primary openai 5.6 terra, synth backup openai 5.6 sol
+so if we're making a financial due diligent agent and a big task of it is to help with post-LOI negotiations and like cross-document reconciliation, should we edit our eval sets to have an LOI for each packet or no?
+
+- Can include the LOI to assess post-LOI deal negotiation and exclude to test pre-LOI valuation/discovery
+
+- is there anywhere else in our website like FAQs or something or just how our agent currently operates that needs to be updated in order to really like distinctly highlight and support functionality for both modes or no?
 
 - Also we should probably be showing the total cost, total per doc cost, and synth cost in the overview tab too right?
 
