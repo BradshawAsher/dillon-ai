@@ -1,7 +1,8 @@
 import * as fs from 'fs'
 import * as path from 'path'
 
-import { evaluateDocument, normalizeActualDoc, summarizeResults, type ActualRunDoc, type DocScore, type EvalSummary } from './evalScoring'
+import { evaluateDocument, evaluateProjectConflicts, normalizeActualDoc, summarizeResults, type ActualRunDoc, type DocScore, type EvalSummary, type GroundTruth, type ProjectConflictScore } from './evalScoring'
+import { detectContradictions, observationsFromRunDocs } from '../frontend/utils/crossDocumentConflicts'
 
 type GroundTruthDoc = {
     fileName: string
@@ -40,10 +41,25 @@ export function runEvalSuite() {
     const evalResults: DocEvalResult[] = []
     const matchedGtFiles = new Set<string>()
 
+    // Documents and matched ground truths grouped by project, so the
+    // cross-document contradiction detector can compare across a deal's files.
+    type ProjectBucket = { projectId: string; business: string; docs: ActualRunDoc[]; gts: GroundTruth[] }
+    const projectData = new Map<string, ProjectBucket>()
+
     for (const resultFile of resultFiles) {
         const runData: ActualRunFile = JSON.parse(fs.readFileSync(path.join(resultsDir, resultFile), 'utf8'))
+        const projectKey = runData.projectId || runData.business || resultFile
+        let bucket = projectData.get(projectKey)
+        if (!bucket) {
+            bucket = { projectId: runData.projectId || projectKey, business: runData.business || '', docs: [], gts: [] }
+            projectData.set(projectKey, bucket)
+        }
+
         for (const rawDoc of runData.documents) {
             const actualDoc: ActualRunDoc = normalizeActualDoc(rawDoc)
+            // Every document participates in contradiction detection, even ones
+            // without a per-document ground-truth match.
+            bucket.docs.push(actualDoc)
 
             const actualName = actualDoc.fileName.toLowerCase().replace(/[^a-z0-9]/g, '')
             const matchingGtFile = gtFiles.find((f) => {
@@ -59,6 +75,8 @@ export function runEvalSuite() {
 
             matchedGtFiles.add(matchingGtFile)
             const gtData: GroundTruthDoc = JSON.parse(fs.readFileSync(path.join(groundTruthDir, matchingGtFile), 'utf8'))
+            bucket.gts.push(gtData.groundTruth)
+            if (!bucket.business) bucket.business = gtData.business
             const score = evaluateDocument(gtData.groundTruth, actualDoc)
 
             evalResults.push({
@@ -70,11 +88,26 @@ export function runEvalSuite() {
         }
     }
 
+    // Project-level pass: detect cross-document contradictions and score them
+    // against each project's expected conflicts. Only projects that either
+    // expect a conflict or where the detector found one are scored, so the
+    // dimension reflects the deals where contradictions are actually in play
+    // rather than being diluted by dozens of trivially-clean packets.
+    const projectConflicts: ProjectConflictScore[] = []
+    for (const bucket of projectData.values()) {
+        const detected = detectContradictions(observationsFromRunDocs(bucket.docs))
+        const expectedCount = bucket.gts.reduce((n, g) => n + (g.expectedCrossDocumentConflicts?.length ?? 0), 0)
+        if (expectedCount === 0 && detected.length === 0) continue
+        projectConflicts.push(
+            evaluateProjectConflicts(bucket.gts, bucket.docs, detected, bucket.projectId, bucket.business),
+        )
+    }
+
     // Coverage: ground-truth specs that never got a scored result. Surfacing
     // these keeps the "20-input golden dataset" target honest.
     const uncoveredGtFiles = gtFiles.filter((f) => !matchedGtFiles.has(f))
 
-    const summary = summarizeResults(evalResults, Number(process.env.EVAL_MIN_SCORE ?? 80))
+    const summary = summarizeResults(evalResults, Number(process.env.EVAL_MIN_SCORE ?? 80), projectConflicts)
 
     const summaryReport = {
         evaluatedAt: new Date().toISOString(),
@@ -99,6 +132,16 @@ export function runEvalSuite() {
         console.log(`  ${dim.padEnd(15)} ${pct}%${marker}`)
     }
     console.log('----------------------------------------------------')
+    if (summary.crossDocConflictResults && summary.crossDocConflictResults.length > 0) {
+        console.log('--- Cross-document conflicts -----------------------')
+        for (const p of summary.crossDocConflictResults) {
+            console.log(`  ${(p.business || p.projectId).padEnd(28)} caught ${p.matchedCount}/${p.expectedCount}  detected ${p.detected.length}  FPs ${p.falsePositives}  ->  ${p.score}/10`)
+            for (const c of p.detected) {
+                console.log(`      • ${c.metric} ${c.period}: ${c.docA} ${c.valueA} vs ${c.docB} ${c.valueB} (${Math.round(c.deltaPct * 100)}%, ${c.severity})`)
+            }
+        }
+        console.log('----------------------------------------------------')
+    }
     for (const res of evalResults) {
         console.log(`- ${res.fileName}: ${res.percentage}% (${res.pass ? 'PASS' : 'FAIL'})`)
     }
@@ -177,6 +220,20 @@ function buildMarkdownReport(report: EvalSummary & {
     lines.push('| Dimension | Avg |', '| --- | --- |')
     for (const [dim, pct] of Object.entries(report.categoryAverages)) {
         lines.push(`| ${dim}${dim === report.weakestDimension ? ' (weakest)' : ''} | ${pct}% |`)
+    }
+    if (report.crossDocConflictResults && report.crossDocConflictResults.length > 0) {
+        lines.push('', '## Cross-document conflicts', '')
+        lines.push('| Project | Expected | Caught | Detector FPs | Score |', '| --- | --- | --- | --- | --- |')
+        for (const p of report.crossDocConflictResults) {
+            lines.push(`| ${p.business || p.projectId} | ${p.expectedCount} | ${p.matchedCount} | ${p.falsePositives} | ${p.score}/10 |`)
+        }
+        for (const p of report.crossDocConflictResults) {
+            if (p.detected.length === 0) continue
+            lines.push('', `**${p.business || p.projectId}** — detected contradictions:`)
+            for (const c of p.detected) {
+                lines.push(`- \`${c.metric}\` ${c.period}: ${c.docA} ${c.valueA} vs ${c.docB} ${c.valueB} (${Math.round(c.deltaPct * 100)}%, ${c.severity})`)
+            }
+        }
     }
     lines.push('', '## Per-document scores', '')
     lines.push('| Document | Score | Verdict |', '| --- | --- | --- |')
