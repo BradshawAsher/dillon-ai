@@ -7,7 +7,10 @@ export function downloadTextFile(fileName: string, content: string, mimeType = '
   document.body.appendChild(anchor)
   anchor.click()
   anchor.remove()
-  URL.revokeObjectURL(url)
+  // Revoke on the next tick rather than synchronously. Some browsers (older
+  // Firefox/Safari) start the download asynchronously after click(), and
+  // revoking the object URL in the same frame can cancel an in-flight save.
+  setTimeout(() => URL.revokeObjectURL(url), 0)
 }
 
 export function fileSafeName(value: string) {
