@@ -669,6 +669,10 @@ export function useGetEvalRuns() {
                 // ignore cache read error
             }
 
+            // Eval runs are served by the same-origin API, which reads them
+            // server-side (the Supabase service-role key stays on the server —
+            // see backend/diligence/getEvalRuns.ts, which also falls back to the
+            // local report file). The browser never holds a database key.
             try {
                 const response = await fetch('/api/diligence/eval-runs', {
                     headers: identityHeaders(),
@@ -682,22 +686,7 @@ export function useGetEvalRuns() {
                     }
                 }
             } catch {
-                // fall through to direct Supabase query
-            }
-
-            // Direct Supabase Query Fallback for Vercel Static Hosting
-            try {
-                const { createClient } = await import('@supabase/supabase-js')
-                const url = 'https://sihpsqrunkwkxhhnwoqe.supabase.co'
-                const key = 'REDACTED_SUPABASE_SERVICE_ROLE_KEY'
-                const client = createClient(url, key)
-                const { data } = await client.from('eval_runs').select('*').order('run_at', { ascending: false }).limit(2)
-                if (Array.isArray(data) && data.length > 0) {
-                    try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ timestamp: Date.now(), data })) } catch {}
-                    return data
-                }
-            } catch {
-                return []
+                // network/endpoint error — return no runs; the UI seeds a default.
             }
             return []
         }, [])

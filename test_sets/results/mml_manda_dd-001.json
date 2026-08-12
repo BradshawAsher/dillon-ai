@@ -52,6 +52,33 @@
         "askingPrice": 7964520,
         "currency": "USD"
       },
+      "mathCheckPassed": true,
+      "crossDocumentConflicts": [
+        "Cross-document EBITDA conflict: the seller's adjusted EBITDA bridge claims $1,590,000, but the buyer-supported adjusted EBITDA is $1,260,400 — a $329,600 (~21%) overstatement."
+      ]
+    },
+    {
+      "fileName": "DD-001_seller_adjusted_ebitda_bridge_exhibit.pdf",
+      "modelUsed": "Gemini 3.1 Flash Lite",
+      "status": "completed",
+      "detectedDocumentType": "Seller Adjusted EBITDA Bridge",
+      "trafficLight": "RED",
+      "riskLevel": "HIGH",
+      "confidence": 0.9,
+      "extractedFacts": [
+        {
+          "metric": "adjusted_ebitda",
+          "normalizedValue": 1590000,
+          "period": "TTM",
+          "rawValue": "$1,590,000"
+        }
+      ],
+      "redFlags": [
+        "Seller add-back bridge asserts $1,590,000 adjusted EBITDA, unsupported by the buyer-side workpapers."
+      ],
+      "yellowFlags": [],
+      "greenFlags": [],
+      "valuation": null,
       "mathCheckPassed": true
     }
   ]

@@ -45,6 +45,11 @@ describe('formatDuration', () => {
         expect(formatDuration(3 * 3600 + 20 * 60)).toBe('~3 hr 20 min')
     })
 
+    it('renders days with remaining hours for very long estimates', () => {
+        expect(formatDuration(26 * 3600)).toBe('~1 day 2 hr')
+        expect(formatDuration(48 * 3600)).toBe('~2 days')
+    })
+
     it('renders a dash for non-positive or invalid input', () => {
         expect(formatDuration(0)).toBe('—')
         expect(formatDuration(Number.NaN)).toBe('—')

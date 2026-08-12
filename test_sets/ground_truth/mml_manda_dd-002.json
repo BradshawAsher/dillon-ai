@@ -52,6 +52,14 @@
     },
     "expectedMathCheckStatus": "passed",
     "notes": "MML M&A Benchmark Deal DD-002: Northstar Industrial Supply, LLC (Specialty Industrial Distribution (fasteners & fluid power)). Seller claims $1.13M EBITDA vs $0.94M buyer-supported ($192k overstatement).",
-    "expectedRecommendation": "PROCEED WITH REPRICE"
+    "expectedRecommendation": "PROCEED WITH REPRICE",
+    "expectedCrossDocumentConflicts": [
+      {
+        "metric": "adjusted_ebitda",
+        "period": "TTM",
+        "description": "Seller-claimed adjusted EBITDA of $1,130,000 overstates the buyer-supported $938,887 by $191,113 (~17%).",
+        "severity": "critical"
+      }
+    ]
   }
 }

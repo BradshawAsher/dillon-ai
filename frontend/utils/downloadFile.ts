@@ -7,9 +7,20 @@ export function downloadTextFile(fileName: string, content: string, mimeType = '
   document.body.appendChild(anchor)
   anchor.click()
   anchor.remove()
-  URL.revokeObjectURL(url)
+  // Revoke on the next tick rather than synchronously. Some browsers (older
+  // Firefox/Safari) start the download asynchronously after click(), and
+  // revoking the object URL in the same frame can cancel an in-flight save.
+  setTimeout(() => URL.revokeObjectURL(url), 0)
 }
 
+/** Longest slug we emit — well under the common 255-byte filesystem limit,
+ *  leaving room for a caller-added suffix and extension. */
+export const MAX_FILE_SAFE_NAME_LENGTH = 100
+
 export function fileSafeName(value: string) {
-  return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'report'
+  const slug = value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+  // Truncate overly long names, then re-trim any trailing hyphen the cut left
+  // behind so we never emit "long-name-".
+  const capped = slug.slice(0, MAX_FILE_SAFE_NAME_LENGTH).replace(/-+$/, '')
+  return capped || 'report'
 }

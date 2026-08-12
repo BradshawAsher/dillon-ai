@@ -54,9 +54,11 @@ describe('computeImpactMetrics', () => {
 })
 
 describe('formatHours', () => {
-    it('renders zero and negatives as 0h', () => {
+    it('renders zero, negatives, and non-finite values as 0h', () => {
         expect(formatHours(0)).toBe('0h')
         expect(formatHours(-5)).toBe('0h')
+        expect(formatHours(Number.NaN)).toBe('0h')
+        expect(formatHours(Number.POSITIVE_INFINITY)).toBe('0h')
     })
 
     it('renders sub-hour values in minutes', () => {

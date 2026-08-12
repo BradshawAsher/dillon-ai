@@ -54,6 +54,14 @@ async function handleRequest(
         return
     }
 
+    if (route === '/eval-runs' && req.method === 'GET') {
+        const mod = await server.ssrLoadModule(backendModuleUrl('getEvalRuns.ts'))
+        const rows: unknown = await mod.default()
+        res.setHeader('Content-Type', 'application/json')
+        res.end(JSON.stringify(rows))
+        return
+    }
+
     if (route === '/submit' && req.method === 'POST') {
         const params = await readJsonBody(req)
         const mod = await server.ssrLoadModule(backendModuleUrl('submitDealPacket.ts'))

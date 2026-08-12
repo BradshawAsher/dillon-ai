@@ -50,6 +50,14 @@
     },
     "expectedMathCheckStatus": "passed",
     "notes": "MML M&A Benchmark Deal DD-005: Juniper Environmental Group, Inc. (Environmental Remediation & Site Services). Seller claims $1.88M EBITDA vs $1.55M buyer-supported ($330k overstatement).",
-    "expectedRecommendation": "WALK AWAY / RESTRUCTURE"
+    "expectedRecommendation": "WALK AWAY / RESTRUCTURE",
+    "expectedCrossDocumentConflicts": [
+      {
+        "metric": "adjusted_ebitda",
+        "period": "TTM",
+        "description": "Seller-claimed adjusted EBITDA of $1,880,000 overstates the buyer-supported $1,548,306 by $331,694 (~18%).",
+        "severity": "critical"
+      }
+    ]
   }
 }

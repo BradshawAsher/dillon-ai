@@ -89,7 +89,7 @@ export function calculateDocumentCost(doc?: Partial<SubmissionHistoryItem> | nul
     // Dynamic content-based estimation for documents
     const fileName = (doc.fileName || '').toLowerCase()
     const extractedStr = typeof doc.extractedJson === 'string' ? doc.extractedJson : JSON.stringify(doc.extractedJson || {})
-    const summaryStr = doc.aiSummary || doc.summary || ''
+    const summaryStr = doc.aiSummary || ''
 
     // Output tokens estimated from extracted JSON character length
     const outputChars = extractedStr.length + summaryStr.length
