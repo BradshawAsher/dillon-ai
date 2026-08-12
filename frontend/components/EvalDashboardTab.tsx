@@ -1551,7 +1551,7 @@ export default function EvalDashboardTab({
                                     ? 'border-2 border-blue-500/50 bg-blue-500/5 dark:bg-blue-950/20 shadow-md hover:border-blue-500/80 transition-all'
                                     : 'border-2 border-emerald-500/50 bg-emerald-500/5 dark:bg-emerald-950/20 shadow-md hover:border-emerald-500/80 transition-all'
 
-                                const hasLivePostLoi = isDD001 || isDD002 || isDD003 || isDD004 || normB.includes('werkheiser')
+                                const hasLivePostLoi = isDD001 || isDD002 || isDD003 || isDD004 || isDD005 || normB.includes('werkheiser')
 
                                 const docCountBadgeText = isPreLoi
                                     ? '22 Docs (Pre-LOI Data Room — Pre-Term Sheet)'
