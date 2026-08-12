@@ -59,6 +59,7 @@ const projectStages = [
 
 const documentTypes = [
     'auto-detect',
+    'Letter of Intent (LOI)',
     'P&L / income statement',
     'Balance sheet',
     'Cash flow statement',

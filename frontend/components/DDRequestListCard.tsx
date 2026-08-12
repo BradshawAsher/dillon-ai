@@ -24,6 +24,7 @@ type RequestItem = {
 }
 
 const STANDARD_DOC_CATEGORIES = [
+    { type: 'LOI', category: 'Transaction', request: 'Executed Letter of Intent (LOI) or term sheet', reason: 'Required to extract purchase multiple, NWC peg, escrow %, and post-LOI price revisions' },
     { type: 'P&L', category: 'Financial', request: '3 years of profit & loss statements (audited or tax-return backed)', reason: 'Required to verify revenue trends and margins' },
     { type: 'Balance Sheet', category: 'Financial', request: 'Balance sheet as of most recent quarter-end', reason: 'Needed for working capital and asset valuation' },
     { type: 'Cash Flow', category: 'Financial', request: 'Statement of cash flows for the trailing 12 months', reason: 'Validates operating cash generation vs. reported earnings' },
