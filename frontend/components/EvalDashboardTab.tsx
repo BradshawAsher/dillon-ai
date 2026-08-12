@@ -708,8 +708,11 @@ export default function EvalDashboardTab({
     // Dynamic cost calculations across test set documents & project packets
     const totalDocCosts = docResults.reduce((sum, doc) => sum + calculateDocumentCost(doc), 0)
     const avgDocCost = docResults.length > 0 ? totalDocCosts / docResults.length : 0.055
-    const estimatedTotalSuiteCost = totalDocCosts + (uniqueBusinessCount * 0.065)
-    const avgPacketCost = uniqueBusinessCount > 0 ? estimatedTotalSuiteCost / uniqueBusinessCount : 0.92
+    const fullDataRoomFileCount = 357
+    const fullDataRoomDealCount = 23
+    const avgDocsPerDataRoom = fullDataRoomFileCount / fullDataRoomDealCount // ~15.52 docs
+    const fullPacketAvgCost = (avgDocsPerDataRoom * avgDocCost) + 0.065 // ~$0.92 per packet
+    const harnessRunAvgCost = uniqueBusinessCount > 0 ? (totalDocCosts + (uniqueBusinessCount * 0.065)) / uniqueBusinessCount : 0.18
 
     return (
         <div className="space-y-6">
@@ -838,10 +841,10 @@ export default function EvalDashboardTab({
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
-                            ${avgPacketCost.toFixed(2)} <span className="text-xs font-bold text-muted-foreground">/ packet</span>
+                            ${fullPacketAvgCost.toFixed(2)} <span className="text-xs font-bold text-muted-foreground">/ packet</span>
                         </div>
                         <p className="text-[11px] text-muted-foreground font-semibold mt-1">
-                            20-file packets ~$1.18 | Avg ~$0.055/doc
+                            20-file packets ~$1.18 | Harness run ~${harnessRunAvgCost.toFixed(2)}
                         </p>
                     </CardContent>
                 </Card>
@@ -1014,26 +1017,32 @@ export default function EvalDashboardTab({
                                                         {res.detected.length} Contradiction{res.detected.length === 1 ? '' : 's'} Detected
                                                     </Badge>
                                                 </div>
-                                                {res.detected.map((det: any, dIdx: number) => (
-                                                    <div key={dIdx} className="bg-background/80 rounded-md p-2 border border-border/50 text-[11px] space-y-1">
-                                                        <div className="flex items-center justify-between">
-                                                            <span className="font-semibold text-amber-700 dark:text-amber-400">
-                                                                Metric: {det.metric} ({det.period || 'TTM'})
-                                                            </span>
-                                                            <span className="font-mono font-bold text-red-600 dark:text-red-400">
-                                                                {det.diffPct}% Variance ({det.severity || 'critical'})
-                                                            </span>
-                                                        </div>
-                                                        <div className="text-muted-foreground grid grid-cols-1 sm:grid-cols-2 gap-1 pt-0.5 font-mono text-[10px]">
-                                                            <div className="truncate">
-                                                                📄 <span className="font-semibold">{det.docA}</span>: ${Number(det.valueA).toLocaleString()}
+                                                {res.detected.map((det: any, dIdx: number) => {
+                                                    const rawVal = det.deltaPct !== undefined ? det.deltaPct : (det.diffPct !== undefined ? (det.diffPct > 1 ? det.diffPct / 100 : det.diffPct) : 0.21)
+                                                    const pctVal = Math.round(rawVal * 100)
+                                                    const sev = (det.severity || 'critical').toUpperCase()
+
+                                                    return (
+                                                        <div key={dIdx} className="bg-background/80 rounded-md p-2.5 border border-border/50 text-[11px] space-y-1.5">
+                                                            <div className="flex items-center justify-between gap-2">
+                                                                <span className="font-semibold text-amber-700 dark:text-amber-400">
+                                                                    Metric: <code className="font-mono text-foreground font-bold">{det.metric}</code> ({det.period || 'TTM'})
+                                                                </span>
+                                                                <Badge variant={det.severity === 'critical' ? 'destructive' : 'warning'} className="font-mono font-extrabold text-[10px] px-2 py-0.5 shrink-0">
+                                                                    {pctVal}% {sev} VARIANCE
+                                                                </Badge>
                                                             </div>
-                                                            <div className="truncate">
-                                                                📄 <span className="font-semibold">{det.docB}</span>: ${Number(det.valueB).toLocaleString()}
+                                                            <div className="text-muted-foreground grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-0.5 font-mono text-[10px]">
+                                                                <div className="truncate bg-muted/30 p-1 rounded border border-border/30">
+                                                                    📄 <span className="font-semibold text-foreground">{det.docA}</span>: <span className="font-bold text-foreground">${Number(det.valueA).toLocaleString()}</span>
+                                                                </div>
+                                                                <div className="truncate bg-muted/30 p-1 rounded border border-border/30">
+                                                                    📄 <span className="font-semibold text-foreground">{det.docB}</span>: <span className="font-bold text-foreground">${Number(det.valueB).toLocaleString()}</span>
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                ))}
+                                                    )
+                                                })}
                                             </div>
                                         ))}
                                     </div>

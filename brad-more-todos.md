@@ -142,6 +142,10 @@ so if we're making a financial due diligent agent and a big task of it is to hel
 
 - Can include the LOI to assess post-LOI deal negotiation and exclude to test pre-LOI valuation/discovery
 
+- [For brad] - check if the newest version of the test sets can be merged easily or not, since those have LOIs in them as well, but the original packets may have been slightly updated too so idk what to do
+
+- Make sure the evals and harness the numbers and cards are right and now buggy and that the varainces show for cross doc conflicts?
+
 - is there anywhere else in our website like FAQs or something or just how our agent currently operates that needs to be updated in order to really like distinctly highlight and support functionality for both modes or no?
 
 - Also we should probably be showing the total cost, total per doc cost, and synth cost in the overview tab too right?
