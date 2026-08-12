@@ -917,13 +917,13 @@ export default function EvalDashboardTab({
                         <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 space-y-2">
                             <div className="flex items-center justify-between">
                                 <Badge variant="warning" className="text-[10px] uppercase font-bold">
-                                    Driver #1 (65% Cost)
+                                    Driver #1 (70% Cost)
                                 </Badge>
-                                <span className="font-mono text-xs font-bold text-amber-600 dark:text-amber-400">~25k Tokens / Run</span>
+                                <span className="font-mono text-xs font-bold text-amber-600 dark:text-amber-400">~$0.055 / Doc</span>
                             </div>
-                            <h5 className="font-bold text-sm text-foreground">Multi-Doc Synthesis Window</h5>
+                            <h5 className="font-bold text-sm text-foreground">Per-Doc Financial Extraction</h5>
                             <p className="text-xs text-muted-foreground leading-relaxed">
-                                Passing full concatenated raw text of 4+ documents into synthesis. Optimized via Gemini 3.1 Flash Lite ($0.075/1M in) reducing pass cost from $0.0312 to $0.0012.
+                                Parsing 20+ multi-tab financial statements, P&amp;Ls, and tax returns per packet. Optimized via <strong>Claude Sonnet 5</strong> ($0.055/doc) with <strong>Claude Opus 5</strong> backup routing.
                             </p>
                         </div>
 
@@ -931,13 +931,13 @@ export default function EvalDashboardTab({
                         <div className="rounded-xl border border-blue-500/30 bg-blue-500/5 p-4 space-y-2">
                             <div className="flex items-center justify-between">
                                 <Badge variant="secondary" className="text-[10px] uppercase font-bold bg-blue-500/20 text-blue-700 dark:text-blue-300">
-                                    Driver #2 (25% Cost)
+                                    Driver #2 (20% Cost)
                                 </Badge>
-                                <span className="font-mono text-xs font-bold text-blue-600 dark:text-blue-400">Up to 3 Passes</span>
+                                <span className="font-mono text-xs font-bold text-blue-600 dark:text-blue-400">~$0.065 / Run</span>
                             </div>
-                            <h5 className="font-bold text-sm text-foreground">Unstructured OCR &amp; Parser Retries</h5>
+                            <h5 className="font-bold text-sm text-foreground">Multi-Doc Synthesis Window</h5>
                             <p className="text-xs text-muted-foreground leading-relaxed">
-                                Complex 2-year P&amp;Ls and balance sheet tables causing JSON schema retries. Optimized via pre-validated JSON schemas and failover fallback routing.
+                                Synthesizing cross-document price bridges, working capital pegs, and contract traps. Optimized via <strong>OpenAI 5.6 Terra</strong> with <strong>OpenAI 5.6 Sol</strong> failover routing.
                             </p>
                         </div>
 
@@ -949,9 +949,9 @@ export default function EvalDashboardTab({
                                 </Badge>
                                 <span className="font-mono text-xs font-bold text-purple-600 dark:text-purple-400">1.5k–3k Tokens</span>
                             </div>
-                            <h5 className="font-bold text-sm text-foreground">High Output Token Generation</h5>
+                            <h5 className="font-bold text-sm text-foreground">Structured Output Generation</h5>
                             <p className="text-xs text-muted-foreground leading-relaxed">
-                                Generative investment thesis, buy reasoning, and negotiation levers. Optimized by enforcing max 1,200 output tokens and concise markdown schemas.
+                                Generative acquisition judgment, buy reasoning, and negotiation levers. Enforced via max 1,500 output tokens and pre-validated JSON contracts.
                             </p>
                         </div>
                     </div>
@@ -960,10 +960,10 @@ export default function EvalDashboardTab({
                         <div className="space-y-0.5">
                             <p className="font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5">
                                 <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-                                Verified $/Run Reduction: Up to 95% Cost Savings Achieved
+                                Verified $/Run Reduction: 51.6% Total Cost Savings Achieved
                             </p>
                             <p className="text-muted-foreground">
-                                Baseline (Legacy Sonnet 5 / GPT-5 Unoptimized): <strong>$0.0480 / run</strong> &rarr; Active Hybrid (Claude Sonnet 5 + OpenAI 5.6 Terra): <strong>$0.0214–$0.0226 / run</strong> (<strong>53% savings</strong>) / Gemini Flash Lite: <strong>$0.0024 / run</strong> (<strong>95% savings</strong>).
+                                Legacy Unoptimized Baseline (All Claude Opus 5): <strong>~$2.40 / 20-file packet</strong> &rarr; Active Production Hybrid (Claude Sonnet 5 + OpenAI 5.6 Terra): <strong>~$1.16 / 20-file packet</strong> (<strong>51.6% verified savings</strong>).
                             </p>
                         </div>
                         <Badge variant="outline" className="font-mono font-bold text-xs bg-emerald-600 text-white shrink-0 self-start sm:self-center">
