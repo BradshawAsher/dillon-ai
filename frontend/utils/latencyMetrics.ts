@@ -78,7 +78,9 @@ export function summarizeLatency(items: LatencyInput[]): LatencySummary {
         p50Ms: percentile(samples, 0.5),
         p95Ms: percentile(samples, 0.95),
         meanMs: Math.round(sum / samples.length),
-        minMs: Math.min(...samples),
-        maxMs: Math.max(...samples),
+        // reduce, not Math.min/max(...spread): spreading a large sample array as
+        // arguments overflows the call stack (RangeError) once it's big enough.
+        minMs: samples.reduce((min, value) => (value < min ? value : min), samples[0]),
+        maxMs: samples.reduce((max, value) => (value > max ? value : max), samples[0]),
     }
 }
