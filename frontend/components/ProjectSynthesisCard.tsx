@@ -541,6 +541,24 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
             </CardHeader>
 
             <CardContent className="space-y-6 p-4">
+                {/* Live Re-Synthesis Disclaimer Banner when a new document or synthesis is processing */}
+                {(runningSynthesis || synthesisPending || documentAnalysisPending || projectDocuments.some((d) => ['processing', 'queued', 'submitted'].includes(d.status))) && (
+                    <div className="rounded-lg border-2 border-amber-500/40 bg-amber-500/10 p-4 text-xs font-semibold text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-pulse shadow-sm">
+                        <div className="space-y-1">
+                            <div className="flex items-center gap-2 font-bold text-sm text-amber-700 dark:text-amber-300">
+                                <Loader2 className="h-4 w-4 animate-spin shrink-0 text-amber-600" />
+                                <span>⚡ New Synthesis Version Generating...</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground font-normal">
+                                A new document (e.g., Letter of Intent) was recently uploaded. The AI Synthesizer is re-processing cross-document findings in the background. Viewing current active version below until update completes.
+                            </p>
+                        </div>
+                        <Badge variant="outline" className="border-amber-500/50 bg-amber-500/20 text-amber-800 dark:text-amber-200 font-mono font-bold text-[10px] shrink-0 uppercase">
+                            Background Processing
+                        </Badge>
+                    </div>
+                )}
+
                 {/* 1. Document Scope Disclaimer & Cost Transparency */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-muted/30 px-3.5 py-2.5 text-xs text-foreground">
