@@ -29,6 +29,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
+import EvalDiagnosticsPanel from './EvalDiagnosticsPanel'
 import { benchmarkGroundTruthSyntheses } from '../evals/ground_truths'
 import { calculateBatchTotalCost, calculateSynthesisCost, calculateDocumentCost } from '../utils/diligenceDashboardUtils'
 
@@ -109,6 +110,7 @@ function getDocDurationSec(doc: any): number {
 
 export default function EvalDashboardTab({
     evalRuns = [],
+    syntheses = [],
     onTriggerEvalRuns,
     onSelectProject,
     onSelectDoc,
@@ -130,6 +132,25 @@ export default function EvalDashboardTab({
         passedDocuments: 20,
         overallPercentage: 77,
         status: 'SHIP-READY (PASS)',
+        // Only the project-level dimension is seeded here; the 7 per-document
+        // dimensions are still derived from documentResults below.
+        categoryAverages: { crossDocConflicts: 100 },
+        crossDocConflictResults: [
+            {
+                projectId: 'mml-dd-001', business: 'Cascadia Climate Services, Inc.',
+                expectedCount: 1, matchedCount: 1,
+                detected: [
+                    { metric: 'adjusted_ebitda', period: 'TTM', docA: 'DD-001 packet', docB: 'DD-001 seller EBITDA bridge', valueA: 1260400, valueB: 1590000, deltaPct: 0.207, severity: 'critical' },
+                ],
+            },
+            {
+                projectId: 'mml-dd-010', business: 'Cobalt Ridge Software, Inc.',
+                expectedCount: 1, matchedCount: 1,
+                detected: [
+                    { metric: 'adjusted_ebitda', period: 'TTM', docA: 'DD-010 packet', docB: 'DD-010 seller EBITDA bridge', valueA: 1214620, valueB: 2760000, deltaPct: 0.56, severity: 'critical' },
+                ],
+            },
+        ],
         documentResults: [
             {
                 fileName: 'Werkheiser P&L 2025.pdf',
@@ -615,6 +636,8 @@ export default function EvalDashboardTab({
         { key: 'employee', field: 'employeeScore', label: 'Employee', max: 5 },
         { key: 'math', field: 'mathScore', label: 'Math checks', max: 10 },
         { key: 'recommendation', field: 'recommendationScore', label: 'Acquisition Judgment', max: 10 },
+        // Project-level: only shown when a run scored cross-document conflicts.
+        { key: 'crossDocConflicts', field: 'crossDocConflictsScore', label: 'Cross-doc conflicts', max: 10 },
     ]
     const allDocResults: Array<Record<string, any>> = Array.isArray(latestRun.documentResults) ? latestRun.documentResults : []
     const docResults = allDocResults.filter((d) => {
@@ -635,8 +658,14 @@ export default function EvalDashboardTab({
     const overallAccuracyPct = totalMaxPoints > 0 ? Math.round((totalObtainedPoints / totalMaxPoints) * 100) : (latestRun.overallPercentage ?? 78)
 
     const categoryAverages = DIMENSIONS.map((dim) => {
-        let avgPct = 0
-        if (dim.key === 'recommendation') {
+        let avgPct: number | null = 0
+        if (dim.key === 'crossDocConflicts') {
+            // Project-level dimension: present only when a run scored it. When
+            // absent it is filtered out below rather than shown as 0%.
+            avgPct = latestRun.categoryAverages?.crossDocConflicts !== undefined
+                ? Number(latestRun.categoryAverages.crossDocConflicts) || 0
+                : null
+        } else if (dim.key === 'recommendation') {
             // 90% Synthesizer Verdict (100% accurate across packets) + 10% Per-Doc Average (80%)
             avgPct = Math.round((0.90 * 100) + (0.10 * 80)) // 98%
         } else if (latestRun.categoryAverages?.[dim.key] !== undefined) {
@@ -648,7 +677,7 @@ export default function EvalDashboardTab({
             avgPct = 80
         }
         return { ...dim, avgPct }
-    })
+    }).filter((d): d is typeof d & { avgPct: number } => d.avgPct !== null)
     const weakestKey = docResults.length > 0
         ? categoryAverages.reduce((min, d) => (d.avgPct < min.avgPct ? d : min)).key
         : null
@@ -677,7 +706,8 @@ export default function EvalDashboardTab({
     const passRatePct = totalDocsCount > 0 ? Math.round((passDocsCount / totalDocsCount) * 100) : 100
 
     return (
-        <div className="space-y-6">
+        <div className="flex flex-col gap-6 xl:flex-row">
+            <div className="min-w-0 flex-1 space-y-6">
             {/* Header Banner */}
             <div className="flex flex-col gap-4 rounded-xl border border-primary/20 bg-gradient-to-r from-primary/5 via-card to-card p-6 shadow-sm md:flex-row md:items-center md:justify-between">
                 <div className="space-y-1.5">
@@ -1955,6 +1985,17 @@ export default function EvalDashboardTab({
                     </div>
                 </div>
             ) : null}
+            </div>
+            <aside className="space-y-4 xl:w-80 xl:shrink-0 xl:sticky xl:top-6 xl:self-start">
+                <EvalDiagnosticsPanel
+                    overallPct={overallAccuracyPct}
+                    regressionPassed={regressionPassed}
+                    regressionThreshold={REGRESSION_THRESHOLD}
+                    dimensions={categoryAverages.map((d) => ({ key: d.key, label: d.label, avgPct: d.avgPct }))}
+                    weakestKey={weakestKey}
+                    conflictResults={latestRun.crossDocConflictResults}
+                />
+            </aside>
         </div>
     )
 }

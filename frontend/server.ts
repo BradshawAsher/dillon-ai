@@ -29,6 +29,7 @@ import stopProjectSynthesisImport from '../backend/diligence/stopProjectSynthesi
 import submitDealPacketImport from '../backend/diligence/submitDealPacket'
 import updateSubmissionRowImport from '../backend/diligence/updateSubmissionRow'
 import { cleanOrphanRecords } from '../backend/diligence/cleanOrphans'
+import getEvalRunsImport from '../backend/diligence/getEvalRuns'
 import { installRetoolGlobals, userFromHeaders } from './retoolRuntime'
 
 try {
@@ -57,6 +58,7 @@ const stopBatchSubmission = interopDefault(stopBatchSubmissionImport)
 const stopProjectSynthesis = interopDefault(stopProjectSynthesisImport)
 const submitDealPacket = interopDefault(submitDealPacketImport)
 const updateSubmissionRow = interopDefault(updateSubmissionRowImport)
+const getEvalRuns = interopDefault(getEvalRunsImport)
 
 installRetoolGlobals()
 
@@ -160,6 +162,14 @@ app.get('/api/diligence/synthesis', async (req, res) => {
             user: userFromHeaders(req.headers),
         })
         res.json(rows)
+    } catch (error) {
+        res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
+    }
+})
+
+app.get('/api/diligence/eval-runs', async (_req, res) => {
+    try {
+        res.json(await getEvalRuns())
     } catch (error) {
         res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
     }

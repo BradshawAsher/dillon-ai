@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { evaluateDocument, extractYear, normalizeActualDoc, summarizeResults, type ActualRunDoc, type DocScore, type GroundTruth } from '../../scripts/evalScoring'
+import { evaluateDocument, evaluateProjectConflicts, extractYear, normalizeActualDoc, summarizeResults, type ActualRunDoc, type DocScore, type GroundTruth } from '../../scripts/evalScoring'
+import type { ContradictionRecord } from './crossDocumentConflicts'
 
 function baseGroundTruth(overrides: Partial<GroundTruth> = {}): GroundTruth {
     return {
@@ -151,12 +152,81 @@ describe('summarizeResults', () => {
         expect(summary.regressionPassed).toBe(true)
         expect(summary.weakestDimension).toBeNull()
     })
+
+    it('keeps the original 7-key shape and headline when no project conflicts are passed', () => {
+        const summary = summarizeResults([scoreWith(90), scoreWith(80)], 70)
+        expect(summary.overallPercentage).toBe(85) // unchanged by the new arg
+        expect(summary.categoryAverages.crossDocConflicts).toBeUndefined()
+        expect(summary.crossDocConflictResults).toBeUndefined()
+    })
+
+    it('injects the crossDocConflicts average and can pick it as weakest', () => {
+        const conflicts = [
+            { projectId: 'p1', business: 'B', detected: [], expectedCount: 4, matchedCount: 1, llmRecall: 0.25, detectorRecall: 0.25, falsePositives: 0, score: 2, maxScore: 10 as const },
+        ]
+        const summary = summarizeResults([scoreWith(90), scoreWith(90)], 70, conflicts)
+        expect(summary.categoryAverages.crossDocConflicts).toBe(20) // 2/10
+        expect(summary.weakestDimension).toBe('crossDocConflicts')
+        expect(summary.crossDocConflictResults).toHaveLength(1)
+    })
+})
+
+describe('evaluateProjectConflicts', () => {
+    const detected = (metric: string, period: string): ContradictionRecord => ({
+        metric, period, docA: 'a', docB: 'b', valueA: 1, valueB: 2, deltaPct: 0.5, severity: 'critical', citations: [],
+    })
+
+    it('credits recall via the deterministic detector', () => {
+        const gt = baseGroundTruth({
+            expectedCrossDocumentConflicts: [{ metric: 'ebitda', period: 'TTM', description: 'seller overstated ebitda' }],
+        })
+        const score = evaluateProjectConflicts([gt], [baseActual()], [detected('ebitda', 'TTM')])
+        expect(score.detectorRecall).toBe(1)
+        expect(score.matchedCount).toBe(1)
+        expect(score.score).toBe(10)
+    })
+
+    it('credits recall via LLM conflict keywords when the detector misses', () => {
+        const gt = baseGroundTruth({
+            expectedCrossDocumentConflicts: [{ metric: 'ebitda', period: 'TTM', description: 'seller overstated adjusted earnings' }],
+        })
+        const actual = baseActual({ crossDocumentConflicts: ['The seller overstated earnings versus the buyer model.'] })
+        const score = evaluateProjectConflicts([gt], [actual], [])
+        expect(score.detectorRecall).toBe(0)
+        expect(score.llmRecall).toBe(1)
+        expect(score.matchedCount).toBe(1)
+    })
+
+    it('penalises detector false positives', () => {
+        const gt = baseGroundTruth({ expectedCrossDocumentConflicts: [] })
+        const score = evaluateProjectConflicts([gt], [baseActual()], [detected('revenue', '2024'), detected('cash', '2024')])
+        expect(score.expectedCount).toBe(0)
+        expect(score.falsePositives).toBe(2)
+        expect(score.score).toBe(6) // 10 - min(2*2, 5)
+    })
+})
+
+describe('normalizeActualDoc mml remap', () => {
+    it('maps extractedFacts / valuationBaseEstimate / mathCheckPassed', () => {
+        const normalized = normalizeActualDoc({
+            fileName: 'packet.pdf',
+            detectedDocumentType: 'Financial Packet',
+            trafficLight: 'RED',
+            extractedFacts: [{ metric: 'ebitda', normalizedValue: 1_260_400, period: 'TTM' }],
+            valuation: { valuationBaseEstimate: 5_671_800 },
+            mathCheckPassed: false,
+        })
+        expect(normalized.financialFacts[0].normalizedValue).toBe(1_260_400)
+        expect(normalized.valuation?.base_estimate).toBe(5_671_800)
+        expect(normalized.mathCheckStatus).toBe('failed')
+        expect(normalized.crossDocumentConflicts).toEqual([])
+    })
 })
 
 describe('normalizeActualDoc', () => {
-    it('passes through a row that already matches ActualRunDoc', () => {
+    it('preserves a row that already matches ActualRunDoc, defaulting conflicts to []', () => {
         const row = baseActual({ fileName: 'x.pdf' })
-        expect(normalizeActualDoc(row)).toBe(row)
+        expect(normalizeActualDoc(row)).toEqual({ ...row, crossDocumentConflicts: [] })
     })
 
     it('parses a snake_case extractedJson blob with nested flags', () => {

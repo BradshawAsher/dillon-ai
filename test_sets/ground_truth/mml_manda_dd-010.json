@@ -51,6 +51,14 @@
     },
     "expectedMathCheckStatus": "passed",
     "notes": "MML M&A Benchmark Deal DD-010: Cobalt Ridge Software, Inc. (Vertical SaaS - Utility Field Operations). Seller claims $2.76M EBITDA vs $1.21M buyer-supported ($1541k overstatement).",
-    "expectedRecommendation": "WALK AWAY / RESTRUCTURE"
+    "expectedRecommendation": "WALK AWAY / RESTRUCTURE",
+    "expectedCrossDocumentConflicts": [
+      {
+        "metric": "adjusted_ebitda",
+        "period": "TTM",
+        "description": "Seller-claimed adjusted EBITDA of $2,760,000 overstates the buyer-supported $1,214,620 by $1,545,380 (~56%).",
+        "severity": "critical"
+      }
+    ]
   }
 }

@@ -10,6 +10,12 @@
 // the page — no extra backend or n8n call — picking the most recent period per
 // metric and preferring confirmed facts.
 import type { SubmissionHistoryItem } from './submissionHistory'
+import {
+    detectContradictions,
+    observationsFromDocuments,
+    type ContradictionRecord,
+    type ConflictDetectorOptions,
+} from './crossDocumentConflicts'
 
 type RawFact = {
     metric?: string
@@ -160,4 +166,22 @@ export function deriveDocumentedFacts(documents: SubmissionHistoryItem[]): Recor
 export function deriveDocumentedFactsJson(documents: SubmissionHistoryItem[]): string {
     const derived = deriveDocumentedFacts(documents)
     return Object.keys(derived).length > 0 ? JSON.stringify(derived) : ''
+}
+
+/**
+ * Same aggregation as `deriveDocumentedFacts`, but also runs the deterministic
+ * cross-document contradiction detector over the raw facts (which
+ * `deriveDocumentedFacts` discards when it keeps only the best value per
+ * metric). The `facts` field is byte-for-byte what `deriveDocumentedFacts`
+ * returns; `conflicts` surfaces the competing values that disagree across
+ * documents so the UI can flag them.
+ */
+export function deriveDocumentedFactsWithConflicts(
+    documents: SubmissionHistoryItem[],
+    options?: ConflictDetectorOptions,
+): { facts: Record<string, DerivedFact>; conflicts: ContradictionRecord[] } {
+    return {
+        facts: deriveDocumentedFacts(documents),
+        conflicts: detectContradictions(observationsFromDocuments(documents), options),
+    }
 }

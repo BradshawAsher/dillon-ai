@@ -268,10 +268,12 @@ export function driveEmbedUrl(documentId?: string, documentUrl?: string): string
         return `https://drive.google.com/file/d/${encodeURIComponent(id)}/preview`
     }
 
-    // Fall back to extracting the id from a /file/d/<id>/ share URL.
-    const match = (documentUrl ?? '').match(/\/file\/d\/([^/]+)/)
+    // Fall back to extracting the id from a share URL. Drive hands these out in
+    // several shapes: /file/d/<id>/…, open?id=<id>, and uc?id=<id>.
+    const url = documentUrl ?? ''
+    const match = url.match(/\/file\/d\/([^/]+)/) ?? url.match(/[?&]id=([^&]+)/)
     if (match) {
-        return `https://drive.google.com/file/d/${match[1]}/preview`
+        return `https://drive.google.com/file/d/${encodeURIComponent(decodeURIComponent(match[1]))}/preview`
     }
 
     return null

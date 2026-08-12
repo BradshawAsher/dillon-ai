@@ -53,6 +53,14 @@
     },
     "expectedMathCheckStatus": "passed",
     "notes": "MML M&A Benchmark Deal DD-012: Basin Waste Solutions, LLC (Roll-Off Waste Hauling & Recycling). Seller claims $1.84M EBITDA vs $2.07M buyer-supported ($-226k overstatement).",
-    "expectedRecommendation": "PROCEED"
+    "expectedRecommendation": "PROCEED",
+    "expectedCrossDocumentConflicts": [
+      {
+        "metric": "adjusted_ebitda",
+        "period": "TTM",
+        "description": "Seller-claimed adjusted EBITDA of $1,840,000 understates the buyer-supported $2,069,689 by $229,689 (~11%).",
+        "severity": "warning"
+      }
+    ]
   }
 }

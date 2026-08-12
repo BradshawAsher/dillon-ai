@@ -3,6 +3,8 @@
 // Kept free of fs/path so it can be unit-tested (see
 // frontend/utils/evalScoring.test.ts) and reused by run-evals.ts.
 
+import { canonicalMetric, canonicalPeriod, type ContradictionRecord } from '../frontend/utils/crossDocumentConflicts'
+
 export type FinancialFact = {
     metric: string
     normalizedValue: number
@@ -27,6 +29,20 @@ export type GroundTruth = {
     } | null
     expectedMathCheckStatus: string
     expectedRecommendation?: string
+    /**
+     * Contradictions a correct run should surface between documents in this
+     * project (e.g. seller-claimed vs buyer-supported EBITDA). Scored by the
+     * crossDocConflicts dimension. `description` is keyword-matched against the
+     * LLM's conflict output, like expectedRedFlags.
+     */
+    expectedCrossDocumentConflicts?: ExpectedConflict[]
+}
+
+export type ExpectedConflict = {
+    metric: string
+    period?: string
+    description: string
+    severity?: 'info' | 'warning' | 'critical'
 }
 
 export type ActualRunDoc = {
@@ -54,6 +70,8 @@ export type ActualRunDoc = {
     mathCheckStatus: string
     finalRecommendation?: string
     recommendation?: string
+    /** LLM-generated cross-document conflicts from the project synthesizer. */
+    crossDocumentConflicts?: string[]
 }
 
 export type DocScore = {
@@ -79,7 +97,33 @@ export const DIMENSION_MAX = {
     employee: 5,
     math: 10,
     recommendation: 10,
+    // Project-level: cross-document contradiction detection. Scored separately
+    // from the 7 per-document dimensions (see evaluateProjectConflicts) and
+    // deliberately kept out of the per-document overallPercentage headline.
+    crossDocConflicts: 10,
 } as const
+
+/** Per-document dimension keys (everything except the project-level conflicts). */
+const PER_DOC_DIMENSIONS = ['classification', 'facts', 'risk', 'valuation', 'employee', 'math', 'recommendation'] as const
+
+/** Score for one project's cross-document contradiction detection (0..10). */
+export type ProjectConflictScore = {
+    projectId: string
+    business: string
+    /** Contradictions the deterministic detector found. */
+    detected: ContradictionRecord[]
+    expectedCount: number
+    /** Expected conflicts caught by either the detector or the LLM output. */
+    matchedCount: number
+    /** Fraction of expected conflicts the LLM output mentioned (0..1). */
+    llmRecall: number
+    /** Fraction of expected conflicts the deterministic detector found (0..1). */
+    detectorRecall: number
+    /** Detector records with no corresponding expected conflict. */
+    falsePositives: number
+    score: number
+    maxScore: 10
+}
 
 export type EvalSummary = {
     totalDocumentsEvaluated: number
@@ -88,10 +132,16 @@ export type EvalSummary = {
     status: string
     regressionThreshold: number
     regressionPassed: boolean
-    /** Average score per dimension, as a percentage of that dimension's max. */
-    categoryAverages: Record<keyof typeof DIMENSION_MAX, number>
+    /**
+     * Average score per dimension, as a percentage of that dimension's max.
+     * `crossDocConflicts` is present only when project conflicts were scored,
+     * so callers that pass no project data see the original 7-key shape.
+     */
+    categoryAverages: Partial<Record<keyof typeof DIMENSION_MAX, number>>
     /** Weakest dimension (lowest category average) — where to focus tuning. */
     weakestDimension: keyof typeof DIMENSION_MAX | null
+    /** Per-project cross-document conflict detail, when scored. */
+    crossDocConflictResults?: ProjectConflictScore[]
 }
 
 /**
@@ -99,12 +149,20 @@ export type EvalSummary = {
  * breakdown, and decides whether the suite clears the regression threshold.
  * Pure so it can be unit-tested and reused by the CI gate.
  */
-export function summarizeResults(results: DocScore[], minScore = 70): EvalSummary {
+export function summarizeResults(
+    results: DocScore[],
+    minScore = 70,
+    projectConflicts: ProjectConflictScore[] = [],
+): EvalSummary {
     const total = results.length
     const passed = results.filter((r) => r.pass).length
+    // Headline stays document-only so historical numbers stay comparable and
+    // the regression gate doesn't false-alarm on the new project-level dimension.
     const overallPercentage = total > 0 ? Math.round(results.reduce((sum, r) => sum + r.percentage, 0) / total) : 0
 
-    const sum = { classification: 0, facts: 0, risk: 0, valuation: 0, employee: 0, math: 0, recommendation: 0 }
+    const sum: Record<(typeof PER_DOC_DIMENSIONS)[number], number> = {
+        classification: 0, facts: 0, risk: 0, valuation: 0, employee: 0, math: 0, recommendation: 0,
+    }
     for (const r of results) {
         sum.classification += r.classificationScore
         sum.facts += r.factsScore
@@ -115,13 +173,25 @@ export function summarizeResults(results: DocScore[], minScore = 70): EvalSummar
         sum.recommendation += r.recommendationScore ?? 10
     }
 
-    const categoryAverages = {} as Record<keyof typeof DIMENSION_MAX, number>
+    const categoryAverages: Partial<Record<keyof typeof DIMENSION_MAX, number>> = {}
+    for (const key of PER_DOC_DIMENSIONS) {
+        categoryAverages[key] = total > 0 ? Math.round((sum[key] / total / DIMENSION_MAX[key]) * 100) : 0
+    }
+    // Project-level dimension: injected separately (it has no per-document sum,
+    // which would otherwise divide by `total` and yield NaN). Only present when
+    // conflicts were actually scored, so no-project callers keep the 7-key shape.
+    if (projectConflicts.length > 0) {
+        const avgScore = projectConflicts.reduce((s, p) => s + p.score, 0) / projectConflicts.length
+        categoryAverages.crossDocConflicts = Math.round((avgScore / DIMENSION_MAX.crossDocConflicts) * 100)
+    }
+
     let weakestDimension: keyof typeof DIMENSION_MAX | null = null
-    for (const key of Object.keys(DIMENSION_MAX) as Array<keyof typeof DIMENSION_MAX>) {
-        const pct = total > 0 ? Math.round((sum[key] / total / DIMENSION_MAX[key]) * 100) : 0
-        categoryAverages[key] = pct
-        if (total > 0 && (weakestDimension === null || pct < categoryAverages[weakestDimension])) {
-            weakestDimension = key
+    if (total > 0) {
+        for (const key of Object.keys(categoryAverages) as Array<keyof typeof DIMENSION_MAX>) {
+            const pct = categoryAverages[key] ?? 0
+            if (weakestDimension === null || pct < (categoryAverages[weakestDimension] ?? 0)) {
+                weakestDimension = key
+            }
         }
     }
 
@@ -134,6 +204,71 @@ export function summarizeResults(results: DocScore[], minScore = 70): EvalSummar
         regressionPassed: total === 0 || overallPercentage >= minScore,
         categoryAverages,
         weakestDimension,
+        ...(projectConflicts.length > 0 ? { crossDocConflictResults: projectConflicts } : {}),
+    }
+}
+
+/**
+ * Scores one project's cross-document contradiction detection out of 10.
+ *
+ * Recall is measured against `expectedCrossDocumentConflicts`: an expected
+ * conflict counts as caught if the deterministic detector produced a matching
+ * record (same canonical metric, and period when specified) OR the LLM's
+ * `crossDocumentConflicts` text mentions one of its description keywords (the
+ * same keyword technique used for expectedRedFlags). Detector records with no
+ * corresponding expected conflict are penalised as false positives.
+ */
+export function evaluateProjectConflicts(
+    gts: GroundTruth[],
+    docs: ActualRunDoc[],
+    detected: ContradictionRecord[],
+    projectId = '',
+    business = '',
+): ProjectConflictScore {
+    const expected = gts.flatMap((g) => g.expectedCrossDocumentConflicts ?? [])
+    const llmBlob = docs.flatMap((d) => d.crossDocumentConflicts ?? []).join(' ').toLowerCase()
+
+    const detectorMatches = (exp: ExpectedConflict) =>
+        detected.some((r) =>
+            r.metric === canonicalMetric(exp.metric)
+            && (!exp.period || r.period === canonicalPeriod(exp.period)))
+
+    const llmMatches = (exp: ExpectedConflict) => {
+        const keywords = exp.description.toLowerCase().split(/\s+/).filter((w) => w.length > 3)
+        return keywords.some((kw) => llmBlob.includes(kw))
+    }
+
+    let detectorHits = 0
+    let matchedCount = 0
+    for (const exp of expected) {
+        const byDetector = detectorMatches(exp)
+        if (byDetector) detectorHits += 1
+        if (byDetector || llmMatches(exp)) matchedCount += 1
+    }
+
+    const falsePositives = detected.filter((r) =>
+        !expected.some((e) =>
+            canonicalMetric(e.metric) === r.metric
+            && (!e.period || canonicalPeriod(e.period) === r.period))).length
+
+    const expectedCount = expected.length
+    const recall = expectedCount > 0 ? matchedCount / expectedCount : 1
+    const FALSE_POSITIVE_PENALTY = 2
+    const PENALTY_CAP = 5
+    const penalty = Math.min(falsePositives * FALSE_POSITIVE_PENALTY, PENALTY_CAP)
+    const score = Math.max(0, Math.min(10, Math.round(recall * 10 - penalty)))
+
+    return {
+        projectId,
+        business,
+        detected,
+        expectedCount,
+        matchedCount,
+        llmRecall: expectedCount > 0 ? expected.filter(llmMatches).length / expectedCount : 1,
+        detectorRecall: expectedCount > 0 ? detectorHits / expectedCount : 1,
+        falsePositives,
+        score,
+        maxScore: 10,
     }
 }
 
@@ -150,7 +285,35 @@ export function extractYear(period?: string): string {
  * Kept here so the parsing is unit-tested rather than inlined in run-evals.
  */
 export function normalizeActualDoc(raw: any): ActualRunDoc {
-    if (!raw?.extractedJson) return raw as ActualRunDoc
+    if (!raw?.extractedJson) {
+        // No extractedJson blob: the row is either already in ActualRunDoc shape
+        // or uses the newer mml packet field names (extractedFacts,
+        // valuation.valuationBaseEstimate, mathCheckPassed). Normalize the
+        // divergent names so the scorer and the conflict detector read them
+        // consistently, leaving already-correct rows untouched.
+        const financialFacts = Array.isArray(raw?.financialFacts)
+            ? raw.financialFacts
+            : Array.isArray(raw?.extractedFacts)
+                ? raw.extractedFacts.map((f: any) => ({
+                    metric: f.metric,
+                    normalizedValue: Number(f.normalizedValue ?? f.normalized_value) || 0,
+                    period: f.period,
+                    confidence: f.confidence,
+                }))
+                : []
+        const valuation = raw?.valuation
+            ? { ...raw.valuation, base_estimate: raw.valuation.base_estimate ?? raw.valuation.valuationBaseEstimate }
+            : raw?.valuation
+        const mathCheckStatus = raw?.mathCheckStatus
+            ?? (typeof raw?.mathCheckPassed === 'boolean' ? (raw.mathCheckPassed ? 'passed' : 'failed') : raw?.mathCheckStatus)
+        return {
+            ...(raw as ActualRunDoc),
+            financialFacts,
+            valuation,
+            mathCheckStatus,
+            crossDocumentConflicts: raw?.crossDocumentConflicts ?? [],
+        }
+    }
     try {
         const parsed = typeof raw.extractedJson === 'string' ? JSON.parse(raw.extractedJson) : raw.extractedJson
         const redFlags = parsed.response?.flags?.red_flags || parsed.response?.flags?.redFlags || parsed.redFlags || []
@@ -174,6 +337,7 @@ export function normalizeActualDoc(raw: any): ActualRunDoc {
             valuation: parsed.valuation || null,
             employeeEvidence: parsed.employee_evidence || parsed.employeeEvidence || null,
             mathCheckStatus: parsed.mathCheckStatus || 'passed',
+            crossDocumentConflicts: parsed.cross_document_conflicts || parsed.crossDocumentConflicts || raw.crossDocumentConflicts || [],
         }
     } catch {
         return raw as ActualRunDoc

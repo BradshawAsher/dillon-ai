@@ -53,6 +53,14 @@
     },
     "expectedMathCheckStatus": "passed",
     "notes": "MML M&A Benchmark Deal DD-014: Alpine Bloom Landscape & Facilities, Inc. (Commercial Landscaping, Irrigation & Snow Removal). Seller claims $2.27M EBITDA vs $1.75M buyer-supported ($518k overstatement).",
-    "expectedRecommendation": "PROCEED WITH REPRICE"
+    "expectedRecommendation": "PROCEED WITH REPRICE",
+    "expectedCrossDocumentConflicts": [
+      {
+        "metric": "adjusted_ebitda",
+        "period": "TTM",
+        "description": "Seller-claimed adjusted EBITDA of $2,270,000 overstates the buyer-supported $1,754,551 by $515,449 (~23%).",
+        "severity": "critical"
+      }
+    ]
   }
 }

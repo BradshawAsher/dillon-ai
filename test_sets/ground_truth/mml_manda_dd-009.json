@@ -53,6 +53,14 @@
     },
     "expectedMathCheckStatus": "passed",
     "notes": "MML M&A Benchmark Deal DD-009: Meridian Testing Laboratories, Inc. (Environmental & Materials Testing Laboratory). Seller claims $2.95M EBITDA vs $2.89M buyer-supported ($56k overstatement).",
-    "expectedRecommendation": "PROCEED"
+    "expectedRecommendation": "PROCEED",
+    "expectedCrossDocumentConflicts": [
+      {
+        "metric": "adjusted_ebitda",
+        "period": "TTM",
+        "description": "Seller-claimed adjusted EBITDA of $2,950,000 overstates the buyer-supported $2,892,719 by $57,281 (~2%).",
+        "severity": "info"
+      }
+    ]
   }
 }
