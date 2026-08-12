@@ -76,8 +76,9 @@ export function exportQuestionsMarkdown(projectName: string, questions: CustomSe
 
     questions.forEach((q, index) => {
         const status = q.answered ? '[x] Answered' : '[ ] Open'
-        const notes = q.notes || '-'
-        md += `| ${index + 1} | ${status} | ${escapeTableCell(q.question)} | ${escapeTableCell(notes)} |\n`
+        // The column is "Owner / Notes" — include the owner, which was dropped.
+        const ownerNotes = [q.owner, q.notes].map((s) => (s ?? '').trim()).filter(Boolean).join(' — ') || '-'
+        md += `| ${index + 1} | ${status} | ${escapeTableCell(q.question)} | ${escapeTableCell(ownerNotes)} |\n`
     })
 
     return md

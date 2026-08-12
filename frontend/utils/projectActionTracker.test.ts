@@ -55,6 +55,15 @@ describe('exportQuestionsMarkdown', () => {
         expect(md).toContain('| 2 | [ ] Open | Q two | - |')
     })
 
+    it('includes the owner alongside notes in the Owner / Notes column', () => {
+        const md = exportQuestionsMarkdown('Acme', [
+            { id: '1', question: 'Q', answered: false, owner: 'Dana', notes: 'follow up', createdAt: 'now' },
+            { id: '2', question: 'Q2', answered: false, owner: 'Lee', createdAt: 'now' },
+        ])
+        expect(md).toContain('| 1 | [ ] Open | Q | Dana — follow up |')
+        expect(md).toContain('| 2 | [ ] Open | Q2 | Lee |')
+    })
+
     it('escapes pipes and newlines so they cannot break the table', () => {
         const md = exportQuestionsMarkdown('Acme', [
             { id: '1', question: 'Line1\nLine2 | piped', answered: false, notes: 'a|b\nc', createdAt: 'now' },
