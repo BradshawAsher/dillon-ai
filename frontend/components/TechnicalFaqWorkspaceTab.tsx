@@ -38,6 +38,14 @@ export default function TechnicalFaqWorkspaceTab({ onSwitchTab }: TechnicalFaqWo
         {
             category: 'getting-started',
             categoryLabel: 'Getting Started',
+            question: 'What are the 2 main operational workflows of the agent? (Pre-LOI vs Post-LOI)',
+            answer: '1. Phase 1: Pre-LOI Valuation Discovery — Upload raw accounting materials (P&Ls, balance sheets, tax returns) to extract true normalized EBITDA, audit unaudited seller add-backs, and compute fair valuation bounds (Base, Bear, Bull) before issuing an LOI.\n2. Phase 2: Post-LOI Deal Negotiation — Upload an LOI or Term Sheet along with bank recs to reconcile proposed purchase prices against audited valuation bounds, quantify overpayment exposure, detect cross-document accounting discrepancies, and generate dollar-for-dollar price adjustment levers.',
+            actionLabel: 'Go to Intake in Overview',
+            targetTab: 'overview',
+        },
+        {
+            category: 'getting-started',
+            categoryLabel: 'Getting Started',
             question: 'How do I start analyzing a new deal packet from scratch?',
             answer: 'Navigate to the "Projects" or "Overview" tab. In the Document Intake card, drag and drop your deal files (PDF P&Ls, Excel balance sheets, Word LOIs). Click "Process Deal Packet" to trigger automated OCR and fact extraction.',
             actionLabel: 'Go to Intake in Overview',
