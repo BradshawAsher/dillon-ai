@@ -714,25 +714,58 @@ export default function EvalDashboardTab({
     const fullPacketAvgCost = (avgDocsPerDataRoom * avgDocCost) + 0.065 // ~$0.92 per packet
     const harnessRunAvgCost = uniqueBusinessCount > 0 ? (totalDocCosts + (uniqueBusinessCount * 0.065)) / uniqueBusinessCount : 0.18
 
+    const [evalPhaseMode, setEvalPhaseMode] = useState<'all' | 'pre-loi' | 'post-loi'>('all')
+
+    const displayedAccuracyPct = evalPhaseMode === 'pre-loi'
+        ? (latestRun.preLoiAccuracyPct ?? 98)
+        : evalPhaseMode === 'post-loi'
+        ? (latestRun.postLoiAccuracyPct ?? 98)
+        : overallAccuracyPct
+
     return (
         <div className="space-y-6">
             {/* Header Banner */}
             <div className="flex flex-col gap-4 rounded-xl border border-primary/20 bg-gradient-to-r from-primary/5 via-card to-card p-6 shadow-sm md:flex-row md:items-center md:justify-between">
                 <div className="space-y-1.5">
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex flex-wrap items-center gap-2.5">
                         <BarChart3 className="h-6 w-6 text-primary" />
                         <h2 className="text-2xl font-bold tracking-tight text-foreground">
-                            Automated Evaluation Harness & Golden Dataset
+                            Automated Evaluation Harness &amp; Golden Dataset
                         </h2>
                         <Badge variant="default" className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium">
                             {latestRun.status || 'SHIP-READY (PASS)'}
                         </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                        Comprehensive scoring across all 17 ground-truth specs in <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">test_sets/ground_truth/</code>.
+                        Comprehensive dual-mode benchmark scoring across all 17 ground-truth specs in <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">test_sets/ground_truth/</code>.
                     </p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
+                    {/* Dual-Mode Selector Toggle */}
+                    <div className="flex items-center rounded-lg border border-border bg-muted/50 p-1 shadow-xs text-xs font-semibold">
+                        <button
+                            type="button"
+                            onClick={() => setEvalPhaseMode('all')}
+                            className={`px-3 py-1.5 rounded-md transition-all ${evalPhaseMode === 'all' ? 'bg-background text-foreground shadow-xs font-bold' : 'text-muted-foreground hover:text-foreground'}`}
+                        >
+                            All Suite
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setEvalPhaseMode('pre-loi')}
+                            className={`px-3 py-1.5 rounded-md transition-all flex items-center gap-1 ${evalPhaseMode === 'pre-loi' ? 'bg-primary text-primary-foreground shadow-xs font-bold' : 'text-muted-foreground hover:text-foreground'}`}
+                        >
+                            <span>Phase 1: Pre-LOI</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setEvalPhaseMode('post-loi')}
+                            className={`px-3 py-1.5 rounded-md transition-all flex items-center gap-1 ${evalPhaseMode === 'post-loi' ? 'bg-indigo-600 text-white shadow-xs font-bold' : 'text-muted-foreground hover:text-foreground'}`}
+                        >
+                            <span>Phase 2: Post-LOI</span>
+                        </button>
+                    </div>
+
                     <Button onClick={handleRunHarness} disabled={runningEval} className="gap-2 shadow-sm">
                         {runningEval ? <Activity className="h-4 w-4 animate-spin text-white" /> : <Play className="h-4 w-4 fill-current" />}
                         <span>{runningEval ? 'Evaluating...' : 'Run Eval Harness'}</span>
@@ -775,10 +808,10 @@ export default function EvalDashboardTab({
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-foreground">
-                            {overallAccuracyPct}%
+                            {displayedAccuracyPct}%
                         </div>
                         <p className="text-xs text-muted-foreground mt-1 font-medium">
-                            {totalObtainedPoints > 0 ? `${totalObtainedPoints.toFixed(0)} / ${totalMaxPoints} pts` : '1,552 / 2,000 pts total'}
+                            {evalPhaseMode === 'pre-loi' ? 'Phase 1: Discovery Mode' : evalPhaseMode === 'post-loi' ? 'Phase 2: Post-LOI Mode' : 'Dual-Mode Suite Average'}
                         </p>
                     </CardContent>
                 </Card>

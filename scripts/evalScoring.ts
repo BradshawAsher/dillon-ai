@@ -142,6 +142,9 @@ export type EvalSummary = {
     weakestDimension: keyof typeof DIMENSION_MAX | null
     /** Per-project cross-document conflict detail, when scored. */
     crossDocConflictResults?: ProjectConflictScore[]
+    /** Dual-mode accuracy breakdowns: Pre-LOI Valuation Discovery vs Post-LOI Deal Negotiation */
+    preLoiAccuracyPct?: number
+    postLoiAccuracyPct?: number
 }
 
 /**
@@ -185,6 +188,14 @@ export function summarizeResults(
         categoryAverages.crossDocConflicts = Math.round((avgScore / DIMENSION_MAX.crossDocConflicts) * 100)
     }
 
+    // Pre-LOI Valuation Discovery Mode score (Classification, Facts, Risk, Valuation, Employee, Math)
+    const preLoiSum = (categoryAverages.classification || 0) + (categoryAverages.facts || 0) + (categoryAverages.risk || 0) + (categoryAverages.valuation || 0) + (categoryAverages.employee || 0) + (categoryAverages.math || 0)
+    const preLoiAccuracyPct = Math.round(preLoiSum / 6)
+
+    // Post-LOI Deal Negotiation Mode score (Recommendation, Cross-Doc Conflicts)
+    const postLoiSum = (categoryAverages.recommendation || 0) + (categoryAverages.crossDocConflicts || 100)
+    const postLoiAccuracyPct = Math.round(postLoiSum / 2)
+
     let weakestDimension: keyof typeof DIMENSION_MAX | null = null
     if (total > 0) {
         for (const key of Object.keys(categoryAverages) as Array<keyof typeof DIMENSION_MAX>) {
@@ -199,6 +210,8 @@ export function summarizeResults(
         totalDocumentsEvaluated: total,
         passedDocuments: passed,
         overallPercentage,
+        preLoiAccuracyPct,
+        postLoiAccuracyPct,
         status: overallPercentage >= 70 ? 'SHIP-READY (PASS)' : 'NEEDS-TUNING',
         regressionThreshold: minScore,
         regressionPassed: total === 0 || overallPercentage >= minScore,

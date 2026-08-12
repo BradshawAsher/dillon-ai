@@ -1,8 +1,10 @@
 {
-  "evaluatedAt": "2026-08-12T04:06:03.624Z",
+  "evaluatedAt": "2026-08-12T18:37:14.419Z",
   "totalDocumentsEvaluated": 43,
   "passedDocuments": 43,
   "overallPercentage": 98,
+  "preLoiAccuracyPct": 99,
+  "postLoiAccuracyPct": 98,
   "status": "SHIP-READY (PASS)",
   "regressionThreshold": 80,
   "regressionPassed": true,
