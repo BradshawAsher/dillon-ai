@@ -1530,15 +1530,24 @@ export default function EvalDashboardTab({
                                 const phaseScore = isPreLoi ? (latestRun.preLoiAccuracyPct ?? 99) : (latestRun.postLoiAccuracyPct ?? 98)
                                 const phaseTitleSuffix = isPreLoi ? 'Phase 1: Pre-LOI Valuation Discovery' : 'Phase 2: Post-LOI Deal Negotiation'
                                 const phaseBadgeColor = isPreLoi
-                                    ? 'bg-blue-500/15 text-blue-800 dark:text-blue-200 border-blue-400/80'
-                                    : 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border-emerald-400/80'
+                                    ? 'bg-blue-500/20 text-blue-900 dark:text-blue-100 border-blue-400 font-extrabold'
+                                    : 'bg-emerald-500/20 text-emerald-900 dark:text-emerald-100 border-emerald-400 font-extrabold'
+                                const cardTheme = isPreLoi
+                                    ? 'border-2 border-blue-500/50 bg-blue-500/5 dark:bg-blue-950/20 shadow-md hover:border-blue-500/80 transition-all'
+                                    : 'border-2 border-emerald-500/50 bg-emerald-500/5 dark:bg-emerald-950/20 shadow-md hover:border-emerald-500/80 transition-all'
+
+                                const docCountBadgeText = isPreLoi
+                                    ? '22 Docs (Pre-LOI Data Room — Pre-Term Sheet)'
+                                    : '23 Docs (Post-LOI Data Room — Includes Executed LOI)'
+
+                                const inspectBtnText = isPreLoi ? 'Inspect 22 Docs' : 'Inspect 23 Docs'
 
                                 return (
-                                    <div key={`${groupIdx}_${phase}`} className="rounded-xl border border-border bg-card p-4 space-y-4 shadow-2xs">
+                                    <div key={`${groupIdx}_${phase}`} className={`rounded-xl p-4 space-y-4 ${cardTheme}`}>
                                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/60 pb-3">
                                             <div className="space-y-1.5">
                                                 <div className="flex items-center gap-2 flex-wrap">
-                                                    <Building2 className="h-4 w-4 text-primary shrink-0" />
+                                                    <Building2 className={`h-4 w-4 shrink-0 ${isPreLoi ? 'text-blue-600 dark:text-blue-400' : 'text-emerald-600 dark:text-emerald-400'}`} />
                                                     <h4 className="font-bold text-base text-foreground">{businessName}</h4>
                                                     <Badge variant="outline" className={`text-xs font-bold gap-1 px-2.5 py-0.5 ${phaseBadgeColor}`}>
                                                         <Sparkles className="h-3.5 w-3.5" />
@@ -1547,8 +1556,8 @@ export default function EvalDashboardTab({
                                                     {(() => {
                                                         if (isDDLive) {
                                                             return (
-                                                                <Badge variant="success" className="text-xs font-bold gap-1 px-2.5 py-0.5 bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border-emerald-400/80">
-                                                                    20 Docs / Full Data Room ($1.16/packet)
+                                                                <Badge variant="success" className={`text-xs font-bold gap-1 px-2.5 py-0.5 ${isPreLoi ? 'bg-blue-500/15 text-blue-900 dark:text-blue-200 border-blue-400/80' : 'bg-emerald-500/15 text-emerald-900 dark:text-emerald-200 border-emerald-400/80'}`}>
+                                                                    {docCountBadgeText} ($1.16/packet)
                                                                 </Badge>
                                                             )
                                                         }
@@ -1573,7 +1582,7 @@ export default function EvalDashboardTab({
                                                     title={`Open interactive per-doc results viewer for ${businessName}`}
                                                 >
                                                     <Eye className="h-4 w-4 shrink-0" />
-                                                    <span>Inspect {isDDPacket ? '22 Docs' : docs.length === 1 ? '1 Folder' : `${docs.length} Docs`}</span>
+                                                    <span>{isDDPacket ? inspectBtnText : docs.length === 1 ? 'Inspect 1 Folder' : `Inspect ${docs.length} Docs`}</span>
                                                 </Button>
 
                                                 <Button
