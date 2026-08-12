@@ -313,6 +313,23 @@ export function isRowMatchingProject(row: SubmissionHistoryItem, targetProjectId
         }
     }
 
+    // Match Juniper Environmental Group files for DD-005 project key
+    if (rawTarget.includes('juniper') || rawTarget.includes('dd-005') || rawTarget.includes('dd005')) {
+        const fn = (row.fileName || '').toLowerCase()
+        const comp = (row.companyName || '').toLowerCase()
+        if (
+            explicitPid.includes('juniper') ||
+            explicitPid.includes('dd-005') ||
+            comp.includes('juniper') ||
+            fn.includes('juniper') ||
+            fn.includes('dd-005') ||
+            explicitPid.startsWith('mml-dd-005') ||
+            pk.startsWith('mml-dd-005')
+        ) {
+            return true
+        }
+    }
+
     // 2. If targetProjectId is a specific instance ID (e.g. "project-20260807-f82ade4b"), match explicit PID/PK or mapped business name
     if (rawTarget.startsWith('project-') || rawTarget.startsWith('batch-') || rawTarget.startsWith('sub-')) {
         if (explicitPid === rawTarget || pk === rawTarget) return true
