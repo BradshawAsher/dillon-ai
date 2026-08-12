@@ -126,6 +126,7 @@ export function runEvalSuite() {
     console.log(`Overall Pass Rate: ${summary.passedDocuments}/${summary.totalDocumentsEvaluated} (${summary.overallPercentage}%)`)
     console.log(`Status: ${summary.status}`)
     console.log(`Regression gate: threshold ${summary.regressionThreshold}% -> ${summary.regressionPassed ? 'PASS' : 'FAIL'}`)
+    console.log(`Dual-mode: Pre-LOI Discovery ${summary.preLoiAccuracyPct ?? '—'}% | Post-LOI Negotiation ${summary.postLoiAccuracyPct ?? '—'}%`)
     console.log('--- Category averages (% of max) -------------------')
     for (const [dim, pct] of Object.entries(summary.categoryAverages)) {
         const marker = dim === summary.weakestDimension ? '  <-- weakest' : ''
@@ -215,6 +216,7 @@ function buildMarkdownReport(report: EvalSummary & {
     lines.push(`- **Generated:** ${report.evaluatedAt}`)
     lines.push(`- **Overall:** ${report.overallPercentage}% (${report.passedDocuments}/${report.totalDocumentsEvaluated} docs passing) — ${report.status}`)
     lines.push(`- **Regression gate:** threshold ${report.regressionThreshold}% → ${report.regressionPassed ? '✅ PASS' : '❌ FAIL'}`)
+    lines.push(`- **Dual-mode accuracy:** Pre-LOI Discovery ${report.preLoiAccuracyPct ?? '—'}% · Post-LOI Negotiation ${report.postLoiAccuracyPct ?? '—'}%`)
     lines.push(`- **Ground-truth coverage:** ${report.totalDocumentsEvaluated}/${report.groundTruthSpecs} specs scored`, '')
     lines.push('## Category averages (% of max)', '')
     lines.push('| Dimension | Avg |', '| --- | --- |')
