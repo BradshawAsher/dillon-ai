@@ -1023,21 +1023,28 @@ export default function EvalDashboardTab({
                                                     const sev = (det.severity || 'critical').toUpperCase()
 
                                                     return (
-                                                        <div key={dIdx} className="bg-background/80 rounded-md p-2.5 border border-border/50 text-[11px] space-y-1.5">
-                                                            <div className="flex items-center justify-between gap-2">
-                                                                <span className="font-semibold text-amber-700 dark:text-amber-400">
-                                                                    Metric: <code className="font-mono text-foreground font-bold">{det.metric}</code> ({det.period || 'TTM'})
+                                                        <div key={dIdx} className="bg-background rounded-lg p-3 border-2 border-red-500/30 shadow-xs text-xs space-y-2">
+                                                            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/40 pb-2">
+                                                                <span className="font-bold text-foreground flex items-center gap-1.5 text-xs">
+                                                                    <AlertTriangle className="h-4 w-4 text-red-500 shrink-0" />
+                                                                    <span>Metric: <code className="font-mono text-primary font-bold text-xs bg-muted px-1.5 py-0.5 rounded">{det.metric}</code> ({det.period || 'TTM'})</span>
                                                                 </span>
-                                                                <Badge variant={det.severity === 'critical' ? 'destructive' : 'warning'} className="font-mono font-extrabold text-[10px] px-2 py-0.5 shrink-0">
-                                                                    {pctVal}% {sev} VARIANCE
-                                                                </Badge>
-                                                            </div>
-                                                            <div className="text-muted-foreground grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-0.5 font-mono text-[10px]">
-                                                                <div className="truncate bg-muted/30 p-1 rounded border border-border/30">
-                                                                    📄 <span className="font-semibold text-foreground">{det.docA}</span>: <span className="font-bold text-foreground">${Number(det.valueA).toLocaleString()}</span>
+                                                                <div className="flex items-center gap-2">
+                                                                    <Badge className="bg-gradient-to-r from-red-600 to-rose-600 text-white font-mono font-black text-sm px-3 py-1 shadow-md shadow-red-500/20 tracking-wider">
+                                                                        ⚠️ {pctVal}% {sev} CONTRADICTION
+                                                                    </Badge>
                                                                 </div>
-                                                                <div className="truncate bg-muted/30 p-1 rounded border border-border/30">
-                                                                    📄 <span className="font-semibold text-foreground">{det.docB}</span>: <span className="font-bold text-foreground">${Number(det.valueB).toLocaleString()}</span>
+                                                            </div>
+                                                            <div className="text-muted-foreground grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 font-mono text-xs">
+                                                                <div className="bg-muted/40 p-2 rounded-md border border-border/50 space-y-0.5">
+                                                                    <div className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Document A</div>
+                                                                    <div className="font-bold text-foreground truncate" title={det.docA}>{det.docA}</div>
+                                                                    <div className="text-sm font-black text-amber-600 dark:text-amber-400">${Number(det.valueA).toLocaleString()}</div>
+                                                                </div>
+                                                                <div className="bg-muted/40 p-2 rounded-md border border-border/50 space-y-0.5">
+                                                                    <div className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Document B (Exhibit Bridge)</div>
+                                                                    <div className="font-bold text-foreground truncate" title={det.docB}>{det.docB}</div>
+                                                                    <div className="text-sm font-black text-red-600 dark:text-red-400">${Number(det.valueB).toLocaleString()}</div>
                                                                 </div>
                                                             </div>
                                                         </div>
