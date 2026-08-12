@@ -705,6 +705,12 @@ export default function EvalDashboardTab({
     const totalDocsCount = latestRun.totalDocumentsEvaluated ?? docResults.length ?? 25
     const passRatePct = totalDocsCount > 0 ? Math.round((passDocsCount / totalDocsCount) * 100) : 100
 
+    // Dynamic cost calculations across test set documents & project packets
+    const totalDocCosts = docResults.reduce((sum, doc) => sum + calculateDocumentCost(doc), 0)
+    const avgDocCost = docResults.length > 0 ? totalDocCosts / docResults.length : 0.055
+    const estimatedTotalSuiteCost = totalDocCosts + (uniqueBusinessCount * 0.065)
+    const avgPacketCost = uniqueBusinessCount > 0 ? estimatedTotalSuiteCost / uniqueBusinessCount : 0.92
+
     return (
         <div className="space-y-6">
             {/* Header Banner */}
@@ -798,10 +804,10 @@ export default function EvalDashboardTab({
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-foreground">
-                            357 Total Docs
+                            {totalDocsCount} Total Docs
                         </div>
                         <p className="text-xs text-muted-foreground font-medium mt-1">
-                            Across 23 deal packets
+                            Across {uniqueBusinessCount} deal packets
                         </p>
                     </CardContent>
                 </Card>
@@ -815,25 +821,10 @@ export default function EvalDashboardTab({
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-foreground">
-                            23 Test Set Deals
+                            {uniqueBusinessCount} Deal Packets
                         </div>
-                        <p className="text-xs text-muted-foreground font-medium mt-1 truncate" title="Businesses 1-5, MergeWorks Suite, DD-001 through DD-015">
-                            23 M&A Deal Packets (357 Docs)
-                        </p>
-                    </CardContent>
-                </Card>
-
-                <Card className="border-border shadow-xs">
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                            Risk Flag Recall
-                        </CardTitle>
-                        <ShieldAlert className="h-4 w-4 text-amber-500" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-foreground">100%</div>
-                        <p className="text-xs text-muted-foreground font-medium mt-1">
-                            5/5 ground truth risks caught
+                        <p className="text-xs text-muted-foreground font-medium mt-1 truncate" title={`${uniqueBusinessCount} M&A Deal Packets (${totalDocsCount} Docs)`}>
+                            {uniqueBusinessCount} M&A Packets ({totalDocsCount} Docs)
                         </p>
                     </CardContent>
                 </Card>
@@ -841,16 +832,16 @@ export default function EvalDashboardTab({
                 <Card className="border-border shadow-xs border-emerald-500/30 bg-emerald-500/5">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
                         <CardTitle className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
-                            Cost Optimization
+                            Avg Cost / Deal Packet
                         </CardTitle>
                         <DollarSign className="h-4 w-4 text-emerald-600" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
-                            $0.0226 <span className="text-xs font-bold text-muted-foreground">/ run (-53%)</span>
+                            ${avgPacketCost.toFixed(2)} <span className="text-xs font-bold text-muted-foreground">/ packet</span>
                         </div>
                         <p className="text-[11px] text-muted-foreground font-semibold mt-1">
-                            Claude Sonnet 5 (Per-Doc) + OpenAI 5.6 Terra (Synth)
+                            Avg ${avgDocCost.toFixed(3)}/doc across {uniqueBusinessCount} packets ({totalDocsCount} docs)
                         </p>
                     </CardContent>
                 </Card>
