@@ -1536,11 +1536,21 @@ export default function EvalDashboardTab({
                                     ? 'border-2 border-blue-500/50 bg-blue-500/5 dark:bg-blue-950/20 shadow-md hover:border-blue-500/80 transition-all'
                                     : 'border-2 border-emerald-500/50 bg-emerald-500/5 dark:bg-emerald-950/20 shadow-md hover:border-emerald-500/80 transition-all'
 
+                                const hasLivePostLoi = isDD001 || isDD002 || isDD003 || isDD004 || normB.includes('werkheiser')
+
                                 const docCountBadgeText = isPreLoi
                                     ? '22 Docs (Pre-LOI Data Room — Pre-Term Sheet)'
-                                    : '23 Docs (Post-LOI Data Room — Includes Executed LOI)'
+                                    : hasLivePostLoi
+                                    ? '23 Docs (Post-LOI Data Room — Includes Executed LOI)'
+                                    : '22 Docs Uploaded (Executed LOI Document Pending)'
 
-                                const inspectBtnText = isPreLoi ? 'Inspect 22 Docs' : 'Inspect 23 Docs'
+                                const inspectBtnText = isPreLoi ? 'Inspect 22 Docs' : hasLivePostLoi ? 'Inspect 23 Docs' : 'Inspect 22 Docs (No LOI Yet)'
+
+                                const liveStatusBadge = isPreLoi
+                                    ? <Badge variant="outline" className="text-xs font-bold gap-1 px-2.5 py-0.5 bg-blue-500/15 text-blue-900 dark:text-blue-200 border-blue-400/80">✅ Live Pre-LOI Discovery Complete</Badge>
+                                    : hasLivePostLoi
+                                    ? <Badge variant="outline" className="text-xs font-bold gap-1 px-2.5 py-0.5 bg-emerald-500/15 text-emerald-900 dark:text-emerald-200 border-emerald-400/80">⚡ Live Post-LOI Synthesis Active</Badge>
+                                    : <Badge variant="outline" className="text-xs font-bold gap-1 px-2.5 py-0.5 bg-amber-500/15 text-amber-900 dark:text-amber-200 border-amber-400/80">⚠️ Post-LOI Synthesis Pending (Needs LOI File)</Badge>
 
                                 return (
                                     <div key={`${groupIdx}_${phase}`} className={`rounded-xl p-4 space-y-4 ${cardTheme}`}>
@@ -1553,10 +1563,11 @@ export default function EvalDashboardTab({
                                                         <Sparkles className="h-3.5 w-3.5" />
                                                         {phaseTitleSuffix} ({phaseScore}%)
                                                     </Badge>
+                                                    {liveStatusBadge}
                                                     {(() => {
                                                         if (isDDLive) {
                                                             return (
-                                                                <Badge variant="success" className={`text-xs font-bold gap-1 px-2.5 py-0.5 ${isPreLoi ? 'bg-blue-500/15 text-blue-900 dark:text-blue-200 border-blue-400/80' : 'bg-emerald-500/15 text-emerald-900 dark:text-emerald-200 border-emerald-400/80'}`}>
+                                                                <Badge variant="success" className={`text-xs font-bold gap-1 px-2.5 py-0.5 ${isPreLoi ? 'bg-blue-500/15 text-blue-900 dark:text-blue-200 border-blue-400/80' : hasLivePostLoi ? 'bg-emerald-500/15 text-emerald-900 dark:text-emerald-200 border-emerald-400/80' : 'bg-amber-500/15 text-amber-900 dark:text-amber-200 border-amber-400/80'}`}>
                                                                     {docCountBadgeText} ($1.16/packet)
                                                                 </Badge>
                                                             )
@@ -1625,6 +1636,12 @@ export default function EvalDashboardTab({
                                                     <span>Add More Files</span>
                                                 </Button>
                                             </div>
+                                            {!isPreLoi && !hasLivePostLoi ? (
+                                                <div className="flex items-center gap-2 rounded-lg border border-amber-500/50 bg-amber-500/15 px-3.5 py-2 text-xs font-semibold text-amber-900 dark:text-amber-100 mt-2 shadow-2xs">
+                                                    <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                                                    <span><strong>Post-LOI Re-Synthesis Pending:</strong> An Executed LOI / Term Sheet document has not been uploaded to this workspace yet. Upload <code>06_transaction/letter_of_intent.pdf</code> to run live Post-LOI purchase price bridge ($\Delta\text{EV}$) and contract trap synthesis.</span>
+                                                </div>
+                                            ) : null}
                                             {isDDPlaceholder ? (
                                                 <div className="flex items-center gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3.5 py-1.5 text-xs font-semibold text-amber-800 dark:text-amber-200 mt-1">
                                                     <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
