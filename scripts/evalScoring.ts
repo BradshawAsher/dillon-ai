@@ -106,6 +106,18 @@ export const DIMENSION_MAX = {
 /** Per-document dimension keys (everything except the project-level conflicts). */
 const PER_DOC_DIMENSIONS = ['classification', 'facts', 'risk', 'valuation', 'employee', 'math', 'recommendation'] as const
 
+/**
+ * Which dimensions make up each dual-mode accuracy score. Single source of
+ * truth so Pre-LOI / Post-LOI membership can't drift from the computation.
+ */
+export const PRE_LOI_DIMENSIONS = ['classification', 'facts', 'risk', 'valuation', 'employee', 'math'] as const
+export const POST_LOI_DIMENSIONS = ['recommendation', 'crossDocConflicts'] as const
+
+/** Value to use for a dimension a run didn't score: conflicts read as clean. */
+const UNSCORED_DIMENSION_DEFAULT: Partial<Record<keyof typeof DIMENSION_MAX, number>> = {
+    crossDocConflicts: 100,
+}
+
 /** Score for one project's cross-document contradiction detection (0..10). */
 export type ProjectConflictScore = {
     projectId: string
@@ -188,15 +200,15 @@ export function summarizeResults(
         categoryAverages.crossDocConflicts = Math.round((avgScore / DIMENSION_MAX.crossDocConflicts) * 100)
     }
 
-    // Pre-LOI Valuation Discovery Mode score (Classification, Facts, Risk, Valuation, Employee, Math)
-    const preLoiSum = (categoryAverages.classification ?? 0) + (categoryAverages.facts ?? 0) + (categoryAverages.risk ?? 0) + (categoryAverages.valuation ?? 0) + (categoryAverages.employee ?? 0) + (categoryAverages.math ?? 0)
-    const preLoiAccuracyPct = Math.round(preLoiSum / 6)
-
-    // Post-LOI Deal Negotiation Mode score (Recommendation, Cross-Doc Conflicts).
-    // Use ?? (not ||) so a genuine 0% cross-doc score is not silently read as a
-    // perfect 100 — only an *unscored* dimension (undefined) defaults to 100.
-    const postLoiSum = (categoryAverages.recommendation ?? 0) + (categoryAverages.crossDocConflicts ?? 100)
-    const postLoiAccuracyPct = Math.round(postLoiSum / 2)
+    // Dual-mode accuracy: average the mode's dimensions. `??` (not `||`) so a
+    // genuine 0% stays 0; only an unscored dimension takes its default (100 for
+    // cross-doc conflicts, 0 otherwise).
+    const modeAccuracy = (dims: readonly (keyof typeof DIMENSION_MAX)[]): number => {
+        const sum = dims.reduce((acc, key) => acc + (categoryAverages[key] ?? UNSCORED_DIMENSION_DEFAULT[key] ?? 0), 0)
+        return Math.round(sum / dims.length)
+    }
+    const preLoiAccuracyPct = modeAccuracy(PRE_LOI_DIMENSIONS)
+    const postLoiAccuracyPct = modeAccuracy(POST_LOI_DIMENSIONS)
 
     let weakestDimension: keyof typeof DIMENSION_MAX | null = null
     if (total > 0) {
