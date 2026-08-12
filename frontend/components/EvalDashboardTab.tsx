@@ -1870,9 +1870,9 @@ export default function EvalDashboardTab({
                         const displayRuns = evalRuns.length > 0 ? evalRuns : defaultRuns
 
                         return (
-                            <div className="overflow-x-auto">
+                            <div className="overflow-x-auto max-h-[380px] overflow-y-auto pr-1 rounded-lg border border-border/60 shadow-xs">
                                 <table className="w-full text-xs text-left">
-                                    <thead className="border-b border-border bg-muted/40 font-semibold text-muted-foreground uppercase text-[10px]">
+                                    <thead className="sticky top-0 bg-card border-b border-border font-semibold text-muted-foreground uppercase text-[10px] z-10 shadow-xs">
                                         <tr>
                                             <th className="py-2.5 px-3">Run Date / Time</th>
                                             <th className="py-2.5 px-3">Commit / SHA</th>
