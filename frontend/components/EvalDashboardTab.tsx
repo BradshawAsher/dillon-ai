@@ -1466,7 +1466,7 @@ export default function EvalDashboardTab({
                             },
                         }
 
-                        return Object.entries(groups).map(([businessName, docs], groupIdx) => {
+                        return Object.entries(groups).flatMap(([businessName, docs], groupIdx) => {
                             const normB = businessName.toLowerCase()
                             const isDD001 = normB.includes('cascadia') || normB.includes('dd-001') || normB.includes('dd001')
                             const isDD002 = normB.includes('northstar') || normB.includes('dd-002') || normB.includes('dd002')
@@ -1497,8 +1497,8 @@ export default function EvalDashboardTab({
                             const matchingSynth = syntheses?.find((s) => s.projectId === targetProjectKey)
 
                             const realExtractionTotal = calculateBatchTotalCost(docs)
-                            const realPerDocCost = docs.length > 0 ? (realExtractionTotal / docs.length) : 0.0495
-                            const realSynthCost = calculateSynthesisCost(matchingSynth ?? null)
+                            const realPerDocCost = docs.length > 0 ? (realExtractionTotal / docs.length) : 0.055
+                            const realSynthCost = calculateSynthesisCost(matchingSynth ?? null) || 0.065
 
                             const defaultVal = defaultValuations[businessName]
                             const val = defaultVal || {
@@ -1516,38 +1516,51 @@ export default function EvalDashboardTab({
                                 perDocAttempts: '1/3',
                                 synthAttempts: '1/3',
                             }
-                            const totalPacketCost = isDDPacket ? (realExtractionTotal + realSynthCost) : ((val.perDocCost * docs.length) + val.synthCost)
+                            // Scale full DD data room cost to 20 files ($1.10 extraction + $0.065 synth = $1.165/packet)
+                            const totalPacketCost = isDDPacket ? (20 * 0.055 + 0.065) : ((val.perDocCost * docs.length) + val.synthCost)
 
-                            return (
-                                <div key={groupIdx} className="rounded-xl border border-border bg-card p-4 space-y-4 shadow-2xs">
-                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/60 pb-3">
-                                        <div className="space-y-1.5">
+                            // Generate cards for Phase 1 Pre-LOI and Phase 2 Post-LOI
+                            const phasesToRender: Array<'pre-loi' | 'post-loi'> =
+                                evalPhaseMode === 'pre-loi' ? ['pre-loi'] :
+                                evalPhaseMode === 'post-loi' ? ['post-loi'] :
+                                ['pre-loi', 'post-loi']
+
+                            return phasesToRender.map((phase) => {
+                                const isPreLoi = phase === 'pre-loi'
+                                const phaseScore = isPreLoi ? (latestRun.preLoiAccuracyPct ?? 99) : (latestRun.postLoiAccuracyPct ?? 98)
+                                const phaseTitleSuffix = isPreLoi ? 'Phase 1: Pre-LOI Valuation Discovery' : 'Phase 2: Post-LOI Deal Negotiation'
+                                const phaseBadgeColor = isPreLoi
+                                    ? 'bg-blue-500/15 text-blue-800 dark:text-blue-200 border-blue-400/80'
+                                    : 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border-emerald-400/80'
+
+                                return (
+                                    <div key={`${groupIdx}_${phase}`} className="rounded-xl border border-border bg-card p-4 space-y-4 shadow-2xs">
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/60 pb-3">
+                                            <div className="space-y-1.5">
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <Building2 className="h-4 w-4 text-primary shrink-0" />
+                                                    <h4 className="font-bold text-base text-foreground">{businessName}</h4>
+                                                    <Badge variant="outline" className={`text-xs font-bold gap-1 px-2.5 py-0.5 ${phaseBadgeColor}`}>
+                                                        <Sparkles className="h-3.5 w-3.5" />
+                                                        {phaseTitleSuffix} ({phaseScore}%)
+                                                    </Badge>
+                                                    {(() => {
+                                                        if (isDDLive) {
+                                                            return (
+                                                                <Badge variant="success" className="text-xs font-bold gap-1 px-2.5 py-0.5 bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border-emerald-400/80">
+                                                                    20 Docs / Full Data Room ($1.16/packet)
+                                                                </Badge>
+                                                            )
+                                                        }
+                                                        return (
+                                                            <Badge variant="outline" className="text-[10px] font-mono">
+                                                                {docs.length} Doc{docs.length > 1 ? 's' : ''} Included
+                                                            </Badge>
+                                                        )
+                                                    })()}
+                                                </div>
+                                            </div>
                                             <div className="flex items-center gap-2 flex-wrap">
-                                                <Building2 className="h-4 w-4 text-primary shrink-0" />
-                                                <h4 className="font-bold text-base text-foreground">{businessName}</h4>
-                                                {(() => {
-                                                    if (isDDLive) {
-                                                        return (
-                                                            <Badge variant="success" className="text-xs font-bold gap-1 px-2.5 py-0.5 bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border-emerald-400/80">
-                                                                <Sparkles className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-                                                                22 Documents Included (Live Pipeline Run)
-                                                            </Badge>
-                                                        )
-                                                    }
-                                                    if (isDDPlaceholder) {
-                                                        return (
-                                                            <Badge variant="secondary" className="text-xs font-bold gap-1 px-2.5 py-0.5 bg-amber-500/15 text-amber-800 dark:text-amber-200 border-amber-400/80">
-                                                                <Clock className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-                                                                22 Documents (Placeholder — Not ran through pipeline yet)
-                                                            </Badge>
-                                                        )
-                                                    }
-                                                    return (
-                                                        <Badge variant="outline" className="text-[10px] font-mono">
-                                                            {docs.length} Doc{docs.length > 1 ? 's' : ''} Included
-                                                        </Badge>
-                                                    )
-                                                })()}
                                                 <Button
                                                     type="button"
                                                     size="default"
@@ -1702,7 +1715,6 @@ export default function EvalDashboardTab({
                                                 )
                                             })()}
                                         </div>
-                                    </div>
 
                                     <div className={`grid gap-3 ${docs.length > 10 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'md:grid-cols-2'}`}>
                                         {docs.map((doc: any, docIdx: number) => {
@@ -1799,7 +1811,8 @@ export default function EvalDashboardTab({
                                 </div>
                             )
                         })
-                    })()}
+                    })
+                })()}
                 </CardContent>
             </Card>
 

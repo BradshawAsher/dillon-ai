@@ -149,6 +149,20 @@ so if we're making a financial due diligent agent and a big task of it is to hel
 - # May have to rerun all the DD-001 through DD-015 by adding the new letter of intent and then rerunning the synthesis for all of them? And then we can compare the 2 versions, the 1st version acts as pre-loi and the 2nd version acts as the post-loi? Is this a good idea and does our app support functionality for this yet?
   - Also some of the dd files themselves may have been changed, can we see what was changed and if it's important or not? Do we have to rerun the whole packets through the pipeline again or no?
 
+
+MORE
+- Evals tab add: avg cost per doc in per doc workflow, avg cost for each per doc workflow?, avg cost per synthesis AND avg cost per synthesis (as a factor/scale of # of docs in the project)
+- Add options to use gemini 3.5 flash lite/3.1 flash lite for both per doc and synthesizer?
+- Add options to use deepseek v4 flash and/or v4 pro?
+- Maybe even have dropdowns for the user to choose and customize which model to use for the 4 options for doc primary, doc backup, synth primary, synth backup?
+
+- Add download eval report for each business and even download eval report per doc, showing what went right and wrong and why it got the accuracy it did (more in depth than the ui)
+
+- Are we only scoring 1 doc per dd-00x business? But we're claiming to give each doc an individual scoring? What is going on? [For brad] - understand how this works and reconcile this?
+
+- Add KPIs to top for # projects finished processing today, # syntheses finished today, # docs finished today, total cost used today
+  - Maybe a history tab for this so the user can see # of these things for last day, last week, last month, etc and like graph and cost analysis like how GCP does it?
+
 - Prepare slides, presentation script (?), and supademo and supademo case study for tuesday business meeting.
 
 - is there anywhere else in our website like FAQs or something or just how our agent currently operates that needs to be updated in order to really like distinctly highlight and support functionality for both modes or no?
