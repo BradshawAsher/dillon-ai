@@ -171,6 +171,30 @@ describe('summarizeResults', () => {
     })
 })
 
+describe('dual-mode accuracy (preLoi / postLoi)', () => {
+    it('averages the six Pre-LOI dimensions', () => {
+        const summary = summarizeResults([scoreWith(80, { valuationScore: 0 }), scoreWith(80, { valuationScore: 0 })], 70)
+        // five dims at 100, valuation at 0 -> round(500 / 6)
+        expect(summary.categoryAverages.valuation).toBe(0)
+        expect(summary.preLoiAccuracyPct).toBe(83)
+    })
+
+    it('defaults Post-LOI cross-doc to 100 when conflicts were not scored', () => {
+        const summary = summarizeResults([scoreWith(90), scoreWith(90)], 70)
+        expect(summary.categoryAverages.crossDocConflicts).toBeUndefined()
+        expect(summary.postLoiAccuracyPct).toBe(100) // recommendation 100 + unscored default 100
+    })
+
+    it('does not treat a real 0% cross-doc score as 100 (regression)', () => {
+        const zeroConflict = [
+            { projectId: 'p', business: 'B', detected: [], expectedCount: 2, matchedCount: 0, llmRecall: 0, detectorRecall: 0, falsePositives: 0, score: 0, maxScore: 10 as const },
+        ]
+        const summary = summarizeResults([scoreWith(90), scoreWith(90)], 70, zeroConflict)
+        expect(summary.categoryAverages.crossDocConflicts).toBe(0)
+        expect(summary.postLoiAccuracyPct).toBe(50) // (100 + real 0) / 2 — not 100
+    })
+})
+
 describe('evaluateProjectConflicts', () => {
     const detected = (metric: string, period: string): ContradictionRecord => ({
         metric, period, docA: 'a', docB: 'b', valueA: 1, valueB: 2, deltaPct: 0.5, severity: 'critical', citations: [],
