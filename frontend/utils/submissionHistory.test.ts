@@ -33,6 +33,8 @@ describe('isStoppedSubmissionStatus', () => {
     it('recognizes user/system stops', () => {
         expect(isStoppedSubmissionStatus('stopped')).toBe(true)
         expect(isStoppedSubmissionStatus('STOPPED_BY_USER')).toBe(true)
+        expect(isStoppedSubmissionStatus('Stopped By User')).toBe(true)
+        expect(isStoppedSubmissionStatus('stopped-by-user')).toBe(true)
         expect(isStoppedSubmissionStatus('processing')).toBe(false)
     })
 })

@@ -99,12 +99,20 @@ export function normalizeSubmissionStatus(status: string) {
     return status.trim().toLowerCase()
 }
 
+// Membership lookups compare against underscore-delimited tokens (e.g.
+// "stopped_by_user"). A source that reports the same status with spaces or
+// hyphens ("Stopped By User") should still match, so collapse those to a
+// single underscore for the comparison only.
+function statusToken(status: string) {
+    return normalizeSubmissionStatus(status).replace(/[\s-]+/g, '_')
+}
+
 export function isActiveSubmissionStatus(status: string) {
-    return activeSubmissionStatuses.has(normalizeSubmissionStatus(status))
+    return activeSubmissionStatuses.has(statusToken(status))
 }
 
 export function isStoppedSubmissionStatus(status: string) {
-    return stoppedSubmissionStatuses.has(normalizeSubmissionStatus(status))
+    return stoppedSubmissionStatuses.has(statusToken(status))
 }
 
 export function formatSubmissionStatus(status: string) {
