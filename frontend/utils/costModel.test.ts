@@ -98,6 +98,11 @@ describe('estimateMonthlyCost', () => {
     it('never returns a negative projection', () => {
         expect(estimateMonthlyCost(-10, -5)).toBe(0)
     })
+
+    it('treats non-finite throughput as zero instead of NaN', () => {
+        expect(estimateMonthlyCost(Number.NaN, 10)).toBeCloseTo(10 * 0.12, 6)
+        expect(estimateMonthlyCost(Number.POSITIVE_INFINITY, Number.NaN)).toBe(0)
+    })
 })
 
 describe('sumMeasuredCost', () => {
