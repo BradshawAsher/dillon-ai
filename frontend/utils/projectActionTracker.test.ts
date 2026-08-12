@@ -41,6 +41,15 @@ describe('action item storage', () => {
         localStorage.setItem('mergeworks_seller_questions_p1', '42')
         expect(getStoredSellerQuestions('p1')).toBeNull()
     })
+
+    it('drops non-object entries from a partially corrupted array', () => {
+        localStorage.setItem('mergeworks_action_items_p1', JSON.stringify([
+            null, 'oops', 5, { id: 'a', text: 'Real', priority: 'low', done: false, createdAt: 'now' },
+        ]))
+        const items = getStoredActionItems('p1')
+        expect(items).toHaveLength(1)
+        expect(items?.[0].text).toBe('Real')
+    })
 })
 
 describe('exportQuestionsMarkdown', () => {
