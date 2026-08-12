@@ -28,10 +28,16 @@ export default async function getEvalRuns() {
         // Fallback to local report file if database table is empty or unpopulated
     }
 
-    // Fallback: Read from local latest_eval_report.json
+    // Fallback: Read from local latest_eval_report.json. Check the parent dir
+    // too, so the report resolves when the process runs from a subdirectory
+    // (e.g. the Vite dev server, whose cwd is frontend/).
     try {
-        const reportPath = path.join(process.cwd(), 'test_sets', 'eval_reports', 'latest_eval_report.json')
-        if (fs.existsSync(reportPath)) {
+        const relative = path.join('test_sets', 'eval_reports', 'latest_eval_report.json')
+        const reportPath = [
+            path.join(process.cwd(), relative),
+            path.join(process.cwd(), '..', relative),
+        ].find((candidate) => fs.existsSync(candidate))
+        if (reportPath) {
             const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'))
             return [
                 {
