@@ -55,6 +55,15 @@ export default function DashboardFaqSidebar({
         {
             category: 'getting-started',
             categoryLabel: 'Getting Started',
+            question: 'What are the 2 main operational workflows of the agent? (Pre-LOI vs Post-LOI)',
+            answer: '1. Pre-LOI Valuation Discovery: Extract normalized EBITDA, audit seller add-backs, and calculate fair valuation bounds (Base, Bear, Bull) before issuing an LOI.\n2. Post-LOI Deal Negotiation: Reconcile proposed LOI purchase prices against audited financials, detect cross-document accounting discrepancies, and generate dollar-for-dollar price adjustment levers.',
+            actionLabel: 'Go to Overview',
+            targetTab: 'overview',
+            badge: 'AGENT WORKFLOWS',
+        },
+        {
+            category: 'getting-started',
+            categoryLabel: 'Getting Started',
             question: 'How do I analyze a deal packet as a beginner?',
             answer: 'Start in the Overview tab. Drag & drop your deal files (2-year P&Ls, Balance Sheets, LOIs) into the intake dropzone. Alternatively, click "Example Mode" at the bottom right to instantly explore a pre-analyzed sample deal packet.',
             actionLabel: 'Go to Intake in Overview',
