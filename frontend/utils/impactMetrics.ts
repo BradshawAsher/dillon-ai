@@ -72,7 +72,7 @@ export function computeImpactMetrics(rows: SubmissionHistoryItem[]): ImpactMetri
 }
 
 export function formatHours(hours: number) {
-    if (hours <= 0) {
+    if (!Number.isFinite(hours) || hours <= 0) {
         return '0h'
     }
     if (hours < 1) {
