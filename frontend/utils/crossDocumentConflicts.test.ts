@@ -103,6 +103,28 @@ describe('detectContradictions', () => {
         expect(info[0].severity).toBe('info')
     })
 
+    it('relates otherwise-distinct metrics via the metricAliases option', () => {
+        const observations = [
+            obs('seller.pdf', 'adjusted_ebitda', 1_590_000, 'TTM'),
+            obs('buyer.xlsx', 'ebitda', 1_260_000, 'TTM'),
+        ]
+        // Without an alias, adjusted_ebitda and ebitda are separate -> no conflict.
+        expect(detectContradictions(observations)).toHaveLength(0)
+        // With an alias mapping adjusted_ebitda -> ebitda, they compare.
+        const withAlias = detectContradictions(observations, { metricAliases: { adjusted_ebitda: 'ebitda' } })
+        expect(withAlias).toHaveLength(1)
+        expect(withAlias[0].metric).toBe('ebitda')
+    })
+
+    it('merges citations from both sides of a contradiction', () => {
+        const records = detectContradictions([
+            { sourceDoc: 'a.pdf', metric: 'revenue', value: 100, period: '2024', citations: [{ source_file: 'a.pdf', excerpt: 'A' }] },
+            { sourceDoc: 'b.pdf', metric: 'revenue', value: 200, period: '2024', citations: [{ source_file: 'b.pdf', excerpt: 'B' }] },
+        ])
+        expect(records[0].citations).toHaveLength(2)
+        expect(records[0].citations.map((c) => c.excerpt)).toEqual(['A', 'B'])
+    })
+
     it('skips non-finite and zero-scale values', () => {
         expect(detectContradictions([
             obs('a.pdf', 'revenue', Number.NaN, '2024'),
