@@ -1639,7 +1639,7 @@ export default function EvalDashboardTab({
                                             {!isPreLoi && !hasLivePostLoi ? (
                                                 <div className="flex items-center gap-2 rounded-lg border border-amber-500/50 bg-amber-500/15 px-3.5 py-2 text-xs font-semibold text-amber-900 dark:text-amber-100 mt-2 shadow-2xs">
                                                     <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
-                                                    <span><strong>Post-LOI Re-Synthesis Pending:</strong> An Executed LOI / Term Sheet document has not been uploaded to this workspace yet. Upload <code>06_transaction/letter_of_intent.pdf</code> to run live Post-LOI purchase price bridge ($\Delta\text{EV}$) and contract trap synthesis.</span>
+                                                    <span><strong>Post-LOI Re-Synthesis Pending:</strong> An Executed LOI / Term Sheet document has not been uploaded to this workspace yet. Upload <code>06_transaction/letter_of_intent.pdf</code> to run live Post-LOI purchase price bridge (&Delta;EV) and contract trap synthesis.</span>
                                                 </div>
                                             ) : null}
                                             {isDDPlaceholder ? (
