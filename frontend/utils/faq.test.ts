@@ -36,6 +36,16 @@ describe('filterFaqs', () => {
         expect(filterFaqs(faqs, { query: '   ebitda   ' })).toHaveLength(1)
     })
 
+    it('collapses internal whitespace in both the query and the text', () => {
+        // Extra spaces typed in the query still match a normally-spaced answer.
+        expect(filterFaqs(faqs, { query: 'normalized    earnings' })).toHaveLength(1)
+        // A query matches text whose words are separated by a newline.
+        const wrapped: FaqLike[] = [
+            { category: 'c', categoryLabel: 'C', question: 'q', answer: 'closing\nescrow holdback' },
+        ]
+        expect(filterFaqs(wrapped, { query: 'closing escrow' })).toHaveLength(1)
+    })
+
     it('returns empty when nothing matches', () => {
         expect(filterFaqs(faqs, { query: 'zzz-nonexistent' })).toHaveLength(0)
     })

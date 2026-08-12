@@ -16,18 +16,24 @@ export type FaqFilter = {
     query?: string
 }
 
+/** Lower-cases and collapses any run of whitespace to a single space, so a
+ *  query with doubled spaces still matches an answer wrapped across lines. */
+function normalizeForSearch(value: string): string {
+    return value.toLowerCase().replace(/\s+/g, ' ').trim()
+}
+
 /** Filters a FAQ list by category and case-insensitive text query. */
 export function filterFaqs<T extends FaqLike>(faqs: T[], filter: FaqFilter = {}): T[] {
     const category = filter.category ?? 'all'
-    const query = (filter.query ?? '').trim().toLowerCase()
+    const query = normalizeForSearch(filter.query ?? '')
 
     return faqs.filter((faq) => {
         const matchesCategory = category === 'all' || faq.category === category
         const matchesSearch =
             query === '' ||
-            faq.question.toLowerCase().includes(query) ||
-            faq.answer.toLowerCase().includes(query) ||
-            faq.categoryLabel.toLowerCase().includes(query)
+            normalizeForSearch(faq.question).includes(query) ||
+            normalizeForSearch(faq.answer).includes(query) ||
+            normalizeForSearch(faq.categoryLabel).includes(query)
         return matchesCategory && matchesSearch
     })
 }
