@@ -29,6 +29,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
+import EvalDiagnosticsPanel from './EvalDiagnosticsPanel'
 import { benchmarkGroundTruthSyntheses } from '../evals/ground_truths'
 import { calculateBatchTotalCost, calculateSynthesisCost, calculateDocumentCost } from '../utils/diligenceDashboardUtils'
 
@@ -131,6 +132,25 @@ export default function EvalDashboardTab({
         passedDocuments: 20,
         overallPercentage: 77,
         status: 'SHIP-READY (PASS)',
+        // Only the project-level dimension is seeded here; the 7 per-document
+        // dimensions are still derived from documentResults below.
+        categoryAverages: { crossDocConflicts: 100 },
+        crossDocConflictResults: [
+            {
+                projectId: 'mml-dd-001', business: 'Cascadia Climate Services, Inc.',
+                expectedCount: 1, matchedCount: 1,
+                detected: [
+                    { metric: 'adjusted_ebitda', period: 'TTM', docA: 'DD-001 packet', docB: 'DD-001 seller EBITDA bridge', valueA: 1260400, valueB: 1590000, deltaPct: 0.207, severity: 'critical' },
+                ],
+            },
+            {
+                projectId: 'mml-dd-010', business: 'Cobalt Ridge Software, Inc.',
+                expectedCount: 1, matchedCount: 1,
+                detected: [
+                    { metric: 'adjusted_ebitda', period: 'TTM', docA: 'DD-010 packet', docB: 'DD-010 seller EBITDA bridge', valueA: 1214620, valueB: 2760000, deltaPct: 0.56, severity: 'critical' },
+                ],
+            },
+        ],
         documentResults: [
             {
                 fileName: 'Werkheiser P&L 2025.pdf',
@@ -686,7 +706,8 @@ export default function EvalDashboardTab({
     const passRatePct = totalDocsCount > 0 ? Math.round((passDocsCount / totalDocsCount) * 100) : 100
 
     return (
-        <div className="space-y-6">
+        <div className="flex flex-col gap-6 xl:flex-row">
+            <div className="min-w-0 flex-1 space-y-6">
             {/* Header Banner */}
             <div className="flex flex-col gap-4 rounded-xl border border-primary/20 bg-gradient-to-r from-primary/5 via-card to-card p-6 shadow-sm md:flex-row md:items-center md:justify-between">
                 <div className="space-y-1.5">
@@ -1964,6 +1985,17 @@ export default function EvalDashboardTab({
                     </div>
                 </div>
             ) : null}
+            </div>
+            <aside className="space-y-4 xl:w-80 xl:shrink-0 xl:sticky xl:top-6 xl:self-start">
+                <EvalDiagnosticsPanel
+                    overallPct={overallAccuracyPct}
+                    regressionPassed={regressionPassed}
+                    regressionThreshold={REGRESSION_THRESHOLD}
+                    dimensions={categoryAverages.map((d) => ({ key: d.key, label: d.label, avgPct: d.avgPct }))}
+                    weakestKey={weakestKey}
+                    conflictResults={latestRun.crossDocConflictResults}
+                />
+            </aside>
         </div>
     )
 }
