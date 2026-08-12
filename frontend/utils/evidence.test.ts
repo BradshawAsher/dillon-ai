@@ -98,6 +98,15 @@ describe('driveEmbedUrl', () => {
         )
     })
 
+    it('extracts an id from open?id= and uc?id= share URLs', () => {
+        expect(driveEmbedUrl(undefined, 'https://drive.google.com/open?id=open123')).toBe(
+            'https://drive.google.com/file/d/open123/preview',
+        )
+        expect(driveEmbedUrl(undefined, 'https://drive.google.com/uc?export=download&id=uc456')).toBe(
+            'https://drive.google.com/file/d/uc456/preview',
+        )
+    })
+
     it('returns null when neither yields a usable id', () => {
         expect(driveEmbedUrl()).toBeNull()
         expect(driveEmbedUrl('', 'https://example.com/not-a-drive-link')).toBeNull()
