@@ -146,6 +146,9 @@ so if we're making a financial due diligent agent and a big task of it is to hel
 
 - Make sure the evals and harness the numbers and cards are right and now buggy and that the varainces show for cross doc conflicts?
 
+- May have to rerun all the DD-001 through DD-015 by adding the new letter of intent and then rerunning the synthesis for all of them? And then we can compare the 2 versions, the 1st version acts as pre-loi and the 2nd version acts as the post-loi? Is this a good idea and does our app support functionality for this yet?
+  - Also some of the dd files themselves may have been changed, can we see what was changed and if it's important or not? Do we have to rerun the whole packets through the pipeline again or no?
+
 - is there anywhere else in our website like FAQs or something or just how our agent currently operates that needs to be updated in order to really like distinctly highlight and support functionality for both modes or no?
 
 - Also we should probably be showing the total cost, total per doc cost, and synth cost in the overview tab too right?
