@@ -20,14 +20,21 @@ export type CustomSellerQuestion = {
 const ACTION_ITEMS_STORAGE_KEY_PREFIX = 'mergeworks_action_items_'
 const SELLER_QUESTIONS_STORAGE_KEY_PREFIX = 'mergeworks_seller_questions_'
 
+/** True for a plain object — used to drop null/primitive entries that would
+ *  crash callers reading item fields (item.text, item.priority, ...). */
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
 export function getStoredActionItems(projectId: string): CustomActionItem[] | null {
     try {
         const raw = localStorage.getItem(`${ACTION_ITEMS_STORAGE_KEY_PREFIX}${projectId}`)
         if (!raw) return null
         const parsed = JSON.parse(raw) as unknown
-        // Guard against corrupted storage: callers `.map`/`.filter` over this,
-        // so a non-array must read as "nothing stored" rather than crash.
-        return Array.isArray(parsed) ? (parsed as CustomActionItem[]) : null
+        // Guard against corrupted storage: callers `.map`/`.filter` over this and
+        // read item fields, so a non-array reads as "nothing stored" and any
+        // non-object entries are dropped rather than crashing later.
+        return Array.isArray(parsed) ? (parsed.filter(isRecord) as CustomActionItem[]) : null
     } catch {
         return null
     }
@@ -46,7 +53,7 @@ export function getStoredSellerQuestions(projectId: string): CustomSellerQuestio
         const raw = localStorage.getItem(`${SELLER_QUESTIONS_STORAGE_KEY_PREFIX}${projectId}`)
         if (!raw) return null
         const parsed = JSON.parse(raw) as unknown
-        return Array.isArray(parsed) ? (parsed as CustomSellerQuestion[]) : null
+        return Array.isArray(parsed) ? (parsed.filter(isRecord) as CustomSellerQuestion[]) : null
     } catch {
         return null
     }
