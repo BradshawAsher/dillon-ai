@@ -100,6 +100,24 @@ export function DiligenceWorkspaceView({
                 )}
             </div>
 
+            {/* Live Re-Synthesis Disclaimer Banner when a document is in processing */}
+            {activeProjectDocuments?.some((d: any) => ['processing', 'queued', 'submitted'].includes(d.status)) && (
+                <div className="rounded-xl border-2 border-amber-500/40 bg-amber-500/10 p-4 text-xs font-semibold text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-pulse shadow-xs">
+                    <div className="space-y-1">
+                        <div className="flex items-center gap-2 font-bold text-sm text-amber-700 dark:text-amber-300">
+                            <span className="inline-block h-2 w-2 rounded-full bg-amber-500 animate-ping shrink-0" />
+                            <span>⚡ New Synthesis Version Generating in Background...</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground font-normal">
+                            New document(s) uploaded. The AI Synthesizer is re-processing cross-document findings in the background. Please wait for updated results or view current active synthesis below.
+                        </p>
+                    </div>
+                    <Badge variant="outline" className="border-amber-500/50 bg-amber-500/20 text-amber-800 dark:text-amber-200 font-mono font-bold text-[10px] shrink-0 uppercase">
+                        Background Synthesizing
+                    </Badge>
+                </div>
+            )}
+
             <DealOverviewCard
                 syntheses={visibleProjectSyntheses}
                 projects={projectSummaries}
