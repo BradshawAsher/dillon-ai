@@ -716,10 +716,19 @@ export default function EvalDashboardTab({
 
     const [evalPhaseMode, setEvalPhaseMode] = useState<'all' | 'pre-loi' | 'post-loi'>('all')
 
+    // Fallback for runs that predate preLoi/postLoiAccuracyPct: derive them from
+    // the dimension averages we already computed, using the same membership and
+    // "unscored conflicts read as 100" rule as the scorer — instead of a magic 98.
+    const dimPct = (key: string) => categoryAverages.find((d) => d.key === key)?.avgPct
+    const averageOfDimensions = (keys: string[], missingDefaults: Record<string, number> = {}) =>
+        Math.round(keys.reduce((sum, key) => sum + (dimPct(key) ?? missingDefaults[key] ?? 0), 0) / keys.length)
+    const preLoiFallback = averageOfDimensions(['classification', 'facts', 'risk', 'valuation', 'employee', 'math'])
+    const postLoiFallback = averageOfDimensions(['recommendation', 'crossDocConflicts'], { crossDocConflicts: 100 })
+
     const displayedAccuracyPct = evalPhaseMode === 'pre-loi'
-        ? (latestRun.preLoiAccuracyPct ?? 98)
+        ? (latestRun.preLoiAccuracyPct ?? preLoiFallback)
         : evalPhaseMode === 'post-loi'
-        ? (latestRun.postLoiAccuracyPct ?? 98)
+        ? (latestRun.postLoiAccuracyPct ?? postLoiFallback)
         : overallAccuracyPct
 
     return (
