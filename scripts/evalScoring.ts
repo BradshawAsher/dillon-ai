@@ -189,11 +189,13 @@ export function summarizeResults(
     }
 
     // Pre-LOI Valuation Discovery Mode score (Classification, Facts, Risk, Valuation, Employee, Math)
-    const preLoiSum = (categoryAverages.classification || 0) + (categoryAverages.facts || 0) + (categoryAverages.risk || 0) + (categoryAverages.valuation || 0) + (categoryAverages.employee || 0) + (categoryAverages.math || 0)
+    const preLoiSum = (categoryAverages.classification ?? 0) + (categoryAverages.facts ?? 0) + (categoryAverages.risk ?? 0) + (categoryAverages.valuation ?? 0) + (categoryAverages.employee ?? 0) + (categoryAverages.math ?? 0)
     const preLoiAccuracyPct = Math.round(preLoiSum / 6)
 
-    // Post-LOI Deal Negotiation Mode score (Recommendation, Cross-Doc Conflicts)
-    const postLoiSum = (categoryAverages.recommendation || 0) + (categoryAverages.crossDocConflicts || 100)
+    // Post-LOI Deal Negotiation Mode score (Recommendation, Cross-Doc Conflicts).
+    // Use ?? (not ||) so a genuine 0% cross-doc score is not silently read as a
+    // perfect 100 — only an *unscored* dimension (undefined) defaults to 100.
+    const postLoiSum = (categoryAverages.recommendation ?? 0) + (categoryAverages.crossDocConflicts ?? 100)
     const postLoiAccuracyPct = Math.round(postLoiSum / 2)
 
     let weakestDimension: keyof typeof DIMENSION_MAX | null = null
