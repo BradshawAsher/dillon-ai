@@ -57,7 +57,14 @@ export function formatDuration(seconds: number): string {
     if (seconds < 90) return `~${Math.round(seconds)} sec`
     const minutes = seconds / 60
     if (minutes < 60) return `~${Math.round(minutes)} min`
-    const hours = Math.floor(minutes / 60)
-    const remMinutes = Math.round(minutes % 60)
-    return remMinutes > 0 ? `~${hours} hr ${remMinutes} min` : `~${hours} hr`
+    const hours = minutes / 60
+    if (hours < 24) {
+        const wholeHours = Math.floor(hours)
+        const remMinutes = Math.round(minutes % 60)
+        return remMinutes > 0 ? `~${wholeHours} hr ${remMinutes} min` : `~${wholeHours} hr`
+    }
+    // Very large estimates read more naturally in days than a big hour count.
+    const days = Math.floor(hours / 24)
+    const remHours = Math.round(hours % 24)
+    return remHours > 0 ? `~${days} day${days > 1 ? 's' : ''} ${remHours} hr` : `~${days} day${days > 1 ? 's' : ''}`
 }
