@@ -109,6 +109,7 @@ function getDocDurationSec(doc: any): number {
 
 export default function EvalDashboardTab({
     evalRuns = [],
+    syntheses = [],
     onTriggerEvalRuns,
     onSelectProject,
     onSelectDoc,
