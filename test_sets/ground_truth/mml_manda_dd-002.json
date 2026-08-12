@@ -60,6 +60,20 @@
         "description": "Seller-claimed adjusted EBITDA of $1,130,000 overstates the buyer-supported $938,887 by $191,113 (~17%).",
         "severity": "critical"
       }
-    ]
+    ],
+    "loiTerms": {
+      "buyer": "Cedar Falls Capital Partners LP",
+      "loiDate": "2026-02-04",
+      "statedMultiple": 5.5,
+      "headlineEnterpriseValueUsd": 6220000,
+      "revisedEnterpriseValueUsd": 5160000,
+      "priceChangeUsd": -1060000,
+      "priceChangePct": -17.04,
+      "sellerAdjustedEbitdaUsd": 1131035,
+      "supportedAdjustedEbitdaUsd": 938887,
+      "escrowPct": 0.1,
+      "escrowUsd": 622000,
+      "workingCapitalPegUsd": 3477885.15
+    }
   }
 }

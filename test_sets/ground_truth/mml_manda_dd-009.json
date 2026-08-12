@@ -61,6 +61,20 @@
         "description": "Seller-claimed adjusted EBITDA of $2,950,000 overstates the buyer-supported $2,892,719 by $57,281 (~2%).",
         "severity": "info"
       }
-    ]
+    ],
+    "loiTerms": {
+      "buyer": "Kestrel Laboratory Partners LLC",
+      "loiDate": "2026-01-14",
+      "statedMultiple": 7.5,
+      "headlineEnterpriseValueUsd": 22120000,
+      "revisedEnterpriseValueUsd": 21700000,
+      "priceChangeUsd": -420000,
+      "priceChangePct": -1.9,
+      "sellerAdjustedEbitdaUsd": 2948705,
+      "supportedAdjustedEbitdaUsd": 2892719,
+      "escrowPct": 0.1,
+      "escrowUsd": 2212000,
+      "workingCapitalPegUsd": 824591.24
+    }
   }
 }

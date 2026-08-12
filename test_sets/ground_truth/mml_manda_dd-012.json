@@ -61,6 +61,20 @@
         "description": "Seller-claimed adjusted EBITDA of $1,840,000 understates the buyer-supported $2,069,689 by $229,689 (~11%).",
         "severity": "warning"
       }
-    ]
+    ],
+    "loiTerms": {
+      "buyer": "Coulee Environmental Holdings LLC",
+      "loiDate": "2026-01-30",
+      "statedMultiple": 6.5,
+      "headlineEnterpriseValueUsd": 11980000,
+      "revisedEnterpriseValueUsd": 13450000,
+      "priceChangeUsd": 1470000,
+      "priceChangePct": 12.27,
+      "sellerAdjustedEbitdaUsd": 1843557,
+      "supportedAdjustedEbitdaUsd": 2069689,
+      "escrowPct": 0.1,
+      "escrowUsd": 1198000,
+      "workingCapitalPegUsd": 425000
+    }
   }
 }

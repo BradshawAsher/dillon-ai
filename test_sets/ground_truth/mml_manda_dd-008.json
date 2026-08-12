@@ -60,6 +60,20 @@
         "description": "Seller-claimed adjusted EBITDA of $2,520,000 overstates the buyer-supported $2,084,101 by $435,899 (~17%).",
         "severity": "critical"
       }
-    ]
+    ],
+    "loiTerms": {
+      "buyer": "Overland Freight Holdings LP",
+      "loiDate": "2026-02-09",
+      "statedMultiple": 5,
+      "headlineEnterpriseValueUsd": 12590000,
+      "revisedEnterpriseValueUsd": 10420000,
+      "priceChangeUsd": -2170000,
+      "priceChangePct": -17.24,
+      "sellerAdjustedEbitdaUsd": 2517111,
+      "supportedAdjustedEbitdaUsd": 2084101,
+      "escrowPct": 0.1,
+      "escrowUsd": 1259000,
+      "workingCapitalPegUsd": 1323912.76
+    }
   }
 }

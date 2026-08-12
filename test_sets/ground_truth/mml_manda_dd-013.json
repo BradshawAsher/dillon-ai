@@ -59,6 +59,20 @@
         "description": "Seller-claimed adjusted EBITDA of $1,530,000 overstates the buyer-supported $1,131,759 by $398,241 (~26%).",
         "severity": "critical"
       }
-    ]
+    ],
+    "loiTerms": {
+      "buyer": "Salish Maritime Capital LLC",
+      "loiDate": "2026-02-06",
+      "statedMultiple": 5.5,
+      "headlineEnterpriseValueUsd": 8430000,
+      "revisedEnterpriseValueUsd": 6220000,
+      "priceChangeUsd": -2210000,
+      "priceChangePct": -26.22,
+      "sellerAdjustedEbitdaUsd": 1533469,
+      "supportedAdjustedEbitdaUsd": 1131759,
+      "escrowPct": 0.15,
+      "escrowUsd": 1264500,
+      "workingCapitalPegUsd": 2364604.66
+    }
   }
 }

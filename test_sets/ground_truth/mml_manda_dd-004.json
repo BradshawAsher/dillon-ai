@@ -60,6 +60,20 @@
         "description": "Seller-claimed adjusted EBITDA of $1,610,000 overstates the buyer-supported $1,283,694 by $326,306 (~20%).",
         "severity": "critical"
       }
-    ]
+    ],
+    "loiTerms": {
+      "buyer": "Granite Peak Manufacturing Partners LP",
+      "loiDate": "2026-02-18",
+      "statedMultiple": 5.5,
+      "headlineEnterpriseValueUsd": 8880000,
+      "revisedEnterpriseValueUsd": 7060000,
+      "priceChangeUsd": -1820000,
+      "priceChangePct": -20.5,
+      "sellerAdjustedEbitdaUsd": 1613744,
+      "supportedAdjustedEbitdaUsd": 1283694,
+      "escrowPct": 0.1,
+      "escrowUsd": 888000,
+      "workingCapitalPegUsd": 2696975.19
+    }
   }
 }
