@@ -20,6 +20,8 @@ export async function copyToClipboard(text: string): Promise<boolean> {
 
     if (typeof document === 'undefined') return false
 
+    const previouslyFocused = document.activeElement as HTMLElement | null
+
     try {
         const textarea = document.createElement('textarea')
         textarea.value = text
@@ -28,8 +30,13 @@ export async function copyToClipboard(text: string): Promise<boolean> {
         textarea.style.opacity = '0'
         document.body.appendChild(textarea)
         textarea.select()
+        // iOS Safari ignores select() on a readonly textarea; an explicit range
+        // is what actually selects the text there.
+        textarea.setSelectionRange?.(0, text.length)
         const ok = document.execCommand('copy')
         document.body.removeChild(textarea)
+        // Restore focus to whatever the user was on so the copy doesn't steal it.
+        previouslyFocused?.focus?.()
         return ok
     } catch {
         return false
