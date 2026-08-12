@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { fileSafeName } from './downloadFile'
+import { fileSafeName, MAX_FILE_SAFE_NAME_LENGTH } from './downloadFile'
 
 describe('fileSafeName', () => {
     it('lowercases and hyphenates whitespace and punctuation', () => {
@@ -18,5 +18,11 @@ describe('fileSafeName', () => {
     it('falls back to "report" when nothing usable remains', () => {
         expect(fileSafeName('')).toBe('report')
         expect(fileSafeName('***')).toBe('report')
+    })
+
+    it('caps very long names and trims a trailing hyphen left by the cut', () => {
+        const result = fileSafeName('a'.repeat(80) + ' ' + 'b'.repeat(80))
+        expect(result.length).toBeLessThanOrEqual(MAX_FILE_SAFE_NAME_LENGTH)
+        expect(result.endsWith('-')).toBe(false)
     })
 })
