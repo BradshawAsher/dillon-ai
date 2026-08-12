@@ -145,7 +145,7 @@ export default function FileDropzone({ selectedFiles, onFileSelect, className }:
                     type="file"
                     className="sr-only"
                     onChange={handleChange}
-                    // @ts-expecting-error webkitdirectory is standard in HTML5 browsers but missing in JSX types
+                    // @ts-expect-error webkitdirectory is standard in HTML5 browsers but missing in JSX types
                     webkitdirectory=""
                     directory=""
                 />
