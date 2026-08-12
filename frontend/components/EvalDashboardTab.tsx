@@ -616,6 +616,8 @@ export default function EvalDashboardTab({
         { key: 'employee', field: 'employeeScore', label: 'Employee', max: 5 },
         { key: 'math', field: 'mathScore', label: 'Math checks', max: 10 },
         { key: 'recommendation', field: 'recommendationScore', label: 'Acquisition Judgment', max: 10 },
+        // Project-level: only shown when a run scored cross-document conflicts.
+        { key: 'crossDocConflicts', field: 'crossDocConflictsScore', label: 'Cross-doc conflicts', max: 10 },
     ]
     const allDocResults: Array<Record<string, any>> = Array.isArray(latestRun.documentResults) ? latestRun.documentResults : []
     const docResults = allDocResults.filter((d) => {
@@ -636,8 +638,14 @@ export default function EvalDashboardTab({
     const overallAccuracyPct = totalMaxPoints > 0 ? Math.round((totalObtainedPoints / totalMaxPoints) * 100) : (latestRun.overallPercentage ?? 78)
 
     const categoryAverages = DIMENSIONS.map((dim) => {
-        let avgPct = 0
-        if (dim.key === 'recommendation') {
+        let avgPct: number | null = 0
+        if (dim.key === 'crossDocConflicts') {
+            // Project-level dimension: present only when a run scored it. When
+            // absent it is filtered out below rather than shown as 0%.
+            avgPct = latestRun.categoryAverages?.crossDocConflicts !== undefined
+                ? Number(latestRun.categoryAverages.crossDocConflicts) || 0
+                : null
+        } else if (dim.key === 'recommendation') {
             // 90% Synthesizer Verdict (100% accurate across packets) + 10% Per-Doc Average (80%)
             avgPct = Math.round((0.90 * 100) + (0.10 * 80)) // 98%
         } else if (latestRun.categoryAverages?.[dim.key] !== undefined) {
@@ -649,7 +657,7 @@ export default function EvalDashboardTab({
             avgPct = 80
         }
         return { ...dim, avgPct }
-    })
+    }).filter((d): d is typeof d & { avgPct: number } => d.avgPct !== null)
     const weakestKey = docResults.length > 0
         ? categoryAverages.reduce((min, d) => (d.avgPct < min.avgPct ? d : min)).key
         : null
