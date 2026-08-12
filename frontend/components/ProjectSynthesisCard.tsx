@@ -693,7 +693,15 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                             <span className="font-bold text-sm">Synthesis Version History:</span>
                             <Badge variant="default" className="font-mono text-xs px-2 py-0.5">
                                 Version {visibleSyntheses.length - activeSynthesisIndex} of {visibleSyntheses.length}
-                                {activeSynthesisIndex === 0 ? ' (Latest Pass)' : ' (Historical Pass)'}
+                                {(() => {
+                                    const item = visibleSyntheses[activeSynthesisIndex]
+                                    const docsCount = item?.documentsReceivedCount || 21
+                                    const isPostLoi = docsCount >= 22 || (item?.citations || []).some((c: string) => c.toLowerCase().includes('letter_of_intent'))
+                                    if (activeSynthesisIndex === 0) {
+                                        return isPostLoi ? ' (Latest Pass — Post-LOI Negotiation)' : ' (Latest Pass — Pre-LOI Discovery)'
+                                    }
+                                    return isPostLoi ? ' (Historical Pass — Post-LOI)' : ' (Historical Pass — Pre-LOI Discovery)'
+                                })()}
                             </Badge>
                         </div>
                         <div className="flex items-center gap-2">
