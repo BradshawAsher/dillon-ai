@@ -61,6 +61,20 @@
         "description": "Seller-claimed adjusted EBITDA of $2,740,000 overstates the buyer-supported $2,417,578 by $322,422 (~12%).",
         "severity": "warning"
       }
-    ]
+    ],
+    "loiTerms": {
+      "buyer": "Lantern Health Partners LP",
+      "loiDate": "2026-02-02",
+      "statedMultiple": 7,
+      "headlineEnterpriseValueUsd": 19160000,
+      "revisedEnterpriseValueUsd": 16920000,
+      "priceChangeUsd": -2240000,
+      "priceChangePct": -11.69,
+      "sellerAdjustedEbitdaUsd": 2737378,
+      "supportedAdjustedEbitdaUsd": 2417578,
+      "escrowPct": 0.12,
+      "escrowUsd": 2299200,
+      "workingCapitalPegUsd": 1079763.33
+    }
   }
 }

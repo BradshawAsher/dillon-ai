@@ -61,6 +61,20 @@
         "description": "Seller-claimed adjusted EBITDA of $2,160,000 overstates the buyer-supported $1,503,957 by $656,043 (~30%).",
         "severity": "critical"
       }
-    ]
+    ],
+    "loiTerms": {
+      "buyer": "Fort Vancouver Polymer Partners LLC",
+      "loiDate": "2026-02-16",
+      "statedMultiple": 5.5,
+      "headlineEnterpriseValueUsd": 11850000,
+      "revisedEnterpriseValueUsd": 8270000,
+      "priceChangeUsd": -3580000,
+      "priceChangePct": -30.21,
+      "sellerAdjustedEbitdaUsd": 2155193,
+      "supportedAdjustedEbitdaUsd": 1503957,
+      "escrowPct": 0.12,
+      "escrowUsd": 1422000,
+      "workingCapitalPegUsd": 1981858.19
+    }
   }
 }

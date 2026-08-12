@@ -61,6 +61,20 @@
         "description": "Seller-claimed adjusted EBITDA of $2,120,000 overstates the buyer-supported $1,687,702 by $432,298 (~20%).",
         "severity": "critical"
       }
-    ]
+    ],
+    "loiTerms": {
+      "buyer": "Prairie Gate Food Capital LLC",
+      "loiDate": "2026-02-25",
+      "statedMultiple": 6,
+      "headlineEnterpriseValueUsd": 12710000,
+      "revisedEnterpriseValueUsd": 10130000,
+      "priceChangeUsd": -2580000,
+      "priceChangePct": -20.3,
+      "sellerAdjustedEbitdaUsd": 2117714,
+      "supportedAdjustedEbitdaUsd": 1687702,
+      "escrowPct": 0.1,
+      "escrowUsd": 1271000,
+      "workingCapitalPegUsd": 2870567.78
+    }
   }
 }

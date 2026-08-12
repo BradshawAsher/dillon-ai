@@ -60,6 +60,20 @@
         "description": "Seller-claimed adjusted EBITDA of $1,590,000 overstates the buyer-supported $1,260,400 by $329,600 (~21%).",
         "severity": "critical"
       }
-    ]
+    ],
+    "loiTerms": {
+      "buyer": "Meriwether Industrial Partners LLC",
+      "loiDate": "2026-02-11",
+      "statedMultiple": 5,
+      "headlineEnterpriseValueUsd": 7960000,
+      "revisedEnterpriseValueUsd": 6300000,
+      "priceChangeUsd": -1660000,
+      "priceChangePct": -20.85,
+      "sellerAdjustedEbitdaUsd": 1592904,
+      "supportedAdjustedEbitdaUsd": 1260400,
+      "escrowPct": 0.1,
+      "escrowUsd": 796000,
+      "workingCapitalPegUsd": 824629.49
+    }
   }
 }

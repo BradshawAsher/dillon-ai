@@ -61,6 +61,20 @@
         "description": "Seller-claimed adjusted EBITDA of $2,270,000 overstates the buyer-supported $1,754,551 by $515,449 (~23%).",
         "severity": "critical"
       }
-    ]
+    ],
+    "loiTerms": {
+      "buyer": "Whitepine Facility Services Partners LP",
+      "loiDate": "2026-02-23",
+      "statedMultiple": 6,
+      "headlineEnterpriseValueUsd": 13630000,
+      "revisedEnterpriseValueUsd": 10530000,
+      "priceChangeUsd": -3100000,
+      "priceChangePct": -22.74,
+      "sellerAdjustedEbitdaUsd": 2272403,
+      "supportedAdjustedEbitdaUsd": 1754551,
+      "escrowPct": 0.1,
+      "escrowUsd": 1363000,
+      "workingCapitalPegUsd": 449291.53
+    }
   }
 }

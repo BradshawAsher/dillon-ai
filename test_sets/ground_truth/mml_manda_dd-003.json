@@ -60,6 +60,20 @@
         "description": "Seller-claimed adjusted EBITDA of $1,900,000 overstates the buyer-supported $1,820,373 by $79,627 (~4%).",
         "severity": "info"
       }
-    ]
+    ],
+    "loiTerms": {
+      "buyer": "Blue Heron Software Holdings LLC",
+      "loiDate": "2026-01-28",
+      "statedMultiple": 7.5,
+      "headlineEnterpriseValueUsd": 14270000,
+      "revisedEnterpriseValueUsd": 13650000,
+      "priceChangeUsd": -620000,
+      "priceChangePct": -4.34,
+      "sellerAdjustedEbitdaUsd": 1902373,
+      "supportedAdjustedEbitdaUsd": 1820373,
+      "escrowPct": 0.12,
+      "escrowUsd": 1712400,
+      "workingCapitalPegUsd": 314304.71
+    }
   }
 }

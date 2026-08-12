@@ -58,6 +58,20 @@
         "description": "Seller-claimed adjusted EBITDA of $1,880,000 overstates the buyer-supported $1,548,306 by $331,694 (~18%).",
         "severity": "critical"
       }
-    ]
+    ],
+    "loiTerms": {
+      "buyer": "Sawtooth Environmental Holdings LLC",
+      "loiDate": "2026-01-21",
+      "statedMultiple": 6,
+      "headlineEnterpriseValueUsd": 11270000,
+      "revisedEnterpriseValueUsd": 9290000,
+      "priceChangeUsd": -1980000,
+      "priceChangePct": -17.57,
+      "sellerAdjustedEbitdaUsd": 1878306,
+      "supportedAdjustedEbitdaUsd": 1548306,
+      "escrowPct": 0.15,
+      "escrowUsd": 1690500,
+      "workingCapitalPegUsd": 898391.54
+    }
   }
 }

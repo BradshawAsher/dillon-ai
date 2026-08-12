@@ -61,6 +61,20 @@
         "description": "Seller-claimed adjusted EBITDA of $2,120,000 overstates the buyer-supported $1,645,104 by $474,896 (~22%).",
         "severity": "critical"
       }
-    ]
+    ],
+    "loiTerms": {
+      "buyer": "Two Rivers Workforce Capital LLC",
+      "loiDate": "2026-02-20",
+      "statedMultiple": 5.5,
+      "headlineEnterpriseValueUsd": 11640000,
+      "revisedEnterpriseValueUsd": 9050000,
+      "priceChangeUsd": -2590000,
+      "priceChangePct": -22.25,
+      "sellerAdjustedEbitdaUsd": 2115510,
+      "supportedAdjustedEbitdaUsd": 1645104,
+      "escrowPct": 0.12,
+      "escrowUsd": 1396800,
+      "workingCapitalPegUsd": 685617.89
+    }
   }
 }

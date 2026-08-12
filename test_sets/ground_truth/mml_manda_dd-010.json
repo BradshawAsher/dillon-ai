@@ -59,6 +59,20 @@
         "description": "Seller-claimed adjusted EBITDA of $2,760,000 overstates the buyer-supported $1,214,620 by $1,545,380 (~56%).",
         "severity": "critical"
       }
-    ]
+    ],
+    "loiTerms": {
+      "buyer": "Vantage Ridge Technology Partners LP",
+      "loiDate": "2026-02-13",
+      "statedMultiple": 9,
+      "headlineEnterpriseValueUsd": 24800000,
+      "revisedEnterpriseValueUsd": 10930000,
+      "priceChangeUsd": -13870000,
+      "priceChangePct": -55.93,
+      "sellerAdjustedEbitdaUsd": 2755620,
+      "supportedAdjustedEbitdaUsd": 1214620,
+      "escrowPct": 0.15,
+      "escrowUsd": 3720000,
+      "workingCapitalPegUsd": 406709.67
+    }
   }
 }
