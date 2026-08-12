@@ -222,10 +222,16 @@ function saveSynthesisToHistory(projectId: string, synthesis: ProjectSynthesisIt
         const raw = window.sessionStorage.getItem('mergeworks.synthesisHistoryByProject')
         const map = (raw ? JSON.parse(raw) : {}) as Record<string, ProjectSynthesisItem[]>
         const existing = map[projectId] || []
-        const isDuplicate = existing.some((item) =>
-            (item.id && item.id === synthesis.id) ||
-            (item.createdAt && item.createdAt === synthesis.createdAt && item.documentsReceivedCount === synthesis.documentsReceivedCount)
-        )
+
+        const timeStr = synthesis.updatedAt || synthesis.createdAt || synthesis.projectProcessedAt || ''
+        const isDuplicate = existing.some((item) => {
+            const itemTime = item.updatedAt || item.createdAt || item.projectProcessedAt || ''
+            if (timeStr && itemTime && timeStr === itemTime) return true
+            const contentLenA = (synthesis.finalJudgmentSummary || '').length + (synthesis.projectSynthesisJson || '').length
+            const contentLenB = (item.finalJudgmentSummary || '').length + (item.projectSynthesisJson || '').length
+            return item.documentsReceivedCount === synthesis.documentsReceivedCount && contentLenA === contentLenB
+        })
+
         if (!isDuplicate) {
             map[projectId] = [synthesis, ...existing]
             window.sessionStorage.setItem('mergeworks.synthesisHistoryByProject', JSON.stringify(map))
@@ -270,7 +276,7 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
             return true
         }
 
-        // Load saved history first, filtering out unpopulated 0-document placeholder or mismatched rows
+        // Load saved history first, keying by time to avoid overwriting updated versions
         savedHistory.forEach((item) => {
             if (!isSynthesisForCurrentProject(item)) return
             const hasValidContent =
@@ -278,7 +284,8 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                 (item.citations && item.citations.length > 0) ||
                 (item.finalRecommendation && item.finalRecommendation.trim().length > 0)
             if (hasValidContent) {
-                map.set(item.id || item.createdAt || Math.random(), item)
+                const uniqueKey = item.updatedAt ? `${item.id || 'hist'}_${item.updatedAt}` : (item.id || item.createdAt || Math.random())
+                map.set(uniqueKey, item)
             }
         })
         syntheses.forEach((item) => {
@@ -291,12 +298,13 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
                  (itemPid.includes('werkheiser') || itemPid.includes('business1') || itemPid.includes('commercial')))
 
             if (isMatch) {
-                map.set(item.id || item.createdAt || Math.random(), item)
+                const uniqueKey = item.updatedAt ? `${item.id || 'live'}_${item.updatedAt}` : (item.id || item.createdAt || Math.random())
+                map.set(uniqueKey, item)
             }
         })
         return [...map.values()].sort((a, b) => {
-            const timeA = new Date(a.createdAt || a.projectProcessedAt || a.updatedAt || 0).getTime()
-            const timeB = new Date(b.createdAt || b.projectProcessedAt || b.updatedAt || 0).getTime()
+            const timeA = new Date(a.updatedAt || a.createdAt || a.projectProcessedAt || 0).getTime()
+            const timeB = new Date(b.updatedAt || b.createdAt || b.projectProcessedAt || 0).getTime()
             return timeB - timeA
         })
     }, [syntheses, normalizedProjectId, projects, savedHistory, targetName, currentProject])
