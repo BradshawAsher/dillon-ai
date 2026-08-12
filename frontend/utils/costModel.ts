@@ -177,7 +177,10 @@ export function estimateMonthlyCost(
     synthesesPerMonth: number,
     costPerSynthesis = 0.12,
 ): number {
-    const docs = Math.max(0, documentsPerMonth)
-    const syntheses = Math.max(0, synthesesPerMonth)
+    // Math.max(0, NaN) is NaN, so coerce non-finite throughput to 0 rather than
+    // letting a bad input poison the whole projection.
+    const nonNegative = (value: number) => (Number.isFinite(value) && value > 0 ? value : 0)
+    const docs = nonNegative(documentsPerMonth)
+    const syntheses = nonNegative(synthesesPerMonth)
     return docs * MEASURED_COST_PER_DOCUMENT + syntheses * costPerSynthesis
 }
