@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { deriveDocumentedFacts, deriveDocumentedFactsJson } from './documentedFacts'
+import { deriveDocumentedFacts, deriveDocumentedFactsJson, deriveDocumentedFactsWithConflicts } from './documentedFacts'
 import type { SubmissionHistoryItem } from './submissionHistory'
 
-function doc(financialFactsJson: string): SubmissionHistoryItem {
-    return { financialFactsJson } as SubmissionHistoryItem
+function doc(financialFactsJson: string, fileName = 'doc.pdf'): SubmissionHistoryItem {
+    return { financialFactsJson, fileName } as SubmissionHistoryItem
 }
 
 function fact(overrides: Record<string, unknown>) {
@@ -96,5 +96,27 @@ describe('deriveDocumentedFactsJson', () => {
     it('round-trips derived facts through JSON', () => {
         const json = deriveDocumentedFactsJson([doc(JSON.stringify([fact({ normalized_value: 4200 })]))])
         expect(JSON.parse(json).revenue.value).toBe(4200)
+    })
+})
+
+describe('deriveDocumentedFactsWithConflicts', () => {
+    it('returns facts identical to deriveDocumentedFacts plus detected conflicts', () => {
+        const a = doc(JSON.stringify([fact({ metric: 'ebitda', normalized_value: 1_590_000, period: 'TTM' })]), 'seller.pdf')
+        const b = doc(JSON.stringify([fact({ metric: 'ebitda', normalized_value: 1_260_000, period: 'TTM' })]), 'buyer.xlsx')
+        const documents = [a, b]
+
+        const { facts, conflicts } = deriveDocumentedFactsWithConflicts(documents)
+        // facts must be byte-for-byte what the untouched function returns.
+        expect(facts).toEqual(deriveDocumentedFacts(documents))
+        // and the competing values it discards are surfaced as a conflict.
+        expect(conflicts).toHaveLength(1)
+        expect(conflicts[0].metric).toBe('ebitda')
+        expect(conflicts[0].severity).toBe('critical')
+    })
+
+    it('reports no conflicts when documents agree', () => {
+        const a = doc(JSON.stringify([fact({ metric: 'revenue', normalized_value: 1_000_000, period: '2024' })]), 'a.pdf')
+        const b = doc(JSON.stringify([fact({ metric: 'revenue', normalized_value: 1_005_000, period: '2024' })]), 'b.pdf')
+        expect(deriveDocumentedFactsWithConflicts([a, b]).conflicts).toHaveLength(0)
     })
 })
