@@ -10,6 +10,7 @@ import {
     DollarSign,
     ExternalLink,
     Eye,
+    EyeOff,
     FileCheck,
     FileText,
     FolderKanban,
@@ -124,6 +125,8 @@ export default function EvalDashboardTab({
     const [sortBy, setSortBy] = useState<'default' | 'score_desc' | 'score_asc' | 'duration_desc' | 'name_asc'>('default')
     const [selectedDocViewerBusiness, setSelectedDocViewerBusiness] = useState<string | null>(null)
     const [viewerSearchQuery, setViewerSearchQuery] = useState('')
+    const [showDocMinicards, setShowDocMinicards] = useState<boolean>(false)
+    const [expandedCardMap, setExpandedCardMap] = useState<Record<string, boolean>>({})
 
     // Default report incorporating Business 1 (Werkheiser), Business 2 (Iron Tree), Business 3 (TurnKey), Business 4 (ConversionXL), and Business 5 (Medical Spa)
     const defaultReport = {
@@ -1200,6 +1203,18 @@ export default function EvalDashboardTab({
                                     <option value="name_asc">File Name: A to Z</option>
                                 </select>
 
+                                {/* Toggle All Doc Minicards */}
+                                <Button
+                                    variant={showDocMinicards ? "secondary" : "default"}
+                                    size="sm"
+                                    className="gap-1.5 font-bold text-xs cursor-pointer shadow-xs transition-all"
+                                    onClick={() => setShowDocMinicards(!showDocMinicards)}
+                                    title={showDocMinicards ? "Hide individual document score cards" : "Show individual document score cards for all deal packets"}
+                                >
+                                    {showDocMinicards ? <EyeOff className="h-3.5 w-3.5 text-amber-500 shrink-0" /> : <Eye className="h-3.5 w-3.5 shrink-0" />}
+                                    <span>{showDocMinicards ? "Hide Doc Minicards" : "Show All Doc Minicards"}</span>
+                                </Button>
+
                                 {/* Reset button */}
                                 {isFiltered && (
                                     <Button
@@ -1581,6 +1596,27 @@ export default function EvalDashboardTab({
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-2 flex-wrap">
+                                                {/* Toggle minicards for this card */}
+                                                {(() => {
+                                                    const cardKey = `${groupIdx}_${phase}`
+                                                    const isCardExpanded = showDocMinicards || !!expandedCardMap[cardKey]
+                                                    return (
+                                                        <Button
+                                                            type="button"
+                                                            size="default"
+                                                            variant="outline"
+                                                            className={`gap-2 font-extrabold text-xs px-3.5 py-2 shadow-xs transition-all cursor-pointer rounded-xl shrink-0 ${isCardExpanded ? 'border-amber-500/50 bg-amber-500/15 text-amber-900 dark:text-amber-200 hover:bg-amber-500/25' : 'border-primary/40 bg-primary/10 text-primary hover:bg-primary/20'}`}
+                                                            onClick={() => {
+                                                                setExpandedCardMap(prev => ({ ...prev, [cardKey]: !prev[cardKey] }))
+                                                            }}
+                                                            title={isCardExpanded ? "Hide individual document score cards for this business" : "Expand individual document score cards for this business"}
+                                                        >
+                                                            {isCardExpanded ? <EyeOff className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" /> : <Eye className="h-4 w-4 shrink-0 text-primary" />}
+                                                            <span>{isCardExpanded ? "Hide Doc Cards" : `Show ${docs.length} Doc Cards`}</span>
+                                                        </Button>
+                                                    )
+                                                })()}
+
                                                 <Button
                                                     type="button"
                                                     size="default"
@@ -1742,98 +1778,127 @@ export default function EvalDashboardTab({
                                             })()}
                                         </div>
 
-                                    <div className={`grid gap-3 ${docs.length > 10 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'md:grid-cols-2'}`}>
-                                        {docs.map((doc: any, docIdx: number) => {
-                                            const isPass = isDocPassed(doc)
-                                            const docCost = doc.costUsd || val.perDocCost
+                                    {/* Minicards Grid (Hidden by Default) */}
+                                    {(() => {
+                                        const cardKey = `${groupIdx}_${phase}`
+                                        const isCardExpanded = showDocMinicards || !!expandedCardMap[cardKey]
+
+                                        if (!isCardExpanded) {
                                             return (
-                                                <div
-                                                    key={docIdx}
-                                                    className={`rounded-lg border transition-all ${docs.length > 10 ? 'p-2.5 space-y-1.5' : 'p-3.5 space-y-2.5'} ${
-                                                        isPass
-                                                            ? 'border-emerald-500/30 bg-emerald-50/30 dark:bg-emerald-950/10'
-                                                            : 'border-red-500/30 bg-red-50/30 dark:bg-red-950/10'
-                                                    }`}
-                                                >
-                                                    <div className="flex items-start justify-between gap-2">
-                                                        <div className="space-y-0.5">
-                                                            <p className="text-sm font-bold text-foreground flex items-center gap-1.5 truncate max-w-[240px]" title={doc.fileName}>
-                                                                <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                                                                {doc.fileName}
-                                                            </p>
-                                                            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                                                                <Clock className="h-3 w-3" /> ~{getDocDurationSec(doc)}s processing
-                                                            </span>
-                                                        </div>
-                                                        <Badge variant={isPass ? 'success' : 'destructive'} className="text-[10px] shrink-0 font-extrabold">
-                                                            {doc.percentage}% ({isPass ? 'PASS' : 'FAIL'})
-                                                        </Badge>
-                                                    </div>
-
-                                                    <div className="grid grid-cols-3 gap-1.5 text-center text-xs">
-                                                        <div className="bg-muted/40 p-1.5 rounded border border-border/40">
-                                                            <span className="text-muted-foreground block text-[9px] uppercase font-semibold">Classification</span>
-                                                            <span className="font-bold text-foreground">{doc.classificationScore}/10</span>
-                                                        </div>
-                                                        <div className="bg-muted/40 p-1.5 rounded border border-border/40">
-                                                            <span className="text-muted-foreground block text-[9px] uppercase font-semibold">Facts Extraction</span>
-                                                            <span className="font-bold text-foreground">{doc.factsScore}/10</span>
-                                                        </div>
-                                                        <div className="bg-muted/40 p-1.5 rounded border border-border/40">
-                                                            <span className="text-muted-foreground block text-[9px] uppercase font-semibold">Risk & Flags</span>
-                                                            <span className="font-bold text-foreground">{doc.riskScore}/20</span>
-                                                        </div>
-                                                        <div className="bg-muted/40 p-1.5 rounded border border-border/40">
-                                                            <span className="text-muted-foreground block text-[9px] uppercase font-semibold">Valuation</span>
-                                                            <span className="font-bold text-foreground">{doc.valuationScore}/15</span>
-                                                        </div>
-                                                        <div className="bg-muted/40 p-1.5 rounded border border-border/40">
-                                                            <span className="text-muted-foreground block text-[9px] uppercase font-semibold">Employees</span>
-                                                            <span className="font-bold text-foreground">{doc.employeeScore}/5</span>
-                                                        </div>
-                                                        <div className="bg-muted/40 p-1.5 rounded border border-border/40">
-                                                            <span className="text-muted-foreground block text-[9px] uppercase font-semibold">Math Checks</span>
-                                                            <span className="font-bold text-emerald-600">{doc.mathScore}/10</span>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="flex flex-wrap items-center justify-between text-[10px] text-muted-foreground pt-1.5 border-t border-border/40 font-mono">
-                                                        <span>
-                                                            Tokens: {(doc.inputTokens || 12400).toLocaleString()} in / {(doc.outputTokens || 1850).toLocaleString()} out
-                                                        </span>
-                                                        <div className="flex items-center gap-2">
-                                                            <span>Attempt {doc.attempts || val.perDocAttempts}</span>
-                                                            <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                                                                ${docCost.toFixed(4)}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/40">
-                                                        <Button
-                                                            type="button"
-                                                            size="sm"
-                                                            variant="ghost"
-                                                            className="h-7 text-[11px] font-semibold text-primary hover:bg-primary/10 hover:text-primary gap-1 px-2 cursor-pointer"
-                                                            onClick={() => {
-                                                                const targetKey = doc.projectId || doc.projectKey || docs[0]?.projectId || docs[0]?.projectKey || mapBusinessToProjectKey(businessName, doc)
-                                                                const targetDocName = doc.fileName || doc.originalFilename || ''
-                                                                if (onSelectDoc) {
-                                                                    onSelectDoc(targetDocName, targetKey)
-                                                                } else if (onSelectProject) {
-                                                                    onSelectProject(targetKey, 'diligence')
-                                                                }
-                                                            }}
-                                                            title={`Switch active workspace to ${doc.fileName || businessName}`}
-                                                        >
-                                                            <FolderKanban className="h-3 w-3 shrink-0 text-primary" />
-                                                            <span>{isDDPacket || (doc.fileName || '').toLowerCase().includes('due_diligence_packet') || (doc.fileName || '').toLowerCase().includes('folder') || docs.length > 10 ? 'View this folder' : 'View this doc'}</span>
-                                                        </Button>
-                                                    </div>
+                                                <div className="flex items-center justify-between p-3 rounded-lg border border-border/60 bg-muted/20 text-xs text-muted-foreground font-semibold">
+                                                    <span className="flex items-center gap-1.5">
+                                                        <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                                        {docs.length} Document Score Cards Hidden (Compact View)
+                                                    </span>
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-7 text-xs font-bold text-primary cursor-pointer hover:bg-primary/10 gap-1 px-2.5"
+                                                        onClick={() => setExpandedCardMap(prev => ({ ...prev, [cardKey]: true }))}
+                                                    >
+                                                        <Eye className="h-3.5 w-3.5 shrink-0" />
+                                                        <span>Expand {docs.length} Doc Cards</span>
+                                                    </Button>
                                                 </div>
                                             )
-                                        })}
-                                    </div>
+                                        }
+
+                                        return (
+                                            <div className={`grid gap-3 ${docs.length > 10 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'md:grid-cols-2'}`}>
+                                                {docs.map((doc: any, docIdx: number) => {
+                                                    const isPass = isDocPassed(doc)
+                                                    const docCost = doc.costUsd || val.perDocCost
+                                                    return (
+                                                        <div
+                                                            key={docIdx}
+                                                            className={`rounded-lg border transition-all ${docs.length > 10 ? 'p-2.5 space-y-1.5' : 'p-3.5 space-y-2.5'} ${
+                                                                isPass
+                                                                    ? 'border-emerald-500/30 bg-emerald-50/30 dark:bg-emerald-950/10'
+                                                                    : 'border-red-500/30 bg-red-50/30 dark:bg-red-950/10'
+                                                            }`}
+                                                        >
+                                                            <div className="flex items-start justify-between gap-2">
+                                                                <div className="space-y-0.5">
+                                                                    <p className="text-sm font-bold text-foreground flex items-center gap-1.5 truncate max-w-[240px]" title={doc.fileName}>
+                                                                        <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                                                        {doc.fileName}
+                                                                    </p>
+                                                                    <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                                                        <Clock className="h-3 w-3" /> ~{getDocDurationSec(doc)}s processing
+                                                                    </span>
+                                                                </div>
+                                                                <Badge variant={isPass ? 'success' : 'destructive'} className="text-[10px] shrink-0 font-extrabold">
+                                                                    {doc.percentage}% ({isPass ? 'PASS' : 'FAIL'})
+                                                                </Badge>
+                                                            </div>
+
+                                                            <div className="grid grid-cols-3 gap-1.5 text-center text-xs">
+                                                                <div className="bg-muted/40 p-1.5 rounded border border-border/40">
+                                                                    <span className="text-muted-foreground block text-[9px] uppercase font-semibold">Classification</span>
+                                                                    <span className="font-bold text-foreground">{doc.classificationScore}/10</span>
+                                                                </div>
+                                                                <div className="bg-muted/40 p-1.5 rounded border border-border/40">
+                                                                    <span className="text-muted-foreground block text-[9px] uppercase font-semibold">Facts Extraction</span>
+                                                                    <span className="font-bold text-foreground">{doc.factsScore}/10</span>
+                                                                </div>
+                                                                <div className="bg-muted/40 p-1.5 rounded border border-border/40">
+                                                                    <span className="text-muted-foreground block text-[9px] uppercase font-semibold">Risk &amp; Flags</span>
+                                                                    <span className="font-bold text-foreground">{doc.riskScore}/20</span>
+                                                                </div>
+                                                                <div className="bg-muted/40 p-1.5 rounded border border-border/40">
+                                                                    <span className="text-muted-foreground block text-[9px] uppercase font-semibold">Valuation</span>
+                                                                    <span className="font-bold text-foreground">{doc.valuationScore}/15</span>
+                                                                </div>
+                                                                <div className="bg-muted/40 p-1.5 rounded border border-border/40">
+                                                                    <span className="text-muted-foreground block text-[9px] uppercase font-semibold">Employees</span>
+                                                                    <span className="font-bold text-foreground">{doc.employeeScore}/5</span>
+                                                                </div>
+                                                                <div className="bg-muted/40 p-1.5 rounded border border-border/40">
+                                                                    <span className="text-muted-foreground block text-[9px] uppercase font-semibold">Math Checks</span>
+                                                                    <span className="font-bold text-emerald-600">{doc.mathScore}/10</span>
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="flex flex-wrap items-center justify-between text-[10px] text-muted-foreground pt-1.5 border-t border-border/40 font-mono">
+                                                                <span>
+                                                                    Tokens: {(doc.inputTokens || 12400).toLocaleString()} in / {(doc.outputTokens || 1850).toLocaleString()} out
+                                                                </span>
+                                                                <div className="flex items-center gap-2">
+                                                                    <span>Attempt {doc.attempts || val.perDocAttempts}</span>
+                                                                    <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                                                                        ${docCost.toFixed(4)}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/40">
+                                                                <Button
+                                                                    type="button"
+                                                                    size="sm"
+                                                                    variant="ghost"
+                                                                    className="h-7 text-[11px] font-semibold text-primary hover:bg-primary/10 hover:text-primary gap-1 px-2 cursor-pointer"
+                                                                    onClick={() => {
+                                                                        const targetKey = doc.projectId || doc.projectKey || docs[0]?.projectId || docs[0]?.projectKey || mapBusinessToProjectKey(businessName, doc)
+                                                                        const targetDocName = doc.fileName || doc.originalFilename || ''
+                                                                        if (onSelectDoc) {
+                                                                            onSelectDoc(targetDocName, targetKey)
+                                                                        } else if (onSelectProject) {
+                                                                            onSelectProject(targetKey, 'diligence')
+                                                                        }
+                                                                    }}
+                                                                    title={`Switch active workspace to ${doc.fileName || businessName}`}
+                                                                >
+                                                                    <FolderKanban className="h-3 w-3 shrink-0 text-primary" />
+                                                                    <span>{isDDPacket || (doc.fileName || '').toLowerCase().includes('due_diligence_packet') || (doc.fileName || '').toLowerCase().includes('folder') || docs.length > 10 ? 'View this folder' : 'View this doc'}</span>
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                    )
+                                                })}
+                                            </div>
+                                        )
+                                    })()}
                                 </div>
                             )
                         })
