@@ -52,6 +52,14 @@
     },
     "expectedMathCheckStatus": "passed",
     "notes": "MML M&A Benchmark Deal DD-003: Summit Managed Services, Inc. (Managed IT Services (MSP)). Seller claims $1.90M EBITDA vs $1.82M buyer-supported ($82k overstatement).",
-    "expectedRecommendation": "PROCEED"
+    "expectedRecommendation": "PROCEED",
+    "expectedCrossDocumentConflicts": [
+      {
+        "metric": "adjusted_ebitda",
+        "period": "TTM",
+        "description": "Seller-claimed adjusted EBITDA of $1,900,000 overstates the buyer-supported $1,820,373 by $79,627 (~4%).",
+        "severity": "info"
+      }
+    ]
   }
 }

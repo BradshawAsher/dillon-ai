@@ -53,6 +53,14 @@
     },
     "expectedMathCheckStatus": "passed",
     "notes": "MML M&A Benchmark Deal DD-015: Quarry Ridge Plastics, Inc. (Injection Moulding & Contract Manufacturing). Seller claims $2.16M EBITDA vs $1.50M buyer-supported ($651k overstatement).",
-    "expectedRecommendation": "PROCEED WITH REPRICE"
+    "expectedRecommendation": "PROCEED WITH REPRICE",
+    "expectedCrossDocumentConflicts": [
+      {
+        "metric": "adjusted_ebitda",
+        "period": "TTM",
+        "description": "Seller-claimed adjusted EBITDA of $2,160,000 overstates the buyer-supported $1,503,957 by $656,043 (~30%).",
+        "severity": "critical"
+      }
+    ]
   }
 }

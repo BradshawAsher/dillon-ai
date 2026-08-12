@@ -51,6 +51,33 @@
         "askingPrice": 13778100,
         "currency": "USD"
       },
+      "mathCheckPassed": true,
+      "crossDocumentConflicts": [
+        "Cross-document EBITDA conflict: the seller's adjusted EBITDA bridge claims $2,760,000, but the buyer-supported adjusted EBITDA is $1,214,620 — a $1,545,380 (~56%) overstatement."
+      ]
+    },
+    {
+      "fileName": "DD-010_seller_adjusted_ebitda_bridge_exhibit.pdf",
+      "modelUsed": "Claude 3.5 Sonnet",
+      "status": "completed",
+      "detectedDocumentType": "Seller Adjusted EBITDA Bridge",
+      "trafficLight": "RED",
+      "riskLevel": "HIGH",
+      "confidence": 0.9,
+      "extractedFacts": [
+        {
+          "metric": "adjusted_ebitda",
+          "normalizedValue": 2760000,
+          "period": "TTM",
+          "rawValue": "$2,760,000"
+        }
+      ],
+      "redFlags": [
+        "Seller add-back bridge asserts $2,760,000 adjusted EBITDA, unsupported by the buyer-side workpapers."
+      ],
+      "yellowFlags": [],
+      "greenFlags": [],
+      "valuation": null,
       "mathCheckPassed": true
     }
   ]

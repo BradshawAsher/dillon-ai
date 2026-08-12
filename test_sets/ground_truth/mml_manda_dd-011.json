@@ -53,6 +53,14 @@
     },
     "expectedMathCheckStatus": "passed",
     "notes": "MML M&A Benchmark Deal DD-011: Ridgeline Staffing Partners, Inc. (Light-Industrial & Skilled-Trades Staffing). Seller claims $2.12M EBITDA vs $1.65M buyer-supported ($470k overstatement).",
-    "expectedRecommendation": "PROCEED WITH REPRICE"
+    "expectedRecommendation": "PROCEED WITH REPRICE",
+    "expectedCrossDocumentConflicts": [
+      {
+        "metric": "adjusted_ebitda",
+        "period": "TTM",
+        "description": "Seller-claimed adjusted EBITDA of $2,120,000 overstates the buyer-supported $1,645,104 by $474,896 (~22%).",
+        "severity": "critical"
+      }
+    ]
   }
 }

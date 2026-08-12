@@ -52,6 +52,14 @@
     },
     "expectedMathCheckStatus": "passed",
     "notes": "MML M&A Benchmark Deal DD-008: Puget Sound Logistics Co. (Regional LTL Trucking & Third-Party Logistics). Seller claims $2.52M EBITDA vs $2.08M buyer-supported ($433k overstatement).",
-    "expectedRecommendation": "PROCEED WITH REPRICE"
+    "expectedRecommendation": "PROCEED WITH REPRICE",
+    "expectedCrossDocumentConflicts": [
+      {
+        "metric": "adjusted_ebitda",
+        "period": "TTM",
+        "description": "Seller-claimed adjusted EBITDA of $2,520,000 overstates the buyer-supported $2,084,101 by $435,899 (~17%).",
+        "severity": "critical"
+      }
+    ]
   }
 }
