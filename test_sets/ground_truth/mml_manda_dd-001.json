@@ -52,6 +52,14 @@
     },
     "expectedMathCheckStatus": "passed",
     "notes": "MML M&A Benchmark Deal DD-001: Cascadia Climate Services, Inc. (Commercial & Residential HVAC Services). Seller claims $1.59M EBITDA vs $1.26M buyer-supported ($333k overstatement).",
-    "expectedRecommendation": "PROCEED WITH REPRICE"
+    "expectedRecommendation": "PROCEED WITH REPRICE",
+    "expectedCrossDocumentConflicts": [
+      {
+        "metric": "adjusted_ebitda",
+        "period": "TTM",
+        "description": "Seller-claimed adjusted EBITDA of $1,590,000 overstates the buyer-supported $1,260,400 by $329,600 (~21%).",
+        "severity": "critical"
+      }
+    ]
   }
 }

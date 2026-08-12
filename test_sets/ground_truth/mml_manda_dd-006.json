@@ -53,6 +53,14 @@
     },
     "expectedMathCheckStatus": "passed",
     "notes": "MML M&A Benchmark Deal DD-006: Harborview Dental Partners, LLC (Multi-Site Dental Group (4 clinics)). Seller claims $2.74M EBITDA vs $2.42M buyer-supported ($320k overstatement).",
-    "expectedRecommendation": "PROCEED WITH REPRICE"
+    "expectedRecommendation": "PROCEED WITH REPRICE",
+    "expectedCrossDocumentConflicts": [
+      {
+        "metric": "adjusted_ebitda",
+        "period": "TTM",
+        "description": "Seller-claimed adjusted EBITDA of $2,740,000 overstates the buyer-supported $2,417,578 by $322,422 (~12%).",
+        "severity": "warning"
+      }
+    ]
   }
 }

@@ -53,6 +53,14 @@
     },
     "expectedMathCheckStatus": "passed",
     "notes": "MML M&A Benchmark Deal DD-007: Bitterroot Food Group, Inc. (Specialty Food Manufacturing & Co-Packing). Seller claims $2.12M EBITDA vs $1.69M buyer-supported ($430k overstatement).",
-    "expectedRecommendation": "PROCEED WITH REPRICE"
+    "expectedRecommendation": "PROCEED WITH REPRICE",
+    "expectedCrossDocumentConflicts": [
+      {
+        "metric": "adjusted_ebitda",
+        "period": "TTM",
+        "description": "Seller-claimed adjusted EBITDA of $2,120,000 overstates the buyer-supported $1,687,702 by $432,298 (~20%).",
+        "severity": "critical"
+      }
+    ]
   }
 }

@@ -52,7 +52,10 @@
         "askingPrice": 5655175,
         "currency": "USD"
       },
-      "mathCheckPassed": true
+      "mathCheckPassed": true,
+      "crossDocumentConflicts": [
+        "Cross-document EBITDA conflict: the seller's adjusted EBITDA bridge claims $1,130,000, but the buyer-supported adjusted EBITDA is $938,887 — a $191,113 (~17%) overstatement."
+      ]
     }
   ]
 }
