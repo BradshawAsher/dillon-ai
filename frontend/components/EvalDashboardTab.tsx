@@ -798,16 +798,16 @@ export default function EvalDashboardTab({
                 <Card className="border-border shadow-xs border-primary/30 bg-primary/5">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
                         <CardTitle className="text-xs font-semibold text-primary uppercase tracking-wider">
-                            Test Set Documents
+                            Scored Test Docs
                         </CardTitle>
                         <FileText className="h-4 w-4 text-primary" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-foreground">
-                            {totalDocsCount} Total Docs
+                            {totalDocsCount} Scored Docs
                         </div>
                         <p className="text-xs text-muted-foreground font-medium mt-1">
-                            Across {uniqueBusinessCount} deal packets
+                            357 raw files in 23 data rooms
                         </p>
                     </CardContent>
                 </Card>
@@ -823,8 +823,8 @@ export default function EvalDashboardTab({
                         <div className="text-2xl font-bold text-foreground">
                             {uniqueBusinessCount} Deal Packets
                         </div>
-                        <p className="text-xs text-muted-foreground font-medium mt-1 truncate" title={`${uniqueBusinessCount} M&A Deal Packets (${totalDocsCount} Docs)`}>
-                            {uniqueBusinessCount} M&A Packets ({totalDocsCount} Docs)
+                        <p className="text-xs text-muted-foreground font-medium mt-1 truncate" title={`${uniqueBusinessCount} M&A Deal Packets (357 raw files)`}>
+                            23 Data Rooms (357 files)
                         </p>
                     </CardContent>
                 </Card>
@@ -841,7 +841,7 @@ export default function EvalDashboardTab({
                             ${avgPacketCost.toFixed(2)} <span className="text-xs font-bold text-muted-foreground">/ packet</span>
                         </div>
                         <p className="text-[11px] text-muted-foreground font-semibold mt-1">
-                            Avg ${avgDocCost.toFixed(3)}/doc across {uniqueBusinessCount} packets ({totalDocsCount} docs)
+                            20-file packets ~$1.18 | Avg ~$0.055/doc
                         </p>
                     </CardContent>
                 </Card>
