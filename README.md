@@ -4,7 +4,7 @@ An AI-powered M&A intelligence workspace for private equity sponsors, search fun
 
 ## Dual Core Agent Capabilities
 
-The Financial Due Diligence Agent automates two core M&A workflow stages (see [`PURPOSE.md`](PURPOSE.md) for full breakdown):
+The Financial Due Diligence Agent automates two core M&A workflow stages (see [`PURPOSE.md`](PURPOSE.md) and [`LOI_DEPENDENCIES.md`](LOI_DEPENDENCIES.md) for full breakdown):
 
 1. **Phase 1: Pre-LOI Valuation Discovery & Normalized EBITDA Extraction**
    - Extracts revenue, gross profit, and reported EBITDA from raw financial statements (P&L, Trial Balance, Tax Returns).
