@@ -203,10 +203,10 @@ function extractJudgmentSummary(parsed: unknown): string {
         const record = parsed as Record<string, unknown>
         const response = record.response
         if (response && typeof response === 'object') {
-            const responseSummary = getRecordString(response as Record<string, unknown>, ['summary'])
+            const responseSummary = getRecordString(response as Record<string, unknown>, ['summary', 'final_judgment_summary', 'finalJudgmentSummary'])
             if (responseSummary) return responseSummary
         }
-        const candidate = record.summary ?? record.judgment ?? record.recommendation ?? record.thesis ?? record.conclusion
+        const candidate = record.finalJudgmentSummary ?? record.final_judgment_summary ?? record.summary ?? record.judgment ?? record.recommendation ?? record.thesis ?? record.conclusion
         if (typeof candidate === 'string' && candidate.trim().length > 0) return candidate
     }
     return ''
@@ -226,23 +226,54 @@ function getJudgmentValues(raw: unknown): { summary: string; json: string } {
 
 function getJudgmentField(raw: string, field: string): unknown {
     if (!raw) return undefined
-    try { const parsed = JSON.parse(raw) as Record<string, unknown>; return parsed[field] } catch { return undefined }
+    try {
+        const parsed = JSON.parse(raw) as Record<string, unknown>
+        if (parsed[field] !== undefined) return parsed[field]
+        if (parsed.response && typeof parsed.response === 'object' && (parsed.response as Record<string, unknown>)[field] !== undefined) {
+            return (parsed.response as Record<string, unknown>)[field]
+        }
+        return undefined
+    } catch {
+        return undefined
+    }
 }
 
 function getProjectFlags(raw: string, key: 'red_flags' | 'yellow_flags' | 'green_flags') {
-    const response = getJudgmentField(raw, 'response')
-    if (!response || typeof response !== 'object') return []
-    const flags = (response as Record<string, unknown>).flags
-    if (!flags || typeof flags !== 'object') return []
-    return getStringListValue((flags as Record<string, unknown>)[key], formatFlag)
+    const camelKey = key === 'red_flags' ? 'redFlags' : key === 'yellow_flags' ? 'yellowFlags' : 'greenFlags'
+    try {
+        const parsed = JSON.parse(raw) as Record<string, unknown>
+        if (parsed.response && typeof parsed.response === 'object') {
+            const flags = (parsed.response as Record<string, unknown>).flags
+            if (flags && typeof flags === 'object' && (flags as Record<string, unknown>)[key]) {
+                return getStringListValue((flags as Record<string, unknown>)[key], formatFlag)
+            }
+        }
+        if (parsed.flags && typeof parsed.flags === 'object' && (parsed.flags as Record<string, unknown>)[key]) {
+            return getStringListValue((parsed.flags as Record<string, unknown>)[key], formatFlag)
+        }
+        if (parsed[key]) return getStringListValue(parsed[key], formatFlag)
+        if (parsed[camelKey]) return getStringListValue(parsed[camelKey], formatFlag)
+    } catch { /* skip */ }
+    return []
 }
 
 function getProjectStructuredFlags(raw: string, key: 'red_flags' | 'yellow_flags' | 'green_flags', fallbackStatus: string) {
-    const response = getJudgmentField(raw, 'response')
-    if (!response || typeof response !== 'object') return []
-    const flags = (response as Record<string, unknown>).flags
-    if (!flags || typeof flags !== 'object') return []
-    return getStructuredFindingsFromRaw((flags as Record<string, unknown>)[key], fallbackStatus)
+    const camelKey = key === 'red_flags' ? 'redFlags' : key === 'yellow_flags' ? 'yellowFlags' : 'greenFlags'
+    try {
+        const parsed = JSON.parse(raw) as Record<string, unknown>
+        if (parsed.response && typeof parsed.response === 'object') {
+            const flags = (parsed.response as Record<string, unknown>).flags
+            if (flags && typeof flags === 'object' && (flags as Record<string, unknown>)[key]) {
+                return getStructuredFindingsFromRaw((flags as Record<string, unknown>)[key], fallbackStatus)
+            }
+        }
+        if (parsed.flags && typeof parsed.flags === 'object' && (parsed.flags as Record<string, unknown>)[key]) {
+            return getStructuredFindingsFromRaw((parsed.flags as Record<string, unknown>)[key], fallbackStatus)
+        }
+        if (parsed[key]) return getStructuredFindingsFromRaw(parsed[key], fallbackStatus)
+        if (parsed[camelKey]) return getStructuredFindingsFromRaw(parsed[camelKey], fallbackStatus)
+    } catch { /* skip */ }
+    return []
 }
 
 function getJudgmentRecommendation(raw: string) {
