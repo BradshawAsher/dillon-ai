@@ -36,6 +36,7 @@ export type ProjectCitation = {
 
 export type ProjectSynthesisItem = {
     projectId: string
+    letterOfIntentPresent?: boolean
     projectName?: string
     companyName?: string
     projectStatus: string
@@ -316,7 +317,7 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
         .from('project_syntheses')
         .select('*')
         .order('updated_at', { ascending: false })
-        .limit(100)
+        .limit(200)
 
     if (error) throw new Error(`Supabase read failed: ${error.message}`)
     if (!rows) return []
@@ -391,6 +392,7 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
                 totalTokens: Number(row.total_tokens ?? 0),
                 costUsd: Number(row.cost_usd ?? 0),
                 id: row.id ?? 0,
+                letterOfIntentPresent: row.letter_of_intent_present ?? Boolean(judgment.json?.letter_of_intent_present),
                 createdAt: row.created_at ?? '',
                 updatedAt: row.updated_at ?? '',
             }

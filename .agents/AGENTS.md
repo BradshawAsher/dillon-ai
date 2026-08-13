@@ -50,6 +50,12 @@ If the user asks to change project synthesis behavior, the agent should:
 - Before making any medium or hard code change, state refactor, or database update, the agent MUST write a detailed `implementation_plan.md` artifact outlining the empirical root cause, target files, exact replacements, and regression verification plan.
 - Never apply multi-file fixes or state refactors without first verifying potential side-effects across the codebase.
 
+## Model Naming & Identifier Protocol
+
+- **UI / Benchmark Display Labels**: The application UI, Evals tab, and marketing pages feature benchmark model names (e.g. `GPT 5.6 Terra`, `Claude Sonnet 5`, `Gemini 3.1 Flash Lite`).
+- **LLM API Endpoints**: When configuring n8n workflows, HTTP requests, or AI model node parameters, agents MUST pass valid production model identifiers recognized by LLM providers (`gpt-4o`, `gpt-4o-mini`, `claude-3-5-sonnet-20241022`, `claude-3-7-sonnet-20250219`). Do not pass synthetic branding strings directly into raw API model parameter fields without confirming proxy endpoint support.
+
+
 
 
 
