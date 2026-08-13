@@ -594,7 +594,50 @@ export default function ProjectSynthesisCard({
 
             <CardContent className="space-y-6 p-4">
                 {/* Live Active Re-Synthesis Card with Live Timer & Stage Breakdown */}
-                {(runningSynthesis || synthesisPending || documentAnalysisPending || projectDocuments.some((d) => ['processing', 'queued', 'submitted'].includes(d.status))) && (
+                {documentAnalysisPending || projectDocuments.some((d) => ['processing', 'queued', 'submitted'].includes(d.status)) ? (
+                    <div className="rounded-xl border-2 border-amber-500/80 bg-amber-500/10 p-5 text-amber-950 dark:text-amber-100 shadow-xl space-y-4 animate-pulse">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-amber-500/20 pb-3">
+                            <div className="flex items-center gap-3">
+                                <div className="relative">
+                                    <RefreshCw className="h-6 w-6 animate-spin text-amber-600 dark:text-amber-400" />
+                                    <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+                                    </span>
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-base text-amber-900 dark:text-amber-200">
+                                        📄 Document Evidence Extraction in Progress
+                                    </h4>
+                                    <p className="text-xs text-amber-800/80 dark:text-amber-300">
+                                        Parsing financial tables, P&L statements, and contract traps. Cross-document synthesis will start automatically when extraction finishes.
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2 bg-amber-900/10 dark:bg-amber-950/60 border border-amber-500/40 rounded-lg px-3 py-1.5 shrink-0">
+                                <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400 animate-bounce" />
+                                <span className="text-xs font-mono font-bold text-amber-900 dark:text-amber-200">
+                                    Elapsed: {formatElapsed(synthesisElapsedSeconds)}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                            <div className="flex items-center gap-2 bg-amber-500/20 rounded-md p-2 border border-amber-500/30 font-bold text-amber-900 dark:text-amber-100">
+                                <Loader2 className="h-4 w-4 animate-spin text-amber-500 shrink-0" />
+                                <span>1. Parsing Document Artifacts...</span>
+                            </div>
+                            <div className="flex items-center gap-2 bg-amber-500/10 rounded-md p-2 border border-amber-500/10 text-muted-foreground">
+                                <div className="h-2 w-2 rounded-full bg-amber-400/40 shrink-0" />
+                                <span>2. AI Forensic Chain Queued</span>
+                            </div>
+                            <div className="flex items-center gap-2 bg-amber-500/10 rounded-md p-2 border border-amber-500/10 text-muted-foreground">
+                                <div className="h-2 w-2 rounded-full bg-amber-400/40 shrink-0" />
+                                <span>3. Save Synthesis to Database</span>
+                            </div>
+                        </div>
+                    </div>
+                ) : (runningSynthesis || synthesisPending) ? (
                     <div className="rounded-xl border-2 border-blue-500/80 bg-blue-500/10 p-5 text-blue-950 dark:text-blue-100 shadow-xl space-y-4 animate-pulse">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-blue-500/20 pb-3">
                             <div className="flex items-center gap-3">
@@ -637,7 +680,7 @@ export default function ProjectSynthesisCard({
                             </div>
                         </div>
                     </div>
-                )}
+                ) : null}
 
                 {/* 1. Document Scope Disclaimer & Cost Transparency */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

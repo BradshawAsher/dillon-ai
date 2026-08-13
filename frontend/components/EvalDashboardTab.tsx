@@ -1263,7 +1263,7 @@ export default function EvalDashboardTab({
                     )
                 })()}
 
-                <CardContent className="space-y-6 max-h-[580px] overflow-y-auto pr-2 scrollbar-thin pt-4">
+                <CardContent className="space-y-6 max-h-[1160px] overflow-y-auto pr-2 scrollbar-thin pt-4">
                     {(() => {
                         const results = latestRun.documentResults || defaultReport.documentResults
 
@@ -1459,6 +1459,66 @@ export default function EvalDashboardTab({
                                 perDocAttempts: '1/3',
                                 synthAttempts: '1/3',
                             },
+                            'Business 11 - Ridgeline Staffing Partners, Inc. (DD-011)': {
+                                bear: '$9,523,636',
+                                base: '$11,640,000',
+                                bull: '$13,756,364',
+                                perDocPrimary: 'Claude Sonnet 5',
+                                perDocBackup: 'Claude Opus 5',
+                                perDocActual: 'Claude Sonnet 5',
+                                synthPrimary: 'OpenAI 5.6 Terra',
+                                synthBackup: 'OpenAI 5.6 Sol',
+                                synthActual: 'OpenAI 5.6 Terra',
+                                perDocCost: 0.0495,
+                                synthCost: 0.0312,
+                                perDocAttempts: '1/3',
+                                synthAttempts: '1/3',
+                            },
+                            'Business 12 - Basin Waste Solutions, LLC (DD-012)': {
+                                bear: '$5,990,000',
+                                base: '$11,980,000',
+                                bull: '$17,970,000',
+                                perDocPrimary: 'Claude Sonnet 5',
+                                perDocBackup: 'Claude Opus 5',
+                                perDocActual: 'Claude Sonnet 5',
+                                synthPrimary: 'OpenAI 5.6 Terra',
+                                synthBackup: 'OpenAI 5.6 Sol',
+                                synthActual: 'OpenAI 5.6 Terra',
+                                perDocCost: 0.0495,
+                                synthCost: 0.0312,
+                                perDocAttempts: '1/3',
+                                synthAttempts: '1/3',
+                            },
+                            'Business 13 - Tideline Marine Services, Inc. (DD-013)': {
+                                bear: '$4,215,000',
+                                base: '$8,430,000',
+                                bull: '$12,645,000',
+                                perDocPrimary: 'Claude Sonnet 5',
+                                perDocBackup: 'Claude Opus 5',
+                                perDocActual: 'Claude Sonnet 5',
+                                synthPrimary: 'OpenAI 5.6 Terra',
+                                synthBackup: 'OpenAI 5.6 Sol',
+                                synthActual: 'OpenAI 5.6 Terra',
+                                perDocCost: 0.0495,
+                                synthCost: 0.0312,
+                                perDocAttempts: '1/3',
+                                synthAttempts: '1/3',
+                            },
+                            'Business 14 - Alpine Bloom Landscape & Facilities, Inc. (DD-014)': {
+                                bear: '$6,815,000',
+                                base: '$13,630,000',
+                                bull: '$20,445,000',
+                                perDocPrimary: 'Claude Sonnet 5',
+                                perDocBackup: 'Claude Opus 5',
+                                perDocActual: 'Claude Sonnet 5',
+                                synthPrimary: 'OpenAI 5.6 Terra',
+                                synthBackup: 'OpenAI 5.6 Sol',
+                                synthActual: 'OpenAI 5.6 Terra',
+                                perDocCost: 0.0495,
+                                synthCost: 0.0312,
+                                perDocAttempts: '1/3',
+                                synthAttempts: '1/3',
+                            },
                             'WidgetCo Forensic Set': {
                                 bear: '$1,200,000',
                                 base: '$1,500,000',
@@ -1541,7 +1601,7 @@ export default function EvalDashboardTab({
                             const realSynthCost = calculateSynthesisCost(matchingSynth ?? null) || 0.065
 
                             const defaultVal = defaultValuations[businessName]
-                            const val = defaultVal || {
+                            let val = defaultVal || {
                                 bear: docs[0]?.valuationBear || '$8,500,000',
                                 base: docs[0]?.valuationBase || '$11,000,000',
                                 bull: docs[0]?.valuationBull || '$13,500,000',
@@ -1555,6 +1615,23 @@ export default function EvalDashboardTab({
                                 synthCost: isDDPacket ? realSynthCost : 0.0012,
                                 perDocAttempts: '1/3',
                                 synthAttempts: '1/3',
+                            }
+
+                            if (matchingSynth) {
+                                try {
+                                    const parsedFJ = typeof matchingSynth.finalJudgementJson === 'string'
+                                        ? JSON.parse(matchingSynth.finalJudgementJson)
+                                        : (matchingSynth.finalJudgementJson || {})
+                                    const synthVal = parsedFJ?.valuation || {}
+                                    if (synthVal.lower_bound || synthVal.base_estimate || synthVal.upper_bound) {
+                                        val = {
+                                            ...val,
+                                            bear: synthVal.lower_bound ? `$${Number(synthVal.lower_bound).toLocaleString(undefined, { maximumFractionDigits: 0 })}` : val.bear,
+                                            base: synthVal.base_estimate ? `$${Number(synthVal.base_estimate).toLocaleString(undefined, { maximumFractionDigits: 0 })}` : val.base,
+                                            bull: synthVal.upper_bound ? `$${Number(synthVal.upper_bound).toLocaleString(undefined, { maximumFractionDigits: 0 })}` : val.bull,
+                                        }
+                                    }
+                                } catch (e) { }
                             }
                             // Scale full DD data room cost to 20 files ($1.10 extraction + $0.065 synth = $1.165/packet)
                             const totalPacketCost = isDDPacket ? (20 * 0.055 + 0.065) : ((val.perDocCost * docs.length) + val.synthCost)
@@ -1576,7 +1653,7 @@ export default function EvalDashboardTab({
                                     ? 'border-2 border-blue-500/50 bg-blue-500/5 dark:bg-blue-950/20 shadow-md hover:border-blue-500/80 transition-all'
                                     : 'border-2 border-emerald-500/50 bg-emerald-500/5 dark:bg-emerald-950/20 shadow-md hover:border-emerald-500/80 transition-all'
 
-                                const hasLivePostLoi = isDD001 || isDD002 || isDD003 || isDD004 || isDD005 || isDD006 || isDD007 || isDD008 || isDD009 || isDD010 || normB.includes('werkheiser')
+                                const hasLivePostLoi = isDD001 || isDD002 || isDD003 || isDD004 || isDD005 || isDD006 || isDD007 || isDD008 || isDD009 || isDD010 || isDD011 || isDD012 || isDD013 || isDD014 || normB.includes('werkheiser')
 
                                 const docCountBadgeText = isPreLoi
                                     ? '22 Docs (Pre-LOI Data Room — Pre-Term Sheet)'
