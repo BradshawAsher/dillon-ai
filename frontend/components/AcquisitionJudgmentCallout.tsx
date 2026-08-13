@@ -1,4 +1,4 @@
-import { Scale } from 'lucide-react'
+import { Pin, PinOff, Scale } from 'lucide-react'
 
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import ExpandableText from './ExpandableText'
@@ -7,7 +7,7 @@ import { Card, CardContent } from '../lib/shadcn/card'
 import { getSubmissionInsightTone } from '../utils/aiSubmissionData'
 import { formatHours, type ImpactMetrics } from '../utils/impactMetrics'
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 
 function cleanCompleteSentence(str: string): string {
     if (!str) return ''
@@ -34,6 +34,7 @@ function cleanCompleteSentence(str: string): string {
 }
 
 export default function AcquisitionJudgmentCallout({ synthesis, impact }: { synthesis?: ProjectSynthesisItem; impact: ImpactMetrics }) {
+    const [isPinned, setIsPinned] = useState(false)
     const pending = !synthesis || !synthesis.finalJudgmentSummary
     const message = pending
         ? synthesis?.finalRecommendation
@@ -43,12 +44,44 @@ export default function AcquisitionJudgmentCallout({ synthesis, impact }: { synt
 
     const parsedSummary = useMemo(() => {
         // 1. First check if n8n returned structured key_acquisition_takeaways
-        const structuredTakeaways: any[] = (synthesis as any)?.finalJudgementJson?.key_acquisition_takeaways || (synthesis as any)?.key_acquisition_takeaways || []
+        let structuredTakeaways: any[] = []
 
-        if (Array.isArray(structuredTakeaways) && structuredTakeaways.length > 0) {
+        let jsonObj: any = null
+        const rawJson = (synthesis as any)?.finalJudgementJson || synthesis?.finalJudgmentJson
+        if (rawJson) {
+            try {
+                jsonObj = typeof rawJson === 'string'
+                    ? JSON.parse(rawJson)
+                    : rawJson
+            } catch { /* skip */ }
+        }
+
+        if (jsonObj) {
+            if (Array.isArray(jsonObj.key_acquisition_takeaways)) {
+                structuredTakeaways = jsonObj.key_acquisition_takeaways
+            } else if (Array.isArray(jsonObj.response?.key_acquisition_takeaways)) {
+                structuredTakeaways = jsonObj.response.key_acquisition_takeaways
+            }
+        }
+
+        if (structuredTakeaways.length === 0 && Array.isArray((synthesis as any)?.key_acquisition_takeaways)) {
+            structuredTakeaways = (synthesis as any).key_acquisition_takeaways
+        }
+
+        if (structuredTakeaways.length === 0 && Array.isArray(synthesis?.keyTakeaways) && synthesis.keyTakeaways.length > 0) {
+            structuredTakeaways = synthesis.keyTakeaways
+        }
+
+        if (structuredTakeaways.length === 0 && Array.isArray(synthesis?.structuredFindings?.keyTakeaways) && synthesis.structuredFindings.keyTakeaways.length > 0) {
+            structuredTakeaways = synthesis.structuredFindings.keyTakeaways
+        }
+
+        if (structuredTakeaways.length > 0) {
             const bullets = structuredTakeaways
                 .map((t: any) => {
-                    const text = typeof t === 'string' ? t : (t.takeaway ? `${t.takeaway}${t.impact ? ` (${t.impact})` : ''}` : (t.description || ''))
+                    const text = typeof t === 'string'
+                        ? t
+                        : (t.takeaway ? `${t.takeaway}${t.impact ? ` (${t.impact})` : ''}` : (t.description || t.text || ''))
                     return cleanCompleteSentence(text)
                 })
                 .filter(Boolean)
@@ -99,8 +132,16 @@ export default function AcquisitionJudgmentCallout({ synthesis, impact }: { synt
         return 'text-primary';
     };
 
+    const cardClass = isPinned
+        ? 'fixed top-16 left-4 right-4 md:left-auto md:right-8 md:w-[700px] z-50 overflow-y-auto max-h-[82vh] border-2 border-primary shadow-2xl backdrop-blur-2xl bg-background/95 transition-all duration-300 rounded-2xl'
+        : pending
+            ? 'overflow-hidden border-2 border-warning shadow-lg transition-all duration-200'
+            : 'overflow-hidden border-2 border-primary shadow-lg transition-all duration-200'
+
     return (
-        <Card className={pending ? 'overflow-hidden border-2 border-warning shadow-lg' : 'overflow-hidden border-2 border-primary shadow-lg'}>
+        <>
+            {isPinned && <div className="h-40 w-full rounded-2xl border-2 border-dashed border-primary/30 bg-primary/5 flex items-center justify-center text-xs font-semibold text-primary"><Pin className="h-4 w-4 mr-2 animate-bounce" /> Acquisition Judgment Card Pinned — Floating on Top-Right</div>}
+            <Card className={cardClass}>
             <CardContent className={pending ? 'bg-gradient-to-br from-warning/20 via-warning/10 to-background p-6' : 'bg-gradient-to-br from-primary/20 via-primary/8 to-background p-6'}>
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="flex items-center gap-3">
@@ -108,13 +149,41 @@ export default function AcquisitionJudgmentCallout({ synthesis, impact }: { synt
                             <Scale className="h-6 w-6" />
                         </div>
                         <div>
-                            <p className={pending ? 'text-sm font-bold uppercase tracking-wide text-warning' : 'text-sm font-bold uppercase tracking-wide text-primary'}>
-                                {pending ? 'Acquisition judgment pending' : 'Start here — acquisition judgment'}
-                            </p>
+                            <div className="flex items-center gap-2">
+                                <p className={pending ? 'text-sm font-bold uppercase tracking-wide text-warning' : 'text-sm font-bold uppercase tracking-wide text-primary'}>
+                                    {pending ? 'Acquisition judgment pending' : 'Start here — acquisition judgment'}
+                                </p>
+                                {isPinned ? (
+                                    <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wider text-primary border-primary bg-primary/10">
+                                        Pinned
+                                    </Badge>
+                                ) : null}
+                            </div>
                             <p className="mt-1 text-sm text-muted-foreground">The project-level decision summary, based on all considered documents.</p>
                         </div>
                     </div>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setIsPinned(!isPinned)}
+                            className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-colors ${isPinned
+                                    ? 'border-primary bg-primary text-primary-foreground shadow-sm hover:bg-primary/90'
+                                    : 'border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground'
+                                }`}
+                            title={isPinned ? 'Unpin card from top of page' : 'Pin card to top of page while scrolling'}
+                        >
+                            {isPinned ? (
+                                <>
+                                    <PinOff className="h-3.5 w-3.5" />
+                                    <span>Unpin Card</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Pin className="h-3.5 w-3.5" />
+                                    <span>Pin Card</span>
+                                </>
+                            )}
+                        </button>
                         {parsedSummary.recommendation ? (
                             <Badge variant={getSubmissionInsightTone(synthesis?.finalTrafficLight || 'YELLOW')}>{parsedSummary.recommendation}</Badge>
                         ) : null}
@@ -157,5 +226,7 @@ export default function AcquisitionJudgmentCallout({ synthesis, impact }: { synt
                 ) : null}
             </CardContent>
         </Card>
+        </>
     )
 }
+

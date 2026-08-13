@@ -57,6 +57,7 @@ export type ProjectSynthesisItem = {
     finalRecommendation: string
     finalJudgmentSummary: string
     finalJudgmentJson: string
+    finalJudgementJson?: string
     aiErrorMessage: string
     aiConfidence: string
     valuationConfidence: string
@@ -323,7 +324,7 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
     return (rows as Array<Record<string, any>>)
         .filter((row) => (row.project_id ?? '').trim().length > 0)
         .map((row): ProjectSynthesisItem => {
-            const judgment = getJudgmentValues(row.final_judgment_json)
+            const judgment = getJudgmentValues(row.final_judgement_json ?? row.final_judgment_json)
 
             const missingDocuments = getStringListValue(row.missing_documents_json)
             const crossDocumentConflicts = getStringListValue(row.cross_document_conflicts_json, formatConflict)
@@ -376,6 +377,7 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
                 finalRecommendation: row.final_recommendation || getJudgmentRecommendation(judgment.json),
                 finalJudgmentSummary: judgment.summary,
                 finalJudgmentJson: judgment.json,
+                finalJudgementJson: judgment.json,
                 aiErrorMessage: row.ai_error_message ?? '',
                 aiConfidence: row.ai_confidence ?? '',
                 valuationConfidence,
