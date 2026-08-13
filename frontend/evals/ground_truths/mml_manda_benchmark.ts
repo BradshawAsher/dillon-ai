@@ -1307,5 +1307,62 @@ export const mmlMandaBenchmarkSyntheses: ProjectSynthesisItem[] = [
         "projectProcessedAt": "2026-08-11T01:52:39.995Z",
         "createdAt": "2026-08-11T01:52:39.995Z",
         "updatedAt": "2026-08-11T01:52:39.995Z"
+    },
+    {
+        "id": 2081,
+        "projectId": "mml-dd-009-meridian-testing-laboratories--inc-",
+        "projectStatus": "synthesized",
+        "documentsReceivedCount": 22,
+        "documentsCompletedCount": 22,
+        "missingDocuments": [],
+        "crossDocumentConflicts": [],
+        "openQuestions": [
+            "Verify LOI earnout terms and working capital peg against $56k QoE EBITDA adjustment."
+        ],
+        "negotiationLevers": [
+            "Enforce LOI escrow holdback based on $56k EBITDA overstatement."
+        ],
+        "keyTakeaways": [
+            "MML M&A Benchmark Deal DD-009 Post-LOI Pass: Meridian Testing Laboratories, Inc."
+        ],
+        "redFlags": [
+            "LOI Trap: Earnout trigger based on unadjusted seller EBITDA."
+        ],
+        "yellowFlags": [
+            "Seasonality and net working capital swing."
+        ],
+        "greenFlags": [
+            "Executed Letter of Intent uploaded and verified."
+        ],
+        "citations": [
+            "01_financials/monthly_pnl.xlsx",
+            "06_transaction/letter_of_intent.pdf"
+        ],
+        "citationDetails": [],
+        "structuredFindings": {
+            "keyTakeaways": [],
+            "redFlags": [],
+            "yellowFlags": [],
+            "greenFlags": [],
+            "crossDocumentConflicts": [],
+            "openQuestions": [],
+            "negotiationLevers": [],
+            "missingDocuments": []
+        },
+        "finalRiskLevel": "Medium",
+        "finalTrafficLight": "Yellow",
+        "finalRecommendation": "RENEGOTIATE LOI — $56k EBITDA Overstatement & Earnout Adjustment",
+        "finalJudgmentSummary": "Meridian Testing Laboratories, Inc. Pass 2 Post-LOI Negotiation verified across 22 VDR files (including Executed LOI). Recommend RENEGOTIATE LOI — $56k EBITDA Overstatement & Earnout Adjustment.",
+        "finalJudgmentJson": "",
+        "aiErrorMessage": "",
+        "aiConfidence": "0.96",
+        "valuationConfidence": "0.91",
+        "valuationLowerBound": "$7.29M",
+        "valuationBaseEstimate": "$9.38M",
+        "valuationUpperBound": "$11.46M",
+        "valuationCurrency": "USD",
+        "projectProcessedAt": "2026-08-12T22:33:06.000Z",
+        "createdAt": "2026-08-12T22:33:06.000Z",
+        "updatedAt": "2026-08-12T22:33:06.000Z"
     }
 ]

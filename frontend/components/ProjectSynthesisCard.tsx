@@ -1059,6 +1059,18 @@ export default function ProjectSynthesisCard({
                                         <Download />
                                         Download project report
                                     </Button>
+                                    {onRunSynthesis ? (
+                                        <Button
+                                            size="lg"
+                                            variant="outline"
+                                            disabled={runningSynthesis || documentAnalysisPending}
+                                            onClick={onRunSynthesis}
+                                            className="border-blue-500/40 hover:border-blue-500 hover:bg-blue-500/10 text-blue-600 dark:text-blue-400 font-medium"
+                                        >
+                                            <RefreshCw className={`mr-2 h-4 w-4 ${(runningSynthesis || documentAnalysisPending) ? 'animate-spin' : ''}`} />
+                                            {runningSynthesis ? 'Re-running Synthesis...' : 'Re-run Synthesis'}
+                                        </Button>
+                                    ) : null}
                                     <Button size="lg" variant="outline" onClick={() => { const el = document.getElementById('upload-section'); el?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}>
                                         Upload more files
                                     </Button>
