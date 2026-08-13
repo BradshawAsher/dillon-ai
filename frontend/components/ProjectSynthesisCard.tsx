@@ -175,14 +175,14 @@ function insightGroupLabel(groupType: InsightGroupType): string {
 }
 
 function formatProjectDisplayName(project: ProjectSummary) {
-    const projectName = project.projectName.trim()
     const companyName = project.companyName.trim()
+    const projectName = project.projectName.trim()
 
-    if (companyName.length === 0 || projectName.toLocaleLowerCase() === companyName.toLocaleLowerCase()) {
-        return projectName || companyName || project.projectId || project.projectKey
+    if (companyName.length > 0) {
+        return companyName
     }
 
-    return `${projectName} • ${companyName}`
+    return projectName || project.projectId || project.projectKey
 }
 
 type SeverityFilter = 'all' | 'critical' | 'medium' | 'low' | 'informational'
@@ -997,7 +997,7 @@ export default function ProjectSynthesisCard({
                 )}
 
                 {[activeSynthesis].filter((s): s is ProjectSynthesisItem => Boolean(s)).map((synthesis) => {
-                    const displayName = projectNameById.get(synthesis.projectId) ?? synthesis.projectId ?? 'Unknown project'
+                    const displayName = synthesis.companyName || synthesis.projectName || projectNameById.get(synthesis.projectId) || synthesis.projectId || 'Unknown project'
                     const synthesisStatus = synthesis.projectStatus.trim().toLowerCase()
                     const hasRefreshFailure = synthesisStatus === 'synthesis_refresh_failed' || synthesisStatus === 'synthesis_blocked'
 
