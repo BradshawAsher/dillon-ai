@@ -1767,6 +1767,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                                 retryingRequestId={retryingRequestId}
                                 onStopSynthesis={handleStopSynthesis}
                                 stoppingSynthesis={isStoppingSynthesis}
+                                onRunSynthesis={handleRunSynthesis}
+                                runningSynthesis={isCurrentProjectAwaitingSynthesis}
                                 onRefresh={() => {
                                     void triggerProjectSynthesis({ environment: activeHistoryEnvironment }, { skipCache: true }).result
                                 }}
