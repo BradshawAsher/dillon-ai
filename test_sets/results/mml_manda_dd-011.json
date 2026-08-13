@@ -1,7 +1,7 @@
 {
   "business": "Ridgeline Staffing Partners, Inc. (Light-Industrial & Skilled-Trades Staffing)",
   "projectId": "mml-dd-011-ridgeline-staffing-partners--inc-",
-  "evaluatedAt": "2026-08-11T01:52:39.986Z",
+  "evaluatedAt": "2026-08-13T20:20:11.628Z",
   "documents": [
     {
       "fileName": "DD-011_Ridgeline_Staffing_Partners__Inc__due_diligence_packet.pdf",
@@ -57,6 +57,55 @@
       "crossDocumentConflicts": [
         "Cross-document EBITDA conflict: the seller's adjusted EBITDA bridge claims $2,120,000, but the buyer-supported adjusted EBITDA is $1,645,104 — a $474,896 (~22%) overstatement."
       ]
+    },
+    {
+      "fileName": "letter_of_intent.pdf",
+      "modelUsed": "Gemini 3.1 Flash Lite",
+      "status": "completed",
+      "detectedDocumentType": "Purchase Agreement or LOI",
+      "trafficLight": "YELLOW",
+      "riskLevel": "LOW",
+      "confidence": 0.9,
+      "extractedFacts": [
+        {
+          "metric": "headline_enterprise_value",
+          "normalizedValue": 11640000,
+          "period": "LOI",
+          "rawValue": "$11,640,000"
+        },
+        {
+          "metric": "stated_multiple",
+          "normalizedValue": 5.5,
+          "period": "LOI",
+          "rawValue": "5.50x"
+        },
+        {
+          "metric": "implied_adjusted_ebitda",
+          "normalizedValue": 2116363.64,
+          "period": "LOI",
+          "rawValue": "$2,116,363.64"
+        }
+      ],
+      "redFlags": [],
+      "yellowFlags": [
+        "Adjusted EBITDA figure is not explicitly stated as a dollar amount in the document; only the enterprise value and multiple are given, requiring derivation to back into the EBITDA base.",
+        "Document is non-binding except for exclusivity, confidentiality, and expenses provisions; purchase price and terms remain subject to change.",
+        "Purchase price is conditioned on confirmation that Adjusted EBITDA for the Measurement Period is not less than the amount on which the purchase price is based.",
+        "Net Working Capital definition explicitly excludes workers' compensation, self-insured retention, and employment-related claim accruals/reserves."
+      ],
+      "greenFlags": [
+        "Deal structure includes a standard net working capital true-up mechanism (dollar-for-dollar adjustment).",
+        "Indemnity escrow of 12% of enterprise value ($1,396,800) held for 18 months provides a defined security mechanism for indemnification claims."
+      ],
+      "valuation": {
+        "valuationLowerBound": 9523636,
+        "valuationBaseEstimate": 11640000,
+        "valuationUpperBound": 13756363,
+        "askingPrice": 11640000,
+        "currency": "USD"
+      },
+      "mathCheckPassed": true,
+      "crossDocumentConflicts": []
     }
   ]
 }

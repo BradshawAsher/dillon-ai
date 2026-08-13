@@ -133,16 +133,16 @@ export default function AcquisitionJudgmentCallout({ synthesis, impact }: { synt
     };
 
     const cardClass = isPinned
-        ? 'fixed top-16 left-4 right-4 md:left-auto md:right-8 md:w-[700px] z-50 overflow-y-auto max-h-[82vh] border-2 border-primary shadow-2xl backdrop-blur-2xl bg-background/95 transition-all duration-300 rounded-2xl'
+        ? 'fixed top-14 left-4 right-4 md:left-8 md:right-8 max-w-7xl mx-auto z-40 overflow-hidden border-2 border-primary shadow-2xl backdrop-blur-2xl bg-background/95 transition-all duration-300 rounded-xl'
         : pending
             ? 'overflow-hidden border-2 border-warning shadow-lg transition-all duration-200'
             : 'overflow-hidden border-2 border-primary shadow-lg transition-all duration-200'
 
     return (
         <>
-            {isPinned && <div className="h-40 w-full rounded-2xl border-2 border-dashed border-primary/30 bg-primary/5 flex items-center justify-center text-xs font-semibold text-primary"><Pin className="h-4 w-4 mr-2 animate-bounce" /> Acquisition Judgment Card Pinned — Floating on Top-Right</div>}
+            {isPinned && <div className="h-44 w-full rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 flex items-center justify-center text-xs font-semibold text-primary"><Pin className="h-4 w-4 mr-2 animate-bounce" /> Acquisition Judgment Card Pinned Below Navbar</div>}
             <Card className={cardClass}>
-            <CardContent className={pending ? 'bg-gradient-to-br from-warning/20 via-warning/10 to-background p-6' : 'bg-gradient-to-br from-primary/20 via-primary/8 to-background p-6'}>
+            <CardContent className={isPinned ? 'p-4 max-h-56 overflow-y-auto space-y-3 bg-gradient-to-br from-primary/20 via-primary/8 to-background' : (pending ? 'bg-gradient-to-br from-warning/20 via-warning/10 to-background p-6' : 'bg-gradient-to-br from-primary/20 via-primary/8 to-background p-6')}>
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="flex items-center gap-3">
                         <div className={pending ? 'rounded-lg bg-warning/20 p-2 text-warning' : 'rounded-lg bg-primary/15 p-2 text-primary'}>

@@ -407,6 +407,17 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     const handleMarkAllNotificationsRead = () => setNotifications(prev => prev.map(n => ({ ...n, read: true })))
     const handleClearNotifications = () => setNotifications([])
 
+    type ToastItem = { id: string; title: string; description: string; type?: 'info' | 'success' | 'warning' | 'error' }
+    const [activeToasts, setActiveToasts] = useState<ToastItem[]>([])
+
+    const addToast = (toast: Omit<ToastItem, 'id'>) => {
+        const id = `toast-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`
+        setActiveToasts(prev => [...prev, { ...toast, id }])
+        setTimeout(() => {
+            setActiveToasts(prev => prev.filter(t => t.id !== id))
+        }, 7000)
+    }
+
     useEffect(() => {
         if (isExampleMode || typeof window === 'undefined') return
 
@@ -624,12 +635,24 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         if (isExampleMode || activeProjectDocuments.length === 0) return false
         if (isCurrentProjectExtractingDocs) return false
 
-        const completedDocCount = activeProjectDocuments.filter((d) =>
+        const completedDocs = activeProjectDocuments.filter((d) =>
             ['completed', 'approved'].includes((d.status || '').trim().toLowerCase())
-        ).length
+        )
+        const completedDocCount = completedDocs.length
 
         if (completedDocCount === 0) return false
         if (!activeProjectSynthesis) return true
+
+        const synthTime = new Date(activeProjectSynthesis.updatedAt || activeProjectSynthesis.createdAt || 0).getTime()
+
+        const hasNewerCompletedDoc = completedDocs.some((d) => {
+            const docTime = new Date(d.updatedAt || d.processedAt || d.createdAt || d.receivedAt || 0).getTime()
+            return docTime > (synthTime + 2000)
+        })
+
+        if (hasNewerCompletedDoc) {
+            return true
+        }
 
         const synthStatus = (activeProjectSynthesis.projectStatus || '').trim().toLowerCase()
         const hasFinishedSynthResults = ['synthesized', 'completed', 'success'].includes(synthStatus) ||
@@ -844,10 +867,13 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         if (batchInProgressNotificationId.current !== activeSubmissionBatch.id) return
         batchInProgressNotificationId.current = null
         playCompletionSound()
+        const title = 'Document batch complete'
+        const description = `${activeBatchFinishedCount}/${activeBatchExpectedCount} documents have reached a final status.`
+        addToast({ title, description, type: 'success' })
         if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification('Document batch complete', { body: `${activeBatchFinishedCount}/${activeBatchExpectedCount} documents have reached a final status.` })
+            new Notification(title, { body: description })
         }
-        setNotifications(prev => [{ id: `batch-${Date.now()}`, type: 'document_processed', title: 'Document batch complete', description: `${activeBatchFinishedCount}/${activeBatchExpectedCount} documents processed.`, timestamp: new Date(), read: false }, ...prev])
+        setNotifications(prev => [{ id: `batch-${Date.now()}`, type: 'document_processed', title, description, timestamp: new Date(), read: false }, ...prev])
     }, [activeBatchExpectedCount, activeBatchFinishedCount, activeSubmissionBatch])
 
     useEffect(() => {
@@ -858,10 +884,13 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         if (synthesisInProgressNotificationProjectId.current !== activeProjectId || !activeProjectSynthesisSucceeded) return
         synthesisInProgressNotificationProjectId.current = null
         playCompletionSound()
+        const title = 'Project synthesis complete'
+        const description = 'Your due diligence synthesis is ready to review.'
+        addToast({ title, description, type: 'success' })
         if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification('Project synthesis complete', { body: 'Your due diligence synthesis is ready to review.' })
+            new Notification(title, { body: description })
         }
-        setNotifications(prev => [{ id: `synth-${Date.now()}`, type: 'synthesis_complete', title: 'Synthesis complete', description: 'Your due diligence synthesis is ready to review.', timestamp: new Date(), read: false }, ...prev])
+        setNotifications(prev => [{ id: `synth-${Date.now()}`, type: 'synthesis_complete', title, description, timestamp: new Date(), read: false }, ...prev])
     }, [activeProjectId, activeProjectSynthesisSucceeded, isCurrentProjectAwaitingSynthesis])
 
     const enableDesktopNotifications = async () => {
@@ -1322,6 +1351,33 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
     return (
         <div className="min-h-screen bg-background text-foreground">
+            {/* Floating In-App Toast Overlay */}
+            {activeToasts.length > 0 && (
+                <div className="fixed top-16 right-6 z-50 flex flex-col gap-2.5 max-w-sm w-full pointer-events-none">
+                    {activeToasts.map((toast) => (
+                        <div
+                            key={toast.id}
+                            className="pointer-events-auto flex items-start gap-3 p-4 rounded-xl bg-background/95 border border-primary/30 shadow-2xl backdrop-blur-md transition-all animate-in fade-in slide-in-from-top-3 duration-300"
+                        >
+                            <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                                    <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                                    {toast.title}
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{toast.description}</p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setActiveToasts(prev => prev.filter(t => t.id !== toast.id))}
+                                className="text-muted-foreground hover:text-foreground text-xs p-1 rounded-md"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            )}
+
             <WorkspaceHeader
                 isExampleMode={isExampleMode}
                 activeProjectDocuments={activeProjectDocuments}
@@ -1455,6 +1511,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                     activeTab={activeWorkspaceTab}
                     isDiligenceComplete={activeProjectDocuments.length > 0 && !isCurrentProjectProcessingDocuments}
                     isSynthesisReady={Boolean(activeProjectSynthesis && !isCurrentProjectAwaitingSynthesis)}
+                    isSynthesisRunning={isCurrentProjectAwaitingSynthesis}
                     onTabChange={(tab) => {
                         setActiveWorkspaceTab(tab)
                         const workspace = document.getElementById('deal-workspace')

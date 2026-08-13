@@ -1,7 +1,7 @@
 {
   "business": "Basin Waste Solutions, LLC (Roll-Off Waste Hauling & Recycling)",
   "projectId": "mml-dd-012-basin-waste-solutions--llc",
-  "evaluatedAt": "2026-08-11T01:52:39.988Z",
+  "evaluatedAt": "2026-08-13T20:32:42.147Z",
   "documents": [
     {
       "fileName": "DD-012_Basin_Waste_Solutions__LLC_due_diligence_packet.pdf",
@@ -57,6 +57,55 @@
       "crossDocumentConflicts": [
         "Cross-document EBITDA conflict: the seller's adjusted EBITDA bridge claims $1,840,000, but the buyer-supported adjusted EBITDA is $2,069,689 — a $229,689 (~11%) variance."
       ]
+    },
+    {
+      "fileName": "letter_of_intent.pdf",
+      "modelUsed": "Gemini 3.1 Flash Lite",
+      "status": "completed",
+      "detectedDocumentType": "Purchase Agreement or LOI",
+      "trafficLight": "YELLOW",
+      "riskLevel": "LOW",
+      "confidence": 0.9,
+      "extractedFacts": [
+        {
+          "metric": "headline_enterprise_value",
+          "normalizedValue": 11980000,
+          "period": "LOI",
+          "rawValue": "$11,980,000"
+        },
+        {
+          "metric": "stated_multiple",
+          "normalizedValue": 6.5,
+          "period": "LOI",
+          "rawValue": "6.50x"
+        },
+        {
+          "metric": "implied_adjusted_ebitda",
+          "normalizedValue": 1843076.92,
+          "period": "LOI",
+          "rawValue": "$1,843,076.92"
+        }
+      ],
+      "redFlags": [],
+      "yellowFlags": [
+        "Adjusted EBITDA is not explicitly stated or supported by financial statements; the LOI only provides a 6.50x multiple and $11.98 million enterprise value. The implied EBITDA is approximately $1.843 million but requires verification.",
+        "No income statement, EBITDA adjustment schedule, balance sheet, debt schedule, or cash-flow evidence was provided.",
+        "The $425,000 target working capital is fixed notwithstanding historical net working capital."
+      ],
+      "greenFlags": [
+        "The transaction is structured on a cash-free, debt-free basis, subject to due-diligence confirmation.",
+        "The LOI includes a dollar-for-dollar closing adjustment for variances from target working capital.",
+        "A 10% indemnity escrow of $1,198,000 for 18 months provides defined post-closing protection."
+      ],
+      "valuation": {
+        "valuationLowerBound": 5990000,
+        "valuationBaseEstimate": 11980000,
+        "valuationUpperBound": 17970000,
+        "askingPrice": 11980000,
+        "currency": "USD"
+      },
+      "mathCheckPassed": true,
+      "crossDocumentConflicts": []
     }
   ]
 }
