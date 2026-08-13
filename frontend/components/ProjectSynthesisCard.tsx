@@ -293,8 +293,11 @@ export default function ProjectSynthesisCard({
         })
 
         return [...versionMap.values()].sort((a, b) => {
-            const timeA = new Date(a.updatedAt || a.createdAt || a.projectProcessedAt || 0).getTime()
-            const timeB = new Date(b.updatedAt || b.createdAt || b.projectProcessedAt || 0).getTime()
+            const docsA = Math.max(a.documentsReceivedCount || 0, a.citations?.length || 0)
+            const docsB = Math.max(b.documentsReceivedCount || 0, b.citations?.length || 0)
+            if (docsA !== docsB) return docsB - docsA
+            const timeA = new Date(a.projectProcessedAt || a.createdAt || a.updatedAt || 0).getTime()
+            const timeB = new Date(b.projectProcessedAt || b.createdAt || b.updatedAt || 0).getTime()
             return timeB - timeA
         })
     }, [syntheses, normalizedProjectId, projects, targetName, currentProject])
@@ -557,21 +560,12 @@ export default function ProjectSynthesisCard({
                         <div className="flex flex-wrap items-center gap-2">
                             <span className="font-medium text-muted-foreground">Synthesis Scope:</span>
                             {(() => {
-                                const completed = projectDocuments.length > 0
-                                    ? completedProjectDocumentsWithAnalysis
-                                    : (activeSynthesis && typeof activeSynthesis.documentsCompletedCount === 'number' && activeSynthesis.documentsCompletedCount > 0)
-                                        ? activeSynthesis.documentsCompletedCount
-                                        : (activeSynthesis?.citations && activeSynthesis.citations.length > 0)
-                                            ? activeSynthesis.citations.length
-                                            : 0
+                                const synthCompleted = activeSynthesis?.documentsCompletedCount || 0
+                                const synthReceived = activeSynthesis?.documentsReceivedCount || 0
+                                const citationCount = activeSynthesis?.citations?.length || 0
 
-                                const received = projectDocuments.length > 0
-                                    ? projectDocuments.length
-                                    : (activeSynthesis && typeof activeSynthesis.documentsReceivedCount === 'number' && activeSynthesis.documentsReceivedCount > 0)
-                                        ? activeSynthesis.documentsReceivedCount
-                                        : (activeSynthesis?.citations && activeSynthesis.citations.length > 0)
-                                            ? activeSynthesis.citations.length
-                                            : 0
+                                const completed = Math.max(completedProjectDocumentsWithAnalysis, synthCompleted, citationCount)
+                                const received = Math.max(projectDocuments.length, synthReceived, citationCount)
 
                                 return (
                                     <span className="font-bold text-foreground">
@@ -679,8 +673,29 @@ export default function ProjectSynthesisCard({
                                 Version {visibleSyntheses.length - activeSynthesisIndex} of {visibleSyntheses.length}
                                 {(() => {
                                     const item = visibleSyntheses[activeSynthesisIndex]
-                                    const docsCount = item?.documentsReceivedCount || 21
-                                    const isPostLoi = docsCount >= 22 || (item?.citations || []).some((c: string) => c.toLowerCase().includes('letter_of_intent'))
+                                    const itemDocCount = Math.max(item?.documentsReceivedCount || 0, item?.citations?.length || 0)
+
+                                    const hasLoiCitation = (item?.citations || []).some((c: string) => {
+                                        const lower = c.toLowerCase()
+                                        return lower.includes('letter_of_intent') || lower.includes('loi') || lower.includes('letter-of-intent')
+                                    })
+                                    const hasLoiInDocs = projectDocuments.some((d) => {
+                                        const fn = (d.fileName || '').toLowerCase()
+                                        return fn.includes('letter_of_intent') || fn.includes('loi') || fn.includes('letter-of-intent')
+                                    })
+
+                                    let isPostLoi = itemDocCount >= 23 || hasLoiCitation
+                                    if (!isPostLoi && visibleSyntheses.length === 2) {
+                                        const otherIndex = activeSynthesisIndex === 0 ? 1 : 0
+                                        const otherItem = visibleSyntheses[otherIndex]
+                                        const otherDocCount = Math.max(otherItem?.documentsReceivedCount || 0, otherItem?.citations?.length || 0)
+                                        if (itemDocCount > otherDocCount) {
+                                            isPostLoi = true
+                                        } else if (itemDocCount === otherDocCount && activeSynthesisIndex === 0 && hasLoiInDocs) {
+                                            isPostLoi = true
+                                        }
+                                    }
+
                                     if (activeSynthesisIndex === 0) {
                                         return isPostLoi ? ' (Latest Pass — Post-LOI Negotiation)' : ' (Latest Pass — Pre-LOI Discovery)'
                                     }
@@ -1014,7 +1029,7 @@ export default function ProjectSynthesisCard({
                                 <div className="space-y-2">
                                     <p className="text-lg font-semibold text-foreground">{displayName}</p>
                                     <p className="text-xs text-muted-foreground">
-                                        {(Number(synthesis.documentsCompletedCount || 0) || completedProjectDocumentsWithAnalysis || projectDocuments.length)} of {(Number(synthesis.documentsReceivedCount || 0) || projectDocuments.length || (Number(synthesis.documentsCompletedCount || 0) || completedProjectDocumentsWithAnalysis || projectDocuments.length))} documents processed ·
+                                        {Math.max(Number(synthesis.documentsCompletedCount || 0), completedProjectDocumentsWithAnalysis, synthesis.citations?.length || 0)} of {Math.max(Number(synthesis.documentsReceivedCount || 0), projectDocuments.length, synthesis.citations?.length || 0)} documents processed ·
                                         synthesized {formatTimestamp(synthesis.projectProcessedAt)}
                                     </p>
                                     <div className="flex flex-wrap items-center gap-2">
