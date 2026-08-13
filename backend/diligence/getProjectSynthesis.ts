@@ -316,14 +316,40 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
     const { data: rows, error } = await supabase
         .from('project_syntheses')
         .select('*')
-        .order('updated_at', { ascending: false })
+        .or('is_placeholder.is.null,is_placeholder.eq.false')
+        .order('id', { ascending: false })
         .limit(200)
 
     if (error) throw new Error(`Supabase read failed: ${error.message}`)
     if (!rows) return []
 
-    return (rows as Array<Record<string, any>>)
-        .filter((row) => (row.project_id ?? '').trim().length > 0)
+    // Deduplicate to keep at most 2 syntheses per project: 1 latest Pre-LOI and 1 latest Post-LOI
+    const perProject: Record<string, { preLoi?: any; postLoi?: any }> = {}
+    const deduplicatedRows: any[] = []
+
+    for (const row of (rows as Array<Record<string, any>>)) {
+        const rawPid = (row.project_id ?? '').trim()
+        if (!rawPid) continue
+        const normPid = rawPid.replace(/-+$/, '')
+
+        if (!perProject[normPid]) perProject[normPid] = {}
+        const entry = perProject[normPid]
+        const isPostLoi = row.letter_of_intent_present === true || row.letter_of_intent_present === 'true'
+
+        if (isPostLoi) {
+            if (!entry.postLoi) {
+                entry.postLoi = row
+                deduplicatedRows.push(row)
+            }
+        } else {
+            if (!entry.preLoi) {
+                entry.preLoi = row
+                deduplicatedRows.push(row)
+            }
+        }
+    }
+
+    return deduplicatedRows
         .map((row): ProjectSynthesisItem => {
             const judgment = getJudgmentValues(row.final_judgement_json ?? row.final_judgment_json)
 
@@ -331,10 +357,19 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
             const crossDocumentConflicts = getStringListValue(row.cross_document_conflicts_json, formatConflict)
             const openQuestions = getStringListValue(row.open_questions_json, formatOpenQuestion)
             const negotiationLevers = getStringListValue(row.negotiation_levers_json, formatNegotiationLever)
-            const keyTakeaways = getStringListValue(getJudgmentField(judgment.json, 'key_acquisition_takeaways'), formatTakeaway)
             const redFlags = getProjectFlags(judgment.json, 'red_flags')
             const yellowFlags = getProjectFlags(judgment.json, 'yellow_flags')
             const greenFlags = getProjectFlags(judgment.json, 'green_flags')
+
+            let keyTakeaways = getStringListValue(getJudgmentField(judgment.json, 'key_acquisition_takeaways'), formatTakeaway)
+            if (keyTakeaways.length === 0) {
+                const derived: string[] = []
+                if (redFlags.length > 0) derived.push(...redFlags.slice(0, 2))
+                if (crossDocumentConflicts.length > 0) derived.push(...crossDocumentConflicts.slice(0, 1))
+                if (negotiationLevers.length > 0) derived.push(...negotiationLevers.slice(0, 1))
+                if (derived.length < 3 && yellowFlags.length > 0) derived.push(...yellowFlags.slice(0, 3 - derived.length))
+                if (derived.length > 0) keyTakeaways = derived
+            }
 
             const structuredFindings: ProjectStructuredFindingGroups = {
                 keyTakeaways: getStructuredFindingsFromRaw(getJudgmentField(judgment.json, 'key_acquisition_takeaways'), 'Synthesized'),
