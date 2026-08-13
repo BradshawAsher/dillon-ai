@@ -1043,8 +1043,13 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         if (!window.confirm('Run a new project synthesis using the currently completed, included documents? This does not re-upload or reprocess files.')) return
         setBatchSubmissionMessage('Starting a new project synthesis from the completed documents…')
         try {
-            const result = await triggerSubmissionConsideration({ requestID: sourceDocument.requestID, action: 'considered', environment: activeHistoryEnvironment }).result
-            if (!result) throw new Error('Unable to start synthesis')
+            const response = await fetch('https://merge-works.app.n8n.cloud/webhook/e276e917-f61a-46e6-9015-f78e385f42b8', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ projectId: activeProjectId })
+            })
+            if (!response.ok) throw new Error('Failed to trigger webhook synthesis')
+            setBatchSubmissionMessage('Project synthesis successfully triggered!')
             await handleRefreshHistory(activeHistoryEnvironment)
         } catch (err) {
             setBatchSubmissionMessage(err instanceof Error ? err.message : 'Unable to start synthesis')
