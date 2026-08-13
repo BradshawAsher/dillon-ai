@@ -31,7 +31,13 @@ export type { WorkspaceTab }
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { ChevronLeft, ChevronRight, History, Check } from 'lucide-react'
 
-export default function DealWorkspaceNav({ activeTab, onTabChange, isDiligenceComplete = false, isSynthesisReady = false }: DealWorkspaceNavProps) {
+export default function DealWorkspaceNav({
+    activeTab,
+    onTabChange,
+    isDiligenceComplete = false,
+    isSynthesisReady = false,
+    isSynthesisRunning = false,
+}: DealWorkspaceNavProps & { isSynthesisRunning?: boolean }) {
     const [navHistory, setNavHistory] = useState<WorkspaceTab[]>(() => {
         try {
             const stored = localStorage.getItem('mergeworks.tabHistory')
@@ -123,9 +129,6 @@ export default function DealWorkspaceNav({ activeTab, onTabChange, isDiligenceCo
     const canGoBack = historyIndex > 0
     const canGoForward = historyIndex < navHistory.length - 1
 
-    // Keep the active tab visible in the horizontal scroller — far-right tabs
-    // (Errors, Email Drafts) would otherwise stay off-screen when selected via
-    // history, keyboard shortcut, or a jump from another card.
     const activeTabRef = useRef<HTMLButtonElement | null>(null)
     useEffect(() => {
         activeTabRef.current?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
@@ -194,7 +197,8 @@ export default function DealWorkspaceNav({ activeTab, onTabChange, isDiligenceCo
                     {tabs.map((tab) => {
                         const isActive = activeTab === tab.id
                         const isDiligenceHighlighted = tab.id === 'diligence' && isDiligenceComplete
-                        const isSynthesisHighlighted = tab.id === 'synthesis' && isSynthesisReady
+                        const isSynthesisRunningHighlighted = tab.id === 'synthesis' && isSynthesisRunning
+                        const isSynthesisReadyHighlighted = tab.id === 'synthesis' && isSynthesisReady && !isSynthesisRunning
 
                         let buttonClass = isActive
                             ? 'rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-all duration-200 ease-out'
@@ -204,7 +208,11 @@ export default function DealWorkspaceNav({ activeTab, onTabChange, isDiligenceCo
                             buttonClass = isActive
                                 ? 'rounded-lg bg-emerald-600 px-3 py-2 text-sm font-bold text-white shadow-sm ring-2 ring-emerald-500/50 flex items-center gap-1.5 transition-all duration-200'
                                 : 'rounded-lg bg-emerald-500/15 dark:bg-emerald-500/25 border border-emerald-500/50 px-3 py-2 text-sm font-bold text-emerald-700 dark:text-emerald-300 shadow-xs shadow-emerald-500/20 hover:bg-emerald-500/30 flex items-center gap-1.5 transition-all duration-200'
-                        } else if (isSynthesisHighlighted) {
+                        } else if (isSynthesisRunningHighlighted) {
+                            buttonClass = isActive
+                                ? 'rounded-lg bg-amber-600 px-3 py-2 text-sm font-bold text-white shadow-sm ring-2 ring-amber-500/50 flex items-center gap-1.5 transition-all duration-200'
+                                : 'rounded-lg bg-amber-500/15 dark:bg-amber-500/25 border border-amber-500/50 px-3 py-2 text-sm font-bold text-amber-700 dark:text-amber-300 shadow-xs shadow-amber-500/20 hover:bg-amber-500/30 flex items-center gap-1.5 transition-all duration-200'
+                        } else if (isSynthesisReadyHighlighted) {
                             buttonClass = isActive
                                 ? 'rounded-lg bg-violet-600 px-3 py-2 text-sm font-bold text-white shadow-sm ring-2 ring-violet-500/50 flex items-center gap-1.5 transition-all duration-200'
                                 : 'rounded-lg bg-violet-500/15 dark:bg-violet-500/25 border border-violet-500/50 px-3 py-2 text-sm font-bold text-violet-700 dark:text-violet-300 shadow-xs shadow-violet-500/20 hover:bg-violet-500/30 flex items-center gap-1.5 transition-all duration-200'
@@ -230,13 +238,22 @@ export default function DealWorkspaceNav({ activeTab, onTabChange, isDiligenceCo
                                         Done
                                     </span>
                                 )}
-                                {isSynthesisHighlighted && (
+                                {isSynthesisRunningHighlighted && (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/20 dark:bg-amber-500/30 px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-amber-800 dark:text-amber-200">
+                                        <span className="relative flex h-1.5 w-1.5">
+                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-500"></span>
+                                        </span>
+                                        Running
+                                    </span>
+                                )}
+                                {isSynthesisReadyHighlighted && (
                                     <span className="inline-flex items-center gap-1 rounded-full bg-violet-500/20 dark:bg-violet-500/30 px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-violet-800 dark:text-violet-200">
                                         <span className="relative flex h-1.5 w-1.5">
                                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span>
                                             <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-violet-500"></span>
                                         </span>
-                                        Ready
+                                        Done
                                     </span>
                                 )}
                             </button>

@@ -55,6 +55,55 @@
       "crossDocumentConflicts": [
         "Cross-document EBITDA conflict: the seller's adjusted EBITDA bridge claims $1,530,000, but the buyer-supported adjusted EBITDA is $1,131,759 — a $398,241 (~26%) overstatement."
       ]
+    },
+    {
+      "fileName": "letter_of_intent.pdf",
+      "modelUsed": "Gemini 3.1 Flash Lite",
+      "status": "completed",
+      "detectedDocumentType": "Letter of Intent (LOI)",
+      "trafficLight": "YELLOW",
+      "riskLevel": "MEDIUM",
+      "confidence": 0.95,
+      "extractedFacts": [
+        {
+          "metric": "headline_enterprise_value",
+          "normalizedValue": 8430000,
+          "period": "LOI",
+          "rawValue": "$8,430,000"
+        },
+        {
+          "metric": "stated_multiple",
+          "normalizedValue": 5.5,
+          "period": "LOI",
+          "rawValue": "5.50x"
+        },
+        {
+          "metric": "escrow_pct",
+          "normalizedValue": 0.15,
+          "period": "LOI",
+          "rawValue": "15%"
+        }
+      ],
+      "redFlags": [],
+      "yellowFlags": [
+        "Unverified Adjusted EBITDA: $8.43M headline EV at 5.50x implies ~$1.53M Adjusted EBITDA, but no financial statements or add-back schedule corroborates it in the LOI.",
+        "Gross-face accounts receivable treatment in target working capital."
+      ],
+      "greenFlags": [
+        "Cash-free and debt-free structure with dollar-for-dollar working capital true-up.",
+        "15% indemnity escrow ($1,264,500) held for 24 months."
+      ],
+      "valuation": {
+        "valuationLowerBound": 4215000,
+        "valuationBaseEstimate": 8430000,
+        "valuationUpperBound": 12645000,
+        "askingPrice": 8430000,
+        "currency": "USD"
+      },
+      "mathCheckPassed": true,
+      "crossDocumentConflicts": [
+        "Seller-claimed EBITDA of $1,533,469 in LOI vs $1,131,759 buyer-supported EBITDA."
+      ]
     }
   ]
 }
