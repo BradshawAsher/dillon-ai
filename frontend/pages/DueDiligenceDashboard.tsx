@@ -227,9 +227,9 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
     const rawProjectSyntheses = useMemo(() => {
         if (isExampleMode) return exampleProjectSyntheses
-        const liveKeys = new Set(liveProjectSynthesesData.map((s: any) => (s.projectId || '').toLowerCase()))
+        const liveKeys = new Set(liveProjectSynthesesData.map((s: any) => (s.projectId || '').toLowerCase().replace(/-+$/, '')))
         const missingBenchmarkRows = exampleProjectSyntheses.filter(
-            (s: any) => !liveKeys.has((s.projectId || '').toLowerCase())
+            (s: any) => !liveKeys.has((s.projectId || '').toLowerCase().replace(/-+$/, ''))
         )
         return [...liveProjectSynthesesData, ...missingBenchmarkRows]
     }, [isExampleMode, liveProjectSynthesesData])
@@ -539,8 +539,11 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     }, [hydratedDealModel, isExampleMode])
 
     const activeProjectSynthesis = useMemo(() => {
-        return visibleProjectSyntheses.find((s: any) => s.projectId === activeProjectId) ?? null
-    }, [activeProjectId, visibleProjectSyntheses])
+        return visibleProjectSyntheses.find((s: any) => 
+            s.projectId === activeProjectId || 
+            isRowMatchingProject({ projectId: s.projectId } as any, activeProjectId, projectSummaries)
+        ) ?? null
+    }, [activeProjectId, visibleProjectSyntheses, projectSummaries])
 
     const suggestedProjectName = useMemo(() => {
         if (selectedFiles.length > 0) {

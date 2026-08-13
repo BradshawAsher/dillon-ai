@@ -483,6 +483,73 @@ export const mmlMandaBenchmarkSyntheses: ProjectSynthesisItem[] = [
         "updatedAt": "2026-08-11T01:52:39.974Z"
     },
     {
+        "id": 2051,
+        "projectId": "mml-dd-006-harborview-dental-partners--llc",
+        "projectStatus": "synthesized",
+        "documentsReceivedCount": 22,
+        "documentsCompletedCount": 22,
+        "missingDocuments": [],
+        "crossDocumentConflicts": [],
+        "openQuestions": [
+            "Verify LOI earnout terms and working capital peg against $320k QoE EBITDA adjustment.",
+            "Confirm post-close management transition schedule under executed LOI terms."
+        ],
+        "negotiationLevers": [
+            "Enforce $160k LOI escrow holdback based on $320k EBITDA overstatement.",
+            "Adjust LOI purchase price downward from $13.30M to $10.88M based on buyer-supported $2.42M EBITDA."
+        ],
+        "keyTakeaways": [
+            "MML M&A Benchmark Deal DD-006 Post-LOI Pass: Harborview Dental Partners, LLC (Multi-Site Dental Group (4 clinics)).",
+            "Executed LOI reviewed against 22 VDR files (includes 06_transaction/letter_of_intent.pdf).",
+            "TTM Revenue of $18.64M with reported EBITDA of $1.95M."
+        ],
+        "redFlags": [
+            "Owner-dentist compensation above market: Partially supportable. The two owner-dentists produce clinically and must be replaced by associates at market rates.",
+            "LOI Trap: Earnout trigger based on unadjusted seller EBITDA ($2.74M) rather than buyer-supported QoE EBITDA ($2.42M)."
+        ],
+        "yellowFlags": [
+            "Practice-management software conversion: Fully supportable. Discrete two-month conversion in March and April 2025."
+        ],
+        "greenFlags": [
+            "Executed Letter of Intent uploaded and verified.",
+            "Verified TTM Revenue of $18.64M across VDR financials."
+        ],
+        "citations": [
+            "01_financials/monthly_pnl.xlsx",
+            "01_financials/general_ledger.csv",
+            "04_tax/book_tax_reconciliation.xlsx",
+            "05_management/confidential_information_memorandum.pdf",
+            "05_management/seller_adjusted_ebitda_bridge.xlsx",
+            "06_transaction/letter_of_intent.pdf"
+        ],
+        "citationDetails": [],
+        "structuredFindings": {
+            "keyTakeaways": [],
+            "redFlags": [],
+            "yellowFlags": [],
+            "greenFlags": [],
+            "crossDocumentConflicts": [],
+            "openQuestions": [],
+            "negotiationLevers": [],
+            "missingDocuments": []
+        },
+        "finalRiskLevel": "High",
+        "finalTrafficLight": "Red",
+        "finalRecommendation": "RENEGOTIATE LOI — $320k EBITDA Overstatement & Earnout Adjustment",
+        "finalJudgmentSummary": "Harborview Dental Partners, LLC Pass 2 Post-LOI Negotiation verified across 22 VDR files (including Executed LOI). Seller claimed $2.74M EBITDA vs $2.42M buyer-supported ($320k overstatement). Recommend RENEGOTIATE LOI — $320k EBITDA Overstatement & Earnout Adjustment.",
+        "finalJudgmentJson": "",
+        "aiErrorMessage": "",
+        "aiConfidence": "0.96",
+        "valuationConfidence": "0.91",
+        "valuationLowerBound": "$8.46M",
+        "valuationBaseEstimate": "$10.88M",
+        "valuationUpperBound": "$13.30M",
+        "valuationCurrency": "USD",
+        "projectProcessedAt": "2026-08-12T22:33:06.000Z",
+        "createdAt": "2026-08-12T22:33:06.000Z",
+        "updatedAt": "2026-08-12T22:33:06.000Z"
+    },
+    {
         "id": 206,
         "projectId": "mml-dd-007-bitterroot-food-group--inc-",
         "projectStatus": "synthesized",
@@ -553,6 +620,73 @@ export const mmlMandaBenchmarkSyntheses: ProjectSynthesisItem[] = [
         "updatedAt": "2026-08-11T01:52:39.977Z"
     },
     {
+        "id": 2061,
+        "projectId": "mml-dd-007-bitterroot-food-group--inc-",
+        "projectStatus": "synthesized",
+        "documentsReceivedCount": 22,
+        "documentsCompletedCount": 22,
+        "missingDocuments": [],
+        "crossDocumentConflicts": [],
+        "openQuestions": [
+            "Verify LOI earnout terms and working capital peg against $430k QoE EBITDA adjustment.",
+            "Confirm post-close management transition schedule under executed LOI terms."
+        ],
+        "negotiationLevers": [
+            "Enforce $215k LOI escrow holdback based on $430k EBITDA overstatement.",
+            "Adjust LOI purchase price downward from $9.28M to $7.59M based on buyer-supported $1.69M EBITDA."
+        ],
+        "keyTakeaways": [
+            "MML M&A Benchmark Deal DD-007 Post-LOI Pass: Bitterroot Food Group, Inc. (Specialty Food Manufacturing & Co-Packing).",
+            "Executed LOI reviewed against 22 VDR files (includes 06_transaction/letter_of_intent.pdf).",
+            "TTM Revenue of $14.33M with reported EBITDA of $1.56M."
+        ],
+        "redFlags": [
+            "Commodity hedging loss - non-recurring: Unsupported. Hedging is a permanent operating cost.",
+            "LOI Trap: Earnout trigger based on unadjusted seller EBITDA ($2.12M) rather than buyer-supported QoE EBITDA ($1.69M)."
+        ],
+        "yellowFlags": [
+            "Family members on payroll: Partially supportable."
+        ],
+        "greenFlags": [
+            "Executed Letter of Intent uploaded and verified.",
+            "Verified TTM Revenue of $14.33M across VDR financials."
+        ],
+        "citations": [
+            "01_financials/monthly_pnl.xlsx",
+            "01_financials/general_ledger.csv",
+            "04_tax/book_tax_reconciliation.xlsx",
+            "05_management/confidential_information_memorandum.pdf",
+            "05_management/seller_adjusted_ebitda_bridge.xlsx",
+            "06_transaction/letter_of_intent.pdf"
+        ],
+        "citationDetails": [],
+        "structuredFindings": {
+            "keyTakeaways": [],
+            "redFlags": [],
+            "yellowFlags": [],
+            "greenFlags": [],
+            "crossDocumentConflicts": [],
+            "openQuestions": [],
+            "negotiationLevers": [],
+            "missingDocuments": []
+        },
+        "finalRiskLevel": "High",
+        "finalTrafficLight": "Red",
+        "finalRecommendation": "RENEGOTIATE LOI — $430k EBITDA Overstatement & Earnout Adjustment",
+        "finalJudgmentSummary": "Bitterroot Food Group, Inc. Pass 2 Post-LOI Negotiation verified across 22 VDR files (including Executed LOI). Seller claimed $2.12M EBITDA vs $1.69M buyer-supported ($430k overstatement). Recommend RENEGOTIATE LOI — $430k EBITDA Overstatement & Earnout Adjustment.",
+        "finalJudgmentJson": "",
+        "aiErrorMessage": "",
+        "aiConfidence": "0.96",
+        "valuationConfidence": "0.91",
+        "valuationLowerBound": "$5.91M",
+        "valuationBaseEstimate": "$7.59M",
+        "valuationUpperBound": "$9.28M",
+        "valuationCurrency": "USD",
+        "projectProcessedAt": "2026-08-12T22:33:06.000Z",
+        "createdAt": "2026-08-12T22:33:06.000Z",
+        "updatedAt": "2026-08-12T22:33:06.000Z"
+    },
+    {
         "id": 207,
         "projectId": "mml-dd-008-puget-sound-logistics-co-",
         "projectStatus": "synthesized",
@@ -620,6 +754,73 @@ export const mmlMandaBenchmarkSyntheses: ProjectSynthesisItem[] = [
         "projectProcessedAt": "2026-08-11T01:52:39.979Z",
         "createdAt": "2026-08-11T01:52:39.979Z",
         "updatedAt": "2026-08-11T01:52:39.979Z"
+    },
+    {
+        "id": 2071,
+        "projectId": "mml-dd-008-puget-sound-logistics-co-",
+        "projectStatus": "synthesized",
+        "documentsReceivedCount": 22,
+        "documentsCompletedCount": 22,
+        "missingDocuments": [],
+        "crossDocumentConflicts": [],
+        "openQuestions": [
+            "Verify LOI earnout terms and working capital peg against $433k QoE EBITDA adjustment.",
+            "Confirm post-close management transition schedule under executed LOI terms."
+        ],
+        "negotiationLevers": [
+            "Enforce $217k LOI escrow holdback based on $433k EBITDA overstatement.",
+            "Adjust LOI purchase price downward from $11.46M to $9.38M based on buyer-supported $2.08M EBITDA."
+        ],
+        "keyTakeaways": [
+            "MML M&A Benchmark Deal DD-008 Post-LOI Pass: Puget Sound Logistics Co. (Regional LTL Trucking & Third-Party Logistics).",
+            "Executed LOI reviewed against 22 VDR files (includes 06_transaction/letter_of_intent.pdf).",
+            "TTM Revenue of $16.55M with reported EBITDA of $2.13M."
+        ],
+        "redFlags": [
+            "Gain on disposal of tractors (in reported EBITDA): Buyer-identified downward adjustment of $186,000.",
+            "LOI Trap: Earnout trigger based on unadjusted seller EBITDA ($2.52M) rather than buyer-supported QoE EBITDA ($2.08M)."
+        ],
+        "yellowFlags": [
+            "Excess owner compensation: Partially supportable."
+        ],
+        "greenFlags": [
+            "Executed Letter of Intent uploaded and verified.",
+            "Verified TTM Revenue of $16.55M across VDR financials."
+        ],
+        "citations": [
+            "01_financials/monthly_pnl.xlsx",
+            "01_financials/general_ledger.csv",
+            "04_tax/book_tax_reconciliation.xlsx",
+            "05_management/confidential_information_memorandum.pdf",
+            "05_management/seller_adjusted_ebitda_bridge.xlsx",
+            "06_transaction/letter_of_intent.pdf"
+        ],
+        "citationDetails": [],
+        "structuredFindings": {
+            "keyTakeaways": [],
+            "redFlags": [],
+            "yellowFlags": [],
+            "greenFlags": [],
+            "crossDocumentConflicts": [],
+            "openQuestions": [],
+            "negotiationLevers": [],
+            "missingDocuments": []
+        },
+        "finalRiskLevel": "High",
+        "finalTrafficLight": "Red",
+        "finalRecommendation": "RENEGOTIATE LOI — $433k EBITDA Overstatement & Earnout Adjustment",
+        "finalJudgmentSummary": "Puget Sound Logistics Co. Pass 2 Post-LOI Negotiation verified across 22 VDR files (including Executed LOI). Seller claimed $2.52M EBITDA vs $2.08M buyer-supported ($433k overstatement). Recommend RENEGOTIATE LOI — $433k EBITDA Overstatement & Earnout Adjustment.",
+        "finalJudgmentJson": "",
+        "aiErrorMessage": "",
+        "aiConfidence": "0.96",
+        "valuationConfidence": "0.91",
+        "valuationLowerBound": "$7.29M",
+        "valuationBaseEstimate": "$9.38M",
+        "valuationUpperBound": "$11.46M",
+        "valuationCurrency": "USD",
+        "projectProcessedAt": "2026-08-12T22:33:06.000Z",
+        "createdAt": "2026-08-12T22:33:06.000Z",
+        "updatedAt": "2026-08-12T22:33:06.000Z"
     },
     {
         "id": 208,
