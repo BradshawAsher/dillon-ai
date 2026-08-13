@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { CheckCircle, ChevronLeft, ChevronRight, Download, FileText, Filter, FolderPlus, Landmark, Layers, Loader2, MessageCircleQuestion, RefreshCw, Scale, Search, ShieldAlert, TriangleAlert } from 'lucide-react'
+import { CheckCircle, ChevronLeft, ChevronRight, Clock, Download, FileText, Filter, FolderPlus, Landmark, Layers, Loader2, MessageCircleQuestion, RefreshCw, Scale, Search, ShieldAlert, TriangleAlert } from 'lucide-react'
 
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
@@ -249,6 +249,24 @@ export default function ProjectSynthesisCard({
     useEffect(() => {
         try { window.sessionStorage.removeItem('mergeworks.synthesisHistoryByProject') } catch {}
     }, [])
+
+    useEffect(() => {
+        let interval: any
+        if (runningSynthesis || synthesisPending || documentAnalysisPending) {
+            interval = setInterval(() => {
+                setSynthesisElapsedSeconds((prev) => prev + 1)
+            }, 1000)
+        } else {
+            setSynthesisElapsedSeconds(0)
+        }
+        return () => clearInterval(interval)
+    }, [runningSynthesis, synthesisPending, documentAnalysisPending])
+
+    const formatElapsed = (sec: number) => {
+        const mins = Math.floor(sec / 60)
+        const secs = sec % 60
+        return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}s`
+    }
 
     const currentProject = projects.find((project) => (project.projectId || project.projectKey) === normalizedProjectId)
     const targetName = (currentProject?.projectName || currentProject?.companyName || normalizedProjectId).toLowerCase()
@@ -515,7 +533,7 @@ export default function ProjectSynthesisCard({
                         </Button>
                         <Button onClick={onRunSynthesis} disabled={!onRunSynthesis || runningSynthesis || documentAnalysisPending}>
                             <RefreshCw className={runningSynthesis ? 'animate-spin' : undefined} />
-                            {runningSynthesis ? 'Starting synthesis…' : 'Run synthesis now'}
+                            {runningSynthesis ? 'Re-running synthesis…' : 'Re-run synthesis'}
                         </Button>
                         <Button
                             type="button"
@@ -546,24 +564,55 @@ export default function ProjectSynthesisCard({
                         ) : null}
                     </div>
                 </div>
+                <p className="mt-2 text-xs text-amber-700 dark:text-amber-400 font-medium bg-amber-500/10 border border-amber-500/20 rounded-md px-2.5 py-1 inline-block">
+                    ⚠️ <strong>Note:</strong> Normal synthesis runs automatically when documents finish processing. Only click <strong>&quot;Re-run synthesis&quot;</strong> in case of a workflow failure or bug.
+                </p>
             </CardHeader>
 
             <CardContent className="space-y-6 p-4">
-                {/* Live Re-Synthesis Disclaimer Banner when a new document or synthesis is processing */}
+                {/* Live Active Re-Synthesis Card with Live Timer & Stage Breakdown */}
                 {(runningSynthesis || synthesisPending || documentAnalysisPending || projectDocuments.some((d) => ['processing', 'queued', 'submitted'].includes(d.status))) && (
-                    <div className="rounded-lg border-2 border-amber-500/40 bg-amber-500/10 p-4 text-xs font-semibold text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-pulse shadow-sm">
-                        <div className="space-y-1">
-                            <div className="flex items-center gap-2 font-bold text-sm text-amber-700 dark:text-amber-300">
-                                <Loader2 className="h-4 w-4 animate-spin shrink-0 text-amber-600" />
-                                <span>⚡ New Synthesis Version Generating...</span>
+                    <div className="rounded-xl border-2 border-blue-500/80 bg-blue-500/10 p-5 text-blue-950 dark:text-blue-100 shadow-xl space-y-4 animate-pulse">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-blue-500/20 pb-3">
+                            <div className="flex items-center gap-3">
+                                <div className="relative">
+                                    <RefreshCw className="h-6 w-6 animate-spin text-blue-600 dark:text-blue-400" />
+                                    <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+                                    </span>
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-base text-blue-900 dark:text-blue-200">
+                                        ⚡ AI Forensic Consolidator is Re-Synthesizing Deal Model
+                                    </h4>
+                                    <p className="text-xs text-blue-800/80 dark:text-blue-300">
+                                        Executing live cross-document Quality of Earnings reconciliation & valuation range re-calculation.
+                                    </p>
+                                </div>
                             </div>
-                            <p className="text-xs text-muted-foreground font-normal">
-                                A new document (e.g., Letter of Intent) was recently uploaded. The AI Synthesizer is re-processing cross-document findings in the background. Viewing current active version below until update completes.
-                            </p>
+                            <div className="flex items-center gap-2 bg-blue-900/10 dark:bg-blue-950/60 border border-blue-500/40 rounded-lg px-3 py-1.5 shrink-0">
+                                <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400 animate-bounce" />
+                                <span className="text-xs font-mono font-bold text-blue-900 dark:text-blue-200">
+                                    Elapsed: {formatElapsed(synthesisElapsedSeconds)}
+                                </span>
+                            </div>
                         </div>
-                        <Badge variant="outline" className="border-amber-500/50 bg-amber-500/20 text-amber-800 dark:text-amber-200 font-mono font-bold text-[10px] shrink-0 uppercase">
-                            Background Processing
-                        </Badge>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                            <div className="flex items-center gap-2 bg-blue-500/15 rounded-md p-2 border border-blue-500/20 font-medium">
+                                <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0" />
+                                <span>1. Document Evidence Loaded</span>
+                            </div>
+                            <div className="flex items-center gap-2 bg-blue-500/20 rounded-md p-2 border border-blue-500/30 font-bold text-blue-900 dark:text-blue-100">
+                                <Loader2 className="h-4 w-4 animate-spin text-blue-500 shrink-0" />
+                                <span>2. LLM Forensic Chain Active...</span>
+                            </div>
+                            <div className="flex items-center gap-2 bg-blue-500/10 rounded-md p-2 border border-blue-500/10 text-muted-foreground">
+                                <div className="h-2 w-2 rounded-full bg-blue-400/40 shrink-0" />
+                                <span>3. Save Synthesis to Database</span>
+                            </div>
+                        </div>
                     </div>
                 )}
 
