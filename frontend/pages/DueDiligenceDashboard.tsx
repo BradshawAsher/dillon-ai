@@ -605,9 +605,62 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         })
     }, [activeProjectDocuments])
 
-    // Periodic refresh effect (3s polling when batch/processing active, 10s idle)
+    const isCurrentProjectExtractingDocs = useMemo(() => {
+        if (isExampleMode || activeProjectDocuments.length === 0) return false
+        return activeProjectDocuments.some((d) =>
+            ['processing', 'pending', 'queued', 'running', 'uploading', 'received'].includes((d.status || '').trim().toLowerCase())
+        )
+    }, [activeProjectDocuments, isExampleMode])
+
+    const isCurrentProjectSynthesisRunning = useMemo(() => {
+        if (isExampleMode || activeProjectDocuments.length === 0) return false
+        if (isCurrentProjectExtractingDocs) return false
+
+        const completedDocs = activeProjectDocuments.filter((d) =>
+            ['completed', 'approved'].includes((d.status || '').trim().toLowerCase())
+        )
+        const completedDocCount = completedDocs.length
+
+        if (completedDocCount === 0) return false
+
+        if (!activeProjectSynthesis) {
+            if (projectSynthesisLoading) return false
+            return true
+        }
+
+        const synthStatus = (activeProjectSynthesis.projectStatus || '').trim().toLowerCase()
+        const isSynthRunning = ['processing', 'pending', 'queued', 'running'].includes(synthStatus)
+        const fjJson = (activeProjectSynthesis.finalJudgmentJson || '').trim()
+        const hasFinishedSynthResults = ['synthesized', 'completed', 'success'].includes(synthStatus) ||
+            ((activeProjectSynthesis.finalRecommendation || '').trim().length > 0 ||
+                (activeProjectSynthesis.finalJudgmentSummary || '').trim().length > 0 ||
+                (fjJson.length > 0 && fjJson !== '{}'))
+
+        if (isSynthRunning || !hasFinishedSynthResults) {
+            return true
+        }
+
+        const synthTime = new Date(activeProjectSynthesis.updatedAt || activeProjectSynthesis.createdAt || 0).getTime()
+
+        const hasNewerCompletedDoc = completedDocs.some((d) => {
+            const docTime = new Date(d.updatedAt || d.processedAt || d.createdAt || d.receivedAt || 0).getTime()
+            return docTime > (synthTime + 2000)
+        })
+
+        if (hasNewerCompletedDoc) {
+            return true
+        }
+
+        return false
+    }, [activeProjectDocuments, activeProjectSynthesis, isCurrentProjectExtractingDocs, isExampleMode, projectSynthesisLoading])
+
+    const isCurrentProjectAwaitingSynthesis = useMemo(() => {
+        return isCurrentProjectExtractingDocs || isCurrentProjectSynthesisRunning
+    }, [isCurrentProjectExtractingDocs, isCurrentProjectSynthesisRunning])
+
+    // Periodic refresh effect (3s polling when batch/processing/synthesis active, 10s idle)
     useEffect(() => {
-        const pollInterval = (activeSubmissionBatch || hasActiveSubmissions || isCurrentProjectProcessingDocuments) ? 3_000 : 10_000
+        const pollInterval = (activeSubmissionBatch || hasActiveSubmissions || isCurrentProjectProcessingDocuments || isCurrentProjectAwaitingSynthesis) ? 3_000 : 10_000
 
         const interval = setInterval(() => {
             void triggerSubmissionHistory({ environment: 'production' })
@@ -622,50 +675,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         activeSubmissionBatch,
         hasActiveSubmissions,
         isCurrentProjectProcessingDocuments,
+        isCurrentProjectAwaitingSynthesis,
     ])
-
-    const isCurrentProjectExtractingDocs = useMemo(() => {
-        if (isExampleMode || activeProjectDocuments.length === 0) return false
-        return activeProjectDocuments.some((d) =>
-            ['processing', 'pending', 'queued', 'running'].includes((d.status || '').trim().toLowerCase())
-        )
-    }, [activeProjectDocuments, isExampleMode])
-
-    const isCurrentProjectAwaitingSynthesis = useMemo(() => {
-        if (isExampleMode || activeProjectDocuments.length === 0) return false
-        if (isCurrentProjectExtractingDocs) return false
-
-        const completedDocs = activeProjectDocuments.filter((d) =>
-            ['completed', 'approved'].includes((d.status || '').trim().toLowerCase())
-        )
-        const completedDocCount = completedDocs.length
-
-        if (completedDocCount === 0) return false
-        if (!activeProjectSynthesis) return true
-
-        const synthTime = new Date(activeProjectSynthesis.updatedAt || activeProjectSynthesis.createdAt || 0).getTime()
-
-        const hasNewerCompletedDoc = completedDocs.some((d) => {
-            const docTime = new Date(d.updatedAt || d.processedAt || d.createdAt || d.receivedAt || 0).getTime()
-            return docTime > (synthTime + 2000)
-        })
-
-        if (hasNewerCompletedDoc) {
-            return true
-        }
-
-        const synthStatus = (activeProjectSynthesis.projectStatus || '').trim().toLowerCase()
-        const hasFinishedSynthResults = ['synthesized', 'completed', 'success'].includes(synthStatus) ||
-            ((activeProjectSynthesis.finalRecommendation || '').trim().length > 0 ||
-                (activeProjectSynthesis.finalJudgmentSummary || '').trim().length > 0 ||
-                (activeProjectSynthesis.finalJudgmentJson || '').trim().length > 0)
-
-        if (hasFinishedSynthResults) {
-            return false
-        }
-
-        return true
-    }, [activeProjectDocuments, activeProjectSynthesis, isCurrentProjectExtractingDocs, isExampleMode])
 
     const activeProjectSynthesisSucceeded = useMemo(() => {
         if (!activeProjectSynthesis || isCurrentProjectAwaitingSynthesis) return false
@@ -1510,8 +1521,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 <DealWorkspaceNav
                     activeTab={activeWorkspaceTab}
                     isDiligenceComplete={activeProjectDocuments.length > 0 && !isCurrentProjectProcessingDocuments}
-                    isSynthesisReady={Boolean(activeProjectSynthesis && !isCurrentProjectAwaitingSynthesis)}
-                    isSynthesisRunning={isCurrentProjectAwaitingSynthesis}
+                    isSynthesisReady={Boolean(activeProjectSynthesis && !isCurrentProjectSynthesisRunning && !isCurrentProjectProcessingDocuments)}
+                    isSynthesisRunning={isCurrentProjectSynthesisRunning}
                     onTabChange={(tab) => {
                         setActiveWorkspaceTab(tab)
                         const workspace = document.getElementById('deal-workspace')
@@ -1653,7 +1664,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                                 </div>
                             ) : null}
 
-                            {!isExampleMode && isCurrentProjectAwaitingSynthesis ? (
+                            {!isExampleMode && !isCurrentProjectProcessingDocuments && isCurrentProjectSynthesisRunning ? (
                                 <div className="flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-800/50 dark:bg-amber-900/15">
                                     <Loader2 className="mt-0.5 h-5 w-5 shrink-0 animate-spin text-amber-600" />
                                     <div>
