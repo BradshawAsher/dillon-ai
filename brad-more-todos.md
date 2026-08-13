@@ -146,6 +146,10 @@ so if we're making a financial due diligent agent and a big task of it is to hel
 
 - Make sure the evals and harness the numbers and cards are right and now buggy and that the varainces show for cross doc conflicts?
 
+- Add a spending tab with spending by day, week, hour, month, etc with records similarly to a billing report on aws or gcp
+
+- If LOI is detected, in projects, evals, and synthesis tab for that project, have an option to "run without LOI for unbiased deal discovery/analysis" to see results without the LOI? Would this require us to first label which doc is the LOI?
+
 - # May have to rerun all the DD-001 through DD-015 by adding the new letter of intent and then rerunning the synthesis for all of them? And then we can compare the 2 versions, the 1st version acts as pre-loi and the 2nd version acts as the post-loi? Is this a good idea and does our app support functionality for this yet?
   - Also some of the dd files themselves may have been changed, can we see what was changed and if it's important or not? Do we have to rerun the whole packets through the pipeline again or no?
 
