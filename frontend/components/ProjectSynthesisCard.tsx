@@ -205,48 +205,38 @@ function getSeverityForGroup(groupType: InsightGroupType): SeverityFilter {
     }
 }
 
-function getSavedSynthesisHistory(projectId: string): ProjectSynthesisItem[] {
-    try {
-        const raw = window.sessionStorage.getItem('mergeworks.synthesisHistoryByProject')
-        if (!raw) return []
-        const map = JSON.parse(raw) as Record<string, ProjectSynthesisItem[]>
-        return map[projectId] || []
-    } catch {
-        return []
-    }
-}
 
-function saveSynthesisToHistory(projectId: string, synthesis: ProjectSynthesisItem) {
-    try {
-        if (!projectId || !synthesis) return
-        const raw = window.sessionStorage.getItem('mergeworks.synthesisHistoryByProject')
-        const map = (raw ? JSON.parse(raw) : {}) as Record<string, ProjectSynthesisItem[]>
-        const existing = map[projectId] || []
 
-        const timeStr = synthesis.updatedAt || synthesis.createdAt || synthesis.projectProcessedAt || ''
-        const isDuplicate = existing.some((item) => {
-            const itemTime = item.updatedAt || item.createdAt || item.projectProcessedAt || ''
-            if (timeStr && itemTime && timeStr === itemTime) return true
-            const contentLenA = (synthesis.finalJudgmentSummary || '').length + (synthesis.projectSynthesisJson || '').length
-            const contentLenB = (item.finalJudgmentSummary || '').length + (item.projectSynthesisJson || '').length
-            return item.documentsReceivedCount === synthesis.documentsReceivedCount && contentLenA === contentLenB
-        })
 
-        if (!isDuplicate) {
-            map[projectId] = [synthesis, ...existing]
-            window.sessionStorage.setItem('mergeworks.synthesisHistoryByProject', JSON.stringify(map))
-        }
-    } catch {
-        // ignore storage errors
-    }
-}
-
-export default function ProjectSynthesisCard({ syntheses, projects, currentProjectId, documentAnalysisPending, synthesisPending, synthesisProgress, synthesisStage, loading, error, onRefresh, impact, documents = [], onOpenEvidence, onExcludeDocument, onIncludeDocument, onRetryDocument, retryingRequestId, onRunSynthesis, runningSynthesis = false, onStopSynthesis, stoppingSynthesis = false, model }: ProjectSynthesisCardProps) {
+export default function ProjectSynthesisCard({
+    syntheses,
+    projects,
+    currentProjectId,
+    documentAnalysisPending,
+    synthesisPending,
+    synthesisProgress,
+    synthesisStage,
+    loading,
+    error,
+    onRefresh,
+    impact,
+    documents = [],
+    onOpenEvidence,
+    onExcludeDocument,
+    onIncludeDocument,
+    onRetryDocument,
+    retryingRequestId,
+    onRunSynthesis,
+    runningSynthesis,
+    onStopSynthesis,
+    stoppingSynthesis,
+    model,
+}: ProjectSynthesisCardProps) {
     const [synthesisElapsedSeconds, setSynthesisElapsedSeconds] = useState(0)
-    const [selectedDocumentRequestId, setSelectedDocumentRequestId] = useState('')
+    const [selectedDocumentRequestId, setSelectedDocumentRequestId] = useState<string | null>(null)
     const [severityFilter, setSeverityFilter] = useState<SeverityFilter>('all')
     const [typeFilter, setTypeFilter] = useState<TypeFilter>('all')
-    const [activeSynthesisIndex, setActiveSynthesisIndex] = useState(0)
+    const [activeSynthesisIndex, setActiveSynthesisIndex] = useState<number>(0)
     const [docSearchQuery, setDocSearchQuery] = useState('')
     const [docPage, setDocPage] = useState(0)
 
@@ -255,16 +245,18 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
     )
 
     const normalizedProjectId = currentProjectId.trim()
-    const savedHistory = useMemo(() => getSavedSynthesisHistory(normalizedProjectId), [normalizedProjectId])
+
+    useEffect(() => {
+        try { window.sessionStorage.removeItem('mergeworks.synthesisHistoryByProject') } catch {}
+    }, [])
 
     const currentProject = projects.find((project) => (project.projectId || project.projectKey) === normalizedProjectId)
     const targetName = (currentProject?.projectName || currentProject?.companyName || normalizedProjectId).toLowerCase()
 
     const rawVisibleSyntheses = useMemo(() => {
-        const map = new Map<string | number, ProjectSynthesisItem>()
+        const versionMap = new Map<string, ProjectSynthesisItem>()
         const targetCompanyNorm = (currentProject?.companyName || targetName || '').toLowerCase()
 
-        // Helper to verify synthesis belongs to the current target company
         const isSynthesisForCurrentProject = (item: ProjectSynthesisItem) => {
             const itemComp = (item.companyName || item.projectName || '').toLowerCase()
             if (
@@ -276,44 +268,36 @@ export default function ProjectSynthesisCard({ syntheses, projects, currentProje
             return true
         }
 
-        // Load saved history first, keying by time to avoid overwriting updated versions
-        savedHistory.forEach((item) => {
-            if (!isSynthesisForCurrentProject(item)) return
-            const hasValidContent =
-                (item.documentsCompletedCount && item.documentsCompletedCount > 0) ||
-                (item.citations && item.citations.length > 0) ||
-                (item.finalRecommendation && item.finalRecommendation.trim().length > 0)
-            if (hasValidContent) {
-                const uniqueKey = item.updatedAt ? `${item.id || 'hist'}_${item.updatedAt}` : (item.id || item.createdAt || Math.random())
-                map.set(uniqueKey, item)
-            }
-        })
         syntheses.forEach((item) => {
             if (!isSynthesisForCurrentProject(item)) return
             const itemPid = (item.projectId || '').toLowerCase()
             const isMatch =
                 item.projectId === normalizedProjectId ||
                 isRowMatchingProject({ projectId: item.projectId } as any, normalizedProjectId, projects) ||
+                ((targetName.includes('juniper') || targetName.includes('dd-005') || normalizedProjectId.includes('juniper') || normalizedProjectId.includes('dd-005')) &&
+                 (itemPid.includes('juniper') || itemPid.includes('dd-005') || itemPid.includes('environmental'))) ||
                 ((targetName.includes('werkheiser') || targetName.includes('business 1') || normalizedProjectId.includes('werkheiser') || normalizedProjectId.includes('business1')) &&
                  (itemPid.includes('werkheiser') || itemPid.includes('business1') || itemPid.includes('commercial')))
 
             if (isMatch) {
-                const uniqueKey = item.updatedAt ? `${item.id || 'live'}_${item.updatedAt}` : (item.id || item.createdAt || Math.random())
-                map.set(uniqueKey, item)
+                const hasValidContent =
+                    (item.finalJudgmentSummary || '').length > 20 ||
+                    (item.finalJudgmentJson || '').length > 20 ||
+                    (item.keyTakeaways && item.keyTakeaways.length > 0) ||
+                    (item.citations && item.citations.length > 0)
+                if (hasValidContent) {
+                    const passKey = item.id ? `db_id_${item.id}` : `doc_count_${item.documentsReceivedCount || 0}`
+                    versionMap.set(passKey, item)
+                }
             }
         })
-        return [...map.values()].sort((a, b) => {
+
+        return [...versionMap.values()].sort((a, b) => {
             const timeA = new Date(a.updatedAt || a.createdAt || a.projectProcessedAt || 0).getTime()
             const timeB = new Date(b.updatedAt || b.createdAt || b.projectProcessedAt || 0).getTime()
             return timeB - timeA
         })
-    }, [syntheses, normalizedProjectId, projects, savedHistory, targetName, currentProject])
-
-    useEffect(() => {
-        if (rawVisibleSyntheses[0] && normalizedProjectId) {
-            saveSynthesisToHistory(normalizedProjectId, rawVisibleSyntheses[0])
-        }
-    }, [rawVisibleSyntheses, normalizedProjectId])
+    }, [syntheses, normalizedProjectId, projects, targetName, currentProject])
 
     const rawProjectDocuments = documents.filter((document) => {
         const itemPid = (document.projectId || '').toLowerCase()
