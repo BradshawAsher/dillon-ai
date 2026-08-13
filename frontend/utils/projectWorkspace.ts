@@ -317,14 +317,21 @@ export function isRowMatchingProject(row: SubmissionHistoryItem, targetProjectId
     if (rawTarget.includes('juniper') || rawTarget.includes('dd-005') || rawTarget.includes('dd005')) {
         const fn = (row.fileName || '').toLowerCase()
         const comp = (row.companyName || '').toLowerCase()
+        const deal = (row.dealName || '').toLowerCase()
+        const summary = (row.aiSummary || '').toLowerCase()
         if (
             explicitPid.includes('juniper') ||
             explicitPid.includes('dd-005') ||
             comp.includes('juniper') ||
             fn.includes('juniper') ||
             fn.includes('dd-005') ||
+            deal.includes('juniper') ||
+            deal.includes('dd-005') ||
+            summary.includes('juniper environmental') ||
             explicitPid.startsWith('mml-dd-005') ||
-            pk.startsWith('mml-dd-005')
+            pk.startsWith('mml-dd-005') ||
+            pk.includes('juniper') ||
+            pk.includes('dd-005')
         ) {
             return true
         }
