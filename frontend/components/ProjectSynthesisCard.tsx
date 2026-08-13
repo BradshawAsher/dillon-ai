@@ -268,12 +268,17 @@ export default function ProjectSynthesisCard({
             return true
         }
 
+        const seenContentHashes = new Set<string>()
+
+        const targetDealCode = (normalizedProjectId.match(/dd-\d+/) || targetName.match(/dd-\d+/))?.[0] || ''
+
         syntheses.forEach((item) => {
             if (!isSynthesisForCurrentProject(item)) return
             const itemPid = (item.projectId || '').toLowerCase()
             const isMatch =
                 item.projectId === normalizedProjectId ||
                 isRowMatchingProject({ projectId: item.projectId } as any, normalizedProjectId, projects) ||
+                (targetDealCode && itemPid.includes(targetDealCode)) ||
                 ((targetName.includes('juniper') || targetName.includes('dd-005') || normalizedProjectId.includes('juniper') || normalizedProjectId.includes('dd-005')) &&
                  (itemPid.includes('juniper') || itemPid.includes('dd-005') || itemPid.includes('environmental'))) ||
                 ((targetName.includes('werkheiser') || targetName.includes('business 1') || normalizedProjectId.includes('werkheiser') || normalizedProjectId.includes('business1')) &&
@@ -286,6 +291,10 @@ export default function ProjectSynthesisCard({
                     (item.keyTakeaways && item.keyTakeaways.length > 0) ||
                     (item.citations && item.citations.length > 0)
                 if (hasValidContent) {
+                    const summarySlice = (item.finalJudgmentSummary || '').slice(0, 200)
+                    const contentHash = `${item.documentsReceivedCount || 0}_${summarySlice}`
+                    if (seenContentHashes.has(contentHash)) return
+                    seenContentHashes.add(contentHash)
                     const passKey = item.id ? `db_id_${item.id}` : `doc_count_${item.documentsReceivedCount || 0}`
                     versionMap.set(passKey, item)
                 }
@@ -325,7 +334,11 @@ export default function ProjectSynthesisCard({
             latestDocsByFile.set(fileKey, doc)
         }
     })
-    const projectDocuments = [...latestDocsByFile.values()]
+    const projectDocuments = [...latestDocsByFile.values()].sort((a, b) => {
+        const timeA = Date.parse(a.createdAt || a.triggerTimestamp || a.receivedAt || '0')
+        const timeB = Date.parse(b.createdAt || b.triggerTimestamp || b.receivedAt || '0')
+        return timeA - timeB
+    })
     const selectedProjectDocument = projectDocuments.find((document) => document.requestID === selectedDocumentRequestId)
     const documentThesisTakeaways = projectDocuments
         .filter((document) => document.isConsidered && document.status.trim().toLowerCase() === 'completed')
