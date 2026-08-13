@@ -5,6 +5,8 @@ import {
     BarChart3,
     Building2,
     CheckCircle2,
+    ChevronDown,
+    ChevronUp,
     Clock,
     Cpu,
     DollarSign,
@@ -127,6 +129,7 @@ export default function EvalDashboardTab({
     const [viewerSearchQuery, setViewerSearchQuery] = useState('')
     const [showDocMinicards, setShowDocMinicards] = useState<boolean>(false)
     const [expandedCardMap, setExpandedCardMap] = useState<Record<string, boolean>>({})
+    const [showCrossDocConflicts, setShowCrossDocConflicts] = useState<boolean>(false)
 
     // Default report incorporating Business 1 (Werkheiser), Business 2 (Iron Tree), Business 3 (TurnKey), Business 4 (ConversionXL), and Business 5 (Medical Spa)
     const defaultReport = {
@@ -1040,68 +1043,90 @@ export default function EvalDashboardTab({
 
                         return (
                             <div className="pt-4 border-t border-border/60 space-y-3">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowCrossDocConflicts((prev) => !prev)}
+                                        className="flex items-center gap-2 text-left group hover:opacity-80 transition-opacity cursor-pointer focus:outline-hidden"
+                                    >
                                         <ShieldAlert className="h-4 w-4 text-amber-500 shrink-0" />
-                                        <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">
-                                            Detected Cross-Document Conflicts ({activeConflicts.length} Project Packets)
+                                        <h4 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+                                            <span>Detected Cross-Document Conflicts ({activeConflicts.length} Project Packets)</span>
+                                            {showCrossDocConflicts ? (
+                                                <ChevronUp className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                                            ) : (
+                                                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                                            )}
                                         </h4>
+                                    </button>
+                                    <div className="flex items-center gap-2">
+                                        <Badge variant="outline" className="border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold">
+                                            Conflict Accuracy: 100% (15/15 Packets Checked)
+                                        </Badge>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => setShowCrossDocConflicts((prev) => !prev)}
+                                            className="h-7 text-xs px-2 text-muted-foreground hover:text-foreground font-semibold flex items-center gap-1 cursor-pointer"
+                                        >
+                                            <span>{showCrossDocConflicts ? 'Hide List' : 'Expand List'}</span>
+                                            {showCrossDocConflicts ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                                        </Button>
                                     </div>
-                                    <Badge variant="outline" className="border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold">
-                                        Conflict Accuracy: 100% (15/15 Packets Checked)
-                                    </Badge>
                                 </div>
 
-                                {activeConflicts.length > 0 ? (
-                                    <div className="space-y-2.5">
-                                        {activeConflicts.map((res: any, idx: number) => (
-                                            <div key={res.projectId || idx} className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-xs space-y-2">
-                                                <div className="flex items-center justify-between font-bold text-foreground">
-                                                    <span className="truncate">{res.business || res.projectId}</span>
-                                                    <Badge variant="warning" className="text-[10px] font-mono font-bold uppercase">
-                                                        {res.detected.length} Contradiction{res.detected.length === 1 ? '' : 's'} Detected
-                                                    </Badge>
-                                                </div>
-                                                {res.detected.map((det: any, dIdx: number) => {
-                                                    const rawVal = det.deltaPct !== undefined ? det.deltaPct : (det.diffPct !== undefined ? (det.diffPct > 1 ? det.diffPct / 100 : det.diffPct) : 0.21)
-                                                    const pctVal = Math.round(rawVal * 100)
-                                                    const sev = (det.severity || 'critical').toUpperCase()
+                                {showCrossDocConflicts && (
+                                    activeConflicts.length > 0 ? (
+                                        <div className="space-y-2.5 pt-1">
+                                            {activeConflicts.map((res: any, idx: number) => (
+                                                <div key={res.projectId || idx} className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-xs space-y-2">
+                                                    <div className="flex items-center justify-between font-bold text-foreground">
+                                                        <span className="truncate">{res.business || res.projectId}</span>
+                                                        <Badge variant="warning" className="text-[10px] font-mono font-bold uppercase">
+                                                            {res.detected.length} Contradiction{res.detected.length === 1 ? '' : 's'} Detected
+                                                        </Badge>
+                                                    </div>
+                                                    {res.detected.map((det: any, dIdx: number) => {
+                                                        const rawVal = det.deltaPct !== undefined ? det.deltaPct : (det.diffPct !== undefined ? (det.diffPct > 1 ? det.diffPct / 100 : det.diffPct) : 0.21)
+                                                        const pctVal = Math.round(rawVal * 100)
+                                                        const sev = (det.severity || 'critical').toUpperCase()
 
-                                                    return (
-                                                        <div key={dIdx} className="bg-background rounded-lg p-3 border-2 border-red-500/30 shadow-xs text-xs space-y-2">
-                                                            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/40 pb-2">
-                                                                <span className="font-bold text-foreground flex items-center gap-1.5 text-xs">
-                                                                    <AlertTriangle className="h-4 w-4 text-red-500 shrink-0" />
-                                                                    <span>Metric: <code className="font-mono text-primary font-bold text-xs bg-muted px-1.5 py-0.5 rounded">{det.metric}</code> ({det.period || 'TTM'})</span>
-                                                                </span>
-                                                                <div className="flex items-center gap-2">
-                                                                    <Badge className="bg-gradient-to-r from-red-600 to-rose-600 text-white font-mono font-black text-sm px-3 py-1 shadow-md shadow-red-500/20 tracking-wider">
-                                                                        ⚠️ {pctVal}% {sev} CONTRADICTION
-                                                                    </Badge>
+                                                        return (
+                                                            <div key={dIdx} className="bg-background rounded-lg p-3 border-2 border-red-500/30 shadow-xs text-xs space-y-2">
+                                                                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/40 pb-2">
+                                                                    <span className="font-bold text-foreground flex items-center gap-1.5 text-xs">
+                                                                        <AlertTriangle className="h-4 w-4 text-red-500 shrink-0" />
+                                                                        <span>Metric: <code className="font-mono text-primary font-bold text-xs bg-muted px-1.5 py-0.5 rounded">{det.metric}</code> ({det.period || 'TTM'})</span>
+                                                                    </span>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <Badge className="bg-gradient-to-r from-red-600 to-rose-600 text-white font-mono font-black text-sm px-3 py-1 shadow-md shadow-red-500/20 tracking-wider">
+                                                                            ⚠️ {pctVal}% {sev} CONTRADICTION
+                                                                        </Badge>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="text-muted-foreground grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 font-mono text-xs">
+                                                                    <div className="bg-muted/40 p-2 rounded-md border border-border/50 space-y-0.5">
+                                                                        <div className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Document A</div>
+                                                                        <div className="font-bold text-foreground truncate" title={det.docA}>{det.docA}</div>
+                                                                        <div className="text-sm font-black text-amber-600 dark:text-amber-400">${Number(det.valueA).toLocaleString()}</div>
+                                                                    </div>
+                                                                    <div className="bg-muted/40 p-2 rounded-md border border-border/50 space-y-0.5">
+                                                                        <div className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Document B (Exhibit Bridge)</div>
+                                                                        <div className="font-bold text-foreground truncate" title={det.docB}>{det.docB}</div>
+                                                                        <div className="text-sm font-black text-red-600 dark:text-red-400">${Number(det.valueB).toLocaleString()}</div>
+                                                                    </div>
                                                                 </div>
                                                             </div>
-                                                            <div className="text-muted-foreground grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 font-mono text-xs">
-                                                                <div className="bg-muted/40 p-2 rounded-md border border-border/50 space-y-0.5">
-                                                                    <div className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Document A</div>
-                                                                    <div className="font-bold text-foreground truncate" title={det.docA}>{det.docA}</div>
-                                                                    <div className="text-sm font-black text-amber-600 dark:text-amber-400">${Number(det.valueA).toLocaleString()}</div>
-                                                                </div>
-                                                                <div className="bg-muted/40 p-2 rounded-md border border-border/50 space-y-0.5">
-                                                                    <div className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Document B (Exhibit Bridge)</div>
-                                                                    <div className="font-bold text-foreground truncate" title={det.docB}>{det.docB}</div>
-                                                                    <div className="text-sm font-black text-red-600 dark:text-red-400">${Number(det.valueB).toLocaleString()}</div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    )
-                                                })}
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="rounded-lg border border-border/50 bg-muted/20 p-3 text-center text-xs text-muted-foreground">
-                                        ✓ No cross-document financial conflicts or accounting contradictions detected across benchmark packets.
-                                    </div>
+                                                        )
+                                                    })}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="rounded-lg border border-border/50 bg-muted/20 p-3 text-center text-xs text-muted-foreground pt-1">
+                                            ✓ No cross-document financial conflicts or accounting contradictions detected across benchmark packets.
+                                        </div>
+                                    )
                                 )}
                             </div>
                         )

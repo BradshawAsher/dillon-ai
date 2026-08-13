@@ -320,9 +320,34 @@ export default function ProjectSynthesisCard({
         })
 
         return [...versionMap.values()].sort((a, b) => {
-            const docsA = Math.max(a.documentsReceivedCount || 0, a.citations?.length || 0)
-            const docsB = Math.max(b.documentsReceivedCount || 0, b.citations?.length || 0)
-            if (docsA !== docsB) return docsB - docsA
+            const isPostLoi = (item: ProjectSynthesisItem) => {
+                try {
+                    const parsed = typeof item?.finalJudgmentJson === 'string' ? JSON.parse(item.finalJudgmentJson) : item?.finalJudgmentJson
+                    if (parsed && typeof parsed === 'object' && typeof parsed.letter_of_intent_present === 'boolean') {
+                        return parsed.letter_of_intent_present
+                    }
+                } catch { /* skip */ }
+
+                const summary = (item.finalJudgmentSummary || '').toLowerCase()
+                if (summary.includes('pre-loi') || summary.includes('pass 1 pre-loi')) return false
+
+                const hasLoiCitation = (item.citations || []).some((c: string) => {
+                    const lower = (c || '').toLowerCase()
+                    return lower.includes('letter_of_intent') || lower.includes('loi') || lower.includes('letter-of-intent')
+                })
+                return hasLoiCitation
+            }
+
+            const postLoiA = isPostLoi(a)
+            const postLoiB = isPostLoi(b)
+            if (postLoiA !== postLoiB) {
+                return postLoiB ? 1 : -1
+            }
+
+            const idA = a.id || 0
+            const idB = b.id || 0
+            if (idA !== idB) return idB - idA
+
             const timeA = new Date(a.projectProcessedAt || a.createdAt || a.updatedAt || 0).getTime()
             const timeB = new Date(b.projectProcessedAt || b.createdAt || b.updatedAt || 0).getTime()
             return timeB - timeA
@@ -371,9 +396,7 @@ export default function ProjectSynthesisCard({
         if (completedDocs.length === 0) return null
 
         const takeaways = documentThesisTakeaways.map((t) => t.takeaway)
-        const rec = takeaways.some((t) => t.toLowerCase().includes('caution') || t.toLowerCase().includes('risk'))
-            ? 'Proceed with Caution'
-            : 'Strong Buy Recommendation'
+        const rec = 'PROCEED WITH CAUTION — SYNTHESIS PENDING'
         const summary = takeaways.length > 0
             ? takeaways.join(' ')
             : `Project ${currentProjectName} documents analyzed. Cross-document synthesis complete across ${completedDocs.length} materials.`
@@ -735,33 +758,44 @@ export default function ProjectSynthesisCard({
                                 Version {visibleSyntheses.length - activeSynthesisIndex} of {visibleSyntheses.length}
                                 {(() => {
                                     const item = visibleSyntheses[activeSynthesisIndex]
-                                    const itemDocCount = Math.max(item?.documentsReceivedCount || 0, item?.citations?.length || 0)
+
+                                    let loiPresentFromSchema: boolean | null = null
+                                    try {
+                                        const parsed = typeof item?.finalJudgmentJson === 'string' ? JSON.parse(item.finalJudgmentJson) : item?.finalJudgmentJson
+                                        if (parsed && typeof parsed === 'object' && typeof parsed.letter_of_intent_present === 'boolean') {
+                                            loiPresentFromSchema = parsed.letter_of_intent_present
+                                        }
+                                    } catch { /* skip */ }
+
+                                    const summaryText = (item?.finalJudgmentSummary || '').toLowerCase()
+                                    const isExplicitPreLoi = summaryText.includes('pre-loi') || summaryText.includes('pass 1 pre-loi')
 
                                     const hasLoiCitation = (item?.citations || []).some((c: string) => {
-                                        const lower = c.toLowerCase()
+                                        const lower = (c || '').toLowerCase()
                                         return lower.includes('letter_of_intent') || lower.includes('loi') || lower.includes('letter-of-intent')
                                     })
-                                    const hasLoiInDocs = projectDocuments.some((d) => {
-                                        const fn = (d.fileName || '').toLowerCase()
-                                        return fn.includes('letter_of_intent') || fn.includes('loi') || fn.includes('letter-of-intent')
-                                    })
 
-                                    let isPostLoi = itemDocCount >= 23 || hasLoiCitation
-                                    if (!isPostLoi && visibleSyntheses.length === 2) {
-                                        const otherIndex = activeSynthesisIndex === 0 ? 1 : 0
-                                        const otherItem = visibleSyntheses[otherIndex]
-                                        const otherDocCount = Math.max(otherItem?.documentsReceivedCount || 0, otherItem?.citations?.length || 0)
-                                        if (itemDocCount > otherDocCount) {
-                                            isPostLoi = true
-                                        } else if (itemDocCount === otherDocCount && activeSynthesisIndex === 0 && hasLoiInDocs) {
+                                    let isPostLoi = false
+                                    if (loiPresentFromSchema !== null) {
+                                        isPostLoi = loiPresentFromSchema
+                                    } else if (isExplicitPreLoi) {
+                                        isPostLoi = false
+                                    } else if (hasLoiCitation) {
+                                        isPostLoi = true
+                                    } else {
+                                        const itemDocCount = Math.max(item?.documentsReceivedCount || 0, item?.citations?.length || 0)
+                                        if (itemDocCount >= 23) {
                                             isPostLoi = true
                                         }
                                     }
 
+                                    const passNumber = visibleSyntheses.length - activeSynthesisIndex
+                                    const stageLabel = isPostLoi ? 'Post-LOI Negotiation' : 'Pre-LOI Discovery'
+
                                     if (activeSynthesisIndex === 0) {
-                                        return isPostLoi ? ' (Latest Pass — Post-LOI Negotiation)' : ' (Latest Pass — Pre-LOI Discovery)'
+                                        return ` (Latest Pass — ${stageLabel})`
                                     }
-                                    return isPostLoi ? ' (Historical Pass — Post-LOI)' : ' (Historical Pass — Pre-LOI Discovery)'
+                                    return ` (Pass ${passNumber} — ${stageLabel})`
                                 })()}
                             </Badge>
                         </div>

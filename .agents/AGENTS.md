@@ -18,6 +18,8 @@ MCP connection to inspect and, when authorized, update those live workflows.
 - Make live workflow changes only through the n8n MCP connection and only when
   the user has requested the change. Verify the resulting workflow state when
   MCP supports verification.
+- If unsure whether an n8n MCP change took effect or if verification cannot be performed automatically, ALWAYS inform the user immediately, explaining exactly where to verify on the n8n Cloud canvas and providing clear step-by-step instructions for making the change manually if needed.
+- If unsure whether a Supabase MCP change (e.g., schema migration, table edit, SQL query execution, or data modification) took effect AND worked as expected, ALWAYS inform the user immediately, explaining exactly where and how to verify in the Supabase Dashboard / SQL Editor and providing clear step-by-step instructions for executing the change manually if needed.
 - Keep repository documentation and the frontend/backend contract in sync with
   confirmed live workflow behavior.
 
