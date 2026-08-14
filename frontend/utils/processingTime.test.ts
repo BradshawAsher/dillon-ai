@@ -54,4 +54,15 @@ describe('formatDuration', () => {
         expect(formatDuration(0)).toBe('—')
         expect(formatDuration(Number.NaN)).toBe('—')
     })
+
+    it('carries rounding up instead of showing impossible remainders', () => {
+        // 1 hr 59.7 min: rounding minutes independently used to yield "~1 hr 60 min".
+        expect(formatDuration(1 * 3600 + 59.7 * 60)).toBe('~2 hr')
+        // 23 hr 59.7 min: used to yield "~23 hr 60 min"; should roll into a day.
+        expect(formatDuration(23 * 3600 + 59.7 * 60)).toBe('~1 day')
+        // 47.8 hr: used to yield "1 day 24 hr".
+        expect(formatDuration(47.8 * 3600)).toBe('~1 day 23 hr')
+        // 59.7 min: used to yield "~60 min"; should promote to an hour.
+        expect(formatDuration(59.7 * 60)).toBe('~1 hr')
+    })
 })
