@@ -55,16 +55,23 @@ export function estimateProcessingSeconds(input: ProcessingEstimateInput): Proce
 export function formatDuration(seconds: number): string {
     if (!Number.isFinite(seconds) || seconds <= 0) return '—'
     if (seconds < 90) return `~${Math.round(seconds)} sec`
-    const minutes = seconds / 60
-    if (minutes < 60) return `~${Math.round(minutes)} min`
-    const hours = minutes / 60
-    if (hours < 24) {
-        const wholeHours = Math.floor(hours)
-        const remMinutes = Math.round(minutes % 60)
-        return remMinutes > 0 ? `~${wholeHours} hr ${remMinutes} min` : `~${wholeHours} hr`
+
+    // Round to whole minutes up front and derive hours/days from that integer,
+    // so a rounding carry propagates cleanly. Rounding each unit independently
+    // could surface impossible remainders like "~1 hr 60 min" or "1 day 24 hr"
+    // (e.g. 59.7 min rounding to 60, or 23.6 hr rounding to 24).
+    const totalMinutes = Math.round(seconds / 60)
+    if (totalMinutes < 60) return `~${totalMinutes} min`
+
+    const totalHours = Math.floor(totalMinutes / 60)
+    const remMinutes = totalMinutes % 60
+    if (totalHours < 24) {
+        return remMinutes > 0 ? `~${totalHours} hr ${remMinutes} min` : `~${totalHours} hr`
     }
+
     // Very large estimates read more naturally in days than a big hour count.
-    const days = Math.floor(hours / 24)
-    const remHours = Math.round(hours % 24)
-    return remHours > 0 ? `~${days} day${days > 1 ? 's' : ''} ${remHours} hr` : `~${days} day${days > 1 ? 's' : ''}`
+    const days = Math.floor(totalHours / 24)
+    const remHours = totalHours % 24
+    const dayLabel = `${days} day${days > 1 ? 's' : ''}`
+    return remHours > 0 ? `~${dayLabel} ${remHours} hr` : `~${dayLabel}`
 }
