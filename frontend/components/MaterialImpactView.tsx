@@ -163,7 +163,7 @@ export default function MaterialImpactView({ synthesis, onOpenEvidence, document
                                         {finding.severity === 'critical' ? 'Critical' : finding.severity === 'medium' ? 'Medium' : 'Low'}
                                     </Badge>
                                     <Badge variant="outline">{IMPACT_LABELS[finding.impact]}</Badge>
-                                    {finding.confidence !== undefined ? <Badge variant="secondary">{finding.confidence}% confidence</Badge> : null}
+                                    {finding.confidence !== undefined ? <Badge variant="secondary">{finding.confidence <= 1 && finding.confidence > 0 ? Math.round(finding.confidence * 100) : Math.round(finding.confidence)}% confidence</Badge> : null}
                                     <span className="text-xs text-muted-foreground">{finding.sourceGroup.replace('-', ' ')}</span>
                                 </div>
                                 <p className="mt-2 text-sm leading-6 text-foreground">{finding.text}</p>

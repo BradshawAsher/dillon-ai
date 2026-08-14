@@ -118,7 +118,9 @@
 
 - Make sure the evals and harness the numbers and cards are right and now buggy and that the varainces show for cross doc conflicts?
 
-- If LOI is detected, in projects, evals, and synthesis tab for that project, have an option to "run without LOI for unbiased deal discovery/analysis" to see results without the LOI? Would this require us to first label which doc is the LOI?
+- [done, need to verify] If LOI is detected, in projects, evals, and synthesis tab for that project, have an option to "run without LOI for unbiased deal discovery/analysis" to see results without the LOI? Would this require us to first have labels which doc is the LOI? Is this even a good idea? And if LOI is not detected, then we can even add like a disclaimer to "add LOI for post-LOI evaluation" or something?
+
+-  [done, need to verify] And also in like projects tab or synthesis tab when I click exclude on a file does it give me a disclaimer like "can re-run synthesis again without this file for different results" as well as a button to re-run synthesis while excluding results for that doc?  And if we exclude a file is there an option to reinclude it or is there like a separate section for like "excluded files" or something? I just want to confirm whether we've already finished this implementation yet or no?
 
 - Need to run business 1-5 without LOI for those that had an LOI, also add the pre-LOI or post-LOI for mergeworks suite 2-4
 
@@ -128,6 +130,9 @@
 
 - Are we only scoring 1 doc per dd-00x business? But we're claiming to give each doc an individual scoring? What is going on? [For brad] - understand how this works and reconcile this?
 
+- Why we are not showing confidence levels for key acquisition takeaways? or for document-level thesis takeaways? These are in syntehsis tab? Confidence levels in material impact mapping should be multiplied by 100 right?
+
+- Also I know each of our tabs is getting long, do some other websites have like a preview on the left side or the right side of the screen that essentially have buttons that take you to each part of that tab and also let the users know what tab sections are include in that tab like since new users won't know what type of info and tools are in each of our tabs in the nav bar? And if this is possible can we do this?
 
 - # Prepare slides, presentation script (?), backup recording, and supademo and supademo case study for tuesday business meeting, also prepare for example questions that they may ask and extra things you can mention if there's more time
 

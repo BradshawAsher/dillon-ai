@@ -1,5 +1,9 @@
 import * as fs from 'fs'
 import * as path from 'path'
+import { fileURLToPath } from 'url'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 import { evaluateDocument, evaluateProjectConflicts, normalizeActualDoc, summarizeResults, type ActualRunDoc, type DocScore, type EvalSummary, type GroundTruth, type ProjectConflictScore } from './evalScoring'
 import { detectContradictions, observationsFromRunDocs } from '../frontend/utils/crossDocumentConflicts'
