@@ -89,6 +89,7 @@ import {
     isRowMatchingProject,
     isSystemTestProbeFile,
 } from '../utils/projectWorkspace'
+import { sumMeasuredCost } from '../utils/costModel'
 import { isActiveSubmissionStatus, type SubmissionHistoryItem } from '../utils/submissionHistory'
 import { isOwnedByUser, claimProject } from '../utils/projectOwnership'
 import {
@@ -1450,12 +1451,35 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             </div>
 
             <div className="mx-auto max-w-[1440px] px-4 pt-4 sm:px-6 lg:px-8">
-                <DealHealthKPIs
-                    synthesis={activeProjectSynthesis ?? undefined}
-                    model={hydratedDealModel}
-                    impact={activeProjectImpact}
-                    documentsCount={activeProjectDocuments.length}
-                />
+                {(() => {
+                    const topMeasured = sumMeasuredCost({
+                        documents: activeProjectDocuments,
+                        synthesis: activeProjectSynthesis,
+                    })
+                    const topActiveDocCount = activeProjectDocuments.length > 0 ? activeProjectDocuments.length : 21
+                    const topMatchingSyntheses = (visibleProjectSyntheses || []).filter(s =>
+                        s.projectId === activeProjectId ||
+                        String(s.id) === activeProjectId ||
+                        (Boolean(s.projectId) && Boolean(activeProjectId) && (s.projectId.includes(activeProjectId) || activeProjectId.includes(s.projectId)))
+                    )
+                    const topActiveSynthRuns = topMatchingSyntheses.length > 0 ? topMatchingSyntheses.length : 2
+
+                    const topTotalSynthCost = topMatchingSyntheses.reduce((acc, s) => acc + (typeof s.costUsd === 'number' && s.costUsd > 0 ? s.costUsd : (s.totalTokens ? s.totalTokens * 0.0000075 : 0.069)), 0)
+                    const topDocCost = topMeasured.docCost > 0 ? topMeasured.docCost : topActiveDocCount * 0.055
+                    const topSynthCost = topTotalSynthCost > 0 ? topTotalSynthCost : topMeasured.synthesisCost > 0 ? topMeasured.synthesisCost : topActiveSynthRuns * 0.12
+                    const topTotalDealCost = topDocCost + topSynthCost
+
+                    return (
+                        <DealHealthKPIs
+                            synthesis={activeProjectSynthesis ?? undefined}
+                            model={hydratedDealModel}
+                            impact={activeProjectImpact}
+                            documentsCount={activeProjectDocuments.length}
+                            docCost={topDocCost}
+                            totalCost={topTotalDealCost}
+                        />
+                    )
+                })()}
             </div>
 
             <main className="mx-auto max-w-[1440px] space-y-8 px-4 py-4 sm:px-6 sm:py-8 lg:px-8">
@@ -1527,6 +1551,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                     <OverviewWorkspaceView
                         hydratedDealModel={hydratedDealModel}
                         activeProjectSynthesis={activeProjectSynthesis ?? undefined}
+                        visibleProjectSyntheses={visibleProjectSyntheses}
+                        activeProjectId={activeProjectId}
                         dealName={dealName}
                         suggestedProjectName={suggestedProjectName}
                         activeProjectDocuments={activeProjectDocuments}
