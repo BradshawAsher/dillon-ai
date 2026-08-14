@@ -10,6 +10,8 @@ type Props = {
     model: DealModel
     synthesis?: ProjectSynthesisItem
     projectName: string
+    docCost?: number
+    totalCost?: number
 }
 
 function compact(value: number) {
@@ -44,7 +46,7 @@ function truncate(text: string, max = 70): string {
     return clean.length > max ? `${clean.slice(0, max - 1)}…` : clean
 }
 
-export default function DealSummaryBanner({ model, synthesis, projectName }: Props) {
+export default function DealSummaryBanner({ model, synthesis, projectName, docCost, totalCost }: Props) {
     const [copied, setCopied] = useState(false)
     const facts = parseDocumentedFacts(model.documentedFactsJson)
     const ebitda = (facts.ebitda_sde?.status === 'confirmed' || facts.ebitda_sde?.status === 'illustrative') && typeof facts.ebitda_sde.value === 'number' ? facts.ebitda_sde.value : null
@@ -57,6 +59,8 @@ export default function DealSummaryBanner({ model, synthesis, projectName }: Pro
     if (ebitda) chips.push({ label: 'EBITDA', value: compact(ebitda), title: exact(ebitda) })
     if (price) chips.push({ label: 'Price', value: compact(price), title: exact(price) })
     if (multiple) chips.push({ label: 'Multiple', value: `${multiple.toFixed(1)}x` })
+    if (typeof docCost === 'number' && docCost > 0) chips.push({ label: 'Doc Cost', value: `$${docCost.toFixed(3)}` })
+    if (typeof totalCost === 'number' && totalCost > 0) chips.push({ label: 'Total Cost', value: `$${totalCost.toFixed(3)}` })
 
     // Three decision drivers: lead with what would kill or reshape the deal
     // (red flags, then conflicts / open questions), falling back to strengths.
@@ -103,7 +107,7 @@ export default function DealSummaryBanner({ model, synthesis, projectName }: Pro
                         {synthesis.finalRecommendation}
                     </Badge>
                 )}
-                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
                     {chips.map(c => (
                         <span key={c.label} className="flex items-center gap-1" title={c.title}>
                             <span className="font-medium text-foreground">{c.value}</span>

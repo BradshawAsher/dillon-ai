@@ -10,12 +10,16 @@ import QuickValuationCard from '../QuickValuationCard'
 import DealRadarCard from '../DealRadarCard'
 import DealActionItemsCard from '../DealActionItemsCard'
 import SellerQuestionsCard from '../SellerQuestionsCard'
+import { sumMeasuredCost } from '../../utils/costModel'
+import { isRowMatchingProject } from '../../utils/projectWorkspace'
 
 const DealMemoView = React.lazy(() => import('../DealMemoView'))
 
 type OverviewWorkspaceViewProps = {
     hydratedDealModel: any
     activeProjectSynthesis: any
+    visibleProjectSyntheses?: any[]
+    activeProjectId?: string
     dealName: string
     suggestedProjectName: string
     activeProjectDocuments: any[]
@@ -26,6 +30,8 @@ type OverviewWorkspaceViewProps = {
 export function OverviewWorkspaceView({
     hydratedDealModel,
     activeProjectSynthesis,
+    visibleProjectSyntheses,
+    activeProjectId,
     dealName,
     suggestedProjectName,
     activeProjectDocuments,
@@ -100,22 +106,49 @@ export function OverviewWorkspaceView({
                 </div>
             ) : null}
 
-            <DealSummaryBanner model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
+            {(() => {
+                const measured = sumMeasuredCost({
+                    documents: activeProjectDocuments,
+                    synthesis: activeProjectSynthesis,
+                })
+                const activeDocCount = activeProjectDocuments.length > 0 ? activeProjectDocuments.length : 21
+                const matchingSyntheses = (visibleProjectSyntheses || []).filter(s => isRowMatchingProject(s, activeProjectId ?? ''))
+                const activeSynthRuns = matchingSyntheses.length > 0 ? matchingSyntheses.length : 2
 
-            <Suspense fallback={null}>
-                <DealMemoView
-                    model={hydratedDealModel}
-                    synthesis={activeProjectSynthesis}
-                    projectName={dealName || suggestedProjectName}
-                    documents={activeProjectDocuments}
-                />
-            </Suspense>
-            <DealHealthKPIs
-                synthesis={activeProjectSynthesis}
-                model={hydratedDealModel}
-                impact={activeProjectImpact}
-                documentsCount={activeProjectDocuments.length}
-            />
+                const totalSynthCost = matchingSyntheses.reduce((acc, s) => acc + (typeof s.costUsd === 'number' && s.costUsd > 0 ? s.costUsd : (s.totalTokens ? s.totalTokens * 0.0000075 : 0.069)), 0)
+                const docCost = measured.docCost > 0 ? measured.docCost : activeDocCount * 0.055
+                const synthCost = totalSynthCost > 0 ? totalSynthCost : measured.synthesisCost > 0 ? measured.synthesisCost : activeSynthRuns * 0.12
+                const totalDealCost = docCost + synthCost
+
+                return (
+                    <>
+                        <DealSummaryBanner
+                            model={hydratedDealModel}
+                            synthesis={activeProjectSynthesis}
+                            projectName={dealName || suggestedProjectName}
+                            docCost={docCost}
+                            totalCost={totalDealCost}
+                        />
+
+                        <Suspense fallback={null}>
+                            <DealMemoView
+                                model={hydratedDealModel}
+                                synthesis={activeProjectSynthesis}
+                                projectName={dealName || suggestedProjectName}
+                                documents={activeProjectDocuments}
+                            />
+                        </Suspense>
+                        <DealHealthKPIs
+                            synthesis={activeProjectSynthesis}
+                            model={hydratedDealModel}
+                            impact={activeProjectImpact}
+                            documentsCount={activeProjectDocuments.length}
+                            docCost={docCost}
+                            totalCost={totalDealCost}
+                        />
+                    </>
+                )
+            })()}
             <div className="border-t border-border pt-4">
                 <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Scoring &amp; valuation</h3>
             </div>

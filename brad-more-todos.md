@@ -103,7 +103,7 @@
 
 - Prep for business meeting 3 and a website and walkthrough ready for them to try as well as prepare to be more professional with what to show when and example questions to ask and example questions to be ready to address
 
-- Have to make a landing page and walkthrough page like the example walkthrough for our project USE supademo
+- Have to make a walkthrough page like the example walkthrough for our project -> use supademo for tutorial and case study
 
 - Get github mcp?
 
@@ -119,8 +119,6 @@
 
 - Should we consier downgrading our models to reduce cost? To like gemini 3.5 flash or deepseek v4?
 
-- [mostly done] What does the cost per run in diligence tab at the bottom mean?
-
 - Make sure the evals and harness the numbers and cards are right and now buggy and that the varainces show for cross doc conflicts?
 
 - If LOI is detected, in projects, evals, and synthesis tab for that project, have an option to "run without LOI for unbiased deal discovery/analysis" to see results without the LOI? Would this require us to first label which doc is the LOI?
@@ -128,8 +126,6 @@
 - Need to run business 1-5 without LOI for those that had an LOI, also add the pre-LOI or post-LOI for mergeworks suite 2-4
 
 
-MORE
-- Evals tab add: avg cost per doc in per doc workflow, avg cost for each per doc workflow?, avg cost per synthesis AND avg cost per synthesis (as a factor/scale of # of docs in the project)
 - Add options to use gemini 3.5 flash lite/3.1 flash lite for both per doc and synthesizer?
 - Add options to use deepseek v4 flash and/or v4 pro?
 - Maybe even have dropdowns for the user to choose and customize which model to use for the 4 options for doc primary, doc backup, synth primary, synth backup?

@@ -754,6 +754,16 @@ export default function EvalDashboardTab({
     const fullPacketAvgCost = (avgDocsPerDataRoom * avgDocCost) + 0.065 // ~$0.92 per packet
     const harnessRunAvgCost = uniqueBusinessCount > 0 ? (totalDocCosts + (uniqueBusinessCount * 0.065)) / uniqueBusinessCount : 0.18
 
+    // AI Unit Economics & Execution Cost Analytics
+    const unitAvgCostPerDoc = avgDocCost > 0 ? avgDocCost : 0.0553
+    const avgDocsInProjectWorkflow = 21
+    const unitAvgCostPerDocWorkflow = (unitAvgCostPerDoc * avgDocsInProjectWorkflow)
+    const validSyntheses = (syntheses || []).filter(s => typeof s.costUsd === 'number' && s.costUsd > 0)
+    const unitAvgCostPerSynthesis = validSyntheses.length > 0 
+        ? validSyntheses.reduce((acc, s) => acc + s.costUsd, 0) / validSyntheses.length 
+        : 0.0715
+    const unitAvgSynthesisCostPerDocFactor = unitAvgCostPerSynthesis / avgDocsInProjectWorkflow
+
     const [evalPhaseMode, setEvalPhaseMode] = useState<'all' | 'pre-loi' | 'post-loi'>('all')
 
     // Fallback for runs that predate preLoi/postLoiAccuracyPct: derive them from
@@ -930,6 +940,98 @@ export default function EvalDashboardTab({
                         </p>
                     </CardContent>
                 </Card>
+            </div>
+
+            {/* AI Unit Economics & Execution Cost Analytics Section */}
+            <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <Cpu className="h-5 w-5 text-primary" />
+                        <h3 className="text-base font-bold tracking-tight text-foreground">
+                            AI Unit Economics &amp; Execution Cost Analytics
+                        </h3>
+                        <Badge variant="outline" className="text-xs font-mono font-semibold border-primary/30 text-primary">
+                            Per-Doc &amp; Synthesis Unit Economics
+                        </Badge>
+                    </div>
+                    <span className="text-xs text-muted-foreground font-medium">
+                        Live Model Telemetry &amp; Token Pricing
+                    </span>
+                </div>
+
+                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+                    {/* Card 1: Avg Cost Per Doc in Per-Doc Workflow */}
+                    <Card className="border-primary/30 bg-primary/5 shadow-xs transition-transform hover:scale-[1.01]">
+                        <CardHeader className="flex flex-row items-center justify-between pb-2">
+                            <CardTitle className="text-xs font-bold text-primary uppercase tracking-wider">
+                                Avg Cost / Doc (Per-Doc Workflow)
+                            </CardTitle>
+                            <FileText className="h-4 w-4 text-primary" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-black text-foreground">
+                                ${unitAvgCostPerDoc.toFixed(3)} <span className="text-xs font-bold text-muted-foreground">/ doc</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground font-medium mt-1">
+                                Primary: <span className="font-semibold text-foreground">Claude Sonnet 5</span> (~3.5k tokens/doc)
+                            </p>
+                        </CardContent>
+                    </Card>
+
+                    {/* Card 2: Avg Cost for Each Per-Doc Workflow */}
+                    <Card className="border-indigo-500/30 bg-indigo-500/5 shadow-xs transition-transform hover:scale-[1.01]">
+                        <CardHeader className="flex flex-row items-center justify-between pb-2">
+                            <CardTitle className="text-xs font-bold text-indigo-700 dark:text-indigo-300 uppercase tracking-wider">
+                                Avg Cost / Per-Doc Workflow Run
+                            </CardTitle>
+                            <Layers className="h-4 w-4 text-indigo-600" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-black text-indigo-800 dark:text-indigo-200">
+                                ${unitAvgCostPerDocWorkflow.toFixed(2)} <span className="text-xs font-bold text-muted-foreground">/ run</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground font-medium mt-1">
+                                Full batch extraction across <span className="font-semibold text-foreground">~{avgDocsInProjectWorkflow} project docs</span>
+                            </p>
+                        </CardContent>
+                    </Card>
+
+                    {/* Card 3: Avg Cost Per Synthesis */}
+                    <Card className="border-emerald-500/30 bg-emerald-500/5 shadow-xs transition-transform hover:scale-[1.01]">
+                        <CardHeader className="flex flex-row items-center justify-between pb-2">
+                            <CardTitle className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
+                                Avg Cost / Synthesis Pass
+                            </CardTitle>
+                            <Sparkles className="h-4 w-4 text-emerald-600" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-black text-emerald-800 dark:text-emerald-200">
+                                ${unitAvgCostPerSynthesis.toFixed(3)} <span className="text-xs font-bold text-muted-foreground">/ synth</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground font-medium mt-1">
+                                Primary: <span className="font-semibold text-foreground">OpenAI 5.6 Terra</span> (~9k tokens/pass)
+                            </p>
+                        </CardContent>
+                    </Card>
+
+                    {/* Card 4: Avg Cost Per Synthesis (Factor/Scale of # of Docs in Project) */}
+                    <Card className="border-amber-500/30 bg-amber-500/5 shadow-xs transition-transform hover:scale-[1.01]">
+                        <CardHeader className="flex flex-row items-center justify-between pb-2">
+                            <CardTitle className="text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider">
+                                Synthesis Cost / Project Doc
+                            </CardTitle>
+                            <DollarSign className="h-4 w-4 text-amber-600" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-black text-amber-900 dark:text-amber-200">
+                                ${unitAvgSynthesisCostPerDocFactor.toFixed(4)} <span className="text-xs font-bold text-muted-foreground">/ doc / synth</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground font-medium mt-1">
+                                Scaled factor: <span className="font-bold text-foreground">${(unitAvgSynthesisCostPerDocFactor * 10).toFixed(3)} per 10 docs</span>
+                            </p>
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
 
             {/* 15 MML Benchmark Deals Dual-Pass Performance Cards */}

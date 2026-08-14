@@ -1,4 +1,4 @@
-import { Activity, AlertTriangle, CheckCircle2, FileCheck, TrendingUp } from 'lucide-react'
+import { Activity, AlertTriangle, CheckCircle2, DollarSign, FileCheck, TrendingUp } from 'lucide-react'
 
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import type { DealModel } from '../hooks/backend/diligence'
@@ -20,7 +20,21 @@ function money(value: number) {
     return `$${value.toFixed(0)}`
 }
 
-export default function DealHealthKPIs({ synthesis, model, impact, documentsCount }: { synthesis?: ProjectSynthesisItem; model: DealModel; impact: ImpactMetrics; documentsCount: number }) {
+export default function DealHealthKPIs({
+    synthesis,
+    model,
+    impact,
+    documentsCount,
+    docCost,
+    totalCost,
+}: {
+    synthesis?: ProjectSynthesisItem
+    model: DealModel
+    impact: ImpactMetrics
+    documentsCount: number
+    docCost?: number
+    totalCost?: number
+}) {
     const facts = parseDocumentedFacts(model.documentedFactsJson)
     const revenue = facts.revenue?.status === 'confirmed' && typeof facts.revenue?.value === 'number' ? facts.revenue.value : null
     const ebitda = facts.ebitda_sde?.status === 'confirmed' && typeof facts.ebitda_sde?.value === 'number' ? facts.ebitda_sde.value : null
@@ -98,12 +112,23 @@ export default function DealHealthKPIs({ synthesis, model, impact, documentsCoun
         variant: confirmedFacts >= 4 ? 'success' : confirmedFacts >= 2 ? 'warning' : 'destructive',
     })
 
+    // Total deal execution cost KPI
+    if (typeof totalCost === 'number' && totalCost > 0) {
+        kpis.push({
+            label: 'Total Deal Cost',
+            value: `$${totalCost.toFixed(3)}`,
+            subtext: typeof docCost === 'number' && docCost > 0 ? `Doc analysis: $${docCost.toFixed(3)}` : 'Live token telemetry',
+            icon: <DollarSign className="h-5 w-5" />,
+            variant: 'success',
+        })
+    }
+
     if (kpis.length === 0) return null
 
     return (
         <Card className="dashboard-kpi-glass border-primary/20">
             <CardContent className="p-4">
-                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
                     {kpis.map((kpi) => (
                         <div key={kpi.label} className="flex items-start gap-3 rounded-lg p-1 transition-transform duration-200 hover:scale-[1.02]">
                             <div className={`mt-0.5 rounded-lg p-2 ${kpi.variant === 'success' ? 'bg-success/10 text-success'
