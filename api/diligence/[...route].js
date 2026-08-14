@@ -21829,7 +21829,7 @@ async function getProjectSynthesis(req) {
       if (derived.length < 3 && yellowFlags.length > 0) derived.push(...yellowFlags.slice(0, 3 - derived.length));
       if (derived.length > 0) keyTakeaways = derived;
     }
-    const synthesisConfidence = getNumberOrNull(row.ai_confidence);
+    const synthesisConfidence = getNumberOrNull(row.ai_global_confidence ?? row.ai_confidence);
     const structuredFindings = {
       keyTakeaways: getStructuredFindingsFromRaw(getJudgmentField(judgment.json, "key_acquisition_takeaways"), "Synthesized"),
       redFlags: getProjectStructuredFlags(judgment.json, "red_flags", "Contradicted"),
@@ -21848,7 +21848,7 @@ async function getProjectSynthesis(req) {
       }
     }
     const valuationObj = getJudgmentField(judgment.json, "valuation");
-    const valuationConfidence = valuationObj && typeof valuationObj === "object" ? String(valuationObj.confidence_score ?? "") : "";
+    const valuationConfidence = valuationObj && typeof valuationObj === "object" ? String(valuationObj.valuation_confidence_score ?? valuationObj.confidence_score ?? "") : "";
     const extractValuationBound = (rowVal, fieldKey) => {
       if (rowVal && String(rowVal).trim() !== "" && String(rowVal).trim() !== "0") {
         return String(rowVal).trim();
@@ -21894,7 +21894,7 @@ async function getProjectSynthesis(req) {
       finalJudgmentJson: judgment.json,
       finalJudgementJson: judgment.json,
       aiErrorMessage: row.ai_error_message ?? "",
-      aiConfidence: row.ai_confidence ?? "",
+      aiConfidence: row.ai_global_confidence || row.ai_confidence || String(getJudgmentField(judgment.json, "global_confidence") ?? ""),
       valuationConfidence,
       valuationLowerBound: valLower,
       valuationBaseEstimate: valBase,

@@ -98,7 +98,9 @@ const TAB_SECTIONS: Partial<Record<WorkspaceTab, TOCSection[]>> = {
 export default function TabSidebarTOC({ activeTab }: { activeTab: WorkspaceTab }) {
     const [activeSection, setActiveSection] = useState<string>('')
     const [isCollapsed, setIsCollapsed] = useState(false)
+    const [presentIds, setPresentIds] = useState<Set<string>>(new Set())
     const observerRef = useRef<IntersectionObserver | null>(null)
+    const mutationRef = useRef<MutationObserver | null>(null)
 
     const sections = TAB_SECTIONS[activeTab]
 
@@ -110,12 +112,14 @@ export default function TabSidebarTOC({ activeTab }: { activeTab: WorkspaceTab }
         }
     }, [])
 
-    useEffect(() => {
+    const syncObserver = useCallback(() => {
         if (!sections) return
 
         observerRef.current?.disconnect()
 
+        const nowPresent = new Set<string>()
         const visibleSections = new Map<string, boolean>()
+
         observerRef.current = new IntersectionObserver(
             (entries) => {
                 for (const entry of entries) {
@@ -124,41 +128,71 @@ export default function TabSidebarTOC({ activeTab }: { activeTab: WorkspaceTab }
                 for (const section of sections) {
                     if (visibleSections.get(section.id)) {
                         setActiveSection(section.id)
-                        break
+                        return
                     }
                 }
             },
-            { rootMargin: '-80px 0px -60% 0px', threshold: 0 }
+            { rootMargin: '-60px 0px -50% 0px', threshold: 0.1 }
         )
 
         for (const section of sections) {
             const el = document.getElementById(section.id)
-            if (el) observerRef.current.observe(el)
+            if (el) {
+                nowPresent.add(section.id)
+                observerRef.current.observe(el)
+            }
         }
 
-        return () => { observerRef.current?.disconnect() }
-    }, [sections, activeTab])
+        setPresentIds(nowPresent)
+    }, [sections])
+
+    useEffect(() => {
+        if (!sections) return
+
+        // Initial sync after a brief delay for React to render
+        const timeout = setTimeout(syncObserver, 150)
+
+        // Watch for DOM changes (conditional rendering adds/removes section elements)
+        mutationRef.current?.disconnect()
+        mutationRef.current = new MutationObserver(() => {
+            syncObserver()
+        })
+        mutationRef.current.observe(document.body, {
+            childList: true,
+            subtree: true,
+            attributes: false,
+        })
+
+        return () => {
+            clearTimeout(timeout)
+            observerRef.current?.disconnect()
+            mutationRef.current?.disconnect()
+        }
+    }, [sections, activeTab, syncObserver])
 
     if (!sections || sections.length === 0) return null
 
+    const visibleSections = sections.filter((s) => presentIds.has(s.id))
+    if (visibleSections.length === 0) return null
+
     if (isCollapsed) {
         return (
-            <div className="fixed right-3 top-1/3 z-30 hidden xl:block print:hidden">
+            <div className="fixed left-3 top-1/3 z-30 hidden xl:block print:hidden">
                 <button
                     type="button"
                     onClick={() => setIsCollapsed(false)}
                     className="flex items-center gap-1 rounded-lg border border-border/80 bg-card/95 px-2 py-2 text-xs font-medium text-muted-foreground shadow-md backdrop-blur-sm transition-colors hover:bg-muted hover:text-foreground"
                     title="Show table of contents"
                 >
+                    <ChevronRight className="h-3 w-3" />
                     <List className="h-3.5 w-3.5" />
-                    <ChevronLeft className="h-3 w-3" />
                 </button>
             </div>
         )
     }
 
     return (
-        <aside className="fixed right-3 top-1/4 z-30 hidden w-44 xl:block print:hidden">
+        <aside className="fixed left-3 top-1/4 z-30 hidden w-44 xl:block print:hidden">
             <nav className="rounded-xl border border-border/80 bg-card/95 shadow-lg backdrop-blur-sm">
                 <div className="flex items-center justify-between border-b border-border/50 px-3 py-2">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">On this tab</span>
@@ -168,11 +202,11 @@ export default function TabSidebarTOC({ activeTab }: { activeTab: WorkspaceTab }
                         className="rounded p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                         title="Collapse sidebar"
                     >
-                        <ChevronRight className="h-3.5 w-3.5" />
+                        <ChevronLeft className="h-3.5 w-3.5" />
                     </button>
                 </div>
                 <ul className="max-h-[60vh] overflow-y-auto p-1.5">
-                    {sections.map((section) => {
+                    {visibleSections.map((section) => {
                         const isActive = activeSection === section.id
                         return (
                             <li key={section.id}>

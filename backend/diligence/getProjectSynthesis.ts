@@ -372,7 +372,7 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
                 if (derived.length > 0) keyTakeaways = derived
             }
 
-            const synthesisConfidence = getNumberOrNull(row.ai_confidence)
+            const synthesisConfidence = getNumberOrNull(row.ai_global_confidence ?? row.ai_confidence)
 
             const structuredFindings: ProjectStructuredFindingGroups = {
                 keyTakeaways: getStructuredFindingsFromRaw(getJudgmentField(judgment.json, 'key_acquisition_takeaways'), 'Synthesized'),
@@ -395,7 +395,7 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
 
             const valuationObj = getJudgmentField(judgment.json, 'valuation')
             const valuationConfidence = valuationObj && typeof valuationObj === 'object'
-                ? String((valuationObj as Record<string, unknown>).confidence_score ?? '')
+                ? String((valuationObj as Record<string, unknown>).valuation_confidence_score ?? (valuationObj as Record<string, unknown>).confidence_score ?? '')
                 : ''
 
             const extractValuationBound = (rowVal: any, fieldKey: string) => {
@@ -446,7 +446,7 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
                 finalJudgmentJson: judgment.json,
                 finalJudgementJson: judgment.json,
                 aiErrorMessage: row.ai_error_message ?? '',
-                aiConfidence: row.ai_confidence ?? '',
+                aiConfidence: row.ai_global_confidence || row.ai_confidence || String(getJudgmentField(judgment.json, 'global_confidence') ?? ''),
                 valuationConfidence,
                 valuationLowerBound: valLower,
                 valuationBaseEstimate: valBase,
