@@ -51,7 +51,10 @@ export function getClientIp(headers: IncomingHttpHeaders): string {
 
 /** Classifies a route+method into a rate bucket. */
 export function bucketFor(route: string, method: string): Bucket {
-    if (method === 'GET') return 'read'
+    // Safe, side-effect-free methods (including CORS preflight) share the
+    // generous read budget rather than spending the tighter write allowance.
+    const upper = method.toUpperCase()
+    if (upper === 'GET' || upper === 'HEAD' || upper === 'OPTIONS') return 'read'
     if (route === 'submit' || route === 'retry-failed-document') return 'trigger'
     return 'write'
 }
