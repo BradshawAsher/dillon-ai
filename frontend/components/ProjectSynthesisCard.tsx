@@ -1317,7 +1317,7 @@ export default function ProjectSynthesisCard({
 
                     return (
                         <div key={`${synthesis.projectId}-${synthesis.id}`} className="space-y-4 rounded-xl border border-border bg-card p-4">
-                            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                            <div id="synthesis-judgment" className="scroll-mt-6 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                                 <div className="space-y-2">
                                     <p className="text-lg font-semibold text-foreground">{displayName}</p>
                                     <p className="text-xs text-muted-foreground">
@@ -1400,7 +1400,7 @@ export default function ProjectSynthesisCard({
                             ) : null}
 
                             {false && synthesis.finalJudgmentSummary ? (
-                                <div id="synthesis-judgment" className="scroll-mt-6 rounded-xl border-2 border-primary bg-gradient-to-br from-primary/15 via-primary/5 to-background p-5 shadow-md">
+                                <div className="rounded-xl border-2 border-primary bg-gradient-to-br from-primary/15 via-primary/5 to-background p-5 shadow-md">
                                     <div className="flex flex-wrap items-center justify-between gap-2">
                                         <div className="flex items-center gap-2">
                                             <Scale className="h-5 w-5 text-primary" />
@@ -1419,7 +1419,7 @@ export default function ProjectSynthesisCard({
                                 </div>
                             ) : null}
 
-                            {!synthesis.finalJudgmentSummary ? <div id="synthesis-judgment" className="scroll-mt-6 rounded-xl border-2 border-warning bg-warning/10 p-5 shadow-md"><div className="flex items-center gap-2"><Scale className="h-5 w-5 text-warning" /><p className="text-sm font-bold uppercase tracking-wide text-warning">Acquisition judgment pending</p></div><p className="mt-3 text-sm leading-6 text-foreground">{synthesis.finalRecommendation ? `n8n returned the recommendation “${synthesis.finalRecommendation},” but did not return its final plain-English judgment yet. Refresh after the next synthesis pass.` : 'This synthesis row has no final judgment text yet. It may still be processing, or the consolidator returned an incomplete payload. Refresh after the next synthesis pass.'}</p></div> : null}
+                            {!synthesis.finalJudgmentSummary ? <div className="rounded-xl border-2 border-warning bg-warning/10 p-5 shadow-md"><div className="flex items-center gap-2"><Scale className="h-5 w-5 text-warning" /><p className="text-sm font-bold uppercase tracking-wide text-warning">Acquisition judgment pending</p></div><p className="mt-3 text-sm leading-6 text-foreground">{synthesis.finalRecommendation ? `n8n returned the recommendation “${synthesis.finalRecommendation},” but did not return its final plain-English judgment yet. Refresh after the next synthesis pass.` : 'This synthesis row has no final judgment text yet. It may still be processing, or the consolidator returned an incomplete payload. Refresh after the next synthesis pass.'}</p></div> : null}
 
                             <div id="synthesis-next-step" className="scroll-mt-6 rounded-xl border-2 border-primary/60 bg-primary/10 p-4 shadow-sm">
                                 <p className="text-sm font-bold uppercase tracking-wide text-primary">Next step after the synthesis</p>
