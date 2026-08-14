@@ -106,6 +106,4 @@ function main() {
     console.log(`\nFailure-case report written to ${outPath}`)
 }
 
-if (require.main === module) {
-    main()
-}
+main()
