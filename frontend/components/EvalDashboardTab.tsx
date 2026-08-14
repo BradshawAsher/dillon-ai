@@ -37,6 +37,7 @@ import EvalDiagnosticsPanel from './EvalDiagnosticsPanel'
 import { benchmarkGroundTruthSyntheses } from '../evals/ground_truths'
 import { calculateBatchTotalCost, calculateSynthesisCost, calculateDocumentCost } from '../utils/diligenceDashboardUtils'
 import { HighLevelBusinessSummaryModal, HighLevelBusinessSummaryData } from './HighLevelBusinessSummaryModal'
+import { resolveFinancialMetricsForProject } from '../utils/financialMetrics'
 
 type EvalDashboardTabProps = {
     evalRuns?: Array<{
@@ -309,33 +310,34 @@ export default function EvalDashboardTab({
             return sId.includes(tKey) || tKey.includes(sId)
         })
 
-        const groundTruth = (benchmarkGroundTruthSyntheses as any)[targetKey] || (benchmarkGroundTruthSyntheses as any)[Object.keys(benchmarkGroundTruthSyntheses).find(k => businessName.toLowerCase().includes(k.toLowerCase()) || k.toLowerCase().includes(businessName.toLowerCase())) || '']
+        const groundTruth = benchmarkGroundTruthSyntheses.find((gt: any) => {
+            const gtId = String(gt.projectId || gt.id || '').toLowerCase()
+            return gtId.includes(targetKey.toLowerCase()) || String(gt.finalJudgmentSummary || '').toLowerCase().includes(businessName.toLowerCase())
+        })
 
-        const askingPrice = liveSynth?.askingPrice || groundTruth?.askingPrice || '$8,500,000'
-        const revenue = liveSynth?.revenueUsd || groundTruth?.revenueUsd || '$5,200,000'
-        const ebitda = liveSynth?.ebitdaUsd || groundTruth?.ebitdaUsd || '$1,250,000'
-        const valuation = liveSynth?.valuationUsd || groundTruth?.valuationUsd || '$7,800,000'
-        const multiple = liveSynth?.impliedMultiple || groundTruth?.impliedMultiple || '6.2'
-        const verdict = liveSynth?.finalRecommendation || groundTruth?.verdict || 'Proceed with Caution'
-        const trafficLight = liveSynth?.finalTrafficLight || groundTruth?.trafficLight || 'YELLOW'
-        const execSummary = liveSynth?.finalJudgmentSummary || liveSynth?.executiveSummary || groundTruth?.executiveSummary || `High-level due diligence synthesis for ${businessName}. Reconciled findings across ${phaseDocs.length} financial, tax, and legal documents.`
+        const activeSynth = liveSynth || groundTruth
+        const fin = resolveFinancialMetricsForProject(activeSynth, phaseDocs, businessName, businessName, targetKey)
+
+        const verdict = activeSynth?.finalRecommendation || (groundTruth as any)?.verdict || 'Proceed with Caution'
+        const trafficLight = activeSynth?.finalTrafficLight || (groundTruth as any)?.trafficLight || 'YELLOW'
+        const execSummary = activeSynth?.finalJudgmentSummary || (activeSynth as any)?.executiveSummary || (groundTruth as any)?.executiveSummary || `High-level due diligence synthesis for ${businessName}. Reconciled findings across ${phaseDocs.length} financial, tax, and legal documents.`
 
         const redFlags: string[] = []
-        if (liveSynth?.redFlags && Array.isArray(liveSynth.redFlags)) {
-            redFlags.push(...liveSynth.redFlags.map((f: any) => typeof f === 'string' ? f : f.description || f.flag || String(f)))
+        if (activeSynth?.redFlags && Array.isArray(activeSynth.redFlags)) {
+            redFlags.push(...activeSynth.redFlags.map((f: any) => typeof f === 'string' ? f : f.description || f.flag || String(f)))
         } else if (groundTruth?.redFlags) {
-            redFlags.push(...groundTruth.redFlags)
+            redFlags.push(...groundTruth.redFlags.map((f: any) => typeof f === 'string' ? f : String(f)))
         }
 
         const greenFlags: string[] = []
-        if (liveSynth?.greenFlags && Array.isArray(liveSynth.greenFlags)) {
-            greenFlags.push(...liveSynth.greenFlags.map((f: any) => typeof f === 'string' ? f : f.description || f.flag || String(f)))
+        if (activeSynth?.greenFlags && Array.isArray(activeSynth.greenFlags)) {
+            greenFlags.push(...activeSynth.greenFlags.map((f: any) => typeof f === 'string' ? f : f.description || f.flag || String(f)))
         } else if (groundTruth?.greenFlags) {
-            greenFlags.push(...groundTruth.greenFlags)
+            greenFlags.push(...groundTruth.greenFlags.map((f: any) => typeof f === 'string' ? f : String(f)))
         }
 
         const docBatchCost = calculateBatchTotalCost(phaseDocs)
-        const synthCost = calculateSynthesisCost(liveSynth)
+        const synthCost = calculateSynthesisCost(activeSynth)
         const totalRunCost = docBatchCost + synthCost
 
         setSummaryModalData({
@@ -344,21 +346,21 @@ export default function EvalDashboardTab({
             projectId: targetKey,
             stage: isPreLoi ? 'Phase 1: Pre-LOI' : 'Phase 2: Post-LOI',
             documentsCount: phaseDocs.length,
-            askingPrice,
-            revenue,
-            ebitda,
-            valuation,
-            multiple,
+            askingPrice: fin.askingPrice,
+            revenue: fin.revenue,
+            ebitda: fin.ebitda,
+            valuation: fin.valuation,
+            multiple: fin.multiple,
             verdict,
             trafficLight,
             executiveSummary: execSummary,
             redFlags,
             greenFlags,
-            dealGrade: liveSynth?.dealGrade || groundTruth?.dealGrade || 'B+',
+            dealGrade: (activeSynth as any)?.dealGrade || (groundTruth as any)?.dealGrade || 'B+',
             totalCostUsd: totalRunCost > 0 ? totalRunCost : 0.285,
             docPrimaryModel: 'Claude Sonnet 5',
             synthPrimaryModel: 'OpenAI 5.6 Terra',
-            synthesisReport: liveSynth,
+            synthesisReport: activeSynth,
         })
         setIsSummaryModalOpen(true)
     }
