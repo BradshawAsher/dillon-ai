@@ -38,6 +38,8 @@ type ProjectSynthesisCardProps = {
     onRetryDocument?: (requestID: string) => void
     retryingRequestId?: string | null
     onRunSynthesis?: () => void
+    onRunSynthesisWithoutLoi?: () => void
+    runningSynthesisWithoutLoi?: boolean
     runningSynthesis?: boolean
     onStopSynthesis?: () => void
     stoppingSynthesis?: boolean
@@ -234,6 +236,8 @@ export default function ProjectSynthesisCard({
     onRetryDocument,
     retryingRequestId,
     onRunSynthesis,
+    onRunSynthesisWithoutLoi,
+    runningSynthesisWithoutLoi,
     runningSynthesis,
     onStopSynthesis,
     stoppingSynthesis,
@@ -835,6 +839,108 @@ export default function ProjectSynthesisCard({
                         </div>
                     </div>
                 ) : null}
+
+                {/* LOI Status Banner */}
+                {(() => {
+                    const loiDoc = projectDocuments.find(d => {
+                        const name = (d.fileName || d.dealName || '').toLowerCase()
+                        return name.includes('loi') || name.includes('letter_of_intent') || name.includes('letter-of-intent')
+                    })
+                    const hasLoiInDocs = Boolean(loiDoc)
+                    const hasPreLoiVersion = visibleSyntheses.some(s => {
+                        const summary = (s.finalJudgmentSummary || '').toLowerCase()
+                        if (summary.includes('pre-loi') || summary.includes('pass 1')) return true
+                        try {
+                            const parsed = typeof s.finalJudgmentJson === 'string' ? JSON.parse(s.finalJudgmentJson) : s.finalJudgmentJson
+                            if (parsed?.letter_of_intent_present === false) return true
+                        } catch {}
+                        return false
+                    })
+                    const hasPostLoiVersion = visibleSyntheses.some(s => {
+                        try {
+                            const parsed = typeof s.finalJudgmentJson === 'string' ? JSON.parse(s.finalJudgmentJson) : s.finalJudgmentJson
+                            if (parsed?.letter_of_intent_present === true) return true
+                        } catch {}
+                        const hasCit = (s.citations || []).some((c: string) => (c || '').toLowerCase().includes('loi') || (c || '').toLowerCase().includes('letter_of_intent'))
+                        return hasCit
+                    })
+
+                    if (hasLoiInDocs && hasPreLoiVersion && hasPostLoiVersion) {
+                        const isViewingPreLoi = activeSynthesisIndex === visibleSyntheses.length - 1
+                        return (
+                            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-indigo-400/40 bg-indigo-500/10 p-3 text-xs shadow-xs">
+                                <div className="flex items-center gap-2">
+                                    <Scale className="h-4 w-4 text-indigo-600 dark:text-indigo-300 shrink-0" />
+                                    <span className="font-bold text-sm text-foreground">LOI Comparison Mode</span>
+                                    <span className="text-muted-foreground">
+                                        {isViewingPreLoi
+                                            ? 'Viewing Pre-LOI blind discovery (unbiased by deal terms)'
+                                            : 'Viewing Post-LOI analysis (informed by executed LOI terms)'}
+                                    </span>
+                                </div>
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    className="gap-1.5 font-bold text-xs border-indigo-400/60 bg-indigo-500/15 text-indigo-900 dark:text-indigo-200 hover:bg-indigo-500/25"
+                                    onClick={() => {
+                                        if (isViewingPreLoi) {
+                                            setActiveSynthesisIndex(0)
+                                        } else {
+                                            setActiveSynthesisIndex(visibleSyntheses.length - 1)
+                                        }
+                                    }}
+                                >
+                                    <RefreshCw className="h-3.5 w-3.5" />
+                                    <span>{isViewingPreLoi ? 'Switch to Post-LOI Analysis' : 'View Without LOI (Blind Discovery)'}</span>
+                                </Button>
+                            </div>
+                        )
+                    }
+
+                    if (!hasLoiInDocs && projectDocuments.length > 0) {
+                        return (
+                            <div className="flex items-center gap-2.5 rounded-xl border border-amber-400/40 bg-amber-500/10 p-3 text-xs shadow-xs">
+                                <FolderPlus className="h-4 w-4 text-amber-600 dark:text-amber-300 shrink-0" />
+                                <span className="font-semibold text-foreground">No LOI detected.</span>
+                                <span className="text-muted-foreground">Upload an executed Letter of Intent to unlock Post-LOI valuation analysis with deal-term-aware negotiation levers.</span>
+                            </div>
+                        )
+                    }
+
+                    if (hasLoiInDocs && hasPostLoiVersion && !hasPreLoiVersion) {
+                        const docsWithoutLoi = projectDocuments.filter(d => {
+                            const name = (d.fileName || d.dealName || '').toLowerCase()
+                            return !(name.includes('loi') || name.includes('letter_of_intent') || name.includes('letter-of-intent'))
+                        })
+                        const estSynthCost = calculateSynthesisCost(visibleSyntheses[0])
+                        const estTotalCost = estSynthCost > 0 ? estSynthCost : (docsWithoutLoi.length * 0.003 + 0.04)
+                        return (
+                            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-indigo-400/40 bg-indigo-500/10 p-3 text-xs shadow-xs">
+                                <div className="flex items-center gap-2.5">
+                                    <Scale className="h-4 w-4 text-indigo-600 dark:text-indigo-300 shrink-0" />
+                                    <div>
+                                        <span className="font-bold text-foreground">Pre-LOI comparison unavailable.</span>{' '}
+                                        <span className="text-muted-foreground">All documents were submitted with the LOI. Run synthesis without the LOI to see unbiased blind discovery.</span>
+                                    </div>
+                                </div>
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    disabled={runningSynthesisWithoutLoi || runningSynthesis}
+                                    className="gap-1.5 font-bold text-xs border-indigo-400/60 bg-indigo-500/15 text-indigo-900 dark:text-indigo-200 hover:bg-indigo-500/25 shrink-0"
+                                    onClick={onRunSynthesisWithoutLoi}
+                                >
+                                    {runningSynthesisWithoutLoi ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                                    <span>{runningSynthesisWithoutLoi ? 'Running Pre-LOI Synthesis...' : `Run Without LOI (~$${estTotalCost.toFixed(2)})`}</span>
+                                </Button>
+                            </div>
+                        )
+                    }
+
+                    return null
+                })()}
 
                 {visibleSyntheses.length > 1 ? (
                     <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/10 p-3.5 text-xs text-foreground shadow-xs">

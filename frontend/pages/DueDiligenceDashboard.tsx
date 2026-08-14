@@ -1153,6 +1153,65 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         }
     }
 
+    const [runningSynthesisWithoutLoi, setRunningSynthesisWithoutLoi] = useState(false)
+
+    const handleRunSynthesisWithoutLoi = async () => {
+        const projectDocs = submissionHistory.filter((row) => getProjectKey(row) === activeProjectId)
+        const loiDoc = projectDocs.find((d) => {
+            const name = (d.fileName || d.dealName || '').toLowerCase()
+            return (name.includes('loi') || name.includes('letter_of_intent') || name.includes('letter-of-intent'))
+                && d.isConsidered
+        })
+        if (!loiDoc) {
+            setBatchSubmissionMessage('No LOI document found in this project to exclude.')
+            return
+        }
+        const loiRequestId = loiDoc.requestID || String(loiDoc.id || '')
+        if (!loiRequestId) {
+            setBatchSubmissionMessage('LOI document has no request ID — cannot exclude.')
+            return
+        }
+
+        if (!window.confirm(
+            `Run a new Pre-LOI blind discovery synthesis excluding "${loiDoc.fileName || 'LOI'}"?\n\n` +
+            `This temporarily removes the LOI from the synthesis scope, runs the consolidator on the remaining ${projectDocs.length - 1} documents, ` +
+            `then automatically re-includes the LOI. Cost depends on document count and context size.`
+        )) return
+
+        setRunningSynthesisWithoutLoi(true)
+        setBatchSubmissionMessage('Excluding LOI for pre-LOI synthesis run…')
+
+        try {
+            await triggerSubmissionConsideration({ requestID: loiRequestId, action: 'nonconsidered', environment: activeHistoryEnvironment }).result
+
+            await new Promise(r => setTimeout(r, 1000))
+
+            const response = await fetch('https://merge-works.app.n8n.cloud/webhook/e276e917-f61a-46e6-9015-f78e385f42b8', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ projectId: activeProjectId })
+            })
+            if (!response.ok) throw new Error('Failed to trigger synthesis webhook')
+
+            setBatchSubmissionMessage('Pre-LOI synthesis triggered! Re-including LOI in ~5s…')
+
+            setTimeout(async () => {
+                try {
+                    await triggerSubmissionConsideration({ requestID: loiRequestId, action: 'considered', environment: activeHistoryEnvironment }).result
+                    setBatchSubmissionMessage('LOI re-included. Pre-LOI synthesis is running — refresh in ~30s to see results.')
+                } catch {
+                    setBatchSubmissionMessage('Pre-LOI synthesis running. Please manually re-include the LOI document after results appear.')
+                }
+                setRunningSynthesisWithoutLoi(false)
+                await handleRefreshHistory(activeHistoryEnvironment)
+            }, 5000)
+        } catch (err) {
+            await triggerSubmissionConsideration({ requestID: loiRequestId, action: 'considered', environment: activeHistoryEnvironment }).result.catch(() => {})
+            setRunningSynthesisWithoutLoi(false)
+            setBatchSubmissionMessage(err instanceof Error ? err.message : 'Unable to run pre-LOI synthesis')
+        }
+    }
+
     const handleRetryFailedDocument = async (requestID: string) => {
         const targetRow = submissionHistory.find((r) => r.requestID === requestID || String(r.id) === requestID)
         const targetProjectId = targetRow?.projectId || activeProjectId
@@ -1925,6 +1984,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                                 onStopSynthesis={handleStopSynthesis}
                                 stoppingSynthesis={isStoppingSynthesis}
                                 onRunSynthesis={handleRunSynthesis}
+                                onRunSynthesisWithoutLoi={handleRunSynthesisWithoutLoi}
+                                runningSynthesisWithoutLoi={runningSynthesisWithoutLoi}
                                 runningSynthesis={isCurrentProjectAwaitingSynthesis}
                                 onRefresh={() => {
                                     void triggerProjectSynthesis({ environment: activeHistoryEnvironment }, { skipCache: true }).result
