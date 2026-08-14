@@ -109,7 +109,7 @@
 
 - Should we make like tutorials and interactive walkthroughs especially for new users, like how AWS or GCP tutorials work?
 
-- Are we separating error handling well? Like regular "we hit an issue" vs we hit a rate limit
+- [Mostly done] Are we separating error handling well? Like regular "we hit an issue" vs we hit a rate limit
 
 - Find a real domain name on Porkbun and then swap to cloudflare for this
 
@@ -117,7 +117,9 @@
 
 - Understand how the AI Deal Assistant works and if we can make it better?
 
-- What does the cost per run in diligence tab at the bottom mean?
+- Should we consier downgrading our models to reduce cost? To like gemini 3.5 flash or deepseek v4?
+
+- [mostly done] What does the cost per run in diligence tab at the bottom mean?
 
 - Make sure the evals and harness the numbers and cards are right and now buggy and that the varainces show for cross doc conflicts?
 

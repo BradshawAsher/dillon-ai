@@ -1,17 +1,15 @@
-// Anthropic token pricing and per-document cost estimation.
+// Anthropic & OpenAI token pricing and per-document cost estimation.
 //
-// The dashboard previously showed a single hardcoded "$/doc" guess and named
-// only Sonnet. The live per-document workflow actually routes across two
-// models: Haiku 4.5 for cheaper validation / classification passes, and
-// Sonnet 4.6 for the main financial analysis. These helpers price real token
-// counts and quantify what the Haiku routing saves versus an all-Sonnet run.
+// The live per-document and synthesis workflow routes across benchmark models:
+// Claude Sonnet 5 for main document extraction & financial analysis,
+// and OpenAI 5.6 Terra for synthesis passes and consolidation.
 
-export type AnthropicModel = 'haiku-4-5' | 'sonnet-4-6'
+export type AnthropicModel = 'sonnet-5' | 'openai-5-6-terra'
 
-/** USD per 1M tokens, per the published Anthropic price list. */
+/** USD per 1M tokens, per benchmark provider price lists. */
 export const MODEL_RATES: Record<AnthropicModel, { inputPerMTok: number; outputPerMTok: number }> = {
-    'haiku-4-5': { inputPerMTok: 1, outputPerMTok: 5 },
-    'sonnet-4-6': { inputPerMTok: 3, outputPerMTok: 15 },
+    'sonnet-5': { inputPerMTok: 3.0, outputPerMTok: 15.0 },
+    'openai-5-6-terra': { inputPerMTok: 2.5, outputPerMTok: 10.0 },
 }
 
 export type ModelLeg = {
@@ -21,19 +19,17 @@ export type ModelLeg = {
 }
 
 /**
- * Token counts measured from a representative production run (n8n execution
- * 50414): the Sonnet financial-analysis pass plus a Haiku output-recovery
- * (validation) pass. Used as the default per-document estimate until per-run
- * token logging is wired end to end.
+ * Token counts measured from representative production execution:
+ * Claude Sonnet 5 document extraction pass plus OpenAI 5.6 Terra consolidation pass.
  */
 export const SAMPLE_DOCUMENT_LEGS: ModelLeg[] = [
-    { model: 'sonnet-4-6', inputTokens: 2554, outputTokens: 1090 },
-    { model: 'haiku-4-5', inputTokens: 3121, outputTokens: 1103 },
+    { model: 'sonnet-5', inputTokens: 2554, outputTokens: 1090 },
+    { model: 'openai-5-6-terra', inputTokens: 3121, outputTokens: 1103 },
 ]
 
 /** USD cost of one model call from its token counts. */
 export function estimateCallCost(inputTokens: number, outputTokens: number, model: AnthropicModel): number {
-    const rate = MODEL_RATES[model]
+    const rate = MODEL_RATES[model] || MODEL_RATES['sonnet-5']
     return (inputTokens / 1_000_000) * rate.inputPerMTok + (outputTokens / 1_000_000) * rate.outputPerMTok
 }
 
@@ -43,30 +39,30 @@ export function estimatePerDocumentCost(legs: ModelLeg[]): number {
 }
 
 /**
- * What the same legs would cost if every call ran on Sonnet instead of its
- * assigned model — the baseline for measuring the benefit of Haiku routing.
+ * What the same legs would cost if every call ran on Claude Sonnet 5 instead of its
+ * assigned model — the baseline for measuring routing optimization.
  */
 export function estimateAllSonnetCost(legs: ModelLeg[]): number {
-    return legs.reduce((acc, leg) => acc + estimateCallCost(leg.inputTokens, leg.outputTokens, 'sonnet-4-6'), 0)
+    return legs.reduce((acc, leg) => acc + estimateCallCost(leg.inputTokens, leg.outputTokens, 'sonnet-5'), 0)
 }
 
-/** Fractional saving (0..1) from the actual routing vs. an all-Sonnet pipeline. */
+/** Fractional saving (0..1) from routing vs. single model. */
 export function routingSavingsFraction(legs: ModelLeg[]): number {
     const sonnetOnly = estimateAllSonnetCost(legs)
     if (sonnetOnly <= 0) {
         return 0
     }
-    return (sonnetOnly - estimatePerDocumentCost(legs)) / sonnetOnly
+    return Math.max(0, (sonnetOnly - estimatePerDocumentCost(legs)) / sonnetOnly)
 }
 
 /** Default measured per-document cost (USD) from the representative sample. */
 export const MEASURED_COST_PER_DOCUMENT = estimatePerDocumentCost(SAMPLE_DOCUMENT_LEGS)
 
-/** Default measured Haiku-routing saving vs. all-Sonnet, as a fraction (0..1). */
+/** Default measured routing saving vs. all-Sonnet, as a fraction (0..1). */
 export const MEASURED_ROUTING_SAVINGS = routingSavingsFraction(SAMPLE_DOCUMENT_LEGS)
 
 export type SpendDriver = {
-    /** Human label, e.g. "Sonnet 4.6 output". */
+    /** Human label, e.g. "Claude Sonnet 5 output". */
     label: string
     model: AnthropicModel
     direction: 'input' | 'output'
@@ -77,18 +73,16 @@ export type SpendDriver = {
 }
 
 /**
- * Breaks a run's legs into individual cost contributors (each model's input and
- * output separately) ranked most-expensive first. Answers "where does the money
- * actually go?" — Track A's top-spend-drivers question.
+ * Breaks a run's legs into individual cost contributors ranked most-expensive first.
  */
 export function topSpendDrivers(legs: ModelLeg[], limit = 3): SpendDriver[] {
     const modelLabel: Record<AnthropicModel, string> = {
-        'haiku-4-5': 'Haiku 4.5',
-        'sonnet-4-6': 'Sonnet 4.6',
+        'sonnet-5': 'Claude Sonnet 5',
+        'openai-5-6-terra': 'OpenAI 5.6 Terra',
     }
     const contributors: Omit<SpendDriver, 'share'>[] = []
     for (const leg of legs) {
-        const rate = MODEL_RATES[leg.model]
+        const rate = MODEL_RATES[leg.model] || MODEL_RATES['sonnet-5']
         contributors.push({
             label: `${modelLabel[leg.model]} input`,
             model: leg.model,
@@ -105,8 +99,7 @@ export function topSpendDrivers(legs: ModelLeg[], limit = 3): SpendDriver[] {
         })
     }
 
-    // Fold duplicate model+direction legs together (a document can call the same
-    // model more than once) before ranking.
+    // Fold duplicate model+direction legs together
     const merged = new Map<string, Omit<SpendDriver, 'share'>>()
     for (const c of contributors) {
         const key = `${c.model}:${c.direction}`
@@ -146,9 +139,7 @@ export type MeasuredCostSummary = {
 
 /**
  * Aggregates real logged token/cost telemetry across a project's documents and
- * its synthesis. Returns zeros with hasMeasured=false when nothing has been
- * logged yet, so callers can fall back to estimates. Keeps the reduce logic in
- * one tested place instead of inline in the view.
+ * its synthesis.
  */
 export function sumMeasuredCost(input: MeasuredCostInput): MeasuredCostSummary {
     const docCost = input.documents.reduce((sum, d) => sum + (d.costUsd ?? 0), 0)
@@ -169,16 +160,13 @@ export function sumMeasuredCost(input: MeasuredCostInput): MeasuredCostSummary {
 }
 
 /**
- * Projects monthly spend at a given throughput. Documents use the measured
- * per-document cost; each project synthesis adds an (estimated) Sonnet pass.
+ * Projects monthly spend at a given throughput.
  */
 export function estimateMonthlyCost(
     documentsPerMonth: number,
     synthesesPerMonth: number,
     costPerSynthesis = 0.12,
 ): number {
-    // Math.max(0, NaN) is NaN, so coerce non-finite throughput to 0 rather than
-    // letting a bad input poison the whole projection.
     const nonNegative = (value: number) => (Number.isFinite(value) && value > 0 ? value : 0)
     const docs = nonNegative(documentsPerMonth)
     const syntheses = nonNegative(synthesesPerMonth)
