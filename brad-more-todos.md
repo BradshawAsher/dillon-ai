@@ -138,11 +138,7 @@ The Right Way to Fallback: Instead of stacking parsers serially, use an If/Else 
 
 - Do we have top 5 customer concentration in the deal packets as well as the LOI clauses? Does LOI clauses mean we are expected to have the old LOI as part of the packet so the synthesizer can judge whether to renegotiate or something like that?
 
-so if we're making a financial due diligent agent and a big task of it is to help with post-LOI negotiations and like cross-document reconciliation, should we edit our eval sets to have an LOI for each packet or no?
-
-- Can include the LOI to assess post-LOI deal negotiation and exclude to test pre-LOI valuation/discovery
-
-- [For brad] - check if the newest version of the test sets can be merged easily or not, since those have LOIs in them as well, but the original packets may have been slightly updated too so idk what to do
+- What does the cost per run in diligence tab at the bottom mean?
 
 - Make sure the evals and harness the numbers and cards are right and now buggy and that the varainces show for cross doc conflicts?
 
