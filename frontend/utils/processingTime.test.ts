@@ -30,6 +30,13 @@ describe('estimateProcessingSeconds', () => {
         const estimate = estimateProcessingSeconds({ documentCount: -5 })
         expect(estimate.totalSeconds).toBe(0)
     })
+
+    it('coerces non-finite inputs to a finite estimate', () => {
+        expect(estimateProcessingSeconds({ documentCount: Number.NaN }).totalSeconds).toBe(0)
+        const infChars = estimateProcessingSeconds({ documentCount: 2, totalCharacters: Number.POSITIVE_INFINITY })
+        expect(infChars.totalSeconds).toBe(2 * SECONDS_PER_DOCUMENT_BASE)
+        expect(Number.isFinite(infChars.totalSeconds)).toBe(true)
+    })
 })
 
 describe('formatDuration', () => {
