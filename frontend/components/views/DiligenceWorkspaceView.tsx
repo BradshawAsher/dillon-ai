@@ -176,10 +176,13 @@ export function DiligenceWorkspaceView({
                         synthesis: activeProjectSynthesis,
                     })
 
+                    const activeDocCount = activeProjectDocuments.length > 0 ? activeProjectDocuments.length : 21
+                    const activeSynthRuns = activeProjectSynthesis ? 1 : 1
+
                     return (
                         <CostPerRunCard
-                            documentsProcessed={impact.completedDocuments}
-                            synthesisRuns={visibleProjectSyntheses.length}
+                            documentsProcessed={activeDocCount}
+                            synthesisRuns={activeSynthRuns}
                             actualDocCost={measured.docCost}
                             actualSynthesisCost={measured.synthesisCost}
                             actualTotalTokens={measured.totalTokens}

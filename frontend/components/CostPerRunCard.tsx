@@ -43,6 +43,10 @@ export default function CostPerRunCard({
     const spendDrivers = topSpendDrivers(SAMPLE_DOCUMENT_LEGS, 3)
     const monthlyAtCurrentPace = estimateMonthlyCost(documentsProcessed, synthesisRuns, ESTIMATED_COST_PER_SYNTHESIS)
 
+    const handleOpenSpendingTab = () => {
+        window.location.hash = 'spending'
+    }
+
     return (
         <Card className="overflow-hidden">
             <CardHeader className="border-b border-border bg-card/80">
@@ -51,24 +55,32 @@ export default function CostPerRunCard({
                         <div className="flex items-center gap-2">
                             <DollarSign className="h-5 w-5 text-primary" />
                             <CardTitle className="text-lg">
-                                {hasLiveDocCost || hasLiveSynthCost ? 'Cost per run (live token usage)' : 'Estimated cost per run'}
+                                {hasLiveDocCost || hasLiveSynthCost ? 'Cost per run (active project live tokens)' : 'Estimated cost per run (active project)'}
                             </CardTitle>
                         </div>
                         <CardDescription>
                             {hasLiveDocCost || hasLiveSynthCost
-                                ? `Calculated directly from live token telemetry (${actualTotalTokens ? `${actualTotalTokens.toLocaleString()} total tokens logged` : 'from n8n executions'}).`
-                                : 'Anthropic Claude API costs: per-document cost measured from token telemetry, synthesis runs estimated. Pod 1 credential is active.'}
+                                ? `Calculated directly from live token telemetry for this active project (${actualTotalTokens ? `${actualTotalTokens.toLocaleString()} total tokens logged` : 'from n8n executions'}).`
+                                : 'Active deal execution cost: per-document extraction measured from token telemetry, synthesis pass estimated. Pod 1 credential active.'}
                         </CardDescription>
                     </div>
-                    <Badge variant={hasLiveDocCost || hasLiveSynthCost ? 'success' : 'secondary'}>
-                        {hasLiveDocCost || hasLiveSynthCost ? 'Live Token Telemetry' : 'Pod 1 Active'}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                        <Badge variant={hasLiveDocCost || hasLiveSynthCost ? 'success' : 'secondary'}>
+                            {hasLiveDocCost || hasLiveSynthCost ? 'Live Token Telemetry' : 'Pod 1 Active'}
+                        </Badge>
+                        <button
+                            onClick={handleOpenSpendingTab}
+                            className="text-xs font-semibold text-primary hover:underline bg-primary/10 px-2.5 py-1 rounded-md transition-colors"
+                        >
+                            View Spending &amp; Billing Report →
+                        </button>
+                    </div>
                 </div>
             </CardHeader>
             <CardContent className="p-4">
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                     <div className="rounded-lg border border-border bg-background p-3">
-                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Documents processed</p>
+                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Active deal documents</p>
                         <p className="mt-1 text-lg font-semibold text-foreground">{documentsProcessed}</p>
                         <p className="mt-1 text-xs text-muted-foreground">
                             {hasLiveDocCost ? `$${(actualDocCost / (documentsProcessed || 1)).toFixed(3)}/doc (live)` : `~${ESTIMATED_COST_PER_DOC.toFixed(2)}/doc`}
@@ -76,8 +88,8 @@ export default function CostPerRunCard({
                     </div>
                     <div className="rounded-lg border border-border bg-background p-3">
                         <div className="flex items-center gap-1">
-                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Synthesis runs</p>
-                            <InfoTip term="Synthesis run" definition="One Sonnet pass that consolidates all of a project's documents into a single judgment." />
+                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Synthesis passes</p>
+                            <InfoTip term="Synthesis run" definition="One OpenAI 5.6 Terra pass that consolidates all of a project's documents into a single judgment." />
                         </div>
                         <p className="mt-1 text-lg font-semibold text-foreground">{synthesisRuns}</p>
                         <p className="mt-1 text-xs text-muted-foreground">
@@ -91,10 +103,10 @@ export default function CostPerRunCard({
                     </div>
                     <div className="rounded-lg border border-border bg-background p-3">
                         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                            {hasLiveDocCost || hasLiveSynthCost ? 'Total live cost' : 'Total estimated'}
+                            {hasLiveDocCost || hasLiveSynthCost ? 'Total deal cost' : 'Total estimated'}
                         </p>
                         <p className="mt-1 text-lg font-semibold text-success">${totalEstimated.toFixed(3)}</p>
-                        <p className="mt-1 text-xs text-muted-foreground">All runs this project</p>
+                        <p className="mt-1 text-xs text-muted-foreground">Active project total</p>
                     </div>
                 </div>
                 {documentsProcessed > 0 && (
@@ -125,7 +137,7 @@ export default function CostPerRunCard({
                         </ol>
                     </div>
                     <div className="rounded-lg border border-border bg-background p-3">
-                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Projected monthly spend</p>
+                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Projected monthly deal spend</p>
                         <p className="mt-1 text-lg font-semibold text-foreground">${monthlyAtCurrentPace.toFixed(2)}<span className="text-xs font-normal text-muted-foreground">/mo</span></p>
                         <p className="mt-1 text-xs text-muted-foreground">
                             At scale: 1,000 docs/mo ≈ <span className="font-medium text-foreground">${estimateMonthlyCost(1000, 200, ESTIMATED_COST_PER_SYNTHESIS).toFixed(0)}</span> (with ~200 syntheses)
@@ -134,7 +146,7 @@ export default function CostPerRunCard({
                 </div>
                 <div className="mt-4 rounded-md border border-dashed border-border bg-muted/20 p-3">
                     <p className="text-xs text-muted-foreground">
-                        <strong>Provider:</strong> Anthropic Claude — Haiku 4.5 for validation/classification passes and Sonnet 4.6 for financial analysis and synthesis. Per-document cost is measured from token telemetry (Haiku 4.5 $1/$5, Sonnet 4.6 $3/$15 per 1M tokens); two-model routing saves ~{ROUTING_SAVINGS_PCT}% versus an all-Sonnet pipeline.
+                        <strong>Models &amp; Provider Architecture:</strong> Document analysis uses <strong>Claude Sonnet 5</strong> (Primary) with <strong>Claude Opus 5</strong> (Backup). Project synthesis uses <strong>OpenAI 5.6 Terra</strong> (Primary) with <strong>OpenAI 5.6 Sol</strong> (Backup). Multi-model routing saves ~{ROUTING_SAVINGS_PCT}% versus an all-Sonnet/Opus pipeline.
                         Actual costs vary with document length, retry count, and context size.
                     </p>
                 </div>
