@@ -30,15 +30,22 @@ const hits = new Map<string, number[]>()
 
 /** Best-effort client IP from proxy headers, falling back to a shared bucket. */
 export function getClientIp(headers: IncomingHttpHeaders): string {
+    // x-forwarded-for may arrive as a comma-joined string or a header array; in
+    // both cases the client is the first entry. Skip blank segments — a leading
+    // empty value (", 5.6.7.8") must not resolve to an empty-string IP, which
+    // would collapse every such caller into one shared rate-limit bucket.
     const forwarded = headers['x-forwarded-for']
-    if (typeof forwarded === 'string' && forwarded.length > 0) {
-        return forwarded.split(',')[0].trim()
-    }
-    if (Array.isArray(forwarded) && forwarded.length > 0) {
-        return forwarded[0].trim()
+    const forwardedParts = Array.isArray(forwarded)
+        ? forwarded.flatMap((part) => part.split(','))
+        : typeof forwarded === 'string'
+            ? forwarded.split(',')
+            : []
+    for (const part of forwardedParts) {
+        const trimmed = part.trim()
+        if (trimmed.length > 0) return trimmed
     }
     const realIp = headers['x-real-ip']
-    if (typeof realIp === 'string' && realIp.length > 0) return realIp.trim()
+    if (typeof realIp === 'string' && realIp.trim().length > 0) return realIp.trim()
     return 'unknown'
 }
 

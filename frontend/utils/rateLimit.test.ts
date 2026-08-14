@@ -23,6 +23,15 @@ describe('getClientIp', () => {
         expect(getClientIp({ 'x-real-ip': '9.9.9.9' })).toBe('9.9.9.9')
         expect(getClientIp({})).toBe('unknown')
     })
+    it('skips a leading empty x-forwarded-for segment', () => {
+        expect(getClientIp({ 'x-forwarded-for': ', 5.6.7.8' })).toBe('5.6.7.8')
+    })
+    it('falls through to x-real-ip when x-forwarded-for is all blanks', () => {
+        expect(getClientIp({ 'x-forwarded-for': ' , ', 'x-real-ip': '9.9.9.9' })).toBe('9.9.9.9')
+    })
+    it('handles an array-valued x-forwarded-for, skipping blanks', () => {
+        expect(getClientIp({ 'x-forwarded-for': ['', '7.7.7.7'] })).toBe('7.7.7.7')
+    })
 })
 
 describe('rateLimit', () => {
