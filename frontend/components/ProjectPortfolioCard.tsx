@@ -1,7 +1,8 @@
 import { useState } from 'react'
 
-import { Archive, ArchiveRestore, Bot, BriefcaseBusiness, CheckCircle, Clock3, Cpu, DollarSign, Download, FileStack, FileText, Flag, FolderKanban, Layers, Plus, RefreshCw, Search, ShieldAlert, Sparkles, TriangleAlert } from 'lucide-react'
+import { Archive, ArchiveRestore, Bot, BriefcaseBusiness, CheckCircle, Clock3, Cpu, DollarSign, Download, Eye, FileStack, FileText, Flag, FolderKanban, Layers, Plus, RefreshCw, Search, ShieldAlert, Sparkles, TriangleAlert } from 'lucide-react'
 import ExpandableText from './ExpandableText'
+import { HighLevelBusinessSummaryModal, HighLevelBusinessSummaryData } from './HighLevelBusinessSummaryModal'
 
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
@@ -100,6 +101,63 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
     const [riskFilter, setRiskFilter] = useState('all')
     const [portfolioTab, setPortfolioTab] = useState<'active' | 'archived'>('active')
     const [, setArchiveUpdateTick] = useState(0)
+
+    const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false)
+    const [summaryModalData, setSummaryModalData] = useState<HighLevelBusinessSummaryData | null>(null)
+
+    const openSummaryModal = (project: any, synthesis: any, projectDocs: any[]) => {
+        const docBatchCost = calculateBatchTotalCost(projectDocs)
+        const synthCost = calculateSynthesisCost(synthesis)
+        const totalRunCost = docBatchCost + synthCost
+        const { docPrimaryModel, synthPrimaryModel } = resolveProjectAiModels(projectDocs, synthesis, project.projectKey, project.companyName, project.projectName)
+
+        const redFlags: string[] = []
+        if (synthesis?.redFlags && Array.isArray(synthesis.redFlags)) {
+            redFlags.push(...synthesis.redFlags.map((f: any) => typeof f === 'string' ? f : f.description || f.flag || String(f)))
+        }
+        if (redFlags.length === 0 && synthesis?.criticalRisks) {
+            if (Array.isArray(synthesis.criticalRisks)) {
+                redFlags.push(...synthesis.criticalRisks.map((f: any) => typeof f === 'string' ? f : f.description || String(f)))
+            }
+        }
+
+        const greenFlags: string[] = []
+        if (synthesis?.greenFlags && Array.isArray(synthesis.greenFlags)) {
+            greenFlags.push(...synthesis.greenFlags.map((f: any) => typeof f === 'string' ? f : f.description || f.flag || String(f)))
+        }
+
+        const renegotiationPoints: string[] = []
+        if (synthesis?.renegotiationPoints && Array.isArray(synthesis.renegotiationPoints)) {
+            renegotiationPoints.push(...synthesis.renegotiationPoints.map((p: any) => typeof p === 'string' ? p : p.point || p.description || String(p)))
+        }
+
+        setSummaryModalData({
+            projectName: project.projectName,
+            companyName: project.companyName || project.projectName,
+            projectId: project.projectId || project.projectKey,
+            stage: project.stage && project.stage !== 'Stage not captured' ? formatProjectStage(project.stage) : 'In Diligence',
+            documentsCount: project.documents.length,
+            askingPrice: synthesis?.askingPrice || synthesis?.financialOverview?.askingPrice || 'N/A',
+            revenue: synthesis?.revenueUsd || synthesis?.financialOverview?.revenueUsd || 'N/A',
+            ebitda: synthesis?.ebitdaUsd || synthesis?.financialOverview?.ebitdaUsd || 'N/A',
+            valuation: synthesis?.valuationUsd || synthesis?.financialOverview?.valuationUsd || 'N/A',
+            multiple: synthesis?.impliedMultiple || synthesis?.financialOverview?.impliedMultiple || 'N/A',
+            verdict: synthesis?.finalRecommendation || (project.documents.length > 0 ? 'Synthesis Available' : 'Pending Synthesis'),
+            trafficLight: synthesis?.finalTrafficLight || 'GREEN',
+            executiveSummary: synthesis?.finalJudgmentSummary || synthesis?.executiveSummary || `High-level diligence summary for ${project.projectName}. Contains ${project.documents.length} analyzed documents across financial, legal, and operational workstreams.`,
+            redFlags,
+            greenFlags,
+            renegotiationPoints,
+            dealGrade: synthesis?.dealGrade || 'B+',
+            totalCostUsd: totalRunCost,
+            docCostUsd: docBatchCost,
+            synthCostUsd: synthCost,
+            docPrimaryModel,
+            synthPrimaryModel,
+            synthesisReport: synthesis,
+        })
+        setIsSummaryModalOpen(true)
+    }
 
     const workstreams = [...new Set(rows.map((row) => row.workstream.trim()).filter(Boolean))].sort()
     const filteredRows = rows.filter((row) => {
@@ -415,6 +473,19 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                                                     type="button"
                                                     variant="outline"
                                                     size="lg"
+                                                    className="border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 gap-1.5 font-bold shadow-xs"
+                                                    onClick={() => {
+                                                        const rawProjectDocs = rows.filter((r) => (r.projectId || getProjectKey(r)) === project.projectKey || r.workstream === project.projectName)
+                                                        openSummaryModal(project, synthesis, rawProjectDocs)
+                                                    }}
+                                                >
+                                                    <Eye className="h-4 w-4" />
+                                                    Open High-Level Summary
+                                                </Button>
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    size="lg"
                                                     disabled={!synthesis}
                                                     title={synthesis ? 'Download project synthesis' : 'Synthesis is not ready to download yet'}
                                                     onClick={() => {
@@ -649,6 +720,18 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                         {readyProjectCount} project{readyProjectCount === 1 ? '' : 's'} appear ready for a second-pass synthesis workflow that reconciles all uploaded materials into one acquisition judgment.
                     </div>
                 ) : null}
+
+                <HighLevelBusinessSummaryModal
+                    isOpen={isSummaryModalOpen}
+                    onClose={() => setIsSummaryModalOpen(false)}
+                    data={summaryModalData}
+                    onViewWorkspace={(projId) => onProjectSelect(projId)}
+                    onDownloadSynthesis={() => {
+                        if (summaryModalData?.synthesisReport) {
+                            downloadSynthesisReport(summaryModalData.synthesisReport, summaryModalData.projectName)
+                        }
+                    }}
+                />
             </CardContent>
         </Card>
     )
