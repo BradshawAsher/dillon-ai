@@ -136,7 +136,6 @@
 
 - is there anywhere else in our website like FAQs or something or just how our agent currently operates that needs to be updated in order to really like distinctly highlight and support functionality for both modes or no?
 
-
 - In projects tab and evals tab maybe should we have an option to "open high level summary" so the user can see like a high level summary without having to click view synthesis and stuff like that
 
 - [For brad] Resync mcp servers for new AIs you use to have same setup that gemini uses
