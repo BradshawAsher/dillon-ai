@@ -13,6 +13,11 @@ describe('bucketFor', () => {
     it('classifies other POSTs as writes', () => {
         expect(bucketFor('deal-models', 'POST')).toBe('write')
     })
+    it('classifies safe methods (HEAD, OPTIONS) as reads regardless of case', () => {
+        expect(bucketFor('submit', 'HEAD')).toBe('read')
+        expect(bucketFor('submit', 'options')).toBe('read')
+        expect(bucketFor('history', 'get')).toBe('read')
+    })
 })
 
 describe('getClientIp', () => {
