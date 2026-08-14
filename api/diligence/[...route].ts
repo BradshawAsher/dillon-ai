@@ -17,6 +17,7 @@ import submitDealPacket from '../../backend/diligence/submitDealPacket'
 import updateSubmissionRow from '../../backend/diligence/updateSubmissionRow'
 import { installRetoolGlobals, readJsonBody, userFromHeaders } from '../_lib/retoolRuntime'
 import { getClientIp, rateLimit } from '../_lib/rateLimit'
+import { messageFromError, statusFromError } from '../_lib/httpError'
 
 type ApiRequest = IncomingMessage
 
@@ -112,6 +113,8 @@ export default async function handler(req: ApiRequest, res: ServerResponse) {
 
         sendJson(res, 404, { error: 'Unknown API route: ' + (req.method ?? 'GET') + ' /api/diligence/' + route })
     } catch (error) {
-        sendJson(res, 500, { error: error instanceof Error ? error.message : String(error) })
+        // HttpError carries an intended 4xx status (bad input); everything else
+        // is an unexpected failure and stays a 500.
+        sendJson(res, statusFromError(error), { error: messageFromError(error) })
     }
 }
