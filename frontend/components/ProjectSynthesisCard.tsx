@@ -737,23 +737,23 @@ export default function ProjectSynthesisCard({
                         const avgCostPerDoc = totalCost / Math.max(1, docCount)
 
                         return (
-                            <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-card px-3.5 py-2 text-xs text-foreground shadow-2xs">
-                                <div className="flex items-center gap-1.5 font-semibold text-muted-foreground">
-                                    <Landmark className="h-3.5 w-3.5 text-primary shrink-0" />
-                                    <span>Execution Cost:</span>
+                            <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-border bg-card/90 px-4 py-2.5 text-xs text-foreground shadow-xs">
+                                <div className="flex items-center gap-2 font-bold text-foreground">
+                                    <Landmark className="h-4 w-4 text-primary shrink-0" />
+                                    <span>Execution Cost breakdown:</span>
                                 </div>
-                                <div className="flex flex-wrap items-center gap-1.5">
-                                    <Badge variant="outline" className="text-[10px] font-mono px-1.5 py-0.5">
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <Badge variant="outline" className="text-[11px] font-mono px-2 py-0.5 font-medium">
                                         Extraction ({docCount} docs): ${batchExtractionCost.toFixed(4)}
                                     </Badge>
-                                    <Badge variant="outline" className="text-[10px] font-mono px-1.5 py-0.5">
+                                    <Badge variant="outline" className="text-[11px] font-mono px-2 py-0.5 font-medium">
                                         Synth: ${synthesisCost.toFixed(4)}
                                     </Badge>
-                                    <Badge variant="outline" className="text-[10px] font-mono px-1.5 py-0.5">
+                                    <Badge variant="outline" className="text-[11px] font-mono px-2 py-0.5 font-medium">
                                         Per Doc: ${avgCostPerDoc.toFixed(4)}
                                     </Badge>
-                                    <Badge variant="success" className="text-[10px] font-mono font-bold px-2 py-0.5 bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border-emerald-400/80">
-                                        Total: ${totalCost.toFixed(4)}
+                                    <Badge variant="success" className="text-xs sm:text-sm font-mono font-black px-3 py-1 bg-emerald-500/20 text-emerald-900 dark:text-emerald-100 border-emerald-500/70 shadow-2xs tracking-tight">
+                                        TOTAL COST: ${totalCost.toFixed(4)}
                                     </Badge>
                                 </div>
                             </div>

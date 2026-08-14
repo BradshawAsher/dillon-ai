@@ -48,9 +48,43 @@ type EvalDashboardTabProps = {
         report_json: any
     }>
     syntheses?: any[]
+    documents?: any[]
+    currentProjectId?: string
+    onViewWorkspace?: (projectId: string) => void
     onTriggerEvalRuns?: () => void
     onSelectProject?: (projectKey: string, targetTab?: string) => void
     onSelectDoc?: (docFileName: string, projectKey?: string) => void
+}
+
+function formatValuationCurrency(rawVal: string | number | null | undefined, fallback: string): string {
+    if (rawVal === null || rawVal === undefined || rawVal === '') return fallback
+    if (typeof rawVal === 'number') {
+        if (Number.isNaN(rawVal) || !Number.isFinite(rawVal) || rawVal <= 0) return fallback
+        return `$${rawVal.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+    }
+
+    const str = String(rawVal).trim()
+    if (!str || str.toLowerCase() === 'nan' || str.toLowerCase() === 'pending' || str === '0') return fallback
+
+    const cleanedNumeric = Number(str.replace(/[$,\s]/g, ''))
+    if (!Number.isNaN(cleanedNumeric) && Number.isFinite(cleanedNumeric) && cleanedNumeric > 0) {
+        return `$${cleanedNumeric.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+    }
+
+    const abbrevMatch = str.match(/^(-?\$?\s*([0-9.]+))\s*(M|K|B|m|k|b)$/i)
+    if (abbrevMatch) {
+        const base = parseFloat(abbrevMatch[2])
+        const suffix = abbrevMatch[3].toUpperCase()
+        const mult = suffix === 'B' ? 1_000_000_000 : suffix === 'M' ? 1_000_000 : 1_000
+        const num = base * mult
+        if (!Number.isNaN(num) && num > 0) {
+            return `$${num.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+        }
+    }
+
+    if (str.startsWith('$')) return str
+
+    return fallback
 }
 
 const mapBusinessToProjectKey = (businessName: string, docItem?: any): string => {
@@ -1718,9 +1752,9 @@ export default function EvalDashboardTab({
                                     if (synthVal.lower_bound || synthVal.base_estimate || synthVal.upper_bound) {
                                         val = {
                                             ...val,
-                                            bear: synthVal.lower_bound ? `$${Number(synthVal.lower_bound).toLocaleString(undefined, { maximumFractionDigits: 0 })}` : val.bear,
-                                            base: synthVal.base_estimate ? `$${Number(synthVal.base_estimate).toLocaleString(undefined, { maximumFractionDigits: 0 })}` : val.base,
-                                            bull: synthVal.upper_bound ? `$${Number(synthVal.upper_bound).toLocaleString(undefined, { maximumFractionDigits: 0 })}` : val.bull,
+                                            bear: formatValuationCurrency(synthVal.lower_bound, val.bear),
+                                            base: formatValuationCurrency(synthVal.base_estimate, val.base),
+                                            bull: formatValuationCurrency(synthVal.upper_bound, val.bull),
                                         }
                                     }
                                 } catch (e) { }
@@ -1778,9 +1812,9 @@ export default function EvalDashboardTab({
                                         const upper = phaseSynth.valuationUpperBound || synthVal.upper_bound
 
                                         if (lower || base || upper) {
-                                            phaseVal.bear = lower ? `$${Number(lower).toLocaleString(undefined, { maximumFractionDigits: 0 })}` : phaseVal.bear
-                                            phaseVal.base = base ? `$${Number(base).toLocaleString(undefined, { maximumFractionDigits: 0 })}` : phaseVal.base
-                                            phaseVal.bull = upper ? `$${Number(upper).toLocaleString(undefined, { maximumFractionDigits: 0 })}` : phaseVal.bull
+                                            phaseVal.bear = formatValuationCurrency(lower, phaseVal.bear)
+                                            phaseVal.base = formatValuationCurrency(base, phaseVal.base)
+                                            phaseVal.bull = formatValuationCurrency(upper, phaseVal.bull)
                                         }
                                     } catch (e) { }
                                 } else if (isDDLive || isDD001 || isDD002 || isDD003 || isDD004 || isDD005 || isDD006 || isDD007 || isDD008 || isDD009 || isDD010 || isDD011 || isDD012 || isDD013 || isDD014 || isDD015) {

@@ -79,52 +79,35 @@
 
 - [ ] **Understand Graph Interpretation**: Review the explanatory tooltips (`i`) on Returns, Growth, Valuation, and Deal Structure charts.
 - [ ] **Review Deterministic Math Checks**: Review [`DETERMINISTIC_MATH_CHECKS.md`](file:///c:/Users/s-bas/MERGEWORKS%20REAL%20WEBSITE/Due-Diligence-Dashboard/DETERMINISTIC_MATH_CHECKS.md) for how Revenue - COGS = GP and Assets - Liab = Equity formulas work.
-- [ ] **Execute Sample Deals Post-Credit Refill**: Once Anthropic API credits are refilled by the admin, queue Business 4 (ConversionXL), Business 1 (Roofing Co), Business 3 (TurnKey), and Business 2 (Iron Tree), then run `npm run eval` to view the evaluation scorecard.
-
-
-- Should we make the ground truth less strict?
-
-- Need to work on the video assignment for this week?
 
 - For brad, going through all the tabs, went through diligence, synthesis, valuation, working on returns tab (on levered cash flow timeline)
 
-- For brad - need to rerun all the evals docs again through the n8n pipeline using the anthropic api keys instead of your gemini api keys
-
 - For Brad - need to keep testing the website and trying different documents, can always expand the eval suite and trying to break the system, and also i think a lot of financial facts like ebitda and sde are not filled even though we put 4 long docs through? Why?
-
 
 - Try seeing why Sonnet, Opus, and Fable are failing for the synthesizer workflow? Try seeing if they can work somehow for the fun of it by changing params?
 
 - Why is anthropic nodes for per doc the only one that will generate an investment thesis?
 
 - Have more robust fallbacks for per doc workflows? 
-How to Properly Do Fallbacks in n8n (Based on Your Canvas)
-Looking at your canvas layout, you have already built a robust error-handling architecture using n8n’s error branching:
+    How to Properly Do Fallbacks in n8n (Based on Your Canvas)
+    Looking at your canvas layout, you have already built a robust error-handling architecture using n8n’s error branching:
 
-The Error Flow Loop: Notice the top routing wires on your canvas (labeled "Classify LLM/Provider Error" looping into wait and retry nodes). This is the correct way to handle failures.
+    The Error Flow Loop: Notice the top routing wires on your canvas (labeled "Classify LLM/Provider Error" looping into wait and retry nodes). This is the correct way to handle failures.
 
-The Right Way to Fallback: Instead of stacking parsers serially, use an If/Else node or n8n’s built-in Error Trigger / On Error routing. If Anthropic throws a provider error, catch that specific error branch, route it to a secondary LLM node (like a Google Gemini or OpenAI model) with its own parser, and let it re-run the extraction cleanly.
-- If both anthropic fail, then fallback to openai or gemini?
+    The Right Way to Fallback: Instead of stacking parsers serially, use an If/Else node or n8n’s built-in Error Trigger / On Error routing. If Anthropic throws a provider error, catch that specific error branch, route it to a secondary LLM node (like a Google Gemini or OpenAI model) with its own parser, and let it re-run the extraction cleanly.
+    - If both anthropic fail, then fallback to openai or gemini?
 
 - Try using deepseek models since they are even cheaper than gemini?
 
-
-- Need to grow your eval and harness set, 20 distinct projects, we currently have like 7. Trisha said she will add some, but we will need to collect our own or make gemini make it for you
-
 - Environment separation for prod API keys separate from testing API keys? Have we done this?
 
-
-- Still need to finish video project by the end of the week?
-
 - Prep for business meeting 3 and a website and walkthrough ready for them to try as well as prepare to be more professional with what to show when and example questions to ask and example questions to be ready to address
-
 
 - Have to make a landing page and walkthrough page like the example walkthrough for our project USE supademo
 
 - Get github mcp?
 
 - Should we make like tutorials and interactive walkthroughs especially for new users, like how AWS or GCP tutorials work?
-
 
 - Are we separating error handling well? Like regular "we hit an issue" vs we hit a rate limit
 
@@ -133,10 +116,6 @@ The Right Way to Fallback: Instead of stacking parsers serially, use an If/Else 
 - Make successful deployment ready for businesses meeting for them to try it
 
 - Understand how the AI Deal Assistant works and if we can make it better?
-
-- Are we updating the extraction cost in diligence latest batch submission results or in synthesis tab after we finish finding the cost? Since right now in diligence it just relies on the placeholder $0.0495 per doc? Also can we add a synthesis cost and total cost to synthesis tab similarly to how we did in the evals and harness tab to be more transparent about the cost?
-
-- Do we have top 5 customer concentration in the deal packets as well as the LOI clauses? Does LOI clauses mean we are expected to have the old LOI as part of the packet so the synthesizer can judge whether to renegotiate or something like that?
 
 - What does the cost per run in diligence tab at the bottom mean?
 
@@ -147,10 +126,6 @@ The Right Way to Fallback: Instead of stacking parsers serially, use an If/Else 
 - If LOI is detected, in projects, evals, and synthesis tab for that project, have an option to "run without LOI for unbiased deal discovery/analysis" to see results without the LOI? Would this require us to first label which doc is the LOI?
 
 - Need to run business 1-5 without LOI for those that had an LOI, also add the pre-LOI or post-LOI for mergeworks suite 2-4
-
-
-- # May have to rerun all the DD-001 through DD-015 by adding the new letter of intent and then rerunning the synthesis for all of them? And then we can compare the 2 versions, the 1st version acts as pre-loi and the 2nd version acts as the post-loi? Is this a good idea and does our app support functionality for this yet?
-  - Also some of the dd files themselves may have been changed, can we see what was changed and if it's important or not? Do we have to rerun the whole packets through the pipeline again or no?
 
 
 MORE
@@ -176,16 +151,7 @@ MORE
 
 - [For brad] Resync mcp servers for new AIs you use to have same setup that gemini uses
 
-- Will have to change the cost optimization stat in evals and harness later
-
 - Is there a way I can automate the pushing of docs under different projects to save time? Or can I upload multiple projects at a time? Like this might require a side panel of like docs in progress or something? Or multiple batches at a time?
-
-- Maybe have a button for the user to click that they are comfortable with making an acquisition judgement with only these docs, and will that change the results of our synthesizer since I think our synthesizer is a little conservative, maybe because it wants to get all the docs in the checklist before making a decision
-
-
-- For all the 5 businesses that trisha gave us that were acquired eventually, why does our model say renegotiate or don't proceed?
-
-- Need to rerun all your test docs with the anthropic for per doc and openai for synthesizer
 
 - Right now the bullet points for acquisition judgement are parsed in the frontend, it may be good to do it on the backend so things are not cut off?
 
@@ -197,25 +163,4 @@ MORE
 
 - Also look through all the tabs for each submission and see if anything is broken or no
 
-- Need to expand the eval set to be like the golden test set we takled about, mostly more happy path, messy path, edge case, and red team packets
-
-- Why we are not showing investment thesis for latest doc submission?
-
-
-
-# BRAD MORE TODO
-
-1.  [DONE?] n8n API Token Access:
-Yes, absolutely! You can add your n8n API Key to frontend/.env as:
-dotenv
-
-N8N_API_KEY=<your-n8n-api-key>
-With an n8n API key, we can interact directly with the n8n Cloud REST API (https://merge-works.app.n8n.cloud/api/v1/) to:
-
-List running executions
-View detailed node execution logs & error tracebacks
-Programmatically cancel stalled executions (POST /api/v1/executions/{id}/stop)
-
-3. [DONE?] Bring Your Own Key (BYOK) Scope: (Check if this is supported)
-AI Chatbot: Uses the custom key saved in browser localStorage directly for instant Q&A.
-Document & Synthesizer Workflows: Background AI extraction and synthesis run on n8n Cloud. The BYOK key is attached as a request header (x-user-anthropic-key) in the upload payload, allowing custom keys to be forwarded when default team credits are exhausted.
+- Check what the scope of current BYOK implementation is
