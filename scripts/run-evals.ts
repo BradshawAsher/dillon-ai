@@ -250,12 +250,10 @@ function buildMarkdownReport(report: EvalSummary & {
     return lines.join('\n')
 }
 
-if (require.main === module) {
-    const report = runEvalSuite()
-    // Fail the process (and therefore the CI regression check) when the suite
-    // drops below the configured threshold.
-    if (!report.regressionPassed) {
-        console.error(`\nEval regression gate FAILED: ${report.overallPercentage}% < ${report.regressionThreshold}% threshold.`)
-        process.exit(1)
-    }
+const report = runEvalSuite()
+// Fail the process (and therefore the CI regression check) when the suite
+// drops below the configured threshold.
+if (!report.regressionPassed) {
+    console.error(`\nEval regression gate FAILED: ${report.overallPercentage}% < ${report.regressionThreshold}% threshold.`)
+    process.exit(1)
 }
