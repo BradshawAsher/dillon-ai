@@ -319,9 +319,9 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                                                 ) : null}
                                                 {(() => {
                                                     const rawProjectDocs = rows.filter((r) => (r.projectId || getProjectKey(r)) === project.projectKey || r.workstream === project.projectName)
-                                                    const isPostLoi = synthesis?.letterOfIntentPresent === true || synthesis?.letterOfIntentPresent === 'true'
+                                                    const isPostLoi = Boolean(synthesis?.letterOfIntentPresent)
                                                     const isLoiDoc = (d: Partial<SubmissionHistoryItem>) => {
-                                                        const name = (d.fileName || d.title || '').toLowerCase()
+                                                        const name = (d.fileName || d.dealName || '').toLowerCase()
                                                         return name.includes('loi') || name.includes('letter_of_intent')
                                                     }
                                                     const projectDocs = isPostLoi ? rawProjectDocs : rawProjectDocs.filter(d => !isLoiDoc(d))
