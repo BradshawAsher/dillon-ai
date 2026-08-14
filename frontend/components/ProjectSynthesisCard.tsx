@@ -17,6 +17,7 @@ import { formatHours, type ImpactMetrics } from '../utils/impactMetrics'
 import { getProjectKey, isRowMatchingProject, type ProjectSummary } from '../utils/projectWorkspace'
 import { buildDocumentLinkedEvidence, parseDocumentedFacts, type EvidenceItem } from '../utils/evidence'
 import { calculateBatchTotalCost, calculateSynthesisCost } from '../utils/diligenceDashboardUtils'
+import { classifyError } from '../utils/errorClassifier'
 
 type ProjectSynthesisCardProps = {
     syntheses: ProjectSynthesisItem[]
@@ -767,28 +768,38 @@ export default function ProjectSynthesisCard({
                     </span>
                 ) : null}
 
-                {/* 2. Synthesis Failure / n8n Token Error Disclaimer */}
-                {visibleSyntheses[0]?.projectStatus?.trim()?.toLowerCase() === 'synthesis_refresh_failed' || visibleSyntheses[0]?.projectStatus?.trim()?.toLowerCase() === 'synthesis_blocked' ? (
-                    <div role="alert" className="rounded-xl border-2 border-destructive/50 bg-destructive/10 p-4 text-sm text-foreground shadow-sm">
-                        <div className="flex items-start gap-3">
-                            <TriangleAlert className="h-5 w-5 shrink-0 text-destructive mt-0.5" />
-                            <div className="space-y-1">
-                                <p className="font-bold text-destructive text-base">
-                                    Project Synthesis Failed — n8n Provider / Token Limit Reached
-                                </p>
-                                <p className="text-sm text-foreground leading-relaxed">
-                                    {visibleSyntheses.length > 1 ? 'The prior synthesis below remains visible from your earlier run. ' : 'The n8n consolidator workflow was unable to complete project-level judgment. '}
-                                    <span className="font-mono text-xs bg-destructive/15 px-1.5 py-0.5 rounded text-destructive border border-destructive/20">
-                                        {visibleSyntheses[0]?.aiErrorMessage || 'n8n connection tokens or LLM rate limit exceeded.'}
-                                    </span>
-                                </p>
-                                <p className="text-xs text-muted-foreground mt-2">
-                                    <strong className="text-foreground">Current Progress:</strong> {visibleSyntheses[0]?.documentsCompletedCount || completedProjectDocumentsWithAnalysis} document(s) completed analysis, {failedProjectDocuments.length} failed parsing. Once you add n8n tokens or update model settings, click <span className="font-semibold text-foreground">&quot;Run synthesis now&quot;</span> at the top of this tab to re-trigger.
-                                </p>
+                {/* 2. Synthesis Failure / Categorized Error Alert */}
+                {visibleSyntheses[0]?.projectStatus?.trim()?.toLowerCase() === 'synthesis_refresh_failed' || visibleSyntheses[0]?.projectStatus?.trim()?.toLowerCase() === 'synthesis_blocked' ? (() => {
+                    const classified = classifyError(visibleSyntheses[0]?.aiErrorMessage)
+                    const isRateLimit = classified.category === 'RATE_LIMIT'
+
+                    return (
+                        <div role="alert" className={`rounded-xl border-2 p-4 text-sm text-foreground shadow-sm ${isRateLimit ? 'border-amber-500/50 bg-amber-500/10' : 'border-destructive/50 bg-destructive/10'}`}>
+                            <div className="flex items-start gap-3">
+                                <TriangleAlert className={`h-5 w-5 shrink-0 mt-0.5 ${isRateLimit ? 'text-amber-800 dark:text-amber-200' : 'text-destructive'}`} />
+                                <div className="space-y-1.5">
+                                    <div className="flex items-center gap-2">
+                                        <p className={`font-bold text-base ${isRateLimit ? 'text-amber-900 dark:text-amber-100' : 'text-destructive'}`}>
+                                            {classified.title}
+                                        </p>
+                                        <Badge variant="outline" className={`text-[10px] font-mono font-bold px-2 py-0.5 ${classified.badgeColorClass}`}>
+                                            {classified.badgeLabel}
+                                        </Badge>
+                                    </div>
+                                    <p className="text-sm text-foreground leading-relaxed">
+                                        {visibleSyntheses.length > 1 ? 'The prior synthesis below remains visible from your earlier run. ' : ''}
+                                        <span className="font-mono text-xs bg-background/80 px-2 py-1 rounded text-foreground border border-border inline-block">
+                                            {classified.description}
+                                        </span>
+                                    </p>
+                                    <p className="text-xs text-muted-foreground mt-2">
+                                        <strong className="text-foreground">Recommended Action:</strong> {classified.actionGuidance}
+                                    </p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                ) : null}
+                    )
+                })() : null}
 
                 {/* 3. Synthesizer Disclaimer (Only shown when NO valid synthesis output exists AND 0 documents completed) */}
                 {(!visibleSyntheses[0]?.finalRecommendation && !visibleSyntheses[0]?.finalJudgmentSummary && visibleSyntheses[0]?.projectStatus !== 'synthesized') && completedProjectDocumentsWithAnalysis === 0 && projectDocuments.length > 0 ? (

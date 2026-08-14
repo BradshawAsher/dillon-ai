@@ -121,8 +121,6 @@
 
 - Make sure the evals and harness the numbers and cards are right and now buggy and that the varainces show for cross doc conflicts?
 
-- Add a spending tab with spending by day, week, hour, month, etc with records similarly to a billing report on aws or gcp
-
 - If LOI is detected, in projects, evals, and synthesis tab for that project, have an option to "run without LOI for unbiased deal discovery/analysis" to see results without the LOI? Would this require us to first label which doc is the LOI?
 
 - Need to run business 1-5 without LOI for those that had an LOI, also add the pre-LOI or post-LOI for mergeworks suite 2-4
