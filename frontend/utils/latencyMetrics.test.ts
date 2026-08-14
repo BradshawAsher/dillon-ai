@@ -54,6 +54,12 @@ describe('percentile', () => {
         expect(percentile(values, 0.95)).toBe(50)
         expect(percentile(values, 0)).toBe(10)
     })
+
+    it('treats a non-finite percentile as the 0th, never returning undefined', () => {
+        const values = [10, 20, 30]
+        expect(percentile(values, Number.NaN)).toBe(10)
+        expect(percentile(values, Number.POSITIVE_INFINITY)).toBe(10)
+    })
 })
 
 describe('summarizeLatency', () => {

@@ -56,7 +56,10 @@ export function percentile(values: number[], p: number): number | null {
         return null
     }
     const sorted = [...values].sort((a, b) => a - b)
-    const clamped = Math.min(1, Math.max(0, p))
+    // A non-finite p (NaN/Infinity) would poison Math.max/ceil and index the
+    // array with NaN, returning undefined through a `number` return type. Treat
+    // it as the 0th percentile rather than leaking undefined.
+    const clamped = Number.isFinite(p) ? Math.min(1, Math.max(0, p)) : 0
     const rank = Math.ceil(clamped * sorted.length)
     const index = Math.min(sorted.length - 1, Math.max(0, rank - 1))
     return sorted[index]
