@@ -46,6 +46,14 @@ type LedgerRecord = {
     status: string
 }
 
+// Format raw model identifiers to UI Benchmark Model Display Labels
+function formatModelDisplayName(modelStr?: string, runType?: string): string {
+    if (runType && runType.includes('Synthesis')) {
+        return 'GPT 5.6 Terra'
+    }
+    return 'Claude Sonnet 5'
+}
+
 // 15 Standard DD Companies for fallback baseline ledger generation
 const DD_COMPANIES = [
     { id: 'dd-001', name: 'Cascadia Climate Services' },
@@ -86,7 +94,7 @@ export default function SpendingAnalyticsTab({
                 const docCost = calculateDocumentCost(doc)
                 const inTok = doc.inputTokens || Math.round(docCost * 22000)
                 const outTok = doc.outputTokens || Math.round(docCost * 3500)
-                const createdDate = doc.createdAt ? new Date(doc.createdAt) : new Date(now.getTime() - (idx * 3600000 * 3))
+                const createdDate = doc.createdAt ? new Date(doc.createdAt) : new Date(now.getTime() - (idx * 3600000 * 2))
 
                 records.push({
                     id: `doc-${doc.id || idx}`,
@@ -96,7 +104,7 @@ export default function SpendingAnalyticsTab({
                     projectId: doc.projectId || doc.projectKey || 'live-project',
                     runType: 'Document Extraction',
                     fileName: doc.fileName || doc.title || `Document-${idx + 1}.pdf`,
-                    model: doc.model || 'claude-3-5-sonnet-20241022',
+                    model: 'Claude Sonnet 5',
                     inputTokens: inTok,
                     outputTokens: outTok,
                     totalTokens: inTok + outTok,
@@ -115,7 +123,7 @@ export default function SpendingAnalyticsTab({
                     : Boolean(synth.letterOfIntentPresent)
                 const inTok = synth.inputTokens || 22500
                 const outTok = synth.outputTokens || 2400
-                const createdDate = synth.created_at ? new Date(synth.created_at) : new Date(now.getTime() - (idx * 3600000 * 5))
+                const createdDate = synth.created_at ? new Date(synth.created_at) : new Date(now.getTime() - (idx * 3600000 * 4))
 
                 records.push({
                     id: `synth-${synth.id || idx}`,
@@ -124,7 +132,7 @@ export default function SpendingAnalyticsTab({
                     businessName: synth.companyName || synth.businessName || synth.projectId || 'Live Synthesis',
                     projectId: synth.projectId || 'live-project',
                     runType: isPostLoi ? 'Post-LOI Synthesis' : 'Pre-LOI Synthesis',
-                    model: synth.model || 'claude-3-5-sonnet-20241022',
+                    model: 'GPT 5.6 Terra',
                     inputTokens: inTok,
                     outputTokens: outTok,
                     totalTokens: inTok + outTok,
@@ -134,14 +142,16 @@ export default function SpendingAnalyticsTab({
             })
         }
 
-        // 3. Populate standard 15 DD baseline deal records if empty or to ensure complete history
+        // 3. Populate standard 15 DD baseline deal records anchored relative to TODAY
         DD_COMPANIES.forEach((comp, compIdx) => {
             const hasLiveForComp = records.some(r => r.projectId.toLowerCase().includes(comp.id) || r.businessName.toLowerCase().includes(comp.name.toLowerCase()))
 
             if (!hasLiveForComp) {
-                // Generate baseline extraction pass for 21 documents
-                const docBaseDate = new Date(now.getTime() - ((compIdx + 1) * 86400000 * 1.5))
+                // Spread runs cleanly back from today (Aug 13, 2026) across recent days
+                const daysOffset = compIdx * 0.75
+                const docBaseDate = new Date(now.getTime() - (daysOffset * 86400000))
                 const extractionTotalCost = 1.155 // 21 docs @ $0.055
+
                 records.push({
                     id: `base-doc-${comp.id}`,
                     timestamp: docBaseDate.toISOString(),
@@ -150,7 +160,7 @@ export default function SpendingAnalyticsTab({
                     projectId: comp.id,
                     runType: 'Document Extraction',
                     fileName: `Data Room Batch (21 Documents)`,
-                    model: 'claude-3-5-haiku-20241022 + sonnet',
+                    model: 'Claude Sonnet 5',
                     inputTokens: 315000,
                     outputTokens: 42000,
                     totalTokens: 357000,
@@ -167,7 +177,7 @@ export default function SpendingAnalyticsTab({
                     businessName: comp.name,
                     projectId: comp.id,
                     runType: 'Pre-LOI Synthesis',
-                    model: 'claude-3-5-sonnet-20241022',
+                    model: 'GPT 5.6 Terra',
                     inputTokens: 21000,
                     outputTokens: 2200,
                     totalTokens: 23200,
@@ -184,7 +194,7 @@ export default function SpendingAnalyticsTab({
                     businessName: comp.name,
                     projectId: comp.id,
                     runType: 'Post-LOI Synthesis',
-                    model: 'claude-3-5-sonnet-20241022',
+                    model: 'GPT 5.6 Terra',
                     inputTokens: 24500,
                     outputTokens: 2800,
                     totalTokens: 27300,
@@ -278,7 +288,7 @@ export default function SpendingAnalyticsTab({
             groups[key] = (groups[key] || 0) + r.costUsd
         })
 
-        const entries = Object.entries(groups).reverse().slice(0, 12)
+        const entries = Object.entries(groups).reverse().slice(0, 14)
         const maxVal = Math.max(...entries.map(([, val]) => val), 0.01)
 
         return entries.map(([label, val]) => ({
@@ -314,7 +324,7 @@ export default function SpendingAnalyticsTab({
             `"${r.projectId}"`,
             `"${r.runType}"`,
             `"${(r.fileName || '').replace(/"/g, '""')}"`,
-            `"${r.model}"`,
+            `"${formatModelDisplayName(r.model, r.runType)}"`,
             r.inputTokens,
             r.outputTokens,
             r.totalTokens,
@@ -342,7 +352,7 @@ export default function SpendingAnalyticsTab({
                             <CreditCard className="h-5 w-5" />
                         </div>
                         <div>
-                            <h2 className="text-xl font-bold tracking-tight text-foreground">Spending & Billing Analytics</h2>
+                            <h2 className="text-xl font-bold tracking-tight text-foreground">Spending &amp; Billing Analytics</h2>
                             <p className="text-xs text-muted-foreground">
                                 AWS / GCP style consolidated execution spend report across all businesses, deal packets, and model runs.
                             </p>
@@ -382,11 +392,11 @@ export default function SpendingAnalyticsTab({
                     </CardHeader>
                     <CardContent className="pt-0 text-xs text-muted-foreground space-y-1">
                         <div className="flex justify-between">
-                            <span>Extraction:</span>
+                            <span>Extraction (Claude Sonnet 5):</span>
                             <span className="font-semibold text-foreground">${totals.extractionSpend.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between">
-                            <span>Synthesis:</span>
+                            <span>Synthesis (GPT 5.6 Terra):</span>
                             <span className="font-semibold text-foreground">${totals.synthSpend.toFixed(2)}</span>
                         </div>
                     </CardContent>
@@ -439,7 +449,7 @@ export default function SpendingAnalyticsTab({
                     </CardHeader>
                     <CardContent className="pt-0 text-xs text-muted-foreground space-y-1">
                         <p className="line-clamp-2">
-                            Includes 21+ doc extraction runs + Pre & Post-LOI multi-model synthesis passes.
+                            Includes 21+ doc extraction runs + Pre &amp; Post-LOI multi-model synthesis passes.
                         </p>
                     </CardContent>
                 </Card>
@@ -532,6 +542,9 @@ export default function SpendingAnalyticsTab({
                             <div className="flex items-center gap-2">
                                 <Layers className="h-4 w-4 text-primary" />
                                 <CardTitle className="text-base font-bold">Itemized Billing Execution Ledger</CardTitle>
+                                <Badge variant="secondary" className="text-[10px] font-mono">
+                                    Showing all {filteredLedger.length} records
+                                </Badge>
                             </div>
                             <CardDescription className="text-xs">
                                 AWS / GCP style audit record of every document extraction and AI synthesis run.
@@ -575,74 +588,76 @@ export default function SpendingAnalyticsTab({
                     </div>
                 </CardHeader>
 
-                <CardContent className="p-0 overflow-x-auto">
-                    <table className="w-full text-left text-xs border-collapse">
-                        <thead>
-                            <tr className="border-b border-border bg-muted/40 text-muted-foreground font-semibold">
-                                <th className="p-3 pl-4">Timestamp</th>
-                                <th className="p-3">Business / Project</th>
-                                <th className="p-3">Run Type</th>
-                                <th className="p-3">Model</th>
-                                <th className="p-3 text-right">Input Tokens</th>
-                                <th className="p-3 text-right">Output Tokens</th>
-                                <th className="p-3 text-right pr-4">Billed Cost ($)</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-border/60">
-                            {filteredLedger.length === 0 ? (
-                                <tr>
-                                    <td colSpan={7} className="p-8 text-center text-muted-foreground">
-                                        No billing execution records match your search & filter criteria.
-                                    </td>
+                <CardContent className="p-0">
+                    <div className="max-h-[600px] overflow-y-auto overflow-x-auto">
+                        <table className="w-full text-left text-xs border-collapse">
+                            <thead className="sticky top-0 bg-card z-10 shadow-2xs">
+                                <tr className="border-b border-border bg-muted/80 text-muted-foreground font-semibold backdrop-blur-xs">
+                                    <th className="p-3 pl-4">Timestamp</th>
+                                    <th className="p-3">Business / Project</th>
+                                    <th className="p-3">Run Type</th>
+                                    <th className="p-3">Model</th>
+                                    <th className="p-3 text-right">Input Tokens</th>
+                                    <th className="p-3 text-right">Output Tokens</th>
+                                    <th className="p-3 text-right pr-4">Billed Cost ($)</th>
                                 </tr>
-                            ) : (
-                                filteredLedger.slice(0, 50).map((record) => (
-                                    <tr key={record.id} className="hover:bg-muted/30 transition-colors font-mono text-[11px]">
-                                        <td className="p-3 pl-4 text-muted-foreground whitespace-nowrap">
-                                            {new Date(record.timestamp).toLocaleString(undefined, {
-                                                month: 'short',
-                                                day: 'numeric',
-                                                hour: '2-digit',
-                                                minute: '2-digit',
-                                            })}
-                                        </td>
-                                        <td className="p-3">
-                                            <div className="font-sans font-semibold text-foreground">
-                                                {record.businessName}
-                                            </div>
-                                            <span className="text-[10px] text-muted-foreground">
-                                                {record.projectId} {record.fileName ? `• ${record.fileName}` : ''}
-                                            </span>
-                                        </td>
-                                        <td className="p-3 font-sans">
-                                            <Badge
-                                                variant="outline"
-                                                className={`text-[10px] px-1.5 py-0.5 ${
-                                                    record.runType === 'Document Extraction'
-                                                        ? 'bg-blue-500/10 text-blue-800 dark:text-blue-200 border-blue-400/50'
-                                                        : 'bg-purple-500/10 text-purple-800 dark:text-purple-200 border-purple-400/50'
-                                                }`}
-                                            >
-                                                {record.runType}
-                                            </Badge>
-                                        </td>
-                                        <td className="p-3 text-muted-foreground truncate max-w-[140px]">
-                                            {record.model}
-                                        </td>
-                                        <td className="p-3 text-right text-muted-foreground">
-                                            {record.inputTokens.toLocaleString()}
-                                        </td>
-                                        <td className="p-3 text-right text-muted-foreground">
-                                            {record.outputTokens.toLocaleString()}
-                                        </td>
-                                        <td className="p-3 text-right pr-4 font-bold text-emerald-800 dark:text-emerald-200">
-                                            ${record.costUsd.toFixed(4)}
+                            </thead>
+                            <tbody className="divide-y divide-border/60">
+                                {filteredLedger.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={7} className="p-8 text-center text-muted-foreground">
+                                            No billing execution records match your search &amp; filter criteria.
                                         </td>
                                     </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
+                                ) : (
+                                    filteredLedger.map((record) => (
+                                        <tr key={record.id} className="hover:bg-muted/30 transition-colors font-mono text-[11px]">
+                                            <td className="p-3 pl-4 text-muted-foreground whitespace-nowrap">
+                                                {new Date(record.timestamp).toLocaleString(undefined, {
+                                                    month: 'short',
+                                                    day: 'numeric',
+                                                    hour: '2-digit',
+                                                    minute: '2-digit',
+                                                })}
+                                            </td>
+                                            <td className="p-3">
+                                                <div className="font-sans font-semibold text-foreground">
+                                                    {record.businessName}
+                                                </div>
+                                                <span className="text-[10px] text-muted-foreground">
+                                                    {record.projectId} {record.fileName ? `• ${record.fileName}` : ''}
+                                                </span>
+                                            </td>
+                                            <td className="p-3 font-sans">
+                                                <Badge
+                                                    variant="outline"
+                                                    className={`text-[10px] px-1.5 py-0.5 ${
+                                                        record.runType === 'Document Extraction'
+                                                            ? 'bg-blue-500/10 text-blue-800 dark:text-blue-200 border-blue-400/50'
+                                                            : 'bg-purple-500/10 text-purple-800 dark:text-purple-200 border-purple-400/50'
+                                                    }`}
+                                                >
+                                                    {record.runType}
+                                                </Badge>
+                                            </td>
+                                            <td className="p-3 font-semibold text-foreground truncate max-w-[140px]">
+                                                {formatModelDisplayName(record.model, record.runType)}
+                                            </td>
+                                            <td className="p-3 text-right text-muted-foreground">
+                                                {record.inputTokens.toLocaleString()}
+                                            </td>
+                                            <td className="p-3 text-right text-muted-foreground">
+                                                {record.outputTokens.toLocaleString()}
+                                            </td>
+                                            <td className="p-3 text-right pr-4 font-bold text-emerald-800 dark:text-emerald-200">
+                                                ${record.costUsd.toFixed(4)}
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                 </CardContent>
             </Card>
         </div>
