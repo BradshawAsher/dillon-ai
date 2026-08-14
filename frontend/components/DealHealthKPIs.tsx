@@ -1,10 +1,27 @@
-import { Activity, AlertTriangle, CheckCircle2, DollarSign, FileCheck, TrendingUp } from 'lucide-react'
+import {
+    Activity,
+    AlertTriangle,
+    CheckCircle2,
+    Coins,
+    DollarSign,
+    FileCheck,
+    FolderCheck,
+    Sparkles,
+    TrendingUp,
+} from 'lucide-react'
 
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import type { DealModel } from '../hooks/backend/diligence'
 import { Card, CardContent } from '../lib/shadcn/card'
 import { parseDocumentedFacts } from '../utils/evidence'
 import type { ImpactMetrics } from '../utils/impactMetrics'
+
+export type TodayPipelineStats = {
+    projectsFinishedToday?: number
+    synthesesFinishedToday?: number
+    docsFinishedToday?: number
+    totalCostToday?: number
+}
 
 type KPIItem = {
     label: string
@@ -27,6 +44,7 @@ export default function DealHealthKPIs({
     documentsCount,
     docCost,
     totalCost,
+    todayStats,
 }: {
     synthesis?: ProjectSynthesisItem
     model: DealModel
@@ -34,6 +52,7 @@ export default function DealHealthKPIs({
     documentsCount: number
     docCost?: number
     totalCost?: number
+    todayStats?: TodayPipelineStats
 }) {
     const facts = parseDocumentedFacts(model.documentedFactsJson)
     const revenue = facts.revenue?.status === 'confirmed' && typeof facts.revenue?.value === 'number' ? facts.revenue.value : null
@@ -123,25 +142,65 @@ export default function DealHealthKPIs({
         })
     }
 
+    // Today's Pipeline Operations KPIs
+    if (todayStats) {
+        kpis.push({
+            label: 'Projects Finished Today',
+            value: `${todayStats.projectsFinishedToday ?? 0}`,
+            subtext: 'Processed today',
+            icon: <FolderCheck className="h-5 w-5" />,
+            variant: 'success',
+        })
+        kpis.push({
+            label: 'Syntheses Finished Today',
+            value: `${todayStats.synthesesFinishedToday ?? 0}`,
+            subtext: 'Synthesized today',
+            icon: <Sparkles className="h-5 w-5" />,
+            variant: 'success',
+        })
+        kpis.push({
+            label: 'Docs Finished Today',
+            value: `${todayStats.docsFinishedToday ?? 0}`,
+            subtext: 'Extracted today',
+            icon: <FileCheck className="h-5 w-5" />,
+            variant: 'success',
+        })
+        kpis.push({
+            label: 'Total Cost Used Today',
+            value: `$${(todayStats.totalCostToday ?? 0).toFixed(2)}`,
+            subtext: 'Pipeline cost today',
+            icon: <Coins className="h-5 w-5" />,
+            variant: 'success',
+        })
+    }
+
     if (kpis.length === 0) return null
 
     return (
         <Card className="dashboard-kpi-glass border-primary/20">
-            <CardContent className="p-4">
-                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+            <CardContent className="p-4 sm:p-5">
+                <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                     {kpis.map((kpi) => (
-                        <div key={kpi.label} className="flex items-start gap-3 rounded-lg p-1 transition-transform duration-200 hover:scale-[1.02]">
-                            <div className={`mt-0.5 rounded-lg p-2 ${kpi.variant === 'success' ? 'bg-success/10 text-success'
+                        <div key={kpi.label} className="flex items-center gap-3 rounded-xl border border-primary/15 bg-background/60 p-3 shadow-xs transition-all duration-200 hover:border-primary/40 hover:bg-background/90 hover:shadow-md">
+                            <div className={`rounded-xl p-2.5 shrink-0 ${kpi.variant === 'success' ? 'bg-success/10 text-success'
                                     : kpi.variant === 'warning' ? 'bg-warning/10 text-warning'
                                         : kpi.variant === 'destructive' ? 'bg-destructive/10 text-destructive'
                                             : 'bg-muted text-muted-foreground'
                                 }`}>
                                 {kpi.icon}
                             </div>
-                            <div className="min-w-0">
-                                <p className="text-xs font-medium text-muted-foreground">{kpi.label}</p>
-                                <p className="text-lg font-bold text-foreground">{kpi.value}</p>
-                                {kpi.subtext && <p className="text-xs text-muted-foreground">{kpi.subtext}</p>}
+                            <div className="min-w-0 flex-1">
+                                <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/80 truncate" title={kpi.label}>
+                                    {kpi.label}
+                                </p>
+                                <p className="text-lg sm:text-xl font-black text-foreground tracking-tight truncate mt-0.5">
+                                    {kpi.value}
+                                </p>
+                                {kpi.subtext && (
+                                    <p className="text-xs font-medium text-muted-foreground truncate mt-0.5">
+                                        {kpi.subtext}
+                                    </p>
+                                )}
                             </div>
                         </div>
                     ))}
@@ -150,3 +209,4 @@ export default function DealHealthKPIs({
         </Card>
     )
 }
+

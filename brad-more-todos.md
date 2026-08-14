@@ -129,18 +129,13 @@
 - Add options to use deepseek v4 flash and/or v4 pro?
 - Maybe even have dropdowns for the user to choose and customize which model to use for the 4 options for doc primary, doc backup, synth primary, synth backup?
 
-- Add download eval report for each business and even download eval report per doc, showing what went right and wrong and why it got the accuracy it did (more in depth than the ui)
-
 - Are we only scoring 1 doc per dd-00x business? But we're claiming to give each doc an individual scoring? What is going on? [For brad] - understand how this works and reconcile this?
 
-- Add KPIs to top for # projects finished processing today, # syntheses finished today, # docs finished today, total cost used today
-  - Maybe a history tab for this so the user can see # of these things for last day, last week, last month, etc and like graph and cost analysis like how GCP does it?
 
 - Prepare slides, presentation script (?), and supademo and supademo case study for tuesday business meeting.
 
 - is there anywhere else in our website like FAQs or something or just how our agent currently operates that needs to be updated in order to really like distinctly highlight and support functionality for both modes or no?
 
-- Also we should probably be showing the total cost, total per doc cost, and synth cost in the overview tab too right?
 
 - In projects tab and evals tab maybe should we have an option to "open high level summary" so the user can see like a high level summary without having to click view synthesis and stuff like that
 

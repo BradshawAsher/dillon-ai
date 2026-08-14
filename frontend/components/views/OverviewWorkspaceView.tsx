@@ -25,6 +25,7 @@ type OverviewWorkspaceViewProps = {
     activeProjectDocuments: any[]
     activeProjectImpact: any
     setActiveWorkspaceTab: (tab: any) => void
+    todayStats?: any
 }
 
 export function OverviewWorkspaceView({
@@ -37,6 +38,7 @@ export function OverviewWorkspaceView({
     activeProjectDocuments,
     activeProjectImpact,
     setActiveWorkspaceTab,
+    todayStats,
 }: OverviewWorkspaceViewProps) {
     const hasExtractionAlert = activeProjectDocuments.some(
         (row) =>
@@ -145,6 +147,7 @@ export function OverviewWorkspaceView({
                             documentsCount={activeProjectDocuments.length}
                             docCost={docCost}
                             totalCost={totalDealCost}
+                            todayStats={todayStats}
                         />
                     </>
                 )
