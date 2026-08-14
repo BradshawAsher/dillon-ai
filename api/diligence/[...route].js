@@ -21829,6 +21829,7 @@ async function getProjectSynthesis(req) {
       if (derived.length < 3 && yellowFlags.length > 0) derived.push(...yellowFlags.slice(0, 3 - derived.length));
       if (derived.length > 0) keyTakeaways = derived;
     }
+    const synthesisConfidence = getNumberOrNull(row.ai_confidence);
     const structuredFindings = {
       keyTakeaways: getStructuredFindingsFromRaw(getJudgmentField(judgment.json, "key_acquisition_takeaways"), "Synthesized"),
       redFlags: getProjectStructuredFlags(judgment.json, "red_flags", "Contradicted"),
@@ -21839,6 +21840,13 @@ async function getProjectSynthesis(req) {
       negotiationLevers: getStructuredFindingsFromRaw(row.negotiation_levers_json, "Synthesized"),
       missingDocuments: missingDocuments.map((text) => ({ text, confidence: null, severity: "medium", impact: "", status: "Needs review", citations: [] }))
     };
+    if (synthesisConfidence !== null) {
+      for (const group of Object.values(structuredFindings)) {
+        for (const finding of group) {
+          if (finding.confidence === null) finding.confidence = synthesisConfidence;
+        }
+      }
+    }
     const valuationObj = getJudgmentField(judgment.json, "valuation");
     const valuationConfidence = valuationObj && typeof valuationObj === "object" ? String(valuationObj.confidence_score ?? "") : "";
     const extractValuationBound = (rowVal, fieldKey) => {

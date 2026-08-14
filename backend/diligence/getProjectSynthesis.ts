@@ -372,6 +372,8 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
                 if (derived.length > 0) keyTakeaways = derived
             }
 
+            const synthesisConfidence = getNumberOrNull(row.ai_confidence)
+
             const structuredFindings: ProjectStructuredFindingGroups = {
                 keyTakeaways: getStructuredFindingsFromRaw(getJudgmentField(judgment.json, 'key_acquisition_takeaways'), 'Synthesized'),
                 redFlags: getProjectStructuredFlags(judgment.json, 'red_flags', 'Contradicted'),
@@ -381,6 +383,14 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
                 openQuestions: getStructuredFindingsFromRaw(row.open_questions_json, 'Needs review'),
                 negotiationLevers: getStructuredFindingsFromRaw(row.negotiation_levers_json, 'Synthesized'),
                 missingDocuments: missingDocuments.map((text) => ({ text, confidence: null, severity: 'medium', impact: '', status: 'Needs review', citations: [] })),
+            }
+
+            if (synthesisConfidence !== null) {
+                for (const group of Object.values(structuredFindings)) {
+                    for (const finding of group) {
+                        if (finding.confidence === null) finding.confidence = synthesisConfidence
+                    }
+                }
             }
 
             const valuationObj = getJudgmentField(judgment.json, 'valuation')

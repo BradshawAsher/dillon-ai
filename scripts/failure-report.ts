@@ -6,6 +6,10 @@
 // goes where it moves the number. Run with: npx tsx scripts/failure-report.ts
 import * as fs from 'fs'
 import * as path from 'path'
+import { fileURLToPath } from 'url'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 import { DIMENSION_MAX } from './evalScoring'
 

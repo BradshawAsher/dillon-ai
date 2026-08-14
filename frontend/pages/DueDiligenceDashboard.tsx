@@ -37,6 +37,7 @@ import { DocumentsWorkspaceView } from '../components/views/DocumentsWorkspaceVi
 import { WorkspaceHeader } from '../components/views/WorkspaceHeader'
 import { useDealWorkspaceState, type WorkspaceTab } from '../hooks/useDealWorkspaceState'
 import DealWorkspaceNav from '../components/DealWorkspaceNav'
+import TabSidebarTOC from '../components/TabSidebarTOC'
 import SectionHeader from '../components/SectionHeader'
 
 const ProjectIntakeCard = lazy(() => import('../components/ProjectIntakeCard'))
@@ -1674,6 +1675,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                     }}
                 />
 
+                <TabSidebarTOC activeTab={activeWorkspaceTab} />
+
                 {activeWorkspaceTab === 'overview' ? (
                     <OverviewWorkspaceView
                         hydratedDealModel={hydratedDealModel}
@@ -1991,10 +1994,12 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                                     void triggerProjectSynthesis({ environment: activeHistoryEnvironment }, { skipCache: true }).result
                                 }}
                             />
-                            <ManagementQuestionTracker
-                                projectId={activeProjectId}
-                                suggestedQuestions={activeProjectSynthesis?.openQuestions ?? []}
-                            />
+                            <div id="synthesis-management-questions" className="scroll-mt-6">
+                                <ManagementQuestionTracker
+                                    projectId={activeProjectId}
+                                    suggestedQuestions={activeProjectSynthesis?.openQuestions ?? []}
+                                />
+                            </div>
                         </section>
                     ) : null}
 

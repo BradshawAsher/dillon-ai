@@ -96,7 +96,7 @@ function compactTakeaway(value: string) {
     return firstSentence.length <= 220 ? firstSentence : `${firstSentence.slice(0, 217).trimEnd()}…`
 }
 
-type DocumentThesisTakeaway = { fileName: string; takeaway: string; stance: string; documentId: string; documentUrl: string; status: string }
+type DocumentThesisTakeaway = { fileName: string; takeaway: string; stance: string; documentId: string; documentUrl: string; status: string; confidence: number | null }
 
 function getDocumentThesisTakeaway(document: SubmissionHistoryItem): DocumentThesisTakeaway | null {
     try {
@@ -106,10 +106,12 @@ function getDocumentThesisTakeaway(document: SubmissionHistoryItem): DocumentThe
         const takeaway = reasoning || summary
         if (!takeaway) return null
         const favorable = parsed.investment_thesis?.is_favorable_indicator
-        return { fileName: document.fileName || 'Unnamed document', takeaway, stance: favorable === true ? 'Supportive indicator' : favorable === false ? 'Caution indicator' : 'Document insight', documentId: document.storageFileId, documentUrl: document.storageFileUrl, status: document.status }
+        const conf = parseFloat(document.aiConfidence || '')
+        return { fileName: document.fileName || 'Unnamed document', takeaway, stance: favorable === true ? 'Supportive indicator' : favorable === false ? 'Caution indicator' : 'Document insight', documentId: document.storageFileId, documentUrl: document.storageFileUrl, status: document.status, confidence: Number.isFinite(conf) ? conf : null }
     } catch {
         if (!document.aiSummary.trim()) return null
-        return { fileName: document.fileName || 'Unnamed document', takeaway: document.aiSummary.trim(), stance: 'Document insight', documentId: document.storageFileId, documentUrl: document.storageFileUrl, status: document.status }
+        const conf = parseFloat(document.aiConfidence || '')
+        return { fileName: document.fileName || 'Unnamed document', takeaway: document.aiSummary.trim(), stance: 'Document insight', documentId: document.storageFileId, documentUrl: document.storageFileUrl, status: document.status, confidence: Number.isFinite(conf) ? conf : null }
     }
 }
 
@@ -841,6 +843,7 @@ export default function ProjectSynthesisCard({
                 ) : null}
 
                 {/* LOI Status Banner */}
+                <div id="synthesis-loi-status" className="scroll-mt-6" />
                 {(() => {
                     const loiDoc = projectDocuments.find(d => {
                         const name = (d.fileName || d.dealName || '').toLowerCase()
@@ -1397,7 +1400,7 @@ export default function ProjectSynthesisCard({
                             ) : null}
 
                             {false && synthesis.finalJudgmentSummary ? (
-                                <div className="rounded-xl border-2 border-primary bg-gradient-to-br from-primary/15 via-primary/5 to-background p-5 shadow-md">
+                                <div id="synthesis-judgment" className="scroll-mt-6 rounded-xl border-2 border-primary bg-gradient-to-br from-primary/15 via-primary/5 to-background p-5 shadow-md">
                                     <div className="flex flex-wrap items-center justify-between gap-2">
                                         <div className="flex items-center gap-2">
                                             <Scale className="h-5 w-5 text-primary" />
@@ -1416,9 +1419,9 @@ export default function ProjectSynthesisCard({
                                 </div>
                             ) : null}
 
-                            {!synthesis.finalJudgmentSummary ? <div className="rounded-xl border-2 border-warning bg-warning/10 p-5 shadow-md"><div className="flex items-center gap-2"><Scale className="h-5 w-5 text-warning" /><p className="text-sm font-bold uppercase tracking-wide text-warning">Acquisition judgment pending</p></div><p className="mt-3 text-sm leading-6 text-foreground">{synthesis.finalRecommendation ? `n8n returned the recommendation “${synthesis.finalRecommendation},” but did not return its final plain-English judgment yet. Refresh after the next synthesis pass.` : 'This synthesis row has no final judgment text yet. It may still be processing, or the consolidator returned an incomplete payload. Refresh after the next synthesis pass.'}</p></div> : null}
+                            {!synthesis.finalJudgmentSummary ? <div id="synthesis-judgment" className="scroll-mt-6 rounded-xl border-2 border-warning bg-warning/10 p-5 shadow-md"><div className="flex items-center gap-2"><Scale className="h-5 w-5 text-warning" /><p className="text-sm font-bold uppercase tracking-wide text-warning">Acquisition judgment pending</p></div><p className="mt-3 text-sm leading-6 text-foreground">{synthesis.finalRecommendation ? `n8n returned the recommendation “${synthesis.finalRecommendation},” but did not return its final plain-English judgment yet. Refresh after the next synthesis pass.` : 'This synthesis row has no final judgment text yet. It may still be processing, or the consolidator returned an incomplete payload. Refresh after the next synthesis pass.'}</p></div> : null}
 
-                            <div className="rounded-xl border-2 border-primary/60 bg-primary/10 p-4 shadow-sm">
+                            <div id="synthesis-next-step" className="scroll-mt-6 rounded-xl border-2 border-primary/60 bg-primary/10 p-4 shadow-sm">
                                 <p className="text-sm font-bold uppercase tracking-wide text-primary">Next step after the synthesis</p>
                                 <p className="mt-1 text-sm leading-6 text-foreground">
                                     {synthesis.missingDocuments.length > 0
@@ -1459,7 +1462,7 @@ export default function ProjectSynthesisCard({
                             </div>
 
                             {(synthesis.valuationBaseEstimate && synthesis.valuationBaseEstimate !== '0') || (synthesis.valuationLowerBound && synthesis.valuationLowerBound !== '0') || (synthesis.valuationUpperBound && synthesis.valuationUpperBound !== '0') ? (
-                                <div>
+                                <div id="synthesis-valuation" className="scroll-mt-6">
                                     {(() => {
                                         const conf = parseFloat(synthesis.valuationConfidence || synthesis.aiConfidence || '')
                                         if (!Number.isFinite(conf)) return null
@@ -1538,7 +1541,7 @@ export default function ProjectSynthesisCard({
                                 })()
                             )}
 
-                            <div className="grid gap-2 rounded-lg border border-border bg-muted/20 p-3 sm:grid-cols-2">
+                            <div id="synthesis-filters" className="scroll-mt-6 grid gap-2 rounded-lg border border-border bg-muted/20 p-3 sm:grid-cols-2">
                                 <label className="flex flex-col gap-1">
                                     <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground"><Filter className="h-3 w-3" />Severity</span>
                                     <select value={severityFilter} onChange={(e) => setSeverityFilter(e.target.value as SeverityFilter)} className="rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground">
@@ -1583,7 +1586,7 @@ export default function ProjectSynthesisCard({
                                     defaultOpen
                                     onItemClick={onOpenEvidence ? (item, index) => handleInsightClick('red-flag', item, index) : undefined}
                                 /></div> : null}
-                                {(severityFilter === 'all' || getSeverityForGroup('yellow-flag') === severityFilter) && (typeFilter === 'all' || typeFilter === 'yellow-flag') ? <ExpandableInsightGroup
+                                {(severityFilter === 'all' || getSeverityForGroup('yellow-flag') === severityFilter) && (typeFilter === 'all' || typeFilter === 'yellow-flag') ? <div id="synthesis-yellow-flags" className="scroll-mt-6"><ExpandableInsightGroup
                                     title="Project-level yellow flags"
                                     icon={<TriangleAlert className="h-4 w-4 text-warning" />}
                                     items={synthesis.yellowFlags}
@@ -1594,8 +1597,8 @@ export default function ProjectSynthesisCard({
                                     itemClassName="border-warning/20"
                                     defaultOpen
                                     onItemClick={onOpenEvidence ? (item, index) => handleInsightClick('yellow-flag', item, index) : undefined}
-                                /> : null}
-                                {(severityFilter === 'all' || getSeverityForGroup('green-flag') === severityFilter) && (typeFilter === 'all' || typeFilter === 'green-flag') ? <ExpandableInsightGroup
+                                /></div> : null}
+                                {(severityFilter === 'all' || getSeverityForGroup('green-flag') === severityFilter) && (typeFilter === 'all' || typeFilter === 'green-flag') ? <div id="synthesis-green-flags" className="scroll-mt-6"><ExpandableInsightGroup
                                     title="Project-level green flags"
                                     icon={<Scale className="h-4 w-4 text-success" />}
                                     items={synthesis.greenFlags}
@@ -1606,8 +1609,8 @@ export default function ProjectSynthesisCard({
                                     itemClassName="border-success/20"
                                     defaultOpen
                                     onItemClick={onOpenEvidence ? (item, index) => handleInsightClick('green-flag', item, index) : undefined}
-                                /> : null}
-                                {(severityFilter === 'all' || getSeverityForGroup('takeaway') === severityFilter) && (typeFilter === 'all' || typeFilter === 'takeaway') ? <ExpandableInsightGroup
+                                /></div> : null}
+                                {(severityFilter === 'all' || getSeverityForGroup('takeaway') === severityFilter) && (typeFilter === 'all' || typeFilter === 'takeaway') ? <div id="synthesis-takeaways" className="scroll-mt-6"><ExpandableInsightGroup
                                     title="Key acquisition takeaways"
                                     icon={<Scale className="h-4 w-4 text-primary" />}
                                     items={synthesis.keyTakeaways}
@@ -1618,11 +1621,11 @@ export default function ProjectSynthesisCard({
                                     itemClassName="border-primary/20"
                                     defaultOpen
                                     onItemClick={onOpenEvidence ? (item, index) => handleInsightClick('takeaway', item, index) : undefined}
-                                /> : null}
-                                {(severityFilter === 'all' || getSeverityForGroup('takeaway') === severityFilter) && (typeFilter === 'all' || typeFilter === 'takeaway') ? <section className="rounded-lg border border-border bg-muted/20 p-4">
+                                /></div> : null}
+                                {(severityFilter === 'all' || getSeverityForGroup('takeaway') === severityFilter) && (typeFilter === 'all' || typeFilter === 'takeaway') ? <section id="synthesis-doc-thesis" className="scroll-mt-6 rounded-lg border border-border bg-muted/20 p-4">
                                     <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><FileText className="h-4 w-4 text-muted-foreground" /><p className="text-sm font-semibold text-foreground">Document-level thesis takeaways</p></div><Badge variant="outline">{documentThesisTakeaways.length}</Badge></div>
                                     <p className="mt-1 text-xs text-muted-foreground">Each point is from one completed document—not a new project-level conclusion.</p>
-                                    {documentThesisTakeaways.length ? <div className="mt-3 max-h-[28rem] space-y-2 overflow-y-auto pr-1">{documentThesisTakeaways.map((takeaway, index) => <button key={`${takeaway.fileName}-${index}`} type="button" onClick={() => onOpenEvidence?.({ title: `Document thesis: ${takeaway.fileName}`, sourceFile: takeaway.fileName, sourceLocation: 'Document-level investment thesis', excerpt: takeaway.takeaway, status: takeaway.status || takeaway.stance, provenance: takeaway.stance, documentId: takeaway.documentId, documentUrl: takeaway.documentUrl })} className="w-full rounded-md border border-border bg-background/80 p-3 text-left text-sm leading-6 text-foreground transition-colors hover:border-primary/40 hover:bg-muted/30"><div className="flex flex-wrap items-center gap-2"><span className="font-medium">{takeaway.fileName}</span><Badge variant={takeaway.stance === 'Caution indicator' ? 'warning' : takeaway.stance === 'Supportive indicator' ? 'success' : 'outline'}>{takeaway.stance}</Badge></div><p className="mt-1">{compactTakeaway(takeaway.takeaway)}</p><span className="mt-1 block text-xs font-medium text-primary">View full source evidence</span></button>)}</div> : <p className="mt-3 rounded-md border border-border bg-background/80 px-3 py-2 text-sm text-muted-foreground">No document-level investment-thesis takeaway has returned yet.</p>}
+                                    {documentThesisTakeaways.length ? <div className="mt-3 max-h-[28rem] space-y-2 overflow-y-auto pr-1">{documentThesisTakeaways.map((takeaway, index) => <button key={`${takeaway.fileName}-${index}`} type="button" onClick={() => onOpenEvidence?.({ title: `Document thesis: ${takeaway.fileName}`, sourceFile: takeaway.fileName, sourceLocation: 'Document-level investment thesis', excerpt: takeaway.takeaway, status: takeaway.status || takeaway.stance, provenance: takeaway.stance, documentId: takeaway.documentId, documentUrl: takeaway.documentUrl })} className="w-full rounded-md border border-border bg-background/80 p-3 text-left text-sm leading-6 text-foreground transition-colors hover:border-primary/40 hover:bg-muted/30"><div className="flex flex-wrap items-center gap-2"><span className="font-medium">{takeaway.fileName}</span><Badge variant={takeaway.stance === 'Caution indicator' ? 'warning' : takeaway.stance === 'Supportive indicator' ? 'success' : 'outline'}>{takeaway.stance}</Badge>{takeaway.confidence !== null ? <Badge variant="secondary">{takeaway.confidence <= 1 && takeaway.confidence > 0 ? Math.round(takeaway.confidence * 100) : Math.round(takeaway.confidence)}% confidence</Badge> : null}</div><p className="mt-1">{compactTakeaway(takeaway.takeaway)}</p><span className="mt-1 block text-xs font-medium text-primary">View full source evidence</span></button>)}</div> : <p className="mt-3 rounded-md border border-border bg-background/80 px-3 py-2 text-sm text-muted-foreground">No document-level investment-thesis takeaway has returned yet.</p>}
                                 </section> : null}
                                 {(severityFilter === 'all' || getSeverityForGroup('conflict') === severityFilter) && (typeFilter === 'all' || typeFilter === 'conflict') ? <div id="synthesis-conflicts" className="scroll-mt-6"><ExpandableInsightGroup
                                     title="Cross-document conflicts"
@@ -1667,7 +1670,7 @@ export default function ProjectSynthesisCard({
                                     onItemClick={onOpenEvidence ? (item, index) => handleInsightClick('open-question', item, index) : undefined}
                                 /></div> : null}
                                 {derivedCitations.length > 0 ? (
-                                     <div className="rounded-lg border border-border bg-muted/20 p-4">
+                                     <div id="synthesis-citations" className="scroll-mt-6 rounded-lg border border-border bg-muted/20 p-4">
                                          <div className="flex items-center gap-2"><FileText className="h-4 w-4 text-muted-foreground" /><p className="text-sm font-semibold text-foreground">Synthesis citations</p></div>
                                          <div className="mt-3 h-64 space-y-2 overflow-y-auto pr-1">
                                              {derivedCitations.map((citation, index) => {
@@ -1680,7 +1683,9 @@ export default function ProjectSynthesisCard({
                                  ) : null}
                             </div>
 
-                            <MaterialImpactView synthesis={synthesis} onOpenEvidence={onOpenEvidence} documents={documents} />
+                            <div id="synthesis-material-impact" className="scroll-mt-6">
+                                <MaterialImpactView synthesis={synthesis} onOpenEvidence={onOpenEvidence} documents={documents} />
+                            </div>
                         </div>
                     )
                 })}

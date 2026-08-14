@@ -1,5 +1,9 @@
 import * as fs from 'fs'
 import * as path from 'path'
+import { fileURLToPath } from 'url'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 const BENCHMARK_DIR = path.resolve('C:\\Users\\s-bas\\Downloads\\NEW mml-manda-dd-benchmark (2)\\mml-manda-dd-benchmark\\output\\ground_truth')
 const WORKSPACE_ROOT = path.resolve(__dirname, '..')
