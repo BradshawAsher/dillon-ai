@@ -280,6 +280,7 @@ function downloadDocumentEvalReport(doc: any, businessName: string, val: any) {
 export default function EvalDashboardTab({
     evalRuns = [],
     syntheses = [],
+    documents = [],
     onTriggerEvalRuns,
     onSelectProject,
     onSelectDoc,
@@ -2081,7 +2082,7 @@ export default function EvalDashboardTab({
                                     ? 'border-2 border-blue-500/50 bg-blue-500/5 dark:bg-blue-950/20 shadow-md hover:border-blue-500/80 transition-all'
                                     : 'border-2 border-emerald-500/50 bg-emerald-500/5 dark:bg-emerald-950/20 shadow-md hover:border-emerald-500/80 transition-all'
 
-                                const hasLivePostLoi = isDD001 || isDD002 || isDD003 || isDD004 || isDD005 || isDD006 || isDD007 || isDD008 || isDD009 || isDD010 || isDD011 || isDD012 || isDD013 || isDD014 || normB.includes('werkheiser')
+                                const hasLivePostLoi = isDD001 || isDD002 || isDD003 || isDD004 || isDD005 || isDD006 || isDD007 || isDD008 || isDD009 || isDD010 || isDD011 || isDD012 || isDD013 || isDD014 || isDD015 || normB.includes('werkheiser')
 
                                 // Phase-scoped documents
                                 const phaseDocs = isPreLoi
@@ -2173,7 +2174,10 @@ export default function EvalDashboardTab({
                                     ? `${phaseDocs.length} Docs (Post-LOI Data Room — Includes Executed LOI)`
                                     : `${phaseDocs.length} Docs Uploaded (Executed LOI Document Pending)`
 
-                                const inspectBtnText = isPreLoi ? `Inspect ${phaseDocs.length} Docs` : hasLivePostLoi ? `Inspect ${phaseDocs.length} Docs` : `Inspect ${phaseDocs.length} Docs (No LOI Yet)`
+                                const isFolderUpload = isDDPacket && phaseDocs.length === 1
+                                const inspectBtnText = isFolderUpload
+                                    ? (isPreLoi ? 'Inspect 1 Folder' : hasLivePostLoi ? 'Inspect 1 Folder' : 'Inspect 1 Folder (No LOI Yet)')
+                                    : (isPreLoi ? `Inspect ${phaseDocs.length} Docs` : hasLivePostLoi ? `Inspect ${phaseDocs.length} Docs` : `Inspect ${phaseDocs.length} Docs (No LOI Yet)`)
 
                                 const liveStatusBadge = isPreLoi
                                     ? <Badge variant="outline" className="text-xs font-bold gap-1 px-2.5 py-0.5 bg-blue-500/15 text-blue-900 dark:text-blue-200 border-blue-400/80">✅ Live Pre-LOI Discovery Complete</Badge>
@@ -2226,7 +2230,7 @@ export default function EvalDashboardTab({
                                                             title={isCardExpanded ? "Hide individual document score cards for this business" : "Expand individual document score cards for this business"}
                                                         >
                                                             {isCardExpanded ? <EyeOff className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" /> : <Eye className="h-4 w-4 shrink-0 text-primary" />}
-                                                            <span>{isCardExpanded ? "Hide Doc Cards" : `Show ${phaseDocs.length} Doc Cards`}</span>
+                                                            <span>{isCardExpanded ? "Hide Doc Cards" : isFolderUpload ? "Show 1 Folder" : `Show ${phaseDocs.length} Doc Cards`}</span>
                                                         </Button>
                                                     )
                                                 })()}
@@ -2431,11 +2435,11 @@ export default function EvalDashboardTab({
                                                 >
                                                     <span className="flex items-center gap-2">
                                                         <FileText className="h-4 w-4 text-primary shrink-0 group-hover:scale-110 transition-transform" />
-                                                        <span>{docs.length} Document Score Cards Hidden (Compact View — Click to Expand)</span>
+                                                        <span>{isFolderUpload ? '1 Folder Hidden (Compact View — Click to Expand)' : `${phaseDocs.length} Document Score Cards Hidden (Compact View — Click to Expand)`}</span>
                                                     </span>
                                                     <div className="flex items-center gap-1.5 text-primary font-black">
                                                         <Eye className="h-4 w-4 shrink-0" />
-                                                        <span>Expand {docs.length} Doc Cards</span>
+                                                        <span>{isFolderUpload ? 'Expand 1 Folder' : `Expand ${phaseDocs.length} Doc Cards`}</span>
                                                     </div>
                                                 </button>
                                             )
@@ -2729,6 +2733,9 @@ export default function EvalDashboardTab({
                                 <p className="text-xs text-muted-foreground">
                                     Per-document AI extraction scores, financial facts, risk flags, math checks, and model token usage.
                                 </p>
+                                <p className="text-xs text-amber-600 dark:text-amber-400 font-bold mt-1 bg-amber-500/10 border border-amber-400/40 rounded-md px-2.5 py-1.5">
+                                    ⚠️ Per-doc rubric scores are cosmetic estimates — ground truth evaluates the full-packet synthesis, not individual documents. Token usage and cost are real.
+                                </p>
                             </div>
                             <Button
                                 type="button"
@@ -2759,11 +2766,14 @@ export default function EvalDashboardTab({
                         <div className="overflow-y-auto pr-1 space-y-3 flex-1">
                             {(() => {
                                 const targetName = selectedDocViewerBusiness.toLowerCase()
+                                const mappedKey = mapBusinessToProjectKey(selectedDocViewerBusiness)
                                 const livePropDocs = (documents || []).filter((d: any) => {
                                     const bName = (d.business || d.company_name || d.project_name || '').toLowerCase()
                                     const pId = (d.project_id || d.projectId || '').toLowerCase()
-                                    const mappedKey = mapBusinessToProjectKey(selectedDocViewerBusiness)
-                                    return bName.includes(targetName) || targetName.includes(bName) || pId === mappedKey || pId.includes(mappedKey)
+                                    if (!bName && !pId) return false
+                                    if (pId && (pId === mappedKey || pId.includes(mappedKey))) return true
+                                    if (bName && (bName.includes(targetName) || targetName.includes(bName))) return true
+                                    return false
                                 }).map((d: any) => ({
                                     fileName: d.file_name || d.fileName || d.original_filename || 'Uploaded Document',
                                     business: selectedDocViewerBusiness,

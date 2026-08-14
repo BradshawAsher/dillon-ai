@@ -128,6 +128,8 @@
 
 - Are we only scoring 1 doc per dd-00x business? But we're claiming to give each doc an individual scoring? What is going on? [For brad] - understand how this works and reconcile this?
 
+- Why is the vercel not synced with the localhost?
+
 
 - # Prepare slides, presentation script (?), backup recording, and supademo and supademo case study for tuesday business meeting, also prepare for example questions that they may ask and extra things you can mention if there's more time
 
