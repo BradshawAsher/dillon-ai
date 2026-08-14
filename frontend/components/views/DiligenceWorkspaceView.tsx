@@ -17,6 +17,7 @@ import IndustryBenchmarksCard from '../IndustryBenchmarksCard'
 import CostPerRunCard from '../CostPerRunCard'
 import ProjectChecklistCard from '../ProjectChecklistCard'
 import { sumMeasuredCost } from '../../utils/costModel'
+import { isRowMatchingProject } from '../../utils/projectWorkspace'
 
 const EbitdaReconstructionCard = React.lazy(() => import('../EbitdaReconstructionCard'))
 const DealTimelineCard = React.lazy(() => import('../DealTimelineCard'))
@@ -177,7 +178,8 @@ export function DiligenceWorkspaceView({
                     })
 
                     const activeDocCount = activeProjectDocuments.length > 0 ? activeProjectDocuments.length : 21
-                    const activeSynthRuns = activeProjectSynthesis ? 1 : 1
+                    const matchingSyntheses = (visibleProjectSyntheses || []).filter(s => isRowMatchingProject(s, activeProjectId))
+                    const activeSynthRuns = matchingSyntheses.length > 0 ? matchingSyntheses.length : 2
 
                     return (
                         <CostPerRunCard

@@ -137,11 +137,21 @@ export default function CostPerRunCard({
                         </ol>
                     </div>
                     <div className="rounded-lg border border-border bg-background p-3">
-                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Projected monthly deal spend</p>
-                        <p className="mt-1 text-lg font-semibold text-foreground">${monthlyAtCurrentPace.toFixed(2)}<span className="text-xs font-normal text-muted-foreground">/mo</span></p>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                            At scale: 1,000 docs/mo ≈ <span className="font-medium text-foreground">${estimateMonthlyCost(1000, 200, ESTIMATED_COST_PER_SYNTHESIS).toFixed(0)}</span> (with ~200 syntheses)
-                        </p>
+                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Active Deal Cost vs Monthly Projection</p>
+                        <div className="mt-1 flex items-baseline gap-2">
+                            <p className="text-xl font-black text-foreground">${totalEstimated.toFixed(3)}</p>
+                            <span className="text-xs font-semibold text-muted-foreground">/ deal run</span>
+                        </div>
+                        <div className="mt-2 space-y-1 text-xs border-t border-border/60 pt-2">
+                            <div className="flex justify-between items-center">
+                                <span className="text-muted-foreground">Firm Pace (~15 deals/mo):</span>
+                                <span className="text-sm font-black text-emerald-800 dark:text-emerald-200">${(totalEstimated * 15).toFixed(2)}/mo</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-muted-foreground">Scale (1,000 docs/mo):</span>
+                                <span className="text-sm font-black text-primary">${estimateMonthlyCost(1000, 200, ESTIMATED_COST_PER_SYNTHESIS).toFixed(0)}/mo</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div className="mt-4 rounded-md border border-dashed border-border bg-muted/20 p-3">
