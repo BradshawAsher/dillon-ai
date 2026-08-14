@@ -38,9 +38,12 @@ export type ProcessingEstimate = {
  * the per-document term when available; otherwise the base rate is used.
  */
 export function estimateProcessingSeconds(input: ProcessingEstimateInput): ProcessingEstimate {
-    const documents = Math.max(0, Math.floor(input.documentCount))
-    const perDocCharSeconds = input.totalCharacters && documents > 0
-        ? (input.totalCharacters / 1000) * SECONDS_PER_1K_CHARS
+    // Coerce non-finite inputs (NaN / Infinity) to safe values so one bad number
+    // can't poison the whole estimate with NaN or Infinity seconds.
+    const documents = Number.isFinite(input.documentCount) ? Math.max(0, Math.floor(input.documentCount)) : 0
+    const totalCharacters = Number.isFinite(input.totalCharacters) ? Math.max(0, input.totalCharacters as number) : 0
+    const perDocCharSeconds = totalCharacters > 0 && documents > 0
+        ? (totalCharacters / 1000) * SECONDS_PER_1K_CHARS
         : 0
     const documentSeconds = documents * SECONDS_PER_DOCUMENT_BASE + perDocCharSeconds
     const synthesisSeconds = input.includeSynthesis && documents > 0 ? SECONDS_PER_SYNTHESIS : 0
