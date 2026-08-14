@@ -51,6 +51,15 @@ data sources at runtime:
 
 The choice sticks in localStorage per browser.
 
+## Active Production AI Model Setup
+
+When running in **Live n8n** mode, the pipeline executes across 4 dedicated models:
+
+- **Per-Document Primary Extraction Model**: `Claude Sonnet 5` ($0.055/doc)
+- **Per-Document Backup Extraction Model**: `Claude Opus 5` (fallback routing)
+- **Project Synthesis Pass Primary Model**: `OpenAI 5.6 Terra` ($0.065/synthesis)
+- **Project Synthesis Pass Backup Model**: `OpenAI 5.6 Sol` (fallback routing)
+
 ## Deploying changes
 
 Push to `main` on GitHub → Vercel automatically creates a deployment.

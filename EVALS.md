@@ -5,6 +5,15 @@ The **MergeWorks Evaluation Suite & Harness** is an automated benchmarking frame
 
 It validates extraction and synthesis outputs against verified ground truth specifications stored in [`test_sets/ground_truth/`](file:///c:/Users/s-bas/MERGEWORKS%20REAL%20WEBSITE/Due-Diligence-Dashboard/test_sets/ground_truth) and logs performance trends over time to Supabase (`public.eval_runs`).
 
+## Active Production AI Model Architecture
+
+The evaluation harness measures benchmark accuracy across our 4 production models:
+
+- **Per-Document Primary Extraction Model**: `Claude Sonnet 5` ($0.055/doc)
+- **Per-Document Backup Extraction Model**: `Claude Opus 5` (fallback routing)
+- **Project Synthesis Pass Primary Model**: `OpenAI 5.6 Terra` ($0.065/synthesis)
+- **Project Synthesis Pass Backup Model**: `OpenAI 5.6 Sol` (fallback routing)
+
 ---
 
 ## Evaluation Architecture
