@@ -382,13 +382,30 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
                 missingDocuments: missingDocuments.map((text) => ({ text, confidence: null, severity: 'medium', impact: '', status: 'Needs review', citations: [] })),
             }
 
-            const citationDetails = getCitationDetails(judgment.json, row.ai_citations ?? '')
-            const uniqueCitationSources = citationDetails.map((c) => c.sourceFile).filter((v, i, a) => a.indexOf(v) === i)
-
             const valuationObj = getJudgmentField(judgment.json, 'valuation')
             const valuationConfidence = valuationObj && typeof valuationObj === 'object'
                 ? String((valuationObj as Record<string, unknown>).confidence_score ?? '')
                 : ''
+
+            const extractValuationBound = (rowVal: any, fieldKey: string) => {
+                if (rowVal && String(rowVal).trim() !== '' && String(rowVal).trim() !== '0') {
+                    return String(rowVal).trim()
+                }
+                if (valuationObj && typeof valuationObj === 'object') {
+                    const rec = valuationObj as Record<string, unknown>
+                    if (rec[fieldKey] && String(rec[fieldKey]).trim() !== '' && String(rec[fieldKey]).trim() !== '0') {
+                        return String(rec[fieldKey]).trim()
+                    }
+                    if (fieldKey === 'lower_bound' && rec['lower_bound_estimate']) return String(rec['lower_bound_estimate']).trim()
+                    if (fieldKey === 'base_estimate' && rec['base']) return String(rec['base']).trim()
+                    if (fieldKey === 'upper_bound' && rec['upper_bound_estimate']) return String(rec['upper_bound_estimate']).trim()
+                }
+                return ''
+            }
+
+            const valLower = extractValuationBound(row.valuation_lower_bound, 'lower_bound')
+            const valBase = extractValuationBound(row.valuation_base_estimate, 'base_estimate')
+            const valUpper = extractValuationBound(row.valuation_upper_bound, 'upper_bound')
 
             return {
                 projectId: row.project_id ?? '',
@@ -417,9 +434,9 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
                 aiErrorMessage: row.ai_error_message ?? '',
                 aiConfidence: row.ai_confidence ?? '',
                 valuationConfidence,
-                valuationLowerBound: row.valuation_lower_bound ?? '',
-                valuationBaseEstimate: row.valuation_base_estimate ?? '',
-                valuationUpperBound: row.valuation_upper_bound ?? '',
+                valuationLowerBound: valLower,
+                valuationBaseEstimate: valBase,
+                valuationUpperBound: valUpper,
                 valuationCurrency: row.valuation_currency ?? '',
                 projectProcessedAt: row.project_processed_at ?? row.updated_at ?? '',
                 inputTokens: Number(row.input_tokens ?? 0),

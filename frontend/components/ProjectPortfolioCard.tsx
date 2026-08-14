@@ -318,7 +318,13 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                                                     <p className="font-mono text-xs text-muted-foreground">Project ID: {project.projectId}</p>
                                                 ) : null}
                                                 {(() => {
-                                                    const projectDocs = rows.filter((r) => (r.projectId || getProjectKey(r)) === project.projectKey || r.workstream === project.projectName)
+                                                    const rawProjectDocs = rows.filter((r) => (r.projectId || getProjectKey(r)) === project.projectKey || r.workstream === project.projectName)
+                                                    const isPostLoi = synthesis?.letterOfIntentPresent === true || synthesis?.letterOfIntentPresent === 'true'
+                                                    const isLoiDoc = (d: Partial<SubmissionHistoryItem>) => {
+                                                        const name = (d.fileName || d.title || '').toLowerCase()
+                                                        return name.includes('loi') || name.includes('letter_of_intent')
+                                                    }
+                                                    const projectDocs = isPostLoi ? rawProjectDocs : rawProjectDocs.filter(d => !isLoiDoc(d))
                                                     const docBatchCost = calculateBatchTotalCost(projectDocs)
                                                     const synthCost = calculateSynthesisCost(synthesis)
                                                     const totalRunCost = docBatchCost + synthCost
