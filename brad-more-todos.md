@@ -150,6 +150,14 @@ so if we're making a financial due diligent agent and a big task of it is to hel
 
 - If LOI is detected, in projects, evals, and synthesis tab for that project, have an option to "run without LOI for unbiased deal discovery/analysis" to see results without the LOI? Would this require us to first label which doc is the LOI?
 
+- Need to run business 1-5 without LOI for those that had an LOI, also add the pre-LOI or post-LOI for mergeworks suite 2-4
+
+    Still have syncing issues when i click on one of the dd projects it still says synthesis is running even when no synthesis is running?
+
+    And when i press view project workspace for dd 002 it shows a really weird synthesis? 1st and 2nd version are the same and it shows mml-dd-002-northstar as the project name?
+
+    Did you break this in your most recent fixing (~6-7 queries ago from me?)
+
 - # May have to rerun all the DD-001 through DD-015 by adding the new letter of intent and then rerunning the synthesis for all of them? And then we can compare the 2 versions, the 1st version acts as pre-loi and the 2nd version acts as the post-loi? Is this a good idea and does our app support functionality for this yet?
   - Also some of the dd files themselves may have been changed, can we see what was changed and if it's important or not? Do we have to rerun the whole packets through the pipeline again or no?
 
