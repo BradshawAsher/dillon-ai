@@ -6,6 +6,7 @@ import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { formatEasternTime } from '../utils/dateTime'
+import { classifyError } from '../utils/errorClassifier'
 
 type Props = { rows: WorkflowErrorItem[]; loading: boolean; error: string | null; onRefresh: () => void }
 
@@ -223,7 +224,14 @@ export default function WorkflowErrorLogCard({ rows, loading, error, onRefresh }
                                                 {formatEasternTime(row.occurredAt)} · Node: {row.failedNode || row.lastNodeExecuted || 'Not recorded'}
                                             </p>
                                         </div>
-                                        <Badge variant="destructive">{row.severity || 'uncaught'}</Badge>
+                                        {(() => {
+                                            const classified = classifyError(row.errorMessage)
+                                            return (
+                                                <Badge variant="outline" className={`font-mono text-[10px] font-bold ${classified.badgeColorClass}`}>
+                                                    {classified.badgeLabel}
+                                                </Badge>
+                                            )
+                                        })()}
                                     </div>
                                     <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{row.errorMessage || 'No error message recorded.'}</p>
                                 </summary>
