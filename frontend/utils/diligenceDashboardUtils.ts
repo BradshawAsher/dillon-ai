@@ -134,7 +134,7 @@ export function calculateBatchTotalCost(docs: Partial<SubmissionHistoryItem>[]):
     return docs.reduce((sum, doc) => sum + calculateDocumentCost(doc), 0)
 }
 
-export function calculateSynthesisCost(synth?: { costUsd?: number; inputTokens?: number; outputTokens?: number; finalJudgmentSummary?: string; projectSynthesisJson?: string } | null): number {
+export function calculateSynthesisCost(synth?: { costUsd?: number; inputTokens?: number; outputTokens?: number; finalJudgmentSummary?: string; finalJudgmentJson?: string } | null): number {
     if (!synth) return 0.0312
     if (typeof synth.costUsd === 'number' && synth.costUsd > 0) {
         return synth.costUsd
@@ -146,7 +146,7 @@ export function calculateSynthesisCost(synth?: { costUsd?: number; inputTokens?:
     }
 
     // Dynamic content-based estimation for synthesis
-    const synthText = (synth?.finalJudgmentSummary || '') + (synth?.projectSynthesisJson || '')
+    const synthText = (synth?.finalJudgmentSummary || '') + (synth?.finalJudgmentJson || '')
     const outputChars = synthText.length
     const estimatedOutputTokens = Math.max(1200, Math.round(outputChars / 3.6))
 
