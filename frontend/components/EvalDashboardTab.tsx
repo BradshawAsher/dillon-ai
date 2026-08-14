@@ -1355,7 +1355,7 @@ export default function EvalDashboardTab({
                     )
                 })()}
 
-                <CardContent className="space-y-6 max-h-[1160px] overflow-y-auto pr-2 scrollbar-thin pt-4">
+                <CardContent className="space-y-6 max-h-[2320px] overflow-y-auto pr-2 scrollbar-thin pt-4">
                     {(() => {
                         const results = latestRun.documentResults || defaultReport.documentResults
 
