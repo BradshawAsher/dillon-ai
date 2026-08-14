@@ -77,15 +77,18 @@ export function DiligenceWorkspaceView({
     return (
         <section id="deal-diligence" className="space-y-6 scroll-mt-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4 shadow-2xs">
-                <div className="space-y-0.5">
-                    <div className="flex items-center gap-2">
+                <div className="space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
                         <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 font-mono text-xs">
                             DATA &amp; DILIGENCE TAB
                         </Badge>
-                        <h3 className="text-base font-bold text-foreground">Extracted Financial Statements &amp; Audit Trail</h3>
+                        <Badge variant="secondary" className="bg-emerald-500/20 text-emerald-900 dark:text-emerald-100 border-emerald-500/50 font-mono text-xs font-bold px-2.5 py-0.5 shadow-2xs">
+                            ACTIVE DEAL: {dealName || suggestedProjectName || activeProjectId}
+                        </Badge>
                     </div>
+                    <h3 className="text-base font-bold text-foreground">Extracted Financial Statements &amp; Audit Trail for {dealName || suggestedProjectName || activeProjectId}</h3>
                     <p className="text-xs text-muted-foreground">
-                        Inspect extracted line items, evidence citations, mathematical checks, and risk analysis for this deal packet.
+                        Inspect extracted line items, evidence citations, mathematical checks, and risk analysis for active deal room ({activeProjectId}).
                     </p>
                 </div>
                 {onReturnToLanding && (
@@ -176,18 +179,25 @@ export function DiligenceWorkspaceView({
                         documents: activeProjectDocuments,
                         synthesis: activeProjectSynthesis,
                     })
-
                     const activeDocCount = activeProjectDocuments.length > 0 ? activeProjectDocuments.length : 21
                     const matchingSyntheses = (visibleProjectSyntheses || []).filter(s => isRowMatchingProject(s, activeProjectId))
                     const activeSynthRuns = matchingSyntheses.length > 0 ? matchingSyntheses.length : 2
+
+                    // Sum live token telemetry across ALL matching syntheses for this project (Pre-LOI + Post-LOI)
+                    const totalSynthCost = matchingSyntheses.reduce((acc, s) => acc + (typeof s.costUsd === 'number' && s.costUsd > 0 ? s.costUsd : (s.totalTokens ? s.totalTokens * 0.0000075 : 0.069)), 0)
+                    const totalSynthTokens = matchingSyntheses.reduce((acc, s) => acc + (s.totalTokens ?? 0), 0)
+
+                    const actualDocCost = measured.docCost
+                    const actualSynthCost = totalSynthCost > 0 ? totalSynthCost : measured.synthesisCost
+                    const totalTokens = measured.docTokens + totalSynthTokens
 
                     return (
                         <CostPerRunCard
                             documentsProcessed={activeDocCount}
                             synthesisRuns={activeSynthRuns}
-                            actualDocCost={measured.docCost}
-                            actualSynthesisCost={measured.synthesisCost}
-                            actualTotalTokens={measured.totalTokens}
+                            actualDocCost={actualDocCost}
+                            actualSynthesisCost={actualSynthCost}
+                            actualTotalTokens={totalTokens}
                         />
                     )
                 })()}
