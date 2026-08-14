@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { DealModel } from '../hooks/backend/diligence'
 import type { SubmissionHistoryItem } from './submissionHistory'
 import {
+    calculateSynthesisCost,
     createUnusedProjectId,
     formatElapsedDuration,
     getFindingVariant,
@@ -125,5 +126,19 @@ describe('withDerivedCapitalStack', () => {
     it('leaves the model untouched when there are no financing inputs', () => {
         const noFinancing = { purchasePrice: 1_000_000 } as DealModel
         expect(withDerivedCapitalStack(noFinancing)).toBe(noFinancing)
+    })
+})
+
+describe('calculateSynthesisCost', () => {
+    it('prefers a logged costUsd when present', () => {
+        expect(calculateSynthesisCost({ costUsd: 0.5 })).toBe(0.5)
+    })
+
+    it('factors finalJudgmentJson length into the content-based estimate', () => {
+        // Without the fix this field was read under a non-existent name, so the
+        // synthesis body never influenced the estimate.
+        const small = calculateSynthesisCost({ finalJudgmentJson: '{}' })
+        const large = calculateSynthesisCost({ finalJudgmentJson: 'x'.repeat(40_000) })
+        expect(large).toBeGreaterThan(small)
     })
 })
