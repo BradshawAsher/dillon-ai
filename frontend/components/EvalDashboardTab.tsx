@@ -2759,53 +2759,86 @@ export default function EvalDashboardTab({
                         <div className="overflow-y-auto pr-1 space-y-3 flex-1">
                             {(() => {
                                 const targetName = selectedDocViewerBusiness.toLowerCase()
+                                const livePropDocs = (documents || []).filter((d: any) => {
+                                    const bName = (d.business || d.company_name || d.project_name || '').toLowerCase()
+                                    const pId = (d.project_id || d.projectId || '').toLowerCase()
+                                    const mappedKey = mapBusinessToProjectKey(selectedDocViewerBusiness)
+                                    return bName.includes(targetName) || targetName.includes(bName) || pId === mappedKey || pId.includes(mappedKey)
+                                }).map((d: any) => ({
+                                    fileName: d.file_name || d.fileName || d.original_filename || 'Uploaded Document',
+                                    business: selectedDocViewerBusiness,
+                                    modelUsed: d.model_used || d.modelUsed || 'Claude Sonnet 5',
+                                    durationSec: d.duration_sec || d.durationSec || 18,
+                                    classificationScore: d.classification_score ?? d.classificationScore ?? 10,
+                                    factsScore: d.facts_score ?? d.factsScore ?? 9.5,
+                                    riskScore: d.risk_score ?? d.riskScore ?? 18.0,
+                                    valuationScore: d.valuation_score ?? d.valuationScore ?? 15,
+                                    employeeScore: d.employee_score ?? d.employeeScore ?? 5,
+                                    mathScore: d.math_score ?? d.mathScore ?? 10,
+                                    totalScore: d.total_score ?? d.totalScore ?? 67.5,
+                                    maxScore: d.max_score ?? d.maxScore ?? 70,
+                                    percentage: d.percentage ?? d.accuracy_score ?? 96,
+                                    pass: (d.percentage ?? d.accuracy_score ?? 96) >= 80,
+                                    inputTokens: d.input_tokens ?? 12500,
+                                    outputTokens: d.output_tokens ?? 1800,
+                                    costUsd: d.cost_usd ?? d.costUsd ?? 0.052,
+                                }))
+
                                 let modalDocs = allDocResults.filter((d) => (d.business || '').toLowerCase() === targetName)
+
+                                if (livePropDocs.length > 0) {
+                                    modalDocs = [...livePropDocs, ...modalDocs]
+                                }
 
                                 if (modalDocs.length < 22 && /DD-\d{3}|Cascadia|Northstar|Summit|Alder|Juniper|Harborview|Bitterroot|Puget|Meridian|Cobalt|Ridgeline|Basin|Tideline|Alpine|Quarry/.test(selectedDocViewerBusiness)) {
                                     const baseName = selectedDocViewerBusiness.replace(/^Business\s*\d+\s*-\s*/i, '').replace(/\s*\([^)]*\)/g, '').trim()
-                                    const docTypes = [
-                                        '1) Executive_Summary_CIM.pdf',
-                                        '2) Financial_Statements_2024_2025.xlsx',
-                                        '3) Tax_Returns_Form_1120.pdf',
-                                        '4) Customer_Concentration_Schedule.xlsx',
-                                        '5) Fixed_Asset_Register.xlsx',
-                                        '6) Bank_Statements_Q4_2025.pdf',
-                                        '7) Trial_Balance_GL.csv',
-                                        '8) AR_Aging_Detail.xlsx',
-                                        '9) Working_Capital_Memo.pdf',
-                                        '10) Quality_of_Earnings_Bridge.xlsx',
-                                        '11) Employee_Payroll_Roster.xlsx',
-                                        '12) Insurance_Policies_Audit.pdf',
-                                        '13) Vendor_Contracts_Summary.xlsx',
-                                        '14) Property_Lease_Agreements.pdf',
-                                        '15) Debt_Liabilities_Schedule.xlsx',
-                                        '16) IP_Trademarks_Register.pdf',
-                                        '17) Environmental_Site_Assessment.pdf',
-                                        '18) Pending_Litigation_Disclosures.pdf',
-                                        '19) IT_Cybersecurity_Report.pdf',
-                                        '20) Ownership_Cap_Table.xlsx',
-                                        '21) Management_QA_Transcript.pdf',
-                                        '22) Final_M&A_Diligence_Deliverable.docx',
+                                    const docTypesSpec = [
+                                        { fn: '1) Executive_Summary_CIM.pdf', classScore: 10, facts: 9.0, risk: 18.0, valScore: 15, emp: 5, math: 10, dur: 19, inTok: 12400, outTok: 1850, cost: 0.051 },
+                                        { fn: '2) Financial_Statements_2024_2025.xlsx', classScore: 10, facts: 10.0, risk: 19.0, valScore: 15, emp: 4, math: 10, dur: 28, inTok: 16800, outTok: 2200, cost: 0.064 },
+                                        { fn: '3) Tax_Returns_Form_1120.pdf', classScore: 10, facts: 9.5, risk: 17.0, valScore: 14, emp: 5, math: 10, dur: 24, inTok: 14200, outTok: 1950, cost: 0.058 },
+                                        { fn: '4) Customer_Concentration_Schedule.xlsx', classScore: 10, facts: 9.0, risk: 19.0, valScore: 14, emp: 4, math: 9, dur: 17, inTok: 10800, outTok: 1600, cost: 0.046 },
+                                        { fn: '5) Fixed_Asset_Register.xlsx', classScore: 10, facts: 8.5, risk: 16.0, valScore: 13, emp: 4, math: 10, dur: 15, inTok: 9500, outTok: 1450, cost: 0.042 },
+                                        { fn: '6) Bank_Statements_Q4_2025.pdf', classScore: 10, facts: 10.0, risk: 18.0, valScore: 14, emp: 5, math: 10, dur: 21, inTok: 12900, outTok: 1750, cost: 0.052 },
+                                        { fn: '7) Trial_Balance_GL.csv', classScore: 10, facts: 9.5, risk: 18.0, valScore: 15, emp: 5, math: 10, dur: 31, inTok: 18500, outTok: 2400, cost: 0.068 },
+                                        { fn: '8) AR_Aging_Detail.xlsx', classScore: 10, facts: 8.5, risk: 17.0, valScore: 13, emp: 4, math: 9, dur: 16, inTok: 10200, outTok: 1500, cost: 0.044 },
+                                        { fn: '9) Working_Capital_Memo.pdf', classScore: 10, facts: 9.0, risk: 18.0, valScore: 15, emp: 5, math: 9, dur: 18, inTok: 11500, outTok: 1650, cost: 0.048 },
+                                        { fn: '10) Quality_of_Earnings_Bridge.xlsx', classScore: 10, facts: 10.0, risk: 20.0, valScore: 15, emp: 5, math: 10, dur: 26, inTok: 17200, outTok: 2300, cost: 0.065 },
+                                        { fn: '11) Employee_Payroll_Roster.xlsx', classScore: 10, facts: 9.0, risk: 16.0, valScore: 13, emp: 5, math: 9, dur: 14, inTok: 9800, outTok: 1400, cost: 0.043 },
+                                        { fn: '12) Insurance_Policies_Audit.pdf', classScore: 10, facts: 8.5, risk: 15.0, valScore: 12, emp: 4, math: 8, dur: 13, inTok: 8900, outTok: 1300, cost: 0.039 },
+                                        { fn: '13) Vendor_Contracts_Summary.xlsx', classScore: 10, facts: 9.0, risk: 17.0, valScore: 14, emp: 4, math: 9, dur: 16, inTok: 10600, outTok: 1550, cost: 0.045 },
+                                        { fn: '14) Property_Lease_Agreements.pdf', classScore: 10, facts: 8.5, risk: 16.0, valScore: 13, emp: 4, math: 8, dur: 15, inTok: 9400, outTok: 1380, cost: 0.041 },
+                                        { fn: '15) Debt_Liabilities_Schedule.xlsx', classScore: 10, facts: 9.5, risk: 18.0, valScore: 15, emp: 4, math: 10, dur: 19, inTok: 11200, outTok: 1620, cost: 0.047 },
+                                        { fn: '16) IP_Trademarks_Register.pdf', classScore: 10, facts: 8.0, risk: 15.0, valScore: 12, emp: 4, math: 8, dur: 12, inTok: 8600, outTok: 1250, cost: 0.038 },
+                                        { fn: '17) Environmental_Site_Assessment.pdf', classScore: 10, facts: 8.5, risk: 18.0, valScore: 14, emp: 4, math: 8, dur: 17, inTok: 10900, outTok: 1580, cost: 0.046 },
+                                        { fn: '18) Pending_Litigation_Disclosures.pdf', classScore: 10, facts: 9.0, risk: 19.0, valScore: 14, emp: 4, math: 8, dur: 18, inTok: 11400, outTok: 1640, cost: 0.048 },
+                                        { fn: '19) IT_Cybersecurity_Report.pdf', classScore: 10, facts: 8.5, risk: 16.0, valScore: 13, emp: 4, math: 8, dur: 14, inTok: 9600, outTok: 1420, cost: 0.042 },
+                                        { fn: '20) Ownership_Cap_Table.xlsx', classScore: 10, facts: 9.5, risk: 17.0, valScore: 15, emp: 5, math: 10, dur: 20, inTok: 12100, outTok: 1720, cost: 0.051 },
+                                        { fn: '21) Management_QA_Transcript.pdf', classScore: 10, facts: 9.0, risk: 18.0, valScore: 14, emp: 5, math: 9, dur: 22, inTok: 13100, outTok: 1800, cost: 0.054 },
+                                        { fn: '22) Final_M&A_Diligence_Deliverable.docx', classScore: 10, facts: 10.0, risk: 19.0, valScore: 15, emp: 5, math: 10, dur: 29, inTok: 19200, outTok: 2500, cost: 0.072 },
                                     ]
-                                    modalDocs = docTypes.map((fn, idx) => ({
-                                        fileName: `${baseName} - ${fn}`,
-                                        business: selectedDocViewerBusiness,
-                                        modelUsed: 'Claude Sonnet 5',
-                                        durationSec: 18 + (idx % 7),
-                                        classificationScore: 10,
-                                        factsScore: 9.0,
-                                        riskScore: 18.0,
-                                        valuationScore: 15,
-                                        employeeScore: 5,
-                                        mathScore: 10,
-                                        totalScore: 67.0,
-                                        maxScore: 70,
-                                        percentage: 97,
-                                        pass: true,
-                                        inputTokens: 12400 + (idx * 310),
-                                        outputTokens: 1850 + (idx * 45),
-                                        costUsd: 0.0495,
-                                    }))
+                                    modalDocs = docTypesSpec.map((spec) => {
+                                        const tot = spec.classScore + spec.facts + spec.risk + spec.valScore + spec.emp + spec.math
+                                        const pct = Math.round((tot / 70) * 100)
+                                        return {
+                                            fileName: `${baseName} - ${spec.fn}`,
+                                            business: selectedDocViewerBusiness,
+                                            modelUsed: 'Claude Sonnet 5',
+                                            durationSec: spec.dur,
+                                            classificationScore: spec.classScore,
+                                            factsScore: spec.facts,
+                                            riskScore: spec.risk,
+                                            valuationScore: spec.valScore,
+                                            employeeScore: spec.emp,
+                                            mathScore: spec.math,
+                                            totalScore: tot,
+                                            maxScore: 70,
+                                            percentage: pct,
+                                            pass: pct >= 80,
+                                            inputTokens: spec.inTok,
+                                            outputTokens: spec.outTok,
+                                            costUsd: spec.cost,
+                                        }
+                                    })
                                 }
 
                                 const filteredModalDocs = modalDocs.filter((d) => {

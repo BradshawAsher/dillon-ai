@@ -80,7 +80,7 @@
 - [ ] **Understand Graph Interpretation**: Review the explanatory tooltips (`i`) on Returns, Growth, Valuation, and Deal Structure charts.
 - [ ] **Review Deterministic Math Checks**: Review [`DETERMINISTIC_MATH_CHECKS.md`](file:///c:/Users/s-bas/MERGEWORKS%20REAL%20WEBSITE/Due-Diligence-Dashboard/DETERMINISTIC_MATH_CHECKS.md) for how Revenue - COGS = GP and Assets - Liab = Equity formulas work.
 
-- For brad, going through all the tabs, went through diligence, synthesis, valuation, working on returns tab (on levered cash flow timeline)
+- # For brad, going through all the tabs, went through diligence, synthesis, valuation, working on returns tab (on levered cash flow timeline)
 
 - For Brad - need to keep testing the website and trying different documents, can always expand the eval suite and trying to break the system, and also i think a lot of financial facts like ebitda and sde are not filled even though we put 4 long docs through? Why?
 
@@ -101,9 +101,6 @@
 
 - Environment separation for prod API keys separate from testing API keys? Have we done this?
 
-- Prep for business meeting 3 and a website and walkthrough ready for them to try as well as prepare to be more professional with what to show when and example questions to ask and example questions to be ready to address
-
-- Have to make a walkthrough page like the example walkthrough for our project -> use supademo for tutorial and case study
 
 - Get github mcp?
 
@@ -132,11 +129,9 @@
 - Are we only scoring 1 doc per dd-00x business? But we're claiming to give each doc an individual scoring? What is going on? [For brad] - understand how this works and reconcile this?
 
 
-- Prepare slides, presentation script (?), and supademo and supademo case study for tuesday business meeting.
+- # Prepare slides, presentation script (?), backup recording, and supademo and supademo case study for tuesday business meeting, also prepare for example questions that they may ask and extra things you can mention if there's more time
 
 - is there anywhere else in our website like FAQs or something or just how our agent currently operates that needs to be updated in order to really like distinctly highlight and support functionality for both modes or no?
-
-- In projects tab and evals tab maybe should we have an option to "open high level summary" so the user can see like a high level summary without having to click view synthesis and stuff like that
 
 - [For brad] Resync mcp servers for new AIs you use to have same setup that gemini uses
 

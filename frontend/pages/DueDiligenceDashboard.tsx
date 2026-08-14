@@ -1980,6 +1980,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                                 evalRuns={Array.isArray(evalRunsData) ? evalRunsData : []}
                                 onTriggerEvalRuns={triggerEvalRuns}
                                 syntheses={visibleProjectSyntheses}
+                                documents={submissionHistory}
                                 onSelectProject={(targetIdentifier, targetTab = 'synthesis') => {
                                     handleEvalProjectSelect(targetIdentifier, (targetTab as WorkspaceTab) || 'synthesis')
                                 }}
