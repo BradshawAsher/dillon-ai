@@ -1,4 +1,4 @@
-import { Pin, PinOff, Scale } from 'lucide-react'
+import { Download, Pin, PinOff, Scale } from 'lucide-react'
 
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import ExpandableText from './ExpandableText'
@@ -6,6 +6,7 @@ import { Badge } from '../lib/shadcn/badge'
 import { Card, CardContent } from '../lib/shadcn/card'
 import { getSubmissionInsightTone } from '../utils/aiSubmissionData'
 import { formatHours, type ImpactMetrics } from '../utils/impactMetrics'
+import { downloadSynthesisReport } from './ProjectSynthesisCard'
 
 import { useMemo, useState } from 'react'
 
@@ -163,6 +164,17 @@ export default function AcquisitionJudgmentCallout({ synthesis, impact }: { synt
                         </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
+                        {synthesis ? (
+                            <button
+                                type="button"
+                                onClick={() => downloadSynthesisReport(synthesis, synthesis.projectName || synthesis.companyName || synthesis.projectId || 'Deal')}
+                                className="flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-2.5 py-1.5 text-xs font-bold text-primary transition-colors hover:bg-primary/20 shadow-xs"
+                                title="Download complete project synthesis report (Markdown)"
+                            >
+                                <Download className="h-3.5 w-3.5 text-primary shrink-0" />
+                                <span>Download Project Report</span>
+                            </button>
+                        ) : null}
                         <button
                             type="button"
                             onClick={() => setIsPinned(!isPinned)}

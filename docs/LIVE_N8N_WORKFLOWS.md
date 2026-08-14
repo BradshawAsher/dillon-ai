@@ -96,3 +96,13 @@ The shared Error Audit workflow is published and ready. Attaching it through
 schema error (`distinctAlias.SharedWorkflow_projectId`); no workflow settings
 were changed by those rejected updates. Once n8n resolves that issue, attach
 `4dqKa3CyLjjaFn8C` as the shared last-resort production error handler.
+
+## Production AI Model Routing Architecture
+
+The live workflows invoke 4 primary and backup model endpoints:
+
+- **Per-Document Primary Extraction Model**: `Claude Sonnet 5` ($0.055/doc) — Handles document categorization, line-item P&L parsing, and fact extraction.
+- **Per-Document Backup Extraction Model**: `Claude Opus 5` — Automatic fallback on complex multi-tab spreadsheets, tax schedules, or LLM rate-limit errors.
+- **Project Synthesis Pass Primary Model**: `OpenAI 5.6 Terra` ($0.065/synthesis) — Handles project-wide cross-document reconciliation, valuation range calibration, and deal memo generation.
+- **Project Synthesis Pass Backup Model**: `OpenAI 5.6 Sol` — Secondary fallback model for project synthesis if primary endpoints experience elevated latency or API errors.
+

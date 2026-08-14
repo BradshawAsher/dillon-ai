@@ -125,7 +125,6 @@
 
 - Need to run business 1-5 without LOI for those that had an LOI, also add the pre-LOI or post-LOI for mergeworks suite 2-4
 
-
 - Add options to use gemini 3.5 flash lite/3.1 flash lite for both per doc and synthesizer?
 - Add options to use deepseek v4 flash and/or v4 pro?
 - Maybe even have dropdowns for the user to choose and customize which model to use for the 4 options for doc primary, doc backup, synth primary, synth backup?
