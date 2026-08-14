@@ -328,9 +328,10 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
     const deduplicatedRows: any[] = []
 
     for (const row of (rows as Array<Record<string, any>>)) {
-        const rawPid = (row.project_id ?? '').trim()
+        const rawPid = (row.project_id ?? '').trim().toLowerCase()
         if (!rawPid) continue
-        const normPid = rawPid.replace(/-+$/, '')
+        const dealMatch = rawPid.match(/dd-\d+/)
+        const normPid = dealMatch ? dealMatch[0] : rawPid.replace(/-+$/, '')
 
         if (!perProject[normPid]) perProject[normPid] = {}
         const entry = perProject[normPid]
@@ -407,6 +408,9 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
             const valBase = extractValuationBound(row.valuation_base_estimate, 'base_estimate')
             const valUpper = extractValuationBound(row.valuation_upper_bound, 'upper_bound')
 
+            const citationDetails = getCitationDetails(judgment.json, row.ai_citations ?? '')
+            const uniqueCitationSources = Array.from(new Set(citationDetails.map((c) => c.sourceFile).filter((name): name is string => Boolean(name))))
+
             return {
                 projectId: row.project_id ?? '',
                 projectName: row.project_name || undefined,
@@ -444,7 +448,7 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
                 totalTokens: Number(row.total_tokens ?? 0),
                 costUsd: Number(row.cost_usd ?? 0),
                 id: row.id ?? 0,
-                letterOfIntentPresent: row.letter_of_intent_present ?? Boolean(judgment.json?.letter_of_intent_present),
+                letterOfIntentPresent: Boolean(row.letter_of_intent_present),
                 createdAt: row.created_at ?? '',
                 updatedAt: row.updated_at ?? '',
             }

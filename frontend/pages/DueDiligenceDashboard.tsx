@@ -601,14 +601,14 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     const isCurrentProjectProcessingDocuments = useMemo(() => {
         return activeProjectDocuments.some((doc) => {
             const st = (doc.status || '').trim().toLowerCase()
-            return ['queued', 'uploading', 'received', 'pending', 'processing', 'running'].includes(st)
+            return ['uploading', 'processing', 'running'].includes(st)
         })
     }, [activeProjectDocuments])
 
     const isCurrentProjectExtractingDocs = useMemo(() => {
         if (isExampleMode || activeProjectDocuments.length === 0) return false
         return activeProjectDocuments.some((d) =>
-            ['processing', 'pending', 'queued', 'running', 'uploading', 'received'].includes((d.status || '').trim().toLowerCase())
+            ['processing', 'running', 'uploading'].includes((d.status || '').trim().toLowerCase())
         )
     }, [activeProjectDocuments, isExampleMode])
 
@@ -624,8 +624,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         if (completedDocCount === 0) return false
 
         if (!activeProjectSynthesis) {
-            if (projectSynthesisLoading) return false
-            return true
+            return false
         }
 
         const synthStatus = (activeProjectSynthesis.projectStatus || '').trim().toLowerCase()
@@ -636,23 +635,12 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 (activeProjectSynthesis.finalJudgmentSummary || '').trim().length > 0 ||
                 (fjJson.length > 0 && fjJson !== '{}'))
 
-        if (isSynthRunning || !hasFinishedSynthResults) {
-            return true
-        }
-
-        const synthTime = new Date(activeProjectSynthesis.updatedAt || activeProjectSynthesis.createdAt || 0).getTime()
-
-        const hasNewerCompletedDoc = completedDocs.some((d) => {
-            const docTime = new Date(d.updatedAt || d.processedAt || d.createdAt || d.receivedAt || 0).getTime()
-            return docTime > (synthTime + 2000)
-        })
-
-        if (hasNewerCompletedDoc) {
+        if (isSynthRunning || (!hasFinishedSynthResults && synthStatus.length > 0)) {
             return true
         }
 
         return false
-    }, [activeProjectDocuments, activeProjectSynthesis, isCurrentProjectExtractingDocs, isExampleMode, projectSynthesisLoading])
+    }, [activeProjectDocuments, activeProjectSynthesis, isCurrentProjectExtractingDocs, isExampleMode])
 
     const isCurrentProjectAwaitingSynthesis = useMemo(() => {
         return isCurrentProjectExtractingDocs || isCurrentProjectSynthesisRunning

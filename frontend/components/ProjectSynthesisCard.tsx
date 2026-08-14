@@ -272,7 +272,6 @@ export default function ProjectSynthesisCard({
     const targetName = (currentProject?.projectName || currentProject?.companyName || normalizedProjectId).toLowerCase()
 
     const rawVisibleSyntheses = useMemo(() => {
-        const versionMap = new Map<string, ProjectSynthesisItem>()
         const targetCompanyNorm = (currentProject?.companyName || targetName || '').toLowerCase()
 
         const isSynthesisForCurrentProject = (item: ProjectSynthesisItem) => {
@@ -286,8 +285,25 @@ export default function ProjectSynthesisCard({
             return true
         }
 
-        const seenContentHashes = new Set<string>()
+        const isPostLoiCheck = (item: ProjectSynthesisItem) => {
+            try {
+                const parsed = typeof item?.finalJudgmentJson === 'string' ? JSON.parse(item.finalJudgmentJson) : item?.finalJudgmentJson
+                if (parsed && typeof parsed === 'object' && typeof parsed.letter_of_intent_present === 'boolean') {
+                    return parsed.letter_of_intent_present
+                }
+            } catch { /* skip */ }
 
+            const summary = (item.finalJudgmentSummary || '').toLowerCase()
+            if (summary.includes('pre-loi') || summary.includes('pass 1 pre-loi')) return false
+
+            const hasLoiCitation = (item.citations || []).some((c: string) => {
+                const lower = (c || '').toLowerCase()
+                return lower.includes('letter_of_intent') || lower.includes('loi') || lower.includes('letter-of-intent')
+            })
+            return hasLoiCitation
+        }
+
+        const matchedItems: ProjectSynthesisItem[] = []
         const targetDealCode = (normalizedProjectId.match(/dd-\d+/) || targetName.match(/dd-\d+/))?.[0] || ''
 
         syntheses.forEach((item) => {
@@ -309,37 +325,36 @@ export default function ProjectSynthesisCard({
                     (item.keyTakeaways && item.keyTakeaways.length > 0) ||
                     (item.citations && item.citations.length > 0)
                 if (hasValidContent) {
-                    const summarySlice = (item.finalJudgmentSummary || '').slice(0, 200)
-                    const contentHash = `${item.documentsReceivedCount || 0}_${summarySlice}`
-                    if (seenContentHashes.has(contentHash)) return
-                    seenContentHashes.add(contentHash)
-                    const passKey = item.id ? `db_id_${item.id}` : `doc_count_${item.documentsReceivedCount || 0}`
-                    versionMap.set(passKey, item)
+                    matchedItems.push(item)
                 }
             }
         })
 
-        return [...versionMap.values()].sort((a, b) => {
-            const isPostLoi = (item: ProjectSynthesisItem) => {
-                try {
-                    const parsed = typeof item?.finalJudgmentJson === 'string' ? JSON.parse(item.finalJudgmentJson) : item?.finalJudgmentJson
-                    if (parsed && typeof parsed === 'object' && typeof parsed.letter_of_intent_present === 'boolean') {
-                        return parsed.letter_of_intent_present
-                    }
-                } catch { /* skip */ }
+        // Group by phase (pre_loi vs post_loi) and keep only the latest synthesis item per phase
+        const phaseMap = new Map<string, ProjectSynthesisItem>()
 
-                const summary = (item.finalJudgmentSummary || '').toLowerCase()
-                if (summary.includes('pre-loi') || summary.includes('pass 1 pre-loi')) return false
+        matchedItems.forEach((item) => {
+            const isPost = isPostLoiCheck(item)
+            const phaseKey = isPost ? 'post_loi' : 'pre_loi'
+            const existing = phaseMap.get(phaseKey)
 
-                const hasLoiCitation = (item.citations || []).some((c: string) => {
-                    const lower = (c || '').toLowerCase()
-                    return lower.includes('letter_of_intent') || lower.includes('loi') || lower.includes('letter-of-intent')
-                })
-                return hasLoiCitation
+            if (!existing) {
+                phaseMap.set(phaseKey, item)
+            } else {
+                const timeItem = new Date(item.updatedAt || item.createdAt || 0).getTime()
+                const timeExisting = new Date(existing.updatedAt || existing.createdAt || 0).getTime()
+                const idItem = item.id || 0
+                const idExisting = existing.id || 0
+
+                if (timeItem > timeExisting || (timeItem === timeExisting && idItem > idExisting)) {
+                    phaseMap.set(phaseKey, item)
+                }
             }
+        })
 
-            const postLoiA = isPostLoi(a)
-            const postLoiB = isPostLoi(b)
+        return [...phaseMap.values()].sort((a, b) => {
+            const postLoiA = isPostLoiCheck(a)
+            const postLoiB = isPostLoiCheck(b)
             if (postLoiA !== postLoiB) {
                 return postLoiB ? 1 : -1
             }
@@ -348,11 +363,9 @@ export default function ProjectSynthesisCard({
             const idB = b.id || 0
             if (idA !== idB) return idB - idA
 
-            const timeA = new Date(a.projectProcessedAt || a.createdAt || a.updatedAt || 0).getTime()
-            const timeB = new Date(b.projectProcessedAt || b.createdAt || b.updatedAt || 0).getTime()
-            return timeB - timeA
+            return 0
         })
-    }, [syntheses, normalizedProjectId, projects, targetName, currentProject])
+    }, [syntheses, currentProject, targetName, normalizedProjectId, projects])
 
     const rawProjectDocuments = documents.filter((document) => {
         const itemPid = (document.projectId || '').toLowerCase()
@@ -708,9 +721,9 @@ export default function ProjectSynthesisCard({
                     </div>
 
                     {(() => {
-                        const isPostLoiActive = activeSynthesis?.letterOfIntentPresent === true || activeSynthesis?.letterOfIntentPresent === 'true'
+                        const isPostLoiActive = Boolean(activeSynthesis?.letterOfIntentPresent)
                         const isLoiDoc = (d: Partial<SubmissionHistoryItem>) => {
-                            const name = (d.fileName || d.title || '').toLowerCase()
+                            const name = (d.fileName || d.dealName || '').toLowerCase()
                             return name.includes('loi') || name.includes('letter_of_intent')
                         }
                         const activeScopeDocs = isPostLoiActive 

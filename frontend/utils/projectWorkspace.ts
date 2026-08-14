@@ -291,6 +291,19 @@ export function isRowMatchingProject(row: SubmissionHistoryItem, targetProjectId
     // 1. Direct exact match on projectId, projectKey, or submissionBatchId
     if (explicitPid === rawTarget || pk === rawTarget || (rowBatch && rowBatch === rawTarget)) return true
 
+    // Check deal code matching (e.g. dd-001, dd-002, ..., dd-015)
+    const targetDealMatch = rawTarget.match(/dd-\d+/)
+    if (targetDealMatch) {
+        const targetDealCode = targetDealMatch[0]
+        const rowDealMatch = (explicitPid + ' ' + pk + ' ' + (row.fileName || '') + ' ' + (row.dealName || '')).toLowerCase().match(/dd-\d+/)
+        if (rowDealMatch && rowDealMatch[0] === targetDealCode) {
+            return true
+        }
+        if (explicitPid.includes(targetDealCode) || pk.includes(targetDealCode) || (row.fileName || '').toLowerCase().includes(targetDealCode)) {
+            return true
+        }
+    }
+
     // Match Cascadia Climate Services files for DD-001 project key
     if (rawTarget.includes('cascadia') || rawTarget.includes('dd-001') || rawTarget.includes('dd001')) {
         const fn = (row.fileName || '').toLowerCase()
