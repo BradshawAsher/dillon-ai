@@ -1,8 +1,14 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "installCommand": "cd frontend && npm ci --include=dev",
+  "installCommand": "npm ci && cd frontend && npm ci --include=dev",
   "buildCommand": "cd frontend && npm run build",
   "outputDirectory": "frontend/dist",
+  "functions": {
+    "api/**/*.ts": {
+      "runtime": "@vercel/node@4",
+      "includeFiles": "backend/**"
+    }
+  },
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
