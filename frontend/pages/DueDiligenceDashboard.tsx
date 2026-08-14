@@ -47,6 +47,7 @@ const SubmissionHistoryCard = lazy(() => import('../components/SubmissionHistory
 const DealChatPanel = lazy(() => import('../components/DealChatPanel'))
 const WorkflowErrorLogCard = lazy(() => import('../components/WorkflowErrorLogCard'))
 const EvalDashboardTab = lazy(() => import('../components/EvalDashboardTab'))
+const SpendingAnalyticsTab = lazy(() => import('../components/SpendingAnalyticsTab'))
 const TechnicalFaqWorkspaceTab = lazy(() => import('../components/TechnicalFaqWorkspaceTab'))
 import LatestSubmissionSection from '../components/dashboard/LatestSubmissionSection'
 import { BatchProgressCard } from '../components/dashboard/BatchProgressCard'
@@ -1891,6 +1892,16 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                                     handleEvalDocSelect(docFileName, targetIdentifier)
                                 }}
                             />
+                    ) : null}
+
+                    {activeWorkspaceTab === 'spending' ? (
+                        <SpendingAnalyticsTab
+                            documents={submissionHistory}
+                            syntheses={visibleProjectSyntheses}
+                            onSelectProject={(targetIdentifier) => {
+                                handleEvalProjectSelect(targetIdentifier, 'synthesis')
+                            }}
+                        />
                     ) : null}
 
                     {activeWorkspaceTab === 'faqs' ? (
