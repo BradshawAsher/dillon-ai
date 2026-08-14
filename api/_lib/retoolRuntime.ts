@@ -2,6 +2,8 @@
 // It deliberately lives under /api so Vercel includes it with the function.
 import type { IncomingHttpHeaders, IncomingMessage } from 'node:http'
 
+import { HttpError } from './httpError'
+
 const N8N_BASE_URL = 'https://merge-works.app.n8n.cloud/'
 
 export type ApiUser = {
@@ -140,12 +142,26 @@ export function readJsonBody(req: IncomingMessage): Promise<Record<string, unkno
     req.on('data', (chunk: Buffer) => chunks.push(chunk))
     req.on('error', reject)
     req.on('end', () => {
-      try {
-        const raw = Buffer.concat(chunks).toString('utf8')
-        resolve(raw.length > 0 ? JSON.parse(raw) as Record<string, unknown> : {})
-      } catch (error) {
-        reject(error)
+      const raw = Buffer.concat(chunks).toString('utf8')
+      if (raw.length === 0) {
+        resolve({})
+        return
       }
+      let parsed: unknown
+      try {
+        parsed = JSON.parse(raw)
+      } catch {
+        reject(new HttpError(400, 'Request body is not valid JSON.'))
+        return
+      }
+      // Every caller destructures this as an object; a JSON array, number,
+      // string, or null would otherwise surface as an opaque 500 deeper in a
+      // handler. Reject it here as an explicit client error instead.
+      if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        reject(new HttpError(400, 'Request body must be a JSON object.'))
+        return
+      }
+      resolve(parsed as Record<string, unknown>)
     })
   })
 }
