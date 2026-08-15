@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
     Activity,
     AlertTriangle,
@@ -44,6 +44,23 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
     const [previewTab, setPreviewTab] = useState<'valuation' | 'citations' | 'risks' | 'cost'>('valuation')
     const [activeFactIndex, setActiveFactIndex] = useState(0)
     const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0)
+    const [activeSection, setActiveSection] = useState('hero')
+
+    useEffect(() => {
+        const sectionIds = ['hero', 'features', 'live-preview', 'evidence', 'pipeline', 'cost-model', 'faqs']
+        const handleScroll = () => {
+            const scrollPosition = window.scrollY + 140
+            for (let i = sectionIds.length - 1; i >= 0; i--) {
+                const el = document.getElementById(sectionIds[i])
+                if (el && el.offsetTop <= scrollPosition) {
+                    setActiveSection(sectionIds[i])
+                    break
+                }
+            }
+        }
+        window.addEventListener('scroll', handleScroll, { passive: true })
+        return () => window.removeEventListener('scroll', handleScroll)
+    }, [])
 
     const faqs = [
         {
@@ -100,6 +117,7 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
     }
 
     const scrollToSection = (id: string) => {
+        setActiveSection(id)
         const el = document.getElementById(id)
         if (el) {
             el.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -172,74 +190,42 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
         <div className="min-h-screen bg-background text-foreground font-sans antialiased selection:bg-primary/20 selection:text-primary">
             {/* Header / Navigation Bar */}
             <header className="sticky top-0 z-40 border-b border-border/80 bg-background/80 backdrop-blur-md">
-                <div className="w-full flex items-center justify-between px-3 py-2.5 sm:px-6">
-                    <div className="flex items-center gap-3 shrink-0">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary via-indigo-600 to-purple-600 text-white shadow-md shadow-primary/20">
-                            <Sparkles className="h-5 w-5" />
+                <div className="w-full flex items-center justify-between px-4 py-3 sm:px-8">
+                    <div className="flex items-center gap-3.5 shrink-0">
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary via-indigo-600 to-purple-600 text-white shadow-md shadow-primary/20">
+                            <Sparkles className="h-6 w-6" />
                         </div>
                         <div className="flex flex-col justify-center">
-                            <div className="flex items-center gap-2">
-                                <span className="text-xl font-black tracking-tight text-foreground leading-none">Dillon AI</span>
-                                <Badge variant="outline" className="border-primary/40 bg-primary/10 text-[10px] font-bold text-primary px-1.5 py-0.5 leading-none shrink-0">
-                                    AI DUE DILIGENCE
-                                </Badge>
-                            </div>
-                            <span className="text-[11px] font-semibold text-muted-foreground mt-1 leading-none whitespace-nowrap">
-                                Autonomous M&amp;A Deal Intelligence
+                            <span className="text-2xl sm:text-[26px] font-black tracking-tight text-foreground leading-none">Dillon AI</span>
+                            <span className="text-xs font-semibold text-muted-foreground mt-1 leading-none whitespace-nowrap">
+                                Autonomous M&amp;A Due Diligence
                             </span>
                         </div>
                     </div>
 
                     <nav className="hidden lg:flex items-center gap-0.5 sm:gap-1 rounded-full border border-border/60 bg-muted/30 p-1 text-xs font-semibold text-muted-foreground ml-6 lg:ml-8 mr-auto">
-                        <button
-                            type="button"
-                            onClick={() => scrollToSection('hero')}
-                            className="rounded-full px-2.5 sm:px-3 py-1 transition-all hover:bg-background hover:text-foreground hover:shadow-2xs whitespace-nowrap"
-                        >
-                            Hero
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => scrollToSection('features')}
-                            className="rounded-full px-2.5 sm:px-3 py-1 transition-all hover:bg-background hover:text-foreground hover:shadow-2xs whitespace-nowrap"
-                        >
-                            Features
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => scrollToSection('live-preview')}
-                            className="rounded-full px-2.5 sm:px-3 py-1 transition-all hover:bg-background hover:text-foreground hover:shadow-2xs whitespace-nowrap"
-                        >
-                            Live Preview
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => scrollToSection('evidence')}
-                            className="rounded-full px-2.5 sm:px-3 py-1 transition-all hover:bg-background hover:text-foreground hover:shadow-2xs whitespace-nowrap"
-                        >
-                            Fact Citation
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => scrollToSection('pipeline')}
-                            className="rounded-full px-2.5 sm:px-3 py-1 transition-all hover:bg-background hover:text-foreground hover:shadow-2xs whitespace-nowrap"
-                        >
-                            M&amp;A Pipeline
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => scrollToSection('cost-model')}
-                            className="rounded-full px-2.5 sm:px-3 py-1 transition-all hover:bg-background hover:text-foreground hover:shadow-2xs whitespace-nowrap"
-                        >
-                            Cost Model
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => scrollToSection('faqs')}
-                            className="rounded-full px-2.5 sm:px-3 py-1 transition-all hover:bg-background hover:text-foreground hover:shadow-2xs whitespace-nowrap text-primary font-bold bg-primary/10"
-                        >
-                            FAQs
-                        </button>
+                        {[
+                            { id: 'hero', label: 'Hero' },
+                            { id: 'features', label: 'Features' },
+                            { id: 'live-preview', label: 'Live Preview' },
+                            { id: 'evidence', label: 'Fact Citation' },
+                            { id: 'pipeline', label: 'M&A Pipeline' },
+                            { id: 'cost-model', label: 'Cost Model' },
+                            { id: 'faqs', label: 'FAQs' },
+                        ].map((item) => (
+                            <button
+                                key={item.id}
+                                type="button"
+                                onClick={() => scrollToSection(item.id)}
+                                className={`rounded-full px-2.5 sm:px-3 py-1 transition-all hover:bg-background hover:text-foreground hover:shadow-2xs whitespace-nowrap ${
+                                    activeSection === item.id
+                                        ? 'text-primary font-bold bg-primary/10 shadow-2xs'
+                                        : ''
+                                }`}
+                            >
+                                {item.label}
+                            </button>
+                        ))}
                     </nav>
 
                     <div className="flex items-center gap-2 shrink-0 ml-auto">
