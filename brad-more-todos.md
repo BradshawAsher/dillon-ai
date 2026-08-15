@@ -144,6 +144,8 @@
 
 - Right now the bullet points for acquisition judgement are parsed in the frontend, it may be good to do it on the backend so things are not cut off?
 
+- Can we open citation from points in the overview tab or in other tabs? Like for instance, in valuation tab, if it extracted a fact, can we click on the fact and it shows exactly how it got that?
+
 - Chatbot should also be able to guide people with functionality like an advanced FAQ if the user is stuck or doesn't know which feature is where, and add clickable links that the user can click to take them to the real places
 
 -  make a more custom and personalized business meeting slides with screenshots from your actual dashboard instead of generic images
