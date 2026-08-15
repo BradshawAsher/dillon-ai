@@ -26,7 +26,7 @@ export function StructureWorkspaceView({
 }: StructureWorkspaceViewProps) {
     return (
         <section className="space-y-6">
-            <ModelAssumptionsSummary model={activeDealModel} area="structure" />
+            <ModelAssumptionsSummary model={hydratedDealModel} area="structure" />
             <DealStructureVisualCard model={hydratedDealModel} onOpenEvidence={setActiveEvidence} />
             <Suspense fallback={null}>
                 <DealStackCard model={hydratedDealModel} />
