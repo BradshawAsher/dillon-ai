@@ -21848,7 +21848,8 @@ async function getProjectSynthesis(req) {
       }
     }
     const valuationObj = getJudgmentField(judgment.json, "valuation");
-    const valuationConfidence = valuationObj && typeof valuationObj === "object" ? String(valuationObj.valuation_confidence_score ?? valuationObj.confidence_score ?? "") : "";
+    const valuationConfidence = row.valuation_confidence_score ? String(row.valuation_confidence_score) : valuationObj && typeof valuationObj === "object" ? String(valuationObj.valuation_confidence_score ?? valuationObj.confidence_score ?? "") : "";
+    const investmentConfidence = row.investment_confidence_score ? String(row.investment_confidence_score) : "";
     const extractValuationBound = (rowVal, fieldKey) => {
       if (rowVal && String(rowVal).trim() !== "" && String(rowVal).trim() !== "0") {
         return String(rowVal).trim();
@@ -21896,6 +21897,7 @@ async function getProjectSynthesis(req) {
       aiErrorMessage: row.ai_error_message ?? "",
       aiConfidence: row.ai_global_confidence || row.ai_confidence || String(getJudgmentField(judgment.json, "global_confidence") ?? ""),
       valuationConfidence,
+      investmentConfidence,
       valuationLowerBound: valLower,
       valuationBaseEstimate: valBase,
       valuationUpperBound: valUpper,
@@ -22159,8 +22161,10 @@ async function getSubmissionHistory(req) {
       valuationBaseEstimate: row.valuation_base_estimate ?? "",
       valuationUpperBound: row.valuation_upper_bound ?? "",
       valuationCurrency: row.valuation_currency ?? "",
+      valuationConfidence: row.valuation_confidence ?? null,
       investmentIsFavorable: row.investment_is_favorable ?? null,
       investmentBuyReasoning: row.investment_buy_reasoning ?? "",
+      investmentConfidence: row.investment_confidence ?? null,
       isConsidered: row.is_considered !== false,
       inputTokens: Number(row.input_tokens ?? 0),
       outputTokens: Number(row.output_tokens ?? 0),

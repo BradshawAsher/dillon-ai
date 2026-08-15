@@ -62,6 +62,7 @@ export type ProjectSynthesisItem = {
     aiErrorMessage: string
     aiConfidence: string
     valuationConfidence: string
+    investmentConfidence?: string
     valuationLowerBound: string
     valuationBaseEstimate: string
     valuationUpperBound: string
@@ -394,8 +395,13 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
             }
 
             const valuationObj = getJudgmentField(judgment.json, 'valuation')
-            const valuationConfidence = valuationObj && typeof valuationObj === 'object'
-                ? String((valuationObj as Record<string, unknown>).valuation_confidence_score ?? (valuationObj as Record<string, unknown>).confidence_score ?? '')
+            const valuationConfidence = row.valuation_confidence_score
+                ? String(row.valuation_confidence_score)
+                : valuationObj && typeof valuationObj === 'object'
+                    ? String((valuationObj as Record<string, unknown>).valuation_confidence_score ?? (valuationObj as Record<string, unknown>).confidence_score ?? '')
+                    : ''
+            const investmentConfidence = row.investment_confidence_score
+                ? String(row.investment_confidence_score)
                 : ''
 
             const extractValuationBound = (rowVal: any, fieldKey: string) => {
@@ -448,6 +454,7 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
                 aiErrorMessage: row.ai_error_message ?? '',
                 aiConfidence: row.ai_global_confidence || row.ai_confidence || String(getJudgmentField(judgment.json, 'global_confidence') ?? ''),
                 valuationConfidence,
+                investmentConfidence,
                 valuationLowerBound: valLower,
                 valuationBaseEstimate: valBase,
                 valuationUpperBound: valUpper,

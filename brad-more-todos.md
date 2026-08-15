@@ -104,6 +104,8 @@
 
 - Get github mcp?
 
+- Why claude code and codex don't give notification but antigravity does?
+
 - Should we make like tutorials and interactive walkthroughs especially for new users, like how AWS or GCP tutorials work?
 
 - [Mostly done] Are we separating error handling well? Like regular "we hit an issue" vs we hit a rate limit
