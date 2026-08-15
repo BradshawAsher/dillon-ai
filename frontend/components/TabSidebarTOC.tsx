@@ -215,35 +215,35 @@ export default function TabSidebarTOC({ activeTab }: { activeTab: WorkspaceTab }
                 <button
                     type="button"
                     onClick={() => setIsCollapsed(false)}
-                    className="flex items-center gap-2 rounded-r-xl border border-l-0 border-primary/50 bg-background/95 px-3 py-2.5 text-xs font-bold text-primary shadow-xl backdrop-blur-md transition-all hover:bg-primary/10 hover:pr-4 cursor-pointer group"
+                    className="flex items-center gap-1.5 rounded-r-xl border border-l-0 border-primary/50 bg-background/95 px-2.5 py-2 text-xs font-bold text-primary shadow-xl backdrop-blur-md transition-all hover:bg-primary/10 hover:pr-3 cursor-pointer group"
                     title="Show Table of Contents"
                 >
-                    <List className="h-4 w-4 shrink-0 text-primary" />
-                    <span className="hidden sm:inline">Table of Contents ({sections.length})</span>
-                    <ChevronRight className="h-3.5 w-3.5 opacity-70 group-hover:translate-x-0.5 transition-transform" />
+                    <List className="h-3.5 w-3.5 shrink-0 text-primary" />
+                    <span className="hidden sm:inline text-[11px]">TOC ({sections.length})</span>
+                    <ChevronRight className="h-3 w-3 opacity-70 group-hover:translate-x-0.5 transition-transform" />
                 </button>
             </div>
         )
     }
 
     return (
-        <aside className="fixed left-0 top-32 z-50 w-60 print:hidden">
-            <nav className="rounded-r-2xl border border-l-0 border-primary/40 bg-background/95 shadow-2xl backdrop-blur-md overflow-hidden">
-                <div className="flex items-center justify-between border-b border-border px-3.5 py-2.5 bg-primary/10">
-                    <div className="flex items-center gap-2">
-                        <Bookmark className="h-4 w-4 text-primary shrink-0" />
-                        <span className="text-xs font-extrabold uppercase tracking-wider text-primary">Table of Contents</span>
+        <aside className="fixed left-0 top-32 z-50 w-44 print:hidden">
+            <nav className="rounded-r-xl border border-l-0 border-primary/40 bg-background/95 shadow-2xl backdrop-blur-md overflow-hidden">
+                <div className="flex items-center justify-between border-b border-border px-2.5 py-1.5 bg-primary/10">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                        <Bookmark className="h-3.5 w-3.5 text-primary shrink-0" />
+                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-primary truncate">Table of Contents</span>
                     </div>
                     <button
                         type="button"
                         onClick={() => setIsCollapsed(true)}
-                        className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
+                        className="rounded p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer shrink-0"
                         title="Collapse Table of Contents"
                     >
-                        <ChevronLeft className="h-4 w-4" />
+                        <ChevronLeft className="h-3.5 w-3.5" />
                     </button>
                 </div>
-                <ul className="max-h-[60vh] overflow-y-auto p-2 space-y-0.5">
+                <ul className="max-h-[75vh] overflow-y-auto p-1.5 space-y-0.5">
                     {sections.map((section) => {
                         const isActive = activeSection === section.id
                         return (
@@ -251,11 +251,12 @@ export default function TabSidebarTOC({ activeTab }: { activeTab: WorkspaceTab }
                                 <button
                                     type="button"
                                     onClick={() => scrollToSection(section.id)}
-                                    className={`w-full rounded-md px-2.5 py-1.5 text-left text-xs font-medium leading-tight transition-all cursor-pointer ${
-                                        section.indent ? 'pl-5' : ''
+                                    title={section.label}
+                                    className={`w-full rounded-md px-2 py-1 text-left text-[11px] font-medium leading-tight transition-all cursor-pointer truncate ${
+                                        section.indent ? 'pl-4 text-muted-foreground/80' : ''
                                     } ${
                                         isActive
-                                            ? 'border-l-2 border-primary bg-primary/15 font-bold text-primary shadow-sm'
+                                            ? 'border-l-2 border-primary bg-primary/15 font-bold text-primary shadow-2xs'
                                             : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                                     }`}
                                 >
