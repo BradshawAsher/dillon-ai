@@ -102,7 +102,9 @@
 - Environment separation for prod API keys separate from testing API keys? Have we done this?
 
 
-- Get github mcp?
+- Verify github mcp works for claude code, for brad, add it to your other AIs
+
+- Make the TOC for each tab bigger and more noticeable
 
 - Why claude code and codex don't give notification but antigravity does?
 
