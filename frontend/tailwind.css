@@ -10,7 +10,7 @@
 
 @layer components {
     .dashboard-header-mesh {
-        @apply relative overflow-hidden border-b border-border/80 bg-card/90 backdrop-blur-md;
+        @apply relative overflow-hidden border-b border-border/80 bg-card;
         background-image:
             radial-gradient(at 0% 0%, hsl(var(--primary) / 0.12) 0px, transparent 50%),
             radial-gradient(at 100% 0%, hsl(var(--primary) / 0.08) 0px, transparent 45%),
