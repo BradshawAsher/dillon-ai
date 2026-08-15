@@ -99,6 +99,8 @@
 
 - Try using deepseek models since they are even cheaper than gemini?
 
+- For brad, maybe rewrite gh commit history the names of the commits so we know what actually happened? This is hard since somtimes when you did commit, like the changes you hoped for didn't actually happen so how can we label which one actually worked and which one didn't?
+
 - Environment separation for prod API keys separate from testing API keys? Have we done this?
 
 - Consider whether your UI works across all screen sizes? Can we turn it into a mobile app too or not yet? Is it installable as an app right now like in chrome save page as?

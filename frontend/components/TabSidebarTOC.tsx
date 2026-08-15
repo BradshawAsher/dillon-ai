@@ -236,17 +236,17 @@ export default function TabSidebarTOC({
     const [activeSection, setActiveSection] = useState<string>('')
     const [internalCollapsed, setInternalCollapsed] = useState<boolean>(false)
     const [internalTocWidth, setInternalTocWidth] = useState<number>(() => {
-        if (typeof window === 'undefined') return 120
+        if (typeof window === 'undefined') return 140
         try {
             const stored = localStorage.getItem('mergeworks.tocWidth')
             if (stored) {
                 const parsed = parseInt(stored, 10)
-                if (!Number.isNaN(parsed) && parsed >= 85 && parsed <= 180) {
+                if (!Number.isNaN(parsed) && parsed >= 90 && parsed <= 240) {
                     return parsed
                 }
             }
         } catch { }
-        return 120
+        return 140
     })
 
     const isCollapsed = propsIsCollapsed !== undefined ? propsIsCollapsed : internalCollapsed
@@ -357,7 +357,7 @@ export default function TabSidebarTOC({
 
     const handleResetAll = () => {
         setTopOffset(null)
-        setTocWidth(120)
+        setTocWidth(140)
         try {
             localStorage.removeItem('mergeworks.tocTop')
             localStorage.removeItem('mergeworks.tocWidth')
@@ -416,8 +416,8 @@ export default function TabSidebarTOC({
                     title="Open Table of Contents (Alt+T)"
                 >
                     <List className="h-4 w-4 shrink-0 text-primary" />
-                    <span className="text-xs font-bold tracking-tight">TOC</span>
-                    <ChevronRight className="h-3.5 w-3.5 opacity-70 group-hover:translate-x-0.5 transition-transform" />
+                    <span className="text-xs font-bold tracking-tight whitespace-nowrap">Table of Contents</span>
+                    <ChevronRight className="h-3.5 w-3.5 opacity-70 group-hover:translate-x-0.5 transition-transform shrink-0" />
                 </button>
             </div>
         )
@@ -442,8 +442,8 @@ export default function TabSidebarTOC({
                 >
                     <div className="flex items-center gap-1 min-w-0">
                         <GripVertical className="h-3.5 w-3.5 text-muted-foreground/60 group-hover:text-primary transition-colors shrink-0" />
-                        <span className="text-[11px] font-extrabold uppercase tracking-wider text-primary truncate">
-                            TOC
+                        <span className="text-[10px] font-extrabold uppercase tracking-tight text-primary leading-tight whitespace-normal" title="Table of Contents">
+                            Table of<br />Contents
                         </span>
                     </div>
                     <div className="flex items-center gap-0.5 shrink-0" onPointerDown={(e) => e.stopPropagation()}>
