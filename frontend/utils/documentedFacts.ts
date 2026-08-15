@@ -157,15 +157,74 @@ export function deriveDocumentedFacts(documents: SubmissionHistoryItem[]): Recor
             }
         }
 
-        if (!document.financialFactsJson) continue
+        let facts: RawFact[] = []
 
-        let facts: RawFact[]
-        try {
-            const parsed = JSON.parse(document.financialFactsJson) as unknown
-            facts = Array.isArray(parsed) ? (parsed as RawFact[]) : []
-        } catch {
-            continue
+        if (document.financialFactsJson) {
+            try {
+                const parsed = JSON.parse(document.financialFactsJson) as unknown
+                if (Array.isArray(parsed)) facts.push(...(parsed as RawFact[]))
+            } catch {
+                // ignore
+            }
         }
+
+        const factArray = Array.isArray((document as any).extractedFacts)
+            ? (document as any).extractedFacts
+            : Array.isArray((document as any).financialFacts)
+                ? (document as any).financialFacts
+                : []
+        for (const ef of factArray) {
+            const m = ef.metric === 'ebitda' || ef.metric === 'adjusted_ebitda' ? 'ebitda_sde' : ef.metric
+            const norm = ef.normalizedValue ?? ef.normalized_value ?? (typeof ef.value === 'number' ? ef.value : null)
+            if (norm !== null && norm !== undefined && isNumber(norm)) {
+                facts.push({
+                    metric: m,
+                    normalized_value: norm,
+                    raw_value: ef.rawValue ?? ef.raw_value ?? `$${norm.toLocaleString()}`,
+                    period: ef.period || 'TTM',
+                    currency: ef.currency || 'USD',
+                    confidence: ef.confidence ?? 0.95,
+                    status: 'confirmed',
+                    provenance: 'Extracted from uploaded documents',
+                    citation: ef.citation,
+                })
+            }
+        }
+
+        if (document.extractedJson) {
+            try {
+                const parsed = typeof document.extractedJson === 'string' ? JSON.parse(document.extractedJson) : document.extractedJson
+                if (parsed && typeof parsed === 'object') {
+                    if (Array.isArray(parsed.financial_facts)) facts.push(...parsed.financial_facts)
+                    if (Array.isArray(parsed.financialFacts)) facts.push(...parsed.financialFacts)
+                    if (Array.isArray(parsed.facts)) facts.push(...parsed.facts)
+                    if (typeof parsed.revenue === 'number' && Number.isFinite(parsed.revenue)) {
+                        facts.push({ metric: 'revenue', normalized_value: parsed.revenue, raw_value: `$${parsed.revenue.toLocaleString()}`, period: 'TTM' })
+                    }
+                    if (typeof parsed.ebitda === 'number' && Number.isFinite(parsed.ebitda)) {
+                        facts.push({ metric: 'ebitda_sde', normalized_value: parsed.ebitda, raw_value: `$${parsed.ebitda.toLocaleString()}`, period: 'TTM' })
+                    }
+                }
+            } catch {
+                // ignore
+            }
+        }
+
+        if ((document as any).valuation && typeof (document as any).valuation === 'object') {
+            const v = (document as any).valuation
+            const ask = v.askingPrice ?? v.asking_price
+            const base = v.valuationBaseEstimate ?? v.base_estimate ?? v.baseEstimate
+            if (typeof ask === 'number' && ask > 0) {
+                facts.push({ metric: 'asking_price', normalized_value: ask, raw_value: `$${ask.toLocaleString()}`, period: 'Asking' })
+                facts.push({ metric: 'purchase_price', normalized_value: ask, raw_value: `$${ask.toLocaleString()}`, period: 'Asking' })
+            }
+            if (typeof base === 'number' && base > 0 && !ask) {
+                facts.push({ metric: 'purchase_price', normalized_value: base, raw_value: `$${base.toLocaleString()}`, period: 'Valuation' })
+                facts.push({ metric: 'asking_price', normalized_value: base, raw_value: `$${base.toLocaleString()}`, period: 'Valuation' })
+            }
+        }
+
+        if (facts.length === 0) continue
 
         for (const fact of facts) {
             const metric = (fact.metric ?? '').trim().toLowerCase()

@@ -205,13 +205,22 @@ function readFactCitations(fact: any): FactObservation['citations'] {
 export function observationsFromDocuments(documents: DocumentLike[]): FactObservation[] {
     const observations: FactObservation[] = []
     for (const document of documents) {
-        if (!document.financialFactsJson) continue
-        let facts: any[]
-        try {
-            const parsed = JSON.parse(document.financialFactsJson) as unknown
-            facts = Array.isArray(parsed) ? parsed : []
-        } catch {
-            continue
+        let facts: any[] = []
+        if (document.financialFactsJson) {
+            try {
+                const parsed = JSON.parse(document.financialFactsJson) as unknown
+                if (Array.isArray(parsed)) facts.push(...parsed)
+            } catch {
+                // ignore
+            }
+        }
+        const extraFacts = Array.isArray((document as any).extractedFacts)
+            ? (document as any).extractedFacts
+            : Array.isArray((document as any).financialFacts)
+                ? (document as any).financialFacts
+                : []
+        if (extraFacts.length > 0) {
+            facts.push(...extraFacts)
         }
         for (const fact of facts) {
             const metric = (fact?.metric ?? '').trim()

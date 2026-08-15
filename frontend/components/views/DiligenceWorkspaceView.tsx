@@ -130,7 +130,7 @@ export function DiligenceWorkspaceView({
                     askingPrice={askingPrice}
                     onAskingPriceChange={handleAskingPriceChange}
                     impact={activeProjectImpact}
-                    model={activeDealModel}
+                    model={hydratedDealModel}
                     documents={submissionHistory.filter((row) => getProjectKey(row) === activeProjectId)}
                     onOpenEvidence={setActiveEvidence}
                     exampleMode={isExampleMode}
@@ -212,7 +212,7 @@ export function DiligenceWorkspaceView({
                 onChange={(next: any) => setProjectChecklistById((current) => ({ ...current, [activeProjectId]: next }))}
                 missingDocuments={activeProjectSynthesis?.missingDocuments ?? []}
                 employeeConfirmed={Boolean(projectSummaries.find((project) => (project.projectId || project.projectKey) === activeProjectId)?.employeeCount) || isExampleMode}
-                hasAskingPrice={askingPrice.trim().length > 0 || activeDealModel.askingPrice !== null}
+                hasAskingPrice={askingPrice.trim().length > 0 || Boolean(hydratedDealModel?.askingPrice) || Boolean(hydratedDealModel?.purchasePrice)}
             />
             <Suspense fallback={null}>
                 <WhatsNewCard />
