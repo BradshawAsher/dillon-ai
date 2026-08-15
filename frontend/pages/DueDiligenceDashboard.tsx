@@ -37,7 +37,7 @@ import { DocumentsWorkspaceView } from '../components/views/DocumentsWorkspaceVi
 import { WorkspaceHeader } from '../components/views/WorkspaceHeader'
 import { useDealWorkspaceState, type WorkspaceTab } from '../hooks/useDealWorkspaceState'
 import DealWorkspaceNav from '../components/DealWorkspaceNav'
-import TabSidebarTOC from '../components/TabSidebarTOC'
+import TabSidebarTOC, { TabTopNavTOC } from '../components/TabSidebarTOC'
 import SectionHeader from '../components/SectionHeader'
 
 const ProjectIntakeCard = lazy(() => import('../components/ProjectIntakeCard'))
@@ -1676,6 +1676,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 />
 
                 <TabSidebarTOC activeTab={activeWorkspaceTab} />
+                <TabTopNavTOC activeTab={activeWorkspaceTab} />
 
                 {activeWorkspaceTab === 'overview' ? (
                     <OverviewWorkspaceView
