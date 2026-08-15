@@ -172,13 +172,36 @@ export function WorkspaceHeader({
                         </p>
                         <p className="mt-1 text-xs text-muted-foreground">Cross-project total</p>
                     </div>
-                    <div className="rounded-lg border border-border bg-background px-4 py-3">
-                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Synthesis verdict</p>
-                        <p className="mt-1 text-2xl font-semibold text-foreground">
-                            {activeProjectSynthesis?.finalRecommendation || activeProjectSynthesis?.finalTrafficLight || 'Pending'}
-                        </p>
-                        <p className="mt-1 text-xs text-muted-foreground">Current project state</p>
-                    </div>
+                    {(() => {
+                        const verdict = activeProjectSynthesis?.finalRecommendation || activeProjectSynthesis?.finalTrafficLight || 'Pending'
+                        const fontSize =
+                            verdict.length <= 4
+                                ? 'text-xl sm:text-2xl'
+                                : verdict.length <= 7
+                                ? 'text-lg sm:text-xl'
+                                : verdict.length <= 10
+                                ? 'text-[15px] sm:text-base'
+                                : verdict.length <= 14
+                                ? 'text-sm sm:text-[15px]'
+                                : 'text-xs sm:text-sm'
+
+                        return (
+                            <div className="rounded-lg border border-border bg-background px-3 py-2.5 min-w-0 flex flex-col justify-between">
+                                <p className="text-[11px] font-medium uppercase tracking-tight text-muted-foreground whitespace-normal leading-tight">
+                                    Synthesis verdict
+                                </p>
+                                <p
+                                    className={`my-0.5 font-bold tracking-tight text-foreground whitespace-nowrap leading-tight ${fontSize}`}
+                                    title={verdict}
+                                >
+                                    {verdict}
+                                </p>
+                                <p className="text-[11px] text-muted-foreground whitespace-normal leading-tight">
+                                    Current project state
+                                </p>
+                            </div>
+                        )
+                    })()}
                 </div>
             </div>
         </header>

@@ -168,6 +168,10 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         setAskingPrice,
         activeEvidence,
         setActiveEvidence,
+        isTocCollapsed,
+        setIsTocCollapsed,
+        tocWidth,
+        setTocWidth,
         askingPriceByProject,
         setAskingPriceByProject,
         projectChecklistById,
@@ -1507,29 +1511,35 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 </div>
             )}
 
-            <WorkspaceHeader
-                isExampleMode={isExampleMode}
-                activeProjectDocuments={activeProjectDocuments}
-                setIsProjectsPanelOpen={setIsProjectsPanelOpen}
-                projectSummaries={projectSummaries}
-                currentTheme={currentTheme}
-                setCurrentTheme={setCurrentTheme}
-                setStoredTheme={setStoredTheme}
-                hydratedDealModel={hydratedDealModel}
-                activeProjectSynthesis={activeProjectSynthesis ?? undefined}
-                dealName={dealName}
-                suggestedProjectName={suggestedProjectName}
-                notifications={notifications}
-                handleMarkNotificationRead={handleMarkNotificationRead}
-                handleMarkAllNotificationsRead={handleMarkAllNotificationsRead}
-                handleClearNotifications={handleClearNotifications}
-                setActiveWorkspaceTab={setActiveWorkspaceTab}
-                setIsApiKeyModalOpen={setIsApiKeyModalOpen}
-                isActiveSubmissionStatus={isActiveSubmissionStatus}
-                onReturnToLanding={onReturnToLanding}
-            />
+            <div
+                className="transition-[padding] duration-200 ease-in-out"
+                style={{
+                    paddingLeft: !isTocCollapsed ? `${tocWidth + 8}px` : undefined,
+                }}
+            >
+                <WorkspaceHeader
+                    isExampleMode={isExampleMode}
+                    activeProjectDocuments={activeProjectDocuments}
+                    setIsProjectsPanelOpen={setIsProjectsPanelOpen}
+                    projectSummaries={projectSummaries}
+                    currentTheme={currentTheme}
+                    setCurrentTheme={setCurrentTheme}
+                    setStoredTheme={setStoredTheme}
+                    hydratedDealModel={hydratedDealModel}
+                    activeProjectSynthesis={activeProjectSynthesis ?? undefined}
+                    dealName={dealName}
+                    suggestedProjectName={suggestedProjectName}
+                    notifications={notifications}
+                    handleMarkNotificationRead={handleMarkNotificationRead}
+                    handleMarkAllNotificationsRead={handleMarkAllNotificationsRead}
+                    handleClearNotifications={handleClearNotifications}
+                    setActiveWorkspaceTab={setActiveWorkspaceTab}
+                    setIsApiKeyModalOpen={setIsApiKeyModalOpen}
+                    isActiveSubmissionStatus={isActiveSubmissionStatus}
+                    onReturnToLanding={onReturnToLanding}
+                />
 
-            <div className="mx-auto max-w-[1440px] px-4 pb-5 sm:px-6 lg:px-8">
+                <div className="mx-auto max-w-[1440px] px-4 pb-5 sm:px-6 lg:px-8">
                 <div className="rounded-xl border-2 border-primary/35 bg-primary/10 px-5 py-5 shadow-sm sm:flex sm:items-center sm:justify-between sm:gap-6">
                     <div className="max-w-3xl">
                         <p className="text-lg font-semibold text-foreground">
@@ -1676,7 +1686,13 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                     }}
                 />
 
-                <TabSidebarTOC activeTab={activeWorkspaceTab} />
+                <TabSidebarTOC
+                    activeTab={activeWorkspaceTab}
+                    isCollapsed={isTocCollapsed}
+                    setIsCollapsed={setIsTocCollapsed}
+                    tocWidth={tocWidth}
+                    setTocWidth={setTocWidth}
+                />
 
                 {activeWorkspaceTab === 'overview' ? (
                     <OverviewWorkspaceView
@@ -2127,12 +2143,13 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                     />
                 ) : null}
             </main>
+        </div>
 
             {/* Right Side Sticky Drawers: FAQ & Activity (Leaves Left side exclusively for TOC) */}
             <button
                 type="button"
                 onClick={() => setIsFaqSidebarOpen((prev) => !prev)}
-                className={`fixed right-0 top-24 z-40 flex items-center gap-2 rounded-l-xl border border-r-0 bg-background/95 px-3 py-2.5 shadow-xl backdrop-blur-md transition-all duration-200 hover:bg-muted hover:pl-4 group ${
+                className={`fixed right-0 top-36 z-40 flex items-center gap-2 rounded-l-xl border border-r-0 bg-background/95 px-3 py-2.5 shadow-xl backdrop-blur-md transition-all duration-200 hover:bg-muted hover:pl-4 group ${
                     isFaqSidebarOpen
                         ? 'border-primary/60 bg-primary/10 text-primary font-bold'
                         : 'border-border/80 text-muted-foreground hover:text-foreground'
@@ -2149,7 +2166,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             <button
                 type="button"
                 onClick={() => setIsBatchDrawerOpen(true)}
-                className={`fixed right-0 top-36 z-40 flex items-center gap-2.5 rounded-l-xl border border-r-0 border-border/80 bg-background/95 px-3 py-2.5 shadow-xl backdrop-blur-md transition-all duration-200 hover:bg-muted hover:pl-4 group ${
+                className={`fixed right-0 top-48 z-40 flex items-center gap-2.5 rounded-l-xl border border-r-0 border-border/80 bg-background/95 px-3 py-2.5 shadow-xl backdrop-blur-md transition-all duration-200 hover:bg-muted hover:pl-4 group ${
                     hasActiveSubmissions || inFlightBatchPlaceholder ? 'border-primary/60 text-primary animate-pulse' : 'text-muted-foreground hover:text-foreground'
                 }`}
                 title="Open Batch Processing Activity (Ctrl+Shift+B)"
@@ -2167,7 +2184,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
             <aside
                 aria-label="Quick Actions"
-                className={`fixed bottom-4 left-4 z-40 transition-all duration-300 ${
+                className={`fixed bottom-2.5 left-3 z-40 transition-all duration-300 ${
                     activeEvidence ? 'opacity-0 pointer-events-none -translate-x-10 scale-95' : 'opacity-100 translate-x-0 scale-100'
                 }`}
             >

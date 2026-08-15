@@ -220,24 +220,39 @@ export function TabTopNavTOC({ activeTab }: { activeTab: WorkspaceTab }) {
 
 type Props = {
     activeTab: WorkspaceTab
+    isCollapsed?: boolean
+    setIsCollapsed?: (collapsed: boolean | ((prev: boolean) => boolean)) => void
+    tocWidth?: number
+    setTocWidth?: (width: number | ((prev: number) => number)) => void
 }
 
-export default function TabSidebarTOC({ activeTab }: Props) {
+export default function TabSidebarTOC({
+    activeTab,
+    isCollapsed: propsIsCollapsed,
+    setIsCollapsed: propsSetIsCollapsed,
+    tocWidth: propsTocWidth,
+    setTocWidth: propsSetTocWidth,
+}: Props) {
     const [activeSection, setActiveSection] = useState<string>('')
-    const [isCollapsed, setIsCollapsed] = useState<boolean>(false)
-    const [tocWidth, setTocWidth] = useState<number>(() => {
-        if (typeof window === 'undefined') return 185
+    const [internalCollapsed, setInternalCollapsed] = useState<boolean>(false)
+    const [internalTocWidth, setInternalTocWidth] = useState<number>(() => {
+        if (typeof window === 'undefined') return 96
         try {
             const stored = localStorage.getItem('mergeworks.tocWidth')
             if (stored) {
                 const parsed = parseInt(stored, 10)
-                if (!Number.isNaN(parsed)) {
-                    return Math.max(140, Math.min(360, parsed))
+                if (!Number.isNaN(parsed) && parsed >= 75 && parsed <= 125) {
+                    return parsed
                 }
             }
         } catch { }
-        return 185
+        return 96
     })
+
+    const isCollapsed = propsIsCollapsed !== undefined ? propsIsCollapsed : internalCollapsed
+    const setIsCollapsed = propsSetIsCollapsed !== undefined ? propsSetIsCollapsed : setInternalCollapsed
+    const tocWidth = propsTocWidth !== undefined ? propsTocWidth : internalTocWidth
+    const setTocWidth = propsSetTocWidth !== undefined ? propsSetTocWidth : setInternalTocWidth
 
     const [topOffset, setTopOffset] = useState<number | null>(() => {
         if (typeof window === 'undefined') return null
@@ -245,8 +260,8 @@ export default function TabSidebarTOC({ activeTab }: Props) {
             const stored = localStorage.getItem('mergeworks.tocTop')
             if (stored) {
                 const parsed = parseInt(stored, 10)
-                if (!Number.isNaN(parsed)) {
-                    return Math.max(64, Math.min(window.innerHeight - 200, parsed))
+                if (!Number.isNaN(parsed) && parsed >= 0 && parsed <= 20) {
+                    return Math.max(0, Math.min(window.innerHeight - 150, parsed))
                 }
             }
         } catch { }
@@ -280,7 +295,7 @@ export default function TabSidebarTOC({ activeTab }: Props) {
         }
         window.addEventListener('keydown', handleKeyDown)
         return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [])
+    }, [setIsCollapsed])
 
     const handleDragPointerDown = (e: React.PointerEvent) => {
         const target = e.target as HTMLElement
@@ -288,7 +303,7 @@ export default function TabSidebarTOC({ activeTab }: Props) {
             return
         }
         e.preventDefault()
-        const currentTop = topOffset ?? 72
+        const currentTop = topOffset ?? 0
         dragYRef.current = {
             startY: e.clientY,
             startTop: currentTop,
@@ -301,7 +316,7 @@ export default function TabSidebarTOC({ activeTab }: Props) {
     const handleDragPointerMove = (e: React.PointerEvent) => {
         if (!dragYRef.current) return
         const deltaY = e.clientY - dragYRef.current.startY
-        const nextTop = Math.max(56, Math.min(window.innerHeight - 200, dragYRef.current.startTop + deltaY))
+        const nextTop = Math.max(0, Math.min(window.innerHeight - 150, dragYRef.current.startTop + deltaY))
         setTopOffset(Math.round(nextTop))
     }
 
@@ -328,7 +343,7 @@ export default function TabSidebarTOC({ activeTab }: Props) {
     const handleWidthPointerMove = (e: React.PointerEvent) => {
         if (!dragXRef.current) return
         const deltaX = e.clientX - dragXRef.current.startX
-        const nextWidth = Math.max(140, Math.min(360, dragXRef.current.startWidth + deltaX))
+        const nextWidth = Math.max(75, Math.min(180, dragXRef.current.startWidth + deltaX))
         setTocWidth(Math.round(nextWidth))
     }
 
@@ -342,7 +357,7 @@ export default function TabSidebarTOC({ activeTab }: Props) {
 
     const handleResetAll = () => {
         setTopOffset(null)
-        setTocWidth(185)
+        setTocWidth(96)
         try {
             localStorage.removeItem('mergeworks.tocTop')
             localStorage.removeItem('mergeworks.tocWidth')
@@ -391,8 +406,8 @@ export default function TabSidebarTOC({ activeTab }: Props) {
     if (isCollapsed) {
         return (
             <div
-                className={`fixed left-0 z-40 print:hidden ${topOffset == null ? 'top-16 sm:top-20' : ''}`}
-                style={topOffset != null ? { top: `${topOffset}px` } : undefined}
+                className="fixed left-0 top-0 z-40 print:hidden"
+                style={topOffset != null ? { top: `${topOffset}px` } : { top: 0 }}
             >
                 <button
                     type="button"
@@ -401,7 +416,7 @@ export default function TabSidebarTOC({ activeTab }: Props) {
                     title="Open Table of Contents (Alt+T)"
                 >
                     <List className="h-4 w-4 shrink-0 text-primary" />
-                    <span className="text-xs font-bold tracking-tight">Table of Contents</span>
+                    <span className="text-xs font-bold tracking-tight">TOC</span>
                     <ChevronRight className="h-3.5 w-3.5 opacity-70 group-hover:translate-x-0.5 transition-transform" />
                 </button>
             </div>
@@ -410,10 +425,10 @@ export default function TabSidebarTOC({ activeTab }: Props) {
 
     return (
         <aside
-            className={`fixed left-0 z-50 print:hidden ${topOffset == null ? 'top-16 sm:top-20' : ''}`}
+            className="fixed left-0 top-0 z-50 print:hidden"
             style={{
                 width: `${tocWidth}px`,
-                top: topOffset != null ? `${topOffset}px` : undefined,
+                top: topOffset != null ? `${topOffset}px` : 0,
             }}
         >
             <nav className="relative rounded-r-xl border border-l-0 border-primary/40 bg-background/95 shadow-2xl backdrop-blur-md overflow-hidden">
@@ -428,7 +443,7 @@ export default function TabSidebarTOC({ activeTab }: Props) {
                     <div className="flex items-center gap-1 min-w-0">
                         <GripVertical className="h-3.5 w-3.5 text-muted-foreground/60 group-hover:text-primary transition-colors shrink-0" />
                         <span className="text-[11px] font-extrabold uppercase tracking-wider text-primary truncate">
-                            Table of Contents
+                            TOC
                         </span>
                     </div>
                     <div className="flex items-center gap-0.5 shrink-0" onPointerDown={(e) => e.stopPropagation()}>
@@ -460,7 +475,7 @@ export default function TabSidebarTOC({ activeTab }: Props) {
                 </div>
 
                 {/* Section List */}
-                <ul className="max-h-[calc(100vh-6.5rem)] overflow-y-auto p-1.5 space-y-0.5 custom-scrollbar">
+                <ul className="max-h-[calc(100vh-4.2rem)] overflow-y-auto p-1 space-y-0.5 custom-scrollbar">
                     {sections.map((section) => {
                         const isActive = activeSection === section.id
                         return (
@@ -469,8 +484,8 @@ export default function TabSidebarTOC({ activeTab }: Props) {
                                     type="button"
                                     onClick={() => scrollToSection(section.id)}
                                     title={section.label}
-                                    className={`w-full rounded-md px-2 py-1.5 text-left text-[11px] font-semibold leading-snug transition-all cursor-pointer whitespace-normal break-words ${
-                                        section.indent ? 'pl-3 text-muted-foreground/80 font-medium' : ''
+                                    className={`w-full rounded-md px-1.5 py-1 text-left text-[10.5px] font-semibold leading-tight transition-all cursor-pointer whitespace-normal break-words hyphens-auto ${
+                                        section.indent ? 'pl-2 text-muted-foreground/80 font-medium text-[10px]' : ''
                                     } ${
                                         isActive
                                             ? 'border-l-2 border-primary bg-primary/15 font-bold text-primary shadow-2xs'

@@ -101,8 +101,13 @@
 
 - Environment separation for prod API keys separate from testing API keys? Have we done this?
 
+- Consider whether your UI works across all screen sizes? Can we turn it into a mobile app too or not yet? Is it installable as an app right now like in chrome save page as?
+
+- Should we move the nav bar to the side like how many apps do it instead of vertically stacked?
 
 - Verify github mcp works for claude code, for brad, add it to your other AIs
+
+- Verify supademo mcp works
 
 - Make the TOCs don't get cut off but just keep going and maybe increase height if you have to?
 
