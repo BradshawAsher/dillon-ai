@@ -2100,7 +2100,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             <button
                 type="button"
                 onClick={() => setIsBatchDrawerOpen(true)}
-                className={`fixed left-0 top-1/3 z-40 flex items-center gap-2.5 rounded-r-xl border border-l-0 border-border/80 bg-background/90 px-3 py-2.5 shadow-xl backdrop-blur-md transition-all duration-200 hover:bg-muted hover:pr-4 group ${
+                className={`fixed left-0 top-20 z-40 flex items-center gap-2.5 rounded-r-xl border border-l-0 border-border/80 bg-background/95 px-3 py-2.5 shadow-xl backdrop-blur-md transition-all duration-200 hover:bg-muted hover:pr-4 group ${
                     hasActiveSubmissions || inFlightBatchPlaceholder ? 'border-primary/60 text-primary animate-pulse' : 'text-muted-foreground hover:text-foreground'
                 }`}
                 title="Open Batch Processing Activity (Ctrl+Shift+B)"
