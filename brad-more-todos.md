@@ -144,6 +144,8 @@
 
 - Right now the bullet points for acquisition judgement are parsed in the frontend, it may be good to do it on the backend so things are not cut off?
 
+-  make a more custom and personalized business meeting slides with screenshots from your actual dashboard instead of generic images
+
 - Change your fixed window + scrolling to more of fixed window + 20 per page, or 50 per page, or view all, like big websites like AWS when you have to look at IAM and admin permissinos stuff?
 
 - Add even more granular confidence score so every fact on the page has a confidence score?
