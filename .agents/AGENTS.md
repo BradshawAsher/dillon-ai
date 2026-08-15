@@ -61,6 +61,11 @@ If the user asks to change project synthesis behavior, the agent should:
 - **Project Synthesis Pass Primary Model**: `OpenAI 5.6 Terra`
 - **Project Synthesis Pass Backup Model**: `OpenAI 5.6 Sol`
 
+## Surgical Code Insertion Protocol
+- ALWAYS perform careful, targeted insertions and minimal replacements rather than rewriting entire files or large blocks of code.
+- Keep edit chunks scoped tightly to the exact lines being added or modified to preserve surrounding code structure and history.
+
+
 
 
 
