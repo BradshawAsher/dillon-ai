@@ -382,7 +382,7 @@ export default function SpendingAnalyticsTab({
             </div>
 
             {/* Top KPI Cards */}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div id="spending-header" className="scroll-mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <Card className="border border-border bg-card/90 shadow-2xs">
                     <CardHeader className="pb-2">
                         <CardDescription className="text-xs font-medium uppercase tracking-wide">Total Spend Across Runs</CardDescription>
@@ -456,7 +456,7 @@ export default function SpendingAnalyticsTab({
             </div>
 
             {/* Visual Spending Velocity Histogram & Top Spend Leaderboard */}
-            <div className="grid gap-6 md:grid-cols-3">
+            <div id="spending-breakdown" className="scroll-mt-6 grid gap-6 md:grid-cols-3">
                 {/* Spend Histogram */}
                 <Card className="md:col-span-2 border border-border bg-card shadow-xs">
                     <CardHeader className="border-b border-border bg-muted/20 pb-3">
@@ -535,7 +535,7 @@ export default function SpendingAnalyticsTab({
             </div>
 
             {/* AWS / GCP Style Itemized Billing Ledger Table */}
-            <Card className="border border-border bg-card shadow-xs">
+            <Card id="spending-history" className="scroll-mt-6 border border-border bg-card shadow-xs">
                 <CardHeader className="border-b border-border bg-muted/20 p-4">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div className="space-y-1">

@@ -33,32 +33,36 @@ export function DocumentsWorkspaceView({
 }: DocumentsWorkspaceViewProps) {
     return (
         <section id="project-portfolio" className="scroll-mt-6 space-y-4">
-            <SectionHeader
-                step={1}
-                title="Document portfolio"
-                description="Every uploaded document grouped by project, with coverage and duplicates."
-            />
-            <ProjectPortfolioCard
-                rows={submissionHistory}
-                syntheses={visibleProjectSyntheses}
-                activeProjectKey={selectedProjectKey}
-                onProjectSelect={handlePortfolioProjectSelect}
-                onExcludeDocument={handleExcludeDocument}
-                onIncludeDocument={handleIncludeDocument}
-                onRetryDocument={handleRetryFailedDocument}
-                onRequeueNewProject={handleRequeueNewProject}
-                retryingRequestId={retryingRequestId}
-                onRunSynthesis={() => {
-                    void handleRunSynthesis()
-                }}
-                runningSynthesis={isCurrentProjectAwaitingSynthesis}
-                onAddDocuments={(projectKey) => {
-                    setSelectedProjectKey(projectKey)
-                    setTimeout(() => {
-                        document.querySelector('[data-project-intake]')?.scrollIntoView({ behavior: 'smooth' })
-                    }, 100)
-                }}
-            />
+            <div id="documents-header" className="scroll-mt-6">
+                <SectionHeader
+                    step={1}
+                    title="Document portfolio"
+                    description="Every uploaded document grouped by project, with coverage and duplicates."
+                />
+            </div>
+            <div id="documents-grid" className="scroll-mt-6">
+                <ProjectPortfolioCard
+                    rows={submissionHistory}
+                    syntheses={visibleProjectSyntheses}
+                    activeProjectKey={selectedProjectKey}
+                    onProjectSelect={handlePortfolioProjectSelect}
+                    onExcludeDocument={handleExcludeDocument}
+                    onIncludeDocument={handleIncludeDocument}
+                    onRetryDocument={handleRetryFailedDocument}
+                    onRequeueNewProject={handleRequeueNewProject}
+                    retryingRequestId={retryingRequestId}
+                    onRunSynthesis={() => {
+                        void handleRunSynthesis()
+                    }}
+                    runningSynthesis={isCurrentProjectAwaitingSynthesis}
+                    onAddDocuments={(projectKey) => {
+                        setSelectedProjectKey(projectKey)
+                        setTimeout(() => {
+                            document.querySelector('[data-project-intake]')?.scrollIntoView({ behavior: 'smooth' })
+                        }, 100)
+                    }}
+                />
+            </div>
         </section>
     )
 }
