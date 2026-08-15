@@ -147,26 +147,37 @@ export function TabTopNavTOC({ activeTab }: { activeTab: WorkspaceTab }) {
 export default function TabSidebarTOC({ activeTab }: { activeTab: WorkspaceTab }) {
     const [activeSection, setActiveSection] = useState<string>('')
     const [isCollapsed, setIsCollapsed] = useState(false)
-    const [presentIds, setPresentIds] = useState<Set<string>>(new Set())
     const observerRef = useRef<IntersectionObserver | null>(null)
-    const mutationRef = useRef<MutationObserver | null>(null)
 
-    const sections = TAB_SECTIONS[activeTab]
+    const sections = TAB_SECTIONS[activeTab] || []
 
     const scrollToSection = useCallback((sectionId: string) => {
+        setActiveSection(sectionId)
         const element = document.getElementById(sectionId)
         if (element) {
             element.scrollIntoView({ behavior: 'smooth', block: 'start' })
-            setActiveSection(sectionId)
+            return
         }
+        // Fallback matching by keyword or section title
+        const keyword = sectionId.split('-').slice(1).join('-') || sectionId
+        const candidate = document.querySelector(`[data-section="${sectionId}"]`) || 
+                          document.querySelector(`[id*="${keyword}"]`) ||
+                          Array.from(document.querySelectorAll('h2, h3, h4, section, div')).find(
+                              (el) => el.textContent?.toLowerCase().includes(keyword.replace(/-/g, ' '))
+                          )
+        if (candidate) {
+            candidate.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            return
+        }
+        // General workspace top fallback
+        const workspace = document.getElementById('deal-workspace') || document.querySelector('main')
+        workspace?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }, [])
 
-    const syncObserver = useCallback(() => {
-        if (!sections) return
+    useEffect(() => {
+        if (!sections || sections.length === 0) return
 
         observerRef.current?.disconnect()
-
-        const nowPresent = new Set<string>()
         const visibleSections = new Map<string, boolean>()
 
         observerRef.current = new IntersectionObserver(
@@ -181,46 +192,22 @@ export default function TabSidebarTOC({ activeTab }: { activeTab: WorkspaceTab }
                     }
                 }
             },
-            { rootMargin: '-60px 0px -50% 0px', threshold: 0.1 }
+            { rootMargin: '-80px 0px -40% 0px', threshold: 0.05 }
         )
 
         for (const section of sections) {
             const el = document.getElementById(section.id)
             if (el) {
-                nowPresent.add(section.id)
                 observerRef.current.observe(el)
             }
         }
 
-        setPresentIds(nowPresent)
-    }, [sections])
-
-    useEffect(() => {
-        if (!sections) return
-
-        const timeout = setTimeout(syncObserver, 150)
-
-        mutationRef.current?.disconnect()
-        mutationRef.current = new MutationObserver(() => {
-            syncObserver()
-        })
-        mutationRef.current.observe(document.body, {
-            childList: true,
-            subtree: true,
-            attributes: false,
-        })
-
         return () => {
-            clearTimeout(timeout)
             observerRef.current?.disconnect()
-            mutationRef.current?.disconnect()
         }
-    }, [sections, activeTab, syncObserver])
+    }, [sections, activeTab])
 
     if (!sections || sections.length === 0) return null
-
-    const visibleSections = sections.filter((s) => presentIds.has(s.id))
-    if (visibleSections.length === 0) return null
 
     if (isCollapsed) {
         return (
@@ -232,7 +219,7 @@ export default function TabSidebarTOC({ activeTab }: { activeTab: WorkspaceTab }
                     title="Show Table of Contents"
                 >
                     <List className="h-4 w-4 shrink-0 text-primary" />
-                    <span className="hidden sm:inline">Table of Contents ({visibleSections.length})</span>
+                    <span className="hidden sm:inline">Table of Contents ({sections.length})</span>
                     <ChevronRight className="h-3.5 w-3.5 opacity-70 group-hover:translate-x-0.5 transition-transform" />
                 </button>
             </div>
@@ -257,7 +244,7 @@ export default function TabSidebarTOC({ activeTab }: { activeTab: WorkspaceTab }
                     </button>
                 </div>
                 <ul className="max-h-[60vh] overflow-y-auto p-2 space-y-0.5">
-                    {visibleSections.map((section) => {
+                    {sections.map((section) => {
                         const isActive = activeSection === section.id
                         return (
                             <li key={section.id}>

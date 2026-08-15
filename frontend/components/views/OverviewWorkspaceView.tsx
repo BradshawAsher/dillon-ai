@@ -124,13 +124,15 @@ export function OverviewWorkspaceView({
 
                 return (
                     <>
-                        <DealSummaryBanner
-                            model={hydratedDealModel}
-                            synthesis={activeProjectSynthesis}
-                            projectName={dealName || suggestedProjectName}
-                            docCost={docCost}
-                            totalCost={totalDealCost}
-                        />
+                        <div id="overview-snapshot" className="scroll-mt-6">
+                            <DealSummaryBanner
+                                model={hydratedDealModel}
+                                synthesis={activeProjectSynthesis}
+                                projectName={dealName || suggestedProjectName}
+                                docCost={docCost}
+                                totalCost={totalDealCost}
+                            />
+                        </div>
 
                         <Suspense fallback={null}>
                             <DealMemoView
@@ -140,15 +142,17 @@ export function OverviewWorkspaceView({
                                 documents={activeProjectDocuments}
                             />
                         </Suspense>
-                        <DealHealthKPIs
-                            synthesis={activeProjectSynthesis}
-                            model={hydratedDealModel}
-                            impact={activeProjectImpact}
-                            documentsCount={activeProjectDocuments.length}
-                            docCost={docCost}
-                            totalCost={totalDealCost}
-                            todayStats={todayStats}
-                        />
+                        <div id="overview-health" className="scroll-mt-6">
+                            <DealHealthKPIs
+                                synthesis={activeProjectSynthesis}
+                                model={hydratedDealModel}
+                                impact={activeProjectImpact}
+                                documentsCount={activeProjectDocuments.length}
+                                docCost={docCost}
+                                totalCost={totalDealCost}
+                                todayStats={todayStats}
+                            />
+                        </div>
                     </>
                 )
             })()}
@@ -163,8 +167,12 @@ export function OverviewWorkspaceView({
             <div className="border-t border-border pt-4">
                 <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Next steps</h3>
             </div>
-            <DealActionItemsCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} />
-            <SellerQuestionsCard synthesis={activeProjectSynthesis} model={hydratedDealModel} />
+            <div id="overview-actions" className="scroll-mt-6">
+                <DealActionItemsCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} />
+            </div>
+            <div id="overview-timeline" className="scroll-mt-6">
+                <SellerQuestionsCard synthesis={activeProjectSynthesis} model={hydratedDealModel} />
+            </div>
         </section>
     )
 }

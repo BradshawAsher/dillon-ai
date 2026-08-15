@@ -1676,7 +1676,6 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 />
 
                 <TabSidebarTOC activeTab={activeWorkspaceTab} />
-                <TabTopNavTOC activeTab={activeWorkspaceTab} />
 
                 {activeWorkspaceTab === 'overview' ? (
                     <OverviewWorkspaceView
@@ -1771,32 +1770,34 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                     {activeWorkspaceTab === 'diligence' ? (
                         <div className="space-y-6">
                             {(activeSubmissionBatch || activeBatchProcessingCount > 0) ? (
-                                <BatchProgressCard
-                                    activeSubmissionBatch={activeSubmissionBatch ?? {
-                                        id: activeProjectId,
-                                        expectedDocumentCount: activeBatchExpectedCount,
-                                        environment: 'production',
-                                        startedAt: Date.now(),
-                                    }}
-                                    activeBatchFinishedCount={activeBatchFinishedCount}
-                                    activeBatchExpectedCount={activeBatchExpectedCount}
-                                    activeBatchFailedCount={activeBatchFailedCount}
-                                    isStoppingBatch={isStoppingBatch}
-                                    handleStopBatch={() => { void handleStopBatch() }}
-                                    activeBatchProcessingCount={activeBatchProcessingCount}
-                                    activeBatchProcessingPercent={activeBatchProcessingPercent}
-                                    activeBatchProgressPercent={activeBatchProgressPercent}
-                                    batchElapsedSeconds={batchElapsedSeconds}
-                                    activeBatchImpact={activeBatchImpact}
-                                    activeBatchStuckRows={activeBatchStuckRows}
-                                    activeBatchErrors={activeBatchErrors}
-                                    activeBatchAdvisories={activeBatchAdvisories}
-                                    activeBatchCompletedCount={activeBatchCompletedCount}
-                                    activeProjectId={activeProjectId}
-                                    retryingRequestId={retryingRequestId ?? undefined}
-                                    handleRetryFailedDocument={(requestID) => { void handleRetryFailedDocument(requestID) }}
-                                    handleOpenProjectSynthesis={handleOpenProjectSynthesis}
-                                />
+                                <div id="diligence-batch" className="scroll-mt-6">
+                                    <BatchProgressCard
+                                        activeSubmissionBatch={activeSubmissionBatch ?? {
+                                            id: activeProjectId,
+                                            expectedDocumentCount: activeBatchExpectedCount,
+                                            environment: 'production',
+                                            startedAt: Date.now(),
+                                        }}
+                                        activeBatchFinishedCount={activeBatchFinishedCount}
+                                        activeBatchExpectedCount={activeBatchExpectedCount}
+                                        activeBatchFailedCount={activeBatchFailedCount}
+                                        isStoppingBatch={isStoppingBatch}
+                                        handleStopBatch={() => { void handleStopBatch() }}
+                                        activeBatchProcessingCount={activeBatchProcessingCount}
+                                        activeBatchProcessingPercent={activeBatchProcessingPercent}
+                                        activeBatchProgressPercent={activeBatchProgressPercent}
+                                        batchElapsedSeconds={batchElapsedSeconds}
+                                        activeBatchImpact={activeBatchImpact}
+                                        activeBatchStuckRows={activeBatchStuckRows}
+                                        activeBatchErrors={activeBatchErrors}
+                                        activeBatchAdvisories={activeBatchAdvisories}
+                                        activeBatchCompletedCount={activeBatchCompletedCount}
+                                        activeProjectId={activeProjectId}
+                                        retryingRequestId={retryingRequestId ?? undefined}
+                                        handleRetryFailedDocument={(requestID) => { void handleRetryFailedDocument(requestID) }}
+                                        handleOpenProjectSynthesis={handleOpenProjectSynthesis}
+                                    />
+                                </div>
                             ) : null}
 
                             {!isExampleMode && isCurrentProjectExtractingDocs ? (
