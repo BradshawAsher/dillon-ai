@@ -51,20 +51,34 @@ export function ReturnsWorkspaceView({
 }: ReturnsWorkspaceViewProps) {
     return (
         <section className="space-y-6">
-            <ModelAssumptionsSummary model={activeDealModel} area="returns" />
-            <ReturnsDecisionSummary model={returnsDisplayModel} />
+            <div id="returns-header" className="scroll-mt-6">
+                <ModelAssumptionsSummary model={activeDealModel} area="returns" />
+                <ReturnsDecisionSummary model={returnsDisplayModel} />
+            </div>
             {isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}
-            <AllCashReturnsCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} />
+            <div id="returns-all-cash" className="scroll-mt-6">
+                <AllCashReturnsCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} />
+            </div>
             {isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}
-            <FinancedReturnsCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} />
+            <div id="returns-financed" className="scroll-mt-6">
+                <FinancedReturnsCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} />
+            </div>
             {isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}
-            <FinancedScenarioComparisonCard model={returnsDisplayModel} />
+            <div id="returns-scenario" className="scroll-mt-6">
+                <FinancedScenarioComparisonCard model={returnsDisplayModel} />
+            </div>
             <Suspense fallback={null}>
-                <BaseReturnMetricsCard model={returnsDisplayModel} />
-                <CashOnCashCalculatorCard model={returnsDisplayModel} />
+                <div id="returns-base" className="scroll-mt-6">
+                    <BaseReturnMetricsCard model={returnsDisplayModel} />
+                </div>
+                <div id="returns-cash-on-cash" className="scroll-mt-6">
+                    <CashOnCashCalculatorCard model={returnsDisplayModel} />
+                </div>
                 <MonteCarloCard model={returnsDisplayModel} />
                 <BreakevenAnalysisCard model={returnsDisplayModel} />
-                <PaybackTimelineCard model={returnsDisplayModel} />
+                <div id="returns-payback" className="scroll-mt-6">
+                    <PaybackTimelineCard model={returnsDisplayModel} />
+                </div>
                 <AnnualCashFlowCard model={returnsDisplayModel} />
                 <DebtServiceCoverageCard model={returnsDisplayModel} />
                 <WeeklyProjectionCard model={returnsDisplayModel} />
@@ -73,7 +87,9 @@ export function ReturnsWorkspaceView({
                 <TaxImpactCard model={returnsDisplayModel} />
             </Suspense>
             <SensitivityAnalysisCard model={returnsDisplayModel} />
-            <HoldPeriodSensitivity model={returnsDisplayModel} />
+            <div id="returns-hold-period" className="scroll-mt-6">
+                <HoldPeriodSensitivity model={returnsDisplayModel} />
+            </div>
             <MathChecksSection
                 documents={activeProjectDocuments}
                 onOpenEvidence={setActiveEvidence}

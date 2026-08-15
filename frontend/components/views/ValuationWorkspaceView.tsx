@@ -29,25 +29,37 @@ export function ValuationWorkspaceView({
 }: ValuationWorkspaceViewProps) {
     return (
         <section className="space-y-6">
-            <ModelAssumptionsSummary model={hydratedDealModel} area="valuation" />
-            <DealValuationCard
-                synthesis={activeProjectSynthesis}
-                askingPrice={askingPrice}
-                model={hydratedDealModel}
-                onModelChange={handleDealModelChange}
-                documents={submissionHistory}
-                onOpenEvidence={setActiveEvidence}
-            />
-            <ValuationGapCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
-            <ComparableTransactionsCard model={hydratedDealModel} />
-            <SensitivityAnalysisCard model={returnsDisplayModel} />
-            <MathChecksSection
-                documents={activeProjectDocuments}
-                onOpenEvidence={setActiveEvidence}
-                compact
-                title="Data integrity checks"
-                description="Verifies the financial numbers feeding into valuation methods."
-            />
+            <div id="valuation-header" className="scroll-mt-6">
+                <ModelAssumptionsSummary model={hydratedDealModel} area="valuation" />
+            </div>
+            <div id="valuation-quick" className="scroll-mt-6">
+                <DealValuationCard
+                    synthesis={activeProjectSynthesis}
+                    askingPrice={askingPrice}
+                    model={hydratedDealModel}
+                    onModelChange={handleDealModelChange}
+                    documents={submissionHistory}
+                    onOpenEvidence={setActiveEvidence}
+                />
+            </div>
+            <div id="valuation-gap" className="scroll-mt-6">
+                <ValuationGapCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
+            </div>
+            <div id="valuation-comps" className="scroll-mt-6">
+                <ComparableTransactionsCard model={hydratedDealModel} />
+            </div>
+            <div id="valuation-sensitivity" className="scroll-mt-6">
+                <SensitivityAnalysisCard model={returnsDisplayModel} />
+            </div>
+            <div id="valuation-risk-adjusted" className="scroll-mt-6">
+                <MathChecksSection
+                    documents={activeProjectDocuments}
+                    onOpenEvidence={setActiveEvidence}
+                    compact
+                    title="Data integrity checks"
+                    description="Verifies the financial numbers feeding into valuation methods."
+                />
+            </div>
         </section>
     )
 }

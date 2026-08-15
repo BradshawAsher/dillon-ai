@@ -122,18 +122,20 @@ export function DiligenceWorkspaceView({
                 </div>
             )}
 
-            <DealOverviewCard
-                syntheses={visibleProjectSyntheses}
-                projects={projectSummaries}
-                currentProjectId={activeProjectId}
-                askingPrice={askingPrice}
-                onAskingPriceChange={handleAskingPriceChange}
-                impact={activeProjectImpact}
-                model={activeDealModel}
-                documents={submissionHistory.filter((row) => getProjectKey(row) === activeProjectId)}
-                onOpenEvidence={setActiveEvidence}
-                exampleMode={isExampleMode}
-            />
+            <div id="diligence-project-synth" className="scroll-mt-6">
+                <DealOverviewCard
+                    syntheses={visibleProjectSyntheses}
+                    projects={projectSummaries}
+                    currentProjectId={activeProjectId}
+                    askingPrice={askingPrice}
+                    onAskingPriceChange={handleAskingPriceChange}
+                    impact={activeProjectImpact}
+                    model={activeDealModel}
+                    documents={submissionHistory.filter((row) => getProjectKey(row) === activeProjectId)}
+                    onOpenEvidence={setActiveEvidence}
+                    exampleMode={isExampleMode}
+                />
+            </div>
             <QuickFilterBar
                 synthesis={activeProjectSynthesis}
                 onJumpTo={(target: string) => {
@@ -147,7 +149,9 @@ export function DiligenceWorkspaceView({
             <div className="border-t border-border pt-4">
                 <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Financial data quality</h3>
             </div>
-            <DealModelReadinessCard model={hydratedDealModel} documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} />
+            <div id="diligence-documents" className="scroll-mt-6">
+                <DealModelReadinessCard model={hydratedDealModel} documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} />
+            </div>
             <FinancialCompletenessCard model={hydratedDealModel} documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} />
             <MathChecksSection
                 documents={activeProjectDocuments}
