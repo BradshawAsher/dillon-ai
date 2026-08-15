@@ -236,17 +236,17 @@ export default function TabSidebarTOC({
     const [activeSection, setActiveSection] = useState<string>('')
     const [internalCollapsed, setInternalCollapsed] = useState<boolean>(false)
     const [internalTocWidth, setInternalTocWidth] = useState<number>(() => {
-        if (typeof window === 'undefined') return 96
+        if (typeof window === 'undefined') return 120
         try {
             const stored = localStorage.getItem('mergeworks.tocWidth')
             if (stored) {
                 const parsed = parseInt(stored, 10)
-                if (!Number.isNaN(parsed) && parsed >= 75 && parsed <= 125) {
+                if (!Number.isNaN(parsed) && parsed >= 85 && parsed <= 180) {
                     return parsed
                 }
             }
         } catch { }
-        return 96
+        return 120
     })
 
     const isCollapsed = propsIsCollapsed !== undefined ? propsIsCollapsed : internalCollapsed
@@ -343,7 +343,7 @@ export default function TabSidebarTOC({
     const handleWidthPointerMove = (e: React.PointerEvent) => {
         if (!dragXRef.current) return
         const deltaX = e.clientX - dragXRef.current.startX
-        const nextWidth = Math.max(75, Math.min(180, dragXRef.current.startWidth + deltaX))
+        const nextWidth = Math.max(85, Math.min(220, dragXRef.current.startWidth + deltaX))
         setTocWidth(Math.round(nextWidth))
     }
 
@@ -357,7 +357,7 @@ export default function TabSidebarTOC({
 
     const handleResetAll = () => {
         setTopOffset(null)
-        setTocWidth(96)
+        setTocWidth(120)
         try {
             localStorage.removeItem('mergeworks.tocTop')
             localStorage.removeItem('mergeworks.tocWidth')
@@ -464,6 +464,7 @@ export default function TabSidebarTOC({
                             onPointerDown={(e) => e.stopPropagation()}
                             onClick={(e) => {
                                 e.stopPropagation()
+                                handleResetAll()
                                 setIsCollapsed(true)
                             }}
                             className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer shrink-0"
@@ -484,8 +485,8 @@ export default function TabSidebarTOC({
                                     type="button"
                                     onClick={() => scrollToSection(section.id)}
                                     title={section.label}
-                                    className={`w-full rounded-md px-1.5 py-1 text-left text-[10.5px] font-semibold leading-tight transition-all cursor-pointer whitespace-normal break-words hyphens-auto ${
-                                        section.indent ? 'pl-2 text-muted-foreground/80 font-medium text-[10px]' : ''
+                                    className={`w-full rounded-md px-2 py-1 text-left text-[11px] font-semibold leading-snug transition-all cursor-pointer whitespace-normal break-words hyphens-auto ${
+                                        section.indent ? 'pl-2.5 text-muted-foreground/80 font-medium text-[10.5px]' : ''
                                     } ${
                                         isActive
                                             ? 'border-l-2 border-primary bg-primary/15 font-bold text-primary shadow-2xs'

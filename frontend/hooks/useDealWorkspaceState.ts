@@ -32,17 +32,17 @@ export function useDealWorkspaceState() {
         }
     })
     const [tocWidth, setTocWidth] = useState<number>(() => {
-        if (typeof window === 'undefined') return 160
+        if (typeof window === 'undefined') return 120
         try {
             const stored = localStorage.getItem('mergeworks.tocWidth')
             if (stored) {
                 const parsed = parseInt(stored, 10)
-                if (!Number.isNaN(parsed) && parsed >= 120 && parsed <= 260) {
+                if (!Number.isNaN(parsed) && parsed >= 85 && parsed <= 180) {
                     return parsed
                 }
             }
         } catch { }
-        return 160
+        return 120
     })
     const [askingPriceByProject, setAskingPriceByProject] = useState<Record<string, string>>(() => {
         if (typeof window === 'undefined') return {}

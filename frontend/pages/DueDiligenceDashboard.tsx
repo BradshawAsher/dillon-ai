@@ -1515,6 +1515,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 className="transition-[padding] duration-200 ease-in-out"
                 style={{
                     paddingLeft: !isTocCollapsed ? `${tocWidth + 8}px` : undefined,
+                    paddingRight: '56px',
                 }}
             >
                 <WorkspaceHeader
