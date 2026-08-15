@@ -104,7 +104,7 @@
 
 - Verify github mcp works for claude code, for brad, add it to your other AIs
 
-- Make the TOC for each tab bigger and more noticeable
+- Make the TOCs don't get cut off but just keep going and maybe increase height if you have to?
 
 - Why claude code and codex don't give notification but antigravity does?
 
@@ -136,13 +136,9 @@
 
 - Why we are not showing confidence levels for key acquisition takeaways? or for document-level thesis takeaways? These are in syntehsis tab? Confidence levels in material impact mapping should be multiplied by 100 right?
 
-- Also I know each of our tabs is getting long, do some other websites have like a preview on the left side or the right side of the screen that essentially have buttons that take you to each part of that tab and also let the users know what tab sections are include in that tab like since new users won't know what type of info and tools are in each of our tabs in the nav bar? And if this is possible can we do this?
-
 - # Prepare slides, presentation script (?), backup recording, and supademo and supademo case study for tuesday business meeting, also prepare for example questions that they may ask and extra things you can mention if there's more time
 
 - is there anywhere else in our website like FAQs or something or just how our agent currently operates that needs to be updated in order to really like distinctly highlight and support functionality for both modes or no?
-
-- [For brad] Resync mcp servers for new AIs you use to have same setup that gemini uses
 
 - Is there a way I can automate the pushing of docs under different projects to save time? Or can I upload multiple projects at a time? Like this might require a side panel of like docs in progress or something? Or multiple batches at a time?
 
