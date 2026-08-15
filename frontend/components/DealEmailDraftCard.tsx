@@ -58,8 +58,8 @@ export default function DealEmailDraftCard({ model, synthesis, projectName }: Pr
         else if (redCount > 0) lines.push(`• Schedule management call to address red flags`)
         else lines.push(`• Move to detailed due diligence / LOI`)
         lines.push('')
-        lines.push(`Full analysis available in MergeWorks dashboard.`)
-        lines.push(`\n— Sent via MergeWorks DD Dashboard`)
+        lines.push(`Full analysis available in Dillon AI dashboard.`)
+        lines.push(`\n— Sent via Dillon AI DD Dashboard`)
 
         return { subject, body: lines.join('\n') }
     }, [model, synthesis, projectName])

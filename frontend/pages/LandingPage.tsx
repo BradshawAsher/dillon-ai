@@ -47,8 +47,8 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
 
     const faqs = [
         {
-            question: 'What is MergeWorks AI Due Diligence?',
-            answer: 'MergeWorks is an autonomous M&A deal intelligence platform that analyzes 2-year P&Ls, balance sheets, customer rosters, and LOIs. It automatically generates audit-grade valuation ranges, EBITDA reconstructions, and Investment Committee memos with 100% citation transparency.',
+            question: 'What is Dillon AI Due Diligence?',
+            answer: 'Dillon AI is an autonomous M&A deal intelligence platform that analyzes 2-year P&Ls, balance sheets, customer rosters, and LOIs. It automatically generates audit-grade valuation ranges, EBITDA reconstructions, and Investment Committee memos with 100% citation transparency.',
             badge: 'GETTING STARTED',
         },
         {
@@ -57,13 +57,13 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
             badge: 'BEGINNER GUIDE',
         },
         {
-            question: 'How does MergeWorks ensure 0 numeric hallucinations?',
+            question: 'How does Dillon AI ensure 0 numeric hallucinations?',
             answer: 'Every single extracted figure (revenue, EBITDA add-backs, customer concentration percentages) is tied to an explicit document line item or cell reference (e.g. "Apex_Commercial_PL_2025.pdf: Line 4"). You can click any number to inspect its original document source.',
             badge: '100% CITATION GUARANTEE',
         },
         {
             question: 'What document formats and file types are supported?',
-            answer: 'MergeWorks accepts native PDFs, scanned PDF documents, Excel spreadsheets (.xlsx, .xltx), Word documents (.docx), and CSV financial tables.',
+            answer: 'Dillon AI accepts native PDFs, scanned PDF documents, Excel spreadsheets (.xlsx, .xltx), Word documents (.docx), and CSV financial tables.',
             badge: 'FILE SUPPORT',
         },
         {
@@ -179,7 +179,7 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
                         </div>
                         <div className="flex flex-col justify-center">
                             <div className="flex items-center gap-2">
-                                <span className="text-xl font-black tracking-tight text-foreground leading-none">MergeWorks</span>
+                                <span className="text-xl font-black tracking-tight text-foreground leading-none">Dillon AI</span>
                                 <Badge variant="outline" className="border-primary/40 bg-primary/10 text-[10px] font-bold text-primary px-1.5 py-0.5 leading-none shrink-0">
                                     AI DUE DILIGENCE
                                 </Badge>
@@ -660,7 +660,7 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
                             Trust What You Can Verify
                         </h2>
                         <p className="text-sm text-muted-foreground leading-relaxed">
-                            M&amp;A buyers and investment committees reject black-box AI outputs. MergeWorks links every extracted number directly to its original file and line item.
+                            M&amp;A buyers and investment committees reject black-box AI outputs. Dillon AI links every extracted number directly to its original file and line item.
                         </p>
                     </div>
 
@@ -744,7 +744,7 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
                             Structured 5-Stage M&amp;A Pipeline
                         </h2>
                         <p className="text-sm text-muted-foreground">
-                            How MergeWorks processes raw financial documents into investment committee verdicts:
+                            How Dillon AI processes raw financial documents into investment committee verdicts:
                         </p>
                     </div>
 
@@ -781,7 +781,7 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
                             88%+ Cost Savings Achieved
                         </h2>
                         <p className="text-sm text-muted-foreground">
-                            Empirical cost breakdown comparing legacy manual review, flagship models, and MergeWorks hybrid pipeline:
+                            Empirical cost breakdown comparing legacy manual review, flagship models, and Dillon AI hybrid pipeline:
                         </p>
                     </div>
 
@@ -812,7 +812,7 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
 
                         <Card className="border-primary/50 bg-primary/5 shadow-lg">
                             <CardHeader>
-                                <Badge variant="success" className="w-fit text-[10px] font-bold">MERGEWORKS HYBRID (OPTIMIZED)</Badge>
+                                <Badge variant="success" className="w-fit text-[10px] font-bold">DILLON AI HYBRID (OPTIMIZED)</Badge>
                                 <CardTitle className="text-3xl font-black text-primary">$0.0210 <span className="text-xs font-normal text-muted-foreground">/ run</span></CardTitle>
                                 <CardDescription className="text-xs">Sonnet 5 (Per-Doc OCR) + OpenAI 5.6 (Synthesizer)</CardDescription>
                             </CardHeader>
@@ -838,7 +838,7 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
                             Frequently Asked Questions (FAQs)
                         </h2>
                         <p className="text-sm text-muted-foreground sm:text-base">
-                            Everything you need to know about navigating MergeWorks, uploading deal packets, and reviewing audit-grade M&amp;A due diligence.
+                            Everything you need to know about navigating Dillon AI, uploading deal packets, and reviewing audit-grade M&amp;A due diligence.
                         </p>
                     </div>
 
@@ -890,9 +890,9 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-6">
                     <div className="flex items-center gap-3">
                         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white font-bold">
-                            M
+                            D
                         </div>
-                        <span className="text-sm font-bold text-foreground">MergeWorks AI Due Diligence Platform</span>
+                        <span className="text-sm font-bold text-foreground">Dillon AI Due Diligence Platform</span>
                     </div>
 
                     <div className="flex items-center gap-6 text-xs text-muted-foreground">
@@ -904,7 +904,7 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
                     </div>
 
                     <p className="text-xs text-muted-foreground">
-                        © 2026 MergeWorks Inc. All rights reserved.
+                        © 2026 Dillon AI Inc. All rights reserved.
                     </p>
                 </div>
             </footer>
@@ -1054,7 +1054,7 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
                                     <Input
                                         type="email"
                                         required
-                                        placeholder="alex@mergeworks-pe.com"
+                                        placeholder="alex@dillon-pe.com"
                                         value={accessForm.email}
                                         onChange={(e) => setAccessForm({ ...accessForm, email: e.target.value })}
                                     />

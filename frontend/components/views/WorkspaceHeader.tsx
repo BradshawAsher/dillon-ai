@@ -57,11 +57,13 @@ export function WorkspaceHeader({
             <div className="mx-auto flex max-w-[1440px] flex-col gap-4 px-4 py-5 sm:px-6 lg:flex-row lg:items-start lg:justify-between lg:px-8">
                 <div className="space-y-2">
                     <p className="text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
-                        Internal M&amp;A Due Diligence Workspace
+                        Dillon AI • M&amp;A Due Diligence Workspace
                     </p>
                     <div className="flex flex-wrap items-center gap-3">
-                        <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
-                            Project-based diligence cockpit
+                        <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl flex items-center gap-2">
+                            <span className="font-bold text-primary">Dillon AI</span>
+                            <span className="text-muted-foreground/40 font-normal">|</span>
+                            <span>Project Diligence Cockpit</span>
                         </h1>
                         <DealStageIndicator />
                         <PipelineStatusIndicator

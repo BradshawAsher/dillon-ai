@@ -469,7 +469,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     const [notifications, setNotifications] = useState<Notification[]>(() => {
         const now = new Date()
         return [
-            { id: '1', type: 'info', title: 'Welcome to MergeWorks', description: 'Upload documents or switch to example data to explore.', timestamp: now, read: false },
+            { id: '1', type: 'info', title: 'Welcome to Dillon AI', description: 'Upload documents or switch to example data to explore.', timestamp: now, read: false },
         ]
     })
 
@@ -2256,7 +2256,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                     <span>256-bit TLS Encryption • Zero-Retention Pipeline • RLS Database Protection</span>
                 </div>
                 <p className="max-w-2xl text-left text-2xs opacity-85 leading-normal">
-                    <strong>Disclaimer:</strong> MergeWorks is an AI-assisted financial due diligence platform. Extracted metrics, EBITDA reconstructions, and risk flags are generated for informational analysis only and do not constitute formal legal, accounting, tax, or investment advice. Always consult certified CPAs and M&A deal advisors before executing acquisitions.
+                    <strong>Disclaimer:</strong> Dillon AI is an AI-assisted financial due diligence platform. Extracted metrics, EBITDA reconstructions, and risk flags are generated for informational analysis only and do not constitute formal legal, accounting, tax, or investment advice. Always consult certified CPAs and M&A deal advisors before executing acquisitions.
                 </p>
             </footer>
 
