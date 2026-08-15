@@ -1999,6 +1999,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                                 onRefresh={() => {
                                     void triggerProjectSynthesis({ environment: activeHistoryEnvironment }, { skipCache: true }).result
                                 }}
+                                onSwitchTab={setActiveWorkspaceTab}
                             />
                             <div id="synthesis-management-questions" className="scroll-mt-6">
                                 <ManagementQuestionTracker

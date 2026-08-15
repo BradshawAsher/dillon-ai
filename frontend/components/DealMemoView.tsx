@@ -10,12 +10,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { formatCurrencyValue } from '../utils/aiSubmissionData'
 import TruncatedListItem from './TruncatedListItem'
+import ActionableRecommendationInfoButton from './ActionableRecommendationInfoButton'
 
 type Props = {
     model: DealModel
     synthesis?: ProjectSynthesisItem
     projectName: string
     documents: SubmissionHistoryItem[]
+    onSwitchTab?: (tab: any) => void
 }
 
 function money(value: number | null | undefined) {
@@ -105,7 +107,7 @@ function buildMemoText(model: DealModel, synthesis: ProjectSynthesisItem | undef
     return lines.join('\n')
 }
 
-export default function DealMemoView({ model, synthesis, projectName, documents }: Props) {
+export default function DealMemoView({ model, synthesis, projectName, documents, onSwitchTab }: Props) {
     const [copied, setCopied] = useState(false)
     const facts = parseDocumentedFacts(model.documentedFactsJson)
     const revenue = facts.revenue?.value
@@ -239,9 +241,17 @@ export default function DealMemoView({ model, synthesis, projectName, documents 
                                     {recText && (
                                         <div className="rounded-xl border border-border bg-background p-4 shadow-sm">
                                             <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">Actionable Recommendation</p>
-                                            <p className={`text-xl sm:text-2xl font-black tracking-tight leading-tight ${getActionColor(recText)}`}>
-                                                {recText}
-                                            </p>
+                                            <div className="flex items-center gap-2.5 flex-wrap">
+                                                <span className={`text-xl sm:text-2xl font-black tracking-tight leading-tight ${getActionColor(recText)}`}>
+                                                    {recText}
+                                                </span>
+                                                <ActionableRecommendationInfoButton
+                                                    recommendation={recText}
+                                                    trafficLight={synthesis.finalTrafficLight}
+                                                    onSwitchTab={onSwitchTab}
+                                                    size="sm"
+                                                />
+                                            </div>
                                         </div>
                                     )}
                                     <div className="space-y-3 bg-background/50 rounded-xl p-4 border border-border/40">

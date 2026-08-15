@@ -131,6 +131,7 @@ export function OverviewWorkspaceView({
                                 projectName={dealName || suggestedProjectName}
                                 docCost={docCost}
                                 totalCost={totalDealCost}
+                                onSwitchTab={setActiveWorkspaceTab}
                             />
                         </div>
 
@@ -140,6 +141,7 @@ export function OverviewWorkspaceView({
                                 synthesis={activeProjectSynthesis}
                                 projectName={dealName || suggestedProjectName}
                                 documents={activeProjectDocuments}
+                                onSwitchTab={setActiveWorkspaceTab}
                             />
                         </Suspense>
                         <div id="overview-health" className="scroll-mt-6">

@@ -9,6 +9,7 @@ import { formatHours, type ImpactMetrics } from '../utils/impactMetrics'
 import { downloadSynthesisReport } from './ProjectSynthesisCard'
 
 import { useMemo, useState } from 'react'
+import ActionableRecommendationInfoButton from './ActionableRecommendationInfoButton'
 
 function cleanCompleteSentence(str: string): string {
     if (!str) return ''
@@ -23,10 +24,12 @@ function cleanCompleteSentence(str: string): string {
     // Ensure sentence ends with valid punctuation
     if (!/[.!?]$/.test(cleaned)) {
         // If string ends with an incomplete word fragment at end of a long sentence, trim to last space
-        if (cleaned.length > 30) {
-            const lastSpaceIndex = cleaned.lastIndexOf(' ')
-            if (lastSpaceIndex > 15 && cleaned.length - lastSpaceIndex < 12) {
-                cleaned = cleaned.substring(0, lastSpaceIndex).trim()
+        if (cleaned.length > 30 && cleaned.lastIndexOf(' ') > cleaned.length - 15) {
+            const lastSpace = cleaned.lastIndexOf(' ')
+            const trailingWord = cleaned.slice(lastSpace + 1)
+            // If trailing token is not a normal word or is incomplete, chop it
+            if (trailingWord.length < 3 || !/^[a-zA-Z0-9]+$/.test(trailingWord)) {
+                cleaned = cleaned.slice(0, lastSpace)
             }
         }
         cleaned += '.'
@@ -34,7 +37,7 @@ function cleanCompleteSentence(str: string): string {
     return cleaned
 }
 
-export default function AcquisitionJudgmentCallout({ synthesis, impact }: { synthesis?: ProjectSynthesisItem; impact: ImpactMetrics }) {
+export default function AcquisitionJudgmentCallout({ synthesis, impact, onSwitchTab }: { synthesis?: ProjectSynthesisItem; impact: ImpactMetrics; onSwitchTab?: (tab: any) => void }) {
     const [isPinned, setIsPinned] = useState(false)
     const pending = !synthesis || !synthesis.finalJudgmentSummary
     const message = pending
@@ -197,7 +200,15 @@ export default function AcquisitionJudgmentCallout({ synthesis, impact }: { synt
                             )}
                         </button>
                         {parsedSummary.recommendation ? (
-                            <Badge variant={getSubmissionInsightTone(synthesis?.finalTrafficLight || 'YELLOW')}>{parsedSummary.recommendation}</Badge>
+                            <div className="flex items-center gap-1.5">
+                                <Badge variant={getSubmissionInsightTone(synthesis?.finalTrafficLight || 'YELLOW')}>{parsedSummary.recommendation}</Badge>
+                                <ActionableRecommendationInfoButton
+                                    recommendation={parsedSummary.recommendation}
+                                    trafficLight={synthesis?.finalTrafficLight}
+                                    onSwitchTab={onSwitchTab}
+                                    size="sm"
+                                />
+                            </div>
                         ) : null}
                         {impact.completedDocuments > 0 ? (
                             <Badge variant="success">~{formatHours(impact.timeSavedHours)} analyst time saved</Badge>
@@ -209,9 +220,17 @@ export default function AcquisitionJudgmentCallout({ synthesis, impact }: { synt
                     {parsedSummary.recommendation && !pending && (
                         <div className="rounded-xl border border-border bg-background p-5 shadow-sm">
                             <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">Actionable Recommendation</p>
-                            <p className={`text-xl sm:text-2xl md:text-3xl font-black tracking-tight leading-tight ${getActionColor(parsedSummary.recommendation)}`}>
-                                {parsedSummary.recommendation}
-                            </p>
+                            <div className="flex items-center gap-2.5 flex-wrap">
+                                <span className={`text-xl sm:text-2xl md:text-3xl font-black tracking-tight leading-tight ${getActionColor(parsedSummary.recommendation)}`}>
+                                    {parsedSummary.recommendation}
+                                </span>
+                                <ActionableRecommendationInfoButton
+                                    recommendation={parsedSummary.recommendation}
+                                    trafficLight={synthesis?.finalTrafficLight}
+                                    onSwitchTab={onSwitchTab}
+                                    size="sm"
+                                />
+                            </div>
                         </div>
                     )}
                     {parsedSummary.bullets.length > 0 ? (

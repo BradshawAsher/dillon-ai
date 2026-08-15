@@ -17,11 +17,13 @@ import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence
 import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
+import ActionableRecommendationInfoButton from './ActionableRecommendationInfoButton'
 
 type Props = {
     model: DealModel
     synthesis?: ProjectSynthesisItem
     projectName: string
+    onSwitchTab?: (tab: any) => void
 }
 
 /** Formats an ISO timestamp as a short, human-readable "last updated" label. */
@@ -95,7 +97,7 @@ function getVerdictConfig(rec?: string, trafficLight?: string) {
     }
 }
 
-export default function BusinessSnapshotCard({ model, synthesis, projectName }: Props) {
+export default function BusinessSnapshotCard({ model, synthesis, projectName, onSwitchTab }: Props) {
     const facts = parseDocumentedFacts(model.documentedFactsJson)
     const employees = typeof facts.employees?.value === 'number' ? facts.employees.value : null
     const location = typeof facts.location?.value === 'string' ? facts.location.value : null
@@ -168,12 +170,17 @@ export default function BusinessSnapshotCard({ model, synthesis, projectName }: 
 
                 {recommendation ? (
                     <div className={`rounded-xl border-2 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm ${verdictConfig.containerBg}`}>
-                        <div className="flex flex-wrap items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-2.5">
                             <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Acquisition Verdict:</span>
                             <span className={verdictConfig.badgeClass}>
                                 <VerdictIcon className="h-5 w-5 shrink-0" />
                                 {recommendation}
                             </span>
+                            <ActionableRecommendationInfoButton
+                                recommendation={recommendation}
+                                trafficLight={synthesis?.finalTrafficLight}
+                                onSwitchTab={onSwitchTab}
+                            />
                         </div>
                         <div className="flex items-center gap-2">
                             {synthesis?.finalTrafficLight ? (

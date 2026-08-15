@@ -122,7 +122,7 @@ export default function WorkflowErrorLogCard({ rows, loading, error, onRefresh }
     const latest = sortedRows[0]
 
     return (
-        <Card className="overflow-hidden">
+        <Card id="errors-header" className="overflow-hidden scroll-mt-6">
             <CardHeader className="border-b border-border bg-card/80">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
@@ -272,7 +272,7 @@ export default function WorkflowErrorLogCard({ rows, loading, error, onRefresh }
                     </div>
                 ) : null}
 
-                <div className="flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/[0.04] p-4 text-sm text-foreground">
+                <div id="errors-arch" className="scroll-mt-6 flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/[0.04] p-4 text-sm text-foreground">
                     <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
                     <div>
                         <p className="font-medium">Safe workflow-change rule</p>

@@ -4,6 +4,7 @@ import { Gauge } from 'lucide-react'
 import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardExplainerPopover from './CardExplainerPopover'
 
 type Props = {
     model: DealModel
@@ -14,21 +15,23 @@ export default function OperatingLeverageCard({ model }: Props) {
         const facts = parseDocumentedFacts(model.documentedFactsJson)
         const ebitda = typeof facts.ebitda_sde?.value === 'number' ? facts.ebitda_sde.value : null
         const revenue = typeof facts.revenue?.value === 'number' ? facts.revenue.value : null
-        const grossProfit = typeof facts.gross_profit?.value === 'number' ? facts.gross_profit.value : null
-        const cogs = typeof facts.cogs?.value === 'number' ? facts.cogs.value : null
 
-        if (!revenue || !ebitda || revenue <= 0 || ebitda <= 0) return null
+        if (!ebitda || !revenue || revenue <= 0 || ebitda <= 0) return null
 
-        const margin = ebitda / revenue
-        const grossMargin = grossProfit ? grossProfit / revenue : (cogs ? (revenue - cogs) / revenue : null)
-        const opex = grossProfit ? grossProfit - ebitda : revenue - ebitda
-        const fixedCostRatio = opex / revenue
+        const margin = (ebitda / revenue) * 100
+        const fixedCostRatio = Math.max(0.2, Math.min(0.8, 1 - (ebitda / revenue) * 1.5))
+        const contributionMargin = (revenue - (revenue - ebitda) * (1 - fixedCostRatio)) / revenue
+        const degreeOfLeverage = contributionMargin / (ebitda / revenue)
 
-        const scenarios = [5, 10, 15, 20].map(revIncrease => {
-            const newRevenue = revenue * (1 + revIncrease / 100)
-            const variableCosts = cogs ? cogs * (1 + revIncrease / 100) : revenue * (1 - (grossMargin ?? 0.5)) * (1 + revIncrease / 100)
-            const newGrossProfit = newRevenue - variableCosts
-            const newEbitda = newGrossProfit - opex
+        const leverageLevel = degreeOfLeverage >= 2.5 ? 'High' : degreeOfLeverage >= 1.5 ? 'Moderate' : 'Low'
+        const leverageColor = degreeOfLeverage >= 2.5 ? 'text-amber-600' : degreeOfLeverage >= 1.5 ? 'text-blue-600' : 'text-green-600'
+
+        const scenarios = [5, 10, 15, 20].map((revIncrease) => {
+            const revChange = revIncrease / 100
+            const newRevenue = revenue * (1 + revChange)
+            const variableCosts = (revenue - ebitda) * (1 - fixedCostRatio) * (1 + revChange)
+            const fixedCosts = (revenue - ebitda) * fixedCostRatio
+            const newEbitda = newRevenue - variableCosts - fixedCosts
             const ebitdaIncrease = ((newEbitda - ebitda) / ebitda) * 100
             const leverageRatio = ebitdaIncrease / revIncrease
 
@@ -40,13 +43,8 @@ export default function OperatingLeverageCard({ model }: Props) {
             }
         })
 
-        const degreeOfLeverage = scenarios[0] ? parseFloat(scenarios[0].leverageRatio) : 1.0
-        const leverageLevel = degreeOfLeverage >= 3 ? 'High' : degreeOfLeverage >= 1.5 ? 'Moderate' : 'Low'
-        const leverageColor = degreeOfLeverage >= 3 ? 'text-purple-600' : degreeOfLeverage >= 1.5 ? 'text-blue-600' : 'text-green-600'
-
         return {
-            margin: (margin * 100).toFixed(0),
-            grossMargin: grossMargin ? (grossMargin * 100).toFixed(0) : null,
+            margin: margin.toFixed(1),
             fixedCostRatio: (fixedCostRatio * 100).toFixed(0),
             degreeOfLeverage: degreeOfLeverage.toFixed(1),
             leverageLevel,
@@ -60,9 +58,17 @@ export default function OperatingLeverageCard({ model }: Props) {
     return (
         <Card className="overflow-hidden">
             <CardHeader className="border-b border-border bg-card/80 pb-3">
-                <div className="flex items-center gap-2">
-                    <Gauge className="h-4 w-4 text-primary" />
-                    <CardTitle className="text-lg">Operating leverage</CardTitle>
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <Gauge className="h-4 w-4 text-primary" />
+                        <CardTitle className="text-lg">Operating leverage</CardTitle>
+                    </div>
+                    <CardExplainerPopover
+                        title="Degree of Operating Leverage (DOL)"
+                        whatIsIt="Measures how sensitive the company's profit (EBITDA) is to changes in revenue. It shows the ratio of fixed costs (rent, heavy equipment) vs variable costs (raw materials)."
+                        howItWorks="A DOL of 2.5x means a 10% increase in revenue will produce a 25% increase in EBITDA, but a 10% decline in revenue will also drop EBITDA by 25%."
+                        whyItMatters="High operating leverage is powerful when growing sales, but high-risk during a recession because high fixed overhead cannot be cut quickly."
+                    />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                     How much does EBITDA grow for each dollar of revenue growth?

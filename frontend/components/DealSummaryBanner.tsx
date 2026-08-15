@@ -5,6 +5,7 @@ import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence
 import { parseDocumentedFacts } from '../utils/evidence'
 import { copyToClipboard } from '../utils/clipboard'
 import { Badge } from '../lib/shadcn/badge'
+import ActionableRecommendationInfoButton from './ActionableRecommendationInfoButton'
 
 type Props = {
     model: DealModel
@@ -12,6 +13,7 @@ type Props = {
     projectName: string
     docCost?: number
     totalCost?: number
+    onSwitchTab?: (tab: any) => void
 }
 
 function compact(value: number) {
@@ -46,7 +48,7 @@ function truncate(text: string, max = 70): string {
     return clean.length > max ? `${clean.slice(0, max - 1)}…` : clean
 }
 
-export default function DealSummaryBanner({ model, synthesis, projectName, docCost, totalCost }: Props) {
+export default function DealSummaryBanner({ model, synthesis, projectName, docCost, totalCost, onSwitchTab }: Props) {
     const [copied, setCopied] = useState(false)
     const facts = parseDocumentedFacts(model.documentedFactsJson)
     const ebitda = (facts.ebitda_sde?.status === 'confirmed' || facts.ebitda_sde?.status === 'illustrative') && typeof facts.ebitda_sde.value === 'number' ? facts.ebitda_sde.value : null
@@ -103,9 +105,17 @@ export default function DealSummaryBanner({ model, synthesis, projectName, docCo
                     <span className="text-sm font-semibold text-foreground truncate max-w-[200px]">{projectName || 'Untitled deal'}</span>
                 </div>
                 {synthesis?.finalRecommendation && (
-                    <Badge variant={synthesis.finalTrafficLight === 'GREEN' ? 'success' : synthesis.finalTrafficLight === 'RED' ? 'destructive' : 'warning'} className="text-[11px]">
-                        {synthesis.finalRecommendation}
-                    </Badge>
+                    <div className="flex items-center gap-1.5">
+                        <Badge variant={synthesis.finalTrafficLight === 'GREEN' ? 'success' : synthesis.finalTrafficLight === 'RED' ? 'destructive' : 'warning'} className="text-[11px]">
+                            {synthesis.finalRecommendation}
+                        </Badge>
+                        <ActionableRecommendationInfoButton
+                            recommendation={synthesis.finalRecommendation}
+                            trafficLight={synthesis.finalTrafficLight}
+                            onSwitchTab={onSwitchTab}
+                            size="sm"
+                        />
+                    </div>
                 )}
                 <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
                     {chips.map(c => (

@@ -134,6 +134,7 @@ export function DiligenceWorkspaceView({
                     documents={submissionHistory.filter((row) => getProjectKey(row) === activeProjectId)}
                     onOpenEvidence={setActiveEvidence}
                     exampleMode={isExampleMode}
+                    onSwitchTab={setActiveWorkspaceTab}
                 />
             </div>
             <QuickFilterBar
@@ -146,7 +147,7 @@ export function DiligenceWorkspaceView({
                     }, 150)
                 }}
             />
-            <div className="border-t border-border pt-4">
+            <div id="diligence-quality" className="border-t border-border pt-4 scroll-mt-6">
                 <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Financial data quality</h3>
             </div>
             <div id="diligence-documents" className="scroll-mt-6">
@@ -171,7 +172,7 @@ export function DiligenceWorkspaceView({
             {activeProjectSynthesis && (
                 <CustomerConcentrationCard synthesis={activeProjectSynthesis} documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} />
             )}
-            <div className="border-t border-border pt-4">
+            <div id="diligence-context" className="border-t border-border pt-4 scroll-mt-6">
                 <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Context &amp; settings</h3>
             </div>
             <Suspense fallback={null}>

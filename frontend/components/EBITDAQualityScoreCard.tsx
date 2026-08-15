@@ -4,6 +4,7 @@ import { BadgeCheck } from 'lucide-react'
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardExplainerPopover from './CardExplainerPopover'
 
 type Props = {
     model: DealModel
@@ -208,9 +209,17 @@ export default function EBITDAQualityScoreCard({ model, synthesis }: Props) {
     return (
         <Card className="overflow-hidden">
             <CardHeader className="border-b border-border bg-card/80 pb-3">
-                <div className="flex items-center gap-2">
-                    <BadgeCheck className="h-4 w-4 text-primary" />
-                    <CardTitle className="text-lg">EBITDA quality score</CardTitle>
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <BadgeCheck className="h-4 w-4 text-primary" />
+                        <CardTitle className="text-lg">EBITDA quality score</CardTitle>
+                    </div>
+                    <CardExplainerPopover
+                        title="EBITDA Quality (QoE) in M&A"
+                        whatIsIt="Grades how reliable, recurring, and cash-convertible the reported profits actually are. It screens out fake add-backs, customer concentration risks, and one-off windfalls."
+                        howItWorks="Scores 5 dimensions: Margin Sustainability, Revenue Growth, Customer Concentration, Earnings Predictability, and Add-Back Verifiability against diligence findings."
+                        whyItMatters="Sellers often inflate EBITDA with aggressive add-backs (like owner perks or non-recurring income). A high score (Grade A/B) means the cash flow is real and will persist after you buy the business."
+                    />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                     EBITDA quality assessment

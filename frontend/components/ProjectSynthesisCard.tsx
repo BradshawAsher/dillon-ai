@@ -44,6 +44,7 @@ type ProjectSynthesisCardProps = {
     onStopSynthesis?: () => void
     stoppingSynthesis?: boolean
     model?: DealModel
+    onSwitchTab?: (tab: any) => void
 }
 
 function getRiskVariant(riskLevel: string): 'destructive' | 'warning' | 'secondary' | 'outline' {
@@ -244,6 +245,7 @@ export default function ProjectSynthesisCard({
     onStopSynthesis,
     stoppingSynthesis,
     model,
+    onSwitchTab,
 }: ProjectSynthesisCardProps) {
     const [synthesisElapsedSeconds, setSynthesisElapsedSeconds] = useState(0)
     const [selectedDocumentRequestId, setSelectedDocumentRequestId] = useState<string | null>(null)
@@ -1027,7 +1029,7 @@ export default function ProjectSynthesisCard({
                     </div>
                 ) : null}
 
-                <AcquisitionJudgmentCallout synthesis={activeSynthesis} impact={impact} />
+                <AcquisitionJudgmentCallout synthesis={activeSynthesis} impact={impact} onSwitchTab={onSwitchTab} />
                 {error ? (
                     <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-foreground">
                         <p className="font-medium">Synthesis endpoint not reachable yet.</p>

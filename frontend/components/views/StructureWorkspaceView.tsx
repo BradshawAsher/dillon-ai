@@ -26,17 +26,29 @@ export function StructureWorkspaceView({
 }: StructureWorkspaceViewProps) {
     return (
         <section className="space-y-6">
-            <ModelAssumptionsSummary model={hydratedDealModel} area="structure" />
-            <DealStructureVisualCard model={hydratedDealModel} onOpenEvidence={setActiveEvidence} />
+            <div id="structure-header" className="scroll-mt-6">
+                <ModelAssumptionsSummary model={hydratedDealModel} area="structure" />
+            </div>
+            <div id="structure-visual" className="scroll-mt-6">
+                <DealStructureVisualCard model={hydratedDealModel} onOpenEvidence={setActiveEvidence} />
+            </div>
             <Suspense fallback={null}>
-                <DealStackCard model={hydratedDealModel} />
-                <LeverageSafetyCard model={hydratedDealModel} />
-                <DownsideProtectionCard model={hydratedDealModel} />
-                <CashReserveAnalysisCard model={hydratedDealModel} />
-                <FinancingComparisonCard model={hydratedDealModel} />
-                <WorkingCapitalCard model={hydratedDealModel} />
+                <div id="structure-stack" className="scroll-mt-6">
+                    <DealStackCard model={hydratedDealModel} />
+                </div>
+                <div id="structure-leverage" className="scroll-mt-6 space-y-6">
+                    <LeverageSafetyCard model={hydratedDealModel} />
+                    <DownsideProtectionCard model={hydratedDealModel} />
+                    <CashReserveAnalysisCard model={hydratedDealModel} />
+                </div>
+                <div id="structure-financing" className="scroll-mt-6 space-y-6">
+                    <FinancingComparisonCard model={hydratedDealModel} />
+                    <WorkingCapitalCard model={hydratedDealModel} />
+                </div>
             </Suspense>
-            <DealModelPendingCard area="structure" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} />
+            <div id="structure-pending" className="scroll-mt-6">
+                <DealModelPendingCard area="structure" model={activeDealModel} onChange={handleDealModelChange} onApplyDefaults={handleDealModelDefaults} />
+            </div>
         </section>
     )
 }

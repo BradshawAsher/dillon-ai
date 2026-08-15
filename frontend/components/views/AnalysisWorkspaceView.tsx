@@ -82,44 +82,51 @@ export function AnalysisWorkspaceView({
 }: AnalysisWorkspaceViewProps) {
     return (
         <section id="deal-analysis" className="space-y-6 scroll-mt-6">
-            <div className="pt-1">
+            <div id="analysis-header" className="scroll-mt-6 pt-1">
                 <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Snapshot &amp; scoring</h3>
             </div>
             <Suspense fallback={null}>
                 <DealOnAPageCard model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
                 <DealScorecardExportCard model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
-                <BusinessSnapshotCard model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
+                <BusinessSnapshotCard
+                    model={hydratedDealModel}
+                    synthesis={activeProjectSynthesis}
+                    projectName={dealName || suggestedProjectName}
+                    onSwitchTab={setActiveWorkspaceTab}
+                />
                 <OpportunityScoreCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
                 <RiskAdjustedValuationCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
             </Suspense>
-            <NextActionsCard
-                model={hydratedDealModel}
-                synthesis={activeProjectSynthesis}
-                documents={activeProjectDocuments}
-                onNavigate={(target) => {
-                    if (target === 'upload') {
-                        document.querySelector('[data-project-intake]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                    } else {
-                        setActiveWorkspaceTab(target)
-                    }
-                }}
-            />
-            <DealReadinessGauge
-                model={hydratedDealModel}
-                synthesis={activeProjectSynthesis}
-                documentsCount={activeProjectDocuments.length}
-                completedDocuments={activeProjectImpact.completedDocuments}
-            />
-            <DocumentCoverageMatrix documents={activeProjectDocuments} />
-            <DealScorecard
-                model={hydratedDealModel}
-                synthesis={activeProjectSynthesis}
-                impact={activeProjectImpact}
-                documentsCount={activeProjectDocuments.length}
-            />
-            <DealRulesOfThumb model={hydratedDealModel} />
-            <ConfidenceMeterCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} />
-            <div className="border-t border-border pt-4">
+            <div id="analysis-deal-grade" className="scroll-mt-6 space-y-6">
+                <NextActionsCard
+                    model={hydratedDealModel}
+                    synthesis={activeProjectSynthesis}
+                    documents={activeProjectDocuments}
+                    onNavigate={(target) => {
+                        if (target === 'upload') {
+                            document.querySelector('[data-project-intake]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                        } else {
+                            setActiveWorkspaceTab(target)
+                        }
+                    }}
+                />
+                <DealReadinessGauge
+                    model={hydratedDealModel}
+                    synthesis={activeProjectSynthesis}
+                    documentsCount={activeProjectDocuments.length}
+                    completedDocuments={activeProjectImpact.completedDocuments}
+                />
+                <DocumentCoverageMatrix documents={activeProjectDocuments} />
+                <DealScorecard
+                    model={hydratedDealModel}
+                    synthesis={activeProjectSynthesis}
+                    impact={activeProjectImpact}
+                    documentsCount={activeProjectDocuments.length}
+                />
+                <DealRulesOfThumb model={hydratedDealModel} />
+                <ConfidenceMeterCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} />
+            </div>
+            <div id="analysis-fit" className="border-t border-border pt-4 scroll-mt-6">
                 <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Health, benchmarks &amp; modeling</h3>
             </div>
             <FinancialHealthCard model={hydratedDealModel} />
@@ -151,16 +158,18 @@ export function AnalysisWorkspaceView({
             </Suspense>
 
             <Suspense fallback={null}>
-                <div className="border-t border-border pt-4">
-                    <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Analysis & Insights</h3>
+                <div id="analysis-thesis" className="border-t border-border pt-4 scroll-mt-6">
+                    <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Analysis &amp; Insights</h3>
                 </div>
                 <DealQuickInsights model={hydratedDealModel} synthesis={activeProjectSynthesis} />
                 <InvestmentThesisCard model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
                 <DecisionFrameworkCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
                 <QuickWinsCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
-                <StrengthsWeaknessesCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
+                <div id="analysis-strengths" className="scroll-mt-6">
+                    <StrengthsWeaknessesCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
+                </div>
 
-                <div className="border-t border-border pt-4">
+                <div id="analysis-risks" className="border-t border-border pt-4 scroll-mt-6">
                     <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Risk Assessment</h3>
                 </div>
                 <RiskSummaryCard synthesis={activeProjectSynthesis} />
@@ -184,8 +193,8 @@ export function AnalysisWorkspaceView({
                 <SecondOpinionCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
                 <AlertRulesCard synthesis={activeProjectSynthesis} />
 
-                <div className="border-t border-border pt-4">
-                    <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Negotiation & Closing</h3>
+                <div id="analysis-closing" className="border-t border-border pt-4 scroll-mt-6">
+                    <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Negotiation &amp; Closing</h3>
                 </div>
                 <TimeToCloseCard
                     documentsCount={activeProjectDocuments.length}

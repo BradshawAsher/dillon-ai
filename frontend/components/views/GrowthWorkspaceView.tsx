@@ -47,20 +47,32 @@ export function GrowthWorkspaceView({
 }: GrowthWorkspaceViewProps) {
     return (
         <section className="space-y-6">
-            <ModelAssumptionsSummary model={activeDealModel} area="growth" />
+            <div id="growth-header" className="scroll-mt-6">
+                <ModelAssumptionsSummary model={activeDealModel} area="growth" />
+            </div>
             {isGrowthIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}
             <GrowthDecisionSummary model={returnsDisplayModel} />
-            <ScenarioComparisonCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} />
-            <EbitdaProjectionCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} />
+            <div id="growth-scenario" className="scroll-mt-6 space-y-6">
+                <ScenarioComparisonCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} />
+                <EbitdaProjectionCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} />
+            </div>
             <Suspense fallback={null}>
                 <BusinessValueEvolutionCard model={returnsDisplayModel} />
-                <RevenueBridgeCard model={returnsDisplayModel} />
-                <GrowthSensitivityCard model={returnsDisplayModel} />
+                <div id="growth-revenue-bridge" className="scroll-mt-6">
+                    <RevenueBridgeCard model={returnsDisplayModel} />
+                </div>
+                <div id="growth-sensitivity" className="scroll-mt-6">
+                    <GrowthSensitivityCard model={returnsDisplayModel} />
+                </div>
                 <ExitReadinessCard model={returnsDisplayModel} synthesis={activeProjectSynthesis} />
-                <ValueCreationPlanCard model={returnsDisplayModel} />
-                <First100DaysCard model={returnsDisplayModel} synthesis={activeProjectSynthesis} />
+                <div id="growth-value-creation" className="scroll-mt-6 space-y-6">
+                    <ValueCreationPlanCard model={returnsDisplayModel} />
+                    <First100DaysCard model={returnsDisplayModel} synthesis={activeProjectSynthesis} />
+                </div>
                 <KeyMetricsTrendCard model={returnsDisplayModel} />
-                <OperatingLeverageCard model={returnsDisplayModel} />
+                <div id="growth-leverage" className="scroll-mt-6">
+                    <OperatingLeverageCard model={returnsDisplayModel} />
+                </div>
             </Suspense>
             <MathChecksSection
                 documents={activeProjectDocuments}
