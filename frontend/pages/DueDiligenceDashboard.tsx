@@ -33,6 +33,7 @@ import { GrowthWorkspaceView } from '../components/views/GrowthWorkspaceView'
 import { StructureWorkspaceView } from '../components/views/StructureWorkspaceView'
 import { NegotiationWorkspaceView } from '../components/views/NegotiationWorkspaceView'
 import { AnalysisWorkspaceView } from '../components/views/AnalysisWorkspaceView'
+import { DiagnosticsWorkspaceView } from '../components/views/DiagnosticsWorkspaceView'
 import { DocumentsWorkspaceView } from '../components/views/DocumentsWorkspaceView'
 import { WorkspaceHeader } from '../components/views/WorkspaceHeader'
 import { useDealWorkspaceState, type WorkspaceTab } from '../hooks/useDealWorkspaceState'
@@ -1700,6 +1701,18 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                         suggestedProjectName={suggestedProjectName}
                         activeProjectDocuments={activeProjectDocuments}
                         activeProjectImpact={activeProjectImpact}
+                        activeProjectId={activeProjectId}
+                        setActiveWorkspaceTab={setActiveWorkspaceTab}
+                    />
+                ) : null}
+
+                {activeWorkspaceTab === 'diagnostics' ? (
+                    <DiagnosticsWorkspaceView
+                        hydratedDealModel={hydratedDealModel}
+                        activeProjectSynthesis={activeProjectSynthesis ?? undefined}
+                        dealName={dealName}
+                        suggestedProjectName={suggestedProjectName}
+                        activeProjectDocuments={activeProjectDocuments}
                         activeProjectId={activeProjectId}
                         setActiveWorkspaceTab={setActiveWorkspaceTab}
                     />

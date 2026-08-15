@@ -4,11 +4,14 @@ import { Keyboard, X } from 'lucide-react'
 import { Button } from '../lib/shadcn/button'
 
 const SHORTCUTS = [
-    { keys: ['Esc'], description: 'Close evidence drawer / chat panel' },
-    { keys: ['?'], description: 'Toggle this shortcuts dialog' },
-    { keys: ['Ctrl', 'K'], description: 'Open command palette' },
-    { keys: ['C'], description: 'Open AI chat assistant' },
+    { keys: ['Alt', 'T'], description: 'Toggle Table of Contents sidebar' },
+    { keys: ['Ctrl', 'K'], description: 'Open command palette / search' },
+    { keys: ['C'], description: 'Open AI chat assistant (Dillon)' },
     { keys: ['Ctrl', 'Shift', 'P'], description: 'Open Projects portfolio panel' },
+    { keys: ['Ctrl', 'Shift', 'B'], description: 'Open Batch Processing activity' },
+    { keys: ['?'], description: 'Toggle this shortcuts cheatsheet' },
+    { keys: ['Esc'], description: 'Close active drawer / popover / modal' },
+    { keys: ['Ctrl', 'P'], description: 'Print / Export deal PDF report' },
 ] as const
 
 interface KeyboardShortcutsDialogProps {
