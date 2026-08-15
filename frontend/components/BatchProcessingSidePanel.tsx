@@ -87,9 +87,9 @@ export function BatchProcessingSidePanel({
                 aria-hidden="true"
             />
 
-            {/* Left Slide-over Drawer Panel */}
+            {/* Right Slide-over Drawer Panel */}
             <aside
-                className="fixed left-0 top-0 bottom-0 z-50 flex w-full max-w-md sm:max-w-lg flex-col border-r border-border bg-background shadow-2xl transition-transform duration-300 ease-in-out"
+                className="fixed right-0 top-0 bottom-0 z-50 flex w-full max-w-md sm:max-w-lg flex-col border-l border-border bg-background shadow-2xl transition-transform duration-300 ease-in-out"
                 role="dialog"
                 aria-modal="true"
                 aria-label="Batch processing drawer"

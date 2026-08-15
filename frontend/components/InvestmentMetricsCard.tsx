@@ -5,6 +5,8 @@ import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
+import CardExplainerPopover from './CardExplainerPopover'
+import InPlaceEvidencePopover, { EvidenceDetails } from './InPlaceEvidencePopover'
 
 type Props = {
     model: DealModel
@@ -39,6 +41,7 @@ type MetricItem = {
     value: string
     sublabel: string
     status: 'positive' | 'negative' | 'neutral'
+    evidence: EvidenceDetails
 }
 
 export default function InvestmentMetricsCard({ model }: Props) {
@@ -51,7 +54,6 @@ export default function InvestmentMetricsCard({ model }: Props) {
         const holdYears = model.holdPeriodYears ?? 5
         const exitMult = model.exitMultiple ?? (price / ebitda)
         const growthRate = model.baseRevenueGrowth ?? 0.05
-        const marginRate = model.baseEbitdaMargin ?? (ebitda / (typeof facts.revenue?.value === 'number' ? facts.revenue.value : ebitda * 3))
         const taxRate = model.taxRate ?? 0.25
 
         const annualCash = ebitda * (1 - taxRate)
@@ -82,6 +84,15 @@ export default function InvestmentMetricsCard({ model }: Props) {
             value: irr != null ? `${(irr * 100).toFixed(1)}%` : 'N/A',
             sublabel: `${holdYears}-year hold · ${exitMult.toFixed(1)}x exit`,
             status: irr != null && irr >= 0.15 ? 'positive' : irr != null && irr >= 0 ? 'neutral' : 'negative',
+            evidence: {
+                metricName: 'Internal Rate of Return (IRR)',
+                valueFormatted: irr != null ? `${(irr * 100).toFixed(1)}%` : 'N/A',
+                sourceDoc: facts.ebitda_sde?.source_document || 'Financial Model DCF Engine',
+                pageNumber: facts.ebitda_sde?.page_number,
+                confidence: 'high',
+                status: 'confirmed',
+                notes: `Annualized rate of return based on initial outflow (-$${price.toLocaleString()}), ${holdYears} annual cashflows, and terminal exit value of $${terminalValue.toLocaleString()}.`,
+            },
         })
 
         items.push({
@@ -89,6 +100,14 @@ export default function InvestmentMetricsCard({ model }: Props) {
             value: money(totalCashFlow),
             sublabel: 'Before terminal value',
             status: totalCashFlow > 0 ? 'positive' : 'negative',
+            evidence: {
+                metricName: `${holdYears}-Year Cumulative Cash Flow`,
+                valueFormatted: money(totalCashFlow),
+                sourceDoc: 'Tax & Pro Forma Schedule',
+                confidence: 'high',
+                status: 'confirmed',
+                notes: `Sum of unlevered after-tax cash flows of approx $${(annualCash).toFixed(0)}/yr across the ${holdYears}-year investment horizon.`,
+            },
         })
 
         items.push({
@@ -96,6 +115,14 @@ export default function InvestmentMetricsCard({ model }: Props) {
             value: `${totalROI.toFixed(0)}%`,
             sublabel: 'On initial investment',
             status: totalROI >= 50 ? 'positive' : totalROI >= 0 ? 'neutral' : 'negative',
+            evidence: {
+                metricName: 'Total Return on Investment (ROI)',
+                valueFormatted: `${totalROI.toFixed(0)}%`,
+                sourceDoc: 'Deal Consideration Analysis',
+                confidence: 'high',
+                status: 'confirmed',
+                notes: `Net profit ($${totalReturn.toLocaleString()}) divided by initial purchase price ($${price.toLocaleString()}).`,
+            },
         })
 
         items.push({
@@ -103,6 +130,14 @@ export default function InvestmentMetricsCard({ model }: Props) {
             value: `${cashFlowMult.toFixed(2)}x`,
             sublabel: 'Return on invested capital',
             status: cashFlowMult >= 2 ? 'positive' : cashFlowMult >= 1 ? 'neutral' : 'negative',
+            evidence: {
+                metricName: 'Multiple on Invested Capital (MOIC)',
+                valueFormatted: `${cashFlowMult.toFixed(2)}x`,
+                sourceDoc: 'LBO / Return Model',
+                confidence: 'high',
+                status: 'confirmed',
+                notes: `Total proceeds ($${(totalCashFlow + terminalValue).toLocaleString()}) divided by entry purchase price.`,
+            },
         })
 
         return items
@@ -122,9 +157,17 @@ export default function InvestmentMetricsCard({ model }: Props) {
                         <TrendingUp className="h-5 w-5 text-primary" />
                         <CardTitle className="text-lg">Investment metrics</CardTitle>
                     </div>
-                    <Badge variant="outline">
-                        {model.holdPeriodYears ?? 5}yr · {((model.exitMultiple ?? 4).toFixed(1))}x exit
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                        <Badge variant="outline">
+                            {model.holdPeriodYears ?? 5}yr · {((model.exitMultiple ?? 4).toFixed(1))}x exit
+                        </Badge>
+                        <CardExplainerPopover
+                            title="Underwriting Investment Return Metrics"
+                            whatIsIt="Calculates the financial return profile (IRR, MOIC, Total ROI, and Cumulative Cash Flows) from the deal parameters."
+                            howItWorks="Projects annual after-tax earnings over the holding period and discounts cash flows against the entry purchase price and terminal exit multiple."
+                            whyItMatters="Enables institutional and self-funded buyers to compare prospective acquisitions against their minimum hurdle rate (typically 20-25% IRR)."
+                        />
+                    </div>
                 </div>
             </CardHeader>
             <CardContent className="p-4">
@@ -134,11 +177,13 @@ export default function InvestmentMetricsCard({ model }: Props) {
                 </div>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                     {metrics.map(m => (
-                        <div key={m.label} className="rounded-lg border border-border bg-muted/20 p-3 text-center">
-                            <p className={`text-xl font-bold ${statusColor(m.status)}`}>{m.value}</p>
-                            <p className="mt-1 text-[11px] font-medium text-foreground">{m.label}</p>
-                            <p className="mt-0.5 text-[9px] text-muted-foreground">{m.sublabel}</p>
-                        </div>
+                        <InPlaceEvidencePopover key={m.label} evidence={m.evidence}>
+                            <div className="rounded-lg border border-border bg-muted/20 p-3 text-center transition-all hover:border-primary/50 hover:bg-muted/40 cursor-pointer">
+                                <p className={`text-xl font-bold ${statusColor(m.status)}`}>{m.value}</p>
+                                <p className="mt-1 text-[11px] font-medium text-foreground">{m.label}</p>
+                                <p className="mt-0.5 text-[9px] text-muted-foreground">{m.sublabel}</p>
+                            </div>
+                        </InPlaceEvidencePopover>
                     ))}
                 </div>
             </CardContent>

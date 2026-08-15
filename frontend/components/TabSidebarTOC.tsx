@@ -7,7 +7,7 @@ type TOCSection = {
     indent?: boolean
 }
 
-export type WorkspaceTab = 'overview' | 'analysis' | 'diligence' | 'synthesis' | 'spending' | 'compare' | 'valuation' | 'returns' | 'growth' | 'structure' | 'negotiation' | 'documents' | 'history' | 'errors' | 'email' | 'evals' | 'faqs'
+export type WorkspaceTab = 'overview' | 'analysis' | 'diagnostics' | 'diligence' | 'synthesis' | 'spending' | 'compare' | 'valuation' | 'returns' | 'growth' | 'structure' | 'negotiation' | 'documents' | 'history' | 'errors' | 'email' | 'evals' | 'faqs'
 
 const TAB_SECTIONS: Partial<Record<WorkspaceTab, TOCSection[]>> = {
     overview: [
@@ -28,6 +28,8 @@ const TAB_SECTIONS: Partial<Record<WorkspaceTab, TOCSection[]>> = {
         { id: 'analysis-scorecard-breakdown', label: 'Score Breakdown' },
         { id: 'analysis-rules', label: 'Rules of Thumb' },
         { id: 'analysis-confidence', label: 'Confidence Meter' },
+        { id: 'analysis-deal-fit', label: 'Deal Fit Analysis' },
+        { id: 'analysis-deal-type', label: 'Deal Type Analysis' },
         { id: 'analysis-health', label: 'Financial Health' },
         { id: 'analysis-ebitda-quality', label: 'EBITDA QoE Score' },
         { id: 'analysis-benchmark', label: 'Benchmark Comp.' },
@@ -38,8 +40,6 @@ const TAB_SECTIONS: Partial<Record<WorkspaceTab, TOCSection[]>> = {
         { id: 'analysis-financing-scenarios', label: 'Financing Scenarios' },
         { id: 'analysis-metrics', label: 'Key Metrics Trend' },
         { id: 'analysis-percentile', label: 'Industry Percentile' },
-        { id: 'analysis-deal-type', label: 'Deal Type Analysis' },
-        { id: 'analysis-fit', label: 'Deal Fit Analysis' },
         { id: 'analysis-asset-comp', label: 'Asset Composition' },
         { id: 'analysis-val-gap', label: 'Valuation Gap' },
         { id: 'analysis-cash-on-cash', label: 'Cash-on-Cash Calc' },
@@ -49,33 +49,35 @@ const TAB_SECTIONS: Partial<Record<WorkspaceTab, TOCSection[]>> = {
         { id: 'analysis-growth-sensitivity', label: 'Growth Sensitivity' },
         { id: 'analysis-monte-carlo', label: 'Monte Carlo Sim' },
         { id: 'analysis-breakeven', label: 'Breakeven Analysis' },
-        { id: 'analysis-quick-insights', label: 'Quick Insights' },
-        { id: 'analysis-thesis', label: 'Investment Thesis' },
-        { id: 'analysis-decision', label: 'Decision Framework' },
-        { id: 'analysis-quick-wins', label: 'Quick Wins' },
-        { id: 'analysis-strengths', label: 'Strengths & Weaknesses' },
-        { id: 'analysis-risk-summary', label: 'Risk Summary' },
-        { id: 'analysis-risk-matrix', label: 'Risk Matrix' },
-        { id: 'analysis-key-person', label: 'Key Person Risk' },
-        { id: 'analysis-owner-dep', label: 'Owner Dependency' },
-        { id: 'analysis-diligence-comp', label: 'DD Completeness' },
-        { id: 'analysis-risk-reward', label: 'Risk vs Reward' },
-        { id: 'analysis-deal-killer', label: 'Deal Killer Check' },
-        { id: 'analysis-second-opinion', label: 'Second Opinion' },
-        { id: 'analysis-alert-rules', label: 'Alert Rules' },
-        { id: 'analysis-time-to-close', label: 'Time to Close' },
-        { id: 'analysis-closing-checklist', label: 'Closing Checklist' },
-        { id: 'analysis-seller-qa', label: 'Seller Q&A' },
-        { id: 'analysis-mgmt-questions', label: 'Mgmt Questions' },
-        { id: 'analysis-playbook', label: 'Negotiation Playbook' },
-        { id: 'analysis-negotiation-impact', label: 'Negotiation Impact' },
-        { id: 'analysis-deal-timing', label: 'Deal Timing' },
-        { id: 'analysis-timeline', label: 'Deal Timeline' },
-        { id: 'analysis-investor-readiness', label: 'Investor Readiness' },
-        { id: 'analysis-term-sheet', label: 'Term Sheet' },
-        { id: 'analysis-dd-requests', label: 'DD Request List' },
-        { id: 'analysis-activity-feed', label: 'Activity Feed' },
-        { id: 'analysis-public-data', label: 'Public Data' },
+    ],
+    diagnostics: [
+        { id: 'diag-quick-insights', label: 'Quick Insights' },
+        { id: 'diag-thesis', label: 'Investment Thesis' },
+        { id: 'diag-decision', label: 'Decision Framework' },
+        { id: 'diag-quick-wins', label: 'Quick Wins' },
+        { id: 'diag-strengths', label: 'Strengths & Weaknesses' },
+        { id: 'diag-risk-summary', label: 'Risk Summary' },
+        { id: 'diag-risk-matrix', label: 'Risk Matrix' },
+        { id: 'diag-key-person', label: 'Key Person Risk' },
+        { id: 'diag-owner-dep', label: 'Owner Dependency' },
+        { id: 'diag-diligence-comp', label: 'DD Completeness' },
+        { id: 'diag-risk-reward', label: 'Risk vs Reward' },
+        { id: 'diag-deal-killer', label: 'Deal Killer Check' },
+        { id: 'diag-second-opinion', label: 'Second Opinion' },
+        { id: 'diag-alert-rules', label: 'Alert Rules' },
+        { id: 'diag-time-to-close', label: 'Time to Close' },
+        { id: 'diag-closing-checklist', label: 'Closing Checklist' },
+        { id: 'diag-seller-qa', label: 'Seller Q&A' },
+        { id: 'diag-mgmt-questions', label: 'Mgmt Questions' },
+        { id: 'diag-playbook', label: 'Negotiation Playbook' },
+        { id: 'diag-negotiation-impact', label: 'Negotiation Impact' },
+        { id: 'diag-deal-timing', label: 'Deal Timing' },
+        { id: 'diag-timeline', label: 'Deal Timeline' },
+        { id: 'diag-investor-readiness', label: 'Investor Readiness' },
+        { id: 'diag-term-sheet', label: 'Term Sheet' },
+        { id: 'diag-dd-requests', label: 'DD Request List' },
+        { id: 'diag-activity-feed', label: 'Activity Feed' },
+        { id: 'diag-public-data', label: 'Public Data' },
     ],
     diligence: [
         { id: 'diligence-project-synth', label: 'Synthesis Pass' },
@@ -281,8 +283,12 @@ export default function TabSidebarTOC({ activeTab }: Props) {
     }, [])
 
     const handleDragPointerDown = (e: React.PointerEvent) => {
+        const target = e.target as HTMLElement
+        if (target.closest('button')) {
+            return
+        }
         e.preventDefault()
-        const currentTop = topOffset ?? 128
+        const currentTop = topOffset ?? 72
         dragYRef.current = {
             startY: e.clientY,
             startTop: currentTop,
@@ -295,7 +301,7 @@ export default function TabSidebarTOC({ activeTab }: Props) {
     const handleDragPointerMove = (e: React.PointerEvent) => {
         if (!dragYRef.current) return
         const deltaY = e.clientY - dragYRef.current.startY
-        const nextTop = Math.max(64, Math.min(window.innerHeight - 200, dragYRef.current.startTop + deltaY))
+        const nextTop = Math.max(56, Math.min(window.innerHeight - 200, dragYRef.current.startTop + deltaY))
         setTopOffset(Math.round(nextTop))
     }
 
@@ -385,7 +391,7 @@ export default function TabSidebarTOC({ activeTab }: Props) {
     if (isCollapsed) {
         return (
             <div
-                className={`fixed left-0 z-40 print:hidden ${topOffset == null ? 'top-32' : ''}`}
+                className={`fixed left-0 z-40 print:hidden ${topOffset == null ? 'top-16 sm:top-20' : ''}`}
                 style={topOffset != null ? { top: `${topOffset}px` } : undefined}
             >
                 <button
@@ -404,7 +410,7 @@ export default function TabSidebarTOC({ activeTab }: Props) {
 
     return (
         <aside
-            className={`fixed left-0 z-50 print:hidden ${topOffset == null ? 'top-32' : ''}`}
+            className={`fixed left-0 z-50 print:hidden ${topOffset == null ? 'top-16 sm:top-20' : ''}`}
             style={{
                 width: `${tocWidth}px`,
                 top: topOffset != null ? `${topOffset}px` : undefined,
@@ -425,10 +431,14 @@ export default function TabSidebarTOC({ activeTab }: Props) {
                             Table of Contents
                         </span>
                     </div>
-                    <div className="flex items-center gap-0.5 shrink-0">
+                    <div className="flex items-center gap-0.5 shrink-0" onPointerDown={(e) => e.stopPropagation()}>
                         <button
                             type="button"
-                            onClick={handleResetAll}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                handleResetAll()
+                            }}
                             className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer transition-colors"
                             title="Reset position & width"
                         >
@@ -436,7 +446,11 @@ export default function TabSidebarTOC({ activeTab }: Props) {
                         </button>
                         <button
                             type="button"
-                            onClick={() => setIsCollapsed(true)}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                setIsCollapsed(true)
+                            }}
                             className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer shrink-0"
                             title="Collapse Table of Contents (Alt+T)"
                         >
@@ -446,7 +460,7 @@ export default function TabSidebarTOC({ activeTab }: Props) {
                 </div>
 
                 {/* Section List */}
-                <ul className="max-h-[85vh] overflow-y-auto p-1.5 space-y-0.5 custom-scrollbar">
+                <ul className="max-h-[calc(100vh-6.5rem)] overflow-y-auto p-1.5 space-y-0.5 custom-scrollbar">
                     {sections.map((section) => {
                         const isActive = activeSection === section.id
                         return (

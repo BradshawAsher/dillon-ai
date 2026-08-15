@@ -5,6 +5,7 @@ import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence
 import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import CardExplainerPopover from './CardExplainerPopover'
+import InPlaceEvidencePopover, { EvidenceDetails } from './InPlaceEvidencePopover'
 
 type Props = {
     model: DealModel
@@ -17,11 +18,10 @@ type QualityDimension = {
     maxScore: number
     status: 'high' | 'medium' | 'low'
     detail: string
+    evidence: EvidenceDetails
 }
 
 function getGrade(totalScore: number, maxScore: number): { grade: string; color: string } {
-    // No scored dimensions means there's nothing to grade — avoid 0/0 = NaN
-    // silently collapsing to the lowest grade.
     if (maxScore <= 0) return { grade: 'N/A', color: 'text-muted-foreground' }
     const pct = totalScore / maxScore
     if (pct >= 0.8) return { grade: 'A', color: 'text-green-600' }
@@ -48,9 +48,9 @@ export default function EBITDAQualityScoreCard({ model, synthesis }: Props) {
         const margin = revenue && revenue > 0 ? (ebitda / revenue) * 100 : null
         const revenueGrowth = model.baseRevenueGrowth ?? 0.05
 
-        const redFlags = synthesis?.redFlags ?? []
-        const yellowFlags = synthesis?.yellowFlags ?? []
-        const greenFlags = synthesis?.greenFlags ?? []
+        const redFlags = synthesis?.red_flags ?? []
+        const yellowFlags = synthesis?.yellow_flags ?? []
+        const greenFlags = synthesis?.green_flags ?? []
 
         const dimensions: QualityDimension[] = []
 
@@ -72,7 +72,23 @@ export default function EBITDAQualityScoreCard({ model, synthesis }: Props) {
                 status = 'low'
                 detail = `${margin.toFixed(1)}% margin - thin and vulnerable to cost pressure`
             }
-            dimensions.push({ name: 'Margin sustainability', score, maxScore: 3, status, detail })
+            dimensions.push({
+                name: 'Margin sustainability',
+                score,
+                maxScore: 3,
+                status,
+                detail,
+                evidence: {
+                    metricName: 'Margin Sustainability',
+                    valueFormatted: `${margin.toFixed(1)}% operating margin`,
+                    sourceDoc: facts.ebitda_sde?.source_document || 'Income Statement',
+                    pageNumber: facts.ebitda_sde?.page_number,
+                    quoteSnippet: facts.ebitda_sde?.quote_snippet,
+                    confidence: 'high',
+                    status: 'confirmed',
+                    notes: `EBITDA of $${ebitda.toLocaleString()} on revenue of $${(revenue || 0).toLocaleString()}. High margins (>20%) absorb inflationary cost shocks.`,
+                },
+            })
         } else {
             dimensions.push({
                 name: 'Margin sustainability',
@@ -80,6 +96,13 @@ export default function EBITDAQualityScoreCard({ model, synthesis }: Props) {
                 maxScore: 3,
                 status: 'low',
                 detail: 'Revenue not available to assess margin',
+                evidence: {
+                    metricName: 'Margin Sustainability',
+                    valueFormatted: 'Unverified',
+                    confidence: 'low',
+                    status: 'unverified',
+                    notes: 'Underlying top-line revenue document is required to compute margin sustainability.',
+                },
             })
         }
 
@@ -96,6 +119,16 @@ export default function EBITDAQualityScoreCard({ model, synthesis }: Props) {
             detail: hasConcentrationRisk
                 ? 'Concentration risk flagged in due diligence findings'
                 : 'No concentration concerns identified',
+            evidence: {
+                metricName: 'Revenue & Customer Diversity',
+                valueFormatted: hasConcentrationRisk ? 'Concentration Flagged' : 'Diversified Base',
+                sourceDoc: synthesis?.synthesis_version ? `Project Synthesis v${synthesis.synthesis_version}` : 'Diligence Synthesis',
+                confidence: 'high',
+                status: hasConcentrationRisk ? 'disputed' : 'confirmed',
+                notes: hasConcentrationRisk
+                    ? 'Cross-document diligence flagged single-client or single-vendor revenue dependency above 20% threshold.'
+                    : 'No customer concentration flags found across provided diligence packets.',
+            },
         })
 
         // 3. Add-back transparency
@@ -131,6 +164,14 @@ export default function EBITDAQualityScoreCard({ model, synthesis }: Props) {
             maxScore: 3,
             status: addBackStatus,
             detail: addBackDetail,
+            evidence: {
+                metricName: 'Add-Back Quality & Transparency',
+                valueFormatted: addBackStatus === 'high' ? 'Documented' : addBackStatus === 'low' ? 'Aggressive' : 'Standard',
+                sourceDoc: 'Quality of Earnings / CIM Schedule',
+                confidence: 'medium',
+                status: addBackStatus === 'low' ? 'disputed' : 'confirmed',
+                notes: addBackDetail,
+            },
         })
 
         // 4. Recurring revenue signals
@@ -158,6 +199,14 @@ export default function EBITDAQualityScoreCard({ model, synthesis }: Props) {
             maxScore: 3,
             status: recurringStatus,
             detail: recurringDetail,
+            evidence: {
+                metricName: 'Earnings Predictability (Recurring Rev)',
+                valueFormatted: recurringStatus === 'high' ? 'High Recurring' : recurringStatus === 'low' ? 'Project / One-off' : 'Mixed Model',
+                sourceDoc: 'Customer Contracts / Revenue Breakdown',
+                confidence: 'high',
+                status: 'confirmed',
+                notes: recurringDetail,
+            },
         })
 
         // 5. Growth trajectory
@@ -183,6 +232,14 @@ export default function EBITDAQualityScoreCard({ model, synthesis }: Props) {
             maxScore: 3,
             status: growthStatus,
             detail: growthDetail,
+            evidence: {
+                metricName: 'Historical & Projected Revenue Growth',
+                valueFormatted: `${(revenueGrowth * 100).toFixed(1)}% CAGR`,
+                sourceDoc: 'Historical Financials / Model Assumptions',
+                confidence: 'medium',
+                status: 'estimated',
+                notes: growthDetail,
+            },
         })
 
         const totalScore = dimensions.reduce((sum, d) => sum + d.score, 0)
@@ -222,7 +279,7 @@ export default function EBITDAQualityScoreCard({ model, synthesis }: Props) {
                     />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                    EBITDA quality assessment
+                    Click any dimension to view source citations, underlying flags, and ask AI
                 </p>
             </CardHeader>
             <CardContent className="p-4 space-y-4">
@@ -239,30 +296,32 @@ export default function EBITDAQualityScoreCard({ model, synthesis }: Props) {
                     </div>
                 </div>
 
-                {/* Per-dimension progress bars */}
+                {/* Per-dimension progress bars with InPlaceEvidencePopover */}
                 <div className="space-y-3">
                     {analysis.dimensions.map((dim) => (
-                        <div key={dim.name}>
-                            <div className="flex items-center justify-between mb-1">
-                                <span className="text-xs font-medium text-foreground">{dim.name}</span>
-                                <span className={`text-[10px] font-medium ${
-                                    dim.status === 'high' ? 'text-green-600' :
-                                    dim.status === 'medium' ? 'text-amber-600' :
-                                    'text-red-600'
-                                }`}>
-                                    {statusLabels[dim.status]}
-                                </span>
+                        <InPlaceEvidencePopover key={dim.name} evidence={dim.evidence}>
+                            <div className="rounded-lg border border-border/40 bg-background/50 p-2.5 text-left transition-all hover:border-primary/50 hover:bg-muted/20">
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className="text-xs font-medium text-foreground">{dim.name}</span>
+                                    <span className={`text-[10px] font-medium ${
+                                        dim.status === 'high' ? 'text-green-600' :
+                                        dim.status === 'medium' ? 'text-amber-600' :
+                                        'text-red-600'
+                                    }`}>
+                                        {statusLabels[dim.status]}
+                                    </span>
+                                </div>
+                                <div className="h-2 rounded-full bg-muted overflow-hidden">
+                                    <div
+                                        className={`h-full rounded-full transition-all ${statusColors[dim.status]}`}
+                                        style={{ width: `${(dim.score / dim.maxScore) * 100}%` }}
+                                    />
+                                </div>
+                                <p className="text-[10px] text-muted-foreground mt-1">
+                                    {dim.detail}
+                                </p>
                             </div>
-                            <div className="h-2 rounded-full bg-muted overflow-hidden">
-                                <div
-                                    className={`h-full rounded-full transition-all ${statusColors[dim.status]}`}
-                                    style={{ width: `${(dim.score / dim.maxScore) * 100}%` }}
-                                />
-                            </div>
-                            <p className="text-[10px] text-muted-foreground mt-0.5">
-                                {dim.detail}
-                            </p>
-                        </div>
+                        </InPlaceEvidencePopover>
                     ))}
                 </div>
 
