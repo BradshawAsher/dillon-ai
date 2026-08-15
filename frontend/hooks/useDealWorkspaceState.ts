@@ -22,6 +22,28 @@ export function useDealWorkspaceState() {
     const [dealName, setDealName] = useState('')
     const [askingPrice, setAskingPrice] = useState('')
     const [activeEvidence, setActiveEvidence] = useState<any>(null)
+    const [isTocCollapsed, setIsTocCollapsed] = useState<boolean>(() => {
+        if (typeof window === 'undefined') return false
+        try {
+            const stored = localStorage.getItem('mergeworks.tocCollapsed')
+            return stored === 'true'
+        } catch {
+            return false
+        }
+    })
+    const [tocWidth, setTocWidth] = useState<number>(() => {
+        if (typeof window === 'undefined') return 160
+        try {
+            const stored = localStorage.getItem('mergeworks.tocWidth')
+            if (stored) {
+                const parsed = parseInt(stored, 10)
+                if (!Number.isNaN(parsed) && parsed >= 120 && parsed <= 260) {
+                    return parsed
+                }
+            }
+        } catch { }
+        return 160
+    })
     const [askingPriceByProject, setAskingPriceByProject] = useState<Record<string, string>>(() => {
         if (typeof window === 'undefined') return {}
         try {
@@ -60,6 +82,18 @@ export function useDealWorkspaceState() {
             window.localStorage.setItem('mergeworks.projectChecklistById', JSON.stringify(projectChecklistById))
         } catch {}
     }, [projectChecklistById])
+
+    useEffect(() => {
+        try {
+            window.localStorage.setItem('mergeworks.tocCollapsed', String(isTocCollapsed))
+        } catch {}
+    }, [isTocCollapsed])
+
+    useEffect(() => {
+        try {
+            window.localStorage.setItem('mergeworks.tocWidth', String(tocWidth))
+        } catch {}
+    }, [tocWidth])
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -103,6 +137,10 @@ export function useDealWorkspaceState() {
         setAskingPrice,
         activeEvidence,
         setActiveEvidence,
+        isTocCollapsed,
+        setIsTocCollapsed,
+        tocWidth,
+        setTocWidth,
         askingPriceByProject,
         setAskingPriceByProject,
         projectChecklistById,
