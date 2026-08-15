@@ -10,6 +10,26 @@ type TOCSection = {
 export type WorkspaceTab = 'overview' | 'analysis' | 'diligence' | 'synthesis' | 'spending' | 'compare' | 'valuation' | 'returns' | 'growth' | 'structure' | 'negotiation' | 'documents' | 'history' | 'errors' | 'email' | 'evals' | 'faqs'
 
 const TAB_SECTIONS: Partial<Record<WorkspaceTab, TOCSection[]>> = {
+    overview: [
+        { id: 'overview-snapshot', label: 'Deal Snapshot' },
+        { id: 'overview-health', label: 'Health KPIs' },
+        { id: 'overview-actions', label: 'Action Items' },
+        { id: 'overview-timeline', label: 'Timeline' },
+    ],
+    analysis: [
+        { id: 'analysis-header', label: 'Analysis Summary' },
+        { id: 'analysis-deal-grade', label: 'Deal Grade' },
+        { id: 'analysis-fit', label: 'Deal Fit' },
+        { id: 'analysis-strengths', label: 'Strengths & Weak.' },
+        { id: 'analysis-risks', label: 'Risk Matrix' },
+        { id: 'analysis-thesis', label: 'Investment Thesis' },
+    ],
+    diligence: [
+        { id: 'diligence-batch', label: 'Batch Progress' },
+        { id: 'diligence-upload', label: 'File Upload' },
+        { id: 'diligence-project-synth', label: 'Project Synthesis' },
+        { id: 'diligence-documents', label: 'Documents' },
+    ],
     synthesis: [
         { id: 'synthesis-judgment', label: 'Judgment' },
         { id: 'synthesis-next-step', label: 'Next Step' },
@@ -28,6 +48,14 @@ const TAB_SECTIONS: Partial<Record<WorkspaceTab, TOCSection[]>> = {
         { id: 'synthesis-open-questions', label: 'Open Questions', indent: true },
         { id: 'synthesis-citations', label: 'Citations' },
         { id: 'synthesis-management-questions', label: 'Mgmt Questions' },
+    ],
+    documents: [
+        { id: 'documents-header', label: 'Doc Portfolio' },
+        { id: 'documents-grid', label: 'Files Grid' },
+    ],
+    compare: [
+        { id: 'compare-header', label: 'Matrix Header' },
+        { id: 'compare-table', label: 'Project Grid' },
     ],
     valuation: [
         { id: 'valuation-header', label: 'Valuation Summary' },
@@ -48,26 +76,6 @@ const TAB_SECTIONS: Partial<Record<WorkspaceTab, TOCSection[]>> = {
         { id: 'returns-hold-period', label: 'Hold Period' },
         { id: 'returns-scenario', label: 'Scenario Comparison' },
     ],
-    analysis: [
-        { id: 'analysis-header', label: 'Analysis Summary' },
-        { id: 'analysis-deal-grade', label: 'Deal Grade' },
-        { id: 'analysis-fit', label: 'Deal Fit' },
-        { id: 'analysis-strengths', label: 'Strengths & Weak.' },
-        { id: 'analysis-risks', label: 'Risk Matrix' },
-        { id: 'analysis-thesis', label: 'Investment Thesis' },
-    ],
-    diligence: [
-        { id: 'diligence-batch', label: 'Batch Progress' },
-        { id: 'diligence-upload', label: 'File Upload' },
-        { id: 'diligence-project-synth', label: 'Project Synthesis' },
-        { id: 'diligence-documents', label: 'Documents' },
-    ],
-    overview: [
-        { id: 'overview-snapshot', label: 'Deal Snapshot' },
-        { id: 'overview-health', label: 'Health KPIs' },
-        { id: 'overview-actions', label: 'Action Items' },
-        { id: 'overview-timeline', label: 'Timeline' },
-    ],
     growth: [
         { id: 'growth-header', label: 'Growth Summary' },
         { id: 'growth-revenue-bridge', label: 'Revenue Bridge' },
@@ -87,11 +95,31 @@ const TAB_SECTIONS: Partial<Record<WorkspaceTab, TOCSection[]>> = {
         { id: 'negotiation-seller', label: 'Seller Questions' },
         { id: 'negotiation-impact', label: 'Impact Analysis' },
     ],
+    spending: [
+        { id: 'spending-header', label: 'Cost Overview' },
+        { id: 'spending-breakdown', label: 'Spend Velocity' },
+        { id: 'spending-history', label: 'Billing Ledger' },
+    ],
+    history: [
+        { id: 'history-header', label: 'Audit Trail' },
+        { id: 'history-table', label: 'Submission Logs' },
+    ],
+    errors: [
+        { id: 'errors-header', label: 'Error Logs' },
+        { id: 'errors-arch', label: 'System Arch' },
+    ],
+    email: [
+        { id: 'email-header', label: 'Email Drafts' },
+        { id: 'email-editor', label: 'Draft Generator' },
+    ],
     evals: [
         { id: 'evals-header', label: 'Evals Overview' },
         { id: 'evals-deal-cards', label: 'Deal Cards' },
         { id: 'evals-harness', label: 'Harness Controls' },
         { id: 'evals-doc-viewer', label: 'Doc Viewer' },
+    ],
+    faqs: [
+        { id: 'faqs-header', label: 'Technical FAQ' },
     ],
 }
 
@@ -215,12 +243,12 @@ export default function TabSidebarTOC({ activeTab }: { activeTab: WorkspaceTab }
                 <button
                     type="button"
                     onClick={() => setIsCollapsed(false)}
-                    className="flex items-center gap-1 rounded-r-lg border border-l-0 border-primary/50 bg-background/95 px-1.5 py-1.5 text-xs font-bold text-primary shadow-xl backdrop-blur-md transition-all hover:bg-primary/10 hover:pr-2 cursor-pointer group"
+                    className="flex items-center gap-1.5 rounded-r-lg border border-l-0 border-primary/50 bg-background/95 px-2 py-1.5 text-xs font-bold text-primary shadow-xl backdrop-blur-md transition-all hover:bg-primary/10 hover:pr-2.5 cursor-pointer group"
                     title="Show Table of Contents"
                 >
                     <List className="h-3.5 w-3.5 shrink-0 text-primary" />
-                    <span className="hidden sm:inline text-[9px]">TOC</span>
-                    <ChevronRight className="h-3 w-3 opacity-70 group-hover:translate-x-0.5 transition-transform" />
+                    <span className="hidden sm:inline text-xs font-bold">TOC</span>
+                    <ChevronRight className="h-3.5 w-3.5 opacity-70 group-hover:translate-x-0.5 transition-transform" />
                 </button>
             </div>
         )
@@ -231,8 +259,8 @@ export default function TabSidebarTOC({ activeTab }: { activeTab: WorkspaceTab }
             <nav className="rounded-r-lg border border-l-0 border-primary/40 bg-background/95 shadow-2xl backdrop-blur-md overflow-hidden">
                 <div className="flex items-center justify-between border-b border-border px-1.5 py-1 bg-primary/10">
                     <div className="flex items-center gap-1 min-w-0">
-                        <Bookmark className="h-3 w-3 text-primary shrink-0" />
-                        <span className="text-[9px] font-extrabold uppercase tracking-wider text-primary truncate">TOC</span>
+                        <Bookmark className="h-3.5 w-3.5 text-primary shrink-0" />
+                        <span className="text-[11px] font-extrabold uppercase tracking-wider text-primary truncate">TOC</span>
                     </div>
                     <button
                         type="button"
@@ -240,10 +268,10 @@ export default function TabSidebarTOC({ activeTab }: { activeTab: WorkspaceTab }
                         className="rounded p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer shrink-0"
                         title="Collapse Table of Contents"
                     >
-                        <ChevronLeft className="h-3 w-3" />
+                        <ChevronLeft className="h-3.5 w-3.5" />
                     </button>
                 </div>
-                <ul className="max-h-[80vh] overflow-y-auto p-1 space-y-0.5">
+                <ul className="max-h-[85vh] overflow-y-auto p-1 space-y-1">
                     {sections.map((section) => {
                         const isActive = activeSection === section.id
                         return (
@@ -252,8 +280,8 @@ export default function TabSidebarTOC({ activeTab }: { activeTab: WorkspaceTab }
                                     type="button"
                                     onClick={() => scrollToSection(section.id)}
                                     title={section.label}
-                                    className={`w-full rounded px-1 py-0.5 text-left text-[9px] font-medium leading-tight transition-all cursor-pointer truncate ${
-                                        section.indent ? 'pl-1.5 text-muted-foreground/80' : ''
+                                    className={`w-full rounded px-1.5 py-1 text-left text-xs font-semibold leading-snug transition-all cursor-pointer truncate ${
+                                        section.indent ? 'pl-2 text-muted-foreground/80 font-medium' : ''
                                     } ${
                                         isActive
                                             ? 'border-l-2 border-primary bg-primary/15 font-bold text-primary shadow-2xs'

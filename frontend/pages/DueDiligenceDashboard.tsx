@@ -1905,59 +1905,63 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
                     {activeWorkspaceTab === 'compare' ? (
                         <section id="project-comparison" className="scroll-mt-6 space-y-4">
-                            <SectionHeader
-                                step={1}
-                                title="Multi-Project Deal Comparison Matrix"
-                                description="Compare financial metrics, valuation multiples, and acquisition risk postures side-by-side across all deal projects."
-                            />
-                            <ProjectComparisonCard
-                                projects={projectSummaries.map((ps) => ({
-                                    projectId: ps.projectId || ps.projectKey,
-                                    projectName: ps.projectName || ps.companyName || ps.projectKey,
-                                    model: (Array.isArray(dealModelsData) ? dealModelsData.find((m: any) => m.projectId === (ps.projectId || ps.projectKey)) : undefined) ?? {
+                            <div id="compare-header" className="scroll-mt-6">
+                                <SectionHeader
+                                    step={1}
+                                    title="Multi-Project Deal Comparison Matrix"
+                                    description="Compare financial metrics, valuation multiples, and acquisition risk postures side-by-side across all deal projects."
+                                />
+                            </div>
+                            <div id="compare-table" className="scroll-mt-6">
+                                <ProjectComparisonCard
+                                    projects={projectSummaries.map((ps) => ({
                                         projectId: ps.projectId || ps.projectKey,
-                                        askingPrice: null,
-                                        purchasePrice: null,
-                                        debtAssumed: null,
-                                        cashAcquired: null,
-                                        workingCapitalRequirement: null,
-                                        transactionFees: null,
-                                        holdPeriodYears: null,
-                                        taxRate: null,
-                                        closingCosts: null,
-                                        maintenanceCapex: null,
-                                        exitMultiple: null,
-                                        exitCosts: null,
-                                        equityContributionPercent: null,
-                                        interestRate: null,
-                                        amortizationYears: null,
-                                        sellerNoteAmount: null,
-                                        bearRevenueGrowth: null,
-                                        baseRevenueGrowth: null,
-                                        bullRevenueGrowth: null,
-                                        bearEbitdaMargin: null,
-                                        baseEbitdaMargin: null,
-                                        bullEbitdaMargin: null,
-                                        bearExitMultiple: null,
-                                        baseExitMultiple: null,
-                                        bullExitMultiple: null,
-                                        revenueMultiple: null,
-                                        ebitdaMultiple: null,
-                                        assetHaircutPercent: null,
-                                        modelUpdatedAt: '',
-                                        modelUpdatedBy: '',
-                                        documentedFactsJson: '',
-                                        documentedFactsStatus: '',
-                                    },
-                                    synthesis: visibleProjectSyntheses.find((s) => s.projectId === (ps.projectId || ps.projectKey)),
-                                    documentsCount: ps.documentCount,
-                                    completedDocuments: ps.completedCount,
-                                }))}
-                                activeProjectId={activeProjectId}
-                                onSelectProject={(id: string) => {
-                                    setSelectedProjectKey(id)
-                                }}
-                            />
+                                        projectName: ps.projectName || ps.companyName || ps.projectKey,
+                                        model: (Array.isArray(dealModelsData) ? dealModelsData.find((m: any) => m.projectId === (ps.projectId || ps.projectKey)) : undefined) ?? {
+                                            projectId: ps.projectId || ps.projectKey,
+                                            askingPrice: null,
+                                            purchasePrice: null,
+                                            debtAssumed: null,
+                                            cashAcquired: null,
+                                            workingCapitalRequirement: null,
+                                            transactionFees: null,
+                                            holdPeriodYears: null,
+                                            taxRate: null,
+                                            closingCosts: null,
+                                            maintenanceCapex: null,
+                                            exitMultiple: null,
+                                            exitCosts: null,
+                                            equityContributionPercent: null,
+                                            interestRate: null,
+                                            amortizationYears: null,
+                                            sellerNoteAmount: null,
+                                            bearRevenueGrowth: null,
+                                            baseRevenueGrowth: null,
+                                            bullRevenueGrowth: null,
+                                            bearEbitdaMargin: null,
+                                            baseEbitdaMargin: null,
+                                            bullEbitdaMargin: null,
+                                            bearExitMultiple: null,
+                                            baseExitMultiple: null,
+                                            bullExitMultiple: null,
+                                            revenueMultiple: null,
+                                            ebitdaMultiple: null,
+                                            assetHaircutPercent: null,
+                                            modelUpdatedAt: '',
+                                            modelUpdatedBy: '',
+                                            documentedFactsJson: '',
+                                            documentedFactsStatus: '',
+                                        },
+                                        synthesis: visibleProjectSyntheses.find((s) => s.projectId === (ps.projectId || ps.projectKey)),
+                                        documentsCount: ps.documentCount,
+                                        completedDocuments: ps.completedCount,
+                                    }))}
+                                    activeProjectId={activeProjectId}
+                                    onSelectProject={(id: string) => {
+                                        setSelectedProjectKey(id)
+                                    }}
+                                />
+                            </div>
                         </section>
                     ) : null}
 
@@ -2007,39 +2011,47 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
                     {activeWorkspaceTab === 'history' ? (
                         <section className="space-y-4">
-                            <SectionHeader
-                                step={1}
-                                title="Submission audit trail"
-                                description="Per-document processing status and AI output, newest first."
-                            />
-                            <SubmissionHistoryCard
-                                rows={submissionHistory}
-                                loading={submissionHistoryLoading}
-                                error={submissionHistoryError}
-                                activeEnvironment={activeHistoryEnvironment}
-                                onRefreshProduction={() => { void handleRefreshHistory('production') }}
-                                onRefreshTest={() => { void handleRefreshHistory('test') }}
-                                isPolling={hasActiveSubmissions}
-                                onRetryFailedDocument={handleRetryFailedDocument}
-                                retryingRequestId={retryingRequestId}
-                                onOpenProject={handleAuditProjectOpen}
-                                onOpenEvidence={setActiveEvidence}
-                            />
+                            <div id="history-header" className="scroll-mt-6">
+                                <SectionHeader
+                                    step={1}
+                                    title="Submission audit trail"
+                                    description="Per-document processing status and AI output, newest first."
+                                />
+                            </div>
+                            <div id="history-table" className="scroll-mt-6">
+                                <SubmissionHistoryCard
+                                    rows={submissionHistory}
+                                    loading={submissionHistoryLoading}
+                                    error={submissionHistoryError}
+                                    activeEnvironment={activeHistoryEnvironment}
+                                    onRefreshProduction={() => { void handleRefreshHistory('production') }}
+                                    onRefreshTest={() => { void handleRefreshHistory('test') }}
+                                    isPolling={hasActiveSubmissions}
+                                    onRetryFailedDocument={handleRetryFailedDocument}
+                                    retryingRequestId={retryingRequestId}
+                                    onOpenProject={handleAuditProjectOpen}
+                                    onOpenEvidence={setActiveEvidence}
+                                />
+                            </div>
                         </section>
                     ) : null}
 
                     {activeWorkspaceTab === 'email' ? (
                         <section className="space-y-4">
-                            <SectionHeader
-                                step={1}
-                                title="Email drafts"
-                                description="Ready-to-send updates for the current deal, based on the selected project and synthesis state."
-                            />
-                            <DealEmailDraftCard
-                                model={hydratedDealModel}
-                                synthesis={activeProjectSynthesis ?? undefined}
-                                projectName={dealName || suggestedProjectName}
-                            />
+                            <div id="email-header" className="scroll-mt-6">
+                                <SectionHeader
+                                    step={1}
+                                    title="Email drafts"
+                                    description="Ready-to-send updates for the current deal, based on the selected project and synthesis state."
+                                />
+                            </div>
+                            <div id="email-editor" className="scroll-mt-6">
+                                <DealEmailDraftCard
+                                    model={hydratedDealModel}
+                                    synthesis={activeProjectSynthesis ?? undefined}
+                                    projectName={dealName || suggestedProjectName}
+                                />
+                            </div>
                         </section>
                     ) : null}
 
@@ -2069,20 +2081,24 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                     ) : null}
 
                     {activeWorkspaceTab === 'faqs' ? (
-                        <section id="dashboard-faqs" className="scroll-mt-6 space-y-6">
+                        <section id="faqs-header" className="scroll-mt-6 space-y-6">
                             <TechnicalFaqWorkspaceTab onSwitchTab={(tab) => setActiveWorkspaceTab(tab as WorkspaceTab)} />
                         </section>
                     ) : null}
 
                     {activeWorkspaceTab === 'errors' ? (
                         <section id="workflow-errors" className="scroll-mt-6 space-y-6">
-                            <WorkflowErrorLogCard
-                                rows={Array.isArray(workflowErrorData) ? workflowErrorData : []}
-                                loading={workflowErrorsLoading}
-                                error={workflowErrorsError}
-                                onRefresh={() => { void triggerWorkflowErrors({ environment: activeHistoryEnvironment }) }}
-                            />
-                            <SystemArchitectureCard />
+                            <div id="errors-header" className="scroll-mt-6">
+                                <WorkflowErrorLogCard
+                                    rows={Array.isArray(workflowErrorData) ? workflowErrorData : []}
+                                    loading={workflowErrorsLoading}
+                                    error={workflowErrorsError}
+                                    onRefresh={() => { void triggerWorkflowErrors({ environment: activeHistoryEnvironment }) }}
+                                />
+                            </div>
+                            <div id="errors-arch" className="scroll-mt-6">
+                                <SystemArchitectureCard />
+                            </div>
                         </section>
                     ) : null}
                 </Suspense>
