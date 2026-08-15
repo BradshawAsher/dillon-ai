@@ -2295,6 +2295,17 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                     }}
                     onOpenProjectsPanel={() => setIsProjectsPanelOpen(true)}
                     projectsCount={projectSummaries.length}
+                    onNavigateTab={(tab, anchorId) => {
+                        setActiveWorkspaceTab(tab)
+                        if (anchorId) {
+                            setTimeout(() => {
+                                const el = document.getElementById(anchorId)
+                                if (el) {
+                                    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                                }
+                            }, 120)
+                        }
+                    }}
                 />
             </Suspense>
 
