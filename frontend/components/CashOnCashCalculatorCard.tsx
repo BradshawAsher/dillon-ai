@@ -5,6 +5,7 @@ import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { normalizeEquityFraction } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardExplainerPopover from './CardExplainerPopover'
 
 type Props = {
     model: DealModel
@@ -58,9 +59,17 @@ export default function CashOnCashCalculatorCard({ model }: Props) {
     return (
         <Card className="overflow-hidden">
             <CardHeader className="border-b border-border bg-card/80 pb-3">
-                <div className="flex items-center gap-2">
-                    <Calculator className="h-4 w-4 text-primary" />
-                    <CardTitle className="text-lg">Cash-on-cash return calculator</CardTitle>
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <Calculator className="h-4 w-4 text-primary" />
+                        <CardTitle className="text-lg">Cash-on-cash return calculator</CardTitle>
+                    </div>
+                    <CardExplainerPopover
+                        title="Cash-on-Cash Return in M&A"
+                        whatIsIt="Measures the annual pre-tax cash you pocket each year relative to the exact initial cash down payment you invested."
+                        howItWorks="Formula: (Annual EBITDA - Annual Debt Service) ÷ Initial Cash Down Payment. If you invest $1M cash down and take home $250k free cash flow after paying bank notes, Cash-on-Cash is 25%."
+                        whyItMatters="Unlike IRR (which depends heavily on selling the business 5 years later), Cash-on-Cash measures immediate annual yield and how quickly your equity gets paid back from operations."
+                    />
                 </div>
             </CardHeader>
             <CardContent className="p-4 space-y-4">

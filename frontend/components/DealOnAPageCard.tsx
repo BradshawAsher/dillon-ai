@@ -5,6 +5,8 @@ import type { DealModel } from '../hooks/backend/diligence'
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
+import InPlaceEvidencePopover from './InPlaceEvidencePopover'
+import CardExplainerPopover from './CardExplainerPopover'
 
 type Props = {
     model: DealModel
@@ -13,8 +15,9 @@ type Props = {
 }
 
 export default function DealOnAPageCard({ model, synthesis, projectName }: Props) {
+    const facts = useMemo(() => parseDocumentedFacts(model.documentedFactsJson), [model.documentedFactsJson])
+    
     const summary = useMemo(() => {
-        const facts = parseDocumentedFacts(model.documentedFactsJson)
         const ebitda = typeof facts.ebitda_sde?.value === 'number' ? facts.ebitda_sde.value : null
         const revenue = typeof facts.revenue?.value === 'number' ? facts.revenue.value : null
         const hasExtractedFinancials = Boolean(ebitda !== null || revenue !== null)
@@ -44,7 +47,7 @@ export default function DealOnAPageCard({ model, synthesis, projectName }: Props
             debt, equity, exitValue, moic, redFlags, greenFlags, signal, signalColor,
             hasExtractedFinancials,
         }
-    }, [model, synthesis])
+    }, [model, synthesis, facts])
 
     if (!summary) return null
 
@@ -57,12 +60,20 @@ export default function DealOnAPageCard({ model, synthesis, projectName }: Props
     return (
         <Card className="overflow-hidden print:shadow-none print:border-2">
             <CardHeader className="border-b border-border bg-card/80 pb-3">
-                <div className="flex items-center gap-2">
-                    <FileImage className="h-4 w-4 text-primary" />
-                    <CardTitle className="text-lg">Deal on a page</CardTitle>
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <FileImage className="h-4 w-4 text-primary" />
+                        <CardTitle className="text-lg">Deal on a page</CardTitle>
+                    </div>
+                    <CardExplainerPopover
+                        title="Deal on a Page (1-Pager)"
+                        whatIsIt="An executive one-page snapshot summarizing critical purchase terms, valuation multiples, historical figures, and modeled return metrics."
+                        howItWorks="Combines hard facts extracted directly from VDR documents (revenue, EBITDA, asking price) with standard underwriting model assumptions (debt leverage, exit multiple, growth)."
+                        whyItMatters="Enables instant, credible screening of a target company without digging through multiple pages of reports, giving you a shareable summary for investment committees."
+                    />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                    One-glance summary for screenshots and quick decision-making.
+                    One-glance summary for screenshots and quick decision-making. Click any metric to inspect in-place source citations.
                 </p>
             </CardHeader>
             <CardContent className="p-4">
@@ -88,15 +99,59 @@ export default function DealOnAPageCard({ model, synthesis, projectName }: Props
                     <div className="grid grid-cols-4 gap-2 text-center">
                         <div>
                             <p className="text-[9px] uppercase text-muted-foreground">Price</p>
-                            <p className="text-sm font-bold text-foreground">{fmt(summary.price)}</p>
+                            <InPlaceEvidencePopover
+                                evidence={{
+                                    metricName: 'Purchase / Asking Price',
+                                    valueFormatted: fmt(summary.price),
+                                    sourceDoc: facts.asking_price?.citations?.[0]?.source_file || facts.purchase_price?.citations?.[0]?.source_file || 'CIM / VDR Deal File',
+                                    pageNumber: facts.asking_price?.citations?.[0]?.row_or_cell || facts.purchase_price?.citations?.[0]?.row_or_cell,
+                                    quoteSnippet: facts.asking_price?.citations?.[0]?.excerpt || facts.purchase_price?.citations?.[0]?.excerpt || 'Documented purchase or asking price from deal intake materials.',
+                                    status: facts.asking_price?.status === 'confirmed' || facts.purchase_price?.status === 'confirmed' ? 'confirmed' : 'estimated',
+                                    notes: 'Base valuation used across leverage and returns modeling.',
+                                }}
+                            >
+                                <p className="text-sm font-bold text-foreground hover:text-primary transition-colors cursor-pointer underline decoration-dotted decoration-primary/40 underline-offset-4">{fmt(summary.price)}</p>
+                            </InPlaceEvidencePopover>
                         </div>
                         <div>
                             <p className="text-[9px] uppercase text-muted-foreground">Revenue</p>
-                            <p className="text-sm font-bold text-foreground">{summary.revenue ? fmt(summary.revenue) : '—'}</p>
+                            {summary.revenue ? (
+                                <InPlaceEvidencePopover
+                                    evidence={{
+                                        metricName: 'Historical Revenue',
+                                        valueFormatted: fmt(summary.revenue),
+                                        sourceDoc: facts.revenue?.citations?.[0]?.source_file || 'Financial Model / P&L',
+                                        pageNumber: facts.revenue?.citations?.[0]?.row_or_cell,
+                                        quoteSnippet: facts.revenue?.citations?.[0]?.excerpt || 'Historical annual top-line revenue extracted from VDR financial files.',
+                                        status: (facts.revenue?.status as any) || 'confirmed',
+                                        notes: 'Annual revenue base extracted from target financials.',
+                                    }}
+                                >
+                                    <p className="text-sm font-bold text-foreground hover:text-primary transition-colors cursor-pointer underline decoration-dotted decoration-primary/40 underline-offset-4">{fmt(summary.revenue)}</p>
+                                </InPlaceEvidencePopover>
+                            ) : (
+                                <p className="text-sm font-bold text-foreground">—</p>
+                            )}
                         </div>
                         <div>
                             <p className="text-[9px] uppercase text-muted-foreground">EBITDA</p>
-                            <p className="text-sm font-bold text-foreground">{summary.ebitda ? fmt(summary.ebitda) : '—'}</p>
+                            {summary.ebitda ? (
+                                <InPlaceEvidencePopover
+                                    evidence={{
+                                        metricName: 'EBITDA / SDE',
+                                        valueFormatted: fmt(summary.ebitda),
+                                        sourceDoc: facts.ebitda_sde?.citations?.[0]?.source_file || 'Financial Model / P&L',
+                                        pageNumber: facts.ebitda_sde?.citations?.[0]?.row_or_cell,
+                                        quoteSnippet: facts.ebitda_sde?.citations?.[0]?.excerpt || 'Documented adjusted EBITDA / SDE extracted from VDR filings.',
+                                        status: (facts.ebitda_sde?.status as any) || 'confirmed',
+                                        notes: 'Underwriting cash flow basis.',
+                                    }}
+                                >
+                                    <p className="text-sm font-bold text-foreground hover:text-primary transition-colors cursor-pointer underline decoration-dotted decoration-primary/40 underline-offset-4">{fmt(summary.ebitda)}</p>
+                                </InPlaceEvidencePopover>
+                            ) : (
+                                <p className="text-sm font-bold text-foreground">—</p>
+                            )}
                         </div>
                         <div>
                             <p className="text-[9px] uppercase text-muted-foreground">Entry Mult</p>

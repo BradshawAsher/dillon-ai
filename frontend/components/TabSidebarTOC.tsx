@@ -17,13 +17,65 @@ const TAB_SECTIONS: Partial<Record<WorkspaceTab, TOCSection[]>> = {
         { id: 'overview-timeline', label: 'Timeline' },
     ],
     analysis: [
-        { id: 'analysis-header', label: 'Snapshot' },
-        { id: 'analysis-deal-grade', label: 'Deal Grade' },
-        { id: 'analysis-fit', label: 'Health & Fit' },
+        { id: 'analysis-deal-on-a-page', label: '1-Pager' },
+        { id: 'analysis-scorecard', label: 'Scorecard' },
+        { id: 'analysis-snapshot', label: 'Snapshot' },
+        { id: 'analysis-opportunity', label: 'Opportunity' },
+        { id: 'analysis-risk-valuation', label: 'Risk Val.' },
+        { id: 'analysis-next-actions', label: 'Next Steps' },
+        { id: 'analysis-readiness', label: 'Readiness' },
+        { id: 'analysis-coverage', label: 'Coverage' },
+        { id: 'analysis-scorecard-breakdown', label: 'Score Breakdown' },
+        { id: 'analysis-rules', label: 'Rules' },
+        { id: 'analysis-confidence', label: 'Confidence' },
+        { id: 'analysis-health', label: 'Fin. Health' },
+        { id: 'analysis-ebitda-quality', label: 'EBITDA QoE' },
+        { id: 'analysis-benchmark', label: 'Benchmark' },
+        { id: 'analysis-position', label: 'Market Pos.' },
+        { id: 'analysis-assumption-gaps', label: 'Gaps' },
+        { id: 'analysis-whats-missing', label: 'Missing' },
+        { id: 'analysis-market-comps', label: 'Comps' },
+        { id: 'analysis-financing-scenarios', label: 'Financing' },
+        { id: 'analysis-metrics', label: 'KPIs' },
+        { id: 'analysis-percentile', label: 'Percentile' },
+        { id: 'analysis-deal-type', label: 'Deal Type' },
+        { id: 'analysis-fit', label: 'Deal Fit' },
+        { id: 'analysis-asset-comp', label: 'Assets' },
+        { id: 'analysis-val-gap', label: 'Val. Gap' },
+        { id: 'analysis-cash-on-cash', label: 'Cash-on-Cash' },
+        { id: 'analysis-val-evolution', label: 'Value Evol.' },
+        { id: 'analysis-revenue-bridge', label: 'Rev. Bridge' },
+        { id: 'analysis-base-returns', label: 'Returns' },
+        { id: 'analysis-growth-sensitivity', label: 'Sensitivity' },
+        { id: 'analysis-monte-carlo', label: 'Monte Carlo' },
+        { id: 'analysis-breakeven', label: 'Breakeven' },
+        { id: 'analysis-quick-insights', label: 'Insights' },
         { id: 'analysis-thesis', label: 'Thesis' },
+        { id: 'analysis-decision', label: 'Decision' },
+        { id: 'analysis-quick-wins', label: 'Quick Wins' },
         { id: 'analysis-strengths', label: 'Strengths' },
-        { id: 'analysis-risks', label: 'Risk Matrix' },
-        { id: 'analysis-closing', label: 'Closing' },
+        { id: 'analysis-risk-summary', label: 'Risk Summary' },
+        { id: 'analysis-risk-matrix', label: 'Risk Matrix' },
+        { id: 'analysis-key-person', label: 'Key Person' },
+        { id: 'analysis-owner-dep', label: 'Owner Dep.' },
+        { id: 'analysis-diligence-comp', label: 'DD Complete' },
+        { id: 'analysis-risk-reward', label: 'Risk/Reward' },
+        { id: 'analysis-deal-killer', label: 'Deal Killer' },
+        { id: 'analysis-second-opinion', label: '2nd Opinion' },
+        { id: 'analysis-alert-rules', label: 'Alert Rules' },
+        { id: 'analysis-time-to-close', label: 'Time2Close' },
+        { id: 'analysis-closing-checklist', label: 'Closing' },
+        { id: 'analysis-seller-qa', label: 'Seller Q&A' },
+        { id: 'analysis-mgmt-questions', label: 'Mgmt Qs' },
+        { id: 'analysis-playbook', label: 'Playbook' },
+        { id: 'analysis-negotiation-impact', label: 'Neg. Impact' },
+        { id: 'analysis-deal-timing', label: 'Deal Timing' },
+        { id: 'analysis-timeline', label: 'Timeline' },
+        { id: 'analysis-investor-readiness', label: 'Investor Read' },
+        { id: 'analysis-term-sheet', label: 'Term Sheet' },
+        { id: 'analysis-dd-requests', label: 'DD Requests' },
+        { id: 'analysis-activity-feed', label: 'Activity' },
+        { id: 'analysis-public-data', label: 'Public Data' },
     ],
     diligence: [
         { id: 'diligence-project-synth', label: 'Synthesis' },
@@ -261,7 +313,7 @@ export default function TabSidebarTOC({ activeTab }: { activeTab: WorkspaceTab }
     }
 
     return (
-        <aside className="fixed left-0 top-32 z-50 w-[5.25rem] print:hidden">
+        <aside className="fixed left-0 top-32 z-50 w-[4.25rem] print:hidden">
             <nav className="rounded-r-lg border border-l-0 border-primary/40 bg-background/95 shadow-2xl backdrop-blur-md overflow-hidden">
                 <div className="flex items-center justify-between border-b border-border px-1.5 py-1 bg-primary/10">
                     <div className="flex items-center gap-1 min-w-0">
@@ -277,7 +329,7 @@ export default function TabSidebarTOC({ activeTab }: { activeTab: WorkspaceTab }
                         <ChevronLeft className="h-3 w-3" />
                     </button>
                 </div>
-                <ul className="max-h-[90vh] overflow-y-auto p-1 space-y-0.5">
+                <ul className="max-h-[92vh] overflow-y-auto p-0.5 space-y-0.5">
                     {sections.map((section) => {
                         const isActive = activeSection === section.id
                         return (
@@ -286,7 +338,7 @@ export default function TabSidebarTOC({ activeTab }: { activeTab: WorkspaceTab }
                                     type="button"
                                     onClick={() => scrollToSection(section.id)}
                                     title={section.label}
-                                    className={`w-full rounded px-1 py-1 text-left text-[10.5px] font-semibold leading-tight transition-all cursor-pointer truncate ${
+                                    className={`w-full rounded px-1 py-1 text-left text-[10px] font-semibold leading-tight transition-all cursor-pointer truncate ${
                                         section.indent ? 'pl-1.5 text-muted-foreground/80 font-medium' : ''
                                     } ${
                                         isActive
