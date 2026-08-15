@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { List, ChevronRight, ChevronLeft, Bookmark, Navigation } from 'lucide-react'
+import { List, ChevronRight, ChevronLeft, Bookmark, Navigation, GripVertical, RotateCcw } from 'lucide-react'
 
 type TOCSection = {
     id: string
@@ -98,86 +98,73 @@ const TAB_SECTIONS: Partial<Record<WorkspaceTab, TOCSection[]>> = {
         { id: 'synthesis-conflicts', label: 'Conflicts', indent: true },
         { id: 'synthesis-negotiation', label: 'Levers', indent: true },
         { id: 'synthesis-missing-docs', label: 'Missing Docs', indent: true },
-        { id: 'synthesis-open-questions', label: 'Open Questions', indent: true },
-        { id: 'synthesis-citations', label: 'Citations' },
-        { id: 'synthesis-management-questions', label: 'Mgmt Questions' },
+        { id: 'synthesis-mgmt-questions', label: 'Mgmt Questions', indent: true },
+        { id: 'synthesis-cross-doc', label: 'Cross-Doc Matrix' },
+        { id: 'synthesis-pipeline-metrics', label: 'Coverage Metrics' },
     ],
     documents: [
-        { id: 'documents-header', label: 'Doc Portfolio' },
-        { id: 'documents-grid', label: 'Files Grid' },
+        { id: 'docs-upload', label: 'Upload' },
+        { id: 'docs-table', label: 'Documents' },
+        { id: 'docs-extraction', label: 'Extraction' },
     ],
     compare: [
-        { id: 'compare-header', label: 'Matrix Header' },
-        { id: 'compare-table', label: 'Project Grid' },
+        { id: 'compare-matrix', label: 'Deal Matrix' },
+        { id: 'compare-charts', label: 'Comparisons' },
+        { id: 'compare-rankings', label: 'Rankings' },
     ],
     valuation: [
-        { id: 'valuation-header', label: 'Assumptions' },
-        { id: 'valuation-quick', label: 'Quick Valuation' },
-        { id: 'valuation-gap', label: 'Valuation Gap' },
-        { id: 'valuation-comps', label: 'Comparables' },
-        { id: 'valuation-sensitivity', label: 'Sensitivity' },
-        { id: 'valuation-risk-adjusted', label: 'Data Integrity' },
+        { id: 'valuation-summary', label: 'Valuation Summary' },
+        { id: 'valuation-multiples', label: 'Multiple Explorer' },
+        { id: 'valuation-dcf', label: 'DCF Model' },
+        { id: 'valuation-precedent', label: 'Precedents' },
     ],
     returns: [
-        { id: 'returns-header', label: 'Returns Summary' },
-        { id: 'returns-base', label: 'Base Metrics' },
-        { id: 'returns-all-cash', label: 'All-Cash' },
-        { id: 'returns-financed', label: 'Financed' },
-        { id: 'returns-cash-on-cash', label: 'Cash-on-Cash' },
-        { id: 'returns-payback', label: 'Payback Timeline' },
-        { id: 'returns-hold-period', label: 'Hold Period' },
-        { id: 'returns-scenario', label: 'Scenario Comparison' },
+        { id: 'returns-summary', label: 'Returns Summary' },
+        { id: 'returns-waterfall', label: 'Waterfall' },
+        { id: 'returns-sensitivity', label: 'Sensitivity Matrix' },
+        { id: 'returns-cashflow', label: 'Cash Flow Forecast' },
     ],
     growth: [
-        { id: 'growth-header', label: 'Growth Plan' },
-        { id: 'growth-scenario', label: 'Scenarios' },
-        { id: 'growth-revenue-bridge', label: 'Revenue Bridge' },
-        { id: 'growth-sensitivity', label: 'Sensitivity' },
-        { id: 'growth-value-creation', label: 'Value Creation' },
-        { id: 'growth-leverage', label: 'Op. Leverage' },
+        { id: 'growth-projections', label: 'Projections' },
+        { id: 'growth-scenarios', label: 'Scenarios' },
+        { id: 'growth-drivers', label: 'Growth Drivers' },
     ],
     structure: [
-        { id: 'structure-header', label: 'Assumptions' },
-        { id: 'structure-visual', label: 'Sources & Uses' },
-        { id: 'structure-stack', label: 'Deal Stack' },
-        { id: 'structure-leverage', label: 'Leverage' },
-        { id: 'structure-financing', label: 'Financing' },
-        { id: 'structure-pending', label: 'Pending Inputs' },
+        { id: 'structure-sources-uses', label: 'Sources & Uses' },
+        { id: 'structure-debt-schedule', label: 'Debt Schedule' },
+        { id: 'structure-covenants', label: 'Covenants' },
     ],
     negotiation: [
-        { id: 'negotiation-header', label: 'Overview' },
-        { id: 'negotiation-seller', label: 'Seller Q&A' },
-        { id: 'negotiation-mgmt', label: 'Mgmt Tracker' },
+        { id: 'negotiation-levers', label: 'Levers' },
+        { id: 'negotiation-impact', label: 'Price Impact' },
         { id: 'negotiation-playbook', label: 'Playbook' },
-        { id: 'negotiation-impact', label: 'Impact' },
-        { id: 'negotiation-timeline', label: 'Timeline' },
-        { id: 'negotiation-terms', label: 'Term Sheet' },
     ],
     spending: [
-        { id: 'spending-header', label: 'Cost Overview' },
-        { id: 'spending-breakdown', label: 'Spend Velocity' },
-        { id: 'spending-history', label: 'Billing Ledger' },
+        { id: 'spending-model', label: 'Cost Breakdown' },
+        { id: 'spending-api-calls', label: 'API Calls' },
+        { id: 'spending-forecast', label: 'Cost Forecast' },
     ],
     history: [
-        { id: 'history-header', label: 'Audit Trail' },
-        { id: 'history-table', label: 'Submission Logs' },
+        { id: 'history-timeline', label: 'Timeline' },
+        { id: 'history-versions', label: 'Versions' },
     ],
     errors: [
-        { id: 'errors-header', label: 'Error Logs' },
-        { id: 'errors-arch', label: 'System Arch' },
+        { id: 'errors-summary', label: 'Summary' },
+        { id: 'errors-list', label: 'Error Log' },
     ],
     email: [
-        { id: 'email-header', label: 'Email Drafts' },
-        { id: 'email-editor', label: 'Draft Generator' },
+        { id: 'email-templates', label: 'Templates' },
+        { id: 'email-logs', label: 'Sent Logs' },
     ],
     evals: [
-        { id: 'evals-header', label: 'Evals Overview' },
-        { id: 'evals-deal-cards', label: 'Deal Cards' },
-        { id: 'evals-harness', label: 'Harness Controls' },
-        { id: 'evals-doc-viewer', label: 'Doc Viewer' },
+        { id: 'evals-benchmarks', label: 'Benchmarks' },
+        { id: 'evals-accuracy', label: 'Accuracy' },
+        { id: 'evals-latency', label: 'Latency' },
     ],
     faqs: [
-        { id: 'faqs-header', label: 'Technical FAQ' },
+        { id: 'faq-general', label: 'General' },
+        { id: 'faq-methodology', label: 'Methodology' },
+        { id: 'faq-troubleshooting', label: 'Help' },
     ],
 }
 
@@ -230,51 +217,89 @@ export function TabTopNavTOC({ activeTab }: { activeTab: WorkspaceTab }) {
     )
 }
 
-export default function TabSidebarTOC({ activeTab }: { activeTab: WorkspaceTab }) {
-    const [activeSection, setActiveSection] = useState<string>('')
-    const [isCollapsed, setIsCollapsed] = useState(false)
-    const observerRef = useRef<IntersectionObserver | null>(null)
+type Props = {
+    activeTab: WorkspaceTab
+}
 
+export default function TabSidebarTOC({ activeTab }: Props) {
+    const [activeSection, setActiveSection] = useState<string>('')
+    const [isCollapsed, setIsCollapsed] = useState<boolean>(false)
+    const [topOffset, setTopOffset] = useState<number | null>(() => {
+        if (typeof window === 'undefined') return null
+        try {
+            const stored = localStorage.getItem('mergeworks.tocTop')
+            if (stored) {
+                const parsed = parseInt(stored, 10)
+                if (!Number.isNaN(parsed)) {
+                    return Math.max(64, Math.min(window.innerHeight - 200, parsed))
+                }
+            }
+        } catch { }
+        return null
+    })
+
+    const observerRef = useRef<IntersectionObserver | null>(null)
+    const dragYRef = useRef<{ startY: number; startTop: number } | null>(null)
     const sections = TAB_SECTIONS[activeTab] || []
 
+    useEffect(() => {
+        if (topOffset != null) {
+            try { localStorage.setItem('mergeworks.tocTop', String(topOffset)) } catch { }
+        } else {
+            try { localStorage.removeItem('mergeworks.tocTop') } catch { }
+        }
+    }, [topOffset])
+
+    const handleDragPointerDown = (e: React.PointerEvent) => {
+        e.preventDefault()
+        const currentTop = topOffset ?? 128
+        dragYRef.current = {
+            startY: e.clientY,
+            startTop: currentTop,
+        }
+        try {
+            (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId)
+        } catch { }
+    }
+
+    const handleDragPointerMove = (e: React.PointerEvent) => {
+        if (!dragYRef.current) return
+        const deltaY = e.clientY - dragYRef.current.startY
+        const nextTop = Math.max(64, Math.min(window.innerHeight - 200, dragYRef.current.startTop + deltaY))
+        setTopOffset(Math.round(nextTop))
+    }
+
+    const handleDragPointerUp = (e: React.PointerEvent) => {
+        if (!dragYRef.current) return
+        try {
+            (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId)
+        } catch { }
+        dragYRef.current = null
+    }
+
+    const handleResetPosition = () => {
+        setTopOffset(null)
+    }
+
     const scrollToSection = useCallback((sectionId: string) => {
-        setActiveSection(sectionId)
-        const element = document.getElementById(sectionId)
-        if (element) {
-            element.scrollIntoView({ behavior: 'smooth', block: 'start' })
-            return
+        const el = document.getElementById(sectionId)
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            setActiveSection(sectionId)
         }
-        // Fallback matching by keyword or section title
-        const keyword = sectionId.split('-').slice(1).join('-') || sectionId
-        const candidate = document.querySelector(`[data-section="${sectionId}"]`) || 
-                          document.querySelector(`[id*="${keyword}"]`) ||
-                          Array.from(document.querySelectorAll('h2, h3, h4, section, div')).find(
-                              (el) => el.textContent?.toLowerCase().includes(keyword.replace(/-/g, ' '))
-                          )
-        if (candidate) {
-            candidate.scrollIntoView({ behavior: 'smooth', block: 'start' })
-            return
-        }
-        // General workspace top fallback
-        const workspace = document.getElementById('deal-workspace') || document.querySelector('main')
-        workspace?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }, [])
 
     useEffect(() => {
         if (!sections || sections.length === 0) return
 
         observerRef.current?.disconnect()
-        const visibleSections = new Map<string, boolean>()
 
         observerRef.current = new IntersectionObserver(
             (entries) => {
                 for (const entry of entries) {
-                    visibleSections.set(entry.target.id, entry.isIntersecting)
-                }
-                for (const section of sections) {
-                    if (visibleSections.get(section.id)) {
-                        setActiveSection(section.id)
-                        return
+                    if (entry.isIntersecting) {
+                        setActiveSection(entry.target.id)
+                        break
                     }
                 }
             },
@@ -297,7 +322,10 @@ export default function TabSidebarTOC({ activeTab }: { activeTab: WorkspaceTab }
 
     if (isCollapsed) {
         return (
-            <div className="fixed left-0 top-32 z-40 print:hidden">
+            <div
+                className={`fixed left-0 z-40 print:hidden ${topOffset == null ? 'top-32' : ''}`}
+                style={topOffset != null ? { top: `${topOffset}px` } : undefined}
+            >
                 <button
                     type="button"
                     onClick={() => setIsCollapsed(false)}
@@ -313,21 +341,42 @@ export default function TabSidebarTOC({ activeTab }: { activeTab: WorkspaceTab }
     }
 
     return (
-        <aside className="fixed left-0 top-32 z-50 w-[4.25rem] print:hidden">
+        <aside
+            className={`fixed left-0 z-50 w-[4.25rem] print:hidden ${topOffset == null ? 'top-32' : ''}`}
+            style={topOffset != null ? { top: `${topOffset}px` } : undefined}
+        >
             <nav className="rounded-r-lg border border-l-0 border-primary/40 bg-background/95 shadow-2xl backdrop-blur-md overflow-hidden">
-                <div className="flex items-center justify-between border-b border-border px-1.5 py-1 bg-primary/10">
-                    <div className="flex items-center gap-1 min-w-0">
-                        <Bookmark className="h-3 w-3 text-primary shrink-0" />
+                <div
+                    onPointerDown={handleDragPointerDown}
+                    onPointerMove={handleDragPointerMove}
+                    onPointerUp={handleDragPointerUp}
+                    className="flex items-center justify-between border-b border-border px-1.5 py-1 bg-primary/10 cursor-move select-none group"
+                    title="Drag vertically to reposition TOC"
+                >
+                    <div className="flex items-center gap-0.5 min-w-0">
+                        <GripVertical className="h-3 w-3 text-muted-foreground/60 group-hover:text-primary transition-colors shrink-0" />
                         <span className="text-[10px] font-extrabold uppercase tracking-wider text-primary truncate">TOC</span>
                     </div>
-                    <button
-                        type="button"
-                        onClick={() => setIsCollapsed(true)}
-                        className="rounded p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer shrink-0"
-                        title="Collapse Table of Contents"
-                    >
-                        <ChevronLeft className="h-3 w-3" />
-                    </button>
+                    <div className="flex items-center gap-0.5 shrink-0">
+                        {topOffset != null && (
+                            <button
+                                type="button"
+                                onClick={handleResetPosition}
+                                className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+                                title="Reset TOC position"
+                            >
+                                <RotateCcw className="h-2.5 w-2.5" />
+                            </button>
+                        )}
+                        <button
+                            type="button"
+                            onClick={() => setIsCollapsed(true)}
+                            className="rounded p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer shrink-0"
+                            title="Collapse Table of Contents"
+                        >
+                            <ChevronLeft className="h-3 w-3" />
+                        </button>
+                    </div>
                 </div>
                 <ul className="max-h-[92vh] overflow-y-auto p-0.5 space-y-0.5">
                     {sections.map((section) => {

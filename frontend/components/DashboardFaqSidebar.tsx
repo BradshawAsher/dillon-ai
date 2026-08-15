@@ -15,6 +15,8 @@ import {
     Zap,
     ShieldCheck,
     ArrowRight,
+    MessageSquare,
+    Bot,
 } from 'lucide-react'
 import { Button } from '../lib/shadcn/button'
 import { Input } from '../lib/shadcn/input'
@@ -339,22 +341,48 @@ export default function DashboardFaqSidebar({
                                                 {faq.answer}
                                             </p>
 
-                                            {faq.targetTab && onSwitchTab && (
+                                            <div className="flex flex-col gap-1.5 mt-1">
+                                                {faq.targetTab && onSwitchTab && (
+                                                    <Button
+                                                        type="button"
+                                                        size="sm"
+                                                        variant="outline"
+                                                        className="w-full text-xs font-bold border-primary/40 text-primary hover:bg-primary/10 justify-between h-8 cursor-pointer"
+                                                        onClick={() => {
+                                                            if (faq.targetTab) {
+                                                                onSwitchTab(faq.targetTab)
+                                                            }
+                                                        }}
+                                                    >
+                                                        <span>{faq.actionLabel || 'Jump to Workspace Tab'}</span>
+                                                        <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                                                    </Button>
+                                                )}
                                                 <Button
                                                     type="button"
                                                     size="sm"
-                                                    variant="outline"
-                                                    className="w-full text-xs font-bold border-primary/40 text-primary hover:bg-primary/10 justify-between h-8 mt-1"
+                                                    variant="ghost"
+                                                    className="w-full text-[11px] font-medium text-muted-foreground hover:text-foreground justify-between h-7 border border-border/50 hover:bg-muted/50 cursor-pointer"
                                                     onClick={() => {
-                                                        if (faq.targetTab) {
-                                                            onSwitchTab(faq.targetTab)
-                                                        }
+                                                        window.dispatchEvent(
+                                                            new CustomEvent('mergeworks:open-chat-ask', {
+                                                                detail: {
+                                                                    topic: faq.question,
+                                                                    title: faq.categoryLabel,
+                                                                    prompt: `Can you explain the following in detail:\n\n**${faq.question}**\n\nContext:\n${faq.answer}`,
+                                                                },
+                                                            })
+                                                        )
+                                                        onClose()
                                                     }}
                                                 >
-                                                    <span>{faq.actionLabel || 'Jump to Workspace Tab'}</span>
-                                                    <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                                                    <span className="flex items-center gap-1.5">
+                                                        <Bot className="h-3 w-3 text-primary" />
+                                                        <span>Ask Dillon AI to explain more</span>
+                                                    </span>
+                                                    <Sparkles className="h-3 w-3 text-amber-500" />
                                                 </Button>
-                                            )}
+                                            </div>
                                         </CardContent>
                                     )}
                                 </Card>

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Bot, FolderKanban, Send, ThumbsDown, ThumbsUp, X } from 'lucide-react'
+import { ArrowUpRight, Bot, Compass, ExternalLink, FolderKanban, GripHorizontal, Move, RotateCcw, Send, Sparkles, ThumbsDown, ThumbsUp, X } from 'lucide-react'
 
 import { Button } from '../lib/shadcn/button'
 import { Card } from '../lib/shadcn/card'
@@ -7,6 +7,7 @@ import { Textarea } from '../lib/shadcn/textarea'
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import type { DealModel } from '../hooks/backend/diligence'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
+import type { WorkspaceTab } from '../hooks/useDealWorkspaceState'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { normalizeEquityFraction } from '../utils/dealMath'
 
@@ -26,6 +27,7 @@ type Props = {
     onSuggestProjectSwitch?: (projectId: string) => void
     onOpenProjectsPanel?: () => void
     projectsCount?: number
+    onNavigateTab?: (tab: WorkspaceTab, anchorId?: string) => void
 }
 
 function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealModel, projectName: string, documents?: SubmissionHistoryItem[], allSyntheses?: ProjectSynthesisItem[]): string {
@@ -180,6 +182,32 @@ function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealMo
         }
     }
 
+    parts.push(`\n## Dashboard Deep-Link Guide:
+When helping users find features or navigate, output links formatted like:
+[Deal Snapshot](tab:analysis#analysis-deal-on-a-page)
+[Deal Scorecard](tab:analysis#analysis-scorecard)
+[EBITDA Quality](tab:analysis#analysis-ebitda-quality)
+[Breakeven Analysis](tab:analysis#analysis-breakeven)
+[Market Comps](tab:analysis#analysis-market-comps)
+[Financing Scenarios](tab:analysis#analysis-financing-scenarios)
+[Asset Composition](tab:analysis#analysis-asset-comp)
+[Monte Carlo Simulation](tab:analysis#analysis-monte-carlo)
+[Risk Matrix](tab:analysis#analysis-risk-matrix)
+[Key Person Risk](tab:analysis#analysis-key-person)
+[Seller Q&A](tab:analysis#analysis-seller-qa)
+[Management Questions](tab:analysis#analysis-mgmt-questions)
+[Closing Checklist](tab:analysis#analysis-closing-checklist)
+[LOI Term Sheet](tab:analysis#analysis-term-sheet)
+[DD Requests](tab:analysis#analysis-dd-requests)
+[Diligence Documents](tab:diligence#diligence-documents)
+[Synthesis Verdict](tab:synthesis#synthesis-judgment)
+[Valuation Explorer](tab:valuation)
+[Returns Explorer](tab:returns)
+[Growth Projections](tab:growth)
+[Deal Capital Structure](tab:structure)
+[Negotiation Levers](tab:negotiation)
+[Compare Projects](tab:compare)`)
+
     return parts.join('\n')
 }
 
@@ -190,13 +218,6 @@ type LocalResponse = {
 
 function formatMoney(value: number): string {
     return `$${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
-}
-
-function formatConfidence(value: string | number | null | undefined): string | null {
-    if (value == null || value === '') return null
-    const numeric = typeof value === 'number' ? value : parseFloat(String(value))
-    if (!Number.isFinite(numeric)) return String(value)
-    return numeric <= 1 ? `${Math.round(numeric * 100)}%` : `${Math.round(numeric)}%`
 }
 
 function bulletList(items: string[], limit = items.length): string {
@@ -210,10 +231,11 @@ function getLocalResponse(
         model: DealModel
         projectName: string
         documents?: SubmissionHistoryItem[]
+        allSyntheses?: ProjectSynthesisItem[]
     }
 ): LocalResponse {
     const q = question.toLowerCase()
-    const { synthesis, model, projectName, documents } = details
+    const { synthesis, model, projectName, documents, allSyntheses } = details
     const facts = parseDocumentedFacts(model.documentedFactsJson)
     const price = model.purchasePrice ?? model.askingPrice
     const revenue = typeof facts.revenue?.value === 'number' ? facts.revenue.value : model.revenue ?? null
@@ -226,21 +248,119 @@ function getLocalResponse(
     const missingDocuments = synthesis?.missingDocuments ?? []
     const completedDocuments = synthesis?.documentsCompletedCount ?? documents?.filter(d => d.status === 'completed').length ?? 0
     const totalDocuments = synthesis?.documentsReceivedCount ?? documents?.length ?? completedDocuments
-    const genericHelp = `I can help you understand this deal. Try asking about:\n\n- **Risks** — "What are the red flags?"\n- **Valuation** — "What multiple am I paying?"\n- **Earnings** — "What's the EBITDA margin?"\n- **Returns** — "What's my IRR?"\n- **Structure** — "How is the deal financed?"\n- **Customers** — "Is there concentration risk?"\n- **Negotiation** — "What levers do I have?"\n- **Confidence** — "How reliable is this valuation?"\n- **Missing info** — "What documents do I still need?"\n- **Next steps** — "What should I do next?"\n- **Overview** — "Give me a summary"\n\nI use the project synthesis and documented facts to answer. For deeper analysis, check the specific tabs.`
+
+    if (q.includes('breakeven') || q.includes('break even') || q.includes('break-even') || q.includes('margin of safety')) {
+        const revText = revenue ? ` Based on current revenue of ${formatMoney(revenue)}, this card tests how far revenue can fall before the deal stops servicing debt.` : ''
+        return {
+            matched: true,
+            content: `**Breakeven & Margin of Safety Analysis:**\n\n- **Breakeven Revenue**: The exact revenue volume required to cover fixed operating costs, variable COGS, and annual debt service (resulting in $0 net profit and $0 net loss).\n- **Margin of Safety**: The percentage buffer by which annual revenue can contract before operating cash flow falls below your break-even threshold.${revText}\n\nYou can model your fixed vs. variable cost structures directly in:\n👉 [Open Breakeven Analysis](tab:analysis#analysis-breakeven)\n👉 [Open Financing Scenarios](tab:analysis#analysis-financing-scenarios)`
+        }
+    }
+
+    if (q.includes('qoe') || q.includes('quality of earnings') || q.includes('ebitda quality') || q.includes('addback') || q.includes('add-back') || q.includes('normalization')) {
+        const ebitdaText = ebitda ? ` Current EBITDA/SDE is recorded at ${formatMoney(ebitda)}.` : ''
+        return {
+            matched: true,
+            content: `**Quality of Earnings (QoE) & EBITDA Normalization:**\n\n- **Purpose**: Audits seller-reported earnings to remove non-operating income, personal expenses (vehicles, vacations), family payroll add-backs, below/above market management salaries, and non-recurring litigation or consulting fees.${ebitdaText}\n- **QoE Score**: Rates how verifiable and high-quality the earnings stream is (High, Medium, Low).\n\nInspect the full waterfall and audit adjustments here:\n👉 [Open EBITDA Quality](tab:analysis#analysis-ebitda-quality)\n👉 [Open Deal Scorecard](tab:analysis#analysis-scorecard)`
+        }
+    }
+
+    if (q.includes('working capital') || q.includes('nwc') || q.includes('peg')) {
+        const wcReq = model.workingCapitalRequirement ? ` This deal model includes an initial working capital buffer of ${formatMoney(model.workingCapitalRequirement)}.` : ''
+        return {
+            matched: true,
+            content: `**Working Capital Peg & Net Working Capital (NWC):**\n\n- **Working Capital Peg**: The agreed target Net Working Capital (Current Assets excluding Cash minus Current Liabilities excluding Debt) that the seller must deliver at closing.\n- **True-Up Adjustment**: If delivered NWC at close is below the peg, the purchase price is reduced dollar-for-dollar. If above the peg, the buyer pays the excess.${wcReq}\n\nReview sources & uses and working capital buffers in:\n👉 [Open Deal Capital Structure](tab:structure)\n👉 [Open Financing Scenarios](tab:analysis#analysis-financing-scenarios)`
+        }
+    }
+
+    if (q.includes('sde') || q.includes("seller's discretionary") || (q.includes('difference') && (q.includes('ebitda') || q.includes('sde')))) {
+        return {
+            matched: true,
+            content: `**SDE vs. EBITDA in SMB Diligence:**\n\n- **SDE (Seller's Discretionary Earnings)**: Net income + owner compensation + owner perks + depreciation + interest. It represents the total cash flow available to a single full-time owner-operator.\n- **EBITDA**: Normalizes cash flow by deducting a market salary for a general manager replacing the owner.\n- **Rule of Thumb**: Businesses doing <$1M earnings are typically priced on SDE (1.5x–3.5x). Businesses >$1M EBITDA are priced on EBITDA (3.5x–6.0x+).\n\nSee how your earnings are classified:\n👉 [Open EBITDA Quality](tab:analysis#analysis-ebitda-quality)\n👉 [Open Market Comps](tab:analysis#analysis-market-comps)`
+        }
+    }
+
+    if (q.includes('dscr') || q.includes('debt service') || q.includes('coverage ratio') || (q.includes('sba') && (q.includes('loan') || q.includes('rule') || q.includes('requirement')))) {
+        return {
+            matched: true,
+            content: `**Debt Service Coverage Ratio (DSCR) & SBA 7(a) Guidelines:**\n\n- **DSCR Formula**: \`(EBITDA - Maintenance Capex - Cash Taxes) / Total Annual Debt Service (P&I)\`.\n- **Bank Requirement**: SBA lenders and commercial banks require a minimum DSCR of **1.25x** (ideal is 1.35x–1.50x+ for safety).\n- **SBA 7(a) Terms**: Maximum loan of $5M, standard 10-year amortization, interest rates typically Prime + 2.25% to 3.00%.\n\nSimulate DSCR under different down payment and rate scenarios:\n👉 [Open Financing Scenarios](tab:analysis#analysis-financing-scenarios)\n👉 [Open Deal Capital Structure](tab:structure)`
+        }
+    }
+
+    if (q.includes('seller note') || q.includes('seller financ') || q.includes('standstill') || q.includes('subordinat')) {
+        return {
+            matched: true,
+            content: `**Seller Financing & Subordinated Notes:**\n\n- **Role**: A loan from the seller bridging the valuation gap or reducing buyer cash equity. Typically 10%–25% of total purchase price.\n- **SBA Standstill**: If counted toward the buyer's 10% equity injection on an SBA 7(a) loan, the seller note must be on full standby (no principal or interest payments) for 24 months.\n- **Valuation Bridge**: Ties the seller's post-close incentives directly to business stability.\n\nModel seller debt alongside senior loans:\n👉 [Open Deal Capital Structure](tab:structure)\n👉 [Open Negotiation Levers](tab:negotiation)`
+        }
+    }
+
+    if (q.includes('earnout') || q.includes('earn-out') || q.includes('escrow') || q.includes('holdback') || q.includes('indemnity')) {
+        return {
+            matched: true,
+            content: `**Earnouts & Indemnity Escrows:**\n\n- **Earnout**: Contingent consideration paid to seller only if post-acquisition revenue, gross profit, or EBITDA targets are met over 1–3 years.\n- **Indemnity Escrow**: 10%–15% of purchase price deposited in a third-party escrow account for 12–24 months to secure buyer indemnification claims (reps & warranties breaches, unrecorded tax liabilities).\n\nStructure these terms in:\n👉 [Open LOI Term Sheet](tab:analysis#analysis-term-sheet)\n👉 [Open Negotiation Levers](tab:negotiation)`
+        }
+    }
+
+    if (q.includes('key person') || q.includes('owner depend') || q.includes('transferability')) {
+        return {
+            matched: true,
+            content: `**Key Person & Owner Dependence Risk:**\n\n- Evaluates how reliant the business is on the owner's personal relationships, technical skills, proprietary licenses, or day-to-day oversight.\n- **Mitigation**: Require a 6–12 month seller transition agreement, employment retention bonuses for key managers, and standardized SOPs before closing.\n\nReview the key person breakdown:\n👉 [Open Key Person Risk](tab:analysis#analysis-key-person)\n👉 [Open Management Questions](tab:analysis#analysis-mgmt-questions)`
+        }
+    }
+
+    if (q.includes('monte carlo') || q.includes('simulation') || q.includes('probabilit')) {
+        return {
+            matched: true,
+            content: `**Monte Carlo Simulation in MergeWorks:**\n\n- Runs 1,000+ probabilistic iterations varying revenue growth rates, EBITDA margin compression, and exit multiples simultaneously.\n- Outputs probability distributions of achieving target IRR (>25%) and downside loss probabilities.\n\nExplore probabilistic returns:\n👉 [Open Monte Carlo Simulation](tab:analysis#analysis-monte-carlo)\n👉 [Open Base Returns & Sensitivity](tab:analysis#analysis-base-returns)`
+        }
+    }
+
+    if (q.includes('where is') || q.includes('how do i find') || q.includes('where can i see') || q.includes('show me where')) {
+        if (q.includes('scorecard') || q.includes('score')) return { matched: true, content: `You can find the Deal Scorecard here:\n👉 [Open Deal Scorecard](tab:analysis#analysis-scorecard)\n👉 [Open Score Breakdown](tab:analysis#analysis-scorecard-breakdown)` }
+        if (q.includes('snapshot') || q.includes('1-pager') || q.includes('one pager') || q.includes('deal on a page')) return { matched: true, content: `You can find the 1-Page Deal Snapshot here:\n👉 [Open Deal Snapshot & 1-Pager](tab:analysis#analysis-deal-on-a-page)` }
+        if (q.includes('qoe') || q.includes('ebitda quality')) return { matched: true, content: `You can find the EBITDA Quality & QoE card here:\n👉 [Open EBITDA Quality](tab:analysis#analysis-ebitda-quality)` }
+        if (q.includes('breakeven')) return { matched: true, content: `You can find the Breakeven Analysis card here:\n👉 [Open Breakeven Analysis](tab:analysis#analysis-breakeven)` }
+        if (q.includes('comps') || q.includes('benchmark')) return { matched: true, content: `You can find Market Comps and Benchmarks here:\n👉 [Open Market Comps](tab:analysis#analysis-market-comps)\n👉 [Open Valuation Tab](tab:valuation)` }
+        if (q.includes('monte carlo') || q.includes('simulation')) return { matched: true, content: `You can find the Monte Carlo Simulation here:\n👉 [Open Monte Carlo Simulation](tab:analysis#analysis-monte-carlo)` }
+        if (q.includes('term sheet') || q.includes('loi')) return { matched: true, content: `You can generate and customize LOIs & Term Sheets here:\n👉 [Open LOI & Term Sheet](tab:analysis#analysis-term-sheet)` }
+        if (q.includes('closing checklist') || q.includes('checklist')) return { matched: true, content: `You can track closing items and milestones here:\n👉 [Open Closing Checklist](tab:analysis#analysis-closing-checklist)` }
+        if (q.includes('seller q') || q.includes('seller question')) return { matched: true, content: `You can view and log Seller Q&A items here:\n👉 [Open Seller Q&A Guide](tab:analysis#analysis-seller-qa)` }
+        if (q.includes('mgmt') || q.includes('management question')) return { matched: true, content: `You can track Management Interview Questions here:\n👉 [Open Management Questions](tab:analysis#analysis-mgmt-questions)` }
+        if (q.includes('upload') || q.includes('document') || q.includes('intake')) return { matched: true, content: `You can upload and review diligence documents here:\n👉 [Go to Diligence Uploads](tab:diligence#diligence-documents)` }
+        if (q.includes('synthesis') || q.includes('verdict') || q.includes('judgment')) return { matched: true, content: `You can view the AI Synthesis & Buy/Pass Verdict here:\n👉 [Open Synthesis Verdict](tab:synthesis#synthesis-judgment)` }
+        if (q.includes('compare') || q.includes('portfolio') || q.includes('all projects')) return { matched: true, content: `You can compare all projects in your portfolio here:\n👉 [Open Portfolio Comparison](tab:compare)` }
+    }
+
+    if (q.includes('compare') || q.includes('portfolio') || q.includes('all project') || q.includes('other project') || q.includes('which deal is better')) {
+        if (allSyntheses && allSyntheses.length > 0) {
+            const projectSummaries = allSyntheses.map(s => {
+                const name = s.projectName || s.projectId
+                const isCurrent = s.projectId === (synthesis?.projectId) ? ' (Current)' : ''
+                const risk = s.finalRiskLevel || 'Pending'
+                const rec = s.finalRecommendation ? ` | Recommendation: **${s.finalRecommendation}**` : ''
+                const val = s.valuationBaseEstimate && s.valuationBaseEstimate !== '0' ? ` | Val: $${s.valuationLowerBound}–$${s.valuationBaseEstimate}` : ''
+                return `- **${name}**${isCurrent}: Risk **${risk}** (${s.finalTrafficLight || 'N/A'})${rec}${val} [${s.documentsCompletedCount || 0} docs]`
+            })
+            return {
+                matched: true,
+                content: `**Portfolio Overview (${allSyntheses.length} Projects):**\n\n${projectSummaries.join('\n')}\n\n👉 [Open Portfolio Comparison](tab:compare) to see detailed side-by-side matrices and valuation multiples.`
+            }
+        }
+    }
 
     if (q.includes('risk') || q.includes('red flag') || q.includes('concern')) {
         if (redFlags.length > 0 || yellowFlags.length > 0) {
             const sections: string[] = []
-            if (redFlags.length > 0) sections.push(`Red flags:\n${bulletList(redFlags, 5)}`)
-            if (yellowFlags.length > 0) sections.push(`Cautions:\n${bulletList(yellowFlags, 4)}`)
+            if (redFlags.length > 0) sections.push(`**Red Flags:**\n${bulletList(redFlags, 5)}`)
+            if (yellowFlags.length > 0) sections.push(`**Yellow Cautions:**\n${bulletList(yellowFlags, 4)}`)
             return {
                 matched: true,
-                content: `Based on the project synthesis, the key risk areas are:\n\n${sections.join('\n\n')}\n\nThese should be investigated with management and verified against source documents.`
+                content: `Based on the synthesis, here are the key risk factors:\n\n${sections.join('\n\n')}\n\n👉 [Open Risk Matrix & Red Flags](tab:analysis#analysis-risk-matrix)\n👉 [Open Deal Scorecard](tab:analysis#analysis-scorecard)`
             }
         }
         return {
             matched: true,
-            content: 'No red flags have been identified yet. This may mean the synthesis is still pending or the current documents have not surfaced material concerns.'
+            content: 'No red flags have been identified yet. Verify source documents or check:\n👉 [Open Deal Scorecard](tab:analysis#analysis-scorecard)'
         }
     }
 
@@ -248,16 +368,16 @@ function getLocalResponse(
         if (price && ebitda) {
             const multiple = (price / ebitda).toFixed(1)
             const valuationRange = synthesis?.valuationBaseEstimate && synthesis.valuationBaseEstimate !== '0'
-                ? `\n\nCurrent synthesis valuation range: $${synthesis.valuationLowerBound} – $${synthesis.valuationBaseEstimate} – $${synthesis.valuationUpperBound}.`
+                ? `\n\nAI valuation estimate: **$${synthesis.valuationLowerBound} – $${synthesis.valuationBaseEstimate} – $${synthesis.valuationUpperBound}**.`
                 : ''
             return {
                 matched: true,
-                content: `The implied entry multiple is ${multiple}x EBITDA/SDE (${formatMoney(price)} / ${formatMoney(ebitda)}).${valuationRange}\n\nFor small businesses, typical multiples are often in the 3-6x range, with higher pricing needing stronger growth, lower risk, or strategic value.`
+                content: `The implied entry multiple is **${multiple}x EBITDA/SDE** (${formatMoney(price)} / ${formatMoney(ebitda)}).${valuationRange}\n\nTypical SMB multiples range from **3.0x to 6.0x EBITDA** depending on recurring revenue and margin quality.\n\n👉 [Open Market Comps & Benchmarks](tab:analysis#analysis-market-comps)\n👉 [Open Valuation Explorer](tab:valuation)`
             }
         }
         return {
             matched: true,
-            content: 'I do not have enough confirmed pricing and earnings data to comment on valuation yet. Set the purchase or asking price and confirm EBITDA/SDE to unlock that analysis.'
+            content: 'Set asking/purchase price and confirm EBITDA/SDE to unlock valuation multiple analysis:\n👉 [Open Valuation Explorer](tab:valuation)'
         }
     }
 
@@ -271,24 +391,20 @@ function getLocalResponse(
             const leverText = negotiationLevers.length > 0 ? `\n\nCurrent negotiation levers:\n${bulletList(negotiationLevers, 4)}` : ''
             return {
                 matched: true,
-                content: `A ${percentMatch[1]}% price reduction would lower the deal price from ${formatMoney(price)} to ${formatMoney(reducedPrice)}, saving ${formatMoney(savings)}.${newMultiple ? `\n\nThat would bring the entry multiple down to ${newMultiple}x EBITDA/SDE.` : ''}${leverText}`
+                content: `A **${percentMatch[1]}% price reduction** reduces the price from ${formatMoney(price)} to **${formatMoney(reducedPrice)}**, saving **${formatMoney(savings)}**.${newMultiple ? `\n\nEntry multiple drops to **${newMultiple}x EBITDA/SDE**.` : ''}${leverText}\n\n👉 [Open Negotiation Levers](tab:negotiation)\n👉 [Open LOI & Term Sheet](tab:analysis#analysis-term-sheet)`
             }
         }
         if (negotiationLevers.length > 0) {
             return {
                 matched: true,
-                content: `The project synthesis already identified negotiation levers:\n\n${bulletList(negotiationLevers, 5)}\n\nEach of these can be used to negotiate price, structure, escrow, or closing conditions.`
+                content: `Identified negotiation levers:\n\n${bulletList(negotiationLevers, 5)}\n\n👉 [Open Negotiation Levers](tab:negotiation)\n👉 [Open LOI & Term Sheet](tab:analysis#analysis-term-sheet)`
             }
         }
         if (redFlags.length > 0) {
             return {
                 matched: true,
-                content: `No explicit negotiation levers were recorded, but these issues can still support negotiation:\n\n${bulletList(redFlags, 3)}\n\nThese usually translate into price reductions, escrow, seller note support, or conditional close terms.`
+                content: `You can leverage these flagged concerns to negotiate price or escrow terms:\n\n${bulletList(redFlags, 3)}\n\n👉 [Open Negotiation Levers](tab:negotiation)`
             }
-        }
-        return {
-            matched: true,
-            content: 'No negotiation levers have been identified yet. These usually appear in the project synthesis after enough documents are processed.'
         }
     }
 
@@ -296,12 +412,12 @@ function getLocalResponse(
         if (missingDocuments.length > 0) {
             return {
                 matched: true,
-                content: `Documents still needed for a more complete analysis:\n\n${bulletList(missingDocuments, 6)}\n\nUploading these should improve diligence coverage and valuation confidence.`
+                content: `Documents still needed:\n\n${bulletList(missingDocuments, 6)}\n\n👉 [Go to Diligence Uploads](tab:diligence#diligence-documents)\n👉 [Open DD Requests](tab:analysis#analysis-dd-requests)`
             }
         }
         return {
             matched: true,
-            content: 'The current synthesis does not list specific missing documents. Check the Project Checklist and DD Request List for the standard diligence set.'
+            content: `Check standard diligence requests here:\n👉 [Open DD Requests](tab:analysis#analysis-dd-requests)\n👉 [Go to Diligence Uploads](tab:diligence#diligence-documents)`
         }
     }
 
@@ -309,157 +425,140 @@ function getLocalResponse(
         if (greenFlags.length > 0) {
             return {
                 matched: true,
-                content: `Positive signals identified:\n\n${bulletList(greenFlags, 5)}\n\nThese support the investment thesis, though they should still be verified against source documents.`
+                content: `Positive signals recorded:\n\n${bulletList(greenFlags, 5)}\n\n👉 [Open Deal Scorecard](tab:analysis#analysis-scorecard)`
             }
-        }
-        return {
-            matched: true,
-            content: 'No specific green flags are recorded yet. That usually means more corroborating documents are needed before the synthesis can call out strengths confidently.'
-        }
-    }
-
-    if (q.includes('next') || q.includes('action') || q.includes('should i') || q.includes('recommend')) {
-        const steps: string[] = []
-        if (missingDocuments.length > 0) steps.push(`1. Upload missing documents: ${missingDocuments.slice(0, 3).join(', ')}`)
-        if (openQuestions.length > 0) steps.push(`${steps.length + 1}. Resolve open questions: ${openQuestions.slice(0, 3).join(', ')}`)
-        if (redFlags.length > 0) steps.push(`${steps.length + 1}. Pressure-test the red flags with management and decide whether they justify price or term changes.`)
-        if (steps.length === 0) steps.push('1. Review the synthesis and decide whether to move toward LOI, confirmatory diligence, or a management call.')
-        steps.push(`${steps.length + 1}. Use the Management Question Tracker to assign owners and due dates.`)
-        return {
-            matched: true,
-            content: `Here is what I would do next:\n\n${steps.join('\n')}\n\nFocus first on anything that could materially change valuation, financing, or go/no-go judgment.`
-        }
-    }
-
-    if (q.includes('structure') || q.includes('financing') || q.includes('debt') || q.includes('equity')) {
-        return {
-            matched: true,
-            content: price
-                ? `The deal is currently priced at ${formatMoney(price)}. Check the Deal Structure tab for the full sources-and-uses breakdown, leverage ratios, debt service coverage, and downside protection.\n\nA good rule of thumb is to keep DSCR comfortably above 1.2x and leave enough equity and working capital for day-one operations.`
-                : 'Set the asking or purchase price and financing assumptions first, then review the Deal Structure tab for leverage and downside analysis.'
         }
     }
 
     if (q.includes('return') || q.includes('irr') || q.includes('moic') || q.includes('payback')) {
         return {
             matched: true,
-            content: 'Check the Returns tab for all-cash and financed return scenarios, including MOIC, IRR, payback, annual cash flow, and debt service coverage. The outputs use your saved deal assumptions.'
+            content: `Model returns across levered and all-cash scenarios:\n👉 [Open Base Returns & Sensitivity](tab:analysis#analysis-base-returns)\n👉 [Open Returns Explorer](tab:returns)\n👉 [Open Monte Carlo Simulation](tab:analysis#analysis-monte-carlo)`
         }
     }
 
-    if (q.includes('confidence') || q.includes('how confident') || q.includes('reliable') || q.includes('trust')) {
-        const confidence = formatConfidence(synthesis?.aiConfidence)
-        const valuationConfidence = formatConfidence(synthesis?.valuationConfidence)
-        if (confidence || valuationConfidence) {
-            const lines = []
-            if (confidence) lines.push(`- Overall synthesis confidence: ${confidence}`)
-            if (valuationConfidence) lines.push(`- Valuation confidence: ${valuationConfidence}`)
-            lines.push('\nConfidence reflects how much corroborating support the AI found across uploaded documents. Low scores mean key figures still need manual verification.')
-            return { matched: true, content: lines.join('\n') }
-        }
-        return {
-            matched: true,
-            content: 'Confidence scores appear once synthesis has enough corroborating evidence. More completed documents usually improve reliability.'
-        }
-    }
-
-    if (q.includes('ebitda') || q.includes('earnings') || q.includes('margin') || q.includes('profit')) {
-        if (ebitda && revenue) {
-            const margin = ((ebitda / revenue) * 100).toFixed(1)
-            return {
-                matched: true,
-                content: `EBITDA/SDE is ${formatMoney(ebitda)} on revenue of ${formatMoney(revenue)} (${margin}% margin).\n\nThis is one of the core inputs for valuation, returns, and financing analysis. Review the EBITDA waterfall and add-back quality cards for detail.`
-            }
-        }
-        if (ebitda) {
-            return {
-                matched: true,
-                content: `EBITDA/SDE is currently ${formatMoney(ebitda)}. Upload or confirm revenue if you want a clean margin analysis too.`
-            }
-        }
-        return {
-            matched: true,
-            content: 'EBITDA has not been confirmed yet. Upload P&L statements or income statements to extract earnings data.'
-        }
-    }
-
-    if (q.includes('customer') || q.includes('concentration') || q.includes('client')) {
-        const concentrationItems = [...redFlags, ...yellowFlags, ...openQuestions].filter(item => /customer|concentration|client/i.test(item))
-        if (concentrationItems.length > 0) {
-            return {
-                matched: true,
-                content: `Customer concentration risk appears in the synthesis:\n\n${bulletList(concentrationItems, 4)}\n\nThat is often a major SMB deal risk. Ask about contract term, renewal probability, and how the business performs if the top account churns.`
-            }
-        }
-        return {
-            matched: true,
-            content: 'No customer concentration risk is currently flagged. That is a positive sign, but a customer revenue breakdown is still worth reviewing if available.'
-        }
-    }
-
-    if (q.includes('timeline') || q.includes('when') || q.includes('how long') || q.includes('progress')) {
-        return {
-            matched: true,
-            content: `Deal progress:\n\n- Documents completed: ${completedDocuments}/${totalDocuments || completedDocuments || 0}\n- Current synthesis status: ${synthesis?.projectStatus || 'pending'}\n- Check the Activity Feed and submission history for live processing details\n\nTypical diligence timing is still deal-dependent, but open questions and missing documents are usually the main blockers.`
-        }
-    }
-
-    if (q.includes('sensitiv') || q.includes('what if') || q.includes('scenario')) {
-        return {
-            matched: true,
-            content: 'Use the Sensitivity Analysis on the Returns tab to see how MOIC and IRR shift across entry and exit assumptions. The Growth tab also shows bear, base, and bull projection scenarios.'
-        }
-    }
-
-    if (q.includes('request') || q.includes('seller') || q.includes('ask for') || q.includes('checklist')) {
-        return {
-            matched: true,
-            content: 'The DD Request List on the Overview tab generates a prioritized seller request list using missing documents and open synthesis questions. It is the fastest place to build your next outreach list.'
-        }
-    }
-
-    if (q.includes('summary') || q.includes('overview') || q.includes('tell me about')) {
+    if (q.includes('summary') || q.includes('overview') || q.includes('tell me about') || q.includes('help') || q.includes('faq')) {
         const summaryLines = [
-            `Here is a quick summary of ${projectName}:`,
-            '',
-            `- Overall risk: ${synthesis?.finalRiskLevel || 'Pending'} (${synthesis?.finalTrafficLight || 'Pending'})`,
-            `- Documents completed: ${completedDocuments}/${totalDocuments || completedDocuments || 0}`,
-            `- Red flags: ${redFlags.length}`,
-            `- Negotiation levers: ${negotiationLevers.length}`,
-            `- Open questions: ${openQuestions.length}`,
-            revenue ? `- Revenue: ${formatMoney(revenue)}` : '- Revenue: not yet confirmed',
-            ebitda ? `- EBITDA/SDE: ${formatMoney(ebitda)}` : '- EBITDA/SDE: not yet confirmed',
+            `**${projectName} Summary:**`,
+            `- **Risk Posture**: ${synthesis?.finalRiskLevel || 'Pending'} (${synthesis?.finalTrafficLight || 'Pending'})`,
+            `- **Documents**: ${completedDocuments}/${totalDocuments || completedDocuments || 0} completed`,
+            `- **Red Flags**: ${redFlags.length}`,
+            `- **Negotiation Levers**: ${negotiationLevers.length}`,
+            revenue ? `- **Revenue**: ${formatMoney(revenue)}` : '- **Revenue**: Not yet confirmed',
+            ebitda ? `- **EBITDA/SDE**: ${formatMoney(ebitda)}` : '- **EBITDA/SDE**: Not yet confirmed',
         ]
         return {
             matched: true,
-            content: `${summaryLines.join('\n')}\n\nAsk me about risk, valuation, negotiation, returns, structure, customer concentration, or next steps if you want a narrower answer.`
+            content: `${summaryLines.join('\n')}\n\n**Quick Links:**\n👉 [Open Deal 1-Pager](tab:analysis#analysis-deal-on-a-page)\n👉 [Open Deal Scorecard](tab:analysis#analysis-scorecard)\n👉 [Open EBITDA Quality](tab:analysis#analysis-ebitda-quality)\n👉 [Open Breakeven Analysis](tab:analysis#analysis-breakeven)\n👉 [Open Financing Scenarios](tab:analysis#analysis-financing-scenarios)\n👉 [Open Synthesis Verdict](tab:synthesis#synthesis-judgment)`
         }
     }
+
+    const genericHelp = `I can help you navigate the entire due diligence workspace and answer any M&A or financial question. Try asking:\n\n- **Feature Guides** — "Where is breakeven?", "Where is the 1-pager?", "Show me market comps"\n- **M&A Terms** — "What is a working capital peg?", "What is QoE?", "Explain DSCR"\n- **Deal Deep Dives** — "What are the red flags?", "What multiple am I paying?", "What if I negotiate 15% off?"\n- **Portfolio** — "Compare all projects", "Which deal has lower risk?"\n\n**Key Dashboard Shortcuts:**\n👉 [Open Deal 1-Pager](tab:analysis#analysis-deal-on-a-page)\n👉 [Open Deal Scorecard](tab:analysis#analysis-scorecard)\n👉 [Open EBITDA Quality](tab:analysis#analysis-ebitda-quality)\n👉 [Open Breakeven Analysis](tab:analysis#analysis-breakeven)\n👉 [Open Financing Scenarios](tab:analysis#analysis-financing-scenarios)`
 
     return { matched: false, content: genericHelp }
 }
 
-function renderSimpleMarkdown(text: string) {
+function renderSimpleMarkdown(
+    text: string,
+    onNavigateTab?: (tab: WorkspaceTab, anchorId?: string) => void
+) {
     return text.split('\n').map((line, i) => {
-        let processed = line
-            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-            .replace(/\*(.+?)\*/g, '<em>$1</em>')
-            .replace(/`(.+?)`/g, '<code class="rounded bg-foreground/10 px-1 py-0.5 text-[11px] font-mono">$1</code>')
+        const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g
+        const elements: Array<React.ReactNode | string> = []
+        let lastIndex = 0
+        let match: RegExpExecArray | null
+
+        while ((match = linkRegex.exec(line)) !== null) {
+            const [fullMatch, label, url] = match
+            const matchIndex = match.index
+
+            if (matchIndex > lastIndex) {
+                elements.push(line.slice(lastIndex, matchIndex))
+            }
+
+            if (url.startsWith('tab:') || url.startsWith('#')) {
+                let targetTab: WorkspaceTab | null = null
+                let anchorId: string | undefined = undefined
+
+                if (url.startsWith('tab:')) {
+                    const withoutPrefix = url.slice(4)
+                    if (withoutPrefix.includes('#')) {
+                        const [t, a] = withoutPrefix.split('#')
+                        targetTab = t as WorkspaceTab
+                        anchorId = a
+                    } else {
+                        targetTab = withoutPrefix as WorkspaceTab
+                    }
+                } else if (url.startsWith('#')) {
+                    anchorId = url.slice(1)
+                    if (anchorId.startsWith('analysis-')) targetTab = 'analysis'
+                    else if (anchorId.startsWith('diligence-')) targetTab = 'diligence'
+                    else if (anchorId.startsWith('synthesis-')) targetTab = 'synthesis'
+                    else if (anchorId.startsWith('overview-')) targetTab = 'overview'
+                }
+
+                elements.push(
+                    <button
+                        key={`${i}-${matchIndex}`}
+                        type="button"
+                        onClick={() => {
+                            if (targetTab && onNavigateTab) {
+                                onNavigateTab(targetTab, anchorId)
+                            } else if (anchorId) {
+                                const el = document.getElementById(anchorId)
+                                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                            }
+                        }}
+                        className="inline-flex items-center gap-1 rounded border border-primary/35 bg-primary/15 px-1.5 py-0.5 text-[11px] font-bold text-primary hover:bg-primary/25 hover:border-primary/60 transition-all cursor-pointer shadow-2xs mx-1 align-baseline my-0.5"
+                        title={`Navigate to ${label}`}
+                    >
+                        <Compass className="h-3 w-3 shrink-0 text-primary" />
+                        <span>{label}</span>
+                        <ArrowUpRight className="h-2.5 w-2.5 opacity-70 shrink-0" />
+                    </button>
+                )
+            } else {
+                elements.push(
+                    <a
+                        key={`${i}-${matchIndex}`}
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary underline font-medium hover:text-primary/80 mx-1"
+                    >
+                        {label}
+                    </a>
+                )
+            }
+
+            lastIndex = matchIndex + fullMatch.length
+        }
+
+        if (lastIndex < line.length) {
+            elements.push(line.slice(lastIndex))
+        }
+
+        const renderedLineParts = elements.map((part, pIdx) => {
+            if (typeof part !== 'string') return part
+            const processed = part
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.+?)\*/g, '<em>$1</em>')
+                .replace(/`(.+?)`/g, '<code class="rounded bg-foreground/10 px-1 py-0.5 text-[11px] font-mono">$1</code>')
+
+            return <span key={pIdx} dangerouslySetInnerHTML={{ __html: processed }} />
+        })
 
         if (/^#{1,3}\s/.test(line)) {
-            const content = line.replace(/^#{1,3}\s+/, '')
-            return <p key={i} className="font-semibold mt-1">{content}</p>
+            return <p key={i} className="font-semibold text-foreground mt-1.5 mb-0.5 text-xs">{renderedLineParts}</p>
         }
         if (/^[-•]\s/.test(line)) {
-            const content = processed.replace(/^[-•]\s+/, '')
-            return <li key={i} className="ml-3 list-disc" dangerouslySetInnerHTML={{ __html: content }} />
+            return <li key={i} className="ml-3 list-disc text-xs leading-relaxed">{renderedLineParts}</li>
         }
         if (/^\d+\.\s/.test(line)) {
-            const content = processed.replace(/^\d+\.\s+/, '')
-            return <li key={i} className="ml-3 list-decimal" dangerouslySetInnerHTML={{ __html: content }} />
+            return <li key={i} className="ml-3 list-decimal text-xs leading-relaxed">{renderedLineParts}</li>
         }
         if (line.trim() === '') return <br key={i} />
-        return <p key={i} dangerouslySetInnerHTML={{ __html: processed }} />
+        return <p key={i} className="text-xs leading-relaxed">{renderedLineParts}</p>
     })
 }
 
@@ -495,7 +594,8 @@ function detectReferencedProject(question: string, currentProjectName: string, a
 
 const CHAT_STORAGE_KEY = 'mergeworks.chatHistory'
 const CHAT_PANEL_SIZE_KEY = 'mergeworks.chatPanelSize'
-const DEFAULT_CHAT_PANEL_SIZE = { width: 420, height: 500 }
+const CHAT_PANEL_POS_KEY = 'mergeworks.chatPanelPos'
+const DEFAULT_CHAT_PANEL_SIZE = { width: 440, height: 520 }
 const MIN_CHAT_PANEL_WIDTH = 380
 const MIN_CHAT_PANEL_HEIGHT = 420
 
@@ -521,7 +621,7 @@ function clampChatPanelSize(width: number, height: number): ChatPanelSize {
     }
 }
 
-export default function DealChatPanel({ synthesis, model, projectName, documents, allSyntheses, onSuggestProjectSwitch, onOpenProjectsPanel, projectsCount }: Props) {
+export default function DealChatPanel({ synthesis, model, projectName, documents, allSyntheses, onSuggestProjectSwitch, onOpenProjectsPanel, projectsCount, onNavigateTab }: Props) {
     const [isOpen, setIsOpen] = useState(false)
     const [unreadCount, setUnreadCount] = useState<number>(0)
     const [messages, setMessages] = useState<Message[]>(() => {
@@ -557,6 +657,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
     const textareaRef = useRef<HTMLTextAreaElement>(null)
     const [ratings, setRatings] = useState<Record<string, 'up' | 'down'>>({})
     const [suggestedProject, setSuggestedProject] = useState<ProjectSynthesisItem | null>(null)
+
     const [panelSize, setPanelSize] = useState<ChatPanelSize>(() => {
         if (typeof window === 'undefined') return DEFAULT_CHAT_PANEL_SIZE
         try {
@@ -570,7 +671,26 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
         } catch { }
         return clampChatPanelSize(DEFAULT_CHAT_PANEL_SIZE.width, DEFAULT_CHAT_PANEL_SIZE.height)
     })
+
+    const [panelPosition, setPanelPosition] = useState<{ x: number; y: number } | null>(() => {
+        if (typeof window === 'undefined') return null
+        try {
+            const stored = window.localStorage.getItem(CHAT_PANEL_POS_KEY)
+            if (stored) {
+                const parsed = JSON.parse(stored)
+                if (typeof parsed.x === 'number' && typeof parsed.y === 'number') {
+                    return {
+                        x: Math.max(12, Math.min(window.innerWidth - 380, parsed.x)),
+                        y: Math.max(12, Math.min(window.innerHeight - 400, parsed.y)),
+                    }
+                }
+            }
+        } catch { }
+        return null
+    })
+
     const resizeStateRef = useRef<{ startX: number; startY: number; startWidth: number; startHeight: number } | null>(null)
+    const dragHeaderRef = useRef<{ startMouseX: number; startMouseY: number; startPanelX: number; startPanelY: number } | null>(null)
 
     useEffect(() => {
         try { localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages.slice(-50))) } catch { }
@@ -581,23 +701,39 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
     }, [panelSize])
 
     useEffect(() => {
+        if (panelPosition) {
+            try { localStorage.setItem(CHAT_PANEL_POS_KEY, JSON.stringify(panelPosition)) } catch { }
+        } else {
+            try { localStorage.removeItem(CHAT_PANEL_POS_KEY) } catch { }
+        }
+    }, [panelPosition])
+
+    useEffect(() => {
         const handleWindowResize = () => {
             setPanelSize((previous) => {
                 const next = clampChatPanelSize(previous.width, previous.height)
                 return next.width === previous.width && next.height === previous.height ? previous : next
             })
+            setPanelPosition((prev) => {
+                if (!prev) return null
+                return {
+                    x: Math.max(12, Math.min(window.innerWidth - panelSize.width - 12, prev.x)),
+                    y: Math.max(12, Math.min(window.innerHeight - panelSize.height - 12, prev.y)),
+                }
+            })
         }
 
         const handlePointerMove = (event: PointerEvent) => {
-            if (!resizeStateRef.current) return
-            const { startX, startY, startWidth, startHeight } = resizeStateRef.current
-            setPanelSize((previous) => {
-                const next = clampChatPanelSize(
-                    startWidth + (startX - event.clientX),
-                    startHeight + (startY - event.clientY),
-                )
-                return next.width === previous.width && next.height === previous.height ? previous : next
-            })
+            if (resizeStateRef.current) {
+                const { startX, startY, startWidth, startHeight } = resizeStateRef.current
+                setPanelSize((previous) => {
+                    const next = clampChatPanelSize(
+                        startWidth + (startX - event.clientX),
+                        startHeight + (startY - event.clientY),
+                    )
+                    return next.width === previous.width && next.height === previous.height ? previous : next
+                })
+            }
         }
 
         const handlePointerUp = () => {
@@ -612,7 +748,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
             window.removeEventListener('pointermove', handlePointerMove)
             window.removeEventListener('pointerup', handlePointerUp)
         }
-    }, [])
+    }, [panelSize.height, panelSize.width])
 
     useEffect(() => {
         function handleKeyDown(e: KeyboardEvent) {
@@ -646,16 +782,16 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
         const price = model.purchasePrice ?? model.askingPrice
 
         if (redCount > 0) suggestions.push(`Explain the ${redCount} red flag${redCount > 1 ? 's' : ''}`)
-        else suggestions.push('What are the risks?')
+        else suggestions.push('Where is breakeven?')
 
         if (hasEbitda && price) suggestions.push('What if I negotiate 15% off?')
-        else suggestions.push('Give me a summary')
+        else suggestions.push('What is a working capital peg?')
 
         if (hasValuation) suggestions.push('Is this fairly priced?')
-        else suggestions.push('What docs do I still need?')
+        else suggestions.push('Where is the 1-pager snapshot?')
 
         if (synthesis?.negotiationLevers?.length) suggestions.push('Best negotiation strategy?')
-        else suggestions.push('What should I do next?')
+        else suggestions.push('Compare all projects')
 
         return suggestions.slice(0, 4)
     }, [synthesis, model])
@@ -670,6 +806,54 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
         }
     }, [panelSize.height, panelSize.width])
 
+    const handleHeaderPointerDown = (e: React.PointerEvent) => {
+        const target = e.target as HTMLElement
+        if (target.closest('button, input, textarea, a')) return
+
+        e.preventDefault()
+        const cardEl = (e.currentTarget as HTMLElement).closest('[data-chat-card]') as HTMLElement
+        const rect = cardEl
+            ? cardEl.getBoundingClientRect()
+            : {
+                left: window.innerWidth - panelSize.width - 24,
+                top: window.innerHeight - panelSize.height - 80,
+            }
+
+        dragHeaderRef.current = {
+            startMouseX: e.clientX,
+            startMouseY: e.clientY,
+            startPanelX: rect.left,
+            startPanelY: rect.top,
+        }
+
+        try {
+            (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId)
+        } catch { }
+    }
+
+    const handleHeaderPointerMove = (e: React.PointerEvent) => {
+        if (!dragHeaderRef.current) return
+        const { startMouseX, startMouseY, startPanelX, startPanelY } = dragHeaderRef.current
+        const deltaX = e.clientX - startMouseX
+        const deltaY = e.clientY - startMouseY
+
+        const maxX = Math.max(12, window.innerWidth - panelSize.width - 12)
+        const maxY = Math.max(12, window.innerHeight - panelSize.height - 12)
+
+        const nextX = Math.max(12, Math.min(maxX, startPanelX + deltaX))
+        const nextY = Math.max(12, Math.min(maxY, startPanelY + deltaY))
+
+        setPanelPosition({ x: Math.round(nextX), y: Math.round(nextY) })
+    }
+
+    const handleHeaderPointerUp = (e: React.PointerEvent) => {
+        if (!dragHeaderRef.current) return
+        try {
+            (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId)
+        } catch { }
+        dragHeaderRef.current = null
+    }
+
     const handleHalfScreen = useCallback(() => {
         if (typeof window === 'undefined') return
         setPanelSize(clampChatPanelSize(window.innerWidth * 0.5, window.innerHeight * 0.5))
@@ -680,12 +864,17 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
         setPanelSize(clampChatPanelSize(window.innerWidth - 48, window.innerHeight - 112))
     }, [])
 
-    const handleResetSize = useCallback(() => {
+    const handleResetPositionAndSize = useCallback(() => {
+        setPanelPosition(null)
         setPanelSize(clampChatPanelSize(DEFAULT_CHAT_PANEL_SIZE.width, DEFAULT_CHAT_PANEL_SIZE.height))
+        try {
+            localStorage.removeItem(CHAT_PANEL_POS_KEY)
+            localStorage.removeItem(CHAT_PANEL_SIZE_KEY)
+        } catch { }
     }, [])
 
-    const handleSend = useCallback(async () => {
-        const trimmed = input.trim()
+    const sendMessageText = useCallback(async (text: string) => {
+        const trimmed = text.trim()
         if (!trimmed) return
 
         const detectedProject = detectReferencedProject(trimmed, projectName, allSyntheses)
@@ -729,6 +918,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                 model,
                 projectName,
                 documents,
+                allSyntheses,
             })
             setMessages(prev => [...prev, {
                 id: `assistant-${Date.now()}`,
@@ -740,7 +930,30 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
             setIsTyping(false)
             if (typingTimerRef.current) { clearInterval(typingTimerRef.current); typingTimerRef.current = null }
         }
-    }, [input, synthesis, model, projectName, documents, sessionId])
+    }, [allSyntheses, documents, model, projectName, sessionId, synthesis])
+
+    const handleSend = useCallback(() => {
+        sendMessageText(input)
+    }, [input, sendMessageText])
+
+    // Global listener for 1-click explanation requests from CardExplainerPopover
+    useEffect(() => {
+        const handleAskAi = (e: Event) => {
+            const customEvent = e as CustomEvent<{ question: string; topic?: string }>
+            const question = customEvent.detail?.question
+            if (!question) return
+            setIsOpen(true)
+            setUnreadCount(0)
+            setTimeout(() => {
+                sendMessageText(question)
+            }, 80)
+        }
+
+        window.addEventListener('mergeworks:open-chat-ask', handleAskAi)
+        return () => {
+            window.removeEventListener('mergeworks:open-chat-ask', handleAskAi)
+        }
+    }, [sendMessageText])
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && !e.shiftKey) {
@@ -760,29 +973,25 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                         aria-label="Open Projects Portfolio Drawer"
                     >
                         <FolderKanban className="h-4 w-4 text-primary" />
-                        <span className="text-xs font-bold">Projects Portfolio</span>
-                        {typeof projectsCount === 'number' ? (
-                            <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary/10 px-1.5 text-[10px] font-bold text-primary">
+                        <span className="text-xs font-semibold">Projects</span>
+                        {typeof projectsCount === 'number' && (
+                            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
                                 {projectsCount}
                             </span>
-                        ) : null}
+                        )}
                     </button>
                 ) : null}
-
                 <button
-                    type="button"
-                    onClick={() => {
-                        setIsOpen(true)
-                        setUnreadCount(0)
-                    }}
-                    className="pointer-events-auto flex items-center gap-2.5 rounded-full bg-primary px-5 py-3 text-primary-foreground shadow-xl transition-all hover:scale-105 active:scale-95"
-                    aria-label="Open AI deal assistant"
+                    onClick={() => setIsOpen(true)}
+                    className="pointer-events-auto relative flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-primary-foreground shadow-lg transition-transform hover:scale-105"
+                    aria-label="Open AI Deal Assistant"
                 >
                     <Bot className="h-5 w-5" />
-                    <span className="text-sm font-semibold">AI Deal Assistant</span>
+                    <span className="text-sm font-medium">Ask Dillon AI</span>
+                    <span className="rounded-full bg-primary-foreground/20 px-1.5 py-0.5 text-[10px] font-semibold">C</span>
                     {unreadCount > 0 && (
-                        <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white shadow-sm animate-pulse">
-                            {unreadCount}
+                        <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white shadow-sm ring-2 ring-background">
+                            {unreadCount > 9 ? '9+' : unreadCount}
                         </span>
                     )}
                 </button>
@@ -792,82 +1001,116 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
 
     return (
         <Card
-            className="fixed bottom-20 right-6 z-50 flex flex-col overflow-hidden shadow-2xl"
-            style={{ width: `${panelSize.width}px`, height: `${panelSize.height}px` }}
+            data-chat-card
+            className="fixed z-50 flex flex-col overflow-hidden shadow-2xl border-2 border-primary/40 bg-card backdrop-blur-md transition-shadow"
+            style={{
+                width: `${panelSize.width}px`,
+                height: `${panelSize.height}px`,
+                ...(panelPosition != null
+                    ? {
+                        left: `${panelPosition.x}px`,
+                        top: `${panelPosition.y}px`,
+                        right: 'auto',
+                        bottom: 'auto',
+                    }
+                    : {
+                        right: '24px',
+                        bottom: '80px',
+                    }),
+            }}
         >
-            <div className="flex items-center justify-between border-b border-border bg-primary/5 px-4 py-3">
-                <div className="flex items-center gap-2">
-                    <Bot className="h-5 w-5 text-primary" />
-                    <span className="text-sm font-semibold text-foreground">Deal Assistant</span>
-                    <span className="text-[10px] text-muted-foreground">Claude</span>
+            {/* Draggable Header */}
+            <div
+                onPointerDown={handleHeaderPointerDown}
+                onPointerMove={handleHeaderPointerMove}
+                onPointerUp={handleHeaderPointerUp}
+                className="flex items-center justify-between border-b border-border bg-muted/60 px-3.5 py-2 select-none cursor-move group"
+                title="Click and drag anywhere on this bar to move window"
+            >
+                <div className="flex items-center gap-2 min-w-0">
+                    <GripHorizontal className="h-4 w-4 text-muted-foreground/60 group-hover:text-primary transition-colors shrink-0" />
+                    <Bot className="h-4 w-4 text-primary shrink-0" />
+                    <span className="text-xs font-bold text-foreground truncate">Dillon AI Assistant</span>
+                    <span className="text-[10px] text-muted-foreground shrink-0 hidden sm:inline">M&A Diligence</span>
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1 shrink-0">
                     {onOpenProjectsPanel ? (
                         <button
                             type="button"
                             onClick={onOpenProjectsPanel}
-                            className="flex items-center gap-1.5 rounded-md border border-border/60 bg-background/80 px-2.5 py-1 text-[11px] font-semibold text-foreground transition-colors hover:bg-muted"
+                            className="flex items-center gap-1 rounded border border-border/70 bg-background/90 px-2 py-0.5 text-[10px] font-semibold text-foreground transition-colors hover:bg-muted cursor-pointer"
                             title="Open Projects Portfolio Drawer"
                         >
-                            <FolderKanban className="h-3.5 w-3.5 text-primary" />
+                            <FolderKanban className="h-3 w-3 text-primary" />
                             <span>Projects</span>
                             {typeof projectsCount === 'number' && (
-                                <span className="text-[10px] text-muted-foreground">({projectsCount})</span>
+                                <span className="text-[9px] text-muted-foreground font-mono">({projectsCount})</span>
                             )}
                         </button>
                     ) : null}
                     <button
+                        type="button"
+                        onClick={handleResetPositionAndSize}
+                        className="flex items-center gap-1 rounded border border-border/60 bg-background/80 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
+                        title="Reset window position and size"
+                    >
+                        <RotateCcw className="h-2.5 w-2.5" />
+                        <span>Reset</span>
+                    </button>
+                    <button
+                        type="button"
                         onClick={handleHalfScreen}
-                        className="rounded-md px-2 py-1 text-[10px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                        title="Resize chat to half-screen"
+                        className="rounded px-1.5 py-0.5 text-[10px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
+                        title="Resize chat to 50% screen"
                     >
                         50%
                     </button>
                     <button
+                        type="button"
                         onClick={handleFullScreen}
-                        className="rounded-md px-2 py-1 text-[10px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                        title="Resize chat to full-screen"
+                        className="rounded px-1.5 py-0.5 text-[10px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
+                        title="Resize chat to full screen"
                     >
                         100%
                     </button>
-                    <button
-                        onClick={handleResetSize}
-                        className="rounded-md px-2 py-1 text-[10px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                        title="Reset chat size"
-                    >
-                        Reset
-                    </button>
                     {messages.length > 0 && (
                         <button
+                            type="button"
                             onClick={() => { setMessages([]); setRatings({}) }}
-                            className="rounded-md px-2 py-1 text-[10px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                            title="Clear conversation"
+                            className="rounded px-1.5 py-0.5 text-[10px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
+                            title="Clear conversation history"
                         >
                             Clear
                         </button>
                     )}
                     <button
+                        type="button"
                         onClick={() => setIsOpen(false)}
-                        className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                        className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
                         aria-label="Close chat"
                     >
-                        <X className="h-4 w-4" />
+                        <X className="h-3.5 w-3.5" />
                     </button>
                 </div>
             </div>
 
             <div className="flex-1 overflow-y-auto p-3 space-y-3">
                 {messages.length === 0 && (
-                    <div className="flex h-full flex-col items-center justify-center text-center">
-                        <Bot className="h-10 w-10 text-muted-foreground/50" />
-                        <p className="mt-3 text-sm font-medium text-foreground">Ask about this deal</p>
-                        <p className="mt-1 text-xs text-muted-foreground">Powered by Claude. I have full context on your deal — financials, risks, flags, documents, and model assumptions.</p>
-                        <div className="mt-4 flex flex-wrap justify-center gap-2">
+                    <div className="flex h-full flex-col items-center justify-center text-center p-2">
+                        <div className="rounded-full bg-primary/10 p-3 ring-1 ring-primary/25 mb-2">
+                            <Bot className="h-7 w-7 text-primary" />
+                        </div>
+                        <p className="text-sm font-bold text-foreground">Ask Dillon AI</p>
+                        <p className="mt-1 text-xs text-muted-foreground max-w-xs leading-relaxed">
+                            Your M&A due diligence copilot. Ask about deal risks, valuation multiples, breakeven, or click below for instant answers.
+                        </p>
+                        <div className="mt-3.5 flex flex-wrap justify-center gap-1.5">
                             {smartSuggestions.map(suggestion => (
                                 <button
                                     key={suggestion}
-                                    onClick={() => { setInput(suggestion); textareaRef.current?.focus() }}
-                                    className="rounded-full border border-border bg-background px-3 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                                    type="button"
+                                    onClick={() => { sendMessageText(suggestion) }}
+                                    className="rounded-full border border-primary/20 bg-background/90 px-2.5 py-1 text-[11px] font-medium text-foreground transition-all hover:bg-primary/10 hover:border-primary/50 cursor-pointer shadow-2xs"
                                 >
                                     {suggestion}
                                 </button>
@@ -878,20 +1121,21 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
 
                 {messages.map(msg => (
                     <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                        <div className="max-w-[85%]">
-                            <div className={`rounded-lg px-3 py-2 text-sm ${msg.role === 'user'
-                                ? 'bg-primary text-primary-foreground whitespace-pre-wrap'
-                                : 'bg-muted text-foreground space-y-0.5'
+                        <div className="max-w-[88%]">
+                            <div className={`rounded-lg px-3 py-2 text-xs leading-relaxed shadow-xs ${msg.role === 'user'
+                                ? 'bg-primary text-primary-foreground whitespace-pre-wrap font-medium'
+                                : 'bg-muted/90 text-foreground space-y-1 border border-border/60'
                                 }`}>
-                                {msg.role === 'assistant' ? renderSimpleMarkdown(msg.content) : msg.content}
+                                {msg.role === 'assistant' ? renderSimpleMarkdown(msg.content, onNavigateTab) : msg.content}
                             </div>
-                            <div className="mt-1 flex items-center gap-1">
+                            <div className="mt-1 flex items-center gap-1.5">
                                 <span className="text-[9px] text-muted-foreground/60">{relativeTime(msg.timestamp)}</span>
                                 {msg.role === 'assistant' && (
                                     <>
                                         <button
+                                            type="button"
                                             onClick={() => setRatings(prev => ({ ...prev, [msg.id]: prev[msg.id] === 'up' ? undefined as never : 'up' }))}
-                                            className={`rounded p-0.5 transition-colors ${ratings[msg.id] === 'up' ? 'text-green-600' : 'text-muted-foreground/40 hover:text-muted-foreground'}`}
+                                            className={`rounded p-0.5 transition-colors cursor-pointer ${ratings[msg.id] === 'up' ? 'text-green-600' : 'text-muted-foreground/40 hover:text-muted-foreground'}`}
                                             title="Helpful"
                                             aria-label="Rate this answer helpful"
                                             aria-pressed={ratings[msg.id] === 'up'}
@@ -899,8 +1143,9 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                                             <ThumbsUp className="h-3 w-3" />
                                         </button>
                                         <button
+                                            type="button"
                                             onClick={() => setRatings(prev => ({ ...prev, [msg.id]: prev[msg.id] === 'down' ? undefined as never : 'down' }))}
-                                            className={`rounded p-0.5 transition-colors ${ratings[msg.id] === 'down' ? 'text-red-600' : 'text-muted-foreground/40 hover:text-muted-foreground'}`}
+                                            className={`rounded p-0.5 transition-colors cursor-pointer ${ratings[msg.id] === 'down' ? 'text-red-600' : 'text-muted-foreground/40 hover:text-muted-foreground'}`}
                                             title="Not helpful"
                                             aria-label="Rate this answer not helpful"
                                             aria-pressed={ratings[msg.id] === 'down'}
@@ -920,17 +1165,19 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                         <p className="mt-1 text-muted-foreground">Switch to {suggestedProject.projectName || suggestedProject.projectId} to chat with that project as the active context.</p>
                         <div className="mt-2 flex gap-2">
                             <button
+                                type="button"
                                 onClick={() => {
                                     onSuggestProjectSwitch(suggestedProject.projectId)
                                     setSuggestedProject(null)
                                 }}
-                                className="rounded-full bg-primary px-3 py-1 text-[11px] font-medium text-primary-foreground transition-colors hover:opacity-90"
+                                className="rounded-full bg-primary px-3 py-1 text-[11px] font-medium text-primary-foreground transition-colors hover:opacity-90 cursor-pointer"
                             >
                                 Switch project
                             </button>
                             <button
+                                type="button"
                                 onClick={() => setSuggestedProject(null)}
-                                className="rounded-full border border-border bg-background px-3 py-1 text-[11px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                                className="rounded-full border border-border bg-background px-3 py-1 text-[11px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
                             >
                                 Stay here
                             </button>
@@ -939,12 +1186,13 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                 ) : null}
 
                 {!isTyping && messages.length > 0 && messages[messages.length - 1].role === 'assistant' && (
-                    <div className="flex flex-wrap gap-1.5 px-1">
-                        {['Tell me more', 'What else should I know?', 'How do I verify this?'].map(q => (
+                    <div className="flex flex-wrap gap-1 px-1">
+                        {['Tell me more', 'Where is the scorecard?', 'What are the red flags?'].map(q => (
                             <button
                                 key={q}
-                                onClick={() => { setInput(q); textareaRef.current?.focus() }}
-                                className="rounded-full border border-border bg-background px-2.5 py-1 text-[11px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                                type="button"
+                                onClick={() => sendMessageText(q)}
+                                className="rounded-full border border-border bg-background px-2 py-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
                             >
                                 {q}
                             </button>
@@ -954,15 +1202,15 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
 
                 {isTyping && (
                     <div className="flex justify-start">
-                        <div className="rounded-lg bg-muted px-3 py-2">
+                        <div className="rounded-lg bg-muted px-3 py-2 border border-border/60">
                             <span className="flex items-center gap-2">
                                 <span className="flex gap-1">
-                                    <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground/50 [animation-delay:0ms]" />
-                                    <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground/50 [animation-delay:150ms]" />
-                                    <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground/50 [animation-delay:300ms]" />
+                                    <span className="h-2 w-2 animate-bounce rounded-full bg-primary/70 [animation-delay:0ms]" />
+                                    <span className="h-2 w-2 animate-bounce rounded-full bg-primary/70 [animation-delay:150ms]" />
+                                    <span className="h-2 w-2 animate-bounce rounded-full bg-primary/70 [animation-delay:300ms]" />
                                 </span>
                                 {typingElapsed > 2 && (
-                                    <span className="text-[10px] text-muted-foreground">{typingElapsed}s</span>
+                                    <span className="text-[10px] text-muted-foreground font-mono">{typingElapsed}s</span>
                                 )}
                             </span>
                         </div>
@@ -972,37 +1220,36 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                 <div ref={messagesEndRef} />
             </div>
 
-            <div className="relative border-t border-border p-3 pr-8">
-                <div className="mb-2 flex items-center justify-between text-[10px] text-muted-foreground">
-                    <span>{panelSize.width} × {panelSize.height}</span>
-                    <span className="text-[10px] text-muted-foreground">Drag the bottom-right corner to resize</span>
-                </div>
+            <div className="relative border-t border-border p-3 pr-8 bg-background/60">
                 <div className="flex items-end gap-2">
                     <Textarea
                         ref={textareaRef}
                         value={input}
                         onChange={e => setInput(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        placeholder="Ask about this deal..."
+                        placeholder="Ask about this deal, M&A terms, or where a feature is..."
                         aria-label="Ask about this deal"
-                        className="min-h-[38px] max-h-[100px] resize-none text-sm"
+                        className="min-h-[38px] max-h-[100px] resize-none text-xs"
                         rows={1}
                     />
                     <Button
                         size="icon"
                         onClick={handleSend}
                         disabled={!input.trim()}
-                        className="h-[38px] w-[38px] shrink-0"
+                        className="h-[38px] w-[38px] shrink-0 cursor-pointer"
                         aria-label="Send message"
                     >
                         <Send className="h-4 w-4" />
                     </Button>
                 </div>
-                <p className="mt-1.5 text-[10px] text-muted-foreground">Answers based on uploaded documents and synthesis. Not a substitute for professional advice.</p>
+                <div className="mt-1.5 flex items-center justify-between text-[9px] text-muted-foreground">
+                    <span>Press <kbd className="font-mono bg-muted px-1 rounded">Enter</kbd> to send</span>
+                    <span>{panelSize.width} × {panelSize.height}</span>
+                </div>
                 <button
                     type="button"
                     onPointerDown={handleResizeStart}
-                    className="absolute bottom-1.5 right-1.5 flex h-5 w-5 items-end justify-end rounded-sm text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground"
+                    className="absolute bottom-1.5 right-1.5 flex h-5 w-5 items-end justify-end rounded-sm text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground cursor-nwse-resize"
                     title="Resize chat panel"
                     aria-label="Resize chat panel from bottom-right corner"
                 >

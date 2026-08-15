@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Info, X, BookOpen, Lightbulb, Calculator, HelpCircle } from 'lucide-react'
+import { Info, X, BookOpen, Lightbulb, Calculator, HelpCircle, Bot } from 'lucide-react'
 
 export interface CardExplainerPopoverProps {
     title: string
@@ -74,6 +74,20 @@ export default function CardExplainerPopover({
         }
     }, [isOpen, align])
 
+    const handleAskAi = () => {
+        setIsOpen(false)
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(
+                new CustomEvent('mergeworks:open-chat-ask', {
+                    detail: {
+                        question: `Can you explain what "${title}" means in SMB M&A diligence, how it is calculated or evaluated on this deal, and what key red flags or buyer risks I should watch out for?`,
+                        topic: title,
+                    },
+                })
+            )
+        }
+    }
+
     return (
         <div className={`relative inline-flex items-center ${className}`}>
             <button
@@ -82,7 +96,7 @@ export default function CardExplainerPopover({
                 onClick={() => setIsOpen(!isOpen)}
                 aria-label={`Learn about ${title}`}
                 title={`What is ${title}?`}
-                className="inline-flex h-5 w-5 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground transition-colors focus:outline-none focus:ring-1 focus:ring-primary"
+                className="inline-flex h-5 w-5 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground transition-colors focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
             >
                 <HelpCircle className="h-3.5 w-3.5" />
             </button>
@@ -103,7 +117,7 @@ export default function CardExplainerPopover({
                             type="button"
                             onClick={() => setIsOpen(false)}
                             aria-label="Close explainer"
-                            className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                            className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
                         >
                             <X className="h-3.5 w-3.5" />
                         </button>
@@ -140,6 +154,18 @@ export default function CardExplainerPopover({
                                 <p className="text-[11px] text-foreground/90 leading-normal">{whyItMatters}</p>
                             </div>
                         )}
+
+                        {/* Ask AI Button */}
+                        <div className="pt-1 border-t border-border/50">
+                            <button
+                                type="button"
+                                onClick={handleAskAi}
+                                className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 px-3 py-1.5 text-[11px] font-bold text-primary hover:bg-primary/20 hover:border-primary/50 transition-all cursor-pointer shadow-2xs"
+                            >
+                                <Bot className="h-3.5 w-3.5" />
+                                <span>Ask AI Assistant to Explain More</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
