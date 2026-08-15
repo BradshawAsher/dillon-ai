@@ -1,6 +1,6 @@
-# Due Diligence Dashboard & Financial Agent
+# Dillon AI (by MergeWorks) — Autonomous Financial Due Diligence Engine
 
-An AI-powered M&A intelligence workspace for private equity sponsors, search funds, and M&A advisors. Documents are uploaded into deal projects, processed asynchronously by n8n workflows, and synthesized in a React dashboard.
+**Dillon AI** is the flagship AI-powered M&A intelligence platform developed by **MergeWorks** for private equity sponsors, search funds, and M&A advisors. Deal documents are ingested into project data rooms, processed asynchronously by MergeWorks' Pod 1 n8n cloud pipeline, and synthesized in a high-performance React workspace.
 
 ## Dual Core Agent Capabilities
 
