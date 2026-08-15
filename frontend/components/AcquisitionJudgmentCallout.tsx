@@ -101,7 +101,7 @@ export default function AcquisitionJudgmentCallout({ synthesis, impact }: { synt
         let cleanMessage = message.trim()
         cleanMessage = cleanMessage.replace(/^(?:###\s+)?Summary:?\s*/i, '').trim()
 
-        const uppercaseMatch = cleanMessage.match(/^([A-Z\s&,-]{4,}\.?)\s*([\s\S]*)/)
+        const uppercaseMatch = cleanMessage.match(/^([A-Z\s&,\/-]{4,}\.?)\s*([\s\S]*)/)
 
         let recommendationText = synthesis?.finalRecommendation || ''
         let remainderText = cleanMessage

@@ -213,7 +213,7 @@ export default function DealMemoView({ model, synthesis, projectName, documents 
                             let cleanText = synthesis.finalJudgmentSummary.trim();
                             cleanText = cleanText.replace(/^(?:###\s+)?Summary:?\s*/i, '').trim();
 
-                            const uppercaseMatch = cleanText.match(/^([A-Z\s&,-]{4,}\.?)\s*([\s\S]*)/);
+                            const uppercaseMatch = cleanText.match(/^([A-Z\s&,\/-]{4,}\.?)\s*([\s\S]*)/);
                             let recText = '';
                             let remainder = cleanText;
                             if (uppercaseMatch) {
