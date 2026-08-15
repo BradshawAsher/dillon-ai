@@ -5,6 +5,7 @@ import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
+import CardExplainerPopover from './CardExplainerPopover'
 
 type Props = {
     model: DealModel
@@ -129,9 +130,17 @@ export default function MonteCarloCard({ model }: Props) {
                             {SIMULATIONS.toLocaleString()} scenarios varying growth, margin, and exit multiple
                         </p>
                     </div>
-                    <Badge variant={ebitdaIsConfirmed ? 'success' : 'warning'} className="w-fit text-[10px] px-2.5 py-0.5 font-bold">
-                        {ebitdaIsConfirmed ? '✓ Verified Source Baseline' : '⚠ Illustrative Simulation'}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                        <CardExplainerPopover
+                            title="Monte Carlo Returns Simulation"
+                            whatIsIt="Runs 5,000 randomized 5-year operating scenarios to calculate the statistical probability of doubling your money (2x MOIC) vs losing capital (<1x MOIC)."
+                            howItWorks="Applies random statistical distributions to 3 key variables simultaneously: Revenue Growth Rate, EBITDA Margin, and Exit Valuation Multiple."
+                            whyItMatters="Single-point financial models are overly optimistic. Monte Carlo tests downside resilience so you know if your returns depend on perfection or if the deal can handle real-world volatility."
+                        />
+                        <Badge variant={ebitdaIsConfirmed ? 'success' : 'warning'} className="w-fit text-[10px] px-2.5 py-0.5 font-bold">
+                            {ebitdaIsConfirmed ? '✓ Verified Source Baseline' : '⚠ Illustrative Simulation'}
+                        </Badge>
+                    </div>
                 </div>
             </CardHeader>
             <CardContent className="p-4 space-y-4">

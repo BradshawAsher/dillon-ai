@@ -417,7 +417,7 @@ export default function SubmissionHistoryCard({
     }).length
 
     return (
-        <Card className="overflow-hidden">
+        <Card id="history-header" className="overflow-hidden scroll-mt-6">
             <CardHeader className="border-b border-border bg-card/80">
                 <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                     <div className="space-y-1">
@@ -579,7 +579,7 @@ export default function SubmissionHistoryCard({
                         {sortedRows.length === 0 ? 'No submission history returned yet.' : 'No rows match the current filters.'}
                     </div>
                 ) : (
-                    <div className="grid gap-4 2xl:grid-cols-[minmax(0,0.9fr)_minmax(560px,1.1fr)] items-start">
+                    <div id="history-table" className="grid gap-4 2xl:grid-cols-[minmax(0,0.9fr)_minmax(560px,1.1fr)] items-start scroll-mt-6">
                         <div className="max-h-[2800px] overflow-auto rounded-lg border border-border bg-card">
                             <Table className="min-w-[720px]">
                                 <TableHeader>

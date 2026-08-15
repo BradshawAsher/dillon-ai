@@ -135,7 +135,7 @@ export function deriveDocumentedFacts(documents: SubmissionHistoryItem[]): Recor
                     metric: 'purchase_price',
                     normalized_value: valNum,
                     raw_value: `$${valNum.toLocaleString()}`,
-                    period: document.period || 'LOI / Agreement',
+                    period: (document as any).period || 'LOI / Agreement',
                     currency: 'USD',
                     confidence: 0.95,
                     status: 'confirmed',

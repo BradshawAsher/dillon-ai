@@ -44,7 +44,7 @@ export default function DashboardFaqSidebar({
     const [openFaqKey, setOpenFaqKey] = useState<string | null>(null)
 
     const dashboardFaqs: Array<{
-        category: 'getting-started' | 'diligence' | 'citations' | 'valuation' | 'troubleshooting'
+        category: 'getting-started' | 'diligence' | 'recommendations' | 'citations' | 'valuation' | 'troubleshooting'
         categoryLabel: string
         question: string
         answer: string
@@ -52,6 +52,42 @@ export default function DashboardFaqSidebar({
         targetTab?: WorkspaceTab
         badge?: string
     }> = [
+        {
+            category: 'recommendations',
+            categoryLabel: 'Verdict & Escalation Guide',
+            question: 'What does the "ESCALATE" (or "WALK AWAY / RESTRUCTURE") actionable recommendation mean?',
+            answer: 'An ESCALATE recommendation indicates critical, structural deal-breakers or severe financial misrepresentations (e.g. >50% customer concentration without contracts, unrecorded payroll tax liens, or tax return Form 1120 revenue fabricated by >50%) that cannot be resolved through routine purchase price negotiations. It directs the deal team to halt LOI signing, freeze earnest deposit release, and escalate directly to the Senior Investment Committee, forensic CPAs, or M&A legal counsel.',
+            actionLabel: 'Open Synthesis Verdict',
+            targetTab: 'synthesis',
+            badge: 'ESCALATION GUIDE',
+        },
+        {
+            category: 'recommendations',
+            categoryLabel: 'Verdict & Escalation Guide',
+            question: 'What is the difference between a Deal-Level Escalation and a Document-Level Escalation?',
+            answer: '• Deal-Level Escalation: Produced during the Multi-Document Project Synthesis pass when the target business exhibits existential financial, legal, or commercial deal-breakers.\n• Document-Level Escalation: Produced during single-document OCR/extraction when a corrupted scan, missing schedule, or unparseable table requires manual human analyst verification before numbers can be trusted.',
+            actionLabel: 'View Submission History',
+            targetTab: 'history',
+            badge: 'ESCALATION ARCHITECTURE',
+        },
+        {
+            category: 'recommendations',
+            categoryLabel: 'Verdict & Escalation Guide',
+            question: 'What do the Green, Yellow, and Red traffic light postures mean?',
+            answer: '• GREEN (PROCEED / PROCEED TO LOI): Low risk. Verified earnings quality, justified add-backs, and market-supported valuation.\n• YELLOW (RENEGOTIATE / PROCEED WITH REPRICE): Moderate risk. Target is viable, but seller add-backs require haircuts or price multiples need downward re-trading.\n• RED (ESCALATE / WALK AWAY): High risk / Deal-breaker. Existential tax, solvency, or customer concentration risks requiring senior leadership review.',
+            actionLabel: 'Open Overview Tab',
+            targetTab: 'overview',
+            badge: 'RISK POSTURES',
+        },
+        {
+            category: 'recommendations',
+            categoryLabel: 'Verdict & Escalation Guide',
+            question: 'When does the AI choose "RENEGOTIATE" versus "ESCALATE"?',
+            answer: 'The AI issues RENEGOTIATE when diligence risks can be resolved via a dollar-for-dollar purchase price reduction or escrow holdback (e.g. rejecting $200k of personal expenses). It issues ESCALATE when risks threaten the ongoing viability of the company or indicate fraud (e.g. non-renewing anchor client, undisclosed liens, or massive book-tax variance).',
+            actionLabel: 'Inspect Negotiation Levers',
+            targetTab: 'negotiation',
+            badge: 'DECISION MATRIX',
+        },
         {
             category: 'getting-started',
             categoryLabel: 'Getting Started',
@@ -135,6 +171,7 @@ export default function DashboardFaqSidebar({
 
     const categories = [
         { id: 'all', label: 'All FAQs' },
+        { id: 'recommendations', label: 'Recommendations & Postures' },
         { id: 'getting-started', label: 'Getting Started' },
         { id: 'diligence', label: 'Deal Analysis' },
         { id: 'citations', label: 'Citations' },

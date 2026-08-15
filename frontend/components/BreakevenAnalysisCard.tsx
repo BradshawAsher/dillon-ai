@@ -5,6 +5,7 @@ import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { normalizeEquityFraction } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardExplainerPopover from './CardExplainerPopover'
 
 type Props = {
     model: DealModel
@@ -105,9 +106,17 @@ export default function BreakevenAnalysisCard({ model }: Props) {
     return (
         <Card className="overflow-hidden">
             <CardHeader className="border-b border-border bg-card/80 pb-3">
-                <div className="flex items-center gap-2">
-                    <Target className="h-4 w-4 text-primary" />
-                    <CardTitle className="text-lg">Breakeven analysis</CardTitle>
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <Target className="h-4 w-4 text-primary" />
+                        <CardTitle className="text-lg">Breakeven analysis</CardTitle>
+                    </div>
+                    <CardExplainerPopover
+                        title="Breakeven Analysis in M&A"
+                        whatIsIt="Calculates the absolute minimum revenue and cash flow (EBITDA) this business must generate to pay its bank loans, interest, and equipment replacement without losing money."
+                        howItWorks="Takes your purchase price, debt structure, interest rate, and required capex, then computes the minimum EBITDA needed so Debt Service Coverage Ratio (DSCR) remains at or above 1.0x."
+                        whyItMatters="Tells you how much customer churn or sales drop the company can survive before defaulting on senior debt. A wider positive margin (+30% or more) means you have a safe operational cushion."
+                    />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                     Minimum performance needed to cover obligations

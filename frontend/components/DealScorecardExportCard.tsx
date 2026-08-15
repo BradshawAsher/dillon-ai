@@ -208,40 +208,53 @@ export default function DealScorecardExportCard({ model, synthesis, projectName 
                     Exportable deal scorecard
                 </p>
             </CardHeader>
-            <CardContent className="p-4 space-y-4">
+            <CardContent className="p-5 space-y-5">
                 {/* Executive Summary */}
-                <div className="rounded-lg border border-border bg-muted/30 p-3">
-                    <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">Executive Summary</p>
-                    <p className="text-xs text-foreground font-medium">{scorecard.verdict}</p>
+                <div className="rounded-xl border border-border bg-muted/40 p-4">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Executive Summary</p>
+                    <p className="text-sm font-semibold text-foreground leading-snug">{scorecard.verdict}</p>
                 </div>
 
                 {/* Key Metrics - 2x4 grid */}
                 <div>
-                    <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-2">Key Metrics</p>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <div className="flex items-center justify-between mb-2.5">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Key Metrics</p>
+                        <span className="text-[10px] text-muted-foreground">Extracted VDR baseline + illustrative underwriting</span>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                         {scorecard.metrics.map(m => (
-                            <div key={m.label} className="rounded-lg bg-muted/50 p-2 text-center">
-                                <p className="text-[9px] text-muted-foreground">{m.label}</p>
-                                <p className="text-xs font-bold text-foreground">{m.value}</p>
+                            <div key={m.label} className="rounded-xl border border-border/50 bg-muted/40 p-3 text-center">
+                                <p className="text-xs font-medium text-muted-foreground mb-1">{m.label}</p>
+                                <p className="text-sm sm:text-base font-bold text-foreground">{m.value}</p>
                             </div>
                         ))}
                     </div>
                 </div>
 
                 {/* Risk Assessment */}
-                <div>
-                    <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-2">Risk Assessment</p>
-                    <div className="flex items-center gap-3 mb-2">
-                        <span className="text-[11px] font-medium text-red-600 dark:text-red-400">{scorecard.redFlagCount} red</span>
-                        <span className="text-[11px] font-medium text-amber-600 dark:text-amber-400">{scorecard.yellowFlagCount} yellow</span>
-                        <span className="text-[11px] font-medium text-green-600 dark:text-green-400">{scorecard.greenFlagCount} green</span>
+                <div className="rounded-xl border border-border/60 bg-background p-4 shadow-sm">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2.5">Risk Assessment</p>
+                    <div className="flex items-center gap-4 mb-3">
+                        <span className="text-xs sm:text-sm font-bold text-red-600 dark:text-red-400 flex items-center gap-1.5">
+                            <span className="h-2 w-2 rounded-full bg-red-500" />
+                            {scorecard.redFlagCount} red flags
+                        </span>
+                        <span className="text-xs sm:text-sm font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                            <span className="h-2 w-2 rounded-full bg-amber-500" />
+                            {scorecard.yellowFlagCount} yellow flags
+                        </span>
+                        <span className="text-xs sm:text-sm font-bold text-green-600 dark:text-green-400 flex items-center gap-1.5">
+                            <span className="h-2 w-2 rounded-full bg-green-500" />
+                            {scorecard.greenFlagCount} green flags
+                        </span>
                     </div>
                     {scorecard.topRedFlags.length > 0 && (
-                        <div className="space-y-1">
+                        <div className="space-y-2 border-t border-border/40 pt-3">
+                            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Top Concerns</p>
                             {scorecard.topRedFlags.map((flag, i) => (
-                                <div key={i} className="flex items-start gap-1.5">
-                                    <span className="mt-0.5 text-[10px] text-red-500">&#x2022;</span>
-                                    <span className="text-[11px] text-foreground">{flag}</span>
+                                <div key={i} className="flex items-start gap-2">
+                                    <span className="mt-1 text-sm font-bold text-red-500 leading-none">&#x2022;</span>
+                                    <span className="text-xs sm:text-sm leading-relaxed text-foreground">{flag}</span>
                                 </div>
                             ))}
                         </div>
@@ -249,18 +262,18 @@ export default function DealScorecardExportCard({ model, synthesis, projectName 
                 </div>
 
                 {/* Financing Summary */}
-                <div>
-                    <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">Financing</p>
-                    <p className="text-[11px] text-foreground">{scorecard.financingSummary}</p>
+                <div className="rounded-xl border border-border/60 bg-background p-4 shadow-sm">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Financing</p>
+                    <p className="text-xs sm:text-sm font-medium leading-relaxed text-foreground">{scorecard.financingSummary}</p>
                 </div>
 
                 {/* Recommendation */}
-                <div className="flex items-center justify-between rounded-lg border border-border p-3">
+                <div className="flex items-center justify-between rounded-xl border border-border bg-background p-4 shadow-sm">
                     <div>
-                        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-0.5">Recommendation</p>
-                        <p className="text-[10px] text-muted-foreground">{scorecard.recommendationReason}</p>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Recommendation</p>
+                        <p className="text-xs sm:text-sm leading-relaxed text-muted-foreground">{scorecard.recommendationReason}</p>
                     </div>
-                    <span className={`shrink-0 ml-3 rounded-md px-2.5 py-1.5 text-xs font-bold ${recommendationColors[scorecard.recommendation]}`}>
+                    <span className={`shrink-0 ml-3 rounded-lg px-3 py-1.5 text-xs sm:text-sm font-bold ${recommendationColors[scorecard.recommendation]}`}>
                         {scorecard.recommendation}
                     </span>
                 </div>

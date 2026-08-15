@@ -17,6 +17,7 @@ export default function DealOnAPageCard({ model, synthesis, projectName }: Props
         const facts = parseDocumentedFacts(model.documentedFactsJson)
         const ebitda = typeof facts.ebitda_sde?.value === 'number' ? facts.ebitda_sde.value : null
         const revenue = typeof facts.revenue?.value === 'number' ? facts.revenue.value : null
+        const hasExtractedFinancials = Boolean(ebitda !== null || revenue !== null)
         const price = model.purchasePrice ?? model.askingPrice
 
         if (!price) return null
@@ -41,6 +42,7 @@ export default function DealOnAPageCard({ model, synthesis, projectName }: Props
         return {
             price, revenue, ebitda, entryMult, margin, growth, exitMult, holdYears,
             debt, equity, exitValue, moic, redFlags, greenFlags, signal, signalColor,
+            hasExtractedFinancials,
         }
     }, [model, synthesis])
 
@@ -65,8 +67,19 @@ export default function DealOnAPageCard({ model, synthesis, projectName }: Props
             </CardHeader>
             <CardContent className="p-4">
                 <div className="rounded-xl border-2 border-primary/20 p-4 space-y-3 bg-background">
-                    <div className="flex items-center justify-between">
-                        <h3 className="text-base font-bold text-foreground">{projectName || 'Unnamed Deal'}</h3>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                            <h3 className="text-base font-bold text-foreground">{projectName || 'Unnamed Deal'}</h3>
+                            {summary.hasExtractedFinancials ? (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20" title="Historical revenue and EBITDA extracted from VDR files">
+                                    ✓ Documented VDR Facts
+                                </span>
+                            ) : (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20" title="Starting default assumptions">
+                                    ⚙ Starting Assumption
+                                </span>
+                            )}
+                        </div>
                         <span className={`px-2 py-0.5 rounded text-xs font-bold ${summary.signalColor}`}>
                             {summary.signal} RISK
                         </span>
@@ -92,6 +105,11 @@ export default function DealOnAPageCard({ model, synthesis, projectName }: Props
                     </div>
 
                     <div className="h-px bg-border" />
+
+                    <div className="flex items-center justify-between pt-0.5">
+                        <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">Underwriting &amp; Illustrative Model Projections</p>
+                        <span className="text-[9px] text-muted-foreground italic">(5yr hold, 4.0x exit mult)</span>
+                    </div>
 
                     <div className="grid grid-cols-5 gap-2 text-center">
                         <div>

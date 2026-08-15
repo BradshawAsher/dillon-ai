@@ -17,18 +17,19 @@ const TAB_SECTIONS: Partial<Record<WorkspaceTab, TOCSection[]>> = {
         { id: 'overview-timeline', label: 'Timeline' },
     ],
     analysis: [
-        { id: 'analysis-header', label: 'Analysis Summary' },
+        { id: 'analysis-header', label: 'Snapshot' },
         { id: 'analysis-deal-grade', label: 'Deal Grade' },
-        { id: 'analysis-fit', label: 'Deal Fit' },
-        { id: 'analysis-strengths', label: 'Strengths & Weak.' },
+        { id: 'analysis-fit', label: 'Health & Fit' },
+        { id: 'analysis-thesis', label: 'Thesis' },
+        { id: 'analysis-strengths', label: 'Strengths' },
         { id: 'analysis-risks', label: 'Risk Matrix' },
-        { id: 'analysis-thesis', label: 'Investment Thesis' },
+        { id: 'analysis-closing', label: 'Closing' },
     ],
     diligence: [
-        { id: 'diligence-batch', label: 'Batch Progress' },
-        { id: 'diligence-upload', label: 'File Upload' },
-        { id: 'diligence-project-synth', label: 'Project Synthesis' },
-        { id: 'diligence-documents', label: 'Documents' },
+        { id: 'diligence-project-synth', label: 'Synthesis' },
+        { id: 'diligence-documents', label: 'Readiness' },
+        { id: 'diligence-quality', label: 'Data Quality' },
+        { id: 'diligence-context', label: 'Deal Context' },
     ],
     synthesis: [
         { id: 'synthesis-judgment', label: 'Judgment' },
@@ -58,13 +59,12 @@ const TAB_SECTIONS: Partial<Record<WorkspaceTab, TOCSection[]>> = {
         { id: 'compare-table', label: 'Project Grid' },
     ],
     valuation: [
-        { id: 'valuation-header', label: 'Valuation Summary' },
+        { id: 'valuation-header', label: 'Assumptions' },
         { id: 'valuation-quick', label: 'Quick Valuation' },
-        { id: 'valuation-comps', label: 'Comparables' },
         { id: 'valuation-gap', label: 'Valuation Gap' },
+        { id: 'valuation-comps', label: 'Comparables' },
         { id: 'valuation-sensitivity', label: 'Sensitivity' },
-        { id: 'valuation-risk-adjusted', label: 'Risk-Adjusted' },
-        { id: 'valuation-monte-carlo', label: 'Monte Carlo' },
+        { id: 'valuation-risk-adjusted', label: 'Data Integrity' },
     ],
     returns: [
         { id: 'returns-header', label: 'Returns Summary' },
@@ -77,23 +77,29 @@ const TAB_SECTIONS: Partial<Record<WorkspaceTab, TOCSection[]>> = {
         { id: 'returns-scenario', label: 'Scenario Comparison' },
     ],
     growth: [
-        { id: 'growth-header', label: 'Growth Summary' },
+        { id: 'growth-header', label: 'Growth Plan' },
+        { id: 'growth-scenario', label: 'Scenarios' },
         { id: 'growth-revenue-bridge', label: 'Revenue Bridge' },
         { id: 'growth-sensitivity', label: 'Sensitivity' },
-        { id: 'growth-leverage', label: 'Operating Leverage' },
         { id: 'growth-value-creation', label: 'Value Creation' },
+        { id: 'growth-leverage', label: 'Op. Leverage' },
     ],
     structure: [
-        { id: 'structure-header', label: 'Structure Summary' },
+        { id: 'structure-header', label: 'Assumptions' },
+        { id: 'structure-visual', label: 'Sources & Uses' },
+        { id: 'structure-stack', label: 'Deal Stack' },
+        { id: 'structure-leverage', label: 'Leverage' },
         { id: 'structure-financing', label: 'Financing' },
-        { id: 'structure-closing', label: 'Closing Checklist' },
-        { id: 'structure-term-sheet', label: 'Term Sheet' },
+        { id: 'structure-pending', label: 'Pending Inputs' },
     ],
     negotiation: [
-        { id: 'negotiation-header', label: 'Negotiation Summary' },
+        { id: 'negotiation-header', label: 'Overview' },
+        { id: 'negotiation-seller', label: 'Seller Q&A' },
+        { id: 'negotiation-mgmt', label: 'Mgmt Tracker' },
         { id: 'negotiation-playbook', label: 'Playbook' },
-        { id: 'negotiation-seller', label: 'Seller Questions' },
-        { id: 'negotiation-impact', label: 'Impact Analysis' },
+        { id: 'negotiation-impact', label: 'Impact' },
+        { id: 'negotiation-timeline', label: 'Timeline' },
+        { id: 'negotiation-terms', label: 'Term Sheet' },
     ],
     spending: [
         { id: 'spending-header', label: 'Cost Overview' },
@@ -255,12 +261,12 @@ export default function TabSidebarTOC({ activeTab }: { activeTab: WorkspaceTab }
     }
 
     return (
-        <aside className="fixed left-0 top-32 z-50 w-24 print:hidden">
+        <aside className="fixed left-0 top-32 z-50 w-[5.25rem] print:hidden">
             <nav className="rounded-r-lg border border-l-0 border-primary/40 bg-background/95 shadow-2xl backdrop-blur-md overflow-hidden">
                 <div className="flex items-center justify-between border-b border-border px-1.5 py-1 bg-primary/10">
                     <div className="flex items-center gap-1 min-w-0">
-                        <Bookmark className="h-3.5 w-3.5 text-primary shrink-0" />
-                        <span className="text-[11px] font-extrabold uppercase tracking-wider text-primary truncate">TOC</span>
+                        <Bookmark className="h-3 w-3 text-primary shrink-0" />
+                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-primary truncate">TOC</span>
                     </div>
                     <button
                         type="button"
@@ -268,10 +274,10 @@ export default function TabSidebarTOC({ activeTab }: { activeTab: WorkspaceTab }
                         className="rounded p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer shrink-0"
                         title="Collapse Table of Contents"
                     >
-                        <ChevronLeft className="h-3.5 w-3.5" />
+                        <ChevronLeft className="h-3 w-3" />
                     </button>
                 </div>
-                <ul className="max-h-[85vh] overflow-y-auto p-1 space-y-1">
+                <ul className="max-h-[90vh] overflow-y-auto p-1 space-y-0.5">
                     {sections.map((section) => {
                         const isActive = activeSection === section.id
                         return (
@@ -280,8 +286,8 @@ export default function TabSidebarTOC({ activeTab }: { activeTab: WorkspaceTab }
                                     type="button"
                                     onClick={() => scrollToSection(section.id)}
                                     title={section.label}
-                                    className={`w-full rounded px-1.5 py-1 text-left text-xs font-semibold leading-snug transition-all cursor-pointer truncate ${
-                                        section.indent ? 'pl-2 text-muted-foreground/80 font-medium' : ''
+                                    className={`w-full rounded px-1 py-1 text-left text-[10.5px] font-semibold leading-tight transition-all cursor-pointer truncate ${
+                                        section.indent ? 'pl-1.5 text-muted-foreground/80 font-medium' : ''
                                     } ${
                                         isActive
                                             ? 'border-l-2 border-primary bg-primary/15 font-bold text-primary shadow-2xs'

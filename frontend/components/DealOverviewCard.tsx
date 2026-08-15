@@ -18,6 +18,7 @@ import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import { buildDocumentLinkedEvidence, parseDocumentedFacts } from '../utils/evidence'
 import type { EvidenceItem } from './EvidenceDrawer'
 import ExpandableText from './ExpandableText'
+import ActionableRecommendationInfoButton from './ActionableRecommendationInfoButton'
 
 type DealOverviewCardProps = {
     syntheses: ProjectSynthesisItem[]
@@ -30,6 +31,7 @@ type DealOverviewCardProps = {
     documents: SubmissionHistoryItem[]
     onOpenEvidence: (evidence: EvidenceItem) => void
     exampleMode?: boolean
+    onSwitchTab?: (tab: any) => void
 }
 
 function riskVariant(riskLevel: string): 'destructive' | 'warning' | 'secondary' | 'outline' {
@@ -79,7 +81,7 @@ function parseMoney(value: string) {
     return Number.isFinite(parsed) && parsed >= 0 ? parsed * multiplier : null
 }
 
-export default function DealOverviewCard({ syntheses, projects, currentProjectId, askingPrice, onAskingPriceChange, impact, model, documents, onOpenEvidence, exampleMode = false }: DealOverviewCardProps) {
+export default function DealOverviewCard({ syntheses, projects, currentProjectId, askingPrice, onAskingPriceChange, impact, model, documents, onOpenEvidence, exampleMode = false, onSwitchTab }: DealOverviewCardProps) {
     const projectId = currentProjectId.trim()
     const synthesis = syntheses.find((item) => item.projectId === projectId)
     const project = projects.find((item) => (item.projectId || item.projectKey) === projectId)
@@ -264,8 +266,18 @@ export default function DealOverviewCard({ syntheses, projects, currentProjectId
                         </CardDescription>
                     </div>
                     {synthesis ? (
-                        <div className="flex flex-wrap gap-2">
-                            {synthesis.finalRecommendation ? <Badge variant={getSubmissionInsightTone(synthesis.finalTrafficLight)}>{synthesis.finalRecommendation}</Badge> : null}
+                        <div className="flex flex-wrap items-center gap-2">
+                            {synthesis.finalRecommendation ? (
+                                <div className="flex items-center gap-1.5">
+                                    <Badge variant={getSubmissionInsightTone(synthesis.finalTrafficLight)}>{synthesis.finalRecommendation}</Badge>
+                                    <ActionableRecommendationInfoButton
+                                        recommendation={synthesis.finalRecommendation}
+                                        trafficLight={synthesis.finalTrafficLight}
+                                        onSwitchTab={onSwitchTab}
+                                        size="sm"
+                                    />
+                                </div>
+                            ) : null}
                             {synthesis.finalRiskLevel ? <Badge variant={riskVariant(synthesis.finalRiskLevel)}>Risk: {synthesis.finalRiskLevel}</Badge> : null}
                             {synthesis.documentsReceivedCount > 0 ? <Badge variant="outline">{synthesis.documentsCompletedCount}/{synthesis.documentsReceivedCount} documents processed</Badge> : null}
                         </div>
@@ -329,9 +341,14 @@ export default function DealOverviewCard({ syntheses, projects, currentProjectId
                     <>
                         {synthesis.finalRecommendation ? (
                             <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted/20 p-4">
-                                <div className="flex flex-wrap items-center gap-3">
+                                <div className="flex flex-wrap items-center gap-2.5">
                                     <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Synthesis verdict:</p>
                                     <p className="text-lg font-bold text-foreground">{synthesis.finalRecommendation}</p>
+                                    <ActionableRecommendationInfoButton
+                                        recommendation={synthesis.finalRecommendation}
+                                        trafficLight={synthesis.finalTrafficLight}
+                                        onSwitchTab={onSwitchTab}
+                                    />
                                     {synthesis.finalTrafficLight ? (
                                         <Badge variant={getSubmissionInsightTone(synthesis.finalTrafficLight)}>{synthesis.finalTrafficLight}</Badge>
                                     ) : null}
