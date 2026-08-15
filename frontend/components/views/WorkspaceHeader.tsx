@@ -57,7 +57,7 @@ export function WorkspaceHeader({
             <div className="mx-auto flex max-w-[1440px] flex-col gap-4 px-4 py-5 sm:px-6 lg:flex-row lg:items-start lg:justify-between lg:px-8">
                 <div className="space-y-2">
                     <p className="text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
-                        Dillon AI • M&amp;A Due Diligence Workspace
+                        Dillon AI by MergeWorks • M&amp;A Due Diligence Workspace
                     </p>
                     <div className="flex flex-wrap items-center gap-3">
                         <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl flex items-center gap-2">
