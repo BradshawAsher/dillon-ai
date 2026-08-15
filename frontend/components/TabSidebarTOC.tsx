@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { List, ChevronRight, ChevronLeft, Bookmark, Navigation, GripVertical, RotateCcw } from 'lucide-react'
+import { List, ChevronRight, ChevronLeft, Navigation, GripVertical, RotateCcw } from 'lucide-react'
 
 type TOCSection = {
     id: string
@@ -14,163 +14,162 @@ const TAB_SECTIONS: Partial<Record<WorkspaceTab, TOCSection[]>> = {
         { id: 'overview-snapshot', label: 'Deal Snapshot' },
         { id: 'overview-health', label: 'Health KPIs' },
         { id: 'overview-actions', label: 'Action Items' },
-        { id: 'overview-timeline', label: 'Timeline' },
+        { id: 'overview-timeline', label: 'Deal Timeline' },
     ],
     analysis: [
-        { id: 'analysis-deal-on-a-page', label: '1-Pager' },
-        { id: 'analysis-scorecard', label: 'Scorecard' },
-        { id: 'analysis-snapshot', label: 'Snapshot' },
-        { id: 'analysis-opportunity', label: 'Opportunity' },
-        { id: 'analysis-risk-valuation', label: 'Risk Val.' },
-        { id: 'analysis-next-actions', label: 'Next Steps' },
-        { id: 'analysis-readiness', label: 'Readiness' },
-        { id: 'analysis-coverage', label: 'Coverage' },
+        { id: 'analysis-deal-on-a-page', label: 'Deal on a Page' },
+        { id: 'analysis-scorecard', label: 'Deal Scorecard' },
+        { id: 'analysis-snapshot', label: 'Business Snapshot' },
+        { id: 'analysis-opportunity', label: 'Opportunity Score' },
+        { id: 'analysis-risk-valuation', label: 'Risk-Adjusted Val.' },
+        { id: 'analysis-next-actions', label: 'Deal Action Items' },
+        { id: 'analysis-readiness', label: 'Deal Readiness' },
+        { id: 'analysis-coverage', label: 'Doc Coverage' },
         { id: 'analysis-scorecard-breakdown', label: 'Score Breakdown' },
-        { id: 'analysis-rules', label: 'Rules' },
-        { id: 'analysis-confidence', label: 'Confidence' },
-        { id: 'analysis-health', label: 'Fin. Health' },
-        { id: 'analysis-ebitda-quality', label: 'EBITDA QoE' },
-        { id: 'analysis-benchmark', label: 'Benchmark' },
-        { id: 'analysis-position', label: 'Market Pos.' },
-        { id: 'analysis-assumption-gaps', label: 'Gaps' },
-        { id: 'analysis-whats-missing', label: 'Missing' },
-        { id: 'analysis-market-comps', label: 'Comps' },
-        { id: 'analysis-financing-scenarios', label: 'Financing' },
-        { id: 'analysis-metrics', label: 'KPIs' },
-        { id: 'analysis-percentile', label: 'Percentile' },
-        { id: 'analysis-deal-type', label: 'Deal Type' },
-        { id: 'analysis-fit', label: 'Deal Fit' },
-        { id: 'analysis-asset-comp', label: 'Assets' },
-        { id: 'analysis-val-gap', label: 'Val. Gap' },
-        { id: 'analysis-cash-on-cash', label: 'Cash-on-Cash' },
-        { id: 'analysis-val-evolution', label: 'Value Evol.' },
-        { id: 'analysis-revenue-bridge', label: 'Rev. Bridge' },
-        { id: 'analysis-base-returns', label: 'Returns' },
-        { id: 'analysis-growth-sensitivity', label: 'Sensitivity' },
-        { id: 'analysis-monte-carlo', label: 'Monte Carlo' },
-        { id: 'analysis-breakeven', label: 'Breakeven' },
-        { id: 'analysis-quick-insights', label: 'Insights' },
-        { id: 'analysis-thesis', label: 'Thesis' },
-        { id: 'analysis-decision', label: 'Decision' },
+        { id: 'analysis-rules', label: 'Rules of Thumb' },
+        { id: 'analysis-confidence', label: 'Confidence Meter' },
+        { id: 'analysis-health', label: 'Financial Health' },
+        { id: 'analysis-ebitda-quality', label: 'EBITDA QoE Score' },
+        { id: 'analysis-benchmark', label: 'Benchmark Comp.' },
+        { id: 'analysis-position', label: 'Market Position' },
+        { id: 'analysis-assumption-gaps', label: 'Assumption Gaps' },
+        { id: 'analysis-whats-missing', label: 'What’s Missing' },
+        { id: 'analysis-market-comps', label: 'Market Comps' },
+        { id: 'analysis-financing-scenarios', label: 'Financing Scenarios' },
+        { id: 'analysis-metrics', label: 'Key Metrics Trend' },
+        { id: 'analysis-percentile', label: 'Industry Percentile' },
+        { id: 'analysis-deal-type', label: 'Deal Type Analysis' },
+        { id: 'analysis-fit', label: 'Deal Fit Analysis' },
+        { id: 'analysis-asset-comp', label: 'Asset Composition' },
+        { id: 'analysis-val-gap', label: 'Valuation Gap' },
+        { id: 'analysis-cash-on-cash', label: 'Cash-on-Cash Calc' },
+        { id: 'analysis-val-evolution', label: 'Value Evolution' },
+        { id: 'analysis-revenue-bridge', label: 'Revenue Bridge' },
+        { id: 'analysis-base-returns', label: 'Base Returns' },
+        { id: 'analysis-growth-sensitivity', label: 'Growth Sensitivity' },
+        { id: 'analysis-monte-carlo', label: 'Monte Carlo Sim' },
+        { id: 'analysis-breakeven', label: 'Breakeven Analysis' },
+        { id: 'analysis-quick-insights', label: 'Quick Insights' },
+        { id: 'analysis-thesis', label: 'Investment Thesis' },
+        { id: 'analysis-decision', label: 'Decision Framework' },
         { id: 'analysis-quick-wins', label: 'Quick Wins' },
-        { id: 'analysis-strengths', label: 'Strengths' },
+        { id: 'analysis-strengths', label: 'Strengths & Weaknesses' },
         { id: 'analysis-risk-summary', label: 'Risk Summary' },
         { id: 'analysis-risk-matrix', label: 'Risk Matrix' },
-        { id: 'analysis-key-person', label: 'Key Person' },
-        { id: 'analysis-owner-dep', label: 'Owner Dep.' },
-        { id: 'analysis-diligence-comp', label: 'DD Complete' },
-        { id: 'analysis-risk-reward', label: 'Risk/Reward' },
-        { id: 'analysis-deal-killer', label: 'Deal Killer' },
-        { id: 'analysis-second-opinion', label: '2nd Opinion' },
+        { id: 'analysis-key-person', label: 'Key Person Risk' },
+        { id: 'analysis-owner-dep', label: 'Owner Dependency' },
+        { id: 'analysis-diligence-comp', label: 'DD Completeness' },
+        { id: 'analysis-risk-reward', label: 'Risk vs Reward' },
+        { id: 'analysis-deal-killer', label: 'Deal Killer Check' },
+        { id: 'analysis-second-opinion', label: 'Second Opinion' },
         { id: 'analysis-alert-rules', label: 'Alert Rules' },
-        { id: 'analysis-time-to-close', label: 'Time2Close' },
-        { id: 'analysis-closing-checklist', label: 'Closing' },
+        { id: 'analysis-time-to-close', label: 'Time to Close' },
+        { id: 'analysis-closing-checklist', label: 'Closing Checklist' },
         { id: 'analysis-seller-qa', label: 'Seller Q&A' },
-        { id: 'analysis-mgmt-questions', label: 'Mgmt Qs' },
-        { id: 'analysis-playbook', label: 'Playbook' },
-        { id: 'analysis-negotiation-impact', label: 'Neg. Impact' },
+        { id: 'analysis-mgmt-questions', label: 'Mgmt Questions' },
+        { id: 'analysis-playbook', label: 'Negotiation Playbook' },
+        { id: 'analysis-negotiation-impact', label: 'Negotiation Impact' },
         { id: 'analysis-deal-timing', label: 'Deal Timing' },
-        { id: 'analysis-timeline', label: 'Timeline' },
-        { id: 'analysis-investor-readiness', label: 'Investor Read' },
+        { id: 'analysis-timeline', label: 'Deal Timeline' },
+        { id: 'analysis-investor-readiness', label: 'Investor Readiness' },
         { id: 'analysis-term-sheet', label: 'Term Sheet' },
-        { id: 'analysis-dd-requests', label: 'DD Requests' },
-        { id: 'analysis-activity-feed', label: 'Activity' },
+        { id: 'analysis-dd-requests', label: 'DD Request List' },
+        { id: 'analysis-activity-feed', label: 'Activity Feed' },
         { id: 'analysis-public-data', label: 'Public Data' },
     ],
     diligence: [
-        { id: 'diligence-project-synth', label: 'Synthesis' },
-        { id: 'diligence-documents', label: 'Readiness' },
+        { id: 'diligence-project-synth', label: 'Synthesis Pass' },
+        { id: 'diligence-documents', label: 'Readiness Gate' },
         { id: 'diligence-quality', label: 'Data Quality' },
         { id: 'diligence-context', label: 'Deal Context' },
     ],
     synthesis: [
-        { id: 'synthesis-judgment', label: 'Judgment' },
-        { id: 'synthesis-next-step', label: 'Next Step' },
+        { id: 'synthesis-judgment', label: 'Acquisition Judgment' },
+        { id: 'synthesis-next-step', label: 'Immediate Next Steps' },
         { id: 'synthesis-valuation', label: 'Valuation Range' },
         { id: 'synthesis-loi-status', label: 'LOI Status' },
-        { id: 'synthesis-material-impact', label: 'Material Impact' },
-        { id: 'synthesis-filters', label: 'Findings' },
+        { id: 'synthesis-material-impact', label: 'Material Diligence Impact' },
+        { id: 'synthesis-filters', label: 'Key Diligence Findings' },
         { id: 'synthesis-red-flags', label: 'Red Flags', indent: true },
         { id: 'synthesis-yellow-flags', label: 'Yellow Flags', indent: true },
         { id: 'synthesis-green-flags', label: 'Green Flags', indent: true },
-        { id: 'synthesis-takeaways', label: 'Takeaways', indent: true },
-        { id: 'synthesis-doc-thesis', label: 'Doc Thesis', indent: true },
-        { id: 'synthesis-conflicts', label: 'Conflicts', indent: true },
-        { id: 'synthesis-negotiation', label: 'Levers', indent: true },
-        { id: 'synthesis-missing-docs', label: 'Missing Docs', indent: true },
-        { id: 'synthesis-mgmt-questions', label: 'Mgmt Questions', indent: true },
-        { id: 'synthesis-cross-doc', label: 'Cross-Doc Matrix' },
-        { id: 'synthesis-pipeline-metrics', label: 'Coverage Metrics' },
+        { id: 'synthesis-takeaways', label: 'Executive Takeaways', indent: true },
+        { id: 'synthesis-doc-thesis', label: 'Document Thesis', indent: true },
+        { id: 'synthesis-conflicts', label: 'Document Conflicts', indent: true },
+        { id: 'synthesis-negotiation', label: 'Negotiation Levers', indent: true },
+        { id: 'synthesis-missing-docs', label: 'Missing Documents', indent: true },
+        { id: 'synthesis-mgmt-questions', label: 'Management Questions', indent: true },
+        { id: 'synthesis-cross-doc', label: 'Cross-Document Matrix' },
+        { id: 'synthesis-pipeline-metrics', label: 'Extraction Metrics' },
     ],
     documents: [
-        { id: 'docs-upload', label: 'Upload' },
-        { id: 'docs-table', label: 'Documents' },
-        { id: 'docs-extraction', label: 'Extraction' },
+        { id: 'docs-upload', label: 'VDR File Upload' },
+        { id: 'docs-table', label: 'Documents Catalog' },
+        { id: 'docs-extraction', label: 'Extraction Details' },
     ],
     compare: [
-        { id: 'compare-matrix', label: 'Deal Matrix' },
-        { id: 'compare-charts', label: 'Comparisons' },
-        { id: 'compare-rankings', label: 'Rankings' },
+        { id: 'compare-matrix', label: 'Portfolio Deal Matrix' },
+        { id: 'compare-charts', label: 'Valuation Comparisons' },
+        { id: 'compare-rankings', label: 'Opportunity Rankings' },
     ],
     valuation: [
         { id: 'valuation-summary', label: 'Valuation Summary' },
         { id: 'valuation-multiples', label: 'Multiple Explorer' },
         { id: 'valuation-dcf', label: 'DCF Model' },
-        { id: 'valuation-precedent', label: 'Precedents' },
+        { id: 'valuation-precedent', label: 'Precedent Comps' },
     ],
     returns: [
         { id: 'returns-summary', label: 'Returns Summary' },
-        { id: 'returns-waterfall', label: 'Waterfall' },
+        { id: 'returns-waterfall', label: 'Equity Waterfall' },
         { id: 'returns-sensitivity', label: 'Sensitivity Matrix' },
         { id: 'returns-cashflow', label: 'Cash Flow Forecast' },
     ],
     growth: [
-        { id: 'growth-projections', label: 'Projections' },
-        { id: 'growth-scenarios', label: 'Scenarios' },
-        { id: 'growth-drivers', label: 'Growth Drivers' },
+        { id: 'growth-projections', label: 'Revenue Projections' },
+        { id: 'growth-scenarios', label: 'Scenario Builder' },
+        { id: 'growth-drivers', label: 'Growth Levers' },
     ],
     structure: [
         { id: 'structure-sources-uses', label: 'Sources & Uses' },
-        { id: 'structure-debt-schedule', label: 'Debt Schedule' },
-        { id: 'structure-covenants', label: 'Covenants' },
+        { id: 'structure-debt-schedule', label: 'Debt Amortization' },
+        { id: 'structure-covenants', label: 'Bank Covenants' },
     ],
     negotiation: [
-        { id: 'negotiation-levers', label: 'Levers' },
-        { id: 'negotiation-impact', label: 'Price Impact' },
-        { id: 'negotiation-playbook', label: 'Playbook' },
+        { id: 'negotiation-levers', label: 'Strategic Levers' },
+        { id: 'negotiation-impact', label: 'Price Impact Bridge' },
+        { id: 'negotiation-playbook', label: 'Negotiation Playbook' },
     ],
     spending: [
-        { id: 'spending-model', label: 'Cost Breakdown' },
-        { id: 'spending-api-calls', label: 'API Calls' },
-        { id: 'spending-forecast', label: 'Cost Forecast' },
+        { id: 'spending-model', label: 'AI Cost Breakdown' },
+        { id: 'spending-api-calls', label: 'LLM Token Usage' },
+        { id: 'spending-forecast', label: 'Budget Forecast' },
     ],
     history: [
-        { id: 'history-timeline', label: 'Timeline' },
-        { id: 'history-versions', label: 'Versions' },
+        { id: 'history-timeline', label: 'Version Timeline' },
+        { id: 'history-versions', label: 'Snapshot Versions' },
     ],
     errors: [
-        { id: 'errors-summary', label: 'Summary' },
-        { id: 'errors-list', label: 'Error Log' },
+        { id: 'errors-summary', label: 'Pipeline Summary' },
+        { id: 'errors-list', label: 'Workflow Error Log' },
     ],
     email: [
-        { id: 'email-templates', label: 'Templates' },
-        { id: 'email-logs', label: 'Sent Logs' },
+        { id: 'email-templates', label: 'Broker Email Templates' },
+        { id: 'email-logs', label: 'Sent Outreach Logs' },
     ],
     evals: [
-        { id: 'evals-benchmarks', label: 'Benchmarks' },
-        { id: 'evals-accuracy', label: 'Accuracy' },
-        { id: 'evals-latency', label: 'Latency' },
+        { id: 'evals-benchmarks', label: 'Benchmark Models' },
+        { id: 'evals-accuracy', label: 'Extraction Accuracy' },
+        { id: 'evals-latency', label: 'Latency & Throughput' },
     ],
     faqs: [
-        { id: 'faq-general', label: 'General' },
-        { id: 'faq-methodology', label: 'Methodology' },
-        { id: 'faq-troubleshooting', label: 'Help' },
+        { id: 'faq-general', label: 'General Diligence' },
+        { id: 'faq-methodology', label: 'Financial Methodology' },
+        { id: 'faq-troubleshooting', label: 'Platform Guidance' },
     ],
 }
 
 /**
  * Top-of-Tab Horizontal Section Navigation Bar (Prominent TOC)
- * Renders cleanly at the top of active workspace tabs for high visibility.
  */
 export function TabTopNavTOC({ activeTab }: { activeTab: WorkspaceTab }) {
     const sections = TAB_SECTIONS[activeTab]
@@ -224,6 +223,20 @@ type Props = {
 export default function TabSidebarTOC({ activeTab }: Props) {
     const [activeSection, setActiveSection] = useState<string>('')
     const [isCollapsed, setIsCollapsed] = useState<boolean>(false)
+    const [tocWidth, setTocWidth] = useState<number>(() => {
+        if (typeof window === 'undefined') return 185
+        try {
+            const stored = localStorage.getItem('mergeworks.tocWidth')
+            if (stored) {
+                const parsed = parseInt(stored, 10)
+                if (!Number.isNaN(parsed)) {
+                    return Math.max(140, Math.min(360, parsed))
+                }
+            }
+        } catch { }
+        return 185
+    })
+
     const [topOffset, setTopOffset] = useState<number | null>(() => {
         if (typeof window === 'undefined') return null
         try {
@@ -240,6 +253,7 @@ export default function TabSidebarTOC({ activeTab }: Props) {
 
     const observerRef = useRef<IntersectionObserver | null>(null)
     const dragYRef = useRef<{ startY: number; startTop: number } | null>(null)
+    const dragXRef = useRef<{ startX: number; startWidth: number } | null>(null)
     const sections = TAB_SECTIONS[activeTab] || []
 
     useEffect(() => {
@@ -249,6 +263,22 @@ export default function TabSidebarTOC({ activeTab }: Props) {
             try { localStorage.removeItem('mergeworks.tocTop') } catch { }
         }
     }, [topOffset])
+
+    useEffect(() => {
+        try { localStorage.setItem('mergeworks.tocWidth', String(tocWidth)) } catch { }
+    }, [tocWidth])
+
+    // Keyboard shortcut: Alt+T to toggle collapse
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.altKey && (e.key === 't' || e.key === 'T')) {
+                e.preventDefault()
+                setIsCollapsed((prev) => !prev)
+            }
+        }
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [])
 
     const handleDragPointerDown = (e: React.PointerEvent) => {
         e.preventDefault()
@@ -277,8 +307,40 @@ export default function TabSidebarTOC({ activeTab }: Props) {
         dragYRef.current = null
     }
 
-    const handleResetPosition = () => {
+    // Horizontal width resize drag handler
+    const handleWidthPointerDown = (e: React.PointerEvent) => {
+        e.preventDefault()
+        dragXRef.current = {
+            startX: e.clientX,
+            startWidth: tocWidth,
+        }
+        try {
+            (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId)
+        } catch { }
+    }
+
+    const handleWidthPointerMove = (e: React.PointerEvent) => {
+        if (!dragXRef.current) return
+        const deltaX = e.clientX - dragXRef.current.startX
+        const nextWidth = Math.max(140, Math.min(360, dragXRef.current.startWidth + deltaX))
+        setTocWidth(Math.round(nextWidth))
+    }
+
+    const handleWidthPointerUp = (e: React.PointerEvent) => {
+        if (!dragXRef.current) return
+        try {
+            (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId)
+        } catch { }
+        dragXRef.current = null
+    }
+
+    const handleResetAll = () => {
         setTopOffset(null)
+        setTocWidth(185)
+        try {
+            localStorage.removeItem('mergeworks.tocTop')
+            localStorage.removeItem('mergeworks.tocWidth')
+        } catch { }
     }
 
     const scrollToSection = useCallback((sectionId: string) => {
@@ -329,11 +391,11 @@ export default function TabSidebarTOC({ activeTab }: Props) {
                 <button
                     type="button"
                     onClick={() => setIsCollapsed(false)}
-                    className="flex items-center gap-1.5 rounded-r-lg border border-l-0 border-primary/50 bg-background/95 px-2 py-1.5 text-xs font-bold text-primary shadow-xl backdrop-blur-md transition-all hover:bg-primary/10 hover:pr-2.5 cursor-pointer group"
-                    title="Show Table of Contents"
+                    className="flex items-center gap-2 rounded-r-xl border border-l-0 border-primary/50 bg-background/95 px-3 py-2 text-xs font-bold text-primary shadow-2xl backdrop-blur-md transition-all hover:bg-primary/10 hover:pr-4 cursor-pointer group"
+                    title="Open Table of Contents (Alt+T)"
                 >
-                    <List className="h-3.5 w-3.5 shrink-0 text-primary" />
-                    <span className="hidden sm:inline text-xs font-bold">TOC</span>
+                    <List className="h-4 w-4 shrink-0 text-primary" />
+                    <span className="text-xs font-bold tracking-tight">Table of Contents</span>
                     <ChevronRight className="h-3.5 w-3.5 opacity-70 group-hover:translate-x-0.5 transition-transform" />
                 </button>
             </div>
@@ -342,43 +404,49 @@ export default function TabSidebarTOC({ activeTab }: Props) {
 
     return (
         <aside
-            className={`fixed left-0 z-50 w-[4.25rem] print:hidden ${topOffset == null ? 'top-32' : ''}`}
-            style={topOffset != null ? { top: `${topOffset}px` } : undefined}
+            className={`fixed left-0 z-50 print:hidden ${topOffset == null ? 'top-32' : ''}`}
+            style={{
+                width: `${tocWidth}px`,
+                top: topOffset != null ? `${topOffset}px` : undefined,
+            }}
         >
-            <nav className="rounded-r-lg border border-l-0 border-primary/40 bg-background/95 shadow-2xl backdrop-blur-md overflow-hidden">
+            <nav className="relative rounded-r-xl border border-l-0 border-primary/40 bg-background/95 shadow-2xl backdrop-blur-md overflow-hidden">
+                {/* Header with Drag and Actions */}
                 <div
                     onPointerDown={handleDragPointerDown}
                     onPointerMove={handleDragPointerMove}
                     onPointerUp={handleDragPointerUp}
-                    className="flex items-center justify-between border-b border-border px-1.5 py-1 bg-primary/10 cursor-move select-none group"
-                    title="Drag vertically to reposition TOC"
+                    className="flex items-center justify-between border-b border-border px-2 py-1.5 bg-primary/10 cursor-move select-none group"
+                    title="Drag vertically to reposition (Alt+T to toggle)"
                 >
-                    <div className="flex items-center gap-0.5 min-w-0">
-                        <GripVertical className="h-3 w-3 text-muted-foreground/60 group-hover:text-primary transition-colors shrink-0" />
-                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-primary truncate">TOC</span>
+                    <div className="flex items-center gap-1 min-w-0">
+                        <GripVertical className="h-3.5 w-3.5 text-muted-foreground/60 group-hover:text-primary transition-colors shrink-0" />
+                        <span className="text-[11px] font-extrabold uppercase tracking-wider text-primary truncate">
+                            Table of Contents
+                        </span>
                     </div>
                     <div className="flex items-center gap-0.5 shrink-0">
-                        {topOffset != null && (
-                            <button
-                                type="button"
-                                onClick={handleResetPosition}
-                                className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
-                                title="Reset TOC position"
-                            >
-                                <RotateCcw className="h-2.5 w-2.5" />
-                            </button>
-                        )}
+                        <button
+                            type="button"
+                            onClick={handleResetAll}
+                            className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer transition-colors"
+                            title="Reset position & width"
+                        >
+                            <RotateCcw className="h-3 w-3" />
+                        </button>
                         <button
                             type="button"
                             onClick={() => setIsCollapsed(true)}
-                            className="rounded p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer shrink-0"
-                            title="Collapse Table of Contents"
+                            className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer shrink-0"
+                            title="Collapse Table of Contents (Alt+T)"
                         >
-                            <ChevronLeft className="h-3 w-3" />
+                            <ChevronLeft className="h-3.5 w-3.5" />
                         </button>
                     </div>
                 </div>
-                <ul className="max-h-[92vh] overflow-y-auto p-0.5 space-y-0.5">
+
+                {/* Section List */}
+                <ul className="max-h-[85vh] overflow-y-auto p-1.5 space-y-0.5 custom-scrollbar">
                     {sections.map((section) => {
                         const isActive = activeSection === section.id
                         return (
@@ -387,8 +455,8 @@ export default function TabSidebarTOC({ activeTab }: Props) {
                                     type="button"
                                     onClick={() => scrollToSection(section.id)}
                                     title={section.label}
-                                    className={`w-full rounded px-1 py-1 text-left text-[10px] font-semibold leading-tight transition-all cursor-pointer truncate ${
-                                        section.indent ? 'pl-1.5 text-muted-foreground/80 font-medium' : ''
+                                    className={`w-full rounded-md px-2 py-1.5 text-left text-[11px] font-semibold leading-snug transition-all cursor-pointer whitespace-normal break-words ${
+                                        section.indent ? 'pl-3 text-muted-foreground/80 font-medium' : ''
                                     } ${
                                         isActive
                                             ? 'border-l-2 border-primary bg-primary/15 font-bold text-primary shadow-2xs'
@@ -401,6 +469,17 @@ export default function TabSidebarTOC({ activeTab }: Props) {
                         )
                     })}
                 </ul>
+
+                {/* Right Edge Resize Handle */}
+                <div
+                    onPointerDown={handleWidthPointerDown}
+                    onPointerMove={handleWidthPointerMove}
+                    onPointerUp={handleWidthPointerUp}
+                    className="absolute top-0 right-0 bottom-0 w-2 cursor-ew-resize hover:bg-primary/30 transition-colors z-20 group"
+                    title="Drag horizontally to resize width"
+                >
+                    <div className="h-full w-0.5 ml-auto bg-transparent group-hover:bg-primary/50" />
+                </div>
             </nav>
         </aside>
     )

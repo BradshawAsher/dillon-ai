@@ -2115,10 +2115,28 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 ) : null}
             </main>
 
+            {/* Right Side Sticky Drawers: FAQ & Activity (Leaves Left side exclusively for TOC) */}
+            <button
+                type="button"
+                onClick={() => setIsFaqSidebarOpen((prev) => !prev)}
+                className={`fixed right-0 top-24 z-40 flex items-center gap-2 rounded-l-xl border border-r-0 bg-background/95 px-3 py-2.5 shadow-xl backdrop-blur-md transition-all duration-200 hover:bg-muted hover:pl-4 group ${
+                    isFaqSidebarOpen
+                        ? 'border-primary/60 bg-primary/10 text-primary font-bold'
+                        : 'border-border/80 text-muted-foreground hover:text-foreground'
+                }`}
+                title="FAQs & Deal Guide"
+                aria-label="Toggle FAQs & Deal Guide sidebar"
+            >
+                <HelpCircle className="h-4 w-4 shrink-0 text-primary" />
+                <span className="text-xs font-bold tracking-tight hidden sm:inline">
+                    {isFaqSidebarOpen ? 'FAQs Guide' : 'FAQs'}
+                </span>
+            </button>
+
             <button
                 type="button"
                 onClick={() => setIsBatchDrawerOpen(true)}
-                className={`fixed left-0 top-20 z-40 flex items-center gap-2.5 rounded-r-xl border border-l-0 border-border/80 bg-background/95 px-3 py-2.5 shadow-xl backdrop-blur-md transition-all duration-200 hover:bg-muted hover:pr-4 group ${
+                className={`fixed right-0 top-36 z-40 flex items-center gap-2.5 rounded-l-xl border border-r-0 border-border/80 bg-background/95 px-3 py-2.5 shadow-xl backdrop-blur-md transition-all duration-200 hover:bg-muted hover:pl-4 group ${
                     hasActiveSubmissions || inFlightBatchPlaceholder ? 'border-primary/60 text-primary animate-pulse' : 'text-muted-foreground hover:text-foreground'
                 }`}
                 title="Open Batch Processing Activity (Ctrl+Shift+B)"
@@ -2131,23 +2149,6 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 </div>
                 <span className="text-xs font-bold tracking-tight hidden sm:inline">
                     {hasActiveSubmissions || inFlightBatchPlaceholder ? 'Batch Running…' : 'Activity'}
-                </span>
-            </button>
-
-            <button
-                type="button"
-                onClick={() => setIsFaqSidebarOpen((prev) => !prev)}
-                className={`fixed right-0 top-1/3 z-40 flex items-center gap-2 rounded-l-xl border border-r-0 bg-background/90 px-3 py-2.5 shadow-xl backdrop-blur-md transition-all duration-200 hover:bg-muted hover:pl-4 group ${
-                    isFaqSidebarOpen
-                        ? 'border-primary/60 bg-primary/10 text-primary font-bold'
-                        : 'border-border/80 text-muted-foreground hover:text-foreground'
-                }`}
-                title="FAQs & Deal Guide"
-                aria-label="Toggle FAQs & Deal Guide sidebar"
-            >
-                <HelpCircle className="h-4 w-4 shrink-0 text-primary" />
-                <span className="text-xs font-bold tracking-tight hidden sm:inline">
-                    {isFaqSidebarOpen ? 'FAQs Guide' : 'FAQs'}
                 </span>
             </button>
 
