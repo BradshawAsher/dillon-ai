@@ -215,11 +215,11 @@ export default function TabSidebarTOC({ activeTab }: { activeTab: WorkspaceTab }
                 <button
                     type="button"
                     onClick={() => setIsCollapsed(false)}
-                    className="flex items-center gap-1 rounded-r-lg border border-l-0 border-primary/50 bg-background/95 px-2 py-1.5 text-xs font-bold text-primary shadow-xl backdrop-blur-md transition-all hover:bg-primary/10 hover:pr-2.5 cursor-pointer group"
+                    className="flex items-center gap-1 rounded-r-lg border border-l-0 border-primary/50 bg-background/95 px-1.5 py-1.5 text-xs font-bold text-primary shadow-xl backdrop-blur-md transition-all hover:bg-primary/10 hover:pr-2 cursor-pointer group"
                     title="Show Table of Contents"
                 >
                     <List className="h-3.5 w-3.5 shrink-0 text-primary" />
-                    <span className="hidden sm:inline text-[10px]">TOC ({sections.length})</span>
+                    <span className="hidden sm:inline text-[9px]">TOC</span>
                     <ChevronRight className="h-3 w-3 opacity-70 group-hover:translate-x-0.5 transition-transform" />
                 </button>
             </div>
@@ -227,12 +227,12 @@ export default function TabSidebarTOC({ activeTab }: { activeTab: WorkspaceTab }
     }
 
     return (
-        <aside className="fixed left-0 top-32 z-50 w-32 print:hidden">
+        <aside className="fixed left-0 top-32 z-50 w-24 print:hidden">
             <nav className="rounded-r-lg border border-l-0 border-primary/40 bg-background/95 shadow-2xl backdrop-blur-md overflow-hidden">
-                <div className="flex items-center justify-between border-b border-border px-2 py-1 bg-primary/10">
+                <div className="flex items-center justify-between border-b border-border px-1.5 py-1 bg-primary/10">
                     <div className="flex items-center gap-1 min-w-0">
                         <Bookmark className="h-3 w-3 text-primary shrink-0" />
-                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-primary truncate">Contents</span>
+                        <span className="text-[9px] font-extrabold uppercase tracking-wider text-primary truncate">TOC</span>
                     </div>
                     <button
                         type="button"
@@ -243,7 +243,7 @@ export default function TabSidebarTOC({ activeTab }: { activeTab: WorkspaceTab }
                         <ChevronLeft className="h-3 w-3" />
                     </button>
                 </div>
-                <ul className="max-h-[78vh] overflow-y-auto p-1 space-y-0.5">
+                <ul className="max-h-[80vh] overflow-y-auto p-1 space-y-0.5">
                     {sections.map((section) => {
                         const isActive = activeSection === section.id
                         return (
@@ -252,8 +252,8 @@ export default function TabSidebarTOC({ activeTab }: { activeTab: WorkspaceTab }
                                     type="button"
                                     onClick={() => scrollToSection(section.id)}
                                     title={section.label}
-                                    className={`w-full rounded px-1.5 py-0.5 text-left text-[10px] font-medium leading-tight transition-all cursor-pointer truncate ${
-                                        section.indent ? 'pl-2.5 text-muted-foreground/80' : ''
+                                    className={`w-full rounded px-1 py-0.5 text-left text-[9px] font-medium leading-tight transition-all cursor-pointer truncate ${
+                                        section.indent ? 'pl-1.5 text-muted-foreground/80' : ''
                                     } ${
                                         isActive
                                             ? 'border-l-2 border-primary bg-primary/15 font-bold text-primary shadow-2xs'
