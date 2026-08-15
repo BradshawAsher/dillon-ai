@@ -603,9 +603,9 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         if (isExampleMode) return false
         try {
             const facts = JSON.parse(hydratedDealModel.documentedFactsJson || '{}')
-            const hasConfirmedEbitda = facts.ebitda_sde?.status === 'confirmed' && typeof facts.ebitda_sde?.value === 'number'
-            const hasConfirmedPrice = hydratedDealModel.askingPrice != null || hydratedDealModel.purchasePrice != null
-            return !(hasConfirmedEbitda && hasConfirmedPrice)
+            const hasDocumentedEbitda = (facts.ebitda_sde?.status === 'confirmed' || facts.ebitda_sde?.status === 'reported') && typeof facts.ebitda_sde?.value === 'number'
+            const hasDocumentedPrice = hydratedDealModel.askingPrice != null || hydratedDealModel.purchasePrice != null
+            return !(hasDocumentedEbitda && hasDocumentedPrice)
         } catch { return true }
     }, [hydratedDealModel, isExampleMode])
 
@@ -613,9 +613,9 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         if (isExampleMode) return false
         try {
             const facts = JSON.parse(hydratedDealModel.documentedFactsJson || '{}')
-            const hasConfirmedRevenue = facts.revenue?.status === 'confirmed' && typeof facts.revenue?.value === 'number'
-            const hasConfirmedEbitda = facts.ebitda_sde?.status === 'confirmed' && typeof facts.ebitda_sde?.value === 'number'
-            return !(hasConfirmedRevenue || hasConfirmedEbitda)
+            const hasDocumentedRevenue = (facts.revenue?.status === 'confirmed' || facts.revenue?.status === 'reported') && typeof facts.revenue?.value === 'number'
+            const hasDocumentedEbitda = (facts.ebitda_sde?.status === 'confirmed' || facts.ebitda_sde?.status === 'reported') && typeof facts.ebitda_sde?.value === 'number'
+            return !(hasDocumentedRevenue || hasDocumentedEbitda)
         } catch { return true }
     }, [hydratedDealModel, isExampleMode])
 
