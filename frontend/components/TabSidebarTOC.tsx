@@ -224,26 +224,26 @@ export default function TabSidebarTOC({ activeTab }: { activeTab: WorkspaceTab }
 
     if (isCollapsed) {
         return (
-            <div className="fixed left-3 top-24 z-40 print:hidden">
+            <div className="fixed left-0 top-32 z-40 print:hidden">
                 <button
                     type="button"
                     onClick={() => setIsCollapsed(false)}
-                    className="flex items-center gap-1.5 rounded-lg border-2 border-primary/50 bg-card px-3 py-2 text-xs font-bold text-primary shadow-xl transition-all hover:bg-primary/10 cursor-pointer"
+                    className="flex items-center gap-2 rounded-r-xl border border-l-0 border-primary/50 bg-background/95 px-3 py-2.5 text-xs font-bold text-primary shadow-xl backdrop-blur-md transition-all hover:bg-primary/10 hover:pr-4 cursor-pointer group"
                     title="Show Table of Contents"
                 >
-                    <List className="h-4 w-4" />
-                    <span>Table of Contents</span>
-                    <ChevronRight className="h-3.5 w-3.5" />
+                    <List className="h-4 w-4 shrink-0 text-primary" />
+                    <span className="hidden sm:inline">Table of Contents ({visibleSections.length})</span>
+                    <ChevronRight className="h-3.5 w-3.5 opacity-70 group-hover:translate-x-0.5 transition-transform" />
                 </button>
             </div>
         )
     }
 
     return (
-        <aside className="fixed left-3 top-24 z-40 hidden w-52 xl:block print:hidden">
-            <nav className="rounded-xl border-2 border-primary/40 bg-card shadow-2xl overflow-hidden">
-                <div className="flex items-center justify-between border-b border-border px-3 py-2.5 bg-primary/10">
-                    <div className="flex items-center gap-1.5">
+        <aside className="fixed left-0 top-32 z-50 w-60 print:hidden">
+            <nav className="rounded-r-2xl border border-l-0 border-primary/40 bg-background/95 shadow-2xl backdrop-blur-md overflow-hidden">
+                <div className="flex items-center justify-between border-b border-border px-3.5 py-2.5 bg-primary/10">
+                    <div className="flex items-center gap-2">
                         <Bookmark className="h-4 w-4 text-primary shrink-0" />
                         <span className="text-xs font-extrabold uppercase tracking-wider text-primary">Table of Contents</span>
                     </div>
@@ -256,7 +256,7 @@ export default function TabSidebarTOC({ activeTab }: { activeTab: WorkspaceTab }
                         <ChevronLeft className="h-4 w-4" />
                     </button>
                 </div>
-                <ul className="max-h-[65vh] overflow-y-auto p-2 space-y-0.5">
+                <ul className="max-h-[60vh] overflow-y-auto p-2 space-y-0.5">
                     {visibleSections.map((section) => {
                         const isActive = activeSection === section.id
                         return (
