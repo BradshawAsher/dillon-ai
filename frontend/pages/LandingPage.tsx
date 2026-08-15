@@ -198,7 +198,7 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
                         <div className="flex flex-col justify-center">
                             <span className="text-2xl sm:text-[26px] font-black tracking-tight text-foreground leading-none">Dillon AI</span>
                             <span className="text-xs font-semibold text-muted-foreground mt-1 leading-none whitespace-nowrap">
-                                Autonomous M&amp;A Due Diligence
+                                Autonomous M&amp;A Due Diligence • by MergeWorks
                             </span>
                         </div>
                     </div>
@@ -878,7 +878,7 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
                         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white font-bold">
                             D
                         </div>
-                        <span className="text-sm font-bold text-foreground">Dillon AI Due Diligence Platform</span>
+                        <span className="text-sm font-bold text-foreground">Dillon AI • Built by MergeWorks</span>
                     </div>
 
                     <div className="flex items-center gap-6 text-xs text-muted-foreground">
@@ -890,7 +890,7 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
                     </div>
 
                     <p className="text-xs text-muted-foreground">
-                        © 2026 Dillon AI Inc. All rights reserved.
+                        © 2026 MergeWorks Inc. Dillon AI is a product of MergeWorks. All rights reserved.
                     </p>
                 </div>
             </footer>
