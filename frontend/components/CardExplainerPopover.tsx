@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Info, X, BookOpen, Lightbulb, Calculator, HelpCircle, Bot } from 'lucide-react'
+import { Info, X, BookOpen, Lightbulb, Calculator, HelpCircle, Bot, Pin } from 'lucide-react'
 
 export interface CardExplainerPopoverProps {
     title: string
@@ -18,10 +18,50 @@ export default function CardExplainerPopover({
     align = 'auto',
     className = '',
 }: CardExplainerPopoverProps) {
-    const [isOpen, setIsOpen] = useState(false)
+    const [isPinned, setIsPinned] = useState(false)
+    const [isHovered, setIsHovered] = useState(false)
     const [computedAlign, setComputedAlign] = useState<'left' | 'right'>('right')
+    const [verticalPlacement, setVerticalPlacement] = useState<'bottom' | 'top'>('bottom')
+    
+    const isOpen = isPinned || isHovered
     const popoverRef = useRef<HTMLDivElement>(null)
     const buttonRef = useRef<HTMLButtonElement>(null)
+    const hoverTimeoutRef = useRef<number | null>(null)
+
+    const clearHoverTimer = () => {
+        if (hoverTimeoutRef.current !== null) {
+            window.clearTimeout(hoverTimeoutRef.current)
+            hoverTimeoutRef.current = null
+        }
+    }
+
+    const handleMouseEnter = () => {
+        clearHoverTimer()
+        setIsHovered(true)
+    }
+
+    const handleMouseLeave = () => {
+        clearHoverTimer()
+        hoverTimeoutRef.current = window.setTimeout(() => {
+            setIsHovered(false)
+        }, 180)
+    }
+
+    const handleTogglePin = (e: React.MouseEvent) => {
+        e.stopPropagation()
+        setIsPinned((prev) => !prev)
+    }
+
+    const handleClose = (e?: React.MouseEvent) => {
+        if (e) e.stopPropagation()
+        clearHoverTimer()
+        setIsPinned(false)
+        setIsHovered(false)
+    }
+
+    useEffect(() => {
+        return () => clearHoverTimer()
+    }, [])
 
     // Handle outside click and Escape key
     useEffect(() => {
@@ -34,13 +74,13 @@ export default function CardExplainerPopover({
                 buttonRef.current &&
                 !buttonRef.current.contains(e.target as Node)
             ) {
-                setIsOpen(false)
+                handleClose()
             }
         }
 
         function handleKeyDown(e: KeyboardEvent) {
             if (e.key === 'Escape') {
-                setIsOpen(false)
+                handleClose()
             }
         }
 
@@ -52,30 +92,36 @@ export default function CardExplainerPopover({
         }
     }, [isOpen])
 
-    // Compute alignment to avoid screen cutoff
+    // Compute alignment and vertical placement to avoid screen cutoff
     useEffect(() => {
         if (!isOpen || !buttonRef.current) return
 
+        const rect = buttonRef.current.getBoundingClientRect()
+        const popoverWidth = 340
+        const popoverHeight = 320
+
         if (align === 'left') {
             setComputedAlign('left')
-            return
-        }
-        if (align === 'right') {
-            setComputedAlign('right')
-            return
-        }
-
-        const rect = buttonRef.current.getBoundingClientRect()
-        const popoverWidth = 320
-        if (rect.left + popoverWidth > window.innerWidth - 16) {
+        } else if (align === 'right') {
             setComputedAlign('right')
         } else {
-            setComputedAlign('left')
+            if (rect.left + popoverWidth > window.innerWidth - 20) {
+                setComputedAlign('right')
+            } else {
+                setComputedAlign('left')
+            }
+        }
+
+        if (rect.bottom + popoverHeight > window.innerHeight - 20 && rect.top > popoverHeight + 20) {
+            setVerticalPlacement('top')
+        } else {
+            setVerticalPlacement('bottom')
         }
     }, [isOpen, align])
 
-    const handleAskAi = () => {
-        setIsOpen(false)
+    const handleAskAi = (e: React.MouseEvent) => {
+        e.stopPropagation()
+        handleClose()
         if (typeof window !== 'undefined') {
             window.dispatchEvent(
                 new CustomEvent('mergeworks:open-chat-ask', {
@@ -89,14 +135,22 @@ export default function CardExplainerPopover({
     }
 
     return (
-        <div className={`relative inline-flex items-center ${className}`}>
+        <div
+            className={`relative inline-flex items-center ${className}`}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+        >
             <button
                 ref={buttonRef}
                 type="button"
-                onClick={() => setIsOpen(!isOpen)}
+                onClick={handleTogglePin}
                 aria-label={`Learn about ${title}`}
-                title={`What is ${title}?`}
-                className="inline-flex h-5 w-5 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground transition-colors focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+                title={`What is ${title}? (Hover to preview, click to pin)`}
+                className={`inline-flex h-5 w-5 items-center justify-center rounded-full transition-colors focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer ${
+                    isPinned
+                        ? 'bg-primary text-primary-foreground font-bold shadow-xs'
+                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                }`}
             >
                 <HelpCircle className="h-3.5 w-3.5" />
             </button>
@@ -104,23 +158,40 @@ export default function CardExplainerPopover({
             {isOpen && (
                 <div
                     ref={popoverRef}
-                    className={`absolute top-full z-50 mt-1.5 w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-popover p-4 shadow-xl text-popover-foreground animate-in fade-in zoom-in-95 duration-150 ${
-                        computedAlign === 'right' ? 'right-0' : 'left-0'
-                    }`}
+                    onMouseEnter={handleMouseEnter}
+                    onMouseLeave={handleMouseLeave}
+                    className={`absolute z-50 w-84 max-w-[calc(100vw-2rem)] max-h-[80vh] overflow-y-auto rounded-xl border border-border bg-popover p-4 shadow-2xl text-popover-foreground animate-in fade-in zoom-in-95 duration-150 ${
+                        verticalPlacement === 'top' ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
+                    } ${computedAlign === 'right' ? 'right-0' : 'left-0'}`}
                 >
                     <div className="flex items-start justify-between gap-2 border-b border-border/60 pb-2.5">
                         <div className="flex items-center gap-1.5">
                             <BookOpen className="h-4 w-4 text-primary shrink-0" />
                             <h4 className="text-xs font-bold text-foreground leading-snug">{title}</h4>
                         </div>
-                        <button
-                            type="button"
-                            onClick={() => setIsOpen(false)}
-                            aria-label="Close explainer"
-                            className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
-                        >
-                            <X className="h-3.5 w-3.5" />
-                        </button>
+                        <div className="flex items-center gap-1">
+                            <button
+                                type="button"
+                                onClick={handleTogglePin}
+                                title={isPinned ? 'Unpin popover' : 'Pin popover open'}
+                                aria-label="Toggle pin"
+                                className={`rounded p-1 transition-colors cursor-pointer ${
+                                    isPinned
+                                        ? 'bg-primary/20 text-primary font-bold'
+                                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                                }`}
+                            >
+                                <Pin className="h-3 w-3" />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleClose}
+                                aria-label="Close explainer"
+                                className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+                            >
+                                <X className="h-3.5 w-3.5" />
+                            </button>
+                        </div>
                     </div>
 
                     <div className="space-y-3 pt-3 text-xs leading-relaxed">

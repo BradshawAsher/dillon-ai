@@ -5,6 +5,7 @@ import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence
 import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
+import CardExplainerPopover from './CardExplainerPopover'
 
 type Props = {
     model: DealModel
@@ -88,6 +89,12 @@ export default function RiskAdjustedValuationCard({ model, synthesis }: Props) {
                     <div className="flex items-center gap-2">
                         <Scale className="h-5 w-5 text-primary" />
                         <CardTitle className="text-lg">Risk-adjusted valuation</CardTitle>
+                        <CardExplainerPopover
+                            title="Risk-Adjusted Valuation"
+                            whatIsIt="A decision-science valuation model that estimates intrinsic enterprise value by weighting Bear, Base, and Bull operational scenarios against the deal's diligence findings."
+                            howItWorks="Scenario probabilities automatically adjust dynamically based on documented red and green flags extracted from the deal's VDR data room."
+                            whyItMatters="Protects buyers from paying full multiple value on a deal when substantial downside operational risks or key-person dependencies remain unhedged."
+                        />
                     </div>
                     <Badge variant="outline">Probability-weighted</Badge>
                 </div>
