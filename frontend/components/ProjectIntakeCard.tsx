@@ -355,7 +355,7 @@ export default function ProjectIntakeCard({
                             </CardHeader>
                             <CardContent className="space-y-3 py-2 text-sm text-muted-foreground">
                                 <p>
-                                    Would you like to enter your custom API key now, or proceed with standard Production queueing using the default Mergeworks system key?
+                                    Would you like to enter your custom API key now, or proceed with standard Production queueing using the default Dillon AI system key?
                                 </p>
                             </CardContent>
                             <CardFooter className="flex flex-col sm:flex-row items-center justify-end gap-2 border-t border-border pt-4">

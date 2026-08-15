@@ -139,7 +139,7 @@ return (
             <>
                 <div className="fixed inset-0 z-50 bg-black/50" onClick={() => setShowDialog(false)} />
                 <div className="fixed left-1/2 top-1/2 z-50 w-full max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-lg border border-border bg-popover p-6 shadow-xl">
-                    <h2 className="text-lg font-semibold text-foreground">Sign in to MergeWorks</h2>
+                    <h2 className="text-lg font-semibold text-foreground">Sign in to Dillon AI</h2>
                     <p className="mt-1 text-sm text-muted-foreground">Optional — sign in to personalize your experience.</p>
                     <form onSubmit={handleLogin} className="mt-4 space-y-3">
                         <div>

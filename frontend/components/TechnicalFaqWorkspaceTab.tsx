@@ -136,7 +136,7 @@ export default function TechnicalFaqWorkspaceTab({ onSwitchTab }: TechnicalFaqWo
                         </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                        Technical documentation, navigation maps, and action button guide for MergeWorks AI Due Diligence.
+                        Technical documentation, navigation maps, and action button guide for Dillon AI Due Diligence.
                     </p>
                 </div>
             </div>

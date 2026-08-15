@@ -71,7 +71,7 @@ export default function AccessGate() {
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-sm space-y-4 rounded-xl border border-border bg-card p-6 shadow-retool-lg">
         <div className="space-y-1">
-          <h2 className="text-lg font-semibold text-foreground">Due Diligence Dashboard</h2>
+          <h2 className="text-lg font-semibold text-foreground">Dillon AI Due Diligence Cockpit</h2>
           <p className="text-sm text-muted-foreground">Enter the team password to continue.</p>
         </div>
         <div className="space-y-2">
