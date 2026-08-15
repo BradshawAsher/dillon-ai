@@ -144,6 +144,8 @@
 
 - Right now the bullet points for acquisition judgement are parsed in the frontend, it may be good to do it on the backend so things are not cut off?
 
+- Chatbot should also be able to guide people with functionality like an advanced FAQ if the user is stuck or doesn't know which feature is where, and add clickable links that the user can click to take them to the real places
+
 -  make a more custom and personalized business meeting slides with screenshots from your actual dashboard instead of generic images
 
 - Change your fixed window + scrolling to more of fixed window + 20 per page, or 50 per page, or view all, like big websites like AWS when you have to look at IAM and admin permissinos stuff?

@@ -67,8 +67,10 @@ export default function DealValuationCard({ synthesis, askingPrice, model, onMod
     const illustrativeRevenue = baseValue !== null && baseValue > 0 ? baseValue / 2.1 : 25_000_000
     const resolvedRevenue = revenue ?? illustrativeRevenue
     const resolvedEbitda = ebitda ?? resolvedRevenue * 0.18
-    const resolvedRevenueMultiple = model?.revenueMultiple ?? 2.1
-    const resolvedEbitdaMultiple = model?.ebitdaMultiple ?? 8
+    const derivedRevMultiple = (revenue && revenue > 0 && model?.purchasePrice) ? Number((model.purchasePrice / revenue).toFixed(2)) : 2.1
+    const resolvedRevenueMultiple = model?.revenueMultiple ?? derivedRevMultiple
+    const derivedEbitdaMultiple = (ebitda && ebitda > 0 && model?.purchasePrice) ? Number((model.purchasePrice / ebitda).toFixed(2)) : 8
+    const resolvedEbitdaMultiple = model?.ebitdaMultiple ?? derivedEbitdaMultiple
     const resolvedAssetHaircut = model?.assetHaircutPercent ?? 0.1
     const resolvedNetAssets = assets !== null && liabilities !== null
         ? assets - liabilities
@@ -92,24 +94,24 @@ export default function DealValuationCard({ synthesis, askingPrice, model, onMod
         {
             label: 'Revenue multiple',
             value: resolvedRevenue * resolvedRevenueMultiple,
-            illustrative: revenue === null || model?.revenueMultiple === null || model?.revenueMultiple === undefined,
+            illustrative: revenue === null || (model?.revenueMultiple == null && model?.purchasePrice == null),
             evidence: buildDerivedEvidence({
                 title: 'Revenue-multiple valuation',
                 formula: 'revenue × revenue multiple',
                 documentedInputs: [{ label: 'Revenue', value: asMoney(revenue) }],
-                analystInputs: [{ label: 'Revenue multiple', value: model?.revenueMultiple !== null && model?.revenueMultiple !== undefined ? `${model.revenueMultiple}x` : 'Not set' }],
+                analystInputs: [{ label: 'Revenue multiple', value: `${resolvedRevenueMultiple}x` }],
                 primaryFact: factEvidence('revenue', 'Revenue'),
             }),
         },
         {
             label: 'EBITDA / SDE multiple',
             value: resolvedEbitda * resolvedEbitdaMultiple,
-            illustrative: ebitda === null || model?.ebitdaMultiple === null || model?.ebitdaMultiple === undefined,
+            illustrative: ebitda === null || (model?.ebitdaMultiple == null && model?.purchasePrice == null),
             evidence: buildDerivedEvidence({
                 title: 'EBITDA-multiple valuation',
                 formula: 'EBITDA/SDE × EBITDA multiple',
                 documentedInputs: [{ label: 'EBITDA / SDE', value: asMoney(ebitda) }],
-                analystInputs: [{ label: 'EBITDA multiple', value: model?.ebitdaMultiple !== null && model?.ebitdaMultiple !== undefined ? `${model.ebitdaMultiple}x` : 'Not set' }],
+                analystInputs: [{ label: 'EBITDA multiple', value: `${resolvedEbitdaMultiple}x` }],
                 primaryFact: factEvidence('ebitda_sde', 'EBITDA / SDE'),
             }),
         },

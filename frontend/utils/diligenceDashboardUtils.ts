@@ -234,8 +234,25 @@ export function hydrateModelFactsFromDocuments(model: DealModel, documents: Subm
         merged[field] = { ...fact }
     }
 
-    return JSON.stringify(merged) === (model.documentedFactsJson || '{}') ? model : {
+    const priceFact = typeof merged.purchase_price?.value === 'number' ? (merged.purchase_price.value as number) : null
+    const askingFact = typeof merged.asking_price?.value === 'number' ? (merged.asking_price.value as number) : null
+    const multFact = typeof merged.ebitda_multiple?.value === 'number' ? (merged.ebitda_multiple.value as number) : null
+    const revMultFact = typeof merged.revenue_multiple?.value === 'number' ? (merged.revenue_multiple.value as number) : null
+    const debtFact = typeof merged.debt?.value === 'number' ? (merged.debt.value as number) : null
+    const wcFact = typeof merged.target_working_capital?.value === 'number'
+        ? (merged.target_working_capital.value as number)
+        : typeof merged.working_capital?.value === 'number'
+            ? (merged.working_capital.value as number)
+            : null
+
+    return {
         ...model,
+        purchasePrice: model.purchasePrice ?? priceFact ?? askingFact,
+        askingPrice: model.askingPrice ?? askingFact ?? priceFact,
+        ebitdaMultiple: model.ebitdaMultiple ?? multFact,
+        revenueMultiple: model.revenueMultiple ?? revMultFact,
+        debtAssumed: model.debtAssumed ?? debtFact,
+        workingCapitalRequirement: model.workingCapitalRequirement ?? wcFact,
         documentedFactsJson: JSON.stringify(merged),
         documentedFactsStatus: model.documentedFactsStatus || 'Temporarily hydrated from completed documents',
     }
@@ -250,17 +267,22 @@ export function buildReturnsDisplayModel(model: DealModel) {
     const confirmedNumber = (field: string) => facts[field]?.status === 'confirmed' && typeof facts[field]?.value === 'number'
     const hasEbitda = confirmedNumber('ebitda_sde')
     const hasRevenue = confirmedNumber('revenue')
+    const revNum = hasRevenue ? (facts.revenue.value as number) : 1_000_000
+    const ebitdaNum = hasEbitda ? (facts.ebitda_sde.value as number) : 200_000
+    const historicalMargin = (revNum > 0 && ebitdaNum > 0) ? ebitdaNum / revNum : 0.20
+
+    const resolvedPrice = model.purchasePrice ?? model.askingPrice ?? (hasEbitda ? Math.round(ebitdaNum * (model.ebitdaMultiple ?? 5.0)) : 1_000_000)
 
     const fallbackBase = {
-        askingPrice: model.askingPrice ?? 1_000_000,
-        purchasePrice: model.purchasePrice ?? model.askingPrice ?? 1_000_000,
-        transactionFees: model.transactionFees ?? 10_000,
-        workingCapitalRequirement: model.workingCapitalRequirement ?? 20_000,
+        askingPrice: model.askingPrice ?? resolvedPrice,
+        purchasePrice: resolvedPrice,
+        transactionFees: model.transactionFees ?? Math.round(resolvedPrice * 0.01),
+        workingCapitalRequirement: model.workingCapitalRequirement ?? 0,
         holdPeriodYears: model.holdPeriodYears ?? 5,
         taxRate: model.taxRate ?? 0.25,
-        maintenanceCapex: model.maintenanceCapex ?? 10_000,
-        exitMultiple: model.exitMultiple ?? 4,
-        exitCosts: model.exitCosts ?? 16_000,
+        maintenanceCapex: model.maintenanceCapex ?? Math.round(ebitdaNum * 0.1),
+        exitMultiple: model.exitMultiple ?? model.ebitdaMultiple ?? 5,
+        exitCosts: model.exitCosts ?? Math.round(resolvedPrice * 0.015),
         equityContributionPercent: model.equityContributionPercent ?? 0.3,
         interestRate: model.interestRate ?? 0.1,
         amortizationYears: model.amortizationYears ?? 10,
@@ -268,12 +290,12 @@ export function buildReturnsDisplayModel(model: DealModel) {
         bearRevenueGrowth: model.bearRevenueGrowth ?? 0,
         baseRevenueGrowth: model.baseRevenueGrowth ?? 0.05,
         bullRevenueGrowth: model.bullRevenueGrowth ?? 0.1,
-        bearEbitdaMargin: model.bearEbitdaMargin ?? 0.15,
-        baseEbitdaMargin: model.baseEbitdaMargin ?? 0.2,
-        bullEbitdaMargin: model.bullEbitdaMargin ?? 0.25,
-        bearExitMultiple: model.bearExitMultiple ?? 3,
-        baseExitMultiple: model.baseExitMultiple ?? 4,
-        bullExitMultiple: model.bullExitMultiple ?? 5,
+        bearEbitdaMargin: model.bearEbitdaMargin ?? Number(Math.max(0.05, historicalMargin - 0.05).toFixed(4)),
+        baseEbitdaMargin: model.baseEbitdaMargin ?? Number(historicalMargin.toFixed(4)),
+        bullEbitdaMargin: model.bullEbitdaMargin ?? Number((historicalMargin + 0.05).toFixed(4)),
+        bearExitMultiple: model.bearExitMultiple ?? Math.max(2, (model.ebitdaMultiple ?? 5) - 1),
+        baseExitMultiple: model.baseExitMultiple ?? model.exitMultiple ?? model.ebitdaMultiple ?? 5,
+        bullExitMultiple: model.bullExitMultiple ?? (model.ebitdaMultiple ?? 5) + 1,
     }
 
     const merged = { ...model }
@@ -285,8 +307,8 @@ export function buildReturnsDisplayModel(model: DealModel) {
 
     merged.documentedFactsJson = JSON.stringify({
         ...facts,
-        revenue: hasRevenue ? facts.revenue : { value: 1_000_000, status: 'illustrative', currency: 'USD', period: 'Display preview', provenance: 'Illustrative preview' },
-        ebitda_sde: hasEbitda ? facts.ebitda_sde : { value: 200_000, status: 'illustrative', currency: 'USD', period: 'Display preview', provenance: 'Illustrative preview' },
+        revenue: hasRevenue ? facts.revenue : { value: revNum, status: 'illustrative', currency: 'USD', period: 'Display preview', provenance: 'Illustrative preview' },
+        ebitda_sde: hasEbitda ? facts.ebitda_sde : { value: ebitdaNum, status: 'illustrative', currency: 'USD', period: 'Display preview', provenance: 'Illustrative preview' },
     })
 
     return merged as DealModel

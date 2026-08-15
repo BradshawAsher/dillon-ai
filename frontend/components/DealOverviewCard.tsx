@@ -89,7 +89,7 @@ export default function DealOverviewCard({ syntheses, projects, currentProjectId
         ? 'Not confirmed'
         : `${employeeCount.toLocaleString()} ${project?.employeeType || 'employees'}`
     const hasValuation = Boolean(synthesis?.valuationLowerBound || synthesis?.valuationBaseEstimate || synthesis?.valuationUpperBound)
-    const askingPriceValue = parseMoney(askingPrice) ?? (exampleMode ? 110_000_000 : null)
+    const askingPriceValue = parseMoney(askingPrice) ?? model?.purchasePrice ?? model?.askingPrice ?? (exampleMode ? 110_000_000 : null)
     const baseValue = synthesis ? parseMoney(synthesis.valuationBaseEstimate) : null
     const priceGapPercent = computePriceGapPercent(askingPriceValue, baseValue)
     const priceGapLabel = priceGapPercent === null
@@ -373,7 +373,7 @@ export default function DealOverviewCard({ syntheses, projects, currentProjectId
                                     inputMode="decimal"
                                     value={askingPrice}
                                     onChange={(event) => onAskingPriceChange(event.target.value)}
-                                    placeholder="Enter asking price in USD"
+                                    placeholder={model?.purchasePrice ? `Extracted LOI: $${model.purchasePrice.toLocaleString()}` : "Enter asking price in USD"}
                                     className="mt-3"
                                 />
                                 {askingPriceValue !== null && baseValue !== null ? (

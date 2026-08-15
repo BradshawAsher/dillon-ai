@@ -57,6 +57,12 @@ const KNOWN_METRICS = new Set([
     'gross_profit',
     'net_income',
     'cogs',
+    'purchase_price',
+    'asking_price',
+    'ebitda_multiple',
+    'revenue_multiple',
+    'target_working_capital',
+    'escrow_amount',
 ])
 
 function periodRank(period: string | undefined): number {
@@ -113,6 +119,44 @@ export function deriveDocumentedFacts(documents: SubmissionHistoryItem[]): Recor
     const bestByMetric = new Map<string, RawFact>()
 
     for (const document of documents) {
+        // 1. Direct LOI / Purchase Agreement valuation extraction
+        const isLoiDoc = (
+            (document.detectedDocumentType || '').toLowerCase().includes('loi') ||
+            (document.detectedDocumentType || '').toLowerCase().includes('purchase agreement') ||
+            (document.documentType || '').toLowerCase().includes('loi') ||
+            (document.fileName || '').toLowerCase().includes('loi') ||
+            (document.fileName || '').toLowerCase().includes('letter_of_intent')
+        )
+
+        if (document.valuationBaseEstimate) {
+            const valNum = Number(String(document.valuationBaseEstimate).replace(/[^0-9.]/g, ''))
+            if (Number.isFinite(valNum) && valNum > 0) {
+                const priceFact: RawFact = {
+                    metric: 'purchase_price',
+                    normalized_value: valNum,
+                    raw_value: `$${valNum.toLocaleString()}`,
+                    period: document.period || 'LOI / Agreement',
+                    currency: 'USD',
+                    confidence: 0.95,
+                    status: 'confirmed',
+                    provenance: 'Extracted from Purchase Agreement / LOI',
+                    citation: {
+                        source_file: document.fileName || 'letter_of_intent.pdf',
+                        excerpt: document.aiSummary || `Proposed enterprise value / purchase price of $${valNum.toLocaleString()}`,
+                    },
+                }
+                const existingPrice = bestByMetric.get('purchase_price')
+                if (!existingPrice || isBetter(priceFact, existingPrice)) {
+                    bestByMetric.set('purchase_price', priceFact)
+                }
+                const askingFact: RawFact = { ...priceFact, metric: 'asking_price' }
+                const existingAsking = bestByMetric.get('asking_price')
+                if (!existingAsking || isBetter(askingFact, existingAsking)) {
+                    bestByMetric.set('asking_price', askingFact)
+                }
+            }
+        }
+
         if (!document.financialFactsJson) continue
 
         let facts: RawFact[]
@@ -127,6 +171,71 @@ export function deriveDocumentedFacts(documents: SubmissionHistoryItem[]): Recor
             const metric = (fact.metric ?? '').trim().toLowerCase()
             if (metric.length === 0 || !isNumber(fact.normalized_value)) continue
 
+            // Parse multiple mentions from raw_value (e.g. "5.50 times the Adjusted EBITDA" -> 5.50x)
+            const rawText = `${fact.raw_value ?? ''} ${fact.citation?.excerpt ?? ''}`
+            const multMatch = rawText.match(/(\d+(?:\.\d+)?)\s*(?:times|x)\b/i)
+            if (multMatch) {
+                const multipleVal = parseFloat(multMatch[1])
+                if (Number.isFinite(multipleVal) && multipleVal > 0 && multipleVal < 100) {
+                    const multFact: RawFact = {
+                        metric: 'ebitda_multiple',
+                        normalized_value: multipleVal,
+                        raw_value: `${multipleVal}x`,
+                        period: fact.period || '',
+                        currency: 'x',
+                        confidence: 0.95,
+                        status: 'confirmed',
+                        provenance: 'Extracted from Purchase Agreement / LOI',
+                        citation: fact.citation,
+                    }
+                    const existingMult = bestByMetric.get('ebitda_multiple')
+                    if (!existingMult || isBetter(multFact, existingMult)) {
+                        bestByMetric.set('ebitda_multiple', multFact)
+                    }
+                }
+            }
+
+            // If an LOI fact labeled "ebitda_sde" has enterprise value text or is an LOI document
+            if (isLoiDoc && metric === 'ebitda_sde' && rawText.toLowerCase().includes('enterprise value')) {
+                // Register this enterprise value as purchase price
+                const priceFact: RawFact = {
+                    metric: 'purchase_price',
+                    normalized_value: fact.normalized_value,
+                    raw_value: fact.raw_value,
+                    period: fact.period || 'LOI',
+                    currency: fact.currency || 'USD',
+                    confidence: fact.confidence ?? 0.95,
+                    status: fact.status || 'confirmed',
+                    provenance: 'Extracted from Purchase Agreement / LOI',
+                    citation: fact.citation,
+                }
+                const existingPrice = bestByMetric.get('purchase_price')
+                if (!existingPrice || isBetter(priceFact, existingPrice)) {
+                    bestByMetric.set('purchase_price', priceFact)
+                }
+                const askingFact: RawFact = { ...priceFact, metric: 'asking_price' }
+                const existingAsking = bestByMetric.get('asking_price')
+                if (!existingAsking || isBetter(askingFact, existingAsking)) {
+                    bestByMetric.set('asking_price', askingFact)
+                }
+
+                // If document had a separate ebitda_extracted, use that for operating ebitda_sde instead of the EV
+                const ebitdaExtractedNum = Number(String(document.ebitdaExtracted || '').replace(/[^0-9.]/g, ''))
+                if (Number.isFinite(ebitdaExtractedNum) && ebitdaExtractedNum > 0) {
+                    const operatingEbitdaFact: RawFact = {
+                        ...fact,
+                        normalized_value: ebitdaExtractedNum,
+                        raw_value: `$${ebitdaExtractedNum.toLocaleString()}`,
+                    }
+                    const existingEbitda = bestByMetric.get('ebitda_sde')
+                    if (!existingEbitda || isBetter(operatingEbitdaFact, existingEbitda)) {
+                        bestByMetric.set('ebitda_sde', operatingEbitdaFact)
+                    }
+                }
+                // Do not register the multi-million EV as operating EBITDA
+                continue
+            }
+
             const existing = bestByMetric.get(metric)
             if (!existing || isBetter(fact, existing)) {
                 bestByMetric.set(metric, fact)
@@ -136,10 +245,6 @@ export function deriveDocumentedFacts(documents: SubmissionHistoryItem[]): Recor
 
     const result: Record<string, DerivedFact> = {}
     for (const [metric, fact] of bestByMetric) {
-        // Keep known metrics; also keep anything else so it isn't silently lost.
-        if (!KNOWN_METRICS.has(metric)) {
-            // still carry it, but only if it looks like a usable numeric fact
-        }
         result[metric] = {
             value: fact.normalized_value as number,
             status: fact.status ?? 'reported',
