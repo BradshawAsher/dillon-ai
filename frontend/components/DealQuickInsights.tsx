@@ -45,7 +45,7 @@ export default function DealQuickInsights({ model, synthesis }: Props) {
                     sourceDoc: facts.ebitda_sde?.source_document || 'Confidential Information Memorandum (CIM)',
                     pageNumber: facts.ebitda_sde?.source_page || 1,
                     quoteSnippet: `Purchase/asking price of $${(price / 1_000_000).toFixed(2)}M against documented EBITDA of $${(ebitda / 1_000_000).toFixed(2)}M.`,
-                    confidence: facts.ebitda_sde?.confidence || 'high',
+                    confidence: facts.ebitda_sde?.confidence != null ? String(facts.ebitda_sde.confidence) : 'high',
                     status: 'confirmed',
                     notes: `Evaluated against industry norm for SMB acquisitions (typically 3.0x - 5.5x for $1M-$5M EBITDA companies).`,
                 },
