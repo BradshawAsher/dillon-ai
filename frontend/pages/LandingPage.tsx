@@ -32,7 +32,8 @@ import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Input } from '../lib/shadcn/input'
-import SupademoModal from '../components/SupademoModal'
+import SupademoModal, { DemoVariantId } from '../components/SupademoModal'
+import { WorkspaceDemoGalleryBar } from '../components/WorkspaceDemoGalleryBar'
 
 interface LandingPageProps {
     onLaunchDashboard: () => void
@@ -40,6 +41,7 @@ interface LandingPageProps {
 
 export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
     const [showWalkthroughModal, setShowWalkthroughModal] = useState(false)
+    const [selectedWalkthroughDemoId, setSelectedWalkthroughDemoId] = useState<DemoVariantId>('short-supademo')
     const [showAccessModal, setShowAccessModal] = useState(false)
     const [previewTab, setPreviewTab] = useState<'valuation' | 'citations' | 'risks' | 'cost'>('valuation')
     const [activeFactIndex, setActiveFactIndex] = useState(0)
@@ -303,6 +305,16 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
                                 <Cpu className="h-4 w-4 text-indigo-600" />
                                 <span>Claude Sonnet 5 &amp; OpenAI 5.6 Hybrid Engine</span>
                             </div>
+                        </div>
+
+                        {/* PRODUCT WALKTHROUGHS & VIDEO DEMOS GALLERY */}
+                        <div className="pt-10 w-full max-w-5xl mx-auto text-left">
+                            <WorkspaceDemoGalleryBar
+                                onSelectDemo={(demoId) => {
+                                    setSelectedWalkthroughDemoId(demoId)
+                                    setShowWalkthroughModal(true)
+                                }}
+                            />
                         </div>
                     </div>
                 </div>
@@ -872,6 +884,7 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
             <SupademoModal
                 isOpen={showWalkthroughModal}
                 onClose={() => setShowWalkthroughModal(false)}
+                defaultDemoId={selectedWalkthroughDemoId}
             />
 
             {/* APPLY FOR ACCESS MODAL */}

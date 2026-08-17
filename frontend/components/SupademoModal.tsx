@@ -24,12 +24,30 @@ export const SUPADEMO_DEMO_ID = 'cmsxjva3k02qnqmzskc587vyg'
 export const SUPADEMO_DIRECT_URL = `https://app.supademo.com/demo/${SUPADEMO_DEMO_ID}?utm_source=link`
 export const SUPADEMO_EMBED_URL = `https://app.supademo.com/embed/${SUPADEMO_DEMO_ID}?embed_v=2&utm_source=embed`
 
+export const SUPADEMO_DEEP_DEMO_ID = 'cmsxmhhb4005f1a0j5beodn92'
+export const SUPADEMO_DEEP_DIRECT_URL = `https://app.supademo.com/demo/${SUPADEMO_DEEP_DEMO_ID}?utm_source=link`
+export const SUPADEMO_DEEP_EMBED_URL = `https://app.supademo.com/embed/${SUPADEMO_DEEP_DEMO_ID}?embed_v=2&utm_source=embed`
+
 export const SUPADEMO_IFRAME_CODE = `<div style="position: relative; box-sizing: content-box; max-height: 80vh; max-height: 80svh; width: 100%; aspect-ratio: 1.78; padding: 40px 0 40px 0;">
   <iframe
     src="${SUPADEMO_EMBED_URL}"
     loading="lazy"
     title="MergeWorks — Financial Due Diligence Engine"
-    allow="clipboard-write"
+    allow="clipboard-write; fullscreen; autoplay; encrypted-media; picture-in-picture"
+    frameborder="0"
+    webkitallowfullscreen="true"
+    mozallowfullscreen="true"
+    allowfullscreen
+    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; border-radius: 12px;"
+  ></iframe>
+</div>`
+
+export const SUPADEMO_DEEP_IFRAME_CODE = `<div style="position: relative; box-sizing: content-box; max-height: 80vh; max-height: 80svh; width: 100%; aspect-ratio: 1.78; padding: 40px 0 40px 0;">
+  <iframe
+    src="${SUPADEMO_DEEP_EMBED_URL}"
+    loading="lazy"
+    title="MergeWorks — Full Deal Diligence Deep Dive (30 Steps)"
+    allow="clipboard-write; fullscreen; autoplay; encrypted-media; picture-in-picture"
     frameborder="0"
     webkitallowfullscreen="true"
     mozallowfullscreen="true"
@@ -49,6 +67,39 @@ export const STEPS_ROADMAP = [
     { num: 8, title: 'Equity Waterfall Modeling', desc: 'Model sponsor equity, senior debt, seller notes, and IRR returns.', tag: 'Waterfall' },
     { num: 9, title: '1-Click IC Export', desc: 'Download publication-ready Investment Committee memorandums.', tag: 'IC Reports' },
     { num: 10, title: 'Live n8n Cloud Pipeline', desc: 'Multi-model orchestration running on Pod 1 n8n & Supabase.', tag: 'Cloud Agent' },
+]
+
+export const DEEP_STEPS_ROADMAP = [
+    { num: 1, title: 'Multi-Doc Deal Room Ingestion', desc: 'Upload CIMs, LOIs, tax returns, and financials in one batch.', tag: 'Intake' },
+    { num: 2, title: 'Trigger OCR & Extraction Pipeline', desc: 'Multi-model pipeline parses PDFs and scans with zero data leakage.', tag: 'Ingestion' },
+    { num: 3, title: 'Submission History & Version Audit', desc: 'Inspect queued documents and track batch OCR processing status.', tag: 'Audit' },
+    { num: 4, title: 'LOI Terms & Valuation Extraction', desc: 'Extracts purchase price, earnout thresholds, and closing contingencies.', tag: 'LOI' },
+    { num: 5, title: 'Deep-Dive LOI Evidence Inspection', desc: 'Every extracted covenant is directly linked to the raw source LOI.', tag: 'Evidence' },
+    { num: 6, title: '100% Ground Truth Evidence Modal', desc: 'View exact bounding boxes, sentence citations, and confidence scores.', tag: 'Citations' },
+    { num: 7, title: 'Verified SDE & EBITDA Add-Backs', desc: 'Reconcile discretionary expenses, non-recurring legal costs, and salaries.', tag: 'Quality of Earnings' },
+    { num: 8, title: 'Enterprise Value Implied by Ask', desc: 'Calculates headline EV multiple from reported earnings vs comps.', tag: 'Valuation' },
+    { num: 9, title: 'Debt-to-Asset & Solvency Audit', desc: 'Cross-checks balance sheet liabilities to confirm clean 0.13 ratio.', tag: 'Balance Sheet' },
+    { num: 10, title: 'Scorecard Cross-Validation', desc: 'Flags contradictory numbers between teaser CIM and signed LOI.', tag: 'Reconciliation' },
+    { num: 11, title: 'Cross-Doc Synthesis & $350k Holdback', desc: 'Detects customer concentration risk and proposes $350k escrow.', tag: 'Synthesis' },
+    { num: 12, title: 'Key Diligence Inquiry Questions', desc: 'Specific inquiry questions for management on top-customer renewals.', tag: 'Inquiry' },
+    { num: 13, title: 'Critical Cash-Flow Red Flag (95%)', desc: 'Identifies working capital deficit and recommends term renegotiation.', tag: 'Red Flag' },
+    { num: 14, title: 'IC ESCALATE Verdict', desc: 'Synthesizes red flags and multiple disconnects into clear guidance.', tag: 'Verdict' },
+    { num: 15, title: 'Enterprise Value Methodologies', desc: 'Examine EV = Purchase Price + Net Funded Debt calculation mechanics.', tag: 'Formulas' },
+    { num: 16, title: 'Normalized EV Breakdown ($4.41M)', desc: 'Detailed breakdown of seller debt assumptions and adjusted equity.', tag: 'Enterprise Value' },
+    { num: 17, title: 'Operational Quality & Margins', desc: 'Deep analysis of recurring SaaS margins and customer retention.', tag: 'Operations' },
+    { num: 18, title: 'Verified Operating Strengths & Moats', desc: 'Highlights low customer churn and strong gross margin defensibility.', tag: 'Moats' },
+    { num: 19, title: 'Opportunity & Upside Modeling', desc: 'Identifies growth opportunities in pricing and international expansion.', tag: 'Growth' },
+    { num: 20, title: 'Launch Dillon AI Deal Copilot', desc: 'Ask natural-language questions about footnotes, leases, and contracts.', tag: 'Copilot' },
+    { num: 21, title: 'Grounded Copilot Deal Q&A', desc: 'AI answers with citation links directly to underlying P&L line items.', tag: 'Q&A' },
+    { num: 22, title: '1-Click Broker Pushback Emails', desc: 'Generate polite but firm broker pushback scripts based on red flags.', tag: 'Negotiation' },
+    { num: 23, title: 'Valuation Matrix & Sensitivity', desc: 'Compare Bear (3.0x), Base (4.0x), and Bull (5.0x) SDE multiples.', tag: 'Multiples' },
+    { num: 24, title: 'Multiple Discrepancy & Risk Identification', desc: 'Flags high seller premium and provides empirical valuation defense.', tag: 'Risk Matrix' },
+    { num: 25, title: 'Tax Rate & Depreciation Assumptions', desc: 'Inspect transparent financial modeling tax rates and working capital.', tag: 'Tax & D&A' },
+    { num: 26, title: 'Equity Waterfall & IRR Modeling', desc: 'Model sponsor equity, senior debt, seller notes, and IRR distributions.', tag: 'Waterfall' },
+    { num: 27, title: 'Transaction Fees & Capitalization', desc: 'Configure legal fees, advisory costs, and debt amortization schedules.', tag: 'Capitalization' },
+    { num: 28, title: 'Phase II Due Diligence Checklist', desc: 'Auto-generates 25+ specific confirmatory diligence requests for seller.', tag: 'Checklist' },
+    { num: 29, title: 'Project Portfolio Rollup', desc: 'Manage 350+ files across 20+ active data rooms with unified synthesis.', tag: 'Portfolio' },
+    { num: 30, title: '1-Click IC Deal Memo Export', desc: 'Export comprehensive deal memos and financial tables to Markdown/PDF.', tag: 'IC Export' },
 ]
 
 export type DemoVariantId = 'short-supademo' | 'deep-supademo' | 'short-yt' | 'long-yt'
@@ -83,13 +134,17 @@ export default function SupademoModal({
 
     const handleCopyEmbed = async () => {
         try {
-            await navigator.clipboard.writeText(SUPADEMO_IFRAME_CODE)
+            const codeToCopy = selectedDemo === 'deep-supademo' ? SUPADEMO_DEEP_IFRAME_CODE : SUPADEMO_IFRAME_CODE
+            await navigator.clipboard.writeText(codeToCopy)
             setCopied(true)
             setTimeout(() => setCopied(false), 2500)
         } catch {
             // Fallback
         }
     }
+
+    const currentDirectUrl = selectedDemo === 'deep-supademo' ? SUPADEMO_DEEP_DIRECT_URL : SUPADEMO_DIRECT_URL
+    const currentStepsRoadmap = selectedDemo === 'deep-supademo' ? DEEP_STEPS_ROADMAP : STEPS_ROADMAP
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-2 sm:p-4 animate-in fade-in duration-200">
@@ -101,104 +156,105 @@ export default function SupademoModal({
                 }`}
             >
                 {/* Header */}
-                <div className="flex items-center justify-between border-b border-border px-4 py-3 sm:px-6 bg-muted/40">
+                <div className="flex items-center justify-between border-b border-border px-4 py-3 bg-muted/40 backdrop-blur-md shrink-0">
                     <div className="flex items-center gap-2.5">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-xs">
                             <Sparkles className="h-4 w-4" />
                         </div>
                         <div>
                             <div className="flex items-center gap-2">
-                                <h3 className="text-base font-bold text-foreground">
-                                    Dillon AI Guided Demos &amp; Walkthroughs
+                                <h3 className="text-sm font-bold text-foreground">
+                                    {selectedDemo === 'deep-supademo' ? 'MergeWorks Deal Room Deep Dive' : 'MergeWorks Interactive Product Walkthrough'}
                                 </h3>
-                                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 text-[10px] font-mono">
-                                    {selectedDemo === 'short-supademo' && '10-STEP TOUR'}
-                                    {selectedDemo === 'deep-supademo' && 'EXTENDED TOUR'}
-                                    {selectedDemo === 'short-yt' && '3-MIN VIDEO'}
-                                    {selectedDemo === 'long-yt' && '15-MIN MASTERCLASS'}
+                                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 bg-emerald-500/10 text-emerald-500 border-emerald-500/20 font-semibold">
+                                    {selectedDemo === 'deep-supademo' ? '30-STEP LIVE TOUR' : '10-STEP LIVE TOUR'}
                                 </Badge>
                             </div>
                             <p className="text-xs text-muted-foreground hidden sm:block">
-                                Interactive Supademo and video walkthroughs of multi-document ingestion and valuation analysis.
+                                {selectedDemo === 'deep-supademo'
+                                    ? 'In-depth interactive due diligence tour: OCR, add-backs, red flags & deal structuring.'
+                                    : 'Interactive deal diligence simulation: Ingestion → Scorecards → Valuation → IC Report.'}
                             </p>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-1.5 sm:gap-2">
+                    <div className="flex items-center gap-1.5">
                         {/* Tab Switcher */}
-                        <div className="flex items-center rounded-lg bg-background p-1 border border-border text-xs">
+                        <div className="flex items-center rounded-lg bg-background border border-border p-0.5 text-xs mr-1">
                             <button
                                 type="button"
                                 onClick={() => setActiveTab('player')}
-                                className={`px-2.5 py-1 rounded-md font-medium transition-colors flex items-center gap-1.5 ${
+                                className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
                                     activeTab === 'player'
                                         ? 'bg-primary text-primary-foreground shadow-xs'
                                         : 'text-muted-foreground hover:text-foreground'
                                 }`}
                             >
-                                <Play className="h-3 w-3" />
-                                <span className="hidden sm:inline">Tour Player</span>
-                                <span className="sm:hidden">Player</span>
+                                Interactive Tour
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setActiveTab('steps')}
-                                className={`px-2.5 py-1 rounded-md font-medium transition-colors flex items-center gap-1.5 ${
+                                className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
                                     activeTab === 'steps'
                                         ? 'bg-primary text-primary-foreground shadow-xs'
                                         : 'text-muted-foreground hover:text-foreground'
                                 }`}
                             >
-                                <Layers className="h-3 w-3" />
-                                <span className="hidden sm:inline">10 Steps Roadmap</span>
-                                <span className="sm:hidden">Steps</span>
+                                Storyboard ({currentStepsRoadmap.length})
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setActiveTab('embed')}
-                                className={`px-2.5 py-1 rounded-md font-medium transition-colors flex items-center gap-1.5 ${
+                                className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
                                     activeTab === 'embed'
                                         ? 'bg-primary text-primary-foreground shadow-xs'
                                         : 'text-muted-foreground hover:text-foreground'
                                 }`}
                             >
-                                <Code className="h-3 w-3" />
-                                <span className="hidden sm:inline">Embed Code</span>
-                                <span className="sm:hidden">Embed</span>
+                                Embed
                             </button>
                         </div>
 
-                        {/* Fullscreen Toggle */}
-                        <Button
+                        {/* Direct Link */}
+                        <a
+                            href={currentDirectUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors hidden sm:inline-flex"
+                            title="Open in new window"
+                        >
+                            <ExternalLink className="h-4 w-4" />
+                        </a>
+
+                        {/* Maximize Toggle */}
+                        <button
                             type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
                             onClick={() => setIsFullscreen(!isFullscreen)}
-                            title={isFullscreen ? 'Exit full view' : 'Expand full view'}
+                            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                            title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
                         >
                             {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-                        </Button>
+                        </button>
 
-                        {/* Close */}
-                        <Button
+                        {/* Close Button */}
+                        <button
                             type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
                             onClick={onClose}
-                            title="Close walkthrough"
+                            className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors ml-1"
+                            title="Close modal"
                         >
                             <X className="h-4 w-4" />
-                        </Button>
+                        </button>
                     </div>
                 </div>
 
-                {/* 4 Demo Selector Switcher Bar */}
-                <div className="border-b border-border bg-card/90 px-4 py-2 flex items-center gap-2 overflow-x-auto text-xs scrollbar-none">
-                    <span className="font-semibold text-muted-foreground uppercase text-[10px] tracking-wider shrink-0 mr-1">
-                        Select Demo:
+                {/* Subheader Demo Variant Selector */}
+                <div className="flex items-center gap-2 border-b border-border px-4 py-2 bg-muted/20 text-xs overflow-x-auto shrink-0 scrollbar-none">
+                    <span className="font-semibold text-muted-foreground shrink-0 uppercase tracking-wider text-[10px]">
+                        Select Tour:
                     </span>
+
                     <button
                         type="button"
                         onClick={() => { setSelectedDemo('short-supademo'); setActiveTab('player') }}
@@ -209,8 +265,8 @@ export default function SupademoModal({
                         }`}
                     >
                         <Sparkles className="h-3.5 w-3.5" />
-                        <span>⚡ 10-Step Supademo (2m)</span>
-                        <Badge variant="default" className="text-[9px] px-1 py-0 h-4 bg-emerald-500/20 text-emerald-400 border-0">
+                        <span>⚡ 10-Step Tour (2 min)</span>
+                        <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 text-emerald-400 border-emerald-400/30">
                             LIVE
                         </Badge>
                     </button>
@@ -225,9 +281,9 @@ export default function SupademoModal({
                         }`}
                     >
                         <Layers className="h-3.5 w-3.5" />
-                        <span>🔍 Extended Supademo (8m)</span>
-                        <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 text-amber-400 border-amber-400/30">
-                            DEEP DIVE
+                        <span>🔍 30-Step Deep Dive (5 min)</span>
+                        <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 text-emerald-400 border-emerald-400/30">
+                            LIVE
                         </Badge>
                     </button>
 
@@ -272,8 +328,8 @@ export default function SupademoModal({
                                 <iframe
                                     src={SUPADEMO_EMBED_URL}
                                     loading="lazy"
-                                    title="MergeWorks — Financial Due Diligence Engine"
-                                    allow="clipboard-write; fullscreen"
+                                    title="MergeWorks — Financial Due Diligence Engine (10-Step Tour)"
+                                    allow="clipboard-write; fullscreen; autoplay; encrypted-media; picture-in-picture"
                                     frameBorder="0"
                                     webkitallowfullscreen="true"
                                     mozallowfullscreen="true"
@@ -287,39 +343,21 @@ export default function SupademoModal({
                             )}
 
                             {selectedDemo === 'deep-supademo' && (
-                                <div className="max-w-2xl text-center p-8 space-y-5 bg-card/80 rounded-2xl border border-border shadow-2xl">
-                                    <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-inner">
-                                        <Layers className="h-7 w-7" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <h4 className="text-xl font-bold text-foreground">
-                                            Extended 8-Minute Supademo
-                                        </h4>
-                                        <p className="text-sm text-muted-foreground max-w-lg mx-auto leading-relaxed">
-                                            A complete walkthrough covering all 9 workspace tabs: EBITDA add-back schedules, LBO sensitivity matrices, customer concentration curves, and custom investment committee templates.
-                                        </p>
-                                    </div>
-                                    <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-                                        <Button
-                                            type="button"
-                                            size="sm"
-                                            className="bg-primary text-primary-foreground font-semibold gap-1.5"
-                                            onClick={() => setSelectedDemo('short-supademo')}
-                                        >
-                                            <Sparkles className="h-3.5 w-3.5" />
-                                            Play Live 10-Step Tour Now
-                                        </Button>
-                                        <a
-                                            href={SUPADEMO_DIRECT_URL}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground px-3 py-2 rounded-lg border border-border"
-                                        >
-                                            <span>Open Supademo Portal</span>
-                                            <ExternalLink className="h-3.5 w-3.5" />
-                                        </a>
-                                    </div>
-                                </div>
+                                <iframe
+                                    src={SUPADEMO_DEEP_EMBED_URL}
+                                    loading="lazy"
+                                    title="MergeWorks — Full Deal Diligence Deep Dive (30 Steps)"
+                                    allow="clipboard-write; fullscreen; autoplay; encrypted-media; picture-in-picture"
+                                    frameBorder="0"
+                                    webkitallowfullscreen="true"
+                                    mozallowfullscreen="true"
+                                    allowFullScreen
+                                    className="w-full h-full rounded-xl shadow-2xl border border-white/10"
+                                    style={{
+                                        minHeight: '100%',
+                                        aspectRatio: '16/9',
+                                    }}
+                                />
                             )}
 
                             {selectedDemo === 'short-yt' && (
@@ -340,10 +378,10 @@ export default function SupademoModal({
                                             type="button"
                                             size="sm"
                                             className="bg-primary text-primary-foreground font-semibold gap-1.5"
-                                            onClick={() => setSelectedDemo('short-supademo')}
+                                            onClick={() => setSelectedDemo('deep-supademo')}
                                         >
                                             <Sparkles className="h-3.5 w-3.5" />
-                                            Try Interactive Tour While Video Encodes
+                                            Launch 30-Step Interactive Deep Dive
                                         </Button>
                                     </div>
                                 </div>
@@ -383,10 +421,12 @@ export default function SupademoModal({
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border pb-3">
                                 <div>
                                     <h4 className="text-base font-bold text-foreground">
-                                        Interactive M&amp;A Diligence Storyboard
+                                        Interactive M&amp;A Diligence Storyboard ({currentStepsRoadmap.length} Steps)
                                     </h4>
                                     <p className="text-xs text-muted-foreground">
-                                        Summary of each curated milestone in the 10-step guided tour.
+                                        {selectedDemo === 'deep-supademo'
+                                            ? 'Full 30-milestone interactive walkthrough from raw intake to debt waterfalls & IC export.'
+                                            : 'Summary of each curated milestone in the 10-step guided tour.'}
                                     </p>
                                 </div>
                                 <Button
@@ -394,7 +434,7 @@ export default function SupademoModal({
                                     size="sm"
                                     variant="default"
                                     className="gap-1.5 text-xs font-semibold"
-                                    onClick={() => { setSelectedDemo('short-supademo'); setActiveTab('player') }}
+                                    onClick={() => setActiveTab('player')}
                                 >
                                     <Play className="h-3 w-3" />
                                     Launch Interactive Player
@@ -402,7 +442,7 @@ export default function SupademoModal({
                             </div>
 
                             <div className="grid gap-2.5 sm:grid-cols-2">
-                                {STEPS_ROADMAP.map((step) => (
+                                {currentStepsRoadmap.map((step) => (
                                     <div
                                         key={step.num}
                                         className="flex items-start gap-3 rounded-xl border border-border bg-card p-3.5 hover:border-primary/40 hover:bg-muted/30 transition-all"
@@ -443,7 +483,9 @@ export default function SupademoModal({
 
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between text-xs text-muted-foreground">
-                                    <span className="font-semibold text-foreground">HTML Embed Snippet</span>
+                                    <span className="font-semibold text-foreground">
+                                        HTML Embed Snippet ({selectedDemo === 'deep-supademo' ? '30-Step Deep Dive' : '10-Step Tour'})
+                                    </span>
                                     <Button
                                         type="button"
                                         size="sm"
@@ -465,7 +507,7 @@ export default function SupademoModal({
                                     </Button>
                                 </div>
                                 <pre className="p-3.5 rounded-xl border border-border bg-muted/60 text-xs font-mono text-foreground overflow-x-auto select-all leading-relaxed">
-                                    {SUPADEMO_IFRAME_CODE}
+                                    {selectedDemo === 'deep-supademo' ? SUPADEMO_DEEP_IFRAME_CODE : SUPADEMO_IFRAME_CODE}
                                 </pre>
                             </div>
 
@@ -476,6 +518,7 @@ export default function SupademoModal({
                                 </h5>
                                 <ul className="text-xs text-muted-foreground space-y-1.5 list-disc list-inside">
                                     <li><strong>100% Responsive</strong>: Adapts automatically to desktop, tablet, and mobile viewports.</li>
+                                    <li><strong>AI Voice Narration Supported</strong>: Integrated audio walkthrough narration across all milestones.</li>
                                     <li><strong>Zero Friction</strong>: Prospective buyers and investment partners can click through without signing up.</li>
                                     <li><strong>Hotspot Interactions</strong>: Full pulse animations and chapter navigation preserved.</li>
                                 </ul>
@@ -491,7 +534,7 @@ export default function SupademoModal({
                             Powered by Supademo &amp; Dillon AI
                         </Badge>
                         <a
-                            href={SUPADEMO_DIRECT_URL}
+                            href={currentDirectUrl}
                             target="_blank"
                             rel="noreferrer"
                             className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
