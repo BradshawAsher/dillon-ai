@@ -75,6 +75,11 @@ export type ProjectSynthesisItem = {
     id: number
     createdAt: string
     updatedAt: string
+    synthesis_version?: string
+    red_flags?: string[]
+    yellow_flags?: string[]
+    green_flags?: string[]
+    open_questions?: string[]
 }
 
 // --- JSON parsing helpers (same logic as before, reads structured JSON from DB) ---

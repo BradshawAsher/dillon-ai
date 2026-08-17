@@ -22,6 +22,10 @@ export type DocumentedFact = {
     provenance?: string
     confidence?: number
     citations?: FactCitation[]
+    source_document?: string
+    source_page?: string | number
+    page_number?: string | number
+    quote_snippet?: string
 }
 
 export type MetricInput = {

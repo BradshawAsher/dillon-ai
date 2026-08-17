@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import {
     Activity,
     AlertCircle,
+    FileDown,
     Globe,
     HelpCircle,
     Key,
@@ -13,6 +14,7 @@ import {
 } from 'lucide-react'
 
 import { ApiKeyModal } from '../components/ApiKeyModal'
+import { ExportDiligenceModal } from '../components/ExportDiligenceModal'
 import { ProjectsSidePanel } from '../components/ProjectsSidePanel'
 import DealHealthKPIs from '../components/DealHealthKPIs'
 import DealEmailDraftCard from '../components/DealEmailDraftCard'
@@ -262,6 +264,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
     const [selectedFiles, setSelectedFiles] = useState<File[]>([])
     const [isSubmittingFile, setIsSubmittingFile] = useState(false)
+    const [isExportModalOpen, setIsExportModalOpen] = useState(false)
     const [batchSubmissionMessage, setBatchSubmissionMessage] = useState('')
     const lastUploadAttemptAtRef = useRef(0)
     const [retryingRequestId, setRetryingRequestId] = useState<string | null>(null)
@@ -1333,6 +1336,12 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         await triggerProjectSynthesis({ environment }, { skipCache: true }).result
     }
 
+    const handleCancelSubmission = () => {
+        setIsSubmittingFile(false)
+        lastUploadAttemptAtRef.current = 0
+        setBatchSubmissionMessage('Pipeline execution cancelled by user. You can modify files or re-queue at any time.')
+    }
+
     const handleSubmit = async (environment: SubmitEnvironment) => {
         if (selectedFiles.length === 0) return
 
@@ -1568,6 +1577,16 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                             size="default"
                             variant="outline"
                             className="gap-2 border-primary/40 bg-background text-primary hover:bg-primary/10 font-bold"
+                            onClick={() => setIsExportModalOpen(true)}
+                            title="Export print-ready Diligence Memo or download Markdown"
+                        >
+                            <FileDown className="h-4 w-4 text-primary" />
+                            <span>Export Memo</span>
+                        </Button>
+                        <Button
+                            size="default"
+                            variant="outline"
+                            className="gap-2 border-primary/40 bg-background text-primary hover:bg-primary/10 font-bold"
                             onClick={() => setIsFaqSidebarOpen(true)}
                         >
                             <HelpCircle className="h-4 w-4 text-primary" />
@@ -1637,6 +1656,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                     selectedFiles={selectedFiles}
                     disabled={isSubmittingFile || submitLoading}
                     isExampleMode={isExampleMode}
+                    onCancelSubmission={isSubmittingFile || submitLoading ? handleCancelSubmission : undefined}
                     onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
                     onDealNameChange={setDealName}
                     onAskingPriceChange={handleAskingPriceChange}
@@ -2357,6 +2377,15 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             </Suspense>
 
             <ApiKeyModal open={isApiKeyModalOpen} onOpenChange={setIsApiKeyModalOpen} />
+            <ExportDiligenceModal
+                open={isExportModalOpen}
+                onOpenChange={setIsExportModalOpen}
+                dealName={dealName || suggestedProjectName || 'Active Target'}
+                projectId={projectId || suggestedProjectId || 'default-project'}
+                synthesis={activeProjectSynthesis}
+                dealModel={hydratedDealModel}
+                documents={activeProjectDocuments}
+            />
             <KeyboardShortcutsDialog open={isShortcutsOpen} onOpenChange={setIsShortcutsOpen} showTrigger={false} />
             <DashboardFaqSidebar
                 isOpen={isFaqSidebarOpen}

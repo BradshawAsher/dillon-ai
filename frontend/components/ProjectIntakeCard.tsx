@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FolderKanban, Info, Key, Loader2, Plus, Upload, X } from 'lucide-react'
+import { FolderKanban, Info, Key, Loader2, Plus, Upload, X, XCircle } from 'lucide-react'
 
 import FileDropzone from './FileDropzone'
 import { Badge } from '../lib/shadcn/badge'
@@ -37,6 +37,7 @@ type ProjectIntakeCardProps = {
     selectedFiles: File[]
     disabled: boolean
     isExampleMode?: boolean
+    onCancelSubmission?: () => void
     onOpenApiKeyModal?: () => void
     onDealNameChange: (value: string) => void
     onAskingPriceChange: (value: string) => void
@@ -91,6 +92,7 @@ export default function ProjectIntakeCard({
     selectedFiles,
     disabled,
     isExampleMode = false,
+    onCancelSubmission,
     onOpenApiKeyModal,
     onDealNameChange,
     onAskingPriceChange,
@@ -317,6 +319,60 @@ export default function ProjectIntakeCard({
                             </Button>
                         </div>
                     </div>
+
+                    {disabled && (
+                        <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-3 animate-in fade-in-0 duration-300">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                                    <span className="text-sm font-semibold text-foreground">Pipeline Execution in Progress</span>
+                                </div>
+                                {onCancelSubmission ? (
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={onCancelSubmission}
+                                        className="h-7 px-2.5 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                    >
+                                        <XCircle className="mr-1 h-3.5 w-3.5" />
+                                        Cancel & Reset
+                                    </Button>
+                                ) : null}
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 pt-1 text-xs">
+                                <div className="flex items-center gap-2 rounded-lg bg-background/80 p-2.5 border border-primary/20 shadow-2xs">
+                                    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary font-bold text-[10px]">1</div>
+                                    <div>
+                                        <p className="font-semibold text-foreground">Ingest & Verify</p>
+                                        <p className="text-[10px] text-muted-foreground">Checksums & transfer</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2 rounded-lg bg-background/80 p-2.5 border border-primary/20 shadow-2xs">
+                                    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary font-bold text-[10px]">2</div>
+                                    <div>
+                                        <p className="font-semibold text-foreground">Claude Sonnet 5</p>
+                                        <p className="text-[10px] text-muted-foreground">Fact extraction</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2 rounded-lg bg-background/80 p-2.5 border border-primary/20 shadow-2xs">
+                                    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary font-bold text-[10px]">3</div>
+                                    <div>
+                                        <p className="font-semibold text-foreground">OpenAI 5.6 Terra</p>
+                                        <p className="text-[10px] text-muted-foreground">Project synthesis</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2 rounded-lg bg-background/80 p-2.5 border border-primary/20 shadow-2xs">
+                                    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary font-bold text-[10px]">4</div>
+                                    <div>
+                                        <p className="font-semibold text-foreground">Valuation & Risk</p>
+                                        <p className="text-[10px] text-muted-foreground">Verdict & model</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     <div className="space-y-2">
                         <div className="flex items-center gap-3 rounded-lg border border-primary/30 bg-primary/10 px-4 py-2.5 text-sm text-foreground/90 shadow-sm">
