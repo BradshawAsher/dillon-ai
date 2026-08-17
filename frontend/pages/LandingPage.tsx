@@ -19,6 +19,7 @@ import {
     Globe,
     HelpCircle,
     Layers,
+    Loader2,
     Lock,
     Play,
     ShieldCheck,
@@ -34,6 +35,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../li
 import { Input } from '../lib/shadcn/input'
 import SupademoModal, { DemoVariantId } from '../components/SupademoModal'
 import { WorkspaceDemoGalleryBar } from '../components/WorkspaceDemoGalleryBar'
+import { submitAccessRequest } from '../services/accessRequestService'
 
 interface LandingPageProps {
     onLaunchDashboard: () => void
@@ -110,11 +112,33 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
     // Access request form state
     const [accessForm, setAccessForm] = useState({ name: '', email: '', firm: '', role: '' })
     const [accessSubmitted, setAccessFormSubmitted] = useState(false)
+    const [isSubmittingAccess, setIsSubmittingAccess] = useState(false)
+    const [accessError, setAccessError] = useState<string | null>(null)
 
-    const handleAccessSubmit = (e: React.FormEvent) => {
+    const handleAccessSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        if (accessForm.email) {
-            setAccessFormSubmitted(true)
+        if (!accessForm.email || !accessForm.name || !accessForm.firm) return
+
+        setIsSubmittingAccess(true)
+        setAccessError(null)
+
+        try {
+            const res = await submitAccessRequest({
+                fullName: accessForm.name,
+                workEmail: accessForm.email,
+                firmName: accessForm.firm,
+                role: accessForm.role || undefined,
+            })
+
+            if (res.success) {
+                setAccessFormSubmitted(true)
+            } else {
+                setAccessError(res.error || 'Unable to submit application. Please check connection and try again.')
+            }
+        } catch (err: unknown) {
+            setAccessError('Unexpected error occurred. Please try again.')
+        } finally {
+            setIsSubmittingAccess(false)
         }
     }
 
@@ -283,6 +307,14 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
                                     <Lock className="mr-2 h-4 w-4 text-muted-foreground" />
                                     Apply for Access
                                 </Button>
+                            </div>
+
+                            {/* Open Source Access Disclaimer */}
+                            <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground font-medium pt-1 text-center">
+                                <Sparkles className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                                <span>
+                                    Applying for access is not required as of now — use is fully open source until further notice.
+                                </span>
                             </div>
                         </div>
 
@@ -904,60 +936,112 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
                             </Button>
                         </div>
 
+                        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3.5 text-xs flex items-start gap-2.5">
+                            <Sparkles className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                            <div className="space-y-1">
+                                <p className="font-bold text-foreground">Open Source Notice</p>
+                                <p className="text-muted-foreground leading-relaxed">
+                                    Applying for access is not required as of now — use is fully open source until further notice. You can explore the live workspace immediately.
+                                </p>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setShowAccessModal(false)
+                                        onLaunchDashboard()
+                                    }}
+                                    className="inline-flex items-center gap-1 font-bold text-primary hover:underline pt-0.5"
+                                >
+                                    <span>Launch Workspace Now</span>
+                                    <ArrowRight className="h-3.5 w-3.5" />
+                                </button>
+                            </div>
+                        </div>
+
                         {accessSubmitted ? (
                             <div className="p-6 text-center space-y-3">
                                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600">
                                     <CheckCircle2 className="h-6 w-6" />
                                 </div>
                                 <h4 className="text-base font-bold text-foreground">Access Request Received!</h4>
-                                <p className="text-xs text-muted-foreground">
-                                    Our deal team will review your application and send invite credentials to <strong>{accessForm.email}</strong> within 1 hour.
+                                <p className="text-xs text-muted-foreground leading-relaxed">
+                                    Your request has been recorded. Our deal team will review your application and send invite credentials to <strong>{accessForm.email}</strong> within 1 hour.
                                 </p>
                                 <Button
                                     type="button"
-                                    className="w-full bg-primary text-white text-xs font-bold mt-2"
+                                    className="w-full bg-primary text-white text-xs font-bold mt-2 cursor-pointer"
                                     onClick={() => {
                                         setShowAccessModal(false)
                                         onLaunchDashboard()
                                     }}
                                 >
-                                    Explore Demo Workspace
+                                    Explore Demo Workspace Now
                                 </Button>
                             </div>
                         ) : (
                             <form onSubmit={handleAccessSubmit} className="space-y-4 text-xs">
+                                {accessError && (
+                                    <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-2.5 text-xs text-rose-500 flex items-center gap-2">
+                                        <AlertTriangle className="h-4 w-4 shrink-0" />
+                                        <span>{accessError}</span>
+                                    </div>
+                                )}
+
                                 <div className="space-y-1">
-                                    <label className="font-semibold text-foreground">Full Name</label>
+                                    <label className="font-semibold text-foreground">Full Name *</label>
                                     <Input
                                         type="text"
                                         required
                                         placeholder="e.g. Alex Mercer"
                                         value={accessForm.name}
+                                        disabled={isSubmittingAccess}
                                         onChange={(e) => setAccessForm({ ...accessForm, name: e.target.value })}
                                     />
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="font-semibold text-foreground">Work Email</label>
+                                    <label className="font-semibold text-foreground">Work Email *</label>
                                     <Input
                                         type="email"
                                         required
                                         placeholder="alex@dillon-pe.com"
                                         value={accessForm.email}
+                                        disabled={isSubmittingAccess}
                                         onChange={(e) => setAccessForm({ ...accessForm, email: e.target.value })}
                                     />
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="font-semibold text-foreground">Firm / Company Name</label>
+                                    <label className="font-semibold text-foreground">Firm / Company Name *</label>
                                     <Input
                                         type="text"
                                         required
                                         placeholder="M&A Capital Partners"
                                         value={accessForm.firm}
+                                        disabled={isSubmittingAccess}
                                         onChange={(e) => setAccessForm({ ...accessForm, firm: e.target.value })}
                                     />
                                 </div>
-                                <Button type="submit" className="w-full bg-primary text-white font-bold text-xs py-2.5">
-                                    Submit Application
+                                <div className="space-y-1">
+                                    <label className="font-semibold text-foreground">Role / Title (Optional)</label>
+                                    <Input
+                                        type="text"
+                                        placeholder="e.g. Managing Director / Principal / Searcher"
+                                        value={accessForm.role}
+                                        disabled={isSubmittingAccess}
+                                        onChange={(e) => setAccessForm({ ...accessForm, role: e.target.value })}
+                                    />
+                                </div>
+                                <Button 
+                                    type="submit" 
+                                    disabled={isSubmittingAccess}
+                                    className="w-full bg-primary hover:bg-primary/90 text-white font-bold text-xs py-2.5 cursor-pointer flex items-center justify-center gap-2"
+                                >
+                                    {isSubmittingAccess ? (
+                                        <>
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                            <span>Submitting Application...</span>
+                                        </>
+                                    ) : (
+                                        <span>Submit Application</span>
+                                    )}
                                 </Button>
                             </form>
                         )}

@@ -11,11 +11,15 @@ import type { WorkspaceTab } from '../hooks/useDealWorkspaceState'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { normalizeEquityFraction } from '../utils/dealMath'
 
+export type ResponseTier = 'cloud_ai' | 'direct_llm' | 'local_heuristics'
+
 type Message = {
     id: string
     role: 'user' | 'assistant'
     content: string
     timestamp: number
+    tier?: ResponseTier
+    providerName?: string
 }
 
 type Props = {
@@ -224,6 +228,81 @@ function bulletList(items: string[], limit = items.length): string {
     return items.slice(0, limit).map(item => `- ${item}`).join('\n')
 }
 
+function buildExecutiveDealBriefing(details: {
+    synthesis?: ProjectSynthesisItem
+    model: DealModel
+    projectName: string
+    documents?: SubmissionHistoryItem[]
+}): string {
+    const { synthesis, model, projectName, documents } = details
+    const facts = parseDocumentedFacts(model.documentedFactsJson)
+    const price = model.purchasePrice ?? model.askingPrice
+    const revenue = typeof facts.revenue?.value === 'number' ? facts.revenue.value : model.revenue ?? null
+    const ebitda = typeof facts.ebitda_sde?.value === 'number' ? facts.ebitda_sde.value : model.ebitda ?? null
+    const redFlags = synthesis?.redFlags ?? []
+    const yellowFlags = synthesis?.yellowFlags ?? []
+    const greenFlags = synthesis?.greenFlags ?? []
+    const negotiationLevers = synthesis?.negotiationLevers ?? []
+    const missingDocuments = synthesis?.missingDocuments ?? []
+    const keyTakeaways = synthesis?.keyTakeaways ?? []
+    const completedDocs = synthesis?.documentsCompletedCount ?? documents?.filter(d => d.status === 'completed').length ?? 0
+    const totalDocs = synthesis?.documentsReceivedCount ?? documents?.length ?? completedDocs
+
+    const companyName = synthesis?.companyName || projectName || 'Target Company'
+    const trafficLight = synthesis?.finalTrafficLight || 'Pending'
+    const riskLevel = synthesis?.finalRiskLevel || 'Pending'
+    const rec = synthesis?.finalRecommendation || (trafficLight === 'Green' ? 'Proceed with Phase 2 Due Diligence' : trafficLight === 'Yellow' ? 'Proceed with Conditional Covenants & Price Adjustments' : 'Caution / High Diligence Risk')
+
+    const multiple = (price && ebitda && ebitda > 0) ? `${(price / ebitda).toFixed(1)}x EBITDA/SDE` : 'N/A'
+    const margin = (revenue && ebitda && revenue > 0) ? `${Math.round((ebitda / revenue) * 100)}%` : null
+
+    const sections: string[] = []
+
+    // 1. Header & Signal
+    sections.push(`### 🏢 Executive Deal Briefing: **${companyName}**\n- **Signal**: 🚦 **${trafficLight}** | **Risk Level**: **${riskLevel}**\n- **Recommendation**: **${rec}**`)
+
+    // 2. Financial & Valuation Profile
+    const valRange = (synthesis?.valuationBaseEstimate && synthesis.valuationBaseEstimate !== '0')
+        ? `$${synthesis.valuationLowerBound} (Low) – $${synthesis.valuationBaseEstimate} (Base) – $${synthesis.valuationUpperBound} (High)`
+        : 'Pending AI Valuation Pass'
+
+    sections.push(`**📊 Financial & Valuation Profile:**\n- **Asking / Purchase Price**: ${price ? formatMoney(price) : 'Not specified'} (Implied **${multiple}**)\n- **AI Valuation Range**: ${valRange}${synthesis?.valuationConfidence ? ` *(Confidence: ${parseFloat(synthesis.valuationConfidence) <= 1 ? Math.round(parseFloat(synthesis.valuationConfidence) * 100) : synthesis.valuationConfidence}%)*` : ''}\n- **Recorded Revenue**: ${revenue ? formatMoney(revenue) : 'Not recorded in VDR'}\n- **Reported EBITDA/SDE**: ${ebitda ? formatMoney(ebitda) : 'Not recorded in VDR'}${margin ? ` *(~${margin} margin)*` : ''}\n- **Diligence Health**: **${completedDocs} / ${totalDocs || completedDocs || 0}** VDR documents fully audited`)
+
+    // 3. Investment Thesis / Judgment
+    if (synthesis?.finalJudgmentSummary) {
+        sections.push(`**💡 Investment Judgment & Synthesis:**\n${synthesis.finalJudgmentSummary}`)
+    } else if (keyTakeaways.length > 0) {
+        sections.push(`**💡 Key Takeaways & Thesis:**\n${bulletList(keyTakeaways, 4)}`)
+    }
+
+    // 4. Red Flags
+    if (redFlags.length > 0) {
+        sections.push(`**🚨 Critical Red Flags (${redFlags.length}):**\n${bulletList(redFlags, 4)}`)
+    } else if (yellowFlags.length > 0) {
+        sections.push(`**⚠️ Diligence Cautions:**\n${bulletList(yellowFlags, 3)}`)
+    }
+
+    // 5. Strengths
+    if (greenFlags.length > 0) {
+        sections.push(`**✅ Core Strengths:**\n${bulletList(greenFlags, 3)}`)
+    }
+
+    // 6. Strategic Negotiation Levers
+    if (negotiationLevers.length > 0) {
+        sections.push(`**🛡️ Key Negotiation Levers & Protections:**\n${bulletList(negotiationLevers, 3)}`)
+    }
+
+    // 7. Missing Documents
+    if (missingDocuments.length > 0) {
+        sections.push(`**📂 Critical Missing Documents:**\n${bulletList(missingDocuments, 3)}`)
+    }
+
+    // 8. One-Click Navigation Links
+    sections.push(`**🧭 Explore Deal Workspaces:**\n👉 [Open Deal 1-Pager](tab:analysis#analysis-deal-on-a-page)\n👉 [Open Deal Scorecard](tab:analysis#analysis-scorecard)\n👉 [Open Valuation Explorer](tab:valuation)\n👉 [Open EBITDA Quality](tab:analysis#analysis-ebitda-quality)\n👉 [Open Breakeven & Debt Service](tab:analysis#analysis-breakeven)\n👉 [Open LOI Term Sheet](tab:analysis#analysis-term-sheet)`)
+
+    return sections.join('\n\n')
+}
+
 function getLocalResponse(
     question: string,
     details: {
@@ -234,7 +313,7 @@ function getLocalResponse(
         allSyntheses?: ProjectSynthesisItem[]
     }
 ): LocalResponse {
-    const q = question.toLowerCase()
+    const q = question.toLowerCase().trim()
     const { synthesis, model, projectName, documents, allSyntheses } = details
     const facts = parseDocumentedFacts(model.documentedFactsJson)
     const price = model.purchasePrice ?? model.askingPrice
@@ -246,9 +325,69 @@ function getLocalResponse(
     const negotiationLevers = synthesis?.negotiationLevers ?? []
     const openQuestions = synthesis?.openQuestions ?? []
     const missingDocuments = synthesis?.missingDocuments ?? []
+    const keyTakeaways = synthesis?.keyTakeaways ?? []
     const completedDocuments = synthesis?.documentsCompletedCount ?? documents?.filter(d => d.status === 'completed').length ?? 0
     const totalDocuments = synthesis?.documentsReceivedCount ?? documents?.length ?? completedDocuments
 
+    // 1. Executive Briefing / Deal Overview queries (e.g. "tell me about this deal", "what is this deal", "summary")
+    if (
+        q.includes('tell me about') ||
+        q.includes('what is this deal') ||
+        q.includes('what is the deal') ||
+        q.includes('explain this deal') ||
+        q.includes('explain the deal') ||
+        q.includes('about this deal') ||
+        q.includes('about the deal') ||
+        q.includes('deal overview') ||
+        q.includes('deal summary') ||
+        q.includes('executive summary') ||
+        q.includes('investment memo') ||
+        q.includes('give me a breakdown') ||
+        q.includes('break down this deal') ||
+        q.includes('what are we looking at') ||
+        q.includes('who is this company') ||
+        q.includes('what does this company do') ||
+        q.includes('tell me about the company') ||
+        q.includes('tell me about the business') ||
+        q === 'overview' ||
+        q === 'summary' ||
+        q === 'deal' ||
+        q === 'briefing'
+    ) {
+        return {
+            matched: true,
+            content: buildExecutiveDealBriefing(details)
+        }
+    }
+
+    // 2. Buy/Pass Decision & Recommendation
+    if (
+        q.includes('should i buy') ||
+        q.includes('should we buy') ||
+        q.includes('should we acquire') ||
+        q.includes('buy or pass') ||
+        q.includes('pass or buy') ||
+        q.includes('verdict') ||
+        q.includes('recommendation') ||
+        q.includes('judgment') ||
+        q.includes('is this a good deal') ||
+        q.includes('worth buying') ||
+        q.includes('investment thesis')
+    ) {
+        const trafficLight = synthesis?.finalTrafficLight || 'Pending'
+        const riskLevel = synthesis?.finalRiskLevel || 'Pending'
+        const rec = synthesis?.finalRecommendation || 'Pending Review'
+        const judgmentText = synthesis?.finalJudgmentSummary
+            ? `**Acquisition Judgment & Reasoning:**\n${synthesis.finalJudgmentSummary}`
+            : (keyTakeaways.length > 0 ? `**Key Takeaways:**\n${bulletList(keyTakeaways, 4)}` : 'Synthesis pass is pending for this project.')
+
+        return {
+            matched: true,
+            content: `**🎯 M&A Acquisition Verdict for ${projectName}:**\n\n- **Signal**: 🚦 **${trafficLight}** (${riskLevel} Risk)\n- **Recommendation**: **${rec}**\n\n${judgmentText}\n\n${redFlags.length > 0 ? `**Top Risk to Protect:**\n${redFlags[0]}\n\n` : ''}${negotiationLevers.length > 0 ? `**Recommended Lever:**\n${negotiationLevers[0]}\n\n` : ''}👉 [Open Synthesis Verdict](tab:synthesis#synthesis-judgment)\n👉 [Open Deal Scorecard](tab:analysis#analysis-scorecard)\n👉 [Open LOI Term Sheet](tab:analysis#analysis-term-sheet)`
+        }
+    }
+
+    // 3. Breakeven & Margin of Safety
     if (q.includes('breakeven') || q.includes('break even') || q.includes('break-even') || q.includes('margin of safety')) {
         const revText = revenue ? ` Based on current revenue of ${formatMoney(revenue)}, this card tests how far revenue can fall before the deal stops servicing debt.` : ''
         return {
@@ -257,6 +396,7 @@ function getLocalResponse(
         }
     }
 
+    // 4. Quality of Earnings & EBITDA Normalization
     if (q.includes('qoe') || q.includes('quality of earnings') || q.includes('ebitda quality') || q.includes('addback') || q.includes('add-back') || q.includes('normalization')) {
         const ebitdaText = ebitda ? ` Current EBITDA/SDE is recorded at ${formatMoney(ebitda)}.` : ''
         return {
@@ -265,6 +405,7 @@ function getLocalResponse(
         }
     }
 
+    // 5. Working Capital & Peg
     if (q.includes('working capital') || q.includes('nwc') || q.includes('peg')) {
         const wcReq = model.workingCapitalRequirement ? ` This deal model includes an initial working capital buffer of ${formatMoney(model.workingCapitalRequirement)}.` : ''
         return {
@@ -273,6 +414,7 @@ function getLocalResponse(
         }
     }
 
+    // 6. SDE vs EBITDA
     if (q.includes('sde') || q.includes("seller's discretionary") || (q.includes('difference') && (q.includes('ebitda') || q.includes('sde')))) {
         return {
             matched: true,
@@ -280,6 +422,7 @@ function getLocalResponse(
         }
     }
 
+    // 7. DSCR & SBA 7(a) Loans
     if (q.includes('dscr') || q.includes('debt service') || q.includes('coverage ratio') || (q.includes('sba') && (q.includes('loan') || q.includes('rule') || q.includes('requirement')))) {
         return {
             matched: true,
@@ -287,6 +430,7 @@ function getLocalResponse(
         }
     }
 
+    // 8. Seller Financing & Subordinated Notes
     if (q.includes('seller note') || q.includes('seller financ') || q.includes('standstill') || q.includes('subordinat')) {
         return {
             matched: true,
@@ -294,6 +438,7 @@ function getLocalResponse(
         }
     }
 
+    // 9. Earnouts & Escrows
     if (q.includes('earnout') || q.includes('earn-out') || q.includes('escrow') || q.includes('holdback') || q.includes('indemnity')) {
         return {
             matched: true,
@@ -301,6 +446,7 @@ function getLocalResponse(
         }
     }
 
+    // 10. Key Person Risk
     if (q.includes('key person') || q.includes('owner depend') || q.includes('transferability')) {
         return {
             matched: true,
@@ -308,6 +454,7 @@ function getLocalResponse(
         }
     }
 
+    // 11. Monte Carlo Simulation
     if (q.includes('monte carlo') || q.includes('simulation') || q.includes('probabilit')) {
         return {
             matched: true,
@@ -315,6 +462,7 @@ function getLocalResponse(
         }
     }
 
+    // 12. Navigation & Feature Finders
     if (q.includes('where is') || q.includes('how do i find') || q.includes('where can i see') || q.includes('show me where')) {
         if (q.includes('scorecard') || q.includes('score')) return { matched: true, content: `You can find the Deal Scorecard here:\n👉 [Open Deal Scorecard](tab:analysis#analysis-scorecard)\n👉 [Open Score Breakdown](tab:analysis#analysis-scorecard-breakdown)` }
         if (q.includes('snapshot') || q.includes('1-pager') || q.includes('one pager') || q.includes('deal on a page')) return { matched: true, content: `You can find the 1-Page Deal Snapshot here:\n👉 [Open Deal Snapshot & 1-Pager](tab:analysis#analysis-deal-on-a-page)` }
@@ -331,6 +479,7 @@ function getLocalResponse(
         if (q.includes('compare') || q.includes('portfolio') || q.includes('all projects')) return { matched: true, content: `You can compare all projects in your portfolio here:\n👉 [Open Portfolio Comparison](tab:compare)` }
     }
 
+    // 13. Portfolio Comparison
     if (q.includes('compare') || q.includes('portfolio') || q.includes('all project') || q.includes('other project') || q.includes('which deal is better')) {
         if (allSyntheses && allSyntheses.length > 0) {
             const projectSummaries = allSyntheses.map(s => {
@@ -348,7 +497,8 @@ function getLocalResponse(
         }
     }
 
-    if (q.includes('risk') || q.includes('red flag') || q.includes('concern')) {
+    // 14. Red Flags & Risks
+    if (q.includes('risk') || q.includes('red flag') || q.includes('concern') || q.includes('drawback') || q.includes('downside') || q.includes('concentration')) {
         if (redFlags.length > 0 || yellowFlags.length > 0) {
             const sections: string[] = []
             if (redFlags.length > 0) sections.push(`**Red Flags:**\n${bulletList(redFlags, 5)}`)
@@ -364,7 +514,8 @@ function getLocalResponse(
         }
     }
 
-    if (q.includes('valuation') || q.includes('price') || q.includes('worth') || q.includes('multiple')) {
+    // 15. Valuation & Price
+    if (q.includes('valuation') || q.includes('price') || q.includes('worth') || q.includes('multiple') || q.includes('dcf') || q.includes('fairly priced')) {
         if (price && ebitda) {
             const multiple = (price / ebitda).toFixed(1)
             const valuationRange = synthesis?.valuationBaseEstimate && synthesis.valuationBaseEstimate !== '0'
@@ -381,7 +532,8 @@ function getLocalResponse(
         }
     }
 
-    if (q.includes('negotiat') || q.includes('lever') || q.includes('offer')) {
+    // 16. Negotiation & Levers
+    if (q.includes('negotiat') || q.includes('lever') || q.includes('offer') || q.includes('discount')) {
         const percentMatch = q.match(/(\d+(?:\.\d+)?)\s*%/)
         if (percentMatch && price) {
             const discountPercent = parseFloat(percentMatch[1]) / 100
@@ -408,7 +560,8 @@ function getLocalResponse(
         }
     }
 
-    if (q.includes('missing') || q.includes('need') || q.includes('upload') || q.includes('document')) {
+    // 17. Missing Documents
+    if (q.includes('missing') || q.includes('need') || q.includes('upload') || q.includes('document') || q.includes('vdr')) {
         if (missingDocuments.length > 0) {
             return {
                 matched: true,
@@ -421,7 +574,8 @@ function getLocalResponse(
         }
     }
 
-    if (q.includes('strength') || q.includes('green') || q.includes('positive') || q.includes('good')) {
+    // 18. Strengths & Positive Signals
+    if (q.includes('strength') || q.includes('green') || q.includes('positive') || q.includes('good') || q.includes('advantage')) {
         if (greenFlags.length > 0) {
             return {
                 matched: true,
@@ -430,32 +584,37 @@ function getLocalResponse(
         }
     }
 
-    if (q.includes('return') || q.includes('irr') || q.includes('moic') || q.includes('payback')) {
+    // 19. Returns & IRR
+    if (q.includes('return') || q.includes('irr') || q.includes('moic') || q.includes('payback') || q.includes('cash on cash')) {
         return {
             matched: true,
             content: `Model returns across levered and all-cash scenarios:\n👉 [Open Base Returns & Sensitivity](tab:analysis#analysis-base-returns)\n👉 [Open Returns Explorer](tab:returns)\n👉 [Open Monte Carlo Simulation](tab:analysis#analysis-monte-carlo)`
         }
     }
 
-    if (q.includes('summary') || q.includes('overview') || q.includes('tell me about') || q.includes('help') || q.includes('faq')) {
-        const summaryLines = [
-            `**${projectName} Summary:**`,
-            `- **Risk Posture**: ${synthesis?.finalRiskLevel || 'Pending'} (${synthesis?.finalTrafficLight || 'Pending'})`,
-            `- **Documents**: ${completedDocuments}/${totalDocuments || completedDocuments || 0} completed`,
-            `- **Red Flags**: ${redFlags.length}`,
-            `- **Negotiation Levers**: ${negotiationLevers.length}`,
-            revenue ? `- **Revenue**: ${formatMoney(revenue)}` : '- **Revenue**: Not yet confirmed',
-            ebitda ? `- **EBITDA/SDE**: ${formatMoney(ebitda)}` : '- **EBITDA/SDE**: Not yet confirmed',
-        ]
-        return {
-            matched: true,
-            content: `${summaryLines.join('\n')}\n\n**Quick Links:**\n👉 [Open Deal 1-Pager](tab:analysis#analysis-deal-on-a-page)\n👉 [Open Deal Scorecard](tab:analysis#analysis-scorecard)\n👉 [Open EBITDA Quality](tab:analysis#analysis-ebitda-quality)\n👉 [Open Breakeven Analysis](tab:analysis#analysis-breakeven)\n👉 [Open Financing Scenarios](tab:analysis#analysis-financing-scenarios)\n👉 [Open Synthesis Verdict](tab:synthesis#synthesis-judgment)`
-        }
-    }
+    // 20. Intelligent Contextual Deal Fallback (never generic fluff)
+    const trafficLight = synthesis?.finalTrafficLight || 'Pending'
+    const riskLevel = synthesis?.finalRiskLevel || 'Pending'
+    const rec = synthesis?.finalRecommendation || 'Pending Review'
+    const multipleStr = (price && ebitda && ebitda > 0) ? `${(price / ebitda).toFixed(1)}x EBITDA/SDE` : 'N/A'
 
-    const genericHelp = `I can help you navigate the entire due diligence workspace and answer any M&A or financial question. Try asking:\n\n- **Feature Guides** — "Where is breakeven?", "Where is the 1-pager?", "Show me market comps"\n- **M&A Terms** — "What is a working capital peg?", "What is QoE?", "Explain DSCR"\n- **Deal Deep Dives** — "What are the red flags?", "What multiple am I paying?", "What if I negotiate 15% off?"\n- **Portfolio** — "Compare all projects", "Which deal has lower risk?"\n\n**Key Dashboard Shortcuts:**\n👉 [Open Deal 1-Pager](tab:analysis#analysis-deal-on-a-page)\n👉 [Open Deal Scorecard](tab:analysis#analysis-scorecard)\n👉 [Open EBITDA Quality](tab:analysis#analysis-ebitda-quality)\n👉 [Open Breakeven Analysis](tab:analysis#analysis-breakeven)\n👉 [Open Financing Scenarios](tab:analysis#analysis-financing-scenarios)`
+    const intelligentFallback = `**Analysis for ${projectName}:**
 
-    return { matched: false, content: genericHelp }
+- **Deal Status**: 🚦 **${trafficLight}** (${riskLevel} Risk) | **Recommendation**: **${rec}**
+- **Financial Profile**: Revenue: **${revenue ? formatMoney(revenue) : '$—'}** | EBITDA: **${ebitda ? formatMoney(ebitda) : '$—'}** | Asking/Purchase: **${price ? formatMoney(price) : '$—'}** (Implied **${multipleStr}**)
+${synthesis?.finalJudgmentSummary ? `- **AI Judgment**: ${synthesis.finalJudgmentSummary.slice(0, 320)}...` : (keyTakeaways.length > 0 ? `- **Key Takeaway**: ${keyTakeaways[0]}` : '')}
+${redFlags.length > 0 ? `- **Critical Risk**: ${redFlags[0]}` : ''}
+${negotiationLevers.length > 0 ? `- **Strategic Lever**: ${negotiationLevers[0]}` : ''}
+
+**Explore Related Diligence Sections:**
+👉 [Open Deal 1-Pager](tab:analysis#analysis-deal-on-a-page)
+👉 [Open Deal Scorecard](tab:analysis#analysis-scorecard)
+👉 [Open Valuation Explorer](tab:valuation)
+👉 [Open EBITDA Quality](tab:analysis#analysis-ebitda-quality)
+👉 [Open Breakeven Analysis](tab:analysis#analysis-breakeven)
+👉 [Open LOI Term Sheet](tab:analysis#analysis-term-sheet)`
+
+    return { matched: true, content: intelligentFallback }
 }
 
 function renderSimpleMarkdown(
@@ -619,6 +778,90 @@ function clampChatPanelSize(width: number, height: number): ChatPanelSize {
         width: Math.min(Math.max(Math.round(width), MIN_CHAT_PANEL_WIDTH), maxWidth),
         height: Math.min(Math.max(Math.round(height), MIN_CHAT_PANEL_HEIGHT), maxHeight),
     }
+}
+
+async function callDirectUserLlm(
+    prompt: string,
+    context: string,
+    keys: { openai?: string; anthropic?: string; gemini?: string }
+): Promise<{ text: string; provider: string } | null> {
+    const systemPrompt = `You are MergeWorks AI, an expert M&A due diligence advisor and general AI assistant.
+You have access to the current project context below. You can answer specific questions about the deal, financial metrics, valuation, red flags, or answer ANY general question (general finance, negotiation, coding, business, or regular conversation) just like ChatGPT or Claude.
+
+--- CURRENT DEAL CONTEXT ---
+${context}
+--- END CONTEXT ---`
+
+    if (keys.openai && keys.openai.trim()) {
+        try {
+            const res = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${keys.openai.trim()}`,
+                },
+                body: JSON.stringify({
+                    model: 'gpt-4o',
+                    messages: [
+                        { role: 'system', content: systemPrompt },
+                        { role: 'user', content: prompt }
+                    ],
+                    temperature: 0.3,
+                })
+            })
+            if (res.ok) {
+                const data = await res.json()
+                const text = data.choices?.[0]?.message?.content
+                if (text) return { text, provider: 'OpenAI (GPT-4o)' }
+            }
+        } catch { }
+    }
+
+    if (keys.anthropic && keys.anthropic.trim()) {
+        try {
+            const res = await fetch('https://api.anthropic.com/v1/messages', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': keys.anthropic.trim(),
+                    'anthropic-version': '2023-06-01',
+                    'dangerously-allow-browser': 'true',
+                },
+                body: JSON.stringify({
+                    model: 'claude-3-5-sonnet-20241022',
+                    max_tokens: 2000,
+                    system: systemPrompt,
+                    messages: [{ role: 'user', content: prompt }]
+                })
+            })
+            if (res.ok) {
+                const data = await res.json()
+                const text = data.content?.[0]?.text
+                if (text) return { text, provider: 'Claude (Sonnet 3.5)' }
+            }
+        } catch { }
+    }
+
+    if (keys.gemini && keys.gemini.trim()) {
+        try {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(keys.gemini.trim())}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [
+                        { role: 'user', parts: [{ text: `${systemPrompt}\n\nUser Question: ${prompt}` }] }
+                    ]
+                })
+            })
+            if (res.ok) {
+                const data = await res.json()
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text
+                if (text) return { text, provider: 'Google (Gemini 2.5 Flash)' }
+            }
+        } catch { }
+    }
+
+    return null
 }
 
 export default function DealChatPanel({ synthesis, model, projectName, documents, allSyntheses, onSuggestProjectSwitch, onOpenProjectsPanel, projectsCount, onNavigateTab }: Props) {
@@ -899,27 +1142,57 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
             const userAnthropicApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_anthropic_key') || '') : ''
             const userOpenAiApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_openai_key') || '') : ''
             const userGeminiApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_gemini_key') || '') : ''
-            const res = await fetch('https://merge-works.app.n8n.cloud/webhook/45ffcb0f-7e10-471e-bdf8-b134617e6b3c/dd-chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    question: trimmed,
-                    context,
-                    sessionId,
-                    userAnthropicApiKey,
-                    userOpenAiApiKey,
-                    userGeminiApiKey,
-                }),
-            })
-            if (!res.ok) throw new Error(`HTTP ${res.status}`)
-            const data = await res.json()
-            const answer = data.answer || data.output || data.text || ''
-            if (!answer) throw new Error('Empty response')
+
+            let answer = ''
+            let tier: ResponseTier = 'cloud_ai'
+            let providerName = 'Cloud AI'
+
+            try {
+                const res = await fetch('https://merge-works.app.n8n.cloud/webhook/45ffcb0f-7e10-471e-bdf8-b134617e6b3c/dd-chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        question: trimmed,
+                        context,
+                        sessionId,
+                        userAnthropicApiKey,
+                        userOpenAiApiKey,
+                        userGeminiApiKey,
+                    }),
+                })
+                if (res.ok) {
+                    const data = await res.json()
+                    answer = data.answer || data.output || data.text || ''
+                    if (answer) {
+                        tier = 'cloud_ai'
+                        providerName = 'Cloud LLM'
+                    }
+                }
+            } catch { }
+
+            // If n8n failed or was empty, check if user provided direct API keys for direct ChatGPT/Claude/Gemini generation
+            if (!answer && (userOpenAiApiKey || userAnthropicApiKey || userGeminiApiKey)) {
+                const directRes = await callDirectUserLlm(trimmed, context, {
+                    openai: userOpenAiApiKey,
+                    anthropic: userAnthropicApiKey,
+                    gemini: userGeminiApiKey,
+                })
+                if (directRes) {
+                    answer = directRes.text
+                    tier = 'direct_llm'
+                    providerName = directRes.provider
+                }
+            }
+
+            if (!answer) throw new Error('Empty response from live LLMs, fallback to local heuristics')
+
             setMessages(prev => [...prev, {
                 id: `assistant-${Date.now()}`,
                 role: 'assistant',
                 content: answer,
                 timestamp: Date.now(),
+                tier,
+                providerName,
             }])
         } catch {
             const fallback = getLocalResponse(trimmed, {
@@ -934,6 +1207,8 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                 role: 'assistant',
                 content: fallback.content,
                 timestamp: Date.now(),
+                tier: 'local_heuristics',
+                providerName: 'Local M&A Engine',
             }])
         } finally {
             setIsTyping(false)
@@ -1137,10 +1412,31 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                                 }`}>
                                 {msg.role === 'assistant' ? renderSimpleMarkdown(msg.content, onNavigateTab) : msg.content}
                             </div>
-                            <div className="mt-1 flex items-center gap-1.5">
+                            <div className="mt-1 flex flex-wrap items-center gap-1.5">
                                 <span className="text-[9px] text-muted-foreground/60">{relativeTime(msg.timestamp)}</span>
                                 {msg.role === 'assistant' && (
                                     <>
+                                        {msg.tier && (
+                                            <span
+                                                className={`inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[9px] font-medium transition-colors ${msg.tier === 'cloud_ai'
+                                                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                                                    : msg.tier === 'direct_llm'
+                                                        ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'
+                                                        : 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20'
+                                                    }`}
+                                                title={
+                                                    msg.tier === 'cloud_ai'
+                                                        ? 'Tier 1: Powered by live n8n Cloud LLM Webhook (OpenAI GPT-4o / Claude / Gemini)'
+                                                        : msg.tier === 'direct_llm'
+                                                            ? `Tier 2: Powered directly via user API key (${msg.providerName})`
+                                                            : 'Tier 3: Powered by MergeWorks local deterministic M&A rules (offline fallback)'
+                                                }
+                                            >
+                                                {msg.tier === 'cloud_ai' && '⚡ Tier 1 • Cloud AI'}
+                                                {msg.tier === 'direct_llm' && `⚡ Tier 2 • ${msg.providerName || 'Direct LLM'}`}
+                                                {msg.tier === 'local_heuristics' && '⚙️ Tier 3 • Local M&A Engine'}
+                                            </span>
+                                        )}
                                         <button
                                             type="button"
                                             onClick={() => setRatings(prev => ({ ...prev, [msg.id]: prev[msg.id] === 'up' ? undefined as never : 'up' }))}
@@ -1252,7 +1548,11 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                     </Button>
                 </div>
                 <div className="mt-1.5 flex items-center justify-between text-[9px] text-muted-foreground">
-                    <span>Press <kbd className="font-mono bg-muted px-1 rounded">Enter</kbd> to send</span>
+                    <span className="flex items-center gap-1.5">
+                        <span>Press <kbd className="font-mono bg-muted px-1 rounded">Enter</kbd></span>
+                        <span className="text-muted-foreground/30">•</span>
+                        <span className="cursor-help text-muted-foreground/80 hover:text-foreground" title="3-Tier AI: Tier 1 Cloud AI → Tier 2 Direct Provider API → Tier 3 Local M&A Engine">3-Tier AI Routing</span>
+                    </span>
                     <span>{panelSize.width} × {panelSize.height}</span>
                 </div>
                 <button
