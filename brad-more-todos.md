@@ -105,7 +105,7 @@
 
 - Make a more native demo in your website than actually just the supademo
 
-- For brad, make a ~30 slide more in depth supademo demo as well with ag, and a short YouTube video and long YouTube video
+- Have to make a short YouTube video and long YouTube video to almost mirror your supademos
 
 - For brad, explore and test features using the vercel link instead of localhost since the vercel lacks some functionality still compared to the localhost
 
@@ -114,6 +114,8 @@
 - and new slides and script and preparation for questions they might ask and things to explain if you have more time
 
 - try to open out and expand the js nodes and the code nodes and json schemas that claude code or antigravity made to have indentation and not be one squished block
+
+- Finish adding the apply for access to go slack and maybe email too
 
 - Is there a lot of overview in the analysis and overview tab with the other more indepth tabs like valuation, returns, growth, negotiation, etc?
 

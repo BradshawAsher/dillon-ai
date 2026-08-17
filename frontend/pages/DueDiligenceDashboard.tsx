@@ -117,6 +117,14 @@ function findLastIndex<T>(arr: T[], predicate: (item: T) => boolean): number {
     return -1
 }
 
+function parseDashboardMoneyInput(value: string | null | undefined): number | null {
+    if (!value || !value.trim()) return null
+    const normalized = value.trim().replace(/[$,\s]/g, '')
+    const multiplier = /m$/i.test(normalized) ? 1_000_000 : /b$/i.test(normalized) ? 1_000_000_000 : /k$/i.test(normalized) ? 1_000 : 1
+    const parsed = Number(normalized.replace(/[kmb]$/i, ''))
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed * multiplier : null
+}
+
 function deriveBatchProgress(rows: SubmissionHistoryItem[]) {
     const finishedCount = rows.filter(r => !isActiveSubmissionStatus(r.status)).length
     const processingCount = rows.filter(r => isActiveSubmissionStatus(r.status)).length
@@ -573,7 +581,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         if (isExampleMode) return exampleModel
         return dealModelDraftByProject[activeProjectId] ?? saved ?? {
             projectId: activeProjectId,
-            askingPrice: askingPrice.trim().length > 0 ? Number(askingPrice.replace(/[^0-9.]/g, '')) || null : null,
+            askingPrice: parseDashboardMoneyInput(askingPrice),
             purchasePrice: null, debtAssumed: null, cashAcquired: null, workingCapitalRequirement: null,
             transactionFees: null, holdPeriodYears: null, taxRate: null, closingCosts: null,
             maintenanceCapex: null, exitMultiple: null, exitCosts: null, equityContributionPercent: null,
