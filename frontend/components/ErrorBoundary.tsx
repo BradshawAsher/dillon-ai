@@ -30,6 +30,16 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
   }
 
   reset = () => {
+    const errorMsg = this.state.error?.message || ''
+    if (
+      typeof window !== 'undefined' &&
+      (errorMsg.includes('dynamically imported module') ||
+        errorMsg.includes('Loading chunk') ||
+        errorMsg.includes('Failed to fetch'))
+    ) {
+      window.location.reload()
+      return
+    }
     this.setState({ error: null })
   }
 

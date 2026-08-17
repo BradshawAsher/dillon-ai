@@ -19,9 +19,10 @@ import ProjectChecklistCard from '../ProjectChecklistCard'
 import { sumMeasuredCost } from '../../utils/costModel'
 import { isRowMatchingProject } from '../../utils/projectWorkspace'
 
-const EbitdaReconstructionCard = React.lazy(() => import('../EbitdaReconstructionCard'))
-const DealTimelineCard = React.lazy(() => import('../DealTimelineCard'))
-const WhatsNewCard = React.lazy(() => import('../WhatsNewCard'))
+import { lazyWithRetry } from '../../utils/lazyWithRetry'
+const EbitdaReconstructionCard = lazyWithRetry(() => import('../EbitdaReconstructionCard'))
+const DealTimelineCard = lazyWithRetry(() => import('../DealTimelineCard'))
+const WhatsNewCard = lazyWithRetry(() => import('../WhatsNewCard'))
 
 type DiligenceWorkspaceViewProps = {
     projectSummaries: any[]

@@ -18,8 +18,9 @@ import { ExportDiligenceModal } from '../components/ExportDiligenceModal'
 import { ProjectsSidePanel } from '../components/ProjectsSidePanel'
 import DealHealthKPIs from '../components/DealHealthKPIs'
 import DealEmailDraftCard from '../components/DealEmailDraftCard'
-const CommandPalette = lazy(() => import('../components/CommandPalette'))
-const SystemArchitectureCard = lazy(() => import('../components/SystemArchitectureCard'))
+import { lazyWithRetry } from '../utils/lazyWithRetry'
+const CommandPalette = lazyWithRetry(() => import('../components/CommandPalette'))
+const SystemArchitectureCard = lazyWithRetry(() => import('../components/SystemArchitectureCard'))
 import LoginButton, { getStoredAuth, isDataIsolationEnabled } from '../components/AuthGate'
 import { buildMarkdownReport, buildJsonExport, downloadFile } from '../components/ExportDealButton'
 import KeyboardShortcutsDialog from '../components/KeyboardShortcutsDialog'
@@ -43,16 +44,16 @@ import DealWorkspaceNav from '../components/DealWorkspaceNav'
 import TabSidebarTOC, { TabTopNavTOC } from '../components/TabSidebarTOC'
 import SectionHeader from '../components/SectionHeader'
 
-const ProjectIntakeCard = lazy(() => import('../components/ProjectIntakeCard'))
-const ProjectSynthesisCard = lazy(() => import('../components/ProjectSynthesisCard'))
+const ProjectIntakeCard = lazyWithRetry(() => import('../components/ProjectIntakeCard'))
+const ProjectSynthesisCard = lazyWithRetry(() => import('../components/ProjectSynthesisCard'))
 import ProjectComparisonCard from '../components/ProjectComparisonCard'
 import ManagementQuestionTracker from '../components/ManagementQuestionTracker'
-const SubmissionHistoryCard = lazy(() => import('../components/SubmissionHistoryCard'))
-const DealChatPanel = lazy(() => import('../components/DealChatPanel'))
-const WorkflowErrorLogCard = lazy(() => import('../components/WorkflowErrorLogCard'))
-const EvalDashboardTab = lazy(() => import('../components/EvalDashboardTab'))
-const SpendingAnalyticsTab = lazy(() => import('../components/SpendingAnalyticsTab'))
-const TechnicalFaqWorkspaceTab = lazy(() => import('../components/TechnicalFaqWorkspaceTab'))
+const SubmissionHistoryCard = lazyWithRetry(() => import('../components/SubmissionHistoryCard'))
+const DealChatPanel = lazyWithRetry(() => import('../components/DealChatPanel'))
+const WorkflowErrorLogCard = lazyWithRetry(() => import('../components/WorkflowErrorLogCard'))
+const EvalDashboardTab = lazyWithRetry(() => import('../components/EvalDashboardTab'))
+const SpendingAnalyticsTab = lazyWithRetry(() => import('../components/SpendingAnalyticsTab'))
+const TechnicalFaqWorkspaceTab = lazyWithRetry(() => import('../components/TechnicalFaqWorkspaceTab'))
 import LatestSubmissionSection from '../components/dashboard/LatestSubmissionSection'
 import { BatchProgressCard } from '../components/dashboard/BatchProgressCard'
 import LegacyDiligenceBackupCard from '../components/dashboard/LegacyDiligenceBackupCard'
