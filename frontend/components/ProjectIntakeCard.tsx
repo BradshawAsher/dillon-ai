@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FolderKanban, Key, Loader2, Plus, Upload, X } from 'lucide-react'
+import { FolderKanban, Info, Key, Loader2, Plus, Upload, X } from 'lucide-react'
 
 import FileDropzone from './FileDropzone'
 import { Badge } from '../lib/shadcn/badge'
@@ -36,6 +36,7 @@ type ProjectIntakeCardProps = {
     availableProjects: ProjectOption[]
     selectedFiles: File[]
     disabled: boolean
+    isExampleMode?: boolean
     onOpenApiKeyModal?: () => void
     onDealNameChange: (value: string) => void
     onAskingPriceChange: (value: string) => void
@@ -89,6 +90,7 @@ export default function ProjectIntakeCard({
     availableProjects,
     selectedFiles,
     disabled,
+    isExampleMode = false,
     onOpenApiKeyModal,
     onDealNameChange,
     onAskingPriceChange,
@@ -129,16 +131,6 @@ export default function ProjectIntakeCard({
         onSubmit('production')
     }
 
-    const handleTestSubmit = () => {
-        if (selectedFiles.length === 0) {
-            setFileRequiredWarning(true)
-            document.querySelector('[data-project-intake]')?.scrollIntoView({ behavior: 'smooth' })
-            return
-        }
-        setFileRequiredWarning(false)
-        onSubmit('test')
-    }
-
     return (
         <Card className="overflow-hidden" data-project-intake>
             <CardHeader className="border-b border-border bg-card/80">
@@ -146,7 +138,7 @@ export default function ProjectIntakeCard({
                     <div className="space-y-1">
                         <div className="flex items-center gap-2">
                             <FolderKanban className="h-4 w-4 text-muted-foreground" />
-                            <CardTitle className="text-xl">Project dossier intake</CardTitle>
+                            <CardTitle className="text-xl">Project intake</CardTitle>
                         </div>
                         <CardDescription>
                             Upload one or many documents into a named project so the agent can eventually reconcile the full diligence set and produce one acquisition judgment.
@@ -286,50 +278,61 @@ export default function ProjectIntakeCard({
                     </div>
                 )}
 
-                <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                    <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                        <Badge variant="outline">Submit path: file → n8n ack → polled project row</Badge>
-                        <span>The UI is now shaped around projects even though the backend still processes one document at a time.</span>
+                <div className="space-y-3 pt-2">
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                            <Badge variant="outline" className="text-[11px] font-medium">Pipeline: n8n Pod 1</Badge>
+                            <span>Multi-document project processing</span>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2.5">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={onCreateProject}
+                            >
+                                <Plus className="mr-1.5 h-4 w-4" />
+                                New project
+                            </Button>
+                            <Button
+                                type="button"
+                                size="lg"
+                                disabled={disabled}
+                                onClick={handleProductionSubmit}
+                                className="h-10 px-6 font-semibold shadow-md bg-primary hover:bg-primary/90 text-primary-foreground text-sm"
+                            >
+                                {disabled ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                                Queue
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                className="gap-1.5 border border-primary/20"
+                                disabled={disabled}
+                                onClick={handleCustomKeySubmit}
+                                title="Queue using your custom Anthropic API key saved in BYOK settings"
+                            >
+                                <Key className="h-3.5 w-3.5 text-primary" />
+                                Queue with custom key
+                            </Button>
+                        </div>
                     </div>
 
-                    <div className="flex flex-col gap-2 sm:flex-row">
-                        <Button
-                            type="button"
-                            variant="secondary"
-                            onClick={onCreateProject}
-                        >
-                            <Plus className="mr-2 h-4 w-4" />
-                            New project
-                        </Button>
-                        <Button
-                            type="button"
-                            disabled={disabled}
-                            onClick={handleProductionSubmit}
-                        >
-                            {disabled ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : null}
-                            Queue in production
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="secondary"
-                            className="gap-1.5 border border-primary/20"
-                            disabled={disabled}
-                            onClick={handleCustomKeySubmit}
-                            title="Queue using your custom Anthropic API key saved in BYOK settings"
-                        >
-                            <Key className="h-3.5 w-3.5 text-primary" />
-                            Queue with custom key
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            disabled={disabled}
-                            onClick={handleTestSubmit}
-                        >
-                            {disabled ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : null}
-                            Queue in test
-                        </Button>
-                        <p className="w-full text-xs text-muted-foreground sm:ml-auto sm:w-auto">If you press <strong>Queue in production</strong> while in Example mode, the app will switch you to <strong>Live n8n</strong> first and preserve your selected files.</p>
+                    <div className="space-y-2">
+                        <div className="flex items-center gap-3 rounded-lg border border-primary/30 bg-primary/10 px-4 py-2.5 text-sm text-foreground/90 shadow-sm">
+                            <Info className="h-4.5 w-4.5 shrink-0 text-primary" />
+                            <p className="leading-relaxed">
+                                The <strong className="font-semibold text-primary">Queue</strong> button is the main action to process and analyze your uploaded deal documents through the Dillon AI diligence engine.
+                            </p>
+                        </div>
+                        {isExampleMode ? (
+                            <div className="flex items-center gap-2.5 rounded-lg border border-border/70 bg-muted/40 px-3.5 py-2 text-xs text-muted-foreground animate-in fade-in-0 duration-200">
+                                <Info className="h-4 w-4 shrink-0 text-muted-foreground" />
+                                <p className="leading-relaxed">
+                                    If you press <strong>Queue</strong> while in Example mode, the app will switch you to <strong>Live n8n</strong> first and preserve your selected files.
+                                </p>
+                            </div>
+                        ) : null}
                     </div>
                 </div>
 

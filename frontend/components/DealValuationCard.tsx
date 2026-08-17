@@ -242,7 +242,7 @@ export default function DealValuationCard({ synthesis, askingPrice, model, onMod
                             Revenue Multiple: {resolvedRevenueMultiple}×{' · '}
                             EBITDA Multiple: {resolvedEbitdaMultiple}×{' · '}
                             Asset Haircut: {(resolvedAssetHaircut * 100).toFixed(0)}%.
-                            Confirming financial facts in Project Dossier automatically locks in source-backed numbers.
+                            Confirming financial facts in Project Intake automatically locks in source-backed numbers.
                         </p>
                     </div>
                 ) : null}
@@ -384,7 +384,7 @@ export default function DealValuationCard({ synthesis, askingPrice, model, onMod
                                 ) : (
                                     <div className="mt-4 rounded-lg border border-dashed border-border bg-muted/40 p-3">
                                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Asking Price Not Set</p>
-                                        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Enter an asking price in Project Dossier Intake or Deal Model to calculate seller premium or cushion.</p>
+                                        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Enter an asking price in Project Intake or Deal Model to calculate seller premium or cushion.</p>
                                     </div>
                                 )}
                             </div>

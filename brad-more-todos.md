@@ -99,6 +99,8 @@
 
 - Try using deepseek models since they are even cheaper than gemini?
 
+- For brad, continue exploring the website and thiings you need to add
+
 - For brad, maybe rewrite gh commit history the names of the commits so we know what actually happened? This is hard since somtimes when you did commit, like the changes you hoped for didn't actually happen so how can we label which one actually worked and which one didn't?
 
 - Environment separation for prod API keys separate from testing API keys? Have we done this?
