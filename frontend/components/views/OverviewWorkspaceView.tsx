@@ -13,7 +13,8 @@ import SellerQuestionsCard from '../SellerQuestionsCard'
 import { sumMeasuredCost } from '../../utils/costModel'
 import { isRowMatchingProject } from '../../utils/projectWorkspace'
 
-const DealMemoView = React.lazy(() => import('../DealMemoView'))
+import { lazyWithRetry } from '../../utils/lazyWithRetry'
+const DealMemoView = lazyWithRetry(() => import('../DealMemoView'))
 
 type OverviewWorkspaceViewProps = {
     hydratedDealModel: any
