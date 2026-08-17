@@ -1,5 +1,5 @@
 import React from 'react'
-import { FolderKanban, Moon, Sun, Key, Globe } from 'lucide-react'
+import { FolderKanban, Moon, Sun, Key, Globe, Play } from 'lucide-react'
 import { Badge } from '../../lib/shadcn/badge'
 import { Button } from '../../lib/shadcn/button'
 import DealStageIndicator from '../DealStageIndicator'
@@ -29,6 +29,7 @@ type WorkspaceHeaderProps = {
     setIsApiKeyModalOpen: (open: boolean) => void
     isActiveSubmissionStatus: (status: any) => boolean
     onReturnToLanding?: () => void
+    onOpenWalkthrough?: () => void
 }
 
 export function WorkspaceHeader({
@@ -51,6 +52,7 @@ export function WorkspaceHeader({
     setIsApiKeyModalOpen,
     isActiveSubmissionStatus,
     onReturnToLanding,
+    onOpenWalkthrough,
 }: WorkspaceHeaderProps) {
     return (
         <header className="dashboard-header-mesh">
@@ -71,6 +73,21 @@ export function WorkspaceHeader({
                             hasActiveSubmissions={activeProjectDocuments.some((d) => isActiveSubmissionStatus(d.status))}
                             hasErrors={activeProjectDocuments.some((d) => ['failed', 'error', 'rejected'].includes(String(d.status ?? '').trim().toLowerCase()))}
                         />
+                        {onOpenWalkthrough && (
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="gap-2 border-primary/40 bg-primary/10 hover:bg-primary/20 text-primary font-semibold shadow-xs"
+                                onClick={onOpenWalkthrough}
+                                title="Open Interactive 10-Step Supademo Walkthrough"
+                            >
+                                <Play className="h-4 w-4 text-primary fill-primary/20" />
+                                <span className="hidden sm:inline">10-Step Demo</span>
+                                <Badge variant="default" className="h-5 px-1.5 text-[10px] bg-primary text-primary-foreground font-mono">
+                                    10
+                                </Badge>
+                            </Button>
+                        )}
                         {onReturnToLanding && (
                             <Button
                                 type="button"

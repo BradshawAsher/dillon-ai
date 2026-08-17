@@ -32,6 +32,7 @@ import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Input } from '../lib/shadcn/input'
+import SupademoModal from '../components/SupademoModal'
 
 interface LandingPageProps {
     onLaunchDashboard: () => void
@@ -40,7 +41,6 @@ interface LandingPageProps {
 export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
     const [showWalkthroughModal, setShowWalkthroughModal] = useState(false)
     const [showAccessModal, setShowAccessModal] = useState(false)
-    const [walkthroughStep, setWalkthroughStep] = useState(1)
     const [previewTab, setPreviewTab] = useState<'valuation' | 'citations' | 'risks' | 'cost'>('valuation')
     const [activeFactIndex, setActiveFactIndex] = useState(0)
     const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0)
@@ -156,33 +156,6 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
             citation: 'Balance Sheet 2025.pdf: Line 18 (Current Assets - Liabilities)',
             verified: true,
             note: 'Sufficient 60-day operating cash buffer confirmed',
-        },
-    ]
-
-    const walkthroughSteps = [
-        {
-            step: 1,
-            title: '01. Instant Document Intake & OCR',
-            desc: 'Drag and drop 2-year P&Ls, Balance Sheets, Customer Rosters, and LOIs. Our OCR engine parses both clean PDFs and messy scans with zero data leakage.',
-            highlight: 'Parses PDFs, Excel, & Scans in < 3 seconds',
-        },
-        {
-            step: 2,
-            title: '02. Evidence-Backed Fact Extraction',
-            desc: 'Every revenue figure, EBITDA add-back, and debt liability is mapped directly to its source file basename, line item, or spreadsheet cell.',
-            highlight: '100% Citation Transparency · Zero Numeric Hallucinations',
-        },
-        {
-            step: 3,
-            title: '03. Multi-Doc Portfolio Synthesis',
-            desc: 'Cross-checks P&L statements against Balance Sheets and Customer Rosters to detect hidden working capital deficits, customer concentration, and tax liabilities.',
-            highlight: 'Automated Red Flag Detection & Traffic Light Scoring',
-        },
-        {
-            step: 4,
-            title: '04. Valuation Ranges & IC Deal Memo',
-            desc: 'Generates Bear, Base, and Bull valuation multiples ($2.18M–$3.27M) alongside an Investment Committee-ready Markdown deal memo with 1-click export.',
-            highlight: 'Downloadable Executive Summary & Valuation Spreadsheets',
         },
     ]
 
@@ -895,96 +868,11 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
                 </div>
             </footer>
 
-            {/* GUIDED WALKTHROUGH MODAL (Supademo Integration) */}
-            {showWalkthroughModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-                    <div className="relative w-full max-w-3xl rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-6">
-                        <div className="flex items-center justify-between border-b border-border pb-4">
-                            <div className="flex items-center gap-2">
-                                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
-                                    SUPADEMO WALKTHROUGH
-                                </Badge>
-                                <h3 className="text-lg font-bold text-foreground">Guided Product Demo</h3>
-                            </div>
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0"
-                                onClick={() => setShowWalkthroughModal(false)}
-                            >
-                                <X className="h-4 w-4" />
-                            </Button>
-                        </div>
-
-                        {/* Interactive Step Preview */}
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between bg-muted/40 p-3 rounded-xl border border-border">
-                                <span className="text-xs font-bold text-primary font-mono">
-                                    Step {walkthroughStep} of {walkthroughSteps.length}
-                                </span>
-                                <div className="flex items-center gap-2">
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        className="h-7 text-xs"
-                                        disabled={walkthroughStep === 1}
-                                        onClick={() => setWalkthroughStep((prev) => Math.max(1, prev - 1))}
-                                    >
-                                        Previous
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        className="h-7 text-xs"
-                                        disabled={walkthroughStep === walkthroughSteps.length}
-                                        onClick={() => setWalkthroughStep((prev) => Math.min(walkthroughSteps.length, prev + 1))}
-                                    >
-                                        Next
-                                    </Button>
-                                </div>
-                            </div>
-
-                            <div className="p-6 rounded-xl border border-primary/30 bg-primary/5 space-y-3">
-                                <h4 className="text-base font-bold text-foreground">
-                                    {walkthroughSteps[walkthroughStep - 1].title}
-                                </h4>
-                                <p className="text-sm text-muted-foreground leading-relaxed">
-                                    {walkthroughSteps[walkthroughStep - 1].desc}
-                                </p>
-                                <Badge variant="success" className="font-mono text-xs font-bold">
-                                    {walkthroughSteps[walkthroughStep - 1].highlight}
-                                </Badge>
-                            </div>
-                        </div>
-
-                        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 border-t border-border">
-                            <a
-                                href="https://app.supademo.com/demo/cms81ew4y01kdqm68samg07zi?utm_source=link"
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
-                            >
-                                <span>Open Full Interactive Supademo in New Tab</span>
-                                <ExternalLink className="h-3.5 w-3.5" />
-                            </a>
-                            <Button
-                                type="button"
-                                className="bg-primary text-white text-xs font-bold w-full sm:w-auto"
-                                onClick={() => {
-                                    setShowWalkthroughModal(false)
-                                    onLaunchDashboard()
-                                }}
-                            >
-                                Try Live in App Dashboard
-                                <ArrowRight className="ml-1.5 h-4 w-4" />
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* GUIDED WALKTHROUGH MODAL (Supademo Interactive Embed) */}
+            <SupademoModal
+                isOpen={showWalkthroughModal}
+                onClose={() => setShowWalkthroughModal(false)}
+            />
 
             {/* APPLY FOR ACCESS MODAL */}
             {showAccessModal && (
