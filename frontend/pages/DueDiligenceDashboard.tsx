@@ -28,6 +28,8 @@ import { type Notification } from '../components/NotificationCenter'
 import { BatchProcessingSidePanel } from '../components/BatchProcessingSidePanel'
 import EvidenceDrawer from '../components/EvidenceDrawer'
 import DashboardFaqSidebar from '../components/DashboardFaqSidebar'
+import SupademoModal, { type DemoVariantId } from '../components/SupademoModal'
+import { WorkspaceDemoGalleryBar } from '../components/WorkspaceDemoGalleryBar'
 import { OverviewWorkspaceView } from '../components/views/OverviewWorkspaceView'
 import { DiligenceWorkspaceView } from '../components/views/DiligenceWorkspaceView'
 import { ReturnsWorkspaceView } from '../components/views/ReturnsWorkspaceView'
@@ -181,6 +183,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         setProjectChecklistById,
     } = useDealWorkspaceState()
 
+    const [isWalkthroughModalOpen, setIsWalkthroughModalOpen] = useState(false)
+    const [selectedWalkthroughDemoId, setSelectedWalkthroughDemoId] = useState<DemoVariantId>('short-supademo')
     const [isLeftQuickDockVisible, setIsLeftQuickDockVisible] = useState(true)
     const { data: diligenceData, error } = useGetDiligenceData()
     const {
@@ -1547,6 +1551,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                     setIsApiKeyModalOpen={setIsApiKeyModalOpen}
                     isActiveSubmissionStatus={isActiveSubmissionStatus}
                     onReturnToLanding={onReturnToLanding}
+                    onOpenWalkthrough={() => setIsWalkthroughModalOpen(true)}
                 />
 
                 <div className="mx-auto max-w-[1440px] px-4 pb-5 sm:px-6 lg:px-8">
@@ -1688,6 +1693,14 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                         </div>
                     </div>
                 ) : null}
+
+                {/* Interactive Product Walkthrough & Video Gallery Dock */}
+                <WorkspaceDemoGalleryBar
+                    onSelectDemo={(demoId) => {
+                        setSelectedWalkthroughDemoId(demoId)
+                        setIsWalkthroughModalOpen(true)
+                    }}
+                />
 
                 <div id="diligence-workspace" className="scroll-mt-6" />
                 <div id="deal-workspace" className="scroll-mt-6" />
@@ -2392,6 +2405,12 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 isOpen={isFaqSidebarOpen}
                 onClose={() => setIsFaqSidebarOpen(false)}
                 onSwitchTab={setActiveWorkspaceTab}
+                onOpenWalkthrough={() => setIsWalkthroughModalOpen(true)}
+            />
+            <SupademoModal
+                isOpen={isWalkthroughModalOpen}
+                defaultDemoId={selectedWalkthroughDemoId}
+                onClose={() => setIsWalkthroughModalOpen(false)}
             />
         </div>
     )

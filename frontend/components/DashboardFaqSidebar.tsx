@@ -17,6 +17,7 @@ import {
     ArrowRight,
     MessageSquare,
     Bot,
+    Play,
 } from 'lucide-react'
 import { Button } from '../lib/shadcn/button'
 import { Input } from '../lib/shadcn/input'
@@ -29,12 +30,14 @@ interface DashboardFaqSidebarProps {
     isOpen: boolean
     onClose: () => void
     onSwitchTab?: (tab: WorkspaceTab) => void
+    onOpenWalkthrough?: () => void
 }
 
 export default function DashboardFaqSidebar({
     isOpen,
     onClose,
     onSwitchTab,
+    onOpenWalkthrough,
 }: DashboardFaqSidebarProps) {
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedCategory, setSelectedCategory] = useState<
@@ -240,6 +243,28 @@ export default function DashboardFaqSidebar({
                         <span className="sr-only">Close</span>
                     </Button>
                 </div>
+
+                {/* 10-Step Interactive Tour Launcher */}
+                {onOpenWalkthrough && (
+                    <div className="mx-4 mt-3 p-3 rounded-xl border border-primary/30 bg-primary/10 flex items-center justify-between gap-3 shadow-xs">
+                        <div className="flex items-center gap-2 min-w-0">
+                            <Sparkles className="h-4 w-4 text-primary shrink-0" />
+                            <div className="min-w-0">
+                                <p className="text-xs font-bold text-foreground">Interactive 10-Step Tour</p>
+                                <p className="text-[10px] text-muted-foreground truncate">Full M&A case study on Supademo</p>
+                            </div>
+                        </div>
+                        <Button
+                            type="button"
+                            size="sm"
+                            className="h-7 text-xs font-semibold gap-1 bg-primary text-primary-foreground shrink-0 shadow-xs"
+                            onClick={onOpenWalkthrough}
+                        >
+                            <Play className="h-3 w-3 fill-primary-foreground" />
+                            Play Tour
+                        </Button>
+                    </div>
+                )}
 
                 {/* Search Bar */}
                 <div className="p-4 border-b border-border/60 space-y-3 bg-card/50">
