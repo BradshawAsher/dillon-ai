@@ -111,6 +111,10 @@
 
 - Chatbot is still not good enough, on the vercel link I asked him tell me about this deal and he just told me to ask him other questions instead of just telling me straight up
 
+- and new slides and script and preparation for questions they might ask and things to explain if you have more time
+
+- try to open out and expand the js nodes and the code nodes and json schemas that claude code or antigravity made to have indentation and not be one squished block
+
 - Is there a lot of overview in the analysis and overview tab with the other more indepth tabs like valuation, returns, growth, negotiation, etc?
 
 - Why is the med spa wellness clinic when i first open the tab $5 price and 0 multiple?
