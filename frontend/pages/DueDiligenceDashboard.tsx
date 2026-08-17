@@ -519,7 +519,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 if (!cancelled) {
                     setSelectedFiles(restoredFiles)
                     window.sessionStorage.removeItem(PENDING_EXAMPLE_MODE_SUBMISSION_KEY)
-                    setBatchSubmissionMessage('Switched from Example to Live n8n automatically. Your selected files were restored — press Queue in production again to submit them live.')
+                    setBatchSubmissionMessage('Switched from Example to Live n8n automatically. Your selected files were restored — press Queue again to submit them live.')
                 }
             } catch {
                 window.sessionStorage.removeItem(PENDING_EXAMPLE_MODE_SUBMISSION_KEY)
@@ -1636,6 +1636,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                     availableProjects={availableProjects}
                     selectedFiles={selectedFiles}
                     disabled={isSubmittingFile || submitLoading}
+                    isExampleMode={isExampleMode}
                     onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
                     onDealNameChange={setDealName}
                     onAskingPriceChange={handleAskingPriceChange}

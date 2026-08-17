@@ -65,6 +65,10 @@ If the user asks to change project synthesis behavior, the agent should:
 - ALWAYS perform careful, targeted insertions and minimal replacements rather than rewriting entire files or large blocks of code.
 - Keep edit chunks scoped tightly to the exact lines being added or modified to preserve surrounding code structure and history.
 
+## Manual Commit & Push Protocol
+- NEVER automatically run `git commit` or `git push` without an explicit, direct instruction from the user asking to commit and/or push.
+- Keep local changes in the working tree for the user to review. Only commit or push when the user explicitly says to do so.
+
 
 
 

@@ -475,7 +475,7 @@ function getRecommendation(args: {
     }
 
     if (args.activeCount > 0) {
-        return 'Project dossier is still processing. Wait for all queued documents before final synthesis.'
+        return 'Project documents are still processing. Wait for all queued documents before final synthesis.'
     }
 
     const missingCoverageCount = args.coverage.filter((item) => !item.matched).length
