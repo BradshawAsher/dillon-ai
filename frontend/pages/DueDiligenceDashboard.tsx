@@ -34,6 +34,7 @@ import { WorkspaceDemoGalleryBar } from '../components/WorkspaceDemoGalleryBar'
 import { useNativeWalkthrough } from '../components/walkthrough/useNativeWalkthrough'
 import { WalkthroughLauncherModal } from '../components/walkthrough/WalkthroughLauncherModal'
 import { NativeWalkthroughOverlay } from '../components/walkthrough/NativeWalkthroughOverlay'
+import WorkspaceTabTutorialBanner from '../components/walkthrough/WorkspaceTabTutorialBanner'
 import { OverviewWorkspaceView } from '../components/views/OverviewWorkspaceView'
 import { DiligenceWorkspaceView } from '../components/views/DiligenceWorkspaceView'
 import { ReturnsWorkspaceView } from '../components/views/ReturnsWorkspaceView'
@@ -1783,6 +1784,12 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                             window.scrollTo({ top: 0, behavior: 'smooth' })
                         }
                     }}
+                />
+
+                <WorkspaceTabTutorialBanner
+                    activeTab={activeWorkspaceTab}
+                    onStartTabTour={walkthrough.startTabTour}
+                    onOpenFullWalkthrough={() => setIsWalkthroughModalOpen(true)}
                 />
 
                 <TabSidebarTOC
