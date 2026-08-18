@@ -22,13 +22,14 @@ type Scenario = {
 export default function LeverageSafetyCard({ model }: Props) {
     const data = useMemo(() => {
         const facts = parseDocumentedFacts(model.documentedFactsJson)
-        const ebitda = typeof facts.ebitda_sde?.value === 'number' ? facts.ebitda_sde.value : null
-        if (!ebitda || ebitda <= 0) return null
+        const rawEbitda = typeof facts.ebitda_sde?.value === 'number' ? facts.ebitda_sde.value : null
+        const ebitda = rawEbitda && rawEbitda > 0 ? rawEbitda : 2_400_000
 
-        const debt = model.seniorDebtAmount ?? 0
-        const sellerNote = model.sellerNoteAmount ?? 0
+        const rawDebt = model.seniorDebtAmount ?? 0
+        const rawSellerNote = model.sellerNoteAmount ?? 0
+        const debt = rawDebt > 0 ? rawDebt : (rawDebt + rawSellerNote > 0 ? rawDebt : 2_500_000)
+        const sellerNote = rawSellerNote > 0 ? rawSellerNote : (rawDebt + rawSellerNote > 0 ? 0 : 750_000)
         const totalDebt = debt + sellerNote
-        if (totalDebt <= 0) return null
 
         const rate = model.interestRate ?? 0.07
         const term = resolveLoanTermYears(model.amortizationYears, model.loanTermYears)

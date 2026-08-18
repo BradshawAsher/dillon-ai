@@ -214,20 +214,20 @@ export default function DashboardFaqSidebar({
                 role="dialog"
                 aria-modal="true"
                 aria-label="FAQs and Guidance Sidebar"
-                className="fixed right-0 top-0 bottom-0 z-50 flex w-full flex-col border-l border-border bg-background shadow-2xl transition-transform duration-300 sm:w-[420px]"
+                className="fixed right-0 top-0 bottom-0 z-50 flex w-full flex-col border-l border-border bg-card/98 shadow-2xl backdrop-blur-xl transition-transform duration-300 sm:w-[320px] max-w-[88vw]"
             >
                 {/* Header */}
-                <div className="flex items-center justify-between border-b border-border/80 p-4 bg-muted/20">
-                    <div className="flex items-center gap-2.5">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                            <HelpCircle className="h-5 w-5" />
+                <div className="flex items-center justify-between border-b border-border/80 p-3.5 bg-muted/40">
+                    <div className="flex items-center gap-2">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
+                            <HelpCircle className="h-4 w-4" />
                         </div>
                         <div>
-                            <h2 className="text-base font-bold text-foreground leading-none">
+                            <h2 className="text-sm font-bold text-foreground leading-none">
                                 FAQs &amp; Deal Guide
                             </h2>
-                            <p className="text-[11px] text-muted-foreground mt-1 leading-none">
-                                Follow along across any workspace tab
+                            <p className="text-[10.5px] text-muted-foreground mt-0.5 leading-none">
+                                Interactive diligence assistance
                             </p>
                         </div>
                     </div>
@@ -235,7 +235,7 @@ export default function DashboardFaqSidebar({
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 rounded-full text-muted-foreground hover:bg-muted"
+                        className="h-7 w-7 rounded-full text-foreground hover:bg-muted hover:text-foreground"
                         onClick={onClose}
                         title="Close FAQ Sidebar"
                     >
@@ -246,43 +246,43 @@ export default function DashboardFaqSidebar({
 
                 {/* 10-Step Interactive Tour Launcher */}
                 {onOpenWalkthrough && (
-                    <div className="mx-4 mt-3 p-3 rounded-xl border border-primary/30 bg-primary/10 flex items-center justify-between gap-3 shadow-xs">
+                    <div className="mx-3 mt-3 p-2.5 rounded-xl border border-primary/40 bg-primary/10 flex items-center justify-between gap-2 shadow-xs">
                         <div className="flex items-center gap-2 min-w-0">
                             <Sparkles className="h-4 w-4 text-primary shrink-0" />
                             <div className="min-w-0">
-                                <p className="text-xs font-bold text-foreground">Interactive 10-Step Tour</p>
-                                <p className="text-[10px] text-muted-foreground truncate">Full M&A case study on Supademo</p>
+                                <p className="text-xs font-bold text-foreground leading-tight">Interactive 10-Step Tour</p>
+                                <p className="text-[10px] text-muted-foreground truncate">Full M&amp;A diligence simulation</p>
                             </div>
                         </div>
                         <Button
                             type="button"
                             size="sm"
-                            className="h-7 text-xs font-semibold gap-1 bg-primary text-primary-foreground shrink-0 shadow-xs"
+                            className="h-7 px-2.5 text-xs font-semibold gap-1 bg-primary text-primary-foreground hover:bg-primary/90 shrink-0 shadow-xs cursor-pointer"
                             onClick={onOpenWalkthrough}
                         >
-                            <Play className="h-3 w-3 fill-primary-foreground" />
-                            Play Tour
+                            <Play className="h-3 w-3 fill-current" />
+                            Play
                         </Button>
                     </div>
                 )}
 
                 {/* Search Bar */}
-                <div className="p-4 border-b border-border/60 space-y-3 bg-card/50">
+                <div className="p-3 border-b border-border/60 space-y-2 bg-muted/20">
                     <div className="relative">
-                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-muted-foreground" />
                         <Input
                             type="text"
                             placeholder="Search questions or features..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-9 text-xs h-9"
+                            className="pl-8 text-xs h-8 bg-background text-foreground placeholder:text-muted-foreground border-border"
                             aria-label="Search FAQs"
                         />
                         {searchQuery && (
                             <button
                                 type="button"
                                 onClick={() => setSearchQuery('')}
-                                className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground text-xs"
+                                className="absolute right-2 top-2 text-muted-foreground hover:text-foreground text-xs"
                             >
                                 Clear
                             </button>
@@ -290,17 +290,17 @@ export default function DashboardFaqSidebar({
                     </div>
 
                     {/* Category Filter Pills */}
-                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
+                    <div className="flex items-center gap-1 overflow-x-auto pb-0.5 no-scrollbar text-xs">
                         {categories.map((cat) => (
                             <button
                                 key={cat.id}
                                 type="button"
                                 aria-pressed={selectedCategory === cat.id}
                                 onClick={() => setSelectedCategory(cat.id as any)}
-                                className={`rounded-full px-2.5 py-1 transition-all whitespace-nowrap text-[11px] font-medium shrink-0 ${
+                                className={`rounded-full px-2 py-0.5 transition-all whitespace-nowrap text-[10.5px] font-semibold shrink-0 cursor-pointer ${
                                     selectedCategory === cat.id
                                         ? 'bg-primary text-primary-foreground font-bold shadow-xs'
-                                        : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
+                                        : 'bg-muted text-foreground/90 hover:bg-muted/80 hover:text-foreground'
                                 }`}
                             >
                                 {cat.label}
@@ -310,12 +310,12 @@ export default function DashboardFaqSidebar({
                 </div>
 
                 {/* FAQ Items List */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                <div className="flex-1 overflow-y-auto p-3 space-y-2">
                     {filteredFaqs.length === 0 ? (
-                        <div className="p-8 text-center space-y-2 text-muted-foreground">
-                            <BookOpen className="h-8 w-8 mx-auto text-muted-foreground/50" />
-                            <p className="text-xs font-semibold">No matching questions found</p>
-                            <p className="text-[11px]">Try clearing your search or category filter.</p>
+                        <div className="p-6 text-center space-y-2 text-muted-foreground">
+                            <BookOpen className="h-7 w-7 mx-auto text-muted-foreground/50" />
+                            <p className="text-xs font-semibold text-foreground">No matching questions found</p>
+                            <p className="text-[11px] text-muted-foreground">Try clearing your search or category filter.</p>
                         </div>
                     ) : (
                         filteredFaqs.map((faq) => {
@@ -325,21 +325,21 @@ export default function DashboardFaqSidebar({
                                     key={faq.question}
                                     className={`border transition-all ${
                                         isOpen
-                                            ? 'border-primary/40 bg-primary/5 shadow-xs'
-                                            : 'border-border/80 bg-card hover:border-border'
+                                            ? 'border-primary/50 bg-primary/5 shadow-xs'
+                                            : 'border-border/80 bg-card hover:border-primary/30'
                                     }`}
                                 >
                                     <button
                                         type="button"
                                         aria-expanded={isOpen}
                                         onClick={() => setOpenFaqKey(isOpen ? null : faq.question)}
-                                        className="w-full p-3.5 text-left flex items-start justify-between gap-3 text-xs font-bold text-foreground cursor-pointer"
+                                        className="w-full p-2.5 text-left flex items-start justify-between gap-2 text-xs font-bold text-foreground cursor-pointer"
                                     >
                                         <div className="space-y-1 pr-1">
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-1.5">
                                                 <Badge
                                                     variant="outline"
-                                                    className="text-[9px] px-1.5 py-0 border-primary/30 text-primary font-mono"
+                                                    className="text-[9px] px-1.5 py-0 border-primary/40 text-primary font-mono font-bold"
                                                 >
                                                     {faq.categoryLabel}
                                                 </Badge>
@@ -349,7 +349,7 @@ export default function DashboardFaqSidebar({
                                                     </span>
                                                 )}
                                             </div>
-                                            <p className="text-xs font-bold text-foreground leading-snug">
+                                            <p className="text-xs font-semibold text-foreground leading-snug">
                                                 {faq.question}
                                             </p>
                                         </div>
@@ -361,8 +361,8 @@ export default function DashboardFaqSidebar({
                                     </button>
 
                                     {isOpen && (
-                                        <CardContent className="px-3.5 pb-3.5 pt-0 text-xs text-muted-foreground space-y-3 border-t border-border/40 mt-1">
-                                            <p className="whitespace-pre-line leading-relaxed pt-2">
+                                        <CardContent className="px-2.5 pb-2.5 pt-0 text-xs text-foreground space-y-2 border-t border-border/40 mt-1">
+                                            <p className="whitespace-pre-line leading-relaxed pt-2 text-xs font-normal text-foreground">
                                                 {faq.answer}
                                             </p>
 
@@ -372,7 +372,7 @@ export default function DashboardFaqSidebar({
                                                         type="button"
                                                         size="sm"
                                                         variant="outline"
-                                                        className="w-full text-xs font-bold border-primary/40 text-primary hover:bg-primary/10 justify-between h-8 cursor-pointer"
+                                                        className="w-full text-xs font-bold border-primary/40 text-primary hover:bg-primary/10 justify-between h-7 cursor-pointer"
                                                         onClick={() => {
                                                             if (faq.targetTab) {
                                                                 onSwitchTab(faq.targetTab)
@@ -380,14 +380,14 @@ export default function DashboardFaqSidebar({
                                                         }}
                                                     >
                                                         <span>{faq.actionLabel || 'Jump to Workspace Tab'}</span>
-                                                        <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                                                        <ArrowRight className="h-3 w-3 ml-1" />
                                                     </Button>
                                                 )}
                                                 <Button
                                                     type="button"
                                                     size="sm"
                                                     variant="ghost"
-                                                    className="w-full text-[11px] font-medium text-muted-foreground hover:text-foreground justify-between h-7 border border-border/50 hover:bg-muted/50 cursor-pointer"
+                                                    className="w-full text-[10.5px] font-semibold text-foreground/80 hover:text-foreground justify-between h-6 border border-border/50 hover:bg-muted/50 cursor-pointer"
                                                     onClick={() => {
                                                         window.dispatchEvent(
                                                             new CustomEvent('mergeworks:open-chat-ask', {
@@ -417,7 +417,7 @@ export default function DashboardFaqSidebar({
                 </div>
 
                 {/* Footer Tip */}
-                <div className="p-3 border-t border-border/80 bg-muted/20 text-center text-[11px] text-muted-foreground flex items-center justify-between px-4">
+                <div className="p-2.5 border-t border-border/80 bg-muted/20 text-center text-[10.5px] text-muted-foreground flex items-center justify-between px-3">
                     <span className="flex items-center gap-1.5 font-medium">
                         <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />
                         <span>Need keyboard shortcuts?</span>

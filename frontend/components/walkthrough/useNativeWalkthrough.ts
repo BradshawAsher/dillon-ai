@@ -148,14 +148,20 @@ export function useNativeWalkthrough({ activeTab, onTabChange }: UseNativeWalkth
             if (!el && step.targetSelector) el = document.querySelector(step.targetSelector) as HTMLElement | null
 
             if (el) {
-                el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                const elRect = el.getBoundingClientRect()
+                const absoluteElementTop = elRect.top + window.pageYOffset
+                // Position target element ~110px from top of viewport so it's fully visible and well above the bottom HUD
+                const targetScrollY = Math.max(0, absoluteElementTop - 110)
+                window.scrollTo({ top: targetScrollY, behavior: 'smooth' })
             }
             updateTargetPosition()
         }
 
-        setTimeout(attemptScrollAndPosition, 60)
-        setTimeout(attemptScrollAndPosition, 200)
-        setTimeout(attemptScrollAndPosition, 500)
+        setTimeout(attemptScrollAndPosition, 50)
+        setTimeout(attemptScrollAndPosition, 150)
+        setTimeout(attemptScrollAndPosition, 300)
+        setTimeout(attemptScrollAndPosition, 600)
+        setTimeout(attemptScrollAndPosition, 1000)
 
         // Trigger simulated click ripple after cursor arrives
         setTimeout(() => {

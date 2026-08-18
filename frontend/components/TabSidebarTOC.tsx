@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { List, ChevronRight, ChevronLeft, Navigation, GripVertical, RotateCcw } from 'lucide-react'
+import { List, ChevronRight, ChevronLeft, Navigation, RotateCcw } from 'lucide-react'
 
 type TOCSection = {
     id: string
@@ -236,17 +236,17 @@ export default function TabSidebarTOC({
     const [activeSection, setActiveSection] = useState<string>('')
     const [internalCollapsed, setInternalCollapsed] = useState<boolean>(false)
     const [internalTocWidth, setInternalTocWidth] = useState<number>(() => {
-        if (typeof window === 'undefined') return 140
+        if (typeof window === 'undefined') return 110
         try {
             const stored = localStorage.getItem('mergeworks.tocWidth')
             if (stored) {
                 const parsed = parseInt(stored, 10)
-                if (!Number.isNaN(parsed) && parsed >= 90 && parsed <= 240) {
+                if (!Number.isNaN(parsed) && parsed >= 85 && parsed <= 200) {
                     return parsed
                 }
             }
         } catch { }
-        return 140
+        return 110
     })
 
     const isCollapsed = propsIsCollapsed !== undefined ? propsIsCollapsed : internalCollapsed
@@ -299,7 +299,7 @@ export default function TabSidebarTOC({
 
     const handleDragPointerDown = (e: React.PointerEvent) => {
         const target = e.target as HTMLElement
-        if (target.closest('button')) {
+        if (target.closest('button, a, input, select, textarea, [role="button"]')) {
             return
         }
         e.preventDefault()
@@ -326,6 +326,7 @@ export default function TabSidebarTOC({
             (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId)
         } catch { }
         dragYRef.current = null
+        dragXRef.current = null
     }
 
     // Horizontal width resize drag handler
@@ -355,14 +356,14 @@ export default function TabSidebarTOC({
         dragXRef.current = null
     }
 
-    const handleResetAll = () => {
+    const handleResetAll = useCallback(() => {
         setTopOffset(null)
-        setTocWidth(140)
+        setTocWidth(110)
         try {
             localStorage.removeItem('mergeworks.tocTop')
             localStorage.removeItem('mergeworks.tocWidth')
         } catch { }
-    }
+    }, [setTocWidth])
 
     const scrollToSection = useCallback((sectionId: string) => {
         const el = document.getElementById(sectionId)
@@ -412,12 +413,12 @@ export default function TabSidebarTOC({
                 <button
                     type="button"
                     onClick={() => setIsCollapsed(false)}
-                    className="flex items-center gap-2 rounded-r-xl border border-l-0 border-primary/50 bg-background/95 px-3 py-2 text-xs font-bold text-primary shadow-2xl backdrop-blur-md transition-all hover:bg-primary/10 hover:pr-4 cursor-pointer group"
+                    className="flex items-center gap-1.5 rounded-r-xl border border-l-0 border-border bg-card/95 px-2.5 py-1.5 text-xs font-bold text-primary shadow-xl backdrop-blur-md transition-all hover:bg-muted/80 hover:pr-3.5 cursor-pointer group"
                     title="Open Table of Contents (Alt+T)"
                 >
-                    <List className="h-4 w-4 shrink-0 text-primary" />
-                    <span className="text-xs font-bold tracking-tight whitespace-nowrap">Table of Contents</span>
-                    <ChevronRight className="h-3.5 w-3.5 opacity-70 group-hover:translate-x-0.5 transition-transform shrink-0" />
+                    <List className="h-3.5 w-3.5 shrink-0 text-primary" />
+                    <span className="text-[11px] font-bold tracking-tight whitespace-nowrap text-foreground">Outline</span>
+                    <ChevronRight className="h-3 w-3 opacity-70 group-hover:translate-x-0.5 transition-transform shrink-0 text-muted-foreground" />
                 </button>
             </div>
         )
@@ -431,19 +432,18 @@ export default function TabSidebarTOC({
                 top: topOffset != null ? `${topOffset}px` : 0,
             }}
         >
-            <nav className="relative rounded-r-xl border border-l-0 border-primary/40 bg-background/95 shadow-2xl backdrop-blur-md overflow-hidden">
-                {/* Header with Drag and Actions */}
-                <div
-                    onPointerDown={handleDragPointerDown}
-                    onPointerMove={handleDragPointerMove}
-                    onPointerUp={handleDragPointerUp}
-                    className="flex items-center justify-between border-b border-border px-2 py-1.5 bg-primary/10 cursor-move select-none group"
-                    title="Drag vertically to reposition (Alt+T to toggle)"
-                >
+            <nav
+                onPointerDown={handleDragPointerDown}
+                onPointerMove={handleDragPointerMove}
+                onPointerUp={handleDragPointerUp}
+                className="relative rounded-r-xl border border-l-0 border-border/80 bg-card/98 shadow-2xl backdrop-blur-md overflow-hidden cursor-move select-none"
+                title="Click and drag anywhere on this sidebar to reposition vertically (Alt+T to toggle)"
+            >
+                {/* Header with Actions */}
+                <div className="flex items-center justify-between border-b border-border/80 px-2 py-1.5 bg-muted/40 select-none">
                     <div className="flex items-center gap-1 min-w-0">
-                        <GripVertical className="h-3.5 w-3.5 text-muted-foreground/60 group-hover:text-primary transition-colors shrink-0" />
-                        <span className="text-[10px] font-extrabold uppercase tracking-tight text-primary leading-tight whitespace-normal" title="Table of Contents">
-                            Table of<br />Contents
+                        <span className="text-[10px] font-extrabold uppercase tracking-tight text-foreground leading-tight whitespace-normal" title="Table of Contents">
+                            Outline
                         </span>
                     </div>
                     <div className="flex items-center gap-0.5 shrink-0" onPointerDown={(e) => e.stopPropagation()}>
@@ -485,12 +485,12 @@ export default function TabSidebarTOC({
                                     type="button"
                                     onClick={() => scrollToSection(section.id)}
                                     title={section.label}
-                                    className={`w-full rounded-md px-2 py-1 text-left text-[11px] font-semibold leading-snug transition-all cursor-pointer whitespace-normal break-words hyphens-auto ${
-                                        section.indent ? 'pl-2.5 text-muted-foreground/80 font-medium text-[10.5px]' : ''
+                                    className={`w-full rounded-md px-1.5 py-1 text-left text-[10.5px] font-medium leading-tight transition-all cursor-pointer whitespace-normal break-words hyphens-auto ${
+                                        section.indent ? 'pl-2 text-muted-foreground font-normal text-[10px]' : ''
                                     } ${
                                         isActive
                                             ? 'border-l-2 border-primary bg-primary/15 font-bold text-primary shadow-2xs'
-                                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                                            : 'text-foreground/80 hover:bg-muted hover:text-foreground'
                                     }`}
                                 >
                                     {section.label}
@@ -505,10 +505,21 @@ export default function TabSidebarTOC({
                     onPointerDown={handleWidthPointerDown}
                     onPointerMove={handleWidthPointerMove}
                     onPointerUp={handleWidthPointerUp}
-                    className="absolute top-0 right-0 bottom-0 w-2 cursor-ew-resize hover:bg-primary/30 transition-colors z-20 group"
+                    className="absolute top-0 right-0 bottom-0 w-2.5 cursor-ew-resize hover:bg-primary/30 transition-colors z-20 group"
                     title="Drag horizontally to resize width"
                 >
                     <div className="h-full w-0.5 ml-auto bg-transparent group-hover:bg-primary/50" />
+                </div>
+
+                {/* Bottom-Right Corner Resize Handle */}
+                <div
+                    onPointerDown={handleWidthPointerDown}
+                    onPointerMove={handleWidthPointerMove}
+                    onPointerUp={handleWidthPointerUp}
+                    className="absolute bottom-0 right-0 h-4 w-4 flex items-end justify-end p-0.5 text-muted-foreground/40 hover:text-primary transition-colors cursor-nwse-resize z-30"
+                    title="Drag corner to resize sidebar width"
+                >
+                    <span className="font-mono text-[9px] leading-none">⤡</span>
                 </div>
             </nav>
         </aside>

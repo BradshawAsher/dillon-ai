@@ -113,6 +113,8 @@
 
 - Dive deeper on how deterministic math checks work and how we get those pure stats to do the match checks with?
 
+- Also for each tab, maybe have an i info button for what is this tab for? and maybe a native tutorial for each?
+
 - Have to make a short YouTube video and long YouTube video to almost mirror your supademos
 
 - For brad, explore and test features using the vercel link instead of localhost since the vercel lacks some functionality still compared to the localhost

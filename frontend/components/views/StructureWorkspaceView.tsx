@@ -33,11 +33,11 @@ export function StructureWorkspaceView({
                 <DealStructureVisualCard model={hydratedDealModel} onOpenEvidence={setActiveEvidence} />
             </div>
             <Suspense fallback={null}>
-                <div id="structure-stack" className="scroll-mt-6">
+                <div id="structure-stack" data-structure-stack="true" className="scroll-mt-6">
                     <DealStackCard model={hydratedDealModel} />
                 </div>
-                <div id="structure-leverage" className="scroll-mt-6 space-y-6">
-                    <div id="structure-dscr" className="scroll-mt-6">
+                <div id="structure-leverage" data-structure-leverage="true" className="scroll-mt-6 space-y-6">
+                    <div id="structure-dscr" data-structure-dscr="true" className="scroll-mt-6">
                         <LeverageSafetyCard model={hydratedDealModel} />
                     </div>
                     <DownsideProtectionCard model={hydratedDealModel} />

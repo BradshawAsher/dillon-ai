@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowUpRight, Bot, Compass, ExternalLink, FolderKanban, GripHorizontal, Move, RotateCcw, Send, Sparkles, ThumbsDown, ThumbsUp, X } from 'lucide-react'
+import { ArrowUpRight, Bot, Compass, ExternalLink, FolderKanban, Move, RotateCcw, Send, Sparkles, ThumbsDown, ThumbsUp, X } from 'lucide-react'
 
 import { Button } from '../lib/shadcn/button'
 import { Card } from '../lib/shadcn/card'
@@ -932,7 +932,25 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
         return null
     })
 
-    const resizeStateRef = useRef<{ startX: number; startY: number; startWidth: number; startHeight: number } | null>(null)
+    type ResizeDirection =
+        | 'top'
+        | 'bottom'
+        | 'left'
+        | 'right'
+        | 'top-left'
+        | 'top-right'
+        | 'bottom-left'
+        | 'bottom-right'
+
+    const resizeStateRef = useRef<{
+        direction: ResizeDirection
+        startX: number
+        startY: number
+        startWidth: number
+        startHeight: number
+        startLeft: number
+        startTop: number
+    } | null>(null)
     const dragHeaderRef = useRef<{ startMouseX: number; startMouseY: number; startPanelX: number; startPanelY: number } | null>(null)
 
     useEffect(() => {
@@ -968,14 +986,46 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
 
         const handlePointerMove = (event: PointerEvent) => {
             if (resizeStateRef.current) {
-                const { startX, startY, startWidth, startHeight } = resizeStateRef.current
+                const { direction, startX, startY, startWidth, startHeight, startLeft, startTop } = resizeStateRef.current
+                const deltaX = event.clientX - startX
+                const deltaY = event.clientY - startY
+
+                let targetWidth = startWidth
+                let targetHeight = startHeight
+                let targetLeft = startLeft
+                let targetTop = startTop
+
+                if (direction.includes('right')) {
+                    targetWidth = startWidth + deltaX
+                } else if (direction.includes('left')) {
+                    targetWidth = startWidth - deltaX
+                }
+
+                if (direction.includes('bottom')) {
+                    targetHeight = startHeight + deltaY
+                } else if (direction.includes('top')) {
+                    targetHeight = startHeight - deltaY
+                }
+
+                const clamped = clampChatPanelSize(targetWidth, targetHeight)
+
+                if (direction.includes('left')) {
+                    targetLeft = startLeft + (startWidth - clamped.width)
+                }
+                if (direction.includes('top')) {
+                    targetTop = startTop + (startHeight - clamped.height)
+                }
+
                 setPanelSize((previous) => {
-                    const next = clampChatPanelSize(
-                        startWidth + (startX - event.clientX),
-                        startHeight + (startY - event.clientY),
-                    )
-                    return next.width === previous.width && next.height === previous.height ? previous : next
+                    return clamped.width === previous.width && clamped.height === previous.height ? previous : clamped
                 })
+
+                if (direction.includes('left') || direction.includes('top')) {
+                    setPanelPosition({
+                        x: Math.round(Math.max(12, Math.min(window.innerWidth - clamped.width - 12, targetLeft))),
+                        y: Math.round(Math.max(12, Math.min(window.innerHeight - clamped.height - 12, targetTop))),
+                    })
+                }
             }
         }
 
@@ -1039,15 +1089,33 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
         return suggestions.slice(0, 4)
     }, [synthesis, model])
 
-    const handleResizeStart = useCallback((event: React.PointerEvent<HTMLButtonElement>) => {
+    const handleResizeStart = useCallback((direction: ResizeDirection, event: React.PointerEvent) => {
         event.preventDefault()
+        event.stopPropagation()
+        const cardEl = document.getElementById('deal-chat-dock')
+        const rect = cardEl
+            ? cardEl.getBoundingClientRect()
+            : {
+                left: window.innerWidth - panelSize.width - 24,
+                top: window.innerHeight - panelSize.height - 80,
+                width: panelSize.width,
+                height: panelSize.height,
+            }
+
+        if (!panelPosition) {
+            setPanelPosition({ x: Math.round(rect.left), y: Math.round(rect.top) })
+        }
+
         resizeStateRef.current = {
+            direction,
             startX: event.clientX,
             startY: event.clientY,
-            startWidth: panelSize.width,
-            startHeight: panelSize.height,
+            startWidth: rect.width || panelSize.width,
+            startHeight: rect.height || panelSize.height,
+            startLeft: rect.left,
+            startTop: rect.top,
         }
-    }, [panelSize.height, panelSize.width])
+    }, [panelPosition, panelSize.height, panelSize.width])
 
     const handleHeaderPointerDown = (e: React.PointerEvent) => {
         const target = e.target as HTMLElement
@@ -1266,6 +1334,8 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                     </button>
                 ) : null}
                 <button
+                    id="deal-chat-dock"
+                    data-chat-trigger="true"
                     onClick={() => setIsOpen(true)}
                     className="pointer-events-auto relative flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-primary-foreground shadow-lg transition-transform hover:scale-105"
                     aria-label="Open AI Deal Assistant"
@@ -1285,7 +1355,8 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
 
     return (
         <Card
-            data-chat-card
+            id="deal-chat-dock"
+            data-chat-card="true"
             className="fixed z-50 flex flex-col overflow-hidden shadow-2xl border-2 border-primary/40 bg-card backdrop-blur-md transition-shadow"
             style={{
                 width: `${panelSize.width}px`,
@@ -1309,10 +1380,9 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                 onPointerMove={handleHeaderPointerMove}
                 onPointerUp={handleHeaderPointerUp}
                 className="flex items-center justify-between border-b border-border bg-muted/60 px-3.5 py-2 select-none cursor-move group"
-                title="Click and drag anywhere on this bar to move window"
+                title="Click and drag anywhere to move window"
             >
                 <div className="flex items-center gap-2 min-w-0">
-                    <GripHorizontal className="h-4 w-4 text-muted-foreground/60 group-hover:text-primary transition-colors shrink-0" />
                     <Bot className="h-4 w-4 text-primary shrink-0" />
                     <span className="text-xs font-bold text-foreground truncate">Dillon AI Assistant</span>
                     <span className="text-[10px] text-muted-foreground shrink-0 hidden sm:inline">M&A Diligence</span>
@@ -1525,7 +1595,13 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                 <div ref={messagesEndRef} />
             </div>
 
-            <div className="relative border-t border-border p-3 pr-8 bg-background/60">
+            <div
+                onPointerDown={handleHeaderPointerDown}
+                onPointerMove={handleHeaderPointerMove}
+                onPointerUp={handleHeaderPointerUp}
+                className="relative border-t border-border p-3 pr-8 bg-background/60 select-none cursor-move"
+                title="Click and drag to move window"
+            >
                 <div className="flex items-end gap-2">
                     <Textarea
                         ref={textareaRef}
@@ -1557,14 +1633,58 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                 </div>
                 <button
                     type="button"
-                    onPointerDown={handleResizeStart}
-                    className="absolute bottom-1.5 right-1.5 flex h-5 w-5 items-end justify-end rounded-sm text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground cursor-nwse-resize"
+                    onPointerDown={(e) => handleResizeStart('bottom-right', e)}
+                    className="absolute bottom-1.5 right-1.5 flex h-5 w-5 items-end justify-end rounded-sm text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground cursor-nwse-resize z-30"
                     title="Resize chat panel"
                     aria-label="Resize chat panel from bottom-right corner"
                 >
                     <span className="font-mono text-[11px] leading-none">⤡</span>
                 </button>
             </div>
+
+            {/* 8-Direction Resizing Border & Corner Handles */}
+            {/* Corners */}
+            <div
+                onPointerDown={(e) => handleResizeStart('top-left', e)}
+                className="absolute -top-1 -left-1 w-4 h-4 cursor-nwse-resize z-30 pointer-events-auto"
+                title="Resize from top-left corner"
+            />
+            <div
+                onPointerDown={(e) => handleResizeStart('top-right', e)}
+                className="absolute -top-1 -right-1 w-4 h-4 cursor-nesw-resize z-30 pointer-events-auto"
+                title="Resize from top-right corner"
+            />
+            <div
+                onPointerDown={(e) => handleResizeStart('bottom-left', e)}
+                className="absolute -bottom-1 -left-1 w-4 h-4 cursor-nesw-resize z-30 pointer-events-auto"
+                title="Resize from bottom-left corner"
+            />
+            <div
+                onPointerDown={(e) => handleResizeStart('bottom-right', e)}
+                className="absolute -bottom-1 -right-1 w-4 h-4 cursor-nwse-resize z-30 pointer-events-auto"
+                title="Resize from bottom-right corner"
+            />
+            {/* Edges */}
+            <div
+                onPointerDown={(e) => handleResizeStart('top', e)}
+                className="absolute -top-1 left-4 right-4 h-2.5 cursor-ns-resize z-20 pointer-events-auto"
+                title="Resize height from top edge"
+            />
+            <div
+                onPointerDown={(e) => handleResizeStart('bottom', e)}
+                className="absolute -bottom-1 left-4 right-4 h-2.5 cursor-ns-resize z-20 pointer-events-auto"
+                title="Resize height from bottom edge"
+            />
+            <div
+                onPointerDown={(e) => handleResizeStart('left', e)}
+                className="absolute top-4 bottom-4 -left-1 w-2.5 cursor-ew-resize z-20 pointer-events-auto"
+                title="Resize width from left edge"
+            />
+            <div
+                onPointerDown={(e) => handleResizeStart('right', e)}
+                className="absolute top-4 bottom-4 -right-1 w-2.5 cursor-ew-resize z-20 pointer-events-auto"
+                title="Resize width from right edge"
+            />
         </Card>
     )
 }
