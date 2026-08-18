@@ -248,6 +248,9 @@ The configured deployment URL is:
 | `docs/HOW_TO_RUN.md` | Additional operating notes |
 | `PURPOSE.md` | Dual core capabilities: Pre-LOI Discovery & Post-LOI Negotiation |
 | `DETERMINISTIC_MATH_CHECKS.md` | How deterministic math checks work |
+| `GROUND_TRUTH_METHODOLOGY.md` | Ground truth creation methodology, gold standard datasets & high-accuracy architecture |
+| `EVALS.md` | Evaluation harness guide, 7-dimension scoring & CI/CD benchmark tests |
+| `EVAL_FAQ_AND_EDGE_CASES.md` | Evaluation edge-case handling & buyer defense FAQ |
 
 ## Retool provenance
 

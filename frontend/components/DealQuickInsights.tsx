@@ -3,6 +3,7 @@ import { Lightbulb, Bot, ExternalLink } from 'lucide-react'
 
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
+import { parseMagnitudeMoney } from '../utils/documentedFacts'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
 import InPlaceEvidencePopover, { EvidenceDetails } from './InPlaceEvidencePopover'
@@ -100,8 +101,8 @@ export default function DealQuickInsights({ model, synthesis }: Props) {
         }
 
         if (synthesis?.valuationBaseEstimate && synthesis.valuationBaseEstimate !== '0' && price) {
-            const baseVal = parseFloat(synthesis.valuationBaseEstimate.replace(/[$,]/g, ''))
-            if (baseVal > 0) {
+            const baseVal = parseMagnitudeMoney(synthesis.valuationBaseEstimate)
+            if (baseVal && baseVal > 0) {
                 const diff = ((baseVal - price) / price) * 100
                 const text = diff > 10
                     ? `Price is ${diff.toFixed(0)}% below AI valuation midpoint`

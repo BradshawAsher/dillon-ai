@@ -6,6 +6,7 @@ import { Badge } from '../lib/shadcn/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { formatCurrencyValue } from '../utils/aiSubmissionData'
 import { buildDerivedEvidence, buildDocumentLinkedEvidence, buildFactEvidence, parseDocumentedFacts, type EvidenceItem } from '../utils/evidence'
+import { parseMagnitudeMoney } from '../utils/documentedFacts'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import { Input } from '../lib/shadcn/input'
 import { MoneyBarChart } from './DealCharts'
@@ -21,12 +22,7 @@ type DealValuationCardProps = {
     onOpenEvidence?: (evidence: EvidenceItem) => void
 }
 
-function parseMoney(value: string) {
-    const normalized = value.replace(/[$,\s]/g, '')
-    const multiplier = /m$/i.test(normalized) ? 1_000_000 : /b$/i.test(normalized) ? 1_000_000_000 : /k$/i.test(normalized) ? 1_000 : 1
-    const parsed = Number(normalized.replace(/[kmb]$/i, ''))
-    return Number.isFinite(parsed) && parsed >= 0 ? parsed * multiplier : null
-}
+const parseMoney = parseMagnitudeMoney
 
 export default function DealValuationCard({ synthesis, askingPrice, model, onModelChange, documents = [], onOpenEvidence }: DealValuationCardProps) {
     const rawAskingPrice = parseMoney(askingPrice) ?? model?.askingPrice ?? null

@@ -3,6 +3,7 @@ import { TrendingUp } from 'lucide-react'
 
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
+import { parseMagnitudeMoney } from '../utils/documentedFacts'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
 
@@ -21,7 +22,7 @@ export default function ValuationGapCard({ model, synthesis }: Props) {
 
         const fairValueEbitda = ebitda * 4.0
         const fairValueRevenue = revenue ? revenue * 1.0 : null
-        const synthValuation = synthesis?.valuationBaseEstimate ? parseFloat(synthesis.valuationBaseEstimate) : null
+        const synthValuation = parseMagnitudeMoney(synthesis?.valuationBaseEstimate)
         const fairValue = synthValuation && synthValuation > 0 ? synthValuation : fairValueEbitda
 
         const gap = price - fairValue

@@ -84,6 +84,18 @@ function citationLocation(citation: RawFact['citation']): string | undefined {
     return undefined
 }
 
+export function parseMagnitudeMoney(value: string | number | null | undefined): number | null {
+    if (value === null || value === undefined) return null
+    if (typeof value === 'number') return Number.isFinite(value) ? value : null
+    let str = String(value).trim()
+    if (!str) return null
+    str = str.replace(/\b(?:usd|cad|eur|gbp|aud)\b/gi, '').trim()
+    const normalized = str.replace(/[$,\s]/g, '')
+    const multiplier = /b$/i.test(normalized) ? 1_000_000_000 : /m$/i.test(normalized) ? 1_000_000 : /k$/i.test(normalized) ? 1_000 : 1
+    const parsed = Number(normalized.replace(/[kmb]$/i, ''))
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed * multiplier : null
+}
+
 function isDerivedFact(fact: RawFact): boolean {
     const normalized = `${fact.provenance ?? ''} ${fact.formula ?? ''} ${fact.citation?.excerpt ?? ''}`.toLowerCase()
     return /reconstruct|formula|derived|calculated|implied|computed/.test(normalized)
@@ -129,8 +141,8 @@ export function deriveDocumentedFacts(documents: SubmissionHistoryItem[]): Recor
         )
 
         if (document.valuationBaseEstimate) {
-            const valNum = Number(String(document.valuationBaseEstimate).replace(/[^0-9.]/g, ''))
-            if (Number.isFinite(valNum) && valNum > 0) {
+            const valNum = parseMagnitudeMoney(document.valuationBaseEstimate)
+            if (valNum !== null && valNum > 0) {
                 const priceFact: RawFact = {
                     metric: 'purchase_price',
                     normalized_value: valNum,
@@ -158,6 +170,46 @@ export function deriveDocumentedFacts(documents: SubmissionHistoryItem[]): Recor
         }
 
         let facts: RawFact[] = []
+
+        if (document.ebitdaExtracted && !isLoiDoc) {
+            const ebitdaNum = parseMagnitudeMoney(document.ebitdaExtracted)
+            if (ebitdaNum !== null && ebitdaNum > 0) {
+                facts.push({
+                    metric: 'ebitda_sde',
+                    normalized_value: ebitdaNum,
+                    raw_value: `$${ebitdaNum.toLocaleString()}`,
+                    period: (document as any).period || 'TTM',
+                    currency: 'USD',
+                    confidence: 0.95,
+                    status: 'confirmed',
+                    provenance: 'Extracted from uploaded documents',
+                    citation: {
+                        source_file: document.fileName || 'financial_statement.pdf',
+                        excerpt: document.aiSummary || `Extracted EBITDA of $${ebitdaNum.toLocaleString()}`,
+                    },
+                })
+            }
+        }
+
+        if ((document as any).revenueExtracted || (document as any).revenue) {
+            const revNum = parseMagnitudeMoney((document as any).revenueExtracted || (document as any).revenue)
+            if (revNum !== null && revNum > 0) {
+                facts.push({
+                    metric: 'revenue',
+                    normalized_value: revNum,
+                    raw_value: `$${revNum.toLocaleString()}`,
+                    period: (document as any).period || 'TTM',
+                    currency: 'USD',
+                    confidence: 0.95,
+                    status: 'confirmed',
+                    provenance: 'Extracted from uploaded documents',
+                    citation: {
+                        source_file: document.fileName || 'financial_statement.pdf',
+                        excerpt: document.aiSummary || `Extracted Revenue of $${revNum.toLocaleString()}`,
+                    },
+                })
+            }
+        }
 
         if (document.financialFactsJson) {
             try {
@@ -279,8 +331,8 @@ export function deriveDocumentedFacts(documents: SubmissionHistoryItem[]): Recor
                 }
 
                 // If document had a separate ebitda_extracted, use that for operating ebitda_sde instead of the EV
-                const ebitdaExtractedNum = Number(String(document.ebitdaExtracted || '').replace(/[^0-9.]/g, ''))
-                if (Number.isFinite(ebitdaExtractedNum) && ebitdaExtractedNum > 0) {
+                const ebitdaExtractedNum = parseMagnitudeMoney(document.ebitdaExtracted)
+                if (ebitdaExtractedNum !== null && ebitdaExtractedNum > 0) {
                     const operatingEbitdaFact: RawFact = {
                         ...fact,
                         normalized_value: ebitdaExtractedNum,
