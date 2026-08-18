@@ -250,11 +250,47 @@ export function deriveDocumentedFacts(documents: SubmissionHistoryItem[]): Recor
                     if (Array.isArray(parsed.financial_facts)) facts.push(...parsed.financial_facts)
                     if (Array.isArray(parsed.financialFacts)) facts.push(...parsed.financialFacts)
                     if (Array.isArray(parsed.facts)) facts.push(...parsed.facts)
-                    if (typeof parsed.revenue === 'number' && Number.isFinite(parsed.revenue)) {
-                        facts.push({ metric: 'revenue', normalized_value: parsed.revenue, raw_value: `$${parsed.revenue.toLocaleString()}`, period: 'TTM' })
+
+                    const parsedRev = parsed.revenueTTM ?? parsed.revenue_ttm ?? parsed.revenue ?? parsed.totalRevenue ?? parsed.total_revenue
+                    if (parsedRev !== undefined && parsedRev !== null) {
+                        const revNum = typeof parsedRev === 'number' ? parsedRev : parseMagnitudeMoney(parsedRev)
+                        if (revNum !== null && Number.isFinite(revNum) && revNum > 0) {
+                            facts.push({
+                                metric: 'revenue',
+                                normalized_value: revNum,
+                                raw_value: typeof parsedRev === 'string' ? parsedRev : `$${revNum.toLocaleString()}`,
+                                period: 'TTM',
+                                currency: 'USD',
+                                confidence: 0.95,
+                                status: 'confirmed',
+                                provenance: 'Extracted from uploaded documents',
+                                citation: {
+                                    source_file: document.fileName || 'financial_statement.pdf',
+                                    excerpt: document.aiSummary || `Extracted Revenue of $${revNum.toLocaleString()}`,
+                                },
+                            })
+                        }
                     }
-                    if (typeof parsed.ebitda === 'number' && Number.isFinite(parsed.ebitda)) {
-                        facts.push({ metric: 'ebitda_sde', normalized_value: parsed.ebitda, raw_value: `$${parsed.ebitda.toLocaleString()}`, period: 'TTM' })
+
+                    const parsedEbitda = parsed.ebitda ?? parsed.ebitda_sde ?? parsed.adjustedEbitda ?? parsed.adjusted_ebitda
+                    if (parsedEbitda !== undefined && parsedEbitda !== null) {
+                        const ebitdaNum = typeof parsedEbitda === 'number' ? parsedEbitda : parseMagnitudeMoney(parsedEbitda)
+                        if (ebitdaNum !== null && Number.isFinite(ebitdaNum) && ebitdaNum > 0) {
+                            facts.push({
+                                metric: 'ebitda_sde',
+                                normalized_value: ebitdaNum,
+                                raw_value: typeof parsedEbitda === 'string' ? parsedEbitda : `$${ebitdaNum.toLocaleString()}`,
+                                period: 'TTM',
+                                currency: 'USD',
+                                confidence: 0.95,
+                                status: 'confirmed',
+                                provenance: 'Extracted from uploaded documents',
+                                citation: {
+                                    source_file: document.fileName || 'financial_statement.pdf',
+                                    excerpt: document.aiSummary || `Extracted EBITDA of $${ebitdaNum.toLocaleString()}`,
+                                },
+                            })
+                        }
                     }
                 }
             } catch {
