@@ -270,8 +270,8 @@ export default function EBITDAQualityScoreCard({ model, synthesis }: Props) {
                     <div className="flex items-center gap-2">
                         <BadgeCheck className="h-4 w-4 text-primary" />
                         <CardTitle className="text-lg">EBITDA quality score</CardTitle>
+                        <CardInfoPopover cardId="ebitda-quality" />
                     </div>
-                    <CardInfoPopover cardId="ebitda-quality" />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                     Click any dimension to view source citations, underlying flags, and ask AI

@@ -57,8 +57,8 @@ export default function ValuationGapCard({ model, synthesis }: Props) {
                     <div className="flex items-center gap-2">
                         <TrendingUp className="h-4 w-4 text-primary" />
                         <CardTitle className="text-lg">Valuation gap analysis</CardTitle>
+                        <CardInfoPopover cardId="valuation-gap" />
                     </div>
-                    <CardInfoPopover cardId="valuation-gap" />
                 </div>
             </CardHeader>
             <CardContent className="p-4 space-y-4">

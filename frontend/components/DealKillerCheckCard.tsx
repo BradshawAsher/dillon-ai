@@ -205,8 +205,8 @@ export default function DealKillerCheckCard({ model, synthesis }: Props) {
                     <div className="flex items-center gap-2">
                         <AlertOctagon className="h-4 w-4 text-destructive" />
                         <CardTitle className="text-lg">Deal-killer check</CardTitle>
+                        <CardInfoPopover cardId="deal-killer-check" />
                     </div>
-                    <CardInfoPopover cardId="deal-killer-check" />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                     Click any check item to inspect the underlying source document evidence and calculations

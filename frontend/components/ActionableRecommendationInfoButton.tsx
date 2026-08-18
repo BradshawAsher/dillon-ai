@@ -102,6 +102,26 @@ export default function ActionableRecommendationInfoButton({
     const [isOpen, setIsOpen] = useState(false)
     const popoverRef = useRef<HTMLDivElement>(null)
     const buttonRef = useRef<HTMLButtonElement>(null)
+    const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+    const clearCloseTimer = () => {
+        if (closeTimeoutRef.current) {
+            clearTimeout(closeTimeoutRef.current)
+            closeTimeoutRef.current = null
+        }
+    }
+
+    const handleMouseEnter = () => {
+        clearCloseTimer()
+        setIsOpen(true)
+    }
+
+    const handleMouseLeave = () => {
+        clearCloseTimer()
+        closeTimeoutRef.current = setTimeout(() => {
+            setIsOpen(false)
+        }, 220)
+    }
 
     const coords = useFloatingPosition({
         isOpen,
@@ -139,6 +159,7 @@ export default function ActionableRecommendationInfoButton({
         return () => {
             document.removeEventListener('mousedown', handleClickOutside)
             document.removeEventListener('keydown', handleKeyDown)
+            clearCloseTimer()
         }
     }, [isOpen])
 
@@ -146,52 +167,49 @@ export default function ActionableRecommendationInfoButton({
     const buttonPadding = size === 'sm' ? 'p-1' : 'p-1.5'
 
     return (
-        <div className={`relative inline-flex items-center align-middle shrink-0 ${className}`}>
+        <div 
+            className={`relative inline-flex items-center align-middle shrink-0 ${className}`}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+        >
             <button
                 ref={buttonRef}
                 type="button"
                 onClick={() => setIsOpen((prev) => !prev)}
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
                 aria-label={`Learn about recommendation: ${details.title}`}
                 aria-expanded={isOpen}
-                title="What does this actionable recommendation mean?"
+                title="What does this actionable recommendation mean? (Hover or click)"
                 className={`inline-flex items-center justify-center rounded-full border border-border/80 bg-background/80 text-muted-foreground transition-all hover:bg-muted hover:text-foreground hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer ${buttonPadding}`}
             >
                 <Info className={iconSize} />
             </button>
 
             {isOpen && typeof document !== 'undefined' && createPortal(
-                <>
-                    {/* Backdrop */}
-                    <div
-                        className="fixed inset-0 z-[99998] bg-black/10 dark:bg-black/25 backdrop-blur-[0.5px]"
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            setIsOpen(false)
-                        }}
-                    />
-
-                    {/* Popover */}
-                    <div
-                        ref={popoverRef}
-                        role="dialog"
-                        aria-label="Recommendation Explanation"
-                        style={{
-                            position: 'fixed',
-                            top: coords.top !== undefined ? `${coords.top}px` : undefined,
-                            bottom: coords.bottom !== undefined ? `${coords.bottom}px` : undefined,
-                            left: coords.left !== undefined ? `${coords.left}px` : undefined,
-                            right: coords.right !== undefined ? `${coords.right}px` : undefined,
-                            width: coords.width !== undefined ? `${coords.width}px` : undefined,
-                            maxHeight: coords.maxHeight !== undefined ? `${coords.maxHeight}px` : '80vh',
-                            zIndex: 99999,
-                        }}
-                        className="overflow-y-auto rounded-xl border border-border bg-popover p-4 text-popover-foreground shadow-2xl ring-1 ring-border/50 animate-in fade-in-0 zoom-in-95 duration-150"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <div className="flex items-start justify-between gap-2 border-b border-border/60 pb-2.5">
-                            <div className="flex items-center gap-2">
-                                {details.icon}
-                                <div>
+                <div
+                    ref={popoverRef}
+                    role="dialog"
+                    aria-label="Recommendation Explanation"
+                    onMouseEnter={handleMouseEnter}
+                    onMouseLeave={handleMouseLeave}
+                    style={{
+                        position: 'fixed',
+                        top: coords.top !== undefined ? `${coords.top}px` : undefined,
+                        bottom: coords.bottom !== undefined ? `${coords.bottom}px` : undefined,
+                        left: coords.left !== undefined ? `${coords.left}px` : undefined,
+                        right: coords.right !== undefined ? `${coords.right}px` : undefined,
+                        width: coords.width !== undefined ? `${coords.width}px` : undefined,
+                        maxHeight: coords.maxHeight !== undefined ? `${coords.maxHeight}px` : '80vh',
+                        zIndex: 99999,
+                    }}
+                    className="overflow-y-auto rounded-xl border border-border bg-popover p-4 text-popover-foreground shadow-2xl ring-1 ring-border/50 animate-in fade-in-0 zoom-in-95 duration-150"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <div className="flex items-start justify-between gap-2 border-b border-border/60 pb-2.5">
+                        <div className="flex items-center gap-2">
+                            {details.icon}
+                            <div>
                                     <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                                         Verdict Meaning
                                     </p>
@@ -246,10 +264,9 @@ export default function ActionableRecommendationInfoButton({
                                 </Button>
                             </div>
                         )}
-                    </div>
-                </>,
-                document.body
-            )}
+                    </div>,
+                    document.body
+                )}
         </div>
     )
 }

@@ -123,8 +123,8 @@ export default function DealGradeCard({ model, synthesis }: Props) {
                 <div className="flex items-center gap-2">
                     <Award className="h-5 w-5 text-primary" />
                     <CardTitle className="text-lg">Deal grade</CardTitle>
+                    <CardInfoPopover cardId="deal-grade" />
                 </div>
-                <CardInfoPopover cardId="deal-grade" />
             </CardHeader>
             <CardContent className="p-5">
                 <div className="flex items-start gap-5">

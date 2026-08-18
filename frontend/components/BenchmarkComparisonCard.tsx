@@ -136,8 +136,8 @@ export default function BenchmarkComparisonCard({ model }: Props) {
                     <div className="flex items-center gap-2">
                         <BarChart3 className="h-4 w-4 text-primary" />
                         <CardTitle className="text-lg">SMB benchmark comparison</CardTitle>
+                        <CardInfoPopover cardId="benchmark-comparison" />
                     </div>
-                    <CardInfoPopover cardId="benchmark-comparison" />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                     How this deal compares to typical SMB acquisition benchmarks

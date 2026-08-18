@@ -63,8 +63,8 @@ export default function CashOnCashCalculatorCard({ model }: Props) {
                     <div className="flex items-center gap-2">
                         <Calculator className="h-4 w-4 text-primary" />
                         <CardTitle className="text-lg">Cash-on-cash return calculator</CardTitle>
+                        <CardInfoPopover cardId="cash-on-cash" />
                     </div>
-                    <CardInfoPopover cardId="cash-on-cash" />
                 </div>
             </CardHeader>
             <CardContent className="p-4 space-y-4">

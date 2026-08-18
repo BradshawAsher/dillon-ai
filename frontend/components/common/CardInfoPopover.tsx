@@ -28,6 +28,26 @@ export default function CardInfoPopover({
     const [isOpen, setIsOpen] = useState(false)
     const popoverRef = useRef<HTMLDivElement | null>(null)
     const buttonRef = useRef<HTMLButtonElement | null>(null)
+    const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+    const clearCloseTimer = () => {
+        if (closeTimeoutRef.current) {
+            clearTimeout(closeTimeoutRef.current)
+            closeTimeoutRef.current = null
+        }
+    }
+
+    const handleMouseEnter = () => {
+        clearCloseTimer()
+        setIsOpen(true)
+    }
+
+    const handleMouseLeave = () => {
+        clearCloseTimer()
+        closeTimeoutRef.current = setTimeout(() => {
+            setIsOpen(false)
+        }, 220)
+    }
 
     const coords = useFloatingPosition({
         isOpen,
@@ -66,6 +86,7 @@ export default function CardInfoPopover({
         return () => {
             document.removeEventListener('mousedown', handleClickOutside)
             document.removeEventListener('keydown', handleKeyDown)
+            clearCloseTimer()
         }
     }, [isOpen])
 
@@ -82,7 +103,11 @@ export default function CardInfoPopover({
     }
 
     return (
-        <div className={`relative inline-flex items-center shrink-0 ${className}`}>
+        <div 
+            className={`relative inline-flex items-center shrink-0 ${className}`}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+        >
             <button
                 ref={buttonRef}
                 type="button"
@@ -90,8 +115,10 @@ export default function CardInfoPopover({
                     e.stopPropagation()
                     setIsOpen((prev) => !prev)
                 }}
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
                 className={`inline-flex items-center justify-center rounded-full text-muted-foreground/70 transition-all hover:bg-primary/10 hover:text-primary hover:scale-110 active:scale-95 cursor-pointer ${btnSizes[buttonSize]}`}
-                title={`What is ${title}? (Click for diligence explanation)`}
+                title={`What is ${title}? (Hover or click for diligence explanation)`}
                 aria-label={`What is ${title}?`}
                 aria-expanded={isOpen}
             >
@@ -99,45 +126,36 @@ export default function CardInfoPopover({
             </button>
 
             {isOpen && typeof document !== 'undefined' && createPortal(
-                <>
-                    {/* Backdrop for click-away and focus trapping */}
-                    <div
-                        className="fixed inset-0 z-[99998] bg-black/10 dark:bg-black/25 backdrop-blur-[0.5px]"
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            setIsOpen(false)
-                        }}
-                    />
-
-                    {/* Popover Card rendered at body root */}
-                    <div
-                        ref={popoverRef}
-                        role="dialog"
-                        aria-label={`About ${title}`}
-                        style={{
-                            position: 'fixed',
-                            top: coords.top !== undefined ? `${coords.top}px` : undefined,
-                            bottom: coords.bottom !== undefined ? `${coords.bottom}px` : undefined,
-                            left: coords.left !== undefined ? `${coords.left}px` : undefined,
-                            right: coords.right !== undefined ? `${coords.right}px` : undefined,
-                            width: coords.width !== undefined ? `${coords.width}px` : undefined,
-                            maxHeight: coords.maxHeight !== undefined ? `${coords.maxHeight}px` : '80vh',
-                            zIndex: 99999,
-                        }}
-                        className="overflow-y-auto rounded-xl border border-primary/30 bg-card text-card-foreground p-4 shadow-2xl backdrop-blur-xl animate-in fade-in-0 zoom-in-95 duration-150 ring-1 ring-border/50"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        {/* Header */}
-                        <div className="flex items-start justify-between gap-2 border-b border-border/60 pb-2.5">
-                            <div>
-                                {meta.category && (
-                                    <span className="inline-block rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary mb-1">
-                                        {meta.category}
-                                    </span>
-                                )}
-                                <h4 className="text-sm font-bold text-foreground leading-tight flex items-center gap-1.5">
-                                    <HelpCircle className="h-4 w-4 text-primary shrink-0" />
-                                    <span>{title}</span>
+                <div
+                    ref={popoverRef}
+                    role="dialog"
+                    aria-label={`About ${title}`}
+                    onMouseEnter={handleMouseEnter}
+                    onMouseLeave={handleMouseLeave}
+                    style={{
+                        position: 'fixed',
+                        top: coords.top !== undefined ? `${coords.top}px` : undefined,
+                        bottom: coords.bottom !== undefined ? `${coords.bottom}px` : undefined,
+                        left: coords.left !== undefined ? `${coords.left}px` : undefined,
+                        right: coords.right !== undefined ? `${coords.right}px` : undefined,
+                        width: coords.width !== undefined ? `${coords.width}px` : undefined,
+                        maxHeight: coords.maxHeight !== undefined ? `${coords.maxHeight}px` : '80vh',
+                        zIndex: 99999,
+                    }}
+                    className="overflow-y-auto rounded-xl border border-primary/30 bg-card text-card-foreground p-4 shadow-2xl backdrop-blur-xl animate-in fade-in-0 zoom-in-95 duration-150 ring-1 ring-border/50"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    {/* Header */}
+                    <div className="flex items-start justify-between gap-2 border-b border-border/60 pb-2.5">
+                        <div>
+                            {meta.category && (
+                                <span className="inline-block rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary mb-1">
+                                    {meta.category}
+                                </span>
+                            )}
+                            <h4 className="text-sm font-bold text-foreground leading-tight flex items-center gap-1.5">
+                                <HelpCircle className="h-4 w-4 text-primary shrink-0" />
+                                <span>{title}</span>
                                 </h4>
                             </div>
                             <button
@@ -194,10 +212,10 @@ export default function CardInfoPopover({
                                 </div>
                             )}
                         </div>
-                    </div>
-                </>,
-                document.body
-            )}
+                    </div>,
+                    document.body
+                )}
         </div>
     )
 }
+

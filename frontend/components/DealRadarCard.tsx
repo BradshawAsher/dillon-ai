@@ -85,8 +85,8 @@ export default function DealRadarCard({ model, synthesis, documentsCount }: Prop
                 <div className="flex items-center gap-2">
                     <Radar className="h-5 w-5 text-primary" />
                     <CardTitle className="text-lg">Deal profile</CardTitle>
+                    <CardInfoPopover cardId="deal-radar" />
                 </div>
-                <CardInfoPopover cardId="deal-radar" />
             </CardHeader>
             <CardContent className="p-4 flex items-center justify-center">
                 <svg

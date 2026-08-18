@@ -74,8 +74,8 @@ export default function ConfidenceMeterCard({ model, synthesis, documents }: Pro
                 <div className="flex items-center gap-2">
                     <ShieldCheck className="h-5 w-5 text-primary" />
                     <CardTitle className="text-lg">Analysis confidence</CardTitle>
+                    <CardInfoPopover cardId="confidence-meter" />
                 </div>
-                <CardInfoPopover cardId="confidence-meter" />
             </CardHeader>
             <CardContent className="p-4">
                 <div className="flex items-center gap-6">

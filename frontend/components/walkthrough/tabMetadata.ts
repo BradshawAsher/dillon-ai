@@ -26,7 +26,7 @@ export const TAB_METADATA: Record<WorkspaceTab, TabMetadata> = {
             'Immediate red flag callouts & recommended actions',
         ],
         recommendedRole: 'Private Equity Partners & Investment Committees',
-        tourStepCount: 3,
+        tourStepCount: 4,
         suggestedFocus: 'High-level deal gating and executive go/no-go decisions',
     },
     analysis: {
@@ -105,7 +105,7 @@ export const TAB_METADATA: Record<WorkspaceTab, TabMetadata> = {
             'Projected budget forecast for full portfolio diligence',
         ],
         recommendedRole: 'Operations Managers & Managing Partners',
-        tourStepCount: 2,
+        tourStepCount: 3,
         suggestedFocus: 'Monitoring cloud processing unit economics',
     },
     compare: {
@@ -135,7 +135,7 @@ export const TAB_METADATA: Record<WorkspaceTab, TabMetadata> = {
             'Seller asking multiple disconnect matrix & price re-trade delta',
         ],
         recommendedRole: 'Valuation Specialists & Investment Bankers',
-        tourStepCount: 3,
+        tourStepCount: 4,
         suggestedFocus: 'Determining defensible purchase price range for LOI drafting',
     },
     returns: {
@@ -150,7 +150,7 @@ export const TAB_METADATA: Record<WorkspaceTab, TabMetadata> = {
             '5-year investor cash flow forecast with debt paydown',
         ],
         recommendedRole: 'Equity Investors, LPs & Fund Sponsors',
-        tourStepCount: 3,
+        tourStepCount: 4,
         suggestedFocus: 'Validating fund hurdle rates (target IRR ≥ 25%)',
     },
     growth: {
@@ -165,7 +165,7 @@ export const TAB_METADATA: Record<WorkspaceTab, TabMetadata> = {
             'Operating leverage and customer retention sensitivity curves',
         ],
         recommendedRole: 'Operating Partners & Financial Modelers',
-        tourStepCount: 2,
+        tourStepCount: 3,
         suggestedFocus: 'Testing thesis durability under downside economic scenarios',
     },
     structure: {
@@ -178,10 +178,10 @@ export const TAB_METADATA: Record<WorkspaceTab, TabMetadata> = {
             'Institutional Sources & Uses of Funds balancing table',
             '10-year monthly debt amortization schedule with principal & interest',
             'Debt Service Coverage Ratio (DSCR) stress test under interest rate spikes',
-            'Seller note subordination and standstill terms',
+            'Seller note subordination and standby agreements',
         ],
         recommendedRole: 'SBA Lenders, Commercial Credit Officers & Deal Structurers',
-        tourStepCount: 3,
+        tourStepCount: 4,
         suggestedFocus: 'Verifying bank debt covenant compliance (DSCR ≥ 1.35x)',
     },
     negotiation: {
@@ -211,7 +211,7 @@ export const TAB_METADATA: Record<WorkspaceTab, TabMetadata> = {
             'OCR confidence inspection and raw text extraction viewer',
         ],
         recommendedRole: 'Data Room Managers & Diligence Coordinators',
-        tourStepCount: 2,
+        tourStepCount: 3,
         suggestedFocus: 'Organizing and switching between active pipeline projects',
     },
     shortcuts: {
@@ -226,7 +226,7 @@ export const TAB_METADATA: Record<WorkspaceTab, TabMetadata> = {
             'Printable / downloadable quick-reference hotkey cheatsheet',
         ],
         recommendedRole: 'Power Users, Associates & Deal Leads',
-        tourStepCount: 2,
+        tourStepCount: 3,
         suggestedFocus: 'Mastering rapid deal review with zero mouse friction',
     },
     evals: {
@@ -241,7 +241,7 @@ export const TAB_METADATA: Record<WorkspaceTab, TabMetadata> = {
             'Real-time latency and throughput metrics',
         ],
         recommendedRole: 'AI Engineers, Compliance Officers & Quantitative Leads',
-        tourStepCount: 2,
+        tourStepCount: 3,
         suggestedFocus: 'Verifying zero-hallucination extraction accuracy',
     },
     faqs: {
@@ -256,7 +256,7 @@ export const TAB_METADATA: Record<WorkspaceTab, TabMetadata> = {
             'Step-by-step Quality of Earnings methodology documentation',
         ],
         recommendedRole: 'All Users & First-Time Diligence Analysts',
-        tourStepCount: 2,
+        tourStepCount: 3,
         suggestedFocus: 'Clarifying accounting definitions and underwriting methodologies',
     },
     history: {
@@ -271,7 +271,7 @@ export const TAB_METADATA: Record<WorkspaceTab, TabMetadata> = {
             'User attribution and timestamped diligence changes',
         ],
         recommendedRole: 'Compliance Officers, Auditors & Deal Partners',
-        tourStepCount: 2,
+        tourStepCount: 3,
         suggestedFocus: 'Reviewing audit trail for lender and LP transparency',
     },
     email: {
@@ -286,7 +286,7 @@ export const TAB_METADATA: Record<WorkspaceTab, TabMetadata> = {
             'Sent email logs and follow-up tracking',
         ],
         recommendedRole: 'Associates & Corporate Development Leads',
-        tourStepCount: 2,
+        tourStepCount: 3,
         suggestedFocus: 'Streamlining seller and broker correspondence',
     },
     errors: {
@@ -301,7 +301,7 @@ export const TAB_METADATA: Record<WorkspaceTab, TabMetadata> = {
             'System health status across Supabase and AI provider APIs',
         ],
         recommendedRole: 'System Administrators & Technical Diligence Leads',
-        tourStepCount: 1,
+        tourStepCount: 2,
         suggestedFocus: 'Troubleshooting failed extractions or webhook errors',
     },
 }

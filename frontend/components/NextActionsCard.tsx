@@ -126,8 +126,8 @@ export default function NextActionsCard({ model, synthesis, documents, onNavigat
                 <div className="flex items-center gap-2">
                     <ArrowRight className="h-4 w-4 text-primary" />
                     <CardTitle className="text-sm font-semibold">Recommended next steps</CardTitle>
+                    <CardInfoPopover cardId="next-actions" />
                 </div>
-                <CardInfoPopover cardId="next-actions" />
             </CardHeader>
             <CardContent className="pb-4">
                 <div className="space-y-2">

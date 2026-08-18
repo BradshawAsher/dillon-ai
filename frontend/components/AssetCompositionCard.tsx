@@ -78,8 +78,8 @@ export default function AssetCompositionCard({ model }: Props) {
                     <div className="flex items-center gap-2">
                         <PieChart className="h-4 w-4 text-primary" />
                         <CardTitle className="text-lg">Asset composition</CardTitle>
+                        <CardInfoPopover cardId="asset-composition" />
                     </div>
-                    <CardInfoPopover cardId="asset-composition" />
                 </div>
             </CardHeader>
             <CardContent className="p-4">

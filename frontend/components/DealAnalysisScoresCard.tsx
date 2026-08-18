@@ -135,8 +135,8 @@ export default function DealAnalysisScoresCard({ model, synthesis }: Props) {
                 <div className="flex items-center gap-2">
                     <Target className="h-5 w-5 text-primary" />
                     <CardTitle className="text-lg">Deal analysis scores</CardTitle>
+                    <CardInfoPopover cardId="deal-analysis-scores" />
                 </div>
-                <CardInfoPopover cardId="deal-analysis-scores" />
             </CardHeader>
             <CardContent className="p-5">
                 <div className="flex flex-col items-center gap-6 sm:flex-row sm:justify-center">
