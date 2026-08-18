@@ -5,6 +5,7 @@ import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type Props = {
     model: DealModel
@@ -88,6 +89,7 @@ export default function AssumptionGapsCard({ model }: Props) {
                     <div className="flex items-center gap-2">
                         <AlertTriangle className="h-5 w-5 text-amber-500" />
                         <CardTitle className="text-lg">Assumption gaps</CardTitle>
+                        <CardInfoPopover cardId="assumption-gaps" />
                     </div>
                     <Badge variant="warning">{gaps.length} divergence{gaps.length > 1 ? 's' : ''}</Badge>
                 </div>

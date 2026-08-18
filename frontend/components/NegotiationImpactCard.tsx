@@ -5,6 +5,7 @@ import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { normalizeEquityFraction } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type Props = {
     model: DealModel
@@ -129,6 +130,7 @@ export default function NegotiationImpactCard({ model }: Props) {
                 <div className="flex items-center gap-2">
                     <Scale className="h-4 w-4 text-primary" />
                     <CardTitle className="text-lg">Negotiation impact calculator</CardTitle>
+                    <CardInfoPopover cardId="negotiation-impact" />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                     Potential savings from common negotiation levers

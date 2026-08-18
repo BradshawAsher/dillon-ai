@@ -2,6 +2,7 @@ import { CheckCircle2, Circle, FileQuestion } from 'lucide-react'
 
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type Props = {
     documents: SubmissionHistoryItem[]
@@ -57,6 +58,7 @@ export default function DocumentCoverageMatrix({ documents }: Props) {
                     <div className="flex items-center gap-2">
                         <FileQuestion className="h-4 w-4 text-primary" />
                         <CardTitle className="text-sm font-semibold">Document coverage</CardTitle>
+                        <CardInfoPopover cardId="document-coverage" />
                     </div>
                     <span className="text-xs font-medium text-muted-foreground">{coveredCount}/{EXPECTED_CATEGORIES.length} ({percentage}%)</span>
                 </div>

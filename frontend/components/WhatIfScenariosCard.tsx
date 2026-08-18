@@ -4,6 +4,7 @@ import { GitBranch } from 'lucide-react'
 import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type Props = {
     model: DealModel
@@ -126,6 +127,7 @@ export default function WhatIfScenariosCard({ model }: Props) {
                 <div className="flex items-center gap-2">
                     <GitBranch className="h-4 w-4 text-primary" />
                     <CardTitle className="text-lg">What-if scenarios</CardTitle>
+                    <CardInfoPopover cardId="what-if-scenarios" />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                     How does the deal perform under different real-world conditions?

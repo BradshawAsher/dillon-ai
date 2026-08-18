@@ -4,6 +4,7 @@ import { Award, ChevronDown, ChevronUp } from 'lucide-react'
 import type { DealModel } from '../hooks/backend/diligence'
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
+import CardInfoPopover from './common/CardInfoPopover'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 
 type Props = {
@@ -118,11 +119,12 @@ export default function DealGradeCard({ model, synthesis }: Props) {
 
     return (
         <Card className="overflow-hidden">
-            <CardHeader className="border-b border-border bg-card/80 pb-3">
+            <CardHeader className="border-b border-border bg-card/80 pb-3 flex flex-row items-center justify-between">
                 <div className="flex items-center gap-2">
                     <Award className="h-5 w-5 text-primary" />
                     <CardTitle className="text-lg">Deal grade</CardTitle>
                 </div>
+                <CardInfoPopover cardId="deal-grade" />
             </CardHeader>
             <CardContent className="p-5">
                 <div className="flex items-start gap-5">

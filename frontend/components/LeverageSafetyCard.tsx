@@ -5,6 +5,7 @@ import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { resolveLoanTermYears } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type Props = {
     model: DealModel
@@ -79,6 +80,7 @@ export default function LeverageSafetyCard({ model }: Props) {
                 <div className="flex items-center gap-2">
                     <ShieldAlert className="h-4 w-4 text-primary" />
                     <CardTitle className="text-lg">Leverage safety margin</CardTitle>
+                    <CardInfoPopover cardId="leverage-safety" />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                     How much can EBITDA decline before debt covenants are breached?

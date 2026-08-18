@@ -1,13 +1,22 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { WorkspaceTab } from '../DealWorkspaceNav'
-import type { TourPlaylistId, WalkthroughStep, WalkthroughResumeState } from './walkthroughTypes'
-import { TOUR_PLAYLISTS } from './walkthroughStepsData'
+import type { TourPlaylistId, WalkthroughStep, WalkthroughResumeState, TourPlaylist } from './walkthroughTypes'
+import { TOUR_PLAYLISTS, getTabTourPlaylist } from './walkthroughStepsData'
 
 const RESUME_STORAGE_KEY = 'dillon_walkthrough_resume_state'
 
 export interface UseNativeWalkthroughProps {
     activeTab: WorkspaceTab
     onTabChange: (tab: WorkspaceTab) => void
+}
+
+function resolvePlaylist(tourId: TourPlaylistId): TourPlaylist {
+    if (TOUR_PLAYLISTS[tourId]) return TOUR_PLAYLISTS[tourId]
+    if (tourId.startsWith('tab-')) {
+        const tabKey = tourId.replace(/^tab-/, '') as WorkspaceTab
+        return getTabTourPlaylist(tabKey)
+    }
+    return TOUR_PLAYLISTS['core-fast']
 }
 
 export function useNativeWalkthrough({ activeTab, onTabChange }: UseNativeWalkthroughProps) {
@@ -35,13 +44,13 @@ export function useNativeWalkthrough({ activeTab, onTabChange }: UseNativeWalkth
     const progressTimerRef = useRef<any>(null)
     const isTransitioningRef = useRef(false)
 
-    const activePlaylist = TOUR_PLAYLISTS[currentTourId] || TOUR_PLAYLISTS['core-fast']
+    const activePlaylist = resolvePlaylist(currentTourId)
     const currentStep: WalkthroughStep | undefined = activePlaylist.steps[currentStepIndex]
 
     // Save resume state helper
     const persistResumeState = useCallback((tourId: TourPlaylistId, stepIdx: number) => {
         try {
-            const playlist = TOUR_PLAYLISTS[tourId] || TOUR_PLAYLISTS['core-fast']
+            const playlist = resolvePlaylist(tourId)
             const step = playlist.steps[stepIdx]
             if (!step) return
             const state: WalkthroughResumeState = {
@@ -182,12 +191,17 @@ export function useNativeWalkthrough({ activeTab, onTabChange }: UseNativeWalkth
         setIsPlaying(playlistId !== 'interactive-quest') // Auto-play by default for regular tours
         setStepProgress(0)
 
-        const playlist = TOUR_PLAYLISTS[playlistId] || TOUR_PLAYLISTS['core-fast']
+        const playlist = resolvePlaylist(playlistId)
         const step = playlist.steps[startStep] || playlist.steps[0]
         if (step) {
             executeStep(step, playlistId, startStep)
         }
     }, [executeStep])
+
+    // Start a dedicated tab tour
+    const startTabTour = useCallback((tabId: WorkspaceTab) => {
+        startTour(`tab-${tabId}`, 0)
+    }, [startTour])
 
     // Resume previous tour from where left off
     const resumeTour = useCallback(() => {
@@ -367,6 +381,7 @@ export function useNativeWalkthrough({ activeTab, onTabChange }: UseNativeWalkth
         resumeTour,
         clearResumeState,
         startTour,
+        startTabTour,
         stopTour,
         nextStep,
         prevStep,
@@ -377,3 +392,4 @@ export function useNativeWalkthrough({ activeTab, onTabChange }: UseNativeWalkth
         notifyQuestAction,
     }
 }
+

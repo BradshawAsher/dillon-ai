@@ -3,6 +3,7 @@ import { Target } from 'lucide-react'
 
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
+import CardInfoPopover from './common/CardInfoPopover'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 
 type Props = {
@@ -130,11 +131,12 @@ export default function DealAnalysisScoresCard({ model, synthesis }: Props) {
 
     return (
         <Card className="overflow-hidden">
-            <CardHeader className="border-b border-border bg-card/80 pb-3">
+            <CardHeader className="border-b border-border bg-card/80 pb-3 flex flex-row items-center justify-between">
                 <div className="flex items-center gap-2">
                     <Target className="h-5 w-5 text-primary" />
                     <CardTitle className="text-lg">Deal analysis scores</CardTitle>
                 </div>
+                <CardInfoPopover cardId="deal-analysis-scores" />
             </CardHeader>
             <CardContent className="p-5">
                 <div className="flex flex-col items-center gap-6 sm:flex-row sm:justify-center">

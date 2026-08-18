@@ -17,6 +17,7 @@ import {
     Zap,
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
 import { calculateDocumentCost, calculateSynthesisCost } from '../utils/diligenceDashboardUtils'
@@ -464,6 +465,7 @@ export default function SpendingAnalyticsTab({
                             <div className="flex items-center gap-2">
                                 <TrendingUp className="h-4 w-4 text-primary" />
                                 <CardTitle className="text-base font-bold">Spending Velocity over Time</CardTitle>
+                                <CardInfoPopover cardId="spending-velocity" />
                             </div>
                             <Badge variant="outline" className="text-[10px] capitalize font-semibold">
                                 Grouped by {timeframe}
@@ -508,6 +510,7 @@ export default function SpendingAnalyticsTab({
                         <div className="flex items-center gap-2">
                             <Building2 className="h-4 w-4 text-primary" />
                             <CardTitle className="text-base font-bold">Top Spending Businesses</CardTitle>
+                            <CardInfoPopover cardId="spending-top-businesses" />
                         </div>
                     </CardHeader>
                     <CardContent className="p-4 space-y-3">
@@ -542,6 +545,7 @@ export default function SpendingAnalyticsTab({
                             <div className="flex items-center gap-2">
                                 <Layers className="h-4 w-4 text-primary" />
                                 <CardTitle className="text-base font-bold">Itemized Billing Execution Ledger</CardTitle>
+                                <CardInfoPopover cardId="spending-itemized-ledger" />
                                 <Badge variant="secondary" className="text-[10px] font-mono">
                                     Showing all {filteredLedger.length} records
                                 </Badge>

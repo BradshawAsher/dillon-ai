@@ -5,6 +5,7 @@ import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { normalizeEquityFraction } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type Props = {
     model: DealModel
@@ -131,9 +132,12 @@ export default function BenchmarkComparisonCard({ model }: Props) {
     return (
         <Card className="overflow-hidden">
             <CardHeader className="border-b border-border bg-card/80 pb-3">
-                <div className="flex items-center gap-2">
-                    <BarChart3 className="h-4 w-4 text-primary" />
-                    <CardTitle className="text-lg">SMB benchmark comparison</CardTitle>
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <BarChart3 className="h-4 w-4 text-primary" />
+                        <CardTitle className="text-lg">SMB benchmark comparison</CardTitle>
+                    </div>
+                    <CardInfoPopover cardId="benchmark-comparison" />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                     How this deal compares to typical SMB acquisition benchmarks

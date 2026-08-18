@@ -1,5 +1,5 @@
 import React from 'react'
-import { FolderKanban, Moon, Sun, Key, Globe, Play, Compass, Sparkles } from 'lucide-react'
+import { FolderKanban, Moon, Sun, Key, Globe, Play, Compass, Sparkles, Keyboard } from 'lucide-react'
 import { Badge } from '../../lib/shadcn/badge'
 import { Button } from '../../lib/shadcn/button'
 import DealStageIndicator from '../DealStageIndicator'
@@ -183,6 +183,17 @@ export function WorkspaceHeader({
                         >
                             <Key className="h-4 w-4 text-primary" />
                             <span className="hidden sm:inline">API Key</span>
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            className="gap-1.5 px-3 py-2 text-sm"
+                            onClick={() => setActiveWorkspaceTab('shortcuts')}
+                            title="Keyboard Shortcuts Cheatsheet & Interactive Tester"
+                        >
+                            <Keyboard className="h-4 w-4 text-primary" />
+                            <span className="hidden sm:inline">Shortcuts</span>
+                            <kbd className="hidden md:inline-flex rounded bg-muted px-1 py-0.2 text-[10px] font-mono border border-border">?</kbd>
                         </Button>
                         <LoginButton />
                     </div>

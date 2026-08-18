@@ -5,6 +5,7 @@ import { Badge } from '../lib/shadcn/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { buildFactEvidence, getEvidenceStatusPresentation, parseDocumentedFacts, type EvidenceItem } from '../utils/evidence'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
+import CardInfoPopover from './common/CardInfoPopover'
 
 const factLabels: Array<[string, string]> = [
     ['revenue', 'Revenue'],
@@ -38,7 +39,7 @@ export default function DealModelReadinessCard({ model, documents, onOpenEvidenc
             <CardHeader className="border-b border-border bg-card/80">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                        <div className="flex items-center gap-2"><Database className="h-5 w-5 text-primary" /><CardTitle className="text-xl">Deal Model readiness</CardTitle></div>
+                        <div className="flex items-center gap-2"><Database className="h-5 w-5 text-primary" /><CardTitle className="text-xl">Deal Model readiness</CardTitle><CardInfoPopover cardId="deal-model-readiness" /></div>
                         <CardDescription className="mt-1">See exactly what arrived from documents versus what still needs an analyst assumption.</CardDescription>
                     </div>
                     <Badge variant={confirmedCount > 0 ? 'success' : 'warning'}>{confirmedCount}/{factLabels.length} core facts confirmed</Badge>

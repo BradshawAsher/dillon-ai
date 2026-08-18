@@ -624,3 +624,64 @@ export const TOUR_PLAYLISTS: Record<string, TourPlaylist> = {
         steps: QUEST_MISSIONS,
     },
 }
+
+import type { WorkspaceTab } from '../DealWorkspaceNav'
+
+export function getTabTourPlaylist(tabId: WorkspaceTab): TourPlaylist {
+    const playlistId = `tab-${tabId}`
+    if (TOUR_PLAYLISTS[playlistId]) {
+        return TOUR_PLAYLISTS[playlistId]
+    }
+
+    // Filter matching steps from DEEP_DIVE_STEPS or CORE_FAST_STEPS
+    const directSteps = DEEP_DIVE_STEPS.filter(s => s.tab === tabId)
+    if (directSteps.length > 0) {
+        const renumbered: WalkthroughStep[] = directSteps.map((s, idx) => ({
+            ...s,
+            id: `${tabId}-tour-step-${idx + 1}`,
+            num: idx + 1,
+        }))
+        return {
+            id: playlistId,
+            title: `${tabId.charAt(0).toUpperCase() + tabId.slice(1)} Tab Guided Tour`,
+            subtitle: `Targeted walkthrough for the ${tabId} workspace section`,
+            durationLabel: `~${Math.max(1, Math.round(renumbered.length * 0.5))} min`,
+            stepCount: renumbered.length,
+            iconName: 'Compass',
+            color: 'from-primary to-indigo-600',
+            description: `A focused, step-by-step interactive tutorial for mastering the ${tabId} diligence section.`,
+            steps: renumbered,
+        }
+    }
+
+    // Default fallback single/dual step for tabs without explicit steps in deep dive
+    const defaultSteps: WalkthroughStep[] = [
+        {
+            id: `${tabId}-tour-step-1`,
+            num: 1,
+            title: `${tabId.charAt(0).toUpperCase() + tabId.slice(1)} Workspace Overview`,
+            tab: tabId,
+            targetElementId: 'deal-workspace',
+            targetSelector: '#deal-workspace, main',
+            tag: tabId.toUpperCase(),
+            badge: 'Workspace',
+            narrative: `Explore the ${tabId} workspace tools, tables, and audit controls to streamline your transaction analysis.`,
+            keyTakeaway: `Dedicated section for institutional ${tabId} diligence.`,
+            cursorPlacement: 'center',
+            durationMs: 7000,
+        },
+    ]
+
+    return {
+        id: playlistId,
+        title: `${tabId.charAt(0).toUpperCase() + tabId.slice(1)} Tab Tutorial`,
+        subtitle: `Overview tutorial for the ${tabId} workspace`,
+        durationLabel: '~30 sec',
+        stepCount: defaultSteps.length,
+        iconName: 'HelpCircle',
+        color: 'from-primary to-indigo-600',
+        description: `Explore key capabilities, tables, and outputs inside the ${tabId} section.`,
+        steps: defaultSteps,
+    }
+}
+

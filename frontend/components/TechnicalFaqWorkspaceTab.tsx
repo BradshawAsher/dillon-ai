@@ -21,6 +21,7 @@ import {
 } from 'lucide-react'
 import { Button } from '../lib/shadcn/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 import { Badge } from '../lib/shadcn/badge'
 
 interface TechnicalFaqWorkspaceTabProps {
@@ -243,6 +244,7 @@ export default function TechnicalFaqWorkspaceTab({ onSwitchTab }: TechnicalFaqWo
                         <CardTitle className="text-lg font-bold flex items-center gap-2">
                             <HelpCircle className="h-5 w-5 text-primary" />
                             <span>Technical FAQs &amp; Feature Map ({filteredFaqs.length})</span>
+                            <CardInfoPopover cardId="technical-faq" />
                         </CardTitle>
 
                         {/* Search Bar */}

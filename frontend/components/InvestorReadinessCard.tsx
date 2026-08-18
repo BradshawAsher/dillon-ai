@@ -5,6 +5,7 @@ import type { DealModel } from '../hooks/backend/diligence'
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type Props = {
     model: DealModel
@@ -95,6 +96,7 @@ export default function InvestorReadinessCard({ model, synthesis, documentCount 
                 <div className="flex items-center gap-2">
                     <Briefcase className="h-4 w-4 text-primary" />
                     <CardTitle className="text-lg">Investor/lender readiness</CardTitle>
+                    <CardInfoPopover cardId="investor-readiness" />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                     Is the deal package ready to present to investors or lenders?

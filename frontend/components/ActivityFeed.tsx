@@ -2,6 +2,7 @@ import { FileUp, FileCheck, Sparkles, AlertCircle, Clock } from 'lucide-react'
 
 import { type SubmissionHistoryItem, isActiveSubmissionStatus } from '../utils/submissionHistory'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type Props = {
     documents: SubmissionHistoryItem[]
@@ -98,6 +99,7 @@ export default function ActivityFeed({ documents, maxItems = 8 }: Props) {
                 <div className="flex items-center gap-2">
                     <Sparkles className="h-4 w-4 text-primary" />
                     <CardTitle className="text-sm font-semibold">Recent activity</CardTitle>
+                    <CardInfoPopover cardId="recent-activity" />
                 </div>
             </CardHeader>
             <CardContent className="p-0">

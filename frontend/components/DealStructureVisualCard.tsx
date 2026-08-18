@@ -3,6 +3,7 @@ import { TriangleAlert, WalletCards } from 'lucide-react'
 import type { DealModel } from '../hooks/backend/diligence'
 import { Badge } from '../lib/shadcn/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 import { buildDerivedEvidence, type EvidenceItem } from '../utils/evidence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { MoneyBarChart } from './DealCharts'
@@ -59,7 +60,12 @@ export default function DealStructureVisualCard({ model, onOpenEvidence }: { mod
 
     return <Card className="overflow-hidden">
         <CardHeader className="border-b border-border bg-card/80">
-            <div className="flex items-center gap-2"><WalletCards className="h-5 w-5 text-primary" /><CardTitle className="text-xl">Sources and uses</CardTitle>{isIllustrativePreview ? <Badge variant="warning">Illustrative preview</Badge> : null}</div>
+            <div className="flex items-center gap-2">
+                <WalletCards className="h-5 w-5 text-primary" />
+                <CardTitle className="text-xl">Sources and uses</CardTitle>
+                <CardInfoPopover cardId="sources-uses" />
+                {isIllustrativePreview ? <Badge variant="warning">Illustrative preview</Badge> : null}
+            </div>
             <CardDescription>Capital stack based on the current project's saved price and financing assumptions, with clearly labeled preview values when a required assumption is still missing.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 p-5">

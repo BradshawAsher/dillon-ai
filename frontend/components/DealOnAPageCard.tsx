@@ -6,7 +6,7 @@ import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import InPlaceEvidencePopover from './InPlaceEvidencePopover'
-import CardExplainerPopover from './CardExplainerPopover'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type Props = {
     model: DealModel
@@ -65,12 +65,7 @@ export default function DealOnAPageCard({ model, synthesis, projectName }: Props
                         <FileImage className="h-4 w-4 text-primary" />
                         <CardTitle className="text-lg">Deal on a page</CardTitle>
                     </div>
-                    <CardExplainerPopover
-                        title="Deal on a Page (1-Pager)"
-                        whatIsIt="An executive one-page snapshot summarizing critical purchase terms, valuation multiples, historical figures, and modeled return metrics."
-                        howItWorks="Combines hard facts extracted directly from VDR documents (revenue, EBITDA, asking price) with standard underwriting model assumptions (debt leverage, exit multiple, growth)."
-                        whyItMatters="Enables instant, credible screening of a target company without digging through multiple pages of reports, giving you a shareable summary for investment committees."
-                    />
+                    <CardInfoPopover cardId="deal-on-a-page" />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                     One-glance summary for screenshots and quick decision-making. Click any metric to inspect in-place source citations.

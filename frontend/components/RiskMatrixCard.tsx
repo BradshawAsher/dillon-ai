@@ -4,6 +4,7 @@ import { Grid3x3 } from 'lucide-react'
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type Props = {
     synthesis?: ProjectSynthesisItem
@@ -94,6 +95,7 @@ export default function RiskMatrixCard({ synthesis }: Props) {
                     <div className="flex items-center gap-2">
                         <Grid3x3 className="h-5 w-5 text-primary" />
                         <CardTitle className="text-lg">Risk matrix</CardTitle>
+                        <CardInfoPopover cardId="risk-matrix" />
                     </div>
                     <Badge variant="outline">{risks.length} risks mapped</Badge>
                 </div>

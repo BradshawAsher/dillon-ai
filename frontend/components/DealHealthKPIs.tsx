@@ -13,6 +13,7 @@ import {
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import type { DealModel } from '../hooks/backend/diligence'
 import { Card, CardContent } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 import { parseDocumentedFacts } from '../utils/evidence'
 import type { ImpactMetrics } from '../utils/impactMetrics'
 
@@ -177,7 +178,10 @@ export default function DealHealthKPIs({
     if (kpis.length === 0) return null
 
     return (
-        <Card className="dashboard-kpi-glass border-primary/20">
+        <Card className="dashboard-kpi-glass border-primary/20 relative">
+            <div className="absolute top-2 right-2 z-10">
+                <CardInfoPopover cardId="deal-health-kpis" />
+            </div>
             <CardContent className="p-4 sm:p-5">
                 <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                     {kpis.map((kpi) => (

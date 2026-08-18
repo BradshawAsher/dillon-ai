@@ -4,6 +4,7 @@ import { UserX } from 'lucide-react'
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type Props = {
     synthesis?: ProjectSynthesisItem
@@ -51,6 +52,7 @@ export default function KeyPersonRiskCard({ synthesis }: Props) {
                     <div className="flex items-center gap-2">
                         <UserX className="h-5 w-5 text-primary" />
                         <CardTitle className="text-lg">Key person risk</CardTitle>
+                        <CardInfoPopover cardId="key-person-risk" />
                     </div>
                     <Badge variant={analysis.level === 'high' ? 'destructive' : 'warning'}>
                         {analysis.level === 'high' ? 'High risk' : 'Moderate'}

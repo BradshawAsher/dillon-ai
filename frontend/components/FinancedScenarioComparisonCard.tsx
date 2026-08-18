@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../li
 import { GrowthLineChart, type ChartDatum } from './DealCharts'
 import { calculateIrr } from '../utils/dealMath'
 import InfoTip, { FINANCIAL_TERMS } from './InfoTip'
+import CardInfoPopover from './common/CardInfoPopover'
 
 function money(value: number) {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value)
@@ -68,7 +69,7 @@ export default function FinancedScenarioComparisonCard({ model }: { model: DealM
     return <Card className="overflow-hidden">
         <CardHeader className="border-b border-border bg-card/80">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div><div className="flex items-center gap-2"><ChartNoAxesCombined className="h-5 w-5 text-primary" /><CardTitle className="text-xl">Financed bear / base / bull returns</CardTitle></div><CardDescription className="mt-1">Levered outcomes combining documented starting revenue, saved growth cases, and the current financing structure.</CardDescription></div>
+                <div><div className="flex items-center gap-2"><ChartNoAxesCombined className="h-5 w-5 text-primary" /><CardTitle className="text-xl">Financed bear / base / bull returns</CardTitle><CardInfoPopover cardId="financed-scenario-comparison" /></div><CardDescription className="mt-1">Levered outcomes combining documented starting revenue, saved growth cases, and the current financing structure.</CardDescription></div>
                 <Badge variant={ready ? 'success' : 'secondary'}>{ready ? 'Scenario inputs available' : 'Inputs needed'}</Badge>
             </div>
         </CardHeader>

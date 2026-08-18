@@ -1,10 +1,12 @@
-type WorkspaceTab = 'overview' | 'analysis' | 'diagnostics' | 'diligence' | 'synthesis' | 'spending' | 'compare' | 'valuation' | 'returns' | 'growth' | 'structure' | 'negotiation' | 'documents' | 'history' | 'errors' | 'email' | 'evals' | 'faqs'
+type WorkspaceTab = 'overview' | 'analysis' | 'diagnostics' | 'diligence' | 'synthesis' | 'spending' | 'compare' | 'valuation' | 'returns' | 'growth' | 'structure' | 'negotiation' | 'documents' | 'shortcuts' | 'evals' | 'faqs' | 'history' | 'email' | 'errors'
 
 type DealWorkspaceNavProps = {
     activeTab: WorkspaceTab
     onTabChange: (tab: WorkspaceTab) => void
     isDiligenceComplete?: boolean
     isSynthesisReady?: boolean
+    isSynthesisRunning?: boolean
+    onStartTabTour?: (tabId: WorkspaceTab) => void
 }
 
 const tabs: Array<{ id: WorkspaceTab; label: string }> = [
@@ -21,6 +23,7 @@ const tabs: Array<{ id: WorkspaceTab; label: string }> = [
     { id: 'structure', label: 'Deal Structure' },
     { id: 'negotiation', label: 'Negotiation' },
     { id: 'documents', label: 'Projects' },
+    { id: 'shortcuts', label: 'Shortcuts' },
     { id: 'evals', label: 'Evals & Harness' },
     { id: 'faqs', label: 'FAQs & Guide' },
     { id: 'history', label: 'Audit Trail' },
@@ -31,7 +34,10 @@ const tabs: Array<{ id: WorkspaceTab; label: string }> = [
 export type { WorkspaceTab }
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { ChevronLeft, ChevronRight, History, Check } from 'lucide-react'
+import TabInfoPopover from './walkthrough/TabInfoPopover'
+import { useFloatingPosition } from '../hooks/useFloatingPosition'
 
 export default function DealWorkspaceNav({
     activeTab,
@@ -39,7 +45,8 @@ export default function DealWorkspaceNav({
     isDiligenceComplete = false,
     isSynthesisReady = false,
     isSynthesisRunning = false,
-}: DealWorkspaceNavProps & { isSynthesisRunning?: boolean }) {
+    onStartTabTour,
+}: DealWorkspaceNavProps) {
     const [navHistory, setNavHistory] = useState<WorkspaceTab[]>(() => {
         try {
             const stored = localStorage.getItem('mergeworks.tabHistory')
@@ -59,6 +66,16 @@ export default function DealWorkspaceNav({
     })
 
     const [isHistoryOpen, setIsHistoryOpen] = useState(false)
+    const historyBtnRef = useRef<HTMLButtonElement>(null)
+
+    const historyCoords = useFloatingPosition({
+        isOpen: isHistoryOpen,
+        targetRef: historyBtnRef,
+        popoverWidth: 260,
+        preferredPlacement: 'bottom',
+        margin: 6,
+        padding: 16,
+    })
 
     // Sync state with native browser back and forward actions (hash/popstate listener)
     useEffect(() => {
@@ -144,7 +161,7 @@ export default function DealWorkspaceNav({
                     type="button"
                     disabled={!canGoBack}
                     onClick={handleBack}
-                    className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-40 disabled:hover:bg-transparent"
+                    className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer"
                     title="Back to previous tab"
                 >
                     <ChevronLeft className="h-4 w-4" />
@@ -153,24 +170,41 @@ export default function DealWorkspaceNav({
                     type="button"
                     disabled={!canGoForward}
                     onClick={handleForward}
-                    className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-40 disabled:hover:bg-transparent"
+                    className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer"
                     title="Forward to next tab"
                 >
                     <ChevronRight className="h-4 w-4" />
                 </button>
                 <div className="relative">
                     <button
+                        ref={historyBtnRef}
                         type="button"
                         onClick={() => setIsHistoryOpen(!isHistoryOpen)}
-                        className={`rounded-md p-1 transition-colors hover:bg-muted ${isHistoryOpen ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                        className={`rounded-md p-1 transition-colors hover:bg-muted cursor-pointer ${isHistoryOpen ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
                         title="View tab history"
                     >
                         <History className="h-4 w-4" />
                     </button>
-                    {isHistoryOpen && (
+                    {isHistoryOpen && typeof document !== 'undefined' && createPortal(
                         <>
-                            <div className="fixed inset-0 z-30" onClick={() => setIsHistoryOpen(false)} />
-                            <div className="absolute left-0 top-full z-40 mt-1.5 w-64 max-h-80 overflow-y-auto rounded-lg border border-border bg-popover p-1.5 shadow-lg">
+                            <div
+                                className="fixed inset-0 z-[99998] bg-black/10 dark:bg-black/25 backdrop-blur-[0.5px]"
+                                onClick={() => setIsHistoryOpen(false)}
+                            />
+                            <div
+                                style={{
+                                    position: 'fixed',
+                                    top: historyCoords.top !== undefined ? `${historyCoords.top}px` : undefined,
+                                    bottom: historyCoords.bottom !== undefined ? `${historyCoords.bottom}px` : undefined,
+                                    left: historyCoords.left !== undefined ? `${historyCoords.left}px` : undefined,
+                                    right: historyCoords.right !== undefined ? `${historyCoords.right}px` : undefined,
+                                    width: historyCoords.width !== undefined ? `${historyCoords.width}px` : undefined,
+                                    maxHeight: historyCoords.maxHeight !== undefined ? `${historyCoords.maxHeight}px` : '80vh',
+                                    zIndex: 99999,
+                                }}
+                                className="overflow-y-auto rounded-lg border border-border bg-popover p-1.5 shadow-2xl ring-1 ring-border/50 animate-in fade-in-0 zoom-in-95 duration-150"
+                                onClick={(e) => e.stopPropagation()}
+                            >
                                 <p className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border/50 mb-1">Tab History</p>
                                 {navHistory.map((tabId, idx) => {
                                     const tabName = tabs.find(t => t.id === tabId)?.label || tabId
@@ -180,7 +214,7 @@ export default function DealWorkspaceNav({
                                             key={`${tabId}-${idx}`}
                                             type="button"
                                             onClick={() => handleJumpToHistoryIndex(idx)}
-                                            className={`flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-muted/60 ${isCurrent ? 'font-semibold text-primary bg-primary/5' : 'text-foreground'}`}
+                                            className={`flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-muted/60 cursor-pointer ${isCurrent ? 'font-semibold text-primary bg-primary/5' : 'text-foreground'}`}
                                         >
                                             <span className="truncate">{idx + 1}. {tabName}</span>
                                             {isCurrent && <Check className="h-3.5 w-3.5 text-primary shrink-0" />}
@@ -188,7 +222,8 @@ export default function DealWorkspaceNav({
                                     )
                                 })}
                             </div>
-                        </>
+                        </>,
+                        document.body
                     )}
                 </div>
             </div>
@@ -203,62 +238,68 @@ export default function DealWorkspaceNav({
                         const isSynthesisReadyHighlighted = tab.id === 'synthesis' && isSynthesisReady && !isSynthesisRunning
 
                         let buttonClass = isActive
-                            ? 'rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-all duration-200 ease-out'
-                            : 'rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-all duration-200 ease-out hover:bg-muted hover:text-foreground hover:shadow-sm'
+                            ? 'rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-all duration-200 ease-out cursor-pointer'
+                            : 'rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-all duration-200 ease-out hover:bg-muted hover:text-foreground hover:shadow-sm cursor-pointer'
 
                         if (isDiligenceHighlighted) {
                             buttonClass = isActive
-                                ? 'rounded-lg bg-emerald-600 px-3 py-2 text-sm font-bold text-white shadow-sm ring-2 ring-emerald-500/50 flex items-center gap-1.5 transition-all duration-200'
-                                : 'rounded-lg bg-emerald-500/15 dark:bg-emerald-500/25 border border-emerald-500/50 px-3 py-2 text-sm font-bold text-emerald-700 dark:text-emerald-300 shadow-xs shadow-emerald-500/20 hover:bg-emerald-500/30 flex items-center gap-1.5 transition-all duration-200'
+                                ? 'rounded-lg bg-emerald-600 px-3 py-2 text-sm font-bold text-white shadow-sm ring-2 ring-emerald-500/50 flex items-center gap-1.5 transition-all duration-200 cursor-pointer'
+                                : 'rounded-lg bg-emerald-500/15 dark:bg-emerald-500/25 border border-emerald-500/50 px-3 py-2 text-sm font-bold text-emerald-700 dark:text-emerald-300 shadow-xs shadow-emerald-500/20 hover:bg-emerald-500/30 flex items-center gap-1.5 transition-all duration-200 cursor-pointer'
                         } else if (isSynthesisRunningHighlighted) {
                             buttonClass = isActive
-                                ? 'rounded-lg bg-amber-600 px-3 py-2 text-sm font-bold text-white shadow-sm ring-2 ring-amber-500/50 flex items-center gap-1.5 transition-all duration-200'
-                                : 'rounded-lg bg-amber-500/15 dark:bg-amber-500/25 border border-amber-500/50 px-3 py-2 text-sm font-bold text-amber-700 dark:text-amber-300 shadow-xs shadow-amber-500/20 hover:bg-amber-500/30 flex items-center gap-1.5 transition-all duration-200'
+                                ? 'rounded-lg bg-amber-600 px-3 py-2 text-sm font-bold text-white shadow-sm ring-2 ring-amber-500/50 flex items-center gap-1.5 transition-all duration-200 cursor-pointer'
+                                : 'rounded-lg bg-amber-500/15 dark:bg-amber-500/25 border border-amber-500/50 px-3 py-2 text-sm font-bold text-amber-700 dark:text-amber-300 shadow-xs shadow-amber-500/20 hover:bg-amber-500/30 flex items-center gap-1.5 transition-all duration-200 cursor-pointer'
                         } else if (isSynthesisReadyHighlighted) {
                             buttonClass = isActive
-                                ? 'rounded-lg bg-violet-600 px-3 py-2 text-sm font-bold text-white shadow-sm ring-2 ring-violet-500/50 flex items-center gap-1.5 transition-all duration-200'
-                                : 'rounded-lg bg-violet-500/15 dark:bg-violet-500/25 border border-violet-500/50 px-3 py-2 text-sm font-bold text-violet-700 dark:text-violet-300 shadow-xs shadow-violet-500/20 hover:bg-violet-500/30 flex items-center gap-1.5 transition-all duration-200'
+                                ? 'rounded-lg bg-violet-600 px-3 py-2 text-sm font-bold text-white shadow-sm ring-2 ring-violet-500/50 flex items-center gap-1.5 transition-all duration-200 cursor-pointer'
+                                : 'rounded-lg bg-violet-500/15 dark:bg-violet-500/25 border border-violet-500/50 px-3 py-2 text-sm font-bold text-violet-700 dark:text-violet-300 shadow-xs shadow-violet-500/20 hover:bg-violet-500/30 flex items-center gap-1.5 transition-all duration-200 cursor-pointer'
                         }
 
                         return (
-                            <button
-                                key={tab.id}
-                                type="button"
-                                role="tab"
-                                aria-selected={isActive}
-                                ref={isActive ? activeTabRef : undefined}
-                                className={buttonClass}
-                                onClick={() => onTabChange(tab.id)}
-                            >
-                                <span>{tab.label}</span>
-                                {isDiligenceHighlighted && (
-                                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 dark:bg-emerald-500/30 px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-emerald-800 dark:text-emerald-200">
-                                        <span className="relative flex h-1.5 w-1.5">
-                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                            <div key={tab.id} className="inline-flex items-center gap-0.5 group shrink-0">
+                                <button
+                                    type="button"
+                                    role="tab"
+                                    aria-selected={isActive}
+                                    ref={isActive ? activeTabRef : undefined}
+                                    className={buttonClass}
+                                    onClick={() => onTabChange(tab.id)}
+                                >
+                                    <span>{tab.label}</span>
+                                    {isDiligenceHighlighted && (
+                                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 dark:bg-emerald-500/30 px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-emerald-800 dark:text-emerald-200">
+                                            <span className="relative flex h-1.5 w-1.5">
+                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                                            </span>
+                                            Done
                                         </span>
-                                        Done
-                                    </span>
-                                )}
-                                {isSynthesisRunningHighlighted && (
-                                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/20 dark:bg-amber-500/30 px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-amber-800 dark:text-amber-200">
-                                        <span className="relative flex h-1.5 w-1.5">
-                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-500"></span>
+                                    )}
+                                    {isSynthesisRunningHighlighted && (
+                                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/20 dark:bg-amber-500/30 px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-amber-800 dark:text-amber-200">
+                                            <span className="relative flex h-1.5 w-1.5">
+                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                                                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-500"></span>
+                                            </span>
+                                            Running
                                         </span>
-                                        Running
-                                    </span>
-                                )}
-                                {isSynthesisReadyHighlighted && (
-                                    <span className="inline-flex items-center gap-1 rounded-full bg-violet-500/20 dark:bg-violet-500/30 px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-violet-800 dark:text-violet-200">
-                                        <span className="relative flex h-1.5 w-1.5">
-                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span>
-                                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-violet-500"></span>
+                                    )}
+                                    {isSynthesisReadyHighlighted && (
+                                        <span className="inline-flex items-center gap-1 rounded-full bg-violet-500/20 dark:bg-violet-500/30 px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-violet-800 dark:text-violet-200">
+                                            <span className="relative flex h-1.5 w-1.5">
+                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span>
+                                                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-violet-500"></span>
+                                            </span>
+                                            Done
                                         </span>
-                                        Done
-                                    </span>
-                                )}
-                            </button>
+                                    )}
+                                </button>
+                                <TabInfoPopover
+                                    tabId={tab.id}
+                                    onStartTour={onStartTabTour}
+                                    className="opacity-60 transition-opacity group-hover:opacity-100 hover:opacity-100"
+                                />
+                            </div>
                         )
                     })}
                 </div>

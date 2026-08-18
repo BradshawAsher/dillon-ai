@@ -5,7 +5,7 @@ import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence
 import { parseDocumentedFacts } from '../utils/evidence'
 import { normalizeEquityFraction } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
-import CardExplainerPopover from './CardExplainerPopover'
+import CardInfoPopover from './common/CardInfoPopover'
 import InPlaceEvidencePopover, { EvidenceDetails } from './InPlaceEvidencePopover'
 
 type Props = {
@@ -206,12 +206,7 @@ export default function DealKillerCheckCard({ model, synthesis }: Props) {
                         <AlertOctagon className="h-4 w-4 text-destructive" />
                         <CardTitle className="text-lg">Deal-killer check</CardTitle>
                     </div>
-                    <CardExplainerPopover
-                        title="Deal-Killer Stress Checks"
-                        whatIsIt="An automated sanity checklist that tests your acquisition structure against fatal underwriting thresholds."
-                        howItWorks="Evaluates DSCR debt coverage (<1.0x), excessive entry multiples (>6x), unmitigated red flags (>5), customer concentration, and negative revenue trajectories."
-                        whyItMatters="Saves searchers and private equity buyers from wasting tens of thousands of dollars in legal and accounting fees on fundamentally unfinanceable transactions."
-                    />
+                    <CardInfoPopover cardId="deal-killer-check" />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                     Click any check item to inspect the underlying source document evidence and calculations

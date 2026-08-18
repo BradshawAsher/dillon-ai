@@ -6,6 +6,7 @@ import { parseDocumentedFacts } from '../utils/evidence'
 import { copyToClipboard } from '../utils/clipboard'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
+import CardInfoPopover from './common/CardInfoPopover'
 import {
     getStoredSellerQuestions,
     saveStoredSellerQuestions,
@@ -167,6 +168,7 @@ export default function SellerQuestionsCard({ synthesis, model }: Props) {
                     <div className="flex items-center gap-2">
                         <MessageSquareText className="h-5 w-5 text-primary" />
                         <CardTitle className="text-lg">Questions for seller</CardTitle>
+                        <CardInfoPopover cardId="seller-questions" />
                     </div>
                     <div className="flex items-center gap-2">
                         <Badge variant="secondary">{answeredCount}/{questions.length} answered</Badge>

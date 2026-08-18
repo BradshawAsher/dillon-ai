@@ -5,6 +5,7 @@ import { Badge } from '../lib/shadcn/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { parseDocumentedFacts, type EvidenceItem, buildFactEvidence } from '../utils/evidence'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type FactSpec = {
     key: string
@@ -73,6 +74,7 @@ export default function FinancialCompletenessCard({ model, documents, onOpenEvid
                         <div className="flex items-center gap-2">
                             <FileBarChart className="h-5 w-5 text-primary" />
                             <CardTitle className="text-xl">Financial data completeness</CardTitle>
+                            <CardInfoPopover cardId="financial-completeness" />
                         </div>
                         <CardDescription className="mt-1">
                             Which core financial facts are confirmed from uploaded documents versus still missing.

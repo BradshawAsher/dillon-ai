@@ -5,6 +5,7 @@ import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type Props = {
     model: DealModel
@@ -78,6 +79,7 @@ export default function IndustryPercentileCard({ model }: Props) {
                     <div className="flex items-center gap-2">
                         <Medal className="h-5 w-5 text-primary" />
                         <CardTitle className="text-lg">Industry percentile</CardTitle>
+                        <CardInfoPopover cardId="industry-percentile" />
                     </div>
                     <Badge variant="outline">SMB $1-10M</Badge>
                 </div>

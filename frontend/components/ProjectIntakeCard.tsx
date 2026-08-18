@@ -5,6 +5,7 @@ import FileDropzone from './FileDropzone'
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 import { Input } from '../lib/shadcn/input'
 import { Label } from '../lib/shadcn/label'
 import {
@@ -141,6 +142,7 @@ export default function ProjectIntakeCard({
                         <div className="flex items-center gap-2">
                             <FolderKanban className="h-4 w-4 text-muted-foreground" />
                             <CardTitle className="text-xl">Project intake</CardTitle>
+                            <CardInfoPopover cardId="project-intake" />
                         </div>
                         <CardDescription>
                             Upload one or many documents into a named project so the agent can eventually reconcile the full diligence set and produce one acquisition judgment.

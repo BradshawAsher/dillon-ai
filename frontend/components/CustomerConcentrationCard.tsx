@@ -4,6 +4,7 @@ import { AlertTriangle, BarChart3, PieChart, Users, Layers } from 'lucide-react'
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { Badge } from '../lib/shadcn/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import { buildDocumentLinkedEvidence, type EvidenceItem } from '../utils/evidence'
 
@@ -194,6 +195,7 @@ export default function CustomerConcentrationCard({ synthesis, documents = [], o
                         <div className="flex items-center gap-2">
                             <Users className="h-5 w-5 text-primary" />
                             <CardTitle className="text-xl font-bold">Top 5 customer concentration</CardTitle>
+                            <CardInfoPopover cardId="customer-concentration" />
                         </div>
                         <CardDescription className="mt-1 text-xs">
                             Revenue dependency breakdown across top accounts and top 5 combined revenue share.

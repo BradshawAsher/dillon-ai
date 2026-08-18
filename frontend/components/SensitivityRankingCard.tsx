@@ -4,6 +4,7 @@ import { Focus } from 'lucide-react'
 import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type Props = {
     model: DealModel
@@ -122,6 +123,7 @@ export default function SensitivityRankingCard({ model }: Props) {
                 <div className="flex items-center gap-2">
                     <Focus className="h-4 w-4 text-primary" />
                     <CardTitle className="text-lg">Which assumptions matter most?</CardTitle>
+                    <CardInfoPopover cardId="sensitivity-ranking" />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                     Impact of +/-10% change in each assumption on exit MOIC

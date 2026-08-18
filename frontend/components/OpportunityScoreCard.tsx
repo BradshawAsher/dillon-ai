@@ -5,7 +5,7 @@ import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence
 import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
-import CardExplainerPopover from './CardExplainerPopover'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type Props = {
     model: DealModel
@@ -90,12 +90,7 @@ export default function OpportunityScoreCard({ model, synthesis }: Props) {
                         <CardTitle className="text-lg">Opportunity score</CardTitle>
                     </div>
                     <div className="flex items-center gap-3">
-                        <CardExplainerPopover
-                            title="Opportunity Score (0-100)"
-                            whatIsIt="Composite benchmark score grading the financial attractiveness of the deal relative to middle-market M&A averages."
-                            howItWorks="Evaluates 5 quantitative pillars: EBITDA Multiple, Revenue Multiple, Margin %, Payback Period (years), and Red Flag deductions."
-                            whyItMatters="Gives an instant high-level index of deal attractiveness. A score >= 75 is a strong opportunity, 50-74 is moderate, and < 50 requires heavy price renegotiation."
-                        />
+                        <CardInfoPopover cardId="opportunity-score" />
                         <div className="flex items-center gap-1.5">
                             <span className={`text-2xl font-black ${overallColor}`}>{overallPct}</span>
                             <span className="text-xs text-muted-foreground">/100</span>

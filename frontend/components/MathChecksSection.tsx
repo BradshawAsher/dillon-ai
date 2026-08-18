@@ -2,6 +2,7 @@ import { Calculator, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react'
 
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 import { Badge } from '../lib/shadcn/badge'
 import type { EvidenceItem } from './EvidenceDrawer'
 
@@ -174,6 +175,7 @@ export default function MathChecksSection({ documents, onOpenEvidence, compact, 
                         <div className="flex items-center gap-2">
                             <Calculator className="h-5 w-5 text-primary" />
                             <CardTitle className="text-lg">{title || 'Deterministic math checks'}</CardTitle>
+                            <CardInfoPopover cardId="math-checks" />
                         </div>
                         {description && <CardDescription className="mt-1">{description}</CardDescription>}
                     </div>

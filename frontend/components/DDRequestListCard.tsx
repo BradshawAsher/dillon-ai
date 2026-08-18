@@ -6,6 +6,7 @@ import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { copyToClipboard } from '../utils/clipboard'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 import { Button } from '../lib/shadcn/button'
 import { Badge } from '../lib/shadcn/badge'
 
@@ -165,6 +166,7 @@ export default function DDRequestListCard({ model, synthesis, documents, project
                         <div className="flex items-center gap-2">
                             <ClipboardList className="h-5 w-5 text-primary" />
                             <CardTitle className="text-xl">DD request list</CardTitle>
+                            <CardInfoPopover cardId="dd-request-list" />
                         </div>
                         <CardDescription className="mt-1">{sortedRequests.length} items to request from seller based on gaps in current documentation.</CardDescription>
                     </div>

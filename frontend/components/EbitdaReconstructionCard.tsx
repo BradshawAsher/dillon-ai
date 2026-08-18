@@ -7,6 +7,7 @@ import { Button } from '../lib/shadcn/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { parseDocumentedFacts, type EvidenceItem } from '../utils/evidence'
 import { WaterfallChart, type WaterfallDatum } from './DealCharts'
+import CardInfoPopover from './common/CardInfoPopover'
 
 function money(value: number) {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value)
@@ -182,6 +183,7 @@ export default function EbitdaReconstructionCard({ model, onOpenEvidence }: { mo
                         <div className="flex items-center gap-2">
                             <Calculator className="h-5 w-5 text-primary" />
                             <CardTitle className="text-xl">EBITDA Reconstruction & Pro-Forma Adjustments</CardTitle>
+                            <CardInfoPopover cardId="ebitda-reconstruction" />
                         </div>
                         <CardDescription className="mt-1">
                             Breaks documented revenue into operating components and lets analysts model custom pro-forma add-backs and owner normalization adjustments.

@@ -5,6 +5,7 @@ import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { normalizeEquityFraction } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type Props = {
     model: DealModel
@@ -66,6 +67,7 @@ export default function AnnualCashFlowCard({ model }: Props) {
                 <div className="flex items-center gap-2">
                     <Banknote className="h-4 w-4 text-primary" />
                     <CardTitle className="text-lg">Annual cash flow breakdown</CardTitle>
+                    <CardInfoPopover cardId="annual-cash-flow" />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                     Year 1 cash flow waterfall from EBITDA to owner's pocket

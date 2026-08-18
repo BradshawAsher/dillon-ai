@@ -7,6 +7,7 @@ import { HighLevelBusinessSummaryModal, HighLevelBusinessSummaryData } from './H
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 import { Input } from '../lib/shadcn/input'
 import { Switch } from '../lib/shadcn/switch'
 import { cn } from '../lib/shadcn/utils'
@@ -224,7 +225,10 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
             <CardHeader className="border-b border-border bg-card/80">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="space-y-1">
-                        <CardTitle className="text-xl">Project portfolio</CardTitle>
+                        <div className="flex items-center gap-2">
+                            <CardTitle className="text-xl">Project portfolio</CardTitle>
+                            <CardInfoPopover cardId="project-portfolio" />
+                        </div>
                         <CardDescription>
                             Group uploaded documents by project so diligence can move from file-by-file extraction to project-level synthesis.
                         </CardDescription>

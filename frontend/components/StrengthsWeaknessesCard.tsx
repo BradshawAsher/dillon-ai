@@ -4,6 +4,7 @@ import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence
 import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
+import CardInfoPopover from './common/CardInfoPopover'
 import TruncatedListItem from './TruncatedListItem'
 
 type Props = {
@@ -61,6 +62,7 @@ export default function StrengthsWeaknessesCard({ model, synthesis }: Props) {
                 <div className="flex items-center gap-2">
                     <Info className="h-5 w-5 text-primary" />
                     <CardTitle className="text-xl">Strengths & weaknesses</CardTitle>
+                    <CardInfoPopover cardId="strengths-weaknesses" />
                 </div>
             </CardHeader>
             <CardContent className="p-5">

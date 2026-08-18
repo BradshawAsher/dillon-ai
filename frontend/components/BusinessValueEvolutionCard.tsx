@@ -4,6 +4,7 @@ import { TrendingUp } from 'lucide-react'
 import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type Props = {
     model: DealModel
@@ -62,6 +63,7 @@ export default function BusinessValueEvolutionCard({ model }: Props) {
                 <div className="flex items-center gap-2">
                     <TrendingUp className="h-4 w-4 text-primary" />
                     <CardTitle className="text-lg">Business value evolution</CardTitle>
+                    <CardInfoPopover cardId="business-value-evolution" />
                 </div>
             </CardHeader>
             <CardContent className="p-4 space-y-4">

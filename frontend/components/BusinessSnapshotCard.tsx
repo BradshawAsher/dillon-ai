@@ -17,6 +17,7 @@ import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence
 import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
+import CardInfoPopover from './common/CardInfoPopover'
 import ActionableRecommendationInfoButton from './ActionableRecommendationInfoButton'
 
 type Props = {
@@ -127,11 +128,12 @@ export default function BusinessSnapshotCard({ model, synthesis, projectName, on
 
     return (
         <Card className="overflow-hidden shadow-sm border border-border">
-            <CardHeader className="border-b border-border bg-card/80 pb-3">
+            <CardHeader className="border-b border-border bg-card/80 pb-3 flex flex-row items-center justify-between">
                 <div className="flex items-center gap-2">
                     <Building2 className="h-5 w-5 text-primary" />
                     <CardTitle className="text-lg">Business snapshot</CardTitle>
                 </div>
+                <CardInfoPopover cardId="business-snapshot" />
             </CardHeader>
             <CardContent className="p-4 sm:p-6 space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">

@@ -5,6 +5,7 @@ import type { WorkflowErrorItem } from '../../backend/diligence/getWorkflowError
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 import { formatEasternTime } from '../utils/dateTime'
 import { classifyError } from '../utils/errorClassifier'
 
@@ -126,10 +127,13 @@ export default function WorkflowErrorLogCard({ rows, loading, error, onRefresh }
             <CardHeader className="border-b border-border bg-card/80">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                        <CardTitle className="flex items-center gap-2 text-xl">
-                            <AlertTriangle className="h-5 w-5 text-warning" />
-                            Workflow reliability &amp; AI Processing Alerts
-                        </CardTitle>
+                        <div className="flex items-center gap-2">
+                            <CardTitle className="flex items-center gap-2 text-xl">
+                                <AlertTriangle className="h-5 w-5 text-warning" />
+                                Workflow reliability &amp; AI Processing Alerts
+                            </CardTitle>
+                            <CardInfoPopover cardId="workflow-error-log" />
+                        </div>
                         <CardDescription className="mt-1">
                             Uncaught production failures recorded after automated retries and recovery paths are exhausted.
                         </CardDescription>

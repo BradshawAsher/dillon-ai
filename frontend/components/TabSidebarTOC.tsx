@@ -7,7 +7,7 @@ type TOCSection = {
     indent?: boolean
 }
 
-export type WorkspaceTab = 'overview' | 'analysis' | 'diagnostics' | 'diligence' | 'synthesis' | 'spending' | 'compare' | 'valuation' | 'returns' | 'growth' | 'structure' | 'negotiation' | 'documents' | 'history' | 'errors' | 'email' | 'evals' | 'faqs'
+export type WorkspaceTab = 'overview' | 'analysis' | 'diagnostics' | 'diligence' | 'synthesis' | 'spending' | 'compare' | 'valuation' | 'returns' | 'growth' | 'structure' | 'negotiation' | 'documents' | 'shortcuts' | 'history' | 'errors' | 'email' | 'evals' | 'faqs'
 
 const TAB_SECTIONS: Partial<Record<WorkspaceTab, TOCSection[]>> = {
     overview: [
@@ -168,7 +168,12 @@ const TAB_SECTIONS: Partial<Record<WorkspaceTab, TOCSection[]>> = {
         { id: 'faq-methodology', label: 'Financial Methodology' },
         { id: 'faq-troubleshooting', label: 'Platform Guidance' },
     ],
+    shortcuts: [
+        { id: 'shortcuts-hotkeys', label: 'Hotkeys Reference' },
+        { id: 'shortcuts-tester', label: 'Live Keyboard Tester' },
+    ],
 }
+
 
 /**
  * Top-of-Tab Horizontal Section Navigation Bar (Prominent TOC)

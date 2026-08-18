@@ -6,6 +6,7 @@ import { parseDocumentedFacts } from '../utils/evidence'
 import { resolveLoanTermYears } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type Props = {
     model: DealModel
@@ -76,6 +77,7 @@ export default function FinancingScenariosCard({ model }: Props) {
                     <div className="flex items-center gap-2">
                         <Landmark className="h-5 w-5 text-primary" />
                         <CardTitle className="text-lg">Financing scenarios</CardTitle>
+                        <CardInfoPopover cardId="financing-scenarios" />
                     </div>
                     <Badge variant="outline">{((model.interestRate ?? 0.07) * 100).toFixed(1)}% rate · {resolveLoanTermYears(model.amortizationYears, model.loanTermYears)}yr term</Badge>
                 </div>

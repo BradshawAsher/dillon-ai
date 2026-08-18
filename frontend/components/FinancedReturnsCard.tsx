@@ -9,6 +9,7 @@ import { buildDerivedEvidence, buildFactEvidence, parseDocumentedFacts, type Evi
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import { CashFlowChart } from './DealCharts'
 import InfoTip, { FINANCIAL_TERMS } from './InfoTip'
+import CardInfoPopover from './common/CardInfoPopover'
 
 function money(value: number) {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value)
@@ -144,6 +145,7 @@ export default function FinancedReturnsCard({ model, documents = [], onOpenEvide
                         <div className="flex items-center gap-2">
                             <Landmark className="h-5 w-5 text-primary" />
                             <CardTitle className="text-xl">Financed acquisition scenario</CardTitle>
+                            <CardInfoPopover cardId="financed-returns" />
                         </div>
                         <CardDescription className="mt-1">
                             Level-payment debt model with optional terminal sale proceeds.

@@ -4,7 +4,7 @@ import { HeartPulse } from 'lucide-react'
 import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
-import CardExplainerPopover from './CardExplainerPopover'
+import CardInfoPopover from './common/CardInfoPopover'
 import InPlaceEvidencePopover, { EvidenceDetails } from './InPlaceEvidencePopover'
 
 type Props = {
@@ -165,12 +165,7 @@ export default function FinancialHealthCard({ model }: Props) {
                         <HeartPulse className="h-5 w-5 text-primary" />
                         <CardTitle className="text-lg">Financial health</CardTitle>
                     </div>
-                    <CardExplainerPopover
-                        title="Financial Health & Ratio Benchmarks"
-                        whatIsIt="A diagnostic dashboard of foundational financial ratios derived directly from extracted financial statements, tax returns, and CIM data."
-                        howItWorks="Compares EBITDA margin, gross profit margin, debt leverage, and valuation multiples against SMB market benchmarks."
-                        whyItMatters="Rapidly flags balance sheet overleverage, compressed unit margins, or aggressive asking price multiples before entering deep LOI negotiations."
-                    />
+                    <CardInfoPopover cardId="financial-health" />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                     Click any ratio metric to inspect underlying document evidence and exact formulas

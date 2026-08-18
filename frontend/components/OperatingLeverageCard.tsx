@@ -4,7 +4,7 @@ import { Gauge } from 'lucide-react'
 import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
-import CardExplainerPopover from './CardExplainerPopover'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type Props = {
     model: DealModel
@@ -63,12 +63,7 @@ export default function OperatingLeverageCard({ model }: Props) {
                         <Gauge className="h-4 w-4 text-primary" />
                         <CardTitle className="text-lg">Operating leverage</CardTitle>
                     </div>
-                    <CardExplainerPopover
-                        title="Degree of Operating Leverage (DOL)"
-                        whatIsIt="Measures how sensitive the company's profit (EBITDA) is to changes in revenue. It shows the ratio of fixed costs (rent, heavy equipment) vs variable costs (raw materials)."
-                        howItWorks="A DOL of 2.5x means a 10% increase in revenue will produce a 25% increase in EBITDA, but a 10% decline in revenue will also drop EBITDA by 25%."
-                        whyItMatters="High operating leverage is powerful when growing sales, but high-risk during a recession because high fixed overhead cannot be cut quickly."
-                    />
+                    <CardInfoPopover cardId="operating-leverage" />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                     How much does EBITDA grow for each dollar of revenue growth?

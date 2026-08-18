@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 import type { DealModel } from '../hooks/backend/diligence'
 import { Badge } from '../lib/shadcn/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 import { computeAllCashReturns, type ResolvedInput } from '../utils/dealMath'
 import { buildDerivedEvidence, buildFactEvidence, parseDocumentedFacts, type EvidenceItem } from '../utils/evidence'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
@@ -151,6 +152,7 @@ export default function AllCashReturnsCard({ model, documents = [], onOpenEviden
                         <div className="flex items-center gap-2">
                             <Calculator className="h-5 w-5 text-primary" />
                             <CardTitle className="text-xl">All-cash baseline</CardTitle>
+                            <CardInfoPopover cardId="all-cash-baseline" />
                         </div>
                         <CardDescription className="mt-1">
                             Deterministic baseline using saved Deal Model inputs and, when set, terminal sale proceeds.

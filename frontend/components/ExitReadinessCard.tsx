@@ -5,6 +5,7 @@ import type { DealModel } from '../hooks/backend/diligence'
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type Props = {
     model: DealModel
@@ -59,9 +60,16 @@ export default function ExitReadinessCard({ model, synthesis }: Props) {
 
         const redFlagCount = synthesis?.redFlags?.length ?? 0
         result.push({
-            label: 'Risk profile for sale',
+            label: 'Clean risk profile',
             status: redFlagCount === 0 ? 'ready' : redFlagCount <= 2 ? 'partial' : 'not-ready',
-            detail: redFlagCount === 0 ? 'Clean risk profile — attractive to buyers' : redFlagCount <= 2 ? `${redFlagCount} red flags may require disclosure/mitigation` : `${redFlagCount} red flags will reduce buyer pool and price`,
+            detail: redFlagCount === 0 ? 'No major red flags to scare future buyers' : redFlagCount <= 2 ? `${redFlagCount} red flag(s) to resolve during hold period` : `${redFlagCount} red flags — significant remediation needed`,
+        })
+
+        const leverage = ((model.seniorDebtAmount ?? 0) + (model.sellerNoteAmount ?? 0)) / ebitda
+        result.push({
+            label: 'Deleveraging path',
+            status: leverage <= 2.5 ? 'ready' : leverage <= 4 ? 'partial' : 'not-ready',
+            detail: leverage <= 2.5 ? 'Low debt allows rapid equity build' : leverage <= 4 ? 'Moderate debt — standard deleveraging timeline' : 'High debt may consume cash needed for growth',
         })
 
         const hasManagement = synthesis ? !synthesis.redFlags.some(f => f.toLowerCase().includes('management') || f.toLowerCase().includes('key person') || f.toLowerCase().includes('owner')) : true
@@ -109,6 +117,7 @@ export default function ExitReadinessCard({ model, synthesis }: Props) {
                 <div className="flex items-center gap-2">
                     <LogOut className="h-4 w-4 text-primary" />
                     <CardTitle className="text-lg">Exit readiness assessment</CardTitle>
+                    <CardInfoPopover cardId="exit-readiness" />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                     How well-positioned is this deal for a profitable exit in {items.holdYears} years?

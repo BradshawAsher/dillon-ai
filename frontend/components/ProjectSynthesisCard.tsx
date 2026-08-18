@@ -10,6 +10,7 @@ import AcquisitionJudgmentCallout from './AcquisitionJudgmentCallout'
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 import { Progress } from '../lib/shadcn/progress'
 import { formatCurrencyValue, getSubmissionInsightTone } from '../utils/aiSubmissionData'
 import { downloadTextFile, fileSafeName } from '../utils/downloadFile'
@@ -571,7 +572,10 @@ export default function ProjectSynthesisCard({
             <CardHeader className="border-b border-border bg-card/80">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="space-y-1">
-                        <CardTitle className="text-xl">Project synthesis — final acquisition judgment</CardTitle>
+                        <div className="flex items-center gap-2">
+                            <CardTitle className="text-xl">Project synthesis — final acquisition judgment</CardTitle>
+                            <CardInfoPopover cardId="project-synthesis" />
+                        </div>
                         <CardDescription>
                             Cross-document reconciliation written by the n8n consolidator workflow: one judgment per project, with
                             conflicts, gaps, and negotiation levers pulled from every uploaded document.

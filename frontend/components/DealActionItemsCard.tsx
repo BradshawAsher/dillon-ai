@@ -6,6 +6,7 @@ import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
+import CardInfoPopover from './common/CardInfoPopover'
 import {
     getStoredActionItems,
     saveStoredActionItems,
@@ -147,6 +148,7 @@ export default function DealActionItemsCard({ model, synthesis, documents }: Pro
                     <div className="flex items-center gap-2">
                         <Zap className="h-5 w-5 text-primary" />
                         <CardTitle className="text-lg">Next actions</CardTitle>
+                        <CardInfoPopover cardId="deal-action-items" />
                     </div>
                     <div className="flex items-center gap-2">
                         <Badge variant="secondary">{doneCount}/{totalCount}</Badge>

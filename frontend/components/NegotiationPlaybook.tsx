@@ -5,6 +5,7 @@ import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import type { DealModel } from '../hooks/backend/diligence'
 import { Badge } from '../lib/shadcn/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 import { parseDocumentedFacts } from '../utils/evidence'
 
 type Props = {
@@ -80,6 +81,7 @@ export default function NegotiationPlaybook({ synthesis, model }: Props) {
                 <div className="flex items-center gap-2">
                     <Handshake className="h-5 w-5 text-primary" />
                     <CardTitle className="text-lg font-bold">Negotiation playbook</CardTitle>
+                    <CardInfoPopover cardId="negotiation-playbook" />
                     <Badge variant="secondary" className="text-[10px]">{playbook.length} tactics</Badge>
                 </div>
             </CardHeader>

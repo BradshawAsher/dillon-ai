@@ -60,6 +60,7 @@ const WorkflowErrorLogCard = lazyWithRetry(() => import('../components/WorkflowE
 const EvalDashboardTab = lazyWithRetry(() => import('../components/EvalDashboardTab'))
 const SpendingAnalyticsTab = lazyWithRetry(() => import('../components/SpendingAnalyticsTab'))
 const TechnicalFaqWorkspaceTab = lazyWithRetry(() => import('../components/TechnicalFaqWorkspaceTab'))
+const KeyboardShortcutsWorkspaceView = lazyWithRetry(() => import('../components/views/KeyboardShortcutsWorkspaceView'))
 import LatestSubmissionSection from '../components/dashboard/LatestSubmissionSection'
 import { BatchProgressCard } from '../components/dashboard/BatchProgressCard'
 import LegacyDiligenceBackupCard from '../components/dashboard/LegacyDiligenceBackupCard'
@@ -1771,6 +1772,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                     isDiligenceComplete={activeProjectDocuments.length > 0 && !isCurrentProjectProcessingDocuments}
                     isSynthesisReady={Boolean(activeProjectSynthesis && !isCurrentProjectSynthesisRunning && !isCurrentProjectProcessingDocuments)}
                     isSynthesisRunning={isCurrentProjectSynthesisRunning}
+                    onStartTabTour={walkthrough.startTabTour}
                     onTabChange={(tab) => {
                         setActiveWorkspaceTab(tab)
                         const workspace = document.getElementById('deal-workspace')
@@ -2209,6 +2211,21 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                     {activeWorkspaceTab === 'faqs' ? (
                         <section id="faqs-header" className="scroll-mt-6 space-y-6">
                             <TechnicalFaqWorkspaceTab onSwitchTab={(tab) => setActiveWorkspaceTab(tab as WorkspaceTab)} />
+                        </section>
+                    ) : null}
+
+                    {activeWorkspaceTab === 'shortcuts' ? (
+                        <section id="shortcuts-header" className="scroll-mt-6 space-y-6">
+                            <KeyboardShortcutsWorkspaceView
+                                onNavigateTab={(tab) => {
+                                    setActiveWorkspaceTab(tab)
+                                    const workspace = document.getElementById('deal-workspace')
+                                    if (workspace) {
+                                        workspace.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                                    }
+                                }}
+                                onStartTour={() => walkthrough.startTour('core-fast', 0)}
+                            />
                         </section>
                     ) : null}
 

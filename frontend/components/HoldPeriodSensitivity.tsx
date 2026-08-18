@@ -5,6 +5,7 @@ import { calculateIrr } from '../utils/dealMath'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type Props = {
     model: DealModel
@@ -66,6 +67,7 @@ export default function HoldPeriodSensitivity({ model }: Props) {
                         <div className="flex items-center gap-2">
                             <Timer className="h-5 w-5 text-primary" />
                             <CardTitle className="text-xl">Hold period sensitivity</CardTitle>
+                            <CardInfoPopover cardId="hold-period-sensitivity" />
                         </div>
                         <CardDescription className="mt-1">IRR at different hold periods and revenue growth rates ({exitMult.toFixed(1)}x exit, {(baseMargin * 100).toFixed(0)}% margin)</CardDescription>
                     </div>

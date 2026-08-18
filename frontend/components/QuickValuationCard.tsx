@@ -5,6 +5,7 @@ import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence
 import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type Props = {
     model: DealModel
@@ -86,6 +87,7 @@ export default function QuickValuationCard({ model, synthesis }: Props) {
                     <div className="flex items-center gap-2">
                         <Calculator className="h-5 w-5 text-primary" />
                         <CardTitle className="text-lg">Quick valuation</CardTitle>
+                        <CardInfoPopover cardId="quick-valuation" />
                     </div>
                     <Badge variant="outline">Back-of-napkin</Badge>
                 </div>
