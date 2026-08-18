@@ -134,6 +134,26 @@ const architecture: ArchitectureItem[] = [
             'Exit-value sensitivity needs revenue + growth + margin + exit multiple all set',
         ],
     },
+    {
+        area: 'Dillon AI Copilot & 3-Tier query engine',
+        description: 'Interactive M&A diligence assistant with 3-tier routing: Cloud n8n Webhook -> Direct LLM Keys -> In-Browser Deterministic Engine.',
+        n8nWorkflow: '[Pod 1] - Financial DD Agent - Chat & On-Demand Copilot Webhook',
+        n8nWorkflowId: 'LBZVN8zeFT03Wn12',
+        frontendFiles: [
+            'frontend/components/DealChatPanel.tsx — floating chat panel, prompt builder, markdown parser, heuristic rules',
+            'frontend/utils/evidence.ts — parses documented facts injected into AI context',
+            'frontend/utils/dealMath.ts — financial sanity check helpers',
+        ],
+        edgeCases: [
+            'Tier 1 (Cloud AI): Webhook call to n8n backed by GPT-4o / Claude / Gemini with complete deal context and cross-project portfolio state',
+            'Tier 2 (Direct LLM): User-configured OpenAI/Anthropic/Gemini keys execute client-side API requests directly with zero intermediate server hops',
+            'Tier 3 (In-Browser Deterministic): 0ms latency offline heuristic engine executing 20+ specialized M&A rule matchers',
+            'Deterministic Disclaimer: Shows amber top banner when Tier 3 is triggered, with one-click "Run with Live LLM" action to force live AI execution',
+            'Strict Link Cap: Caps deep-links to at most 1–2 card anchors per response to prevent cognitive overload',
+            'What it is made to do: Auditing extracted financials, QoE add-backs, DSCR debt math, red flags, and 1-click workspace navigation',
+            'What it is NOT made to do: Cannot provide legal CPA audit opinions, cannot hallucinate facts not in deal files, cannot modify database schemas or wire funds',
+        ],
+    },
 ]
 
 export default function SystemArchitectureCard() {

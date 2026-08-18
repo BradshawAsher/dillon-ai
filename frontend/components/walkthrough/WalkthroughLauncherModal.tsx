@@ -22,6 +22,8 @@ import {
     SUPADEMO_DEEP_DEMO_ID,
     SUPADEMO_DEEP_DIRECT_URL,
     SUPADEMO_DEEP_EMBED_URL,
+    YOUTUBE_SHORT_DIRECT_URL,
+    YOUTUBE_SHORT_EMBED_URL,
 } from '../SupademoModal'
 import { TOUR_PLAYLISTS } from './walkthroughStepsData'
 import type { TourPlaylistId, WalkthroughResumeState } from './walkthroughTypes'
@@ -42,7 +44,7 @@ export function WalkthroughLauncherModal({
     onResumeTour,
 }: WalkthroughLauncherModalProps) {
     const [activeTab, setActiveTab] = useState<'interactive' | 'video'>('interactive')
-    const [videoMode, setVideoMode] = useState<'quick' | 'deep'>('quick')
+    const [videoMode, setVideoMode] = useState<'yt' | 'quick' | 'deep'>('yt')
 
     if (!isOpen) return null
 
@@ -218,11 +220,24 @@ export function WalkthroughLauncherModal({
                     </div>
                 )}
 
-                {/* Tab 2: Recorded Video Demos (Supademo) */}
+                {/* Tab 2: Recorded Video Demos (YouTube + Supademo) */}
                 {activeTab === 'video' && (
                     <div className="mt-6 space-y-4">
-                        <div className="flex items-center justify-between gap-3 bg-muted/40 p-2 rounded-lg border border-border">
-                            <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center justify-between gap-3 bg-muted/40 p-2 rounded-lg border border-border">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    variant={videoMode === 'yt' ? 'default' : 'ghost'}
+                                    className="text-xs gap-1.5"
+                                    onClick={() => setVideoMode('yt')}
+                                >
+                                    <Video className="h-3.5 w-3.5" />
+                                    <span>2-Min YouTube Video</span>
+                                    <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 bg-red-500/10 text-red-500 border-red-500/30">
+                                        HD
+                                    </Badge>
+                                </Button>
                                 <Button
                                     type="button"
                                     size="sm"
@@ -243,24 +258,35 @@ export function WalkthroughLauncherModal({
                                 </Button>
                             </div>
                             <a
-                                href={videoMode === 'quick' ? SUPADEMO_DIRECT_URL : SUPADEMO_DEEP_DIRECT_URL}
+                                href={videoMode === 'yt' ? YOUTUBE_SHORT_DIRECT_URL : videoMode === 'quick' ? SUPADEMO_DIRECT_URL : SUPADEMO_DEEP_DIRECT_URL}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-xs text-primary hover:underline flex items-center gap-1 font-medium"
                             >
-                                <span>Open Fullscreen</span>
+                                <span>{videoMode === 'yt' ? 'Watch on YouTube' : 'Open Fullscreen'}</span>
                                 <ChevronRight className="h-3.5 w-3.5" />
                             </a>
                         </div>
 
                         <div className="relative w-full rounded-xl overflow-hidden border border-border bg-black aspect-video">
-                            <iframe
-                                src={videoMode === 'quick' ? SUPADEMO_EMBED_URL : SUPADEMO_DEEP_EMBED_URL}
-                                loading="lazy"
-                                title="Supademo M&A Diligence Engine"
-                                allow="clipboard-write; fullscreen; autoplay; encrypted-media; picture-in-picture"
-                                className="absolute inset-0 h-full w-full border-0"
-                            />
+                            {videoMode === 'yt' ? (
+                                <iframe
+                                    src={`${YOUTUBE_SHORT_EMBED_URL}?autoplay=1&rel=0`}
+                                    loading="lazy"
+                                    title="MergeWorks — 2-Min Video Walkthrough"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                    allowFullScreen
+                                    className="absolute inset-0 h-full w-full border-0"
+                                />
+                            ) : (
+                                <iframe
+                                    src={videoMode === 'quick' ? SUPADEMO_EMBED_URL : SUPADEMO_DEEP_EMBED_URL}
+                                    loading="lazy"
+                                    title="Supademo M&A Diligence Engine"
+                                    allow="clipboard-write; fullscreen; autoplay; encrypted-media; picture-in-picture"
+                                    className="absolute inset-0 h-full w-full border-0"
+                                />
+                            )}
                         </div>
                     </div>
                 )}

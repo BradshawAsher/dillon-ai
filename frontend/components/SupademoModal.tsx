@@ -56,6 +56,22 @@ export const SUPADEMO_DEEP_IFRAME_CODE = `<div style="position: relative; box-si
   ></iframe>
 </div>`
 
+export const YOUTUBE_SHORT_VIDEO_ID = 'ttm2wTX6oPM'
+export const YOUTUBE_SHORT_DIRECT_URL = 'https://www.youtube.com/watch?v=ttm2wTX6oPM'
+export const YOUTUBE_SHORT_EMBED_URL = 'https://www.youtube.com/embed/ttm2wTX6oPM'
+
+export const YOUTUBE_SHORT_IFRAME_CODE = `<div style="position: relative; box-sizing: content-box; width: 100%; aspect-ratio: 16/9; max-height: 80vh;">
+  <iframe
+    src="${YOUTUBE_SHORT_EMBED_URL}?autoplay=1&rel=0"
+    loading="lazy"
+    title="MergeWorks — 2-Min Video Walkthrough"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+    frameborder="0"
+    allowfullscreen
+    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; border-radius: 12px;"
+  ></iframe>
+</div>`
+
 export const STEPS_ROADMAP = [
     { num: 1, title: 'Multi-Doc Ingestion', desc: 'Drag-and-drop CIMs, LOIs, tax filings, and financials.', tag: 'Ingestion' },
     { num: 2, title: 'Deterministic Extraction', desc: 'AI extracts verified revenue, EBITDA, SDE, and officer salaries.', tag: 'Scorecards' },
@@ -134,7 +150,11 @@ export default function SupademoModal({
 
     const handleCopyEmbed = async () => {
         try {
-            const codeToCopy = selectedDemo === 'deep-supademo' ? SUPADEMO_DEEP_IFRAME_CODE : SUPADEMO_IFRAME_CODE
+            const codeToCopy = selectedDemo === 'short-yt'
+                ? YOUTUBE_SHORT_IFRAME_CODE
+                : selectedDemo === 'deep-supademo'
+                    ? SUPADEMO_DEEP_IFRAME_CODE
+                    : SUPADEMO_IFRAME_CODE
             await navigator.clipboard.writeText(codeToCopy)
             setCopied(true)
             setTimeout(() => setCopied(false), 2500)
@@ -143,7 +163,11 @@ export default function SupademoModal({
         }
     }
 
-    const currentDirectUrl = selectedDemo === 'deep-supademo' ? SUPADEMO_DEEP_DIRECT_URL : SUPADEMO_DIRECT_URL
+    const currentDirectUrl = selectedDemo === 'short-yt'
+        ? YOUTUBE_SHORT_DIRECT_URL
+        : selectedDemo === 'deep-supademo'
+            ? SUPADEMO_DEEP_DIRECT_URL
+            : SUPADEMO_DIRECT_URL
     const currentStepsRoadmap = selectedDemo === 'deep-supademo' ? DEEP_STEPS_ROADMAP : STEPS_ROADMAP
 
     return (
@@ -164,16 +188,26 @@ export default function SupademoModal({
                         <div>
                             <div className="flex items-center gap-2">
                                 <h3 className="text-sm font-bold text-foreground">
-                                    {selectedDemo === 'deep-supademo' ? 'MergeWorks Deal Room Deep Dive' : 'MergeWorks Interactive Product Walkthrough'}
+                                    {selectedDemo === 'short-yt'
+                                        ? 'MergeWorks Video Walkthrough'
+                                        : selectedDemo === 'deep-supademo'
+                                            ? 'MergeWorks Deal Room Deep Dive'
+                                            : 'MergeWorks Interactive Product Walkthrough'}
                                 </h3>
                                 <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 bg-emerald-500/10 text-emerald-500 border-emerald-500/20 font-semibold">
-                                    {selectedDemo === 'deep-supademo' ? '30-STEP LIVE TOUR' : '10-STEP LIVE TOUR'}
+                                    {selectedDemo === 'short-yt'
+                                        ? 'YOUTUBE VIDEO'
+                                        : selectedDemo === 'deep-supademo'
+                                            ? '30-STEP LIVE TOUR'
+                                            : '10-STEP LIVE TOUR'}
                                 </Badge>
                             </div>
                             <p className="text-xs text-muted-foreground hidden sm:block">
-                                {selectedDemo === 'deep-supademo'
-                                    ? 'In-depth interactive due diligence tour: OCR, add-backs, red flags & deal structuring.'
-                                    : 'Interactive deal diligence simulation: Ingestion → Scorecards → Valuation → IC Report.'}
+                                {selectedDemo === 'short-yt'
+                                    ? 'Executive walkthrough: multi-document OCR, table extraction, and valuation matrix.'
+                                    : selectedDemo === 'deep-supademo'
+                                        ? 'In-depth interactive due diligence tour: OCR, add-backs, red flags & deal structuring.'
+                                        : 'Interactive deal diligence simulation: Ingestion → Scorecards → Valuation → IC Report.'}
                             </p>
                         </div>
                     </div>
@@ -330,9 +364,6 @@ export default function SupademoModal({
                                     loading="lazy"
                                     title="MergeWorks — Financial Due Diligence Engine (10-Step Tour)"
                                     allow="clipboard-write; fullscreen; autoplay; encrypted-media; picture-in-picture"
-                                    frameBorder="0"
-                                    webkitallowfullscreen="true"
-                                    mozallowfullscreen="true"
                                     allowFullScreen
                                     className="w-full h-full rounded-xl shadow-2xl border border-white/10"
                                     style={{
@@ -348,9 +379,6 @@ export default function SupademoModal({
                                     loading="lazy"
                                     title="MergeWorks — Full Deal Diligence Deep Dive (30 Steps)"
                                     allow="clipboard-write; fullscreen; autoplay; encrypted-media; picture-in-picture"
-                                    frameBorder="0"
-                                    webkitallowfullscreen="true"
-                                    mozallowfullscreen="true"
                                     allowFullScreen
                                     className="w-full h-full rounded-xl shadow-2xl border border-white/10"
                                     style={{
@@ -361,30 +389,18 @@ export default function SupademoModal({
                             )}
 
                             {selectedDemo === 'short-yt' && (
-                                <div className="max-w-2xl text-center p-8 space-y-5 bg-card/80 rounded-2xl border border-border shadow-2xl">
-                                    <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-red-500/10 text-red-500 shadow-inner">
-                                        <Video className="h-7 w-7" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <h4 className="text-xl font-bold text-foreground">
-                                            3-Minute Executive Video Overview
-                                        </h4>
-                                        <p className="text-sm text-muted-foreground max-w-lg mx-auto leading-relaxed">
-                                            High-tempo visual summary demonstrating multi-document OCR, table extraction, citation inspection, and valuation gap detection in under 180 seconds.
-                                        </p>
-                                    </div>
-                                    <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-                                        <Button
-                                            type="button"
-                                            size="sm"
-                                            className="bg-primary text-primary-foreground font-semibold gap-1.5"
-                                            onClick={() => setSelectedDemo('deep-supademo')}
-                                        >
-                                            <Sparkles className="h-3.5 w-3.5" />
-                                            Launch 30-Step Interactive Deep Dive
-                                        </Button>
-                                    </div>
-                                </div>
+                                <iframe
+                                    src={`${YOUTUBE_SHORT_EMBED_URL}?autoplay=1&rel=0`}
+                                    loading="lazy"
+                                    title="MergeWorks — 2-Min Video Walkthrough"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                    allowFullScreen
+                                    className="w-full h-full rounded-xl shadow-2xl border border-white/10"
+                                    style={{
+                                        minHeight: '100%',
+                                        aspectRatio: '16/9',
+                                    }}
+                                />
                             )}
 
                             {selectedDemo === 'long-yt' && (

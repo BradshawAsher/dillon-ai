@@ -13,7 +13,7 @@ import {
 import { Badge } from '../lib/shadcn/badge'
 import type { WalkthroughResumeState } from './walkthrough/walkthroughTypes'
 
-export type DemoVariantId = 'native-core' | 'native-deep' | 'native-quest' | 'short-supademo' | 'deep-supademo'
+export type DemoVariantId = 'native-core' | 'native-deep' | 'native-quest' | 'short-yt' | 'short-supademo' | 'deep-supademo'
 
 export interface DemoItem {
     id: DemoVariantId
@@ -66,15 +66,15 @@ export const WORKSPACE_DEMOS: DemoItem[] = [
         badgeVariant: 'secondary',
     },
     {
-        id: 'short-supademo',
-        title: 'Recorded Video Showcase',
-        shortTitle: 'Video Demo',
+        id: 'short-yt',
+        title: '2-Min Video Walkthrough',
+        shortTitle: 'YouTube Walkthrough',
         category: 'Video Showcase',
-        duration: '2 min',
-        description: 'High-res recorded screen capture demo of the M&A diligence workspace.',
+        duration: '~2 min',
+        description: 'High-tempo video walkthrough of deal room OCR ingestion, QoE adjustments, and valuation matrices.',
         status: 'active',
         icon: Video,
-        badgeText: 'Video Capture',
+        badgeText: 'YouTube',
         badgeVariant: 'outline',
     },
 ]

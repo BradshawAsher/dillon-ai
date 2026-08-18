@@ -638,7 +638,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         return [...uniqueDocs.values()]
     }, [activeProjectId, submissionHistory, projectSummaries])
 
-    const handleStartTour = useCallback((tourId: 'core-fast' | 'deep-dive' | 'interactive-quest') => {
+    const handleStartTour = useCallback((tourId: string) => {
         if (!isExampleMode && activeProjectDocuments.length === 0) {
             setDataSource('mock')
         }
