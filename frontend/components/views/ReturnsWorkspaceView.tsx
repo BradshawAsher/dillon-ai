@@ -61,7 +61,9 @@ export function ReturnsWorkspaceView({
             </div>
             {isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}
             <div id="returns-financed" className="scroll-mt-6">
-                <FinancedReturnsCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} />
+                <div id="returns-waterfall" className="scroll-mt-6">
+                    <FinancedReturnsCard model={returnsDisplayModel} documents={submissionHistory} onOpenEvidence={setActiveEvidence} />
+                </div>
             </div>
             {isReturnsIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}
             <div id="returns-scenario" className="scroll-mt-6">

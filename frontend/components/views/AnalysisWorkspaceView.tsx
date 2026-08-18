@@ -193,8 +193,10 @@ export function AnalysisWorkspaceView({
                     <div id="analysis-health" className="scroll-mt-6">
                         <FinancialHealthCard model={hydratedDealModel} />
                     </div>
-                    <div id="analysis-ebitda-quality" className="scroll-mt-6">
-                        <EBITDAQualityScoreCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
+                    <div id="analysis-ebitda-quality" data-analysis-qoe className="scroll-mt-6">
+                        <div id="analysis-qoe" className="scroll-mt-6">
+                            <EBITDAQualityScoreCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
+                        </div>
                     </div>
                     <div id="analysis-benchmark" className="scroll-mt-6">
                         <BenchmarkComparisonCard model={hydratedDealModel} />

@@ -29,6 +29,8 @@ type CommandPaletteProps = {
     onOpenChat: () => void
     onCopySummary?: () => void
     onScrollToUpload?: () => void
+    onStartTour?: (tourId: 'core-fast' | 'deep-dive' | 'interactive-quest') => void
+    onOpenWalkthrough?: () => void
 }
 
 type Command = {
@@ -50,6 +52,8 @@ export default function CommandPalette({
     onOpenChat,
     onCopySummary,
     onScrollToUpload,
+    onStartTour,
+    onOpenWalkthrough,
 }: CommandPaletteProps) {
     const [query, setQuery] = useState('')
     const [selectedIndex, setSelectedIndex] = useState(0)
@@ -169,6 +173,38 @@ export default function CommandPalette({
             action: onOpenChat,
             group: 'Actions',
         },
+        ...(onStartTour ? [
+            {
+                id: 'tour-core',
+                label: 'Launch 10-Step Core Guided Tour (~90 sec)',
+                icon: <Sparkles className="h-4 w-4 text-primary" />,
+                action: () => onStartTour('core-fast'),
+                group: 'Guided Tours',
+            },
+            {
+                id: 'tour-deep',
+                label: 'Launch 28-Step Diligence Deep Dive (~3.5 min)',
+                icon: <FlaskConical className="h-4 w-4 text-emerald-500" />,
+                action: () => onStartTour('deep-dive'),
+                group: 'Guided Tours',
+            },
+            {
+                id: 'tour-quest',
+                label: 'Launch Interactive Hands-On Quest (Gamified Tutorial)',
+                icon: <TrendingUp className="h-4 w-4 text-amber-500" />,
+                action: () => onStartTour('interactive-quest'),
+                group: 'Guided Tours',
+            },
+        ] : []),
+        ...(onOpenWalkthrough ? [
+            {
+                id: 'tour-launcher',
+                label: 'Open Walkthroughs & Video Demos Launcher',
+                icon: <Sparkles className="h-4 w-4 text-primary" />,
+                action: onOpenWalkthrough,
+                group: 'Guided Tours',
+            },
+        ] : []),
         ...(onCopySummary ? [{
             id: 'copy-summary',
             label: 'Copy deal summary to clipboard',

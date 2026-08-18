@@ -30,6 +30,9 @@ import EvidenceDrawer from '../components/EvidenceDrawer'
 import DashboardFaqSidebar from '../components/DashboardFaqSidebar'
 import SupademoModal, { type DemoVariantId } from '../components/SupademoModal'
 import { WorkspaceDemoGalleryBar } from '../components/WorkspaceDemoGalleryBar'
+import { useNativeWalkthrough } from '../components/walkthrough/useNativeWalkthrough'
+import { WalkthroughLauncherModal } from '../components/walkthrough/WalkthroughLauncherModal'
+import { NativeWalkthroughOverlay } from '../components/walkthrough/NativeWalkthroughOverlay'
 import { OverviewWorkspaceView } from '../components/views/OverviewWorkspaceView'
 import { DiligenceWorkspaceView } from '../components/views/DiligenceWorkspaceView'
 import { ReturnsWorkspaceView } from '../components/views/ReturnsWorkspaceView'
@@ -194,6 +197,27 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     const [isWalkthroughModalOpen, setIsWalkthroughModalOpen] = useState(false)
     const [selectedWalkthroughDemoId, setSelectedWalkthroughDemoId] = useState<DemoVariantId>('short-supademo')
     const [isLeftQuickDockVisible, setIsLeftQuickDockVisible] = useState(true)
+
+    const walkthrough = useNativeWalkthrough({
+        activeTab: activeWorkspaceTab,
+        onTabChange: setActiveWorkspaceTab,
+    })
+
+    // Auto-launch walkthrough if requested via URL hash or search params
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        const hash = window.location.hash || ''
+        const search = window.location.search || ''
+        const fullQuery = `${hash}&${search}`
+        if (fullQuery.includes('walkthrough=core') || fullQuery.includes('tour=core')) {
+            walkthrough.startTour('core-fast')
+        } else if (fullQuery.includes('walkthrough=deep') || fullQuery.includes('tour=deep')) {
+            walkthrough.startTour('deep-dive')
+        } else if (fullQuery.includes('walkthrough=quest') || fullQuery.includes('tour=quest')) {
+            walkthrough.startTour('interactive-quest')
+        }
+    }, [])
+
     const { data: diligenceData, error } = useGetDiligenceData()
     const {
         data: submissionHistoryData,
@@ -609,6 +633,20 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         })
         return [...uniqueDocs.values()]
     }, [activeProjectId, submissionHistory, projectSummaries])
+
+    const handleStartTour = useCallback((tourId: 'core-fast' | 'deep-dive' | 'interactive-quest') => {
+        if (!isExampleMode && activeProjectDocuments.length === 0) {
+            setDataSource('mock')
+        }
+        walkthrough.startTour(tourId)
+    }, [activeProjectDocuments.length, isExampleMode, walkthrough])
+
+    const handleResumeTour = useCallback(() => {
+        if (!isExampleMode && activeProjectDocuments.length === 0) {
+            setDataSource('mock')
+        }
+        walkthrough.resumeTour()
+    }, [activeProjectDocuments.length, isExampleMode, walkthrough])
 
     const hydratedDealModel = useMemo(
         () => hydrateModelFactsFromDocuments(activeDealModel, activeProjectDocuments),
@@ -1560,6 +1598,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                     isActiveSubmissionStatus={isActiveSubmissionStatus}
                     onReturnToLanding={onReturnToLanding}
                     onOpenWalkthrough={() => setIsWalkthroughModalOpen(true)}
+                    resumeState={walkthrough.resumeState}
+                    onResumeTour={handleResumeTour}
                 />
 
                 <div className="mx-auto max-w-[1440px] px-4 pb-5 sm:px-6 lg:px-8">
@@ -1704,9 +1744,19 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
                 {/* Interactive Product Walkthrough & Video Gallery Dock */}
                 <WorkspaceDemoGalleryBar
+                    resumeState={walkthrough.resumeState}
+                    onResumeTour={handleResumeTour}
                     onSelectDemo={(demoId) => {
-                        setSelectedWalkthroughDemoId(demoId)
-                        setIsWalkthroughModalOpen(true)
+                        if (demoId === 'native-core') {
+                            handleStartTour('core-fast')
+                        } else if (demoId === 'native-deep') {
+                            handleStartTour('deep-dive')
+                        } else if (demoId === 'native-quest') {
+                            handleStartTour('interactive-quest')
+                        } else {
+                            setSelectedWalkthroughDemoId(demoId)
+                            setIsWalkthroughModalOpen(true)
+                        }
                     }}
                 />
 
@@ -2225,6 +2275,22 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 </span>
             </button>
 
+            {/* Resume Guided Tour Button (Directly under Activity) */}
+            {walkthrough.resumeState && !walkthrough.isActive && (
+                <button
+                    type="button"
+                    onClick={handleResumeTour}
+                    className="fixed right-0 top-60 z-40 flex items-center gap-2 rounded-l-xl border border-r-0 border-primary/80 bg-gradient-to-r from-primary to-emerald-600 text-white px-3 py-2.5 shadow-xl backdrop-blur-md transition-all duration-200 hover:pl-4 group animate-pulse hover:animate-none cursor-pointer"
+                    title={`Resume ${walkthrough.resumeState.playlistTitle} (Step ${walkthrough.resumeState.stepIndex + 1}/${walkthrough.resumeState.totalSteps})`}
+                    aria-label="Resume Guided Tour"
+                >
+                    <Play className="h-4 w-4 shrink-0 fill-current" />
+                    <span className="text-xs font-bold tracking-tight hidden sm:inline">
+                        Resume Tour ({walkthrough.resumeState.stepIndex + 1}/{walkthrough.resumeState.totalSteps})
+                    </span>
+                </button>
+            )}
+
             <aside
                 aria-label="Quick Actions"
                 className={`fixed bottom-2.5 left-3 z-40 transition-all duration-300 ${
@@ -2353,6 +2419,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 onRequeueNewProject={handleRequeueNewProject}
                 retryingRequestId={retryingRequestId}
                 submissionHistory={submissionHistory}
+                resumeState={walkthrough.resumeState}
+                onResumeTour={handleResumeTour}
             />
 
             <Suspense fallback={null}>
@@ -2391,10 +2459,12 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                     onToggleTheme={() => { const next = currentTheme === 'dark' ? 'light' : currentTheme === 'light' ? 'system' : 'dark'; setCurrentTheme(next); setStoredTheme(next) }}
                     onExportMarkdown={() => { const name = dealName || suggestedProjectName; const safeName = name.replace(/[^a-zA-Z0-9-_]/g, '_').slice(0, 50) || 'deal'; downloadFile(buildMarkdownReport(hydratedDealModel, activeProjectSynthesis ?? undefined, name), `${safeName}_summary.md`, 'text/markdown') }}
                     onExportJson={() => { const name = dealName || suggestedProjectName; const safeName = name.replace(/[^a-zA-Z0-9-_]/g, '_').slice(0, 50) || 'deal'; downloadFile(JSON.stringify(buildJsonExport(hydratedDealModel, activeProjectSynthesis ?? undefined, name), null, 2), `${safeName}_export.json`, 'application/json') }}
-                    onShowShortcuts={() => { }}
+                    onShowShortcuts={() => { setIsShortcutsOpen(true) }}
                     onOpenChat={() => { }}
                     onCopySummary={() => { const name = dealName || suggestedProjectName; navigator.clipboard.writeText(buildMarkdownReport(hydratedDealModel, activeProjectSynthesis ?? undefined, name)) }}
                     onScrollToUpload={() => { document.querySelector('[data-project-intake]')?.scrollIntoView({ behavior: 'smooth' }) }}
+                    onStartTour={(tourId) => handleStartTour(tourId)}
+                    onOpenWalkthrough={() => setIsWalkthroughModalOpen(true)}
                 />
             </Suspense>
 
@@ -2415,10 +2485,16 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 onSwitchTab={setActiveWorkspaceTab}
                 onOpenWalkthrough={() => setIsWalkthroughModalOpen(true)}
             />
-            <SupademoModal
+            <WalkthroughLauncherModal
                 isOpen={isWalkthroughModalOpen}
-                defaultDemoId={selectedWalkthroughDemoId}
                 onClose={() => setIsWalkthroughModalOpen(false)}
+                onStartTour={(tourId) => handleStartTour(tourId)}
+                resumeState={walkthrough.resumeState}
+                onResumeTour={handleResumeTour}
+            />
+            <NativeWalkthroughOverlay
+                walkthrough={walkthrough}
+                dealName={dealName || (isExampleMode ? 'Apex Industrial Technologies (Atlas Demo)' : (activeProjectId ? `Project #${activeProjectId}` : 'Apex Industrial Technologies'))}
             />
         </div>
     )

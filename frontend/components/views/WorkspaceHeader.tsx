@@ -1,5 +1,5 @@
 import React from 'react'
-import { FolderKanban, Moon, Sun, Key, Globe, Play } from 'lucide-react'
+import { FolderKanban, Moon, Sun, Key, Globe, Play, Compass, Sparkles } from 'lucide-react'
 import { Badge } from '../../lib/shadcn/badge'
 import { Button } from '../../lib/shadcn/button'
 import DealStageIndicator from '../DealStageIndicator'
@@ -8,6 +8,8 @@ import ExportDealButton from '../ExportDealButton'
 import KeyboardShortcutsDialog from '../KeyboardShortcutsDialog'
 import NotificationCenter, { type Notification } from '../NotificationCenter'
 import LoginButton from '../AuthGate'
+
+import type { WalkthroughResumeState } from '../walkthrough/walkthroughTypes'
 
 type WorkspaceHeaderProps = {
     isExampleMode: boolean
@@ -30,6 +32,8 @@ type WorkspaceHeaderProps = {
     isActiveSubmissionStatus: (status: any) => boolean
     onReturnToLanding?: () => void
     onOpenWalkthrough?: () => void
+    resumeState?: WalkthroughResumeState | null
+    onResumeTour?: () => void
 }
 
 export function WorkspaceHeader({
@@ -53,6 +57,8 @@ export function WorkspaceHeader({
     isActiveSubmissionStatus,
     onReturnToLanding,
     onOpenWalkthrough,
+    resumeState,
+    onResumeTour,
 }: WorkspaceHeaderProps) {
     return (
         <header className="dashboard-header-mesh">
@@ -73,18 +79,34 @@ export function WorkspaceHeader({
                             hasActiveSubmissions={activeProjectDocuments.some((d) => isActiveSubmissionStatus(d.status))}
                             hasErrors={activeProjectDocuments.some((d) => ['failed', 'error', 'rejected'].includes(String(d.status ?? '').trim().toLowerCase()))}
                         />
+                        {resumeState && onResumeTour && (
+                            <Button
+                                type="button"
+                                variant="default"
+                                size="sm"
+                                className="gap-2 bg-gradient-to-r from-primary to-emerald-500 hover:from-primary/90 hover:to-emerald-500/90 text-primary-foreground font-semibold shadow-md animate-pulse hover:animate-none"
+                                onClick={onResumeTour}
+                                title={`Resume ${resumeState.playlistTitle} from Step ${resumeState.stepIndex + 1}: ${resumeState.stepTitle}`}
+                            >
+                                <Play className="h-3.5 w-3.5 fill-current" />
+                                <span className="hidden sm:inline">Resume Tour</span>
+                                <Badge variant="secondary" className="h-5 px-1.5 text-[10px] bg-white/20 text-white font-mono">
+                                    Step {resumeState.stepIndex + 1}/{resumeState.totalSteps}
+                                </Badge>
+                            </Button>
+                        )}
                         {onOpenWalkthrough && (
                             <Button
                                 type="button"
                                 variant="outline"
                                 className="gap-2 border-primary/40 bg-primary/10 hover:bg-primary/20 text-primary font-semibold shadow-xs"
                                 onClick={onOpenWalkthrough}
-                                title="Open Interactive 10-Step Supademo Walkthrough"
+                                title="Open Native Guided Walkthroughs & Interactive Demos"
                             >
-                                <Play className="h-4 w-4 text-primary fill-primary/20" />
-                                <span className="hidden sm:inline">10-Step Demo</span>
-                                <Badge variant="default" className="h-5 px-1.5 text-[10px] bg-primary text-primary-foreground font-mono">
-                                    10
+                                <Sparkles className="h-4 w-4 text-primary animate-pulse" />
+                                <span className="hidden sm:inline">Guided Tour</span>
+                                <Badge variant="default" className="h-5 px-1.5 text-[10px] bg-primary text-primary-foreground font-semibold">
+                                    Interactive
                                 </Badge>
                             </Button>
                         )}
