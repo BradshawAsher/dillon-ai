@@ -254,15 +254,15 @@ export default function WorkflowErrorLogCard({ rows, loading, error, onRefresh }
                                     <div className="flex flex-wrap items-center gap-1.5 pt-1 text-xs font-mono">
                                         <Badge variant="outline" className="gap-1 text-[11px] bg-card">
                                             <Cpu className="h-3 w-3 text-primary shrink-0" />
-                                            Primary: Gemini 3.1 Flash Lite
+                                            Primary: OpenAI 5.6 Terra
                                         </Badge>
                                         <Badge variant="outline" className="gap-1 text-[11px] bg-card">
                                             <Layers className="h-3 w-3 text-muted-foreground shrink-0" />
-                                            Backup: Gemini 3.1 Flash Lite
+                                            Backup: OpenAI 5.6 Sol
                                         </Badge>
                                         <Badge variant="outline" className="gap-1 text-[11px] bg-card">
                                             <Bot className="h-3 w-3 text-primary shrink-0" />
-                                            Synth: Gemini 3.1 Flash Lite
+                                            Synth: OpenAI 5.6 Terra
                                         </Badge>
                                         <Badge variant="outline" className="gap-1 text-[11px] bg-card border-emerald-500/40 text-emerald-700 dark:text-emerald-300">
                                             <RefreshCw className="h-3 w-3 text-emerald-600 shrink-0" />

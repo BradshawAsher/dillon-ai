@@ -158,7 +158,7 @@ export default function CostPerRunCard({
                 </div>
                 <div className="mt-4 rounded-md border border-dashed border-border bg-muted/20 p-3">
                     <p className="text-xs text-muted-foreground">
-                        <strong>Models &amp; Provider Architecture:</strong> Document analysis uses <strong>Claude Sonnet 5</strong> (Primary) with <strong>Claude Opus 5</strong> (Backup). Project synthesis uses <strong>OpenAI 5.6 Terra</strong> (Primary) with <strong>OpenAI 5.6 Sol</strong> (Backup). Multi-model routing saves ~{ROUTING_SAVINGS_PCT}% versus an all-Sonnet/Opus pipeline.
+                        <strong>Models &amp; Provider Architecture:</strong> Document analysis uses <strong>OpenAI 5.6 Terra</strong> (Primary) with <strong>OpenAI 5.6 Sol</strong> (Backup). Project synthesis uses <strong>OpenAI 5.6 Terra</strong> (Primary) with <strong>OpenAI 5.6 Sol</strong> (Backup). Multi-stage routing saves ~{ROUTING_SAVINGS_PCT}% versus an unoptimized monolithic pipeline.
                         Actual costs vary with document length, retry count, and context size.
                     </p>
                 </div>

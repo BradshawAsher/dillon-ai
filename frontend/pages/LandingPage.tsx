@@ -299,26 +299,42 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
                                 <ArrowRight className="ml-2.5 h-6 w-6" />
                             </Button>
 
-                            {/* Secondary Actions */}
-                            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                            {/* Secondary Actions: Direct Walkthrough Launchers */}
+                            <div className="flex flex-wrap items-center justify-center gap-2.5 pt-2">
                                 <Button
                                     type="button"
                                     variant="outline"
                                     size="default"
-                                    className="border-border/80 text-sm font-bold px-5 py-2.5 shadow-2xs hover:bg-muted"
-                                    onClick={() => setShowWalkthroughModal(true)}
+                                    className="border-primary/40 bg-primary/5 text-xs sm:text-sm font-bold px-4 py-2.5 shadow-2xs hover:bg-primary/10 text-primary"
+                                    onClick={() => handleStartTourFromLanding('core-fast')}
                                 >
-                                    <Play className="mr-2 h-4 w-4 fill-primary text-primary" />
-                                    Guided Walkthrough
+                                    <Zap className="mr-1.5 h-4 w-4 fill-primary text-primary" />
+                                    Walkthrough #1: Core Flow
+                                    <Badge variant="secondary" className="ml-1.5 text-[10px] px-1.5 py-0 bg-primary/15 text-primary border-primary/30">
+                                        ~75s
+                                    </Badge>
                                 </Button>
                                 <Button
                                     type="button"
                                     variant="outline"
                                     size="default"
-                                    className="border-border/80 text-sm font-bold px-5 py-2.5 shadow-2xs hover:bg-muted"
+                                    className="border-emerald-500/40 bg-emerald-500/5 text-xs sm:text-sm font-bold px-4 py-2.5 shadow-2xs hover:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                                    onClick={() => handleStartTourFromLanding('deep-dive')}
+                                >
+                                    <Layers className="mr-1.5 h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                                    Walkthrough #2: Deep Dive
+                                    <Badge variant="secondary" className="ml-1.5 text-[10px] px-1.5 py-0 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30">
+                                        ~3.5m
+                                    </Badge>
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="default"
+                                    className="border-border/80 text-xs sm:text-sm font-bold px-4 py-2.5 shadow-2xs hover:bg-muted text-muted-foreground hover:text-foreground"
                                     onClick={() => setShowAccessModal(true)}
                                 >
-                                    <Lock className="mr-2 h-4 w-4 text-muted-foreground" />
+                                    <Lock className="mr-1.5 h-4 w-4" />
                                     Apply for Access
                                 </Button>
                             </div>
@@ -349,7 +365,7 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
                             </div>
                             <div className="flex items-center gap-1.5">
                                 <Cpu className="h-4 w-4 text-indigo-600" />
-                                <span>Claude Sonnet 5 &amp; OpenAI 5.6 Hybrid Engine</span>
+                                <span>OpenAI 5.6 Terra Dual-Stage Engine</span>
                             </div>
                         </div>
 
@@ -364,6 +380,7 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
                                     } else if (demoId === 'native-quest') {
                                         handleStartTourFromLanding('interactive-quest')
                                     } else {
+                                        setSelectedWalkthroughDemoId(demoId)
                                         setShowWalkthroughModal(true)
                                     }
                                 }}
@@ -657,8 +674,8 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
                                     <div className="grid gap-3 sm:grid-cols-2">
                                         <div className="p-3.5 rounded-xl border border-primary/30 bg-primary/5 space-y-1">
                                             <span className="text-primary font-bold">Per-Doc Primary Model:</span>
-                                            <p className="text-base font-black text-foreground">Claude Sonnet 5</p>
-                                            <p className="text-[11px] text-muted-foreground">Backup Failover: Claude Opus 5</p>
+                                            <p className="text-base font-black text-foreground">OpenAI 5.6 Terra</p>
+                                            <p className="text-[11px] text-muted-foreground">Backup Failover: OpenAI 5.6 Sol</p>
                                         </div>
                                         <div className="p-3.5 rounded-xl border border-purple-500/30 bg-purple-500/5 space-y-1">
                                             <span className="text-purple-600 dark:text-purple-400 font-bold">Synthesizer Primary Model:</span>
@@ -938,6 +955,8 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
                 isOpen={showWalkthroughModal}
                 onClose={() => setShowWalkthroughModal(false)}
                 onStartTour={(tourId) => handleStartTourFromLanding(tourId)}
+                initialTab={selectedWalkthroughDemoId === 'short-yt' || selectedWalkthroughDemoId === 'short-supademo' || selectedWalkthroughDemoId === 'deep-supademo' ? 'video' : 'interactive'}
+                initialVideoMode={selectedWalkthroughDemoId === 'short-supademo' ? 'quick' : selectedWalkthroughDemoId === 'deep-supademo' ? 'deep' : 'yt'}
             />
 
             {/* APPLY FOR ACCESS MODAL */}

@@ -162,7 +162,7 @@ export function ApiKeyModal({ open, onOpenChange }: ApiKeyModalProps) {
                                 <Label htmlFor="anthropic-key" className="text-xs font-semibold">
                                     Anthropic Claude API Key
                                 </Label>
-                                <span className="text-[10px] text-muted-foreground font-mono">Powers Claude Sonnet 5 Extraction</span>
+                                <span className="text-[10px] text-muted-foreground font-mono">Powers Legacy Claude Passes</span>
                             </div>
                             <Input
                                 id="anthropic-key"
@@ -185,7 +185,7 @@ export function ApiKeyModal({ open, onOpenChange }: ApiKeyModalProps) {
                                 <Label htmlFor="openai-key" className="text-xs font-semibold">
                                     OpenAI API Key
                                 </Label>
-                                <span className="text-[10px] text-muted-foreground font-mono">Powers OpenAI 5.6 Terra Synthesis</span>
+                                <span className="text-[10px] text-muted-foreground font-mono">Powers OpenAI 5.6 Terra Extraction &amp; Synthesis</span>
                             </div>
                             <Input
                                 id="openai-key"

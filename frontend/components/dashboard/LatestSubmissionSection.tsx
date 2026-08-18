@@ -113,7 +113,7 @@ export default function LatestSubmissionSection({
     const formattedConfidence = formatConfidencePercent(confidence)
 
     return (
-        <Card className="overflow-hidden">
+        <Card id="latest-submission-section" data-latest-submission className="overflow-hidden">
             <CardHeader className="border-b border-border bg-card/80">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="space-y-1">

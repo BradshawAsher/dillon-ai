@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
     Zap,
     Layers,
@@ -34,6 +34,8 @@ interface WalkthroughLauncherModalProps {
     onStartTour: (tourId: TourPlaylistId) => void
     resumeState?: WalkthroughResumeState | null
     onResumeTour?: () => void
+    initialTab?: 'interactive' | 'video'
+    initialVideoMode?: 'yt' | 'quick' | 'deep'
 }
 
 export function WalkthroughLauncherModal({
@@ -42,9 +44,18 @@ export function WalkthroughLauncherModal({
     onStartTour,
     resumeState,
     onResumeTour,
+    initialTab,
+    initialVideoMode,
 }: WalkthroughLauncherModalProps) {
-    const [activeTab, setActiveTab] = useState<'interactive' | 'video'>('interactive')
-    const [videoMode, setVideoMode] = useState<'yt' | 'quick' | 'deep'>('yt')
+    const [activeTab, setActiveTab] = useState<'interactive' | 'video'>(initialTab || 'interactive')
+    const [videoMode, setVideoMode] = useState<'yt' | 'quick' | 'deep'>(initialVideoMode || 'yt')
+
+    useEffect(() => {
+        if (isOpen) {
+            if (initialTab) setActiveTab(initialTab)
+            if (initialVideoMode) setVideoMode(initialVideoMode)
+        }
+    }, [isOpen, initialTab, initialVideoMode])
 
     if (!isOpen) return null
 
@@ -176,6 +187,11 @@ export function WalkthroughLauncherModal({
                                                 {isQuest && <Target className="h-5 w-5" />}
                                             </div>
                                             <div className="flex items-center gap-1.5">
+                                                {isCore && (
+                                                    <Badge className="bg-primary text-primary-foreground text-[10px] font-semibold">
+                                                        Recommended
+                                                    </Badge>
+                                                )}
                                                 <Badge variant="outline" className="text-[11px] font-mono">
                                                     <Clock className="h-3 w-3 mr-1" />
                                                     {playlist.durationLabel}
@@ -193,6 +209,22 @@ export function WalkthroughLauncherModal({
                                                 {playlist.subtitle}
                                             </p>
                                         </div>
+
+                                        {isCore && (
+                                            <div className="flex flex-wrap items-center gap-1 text-[10px] font-mono font-medium text-primary bg-primary/10 rounded-md p-1.5 border border-primary/20">
+                                                <span>1. Intake</span>
+                                                <span>→</span>
+                                                <span>2. Diligence</span>
+                                                <span>→</span>
+                                                <span>3. Synthesis</span>
+                                                <span>→</span>
+                                                <span>4. Memo</span>
+                                                <span>→</span>
+                                                <span>5. Chatbot</span>
+                                                <span>→</span>
+                                                <span>6. Export</span>
+                                            </div>
+                                        )}
 
                                         <p className="text-xs text-foreground/80 leading-relaxed">
                                             {playlist.description}

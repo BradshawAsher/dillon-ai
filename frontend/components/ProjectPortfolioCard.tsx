@@ -66,19 +66,16 @@ function SummaryMetric({
 }
 
 function resolveProjectAiModels(projectDocs: SubmissionHistoryItem[], synthesis: any, projectKey: string, companyName?: string, projectName?: string) {
-    const combinedKey = `${projectKey || ''} ${companyName || ''} ${projectName || ''}`.toLowerCase()
+    const rawKey = (projectKey || '').toLowerCase()
 
-    const isPreDD001Legacy = (
-        combinedKey.includes('business 1') || combinedKey.includes('business-1') || combinedKey.includes('werkheiser') ||
-        combinedKey.includes('business 2') || combinedKey.includes('business-2') || combinedKey.includes('iron tree') || combinedKey.includes('iron_tree') ||
-        combinedKey.includes('business 3') || combinedKey.includes('business-3') || combinedKey.includes('turnkey') || combinedKey.includes('conversionxl') || combinedKey.includes('cxl') ||
-        combinedKey.includes('business 4') || combinedKey.includes('business-4') || combinedKey.includes('renew health') || combinedKey.includes('renew_health') ||
-        combinedKey.includes('mergeworks 1') || combinedKey.includes('mergeworks-1') ||
-        combinedKey.includes('mergeworks 2') || combinedKey.includes('mergeworks-2') ||
-        combinedKey.includes('widgetco')
+    // Explicit legacy mock keys only (never match dynamic user projects like project-2026...)
+    const isExplicitLegacyMock = (
+        rawKey === 'proj_legacy_b1' ||
+        rawKey === 'legacy-gemini-proto' ||
+        rawKey === 'mock-legacy-pre-dd001'
     )
 
-    if (isPreDD001Legacy) {
+    if (isExplicitLegacyMock) {
         return {
             docPrimaryModel: 'Gemini 3.1 Flash Lite',
             docBackupModel: 'Gemini 3.1 Flash Lite',
@@ -87,10 +84,10 @@ function resolveProjectAiModels(projectDocs: SubmissionHistoryItem[], synthesis:
         }
     }
 
-    // All projects starting from DD-001 Cascadia Climate Services, Inc. onwards
+    // Active production model architecture across all projects
     return {
-        docPrimaryModel: 'Claude Sonnet 5',
-        docBackupModel: 'Claude Opus 5',
+        docPrimaryModel: 'OpenAI 5.6 Terra',
+        docBackupModel: 'OpenAI 5.6 Sol',
         synthPrimaryModel: 'OpenAI 5.6 Terra',
         synthBackupModel: 'OpenAI 5.6 Sol',
     }

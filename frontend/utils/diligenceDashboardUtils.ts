@@ -109,8 +109,8 @@ export function calculateDocumentCost(doc?: Partial<SubmissionHistoryItem> | nul
 
     const estimatedInputTokens = baseInputTokens + Math.min(10000, Math.round(extractedStr.length / 4))
 
-    // Claude Sonnet 5 rates ($3.00/1M input, $15.00/1M output)
-    const cost = (estimatedInputTokens / 1_000_000 * 3.0) + (estimatedOutputTokens / 1_000_000 * 15.0)
+    // OpenAI 5.6 Terra rates ($2.50/1M input, $10.00/1M output)
+    const cost = (estimatedInputTokens / 1_000_000 * 2.5) + (estimatedOutputTokens / 1_000_000 * 10.0)
     return Math.max(0.015, Number(cost.toFixed(4)))
 }
 

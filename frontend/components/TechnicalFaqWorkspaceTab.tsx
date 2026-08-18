@@ -138,7 +138,7 @@ export default function TechnicalFaqWorkspaceTab({ onSwitchTab }: TechnicalFaqWo
             category: 'troubleshooting',
             categoryLabel: 'Troubleshooting',
             question: 'What should I do if a complex scanned document fails to parse?',
-            answer: 'Check the "Errors" tab to view the workflow retry logs. Our engine automatically executes retries using failover models (Claude Opus 5 / OpenAI 5.6 Sol). If needed, click "Re-Run Extraction" in the Intake card.',
+            answer: 'Check the "Errors" tab to view the workflow retry logs. Our engine automatically executes retries using failover models (OpenAI 5.6 Sol / OpenAI 5.6 Terra). If needed, click "Re-Run Extraction" in the Intake card.',
             actionLabel: 'View Workflow Errors',
             targetTab: 'errors',
         },

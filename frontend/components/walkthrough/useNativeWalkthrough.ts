@@ -150,6 +150,29 @@ export function useNativeWalkthrough({ activeTab, onTabChange }: UseNativeWalkth
             onTabChange(step.tab)
         }
 
+        // 1.1 Trigger Chat Panel open if step is interacting with Dillon AI Chatbot
+        const isChatStep =
+            step.targetElementId === 'deal-chat-dock' ||
+            step.targetSelector?.includes('chat') ||
+            step.id.includes('chat') ||
+            step.simulatedAction?.type === 'type_chat'
+
+        if (isChatStep && typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('mergeworks:open-chat'))
+        }
+
+        // 1.2 Dispatch generic walkthrough action event for workspace simulation
+        if (typeof window !== 'undefined' && step.simulatedAction) {
+            window.dispatchEvent(
+                new CustomEvent('mergeworks:walkthrough-action', {
+                    detail: {
+                        stepId: step.id,
+                        action: step.simulatedAction,
+                    },
+                })
+            )
+        }
+
         // 2. Multi-frame polling to find element after tab/suspense render
         const attemptScrollAndPosition = () => {
             let el: HTMLElement | null = null
@@ -223,6 +246,15 @@ export function useNativeWalkthrough({ activeTab, onTabChange }: UseNativeWalkth
         if (progressTimerRef.current) clearInterval(progressTimerRef.current)
         if (typeof window !== 'undefined' && window.speechSynthesis) {
             try { window.speechSynthesis.cancel() } catch { }
+        }
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(
+                new CustomEvent('mergeworks:walkthrough-action', {
+                    detail: {
+                        action: { type: 'reset_simulation' },
+                    },
+                })
+            )
         }
     }, [])
 

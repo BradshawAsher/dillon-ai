@@ -168,7 +168,7 @@ export default function DashboardFaqSidebar({
             category: 'troubleshooting',
             categoryLabel: 'Troubleshooting',
             question: 'What should I do if a complex document fails or hits an error?',
-            answer: 'Check the Errors tab! Our workflow engine automatically retries complex scans with failover model passes (Claude Opus 5 / OpenAI 5.6 Sol). You can inspect error logs and click "Re-Run Extraction".',
+            answer: 'Check the Errors tab! Our workflow engine automatically retries complex scans with failover model passes (OpenAI 5.6 Sol / OpenAI 5.6 Terra). You can inspect error logs and click "Re-Run Extraction".',
             actionLabel: 'View Workflow Errors',
             targetTab: 'errors',
             badge: 'RETRY LOGS',
@@ -248,14 +248,14 @@ export default function DashboardFaqSidebar({
                     </Button>
                 </div>
 
-                {/* 10-Step Interactive Tour Launcher */}
+                {/* Guided Walkthrough #1 Launcher */}
                 {onOpenWalkthrough && (
                     <div className="mx-3 mt-3 p-2.5 rounded-xl border border-primary/40 bg-primary/10 flex items-center justify-between gap-2 shadow-xs">
                         <div className="flex items-center gap-2 min-w-0">
                             <Sparkles className="h-4 w-4 text-primary shrink-0" />
                             <div className="min-w-0">
-                                <p className="text-xs font-bold text-foreground leading-tight">Interactive 10-Step Tour</p>
-                                <p className="text-[10px] text-muted-foreground truncate">Full M&amp;A diligence simulation</p>
+                                <p className="text-xs font-bold text-foreground leading-tight">Guided Walkthrough #1</p>
+                                <p className="text-[10px] text-muted-foreground truncate">Upload → Diligence → Synthesis → Overview → Chatbot</p>
                             </div>
                         </div>
                         <Button

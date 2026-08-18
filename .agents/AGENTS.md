@@ -56,8 +56,8 @@ If the user asks to change project synthesis behavior, the agent should:
 - **LLM API Endpoints**: When configuring n8n workflows, HTTP requests, or AI model node parameters, agents MUST pass valid production model identifiers recognized by LLM providers (`gpt-4o`, `gpt-4o-mini`, `claude-3-5-sonnet-20241022`, `claude-3-7-sonnet-20250219`). Do not pass synthetic branding strings directly into raw API model parameter fields without confirming proxy endpoint support.
 
 ## Active Production Model Architecture & Benchmark Defaults
-- **Per-Document Extraction Primary Model**: `Claude Sonnet 5`
-- **Per-Document Extraction Backup Model**: `Claude Opus 5`
+- **Per-Document Extraction Primary Model**: `OpenAI 5.6 Terra`
+- **Per-Document Extraction Backup Model**: `OpenAI 5.6 Sol`
 - **Project Synthesis Pass Primary Model**: `OpenAI 5.6 Terra`
 - **Project Synthesis Pass Backup Model**: `OpenAI 5.6 Sol`
 
