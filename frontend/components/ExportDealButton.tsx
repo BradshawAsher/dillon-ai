@@ -230,6 +230,8 @@ export default function ExportDealButton({ model, synthesis, projectName }: Prop
     return (
         <div className="relative">
             <Button
+                id="export-deal-btn"
+                data-export-btn="true"
                 type="button"
                 variant="outline"
                 className="gap-2 px-4 py-2 text-sm"

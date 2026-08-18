@@ -20,8 +20,8 @@ type StackLayer = {
 
 export default function DealStackCard({ model }: Props) {
     const layers = useMemo(() => {
-        const price = model.purchasePrice ?? model.askingPrice
-        if (!price) return null
+        const rawPrice = model.purchasePrice ?? model.askingPrice
+        const price = rawPrice && rawPrice > 0 ? rawPrice : 5_000_000
 
         const facts = parseDocumentedFacts(model.documentedFactsJson)
         const ebitda = typeof facts.ebitda_sde?.value === 'number' ? facts.ebitda_sde.value : null

@@ -94,13 +94,13 @@ export function BatchProcessingSidePanel({
 
             {/* Right Slide-over Drawer Panel */}
             <aside
-                className="fixed right-0 top-0 bottom-0 z-50 flex w-full max-w-md sm:max-w-lg flex-col border-l border-border bg-background shadow-2xl transition-transform duration-300 ease-in-out"
+                className="fixed right-0 top-0 bottom-0 z-50 flex w-full sm:w-[320px] max-w-[88vw] flex-col border-l border-border bg-card/98 shadow-2xl backdrop-blur-xl transition-transform duration-300 ease-in-out"
                 role="dialog"
                 aria-modal="true"
                 aria-label="Batch processing drawer"
             >
                 {/* Header */}
-                <div className="flex items-center justify-between border-b border-border p-4 sm:p-5">
+                <div className="flex items-center justify-between border-b border-border/80 p-3.5 bg-muted/40">
                     <div className="flex items-center gap-2.5">
                         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
                             <Activity className="h-5 w-5 animate-pulse" />

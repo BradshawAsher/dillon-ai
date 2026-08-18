@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
     Activity,
     AlertCircle,
@@ -8,6 +8,7 @@ import {
     Key,
     Keyboard,
     Loader2,
+    Play,
     ShieldCheck,
     SlidersHorizontal,
     X,
@@ -1628,6 +1629,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                             Live n8n
                         </Button>
                         <Button
+                            id="export-memo-btn"
+                            data-export-btn="true"
                             size="default"
                             variant="outline"
                             className="gap-2 border-primary/40 bg-background text-primary hover:bg-primary/10 font-bold"
@@ -1871,7 +1874,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                     {activeWorkspaceTab === 'structure' ? (
                         <StructureWorkspaceView
                             activeDealModel={activeDealModel}
-                            hydratedDealModel={hydratedDealModel}
+                            hydratedDealModel={returnsDisplayModel}
                             setActiveEvidence={setActiveEvidence}
                             handleDealModelChange={handleDealModelChange}
                             handleDealModelDefaults={handleDealModelDefaults}
@@ -2242,10 +2245,10 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             <button
                 type="button"
                 onClick={() => setIsFaqSidebarOpen((prev) => !prev)}
-                className={`fixed right-0 top-36 z-40 flex items-center gap-2 rounded-l-xl border border-r-0 bg-background/95 px-3 py-2.5 shadow-xl backdrop-blur-md transition-all duration-200 hover:bg-muted hover:pl-4 group ${
+                className={`fixed right-0 top-36 z-40 flex items-center gap-2 rounded-l-xl border border-r-0 bg-background/95 px-3 py-2 shadow-xl backdrop-blur-md transition-all duration-200 hover:bg-muted hover:pl-3.5 group cursor-pointer ${
                     isFaqSidebarOpen
                         ? 'border-primary/60 bg-primary/10 text-primary font-bold'
-                        : 'border-border/80 text-muted-foreground hover:text-foreground'
+                        : 'border-border/80 text-foreground hover:text-primary'
                 }`}
                 title="FAQs & Deal Guide"
                 aria-label="Toggle FAQs & Deal Guide sidebar"
@@ -2259,13 +2262,13 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             <button
                 type="button"
                 onClick={() => setIsBatchDrawerOpen(true)}
-                className={`fixed right-0 top-48 z-40 flex items-center gap-2.5 rounded-l-xl border border-r-0 border-border/80 bg-background/95 px-3 py-2.5 shadow-xl backdrop-blur-md transition-all duration-200 hover:bg-muted hover:pl-4 group ${
-                    hasActiveSubmissions || inFlightBatchPlaceholder ? 'border-primary/60 text-primary animate-pulse' : 'text-muted-foreground hover:text-foreground'
+                className={`fixed right-0 top-48 z-40 flex items-center gap-2 rounded-l-xl border border-r-0 border-border/80 bg-background/95 px-3 py-2 shadow-xl backdrop-blur-md transition-all duration-200 hover:bg-muted hover:pl-3.5 group cursor-pointer ${
+                    hasActiveSubmissions || inFlightBatchPlaceholder ? 'border-primary/60 text-primary animate-pulse' : 'text-foreground hover:text-primary'
                 }`}
                 title="Open Batch Processing Activity (Ctrl+Shift+B)"
                 aria-label="Open batch processing drawer"
             >
-                <div className="flex flex-col gap-1 w-4">
+                <div className="flex flex-col gap-1 w-3.5">
                     <span className="h-0.5 w-full bg-current rounded-full transition-transform group-hover:scale-x-110" />
                     <span className="h-0.5 w-full bg-current rounded-full transition-transform group-hover:scale-x-110" />
                     <span className="h-0.5 w-full bg-current rounded-full transition-transform group-hover:scale-x-110" />
@@ -2275,18 +2278,18 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 </span>
             </button>
 
-            {/* Resume Guided Tour Button (Directly under Activity) */}
+            {/* Resume Guided Tour Button (Directly under Activity, identical size & styling) */}
             {walkthrough.resumeState && !walkthrough.isActive && (
                 <button
                     type="button"
                     onClick={handleResumeTour}
-                    className="fixed right-0 top-60 z-40 flex items-center gap-2 rounded-l-xl border border-r-0 border-primary/80 bg-gradient-to-r from-primary to-emerald-600 text-white px-3 py-2.5 shadow-xl backdrop-blur-md transition-all duration-200 hover:pl-4 group animate-pulse hover:animate-none cursor-pointer"
+                    className="fixed right-0 top-60 z-40 flex items-center gap-2 rounded-l-xl border border-r-0 border-border/80 bg-background/95 px-3 py-2 shadow-xl backdrop-blur-md transition-all duration-200 hover:bg-muted hover:pl-3.5 group text-foreground hover:text-primary cursor-pointer"
                     title={`Resume ${walkthrough.resumeState.playlistTitle} (Step ${walkthrough.resumeState.stepIndex + 1}/${walkthrough.resumeState.totalSteps})`}
                     aria-label="Resume Guided Tour"
                 >
-                    <Play className="h-4 w-4 shrink-0 fill-current" />
+                    <Play className="h-3.5 w-3.5 shrink-0 fill-primary text-primary" />
                     <span className="text-xs font-bold tracking-tight hidden sm:inline">
-                        Resume Tour ({walkthrough.resumeState.stepIndex + 1}/{walkthrough.resumeState.totalSteps})
+                        Tour ({walkthrough.resumeState.stepIndex + 1}/{walkthrough.resumeState.totalSteps})
                     </span>
                 </button>
             )}
