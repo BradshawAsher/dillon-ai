@@ -377,6 +377,8 @@ export function useNativeWalkthrough({ activeTab, onTabChange }: UseNativeWalkth
         stepProgress,
         targetRect,
         cursorPos,
+        isClicking,
+        questSuccess,
         resumeState,
         resumeTour,
         clearResumeState,

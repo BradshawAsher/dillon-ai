@@ -30,7 +30,7 @@ interface TechnicalFaqWorkspaceTabProps {
 
 export default function TechnicalFaqWorkspaceTab({ onSwitchTab }: TechnicalFaqWorkspaceTabProps) {
     const [searchQuery, setSearchQuery] = useState('')
-    const [selectedCategory, setSelectedCategory] = useState<'all' | 'getting-started' | 'navigation' | 'buttons' | 'data-modes' | 'troubleshooting'>('all')
+    const [selectedCategory, setSelectedCategory] = useState<'all' | 'recommendations' | 'getting-started' | 'navigation' | 'buttons' | 'data-modes' | 'troubleshooting' | 'chatbot'>('all')
     // Track the open FAQ by question text so filtering doesn't leave the wrong
     // item expanded (index would point at a different question after a filter).
     const [openKey, setOpenKey] = useState<string | null>(null)
@@ -149,6 +149,38 @@ export default function TechnicalFaqWorkspaceTab({ onSwitchTab }: TechnicalFaqWo
             answer: 'Navigate to the "Evals & Harness" tab to inspect our 25-document golden test suite scores, accuracy by dimension, and Track A model cost benchmarks.',
             actionLabel: 'Jump to Evals & Harness',
             targetTab: 'evals',
+        },
+        {
+            category: 'chatbot',
+            categoryLabel: 'Dillon AI Copilot',
+            question: 'How does the Dillon AI Copilot 3-Tier Architecture work?',
+            answer: '• Tier 1 (Cloud AI / n8n Webhook): Queries our production n8n workflow backed by OpenAI GPT-4o, Claude 3.5 Sonnet, and Gemini 1.5 Pro. It receives full context of the project\'s synthesis, documented financial facts, OCR summaries, and cross-project portfolio state.\n• Tier 2 (Direct Provider API): If you configure your own OpenAI, Anthropic, or Gemini API keys in the chat settings, queries run directly from your browser to provider endpoints with zero intermediate hops.\n• Tier 3 (In-Browser Deterministic Engine): If cloud endpoints are unreachable or you are offline, Dillon instantly runs an in-browser deterministic M&A rules engine with 0ms latency and 100% uptime.',
+            actionLabel: 'Open Architecture Card',
+            targetTab: 'errors',
+        },
+        {
+            category: 'chatbot',
+            categoryLabel: 'Dillon AI Copilot',
+            question: 'What is Dillon AI Copilot designed to do?',
+            answer: '1. Extract & Audit Deal Financials: Instantly surfaces confirmed Revenue, SDE, EBITDA, and gross margins from uploaded CIMs, P&Ls, and tax returns.\n2. Quality of Earnings (QoE) & Add-Back Verification: Audits seller add-backs (owner perks, non-recurring expenses) and calculates haircut adjustments.\n3. Debt Structuring & DSCR Headroom: Computes debt coverage ratios under SBA 7(a), seller note, and mezzanine debt structures.\n4. Valuation & Multiple Analysis: Compares implied entry multiples against SMB benchmarks (3.0x–6.0x) and runs DCF/IRR sensitivities.\n5. Deep-Link Navigation: Directs you to specific workspace cards and anchors with targeted 1-click links (capped at 1–2 per response).\n6. Cross-Document Discrepancy Auditing: Flags discrepancies between tax return Form 1120 revenue and unaudited internal P&Ls.',
+            actionLabel: 'Open Analysis Tab',
+            targetTab: 'analysis',
+        },
+        {
+            category: 'chatbot',
+            categoryLabel: 'Dillon AI Copilot',
+            question: 'What is Dillon AI Copilot NOT made to do / unable to do?',
+            answer: '1. NOT a Replacement for Legal/CPA Counsel: Dillon AI does not provide certified CPA audit opinions, binding legal counsel, or environmental Phase I sign-offs.\n2. CANNOT Invent or Hallucinate Missing Facts: Dillon will never fabricate financial numbers or operational metrics that are not documented in uploaded files or user-entered model assumptions.\n3. CANNOT Execute Real-World Transactions: Dillon cannot wire earnest funds, sign contracts, or submit binding LOIs.\n4. CANNOT Tamper with Audit Records: The copilot operates on read-only synthesis snapshots and cannot delete, overwrite, or corrupt immutable database audit logs.',
+            actionLabel: 'Open Overview Tab',
+            targetTab: 'overview',
+        },
+        {
+            category: 'chatbot',
+            categoryLabel: 'Dillon AI Copilot',
+            question: 'Why did I receive an in-browser deterministic answer and how do I force a live LLM run?',
+            answer: 'When the cloud LLM webhook is slow or unreachable, Dillon AI automatically provides a deterministic in-browser answer (marked with an amber badge) to eliminate wait times and prevent blank screens. You can click the "✨ Run with Live LLM" button on any in-browser response to force a live AI query, or configure personal OpenAI/Anthropic API keys in the chat header.',
+            actionLabel: 'Open Deal Structure',
+            targetTab: 'structure',
         },
     ]
 
@@ -273,6 +305,7 @@ export default function TechnicalFaqWorkspaceTab({ onSwitchTab }: TechnicalFaqWo
                     <div className="flex flex-wrap gap-1.5 pt-2">
                         {[
                             { id: 'all', label: 'All Topics' },
+                            { id: 'chatbot', label: 'Dillon AI Copilot & 3 Tiers' },
                             { id: 'recommendations', label: 'Verdicts & Escalation' },
                             { id: 'getting-started', label: 'Getting Started' },
                             { id: 'navigation', label: 'Finding Info' },

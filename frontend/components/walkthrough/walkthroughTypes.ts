@@ -1,3 +1,5 @@
+import type { WorkspaceTab } from '../TabSidebarTOC'
+
 export type TourPlaylistId = 'core-fast' | 'deep-dive' | 'interactive-quest' | string
 
 export interface SimulatedAction {
@@ -25,11 +27,13 @@ export interface WalkthroughStep {
     tag: string
     badge?: string
     narrative: string
+    description?: string
+    proTip?: string
     keyTakeaway: string
     simulatedAction?: SimulatedAction
     questPrompt?: QuestPrompt
     durationMs?: number
-    cursorPlacement?: 'top-left' | 'center' | 'top-right' | 'bottom-right' | 'button-center'
+    cursorPlacement?: 'top-left' | 'center' | 'top-right' | 'bottom-right' | 'bottom-left' | 'button-center'
 }
 
 export interface TourPlaylist {

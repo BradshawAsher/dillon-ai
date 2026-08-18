@@ -337,7 +337,7 @@ export const CARD_DESCRIPTIONS: Record<string, CardDescription> = {
         diligenceImpact: 'High operating leverage accelerates profit growth during market expansions, but increases downside risk during economic slowdowns.',
         benchmarkOrTarget: 'DOL 1.5x–3.0x for stable cash-flowing SMBs',
     },
-    'downside-protection': {
+    'downside-protection-standstill': {
         title: 'Downside Protection & Seller Note Standstill',
         category: 'Deal Terms',
         whatItIs: 'Covenant analysis detailing seller note subordination, standstill periods, indemnity escrow holdbacks, and offset rights.',

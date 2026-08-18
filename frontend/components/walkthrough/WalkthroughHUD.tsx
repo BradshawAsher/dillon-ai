@@ -582,7 +582,7 @@ export function WalkthroughHUD({
                     </h2>
 
                     <p className="text-xs sm:text-[13px] text-foreground/90 leading-relaxed font-normal">
-                        {currentStep.description}
+                        {currentStep.description || currentStep.narrative}
                     </p>
 
                     {/* Pro Tip Callout (if present) */}
