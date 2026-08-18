@@ -46,6 +46,7 @@ export type SubmissionHistoryItem = {
     category: string
     trafficLight: string
     ebitdaExtracted: string
+    revenueExtracted?: string
     needsHumanReview: boolean
     extractedJson: string
     storageFileId: string

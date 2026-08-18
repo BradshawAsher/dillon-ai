@@ -9,6 +9,8 @@ import { Button } from '../lib/shadcn/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
 import { parseDocumentedFacts } from '../utils/evidence'
+import { parseMagnitudeMoney } from '../utils/documentedFacts'
+import { resolveFinancialMetricsForProject } from '../utils/financialMetrics'
 import { formatCurrencyValue } from '../utils/aiSubmissionData'
 import TruncatedListItem from './TruncatedListItem'
 import ActionableRecommendationInfoButton from './ActionableRecommendationInfoButton'
@@ -111,9 +113,10 @@ function buildMemoText(model: DealModel, synthesis: ProjectSynthesisItem | undef
 export default function DealMemoView({ model, synthesis, projectName, documents, onSwitchTab }: Props) {
     const [copied, setCopied] = useState(false)
     const facts = parseDocumentedFacts(model.documentedFactsJson)
-    const revenue = facts.revenue?.value
-    const ebitda = facts.ebitda_sde?.value
-    const price = model.askingPrice ?? model.purchasePrice
+    const metrics = resolveFinancialMetricsForProject(synthesis, documents, projectName, '', model?.projectId)
+    const revenue = facts.revenue?.value ?? (metrics.revenue !== 'N/A' ? parseMagnitudeMoney(metrics.revenue) : null)
+    const ebitda = facts.ebitda_sde?.value ?? (metrics.ebitda !== 'N/A' ? parseMagnitudeMoney(metrics.ebitda) : null)
+    const price = model.askingPrice ?? model.purchasePrice ?? (metrics.purchasePrice !== 'N/A' ? parseMagnitudeMoney(metrics.purchasePrice) : null)
     const multiple = price && ebitda ? (price / Number(ebitda)).toFixed(1) : null
 
     const handleCopy = useCallback(async () => {
