@@ -4,7 +4,7 @@ import { TrendingUp } from 'lucide-react'
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
-import CardExplainerPopover from './CardExplainerPopover'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type Props = {
     model: DealModel
@@ -58,12 +58,7 @@ export default function ValuationGapCard({ model, synthesis }: Props) {
                         <TrendingUp className="h-4 w-4 text-primary" />
                         <CardTitle className="text-lg">Valuation gap analysis</CardTitle>
                     </div>
-                    <CardExplainerPopover
-                        title="Valuation Gap Analysis"
-                        whatIsIt="Compares the seller's Asking Price against our Diligence Fair Value Estimate, and models upside value creation from operational improvements."
-                        howItWorks="Fair Value uses verified adjusted EBITDA and median market multiples. Total Potential Value adds 15% estimated productivity gains and 3% margin expansion."
-                        whyItMatters="If the gap is positive (asking > fair value), the deal is overpriced. You should use this exact dollar delta to negotiate a price re-trade or require an earn-out/seller note."
-                    />
+                    <CardInfoPopover cardId="valuation-gap" />
                 </div>
             </CardHeader>
             <CardContent className="p-4 space-y-4">

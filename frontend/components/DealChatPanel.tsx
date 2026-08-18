@@ -3,6 +3,7 @@ import { ArrowUpRight, Bot, Compass, ExternalLink, FolderKanban, Move, RotateCcw
 
 import { Button } from '../lib/shadcn/button'
 import { Card } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 import { Textarea } from '../lib/shadcn/textarea'
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import type { DealModel } from '../hooks/backend/diligence'
@@ -1385,6 +1386,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                 <div className="flex items-center gap-2 min-w-0">
                     <Bot className="h-4 w-4 text-primary shrink-0" />
                     <span className="text-xs font-bold text-foreground truncate">Dillon AI Assistant</span>
+                    <CardInfoPopover cardId="deal-chat-copilot" />
                     <span className="text-[10px] text-muted-foreground shrink-0 hidden sm:inline">M&A Diligence</span>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">

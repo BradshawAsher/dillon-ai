@@ -8,6 +8,7 @@ import { normalizeEquityFraction } from '../utils/dealMath'
 import { copyToClipboard } from '../utils/clipboard'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Button } from '../lib/shadcn/button'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type Props = {
     model: DealModel
@@ -106,6 +107,7 @@ export default function TermSheetCard({ model, synthesis, projectName }: Props) 
                     <div className="flex items-center gap-2">
                         <FileText className="h-4 w-4 text-primary" />
                         <CardTitle className="text-lg">Term sheet summary</CardTitle>
+                        <CardInfoPopover cardId="term-sheet" />
                     </div>
                     <Button variant="ghost" size="sm" onClick={handleCopy} className="gap-1.5 text-xs">
                         {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}

@@ -5,6 +5,7 @@ import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence
 import { Button } from '../lib/shadcn/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { parseDocumentedFacts } from '../utils/evidence'
+import CardInfoPopover from './common/CardInfoPopover'
 
 export type ProjectComparison = {
     projectId: string
@@ -501,10 +502,13 @@ export default function ProjectComparisonCard({ projects, activeProjectId, onSel
                 <CardHeader className="pb-3">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div>
-                            <CardTitle className="flex items-center gap-2 text-base font-semibold">
-                                <GitCompareArrows className="h-4 w-4 text-primary" />
-                                Deal Comparison Matrix ({filteredProjects.length} of {projects.length})
-                            </CardTitle>
+                            <div className="flex items-center gap-2">
+                                <CardTitle className="flex items-center gap-2 text-base font-semibold">
+                                    <GitCompareArrows className="h-4 w-4 text-primary" />
+                                    Deal Comparison Matrix ({filteredProjects.length} of {projects.length})
+                                </CardTitle>
+                                <CardInfoPopover cardId="project-comparison" />
+                            </div>
                             <p className="text-xs text-muted-foreground mt-0.5">
                                 Side-by-side benchmarking across financial health, entry valuation multiples, and diligence risk posture.
                             </p>

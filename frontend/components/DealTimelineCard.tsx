@@ -4,6 +4,7 @@ import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type Props = {
     documents: SubmissionHistoryItem[]
@@ -99,6 +100,7 @@ export default function DealTimelineCard({ documents, synthesis, projectName }: 
                         <div className="flex items-center gap-2">
                             <FileText className="h-5 w-5 text-primary" />
                             <CardTitle className="text-lg">Project timeline</CardTitle>
+                            <CardInfoPopover cardId="deal-timeline" />
                         </div>
                         <CardDescription>{projectName} — {completedCount}/{totalCount} milestones complete</CardDescription>
                     </div>

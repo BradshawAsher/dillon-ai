@@ -1,5 +1,7 @@
 import { Info } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
+import { useFloatingPosition } from '../hooks/useFloatingPosition'
 
 type Props = {
     term: string
@@ -34,14 +36,25 @@ export const FINANCIAL_TERMS: Record<string, string> = {
     'Debt balance': 'The remaining principal balance on senior debt at the end of the hold period that must be paid off upon sale.',
 }
 
-export default function InfoTip({ term, definition, align = 'center' }: Props) {
+export default function InfoTip({ term, definition }: Props) {
     const [open, setOpen] = useState(false)
-    const ref = useRef<HTMLSpanElement>(null)
+    const buttonRef = useRef<HTMLButtonElement>(null)
+
+    const coords = useFloatingPosition({
+        isOpen: open,
+        targetRef: buttonRef,
+        popoverWidth: 260,
+        preferredPlacement: 'top',
+        margin: 6,
+        padding: 12,
+    })
 
     useEffect(() => {
         if (!open) return
         function handleClick(e: MouseEvent) {
-            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+            if (buttonRef.current && !buttonRef.current.contains(e.target as Node)) {
+                setOpen(false)
+            }
         }
         function handleKey(e: KeyboardEvent) {
             if (e.key === 'Escape') setOpen(false)
@@ -54,35 +67,41 @@ export default function InfoTip({ term, definition, align = 'center' }: Props) {
         }
     }, [open])
 
-    const alignmentClasses = {
-        center: 'left-1/2 -translate-x-1/2',
-        left: 'left-0 translate-x-0',
-        right: 'right-0 translate-x-0',
-    }
-
     return (
-        <span ref={ref} className="relative inline-flex items-center">
+        <span className="relative inline-flex items-center align-middle shrink-0">
             <button
+                ref={buttonRef}
                 type="button"
                 onClick={() => setOpen(o => !o)}
                 onMouseEnter={() => setOpen(true)}
                 onMouseLeave={() => setOpen(false)}
                 onFocus={() => setOpen(true)}
                 onBlur={() => setOpen(false)}
-                className="inline-flex items-center justify-center rounded-full p-0.5 text-muted-foreground/60 hover:text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="inline-flex items-center justify-center rounded-full p-0.5 text-muted-foreground/60 hover:text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer"
                 aria-label={`What is ${term}?`}
                 aria-expanded={open}
             >
                 <Info className="h-3 w-3" />
             </button>
-            {open && (
+            {open && typeof document !== 'undefined' && createPortal(
                 <span
                     role="tooltip"
-                    className={`absolute bottom-full mb-1.5 z-50 w-60 rounded-lg border border-border bg-popover px-3 py-2 text-xs leading-relaxed text-popover-foreground shadow-xl pointer-events-none ${alignmentClasses[align]}`}
+                    style={{
+                        position: 'fixed',
+                        top: coords.top !== undefined ? `${coords.top}px` : undefined,
+                        bottom: coords.bottom !== undefined ? `${coords.bottom}px` : undefined,
+                        left: coords.left !== undefined ? `${coords.left}px` : undefined,
+                        right: coords.right !== undefined ? `${coords.right}px` : undefined,
+                        width: coords.width !== undefined ? `${coords.width}px` : undefined,
+                        maxHeight: coords.maxHeight !== undefined ? `${coords.maxHeight}px` : undefined,
+                        zIndex: 99999,
+                    }}
+                    className="overflow-y-auto rounded-lg border border-border bg-popover px-3 py-2 text-xs leading-relaxed text-popover-foreground shadow-xl ring-1 ring-border/50 animate-in fade-in-0 zoom-in-95 duration-100 pointer-events-none"
                 >
                     <span className="font-semibold block mb-0.5 text-foreground">{term}</span>
                     <span className="text-muted-foreground">{definition}</span>
-                </span>
+                </span>,
+                document.body
             )}
         </span>
     )

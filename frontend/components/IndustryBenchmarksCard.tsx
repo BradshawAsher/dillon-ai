@@ -2,6 +2,7 @@ import { BarChart3 } from 'lucide-react'
 
 import { Badge } from '../lib/shadcn/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 
 export default function IndustryBenchmarksCard() {
     return (
@@ -12,6 +13,7 @@ export default function IndustryBenchmarksCard() {
                         <div className="flex items-center gap-2">
                             <BarChart3 className="h-5 w-5 text-primary" />
                             <CardTitle className="text-lg">Industry benchmarks</CardTitle>
+                            <CardInfoPopover cardId="industry-benchmarks" />
                         </div>
                         <CardDescription>Compare this deal against industry medians. Only shown when a source, as-of date, and comparability notes are available.</CardDescription>
                     </div>

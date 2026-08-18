@@ -4,6 +4,7 @@ import { Umbrella } from 'lucide-react'
 import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type Props = {
     model: DealModel
@@ -58,9 +59,9 @@ export default function DownsideProtectionCard({ model }: Props) {
 
         const wc = model.workingCapitalRequirement ?? 0
         protections.push({
-            label: 'Working capital cushion',
-            status: wc > 0 ? 'active' : 'none',
-            detail: wc > 0 ? `$${wc.toLocaleString()} working capital included` : 'No explicit working capital — may need injection post-close',
+            label: 'Working capital funded',
+            status: wc > 0 ? 'active' : 'partial',
+            detail: wc > 0 ? `$${(wc / 1000).toFixed(0)}K working capital reserve budgeted` : 'No explicit working capital buffer modeled',
         })
 
         const equity = model.equityAmount ?? (price - totalDebt)
@@ -90,6 +91,7 @@ export default function DownsideProtectionCard({ model }: Props) {
                 <div className="flex items-center gap-2">
                     <Umbrella className="h-4 w-4 text-primary" />
                     <CardTitle className="text-lg">Downside protection</CardTitle>
+                    <CardInfoPopover cardId="downside-protection" />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                     Structural safeguards against adverse scenarios.

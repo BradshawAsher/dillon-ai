@@ -10,6 +10,7 @@ import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import { Input } from '../lib/shadcn/input'
 import { MoneyBarChart } from './DealCharts'
 import ValuationImpactBridge from './ValuationImpactBridge'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type DealValuationCardProps = {
     synthesis?: ProjectSynthesisItem
@@ -147,7 +148,11 @@ export default function DealValuationCard({ synthesis, askingPrice, model, onMod
             <CardHeader className="border-b border-border bg-card/80">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="space-y-1">
-                        <div className="flex items-center gap-2"><Scale className="h-5 w-5 text-primary" /><CardTitle className="text-xl">Valuation</CardTitle></div>
+                        <div className="flex items-center gap-2">
+                            <Scale className="h-5 w-5 text-primary" />
+                            <CardTitle className="text-xl">Valuation</CardTitle>
+                            <CardInfoPopover cardId="valuation-summary" />
+                        </div>
                         <CardDescription>Evidence-backed range and price position for the current project. Missing method inputs use clearly labeled, display-only starting assumptions so the comparison remains complete.</CardDescription>
                     </div>
                     <Badge variant="outline">Source: project synthesis</Badge>

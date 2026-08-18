@@ -4,6 +4,7 @@ import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
+import CardInfoPopover from './common/CardInfoPopover'
 import { parseDocumentedFacts } from '../utils/evidence'
 
 type Props = {
@@ -121,11 +122,12 @@ export default function NextActionsCard({ model, synthesis, documents, onNavigat
 
     return (
         <Card className="overflow-hidden">
-            <CardHeader className="pb-2">
+            <CardHeader className="pb-2 flex flex-row items-center justify-between">
                 <div className="flex items-center gap-2">
                     <ArrowRight className="h-4 w-4 text-primary" />
                     <CardTitle className="text-sm font-semibold">Recommended next steps</CardTitle>
                 </div>
+                <CardInfoPopover cardId="next-actions" />
             </CardHeader>
             <CardContent className="pb-4">
                 <div className="space-y-2">

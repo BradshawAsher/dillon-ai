@@ -23,6 +23,7 @@ import { Button } from '../lib/shadcn/button'
 import { Input } from '../lib/shadcn/input'
 import { Badge } from '../lib/shadcn/badge'
 import { Card, CardContent } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 import { type WorkspaceTab } from '../hooks/useDealWorkspaceState'
 import { filterFaqs } from '../utils/faq'
 
@@ -223,9 +224,12 @@ export default function DashboardFaqSidebar({
                             <HelpCircle className="h-4 w-4" />
                         </div>
                         <div>
-                            <h2 className="text-sm font-bold text-foreground leading-none">
-                                FAQs &amp; Deal Guide
-                            </h2>
+                            <div className="flex items-center gap-1.5">
+                                <h2 className="text-sm font-bold text-foreground leading-none">
+                                    FAQs &amp; Deal Guide
+                                </h2>
+                                <CardInfoPopover cardId="technical-faq" />
+                            </div>
                             <p className="text-[10.5px] text-muted-foreground mt-0.5 leading-none">
                                 Interactive diligence assistance
                             </p>

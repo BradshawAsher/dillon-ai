@@ -2,6 +2,7 @@ import { Settings2, HelpCircle } from 'lucide-react'
 
 import type { DealModel } from '../hooks/backend/diligence'
 import { Card, CardContent } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
 import InPlaceEvidencePopover, { EvidenceDetails } from './InPlaceEvidencePopover'
@@ -257,7 +258,10 @@ export default function ModelAssumptionsSummary({ model, area }: Props) {
         <Card className="overflow-hidden border-primary/20 bg-gradient-to-r from-primary/[0.03] to-transparent">
             <CardContent className="p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-sm font-semibold text-foreground">{config.title}</p>
+                    <div className="flex items-center gap-2">
+                        <p className="text-sm font-semibold text-foreground">{config.title}</p>
+                        <CardInfoPopover cardId="model-assumptions-summary" />
+                    </div>
                     <div className="flex items-center gap-2">
                         <Badge variant={setCount === rows.length ? 'success' : setCount > 0 ? 'warning' : 'destructive'}>
                             {setCount}/{rows.length} saved

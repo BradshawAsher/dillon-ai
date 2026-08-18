@@ -5,6 +5,7 @@ import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { resolveLoanTermYears } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type Props = {
     model: DealModel
@@ -70,6 +71,7 @@ export default function WeeklyProjectionCard({ model }: Props) {
                 <div className="flex items-center gap-2">
                     <CalendarDays className="h-4 w-4 text-primary" />
                     <CardTitle className="text-lg">Year 1 monthly projection</CardTitle>
+                    <CardInfoPopover cardId="weekly-projection" />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                     Monthly net cash flow and cumulative position for the first year post-acquisition.

@@ -1,6 +1,4 @@
-import type { WorkspaceTab } from '../DealWorkspaceNav'
-
-export type TourPlaylistId = 'core-fast' | 'deep-dive' | 'interactive-quest'
+export type TourPlaylistId = 'core-fast' | 'deep-dive' | 'interactive-quest' | string
 
 export interface SimulatedAction {
     type: 'click' | 'highlight' | 'scroll' | 'type_chat' | 'slider_tweak'

@@ -5,7 +5,7 @@ import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
-import CardExplainerPopover from './CardExplainerPopover'
+import CardInfoPopover from './common/CardInfoPopover'
 import InPlaceEvidencePopover, { EvidenceDetails } from './InPlaceEvidencePopover'
 
 type Props = {
@@ -161,12 +161,7 @@ export default function InvestmentMetricsCard({ model }: Props) {
                         <Badge variant="outline">
                             {model.holdPeriodYears ?? 5}yr · {((model.exitMultiple ?? 4).toFixed(1))}x exit
                         </Badge>
-                        <CardExplainerPopover
-                            title="Underwriting Investment Return Metrics"
-                            whatIsIt="Calculates the financial return profile (IRR, MOIC, Total ROI, and Cumulative Cash Flows) from the deal parameters."
-                            howItWorks="Projects annual after-tax earnings over the holding period and discounts cash flows against the entry purchase price and terminal exit multiple."
-                            whyItMatters="Enables institutional and self-funded buyers to compare prospective acquisitions against their minimum hurdle rate (typically 20-25% IRR)."
-                        />
+                        <CardInfoPopover cardId="investment-metrics" />
                     </div>
                 </div>
             </CardHeader>

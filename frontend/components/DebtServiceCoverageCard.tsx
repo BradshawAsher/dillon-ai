@@ -5,6 +5,7 @@ import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { normalizeEquityFraction } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type Props = {
     model: DealModel
@@ -125,6 +126,7 @@ export default function DebtServiceCoverageCard({ model }: Props) {
                 <div className="flex items-center gap-2">
                     <Shield className="h-4 w-4 text-primary" />
                     <CardTitle className="text-lg">Debt service coverage</CardTitle>
+                    <CardInfoPopover cardId="debt-service-coverage" />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                     After-tax EBITDA relative to annual debt obligations

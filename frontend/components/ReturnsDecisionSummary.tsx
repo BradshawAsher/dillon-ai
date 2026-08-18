@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 
 import type { DealModel } from '../hooks/backend/diligence'
 import { Card, CardContent } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 import { Badge } from '../lib/shadcn/badge'
 import { computeAllCashReturns } from '../utils/dealMath'
 import { parseDocumentedFacts } from '../utils/evidence'
@@ -94,6 +95,7 @@ export default function ReturnsDecisionSummary({ model }: { model: DealModel }) 
                         <div className="flex items-center gap-2 text-primary">
                             <TrendingUp className="h-5 w-5" />
                             <p className="text-sm font-bold uppercase tracking-wide">Start here — returns at a glance</p>
+                            <CardInfoPopover cardId="returns-decision-summary" />
                         </div>
                         <p className="mt-1 text-sm leading-6 text-foreground">
                             A plain-English first view of what the acquisition puts in, produces, and returns.

@@ -7,6 +7,7 @@ import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { formatCurrencyValue } from '../utils/aiSubmissionData'
 import TruncatedListItem from './TruncatedListItem'
@@ -136,6 +137,7 @@ export default function DealMemoView({ model, synthesis, projectName, documents,
                     <div className="flex items-center gap-2">
                         <FileText className="h-5 w-5 text-primary" />
                         <CardTitle className="text-lg">Deal memo</CardTitle>
+                        <CardInfoPopover cardId="deal-memo" />
                     </div>
                     <div className="flex gap-2 print:hidden">
                         <Button variant="outline" size="sm" onClick={handleCopy}>

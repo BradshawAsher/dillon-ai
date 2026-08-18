@@ -3,6 +3,7 @@ import { Clock } from 'lucide-react'
 
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type Props = {
     documentsCount: number
@@ -49,6 +50,7 @@ export default function TimeToCloseCard({ documentsCount, completedDocuments, ha
                     <div className="flex items-center gap-2">
                         <Clock className="h-5 w-5 text-primary" />
                         <CardTitle className="text-lg">Time to close</CardTitle>
+                        <CardInfoPopover cardId="time-to-close" />
                     </div>
                     <Badge variant="secondary">{analysis.stageInfo.remaining}</Badge>
                 </div>

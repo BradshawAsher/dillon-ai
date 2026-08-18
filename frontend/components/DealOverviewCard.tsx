@@ -4,6 +4,7 @@ import { ArrowDownToLine, BadgeDollarSign, CircleAlert, FileCheck2, MessageCircl
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { Badge } from '../lib/shadcn/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 import { Input } from '../lib/shadcn/input'
 import { formatCurrencyValue, getSubmissionInsightTone } from '../utils/aiSubmissionData'
 import {
@@ -260,6 +261,7 @@ export default function DealOverviewCard({ syntheses, projects, currentProjectId
                         <div className="flex items-center gap-2">
                             <Scale className="h-5 w-5 text-primary" />
                             <CardTitle className="text-xl">Deal overview</CardTitle>
+                            <CardInfoPopover cardId="deal-overview" />
                         </div>
                         <CardDescription>
                             Decision-first view for {projectName}. Metrics are drawn from the latest project synthesis and linked detail remains below.

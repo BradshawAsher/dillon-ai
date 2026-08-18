@@ -6,6 +6,7 @@ import { Card, CardContent } from '../lib/shadcn/card'
 import { parseDocumentedFacts } from '../utils/evidence'
 import type { ImpactMetrics } from '../utils/impactMetrics'
 import InPlaceEvidencePopover, { EvidenceDetails } from './InPlaceEvidencePopover'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type Props = {
     model: DealModel
@@ -116,9 +117,10 @@ export default function DealScorecard({ model, synthesis, impact, documentsCount
                         <span className={`text-2xl font-bold ${gradeColor}`}>{grade}</span>
                     </div>
                     <div className="flex-1">
-                        <div className="flex items-baseline gap-2">
+                        <div className="flex items-center gap-1.5">
                             <p className="text-sm font-semibold text-foreground">Deal readiness score</p>
                             <span className="text-xs text-muted-foreground">{totalScore}/100</span>
+                            <CardInfoPopover cardId="deal-readiness" />
                         </div>
                         <div className="mt-2 flex flex-wrap gap-3">
                             {dimensions.map(d => (

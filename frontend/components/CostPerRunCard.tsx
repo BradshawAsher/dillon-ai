@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../li
 import { estimateMonthlyCost, MEASURED_COST_PER_DOCUMENT, MEASURED_ROUTING_SAVINGS, SAMPLE_DOCUMENT_LEGS, topSpendDrivers } from '../utils/costModel'
 import { estimateProcessingSeconds, formatDuration } from '../utils/processingTime'
 import InfoTip from './InfoTip'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type Props = {
     documentsProcessed: number
@@ -57,6 +58,7 @@ export default function CostPerRunCard({
                             <CardTitle className="text-lg">
                                 {hasLiveDocCost || hasLiveSynthCost ? 'Cost per run (active project live tokens)' : 'Estimated cost per run (active project)'}
                             </CardTitle>
+                            <CardInfoPopover cardId="cost-per-run" />
                         </div>
                         <CardDescription>
                             {hasLiveDocCost || hasLiveSynthCost

@@ -5,6 +5,7 @@ import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence
 import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type Props = {
     model: DealModel
@@ -119,6 +120,7 @@ export default function DealTypeAnalysisCard({ model, synthesis }: Props) {
                     <div className="flex items-center gap-2">
                         <Layers className="h-5 w-5 text-primary" />
                         <CardTitle className="text-lg">Deal type analysis</CardTitle>
+                        <CardInfoPopover cardId="deal-type" />
                     </div>
                     <div className="flex items-center gap-2">
                         <Badge variant="secondary">{dealType.label}</Badge>

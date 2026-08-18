@@ -4,6 +4,7 @@ import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import type { DealModel } from '../hooks/backend/diligence'
 import { Badge } from '../lib/shadcn/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 import { buildDocumentLinkedEvidence, parseDocumentedFacts, type EvidenceItem } from '../utils/evidence'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 
@@ -132,6 +133,7 @@ export default function RecurringVsOneTimeCard({ model, synthesis, documents = [
                         <div className="flex items-center gap-2">
                             <RefreshCw className="h-5 w-5 text-primary" />
                             <CardTitle className="text-lg">Recurring vs one-time findings</CardTitle>
+                            <CardInfoPopover cardId="recurring-vs-onetime" />
                         </div>
                         <CardDescription>Quality-of-earnings classification: which findings represent ongoing economics vs one-time events that distort trailing financials.</CardDescription>
                     </div>

@@ -4,7 +4,7 @@ import { PieChart } from 'lucide-react'
 import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
-import CardExplainerPopover from './CardExplainerPopover'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type Props = {
     model: DealModel
@@ -79,12 +79,7 @@ export default function AssetCompositionCard({ model }: Props) {
                         <PieChart className="h-4 w-4 text-primary" />
                         <CardTitle className="text-lg">Asset composition</CardTitle>
                     </div>
-                    <CardExplainerPopover
-                        title="Balance Sheet Asset Composition"
-                        whatIsIt="Visualizes the tangible vs working capital asset makeup of the business (Accounts Receivable, Inventory, Equipment, Net Equity)."
-                        howItWorks="Extracts balance sheet assets from VDR records to show how much of the purchase price is backed by hard assets vs goodwill/intangibles."
-                        whyItMatters="Tangible assets (AR, machinery, inventory) can be pledged as collateral to secure bank debt (Asset-Based Lending). Higher tangible backing lowers risk."
-                    />
+                    <CardInfoPopover cardId="asset-composition" />
                 </div>
             </CardHeader>
             <CardContent className="p-4">

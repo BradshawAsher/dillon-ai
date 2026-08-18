@@ -2,6 +2,7 @@ import { ChartNoAxesCombined } from 'lucide-react'
 
 import type { DealModel } from '../hooks/backend/diligence'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 import { calculateIrr } from '../utils/dealMath'
 import { buildDerivedEvidence, buildFactEvidence, parseDocumentedFacts, type EvidenceItem } from '../utils/evidence'
 import { safeFormatCurrency } from '../utils/diligenceDashboardUtils'
@@ -40,7 +41,7 @@ export default function ScenarioComparisonCard({ model, documents = [], onOpenEv
         Bull: revenue * (1 + (model.bullRevenueGrowth ?? 0.1)) ** year,
     }))
 
-    return <Card className="overflow-hidden"><CardHeader className="border-b border-border bg-card/80"><div className="flex items-center gap-2"><ChartNoAxesCombined className="h-5 w-5 text-primary" /><CardTitle className="text-xl">Bear / base / bull scenarios</CardTitle></div><CardDescription>All-cash five-year projection from documented starting revenue and analyst-entered scenario assumptions.</CardDescription></CardHeader><CardContent className="p-5">{!ready ? <p className="rounded-lg border border-dashed border-border bg-muted/20 p-4 text-sm text-muted-foreground">Add documented revenue plus revenue-growth, EBITDA-margin, and exit-multiple assumptions for each scenario.</p> : <><GrowthLineChart data={growthChartData} /><div className="mt-5 grid gap-3 lg:grid-cols-3">{scenarios.map(([name, growth, margin, multiple]) => {
+    return <Card className="overflow-hidden"><CardHeader className="border-b border-border bg-card/80"><div className="flex items-center gap-2"><ChartNoAxesCombined className="h-5 w-5 text-primary" /><CardTitle className="text-xl">Bear / base / bull scenarios</CardTitle><CardInfoPopover cardId="scenario-comparison" /></div><CardDescription>All-cash five-year projection from documented starting revenue and analyst-entered scenario assumptions.</CardDescription></CardHeader><CardContent className="p-5">{!ready ? <p className="rounded-lg border border-dashed border-border bg-muted/20 p-4 text-sm text-muted-foreground">Add documented revenue plus revenue-growth, EBITDA-margin, and exit-multiple assumptions for each scenario.</p> : <><GrowthLineChart data={growthChartData} /><div className="mt-5 grid gap-3 lg:grid-cols-3">{scenarios.map(([name, growth, margin, multiple]) => {
         const yearlyRevenue = Array.from({ length: years }, (_, year) => revenue! * (1 + growth!) ** (year + 1))
         const yearlyOperatingCashFlow = taxRate === null ? null : yearlyRevenue.map((yearRevenue) => yearRevenue * margin! * (1 - taxRate) - capex)
         const exitRevenue = yearlyRevenue[years - 1]

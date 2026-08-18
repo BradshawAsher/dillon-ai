@@ -6,6 +6,7 @@ import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type Props = {
     model: DealModel
@@ -80,6 +81,7 @@ export default function WhatsMissingCard({ model, synthesis, documents }: Props)
                     <div className="flex items-center gap-2">
                         <SearchX className="h-5 w-5 text-primary" />
                         <CardTitle className="text-lg">What's missing</CardTitle>
+                        <CardInfoPopover cardId="whats-missing" />
                     </div>
                     {criticalCount > 0 && (
                         <Badge variant="destructive">{criticalCount} critical</Badge>

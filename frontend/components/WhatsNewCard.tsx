@@ -4,6 +4,7 @@ import { ChevronDown, ChevronUp, Sparkles } from 'lucide-react'
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type ChangelogEntry = {
     date: string
@@ -155,6 +156,7 @@ export default function WhatsNewCard() {
                     <div className="flex items-center gap-2">
                         <Sparkles className="h-5 w-5 text-primary" />
                         <CardTitle className="text-lg">What's new</CardTitle>
+                        <CardInfoPopover cardId="whats-new" />
                     </div>
                     <Badge variant="secondary">{CHANGELOG.length} updates</Badge>
                 </div>

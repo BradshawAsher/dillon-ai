@@ -6,6 +6,7 @@ import ExpandableText from './ExpandableText'
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 import { Input } from '../lib/shadcn/input'
 import { Progress } from '../lib/shadcn/progress'
 import { Switch } from '../lib/shadcn/switch'
@@ -421,7 +422,10 @@ export default function SubmissionHistoryCard({
             <CardHeader className="border-b border-border bg-card/80">
                 <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                     <div className="space-y-1">
-                        <CardTitle className="text-xl">Submission History</CardTitle>
+                        <div className="flex items-center gap-2">
+                            <CardTitle className="text-xl">Submission History</CardTitle>
+                            <CardInfoPopover cardId="submission-history" />
+                        </div>
                         <CardDescription>
                             Track asynchronous intake, AI processing, and review outcomes returned by the n8n history endpoint.
                         </CardDescription>

@@ -5,6 +5,7 @@ import type { DealModel } from '../hooks/backend/diligence'
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type Props = {
     model: DealModel
@@ -147,6 +148,7 @@ export default function First100DaysCard({ model, synthesis }: Props) {
                 <div className="flex items-center gap-2">
                     <Rocket className="h-4 w-4 text-primary" />
                     <CardTitle className="text-lg">First 100 days plan</CardTitle>
+                    <CardInfoPopover cardId="first-100-days" />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                     Post-acquisition first 100 days plan

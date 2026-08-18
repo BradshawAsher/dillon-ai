@@ -5,6 +5,7 @@ import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type Props = {
     model: DealModel
@@ -69,11 +70,12 @@ export default function ConfidenceMeterCard({ model, synthesis, documents }: Pro
 
     return (
         <Card className="overflow-hidden">
-            <CardHeader className="border-b border-border bg-card/80 pb-3">
+            <CardHeader className="border-b border-border bg-card/80 pb-3 flex flex-row items-center justify-between">
                 <div className="flex items-center gap-2">
                     <ShieldCheck className="h-5 w-5 text-primary" />
                     <CardTitle className="text-lg">Analysis confidence</CardTitle>
                 </div>
+                <CardInfoPopover cardId="confidence-meter" />
             </CardHeader>
             <CardContent className="p-4">
                 <div className="flex items-center gap-6">

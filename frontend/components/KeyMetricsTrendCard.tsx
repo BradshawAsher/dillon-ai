@@ -5,6 +5,7 @@ import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { resolveLoanTermYears } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type Props = {
     model: DealModel
@@ -126,6 +127,7 @@ export default function KeyMetricsTrendCard({ model }: Props) {
                 <div className="flex items-center gap-2">
                     <Activity className="h-4 w-4 text-primary" />
                     <CardTitle className="text-lg">Key metrics trajectory</CardTitle>
+                    <CardInfoPopover cardId="key-metrics-trend" />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                     Projected evolution of critical deal metrics over the hold period.

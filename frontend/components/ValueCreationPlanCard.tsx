@@ -5,6 +5,7 @@ import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { normalizeEquityFraction } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type Props = {
     model: DealModel
@@ -125,6 +126,7 @@ export default function ValueCreationPlanCard({ model }: Props) {
                 <div className="flex items-center gap-2">
                     <TrendingUp className="h-4 w-4 text-primary" />
                     <CardTitle className="text-lg">Value creation plan</CardTitle>
+                    <CardInfoPopover cardId="value-creation-plan" />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                     5-step roadmap to maximize investment returns

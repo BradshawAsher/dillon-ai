@@ -6,6 +6,7 @@ import { parseDocumentedFacts } from '../utils/evidence'
 import { copyToClipboard } from '../utils/clipboard'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type Props = {
     model: DealModel
@@ -88,6 +89,7 @@ export default function InvestmentThesisCard({ model, synthesis, projectName }: 
                     <div className="flex items-center gap-2">
                         <BookOpen className="h-5 w-5 text-primary" />
                         <CardTitle className="text-lg">Investment thesis</CardTitle>
+                        <CardInfoPopover cardId="investment-thesis" />
                     </div>
                     <div className="flex items-center gap-2">
                         <Badge variant="secondary">Auto-generated</Badge>

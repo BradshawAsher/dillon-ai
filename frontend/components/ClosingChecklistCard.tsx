@@ -5,6 +5,7 @@ import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 import { Badge } from '../lib/shadcn/badge'
 
 type Props = {
@@ -57,6 +58,7 @@ export default function ClosingChecklistCard({ model, synthesis, documents }: Pr
                     <div className="flex items-center gap-2">
                         <ClipboardCheck className="h-5 w-5 text-primary" />
                         <CardTitle className="text-lg">Closing checklist</CardTitle>
+                        <CardInfoPopover cardId="closing-checklist" />
                     </div>
                     <Badge variant={pct >= 80 ? 'success' : pct >= 50 ? 'warning' : 'secondary'}>
                         {pct}% ready

@@ -5,6 +5,7 @@ import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type AlertTrigger = 'red-flag' | 'synthesis-complete' | 'document-failed' | 'high-risk' | 'valuation-gap' | 'custom'
 type AlertChannel = 'email' | 'slack' | 'in-app'
@@ -145,7 +146,10 @@ export default function AlertRulesCard({ synthesis }: { synthesis?: ProjectSynth
                             <Bell className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                         </div>
                         <div>
-                            <CardTitle className="text-base">Alert Rules</CardTitle>
+                            <div className="flex items-center gap-1.5">
+                                <CardTitle className="text-base">Alert Rules</CardTitle>
+                                <CardInfoPopover cardId="alert-rules" />
+                            </div>
                             <p className="mt-0.5 text-xs text-muted-foreground">Configure automated notifications for deal events</p>
                         </div>
                     </div>

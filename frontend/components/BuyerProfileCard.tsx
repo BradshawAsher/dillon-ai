@@ -6,6 +6,7 @@ import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 import { Input } from '../lib/shadcn/input'
 import { parseDocumentedFacts } from '../utils/evidence'
 
@@ -94,6 +95,7 @@ export default function BuyerProfileCard({ model, synthesis }: Props) {
                         <div className="flex items-center gap-2">
                             <UserCircle className="h-5 w-5 text-primary" />
                             <CardTitle className="text-lg">Buyer profile</CardTitle>
+                            <CardInfoPopover cardId="buyer-profile" />
                         </div>
                         <CardDescription>Define the buyer&apos;s characteristics to see explainable acquisition-fit reasoning. No opaque scores — only transparent logic.</CardDescription>
                     </div>

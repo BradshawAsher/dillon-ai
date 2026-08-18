@@ -1,6 +1,7 @@
 import React from 'react'
 import { AlertTriangle, Gauge } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 import { Badge } from '../lib/shadcn/badge'
 
 export type DiagnosticDimension = { key: string; label: string; avgPct: number }
@@ -77,6 +78,7 @@ export default function EvalDiagnosticsPanel({
                         <CardTitle className="flex items-center gap-2 text-base">
                             <Gauge className="h-4 w-4 text-muted-foreground" />
                             Diagnostics
+                            <CardInfoPopover cardId="eval-diagnostics" />
                         </CardTitle>
                         <Badge variant={regressionPassed ? 'success' : 'destructive'}>
                             {regressionPassed ? 'PASS' : 'FAIL'}
@@ -119,6 +121,7 @@ export default function EvalDiagnosticsPanel({
                     <CardTitle className="flex items-center gap-2 text-base">
                         <AlertTriangle className="h-4 w-4 text-amber-500" />
                         Cross-document contradictions
+                        <CardInfoPopover cardId="cross-document-contradictions" />
                     </CardTitle>
                     <CardDescription>
                         {conflictResults.length === 0

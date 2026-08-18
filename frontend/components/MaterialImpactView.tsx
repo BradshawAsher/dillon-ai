@@ -4,6 +4,7 @@ import { ArrowRight, Scale, ShieldAlert } from 'lucide-react'
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { Badge } from '../lib/shadcn/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 import { buildDocumentLinkedEvidence, type EvidenceItem } from '../utils/evidence'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 
@@ -121,7 +122,11 @@ export default function MaterialImpactView({ synthesis, onOpenEvidence, document
         <CardHeader className="border-b border-border bg-card/80">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                    <div className="flex items-center gap-2"><ShieldAlert className="h-5 w-5 text-primary" /><CardTitle className="text-xl">Material-impact mapping</CardTitle></div>
+                    <div className="flex items-center gap-2">
+                        <ShieldAlert className="h-5 w-5 text-primary" />
+                        <CardTitle className="text-xl">Material-impact mapping</CardTitle>
+                        <CardInfoPopover cardId="material-impact-mapping" />
+                    </div>
                     <CardDescription className="mt-1">Each finding is auto-classified by its likely deal impact. Click any finding for source evidence.</CardDescription>
                 </div>
                 <Badge variant="outline">{findings.length} findings mapped</Badge>

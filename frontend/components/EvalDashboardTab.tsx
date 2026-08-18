@@ -31,6 +31,7 @@ import {
     Zap,
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
 import EvalDiagnosticsPanel from './EvalDiagnosticsPanel'
@@ -1335,6 +1336,7 @@ export default function EvalDashboardTab({
                             <CardTitle className="text-lg font-bold flex items-center gap-2">
                                 <TrendingUp className="h-5 w-5 text-emerald-600" />
                                 <span>Track A: Workflow Cost Analysis &amp; Top 3 Spend Drivers</span>
+                                <CardInfoPopover cardId="track-a-cost-analysis" />
                             </CardTitle>
                             <CardDescription>
                                 Empirical cost analysis identifying top workflow spend drivers and verified &gt;50% model cost optimizations.
@@ -1425,6 +1427,7 @@ export default function EvalDashboardTab({
                     <div>
                         <div className="flex flex-wrap items-center gap-2">
                             <CardTitle className="text-base font-bold">Score by Dimension</CardTitle>
+                            <CardInfoPopover cardId="eval-score-by-dimension" />
                             {weakestKey && (
                                 <Badge variant="outline" className="border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300 font-semibold text-xs gap-1 px-2.5 py-0.5">
                                     <AlertTriangle className="h-3.5 w-3.5 text-amber-600 shrink-0" />
@@ -1571,6 +1574,7 @@ export default function EvalDashboardTab({
                             <CardTitle className="text-lg font-bold flex items-center gap-2">
                                 <FileText className="h-5 w-5 text-primary" />
                                 <span>Document Score Breakdown ({docResults.length} Test Set Files)</span>
+                                <CardInfoPopover cardId="eval-doc-breakdown" />
                             </CardTitle>
                             <CardDescription className="mt-0.5">
                                 Automated score breakdown per document against ground-truth expectations, categorized by project deal packet.
@@ -2605,6 +2609,7 @@ export default function EvalDashboardTab({
                         <CardTitle className="text-lg font-bold flex items-center gap-2">
                             <Clock className="h-5 w-5 text-primary" />
                             Eval Run History & CI/CD Regression Log
+                            <CardInfoPopover cardId="eval-run-history" />
                         </CardTitle>
                         <CardDescription>
                             Tracked evaluation scores logged to Supabase <code className="text-xs bg-muted px-1 py-0.5 rounded">public.eval_runs</code> and CI/CD GitHub Actions (<code className="text-xs font-mono">.github/workflows/eval-regression.yml</code>).

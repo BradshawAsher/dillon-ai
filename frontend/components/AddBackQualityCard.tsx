@@ -5,6 +5,7 @@ import type { DealModel } from '../hooks/backend/diligence'
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { Badge } from '../lib/shadcn/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 import { buildDocumentLinkedEvidence, parseDocumentedFacts, type EvidenceItem } from '../utils/evidence'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 
@@ -144,6 +145,7 @@ export default function AddBackQualityCard({ model, synthesis, documents = [], o
                         <div className="flex items-center gap-2">
                             <Scale className="h-5 w-5 text-primary" />
                             <CardTitle className="text-xl">Add-back quality</CardTitle>
+                            <CardInfoPopover cardId="add-back-quality" />
                         </div>
                         <CardDescription className="mt-1">
                             Are claimed EBITDA add-backs independently substantiated by uploaded documents?

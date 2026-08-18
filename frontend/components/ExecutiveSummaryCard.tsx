@@ -7,6 +7,7 @@ import { parseDocumentedFacts } from '../utils/evidence'
 import { copyToClipboard } from '../utils/clipboard'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Button } from '../lib/shadcn/button'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type Props = {
     model: DealModel
@@ -58,10 +59,10 @@ export default function ExecutiveSummaryCard({ model, synthesis, projectName }: 
         let s3 = `At proposed terms, projected MOIC is ${moic.toFixed(1)}x over ${holdYears} years (${irr.toFixed(0)}% IRR).`
 
         let s4: string
-        if (moic >= 2.5 && redFlags <= 2) {
-            s4 = 'Recommend proceeding to LOI with standard diligence timeline.'
-        } else if (moic >= 1.5) {
-            s4 = 'Recommend continued diligence with focus on risk mitigation and price negotiation.'
+        if (irr >= 20) {
+            s4 = 'Returns profile supports proceeding to detailed due diligence.'
+        } else if (irr >= 12) {
+            s4 = 'Returns are acceptable but consider negotiating a lower entry multiple or seller note.'
         } else {
             s4 = 'Further analysis needed — returns profile does not meet target threshold at current terms.'
         }
@@ -82,6 +83,7 @@ export default function ExecutiveSummaryCard({ model, synthesis, projectName }: 
                     <div className="flex items-center gap-2">
                         <FileText className="h-4 w-4 text-primary" />
                         <CardTitle className="text-lg">Executive summary</CardTitle>
+                        <CardInfoPopover cardId="executive-summary" />
                     </div>
                     <Button variant="ghost" size="sm" onClick={handleCopy} className="text-xs h-7">
                         Copy

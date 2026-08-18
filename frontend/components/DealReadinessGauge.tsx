@@ -2,6 +2,7 @@ import { CheckCircle2, Circle } from 'lucide-react'
 
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { Card, CardContent } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 import { parseDocumentedFacts } from '../utils/evidence'
 
 type Props = {
@@ -47,7 +48,10 @@ export default function DealReadinessGauge({ model, synthesis, documentsCount, c
             <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                     <div>
-                        <p className="text-sm font-semibold text-foreground">Deal analysis readiness</p>
+                        <div className="flex items-center gap-2">
+                            <p className="text-sm font-semibold text-foreground">Deal analysis readiness</p>
+                            <CardInfoPopover cardId="deal-readiness" />
+                        </div>
                         <p className="text-xs text-muted-foreground">{completedCount} of {milestones.length} milestones complete</p>
                     </div>
                     <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-primary/20">

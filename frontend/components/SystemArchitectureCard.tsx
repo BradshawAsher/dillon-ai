@@ -3,6 +3,7 @@ import { Braces, ChevronDown, ChevronRight, Server } from 'lucide-react'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type ArchitectureItem = {
     area: string
@@ -144,6 +145,7 @@ export default function SystemArchitectureCard() {
                 <div className="flex items-center gap-2">
                     <Server className="h-5 w-5 text-primary" />
                     <CardTitle className="text-lg">System architecture reference</CardTitle>
+                    <CardInfoPopover cardId="system-architecture" />
                 </div>
                 <CardDescription>What n8n workflows and frontend files are responsible for each area. Click to expand edge cases.</CardDescription>
             </CardHeader>

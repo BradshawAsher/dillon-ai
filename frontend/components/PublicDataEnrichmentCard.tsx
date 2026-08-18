@@ -6,6 +6,7 @@ import { parseDocumentedFacts } from '../utils/evidence'
 import ProvenanceBadge from './ProvenanceBadge'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type Props = {
     model: DealModel
@@ -94,6 +95,7 @@ export default function PublicDataEnrichmentCard({ model, synthesis, projectName
                     <div className="flex items-center gap-2">
                         <Globe className="h-5 w-5 text-primary" />
                         <CardTitle className="text-lg">Public & web intelligence enrichment</CardTitle>
+                        <CardInfoPopover cardId="public-data-enrichment" />
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                         <ProvenanceBadge provenance="Public web enrichment" status="estimated" />

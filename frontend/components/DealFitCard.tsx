@@ -5,7 +5,7 @@ import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence
 import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
-import CardExplainerPopover from './CardExplainerPopover'
+import CardInfoPopover from './common/CardInfoPopover'
 import InPlaceEvidencePopover, { EvidenceDetails } from './InPlaceEvidencePopover'
 
 type Props = {
@@ -204,12 +204,7 @@ export default function DealFitCard({ model, synthesis }: Props) {
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <CardTitle className="text-lg">Deal fit analysis</CardTitle>
-                        <CardExplainerPopover
-                            title="Deal Fit Analysis"
-                            whatIsIt="Consolidates the strategic Pros (Matches) and Cons (Mismatches) of the acquisition against standard investment criteria."
-                            howItWorks="Synthesizes valuation multiples, margin quality, cash payback, unverified add-backs, and flagged operational risks."
-                            whyItMatters="Helps you quickly weigh whether the strengths (high margin, market position) outweigh the liabilities (customer concentration, missing records)."
-                        />
+                        <CardInfoPopover cardId="deal-fit" />
                     </div>
                     <span className="text-[11px] text-muted-foreground">Click any signal for citation details & AI explanation</span>
                 </div>

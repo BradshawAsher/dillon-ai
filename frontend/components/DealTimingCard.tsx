@@ -4,6 +4,7 @@ import { Calendar } from 'lucide-react'
 import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type Props = {
     model: DealModel
@@ -61,10 +62,6 @@ export default function DealTimingCard({ model }: Props) {
             year: 'numeric',
         })
 
-        // Best month to close: align with fiscal year start for clean financials
-        // Default to calendar year: January is ideal for full-year reporting
-        // But if we're past October, recommend January of next year
-        // If early in year, recommend start of next quarter
         let bestMonth: number
         let bestMonthReason: string
 
@@ -142,6 +139,7 @@ export default function DealTimingCard({ model }: Props) {
                 <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-primary" />
                     <CardTitle className="text-lg">Deal timing</CardTitle>
+                    <CardInfoPopover cardId="deal-timing" />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                     Optimal close timing based on fiscal alignment and tax planning

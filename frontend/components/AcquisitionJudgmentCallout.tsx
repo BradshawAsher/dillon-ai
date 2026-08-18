@@ -10,6 +10,7 @@ import { downloadSynthesisReport } from './ProjectSynthesisCard'
 
 import { useMemo, useState } from 'react'
 import ActionableRecommendationInfoButton from './ActionableRecommendationInfoButton'
+import CardInfoPopover from './common/CardInfoPopover'
 
 function cleanCompleteSentence(str: string): string {
     if (!str) return ''
@@ -157,6 +158,7 @@ export default function AcquisitionJudgmentCallout({ synthesis, impact, onSwitch
                                 <p className={pending ? 'text-sm font-bold uppercase tracking-wide text-warning' : 'text-sm font-bold uppercase tracking-wide text-primary'}>
                                     {pending ? 'Acquisition judgment pending' : 'Start here — acquisition judgment'}
                                 </p>
+                                <CardInfoPopover cardId="acquisition-judgment" />
                                 {isPinned ? (
                                     <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wider text-primary border-primary bg-primary/10">
                                         Pinned

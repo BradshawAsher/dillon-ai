@@ -5,6 +5,7 @@ import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence
 import { parseDocumentedFacts, getEvidenceStatusPresentation } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
+import CardInfoPopover from './common/CardInfoPopover'
 import InfoTip from './InfoTip'
 
 type Props = {
@@ -165,6 +166,7 @@ export default function DealStatsGridCard({ model }: Props) {
                     <div className="flex items-center gap-2">
                         <BarChart3 className="h-5 w-5 text-primary" />
                         <CardTitle className="text-lg">Key stats</CardTitle>
+                        <CardInfoPopover cardId="deal-stats-grid" />
                     </div>
                     <div className="flex items-center gap-2">
                         {factStatus && (

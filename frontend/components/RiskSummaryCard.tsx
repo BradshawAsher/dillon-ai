@@ -2,6 +2,7 @@ import { ShieldAlert } from 'lucide-react'
 
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type Props = {
     synthesis?: ProjectSynthesisItem
@@ -69,6 +70,7 @@ export default function RiskSummaryCard({ synthesis }: Props) {
                 <div className="flex items-center gap-2">
                     <ShieldAlert className="h-4 w-4 text-destructive" />
                     <CardTitle className="text-sm font-semibold">Risk concentration</CardTitle>
+                    <CardInfoPopover cardId="risk-summary" />
                 </div>
             </CardHeader>
             <CardContent className="pb-4">

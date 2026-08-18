@@ -4,6 +4,7 @@ import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { normalizeEquityFraction } from '../utils/dealMath'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type Props = {
     model: DealModel
@@ -102,6 +103,7 @@ export default function DealRulesOfThumb({ model }: Props) {
                 <div className="flex items-center gap-2">
                     <Scale className="h-5 w-5 text-primary" />
                     <CardTitle className="text-xl">Deal rules of thumb</CardTitle>
+                    <CardInfoPopover cardId="deal-rules-of-thumb" />
                 </div>
                 <CardDescription>Quick heuristics SMB buyers use to screen acquisition targets.</CardDescription>
             </CardHeader>

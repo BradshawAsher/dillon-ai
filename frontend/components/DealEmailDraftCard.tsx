@@ -6,6 +6,7 @@ import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence
 import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type Props = {
     model: DealModel
@@ -78,6 +79,7 @@ export default function DealEmailDraftCard({ model, synthesis, projectName }: Pr
                     <div className="flex items-center gap-2">
                         <Mail className="h-5 w-5 text-primary" />
                         <CardTitle className="text-lg">Team update draft</CardTitle>
+                        <CardInfoPopover cardId="deal-email-draft" />
                     </div>
                     <div className="flex items-center gap-2">
                         <Badge variant="secondary">Email ready</Badge>

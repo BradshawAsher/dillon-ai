@@ -7,7 +7,7 @@ import { parseDocumentedFacts } from '../utils/evidence'
 import { normalizeEquityFraction } from '../utils/dealMath'
 import { copyToClipboard } from '../utils/clipboard'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
-import CardExplainerPopover from './CardExplainerPopover'
+import CardInfoPopover from './common/CardInfoPopover'
 import InPlaceEvidencePopover from './InPlaceEvidencePopover'
 
 type Props = {
@@ -274,12 +274,7 @@ export default function DealScorecardExportCard({ model, synthesis, projectName 
                         <CardTitle className="text-lg">Deal scorecard</CardTitle>
                     </div>
                     <div className="flex items-center gap-2">
-                        <CardExplainerPopover
-                            title="Exportable Deal Scorecard"
-                            whatIsIt="One-page investment committee memo summarizing key acquisition metrics, risk flags, capital structure, and final Go/No-Go verdict."
-                            howItWorks="Combines valuation multiples, normalized debt schedule, and diligence risk flags into an easily copyable memo format."
-                            whyItMatters="Use this as an executive snapshot to present to investment partners, lenders, or advisors."
-                        />
+                        <CardInfoPopover cardId="deal-scorecard" />
                         <button
                             type="button"
                             onClick={handleCopy}

@@ -4,7 +4,7 @@ import { Lightbulb, Bot, ExternalLink } from 'lucide-react'
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
-import CardExplainerPopover from './CardExplainerPopover'
+import CardInfoPopover from './common/CardInfoPopover'
 import InPlaceEvidencePopover, { EvidenceDetails } from './InPlaceEvidencePopover'
 
 type Props = {
@@ -210,12 +210,7 @@ export default function DealQuickInsights({ model, synthesis }: Props) {
                     <div className="flex items-center gap-2">
                         <Lightbulb className="h-5 w-5 text-primary" />
                         <CardTitle className="text-lg">Quick insights</CardTitle>
-                        <CardExplainerPopover
-                            title="Quick Deal Insights"
-                            whatIsIt="Automated heuristics comparing this deal's core metrics (multiple, EBITDA margin, payback horizon, MOIC) against standard SMB acquisition benchmarks."
-                            howItWorks="Calculated directly from verified documented facts (EBITDA, purchase price, revenue, hold period) combined with VDR synthesis findings."
-                            whyItMatters="Enables searchers and PE buyers to immediately assess baseline deal attractiveness and spot potential return mismatches."
-                        />
+                        <CardInfoPopover cardId="deal-quick-insights" />
                     </div>
                     <span className="text-[11px] text-muted-foreground">Hover or click for citations & AI deep-dive</span>
                 </div>

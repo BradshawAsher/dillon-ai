@@ -4,6 +4,7 @@ import { Calendar } from 'lucide-react'
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
+import CardInfoPopover from './common/CardInfoPopover'
 
 type Props = {
     model: DealModel
@@ -80,6 +81,7 @@ export default function AcquisitionTimelineCard({ model, synthesis }: Props) {
                     <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-primary" />
                         <CardTitle className="text-lg">Projected timeline from LOI to close</CardTitle>
+                        <CardInfoPopover cardId="acquisition-timeline" />
                     </div>
                     <div className="text-right">
                         <div className="text-lg font-bold text-foreground">{totalWeeks} wks</div>
