@@ -3,7 +3,7 @@ import type { WorkspaceTab } from '../TabSidebarTOC'
 export type TourPlaylistId = 'core-fast' | 'deep-dive' | 'interactive-quest' | string
 
 export interface SimulatedAction {
-    type: 'click' | 'highlight' | 'scroll' | 'type_chat' | 'slider_tweak'
+    type: 'click' | 'highlight' | 'scroll' | 'type_chat' | 'slider_tweak' | 'stage_packet' | 'simulate_queue' | 'reset_simulation'
     description?: string
     targetSelector?: string
     delayMs?: number

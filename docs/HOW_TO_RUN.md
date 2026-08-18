@@ -55,8 +55,8 @@ The choice sticks in localStorage per browser.
 
 When running in **Live n8n** mode, the pipeline executes across 4 dedicated models:
 
-- **Per-Document Primary Extraction Model**: `Claude Sonnet 5` ($0.055/doc)
-- **Per-Document Backup Extraction Model**: `Claude Opus 5` (fallback routing)
+- **Per-Document Primary Extraction Model**: `OpenAI 5.6 Terra` ($0.055/doc)
+- **Per-Document Backup Extraction Model**: `OpenAI 5.6 Sol` (fallback routing)
 - **Project Synthesis Pass Primary Model**: `OpenAI 5.6 Terra` ($0.065/synthesis)
 - **Project Synthesis Pass Backup Model**: `OpenAI 5.6 Sol` (fallback routing)
 

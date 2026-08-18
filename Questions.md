@@ -1,7 +1,7 @@
 1. The "Hallucination / Accuracy" Question
 The Question: "Financial data is zero-tolerance. How do you prevent the AI from hallucinating a phantom line item or messing up EBITDA add-backs in a messy PDF?"
 
-How to Respond: > "We separate natural language parsing from mathematical execution. We use Llamaparse to parse docs, while Claude Sonnet 5 is used to read and classify unstructured text and footnotes, the actual math—like normalizing P&Ls, calculating gross profit margins, and aggregating totals—is handled by pure, deterministic Python code running at a strict 2% tolerance. The LLM extracts the text and maps the fields, but it never calculates the final numbers. Every finding also links directly back to the source page and coordinate in the PDF, so an analyst can verify it instantly."
+How to Respond: > "We separate natural language parsing from mathematical execution. We use Llamaparse to parse docs, while OpenAI 5.6 Terra is used to read and classify unstructured text and footnotes, the actual math—like normalizing P&Ls, calculating gross profit margins, and aggregating totals—is handled by pure, deterministic Python code running at a strict 2% tolerance. The LLM extracts the text and maps the fields, but it never calculates the final numbers. Every finding also links directly back to the source page and coordinate in the PDF, so an analyst can verify it instantly."
 
 2. The "Defensibility / Moat" Question
 The Question: "What's stopping OpenAI, Claude, or a well-funded legal tech incumbent from building this exact feature next month?"
@@ -18,11 +18,11 @@ How to Respond:
 "Security is non-negotiable for buy-side clients. All document processing and model calls are handled through enterprise-grade API connections (via secure endpoints) with strict zero-data-retention policies. None of our underlying model providers use customer data room files to train their public models, and all data is encrypted both in transit and at rest within our secure Supabase and cloud architecture."
 
 4. The "Model Routing & Cost" Question
-The Question: "Why use a multi-model routing setup (Sonnet for ingestion + OpenAI for synthesis) instead of just pointing everything at one flagship model?"
+The Question: "Why use an optimized dual-stage routing setup (Terra for ingestion + Terra/Sol for synthesis) instead of just pointing everything at one flagship model?"
 
 How to Respond:
 
-"Economics and capability matching. Different tasks require different cognitive strengths: Claude Sonnet 5 excels at dense financial text extraction and layout parsing, while OpenAI 5.6 Terra is exceptional at structured narrative synthesis and generating negotiation memos. By matching the right task to the right model—and backing it up with automated 3× retries—we slashed our packet processing costs by 51.6%, dropping our baseline from $2.40 down to $1.16 per 20-file packet without sacrificing a single point of accuracy."
+"Economics and capability matching. Different tasks require different cognitive strengths: OpenAI 5.6 Terra excels at dense financial text extraction and layout parsing as well as structured narrative synthesis and negotiation memos. By matching the right task to the right model—and backing it up with automated 3× retries with OpenAI 5.6 Sol failover—we slashed our packet processing costs by 51.6%, dropping our baseline from $2.40 down to $1.16 per 20-file packet without sacrificing a single point of accuracy."
 
 5. The "Edge Case / Messy Data" Question
 The Question: "What happens when a target company gives you completely disorganized, corrupted, or missing financial records?"

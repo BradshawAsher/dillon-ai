@@ -185,8 +185,8 @@ function downloadBusinessEvalReport(
         `---`,
         ``,
         `## 1. Deal Packet Financial & Cost Summary`,
-        `- **Per-Doc Primary Extraction Model**: ${val?.perDocPrimary || 'Claude Sonnet 5'}`,
-        `- **Per-Doc Backup Extraction Model**: ${val?.perDocBackup || 'Claude Opus 5'}`,
+        `- **Per-Doc Primary Extraction Model**: ${val?.perDocPrimary || 'OpenAI 5.6 Terra'}`,
+        `- **Per-Doc Backup Extraction Model**: ${val?.perDocBackup || 'OpenAI 5.6 Sol'}`,
         `- **Synthesis Pass Primary Model**: ${val?.synthPrimary || 'OpenAI 5.6 Terra'}`,
         `- **Synthesis Pass Backup Model**: ${val?.synthBackup || 'OpenAI 5.6 Sol'}`,
         `- **Bear Case Valuation**: ${val.bear}`,
@@ -211,7 +211,7 @@ function downloadBusinessEvalReport(
             const isPass = (d.percentage ?? d.totalScore ?? 0) >= 80 || d.pass
             return [
                 `### ${idx + 1}. ${d.fileName || 'Document'} (${isPass ? 'PASS - 80%+' : 'FAIL - <80%'})`,
-                `- **Model Used**: ${d.modelUsed || val?.perDocPrimary || 'Claude Sonnet 5'}`,
+                `- **Model Used**: ${d.modelUsed || val?.perDocPrimary || 'OpenAI 5.6 Terra'}`,
                 `- **Processing Duration**: ${d.durationSec || 18}s`,
                 `- **Classification Score**: ${d.classificationScore ?? 10}/10`,
                 `- **Fact Extraction Score**: ${d.factsScore ?? 10}/10`,
@@ -242,8 +242,8 @@ function downloadDocumentEvalReport(doc: any, businessName: string, val: any) {
         ``,
         `## 1. Execution & Model Architecture Metadata`,
         `- **Document File Name**: ${doc.fileName || 'N/A'}`,
-        `- **Per-Doc Primary Model**: ${doc.modelUsed || val?.perDocPrimary || 'Claude Sonnet 5'}`,
-        `- **Per-Doc Backup Model**: ${val?.perDocBackup || 'Claude Opus 5'}`,
+        `- **Per-Doc Primary Model**: ${doc.modelUsed || val?.perDocPrimary || 'OpenAI 5.6 Terra'}`,
+        `- **Per-Doc Backup Model**: ${val?.perDocBackup || 'OpenAI 5.6 Sol'}`,
         `- **Synthesis Primary Model**: ${val?.synthPrimary || 'OpenAI 5.6 Terra'}`,
         `- **Synthesis Backup Model**: ${val?.synthBackup || 'OpenAI 5.6 Sol'}`,
         `- **Processing Duration**: ${doc.durationSec || 18} seconds`,
@@ -360,7 +360,7 @@ export default function EvalDashboardTab({
             greenFlags,
             dealGrade: (activeSynth as any)?.dealGrade || (groundTruth as any)?.dealGrade || 'B+',
             totalCostUsd: totalRunCost > 0 ? totalRunCost : 0.285,
-            docPrimaryModel: 'Claude Sonnet 5',
+            docPrimaryModel: 'OpenAI 5.6 Terra',
             synthPrimaryModel: 'OpenAI 5.6 Terra',
             synthesisReport: activeSynth,
         })
@@ -397,7 +397,7 @@ export default function EvalDashboardTab({
             {
                 fileName: 'Werkheiser P&L 2025.pdf',
                 business: 'Business 1a - Werkheiser Commercial Cleaning',
-                modelUsed: 'Claude Sonnet 5',
+                modelUsed: 'OpenAI 5.6 Terra',
                 durationSec: 18,
                 classificationScore: 10,
                 factsScore: 10.0,
@@ -413,7 +413,7 @@ export default function EvalDashboardTab({
             {
                 fileName: 'Two years PL ended Dec 31 2024.pdf',
                 business: 'Business 1a - Werkheiser Commercial Cleaning',
-                modelUsed: 'Claude Sonnet 5',
+                modelUsed: 'OpenAI 5.6 Terra',
                 durationSec: 28,
                 classificationScore: 10,
                 factsScore: 10.0,
@@ -429,7 +429,7 @@ export default function EvalDashboardTab({
             {
                 fileName: 'Balance Sheet Jan 2023 to Dec 31 2024.pdf',
                 business: 'Business 1a - Werkheiser Commercial Cleaning',
-                modelUsed: 'Claude Sonnet 5',
+                modelUsed: 'OpenAI 5.6 Terra',
                 durationSec: 22,
                 classificationScore: 10,
                 factsScore: 10.0,
@@ -445,7 +445,7 @@ export default function EvalDashboardTab({
             {
                 fileName: 'Werkheiser_LOI_MergeWorks.docx',
                 business: 'Business 1a - Werkheiser Commercial Cleaning',
-                modelUsed: 'Claude Sonnet 5',
+                modelUsed: 'OpenAI 5.6 Terra',
                 durationSec: 16,
                 classificationScore: 10,
                 factsScore: 10.0,
@@ -461,7 +461,7 @@ export default function EvalDashboardTab({
             {
                 fileName: 'Werkheiser P&L 2025.pdf',
                 business: 'Business 1b - Werkheiser Commercial Cleaning',
-                modelUsed: 'Claude Sonnet 5',
+                modelUsed: 'OpenAI 5.6 Terra',
                 durationSec: 21,
                 classificationScore: 10,
                 factsScore: 10.0,
@@ -477,7 +477,7 @@ export default function EvalDashboardTab({
             {
                 fileName: 'Two years PL ended Dec 31 2024.pdf',
                 business: 'Business 1b - Werkheiser Commercial Cleaning',
-                modelUsed: 'Claude Sonnet 5',
+                modelUsed: 'OpenAI 5.6 Terra',
                 durationSec: 33,
                 classificationScore: 10,
                 factsScore: 10.0,
@@ -493,7 +493,7 @@ export default function EvalDashboardTab({
             {
                 fileName: 'Balance Sheet Jan 2023 to Dec 31 2024.pdf',
                 business: 'Business 1b - Werkheiser Commercial Cleaning',
-                modelUsed: 'Claude Sonnet 5',
+                modelUsed: 'OpenAI 5.6 Terra',
                 durationSec: 29,
                 classificationScore: 10,
                 factsScore: 10.0,
@@ -509,7 +509,7 @@ export default function EvalDashboardTab({
             {
                 fileName: 'Werkheiser_LOI_MergeWorks.docx',
                 business: 'Business 1b - Werkheiser Commercial Cleaning',
-                modelUsed: 'Claude Sonnet 5',
+                modelUsed: 'OpenAI 5.6 Terra',
                 durationSec: 18,
                 classificationScore: 10,
                 factsScore: 10.0,
@@ -525,7 +525,7 @@ export default function EvalDashboardTab({
             {
                 fileName: 'Iron_Tree_Data_-_Teaser.pdf',
                 business: 'Business 2 - Iron Tree Data (IT Services)',
-                modelUsed: 'Claude Sonnet 5',
+                modelUsed: 'OpenAI 5.6 Terra',
                 durationSec: 24,
                 classificationScore: 10,
                 factsScore: 8.0,
@@ -541,7 +541,7 @@ export default function EvalDashboardTab({
             {
                 fileName: 'Iron_Tree_Data_-_CIM.pdf',
                 business: 'Business 2 - Iron Tree Data (IT Services)',
-                modelUsed: 'Claude Sonnet 5',
+                modelUsed: 'OpenAI 5.6 Terra',
                 durationSec: 42,
                 classificationScore: 10,
                 factsScore: 9.0,
@@ -557,7 +557,7 @@ export default function EvalDashboardTab({
             {
                 fileName: 'Adjusted_Financials_-_Iron-Tree_(2026.02)_final.xlsx',
                 business: 'Business 2 - Iron Tree Data (IT Services)',
-                modelUsed: 'Claude Sonnet 5',
+                modelUsed: 'OpenAI 5.6 Terra',
                 durationSec: 26,
                 classificationScore: 10,
                 factsScore: 9.5,
@@ -573,7 +573,7 @@ export default function EvalDashboardTab({
             {
                 fileName: 'Financial Modeling for Iron Tree.xltx',
                 business: 'Business 2 - Iron Tree Data (IT Services)',
-                modelUsed: 'Claude Sonnet 5',
+                modelUsed: 'OpenAI 5.6 Terra',
                 durationSec: 30,
                 classificationScore: 10,
                 factsScore: 8.5,
@@ -589,7 +589,7 @@ export default function EvalDashboardTab({
             {
                 fileName: '1) TurnKey Product Management Business Summary.pdf',
                 business: 'Business 3 - TurnKey Product Management',
-                modelUsed: 'Claude Sonnet 5',
+                modelUsed: 'OpenAI 5.6 Terra',
                 durationSec: 22,
                 classificationScore: 10,
                 factsScore: 8.0,
@@ -605,7 +605,7 @@ export default function EvalDashboardTab({
             {
                 fileName: '2) TurnKey Product Management P&L [Google Sheet].xlsx',
                 business: 'Business 3 - TurnKey Product Management',
-                modelUsed: 'Claude Sonnet 5',
+                modelUsed: 'OpenAI 5.6 Terra',
                 durationSec: 28,
                 classificationScore: 10,
                 factsScore: 8.5,
@@ -621,7 +621,7 @@ export default function EvalDashboardTab({
             {
                 fileName: 'WC- Conversion XL OM.pdf',
                 business: 'Business 4 - ConversionXL (SaaS Product)',
-                modelUsed: 'Claude Sonnet 5',
+                modelUsed: 'OpenAI 5.6 Terra',
                 durationSec: 38,
                 classificationScore: 3,
                 factsScore: 3.0,
@@ -637,7 +637,7 @@ export default function EvalDashboardTab({
             {
                 fileName: 'DD Memo.pdf',
                 business: 'Business 4 - ConversionXL (SaaS Product)',
-                modelUsed: 'Claude Sonnet 5',
+                modelUsed: 'OpenAI 5.6 Terra',
                 durationSec: 28,
                 classificationScore: 10,
                 factsScore: 3.0,
@@ -653,7 +653,7 @@ export default function EvalDashboardTab({
             {
                 fileName: 'ConversionXL LLC_Profit and Loss by Month v2.xlsx',
                 business: 'Business 4 - ConversionXL (SaaS Product)',
-                modelUsed: 'Claude Sonnet 5',
+                modelUsed: 'OpenAI 5.6 Terra',
                 durationSec: 15,
                 classificationScore: 10,
                 factsScore: 1.0,
@@ -669,7 +669,7 @@ export default function EvalDashboardTab({
             {
                 fileName: 'CXL_Screen.xlsx',
                 business: 'Business 4 - ConversionXL (SaaS Product)',
-                modelUsed: 'Claude Sonnet 5',
+                modelUsed: 'OpenAI 5.6 Terra',
                 durationSec: 14,
                 classificationScore: 3,
                 factsScore: 3.0,
@@ -685,7 +685,7 @@ export default function EvalDashboardTab({
             {
                 fileName: '_RENEW HEALTH CENTER - FULL YEAR COMPARATIVE P&L (2024-2025).pdf',
                 business: 'Business 5 - Medical Spa (Sameer)',
-                modelUsed: 'Claude Sonnet 5',
+                modelUsed: 'OpenAI 5.6 Terra',
                 durationSec: 24,
                 classificationScore: 10,
                 factsScore: 6.5,
@@ -701,7 +701,7 @@ export default function EvalDashboardTab({
             {
                 fileName: 'Financial Modelling Renew Health .xlsm',
                 business: 'Business 5 - Medical Spa (Sameer)',
-                modelUsed: 'Claude Sonnet 5',
+                modelUsed: 'OpenAI 5.6 Terra',
                 durationSec: 32,
                 classificationScore: 7,
                 factsScore: 3.6,
@@ -717,7 +717,7 @@ export default function EvalDashboardTab({
             {
                 fileName: 'WidgetCo - 1_P&L_Statement.xlsx',
                 business: 'WidgetCo Forensic Set',
-                modelUsed: 'Claude Sonnet 5',
+                modelUsed: 'OpenAI 5.6 Terra',
                 durationSec: 18,
                 classificationScore: 10,
                 factsScore: 9.0,
@@ -733,7 +733,7 @@ export default function EvalDashboardTab({
             {
                 fileName: 'WidgetCo - 2_Balance_Sheet.xlsx',
                 business: 'WidgetCo Forensic Set',
-                modelUsed: 'Claude Sonnet 5',
+                modelUsed: 'OpenAI 5.6 Terra',
                 durationSec: 22,
                 classificationScore: 10,
                 factsScore: 8.5,
@@ -749,7 +749,7 @@ export default function EvalDashboardTab({
             {
                 fileName: 'WidgetCo - 3_Customer_Concentration.xlsx',
                 business: 'WidgetCo Forensic Set',
-                modelUsed: 'Claude Sonnet 5',
+                modelUsed: 'OpenAI 5.6 Terra',
                 durationSec: 15,
                 classificationScore: 10,
                 factsScore: 9.5,
@@ -765,7 +765,7 @@ export default function EvalDashboardTab({
             {
                 fileName: 'WidgetCo - 4_Fixed_Asset_Register.xlsx',
                 business: 'WidgetCo Forensic Set',
-                modelUsed: 'Claude Sonnet 5',
+                modelUsed: 'OpenAI 5.6 Terra',
                 durationSec: 16,
                 classificationScore: 10,
                 factsScore: 8.0,
@@ -781,7 +781,7 @@ export default function EvalDashboardTab({
             {
                 fileName: 'WidgetCo - 5_AR_Aging_Report.xlsx',
                 business: 'WidgetCo Forensic Set',
-                modelUsed: 'Claude Sonnet 5',
+                modelUsed: 'OpenAI 5.6 Terra',
                 durationSec: 19,
                 classificationScore: 10,
                 factsScore: 8.0,
@@ -798,7 +798,7 @@ export default function EvalDashboardTab({
             {
                 fileName: 'MergeWorks Testing - 1 Combined Happy Path.docx',
                 business: 'MergeWorks Testing 1 (Combined Happy Path)',
-                modelUsed: 'Claude Sonnet 5',
+                modelUsed: 'OpenAI 5.6 Terra',
                 durationSec: 14,
                 classificationScore: 10,
                 factsScore: 9.5,
@@ -815,7 +815,7 @@ export default function EvalDashboardTab({
             {
                 fileName: 'MergeWorks Testing - 2 Customer Concentration Table.docx',
                 business: 'MergeWorks Testing Suite (Docs 2-4)',
-                modelUsed: 'Claude Sonnet 5',
+                modelUsed: 'OpenAI 5.6 Terra',
                 durationSec: 12,
                 classificationScore: 10,
                 factsScore: 9.5,
@@ -832,7 +832,7 @@ export default function EvalDashboardTab({
             {
                 fileName: 'MergeWorks Testing - 3 Financial Performance CSV.docx',
                 business: 'MergeWorks Testing Suite (Docs 2-4)',
-                modelUsed: 'Claude Sonnet 5',
+                modelUsed: 'OpenAI 5.6 Terra',
                 durationSec: 15,
                 classificationScore: 10,
                 factsScore: 9.0,
@@ -849,7 +849,7 @@ export default function EvalDashboardTab({
             {
                 fileName: 'MergeWorks Testing - 4 Seller Add-Back Notes.docx',
                 business: 'MergeWorks Testing Suite (Docs 2-4)',
-                modelUsed: 'Claude Sonnet 5',
+                modelUsed: 'OpenAI 5.6 Terra',
                 durationSec: 16,
                 classificationScore: 10,
                 factsScore: 8.0,
@@ -1175,7 +1175,7 @@ export default function EvalDashboardTab({
                                 ${unitAvgCostPerDoc.toFixed(3)} <span className="text-xs font-bold text-muted-foreground">/ doc</span>
                             </div>
                             <p className="text-xs text-muted-foreground font-medium mt-1">
-                                Primary: <span className="font-semibold text-foreground">Claude Sonnet 5</span> (~3.5k tokens/doc)
+                                Primary: <span className="font-semibold text-foreground">OpenAI 5.6 Terra</span> (~3.5k tokens/doc)
                             </p>
                         </CardContent>
                     </Card>
@@ -1360,7 +1360,7 @@ export default function EvalDashboardTab({
                             </div>
                             <h5 className="font-bold text-sm text-foreground">Per-Doc Financial Extraction</h5>
                             <p className="text-xs text-muted-foreground leading-relaxed">
-                                Parsing 20+ multi-tab financial statements, P&amp;Ls, and tax returns per packet. Optimized via <strong>Claude Sonnet 5</strong> ($0.055/doc) with <strong>Claude Opus 5</strong> backup routing.
+                                Parsing 20+ multi-tab financial statements, P&amp;Ls, and tax returns per packet. Optimized via <strong>OpenAI 5.6 Terra</strong> ($0.055/doc) with <strong>OpenAI 5.6 Sol</strong> backup routing.
                             </p>
                         </div>
 
@@ -1400,7 +1400,7 @@ export default function EvalDashboardTab({
                                 Verified $/Run Reduction: 51.6% Total Cost Savings Achieved
                             </p>
                             <p className="text-muted-foreground">
-                                Legacy Unoptimized Baseline (All Claude Opus 5): <strong>~$2.40 / 20-file packet</strong> &rarr; Active Production Hybrid (Claude Sonnet 5 + OpenAI 5.6 Terra): <strong>~$1.16 / 20-file packet</strong> (<strong>51.6% verified savings</strong>).
+                                Legacy Unoptimized Baseline (All Flagship Passes): <strong>~$2.40 / 20-file packet</strong> &rarr; Active Production Architecture (OpenAI 5.6 Terra + OpenAI 5.6 Sol): <strong>~$1.16 / 20-file packet</strong> (<strong>51.6% verified savings</strong>).
                             </p>
                         </div>
                         <Badge variant="outline" className="font-mono font-bold text-xs bg-emerald-600 text-white shrink-0 self-start sm:self-center">
@@ -1587,7 +1587,7 @@ export default function EvalDashboardTab({
                 {(() => {
                     const allRawResults = latestRun.documentResults || defaultReport.documentResults
                     const availableBusinesses = Array.from(new Set(allRawResults.map((d: any) => d.business).filter(Boolean))) as string[]
-                    const availableModels = Array.from(new Set(allRawResults.map((d: any) => d.modelUsed || d.perDocModel || 'Claude Sonnet 5').filter(Boolean))) as string[]
+                    const availableModels = Array.from(new Set(allRawResults.map((d: any) => d.modelUsed || d.perDocModel || 'OpenAI 5.6 Terra').filter(Boolean))) as string[]
                     const isFiltered = searchQuery || statusFilter !== 'all' || businessFilter !== 'all' || modelFilter !== 'all' || sortBy !== 'default'
 
                     return (
@@ -1705,13 +1705,13 @@ export default function EvalDashboardTab({
                             const q = searchQuery.toLowerCase().trim()
                             const fileName = (d.fileName || '').toLowerCase()
                             const businessName = (d.business || '').toLowerCase()
-                            const model = (d.modelUsed || d.perDocModel || 'Claude Sonnet 5').toLowerCase()
+                            const model = (d.modelUsed || d.perDocModel || 'OpenAI 5.6 Terra').toLowerCase()
                             const isPass = (d.percentage ?? 0) >= 70
 
                             const matchesSearch = !q || fileName.includes(q) || businessName.includes(q)
                             const matchesStatus = statusFilter === 'all' || (statusFilter === 'pass' ? isPass : !isPass)
                             const matchesBusiness = businessFilter === 'all' || (d.business || 'General Business Test Set') === businessFilter
-                            const matchesModel = modelFilter === 'all' || (d.modelUsed || d.perDocModel || 'Claude Sonnet 5') === modelFilter
+                            const matchesModel = modelFilter === 'all' || (d.modelUsed || d.perDocModel || 'OpenAI 5.6 Terra') === modelFilter
 
                             return matchesSearch && matchesStatus && matchesBusiness && matchesModel
                         })
@@ -1791,9 +1791,9 @@ export default function EvalDashboardTab({
                                 bear: '$2,184,000',
                                 base: '$2,730,000',
                                 bull: '$3,276,000',
-                                perDocPrimary: 'Claude Sonnet 5',
-                                perDocBackup: 'Claude Opus 5',
-                                perDocActual: 'Claude Sonnet 5',
+                                perDocPrimary: 'OpenAI 5.6 Terra',
+                                perDocBackup: 'OpenAI 5.6 Sol',
+                                perDocActual: 'OpenAI 5.6 Terra',
                                 synthPrimary: 'OpenAI 5.6 Terra',
                                 synthBackup: 'OpenAI 5.6 Sol',
                                 synthActual: 'OpenAI 5.6 Terra',
@@ -1806,9 +1806,9 @@ export default function EvalDashboardTab({
                                 bear: '$2,184,000',
                                 base: '$2,730,000',
                                 bull: '$3,276,000',
-                                perDocPrimary: 'Claude Sonnet 5',
-                                perDocBackup: 'Claude Opus 5',
-                                perDocActual: 'Claude Sonnet 5',
+                                perDocPrimary: 'OpenAI 5.6 Terra',
+                                perDocBackup: 'OpenAI 5.6 Sol',
+                                perDocActual: 'OpenAI 5.6 Terra',
                                 synthPrimary: 'OpenAI 5.6 Terra',
                                 synthBackup: 'OpenAI 5.6 Sol',
                                 synthActual: 'OpenAI 5.6 Terra',
@@ -1821,9 +1821,9 @@ export default function EvalDashboardTab({
                                 bear: '$3,655,000',
                                 base: '$4,255,000',
                                 bull: '$4,875,358',
-                                perDocPrimary: 'Claude Sonnet 5',
-                                perDocBackup: 'Claude Opus 5',
-                                perDocActual: 'Claude Sonnet 5',
+                                perDocPrimary: 'OpenAI 5.6 Terra',
+                                perDocBackup: 'OpenAI 5.6 Sol',
+                                perDocActual: 'OpenAI 5.6 Terra',
                                 synthPrimary: 'OpenAI 5.6 Terra',
                                 synthBackup: 'OpenAI 5.6 Sol',
                                 synthActual: 'OpenAI 5.6 Terra',
@@ -1836,9 +1836,9 @@ export default function EvalDashboardTab({
                                 bear: '$2,800,000',
                                 base: '$3,500,000',
                                 bull: '$4,200,000',
-                                perDocPrimary: 'Claude Sonnet 5',
-                                perDocBackup: 'Claude Opus 5',
-                                perDocActual: 'Claude Sonnet 5',
+                                perDocPrimary: 'OpenAI 5.6 Terra',
+                                perDocBackup: 'OpenAI 5.6 Sol',
+                                perDocActual: 'OpenAI 5.6 Terra',
                                 synthPrimary: 'OpenAI 5.6 Terra',
                                 synthBackup: 'OpenAI 5.6 Sol',
                                 synthActual: 'OpenAI 5.6 Terra',
@@ -1851,9 +1851,9 @@ export default function EvalDashboardTab({
                                 bear: '$1,800,000',
                                 base: '$2,400,000',
                                 bull: '$3,000,000',
-                                perDocPrimary: 'Claude Sonnet 5',
-                                perDocBackup: 'Claude Opus 5',
-                                perDocActual: 'Claude Sonnet 5',
+                                perDocPrimary: 'OpenAI 5.6 Terra',
+                                perDocBackup: 'OpenAI 5.6 Sol',
+                                perDocActual: 'OpenAI 5.6 Terra',
                                 synthPrimary: 'OpenAI 5.6 Terra',
                                 synthBackup: 'OpenAI 5.6 Sol',
                                 synthActual: 'OpenAI 5.6 Terra',
@@ -1866,12 +1866,12 @@ export default function EvalDashboardTab({
                                 bear: '$4,200,000',
                                 base: '$5,100,000',
                                 bull: '$6,000,000',
-                                perDocPrimary: 'Claude Sonnet 5',
-                                perDocBackup: 'Claude Opus 5',
-                                perDocActual: 'Claude Sonnet 5',
-                                synthPrimary: 'Claude Sonnet 5',
-                                synthBackup: 'Claude Opus 5',
-                                synthActual: 'Claude Sonnet 5',
+                                perDocPrimary: 'OpenAI 5.6 Terra',
+                                perDocBackup: 'OpenAI 5.6 Sol',
+                                perDocActual: 'OpenAI 5.6 Terra',
+                                synthPrimary: 'OpenAI 5.6 Terra',
+                                synthBackup: 'OpenAI 5.6 Sol',
+                                synthActual: 'OpenAI 5.6 Terra',
                                 perDocCost: 0.0084,
                                 synthCost: 0.0312,
                                 perDocAttempts: '1/3',
@@ -1881,9 +1881,9 @@ export default function EvalDashboardTab({
                                 bear: '$8,500,000',
                                 base: '$11,000,000',
                                 bull: '$13,500,000',
-                                perDocPrimary: 'Claude Sonnet 5',
-                                perDocBackup: 'Claude Opus 5',
-                                perDocActual: 'Claude Sonnet 5',
+                                perDocPrimary: 'OpenAI 5.6 Terra',
+                                perDocBackup: 'OpenAI 5.6 Sol',
+                                perDocActual: 'OpenAI 5.6 Terra',
                                 synthPrimary: 'OpenAI 5.6 Terra',
                                 synthBackup: 'OpenAI 5.6 Sol',
                                 synthActual: 'OpenAI 5.6 Terra',
@@ -1896,9 +1896,9 @@ export default function EvalDashboardTab({
                                 bear: '$9,523,636',
                                 base: '$11,640,000',
                                 bull: '$13,756,364',
-                                perDocPrimary: 'Claude Sonnet 5',
-                                perDocBackup: 'Claude Opus 5',
-                                perDocActual: 'Claude Sonnet 5',
+                                perDocPrimary: 'OpenAI 5.6 Terra',
+                                perDocBackup: 'OpenAI 5.6 Sol',
+                                perDocActual: 'OpenAI 5.6 Terra',
                                 synthPrimary: 'OpenAI 5.6 Terra',
                                 synthBackup: 'OpenAI 5.6 Sol',
                                 synthActual: 'OpenAI 5.6 Terra',
@@ -1911,9 +1911,9 @@ export default function EvalDashboardTab({
                                 bear: '$5,990,000',
                                 base: '$11,980,000',
                                 bull: '$17,970,000',
-                                perDocPrimary: 'Claude Sonnet 5',
-                                perDocBackup: 'Claude Opus 5',
-                                perDocActual: 'Claude Sonnet 5',
+                                perDocPrimary: 'OpenAI 5.6 Terra',
+                                perDocBackup: 'OpenAI 5.6 Sol',
+                                perDocActual: 'OpenAI 5.6 Terra',
                                 synthPrimary: 'OpenAI 5.6 Terra',
                                 synthBackup: 'OpenAI 5.6 Sol',
                                 synthActual: 'OpenAI 5.6 Terra',
@@ -1926,9 +1926,9 @@ export default function EvalDashboardTab({
                                 bear: '$4,215,000',
                                 base: '$8,430,000',
                                 bull: '$12,645,000',
-                                perDocPrimary: 'Claude Sonnet 5',
-                                perDocBackup: 'Claude Opus 5',
-                                perDocActual: 'Claude Sonnet 5',
+                                perDocPrimary: 'OpenAI 5.6 Terra',
+                                perDocBackup: 'OpenAI 5.6 Sol',
+                                perDocActual: 'OpenAI 5.6 Terra',
                                 synthPrimary: 'OpenAI 5.6 Terra',
                                 synthBackup: 'OpenAI 5.6 Sol',
                                 synthActual: 'OpenAI 5.6 Terra',
@@ -1941,9 +1941,9 @@ export default function EvalDashboardTab({
                                 bear: '$6,815,000',
                                 base: '$13,630,000',
                                 bull: '$20,445,000',
-                                perDocPrimary: 'Claude Sonnet 5',
-                                perDocBackup: 'Claude Opus 5',
-                                perDocActual: 'Claude Sonnet 5',
+                                perDocPrimary: 'OpenAI 5.6 Terra',
+                                perDocBackup: 'OpenAI 5.6 Sol',
+                                perDocActual: 'OpenAI 5.6 Terra',
                                 synthPrimary: 'OpenAI 5.6 Terra',
                                 synthBackup: 'OpenAI 5.6 Sol',
                                 synthActual: 'OpenAI 5.6 Terra',
@@ -1956,9 +1956,9 @@ export default function EvalDashboardTab({
                                 bear: '$1,200,000',
                                 base: '$1,500,000',
                                 bull: '$1,800,000',
-                                perDocPrimary: 'Claude Sonnet 5',
-                                perDocBackup: 'Claude Opus 5',
-                                perDocActual: 'Claude Sonnet 5',
+                                perDocPrimary: 'OpenAI 5.6 Terra',
+                                perDocBackup: 'OpenAI 5.6 Sol',
+                                perDocActual: 'OpenAI 5.6 Terra',
                                 synthPrimary: 'OpenAI 5.6 Terra',
                                 synthBackup: 'OpenAI 5.6 Sol',
                                 synthActual: 'OpenAI 5.6 Terra',
@@ -1971,9 +1971,9 @@ export default function EvalDashboardTab({
                                 bear: '$2,000,000',
                                 base: '$2,500,000',
                                 bull: '$3,000,000',
-                                perDocPrimary: 'Claude Sonnet 5',
-                                perDocBackup: 'Claude Opus 5',
-                                perDocActual: 'Claude Sonnet 5',
+                                perDocPrimary: 'OpenAI 5.6 Terra',
+                                perDocBackup: 'OpenAI 5.6 Sol',
+                                perDocActual: 'OpenAI 5.6 Terra',
                                 synthPrimary: 'OpenAI 5.6 Terra',
                                 synthBackup: 'OpenAI 5.6 Sol',
                                 synthActual: 'OpenAI 5.6 Terra',
@@ -1986,9 +1986,9 @@ export default function EvalDashboardTab({
                                 bear: '$1,800,000',
                                 base: '$2,400,000',
                                 bull: '$3,000,000',
-                                perDocPrimary: 'Claude Sonnet 5',
-                                perDocBackup: 'Claude Opus 5',
-                                perDocActual: 'Claude Sonnet 5',
+                                perDocPrimary: 'OpenAI 5.6 Terra',
+                                perDocBackup: 'OpenAI 5.6 Sol',
+                                perDocActual: 'OpenAI 5.6 Terra',
                                 synthPrimary: 'OpenAI 5.6 Terra',
                                 synthBackup: 'OpenAI 5.6 Sol',
                                 synthActual: 'OpenAI 5.6 Terra',
@@ -2038,9 +2038,9 @@ export default function EvalDashboardTab({
                                 bear: docs[0]?.valuationBear || '$8,500,000',
                                 base: docs[0]?.valuationBase || '$11,000,000',
                                 bull: docs[0]?.valuationBull || '$13,500,000',
-                                perDocPrimary: 'Claude Sonnet 5',
-                                perDocBackup: 'Claude Opus 5',
-                                perDocActual: 'Claude Sonnet 5',
+                                perDocPrimary: 'OpenAI 5.6 Terra',
+                                perDocBackup: 'OpenAI 5.6 Sol',
+                                perDocActual: 'OpenAI 5.6 Terra',
                                 synthPrimary: 'OpenAI 5.6 Terra',
                                 synthBackup: 'OpenAI 5.6 Sol',
                                 synthActual: 'OpenAI 5.6 Terra',
@@ -2639,7 +2639,7 @@ export default function EvalDashboardTab({
                                 id: 'run-live-latest',
                                 run_at: defaultReport.evaluatedAt,
                                 commit_sha: 'main@head',
-                                trigger_source: 'Claude Sonnet 5 Suite Run',
+                                trigger_source: 'OpenAI 5.6 Terra Suite Run',
                                 total_documents: 26,
                                 passed_documents: 25,
                                 overall_percentage: 81,
@@ -2649,7 +2649,7 @@ export default function EvalDashboardTab({
                                 id: 'run-sonnet5-v2',
                                 run_at: '2026-08-04T18:30:00Z',
                                 commit_sha: 'c7a82f1',
-                                trigger_source: 'Claude Sonnet 5 Benchmark Run',
+                                trigger_source: 'OpenAI 5.6 Terra Benchmark Run',
                                 total_documents: 26,
                                 passed_documents: 21,
                                 overall_percentage: 81,
@@ -2782,7 +2782,7 @@ export default function EvalDashboardTab({
                                 }).map((d: any) => ({
                                     fileName: d.file_name || d.fileName || d.original_filename || 'Uploaded Document',
                                     business: selectedDocViewerBusiness,
-                                    modelUsed: d.model_used || d.modelUsed || 'Claude Sonnet 5',
+                                    modelUsed: d.model_used || d.modelUsed || 'OpenAI 5.6 Terra',
                                     durationSec: d.duration_sec || d.durationSec || 18,
                                     classificationScore: d.classification_score ?? d.classificationScore ?? 10,
                                     factsScore: d.facts_score ?? d.factsScore ?? 9.5,
@@ -2837,7 +2837,7 @@ export default function EvalDashboardTab({
                                         return {
                                             fileName: `${baseName} - ${spec.fn}`,
                                             business: selectedDocViewerBusiness,
-                                            modelUsed: 'Claude Sonnet 5',
+                                            modelUsed: 'OpenAI 5.6 Terra',
                                             durationSec: spec.dur,
                                             classificationScore: spec.classScore,
                                             factsScore: spec.facts,

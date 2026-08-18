@@ -52,7 +52,7 @@ function formatModelDisplayName(modelStr?: string, runType?: string): string {
     if (runType && runType.includes('Synthesis')) {
         return 'GPT 5.6 Terra'
     }
-    return 'Claude Sonnet 5'
+    return 'OpenAI 5.6 Terra'
 }
 
 // 15 Standard DD Companies for fallback baseline ledger generation
@@ -105,7 +105,7 @@ export default function SpendingAnalyticsTab({
                     projectId: doc.projectId || doc.projectKey || 'live-project',
                     runType: 'Document Extraction',
                     fileName: doc.fileName || doc.title || `Document-${idx + 1}.pdf`,
-                    model: 'Claude Sonnet 5',
+                    model: 'OpenAI 5.6 Terra',
                     inputTokens: inTok,
                     outputTokens: outTok,
                     totalTokens: inTok + outTok,
@@ -161,7 +161,7 @@ export default function SpendingAnalyticsTab({
                     projectId: comp.id,
                     runType: 'Document Extraction',
                     fileName: `Data Room Batch (21 Documents)`,
-                    model: 'Claude Sonnet 5',
+                    model: 'OpenAI 5.6 Terra',
                     inputTokens: 315000,
                     outputTokens: 42000,
                     totalTokens: 357000,
@@ -393,7 +393,7 @@ export default function SpendingAnalyticsTab({
                     </CardHeader>
                     <CardContent className="pt-0 text-xs text-muted-foreground space-y-1">
                         <div className="flex justify-between">
-                            <span>Extraction (Claude Sonnet 5):</span>
+                            <span>Extraction (OpenAI 5.6 Terra):</span>
                             <span className="font-semibold text-foreground">${totals.extractionSpend.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between">

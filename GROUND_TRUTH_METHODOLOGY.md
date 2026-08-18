@@ -138,7 +138,7 @@ When prospective buyers ask why MergeWorks achieves **98%+ accuracy** where gene
 ```mermaid
 graph TD
     subgraph Pillar 1: Dual-Pass Pipeline
-        P1A["Pass 1: Claude Sonnet 5 Document Extraction"] --> P1B["Pass 2: OpenAI 5.6 Terra Deal Room Synthesis"]
+        P1A["Pass 1: OpenAI 5.6 Terra Document Extraction"] --> P1B["Pass 2: OpenAI 5.6 Terra Deal Room Synthesis"]
     end
     subgraph Pillar 2: Deterministic Pre-Processing
         P2A["Cell-Header Flattening & Sheet Indexing"]
@@ -159,7 +159,7 @@ graph TD
 ```
 
 ### Pillar 1: Dual-Pass Extraction & Project Synthesis Architecture
-- **Pass 1 (Per-Document Extraction)**: [`Claude Sonnet 5`](https://anthropic.com) (with [`Claude Opus 5`](https://anthropic.com) fallback) extracts raw tables, notes, and individual file metrics.
+- **Pass 1 (Per-Document Extraction)**: [`OpenAI 5.6 Terra`](https://openai.com) (with [`OpenAI 5.6 Sol`](https://openai.com) fallback) extracts raw tables, notes, and individual file metrics.
 - **Pass 2 (Project Synthesis Consolidator)**: [`OpenAI 5.6 Terra`](https://openai.com) (with `OpenAI 5.6 Sol` fallback) ingests all document payloads together. It reconciles single-file noise (e.g. converting 24 monthly columns into annual FY totals) and eliminates parsing ambiguity.
 - **The 90/10 Scoring Rule**: 90% of each dimension's score is driven by the final synthesized deal room deliverable, while 10% tests single-document parsing fidelity.
 
@@ -258,6 +258,6 @@ Dual-mode: Pre-LOI Discovery 98% | Post-LOI Negotiation 99%
 | Question | MergeWorks Answer |
 | :--- | :--- |
 | **"How were your ground truths created?"** | Transcribed and reconciled by M&A financial analysts and CPAs from real deal rooms and forensic benchmarks (41 document specs, 20+ deals). |
-| **"Why is accuracy so high (98%+)?"** | Dual-pass architecture (Claude Sonnet 5 per-document + OpenAI 5.6 Terra project synthesis) combined with deterministic accounting math engines and semantic fuzzy risk matching. |
+| **"Why is accuracy so high (98%+)?"** | Dual-pass architecture (OpenAI 5.6 Terra per-document + OpenAI 5.6 Terra project synthesis) combined with deterministic accounting math engines and semantic fuzzy risk matching. |
 | **"Are the numbers verifiable?"** | Yes. 100% of extracted metrics link directly to in-place source citations (PDF pages, Excel sheet cells). |
 | **"Is this tested continuously?"** | Yes. Automated GitHub Actions CI/CD runs the full 41-doc benchmark on every commit and publishes live results to Supabase (`public.eval_runs`). |

@@ -9,8 +9,8 @@ It validates extraction and synthesis outputs against verified ground truth spec
 
 The evaluation harness measures benchmark accuracy across our 4 production models:
 
-- **Per-Document Primary Extraction Model**: `Claude Sonnet 5` ($0.055/doc)
-- **Per-Document Backup Extraction Model**: `Claude Opus 5` (fallback routing)
+- **Per-Document Primary Extraction Model**: `OpenAI 5.6 Terra` ($0.055/doc)
+- **Per-Document Backup Extraction Model**: `OpenAI 5.6 Sol` (fallback routing)
 - **Project Synthesis Pass Primary Model**: `OpenAI 5.6 Terra` ($0.065/synthesis)
 - **Project Synthesis Pass Backup Model**: `OpenAI 5.6 Sol` (fallback routing)
 

@@ -236,7 +236,7 @@ export const TAB_METADATA: Record<WorkspaceTab, TabMetadata> = {
         badge: 'Model Benchmark',
         whatItIsFor: 'Platform evaluation harness displaying empirical accuracy, table extraction precision, and latency benchmarks across production LLMs.',
         keyDeliverables: [
-            'Model benchmark comparison (Claude Sonnet, OpenAI Terra, etc.)',
+            'Model benchmark comparison (OpenAI Terra, OpenAI Sol, etc.)',
             'Extraction accuracy scorecards across 500+ financial ground-truth items',
             'Real-time latency and throughput metrics',
         ],

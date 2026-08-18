@@ -58,8 +58,8 @@ The Financial Due Diligence Agent utilizes a 4-model hybrid routing architecture
 
 | Pipeline Stage | Model Role | Active Model | Purpose & Routing |
 | --- | --- | --- | --- |
-| **Per-Document Extraction** | **Primary** | `Claude Sonnet 5` | Financial fact extraction, line-item P&L parsing, risk flag detection, and classification ($0.055/doc). |
-| **Per-Document Extraction** | **Backup** | `Claude Opus 5` | Automatic fallback routing on complex non-standard tax schedules, multi-tab workbooks, or rate-limit retry passes. |
+| **Per-Document Extraction** | **Primary** | `OpenAI 5.6 Terra` | Financial fact extraction, line-item P&L parsing, risk flag detection, and classification ($0.055/doc). |
+| **Per-Document Extraction** | **Backup** | `OpenAI 5.6 Sol` | Automatic fallback routing on complex non-standard tax schedules, multi-tab workbooks, or rate-limit retry passes. |
 | **Project Synthesis Pass** | **Primary** | `OpenAI 5.6 Terra` | Project-wide cross-document reconciliation, deal judgment generation, purchase price bridge calculations, and deal memo synthesis ($0.065/synthesis). |
 | **Project Synthesis Pass** | **Backup** | `OpenAI 5.6 Sol` | Secondary fallback model for deal synthesis if primary model endpoints experience elevated latency or errors. |
 
@@ -72,7 +72,7 @@ Re-derive them with the helpers in `frontend/utils/` (`latencyMetrics.ts`,
 - **Per-document extraction latency**: ~21–25 s average per document (download → tabular preflight → LLM fact extraction → deterministic reconciliation → write).
 - **Project synthesis pass latency**: ~45–60 s average per synthesis pass (cross-document reconciliation → EV/SDE multiple bridge → deal memo generation).
 - **Combined full-deal latency**: ~p50 71 s / p95 125 s end-to-end when processing multi-document batches and final synthesis in sequence.
-- **Per-document cost**: ~$0.055 per document using **Claude Sonnet 5** primary extraction with **Claude Opus 5** backup routing.
+- **Per-document cost**: ~$0.055 per document using **OpenAI 5.6 Terra** primary extraction with **OpenAI 5.6 Sol** backup routing.
 - **Synthesis pass cost**: ~$0.065 per project using **OpenAI 5.6 Terra** primary synthesis with **OpenAI 5.6 Sol** backup routing.
 - **Retry/backoff**: external and sub-workflow calls retry 3× with a 2 s delay
   (5 s on the model-adjacent nodes).

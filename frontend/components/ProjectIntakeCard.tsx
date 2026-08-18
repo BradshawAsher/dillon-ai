@@ -354,7 +354,7 @@ export default function ProjectIntakeCard({
                                 <div className="flex items-center gap-2 rounded-lg bg-background/80 p-2.5 border border-primary/20 shadow-2xs">
                                     <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary font-bold text-[10px]">2</div>
                                     <div>
-                                        <p className="font-semibold text-foreground">Claude Sonnet 5</p>
+                                        <p className="font-semibold text-foreground">OpenAI 5.6 Terra</p>
                                         <p className="text-[10px] text-muted-foreground">Fact extraction</p>
                                     </div>
                                 </div>

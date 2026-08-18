@@ -324,6 +324,52 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         } catch { return null }
     })
 
+    const [simulatedWalkthroughBatch, setSimulatedWalkthroughBatch] = useState<{
+        id: string
+        expectedDocumentCount: number
+        finishedCount: number
+        elapsedSeconds: number
+    } | null>(null)
+
+    useEffect(() => {
+        const handleWalkthroughAction = (e: Event) => {
+            const customEvent = e as CustomEvent<{ stepId?: string; action?: { type: string; payload?: any } }>
+            const action = customEvent.detail?.action
+            if (!action) return
+
+            if (action.type === 'stage_packet') {
+                setDealName('Apex Industrial Technologies LLC')
+                setAskingPrice('12500000')
+                setProjectStage('qoe')
+                try {
+                    const sampleFiles = [
+                        new File([new Uint8Array(1024 * 3400)], 'Apex_Industrial_FY23-FY25_Profit_and_Loss.pdf', { type: 'application/pdf' }),
+                        new File([new Uint8Array(1024 * 1800)], 'Apex_Industrial_Q3_Balance_Sheet.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
+                        new File([new Uint8Array(1024 * 840)], 'Signed_Letter_of_Intent_Apex_Acquisition.pdf', { type: 'application/pdf' }),
+                        new File([new Uint8Array(1024 * 2100)], 'IRS_Form_1120_Tax_Return_2024.pdf', { type: 'application/pdf' }),
+                    ]
+                    setSelectedFiles(sampleFiles)
+                } catch {
+                    // Fallback
+                }
+            } else if (action.type === 'simulate_queue') {
+                setSimulatedWalkthroughBatch({
+                    id: 'apex-demo-001',
+                    expectedDocumentCount: 4,
+                    finishedCount: 4,
+                    elapsedSeconds: 38,
+                })
+            } else if (action.type === 'reset_simulation') {
+                setSimulatedWalkthroughBatch(null)
+            }
+        }
+
+        window.addEventListener('mergeworks:walkthrough-action', handleWalkthroughAction)
+        return () => {
+            window.removeEventListener('mergeworks:walkthrough-action', handleWalkthroughAction)
+        }
+    }, [])
+
     useEffect(() => {
         try {
             if (activeSubmissionBatch) {
@@ -1904,29 +1950,34 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
                     {activeWorkspaceTab === 'diligence' ? (
                         <div className="space-y-6">
-                            {(activeSubmissionBatch || activeBatchProcessingCount > 0) ? (
+                            {(activeSubmissionBatch || activeBatchProcessingCount > 0 || simulatedWalkthroughBatch) ? (
                                 <div id="diligence-batch" className="scroll-mt-6">
                                     <BatchProgressCard
-                                        activeSubmissionBatch={activeSubmissionBatch ?? {
+                                        activeSubmissionBatch={activeSubmissionBatch ?? (simulatedWalkthroughBatch ? {
+                                            id: simulatedWalkthroughBatch.id,
+                                            expectedDocumentCount: simulatedWalkthroughBatch.expectedDocumentCount,
+                                            environment: 'production',
+                                            startedAt: Date.now() - (simulatedWalkthroughBatch.elapsedSeconds * 1000),
+                                        } : {
                                             id: activeProjectId,
                                             expectedDocumentCount: activeBatchExpectedCount,
                                             environment: 'production',
                                             startedAt: Date.now(),
-                                        }}
-                                        activeBatchFinishedCount={activeBatchFinishedCount}
-                                        activeBatchExpectedCount={activeBatchExpectedCount}
-                                        activeBatchFailedCount={activeBatchFailedCount}
+                                        })}
+                                        activeBatchFinishedCount={simulatedWalkthroughBatch ? simulatedWalkthroughBatch.finishedCount : activeBatchFinishedCount}
+                                        activeBatchExpectedCount={simulatedWalkthroughBatch ? simulatedWalkthroughBatch.expectedDocumentCount : activeBatchExpectedCount}
+                                        activeBatchFailedCount={simulatedWalkthroughBatch ? 0 : activeBatchFailedCount}
                                         isStoppingBatch={isStoppingBatch}
                                         handleStopBatch={() => { void handleStopBatch() }}
-                                        activeBatchProcessingCount={activeBatchProcessingCount}
-                                        activeBatchProcessingPercent={activeBatchProcessingPercent}
-                                        activeBatchProgressPercent={activeBatchProgressPercent}
-                                        batchElapsedSeconds={batchElapsedSeconds}
+                                        activeBatchProcessingCount={simulatedWalkthroughBatch ? 0 : activeBatchProcessingCount}
+                                        activeBatchProcessingPercent={simulatedWalkthroughBatch ? 0 : activeBatchProcessingPercent}
+                                        activeBatchProgressPercent={simulatedWalkthroughBatch ? 100 : activeBatchProgressPercent}
+                                        batchElapsedSeconds={simulatedWalkthroughBatch ? simulatedWalkthroughBatch.elapsedSeconds : batchElapsedSeconds}
                                         activeBatchImpact={activeBatchImpact}
                                         activeBatchStuckRows={activeBatchStuckRows}
                                         activeBatchErrors={activeBatchErrors}
                                         activeBatchAdvisories={activeBatchAdvisories}
-                                        activeBatchCompletedCount={activeBatchCompletedCount}
+                                        activeBatchCompletedCount={simulatedWalkthroughBatch ? simulatedWalkthroughBatch.finishedCount : activeBatchCompletedCount}
                                         activeProjectId={activeProjectId}
                                         retryingRequestId={retryingRequestId ?? undefined}
                                         handleRetryFailedDocument={(requestID) => { void handleRetryFailedDocument(requestID) }}
@@ -1959,7 +2010,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                                 </div>
                             ) : null}
 
-                            {!isExampleMode && (submitResponse || displayedSubmissionRow || activeProjectDocuments.length > 0) ? (
+                            {((!isExampleMode && (submitResponse || displayedSubmissionRow || activeProjectDocuments.length > 0)) || simulatedWalkthroughBatch) ? (
                                 <LatestSubmissionSection
                                     displayedSubmissionRow={displayedSubmissionRow}
                                     displayedSubmitStatus={displayedSubmitStatus}
@@ -2519,6 +2570,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 onStartTour={(tourId) => handleStartTour(tourId)}
                 resumeState={walkthrough.resumeState}
                 onResumeTour={handleResumeTour}
+                initialTab={selectedWalkthroughDemoId === 'short-yt' || selectedWalkthroughDemoId === 'short-supademo' || selectedWalkthroughDemoId === 'deep-supademo' ? 'video' : 'interactive'}
+                initialVideoMode={selectedWalkthroughDemoId === 'short-supademo' ? 'quick' : selectedWalkthroughDemoId === 'deep-supademo' ? 'deep' : 'yt'}
             />
             <NativeWalkthroughOverlay
                 walkthrough={walkthrough}

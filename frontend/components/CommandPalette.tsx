@@ -176,14 +176,14 @@ export default function CommandPalette({
         ...(onStartTour ? [
             {
                 id: 'tour-core',
-                label: 'Launch 10-Step Core Guided Tour (~90 sec)',
+                label: 'Launch Guided Walkthrough #1: End-to-End Deal Flow (~75 sec)',
                 icon: <Sparkles className="h-4 w-4 text-primary" />,
                 action: () => onStartTour('core-fast'),
                 group: 'Guided Tours',
             },
             {
                 id: 'tour-deep',
-                label: 'Launch 28-Step Diligence Deep Dive (~3.5 min)',
+                label: 'Launch Guided Walkthrough #2: Deep Financial Tour (~3.5 min)',
                 icon: <FlaskConical className="h-4 w-4 text-emerald-500" />,
                 action: () => onStartTour('deep-dive'),
                 group: 'Guided Tours',
