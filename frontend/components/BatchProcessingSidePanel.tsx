@@ -1,10 +1,11 @@
 import { useEffect } from 'react'
-import { Activity, AlertTriangle, CheckCircle2, Clock, Loader2, RefreshCw, StopCircle, X, ArrowRight, FolderPlus } from 'lucide-react'
+import { Activity, AlertTriangle, CheckCircle2, Clock, Loader2, RefreshCw, StopCircle, X, ArrowRight, FolderPlus, Play, Sparkles } from 'lucide-react'
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
 import { Progress } from '../lib/shadcn/progress'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import { formatSubmissionStatus, isActiveSubmissionStatus } from '../utils/submissionHistory'
+import type { WalkthroughResumeState } from './walkthrough/walkthroughTypes'
 
 interface BatchProcessingSidePanelProps {
     isOpen: boolean
@@ -24,6 +25,8 @@ interface BatchProcessingSidePanelProps {
     onRequeueNewProject?: (requestID?: string) => void
     retryingRequestId: string | null
     submissionHistory: SubmissionHistoryItem[]
+    resumeState?: WalkthroughResumeState | null
+    onResumeTour?: () => void
 }
 
 export function BatchProcessingSidePanel({
@@ -44,6 +47,8 @@ export function BatchProcessingSidePanel({
     onRequeueNewProject,
     retryingRequestId,
     submissionHistory,
+    resumeState,
+    onResumeTour,
 }: BatchProcessingSidePanelProps) {
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -121,6 +126,41 @@ export function BatchProcessingSidePanel({
 
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-5">
+                    {/* Paused Guided Tour Resume Card */}
+                    {resumeState && onResumeTour && (
+                        <div className="rounded-xl border border-primary/40 bg-gradient-to-br from-primary/15 via-emerald-500/10 to-primary/5 p-4 space-y-2.5 shadow-sm">
+                            <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold text-primary uppercase tracking-wider flex items-center gap-1.5">
+                                    <Sparkles className="h-3.5 w-3.5 animate-pulse text-primary" />
+                                    Paused Guided Tour
+                                </span>
+                                <Badge variant="outline" className="font-mono text-[10px] border-primary/30 text-primary">
+                                    Step {resumeState.stepIndex + 1} of {resumeState.totalSteps}
+                                </Badge>
+                            </div>
+                            <div>
+                                <p className="text-xs font-semibold text-foreground">
+                                    {resumeState.playlistTitle}
+                                </p>
+                                <p className="text-[11px] text-muted-foreground truncate">
+                                    {resumeState.stepTitle}
+                                </p>
+                            </div>
+                            <Button
+                                type="button"
+                                size="sm"
+                                className="w-full h-8 text-xs font-semibold gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
+                                onClick={() => {
+                                    onClose()
+                                    onResumeTour()
+                                }}
+                            >
+                                <Play className="h-3.5 w-3.5 fill-current" />
+                                Resume Guided Walkthrough
+                            </Button>
+                        </div>
+                    )}
+
                     {/* Active In-Flight Batch Banner */}
                     {(inFlightBatch || activeProcessingRows.length > 0) ? (() => {
                         const isFinished = batchExpectedCount > 0 && batchFinishedCount >= batchExpectedCount && activeProcessingRows.length === 0

@@ -105,23 +105,31 @@
 
 - Make a more native demo in your website than actually just the supademo
 
+- Make like native tutorials too?
+
+- Can have like achievements too like for the user to finish these things like get started like in aws, have this paired with tutorials? maybe can give them free credit for doing some of these achievements?
+
+- Can we add a tab for keyboard shortcuts and a button on the top next to sign in?
+
+- Dive deeper on how deterministic math checks work and how we get those pure stats to do the match checks with?
+
 - Have to make a short YouTube video and long YouTube video to almost mirror your supademos
 
 - For brad, explore and test features using the vercel link instead of localhost since the vercel lacks some functionality still compared to the localhost
 
-- Chatbot is still not good enough, on the vercel link I asked him tell me about this deal and he just told me to ask him other questions instead of just telling me straight up
+- [DONE?] Chatbot is still not good enough, on the vercel link I asked him tell me about this deal and he just told me to ask him other questions instead of just telling me straight up
 
-- and new slides and script and preparation for questions they might ask and things to explain if you have more time
+- Prepare for questions they might ask and things to explain if you have more time
 
 - try to open out and expand the js nodes and the code nodes and json schemas that claude code or antigravity made to have indentation and not be one squished block
 
 - Finish adding the apply for access to go slack and maybe email too
 
-- Is there a lot of overview in the analysis and overview tab with the other more indepth tabs like valuation, returns, growth, negotiation, etc?
+- [YES] Is there a lot of overview in the analysis and overview tab with the other more indepth tabs like valuation, returns, growth, negotiation, etc?
 
-- Why is the med spa wellness clinic when i first open the tab $5 price and 0 multiple?
+- [DONE?] Why is the med spa wellness clinic when i first open the tab $5 price and 0 multiple?
 
-- Some of the TOC didn't work on the vercel when i was on some tabs?
+- [DONE?] Some of the TOC didn't work on the vercel when i was on some tabs?
 
 - For brad, maybe rewrite gh commit history the names of the commits so we know what actually happened? This is hard since somtimes when you did commit, like the changes you hoped for didn't actually happen so how can we label which one actually worked and which one didn't?
 

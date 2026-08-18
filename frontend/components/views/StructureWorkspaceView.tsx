@@ -37,7 +37,9 @@ export function StructureWorkspaceView({
                     <DealStackCard model={hydratedDealModel} />
                 </div>
                 <div id="structure-leverage" className="scroll-mt-6 space-y-6">
-                    <LeverageSafetyCard model={hydratedDealModel} />
+                    <div id="structure-dscr" className="scroll-mt-6">
+                        <LeverageSafetyCard model={hydratedDealModel} />
+                    </div>
                     <DownsideProtectionCard model={hydratedDealModel} />
                     <CashReserveAnalysisCard model={hydratedDealModel} />
                 </div>

@@ -43,7 +43,9 @@ export function NegotiationWorkspaceView({
                 <ManagementQuestionTracker projectId={activeProjectId} suggestedQuestions={activeProjectSynthesis?.openQuestions ?? []} />
             </div>
             <div id="negotiation-playbook" className="scroll-mt-6">
-                <NegotiationPlaybook synthesis={activeProjectSynthesis} model={hydratedDealModel} />
+                <div id="negotiation-levers" className="scroll-mt-6">
+                    <NegotiationPlaybook synthesis={activeProjectSynthesis} model={hydratedDealModel} />
+                </div>
             </div>
             <div id="negotiation-impact" className="scroll-mt-6">
                 <NegotiationImpactCard model={hydratedDealModel} />

@@ -35,6 +35,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../li
 import { Input } from '../lib/shadcn/input'
 import SupademoModal, { DemoVariantId } from '../components/SupademoModal'
 import { WorkspaceDemoGalleryBar } from '../components/WorkspaceDemoGalleryBar'
+import { WalkthroughLauncherModal } from '../components/walkthrough/WalkthroughLauncherModal'
+import type { TourPlaylistId } from '../components/walkthrough/walkthroughTypes'
 import { submitAccessRequest } from '../services/accessRequestService'
 
 interface LandingPageProps {
@@ -47,6 +49,18 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
     const [showAccessModal, setShowAccessModal] = useState(false)
     const [previewTab, setPreviewTab] = useState<'valuation' | 'citations' | 'risks' | 'cost'>('valuation')
     const [activeFactIndex, setActiveFactIndex] = useState(0)
+
+    const handleStartTourFromLanding = (tourId: TourPlaylistId) => {
+        setShowWalkthroughModal(false)
+        if (tourId === 'core-fast') {
+            window.location.hash = 'walkthrough=core'
+        } else if (tourId === 'deep-dive') {
+            window.location.hash = 'walkthrough=deep'
+        } else if (tourId === 'interactive-quest') {
+            window.location.hash = 'walkthrough=quest'
+        }
+        onLaunchDashboard()
+    }
     const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0)
     const [activeSection, setActiveSection] = useState('hero')
 
@@ -343,8 +357,15 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
                         <div className="pt-10 w-full max-w-5xl mx-auto text-left">
                             <WorkspaceDemoGalleryBar
                                 onSelectDemo={(demoId) => {
-                                    setSelectedWalkthroughDemoId(demoId)
-                                    setShowWalkthroughModal(true)
+                                    if (demoId === 'native-core') {
+                                        handleStartTourFromLanding('core-fast')
+                                    } else if (demoId === 'native-deep') {
+                                        handleStartTourFromLanding('deep-dive')
+                                    } else if (demoId === 'native-quest') {
+                                        handleStartTourFromLanding('interactive-quest')
+                                    } else {
+                                        setShowWalkthroughModal(true)
+                                    }
                                 }}
                             />
                         </div>
@@ -912,11 +933,11 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
                 </div>
             </footer>
 
-            {/* GUIDED WALKTHROUGH MODAL (Supademo Interactive Embed) */}
-            <SupademoModal
+            {/* GUIDED WALKTHROUGH & DEMOS LAUNCHER MODAL */}
+            <WalkthroughLauncherModal
                 isOpen={showWalkthroughModal}
                 onClose={() => setShowWalkthroughModal(false)}
-                defaultDemoId={selectedWalkthroughDemoId}
+                onStartTour={(tourId) => handleStartTourFromLanding(tourId)}
             />
 
             {/* APPLY FOR ACCESS MODAL */}

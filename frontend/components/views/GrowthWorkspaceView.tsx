@@ -66,7 +66,9 @@ export function GrowthWorkspaceView({
                 </div>
                 <ExitReadinessCard model={returnsDisplayModel} synthesis={activeProjectSynthesis} />
                 <div id="growth-value-creation" className="scroll-mt-6 space-y-6">
-                    <ValueCreationPlanCard model={returnsDisplayModel} />
+                    <div id="growth-levers" className="scroll-mt-6">
+                        <ValueCreationPlanCard model={returnsDisplayModel} />
+                    </div>
                     <First100DaysCard model={returnsDisplayModel} synthesis={activeProjectSynthesis} />
                 </div>
                 <KeyMetricsTrendCard model={returnsDisplayModel} />
