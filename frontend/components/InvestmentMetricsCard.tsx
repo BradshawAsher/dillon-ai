@@ -156,12 +156,12 @@ export default function InvestmentMetricsCard({ model }: Props) {
                     <div className="flex items-center gap-2">
                         <TrendingUp className="h-5 w-5 text-primary" />
                         <CardTitle className="text-lg">Investment metrics</CardTitle>
+                        <CardInfoPopover cardId="investment-metrics" />
                     </div>
                     <div className="flex items-center gap-2">
                         <Badge variant="outline">
                             {model.holdPeriodYears ?? 5}yr · {((model.exitMultiple ?? 4).toFixed(1))}x exit
                         </Badge>
-                        <CardInfoPopover cardId="investment-metrics" />
                     </div>
                 </div>
             </CardHeader>

@@ -132,8 +132,8 @@ export default function BusinessSnapshotCard({ model, synthesis, projectName, on
                 <div className="flex items-center gap-2">
                     <Building2 className="h-5 w-5 text-primary" />
                     <CardTitle className="text-lg">Business snapshot</CardTitle>
+                    <CardInfoPopover cardId="business-snapshot" />
                 </div>
-                <CardInfoPopover cardId="business-snapshot" />
             </CardHeader>
             <CardContent className="p-4 sm:p-6 space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">

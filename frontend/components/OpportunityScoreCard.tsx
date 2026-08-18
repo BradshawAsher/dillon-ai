@@ -88,9 +88,9 @@ export default function OpportunityScoreCard({ model, synthesis }: Props) {
                     <div className="flex items-center gap-2">
                         <Gem className="h-5 w-5 text-primary" />
                         <CardTitle className="text-lg">Opportunity score</CardTitle>
+                        <CardInfoPopover cardId="opportunity-score" />
                     </div>
                     <div className="flex items-center gap-3">
-                        <CardInfoPopover cardId="opportunity-score" />
                         <div className="flex items-center gap-1.5">
                             <span className={`text-2xl font-black ${overallColor}`}>{overallPct}</span>
                             <span className="text-xs text-muted-foreground">/100</span>

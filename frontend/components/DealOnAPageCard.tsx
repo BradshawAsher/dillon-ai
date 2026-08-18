@@ -64,8 +64,8 @@ export default function DealOnAPageCard({ model, synthesis, projectName }: Props
                     <div className="flex items-center gap-2">
                         <FileImage className="h-4 w-4 text-primary" />
                         <CardTitle className="text-lg">Deal on a page</CardTitle>
+                        <CardInfoPopover cardId="deal-on-a-page" />
                     </div>
-                    <CardInfoPopover cardId="deal-on-a-page" />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                     One-glance summary for screenshots and quick decision-making. Click any metric to inspect in-place source citations.

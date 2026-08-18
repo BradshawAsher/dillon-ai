@@ -125,13 +125,13 @@ export default function MonteCarloCard({ model }: Props) {
                         <div className="flex items-center gap-2">
                             <Dice5 className="h-4 w-4 text-primary" />
                             <CardTitle className="text-lg">Monte Carlo simulation</CardTitle>
+                            <CardInfoPopover cardId="monte-carlo" />
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">
                             {SIMULATIONS.toLocaleString()} scenarios varying growth, margin, and exit multiple
                         </p>
                     </div>
                     <div className="flex items-center gap-2">
-                        <CardInfoPopover cardId="monte-carlo" />
                         <Badge variant={ebitdaIsConfirmed ? 'success' : 'warning'} className="w-fit text-[10px] px-2.5 py-0.5 font-bold">
                             {ebitdaIsConfirmed ? '✓ Verified Source Baseline' : '⚠ Illustrative Simulation'}
                         </Badge>

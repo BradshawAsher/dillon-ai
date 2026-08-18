@@ -272,9 +272,9 @@ export default function DealScorecardExportCard({ model, synthesis, projectName 
                     <div className="flex items-center gap-2">
                         <Award className="h-4 w-4 text-primary" />
                         <CardTitle className="text-lg">Deal scorecard</CardTitle>
+                        <CardInfoPopover cardId="deal-scorecard" />
                     </div>
                     <div className="flex items-center gap-2">
-                        <CardInfoPopover cardId="deal-scorecard" />
                         <button
                             type="button"
                             onClick={handleCopy}

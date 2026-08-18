@@ -62,8 +62,8 @@ export default function OperatingLeverageCard({ model }: Props) {
                     <div className="flex items-center gap-2">
                         <Gauge className="h-4 w-4 text-primary" />
                         <CardTitle className="text-lg">Operating leverage</CardTitle>
+                        <CardInfoPopover cardId="operating-leverage" />
                     </div>
-                    <CardInfoPopover cardId="operating-leverage" />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                     How much does EBITDA grow for each dollar of revenue growth?

@@ -164,8 +164,8 @@ export default function FinancialHealthCard({ model }: Props) {
                     <div className="flex items-center gap-2">
                         <HeartPulse className="h-5 w-5 text-primary" />
                         <CardTitle className="text-lg">Financial health</CardTitle>
+                        <CardInfoPopover cardId="financial-health" />
                     </div>
-                    <CardInfoPopover cardId="financial-health" />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                     Click any ratio metric to inspect underlying document evidence and exact formulas

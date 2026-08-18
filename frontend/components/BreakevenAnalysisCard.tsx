@@ -110,8 +110,8 @@ export default function BreakevenAnalysisCard({ model }: Props) {
                     <div className="flex items-center gap-2">
                         <Target className="h-4 w-4 text-primary" />
                         <CardTitle className="text-lg">Breakeven analysis</CardTitle>
+                        <CardInfoPopover cardId="breakeven-analysis" />
                     </div>
-                    <CardInfoPopover cardId="breakeven-analysis" />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                     Minimum performance needed to cover obligations
