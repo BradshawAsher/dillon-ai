@@ -69,8 +69,9 @@ Numbers below are measured from live n8n execution telemetry, not estimates.
 Re-derive them with the helpers in `frontend/utils/` (`latencyMetrics.ts`,
 `qualityMetrics.ts`, `costModel.ts`) or directly from n8n executions.
 
-- **Per-document latency**: ~p50 71 s / p95 125 s end-to-end (download → parse →
-  LLM extract → deterministic reconciliation → write).
+- **Per-document extraction latency**: ~21–25 s average per document (download → tabular preflight → LLM fact extraction → deterministic reconciliation → write).
+- **Project synthesis pass latency**: ~45–60 s average per synthesis pass (cross-document reconciliation → EV/SDE multiple bridge → deal memo generation).
+- **Combined full-deal latency**: ~p50 71 s / p95 125 s end-to-end when processing multi-document batches and final synthesis in sequence.
 - **Per-document cost**: ~$0.055 per document using **Claude Sonnet 5** primary extraction with **Claude Opus 5** backup routing.
 - **Synthesis pass cost**: ~$0.065 per project using **OpenAI 5.6 Terra** primary synthesis with **OpenAI 5.6 Sol** backup routing.
 - **Retry/backoff**: external and sub-workflow calls retry 3× with a 2 s delay
