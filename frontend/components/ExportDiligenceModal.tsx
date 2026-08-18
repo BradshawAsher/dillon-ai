@@ -6,6 +6,7 @@ import { Check, Copy, Download, FileText, Printer, Sparkles, X, ShieldAlert, Ale
 import type { ProjectSynthesisItem, DealModel } from '../hooks/backend/diligence'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import { parseDocumentedFacts } from '../utils/evidence'
+import { parseMagnitudeMoney } from '../utils/documentedFacts'
 
 interface ExportDiligenceModalProps {
     open: boolean
@@ -33,7 +34,7 @@ function generateMarkdownMemo(
     const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
     const asking = dealModel.askingPrice || 0
     const valuationBase = synthesis?.valuationBaseEstimate && synthesis.valuationBaseEstimate !== '0'
-        ? parseFloat(synthesis.valuationBaseEstimate)
+        ? parseMagnitudeMoney(synthesis.valuationBaseEstimate)
         : null
 
     const lines: string[] = [
@@ -172,7 +173,7 @@ export function ExportDiligenceModal({
 
         const asking = dealModel.askingPrice ? formatCurrency(dealModel.askingPrice) : 'Not specified'
         const baseVal = synthesis?.valuationBaseEstimate && synthesis.valuationBaseEstimate !== '0'
-            ? formatCurrency(parseFloat(synthesis.valuationBaseEstimate))
+            ? formatCurrency(parseMagnitudeMoney(synthesis.valuationBaseEstimate))
             : 'Pending'
         const facts = parseDocumentedFacts(dealModel.documentedFactsJson)
         const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })

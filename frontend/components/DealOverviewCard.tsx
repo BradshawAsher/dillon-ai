@@ -17,6 +17,7 @@ import { formatHours, type ImpactMetrics } from '../utils/impactMetrics'
 import type { ProjectSummary } from '../utils/projectWorkspace'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import { buildDocumentLinkedEvidence, parseDocumentedFacts } from '../utils/evidence'
+import { parseMagnitudeMoney } from '../utils/documentedFacts'
 import type { EvidenceItem } from './EvidenceDrawer'
 import ExpandableText from './ExpandableText'
 import ActionableRecommendationInfoButton from './ActionableRecommendationInfoButton'
@@ -75,12 +76,7 @@ function InsightList({ items, emptyLabel }: { items: string[]; emptyLabel: strin
     )
 }
 
-function parseMoney(value: string) {
-    const normalized = value.replace(/[$,\s]/g, '')
-    const multiplier = /m$/i.test(normalized) ? 1_000_000 : /b$/i.test(normalized) ? 1_000_000_000 : /k$/i.test(normalized) ? 1_000 : 1
-    const parsed = Number(normalized.replace(/[kmb]$/i, ''))
-    return Number.isFinite(parsed) && parsed >= 0 ? parsed * multiplier : null
-}
+const parseMoney = parseMagnitudeMoney
 
 export default function DealOverviewCard({ syntheses, projects, currentProjectId, askingPrice, onAskingPriceChange, impact, model, documents, onOpenEvidence, exampleMode = false, onSwitchTab }: DealOverviewCardProps) {
     const projectId = currentProjectId.trim()

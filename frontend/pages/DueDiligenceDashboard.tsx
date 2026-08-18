@@ -124,8 +124,9 @@ function findLastIndex<T>(arr: T[], predicate: (item: T) => boolean): number {
 
 function parseDashboardMoneyInput(value: string | null | undefined): number | null {
     if (!value || !value.trim()) return null
-    const normalized = value.trim().replace(/[$,\s]/g, '')
-    const multiplier = /m$/i.test(normalized) ? 1_000_000 : /b$/i.test(normalized) ? 1_000_000_000 : /k$/i.test(normalized) ? 1_000 : 1
+    let str = value.trim().replace(/\b(?:usd|cad|eur|gbp|aud)\b/gi, '').trim()
+    const normalized = str.replace(/[$,\s]/g, '')
+    const multiplier = /b$/i.test(normalized) ? 1_000_000_000 : /m$/i.test(normalized) ? 1_000_000 : /k$/i.test(normalized) ? 1_000 : 1
     const parsed = Number(normalized.replace(/[kmb]$/i, ''))
     return Number.isFinite(parsed) && parsed >= 0 ? parsed * multiplier : null
 }
