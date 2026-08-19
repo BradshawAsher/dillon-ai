@@ -252,18 +252,23 @@ export function formatCurrencyValue(value: string, currency: string) {
 
 function getConfidencePercent(row: SubmissionHistoryItem, extractedObject: ParsedJson | null) {
   const rawConfidence = row.aiConfidence || getStringValue(getObjectValue(extractedObject, 'confidence'))
+  const trimmed = rawConfidence.trim()
 
-  if (rawConfidence.trim().length === 0) {
+  if (trimmed.length === 0) {
     return null
   }
 
-  const numericValue = Number(rawConfidence)
+  // A confidence written as "85%" must parse to 85, not fail Number() and read
+  // as no confidence. Strip the sign, and remember it so an already-percentage
+  // value is not rescaled by the <= 1 fraction heuristic below.
+  const hasPercentSign = trimmed.includes('%')
+  const numericValue = Number(trimmed.replace('%', '').trim())
 
   if (!Number.isFinite(numericValue)) {
     return null
   }
 
-  if (numericValue <= 1) {
+  if (numericValue <= 1 && !hasPercentSign) {
     return Math.round(numericValue * 100)
   }
 
