@@ -98,7 +98,13 @@ export function canonicalPeriod(period: string | undefined): string {
     if (raw.length === 0) return ''
     if (/\bttm\b|\bltm\b|trailing twelve|last twelve/.test(raw)) return 'TTM'
     const year = raw.match(/(20\d{2})/)
-    return year ? year[1] : ''
+    if (year) return year[1]
+    // A non-empty but unparseable label (e.g. "Q4", "FY19", "interim") must not
+    // collapse into the undated ('') bucket — doing so would let it cross-compare
+    // with genuinely undated facts and manufacture contradictions across periods
+    // that were never asserted to be the same. Give it a stable self-only bucket
+    // derived from the label so it compares only with identical labels.
+    return raw.replace(/[\s_-]+/g, '_').replace(/^_+|_+$/g, '')
 }
 
 function isFiniteNumber(value: unknown): value is number {

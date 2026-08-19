@@ -35,6 +35,15 @@ describe('canonicalPeriod', () => {
         expect(canonicalPeriod('')).toBe('')
         expect(canonicalPeriod(undefined)).toBe('')
     })
+
+    it('keeps unparseable labels out of the undated bucket', () => {
+        // A non-empty label with no recognizable year must get its own bucket,
+        // never collapse to '' alongside genuinely undated facts.
+        expect(canonicalPeriod('Q4')).toBe('q4')
+        expect(canonicalPeriod('FY19')).toBe('fy19')
+        expect(canonicalPeriod('interim period')).toBe('interim_period')
+        expect(canonicalPeriod('Q4')).not.toBe(canonicalPeriod(''))
+    })
 })
 
 describe('detectContradictions', () => {
@@ -66,6 +75,15 @@ describe('detectContradictions', () => {
         expect(detectContradictions([
             obs('a.pdf', 'ebitda', 1_000_000, 'TTM'),
             obs('b.pdf', 'ebitda', 2_000_000, 'FY2025'),
+        ])).toHaveLength(0)
+    })
+
+    it('does not compare an unparseable-period fact against an undated one', () => {
+        // "Q4" carries no year, but it is not undated — it must not be assumed
+        // equal to a fact with no period at all.
+        expect(detectContradictions([
+            obs('a.pdf', 'revenue', 1_000_000, 'Q4'),
+            obs('b.pdf', 'revenue', 2_000_000, undefined),
         ])).toHaveLength(0)
     })
 
