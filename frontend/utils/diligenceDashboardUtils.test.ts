@@ -60,6 +60,11 @@ describe('currency helpers', () => {
         // invalid currency should not throw
         expect(() => safeFormatCurrency(1500, '$$$')).not.toThrow()
     })
+
+    it('renders a placeholder instead of "$NaN" for a non-finite value', () => {
+        expect(safeFormatCurrency(Number.NaN, 'USD')).toBe('—')
+        expect(safeFormatCurrency(Number.POSITIVE_INFINITY, 'USD')).toBe('—')
+    })
 })
 
 describe('createUnusedProjectId', () => {

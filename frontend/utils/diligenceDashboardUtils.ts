@@ -53,6 +53,10 @@ export function sanitizeCurrencyCode(currency?: string): string {
 }
 
 export function safeFormatCurrency(value: number, rawCurrency?: string, options?: Intl.NumberFormatOptions): string {
+    // A non-finite input (NaN/Infinity from a missing or failed upstream
+    // computation) would otherwise render as "$NaN". Show a neutral placeholder
+    // rather than a fake amount that could mislead a diligence decision.
+    if (!Number.isFinite(value)) return '—'
     const currency = sanitizeCurrencyCode(rawCurrency)
     try {
         return new Intl.NumberFormat('en-US', {
