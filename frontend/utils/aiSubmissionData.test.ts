@@ -118,6 +118,12 @@ describe('getAiSubmissionViewModel', () => {
         expect(vm.redFlags).toEqual(['JSON red flag'])
     })
 
+    it('parses a confidence written with a percent sign', () => {
+        // "85%" previously failed Number() and showed as no confidence.
+        expect(getAiSubmissionViewModel(makeRow({ aiConfidence: '85%' })).confidencePercent).toBe(85)
+        expect(getAiSubmissionViewModel(makeRow({ aiConfidence: '1%' })).confidencePercent).toBe(1)
+    })
+
     it('groups thousands consistently for integer and decimal metrics', () => {
         const extracted = JSON.stringify({
             response: {
