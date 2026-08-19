@@ -302,6 +302,13 @@ describe('evaluateDocument dimension scoring', () => {
         expect(evaluateDocument(gt, baseActual({ valuation: null })).valuationScore).toBe(13.5) // expected but missing -> 90%(15) + 10%(0) = 13.5
     })
 
+    it('scores valuation proximity by magnitude even for a negative base estimate', () => {
+        const gt = baseGroundTruth({ valuation: { valuation_base_estimate: -1000 } })
+        // A value 100% off in magnitude must land in the far tier, not full marks.
+        expect(evaluateDocument(gt, baseActual({ valuation: { base_estimate: -2000 } })).valuationScore).toBe(14) // 90%(15) + 10%(5)
+        expect(evaluateDocument(gt, baseActual({ valuation: { base_estimate: -1050 } })).valuationScore).toBe(15) // 5% off -> full
+    })
+
     it('scores employee evidence as exact-match only', () => {
         const gt = baseGroundTruth({ employeeEvidence: { employee_count: 12 } })
         expect(evaluateDocument(gt, baseActual({ employeeEvidence: { count: 12 } })).employeeScore).toBe(5)

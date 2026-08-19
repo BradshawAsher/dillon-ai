@@ -438,7 +438,7 @@ export function evaluateDocument(gt: GroundTruth, actual: ActualRunDoc): DocScor
     let docValuationScore = 15
     if (gt.valuation?.valuation_base_estimate) {
         if (actual.valuation?.base_estimate) {
-            const diffPct = Math.abs(actual.valuation.base_estimate - gt.valuation.valuation_base_estimate) / gt.valuation.valuation_base_estimate
+            const diffPct = Math.abs(actual.valuation.base_estimate - gt.valuation.valuation_base_estimate) / Math.abs(gt.valuation.valuation_base_estimate)
             if (diffPct <= 0.15) docValuationScore = 15
             else if (diffPct <= 0.30) docValuationScore = 10
             else docValuationScore = 5
