@@ -38,6 +38,11 @@ describe('variant mappers', () => {
         expect(getSubmissionStatusVariant('failed')).toBe('destructive')
         expect(getSubmissionStatusVariant('stopped')).toBe('warning')
         expect(getSubmissionStatusVariant('stopped_by_user')).toBe('warning')
+        // Spaced / hyphenated variants must resolve like their underscore form.
+        expect(getSubmissionStatusVariant('Stopped By User')).toBe('warning')
+        expect(getSubmissionStatusVariant('stopped-by-user')).toBe('warning')
+        expect(getSubmissionStatusVariant('human review')).toBe('warning')
+        expect(getSubmissionStatusVariant('needs review')).toBe('warning')
         expect(getSubmissionStatusVariant('whatever')).toBe('secondary')
     })
 })

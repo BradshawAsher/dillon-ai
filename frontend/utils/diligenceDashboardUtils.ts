@@ -15,16 +15,19 @@ export function getSeverityVariant(severity: Severity): 'destructive' | 'warning
 }
 
 export function getSubmissionStatusVariant(status: string): 'success' | 'warning' | 'destructive' | 'secondary' | 'outline' {
-    const normalized = (status || '').trim().toLowerCase()
+    // Collapse whitespace/hyphen runs to a single underscore so the same status
+    // reported as "stopped by user", "stopped-by-user", or "stopped_by_user" all
+    // resolve identically — otherwise a spaced variant slips through to the
+    // neutral fallback despite matching one of the cases below.
+    const normalized = (status || '').trim().toLowerCase().replace(/[\s-]+/g, '_')
     if (normalized === 'completed' || normalized === 'approved') return 'success'
     if (
         normalized === 'accepted'
         || normalized === 'queued'
         || normalized === 'processing'
         || normalized === 'submitted'
-        || normalized === 'human review'
         || normalized === 'human_review'
-        || normalized === 'needs review'
+        || normalized === 'needs_review'
     ) {
         return 'warning'
     }
