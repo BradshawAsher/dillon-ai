@@ -91,12 +91,17 @@ export function parseMagnitudeMoney(value: string | number | null | undefined): 
     if (!str) return null
     str = str.replace(/\b(?:usd|cad|eur|gbp|aud)\b/gi, '').trim()
     const normalized = str.replace(/[$,\s]/g, '')
-    // Match a trailing magnitude unit. Order matters: the two-letter units
-    // (bn, mm) must be tried before their single-letter forms (b, m) so that
-    // common finance shorthand like "$1.5MM" (millions) parses correctly.
-    const unitMatch = normalized.match(/(bn|b|mm|m|k)$/i)
+    // Match a trailing magnitude unit. Order matters: longer tokens must be tried
+    // before shorter ones that prefix-collide (billion before bn/b, million
+    // before mm/m) so both finance shorthand ("$1.5MM") and spelled-out
+    // magnitudes ("$1.5 million") parse to the same value.
+    const unitMatch = normalized.match(/(billion|bn|b|million|mm|m|thousand|k)$/i)
     const unit = unitMatch ? unitMatch[1].toLowerCase() : ''
-    const multiplier = unit === 'bn' || unit === 'b' ? 1_000_000_000 : unit === 'mm' || unit === 'm' ? 1_000_000 : unit === 'k' ? 1_000 : 1
+    const multiplier =
+        unit === 'billion' || unit === 'bn' || unit === 'b' ? 1_000_000_000
+        : unit === 'million' || unit === 'mm' || unit === 'm' ? 1_000_000
+        : unit === 'thousand' || unit === 'k' ? 1_000
+        : 1
     const numericPart = unit ? normalized.slice(0, normalized.length - unit.length) : normalized
     const parsed = Number(numericPart)
     return Number.isFinite(parsed) && parsed >= 0 ? parsed * multiplier : null

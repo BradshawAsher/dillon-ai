@@ -149,6 +149,14 @@ describe('parseMagnitudeMoney', () => {
         expect(parseMagnitudeMoney('3 BN')).toBe(3_000_000_000)
     })
 
+    it('applies spelled-out magnitude words', () => {
+        expect(parseMagnitudeMoney('$1.5 million')).toBe(1_500_000)
+        expect(parseMagnitudeMoney('2 BILLION')).toBe(2_000_000_000)
+        expect(parseMagnitudeMoney('750 thousand')).toBe(750_000)
+        // Word and shorthand forms must agree.
+        expect(parseMagnitudeMoney('1.5 million')).toBe(parseMagnitudeMoney('1.5M'))
+    })
+
     it('strips currency codes, symbols, and separators', () => {
         expect(parseMagnitudeMoney('USD 2,500,000')).toBe(2_500_000)
         expect(parseMagnitudeMoney('$2,500,000')).toBe(2_500_000)
