@@ -146,7 +146,7 @@ export default function AcquisitionJudgmentCallout({ synthesis, impact, onSwitch
     return (
         <>
             {isPinned && <div className="h-44 w-full rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 flex items-center justify-center text-xs font-semibold text-primary"><Pin className="h-4 w-4 mr-2 animate-bounce" /> Acquisition Judgment Card Pinned Below Navbar</div>}
-            <Card className={cardClass}>
+            <Card id="synthesis-judgment-callout" data-acquisition-judgment="true" className={cardClass}>
             <CardContent className={isPinned ? 'p-4 max-h-56 overflow-y-auto space-y-3 bg-gradient-to-br from-primary/20 via-primary/8 to-background' : (pending ? 'bg-gradient-to-br from-warning/20 via-warning/10 to-background p-6' : 'bg-gradient-to-br from-primary/20 via-primary/8 to-background p-6')}>
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="flex items-center gap-3">

@@ -31,6 +31,7 @@ export function useNativeWalkthrough({ activeTab, onTabChange }: UseNativeWalkth
     const [cursorPos, setCursorPos] = useState<{ x: number; y: number } | null>(null)
     const [isClicking, setIsClicking] = useState(false)
     const [questSuccess, setQuestSuccess] = useState(false)
+    const [isFileExplorerOpen, setIsFileExplorerOpen] = useState(false)
     const [resumeState, setResumeState] = useState<WalkthroughResumeState | null>(() => {
         try {
             const raw = localStorage.getItem(RESUME_STORAGE_KEY)
@@ -98,7 +99,18 @@ export function useNativeWalkthrough({ activeTab, onTabChange }: UseNativeWalkth
 
         if (el) {
             const rect = el.getBoundingClientRect()
-            setTargetRect(rect)
+            setTargetRect((prev) => {
+                if (
+                    prev &&
+                    Math.abs(prev.top - rect.top) < 2 &&
+                    Math.abs(prev.left - rect.left) < 2 &&
+                    Math.abs(prev.width - rect.width) < 2 &&
+                    Math.abs(prev.height - rect.height) < 2
+                ) {
+                    return prev
+                }
+                return rect
+            })
 
             // Calculate cursor destination based on target placement
             let targetX = rect.left + rect.width / 2
@@ -115,9 +127,18 @@ export function useNativeWalkthrough({ activeTab, onTabChange }: UseNativeWalkth
                 targetY = rect.bottom - Math.min(rect.height * 0.2, 40)
             }
 
-            setCursorPos({
-                x: Math.max(20, Math.min(window.innerWidth - 40, targetX)),
-                y: Math.max(20, Math.min(window.innerHeight - 40, targetY)),
+            const clampedX = Math.max(20, Math.min(window.innerWidth - 40, targetX))
+            const clampedY = Math.max(20, Math.min(window.innerHeight - 40, targetY))
+
+            setCursorPos((prev) => {
+                if (
+                    prev &&
+                    Math.abs(prev.x - clampedX) < 2 &&
+                    Math.abs(prev.y - clampedY) < 2
+                ) {
+                    return prev
+                }
+                return { x: clampedX, y: clampedY }
             })
         }
     }, [isActive, currentStep])
@@ -150,27 +171,83 @@ export function useNativeWalkthrough({ activeTab, onTabChange }: UseNativeWalkth
             onTabChange(step.tab)
         }
 
-        // 1.1 Trigger Chat Panel open if step is interacting with Dillon AI Chatbot
+        // 1.1 Trigger Chat Panel open/close
         const isChatStep =
             step.targetElementId === 'deal-chat-dock' ||
             step.targetSelector?.includes('chat') ||
             step.id.includes('chat') ||
-            step.simulatedAction?.type === 'type_chat'
+            step.simulatedAction?.type === 'type_chat' ||
+            step.simulatedAction?.type === 'open_chat'
 
-        if (isChatStep && typeof window !== 'undefined') {
-            window.dispatchEvent(new CustomEvent('mergeworks:open-chat'))
+        if (typeof window !== 'undefined') {
+            if (isChatStep) {
+                window.dispatchEvent(new CustomEvent('mergeworks:open-chat'))
+                if (step.simulatedAction?.type === 'open_chat' && step.simulatedAction.payload === 'clear') {
+                    window.dispatchEvent(new CustomEvent('mergeworks:clear-chat'))
+                } else if (step.simulatedAction?.type === 'type_chat' && step.simulatedAction.payload) {
+                    window.dispatchEvent(
+                        new CustomEvent('mergeworks:open-chat-ask', {
+                            detail: { question: step.simulatedAction.payload },
+                        })
+                    )
+                }
+            } else {
+                // Automatically minimize/close chat dock so it does not obscure the workspace or export button!
+                window.dispatchEvent(new CustomEvent('mergeworks:close-chat'))
+            }
         }
 
-        // 1.2 Dispatch generic walkthrough action event for workspace simulation
-        if (typeof window !== 'undefined' && step.simulatedAction) {
-            window.dispatchEvent(
-                new CustomEvent('mergeworks:walkthrough-action', {
-                    detail: {
-                        stepId: step.id,
-                        action: step.simulatedAction,
-                    },
-                })
-            )
+        // 1.1b Trigger Export Modal open/close
+        const isExportModalStep =
+            step.targetElementId === 'export-diligence-modal' ||
+            step.targetSelector?.includes('export-diligence-modal') ||
+            step.simulatedAction?.type === 'open_export_modal'
+
+        if (typeof window !== 'undefined') {
+            if (isExportModalStep) {
+                window.dispatchEvent(new CustomEvent('mergeworks:open-export-modal'))
+            } else {
+                window.dispatchEvent(new CustomEvent('mergeworks:close-export-modal'))
+            }
+        }
+
+        // 1.2 Manage Mock VDR File Explorer Modal visibility
+        if (step.simulatedAction?.type === 'open_file_explorer') {
+            setIsFileExplorerOpen(true)
+        } else {
+            setIsFileExplorerOpen(false)
+        }
+
+        // 1.3 Dispatch generic walkthrough action event for workspace simulation
+        const isEvidenceStep =
+            step.targetElementId?.includes('evidence') ||
+            step.targetSelector?.includes('evidence') ||
+            step.id?.includes('evidence') ||
+            step.simulatedAction?.type === 'simulate_open_evidence' ||
+            step.simulatedAction?.type === 'simulate_open_doc_evidence' ||
+            step.simulatedAction?.type === 'scroll_evidence'
+
+        if (typeof window !== 'undefined') {
+            if (!isEvidenceStep) {
+                window.dispatchEvent(
+                    new CustomEvent('mergeworks:walkthrough-action', {
+                        detail: {
+                            stepId: step.id,
+                            action: { type: 'close_evidence' },
+                        },
+                    })
+                )
+            }
+            if (step.simulatedAction) {
+                window.dispatchEvent(
+                    new CustomEvent('mergeworks:walkthrough-action', {
+                        detail: {
+                            stepId: step.id,
+                            action: step.simulatedAction,
+                        },
+                    })
+                )
+            }
         }
 
         // 2. Multi-frame polling to find element after tab/suspense render
@@ -180,11 +257,19 @@ export function useNativeWalkthrough({ activeTab, onTabChange }: UseNativeWalkth
             if (!el && step.targetSelector) el = document.querySelector(step.targetSelector) as HTMLElement | null
 
             if (el) {
-                const elRect = el.getBoundingClientRect()
-                const absoluteElementTop = elRect.top + window.pageYOffset
-                // Position target element ~110px from top of viewport so it's fully visible and well above the bottom HUD
-                const targetScrollY = Math.max(0, absoluteElementTop - 110)
-                window.scrollTo({ top: targetScrollY, behavior: 'smooth' })
+                const scrollParent = (el.closest('#evidence-drawer-scroll-body') || el.closest('[data-evidence-drawer] .overflow-y-auto') || el.closest('aside .overflow-y-auto')) as HTMLElement | null
+                if (scrollParent) {
+                    const parentRect = scrollParent.getBoundingClientRect()
+                    const elRect = el.getBoundingClientRect()
+                    const relativeTop = elRect.top - parentRect.top + scrollParent.scrollTop
+                    scrollParent.scrollTo({ top: Math.max(0, relativeTop - 30), behavior: 'smooth' })
+                } else {
+                    const elRect = el.getBoundingClientRect()
+                    const absoluteElementTop = elRect.top + window.pageYOffset
+                    // Position target element ~110px from top of viewport so it's fully visible and well above the bottom HUD
+                    const targetScrollY = Math.max(0, absoluteElementTop - 110)
+                    window.scrollTo({ top: targetScrollY, behavior: 'smooth' })
+                }
             }
             updateTargetPosition()
         }
@@ -205,6 +290,20 @@ export function useNativeWalkthrough({ activeTab, onTabChange }: UseNativeWalkth
         // Trigger voiceover
         speakNarrative(`${step.title}. ${step.narrative}`)
     }, [activeTab, currentTourId, currentStepIndex, onTabChange, persistResumeState, speakNarrative, updateTargetPosition])
+
+    // Handle upload from mock VDR File Explorer
+    const handleUploadFromVDR = useCallback((files?: any[]) => {
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(
+                new CustomEvent('mergeworks:walkthrough-action', {
+                    detail: {
+                        action: { type: 'stage_packet', payload: files },
+                    },
+                })
+            )
+        }
+        setIsFileExplorerOpen(false)
+    }, [])
 
     // Start a tour playlist
     const startTour = useCallback((playlistId: TourPlaylistId = 'core-fast', startStep = 0) => {
@@ -242,12 +341,15 @@ export function useNativeWalkthrough({ activeTab, onTabChange }: UseNativeWalkth
         setStepProgress(0)
         setTargetRect(null)
         setCursorPos(null)
+        setIsFileExplorerOpen(false)
         if (timerRef.current) clearTimeout(timerRef.current)
         if (progressTimerRef.current) clearInterval(progressTimerRef.current)
         if (typeof window !== 'undefined' && window.speechSynthesis) {
             try { window.speechSynthesis.cancel() } catch { }
         }
         if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('mergeworks:close-chat'))
+            window.dispatchEvent(new CustomEvent('mergeworks:close-export-modal'))
             window.dispatchEvent(
                 new CustomEvent('mergeworks:walkthrough-action', {
                     detail: {
@@ -272,14 +374,13 @@ export function useNativeWalkthrough({ activeTab, onTabChange }: UseNativeWalkth
         }
     }, [isActive, activePlaylist, currentStepIndex, executeStep, stopTour])
 
-    // Go to previous step
+    // Go to previous step (wraps around to last step from step 0)
     const prevStep = useCallback(() => {
         if (!isActive) return
-        if (currentStepIndex > 0) {
-            const prevIdx = currentStepIndex - 1
-            setCurrentStepIndex(prevIdx)
-            executeStep(activePlaylist.steps[prevIdx])
-        }
+        const maxIndex = activePlaylist.steps.length - 1
+        const prevIdx = currentStepIndex > 0 ? currentStepIndex - 1 : maxIndex
+        setCurrentStepIndex(prevIdx)
+        executeStep(activePlaylist.steps[prevIdx])
     }, [isActive, activePlaylist, currentStepIndex, executeStep])
 
     // Jump to specific step
@@ -325,7 +426,10 @@ export function useNativeWalkthrough({ activeTab, onTabChange }: UseNativeWalkth
     // Auto-advance progress timer when isPlaying is true
     useEffect(() => {
         if (!isActive || !isPlaying || !currentStep || currentTourId === 'interactive-quest') {
-            if (progressTimerRef.current) clearInterval(progressTimerRef.current)
+            if (progressTimerRef.current) {
+                clearInterval(progressTimerRef.current)
+                progressTimerRef.current = null
+            }
             return
         }
 
@@ -333,23 +437,30 @@ export function useNativeWalkthrough({ activeTab, onTabChange }: UseNativeWalkth
         const intervalMs = 50
         const stepIncrement = (intervalMs / totalDuration) * 100
 
+        let currentProgress = 0
         setStepProgress(0)
 
         progressTimerRef.current = setInterval(() => {
-            setStepProgress(prev => {
-                if (prev >= 100) {
+            currentProgress += stepIncrement
+            if (currentProgress >= 100) {
+                if (progressTimerRef.current) {
                     clearInterval(progressTimerRef.current)
-                    nextStep()
-                    return 0
+                    progressTimerRef.current = null
                 }
-                return Math.min(100, prev + stepIncrement)
-            })
+                setStepProgress(100)
+                nextStep()
+            } else {
+                setStepProgress(Math.min(100, currentProgress))
+            }
         }, intervalMs)
 
         return () => {
-            if (progressTimerRef.current) clearInterval(progressTimerRef.current)
+            if (progressTimerRef.current) {
+                clearInterval(progressTimerRef.current)
+                progressTimerRef.current = null
+            }
         }
-    }, [isActive, isPlaying, currentStep, currentStepIndex, playbackSpeed, currentTourId, nextStep])
+    }, [isActive, isPlaying, currentStepIndex, playbackSpeed, currentTourId, nextStep])
 
     // Track target position on scroll and resize
     useEffect(() => {
@@ -411,6 +522,9 @@ export function useNativeWalkthrough({ activeTab, onTabChange }: UseNativeWalkth
         cursorPos,
         isClicking,
         questSuccess,
+        isFileExplorerOpen,
+        setIsFileExplorerOpen,
+        handleUploadFromVDR,
         resumeState,
         resumeTour,
         clearResumeState,

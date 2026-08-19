@@ -165,6 +165,8 @@ export default function EvidenceDrawer({ evidence, onClose }: { evidence: Eviden
     return (
         <div className="fixed inset-0 z-50 flex justify-start bg-black/35" role="presentation" onMouseDown={onClose}>
             <aside
+                id="diligence-evidence-drawer"
+                data-evidence-drawer="true"
                 role="dialog"
                 aria-modal="true"
                 aria-label="Evidence detail"
@@ -197,7 +199,7 @@ export default function EvidenceDrawer({ evidence, onClose }: { evidence: Eviden
                     </div>
                 </div>
 
-                <div className="flex-1 space-y-5 overflow-y-auto p-5">
+                <div id="evidence-drawer-scroll-body" className="flex-1 space-y-5 overflow-y-auto p-5">
                     <div className="flex flex-wrap gap-2">
                         <ProvenanceBadge
                             provenance={evidence.provenance}
@@ -241,20 +243,22 @@ export default function EvidenceDrawer({ evidence, onClose }: { evidence: Eviden
                     />
 
                     {evidence.excerpt ? (
-                        <div className="rounded-md border border-border bg-background/80 p-3">
+                        <div id="evidence-cited-excerpt" className="rounded-md border border-border bg-background/80 p-3">
                             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Cited excerpt</p>
                             <p className="mt-1 text-sm leading-6 text-foreground whitespace-pre-wrap">{evidence.excerpt}</p>
                         </div>
                     ) : null}
 
-                    <DocumentHighlightViewer
-                        sourceFile={evidence.sourceFile}
-                        sourceLocation={evidence.sourceLocation}
-                        excerpt={evidence.excerpt}
-                        documentUrl={evidence.documentUrl}
-                        documentId={evidence.documentId}
-                        confidence={confidence}
-                    />
+                    <div id="evidence-pdf-viewer">
+                        <DocumentHighlightViewer
+                            sourceFile={evidence.sourceFile}
+                            sourceLocation={evidence.sourceLocation}
+                            excerpt={evidence.excerpt}
+                            documentUrl={evidence.documentUrl}
+                            documentId={evidence.documentId}
+                            confidence={confidence}
+                        />
+                    </div>
                 </div>
             </aside>
         </div>

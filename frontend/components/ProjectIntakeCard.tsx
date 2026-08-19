@@ -299,11 +299,13 @@ export default function ProjectIntakeCard({
                                 New project
                             </Button>
                             <Button
+                                id="queue-submit-btn"
+                                data-queue-btn="true"
                                 type="button"
                                 size="lg"
                                 disabled={disabled}
                                 onClick={handleProductionSubmit}
-                                className="h-10 px-6 font-semibold shadow-md bg-primary hover:bg-primary/90 text-primary-foreground text-sm"
+                                className="h-10 px-6 font-semibold shadow-md bg-primary hover:bg-primary/90 text-primary-foreground text-sm cursor-pointer"
                             >
                                 {disabled ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                                 Queue

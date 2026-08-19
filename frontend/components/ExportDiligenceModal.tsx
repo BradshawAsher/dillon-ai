@@ -350,7 +350,7 @@ export function ExportDiligenceModal({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in-0 duration-200">
-            <Card className="relative w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl border-primary/20 bg-card text-card-foreground">
+            <Card id="export-diligence-modal" className="relative w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl border-primary/20 bg-card text-card-foreground">
                 <CardHeader className="border-b border-border/60 pb-4">
                     <div className="flex items-start justify-between">
                         <div>

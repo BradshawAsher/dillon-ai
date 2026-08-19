@@ -422,7 +422,7 @@ export default function LatestSubmissionSection({
                             </div>
                         ) : null}
                         {liveSubmitInsight ? (
-                            <div className="grid gap-3 xl:col-span-4 xl:grid-cols-2">
+                            <div id="diligence-document-flags" data-document-flags="true" className="scroll-mt-6 grid gap-3 xl:col-span-4 xl:grid-cols-2">
                                 {[
                                     {
                                         title: 'Red flags',
@@ -430,6 +430,7 @@ export default function LatestSubmissionSection({
                                         badge: 'destructive' as const,
                                         sectionClass: 'border-destructive/30 bg-destructive/5',
                                         itemClass: 'border-destructive/20',
+                                        id: 'diligence-red-flags',
                                     },
                                     {
                                         title: 'Yellow flags',
@@ -437,6 +438,7 @@ export default function LatestSubmissionSection({
                                         badge: 'warning' as const,
                                         sectionClass: 'border-warning/30 bg-warning/5',
                                         itemClass: 'border-warning/20',
+                                        id: 'diligence-yellow-flags',
                                     },
                                     {
                                         title: 'Green flags',
@@ -444,32 +446,34 @@ export default function LatestSubmissionSection({
                                         badge: 'success' as const,
                                         sectionClass: 'border-success/30 bg-success/5',
                                         itemClass: 'border-success/20',
+                                        id: 'diligence-green-flags',
                                     },
                                 ].map((group) => (
-                                    <ExpandableInsightGroup
-                                        key={group.title}
-                                        title={group.title}
-                                        items={group.flags}
-                                        badgeVariant={group.badge}
-                                        className={group.sectionClass}
-                                        itemClassName={group.itemClass}
-                                        emptyLabel="None"
-                                        defaultOpen
-                                        onItemClick={(item) => {
-                                            if (setActiveEvidence) {
-                                                setActiveEvidence({
-                                                    title: `${group.title.replace(' flags', ' flag')}: finding`,
-                                                    sourceFile: displayedSubmissionRow?.fileName || 'Uploaded document',
-                                                    sourceLocation: group.title,
-                                                    excerpt: item,
-                                                    status: group.badge === 'destructive' ? 'Risk' : group.badge === 'warning' ? 'Caution' : 'Confirmed',
-                                                    provenance: `Document-level ${group.title.toLowerCase()} analysis`,
-                                                    documentId: displayedSubmissionRow?.storageFileId,
-                                                    documentUrl: displayedSubmissionRow?.storageFileUrl,
-                                                })
-                                            }
-                                        }}
-                                    />
+                                    <div key={group.title} id={group.id} className="scroll-mt-6">
+                                        <ExpandableInsightGroup
+                                            title={group.title}
+                                            items={group.flags}
+                                            badgeVariant={group.badge}
+                                            className={group.sectionClass}
+                                            itemClassName={group.itemClass}
+                                            emptyLabel="None"
+                                            defaultOpen
+                                            onItemClick={(item) => {
+                                                if (setActiveEvidence) {
+                                                    setActiveEvidence({
+                                                        title: `${group.title.replace(' flags', ' flag')}: finding`,
+                                                        sourceFile: displayedSubmissionRow?.fileName || 'Uploaded document',
+                                                        sourceLocation: group.title,
+                                                        excerpt: item,
+                                                        status: group.badge === 'destructive' ? 'Risk' : group.badge === 'warning' ? 'Caution' : 'Confirmed',
+                                                        provenance: `Document-level ${group.title.toLowerCase()} analysis`,
+                                                        documentId: displayedSubmissionRow?.storageFileId,
+                                                        documentUrl: displayedSubmissionRow?.storageFileUrl,
+                                                    })
+                                                }
+                                            }}
+                                        />
+                                    </div>
                                 ))}
                             </div>
                         ) : null}

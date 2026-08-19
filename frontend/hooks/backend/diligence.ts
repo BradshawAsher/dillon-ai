@@ -20,7 +20,7 @@ import { identityHeaders } from '../../lib/identity'
 import type { DiligenceFinding } from '../../utils/diligence'
 import type { SubmissionHistoryItem } from '../../utils/submissionHistory'
 
-export type { ProjectSynthesisItem }
+export type { ProjectSynthesisItem, SubmissionHistoryItem }
 
 const USE_MOCKS = getDataSource() === 'mock'
 
@@ -263,7 +263,7 @@ function useLiveSubmitDealPacket() {
 // Mock implementations (VITE_USE_MOCKS=true): in-memory, no network
 // ---------------------------------------------------------------------------
 
-function blankHistoryRow(): SubmissionHistoryItem {
+export function blankHistoryRow(): SubmissionHistoryItem {
     return {
         requestID: '',
         dealName: '',

@@ -109,19 +109,12 @@
 
 - Can have like achievements too like for the user to finish these things like get started like in aws, have this paired with tutorials? maybe can give them free credit for doing some of these achievements?
 
-- Can we add a tab for keyboard shortcuts and a button on the top next to sign in?
-
 - Dive deeper on how deterministic math checks work and how we get those pure stats to do the match checks with?
 
-- Also for each tab, maybe have an i info button for what is this tab for? and maybe a native tutorial for each?
-
-- Have to make a short YouTube video and long YouTube video to almost mirror your supademos
+- Have to make a long YouTube video to showcase tabs besides the diligence tab
 
 - For brad, explore and test features using the vercel link instead of localhost since the vercel lacks some functionality still compared to the localhost
-
-- [DONE?] Chatbot is still not good enough, on the vercel link I asked him tell me about this deal and he just told me to ask him other questions instead of just telling me straight up
-
-- Prepare for questions they might ask and things to explain if you have more time
+- Explore the chatbot to see if its lacking
 
 - try to open out and expand the js nodes and the code nodes and json schemas that claude code or antigravity made to have indentation and not be one squished block
 
@@ -129,11 +122,7 @@
 
 - [YES] Is there a lot of overview in the analysis and overview tab with the other more indepth tabs like valuation, returns, growth, negotiation, etc?
 
-- [DONE?] Why is the med spa wellness clinic when i first open the tab $5 price and 0 multiple?
-
 - [DONE?] Some of the TOC didn't work on the vercel when i was on some tabs?
-
-- For brad, maybe rewrite gh commit history the names of the commits so we know what actually happened? This is hard since somtimes when you did commit, like the changes you hoped for didn't actually happen so how can we label which one actually worked and which one didn't?
 
 - Environment separation for prod API keys separate from testing API keys? Have we done this?
 
@@ -142,8 +131,6 @@
 - Should we move the nav bar to the side like how many apps do it instead of vertically stacked?
 
 - Verify github mcp works for claude code, for brad, add it to your other AIs
-
-- Verify supademo mcp works
 
 - Make the TOCs don't get cut off but just keep going and maybe increase height if you have to?
 
