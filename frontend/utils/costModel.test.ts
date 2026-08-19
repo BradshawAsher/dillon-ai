@@ -23,6 +23,22 @@ describe('estimateCallCost', () => {
         // 3121 in * $2 + 1103 out * $12, per MTok.
         expect(estimateCallCost(3121, 1103, 'openai-5-6-terra')).toBeCloseTo(0.019478, 6)
     })
+
+    it('prices the remaining benchmark models from their published rates', () => {
+        // 1M in + 1M out makes each result read directly as (input + output) $/MTok.
+        expect(estimateCallCost(1_000_000, 1_000_000, 'opus-5')).toBeCloseTo(30, 6) // $5 + $25
+        expect(estimateCallCost(1_000_000, 1_000_000, 'openai-5-6-sol')).toBeCloseTo(35, 6) // $5 + $30
+        expect(estimateCallCost(1_000_000, 1_000_000, 'gemini-3-1-flash-lite')).toBeCloseTo(1.75, 6) // $0.25 + $1.50
+        expect(estimateCallCost(1_000_000, 1_000_000, 'gemini-3-5-flash-lite')).toBeCloseTo(1.75, 6)
+        expect(estimateCallCost(1_000_000, 1_000_000, 'gemini-flash')).toBeCloseTo(1.75, 6)
+    })
+
+    it('falls back to Terra pricing for an unrecognized model', () => {
+        // An unexpected model id (e.g. a newly routed model not yet in the table)
+        // must still cost something sane rather than throw on undefined rates.
+        const unknown = estimateCallCost(1_000_000, 1_000_000, 'model-not-in-table' as never)
+        expect(unknown).toBeCloseTo(14, 6) // Terra: $2 + $12
+    })
 })
 
 describe('estimatePerDocumentCost', () => {
