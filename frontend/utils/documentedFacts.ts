@@ -91,8 +91,14 @@ export function parseMagnitudeMoney(value: string | number | null | undefined): 
     if (!str) return null
     str = str.replace(/\b(?:usd|cad|eur|gbp|aud)\b/gi, '').trim()
     const normalized = str.replace(/[$,\s]/g, '')
-    const multiplier = /b$/i.test(normalized) ? 1_000_000_000 : /m$/i.test(normalized) ? 1_000_000 : /k$/i.test(normalized) ? 1_000 : 1
-    const parsed = Number(normalized.replace(/[kmb]$/i, ''))
+    // Match a trailing magnitude unit. Order matters: the two-letter units
+    // (bn, mm) must be tried before their single-letter forms (b, m) so that
+    // common finance shorthand like "$1.5MM" (millions) parses correctly.
+    const unitMatch = normalized.match(/(bn|b|mm|m|k)$/i)
+    const unit = unitMatch ? unitMatch[1].toLowerCase() : ''
+    const multiplier = unit === 'bn' || unit === 'b' ? 1_000_000_000 : unit === 'mm' || unit === 'm' ? 1_000_000 : unit === 'k' ? 1_000 : 1
+    const numericPart = unit ? normalized.slice(0, normalized.length - unit.length) : normalized
+    const parsed = Number(numericPart)
     return Number.isFinite(parsed) && parsed >= 0 ? parsed * multiplier : null
 }
 

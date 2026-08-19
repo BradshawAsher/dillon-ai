@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { deriveDocumentedFacts, deriveDocumentedFactsJson, deriveDocumentedFactsWithConflicts } from './documentedFacts'
+import { deriveDocumentedFacts, deriveDocumentedFactsJson, deriveDocumentedFactsWithConflicts, parseMagnitudeMoney } from './documentedFacts'
 import type { SubmissionHistoryItem } from './submissionHistory'
 
 function doc(financialFactsJson: string, fileName = 'doc.pdf'): SubmissionHistoryItem {
@@ -118,5 +118,46 @@ describe('deriveDocumentedFactsWithConflicts', () => {
         const a = doc(JSON.stringify([fact({ metric: 'revenue', normalized_value: 1_000_000, period: '2024' })]), 'a.pdf')
         const b = doc(JSON.stringify([fact({ metric: 'revenue', normalized_value: 1_005_000, period: '2024' })]), 'b.pdf')
         expect(deriveDocumentedFactsWithConflicts([a, b]).conflicts).toHaveLength(0)
+    })
+})
+
+describe('parseMagnitudeMoney', () => {
+    it('returns null for empty or nullish input', () => {
+        expect(parseMagnitudeMoney(null)).toBeNull()
+        expect(parseMagnitudeMoney(undefined)).toBeNull()
+        expect(parseMagnitudeMoney('')).toBeNull()
+        expect(parseMagnitudeMoney('   ')).toBeNull()
+    })
+
+    it('passes finite numbers through and rejects non-finite ones', () => {
+        expect(parseMagnitudeMoney(1_500_000)).toBe(1_500_000)
+        expect(parseMagnitudeMoney(0)).toBe(0)
+        expect(parseMagnitudeMoney(Number.NaN)).toBeNull()
+        expect(parseMagnitudeMoney(Number.POSITIVE_INFINITY)).toBeNull()
+    })
+
+    it('applies single-letter magnitude suffixes', () => {
+        expect(parseMagnitudeMoney('$1.5K')).toBe(1_500)
+        expect(parseMagnitudeMoney('$1.5M')).toBe(1_500_000)
+        expect(parseMagnitudeMoney('$1.5B')).toBe(1_500_000_000)
+    })
+
+    it('applies the two-letter finance shorthands MM and bn', () => {
+        expect(parseMagnitudeMoney('$1.5MM')).toBe(1_500_000)
+        expect(parseMagnitudeMoney('2mm')).toBe(2_000_000)
+        expect(parseMagnitudeMoney('$1.5bn')).toBe(1_500_000_000)
+        expect(parseMagnitudeMoney('3 BN')).toBe(3_000_000_000)
+    })
+
+    it('strips currency codes, symbols, and separators', () => {
+        expect(parseMagnitudeMoney('USD 2,500,000')).toBe(2_500_000)
+        expect(parseMagnitudeMoney('$2,500,000')).toBe(2_500_000)
+        expect(parseMagnitudeMoney('EUR 4M')).toBe(4_000_000)
+    })
+
+    it('rejects negative amounts and unparseable strings', () => {
+        expect(parseMagnitudeMoney('-$1.5M')).toBeNull()
+        expect(parseMagnitudeMoney('N/A')).toBeNull()
+        expect(parseMagnitudeMoney('5x')).toBeNull()
     })
 })
