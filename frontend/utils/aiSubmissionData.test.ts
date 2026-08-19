@@ -19,6 +19,13 @@ describe('formatCurrencyValue', () => {
         expect(formatCurrencyValue('2B', 'USD')).toContain('2,000,000,000')
     })
 
+    it('expands MM/bn shorthand and spelled-out magnitudes', () => {
+        expect(formatCurrencyValue('$1.5MM', 'USD')).toContain('1,500,000')
+        expect(formatCurrencyValue('1.5bn', 'USD')).toContain('1,500,000,000')
+        expect(formatCurrencyValue('1.5 million', 'USD')).toContain('1,500,000')
+        expect(formatCurrencyValue('750 thousand', 'USD')).toContain('750,000')
+    })
+
     it('handles negative abbreviations (the fix)', () => {
         expect(formatCurrencyValue('-1.2M', 'USD')).toContain('1,200,000')
         expect(formatCurrencyValue('-1.2M', 'USD')).toMatch(/-|\(/) // negative rendering

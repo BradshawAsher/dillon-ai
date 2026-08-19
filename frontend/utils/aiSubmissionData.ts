@@ -214,11 +214,17 @@ export function formatCurrencyValue(value: string, currency: string) {
 
   if (!Number.isFinite(numericValue)) {
     const cleaned = trimmedValue.replace(/[$,\s]/g, '')
-    const abbrevMatch = cleaned.match(/^(-?[0-9.]+)\s*(M|K|B|m|k|b)$/i)
+    // Accept the same magnitude vocabulary as parseMagnitudeMoney — letter
+    // shorthand (M/MM/K/B/bn) and spelled-out words — so a valuation like
+    // "$1.5MM" or "$1.5 million" formats instead of rendering as raw text.
+    const abbrevMatch = cleaned.match(/^(-?[0-9.]+)(billion|bn|b|million|mm|m|thousand|k)$/i)
     if (abbrevMatch) {
       const base = parseFloat(abbrevMatch[1])
-      const suffix = abbrevMatch[2].toUpperCase()
-      const multiplier = suffix === 'B' ? 1_000_000_000 : suffix === 'M' ? 1_000_000 : 1_000
+      const suffix = abbrevMatch[2].toLowerCase()
+      const multiplier =
+        suffix === 'billion' || suffix === 'bn' || suffix === 'b' ? 1_000_000_000
+        : suffix === 'million' || suffix === 'mm' || suffix === 'm' ? 1_000_000
+        : 1_000
       numericValue = base * multiplier
     } else {
       const strippedNum = Number(cleaned)
