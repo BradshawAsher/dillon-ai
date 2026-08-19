@@ -152,7 +152,13 @@ function formatLabel(key: string) {
 
 function formatMetricValue(value: unknown) {
   if (typeof value === 'number') {
-    return Number.isInteger(value) ? value.toLocaleString() : value.toFixed(2)
+    if (!Number.isFinite(value)) return ''
+    // Group thousands for decimals too — previously integers used
+    // toLocaleString() ("1,000,000") while decimals used toFixed(2)
+    // ("1000000.50"), so two adjacent metrics rendered inconsistently. Pin the
+    // locale so the grouping is deterministic across environments.
+    const fractionDigits = Number.isInteger(value) ? 0 : 2
+    return value.toLocaleString('en-US', { minimumFractionDigits: fractionDigits, maximumFractionDigits: fractionDigits })
   }
 
   if (typeof value === 'boolean') {

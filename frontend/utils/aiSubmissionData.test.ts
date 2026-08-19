@@ -110,4 +110,20 @@ describe('getAiSubmissionViewModel', () => {
         expect(vm.confidencePercent).toBe(50)
         expect(vm.redFlags).toEqual(['JSON red flag'])
     })
+
+    it('groups thousands consistently for integer and decimal metrics', () => {
+        const extracted = JSON.stringify({
+            response: {
+                calculated_metrics: {
+                    headcount: 1234567,
+                    dscr: 1234567.5,
+                },
+            },
+        })
+        const vm = getAiSubmissionViewModel(makeRow({ extractedJson: extracted }))
+        const byLabel = Object.fromEntries(vm.displayMetrics.map((m) => [m.label, m.value]))
+        expect(byLabel['Headcount']).toBe('1,234,567')
+        // Decimals must also be grouped (previously rendered "1234567.50").
+        expect(byLabel['Dscr']).toBe('1,234,567.50')
+    })
 })
