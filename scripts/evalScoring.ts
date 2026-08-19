@@ -401,7 +401,11 @@ export function evaluateDocument(gt: GroundTruth, actual: ActualRunDoc): DocScor
             if (matchIdx !== -1) {
                 usedActualIdx.add(matchIdx)
                 const match = actualFacts[matchIdx]
-                const diffPct = Math.abs(match.normalizedValue - gtFact.normalizedValue) / (gtFact.normalizedValue || 1)
+                // Denominator must be the magnitude of the ground-truth value: a
+                // negative fact (e.g. a loss-making EBITDA) would otherwise make
+                // diffPct negative, so `diffPct <= 0.01` would award full marks to
+                // any actual value however far off.
+                const diffPct = Math.abs(match.normalizedValue - gtFact.normalizedValue) / (Math.abs(gtFact.normalizedValue) || 1)
                 if (diffPct <= 0.01) factsPoints += 10
                 else if (diffPct <= 0.05) factsPoints += 5
                 else factsPoints += 3
