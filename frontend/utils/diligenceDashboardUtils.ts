@@ -75,15 +75,43 @@ export function formatConfidencePercent(rawConfidence?: string | number | null):
     return `${Math.round(num)}%`
 }
 
+/**
+ * Resolves per-token rates ($/token) based on benchmark model pricing:
+ * - OpenAI 5.6 Sol: $5.00/1M in, $30.00/1M out
+ * - OpenAI 5.6 Terra: $2.00/1M in, $12.00/1M out
+ * - Claude Sonnet 5 (intro through Aug 31, 2026): $2.00/1M in, $10.00/1M out
+ * - Claude Opus 5: $5.00/1M in, $25.00/1M out
+ * - Gemini 3.1 / 3.5 Flash Lite: $0.25/1M in, $1.50/1M out
+ */
+export function getModelTokenRates(modelStr?: string | null): { inputRate: number; outputRate: number } {
+    const s = String(modelStr || '').toLowerCase()
+    if (s.includes('sol')) {
+        return { inputRate: 0.000005, outputRate: 0.000030 }
+    }
+    if (s.includes('opus')) {
+        return { inputRate: 0.000005, outputRate: 0.000025 }
+    }
+    if (s.includes('sonnet')) {
+        return { inputRate: 0.000002, outputRate: 0.000010 }
+    }
+    if (s.includes('flash') || s.includes('gemini')) {
+        return { inputRate: 0.00000025, outputRate: 0.0000015 }
+    }
+    // Default: OpenAI 5.6 Terra
+    return { inputRate: 0.000002, outputRate: 0.000012 }
+}
+
 export function calculateDocumentCost(doc?: Partial<SubmissionHistoryItem> | null): number {
     if (!doc) return 0.0495
     if (typeof doc.costUsd === 'number' && doc.costUsd > 0) {
         return doc.costUsd
     }
 
+    const { inputRate, outputRate } = getModelTokenRates(doc.modelUsed || doc.model_used)
+
     if (doc.inputTokens && doc.outputTokens) {
-        const calculated = (doc.inputTokens * 0.000003) + (doc.outputTokens * 0.000015)
-        if (calculated > 0) return calculated
+        const calculated = (doc.inputTokens * inputRate) + (doc.outputTokens * outputRate)
+        if (calculated > 0) return Number(calculated.toFixed(4))
     }
 
     // Dynamic content-based estimation for documents
@@ -109,9 +137,8 @@ export function calculateDocumentCost(doc?: Partial<SubmissionHistoryItem> | nul
 
     const estimatedInputTokens = baseInputTokens + Math.min(10000, Math.round(extractedStr.length / 4))
 
-    // OpenAI 5.6 Terra rates ($2.50/1M input, $10.00/1M output)
-    const cost = (estimatedInputTokens / 1_000_000 * 2.5) + (estimatedOutputTokens / 1_000_000 * 10.0)
-    return Math.max(0.015, Number(cost.toFixed(4)))
+    const cost = (estimatedInputTokens * inputRate) + (estimatedOutputTokens * outputRate)
+    return Math.max(0.005, Number(cost.toFixed(4)))
 }
 
 export function isDocumentCostEstimated(doc?: Partial<SubmissionHistoryItem> | null): boolean {
@@ -134,15 +161,17 @@ export function calculateBatchTotalCost(docs: Partial<SubmissionHistoryItem>[]):
     return docs.reduce((sum, doc) => sum + calculateDocumentCost(doc), 0)
 }
 
-export function calculateSynthesisCost(synth?: { costUsd?: number; inputTokens?: number; outputTokens?: number; finalJudgmentSummary?: string; finalJudgmentJson?: string } | null): number {
+export function calculateSynthesisCost(synth?: { costUsd?: number; inputTokens?: number; outputTokens?: number; modelUsed?: string; model_used?: string; finalJudgmentSummary?: string; finalJudgmentJson?: string } | null): number {
     if (!synth) return 0.0312
     if (typeof synth.costUsd === 'number' && synth.costUsd > 0) {
         return synth.costUsd
     }
 
-    if (synth.inputTokens && synth.outputTokens) {
-        const calculated = (synth.inputTokens * 0.0000025) + (synth.outputTokens * 0.000010)
-        if (calculated > 0) return calculated
+    const { inputRate, outputRate } = getModelTokenRates(synth?.modelUsed || synth?.model_used)
+
+    if (synth?.inputTokens && synth?.outputTokens) {
+        const calculated = (synth.inputTokens * inputRate) + (synth.outputTokens * outputRate)
+        if (calculated > 0) return Number(calculated.toFixed(4))
     }
 
     // Dynamic content-based estimation for synthesis
@@ -153,9 +182,8 @@ export function calculateSynthesisCost(synth?: { costUsd?: number; inputTokens?:
     // Synthesis reads all 22 extracted docs (~22k-30k tokens input context)
     const estimatedInputTokens = Math.max(18000, 20000 + Math.round(outputChars / 2))
 
-    // OpenAI 5.6 Terra rates ($2.50/1M input, $10.00/1M output)
-    const cost = (estimatedInputTokens / 1_000_000 * 2.50) + (estimatedOutputTokens / 1_000_000 * 10.0)
-    return Math.max(0.02, Number(cost.toFixed(4)))
+    const cost = (estimatedInputTokens * inputRate) + (estimatedOutputTokens * outputRate)
+    return Math.max(0.01, Number(cost.toFixed(4)))
 }
 
 export function createUnusedProjectId(usedProjectIds: Iterable<string> = []) {

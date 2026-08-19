@@ -93,6 +93,7 @@ async function syncPendingRowsFromN8nDataTable(rows: Array<Record<string, any>>)
                     output_tokens: match.outputTokens || 0,
                     total_tokens: match.totalTokens || 0,
                     cost_usd: match.costUsd || 0,
+                    model_used: match.modelUsed || match.model_used || '',
                 }
 
                 Object.assign(pendingRow, updatePayload)
@@ -199,6 +200,8 @@ export default async function getSubmissionHistory(req: {
         outputTokens: Number(row.output_tokens ?? 0),
         totalTokens: Number(row.total_tokens ?? 0),
         costUsd: Number(row.cost_usd ?? 0),
+        modelUsed: row.model_used ?? '',
+        model_used: row.model_used ?? '',
         id: row.id ?? 0,
         createdAt: row.created_at ?? '',
         updatedAt: row.updated_at ?? '',

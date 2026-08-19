@@ -143,6 +143,9 @@ export default function LatestSubmissionSection({
                         <Badge variant={displayedSubmissionRow ? 'success' : 'secondary'}>
                             {liveSubmittedRow ? 'Live project row found' : 'Most recent saved submission'}
                         </Badge>
+                        <Badge variant="outline" className="font-mono text-xs bg-primary/10 text-primary border-primary/30">
+                            {displayedSubmissionRow?.modelUsed || 'OpenAI 5.6 Terra'}
+                        </Badge>
                     </div>
                 </div>
             </CardHeader>
