@@ -79,6 +79,19 @@ describe('evaluateDocument financial-fact matching', () => {
     it('gives full facts credit when ground truth lists no facts', () => {
         expect(evaluateDocument(baseGroundTruth(), baseActual()).factsScore).toBe(10)
     })
+
+    it('does not award full credit for a wrong value against a negative ground-truth fact', () => {
+        // A loss-making EBITDA is a legitimate negative ground truth. A sign-flipped
+        // actual is 200% off and must earn only partial credit, not full marks.
+        const gt = baseGroundTruth({
+            financialFacts: [{ metric: 'ebitda', normalizedValue: -500_000, period: '2025' }],
+        })
+        const wrong = baseActual({ financialFacts: [{ metric: 'ebitda', normalizedValue: 500_000, period: '2025' }] })
+        expect(evaluateDocument(gt, wrong).factsScore).toBe(9.3) // 90%(10) + 10%(3 partial)
+        // An exact negative match still scores full facts.
+        const exact = baseActual({ financialFacts: [{ metric: 'ebitda', normalizedValue: -500_000, period: '2025' }] })
+        expect(evaluateDocument(gt, exact).factsScore).toBe(10)
+    })
 })
 
 describe('evaluateDocument component scores', () => {
