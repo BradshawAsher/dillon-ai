@@ -2,6 +2,7 @@ import React from 'react'
 import { WalkthroughSpotlight } from './WalkthroughSpotlight'
 import { WalkthroughCursor } from './WalkthroughCursor'
 import { WalkthroughHUD } from './WalkthroughHUD'
+import { WalkthroughFileExplorerModal } from './WalkthroughFileExplorerModal'
 import type { useNativeWalkthrough } from './useNativeWalkthrough'
 
 interface NativeWalkthroughOverlayProps {
@@ -23,6 +24,9 @@ export function NativeWalkthroughOverlay({ walkthrough, dealName }: NativeWalkth
         cursorPos,
         isClicking,
         questSuccess,
+        isFileExplorerOpen,
+        setIsFileExplorerOpen,
+        handleUploadFromVDR,
         nextStep,
         prevStep,
         goToStep,
@@ -51,6 +55,14 @@ export function NativeWalkthroughOverlay({ walkthrough, dealName }: NativeWalkth
                 isClicking={isClicking}
                 isActive={isActive}
                 label={`${currentStep.tag} • ${currentStep.title}`}
+            />
+
+            {/* Simulated Virtual Data Room File Explorer Modal */}
+            <WalkthroughFileExplorerModal
+                isOpen={isFileExplorerOpen}
+                onClose={() => setIsFileExplorerOpen(false)}
+                onUploadFiles={(files) => handleUploadFromVDR(files)}
+                isAutoSelected={true}
             />
 
             {/* Floating Glassmorphic HUD Controller */}

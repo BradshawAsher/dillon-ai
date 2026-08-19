@@ -258,6 +258,8 @@ export default function DealWorkspaceNav({
                         return (
                             <div key={tab.id} className="inline-flex items-center gap-0.5 group shrink-0">
                                 <button
+                                    id={`tab-nav-${tab.id}`}
+                                    data-tab-nav={tab.id}
                                     type="button"
                                     role="tab"
                                     aria-selected={isActive}

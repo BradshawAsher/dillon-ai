@@ -327,12 +327,13 @@ export default function ProjectSynthesisCard({
             const itemPid = (item.projectId || '').toLowerCase()
             const isMatch =
                 item.projectId === normalizedProjectId ||
-                isRowMatchingProject({ projectId: item.projectId } as any, normalizedProjectId, projects) ||
+                (Boolean(normalizedProjectId) && isRowMatchingProject({ projectId: item.projectId } as any, normalizedProjectId, projects)) ||
                 (targetDealCode && itemPid.includes(targetDealCode)) ||
                 ((targetName.includes('juniper') || targetName.includes('dd-005') || normalizedProjectId.includes('juniper') || normalizedProjectId.includes('dd-005')) &&
                  (itemPid.includes('juniper') || itemPid.includes('dd-005') || itemPid.includes('environmental'))) ||
                 ((targetName.includes('werkheiser') || targetName.includes('business 1') || normalizedProjectId.includes('werkheiser') || normalizedProjectId.includes('business1')) &&
-                 (itemPid.includes('werkheiser') || itemPid.includes('business1') || itemPid.includes('commercial')))
+                 (itemPid.includes('werkheiser') || itemPid.includes('business1') || itemPid.includes('commercial'))) ||
+                (itemPid === 'apex-industrial-tech' && (normalizedProjectId === 'apex-industrial-tech' || !normalizedProjectId || targetName.includes('apex')))
 
             if (isMatch) {
                 const hasValidContent =

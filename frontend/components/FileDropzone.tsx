@@ -185,6 +185,8 @@ export default function FileDropzone({ selectedFiles, onFileSelect, className }:
                         Browse files
                     </Button>
                     <Button
+                        id="browse-vdr-btn"
+                        data-browse-vdr="true"
                         type="button"
                         variant="secondary"
                         size="sm"

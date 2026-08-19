@@ -1662,12 +1662,18 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
         const handleCloseChat = () => {
             setIsOpen(false)
         }
+        const handleClearChat = () => {
+            setMessages([])
+            setRatings({})
+        }
         window.addEventListener('mergeworks:open-chat', handleOpenChat)
         window.addEventListener('mergeworks:close-chat', handleCloseChat)
+        window.addEventListener('mergeworks:clear-chat', handleClearChat)
         return () => {
             window.removeEventListener('mergeworks:open-chat-ask', handleAskAi)
             window.removeEventListener('mergeworks:open-chat', handleOpenChat)
             window.removeEventListener('mergeworks:close-chat', handleCloseChat)
+            window.removeEventListener('mergeworks:clear-chat', handleClearChat)
         }
     }, [sendMessageText])
 

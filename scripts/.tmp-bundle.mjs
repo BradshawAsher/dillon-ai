@@ -37,7 +37,8 @@ function canonicalPeriod(period) {
   if (raw.length === 0) return "";
   if (/\bttm\b|\bltm\b|trailing twelve|last twelve/.test(raw)) return "TTM";
   const year = raw.match(/(20\d{2})/);
-  return year ? year[1] : "";
+  if (year) return year[1];
+  return raw.replace(/[\s_-]+/g, "_").replace(/^_+|_+$/g, "");
 }
 function isFiniteNumber(value) {
   return typeof value === "number" && Number.isFinite(value);
@@ -313,7 +314,7 @@ function evaluateDocument(gt, actual) {
       if (matchIdx !== -1) {
         usedActualIdx.add(matchIdx);
         const match = actualFacts[matchIdx];
-        const diffPct = Math.abs(match.normalizedValue - gtFact.normalizedValue) / (gtFact.normalizedValue || 1);
+        const diffPct = Math.abs(match.normalizedValue - gtFact.normalizedValue) / (Math.abs(gtFact.normalizedValue) || 1);
         if (diffPct <= 0.01) factsPoints += 10;
         else if (diffPct <= 0.05) factsPoints += 5;
         else factsPoints += 3;
@@ -342,7 +343,7 @@ function evaluateDocument(gt, actual) {
   let docValuationScore = 15;
   if (gt.valuation?.valuation_base_estimate) {
     if (actual.valuation?.base_estimate) {
-      const diffPct = Math.abs(actual.valuation.base_estimate - gt.valuation.valuation_base_estimate) / gt.valuation.valuation_base_estimate;
+      const diffPct = Math.abs(actual.valuation.base_estimate - gt.valuation.valuation_base_estimate) / Math.abs(gt.valuation.valuation_base_estimate);
       if (diffPct <= 0.15) docValuationScore = 15;
       else if (diffPct <= 0.3) docValuationScore = 10;
       else docValuationScore = 5;
