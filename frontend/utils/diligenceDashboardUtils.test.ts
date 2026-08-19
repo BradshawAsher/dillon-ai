@@ -135,6 +135,15 @@ describe('withDerivedCapitalStack', () => {
         const noFinancing = { purchasePrice: 1_000_000 } as DealModel
         expect(withDerivedCapitalStack(noFinancing)).toBe(noFinancing)
     })
+
+    it('normalizes a whole-percent equity entry instead of multiplying by it', () => {
+        // A user who typed 30 (meaning 30%) into the decimal field must not
+        // produce 30x the price in equity.
+        const wholePercent = { purchasePrice: 1_000_000, equityContributionPercent: 30, debtAssumed: 0 } as DealModel
+        const out = withDerivedCapitalStack(wholePercent)
+        expect(out.equityAmount).toBe(300_000)
+        expect(out.seniorDebtAmount).toBe(700_000)
+    })
 })
 
 describe('formatConfidencePercent', () => {

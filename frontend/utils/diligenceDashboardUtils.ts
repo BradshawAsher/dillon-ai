@@ -2,6 +2,7 @@ import type { FindingType, Severity } from './diligence'
 import type { DealModel } from '../hooks/backend/diligence'
 import type { SubmissionHistoryItem } from './submissionHistory'
 import { deriveDocumentedFacts } from './documentedFacts'
+import { normalizeEquityFraction } from './dealMath'
 
 export function getFindingVariant(findingType: FindingType): 'destructive' | 'success' {
     return findingType === 'Red Flag' ? 'destructive' : 'success'
@@ -357,7 +358,11 @@ export function withDerivedCapitalStack(model: DealModel): DealModel {
         model.debtAssumed != null
     if (price == null || price <= 0 || !hasFinancingInputs) return model
 
-    const equityPct = model.equityContributionPercent ?? 0.3
+    // Resolve the equity input through the shared normalizer: the field is
+    // saved as a decimal (0.3), but a user who types a whole percent (30) into
+    // it would otherwise multiply the price by 30. normalizeEquityFraction is
+    // the single place that disambiguates, and every consumer must use it.
+    const equityPct = normalizeEquityFraction(model.equityContributionPercent)
     const equity = Math.max(0, price * equityPct)
     const sellerNote = model.sellerNoteAmount ?? 0
     const seniorDebt = Math.max(0, price - equity - sellerNote)
