@@ -69,10 +69,14 @@ export function formatConfidencePercent(rawConfidence?: string | number | null):
     if (rawConfidence === undefined || rawConfidence === null) return 'Pending'
     const str = String(rawConfidence).trim()
     if (!str) return 'Pending'
+    const hasPercentSign = str.includes('%')
     const cleaned = str.replace('%', '').trim()
     const num = Number(cleaned)
     if (!Number.isFinite(num)) return str
-    if (num <= 1) {
+    // The "<= 1 is a fraction" heuristic only applies to a bare number like
+    // 0.87. A value already written with a percent sign ("1%") is in percentage
+    // units, so scaling it up to "100%" would be wrong — honor the sign.
+    if (num <= 1 && !hasPercentSign) {
         return `${Math.round(num * 100)}%`
     }
     return `${Math.round(num)}%`

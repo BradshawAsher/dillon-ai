@@ -6,6 +6,7 @@ import {
     calculateDocumentCost,
     calculateSynthesisCost,
     createUnusedProjectId,
+    formatConfidencePercent,
     formatElapsedDuration,
     getFindingVariant,
     getModelTokenRates,
@@ -133,6 +134,31 @@ describe('withDerivedCapitalStack', () => {
     it('leaves the model untouched when there are no financing inputs', () => {
         const noFinancing = { purchasePrice: 1_000_000 } as DealModel
         expect(withDerivedCapitalStack(noFinancing)).toBe(noFinancing)
+    })
+})
+
+describe('formatConfidencePercent', () => {
+    it('scales a bare fraction up to a percentage', () => {
+        expect(formatConfidencePercent(0.87)).toBe('87%')
+        expect(formatConfidencePercent('0.5')).toBe('50%')
+        expect(formatConfidencePercent(1)).toBe('100%')
+    })
+
+    it('leaves an already-percentage value alone', () => {
+        expect(formatConfidencePercent(85)).toBe('85%')
+        expect(formatConfidencePercent('85%')).toBe('85%')
+    })
+
+    it('honors an explicit percent sign instead of rescaling it', () => {
+        // "1%" is one percent, not a 1.0 fraction that should become 100%.
+        expect(formatConfidencePercent('1%')).toBe('1%')
+        expect(formatConfidencePercent('0.5%')).toBe('1%') // rounds to nearest whole percent
+    })
+
+    it('returns Pending for missing input and passes through non-numeric text', () => {
+        expect(formatConfidencePercent(null)).toBe('Pending')
+        expect(formatConfidencePercent('')).toBe('Pending')
+        expect(formatConfidencePercent('high')).toBe('high')
     })
 })
 
