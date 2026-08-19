@@ -14,12 +14,14 @@ import {
 } from './costModel'
 
 describe('estimateCallCost', () => {
-    it('prices a Sonnet 5 call at $3/$15 per MTok', () => {
-        expect(estimateCallCost(2554, 1090, 'sonnet-5')).toBeCloseTo(0.024012, 6)
+    it('prices a Sonnet 5 call at its $2/$10 intro rate per MTok', () => {
+        // 2554 in * $2 + 1090 out * $10, per MTok.
+        expect(estimateCallCost(2554, 1090, 'sonnet-5')).toBeCloseTo(0.016008, 6)
     })
 
-    it('prices an OpenAI 5.6 Terra call at $2.5/$10 per MTok', () => {
-        expect(estimateCallCost(3121, 1103, 'openai-5-6-terra')).toBeCloseTo(0.0188325, 6)
+    it('prices an OpenAI 5.6 Terra call at $2/$12 per MTok', () => {
+        // 3121 in * $2 + 1103 out * $12, per MTok.
+        expect(estimateCallCost(3121, 1103, 'openai-5-6-terra')).toBeCloseTo(0.019478, 6)
     })
 })
 
@@ -54,10 +56,12 @@ describe('derived constants', () => {
 })
 
 describe('topSpendDrivers', () => {
-    it('ranks Claude Sonnet 5 output as top spend driver', () => {
+    it('ranks OpenAI 5.6 Terra output as top spend driver', () => {
+        // Both sample legs now run on Terra, whose $12 output rate makes the
+        // folded output leg the single largest contributor.
         const drivers = topSpendDrivers(SAMPLE_DOCUMENT_LEGS)
-        expect(drivers[0].label).toBe('Claude Sonnet 5 output')
-        expect(drivers[0].model).toBe('sonnet-5')
+        expect(drivers[0].label).toBe('OpenAI 5.6 Terra output')
+        expect(drivers[0].model).toBe('openai-5-6-terra')
         expect(drivers[0].direction).toBe('output')
     })
 
