@@ -121,11 +121,23 @@ export function resolveFinancialMetricsForProject(
         return s
     }
 
+    // A multiple is expressed with a trailing "x" (e.g. "5.5x"), never as a
+    // dollar amount. A bare number like 5.5 must not be passed through the
+    // money formatter, which would render it as "$5.5".
+    const fmtMultiple = (val: any) => {
+        if (!val || val === 'N/A') return 'N/A'
+        const s = String(val).trim()
+        if (/x$/i.test(s)) return s
+        const num = Number(s.replace(/[^0-9.]/g, ''))
+        if (Number.isFinite(num) && num > 0) return `${num}x`
+        return s
+    }
+
     return {
         askingPrice: fmt(askingPrice),
         revenue: fmt(revenue),
         ebitda: fmt(ebitda),
         valuation: fmt(valuation),
-        multiple: fmt(multiple),
+        multiple: fmtMultiple(multiple),
     }
 }
