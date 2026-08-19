@@ -3,10 +3,12 @@ import { describe, expect, it } from 'vitest'
 import type { DealModel } from '../hooks/backend/diligence'
 import type { SubmissionHistoryItem } from './submissionHistory'
 import {
+    calculateDocumentCost,
     calculateSynthesisCost,
     createUnusedProjectId,
     formatElapsedDuration,
     getFindingVariant,
+    getModelTokenRates,
     getSeverityVariant,
     getSubmissionStatusVariant,
     hasReachedProcessingStage,
@@ -126,6 +128,41 @@ describe('withDerivedCapitalStack', () => {
     it('leaves the model untouched when there are no financing inputs', () => {
         const noFinancing = { purchasePrice: 1_000_000 } as DealModel
         expect(withDerivedCapitalStack(noFinancing)).toBe(noFinancing)
+    })
+})
+
+describe('getModelTokenRates', () => {
+    it('maps each benchmark model family to its per-token rate', () => {
+        expect(getModelTokenRates('openai-5-6-sol')).toEqual({ inputRate: 0.000005, outputRate: 0.000030 })
+        expect(getModelTokenRates('opus-5')).toEqual({ inputRate: 0.000005, outputRate: 0.000025 })
+        expect(getModelTokenRates('sonnet-5')).toEqual({ inputRate: 0.000002, outputRate: 0.000010 })
+        expect(getModelTokenRates('gemini-3-1-flash-lite')).toEqual({ inputRate: 0.00000025, outputRate: 0.0000015 })
+    })
+
+    it('defaults to Terra rates for Terra, unknown, or missing model ids', () => {
+        const terra = { inputRate: 0.000002, outputRate: 0.000012 }
+        expect(getModelTokenRates('openai-5-6-terra')).toEqual(terra)
+        expect(getModelTokenRates('something-unrecognized')).toEqual(terra)
+        expect(getModelTokenRates(undefined)).toEqual(terra)
+        expect(getModelTokenRates(null)).toEqual(terra)
+        expect(getModelTokenRates('')).toEqual(terra)
+    })
+})
+
+describe('calculateDocumentCost', () => {
+    it('prefers a logged costUsd over any estimate', () => {
+        expect(calculateDocumentCost({ costUsd: 0.5, inputTokens: 1000, outputTokens: 1000 })).toBe(0.5)
+    })
+
+    it('prices measured tokens using the document model rate', () => {
+        // Opus 5: 100k in * $5/MTok + 50k out * $25/MTok = 0.5 + 1.25.
+        expect(calculateDocumentCost({ inputTokens: 100_000, outputTokens: 50_000, modelUsed: 'opus-5' })).toBeCloseTo(1.75, 4)
+        // Sonnet 5 intro rate on the same tokens: 0.2 + 0.5.
+        expect(calculateDocumentCost({ inputTokens: 100_000, outputTokens: 50_000, modelUsed: 'sonnet-5' })).toBeCloseTo(0.7, 4)
+    })
+
+    it('honours the snake_case model_used alias', () => {
+        expect(calculateDocumentCost({ inputTokens: 100_000, outputTokens: 50_000, model_used: 'opus-5' })).toBeCloseTo(1.75, 4)
     })
 })
 
