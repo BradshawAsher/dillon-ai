@@ -1,15 +1,27 @@
 // Anthropic & OpenAI token pricing and per-document cost estimation.
 //
 // The live per-document and synthesis workflow routes across benchmark models:
-// Claude Sonnet 5 for main document extraction & financial analysis,
-// and OpenAI 5.6 Terra for synthesis passes and consolidation.
+// Primary document extraction on OpenAI 5.6 Terra (with Sol fallback)
+// and synthesis passes on OpenAI 5.6 Terra.
 
-export type AnthropicModel = 'sonnet-5' | 'openai-5-6-terra'
+export type AnthropicModel =
+    | 'sonnet-5'
+    | 'opus-5'
+    | 'openai-5-6-terra'
+    | 'openai-5-6-sol'
+    | 'gemini-3-1-flash-lite'
+    | 'gemini-3-5-flash-lite'
+    | 'gemini-flash'
 
 /** USD per 1M tokens, per benchmark provider price lists. */
 export const MODEL_RATES: Record<AnthropicModel, { inputPerMTok: number; outputPerMTok: number }> = {
-    'sonnet-5': { inputPerMTok: 3.0, outputPerMTok: 15.0 },
-    'openai-5-6-terra': { inputPerMTok: 2.5, outputPerMTok: 10.0 },
+    'openai-5-6-terra': { inputPerMTok: 2.0, outputPerMTok: 12.0 },
+    'openai-5-6-sol': { inputPerMTok: 5.0, outputPerMTok: 30.0 },
+    'sonnet-5': { inputPerMTok: 2.0, outputPerMTok: 10.0 }, // Intro rate through August 31, 2026 ($2 in / $10 out)
+    'opus-5': { inputPerMTok: 5.0, outputPerMTok: 25.0 },
+    'gemini-3-1-flash-lite': { inputPerMTok: 0.25, outputPerMTok: 1.50 },
+    'gemini-3-5-flash-lite': { inputPerMTok: 0.25, outputPerMTok: 1.50 },
+    'gemini-flash': { inputPerMTok: 0.25, outputPerMTok: 1.50 },
 }
 
 export type ModelLeg = {
@@ -20,16 +32,16 @@ export type ModelLeg = {
 
 /**
  * Token counts measured from representative production execution:
- * Claude Sonnet 5 document extraction pass plus OpenAI 5.6 Terra consolidation pass.
+ * OpenAI 5.6 Terra document extraction pass plus OpenAI 5.6 Terra consolidation pass.
  */
 export const SAMPLE_DOCUMENT_LEGS: ModelLeg[] = [
-    { model: 'sonnet-5', inputTokens: 2554, outputTokens: 1090 },
+    { model: 'openai-5-6-terra', inputTokens: 2554, outputTokens: 1090 },
     { model: 'openai-5-6-terra', inputTokens: 3121, outputTokens: 1103 },
 ]
 
 /** USD cost of one model call from its token counts. */
 export function estimateCallCost(inputTokens: number, outputTokens: number, model: AnthropicModel): number {
-    const rate = MODEL_RATES[model] || MODEL_RATES['sonnet-5']
+    const rate = MODEL_RATES[model] || MODEL_RATES['openai-5-6-terra']
     return (inputTokens / 1_000_000) * rate.inputPerMTok + (outputTokens / 1_000_000) * rate.outputPerMTok
 }
 
@@ -62,7 +74,7 @@ export const MEASURED_COST_PER_DOCUMENT = estimatePerDocumentCost(SAMPLE_DOCUMEN
 export const MEASURED_ROUTING_SAVINGS = routingSavingsFraction(SAMPLE_DOCUMENT_LEGS)
 
 export type SpendDriver = {
-    /** Human label, e.g. "Claude Sonnet 5 output". */
+    /** Human label, e.g. "OpenAI 5.6 Terra output". */
     label: string
     model: AnthropicModel
     direction: 'input' | 'output'
@@ -77,21 +89,26 @@ export type SpendDriver = {
  */
 export function topSpendDrivers(legs: ModelLeg[], limit = 3): SpendDriver[] {
     const modelLabel: Record<AnthropicModel, string> = {
-        'sonnet-5': 'Claude Sonnet 5',
         'openai-5-6-terra': 'OpenAI 5.6 Terra',
+        'openai-5-6-sol': 'OpenAI 5.6 Sol',
+        'sonnet-5': 'Claude Sonnet 5',
+        'opus-5': 'Claude Opus 5',
+        'gemini-3-1-flash-lite': 'Gemini 3.1 Flash Lite',
+        'gemini-3-5-flash-lite': 'Gemini 3.5 Flash Lite',
+        'gemini-flash': 'Gemini 3.5 Flash Lite',
     }
     const contributors: Omit<SpendDriver, 'share'>[] = []
     for (const leg of legs) {
-        const rate = MODEL_RATES[leg.model] || MODEL_RATES['sonnet-5']
+        const rate = MODEL_RATES[leg.model] || MODEL_RATES['openai-5-6-terra']
         contributors.push({
-            label: `${modelLabel[leg.model]} input`,
+            label: `${modelLabel[leg.model] || leg.model} input`,
             model: leg.model,
             direction: 'input',
             tokens: leg.inputTokens,
             costUsd: (leg.inputTokens / 1_000_000) * rate.inputPerMTok,
         })
         contributors.push({
-            label: `${modelLabel[leg.model]} output`,
+            label: `${modelLabel[leg.model] || leg.model} output`,
             model: leg.model,
             direction: 'output',
             tokens: leg.outputTokens,

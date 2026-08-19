@@ -49,8 +49,18 @@ type LedgerRecord = {
 
 // Format raw model identifiers to UI Benchmark Model Display Labels
 function formatModelDisplayName(modelStr?: string, runType?: string): string {
+    if (modelStr && modelStr.trim().length > 0) {
+        const lower = modelStr.toLowerCase()
+        if (lower.includes('sol')) return 'OpenAI 5.6 Sol'
+        if (lower.includes('terra')) return 'OpenAI 5.6 Terra'
+        if (lower.includes('sonnet')) return 'Claude Sonnet 5'
+        if (lower.includes('opus')) return 'Claude Opus 5'
+        if (lower.includes('3.5') && (lower.includes('flash') || lower.includes('gemini'))) return 'Gemini 3.5 Flash Lite'
+        if (lower.includes('flash') || lower.includes('gemini')) return 'Gemini 3.1 Flash Lite'
+        return modelStr
+    }
     if (runType && runType.includes('Synthesis')) {
-        return 'GPT 5.6 Terra'
+        return 'OpenAI 5.6 Terra'
     }
     return 'OpenAI 5.6 Terra'
 }
@@ -105,7 +115,7 @@ export default function SpendingAnalyticsTab({
                     projectId: doc.projectId || doc.projectKey || 'live-project',
                     runType: 'Document Extraction',
                     fileName: doc.fileName || doc.title || `Document-${idx + 1}.pdf`,
-                    model: 'OpenAI 5.6 Terra',
+                    model: formatModelDisplayName(doc.modelUsed || doc.model_used, 'Document Extraction'),
                     inputTokens: inTok,
                     outputTokens: outTok,
                     totalTokens: inTok + outTok,
@@ -133,7 +143,7 @@ export default function SpendingAnalyticsTab({
                     businessName: synth.companyName || synth.businessName || synth.projectId || 'Live Synthesis',
                     projectId: synth.projectId || 'live-project',
                     runType: isPostLoi ? 'Post-LOI Synthesis' : 'Pre-LOI Synthesis',
-                    model: 'GPT 5.6 Terra',
+                    model: formatModelDisplayName(synth.modelUsed || synth.model_used, isPostLoi ? 'Post-LOI Synthesis' : 'Pre-LOI Synthesis'),
                     inputTokens: inTok,
                     outputTokens: outTok,
                     totalTokens: inTok + outTok,

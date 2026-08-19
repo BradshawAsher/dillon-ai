@@ -72,6 +72,8 @@ export type SubmissionHistoryItem = {
     outputTokens?: number
     totalTokens?: number
     costUsd?: number
+    modelUsed?: string
+    model_used?: string
     projectLevelFields?: Record<string, string | number | boolean | null | undefined>
     projectSynthesisSummary?: string
     projectSynthesisRecommendation?: string

@@ -72,6 +72,8 @@ export type ProjectSynthesisItem = {
     outputTokens?: number
     totalTokens?: number
     costUsd?: number
+    modelUsed?: string
+    model_used?: string
     id: number
     createdAt: string
     updatedAt: string
@@ -469,6 +471,8 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
                 outputTokens: Number(row.output_tokens ?? 0),
                 totalTokens: Number(row.total_tokens ?? 0),
                 costUsd: Number(row.cost_usd ?? 0),
+                modelUsed: row.model_used ?? '',
+                model_used: row.model_used ?? '',
                 id: row.id ?? 0,
                 letterOfIntentPresent: Boolean(row.letter_of_intent_present),
                 createdAt: row.created_at ?? '',
