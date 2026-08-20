@@ -211,6 +211,34 @@ export function useNativeWalkthrough({ activeTab, onTabChange }: UseNativeWalkth
             }
         }
 
+        // 1.1c Trigger High-Level Summary Modal open/close
+        const isSummaryModalStep =
+            step.targetElementId?.includes('summary-modal') ||
+            step.targetSelector?.includes('summary-modal') ||
+            step.simulatedAction?.type === 'open_summary_modal'
+
+        if (typeof window !== 'undefined') {
+            if (isSummaryModalStep) {
+                window.dispatchEvent(
+                    new CustomEvent('mergeworks:walkthrough-action', {
+                        detail: {
+                            stepId: step.id,
+                            action: { type: 'open_summary_modal' },
+                        },
+                    })
+                )
+            } else {
+                window.dispatchEvent(
+                    new CustomEvent('mergeworks:walkthrough-action', {
+                        detail: {
+                            stepId: step.id,
+                            action: { type: 'close_summary_modal' },
+                        },
+                    })
+                )
+            }
+        }
+
         // 1.2 Manage Mock VDR File Explorer Modal visibility
         if (step.simulatedAction?.type === 'open_file_explorer') {
             setIsFileExplorerOpen(true)
@@ -257,19 +285,26 @@ export function useNativeWalkthrough({ activeTab, onTabChange }: UseNativeWalkth
             if (!el && step.targetSelector) el = document.querySelector(step.targetSelector) as HTMLElement | null
 
             if (el) {
-                const scrollParent = (el.closest('#evidence-drawer-scroll-body') || el.closest('[data-evidence-drawer] .overflow-y-auto') || el.closest('aside .overflow-y-auto')) as HTMLElement | null
-                if (scrollParent) {
-                    const parentRect = scrollParent.getBoundingClientRect()
-                    const elRect = el.getBoundingClientRect()
-                    const relativeTop = elRect.top - parentRect.top + scrollParent.scrollTop
-                    scrollParent.scrollTo({ top: Math.max(0, relativeTop - 30), behavior: 'smooth' })
-                } else {
-                    const elRect = el.getBoundingClientRect()
-                    const absoluteElementTop = elRect.top + window.pageYOffset
-                    // Position target element ~110px from top of viewport so it's fully visible and well above the bottom HUD
-                    const targetScrollY = Math.max(0, absoluteElementTop - 110)
-                    window.scrollTo({ top: targetScrollY, behavior: 'smooth' })
+                // If el is inside any scrollable parent container (e.g. drawer or overflow container), scroll that container
+                let curr = el.parentElement
+                while (curr && curr !== document.body && curr !== document.documentElement) {
+                    const style = window.getComputedStyle(curr)
+                    const overflowY = style.overflowY
+                    if ((overflowY === 'auto' || overflowY === 'scroll') && curr.scrollHeight > curr.clientHeight) {
+                        const parentRect = curr.getBoundingClientRect()
+                        const elRect = el.getBoundingClientRect()
+                        const relativeTop = elRect.top - parentRect.top + curr.scrollTop
+                        curr.scrollTo({ top: Math.max(0, relativeTop - 30), behavior: 'smooth' })
+                        break
+                    }
+                    curr = curr.parentElement
                 }
+
+                // Also scroll main window viewport so target element is clearly framed ~110px from top
+                const elRect = el.getBoundingClientRect()
+                const absoluteElementTop = elRect.top + window.pageYOffset
+                const targetScrollY = Math.max(0, absoluteElementTop - 110)
+                window.scrollTo({ top: targetScrollY, behavior: 'smooth' })
             }
             updateTargetPosition()
         }

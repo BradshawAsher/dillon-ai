@@ -144,7 +144,10 @@ export function WalkthroughFileExplorerModal({
                 if (e.target === e.currentTarget) onClose()
             }}
         >
-            <div className="flex flex-col lg:flex-row items-stretch justify-center gap-4 w-full max-w-5xl max-h-[90vh]">
+            <div
+                id="mock-vdr-modal-container"
+                className="flex flex-col lg:flex-row items-stretch justify-center gap-4 w-full max-w-5xl max-h-[90vh]"
+            >
                 {/* Main VDR File Explorer Window */}
                 <div
                     id="mock-file-explorer-window"
