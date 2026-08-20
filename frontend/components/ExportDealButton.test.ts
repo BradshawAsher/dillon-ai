@@ -32,3 +32,23 @@ describe('export entry multiple', () => {
         expect(buildOnePageSnapshot(m, undefined as unknown as ProjectSynthesisItem, 'Deal')).toContain('Entry multiple:** Not available')
     })
 })
+
+describe('markdown report confidence', () => {
+    function synth(over: Partial<ProjectSynthesisItem> = {}): ProjectSynthesisItem {
+        return {
+            redFlags: [], yellowFlags: [], greenFlags: [], openQuestions: [],
+            valuationBaseEstimate: '5000000', valuationLowerBound: '4000000', valuationUpperBound: '6000000',
+            ...over,
+        } as ProjectSynthesisItem
+    }
+
+    it('renders a fractional confidence as a percentage', () => {
+        const md = buildMarkdownReport(model(), synth({ valuationConfidence: '0.82' }), 'Deal')
+        expect(md).toContain('Confidence:** 82% (High)')
+    })
+
+    it('does not rescale a percent-sign confidence', () => {
+        const md = buildMarkdownReport(model(), synth({ valuationConfidence: '1%' }), 'Deal')
+        expect(md).toContain('Confidence:** 1% (Low)')
+    })
+})
