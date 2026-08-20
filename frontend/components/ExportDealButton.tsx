@@ -5,6 +5,7 @@ import { Button } from '../lib/shadcn/button'
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { formatCurrencyValue } from '../utils/aiSubmissionData'
+import { entryMultiple } from '../utils/dealMath'
 
 type Props = {
     model: DealModel
@@ -30,7 +31,10 @@ export function buildOnePageSnapshot(model: DealModel, synthesis: ProjectSynthes
     const recommendation = synthesis?.finalRecommendation || 'Pending final recommendation'
     const price = model.purchasePrice || model.askingPrice
     const ebitda = typeof facts.ebitda_sde?.value === 'number' ? facts.ebitda_sde.value : null
-    const entryMultiple = price && ebitda ? `${(price / ebitda).toFixed(1)}x EBITDA/SDE` : 'Not available'
+    // Reuse the canonical multiple, which returns null for a non-positive EBITDA
+    // rather than emitting a meaningless negative "x" for a loss-making target.
+    const multipleValue = entryMultiple(price ?? null, ebitda)
+    const entryMultipleLabel = multipleValue !== null ? `${multipleValue.toFixed(1)}x EBITDA/SDE` : 'Not available'
 
     lines.push(`# Deal Snapshot: ${projectName}`)
     lines.push('')
@@ -38,7 +42,7 @@ export function buildOnePageSnapshot(model: DealModel, synthesis: ProjectSynthes
     lines.push('')
     lines.push(`**Recommendation:** ${recommendation}`)
     lines.push(`**Risk / signal:** ${risk} / ${signal}`)
-    lines.push(`**Entry multiple:** ${entryMultiple}`)
+    lines.push(`**Entry multiple:** ${entryMultipleLabel}`)
     lines.push('')
     lines.push('## Key Numbers')
     lines.push(`- Revenue: ${formatFactValue(facts.revenue?.value)}`)
@@ -82,9 +86,12 @@ export function buildMarkdownReport(model: DealModel, synthesis: ProjectSynthesi
     if (facts.revenue?.value) lines.push(`- **Revenue:** $${Number(facts.revenue.value).toLocaleString()}`)
     if (facts.ebitda_sde?.value) lines.push(`- **EBITDA/SDE:** $${Number(facts.ebitda_sde.value).toLocaleString()}`)
     if (facts.gross_profit?.value) lines.push(`- **Gross Profit:** $${Number(facts.gross_profit.value).toLocaleString()}`)
-    if (model.purchasePrice && facts.ebitda_sde?.value) {
-        const multiple = model.purchasePrice / Number(facts.ebitda_sde.value)
-        lines.push(`- **Entry Multiple:** ${multiple.toFixed(1)}x`)
+    const reportMultiple = entryMultiple(
+        model.purchasePrice ?? null,
+        typeof facts.ebitda_sde?.value === 'number' ? facts.ebitda_sde.value : null,
+    )
+    if (reportMultiple !== null) {
+        lines.push(`- **Entry Multiple:** ${reportMultiple.toFixed(1)}x`)
     }
     lines.push(``)
 
