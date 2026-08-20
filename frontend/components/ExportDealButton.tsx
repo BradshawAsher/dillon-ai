@@ -7,6 +7,7 @@ import { parseDocumentedFacts } from '../utils/evidence'
 import { formatCurrencyValue } from '../utils/aiSubmissionData'
 import { entryMultiple } from '../utils/dealMath'
 import { downloadTextFile } from '../utils/downloadFile'
+import { confidenceToPercent } from '../utils/diligenceDashboardUtils'
 
 type Props = {
     model: DealModel
@@ -103,9 +104,8 @@ export function buildMarkdownReport(model: DealModel, synthesis: ProjectSynthesi
             lines.push(`- **Lower Bound:** ${formatCurrencyValue(synthesis.valuationLowerBound, synthesis.valuationCurrency || 'USD') || 'Pending'}`)
             lines.push(`- **Base Estimate:** ${formatCurrencyValue(synthesis.valuationBaseEstimate, synthesis.valuationCurrency || 'USD') || 'Pending'}`)
             lines.push(`- **Upper Bound:** ${formatCurrencyValue(synthesis.valuationUpperBound, synthesis.valuationCurrency || 'USD') || 'Pending'}`)
-            const conf = parseFloat(synthesis.valuationConfidence || synthesis.aiConfidence || '')
-            if (Number.isFinite(conf)) {
-                const pct = conf <= 1 ? Math.round(conf * 100) : Math.round(conf)
+            const pct = confidenceToPercent(synthesis.valuationConfidence || synthesis.aiConfidence)
+            if (pct !== null) {
                 lines.push(`- **Confidence:** ${pct}% (${pct >= 70 ? 'High' : pct >= 40 ? 'Medium' : 'Low'})`)
             }
             lines.push(``)

@@ -88,6 +88,25 @@ export function formatConfidencePercent(rawConfidence?: string | number | null):
 }
 
 /**
+ * Normalizes a confidence value to a whole-number percent (0..100), or null when
+ * it is not a finite number. Accepts a fraction (0.87 -> 87), a whole percent
+ * (85 -> 85), or a percent-sign string ("85%" -> 85, "1%" -> 1). This is the
+ * numeric counterpart of formatConfidencePercent — use it anywhere a percent
+ * number (not a display string) is needed, rather than re-deriving the
+ * <= 1 heuristic with parseFloat, which silently drops a trailing "%".
+ */
+export function confidenceToPercent(raw: string | number | null | undefined): number | null {
+    if (raw === null || raw === undefined) return null
+    const str = String(raw).trim()
+    if (!str) return null
+    const hasPercentSign = str.includes('%')
+    const num = Number(str.replace('%', '').trim())
+    if (!Number.isFinite(num)) return null
+    const pct = num <= 1 && !hasPercentSign ? num * 100 : num
+    return Math.round(pct)
+}
+
+/**
  * Resolves per-token rates ($/token) based on benchmark model pricing:
  * - OpenAI 5.6 Sol: $5.00/1M in, $30.00/1M out
  * - OpenAI 5.6 Terra: $2.00/1M in, $12.00/1M out

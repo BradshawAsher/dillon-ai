@@ -5,6 +5,7 @@ import type { SubmissionHistoryItem } from './submissionHistory'
 import {
     calculateDocumentCost,
     calculateSynthesisCost,
+    confidenceToPercent,
     createUnusedProjectId,
     formatConfidencePercent,
     formatElapsedDuration,
@@ -173,6 +174,23 @@ describe('formatConfidencePercent', () => {
         expect(formatConfidencePercent(null)).toBe('Pending')
         expect(formatConfidencePercent('')).toBe('Pending')
         expect(formatConfidencePercent('high')).toBe('high')
+    })
+})
+
+describe('confidenceToPercent', () => {
+    it('normalizes fractions, whole percents, and percent-sign strings', () => {
+        expect(confidenceToPercent(0.87)).toBe(87)
+        expect(confidenceToPercent('0.5')).toBe(50)
+        expect(confidenceToPercent(85)).toBe(85)
+        expect(confidenceToPercent('85%')).toBe(85)
+        expect(confidenceToPercent('1%')).toBe(1) // not rescaled to 100
+    })
+
+    it('returns null for missing or non-numeric input', () => {
+        expect(confidenceToPercent(null)).toBeNull()
+        expect(confidenceToPercent(undefined)).toBeNull()
+        expect(confidenceToPercent('')).toBeNull()
+        expect(confidenceToPercent('high')).toBeNull()
     })
 })
 
