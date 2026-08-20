@@ -1,5 +1,5 @@
-import React from 'react'
-import { FolderKanban, Moon, Sun, Key, Globe, Play, Compass, Sparkles, Keyboard } from 'lucide-react'
+import React, { useState } from 'react'
+import { FolderKanban, Moon, Sun, Key, Globe, Play, Compass, Sparkles, Keyboard, Link2, Check } from 'lucide-react'
 import { Badge } from '../../lib/shadcn/badge'
 import { Button } from '../../lib/shadcn/button'
 import DealStageIndicator from '../DealStageIndicator'
@@ -8,6 +8,8 @@ import ExportDealButton from '../ExportDealButton'
 import KeyboardShortcutsDialog from '../KeyboardShortcutsDialog'
 import NotificationCenter, { type Notification } from '../NotificationCenter'
 import LoginButton from '../AuthGate'
+import { copyToClipboard } from '../../utils/clipboard'
+import { buildProjectPermalink } from '../../utils/deepLinking'
 
 import type { WalkthroughResumeState } from '../walkthrough/walkthroughTypes'
 
@@ -34,6 +36,8 @@ type WorkspaceHeaderProps = {
     onOpenWalkthrough?: () => void
     resumeState?: WalkthroughResumeState | null
     onResumeTour?: () => void
+    activeProjectId?: string
+    activeWorkspaceTab?: string
 }
 
 export function WorkspaceHeader({
@@ -59,7 +63,21 @@ export function WorkspaceHeader({
     onOpenWalkthrough,
     resumeState,
     onResumeTour,
+    activeProjectId,
+    activeWorkspaceTab,
 }: WorkspaceHeaderProps) {
+    const [copiedLink, setCopiedLink] = useState(false)
+
+    const handleShareLink = async () => {
+        const permalink = buildProjectPermalink({
+            projectKey: activeProjectId || dealName || suggestedProjectName,
+            tab: activeWorkspaceTab || 'overview',
+        })
+        if (await copyToClipboard(permalink)) {
+            setCopiedLink(true)
+            setTimeout(() => setCopiedLink(false), 2000)
+        }
+    }
     return (
         <header className="dashboard-header-mesh">
             <div className="mx-auto flex max-w-[1440px] flex-col gap-4 px-4 py-5 sm:px-6 lg:flex-row lg:items-start lg:justify-between lg:px-8">
@@ -151,6 +169,25 @@ export function WorkspaceHeader({
                             {currentTheme === 'system' ? 'Auto theme' : currentTheme === 'dark' ? 'Dark mode' : 'Light mode'}
                         </Button>
                         <ExportDealButton model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
+                        <Button
+                            type="button"
+                            variant="outline"
+                            className="gap-1.5 px-3 py-2 text-sm"
+                            onClick={handleShareLink}
+                            title="Copy permanent share link for this project and active tab"
+                        >
+                            {copiedLink ? (
+                                <>
+                                    <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                                    <span className="hidden sm:inline">Link Copied!</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Link2 className="h-4 w-4 text-primary" />
+                                    <span className="hidden sm:inline">Share Deal</span>
+                                </>
+                            )}
+                        </Button>
                         <KeyboardShortcutsDialog />
                         <NotificationCenter
                             notifications={notifications}

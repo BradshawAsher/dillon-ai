@@ -1,20 +1,31 @@
 import { useState, useEffect } from 'react'
 import { createUnusedProjectId } from '../utils/diligenceDashboardUtils'
 import type { WorkspaceTab } from '../components/DealWorkspaceNav'
+import { parseUrlDeepLinkState } from '../utils/deepLinking'
 
 export type { WorkspaceTab }
 
 export { createUnusedProjectId }
 
 export function useDealWorkspaceState() {
-    const [activeWorkspaceTab, setActiveWorkspaceTab] = useState<WorkspaceTab>('overview')
-    const [activeViewProjectId, setActiveViewProjectId] = useState<string>(() => {
-        if (typeof window === 'undefined') return ''
-        try {
-            return window.localStorage.getItem('mergeworks.activeProjectKey') || ''
-        } catch {
-            return ''
+    const [activeWorkspaceTab, setActiveWorkspaceTab] = useState<WorkspaceTab>(() => {
+        if (typeof window !== 'undefined') {
+            const parsed = parseUrlDeepLinkState(window.location.search)
+            if (parsed.tab) return parsed.tab as WorkspaceTab
         }
+        return 'overview'
+    })
+    const [activeViewProjectId, setActiveViewProjectId] = useState<string>(() => {
+        if (typeof window !== 'undefined') {
+            const parsed = parseUrlDeepLinkState(window.location.search)
+            if (parsed.projectQuery) return parsed.projectQuery
+            try {
+                return window.localStorage.getItem('mergeworks.activeProjectKey') || ''
+            } catch {
+                return ''
+            }
+        }
+        return ''
     })
     const [projectId, setProjectId] = useState(() => createUnusedProjectId())
     const [projectStage, setProjectStage] = useState('post-loi')

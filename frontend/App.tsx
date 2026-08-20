@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react'
 import ErrorBoundary from './components/ErrorBoundary'
 import DueDiligenceDashboard from './pages/DueDiligenceDashboard'
 import LandingPage from './pages/LandingPage'
+import { parseUrlDeepLinkState } from './utils/deepLinking'
 
 export default function App() {
   const [view, setView] = useState<'landing' | 'dashboard'>(() => {
     if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search)
-      if (params.get('view') === 'dashboard' || params.get('app') === 'true') {
+      const parsed = parseUrlDeepLinkState(window.location.search)
+      if (parsed.view === 'dashboard') {
         return 'dashboard'
       }
     }
@@ -17,8 +18,8 @@ export default function App() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const handlePopState = () => {
-        const params = new URLSearchParams(window.location.search)
-        if (params.get('view') === 'dashboard' || params.get('app') === 'true') {
+        const parsed = parseUrlDeepLinkState(window.location.search)
+        if (parsed.view === 'dashboard') {
           setView('dashboard')
         } else {
           setView('landing')

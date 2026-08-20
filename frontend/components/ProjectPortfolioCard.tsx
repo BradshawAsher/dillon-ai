@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 
-import { Archive, ArchiveRestore, Bot, BriefcaseBusiness, CheckCircle, Clock3, Cpu, DollarSign, Download, Eye, FileStack, FileText, Flag, FolderKanban, Layers, Plus, RefreshCw, Search, ShieldAlert, Sparkles, TriangleAlert } from 'lucide-react'
+import { Archive, ArchiveRestore, Bot, BriefcaseBusiness, CheckCircle, Clock3, Cpu, DollarSign, Download, Eye, FileStack, FileText, Flag, FolderKanban, Layers, Plus, RefreshCw, Search, ShieldAlert, Sparkles, TriangleAlert, Link2, Check } from 'lucide-react'
 import ExpandableText from './ExpandableText'
 import { HighLevelBusinessSummaryModal, HighLevelBusinessSummaryData } from './HighLevelBusinessSummaryModal'
 
@@ -29,6 +29,8 @@ import {
 } from '../utils/diligenceDashboardUtils'
 import { resolveFinancialMetricsForProject } from '../utils/financialMetrics'
 import { benchmarkGroundTruthSyntheses } from '../evals/ground_truths'
+import { copyToClipboard } from '../utils/clipboard'
+import { buildProjectPermalink } from '../utils/deepLinking'
 
 type ProjectPortfolioCardProps = {
     rows: SubmissionHistoryItem[]
@@ -104,6 +106,19 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
 
     const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false)
     const [summaryModalData, setSummaryModalData] = useState<HighLevelBusinessSummaryData | null>(null)
+    const [copiedLinkKey, setCopiedLinkKey] = useState<string | null>(null)
+
+    const handleCopyProjectLink = async (project: any) => {
+        const targetKey = project.projectKey || project.projectId || project.projectName
+        const permalink = buildProjectPermalink({
+            projectKey: targetKey,
+            tab: 'overview',
+        })
+        if (await copyToClipboard(permalink)) {
+            setCopiedLinkKey(project.projectKey)
+            setTimeout(() => setCopiedLinkKey(null), 2000)
+        }
+    }
 
     const openSummaryModal = (project: any, synthesis: any, projectDocs: any[]) => {
         const fin = resolveFinancialMetricsForProject(synthesis, projectDocs, project.projectName, project.companyName, project.projectKey)
@@ -545,6 +560,26 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                                                     onClick={() => onProjectSelect(project.projectKey)}
                                                 >
                                                     {project.projectKey === activeProjectKey ? 'Viewing project' : 'View this project'}
+                                                </Button>
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    size="lg"
+                                                    className="shadow-sm gap-1.5"
+                                                    title="Copy permanent share link for this project"
+                                                    onClick={() => handleCopyProjectLink(project)}
+                                                >
+                                                    {copiedLinkKey === project.projectKey ? (
+                                                        <>
+                                                            <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                                                            Link Copied!
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Link2 className="h-4 w-4" />
+                                                            Share Link
+                                                        </>
+                                                    )}
                                                 </Button>
                                                 {project.projectKey === activeProjectKey ? (
                                                     <Button

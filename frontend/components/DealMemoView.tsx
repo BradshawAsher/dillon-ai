@@ -1,4 +1,4 @@
-import { FileText, Printer, Copy, Check } from 'lucide-react'
+import { FileText, Printer, Copy, Check, Link2 } from 'lucide-react'
 import { copyToClipboard } from '../utils/clipboard'
 import { useState, useCallback } from 'react'
 
@@ -14,6 +14,7 @@ import { entryMultiple } from '../utils/dealMath'
 import { confidenceToPercent, formatCompactMoney } from '../utils/diligenceDashboardUtils'
 import { resolveFinancialMetricsForProject } from '../utils/financialMetrics'
 import { formatCurrencyValue } from '../utils/aiSubmissionData'
+import { buildProjectPermalink } from '../utils/deepLinking'
 import TruncatedListItem from './TruncatedListItem'
 import ActionableRecommendationInfoButton from './ActionableRecommendationInfoButton'
 
@@ -119,6 +120,7 @@ export function buildMemoText(model: DealModel, synthesis: ProjectSynthesisItem 
 
 export default function DealMemoView({ model, synthesis, projectName, documents, onSwitchTab }: Props) {
     const [copied, setCopied] = useState(false)
+    const [linkCopied, setLinkCopied] = useState(false)
     const facts = parseDocumentedFacts(model.documentedFactsJson)
     const metrics = resolveFinancialMetricsForProject(synthesis, documents, projectName, '', model?.projectId)
     const revenue = facts.revenue?.value ?? (metrics.revenue !== 'N/A' ? parseMagnitudeMoney(metrics.revenue) : null)
@@ -130,6 +132,18 @@ export default function DealMemoView({ model, synthesis, projectName, documents,
         if (await copyToClipboard(buildMemoText(model, synthesis, projectName))) {
             setCopied(true)
             setTimeout(() => setCopied(false), 2000)
+        }
+    }, [model, synthesis, projectName])
+
+    const handleShareLink = useCallback(async () => {
+        const targetKey = model?.projectId || (synthesis as any)?.projectId || projectName
+        const permalink = buildProjectPermalink({
+            projectKey: targetKey,
+            tab: 'overview',
+        })
+        if (await copyToClipboard(permalink)) {
+            setLinkCopied(true)
+            setTimeout(() => setLinkCopied(false), 2000)
         }
     }, [model, synthesis, projectName])
 
@@ -149,6 +163,10 @@ export default function DealMemoView({ model, synthesis, projectName, documents,
                         <CardInfoPopover cardId="deal-memo" />
                     </div>
                     <div className="flex gap-2 print:hidden">
+                        <Button variant="outline" size="sm" onClick={handleShareLink} title="Copy permanent share link for this deal">
+                            {linkCopied ? <Check className="mr-1 h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" /> : <Link2 className="mr-1 h-3.5 w-3.5" />}
+                            {linkCopied ? 'Link Copied' : 'Share Link'}
+                        </Button>
                         <Button variant="outline" size="sm" onClick={handleCopy}>
                             {copied ? <Check className="mr-1 h-3.5 w-3.5" /> : <Copy className="mr-1 h-3.5 w-3.5" />}
                             {copied ? 'Copied' : 'Copy'}

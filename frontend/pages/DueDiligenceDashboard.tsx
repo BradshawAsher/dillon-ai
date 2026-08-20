@@ -49,6 +49,7 @@ import { DiagnosticsWorkspaceView } from '../components/views/DiagnosticsWorkspa
 import { DocumentsWorkspaceView } from '../components/views/DocumentsWorkspaceView'
 import { WorkspaceHeader } from '../components/views/WorkspaceHeader'
 import { useDealWorkspaceState, type WorkspaceTab } from '../hooks/useDealWorkspaceState'
+import { parseUrlDeepLinkState, matchProjectFromQuery, syncBrowserUrl } from '../utils/deepLinking'
 import DealWorkspaceNav from '../components/DealWorkspaceNav'
 import TabSidebarTOC, { TabTopNavTOC } from '../components/TabSidebarTOC'
 import SectionHeader from '../components/SectionHeader'
@@ -1178,11 +1179,19 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     const dealModelSaveTimeout = useRef<number | null>(null)
     const [hasRestoredLatestProject, setHasRestoredLatestProject] = useState(false)
 
-    // Automatically restore active viewing project or default to the most recently submitted live project on initial page load / refresh once backend query completes
+    // Automatically restore active viewing project from deep link, stored active project, or default to the most recently submitted live project on initial page load / refresh once backend query completes
     useEffect(() => {
         if (!isExampleMode && submissionHistoryData === null) return
         if (submissionHistoryLoading || projectSynthesisLoading) return
         if (hasRestoredLatestProject || projectSummaries.length === 0) return
+
+        let urlProjectTarget: any = null
+        if (typeof window !== 'undefined') {
+            const parsed = parseUrlDeepLinkState(window.location.search)
+            if (parsed.projectQuery) {
+                urlProjectTarget = matchProjectFromQuery(parsed.projectQuery, projectSummaries)
+            }
+        }
 
         const storedActiveKey = typeof window !== 'undefined'
             ? (window.localStorage.getItem('mergeworks.activeProjectKey') || window.localStorage.getItem('mergeworks.selectedProjectKey'))
@@ -1192,7 +1201,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             ? projectSummaries.find((p: any) => p.projectKey === storedActiveKey || p.projectId === storedActiveKey)
             : null
 
-        const targetProject = matchingStoredProject || projectSummaries[0]
+        const targetProject = urlProjectTarget || matchingStoredProject || projectSummaries[0]
         if (targetProject) {
             const targetKey = targetProject.projectKey || targetProject.projectId
             if (activeViewProjectId !== targetKey) {
@@ -1312,6 +1321,13 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             id: found.projectId || found.projectKey,
         }
     }, [activeProjectId, projectSummaries])
+
+    // Keep browser address bar in sync with active project and active tab for 1-click URL sharing
+    useEffect(() => {
+        if (isTourActive || isExampleMode) return
+        if (!activeProjectId) return
+        syncBrowserUrl(activeViewProject?.key || activeProjectId, activeWorkspaceTab)
+    }, [activeProjectId, activeViewProject, activeWorkspaceTab, isTourActive, isExampleMode])
 
     const handleAppendToActiveProject = useCallback(() => {
         if (!activeViewProject) return
@@ -2374,6 +2390,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                     onOpenWalkthrough={() => setIsWalkthroughModalOpen(true)}
                     resumeState={walkthrough.resumeState}
                     onResumeTour={handleResumeTour}
+                    activeProjectId={activeProjectId}
+                    activeWorkspaceTab={activeWorkspaceTab}
                 />
 
                 <div className="mx-auto max-w-[1440px] px-4 pb-5 sm:px-6 lg:px-8">
