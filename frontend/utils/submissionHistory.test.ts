@@ -45,6 +45,12 @@ describe('formatSubmissionStatus', () => {
         expect(formatSubmissionStatus('in-progress')).toBe('In Progress')
     })
 
+    it('normalizes an all-caps source status to title case', () => {
+        expect(formatSubmissionStatus('IN_PROGRESS')).toBe('In Progress')
+        expect(formatSubmissionStatus('COMPLETED')).toBe('Completed')
+        expect(formatSubmissionStatus('STOPPED_BY_USER')).toBe('Stopped By User')
+    })
+
     it('falls back to Unknown for empty input', () => {
         expect(formatSubmissionStatus('   ')).toBe('Unknown')
     })

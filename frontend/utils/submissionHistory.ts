@@ -125,7 +125,10 @@ export function formatSubmissionStatus(status: string) {
         return 'Unknown'
     }
 
+    // Lowercase first so an all-caps source status ("IN_PROGRESS", "COMPLETED")
+    // becomes title case ("In Progress", "Completed") rather than staying shouty.
     return trimmed
+        .toLowerCase()
         .replace(/[_-]+/g, ' ')
         .replace(/\b\w/g, (character) => character.toUpperCase())
 }
