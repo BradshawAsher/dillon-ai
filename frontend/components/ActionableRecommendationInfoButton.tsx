@@ -33,7 +33,9 @@ export function getVerdictExplanation(recommendation = '', trafficLight = ''): V
         normRec.includes('escalat') ||
         normRec.includes('walk away') ||
         normRec.includes('abort') ||
-        normRec.includes('pass') ||
+        // Whole word only: "pass" means decline, but "passed"/"surpass" are
+        // positive and must not trip the walk-away verdict.
+        /\bpass\b/.test(normRec) ||
         normRec.includes('reject') ||
         normRec.includes('no-go') ||
         normRec.includes('abandon')
@@ -43,7 +45,8 @@ export function getVerdictExplanation(recommendation = '', trafficLight = ''): V
         normRec.includes('renegotiat') ||
         normRec.includes('reprice') ||
         normRec.includes('caution') ||
-        normRec.includes('hold') ||
+        // Whole word only, so "household"/"threshold"/"shareholder" don't match.
+        /\bhold\b/.test(normRec) ||
         normRec.includes('warn') ||
         normRec.includes('conditional')
 

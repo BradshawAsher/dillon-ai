@@ -43,4 +43,16 @@ describe('getVerdictExplanation', () => {
         expect(fallback.posture).toBe('GREEN')
         expect(fallback.variant).toBe('success')
     })
+
+    it('does not misread positive words that merely contain "pass" or "hold"', () => {
+        // "Passed" is success, not "pass on the deal".
+        expect(getVerdictExplanation('Passed QoE, proceed to LOI').posture).toBe('GREEN')
+        // "household-name" contains "hold" but is not a hold verdict.
+        expect(getVerdictExplanation('Strong household-name brand, proceed').posture).toBe('GREEN')
+    })
+
+    it('still classifies the whole words "pass" and "hold"', () => {
+        expect(getVerdictExplanation('Pass on this deal').posture).toBe('RED')
+        expect(getVerdictExplanation('Put on hold pending review').posture).toBe('YELLOW')
+    })
 })
