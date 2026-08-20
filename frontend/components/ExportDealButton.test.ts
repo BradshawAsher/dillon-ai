@@ -31,6 +31,13 @@ describe('export entry multiple', () => {
         const m = model({ purchasePrice: 6_000_000, documentedFactsJson: '{}' })
         expect(buildOnePageSnapshot(m, undefined as unknown as ProjectSynthesisItem, 'Deal')).toContain('Entry multiple:** Not available')
     })
+
+    it('places the minus before the dollar sign for a negative fact value', () => {
+        const facts = JSON.stringify({ ebitda_sde: { value: -500_000, status: 'confirmed' } })
+        const snapshot = buildOnePageSnapshot(model({ documentedFactsJson: facts }), undefined as unknown as ProjectSynthesisItem, 'Deal')
+        expect(snapshot).toContain('EBITDA/SDE: -$500,000')
+        expect(snapshot).not.toContain('$-500,000')
+    })
 })
 
 describe('markdown report confidence', () => {
