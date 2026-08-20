@@ -16,7 +16,11 @@ type Props = {
 }
 
 function formatFactValue(value: unknown): string {
-    if (typeof value === 'number') return `$${value.toLocaleString()}`
+    if (typeof value === 'number' && Number.isFinite(value)) {
+        // Put the minus before the dollar sign ("-$500,000", not "$-500,000")
+        // and never render a non-finite number as "$NaN".
+        return value < 0 ? `-$${Math.abs(value).toLocaleString()}` : `$${value.toLocaleString()}`
+    }
     if (typeof value === 'string' && value.trim().length > 0) return value
     return 'Not confirmed'
 }
