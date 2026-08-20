@@ -148,77 +148,78 @@ export function DiligenceWorkspaceView({
                     }, 150)
                 }}
             />
-            <div id="diligence-quality" className="border-t border-border pt-4 scroll-mt-6">
-                <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Financial data quality</h3>
+            <div id="diligence-quality" className="space-y-6 scroll-mt-6 border-t border-border pt-4">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Financial data quality &amp; Math Reconciliation</h3>
+                <div id="diligence-documents" className="scroll-mt-6">
+                    <DealModelReadinessCard model={hydratedDealModel} documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} />
+                </div>
+                <FinancialCompletenessCard model={hydratedDealModel} documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} />
+                <MathChecksSection
+                    documents={activeProjectDocuments}
+                    onOpenEvidence={setActiveEvidence}
+                    compact
+                    title="Project math checks"
+                    description="Aggregated deterministic checks across all processed documents."
+                />
+                <DataQualityChecksCard model={hydratedDealModel} />
+                <Suspense fallback={null}>
+                    <EbitdaReconstructionCard model={hydratedDealModel} onOpenEvidence={setActiveEvidence} />
+                </Suspense>
+                <AddBackQualityCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} />
+                {activeProjectSynthesis && (
+                    <RecurringVsOneTimeCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} />
+                )}
+                {activeProjectSynthesis && (
+                    <CustomerConcentrationCard synthesis={activeProjectSynthesis} documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} />
+                )}
             </div>
-            <div id="diligence-documents" className="scroll-mt-6">
-                <DealModelReadinessCard model={hydratedDealModel} documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} />
+
+            <div id="diligence-context" className="space-y-6 scroll-mt-6 border-t border-border pt-4">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Context, Operations &amp; Diligence Checklist</h3>
+                <Suspense fallback={null}>
+                    <DealTimelineCard documents={activeProjectDocuments} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
+                    <BuyerProfileCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
+                    <IndustryBenchmarksCard />
+                    {(() => {
+                        const measured = sumMeasuredCost({
+                            documents: activeProjectDocuments,
+                            synthesis: activeProjectSynthesis,
+                        })
+                        const activeDocCount = activeProjectDocuments.length > 0 ? activeProjectDocuments.length : 21
+                        const matchingSyntheses = (visibleProjectSyntheses || []).filter(s => isRowMatchingProject(s, activeProjectId))
+                        const activeSynthRuns = matchingSyntheses.length > 0 ? matchingSyntheses.length : 2
+
+                        // Sum live token telemetry across ALL matching syntheses for this project (Pre-LOI + Post-LOI)
+                        const totalSynthCost = matchingSyntheses.reduce((acc, s) => acc + (typeof s.costUsd === 'number' && s.costUsd > 0 ? s.costUsd : (s.totalTokens ? s.totalTokens * 0.0000075 : 0.069)), 0)
+                        const totalSynthTokens = matchingSyntheses.reduce((acc, s) => acc + (s.totalTokens ?? 0), 0)
+
+                        const actualDocCost = measured.docCost
+                        const actualSynthCost = totalSynthCost > 0 ? totalSynthCost : measured.synthesisCost
+                        const totalTokens = measured.docTokens + totalSynthTokens
+
+                        return (
+                            <CostPerRunCard
+                                documentsProcessed={activeDocCount}
+                                synthesisRuns={activeSynthRuns}
+                                actualDocCost={actualDocCost}
+                                actualSynthesisCost={actualSynthCost}
+                                actualTotalTokens={totalTokens}
+                            />
+                        )
+                    })()}
+                </Suspense>
+                <ProjectChecklistCard
+                    projectId={activeProjectId}
+                    state={projectChecklistById[activeProjectId] ?? {}}
+                    onChange={(next: any) => setProjectChecklistById((current) => ({ ...current, [activeProjectId]: next }))}
+                    missingDocuments={activeProjectSynthesis?.missingDocuments ?? []}
+                    employeeConfirmed={Boolean(projectSummaries.find((project) => (project.projectId || project.projectKey) === activeProjectId)?.employeeCount) || isExampleMode}
+                    hasAskingPrice={askingPrice.trim().length > 0 || Boolean(hydratedDealModel?.askingPrice) || Boolean(hydratedDealModel?.purchasePrice)}
+                />
+                <Suspense fallback={null}>
+                    <WhatsNewCard />
+                </Suspense>
             </div>
-            <FinancialCompletenessCard model={hydratedDealModel} documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} />
-            <MathChecksSection
-                documents={activeProjectDocuments}
-                onOpenEvidence={setActiveEvidence}
-                compact
-                title="Project math checks"
-                description="Aggregated deterministic checks across all processed documents."
-            />
-            <DataQualityChecksCard model={hydratedDealModel} />
-            <Suspense fallback={null}>
-                <EbitdaReconstructionCard model={hydratedDealModel} onOpenEvidence={setActiveEvidence} />
-            </Suspense>
-            <AddBackQualityCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} />
-            {activeProjectSynthesis && (
-                <RecurringVsOneTimeCard model={hydratedDealModel} synthesis={activeProjectSynthesis} documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} />
-            )}
-            {activeProjectSynthesis && (
-                <CustomerConcentrationCard synthesis={activeProjectSynthesis} documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} />
-            )}
-            <div id="diligence-context" className="border-t border-border pt-4 scroll-mt-6">
-                <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Context &amp; settings</h3>
-            </div>
-            <Suspense fallback={null}>
-                <DealTimelineCard documents={activeProjectDocuments} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
-                <BuyerProfileCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
-                <IndustryBenchmarksCard />
-                {(() => {
-                    const measured = sumMeasuredCost({
-                        documents: activeProjectDocuments,
-                        synthesis: activeProjectSynthesis,
-                    })
-                    const activeDocCount = activeProjectDocuments.length > 0 ? activeProjectDocuments.length : 21
-                    const matchingSyntheses = (visibleProjectSyntheses || []).filter(s => isRowMatchingProject(s, activeProjectId))
-                    const activeSynthRuns = matchingSyntheses.length > 0 ? matchingSyntheses.length : 2
-
-                    // Sum live token telemetry across ALL matching syntheses for this project (Pre-LOI + Post-LOI)
-                    const totalSynthCost = matchingSyntheses.reduce((acc, s) => acc + (typeof s.costUsd === 'number' && s.costUsd > 0 ? s.costUsd : (s.totalTokens ? s.totalTokens * 0.0000075 : 0.069)), 0)
-                    const totalSynthTokens = matchingSyntheses.reduce((acc, s) => acc + (s.totalTokens ?? 0), 0)
-
-                    const actualDocCost = measured.docCost
-                    const actualSynthCost = totalSynthCost > 0 ? totalSynthCost : measured.synthesisCost
-                    const totalTokens = measured.docTokens + totalSynthTokens
-
-                    return (
-                        <CostPerRunCard
-                            documentsProcessed={activeDocCount}
-                            synthesisRuns={activeSynthRuns}
-                            actualDocCost={actualDocCost}
-                            actualSynthesisCost={actualSynthCost}
-                            actualTotalTokens={totalTokens}
-                        />
-                    )
-                })()}
-            </Suspense>
-            <ProjectChecklistCard
-                projectId={activeProjectId}
-                state={projectChecklistById[activeProjectId] ?? {}}
-                onChange={(next: any) => setProjectChecklistById((current) => ({ ...current, [activeProjectId]: next }))}
-                missingDocuments={activeProjectSynthesis?.missingDocuments ?? []}
-                employeeConfirmed={Boolean(projectSummaries.find((project) => (project.projectId || project.projectKey) === activeProjectId)?.employeeCount) || isExampleMode}
-                hasAskingPrice={askingPrice.trim().length > 0 || Boolean(hydratedDealModel?.askingPrice) || Boolean(hydratedDealModel?.purchasePrice)}
-            />
-            <Suspense fallback={null}>
-                <WhatsNewCard />
-            </Suspense>
         </section>
     )
 }

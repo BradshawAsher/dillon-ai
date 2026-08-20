@@ -287,6 +287,90 @@ const DEMO_FALLBACK_DOCS: SubmissionHistoryItem[] = Object.freeze([
         valuationUpperBound: '$15.20M',
         valuationCurrency: 'USD',
         investmentIsFavorable: true,
+    },
+    {
+        ...blankHistoryRow(),
+        id: 5,
+        requestID: 'cascadia-doc-001',
+        dealName: 'Cascadia Climate Services',
+        companyName: 'Cascadia Climate Services, Inc.',
+        workstream: 'Financial Diligence',
+        submissionNotes: 'Historical 3-year financial statements and CIM teaser overview.',
+        analystName: 'MergeWorks Diligence Team',
+        analystEmail: 'team@mergeworks.com',
+        projectId: 'cascadia-climate-services',
+        projectStage: 'Pre-LOI',
+        documentType: 'Financial statements',
+        detectedDocumentType: 'P&L / income statement',
+        fileName: 'Cascadia_Climate_Services_CIM_FY23.pdf',
+        fileSize: 395000,
+        fileType: 'application/pdf',
+        triggerTimestamp: new Date().toISOString(),
+        status: 'completed',
+        environment: 'production',
+        receivedAt: new Date().toISOString(),
+        processingStartedAt: new Date().toISOString(),
+        processedAt: new Date().toISOString(),
+        riskLevel: 'Medium',
+        category: 'Commercial HVAC & Energy Services',
+        trafficLight: 'Yellow',
+        revenueExtracted: '$8,450,000 USD',
+        ebitdaExtracted: '$1,590,000 USD',
+        extractedJson: JSON.stringify({
+            revenue: { value: 8_450_000, status: 'confirmed', currency: 'USD', period: 'FY23', provenance: 'Document Extracted' },
+            ebitda_sde: { value: 1_590_000, status: 'confirmed', currency: 'USD', period: 'FY23', provenance: 'Document Extracted' }
+        }),
+        aiSummary: '3-year P&L for Cascadia Climate Services. Commercial HVAC service provider with 68% recurring maintenance agreements.',
+        aiConfidence: '97',
+        aiGreenFlags: JSON.stringify(['High recurring service contract base (68% ARR) with 94% retention']),
+        aiYellowFlags: JSON.stringify(['Seller add-back bridge of $330,000 requires verification of non-recurring vehicle leases']),
+        valuationLowerBound: '$6.20M',
+        valuationBaseEstimate: '$7.80M',
+        valuationUpperBound: '$8.50M',
+        valuationCurrency: 'USD',
+        investmentIsFavorable: true,
+    },
+    {
+        ...blankHistoryRow(),
+        id: 6,
+        requestID: 'cascadia-doc-002',
+        dealName: 'Cascadia Climate Services',
+        companyName: 'Cascadia Climate Services, Inc.',
+        workstream: 'Tax & Compliance Diligence',
+        submissionNotes: 'IRS Form 1120 corporate income tax return simulation.',
+        analystName: 'MergeWorks Diligence Team',
+        analystEmail: 'team@mergeworks.com',
+        projectId: 'cascadia-climate-services',
+        projectStage: 'Pre-LOI',
+        documentType: 'Tax return (Form 1120-S)',
+        detectedDocumentType: 'Tax return (Form 1120-S)',
+        fileName: 'Cascadia_Tax_Return_1120S_2023.pdf',
+        fileSize: 480000,
+        fileType: 'application/pdf',
+        triggerTimestamp: new Date().toISOString(),
+        status: 'completed',
+        environment: 'production',
+        receivedAt: new Date().toISOString(),
+        processingStartedAt: new Date().toISOString(),
+        processedAt: new Date().toISOString(),
+        riskLevel: 'Medium',
+        category: 'Commercial HVAC & Energy Services',
+        trafficLight: 'Yellow',
+        revenueExtracted: '$8,210,000 USD',
+        ebitdaExtracted: '$1,260,400 USD',
+        extractedJson: JSON.stringify({
+            revenue: { value: 8_210_000, status: 'confirmed', currency: 'USD', period: 'FY23', provenance: 'IRS Tax Return Form 1120-S' },
+            ebitda_sde: { value: 1_260_400, status: 'confirmed', currency: 'USD', period: 'FY23', provenance: 'IRS Tax Return Form 1120-S' }
+        }),
+        aiSummary: 'IRS Form 1120-S corporate tax return. Adjusted EBITDA of $1.26M vs CIM claimed $1.59M ($330k variance).',
+        aiConfidence: '98',
+        aiRedFlags: JSON.stringify(['$329,600 EBITDA variance between tax filings and seller marketing deck']),
+        aiGreenFlags: JSON.stringify(['Clean tax compliance record with zero open state or federal audit notices']),
+        valuationLowerBound: '$6.20M',
+        valuationBaseEstimate: '$7.80M',
+        valuationUpperBound: '$8.50M',
+        valuationCurrency: 'USD',
+        investmentIsFavorable: true,
     }
 ]) as unknown as SubmissionHistoryItem[]
 
@@ -455,6 +539,105 @@ const DEMO_FALLBACK_SYNTHESIS: ProjectSynthesisItem = Object.freeze({
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     letterOfIntentPresent: true,
+}) as unknown as ProjectSynthesisItem
+
+const DEMO_FALLBACK_SYNTHESIS_CASCADIA: ProjectSynthesisItem = Object.freeze({
+    id: 2,
+    projectId: 'cascadia-climate-services',
+    projectName: 'Cascadia Climate Services',
+    companyName: 'Cascadia Climate Services, Inc.',
+    projectStatus: 'synthesized',
+    documentsReceivedCount: 2,
+    documentsCompletedCount: 2,
+    missingDocuments: [],
+    crossDocumentConflicts: [
+        'CIM reported FY23 Adjusted EBITDA of $1.59M vs IRS Form 1120-S Line 21 net income of $1.26M ($330k variance).'
+    ],
+    openQuestions: [
+        'Can seller document the non-recurring nature of $330,000 vehicle lease add-backs?',
+        'What percentage of commercial maintenance contracts have automatic annual price escalators?'
+    ],
+    negotiationLevers: [
+        'Utilize $330k EBITDA tax bridge variance to adjust purchase price multiple from 5.2x down to 4.7x.',
+        'Structure $500k earnout contingent on 90%+ contract renewal rate over 24 months post-closing.'
+    ],
+    keyTakeaways: [
+        'Commercial & residential HVAC services provider with strong 68% recurring service contract revenue.',
+        'Verified $8.45M TTM Revenue and $1.59M reported EBITDA (18.8% margin).',
+        'Tax filing reconciliation flags $330k discretionary add-back requiring seller bridge validation.'
+    ],
+    redFlags: [
+        'Discretionary Add-Backs: $330k vehicle lease and personal expenses added to EBITDA without audited ledger receipts.'
+    ],
+    yellowFlags: [
+        'Technician Turnover: 22% annual HVAC tech turnover in a tight labor market.'
+    ],
+    greenFlags: [
+        'High Contract Retention: 94% annual customer contract renewal rate.',
+        'Clean Tax Compliance: Zero state or federal tax liabilities or open audits.'
+    ],
+    citations: [
+        'Cascadia_Climate_Services_CIM_FY23.pdf',
+        'Cascadia_Tax_Return_1120S_2023.pdf'
+    ],
+    citationDetails: [
+        { sourceFile: 'Cascadia_Tax_Return_1120S_2023.pdf', sourceLocation: 'Page 1, Line 21', excerpt: 'Net ordinary business income: $1,260,400.', period: 'FY23', currency: 'USD', confidence: 0.98, status: 'critical_conflict' }
+    ],
+    structuredFindings: {
+        keyTakeaways: [
+            {
+                text: 'Commercial & residential HVAC services provider with strong 68% recurring service contract revenue.',
+                confidence: 0.97,
+                status: 'confirmed',
+                citations: [
+                    { sourceFile: 'Cascadia_Climate_Services_CIM_FY23.pdf', sourceLocation: 'Page 2', excerpt: 'Recurring service contract revenue represents 68% of total revenue.', period: 'FY23', currency: 'USD', confidence: 0.97, status: 'confirmed' }
+                ]
+            }
+        ],
+        redFlags: [
+            {
+                text: 'Discretionary Add-Backs: $330k vehicle lease and personal expenses added to EBITDA without audited ledger receipts.',
+                confidence: 0.96,
+                status: 'critical_conflict',
+                citations: [
+                    { sourceFile: 'Cascadia_Tax_Return_1120S_2023.pdf', sourceLocation: 'Page 1', excerpt: '$330k add-back variance against tax filing.', period: 'FY23', currency: 'USD', confidence: 0.96, status: 'critical_conflict' }
+                ]
+            }
+        ],
+        yellowFlags: [
+            {
+                text: 'Technician Turnover: 22% annual HVAC tech turnover in a tight labor market.',
+                confidence: 0.94,
+                status: 'investigate',
+                citations: []
+            }
+        ],
+        greenFlags: [
+            {
+                text: 'High Contract Retention: 94% annual customer contract renewal rate.',
+                confidence: 0.98,
+                status: 'confirmed',
+                citations: []
+            }
+        ],
+        missingDocuments: []
+    },
+    finalRiskLevel: 'Medium',
+    finalTrafficLight: 'Yellow',
+    finalRecommendation: 'PROCEED WITH CONDITIONS — $500k Earnout Structure for Add-Back Variance',
+    finalJudgmentSummary: 'Cascadia Climate Services, Inc. ($7.8M valuation estimate) demonstrates strong recurring revenue (68%) and solid gross margins. $330k EBITDA tax bridge variance should be mitigated via a $500k performance earnout tied to verified cash flow.',
+    finalJudgmentJson: '',
+    aiErrorMessage: '',
+    aiConfidence: '0.95',
+    valuationConfidence: '0.93',
+    valuationLowerBound: '$6.20M',
+    valuationBaseEstimate: '$7.80M',
+    valuationUpperBound: '$8.50M',
+    valuationCurrency: 'USD',
+    projectProcessedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    letterOfIntentPresent: false,
 }) as unknown as ProjectSynthesisItem
 
 const DEMO_FALLBACK_DEAL_MODEL: DealModel = Object.freeze({
@@ -686,7 +869,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             : rawSubmissionHistory.filter((row: SubmissionHistoryItem) => isOwnedByUser(getProjectKey(row), user.email))
 
         if (walkthrough.isActive || simulatedWalkthroughBatch) {
-            const other = base.filter((r: any) => r.projectId !== 'apex-industrial-tech')
+            const other = base.filter((r: any) => r.projectId !== 'apex-industrial-tech' && r.projectId !== 'cascadia-climate-services')
             return [...DEMO_FALLBACK_DOCS, ...other]
         }
         return base
@@ -700,8 +883,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             : rawProjectSyntheses.filter((s: any) => isOwnedByUser(s.projectId || '', user.email))
 
         if (walkthrough.isActive || simulatedWalkthroughBatch) {
-            const other = base.filter((s: any) => s.projectId !== 'apex-industrial-tech')
-            return [DEMO_FALLBACK_SYNTHESIS, ...other]
+            const other = base.filter((s: any) => s.projectId !== 'apex-industrial-tech' && s.projectId !== 'cascadia-climate-services')
+            return [DEMO_FALLBACK_SYNTHESIS, DEMO_FALLBACK_SYNTHESIS_CASCADIA, ...other]
         }
         return base
     }, [rawProjectSyntheses, walkthrough.isActive, simulatedWalkthroughBatch])
@@ -2524,7 +2707,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                                 </div>
                             ) : null}
 
-                            {((!isExampleMode && (submitResponse || displayedSubmissionRow || activeProjectDocuments.length > 0)) || simulatedWalkthroughBatch) ? (
+                            {(submitResponse || displayedSubmissionRow || activeProjectDocuments.length > 0 || simulatedWalkthroughBatch || isTourActive || isExampleMode) ? (
                                 <LatestSubmissionSection
                                     displayedSubmissionRow={displayedSubmissionRow}
                                     displayedSubmitStatus={displayedSubmitStatus}

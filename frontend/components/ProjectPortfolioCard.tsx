@@ -105,6 +105,27 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
     const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false)
     const [summaryModalData, setSummaryModalData] = useState<HighLevelBusinessSummaryData | null>(null)
 
+    useEffect(() => {
+        const handleWalkthroughAction = (e: CustomEvent) => {
+            const action = e.detail?.action
+            if (!action) return
+            if (action.type === 'open_summary_modal') {
+                const targetProject = visibleProjects.find((p) => p.projectKey === activeProjectKey) || visibleProjects[0]
+                if (targetProject) {
+                    const rawProjectDocs = rows.filter((r) => (r.projectId || getProjectKey(r)) === targetProject.projectKey || r.workstream === targetProject.projectName)
+                    const targetSynthesis = syntheses.find((s) => s.projectId === (targetProject.projectId || targetProject.projectKey))
+                    openSummaryModal(targetProject, targetSynthesis, rawProjectDocs)
+                }
+            } else if (action.type === 'close_summary_modal' || action.type === 'reset_simulation') {
+                setIsSummaryModalOpen(false)
+            }
+        }
+        window.addEventListener('mergeworks:walkthrough-action', handleWalkthroughAction as EventListener)
+        return () => {
+            window.removeEventListener('mergeworks:walkthrough-action', handleWalkthroughAction as EventListener)
+        }
+    }, [activeProjectKey, visibleProjects, syntheses, rows])
+
     const openSummaryModal = (project: any, synthesis: any, projectDocs: any[]) => {
         const fin = resolveFinancialMetricsForProject(synthesis, projectDocs, project.projectName, project.companyName, project.projectKey)
 
@@ -269,33 +290,35 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
             </CardHeader>
 
             <CardContent className="space-y-4 p-4">
-                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                <div id="projects-summary-metrics" className="grid gap-3 md:grid-cols-2 xl:grid-cols-4 scroll-mt-6">
                     <SummaryMetric label="Active Projects" value={activeProjects.length} icon={FolderKanban} />
                     <SummaryMetric label="Documents" value={totalDocuments} icon={FileStack} />
                     <SummaryMetric label="In progress" value={activeProjectCount} icon={Clock3} />
                     <SummaryMetric label="Needs review" value={reviewProjectCount} icon={ShieldAlert} />
                 </div>
 
-                {targetProjects.length > 0 ? (
-                    <div className="relative">
-                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                            value={projectSearch}
-                            onChange={(event) => setProjectSearch(event.target.value)}
-                            placeholder={portfolioTab === 'active' ? 'Search active projects, IDs, stages, or document names' : 'Search archived projects...'}
-                            className="pl-9"
-                            aria-label="Search project portfolio"
-                        />
-                    </div>
-                ) : null}
+                <div id="projects-filter-bar" className="space-y-3 scroll-mt-6">
+                    {targetProjects.length > 0 ? (
+                        <div className="relative">
+                            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                            <Input
+                                value={projectSearch}
+                                onChange={(event) => setProjectSearch(event.target.value)}
+                                placeholder={portfolioTab === 'active' ? 'Search active projects, IDs, stages, or document names' : 'Search archived projects...'}
+                                className="pl-9"
+                                aria-label="Search project portfolio"
+                            />
+                        </div>
+                    ) : null}
 
-                {rows.length > 0 ? (
-                    <div className="grid gap-2 rounded-lg border border-border bg-muted/20 p-3 sm:grid-cols-3">
-                        <label className="space-y-1"><span className="text-xs font-medium text-muted-foreground">Workstream</span><select value={workstreamFilter} onChange={(event) => setWorkstreamFilter(event.target.value)} className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="all">All workstreams</option>{workstreams.map((workstream) => <option key={workstream} value={workstream}>{workstream}</option>)}</select></label>
-                        <label className="space-y-1"><span className="text-xs font-medium text-muted-foreground">Document status</span><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="all">All statuses</option><option value="completed">Completed</option><option value="processing">Processing</option><option value="failed">Failed</option><option value="needs_review">Needs review</option></select></label>
-                        <label className="space-y-1"><span className="text-xs font-medium text-muted-foreground">Risk signal</span><select value={riskFilter} onChange={(event) => setRiskFilter(event.target.value)} className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="all">All risk signals</option><option value="attention">Any attention</option><option value="high">High / red only</option></select></label>
-                    </div>
-                ) : null}
+                    {rows.length > 0 ? (
+                        <div className="grid gap-2 rounded-lg border border-border bg-muted/20 p-3 sm:grid-cols-3">
+                            <label className="space-y-1"><span className="text-xs font-medium text-muted-foreground">Workstream</span><select value={workstreamFilter} onChange={(event) => setWorkstreamFilter(event.target.value)} className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="all">All workstreams</option>{workstreams.map((workstream) => <option key={workstream} value={workstream}>{workstream}</option>)}</select></label>
+                            <label className="space-y-1"><span className="text-xs font-medium text-muted-foreground">Document status</span><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="all">All statuses</option><option value="completed">Completed</option><option value="processing">Processing</option><option value="failed">Failed</option><option value="needs_review">Needs review</option></select></label>
+                            <label className="space-y-1"><span className="text-xs font-medium text-muted-foreground">Risk signal</span><select value={riskFilter} onChange={(event) => setRiskFilter(event.target.value)} className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="all">All risk signals</option><option value="attention">Any attention</option><option value="high">High / red only</option></select></label>
+                        </div>
+                    ) : null}
+                </div>
 
                 {targetProjects.length === 0 ? (
                     <div className="rounded-lg border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
@@ -308,9 +331,10 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                         No projects match “{projectSearch}”.
                     </div>
                 ) : (
-                    <div className="h-[calc(100vh-280px)] min-h-[600px] overflow-y-auto pr-2 pb-10">
+                    <div className="space-y-4 pb-10">
                         <div className="grid gap-4 xl:grid-cols-2">
-                            {visibleProjects.map((project) => {
+                            {visibleProjects.map((project, projectIdx) => {
+                                const isPrimaryActiveCard = project.projectKey === activeProjectKey || (projectIdx === 0 && !visibleProjects.some(p => p.projectKey === activeProjectKey))
                                 const projectImpact = computeImpactMetrics(rows.filter((row) => row.isConsidered && getProjectKey(row) === project.projectKey))
                                 const missingCoverage = project.coverage.filter((item) => !item.matched)
                                 const hasStoppedDocuments = rows.some((row) => getProjectKey(row) === project.projectKey && row.status.trim().toLowerCase() === 'stopped')
@@ -363,13 +387,14 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                                 return (
                                     <div
                                         key={project.projectKey}
+                                        id={isPrimaryActiveCard ? 'project-card-active' : undefined}
                                         className={cn(
-                                            'rounded-xl border bg-background p-4 transition-all shadow-xs hover:shadow-md',
+                                            'rounded-xl border bg-background p-4 transition-all shadow-xs hover:shadow-md scroll-mt-6',
                                             cardHealthBorder,
                                             project.projectKey === activeProjectKey ? 'ring-2 ring-primary' : ''
                                         )}
                                     >
-                                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                        <div id={isPrimaryActiveCard ? 'project-card-header' : undefined} className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between scroll-mt-6">
                                             <div className="space-y-1">
                                                 <div className="flex flex-wrap items-center gap-2">
                                                     <h3 className="text-lg font-semibold text-foreground">{project.projectName}</h3>
@@ -404,7 +429,7 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                                                     const passCycles = (projectDocs[0] as any)?.passCycles || (projectDocs[0] as any)?.cycleCount || '1/3'
 
                                                     return (
-                                                        <div className="space-y-1.5 pt-1">
+                                                        <div id={isPrimaryActiveCard ? 'project-card-telemetry' : undefined} className="space-y-1.5 pt-1 scroll-mt-6">
                                                             <div className="flex flex-wrap items-center gap-2">
                                                                 <Badge variant="outline" className="gap-1 font-mono text-xs font-bold bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-300/60 py-0.5 px-2">
                                                                     <FileText className="h-3.5 w-3.5 text-blue-600 shrink-0" />
@@ -484,6 +509,7 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                                                     </Button>
                                                 )}
                                                 <Button
+                                                    id={isPrimaryActiveCard ? 'project-card-summary-btn' : undefined}
                                                     type="button"
                                                     variant="outline"
                                                     size="lg"
@@ -541,7 +567,7 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                                             </div>
                                         </div>
 
-                                        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                                        <div id={isPrimaryActiveCard ? 'project-card-metrics' : undefined} className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5 scroll-mt-6">
                                             <div className="rounded-lg border border-border bg-muted/30 p-3">
                                                 <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Documents</p>
                                                 <p className="mt-1 text-lg font-semibold text-foreground">{project.documentCount}</p>
@@ -567,7 +593,7 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                                             </div>
                                         </div>
 
-                                        <div className="mt-4 rounded-lg border border-border bg-muted/20 p-4">
+                                        <div id={isPrimaryActiveCard ? 'project-card-recommendation' : undefined} className="mt-4 rounded-lg border border-border bg-muted/20 p-4 scroll-mt-6">
                                             <div className="flex items-center gap-2">
                                                 <Flag className="h-4 w-4 text-muted-foreground" />
                                                 <p className="text-sm font-semibold text-foreground">Recommended next action</p>
@@ -575,7 +601,7 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                                             <ExpandableText text={project.recommendation} maxHeight={80} className="mt-2 text-sm leading-6 text-foreground" />
                                         </div>
 
-                                        <details className="mt-4 rounded-lg border border-border bg-muted/20 p-4">
+                                        <details id={isPrimaryActiveCard ? 'project-card-documents' : undefined} open className="mt-4 rounded-lg border border-border bg-muted/20 p-4 scroll-mt-6">
                                             <summary className="cursor-pointer text-sm font-semibold text-foreground">
                                                 Documents in this project ({visibleDocuments.length}
                                                 {hiddenDuplicateCount > 0 ? ` shown · ${hiddenDuplicateCount} duplicate${hiddenDuplicateCount === 1 ? '' : 's'} hidden` : ''})
@@ -660,7 +686,7 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                                             </div>
                                         ) : null}
 
-                                        <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+                                        <div id={isPrimaryActiveCard ? 'project-card-coverage' : undefined} className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] scroll-mt-6">
                                             <div className="rounded-lg border border-border bg-muted/20 p-4">
                                                 <p className="text-sm font-semibold text-foreground">Coverage checklist</p>
                                                 <div className="mt-3 space-y-2">

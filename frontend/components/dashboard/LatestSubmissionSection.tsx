@@ -394,7 +394,7 @@ export default function LatestSubmissionSection({
                                     </div>
                                 ) : null}
                                 {aiSummary ? (
-                                    <div>
+                                    <div id="latest-doc-ai-summary" className="scroll-mt-6">
                                         <ExpandableInsightGroup
                                             title="AI Summary"
                                             items={splitReadableText(aiSummary)}

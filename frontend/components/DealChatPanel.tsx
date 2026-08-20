@@ -221,7 +221,8 @@ function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealMo
   - tab:analysis (anchors: #analysis-deal-on-a-page, #analysis-scorecard, #analysis-ebitda-quality, #analysis-breakeven, #analysis-market-comps, #analysis-financing-scenarios, #analysis-asset-comp, #analysis-monte-carlo, #analysis-risk-matrix, #analysis-key-person, #analysis-seller-qa, #analysis-mgmt-questions, #analysis-closing-checklist, #analysis-term-sheet, #analysis-dd-requests)
   - tab:diligence (anchors: #diligence-documents, #diligence-quality, #diligence-project-synth)
   - tab:synthesis (anchors: #synthesis-judgment, #synthesis-valuation, #synthesis-red-flags)
-  - tab:compare (anchors: #compare-matrix, #compare-charts)
+  - tab:compare (anchors: #compare-kpis, #compare-filters, #compare-matrix)
+  - tab:documents (anchors: #projects-summary-metrics, #project-card-active, #project-card-documents)
   - tab:spending (anchors: #spending-model, #spending-api-calls)`)
 
     return parts.join('\n')

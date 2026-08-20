@@ -106,7 +106,8 @@ export function HighLevelBusinessSummaryModal({
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4 sm:p-6 overflow-y-auto animate-in fade-in duration-200">
             <div
-                className="relative w-full max-w-4xl max-h-[90vh] flex flex-col rounded-2xl border border-primary/20 bg-background/95 shadow-2xl overflow-hidden my-auto"
+                id="summary-modal-container"
+                className="relative w-full max-w-4xl max-h-[90vh] flex flex-col rounded-2xl border border-primary/20 bg-background/95 shadow-2xl overflow-hidden my-auto scroll-mt-6"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Top Header */}
@@ -142,6 +143,7 @@ export function HighLevelBusinessSummaryModal({
                         </p>
                     </div>
                     <Button
+                        id="summary-modal-close-btn"
                         type="button"
                         variant="ghost"
                         size="icon"
@@ -155,7 +157,7 @@ export function HighLevelBusinessSummaryModal({
                 {/* Modal Body */}
                 <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6">
                     {/* Financial Snapshot Grid */}
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    <div id="summary-modal-financials" className="grid grid-cols-2 gap-3 sm:grid-cols-4 scroll-mt-6">
                         <div className="rounded-xl border border-border/70 bg-card/60 p-3.5 space-y-1">
                             <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Asking Price</p>
                             <p className="text-lg sm:text-xl font-black text-foreground">{formatCurrency(data.askingPrice)}</p>
@@ -178,7 +180,7 @@ export function HighLevelBusinessSummaryModal({
 
                     {/* Executive Summary */}
                     {data.executiveSummary ? (
-                        <div className="rounded-xl border border-border/80 bg-muted/20 p-4 space-y-2">
+                        <div id="summary-modal-rationale" className="rounded-xl border border-border/80 bg-muted/20 p-4 space-y-2 scroll-mt-6">
                             <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                                 <Sparkles className="h-4 w-4 text-primary" /> Executive Summary &amp; Deal Rationale
                             </h3>
@@ -189,7 +191,7 @@ export function HighLevelBusinessSummaryModal({
                     ) : null}
 
                     {/* Red Flags & Green Flags Grid */}
-                    <div className="grid gap-4 sm:grid-cols-2">
+                    <div id="summary-modal-flags" className="grid gap-4 sm:grid-cols-2 scroll-mt-6">
                         {/* Red Flags */}
                         <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 space-y-2">
                             <h3 className="text-xs font-bold uppercase tracking-wider text-destructive flex items-center gap-1.5">
