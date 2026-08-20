@@ -10,6 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { parseMagnitudeMoney } from '../utils/documentedFacts'
+import { entryMultiple } from '../utils/dealMath'
+import { confidenceToPercent } from '../utils/diligenceDashboardUtils'
 import { resolveFinancialMetricsForProject } from '../utils/financialMetrics'
 import { formatCurrencyValue } from '../utils/aiSubmissionData'
 import TruncatedListItem from './TruncatedListItem'
@@ -30,7 +32,7 @@ function money(value: number | null | undefined) {
     return `$${value.toFixed(0)}`
 }
 
-function buildMemoText(model: DealModel, synthesis: ProjectSynthesisItem | undefined, projectName: string): string {
+export function buildMemoText(model: DealModel, synthesis: ProjectSynthesisItem | undefined, projectName: string): string {
     const facts = parseDocumentedFacts(model.documentedFactsJson)
     const lines: string[] = []
 
@@ -43,8 +45,12 @@ function buildMemoText(model: DealModel, synthesis: ProjectSynthesisItem | undef
     if (facts.ebitda_sde?.value) lines.push(`EBITDA/SDE: $${Number(facts.ebitda_sde.value).toLocaleString()}`)
     if (model.askingPrice) lines.push(`Asking Price: $${model.askingPrice.toLocaleString()}`)
     if (model.purchasePrice) lines.push(`Purchase Price: $${model.purchasePrice.toLocaleString()}`)
-    if (model.purchasePrice && facts.ebitda_sde?.value) {
-        lines.push(`Entry Multiple: ${(model.purchasePrice / Number(facts.ebitda_sde.value)).toFixed(1)}x EBITDA`)
+    const memoMultiple = entryMultiple(
+        model.purchasePrice ?? null,
+        typeof facts.ebitda_sde?.value === 'number' ? facts.ebitda_sde.value : null,
+    )
+    if (memoMultiple !== null) {
+        lines.push(`Entry Multiple: ${memoMultiple.toFixed(1)}x EBITDA`)
     }
     lines.push('')
 
@@ -54,10 +60,9 @@ function buildMemoText(model: DealModel, synthesis: ProjectSynthesisItem | undef
         lines.push(`Risk Level: ${synthesis.finalTrafficLight || synthesis.finalRiskLevel || 'Pending'}`)
         if (synthesis.valuationBaseEstimate && synthesis.valuationBaseEstimate !== '0') {
             lines.push(`Valuation: ${synthesis.valuationLowerBound} – ${synthesis.valuationBaseEstimate} – ${synthesis.valuationUpperBound}`)
-            const conf = parseFloat(synthesis.valuationConfidence || synthesis.aiConfidence || '')
-            if (Number.isFinite(conf)) {
-                const pct = conf <= 1 ? Math.round(conf * 100) : Math.round(conf)
-                lines.push(`Confidence: ${pct}%`)
+            const memoConf = confidenceToPercent(synthesis.valuationConfidence || synthesis.aiConfidence)
+            if (memoConf !== null) {
+                lines.push(`Confidence: ${memoConf}%`)
             }
         }
         lines.push('')
@@ -93,9 +98,12 @@ function buildMemoText(model: DealModel, synthesis: ProjectSynthesisItem | undef
     const priceFact = model.purchasePrice ?? model.askingPrice
     if (ebitda || revenue || priceFact) {
         lines.push('--- QUICK ANALYSIS ---')
-        if (priceFact && ebitda) lines.push(`Entry Multiple: ${(priceFact / ebitda).toFixed(1)}x EBITDA`)
+        // Guard against non-positive EBITDA (a loss), which would otherwise print
+        // a meaningless negative multiple and payback period.
+        const quickMultiple = entryMultiple(priceFact ?? null, ebitda)
+        if (quickMultiple !== null) lines.push(`Entry Multiple: ${quickMultiple.toFixed(1)}x EBITDA`)
         if (revenue && ebitda) lines.push(`EBITDA Margin: ${((ebitda / revenue) * 100).toFixed(0)}%`)
-        if (priceFact && ebitda) lines.push(`Payback Period: ~${(priceFact / ebitda).toFixed(1)} years`)
+        if (quickMultiple !== null) lines.push(`Payback Period: ~${quickMultiple.toFixed(1)} years`)
         lines.push('')
     }
 
@@ -130,8 +138,7 @@ export default function DealMemoView({ model, synthesis, projectName, documents,
         window.print()
     }, [])
 
-    const conf = parseFloat(synthesis?.valuationConfidence || synthesis?.aiConfidence || '')
-    const confPct = Number.isFinite(conf) ? (conf <= 1 ? Math.round(conf * 100) : Math.round(conf)) : null
+    const confPct = confidenceToPercent(synthesis?.valuationConfidence || synthesis?.aiConfidence)
 
     return (
         <Card className="overflow-hidden print:border-0 print:shadow-none">
