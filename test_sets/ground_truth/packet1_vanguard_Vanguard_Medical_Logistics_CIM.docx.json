@@ -1,0 +1,43 @@
+{
+  "fileName": "Vanguard_Medical_Logistics_CIM.docx",
+  "business": "Vanguard Medical Logistics, LLC (Healthcare Cold-Chain Logistics)",
+  "fileType": "DOCX",
+  "groundTruth": {
+    "documentType": "Quality of Earnings Report",
+    "trafficLight": "GREEN",
+    "riskLevel": "LOW",
+    "financialFacts": [
+      {
+        "metric": "revenue",
+        "normalizedValue": 8450000,
+        "period": "TTM",
+        "rawValue": "$8,450,000"
+      },
+      {
+        "metric": "ebitda",
+        "normalizedValue": 1920000,
+        "period": "TTM",
+        "rawValue": "$1,920,000"
+      },
+      {
+        "metric": "adjusted_ebitda",
+        "normalizedValue": 2100000,
+        "period": "TTM",
+        "rawValue": "$2,100,000"
+      }
+    ],
+    "expectedRedFlags": [],
+    "expectedYellowFlags": [
+      "Officer comp add-back verified against market replacement salary"
+    ],
+    "valuation": {
+      "valuationLowerBound": 7560000,
+      "valuationBaseEstimate": 8400000,
+      "valuationUpperBound": 9240000,
+      "askingPrice": 8400000,
+      "currency": "USD"
+    },
+    "expectedMathCheckStatus": "passed",
+    "expectedRecommendation": "PROCEED"
+  }
+}

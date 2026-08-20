@@ -1,0 +1,28 @@
+{
+  "fileName": "Apex_Precision_Dynamics_Draft_Purchase_Agreement.docx",
+  "business": "Apex Precision Dynamics, Inc. (Aerospace CNC Machining)",
+  "fileType": "DOCX",
+  "groundTruth": {
+    "documentType": "Purchase Agreement or LOI",
+    "trafficLight": "YELLOW",
+    "riskLevel": "MEDIUM",
+    "financialFacts": [
+      {
+        "metric": "revenue",
+        "normalizedValue": 12300000,
+        "period": "TTM",
+        "rawValue": "$12,300,000"
+      }
+    ],
+    "expectedRedFlags": [],
+    "expectedYellowFlags": [
+      "Purchase price reprice recommended from $15.75M to $12.10M"
+    ],
+    "valuation": {
+      "valuationBaseEstimate": 12100000,
+      "askingPrice": 15750000,
+      "currency": "USD"
+    },
+    "expectedRecommendation": "PROCEED WITH REPRICE"
+  }
+}

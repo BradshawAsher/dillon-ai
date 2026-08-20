@@ -1,0 +1,16 @@
+{
+  "fileName": "TerraNova_Environmental_Legal_Regulatory_Disclosures.docx",
+  "business": "TerraNova Environmental Hauling, LLC (Commercial Waste & Remediation)",
+  "fileType": "DOCX",
+  "groundTruth": {
+    "documentType": "Due Diligence Data Room Packet",
+    "trafficLight": "RED",
+    "riskLevel": "CRITICAL",
+    "financialFacts": [],
+    "expectedRedFlags": [
+      "$2.4M active EPA Superfund cleanup lien under federal consent decree"
+    ],
+    "expectedYellowFlags": [],
+    "expectedRecommendation": "WALK AWAY"
+  }
+}

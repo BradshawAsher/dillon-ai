@@ -1,0 +1,145 @@
+{
+  "business": "Vanguard Medical Logistics, LLC (Healthcare Cold-Chain Logistics)",
+  "projectId": "project-vanguard-medical-proceed",
+  "evaluatedAt": "2026-08-19T20:00:00.000Z",
+  "documents": [
+    {
+      "fileName": "Vanguard_Medical_Logistics_CIM.docx",
+      "status": "completed",
+      "modelUsed": "OpenAI 5.6 Terra",
+      "detectedDocumentType": "Quality of Earnings Report",
+      "trafficLight": "GREEN",
+      "riskLevel": "LOW",
+      "financialFacts": [
+        {
+          "metric": "revenue",
+          "normalizedValue": 8450000,
+          "period": "TTM",
+          "confidence": 1.0
+        },
+        {
+          "metric": "ebitda",
+          "normalizedValue": 1920000,
+          "period": "TTM",
+          "confidence": 1.0
+        },
+        {
+          "metric": "adjusted_ebitda",
+          "normalizedValue": 2100000,
+          "period": "TTM",
+          "confidence": 1.0
+        }
+      ],
+      "redFlags": [],
+      "yellowFlags": [
+        "Officer comp add-back verified against market replacement salary"
+      ],
+      "valuation": {
+        "base_estimate": 8400000
+      },
+      "mathCheckStatus": "passed"
+    },
+    {
+      "fileName": "Vanguard_Medical_Logistics_3Yr_PnL_BalanceSheet.xlsx",
+      "status": "completed",
+      "modelUsed": "OpenAI 5.6 Terra",
+      "detectedDocumentType": "Profit and Loss Statement",
+      "trafficLight": "GREEN",
+      "riskLevel": "LOW",
+      "financialFacts": [
+        {
+          "metric": "revenue",
+          "normalizedValue": 8450000,
+          "period": "FY2025",
+          "confidence": 1.0
+        },
+        {
+          "metric": "ebitda",
+          "normalizedValue": 1920000,
+          "period": "FY2025",
+          "confidence": 1.0
+        },
+        {
+          "metric": "adjusted_ebitda",
+          "normalizedValue": 2100000,
+          "period": "FY2025",
+          "confidence": 1.0
+        }
+      ],
+      "redFlags": [],
+      "yellowFlags": [],
+      "valuation": {
+        "base_estimate": 8400000
+      },
+      "mathCheckStatus": "passed"
+    },
+    {
+      "fileName": "Vanguard_Medical_Logistics_Tax_Form_1120S_Reconciliation.xlsx",
+      "status": "completed",
+      "modelUsed": "OpenAI 5.6 Terra",
+      "detectedDocumentType": "Tax Return",
+      "trafficLight": "GREEN",
+      "riskLevel": "LOW",
+      "financialFacts": [
+        {
+          "metric": "revenue",
+          "normalizedValue": 8450000,
+          "period": "FY2025",
+          "confidence": 1.0
+        },
+        {
+          "metric": "net_income",
+          "normalizedValue": 1378800,
+          "period": "FY2025",
+          "confidence": 1.0
+        }
+      ],
+      "redFlags": [],
+      "yellowFlags": [],
+      "mathCheckStatus": "passed"
+    },
+    {
+      "fileName": "Vanguard_Medical_Logistics_Executed_LOI.docx",
+      "status": "completed",
+      "modelUsed": "OpenAI 5.6 Terra",
+      "detectedDocumentType": "Purchase Agreement or LOI",
+      "trafficLight": "GREEN",
+      "riskLevel": "LOW",
+      "financialFacts": [
+        {
+          "metric": "revenue",
+          "normalizedValue": 8450000,
+          "period": "TTM",
+          "confidence": 1.0
+        }
+      ],
+      "redFlags": [],
+      "yellowFlags": [],
+      "valuation": {
+        "base_estimate": 8400000
+      },
+      "mathCheckStatus": "passed"
+    },
+    {
+      "fileName": "Vanguard_Medical_Logistics_Customer_Master_Concentration.xlsx",
+      "status": "completed",
+      "modelUsed": "OpenAI 5.6 Terra",
+      "detectedDocumentType": "Operating Metrics",
+      "trafficLight": "GREEN",
+      "riskLevel": "LOW",
+      "financialFacts": [
+        {
+          "metric": "revenue",
+          "normalizedValue": 8450000,
+          "period": "TTM",
+          "confidence": 1.0
+        }
+      ],
+      "redFlags": [],
+      "yellowFlags": [
+        "Top client is 11.4% of revenue (acceptable threshold)"
+      ],
+      "mathCheckStatus": "passed"
+    }
+  ]
+}

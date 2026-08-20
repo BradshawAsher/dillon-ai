@@ -1,0 +1,142 @@
+{
+  "business": "Apex Precision Dynamics, Inc. (Aerospace CNC Machining)",
+  "projectId": "project-apex-precision-renegotiate",
+  "evaluatedAt": "2026-08-19T20:00:00.000Z",
+  "documents": [
+    {
+      "fileName": "Apex_Precision_Dynamics_CIM.docx",
+      "status": "completed",
+      "modelUsed": "OpenAI 5.6 Terra",
+      "detectedDocumentType": "Due Diligence Data Room Packet",
+      "trafficLight": "YELLOW",
+      "riskLevel": "HIGH",
+      "financialFacts": [
+        {
+          "metric": "revenue",
+          "normalizedValue": 12300000,
+          "period": "TTM",
+          "confidence": 1.0
+        },
+        {
+          "metric": "adjusted_ebitda",
+          "normalizedValue": 3150000,
+          "period": "TTM",
+          "confidence": 1.0
+        }
+      ],
+      "redFlags": [
+        "Seller claims $3.15M EBITDA overstating verified $2.42M by $730k (23.2%)"
+      ],
+      "yellowFlags": [
+        "Severe customer concentration: Top customer AeroShield is 44.5% of revenue expiring in 9 months",
+        "Disallowed $260k personal boat/plane leasing perk add-back",
+        "$350k non-recurring aerospace R&D grant recorded as ordinary revenue"
+      ],
+      "valuation": {
+        "base_estimate": 12100000
+      },
+      "mathCheckStatus": "passed"
+    },
+    {
+      "fileName": "Apex_Precision_Dynamics_Monthly_PnL_AddBacks.xlsx",
+      "status": "completed",
+      "modelUsed": "OpenAI 5.6 Terra",
+      "detectedDocumentType": "Quality of Earnings Report",
+      "trafficLight": "YELLOW",
+      "riskLevel": "HIGH",
+      "financialFacts": [
+        {
+          "metric": "revenue",
+          "normalizedValue": 12300000,
+          "period": "TTM",
+          "confidence": 1.0
+        },
+        {
+          "metric": "adjusted_ebitda",
+          "normalizedValue": 2420000,
+          "period": "TTM",
+          "confidence": 1.0
+        }
+      ],
+      "redFlags": [
+        "Unsupportable $260k personal vehicle/aircraft add-back"
+      ],
+      "yellowFlags": [
+        "$350k grant deduction from operating revenue"
+      ],
+      "mathCheckStatus": "passed"
+    },
+    {
+      "fileName": "Apex_Precision_Dynamics_Tax_Reconciliation_Bridge.xlsx",
+      "status": "completed",
+      "modelUsed": "OpenAI 5.6 Terra",
+      "detectedDocumentType": "Tax Return",
+      "trafficLight": "YELLOW",
+      "riskLevel": "HIGH",
+      "financialFacts": [
+        {
+          "metric": "revenue",
+          "normalizedValue": 12300000,
+          "period": "TTM",
+          "confidence": 1.0
+        },
+        {
+          "metric": "net_income",
+          "normalizedValue": 2420000,
+          "period": "TTM",
+          "confidence": 1.0
+        }
+      ],
+      "redFlags": [
+        "$730k tax-to-book cash flow variance"
+      ],
+      "yellowFlags": [],
+      "mathCheckStatus": "passed"
+    },
+    {
+      "fileName": "Apex_Precision_Dynamics_Draft_Purchase_Agreement.docx",
+      "status": "completed",
+      "modelUsed": "OpenAI 5.6 Terra",
+      "detectedDocumentType": "Purchase Agreement or LOI",
+      "trafficLight": "YELLOW",
+      "riskLevel": "MEDIUM",
+      "financialFacts": [
+        {
+          "metric": "revenue",
+          "normalizedValue": 12300000,
+          "period": "TTM",
+          "confidence": 1.0
+        }
+      ],
+      "redFlags": [],
+      "yellowFlags": [
+        "Purchase price reprice recommended from $15.75M to $12.10M"
+      ],
+      "valuation": {
+        "base_estimate": 12100000
+      },
+      "mathCheckStatus": "passed"
+    },
+    {
+      "fileName": "Apex_Precision_Dynamics_Customer_Concentration_AR.xlsx",
+      "status": "completed",
+      "modelUsed": "OpenAI 5.6 Terra",
+      "detectedDocumentType": "Operating Metrics",
+      "trafficLight": "YELLOW",
+      "riskLevel": "HIGH",
+      "financialFacts": [
+        {
+          "metric": "revenue",
+          "normalizedValue": 12300000,
+          "period": "TTM",
+          "confidence": 1.0
+        }
+      ],
+      "redFlags": [],
+      "yellowFlags": [
+        "Customer concentration: Top client is 44.5% of total revenue"
+      ],
+      "mathCheckStatus": "passed"
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "fileName": "Apex_Precision_Dynamics_Customer_Concentration_AR.xlsx",
+  "business": "Apex Precision Dynamics, Inc. (Aerospace CNC Machining)",
+  "fileType": "XLSX",
+  "groundTruth": {
+    "documentType": "Operating Metrics",
+    "trafficLight": "YELLOW",
+    "riskLevel": "HIGH",
+    "financialFacts": [
+      {
+        "metric": "revenue",
+        "normalizedValue": 12300000,
+        "period": "TTM",
+        "rawValue": "$12,300,000"
+      }
+    ],
+    "expectedRedFlags": [],
+    "expectedYellowFlags": [
+      "Customer concentration: Top client is 44.5% of total revenue"
+    ],
+    "expectedRecommendation": "PROCEED WITH REPRICE"
+  }
+}

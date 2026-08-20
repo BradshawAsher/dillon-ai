@@ -1,0 +1,123 @@
+{
+  "business": "TerraNova Environmental Hauling, LLC (Commercial Waste & Remediation)",
+  "projectId": "project-terranova-environmental-walkaway",
+  "evaluatedAt": "2026-08-19T20:00:00.000Z",
+  "documents": [
+    {
+      "fileName": "TerraNova_Environmental_Seller_Teaser_CIM.docx",
+      "status": "completed",
+      "modelUsed": "OpenAI 5.6 Terra",
+      "detectedDocumentType": "Due Diligence Data Room Packet",
+      "trafficLight": "RED",
+      "riskLevel": "CRITICAL",
+      "financialFacts": [
+        {
+          "metric": "revenue",
+          "normalizedValue": 14800000,
+          "period": "TTM",
+          "confidence": 1.0
+        },
+        {
+          "metric": "net_income",
+          "normalizedValue": -410000,
+          "period": "TTM",
+          "confidence": 1.0
+        }
+      ],
+      "redFlags": [
+        "Severe revenue inflation: Seller claims $14.8M vs verified $8.2M bank cash ($6.6M deficit)",
+        "True operational loss of -$410,000 (insolvency risk)",
+        "Undisclosed $2.4M EPA Superfund cleanup lien",
+        "68% of AR >90 days delinquent ($3.3M bad debt write-off required)"
+      ],
+      "yellowFlags": [],
+      "valuation": {
+        "base_estimate": 0
+      },
+      "mathCheckStatus": "failed"
+    },
+    {
+      "fileName": "TerraNova_Environmental_General_Ledger_Bank_Recon.xlsx",
+      "status": "completed",
+      "modelUsed": "OpenAI 5.6 Terra",
+      "detectedDocumentType": "Balance Sheet",
+      "trafficLight": "RED",
+      "riskLevel": "CRITICAL",
+      "financialFacts": [
+        {
+          "metric": "revenue",
+          "normalizedValue": 8200000,
+          "period": "FY2025",
+          "confidence": 1.0
+        }
+      ],
+      "redFlags": [
+        "$6.6M cash deficit vs billed invoices"
+      ],
+      "yellowFlags": [],
+      "mathCheckStatus": "failed"
+    },
+    {
+      "fileName": "TerraNova_Environmental_Tax_Form_1120_Audit.xlsx",
+      "status": "completed",
+      "modelUsed": "OpenAI 5.6 Terra",
+      "detectedDocumentType": "Tax Return",
+      "trafficLight": "RED",
+      "riskLevel": "CRITICAL",
+      "financialFacts": [
+        {
+          "metric": "revenue",
+          "normalizedValue": 8200000,
+          "period": "FY2025",
+          "confidence": 1.0
+        },
+        {
+          "metric": "net_income",
+          "normalizedValue": -410000,
+          "period": "FY2025",
+          "confidence": 1.0
+        }
+      ],
+      "redFlags": [
+        "-$410,000 operating loss on $8.2M revenue"
+      ],
+      "yellowFlags": [],
+      "mathCheckStatus": "failed"
+    },
+    {
+      "fileName": "TerraNova_Environmental_AR_Aging_Bad_Debt.xlsx",
+      "status": "completed",
+      "modelUsed": "OpenAI 5.6 Terra",
+      "detectedDocumentType": "Operating Metrics",
+      "trafficLight": "RED",
+      "riskLevel": "CRITICAL",
+      "financialFacts": [
+        {
+          "metric": "revenue",
+          "normalizedValue": 8200000,
+          "period": "TTM",
+          "confidence": 1.0
+        }
+      ],
+      "redFlags": [
+        "$3.34M in uncollectible AR write-offs (68% delinquent)"
+      ],
+      "yellowFlags": [],
+      "mathCheckStatus": "failed"
+    },
+    {
+      "fileName": "TerraNova_Environmental_Legal_Regulatory_Disclosures.docx",
+      "status": "completed",
+      "modelUsed": "OpenAI 5.6 Terra",
+      "detectedDocumentType": "Due Diligence Data Room Packet",
+      "trafficLight": "RED",
+      "riskLevel": "CRITICAL",
+      "financialFacts": [],
+      "redFlags": [
+        "$2.4M active EPA Superfund cleanup lien under federal consent decree"
+      ],
+      "yellowFlags": [],
+      "mathCheckStatus": "failed"
+    }
+  ]
+}

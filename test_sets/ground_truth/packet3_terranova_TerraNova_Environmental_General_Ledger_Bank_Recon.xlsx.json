@@ -1,0 +1,23 @@
+{
+  "fileName": "TerraNova_Environmental_General_Ledger_Bank_Recon.xlsx",
+  "business": "TerraNova Environmental Hauling, LLC (Commercial Waste & Remediation)",
+  "fileType": "XLSX",
+  "groundTruth": {
+    "documentType": "Balance Sheet",
+    "trafficLight": "RED",
+    "riskLevel": "CRITICAL",
+    "financialFacts": [
+      {
+        "metric": "revenue",
+        "normalizedValue": 8200000,
+        "period": "FY2025",
+        "rawValue": "$8,200,000"
+      }
+    ],
+    "expectedRedFlags": [
+      "$6.6M cash deficit vs billed invoices"
+    ],
+    "expectedYellowFlags": [],
+    "expectedRecommendation": "WALK AWAY"
+  }
+}

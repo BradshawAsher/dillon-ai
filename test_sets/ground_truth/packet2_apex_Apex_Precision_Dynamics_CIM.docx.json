@@ -1,0 +1,49 @@
+{
+  "fileName": "Apex_Precision_Dynamics_CIM.docx",
+  "business": "Apex Precision Dynamics, Inc. (Aerospace CNC Machining)",
+  "fileType": "DOCX",
+  "groundTruth": {
+    "documentType": "Due Diligence Data Room Packet",
+    "trafficLight": "YELLOW",
+    "riskLevel": "HIGH",
+    "financialFacts": [
+      {
+        "metric": "revenue",
+        "normalizedValue": 12300000,
+        "period": "TTM",
+        "rawValue": "$12,300,000"
+      },
+      {
+        "metric": "adjusted_ebitda",
+        "normalizedValue": 2420000,
+        "period": "TTM",
+        "rawValue": "$2,420,000"
+      }
+    ],
+    "expectedRedFlags": [
+      "Seller claims $3.15M EBITDA overstating verified $2.42M by $730k (23.2%)"
+    ],
+    "expectedYellowFlags": [
+      "Severe customer concentration: Top customer AeroShield is 44.5% of revenue expiring in 9 months",
+      "Disallowed $260k personal boat/plane leasing perk add-back",
+      "$350k non-recurring aerospace R&D grant recorded as ordinary revenue"
+    ],
+    "valuation": {
+      "valuationLowerBound": 10890000,
+      "valuationBaseEstimate": 12100000,
+      "valuationUpperBound": 13310000,
+      "askingPrice": 15750000,
+      "currency": "USD"
+    },
+    "expectedMathCheckStatus": "passed",
+    "expectedRecommendation": "PROCEED WITH REPRICE",
+    "expectedCrossDocumentConflicts": [
+      {
+        "metric": "adjusted_ebitda",
+        "period": "TTM",
+        "description": "Seller claimed EBITDA of $3,150,000 overstates buyer-supported tax return EBITDA of $2,420,000 by $730,000 (23.2%).",
+        "severity": "critical"
+      }
+    ]
+  }
+}

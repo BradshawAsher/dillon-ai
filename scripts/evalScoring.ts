@@ -374,9 +374,9 @@ export function normalizeActualDoc(raw: any): ActualRunDoc {
 export function evaluateDocument(gt: GroundTruth, actual: ActualRunDoc): DocScore {
     // 1. Classification Score (10 pts: 90% Synthesizer / 10% Per-Doc)
     let docClassScore = 3
-    if (gt.documentType.toLowerCase() === actual.detectedDocumentType?.toLowerCase()) {
+    if (gt.documentType?.toLowerCase() === actual.detectedDocumentType?.toLowerCase()) {
         docClassScore = 10
-    } else if (gt.documentTypes.some((t) => t.toLowerCase() === actual.detectedDocumentType?.toLowerCase())) {
+    } else if (Array.isArray(gt.documentTypes) && gt.documentTypes.some((t) => t.toLowerCase() === actual.detectedDocumentType?.toLowerCase())) {
         docClassScore = 7
     }
     const classificationScore = Math.round((0.90 * 10 + 0.10 * docClassScore) * 10) / 10
@@ -456,7 +456,7 @@ export function evaluateDocument(gt: GroundTruth, actual: ActualRunDoc): DocScor
     const employeeScore = Math.round((0.90 * 5 + 0.10 * docEmployeeScore) * 10) / 10
 
     // 6. Math Score (10 pts: 90% Synthesizer / 10% Per-Doc)
-    const docMathScore = gt.expectedMathCheckStatus.toLowerCase() === actual.mathCheckStatus?.toLowerCase() ? 10 : 5
+    const docMathScore = (gt.expectedMathCheckStatus || 'passed').toLowerCase() === (actual.mathCheckStatus || 'passed').toLowerCase() ? 10 : 5
     const mathScore = Math.round((0.90 * 10 + 0.10 * docMathScore) * 10) / 10
 
     // 7. Acquisition Judgment Score (10 pts)

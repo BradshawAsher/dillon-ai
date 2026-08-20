@@ -1,0 +1,29 @@
+{
+  "fileName": "TerraNova_Environmental_Tax_Form_1120_Audit.xlsx",
+  "business": "TerraNova Environmental Hauling, LLC (Commercial Waste & Remediation)",
+  "fileType": "XLSX",
+  "groundTruth": {
+    "documentType": "Tax Return",
+    "trafficLight": "RED",
+    "riskLevel": "CRITICAL",
+    "financialFacts": [
+      {
+        "metric": "revenue",
+        "normalizedValue": 8200000,
+        "period": "FY2025",
+        "rawValue": "$8,200,000"
+      },
+      {
+        "metric": "net_income",
+        "normalizedValue": -410000,
+        "period": "FY2025",
+        "rawValue": "-$410,000"
+      }
+    ],
+    "expectedRedFlags": [
+      "-$410,000 operating loss on $8.2M revenue"
+    ],
+    "expectedYellowFlags": [],
+    "expectedRecommendation": "WALK AWAY"
+  }
+}

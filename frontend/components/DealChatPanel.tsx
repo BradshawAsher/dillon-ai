@@ -1819,7 +1819,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-3 space-y-3">
+            <div className="flex-1 overflow-y-auto overscroll-contain p-3 space-y-3">
                 {messages.length === 0 && (
                     <div className="flex h-full flex-col items-center justify-center text-center p-2">
                         <div className="rounded-full bg-primary/10 p-3 ring-1 ring-primary/25 mb-2">

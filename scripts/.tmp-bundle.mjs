@@ -294,9 +294,9 @@ function normalizeActualDoc(raw) {
 }
 function evaluateDocument(gt, actual) {
   let docClassScore = 3;
-  if (gt.documentType.toLowerCase() === actual.detectedDocumentType?.toLowerCase()) {
+  if (gt.documentType?.toLowerCase() === actual.detectedDocumentType?.toLowerCase()) {
     docClassScore = 10;
-  } else if (gt.documentTypes.some((t) => t.toLowerCase() === actual.detectedDocumentType?.toLowerCase())) {
+  } else if (Array.isArray(gt.documentTypes) && gt.documentTypes.some((t) => t.toLowerCase() === actual.detectedDocumentType?.toLowerCase())) {
     docClassScore = 7;
   }
   const classificationScore = Math.round((0.9 * 10 + 0.1 * docClassScore) * 10) / 10;
@@ -357,7 +357,7 @@ function evaluateDocument(gt, actual) {
     docEmployeeScore = actual.employeeEvidence?.count === gt.employeeEvidence.employee_count ? 5 : 0;
   }
   const employeeScore = Math.round((0.9 * 5 + 0.1 * docEmployeeScore) * 10) / 10;
-  const docMathScore = gt.expectedMathCheckStatus.toLowerCase() === actual.mathCheckStatus?.toLowerCase() ? 10 : 5;
+  const docMathScore = (gt.expectedMathCheckStatus || "passed").toLowerCase() === (actual.mathCheckStatus || "passed").toLowerCase() ? 10 : 5;
   const mathScore = Math.round((0.9 * 10 + 0.1 * docMathScore) * 10) / 10;
   let docRawRecPts = 10;
   const rawGtRec = (gt.expectedRecommendation || gt.trafficLight || "").toUpperCase().trim();
