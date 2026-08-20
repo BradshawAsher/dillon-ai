@@ -54,4 +54,13 @@ describe('resolveFinancialMetricsForProject', () => {
         expect(resolved.revenue).toBe('$5,000,000')
         expect(resolved.ebitda).toBe('$1.2M')
     })
+
+    it('formats a negative EBITDA as a signed dollar amount', () => {
+        // A loss-making target must not leak an unformatted "-500000".
+        expect(resolveFinancialMetricsForProject({ ebitdaUsd: -500_000 }).ebitda).toBe('-$500,000')
+    })
+
+    it('leaves a valuation range untouched', () => {
+        expect(resolveFinancialMetricsForProject({ valuationUsd: '$6.77M - $8.25M' }).valuation).toBe('$6.77M - $8.25M')
+    })
 })

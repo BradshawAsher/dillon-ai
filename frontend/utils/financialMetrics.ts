@@ -115,9 +115,14 @@ export function resolveFinancialMetricsForProject(
     const fmt = (val: any) => {
         if (!val || val === 'N/A') return 'N/A'
         const s = String(val).trim()
-        if (s.startsWith('$') || s.endsWith('x') || s.endsWith('M') || s.endsWith('K') || s.includes('-')) return s
+        // Pass through already-formatted values and ranges ("$5.67M - $6.30M").
+        // Match a spaced hyphen for the range so a bare negative number ("-500000")
+        // still gets formatted below rather than leaking through unstyled.
+        if (s.startsWith('$') || s.endsWith('x') || s.endsWith('M') || s.endsWith('K') || s.includes(' - ')) return s
         const num = Number(s.replace(/[^0-9.-]+/g, ''))
-        if (!isNaN(num) && num > 0) return `$${num.toLocaleString()}`
+        if (Number.isFinite(num) && num !== 0) {
+            return num < 0 ? `-$${Math.abs(num).toLocaleString()}` : `$${num.toLocaleString()}`
+        }
         return s
     }
 
