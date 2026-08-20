@@ -20,7 +20,10 @@ export type ClassifiedError = {
 export function classifyError(errorMessage?: string | null): ClassifiedError {
     const msg = (errorMessage || '').trim().toLowerCase()
 
-    if (/rate|429|quota|tpm|rpm|overloaded|too many requests|tokens per min|limit reached/.test(msg)) {
+    // Require the phrase "rate limit" (any separator) rather than a bare "rate",
+    // which is a substring of ordinary words like "generate" and "moderate" and
+    // would misclassify a generation error as a 429.
+    if (/rate[\s_-]?limit|429|quota|tpm|rpm|overloaded|too many requests|tokens per min|limit reached/.test(msg)) {
         return {
             category: 'RATE_LIMIT',
             badgeLabel: 'RATE LIMIT / QUOTA (429)',
