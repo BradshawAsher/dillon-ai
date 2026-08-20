@@ -70,6 +70,20 @@ export function safeFormatCurrency(value: number, rawCurrency?: string, options?
     }
 }
 
+/**
+ * Compact money label ("$2.4M", "$750K", "-$1.2M") for dense card headers.
+ * Handles negatives by placing the sign before the dollar amount and still
+ * compacting the magnitude, and renders a non-finite/absent value as an em-dash.
+ */
+export function formatCompactMoney(value: number | null | undefined): string {
+    if (value === null || value === undefined || !Number.isFinite(value)) return '—'
+    const sign = value < 0 ? '-' : ''
+    const abs = Math.abs(value)
+    if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(1)}M`
+    if (abs >= 1_000) return `${sign}$${(abs / 1_000).toFixed(0)}K`
+    return `${sign}$${abs.toFixed(0)}`
+}
+
 export function formatConfidencePercent(rawConfidence?: string | number | null): string {
     if (rawConfidence === undefined || rawConfidence === null) return 'Pending'
     const str = String(rawConfidence).trim()

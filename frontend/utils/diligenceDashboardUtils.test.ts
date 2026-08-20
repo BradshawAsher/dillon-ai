@@ -6,6 +6,7 @@ import {
     calculateDocumentCost,
     calculateSynthesisCost,
     confidenceToPercent,
+    formatCompactMoney,
     createUnusedProjectId,
     formatConfidencePercent,
     formatElapsedDuration,
@@ -174,6 +175,25 @@ describe('formatConfidencePercent', () => {
         expect(formatConfidencePercent(null)).toBe('Pending')
         expect(formatConfidencePercent('')).toBe('Pending')
         expect(formatConfidencePercent('high')).toBe('high')
+    })
+})
+
+describe('formatCompactMoney', () => {
+    it('compacts magnitudes with a leading dollar sign', () => {
+        expect(formatCompactMoney(2_400_000)).toBe('$2.4M')
+        expect(formatCompactMoney(750_000)).toBe('$750K')
+        expect(formatCompactMoney(500)).toBe('$500')
+    })
+
+    it('places the sign before the dollar and still compacts negatives', () => {
+        expect(formatCompactMoney(-1_200_000)).toBe('-$1.2M')
+        expect(formatCompactMoney(-750_000)).toBe('-$750K')
+    })
+
+    it('renders a non-finite or absent value as an em-dash', () => {
+        expect(formatCompactMoney(null)).toBe('—')
+        expect(formatCompactMoney(undefined)).toBe('—')
+        expect(formatCompactMoney(Number.NaN)).toBe('—')
     })
 })
 
