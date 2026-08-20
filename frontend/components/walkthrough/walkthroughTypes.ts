@@ -3,7 +3,7 @@ import type { WorkspaceTab } from '../TabSidebarTOC'
 export type TourPlaylistId = 'core-fast' | 'deep-dive' | 'interactive-quest' | string
 
 export interface SimulatedAction {
-    type: 'click' | 'highlight' | 'scroll' | 'type_chat' | 'open_chat' | 'clear_chat' | 'open_export_modal' | 'close_export_modal' | 'slider_tweak' | 'stage_packet' | 'simulate_queue' | 'reset_simulation' | 'open_file_explorer' | 'close_file_explorer' | 'close_chat' | 'simulate_open_evidence' | 'simulate_open_doc_evidence' | 'close_evidence' | 'scroll_evidence'
+    type: 'click' | 'highlight' | 'scroll' | 'type_chat' | 'open_chat' | 'clear_chat' | 'open_export_modal' | 'close_export_modal' | 'open_summary_modal' | 'close_summary_modal' | 'slider_tweak' | 'stage_packet' | 'simulate_queue' | 'reset_simulation' | 'open_file_explorer' | 'close_file_explorer' | 'close_chat' | 'simulate_open_evidence' | 'simulate_open_doc_evidence' | 'close_evidence' | 'scroll_evidence'
     description?: string
     targetSelector?: string
     delayMs?: number

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 import { Archive, ArchiveRestore, Bot, BriefcaseBusiness, CheckCircle, Clock3, Cpu, DollarSign, Download, Eye, FileStack, FileText, Flag, FolderKanban, Layers, Plus, RefreshCw, Search, ShieldAlert, Sparkles, TriangleAlert } from 'lucide-react'
 import ExpandableText from './ExpandableText'
@@ -105,27 +105,6 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
     const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false)
     const [summaryModalData, setSummaryModalData] = useState<HighLevelBusinessSummaryData | null>(null)
 
-    useEffect(() => {
-        const handleWalkthroughAction = (e: CustomEvent) => {
-            const action = e.detail?.action
-            if (!action) return
-            if (action.type === 'open_summary_modal') {
-                const targetProject = visibleProjects.find((p) => p.projectKey === activeProjectKey) || visibleProjects[0]
-                if (targetProject) {
-                    const rawProjectDocs = rows.filter((r) => (r.projectId || getProjectKey(r)) === targetProject.projectKey || r.workstream === targetProject.projectName)
-                    const targetSynthesis = syntheses.find((s) => s.projectId === (targetProject.projectId || targetProject.projectKey))
-                    openSummaryModal(targetProject, targetSynthesis, rawProjectDocs)
-                }
-            } else if (action.type === 'close_summary_modal' || action.type === 'reset_simulation') {
-                setIsSummaryModalOpen(false)
-            }
-        }
-        window.addEventListener('mergeworks:walkthrough-action', handleWalkthroughAction as EventListener)
-        return () => {
-            window.removeEventListener('mergeworks:walkthrough-action', handleWalkthroughAction as EventListener)
-        }
-    }, [activeProjectKey, visibleProjects, syntheses, rows])
-
     const openSummaryModal = (project: any, synthesis: any, projectDocs: any[]) => {
         const fin = resolveFinancialMetricsForProject(synthesis, projectDocs, project.projectName, project.companyName, project.projectKey)
 
@@ -227,6 +206,27 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
 
             return searchableProjectText.includes(normalizedProjectSearch)
         })
+
+    useEffect(() => {
+        const handleWalkthroughAction = (e: CustomEvent) => {
+            const action = e.detail?.action
+            if (!action) return
+            if (action.type === 'open_summary_modal') {
+                const targetProject = visibleProjects.find((p) => p.projectKey === activeProjectKey) || visibleProjects[0]
+                if (targetProject) {
+                    const rawProjectDocs = rows.filter((r) => (r.projectId || getProjectKey(r)) === targetProject.projectKey || r.workstream === targetProject.projectName)
+                    const targetSynthesis = syntheses.find((s) => s.projectId === (targetProject.projectId || targetProject.projectKey))
+                    openSummaryModal(targetProject, targetSynthesis, rawProjectDocs)
+                }
+            } else if (action.type === 'close_summary_modal' || action.type === 'reset_simulation') {
+                setIsSummaryModalOpen(false)
+            }
+        }
+        window.addEventListener('mergeworks:walkthrough-action', handleWalkthroughAction as EventListener)
+        return () => {
+            window.removeEventListener('mergeworks:walkthrough-action', handleWalkthroughAction as EventListener)
+        }
+    }, [activeProjectKey, visibleProjects, syntheses, rows])
 
     const handleArchive = (projectKey: string) => {
         archiveProjectKey(projectKey)
