@@ -11,7 +11,7 @@ import CardInfoPopover from './common/CardInfoPopover'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { parseMagnitudeMoney } from '../utils/documentedFacts'
 import { entryMultiple } from '../utils/dealMath'
-import { confidenceToPercent } from '../utils/diligenceDashboardUtils'
+import { confidenceToPercent, formatCompactMoney } from '../utils/diligenceDashboardUtils'
 import { resolveFinancialMetricsForProject } from '../utils/financialMetrics'
 import { formatCurrencyValue } from '../utils/aiSubmissionData'
 import TruncatedListItem from './TruncatedListItem'
@@ -25,11 +25,10 @@ type Props = {
     onSwitchTab?: (tab: any) => void
 }
 
+// Delegates to the shared compact-money formatter, which (unlike the previous
+// local copy) formats negatives as "-$1.2M" rather than "$-1200000".
 function money(value: number | null | undefined) {
-    if (value === null || value === undefined) return '—'
-    if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`
-    if (value >= 1_000) return `$${(value / 1_000).toFixed(0)}K`
-    return `$${value.toFixed(0)}`
+    return formatCompactMoney(value)
 }
 
 export function buildMemoText(model: DealModel, synthesis: ProjectSynthesisItem | undefined, projectName: string): string {
