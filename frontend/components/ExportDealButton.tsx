@@ -6,6 +6,7 @@ import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence
 import { parseDocumentedFacts } from '../utils/evidence'
 import { formatCurrencyValue } from '../utils/aiSubmissionData'
 import { entryMultiple } from '../utils/dealMath'
+import { downloadTextFile } from '../utils/downloadFile'
 
 type Props = {
     model: DealModel
@@ -199,15 +200,10 @@ export function buildJsonExport(model: DealModel, synthesis: ProjectSynthesisIte
 }
 
 export function downloadFile(content: string, filename: string, mimeType: string) {
-    const blob = new Blob([content], { type: mimeType })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = filename
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
+    // Delegate to the shared helper, which revokes the object URL on the next
+    // tick. Revoking synchronously (as this used to) can cancel an in-flight
+    // download in browsers that start the save asynchronously after click().
+    downloadTextFile(filename, content, mimeType)
 }
 
 export default function ExportDealButton({ model, synthesis, projectName }: Props) {
