@@ -8,6 +8,14 @@ export { createUnusedProjectId }
 
 export function useDealWorkspaceState() {
     const [activeWorkspaceTab, setActiveWorkspaceTab] = useState<WorkspaceTab>('overview')
+    const [activeViewProjectId, setActiveViewProjectId] = useState<string>(() => {
+        if (typeof window === 'undefined') return ''
+        try {
+            return window.localStorage.getItem('mergeworks.activeProjectKey') || ''
+        } catch {
+            return ''
+        }
+    })
     const [projectId, setProjectId] = useState(() => createUnusedProjectId())
     const [projectStage, setProjectStage] = useState('post-loi')
     const [documentType, setDocumentType] = useState('auto-detect')
@@ -65,6 +73,14 @@ export function useDealWorkspaceState() {
 
     useEffect(() => {
         try {
+            if (activeViewProjectId) {
+                window.localStorage.setItem('mergeworks.activeProjectKey', activeViewProjectId)
+            }
+        } catch {}
+    }, [activeViewProjectId])
+
+    useEffect(() => {
+        try {
             if (selectedProjectKey) {
                 window.localStorage.setItem('mergeworks.selectedProjectKey', selectedProjectKey)
             }
@@ -109,6 +125,8 @@ export function useDealWorkspaceState() {
     return {
         activeWorkspaceTab,
         setActiveWorkspaceTab,
+        activeViewProjectId,
+        setActiveViewProjectId,
         projectId,
         setProjectId,
         projectStage,

@@ -1,5 +1,5 @@
 import { ChangeEvent, DragEvent, useRef, useState } from 'react'
-import { FileText, FolderKanban, Upload } from 'lucide-react'
+import { FileText, FolderKanban, Trash2, Upload } from 'lucide-react'
 
 import { Button } from '../lib/shadcn/button'
 import { cn } from '../lib/shadcn/utils'
@@ -200,6 +200,27 @@ export default function FileDropzone({ selectedFiles, onFileSelect, className }:
                         <FolderKanban className="h-3.5 w-3.5" />
                         <span>Browse Folder / Data Room</span>
                     </Button>
+                    {selectedFiles.length > 0 && (
+                        <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            className="w-full sm:w-auto text-xs font-medium gap-1 bg-destructive/15 text-destructive hover:bg-destructive/25 border border-destructive/30"
+                            title="Clear all selected files"
+                            onClick={(event) => {
+                                event.preventDefault()
+                                if (inputRef.current) inputRef.current.value = ''
+                                if (folderInputRef.current) folderInputRef.current.value = ''
+                                setRejectedNames([])
+                                setOversizedNames([])
+                                setHasNumbersFile(false)
+                                onFileSelect([])
+                            }}
+                        >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            <span>Clear files</span>
+                        </Button>
+                    )}
                 </div>
             </label>
             {hasNumbersFile ? (

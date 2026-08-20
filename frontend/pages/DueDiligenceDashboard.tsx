@@ -5,10 +5,12 @@ import {
     FileDown,
     Globe,
     HelpCircle,
+    Info,
     Key,
     Keyboard,
     Loader2,
     Play,
+    RotateCcw,
     ShieldCheck,
     SlidersHorizontal,
     X,
@@ -726,6 +728,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     const {
         activeWorkspaceTab,
         setActiveWorkspaceTab,
+        activeViewProjectId,
+        setActiveViewProjectId,
         projectId,
         setProjectId,
         projectStage,
@@ -1174,7 +1178,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     const dealModelSaveTimeout = useRef<number | null>(null)
     const [hasRestoredLatestProject, setHasRestoredLatestProject] = useState(false)
 
-    // Automatically restore active project or default to the most recently submitted live project on initial page load / refresh once backend query completes
+    // Automatically restore active viewing project or default to the most recently submitted live project on initial page load / refresh once backend query completes
     useEffect(() => {
         if (!isExampleMode && submissionHistoryData === null) return
         if (submissionHistoryLoading || projectSynthesisLoading) return
@@ -1190,27 +1194,16 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
         const targetProject = matchingStoredProject || projectSummaries[0]
         if (targetProject) {
-            if (selectedProjectKey !== targetProject.projectKey) {
-                setSelectedProjectKey(targetProject.projectKey)
-            }
-            const targetPid = targetProject.projectId || targetProject.projectKey
-            if (projectId !== targetPid) {
-                setProjectId(targetPid)
-            }
-            if (dealName !== targetProject.projectName) {
-                setDealName(targetProject.projectName)
-            }
-            const targetStage = targetProject.stage || 'post-loi'
-            if (projectStage !== targetStage) {
-                setProjectStage(targetStage)
+            const targetKey = targetProject.projectKey || targetProject.projectId
+            if (activeViewProjectId !== targetKey) {
+                setActiveViewProjectId(targetKey)
             }
             if (typeof window !== 'undefined') {
-                window.localStorage.setItem('mergeworks.activeProjectKey', targetProject.projectKey)
-                window.localStorage.setItem('mergeworks.selectedProjectKey', targetProject.projectKey)
+                window.localStorage.setItem('mergeworks.activeProjectKey', targetKey)
             }
         }
         setHasRestoredLatestProject(true)
-    }, [submissionHistoryLoading, projectSynthesisLoading, hasRestoredLatestProject, projectSummaries, dealName, projectId, projectStage, selectedProjectKey, setDealName, setProjectId, setProjectStage, setSelectedProjectKey])
+    }, [submissionHistoryLoading, projectSynthesisLoading, hasRestoredLatestProject, projectSummaries, activeViewProjectId, setActiveViewProjectId, isExampleMode, submissionHistoryData])
 
     // Keep project fields in sync whenever selectedProjectKey changes, auto-resolving orphaned keys
     useEffect(() => {
@@ -1307,7 +1300,50 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     const isTourActive = walkthrough.isActive || Boolean(simulatedWalkthroughBatch)
     const activeProjectId = isExampleMode
         ? 'atlas-001'
-        : (isTourActive ? 'apex-industrial-tech' : (projectId || projectSummaries[0]?.projectId || projectSummaries[0]?.projectKey || ''))
+        : (isTourActive ? 'apex-industrial-tech' : (activeViewProjectId || (selectedProjectKey !== 'new' ? projectId : '') || projectSummaries[0]?.projectId || projectSummaries[0]?.projectKey || ''))
+
+    const activeViewProject = useMemo(() => {
+        if (!activeProjectId || projectSummaries.length === 0) return null
+        const found = projectSummaries.find((p: any) => p.projectId === activeProjectId || p.projectKey === activeProjectId)
+        if (!found) return null
+        return {
+            key: found.projectKey,
+            name: found.projectName || found.companyName || found.projectKey,
+            id: found.projectId || found.projectKey,
+        }
+    }, [activeProjectId, projectSummaries])
+
+    const handleAppendToActiveProject = useCallback(() => {
+        if (!activeViewProject) return
+        setSelectedProjectKey(activeViewProject.key)
+        const target = projectSummaries.find((p: any) => p.projectKey === activeViewProject.key || p.projectId === activeViewProject.key)
+        if (target) {
+            setProjectId(target.projectId || target.projectKey)
+            setDealName(target.projectName)
+            setProjectStage(target.stage || 'post-loi')
+        }
+    }, [activeViewProject, projectSummaries, setDealName, setProjectId, setProjectStage, setSelectedProjectKey])
+
+    const handleSwitchActiveViewProject = useCallback((projectKey: string) => {
+        if (!projectKey) return
+        setActiveViewProjectId(projectKey)
+        try {
+            localStorage.setItem('mergeworks.activeProjectKey', projectKey)
+        } catch {
+            // ignore
+        }
+    }, [setActiveViewProjectId])
+
+    const mostRecentProject = useMemo(() => projectSummaries[0] ?? null, [projectSummaries])
+    const isViewingOlderDeal = Boolean(
+        !isExampleMode &&
+        !isTourActive &&
+        mostRecentProject &&
+        activeProjectId &&
+        (activeViewProjectId
+            ? (activeViewProjectId !== mostRecentProject.projectKey && activeViewProjectId !== mostRecentProject.projectId)
+            : (activeProjectId !== mostRecentProject.projectId && activeProjectId !== mostRecentProject.projectKey))
+    )
 
     const prevFailedCountRef = useRef<number | null>(null)
     useEffect(() => {
@@ -1431,7 +1467,9 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         return found ?? DEMO_FALLBACK_SYNTHESIS
     }, [activeProjectId, visibleProjectSyntheses, projectSummaries, isTourActive, isExampleMode])
 
-    const effectiveDealName = isTourActive ? 'Apex Industrial Technologies LLC' : dealName
+    const effectiveDealName = isTourActive
+        ? 'Apex Industrial Technologies LLC'
+        : (isExampleMode ? 'Apex Industrial Technologies (Atlas Demo)' : (activeViewProject?.name || dealName || ''))
 
     const suggestedProjectName = useMemo(() => {
         if (isTourActive) {
@@ -1440,8 +1478,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         if (selectedFiles.length > 0) {
             return selectedFiles[0].name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ')
         }
-        return effectiveDealName || 'New Project'
-    }, [effectiveDealName, selectedFiles, isTourActive])
+        return dealName || activeViewProject?.name || 'New Project'
+    }, [dealName, activeViewProject, selectedFiles, isTourActive])
 
     const suggestedProjectId = useMemo(() => {
         const used = projectSummaries.map((p: any) => p.projectId || p.projectKey)
@@ -1810,23 +1848,13 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     }
 
     const handlePortfolioProjectSelect = (projectKey: string, targetTab: WorkspaceTab = 'synthesis') => {
-        setSelectedProjectKey(projectKey)
+        setActiveViewProjectId(projectKey)
         setActiveWorkspaceTab(targetTab)
         setActiveSubmissionBatch(null)
         setUserHasNavigatedBatchDocs(false)
-        const project = projectSummaries.find((candidate: any) => candidate.projectKey === projectKey || candidate.projectId === projectKey)
-
-        if (project) {
-            setProjectId(project.projectId || project.projectKey)
-            setDealName(project.projectName)
-            setProjectStage(project.stage || 'post-loi')
-        } else {
-            setProjectId(projectKey)
-        }
 
         if (typeof window !== 'undefined') {
             window.localStorage.setItem('mergeworks.activeProjectKey', projectKey)
-            window.localStorage.setItem('mergeworks.selectedProjectKey', projectKey)
         }
 
         window.setTimeout(() => {
@@ -1902,11 +1930,10 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
     const handleAuditProjectOpen = (targetProjectId: string) => {
         const project = projectSummaries.find((candidate: any) => (candidate.projectId || candidate.projectKey) === targetProjectId)
-        setSelectedProjectKey(project?.projectKey || targetProjectId)
-        setProjectId(project?.projectId || targetProjectId)
-        if (project) {
-            setDealName(project.projectName)
-            setProjectStage(project.stage || 'post-loi')
+        const targetKey = project?.projectKey || targetProjectId
+        setActiveViewProjectId(targetKey)
+        if (typeof window !== 'undefined') {
+            window.localStorage.setItem('mergeworks.activeProjectKey', targetKey)
         }
         setActiveWorkspaceTab('documents')
         window.setTimeout(() => {
@@ -1916,11 +1943,10 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
     const handleOpenProjectSynthesis = (targetProjectId: string) => {
         const project = projectSummaries.find((candidate: any) => (candidate.projectId || candidate.projectKey) === targetProjectId)
-        setSelectedProjectKey(project?.projectKey || targetProjectId)
-        setProjectId(project?.projectId || targetProjectId)
-        if (project) {
-            setDealName(project.projectName)
-            setProjectStage(project.stage || 'post-loi')
+        const targetKey = project?.projectKey || targetProjectId
+        setActiveViewProjectId(targetKey)
+        if (typeof window !== 'undefined') {
+            window.localStorage.setItem('mergeworks.activeProjectKey', targetKey)
         }
         setActiveWorkspaceTab('synthesis')
         window.setTimeout(() => {
@@ -2197,6 +2223,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             const targetProjectId = (selectedProjectKey === 'new' || !projectId) ? (suggestedProjectId || `project-${Date.now().toString(36)}`) : projectId
             setSelectedProjectKey(targetProjectId)
             setProjectId(targetProjectId)
+            setActiveViewProjectId(targetProjectId)
             if (typeof window !== 'undefined') {
                 window.localStorage.setItem('mergeworks.activeProjectKey', targetProjectId)
                 window.localStorage.setItem('mergeworks.selectedProjectKey', targetProjectId)
@@ -2459,6 +2486,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                     selectedFiles={selectedFiles}
                     disabled={isSubmittingFile || submitLoading}
                     isExampleMode={isExampleMode}
+                    activeViewProject={activeViewProject}
                     onCancelSubmission={isSubmittingFile || submitLoading ? handleCancelSubmission : undefined}
                     onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
                     onDealNameChange={setDealName}
@@ -2469,6 +2497,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                     onSubmissionNotesChange={setSubmissionNotes}
                     onSelectedProjectKeyChange={setSelectedProjectKey}
                     onCreateProject={handleCreateProject}
+                    onAppendToActiveProject={handleAppendToActiveProject}
+                    onSwitchActiveViewProject={handleSwitchActiveViewProject}
                     onFileSelect={setSelectedFiles}
                     onSubmit={(environment) => { void handleSubmit(environment) }}
                 />
@@ -2511,6 +2541,27 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
                 <div id="diligence-workspace" className="scroll-mt-6" />
                 <div id="deal-workspace" className="scroll-mt-6" />
+
+                {isViewingOlderDeal && mostRecentProject && (
+                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 dark:bg-amber-950/30 px-4 py-3 text-xs text-amber-950 dark:text-amber-200 shadow-xs animate-in fade-in-0 duration-200">
+                        <div className="flex items-center gap-2.5">
+                            <Info className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                            <span>
+                                You are currently viewing: <strong className="font-bold text-amber-950 dark:text-amber-100">{activeViewProject?.name || effectiveDealName || activeProjectId}</strong> (this is not the most recent project).
+                            </span>
+                        </div>
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="border-amber-600/40 bg-background/90 hover:bg-background text-amber-950 dark:text-amber-200 font-semibold text-xs gap-1.5 shadow-2xs cursor-pointer"
+                            onClick={() => handlePortfolioProjectSelect(mostRecentProject.projectKey || mostRecentProject.projectId)}
+                        >
+                            <RotateCcw className="h-3.5 w-3.5" />
+                            Switch back to most recent project ({mostRecentProject.projectName || mostRecentProject.companyName || mostRecentProject.projectKey})
+                        </Button>
+                    </div>
+                )}
 
                 <DealWorkspaceNav
                     activeTab={activeWorkspaceTab}
@@ -2773,7 +2824,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                         <DocumentsWorkspaceView
                             submissionHistory={submissionHistory}
                             visibleProjectSyntheses={visibleProjectSyntheses}
-                            selectedProjectKey={selectedProjectKey}
+                            selectedProjectKey={activeViewProject?.key || activeProjectId}
                             handlePortfolioProjectSelect={handlePortfolioProjectSelect}
                             handleExcludeDocument={handleExcludeDocument}
                             handleIncludeDocument={handleIncludeDocument}
@@ -3157,7 +3208,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 isOpen={isProjectsPanelOpen}
                 onClose={() => setIsProjectsPanelOpen(false)}
                 projects={projectSummaries}
-                activeProjectKey={selectedProjectKey}
+                activeProjectKey={activeViewProject?.key || activeProjectId}
                 syntheses={visibleProjectSyntheses}
                 onSelectProject={(key) => handlePortfolioProjectSelect(key)}
                 onOpenIntake={() => {
