@@ -1,0 +1,29 @@
+{
+  "fileName": "Apex_Precision_Dynamics_Tax_Reconciliation_Bridge.xlsx",
+  "business": "Apex Precision Dynamics, Inc. (Aerospace CNC Machining)",
+  "fileType": "XLSX",
+  "groundTruth": {
+    "documentType": "Tax Return",
+    "trafficLight": "YELLOW",
+    "riskLevel": "HIGH",
+    "financialFacts": [
+      {
+        "metric": "revenue",
+        "normalizedValue": 11950000,
+        "period": "FY2025",
+        "rawValue": "$11,950,000"
+      },
+      {
+        "metric": "net_income",
+        "normalizedValue": 2420000,
+        "period": "FY2025",
+        "rawValue": "$2,420,000"
+      }
+    ],
+    "expectedRedFlags": [
+      "$730k tax-to-book cash flow variance"
+    ],
+    "expectedYellowFlags": [],
+    "expectedRecommendation": "PROCEED WITH REPRICE"
+  }
+}

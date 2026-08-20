@@ -27,7 +27,7 @@ export function WalkthroughSpotlight({
 
     return (
         <div className="fixed inset-0 z-40 pointer-events-none transition-opacity duration-300">
-            <svg className="h-full w-full pointer-events-auto" onClick={onBackdropClick}>
+            <svg className="h-full w-full pointer-events-none" onClick={onBackdropClick}>
                 <defs>
                     <mask id="walkthrough-spotlight-mask">
                         {/* White base fills entire screen (masked = transparent) */}

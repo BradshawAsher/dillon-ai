@@ -1,0 +1,26 @@
+{
+  "fileName": "Vanguard_Medical_Logistics_Executed_LOI.docx",
+  "business": "Vanguard Medical Logistics, LLC (Healthcare Cold-Chain Logistics)",
+  "fileType": "DOCX",
+  "groundTruth": {
+    "documentType": "Purchase Agreement or LOI",
+    "trafficLight": "GREEN",
+    "riskLevel": "LOW",
+    "financialFacts": [
+      {
+        "metric": "revenue",
+        "normalizedValue": 8450000,
+        "period": "TTM",
+        "rawValue": "$8,450,000"
+      }
+    ],
+    "expectedRedFlags": [],
+    "expectedYellowFlags": [],
+    "valuation": {
+      "valuationBaseEstimate": 8400000,
+      "askingPrice": 8400000,
+      "currency": "USD"
+    },
+    "expectedRecommendation": "PROCEED"
+  }
+}

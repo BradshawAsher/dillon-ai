@@ -1,0 +1,23 @@
+{
+  "fileName": "Vanguard_Medical_Logistics_Customer_Master_Concentration.xlsx",
+  "business": "Vanguard Medical Logistics, LLC (Healthcare Cold-Chain Logistics)",
+  "fileType": "XLSX",
+  "groundTruth": {
+    "documentType": "Operating Metrics",
+    "trafficLight": "GREEN",
+    "riskLevel": "LOW",
+    "financialFacts": [
+      {
+        "metric": "revenue",
+        "normalizedValue": 8450000,
+        "period": "TTM",
+        "rawValue": "$8,450,000"
+      }
+    ],
+    "expectedRedFlags": [],
+    "expectedYellowFlags": [
+      "Top client is 11.4% of revenue (acceptable threshold)"
+    ],
+    "expectedRecommendation": "PROCEED"
+  }
+}

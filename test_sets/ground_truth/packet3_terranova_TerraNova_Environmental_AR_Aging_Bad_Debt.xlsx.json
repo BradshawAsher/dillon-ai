@@ -1,0 +1,23 @@
+{
+  "fileName": "TerraNova_Environmental_AR_Aging_Bad_Debt.xlsx",
+  "business": "TerraNova Environmental Hauling, LLC (Commercial Waste & Remediation)",
+  "fileType": "XLSX",
+  "groundTruth": {
+    "documentType": "Operating Metrics",
+    "trafficLight": "RED",
+    "riskLevel": "CRITICAL",
+    "financialFacts": [
+      {
+        "metric": "revenue",
+        "normalizedValue": 8200000,
+        "period": "TTM",
+        "rawValue": "$8,200,000"
+      }
+    ],
+    "expectedRedFlags": [
+      "$3.34M in uncollectible AR write-offs (68% delinquent)"
+    ],
+    "expectedYellowFlags": [],
+    "expectedRecommendation": "WALK AWAY"
+  }
+}

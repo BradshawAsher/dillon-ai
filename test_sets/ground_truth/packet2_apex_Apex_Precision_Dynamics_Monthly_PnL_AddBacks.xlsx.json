@@ -1,0 +1,31 @@
+{
+  "fileName": "Apex_Precision_Dynamics_Monthly_PnL_AddBacks.xlsx",
+  "business": "Apex Precision Dynamics, Inc. (Aerospace CNC Machining)",
+  "fileType": "XLSX",
+  "groundTruth": {
+    "documentType": "Quality of Earnings Report",
+    "trafficLight": "YELLOW",
+    "riskLevel": "HIGH",
+    "financialFacts": [
+      {
+        "metric": "revenue",
+        "normalizedValue": 11950000,
+        "period": "TTM",
+        "rawValue": "$11,950,000"
+      },
+      {
+        "metric": "adjusted_ebitda",
+        "normalizedValue": 2420000,
+        "period": "TTM",
+        "rawValue": "$2,420,000"
+      }
+    ],
+    "expectedRedFlags": [
+      "Unsupportable $260k personal vehicle/aircraft add-back"
+    ],
+    "expectedYellowFlags": [
+      "$350k grant deduction from operating revenue"
+    ],
+    "expectedRecommendation": "PROCEED WITH REPRICE"
+  }
+}

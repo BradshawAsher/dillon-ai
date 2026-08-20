@@ -1,0 +1,48 @@
+{
+  "fileName": "TerraNova_Environmental_Seller_Teaser_CIM.docx",
+  "business": "TerraNova Environmental Hauling, LLC (Commercial Waste & Remediation)",
+  "fileType": "DOCX",
+  "groundTruth": {
+    "documentType": "Due Diligence Data Room Packet",
+    "trafficLight": "RED",
+    "riskLevel": "CRITICAL",
+    "financialFacts": [
+      {
+        "metric": "revenue",
+        "normalizedValue": 8200000,
+        "period": "TTM",
+        "rawValue": "$8,200,000"
+      },
+      {
+        "metric": "net_income",
+        "normalizedValue": -410000,
+        "period": "TTM",
+        "rawValue": "-$410,000"
+      }
+    ],
+    "expectedRedFlags": [
+      "Severe revenue inflation: Seller claims $14.8M vs verified $8.2M bank cash ($6.6M deficit)",
+      "True operational loss of -$410,000 (insolvency risk)",
+      "Undisclosed $2.4M EPA Superfund cleanup lien",
+      "68% of AR >90 days delinquent ($3.3M bad debt write-off required)"
+    ],
+    "expectedYellowFlags": [],
+    "valuation": {
+      "valuationLowerBound": 0,
+      "valuationBaseEstimate": 0,
+      "valuationUpperBound": 1000000,
+      "askingPrice": 14800000,
+      "currency": "USD"
+    },
+    "expectedMathCheckStatus": "failed",
+    "expectedRecommendation": "WALK AWAY",
+    "expectedCrossDocumentConflicts": [
+      {
+        "metric": "revenue",
+        "period": "TTM",
+        "description": "Seller claimed revenue of $14,800,000 overstates bank-verified tax return revenue of $8,200,000 by $6,600,000 (44.6%).",
+        "severity": "critical"
+      }
+    ]
+  }
+}

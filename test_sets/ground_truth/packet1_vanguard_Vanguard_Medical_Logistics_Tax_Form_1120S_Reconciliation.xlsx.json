@@ -1,0 +1,28 @@
+{
+  "fileName": "Vanguard_Medical_Logistics_Tax_Form_1120S_Reconciliation.xlsx",
+  "business": "Vanguard Medical Logistics, LLC (Healthcare Cold-Chain Logistics)",
+  "fileType": "XLSX",
+  "groundTruth": {
+    "documentType": "Tax Return",
+    "trafficLight": "GREEN",
+    "riskLevel": "LOW",
+    "financialFacts": [
+      {
+        "metric": "revenue",
+        "normalizedValue": 8450000,
+        "period": "FY2025",
+        "rawValue": "$8,450,000"
+      },
+      {
+        "metric": "net_income",
+        "normalizedValue": 1378800,
+        "period": "FY2025",
+        "rawValue": "$1,378,800"
+      }
+    ],
+    "expectedRedFlags": [],
+    "expectedYellowFlags": [],
+    "expectedMathCheckStatus": "passed",
+    "expectedRecommendation": "PROCEED"
+  }
+}

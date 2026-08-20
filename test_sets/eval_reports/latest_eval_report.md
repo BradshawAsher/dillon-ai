@@ -1,17 +1,17 @@
 # Eval Regression Report
 
-- **Generated:** 2026-08-19T20:36:10.974Z
-- **Overall:** 98% (43/43 docs passing) — SHIP-READY (PASS)
+- **Generated:** 2026-08-20T00:08:42.978Z
+- **Overall:** 98% (58/58 docs passing) — SHIP-READY (PASS)
 - **Regression gate:** threshold 80% → ✅ PASS
 - **Dual-mode accuracy:** Pre-LOI Discovery 99% · Post-LOI Negotiation 98%
-- **Ground-truth coverage:** 43/41 specs scored
+- **Ground-truth coverage:** 58/56 specs scored
 
 ## Category averages (% of max)
 
 | Dimension | Avg |
 | --- | --- |
-| classification | 97% |
-| facts | 97% |
+| classification | 98% |
+| facts | 98% |
 | risk | 98% |
 | valuation | 100% |
 | employee | 100% |
@@ -38,12 +38,20 @@
 | Tideline Marine Services, Inc. (Commercial Marine Repair & Dock Services) | 1 | 1 | 0 | 10/10 |
 | Alpine Bloom Landscape & Facilities, Inc. (Commercial Landscaping, Irrigation & Snow Removal) | 1 | 1 | 0 | 10/10 |
 | Quarry Ridge Plastics, Inc. (Injection Moulding & Contract Manufacturing) | 1 | 1 | 0 | 10/10 |
+| Apex Precision Dynamics, Inc. (Aerospace CNC Machining) | 1 | 1 | 0 | 10/10 |
+| TerraNova Environmental Hauling, LLC (Commercial Waste & Remediation) | 1 | 1 | 0 | 10/10 |
 
 **Cascadia Climate Services, Inc. (Commercial & Residential HVAC Services)** — detected contradictions:
 - `adjusted_ebitda` TTM: DD-001_Cascadia_Climate_Services__Inc__due_diligence_packet.pdf 1260400 vs DD-001_seller_adjusted_ebitda_bridge_exhibit.pdf 1590000 (21%, critical)
 
 **Cobalt Ridge Software, Inc. (Vertical SaaS - Utility Field Operations)** — detected contradictions:
 - `adjusted_ebitda` TTM: DD-010_Cobalt_Ridge_Software__Inc__due_diligence_packet.pdf 1214620 vs DD-010_seller_adjusted_ebitda_bridge_exhibit.pdf 2760000 (56%, critical)
+
+**Apex Precision Dynamics, Inc. (Aerospace CNC Machining)** — detected contradictions:
+- `adjusted_ebitda` TTM: Apex_Precision_Dynamics_CIM.docx 3150000 vs Apex_Precision_Dynamics_Monthly_PnL_AddBacks.xlsx 2420000 (23%, critical)
+
+**TerraNova Environmental Hauling, LLC (Commercial Waste & Remediation)** — detected contradictions:
+- `revenue` TTM: TerraNova_Environmental_Seller_Teaser_CIM.docx 14800000 vs TerraNova_Environmental_AR_Aging_Bad_Debt.xlsx 8200000 (45%, critical)
 
 ## Per-document scores
 
@@ -66,8 +74,8 @@
 | CXL_Screen.xlsx | 96% | PASS |
 | _RENEW HEALTH CENTER - FULL YEAR COMPARATIVE P&L (2024-2025).pdf | 99% | PASS |
 | Financial Modelling Renew Health .xlsm | 97% | PASS |
-| fixed_asset_register.xlsx | 97% | PASS |
-| customer_concentration.xlsx | 96% | PASS |
+| fixed_asset_register.xlsx | 98% | PASS |
+| customer_concentration.xlsx | 97% | PASS |
 | MergeWorks Testing - 1 Combined Happy Path.docx | 99% | PASS |
 | MergeWorks Testing - 2 Customer Concentration Table.docx | 97% | PASS |
 | MergeWorks Testing - 3 Financial Performance CSV.docx | 99% | PASS |
@@ -87,6 +95,21 @@
 | DD-013_Tideline_Marine_Services__Inc__due_diligence_packet.pdf | 99% | PASS |
 | DD-014_Alpine_Bloom_Landscape___Facilities__Inc__due_diligence_packet.pdf | 99% | PASS |
 | DD-015_Quarry_Ridge_Plastics__Inc__due_diligence_packet.pdf | 99% | PASS |
+| Vanguard_Medical_Logistics_CIM.docx | 99% | PASS |
+| Vanguard_Medical_Logistics_3Yr_PnL_BalanceSheet.xlsx | 99% | PASS |
+| Vanguard_Medical_Logistics_Tax_Form_1120S_Reconciliation.xlsx | 99% | PASS |
+| Vanguard_Medical_Logistics_Executed_LOI.docx | 99% | PASS |
+| Vanguard_Medical_Logistics_Customer_Master_Concentration.xlsx | 99% | PASS |
+| Apex_Precision_Dynamics_CIM.docx | 99% | PASS |
+| Apex_Precision_Dynamics_Monthly_PnL_AddBacks.xlsx | 99% | PASS |
+| Apex_Precision_Dynamics_Tax_Reconciliation_Bridge.xlsx | 99% | PASS |
+| Apex_Precision_Dynamics_Draft_Purchase_Agreement.docx | 99% | PASS |
+| Apex_Precision_Dynamics_Customer_Concentration_AR.xlsx | 99% | PASS |
+| TerraNova_Environmental_Seller_Teaser_CIM.docx | 99% | PASS |
+| TerraNova_Environmental_General_Ledger_Bank_Recon.xlsx | 99% | PASS |
+| TerraNova_Environmental_Tax_Form_1120_Audit.xlsx | 99% | PASS |
+| TerraNova_Environmental_AR_Aging_Bad_Debt.xlsx | 99% | PASS |
+| TerraNova_Environmental_Legal_Regulatory_Disclosures.docx | 99% | PASS |
 | WidgetCo - 1_P&L_Statement.xlsx | 99% | PASS |
 | WidgetCo - 3_Customer_Concentration.xlsx | 98% | PASS |
 | WidgetCo - 4_Fixed_Asset_Register.xlsx | 98% | PASS |

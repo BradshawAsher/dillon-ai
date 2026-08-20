@@ -1,0 +1,39 @@
+{
+  "fileName": "Vanguard_Medical_Logistics_3Yr_PnL_BalanceSheet.xlsx",
+  "business": "Vanguard Medical Logistics, LLC (Healthcare Cold-Chain Logistics)",
+  "fileType": "XLSX",
+  "groundTruth": {
+    "documentType": "Profit and Loss Statement",
+    "trafficLight": "GREEN",
+    "riskLevel": "LOW",
+    "financialFacts": [
+      {
+        "metric": "revenue",
+        "normalizedValue": 8450000,
+        "period": "FY2025",
+        "rawValue": "$8,450,000"
+      },
+      {
+        "metric": "ebitda",
+        "normalizedValue": 1920000,
+        "period": "FY2025",
+        "rawValue": "$1,920,000"
+      },
+      {
+        "metric": "adjusted_ebitda",
+        "normalizedValue": 2100000,
+        "period": "FY2025",
+        "rawValue": "$2,100,000"
+      }
+    ],
+    "expectedRedFlags": [],
+    "expectedYellowFlags": [],
+    "valuation": {
+      "valuationBaseEstimate": 8400000,
+      "askingPrice": 8400000,
+      "currency": "USD"
+    },
+    "expectedMathCheckStatus": "passed",
+    "expectedRecommendation": "PROCEED"
+  }
+}
