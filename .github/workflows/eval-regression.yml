@@ -21,6 +21,9 @@ jobs:
       - name: Install dependencies
         run: npm --prefix frontend install
 
+      - name: Run Frontend Unit Tests
+        run: npm --prefix frontend test
+
       # Fails the job (blocking the deploy check) when the suite drops below
       # EVAL_MIN_SCORE — run-evals.ts exits non-zero on regression.
       - name: Execute Automated Eval Harness
