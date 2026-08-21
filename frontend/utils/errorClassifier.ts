@@ -35,7 +35,12 @@ export function classifyError(errorMessage?: string | null): ClassifiedError {
         }
     }
 
-    if (/credential|auth|401|403|unauthor|forbidden|not found|invalid api key|header/.test(msg)) {
+    // Note: "auth" already covers "authorization header", so a bare "header" (or
+    // a bare "not found") is not used here — both matched unrelated failures such
+    // as a CSV "header" parse error or a "workflow not found" system error and
+    // mislabeled them as non-retryable credential problems. Only key/credential
+    // "not found" phrasings should count as auth.
+    if (/credential|auth|401|403|unauthor|forbidden|invalid api key|(?:api ?key|credential|token) not found/.test(msg)) {
         return {
             category: 'AUTH_CREDENTIAL',
             badgeLabel: 'AUTH / CREDENTIAL ERROR',
