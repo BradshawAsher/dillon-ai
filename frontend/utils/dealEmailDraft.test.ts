@@ -12,6 +12,15 @@ describe('dealEmailDraft Generator Utility', () => {
         expect(formatDraftMoney(12500000)).toBe('$12.5M')
     })
 
+    it('places the sign before the amount for negative values and rejects non-finite input', () => {
+        expect(formatDraftMoney(-2000000)).toBe('-$2.0M')
+        expect(formatDraftMoney(-446000)).toBe('-$446K')
+        expect(formatDraftMoney(-500)).toBe('-$500')
+        expect(formatDraftMoney(Infinity)).toBeNull()
+        expect(formatDraftMoney(-Infinity)).toBeNull()
+        expect(formatDraftMoney(NaN)).toBeNull()
+    })
+
     it('correctly classifies Scenario Communications as RED / ESCALATE even if trafficLight is YELLOW', () => {
         const synthesis: Partial<ProjectSynthesisItem> = {
             projectId: 'project-20260820-scenario-communications',
