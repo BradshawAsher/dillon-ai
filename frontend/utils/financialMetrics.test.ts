@@ -63,4 +63,23 @@ describe('resolveFinancialMetricsForProject', () => {
     it('leaves a valuation range untouched', () => {
         expect(resolveFinancialMetricsForProject({ valuationUsd: '$6.77M - $8.25M' }).valuation).toBe('$6.77M - $8.25M')
     })
+
+    it('resolves financial facts from document financialFactsJson array', () => {
+        const doc = {
+            financialFactsJson: JSON.stringify([
+                { metric: 'revenue', normalized_value: 17448023.61 },
+                { metric: 'net_income', normalized_value: 1691534.87 },
+            ]),
+        }
+        const synthesis = {
+            valuationLowerBound: 1500000,
+            valuationUpperBound: 2500000,
+            valuationBaseEstimate: 2000000,
+        }
+
+        const resolved = resolveFinancialMetricsForProject(synthesis, [doc])
+        expect(resolved.revenue).toBe('$17.45M')
+        expect(resolved.askingPrice).toBe('N/A')
+        expect(resolved.valuation).toBe('$1.5M - $2.5M')
+    })
 })

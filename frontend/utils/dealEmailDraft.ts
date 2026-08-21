@@ -14,6 +14,7 @@ export interface DealEmailDraftResult {
     ebitdaFormatted: string | null
     priceFormatted: string | null
     multipleFormatted: string | null
+    valuationRangeFormatted: string | null
 }
 
 export function formatDraftMoney(value: number | null | undefined): string | null {
@@ -46,6 +47,23 @@ export function buildDealEmailDraft(options: {
     const ebitdaFormatted = formatDraftMoney(ebitda)
     const priceFormatted = formatDraftMoney(price)
     const multipleFormatted = multiple ? `${multiple}x` : null
+
+    // Resolve valuation range
+    let valuationRangeFormatted: string | null = null
+    const rawValLow = Number(synthesis?.valuationLowerBound)
+    const rawValHigh = Number(synthesis?.valuationUpperBound)
+    const rawValBase = Number(synthesis?.valuationBaseEstimate)
+
+    if (!isNaN(rawValLow) && rawValLow > 0 && !isNaN(rawValHigh) && rawValHigh > 0) {
+        const valLow = formatDraftMoney(rawValLow)
+        const valHigh = formatDraftMoney(rawValHigh)
+        const valBase = !isNaN(rawValBase) && rawValBase > 0 ? formatDraftMoney(rawValBase) : null
+        valuationRangeFormatted = valLow && valHigh ? `${valLow} – ${valHigh}${valBase ? ` (Base: ${valBase})` : ''}` : null
+    } else if ((synthesis as any)?.suggestedValuationRange) {
+        valuationRangeFormatted = (synthesis as any).suggestedValuationRange
+    } else if ((synthesis as any)?.valuationRange) {
+        valuationRangeFormatted = (synthesis as any).valuationRange
+    }
 
     // 2. Classify verdict posture
     const rawRecommendation = synthesis?.finalRecommendation || ''
@@ -86,16 +104,19 @@ export function buildDealEmailDraft(options: {
     lines.push('Hi team,\n')
     lines.push(`Here is the latest diligence summary and AI synthesis for ${effectiveName}:\n`)
 
-    lines.push('KEY FINANCIAL METRICS:')
+    lines.push('KEY FINANCIAL METRICS & VALUATION:')
     if (revenueFormatted) lines.push(`• Revenue: ${revenueFormatted}`)
     if (ebitdaFormatted) {
         const marginStr = revenue && ebitda ? ` (${((ebitda / revenue) * 100).toFixed(0)}% margin)` : ''
         lines.push(`• EBITDA/SDE: ${ebitdaFormatted}${marginStr}`)
     }
+    if (valuationRangeFormatted) {
+        lines.push(`• Estimated Valuation Range: ${valuationRangeFormatted}`)
+    }
     if (priceFormatted) {
         lines.push(`• Asking / Target Price: ${priceFormatted}${multipleFormatted ? ` (${multipleFormatted})` : ''}`)
     }
-    if (!revenueFormatted && !ebitdaFormatted && !priceFormatted) {
+    if (!revenueFormatted && !ebitdaFormatted && !priceFormatted && !valuationRangeFormatted) {
         lines.push('• Financials: Pending document extraction and QoE reconciliation')
     }
     lines.push('')
@@ -161,5 +182,6 @@ export function buildDealEmailDraft(options: {
         ebitdaFormatted,
         priceFormatted,
         multipleFormatted,
+        valuationRangeFormatted,
     }
 }

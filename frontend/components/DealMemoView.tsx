@@ -1,4 +1,4 @@
-import { FileText, Printer, Copy, Check, Link2 } from 'lucide-react'
+import { FileText, Printer, Copy, Check, Link2, Mail } from 'lucide-react'
 import { copyToClipboard } from '../utils/clipboard'
 import { useState, useCallback } from 'react'
 
@@ -8,6 +8,7 @@ import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
+import DealEmailDraftModal from './DealEmailDraftModal'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { parseMagnitudeMoney } from '../utils/documentedFacts'
 import { entryMultiple } from '../utils/dealMath'
@@ -121,6 +122,7 @@ export function buildMemoText(model: DealModel, synthesis: ProjectSynthesisItem 
 export default function DealMemoView({ model, synthesis, projectName, documents, onSwitchTab }: Props) {
     const [copied, setCopied] = useState(false)
     const [linkCopied, setLinkCopied] = useState(false)
+    const [isEmailModalOpen, setIsEmailModalOpen] = useState(false)
     const facts = parseDocumentedFacts(model.documentedFactsJson)
     const metrics = resolveFinancialMetricsForProject(synthesis, documents, projectName, '', model?.projectId)
     const revenue = facts.revenue?.value ?? (metrics.revenue !== 'N/A' ? parseMagnitudeMoney(metrics.revenue) : null)
@@ -154,6 +156,7 @@ export default function DealMemoView({ model, synthesis, projectName, documents,
     const confPct = confidenceToPercent(synthesis?.valuationConfidence || synthesis?.aiConfidence)
 
     return (
+        <>
         <Card className="overflow-hidden print:border-0 print:shadow-none">
             <CardHeader className="border-b border-border bg-card/80 print:border-0">
                 <div className="flex items-center justify-between">
@@ -162,7 +165,17 @@ export default function DealMemoView({ model, synthesis, projectName, documents,
                         <CardTitle className="text-lg">Deal memo</CardTitle>
                         <CardInfoPopover cardId="deal-memo" />
                     </div>
-                    <div className="flex gap-2 print:hidden">
+                    <div className="flex flex-wrap gap-2 print:hidden">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setIsEmailModalOpen(true)}
+                            title="Open interactive deal update email draft modal"
+                            className="border-indigo-500/30 text-indigo-700 hover:bg-indigo-500/10 dark:text-indigo-300"
+                        >
+                            <Mail className="mr-1 h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
+                            Email Draft
+                        </Button>
                         <Button variant="outline" size="sm" onClick={handleShareLink} title="Copy permanent share link for this deal">
                             {linkCopied ? <Check className="mr-1 h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" /> : <Link2 className="mr-1 h-3.5 w-3.5" />}
                             {linkCopied ? 'Link Copied' : 'Share Link'}
@@ -345,5 +358,14 @@ export default function DealMemoView({ model, synthesis, projectName, documents,
                 )}
             </CardContent>
         </Card>
+        <DealEmailDraftModal
+            isOpen={isEmailModalOpen}
+            onClose={() => setIsEmailModalOpen(false)}
+            model={model}
+            synthesis={synthesis}
+            projectName={projectName}
+            projectId={model?.projectId || (synthesis as any)?.projectId}
+        />
+        </>
     )
 }

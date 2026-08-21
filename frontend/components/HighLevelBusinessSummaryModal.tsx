@@ -157,11 +157,17 @@ export function HighLevelBusinessSummaryModal({
                 {/* Modal Body */}
                 <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6">
                     {/* Financial Snapshot Grid */}
-                    <div id="summary-modal-financials" className="grid grid-cols-2 gap-3 sm:grid-cols-4 scroll-mt-6">
+                    <div id="summary-modal-financials" className={`grid grid-cols-2 gap-3 ${data.valuation && data.valuation !== 'N/A' && data.askingPrice && data.askingPrice !== 'N/A' ? 'sm:grid-cols-5' : 'sm:grid-cols-4'} scroll-mt-6`}>
                         <div className="rounded-xl border border-border/70 bg-card/60 p-3.5 space-y-1">
                             <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Asking Price</p>
                             <p className="text-lg sm:text-xl font-black text-foreground">{formatCurrency(data.askingPrice)}</p>
                         </div>
+                        {data.valuation && data.valuation !== 'N/A' && (
+                            <div className="rounded-xl border border-border/70 bg-card/60 p-3.5 space-y-1">
+                                <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">AI Valuation</p>
+                                <p className="text-lg sm:text-xl font-black text-foreground">{formatCurrency(data.valuation)}</p>
+                            </div>
+                        )}
                         <div className="rounded-xl border border-border/70 bg-card/60 p-3.5 space-y-1">
                             <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Revenue</p>
                             <p className="text-lg sm:text-xl font-black text-foreground">{formatCurrency(data.revenue)}</p>
@@ -173,7 +179,7 @@ export function HighLevelBusinessSummaryModal({
                         <div className="rounded-xl border border-border/70 bg-card/60 p-3.5 space-y-1">
                             <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Implied Multiple</p>
                             <p className="text-lg sm:text-xl font-black text-primary">
-                                {data.multiple ? `${data.multiple}x` : 'N/A'}
+                                {data.multiple ? (String(data.multiple).endsWith('x') ? data.multiple : `${data.multiple}x`) : 'N/A'}
                             </p>
                         </div>
                     </div>
