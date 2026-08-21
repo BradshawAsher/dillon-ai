@@ -67,8 +67,15 @@ const KNOWN_METRICS = new Set([
 
 function periodRank(period: string | undefined): number {
     if (!period) return 0
+    // A dated label (even a dated "TTM 2023") ranks by its explicit year.
     const match = period.match(/(\d{4})/)
-    return match ? Number(match[1]) : 0
+    if (match) return Number(match[1])
+    // An undated trailing-twelve-month / current label is the most recent view
+    // available, so it must outrank any dated fiscal year rather than sorting to
+    // the bottom (rank 0) and losing to a stale annual figure. Use a sentinel
+    // above any plausible calendar year; this keeps the comparison deterministic.
+    if (/\bttm\b|\bltm\b|trailing twelve|last twelve|current/i.test(period)) return 9999
+    return 0
 }
 
 function isNumber(value: unknown): value is number {
