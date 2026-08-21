@@ -23,9 +23,23 @@ export function getArchivedProjectKeys(): string[] {
     if (typeof window === 'undefined') return []
     try {
         const raw = localStorage.getItem(CUSTOM_ARCHIVED_PROJECTS_STORAGE)
-        return raw ? (JSON.parse(raw) as string[]) : []
+        if (!raw) return []
+        const parsed = JSON.parse(raw) as unknown
+        // Callers do `.includes(...)` over the result, so corrupted storage (an
+        // object, a primitive, or an array with non-string entries) must resolve
+        // to a clean string array rather than crash later.
+        return Array.isArray(parsed) ? parsed.filter((k): k is string => typeof k === 'string') : []
     } catch {
         return []
+    }
+}
+
+function persistArchivedProjectKeys(keys: Iterable<string>): void {
+    try {
+        localStorage.setItem(CUSTOM_ARCHIVED_PROJECTS_STORAGE, JSON.stringify([...keys]))
+    } catch {
+        // localStorage can be unavailable (private mode) or over quota — a failed
+        // persist should never crash the archive/unarchive flow.
     }
 }
 
@@ -33,14 +47,14 @@ export function archiveProjectKey(key: string): void {
     if (typeof window === 'undefined' || !key) return
     const keys = new Set(getArchivedProjectKeys())
     keys.add(key)
-    localStorage.setItem(CUSTOM_ARCHIVED_PROJECTS_STORAGE, JSON.stringify([...keys]))
+    persistArchivedProjectKeys(keys)
 }
 
 export function unarchiveProjectKey(key: string): void {
     if (typeof window === 'undefined' || !key) return
     const keys = new Set(getArchivedProjectKeys())
     keys.delete(key)
-    localStorage.setItem(CUSTOM_ARCHIVED_PROJECTS_STORAGE, JSON.stringify([...keys]))
+    persistArchivedProjectKeys(keys)
 }
 
 export function isProjectArchivedKey(key: string): boolean {
