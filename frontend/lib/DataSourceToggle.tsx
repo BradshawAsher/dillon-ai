@@ -33,10 +33,10 @@ export default function DataSourceToggle() {
     const handleLandingClick = () => {
         if (typeof window !== 'undefined') {
             const url = new URL(window.location.href)
-            url.searchParams.delete('view')
-            url.searchParams.delete('app')
-            window.history.pushState({ view: 'landing' }, '', url.pathname + (url.search ? url.search : ''))
+            url.search = ''
+            window.history.pushState({ view: 'landing' }, '', url.pathname)
             window.dispatchEvent(new PopStateEvent('popstate'))
+            setCurrentView('landing')
         }
     }
 

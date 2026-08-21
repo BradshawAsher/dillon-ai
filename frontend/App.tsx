@@ -2,12 +2,18 @@ import { useState, useEffect } from 'react'
 import ErrorBoundary from './components/ErrorBoundary'
 import DueDiligenceDashboard from './pages/DueDiligenceDashboard'
 import LandingPage from './pages/LandingPage'
+import LoginPage from './pages/LoginPage'
 import { parseUrlDeepLinkState } from './utils/deepLinking'
+import { initAuthListener, type AppAuthUser } from './services/supabaseAuth'
 
 export default function App() {
-  const [view, setView] = useState<'landing' | 'dashboard'>(() => {
+  const [currentUser, setCurrentUser] = useState<AppAuthUser | null>(null)
+  const [view, setView] = useState<'landing' | 'login' | 'dashboard'>(() => {
     if (typeof window !== 'undefined') {
       const parsed = parseUrlDeepLinkState(window.location.search)
+      if (parsed.view === 'login') {
+        return 'login'
+      }
       if (parsed.view === 'dashboard') {
         return 'dashboard'
       }
@@ -16,21 +22,51 @@ export default function App() {
   })
 
   useEffect(() => {
+    // 1. Initialize Supabase Auth state listener
+    const unsubscribe = initAuthListener((user) => {
+      setCurrentUser(user)
+    })
+
+    // 2. Browser history popstate navigation
     if (typeof window !== 'undefined') {
       const handlePopState = () => {
         const parsed = parseUrlDeepLinkState(window.location.search)
-        if (parsed.view === 'dashboard') {
+        if (parsed.view === 'login') {
+          setView('login')
+        } else if (parsed.view === 'dashboard') {
           setView('dashboard')
         } else {
           setView('landing')
         }
       }
       window.addEventListener('popstate', handlePopState)
-      return () => window.removeEventListener('popstate', handlePopState)
+      return () => {
+        unsubscribe?.()
+        window.removeEventListener('popstate', handlePopState)
+      }
+    }
+
+    return () => {
+      unsubscribe?.()
     }
   }, [])
 
   const handleLaunchDashboard = () => {
+    setView('dashboard')
+    if (typeof window !== 'undefined') {
+      window.history.pushState({}, '', '?view=dashboard')
+    }
+  }
+
+  const handleGoToLogin = () => {
+    setView('login')
+    if (typeof window !== 'undefined') {
+      window.history.pushState({}, '', '?view=login')
+    }
+  }
+
+  const handleLoginSuccess = (user: AppAuthUser) => {
+    setCurrentUser(user)
     setView('dashboard')
     if (typeof window !== 'undefined') {
       window.history.pushState({}, '', '?view=dashboard')
@@ -46,10 +82,23 @@ export default function App() {
 
   return (
     <ErrorBoundary label="app">
-      {view === 'landing' ? (
-        <LandingPage onLaunchDashboard={handleLaunchDashboard} />
-      ) : (
-        <DueDiligenceDashboard onReturnToLanding={handleReturnToLanding} />
+      {view === 'landing' && (
+        <LandingPage
+          onLaunchDashboard={handleLaunchDashboard}
+          onGoToLogin={handleGoToLogin}
+        />
+      )}
+      {view === 'login' && (
+        <LoginPage
+          onLoginSuccess={handleLoginSuccess}
+          onLaunchDashboardDirectly={handleLaunchDashboard}
+          onReturnToLanding={handleReturnToLanding}
+        />
+      )}
+      {view === 'dashboard' && (
+        <DueDiligenceDashboard
+          onReturnToLanding={handleReturnToLanding}
+        />
       )}
     </ErrorBoundary>
   )

@@ -20,7 +20,12 @@ export function useDealWorkspaceState() {
             const parsed = parseUrlDeepLinkState(window.location.search)
             if (parsed.projectQuery) return parsed.projectQuery
             try {
-                return window.localStorage.getItem('mergeworks.activeProjectKey') || ''
+                const stored = window.localStorage.getItem('mergeworks.activeProjectKey') || ''
+                // Ignore ephemeral unsubmitted draft IDs (e.g. project-20260821-28a7ed75)
+                if (/^project-\d{8}-[a-f0-9]+$/i.test(stored)) {
+                    return ''
+                }
+                return stored
             } catch {
                 return ''
             }

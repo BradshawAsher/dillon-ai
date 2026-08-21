@@ -186,6 +186,12 @@ async function fetchJson<T>(input: string, init?: RequestInit): Promise<T> {
     const body: unknown = await response.json().catch(() => null)
 
     if (!response.ok) {
+        if (response.status === 504) {
+            throw new Error('Vercel serverless timeout (HTTP 504). The submission pipeline took longer than the serverless execution limit while dispatching to n8n. Processing may still finish in the background — please check history or try again.')
+        }
+        if (response.status === 413) {
+            throw new Error('Document payload exceeds Vercel Serverless Function limit (4.5 MB). Please upload a compressed version or smaller file.')
+        }
         const message =
             body && typeof body === 'object' && 'error' in body
                 ? String((body as { error: unknown }).error)

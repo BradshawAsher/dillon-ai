@@ -22322,52 +22322,48 @@ async function submitDealPacket(req) {
   const environment = req.params.environment === "test" ? "test" : "production";
   const normalizedProjectId = req.params.projectId.trim().toLowerCase();
   const normalizedFileName = req.params.fileName.trim().toLowerCase();
-  const priorSubmissions = await getSubmissionHistory({
-    params: { environment },
-    user: req.user
-  });
-  const existingDocument = priorSubmissions.find((submission) => {
-    const isSameFile = submission.projectId.trim().toLowerCase() === normalizedProjectId && submission.fileName.trim().toLowerCase() === normalizedFileName && submission.fileSize === req.params.fileSize;
-    const isFinished = submission.status.trim().toLowerCase() === "completed";
-    return isSameFile && isFinished;
-  });
-  if (existingDocument) {
-    return {
-      status: "duplicate",
-      environment,
-      target: "duplicate-check",
-      method: "POST",
-      submittedAt: triggerTimestamp,
-      submittedBy: req.user.email,
-      payload: {
-        fileName: req.params.fileName,
-        fileSize: req.params.fileSize,
-        fileType: req.params.fileType,
-        dealName: req.params.dealName,
-        companyName: req.params.companyName,
-        workstream: req.params.workstream,
-        submissionNotes: req.params.submissionNotes,
-        projectId: req.params.projectId,
-        projectStage: req.params.projectStage,
-        documentType: req.params.documentType,
-        submissionBatchId: req.params.submissionBatchId ?? "",
-        expectedBatchDocumentCount: req.params.expectedBatchDocumentCount ?? 1,
-        analystName: req.user.fullName,
-        analystEmail: req.user.email,
-        triggerTimestamp,
-        requestID,
-        environment
-      },
-      response: {
-        requestID: existingDocument.requestID,
+  try {
+    const { data: duplicateDocs } = await supabase.from("documents").select("id, request_id, created_at, updated_at, status").ilike("project_id", normalizedProjectId).ilike("file_name", normalizedFileName).eq("file_size", req.params.fileSize).eq("status", "completed").limit(1);
+    if (duplicateDocs && duplicateDocs.length > 0) {
+      const existingDocument = duplicateDocs[0];
+      return {
         status: "duplicate",
-        receivedAt: existingDocument.receivedAt || existingDocument.createdAt || triggerTimestamp,
-        id: existingDocument.id,
-        createdAt: existingDocument.createdAt || triggerTimestamp,
-        updatedAt: existingDocument.updatedAt || triggerTimestamp,
-        environment
-      }
-    };
+        environment,
+        target: "duplicate-check",
+        method: "POST",
+        submittedAt: triggerTimestamp,
+        submittedBy: req.user.email,
+        payload: {
+          fileName: req.params.fileName,
+          fileSize: req.params.fileSize,
+          fileType: req.params.fileType,
+          dealName: req.params.dealName,
+          companyName: req.params.companyName,
+          workstream: req.params.workstream,
+          submissionNotes: req.params.submissionNotes,
+          projectId: req.params.projectId,
+          projectStage: req.params.projectStage,
+          documentType: req.params.documentType,
+          submissionBatchId: req.params.submissionBatchId ?? "",
+          expectedBatchDocumentCount: req.params.expectedBatchDocumentCount ?? 1,
+          analystName: req.user.fullName,
+          analystEmail: req.user.email,
+          triggerTimestamp,
+          requestID,
+          environment
+        },
+        response: {
+          requestID: existingDocument.request_id || requestID,
+          status: "duplicate",
+          receivedAt: existingDocument.created_at || triggerTimestamp,
+          id: existingDocument.id,
+          createdAt: existingDocument.created_at || triggerTimestamp,
+          updatedAt: existingDocument.updated_at || triggerTimestamp,
+          environment
+        }
+      };
+    }
+  } catch {
   }
   const path2 = getSubmitPath(environment);
   const payload = {
@@ -22387,8 +22383,38 @@ async function submitDealPacket(req) {
     analystEmail: req.user.email,
     triggerTimestamp,
     requestID,
-    environment
+    environment,
+    storageFileUrl: req.params.storageFileUrl ?? "",
+    storagePath: req.params.storagePath ?? ""
   };
+  try {
+    await supabase.from("documents").upsert(
+      {
+        request_id: requestID,
+        project_id: normalizedProjectId,
+        deal_name: req.params.dealName,
+        company_name: req.params.companyName,
+        workstream: req.params.workstream,
+        submission_notes: req.params.submissionNotes,
+        analyst_name: req.user.fullName,
+        analyst_email: req.user.email,
+        project_stage: req.params.projectStage,
+        document_type: req.params.documentType,
+        file_name: req.params.fileName,
+        file_size: req.params.fileSize,
+        file_type: req.params.fileType,
+        trigger_timestamp: triggerTimestamp,
+        received_at: triggerTimestamp,
+        status: "queued",
+        environment,
+        storage_file_url: req.params.storageFileUrl || "",
+        submission_batch_id: req.params.submissionBatchId || "",
+        expected_batch_document_count: req.params.expectedBatchDocumentCount ?? 1
+      },
+      { onConflict: "request_id" }
+    );
+  } catch {
+  }
   const formData = [
     { key: "fileName", value: req.params.fileName },
     { key: "fileSize", value: String(req.params.fileSize) },
@@ -22406,9 +22432,17 @@ async function submitDealPacket(req) {
     { key: "analystEmail", value: req.user.email },
     { key: "triggerTimestamp", value: triggerTimestamp },
     { key: "requestID", value: requestID },
-    { key: "environment", value: environment },
-    { key: "file", file: req.params.fileBase64, filename: req.params.fileName }
+    { key: "environment", value: environment }
   ];
+  if (req.params.storageFileUrl) {
+    formData.push({ key: "storageFileUrl", value: req.params.storageFileUrl });
+  }
+  if (req.params.storagePath) {
+    formData.push({ key: "storagePath", value: req.params.storagePath });
+  }
+  if (req.params.fileBase64) {
+    formData.push({ key: "file", file: req.params.fileBase64, filename: req.params.fileName });
+  }
   const response = await n8nFinancialAgent.rawRequest({
     path: path2,
     method: "POST",
@@ -22429,6 +22463,27 @@ async function submitDealPacket(req) {
     submittedBy: req.user.email,
     payload,
     response: normalizedResponse
+  };
+}
+
+// backend/diligence/createUploadUrl.ts
+var BUCKET_NAME = "deal-documents";
+async function createUploadUrl(req) {
+  const fileName = req.params.fileName || "document.pdf";
+  const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const projectId = (req.params.projectId || "general").trim().toLowerCase().replace(/[^a-zA-Z0-9_-]/g, "_");
+  const path2 = `${projectId}/${Date.now()}-${sanitizedFileName}`;
+  const { data, error } = await supabase.storage.from(BUCKET_NAME).createSignedUploadUrl(path2);
+  if (error || !data) {
+    throw new Error(`Failed to generate signed upload URL: ${error?.message || "Unknown error"}`);
+  }
+  const { data: publicData } = supabase.storage.from(BUCKET_NAME).getPublicUrl(path2);
+  return {
+    signedUrl: data.signedUrl,
+    path: data.path,
+    token: data.token,
+    publicUrl: publicData.publicUrl,
+    bucket: BUCKET_NAME
   };
 }
 
@@ -22822,6 +22877,11 @@ async function handler(req, res) {
     if (route === "submission-consideration" && req.method === "POST") {
       const params = await readJsonBody(req);
       sendJson(res, 200, await updateSubmissionRow({ params, user }));
+      return;
+    }
+    if (route === "upload-url" && req.method === "POST") {
+      const params = await readJsonBody(req);
+      sendJson(res, 200, await createUploadUrl({ params, user }));
       return;
     }
     if (route === "submit" && req.method === "POST") {

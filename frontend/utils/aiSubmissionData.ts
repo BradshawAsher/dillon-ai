@@ -29,7 +29,16 @@ function parseStringArray(raw: string) {
     return []
   }
 
-  return parsed.filter((value): value is string => typeof value === 'string')
+  return parsed
+    .map((value) => {
+      if (typeof value === 'string') return value
+      if (value && typeof value === 'object' && !Array.isArray(value)) {
+        const record = value as Record<string, unknown>
+        return getStringValue(record.description) || getStringValue(record.text) || getStringValue(record.finding) || ''
+      }
+      return ''
+    })
+    .filter((value): value is string => typeof value === 'string' && value.length > 0)
 }
 
 function parseTextList(raw: string) {
@@ -142,7 +151,16 @@ function getStringArray(value: unknown) {
     return []
   }
 
-  return value.filter((entry): entry is string => typeof entry === 'string')
+  return value
+    .map((entry) => {
+      if (typeof entry === 'string') return entry
+      if (entry && typeof entry === 'object' && !Array.isArray(entry)) {
+        const record = entry as Record<string, unknown>
+        return getStringValue(record.description) || getStringValue(record.text) || getStringValue(record.finding) || ''
+      }
+      return ''
+    })
+    .filter((entry): entry is string => typeof entry === 'string' && entry.length > 0)
 }
 
 function formatLabel(key: string) {
@@ -316,6 +334,110 @@ export function getSubmissionInsightTone(trafficLight: string) {
   return 'secondary' as const
 }
 
+export type DocumentStructuredFinding = {
+  text: string
+  confidence: number | null
+  severity: string
+  impact: string
+  status: string
+  citations?: ParsedCitation[]
+}
+
+export type DocumentStructuredFindings = {
+  redFlags: DocumentStructuredFinding[]
+  yellowFlags: DocumentStructuredFinding[]
+  greenFlags: DocumentStructuredFinding[]
+}
+
+function parseStructuredFlagItems(
+  raw: unknown,
+  fallbackConfidence: number | null,
+  fallbackStatus = 'confirmed'
+): DocumentStructuredFinding[] {
+  let value = raw
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    if (!trimmed) return []
+    const parsed = parseJsonValue(trimmed)
+    if (parsed !== null) {
+      value = parsed
+    } else {
+      const list = parseTextList(trimmed)
+      return list.map((text) => ({
+        text,
+        confidence: fallbackConfidence,
+        severity: '',
+        impact: '',
+        status: fallbackStatus,
+        citations: [],
+      }))
+    }
+  }
+
+  if (!Array.isArray(value)) {
+    return []
+  }
+
+  const findings: DocumentStructuredFinding[] = []
+
+  for (const item of value) {
+    if (typeof item === 'string') {
+      const trimmed = item.trim()
+      if (trimmed.length > 0) {
+        findings.push({
+          text: trimmed,
+          confidence: fallbackConfidence,
+          severity: '',
+          impact: '',
+          status: fallbackStatus,
+          citations: [],
+        })
+      }
+    } else if (item && typeof item === 'object' && !Array.isArray(item)) {
+      const record = item as Record<string, unknown>
+      const text =
+        getStringValue(record.description) ||
+        getStringValue(record.text) ||
+        getStringValue(record.finding) ||
+        getStringValue(record.title) ||
+        getStringValue(record.label) ||
+        getStringValue(record.summary)
+
+      if (text.length > 0) {
+        let confidence: number | null = null
+        const rawConf = record.confidence_score ?? record.confidence ?? record.confidenceScore
+        if (typeof rawConf === 'number' && Number.isFinite(rawConf)) {
+          confidence = rawConf > 1 ? rawConf / 100 : rawConf
+        } else if (typeof rawConf === 'string') {
+          const parsedNum = Number(rawConf.replace(/%/g, '').trim())
+          if (Number.isFinite(parsedNum)) {
+            confidence = parsedNum > 1 ? parsedNum / 100 : parsedNum
+          }
+        }
+        if (confidence === null) {
+          confidence = fallbackConfidence
+        }
+
+        const severity = getStringValue(record.severity) || getStringValue(record.priority)
+        const impact = getStringValue(record.impact)
+        const status = getStringValue(record.status) || fallbackStatus
+        const citations = Array.isArray(record.citations) ? normalizeCitationList(record.citations) : []
+
+        findings.push({
+          text,
+          confidence,
+          severity,
+          impact,
+          status,
+          citations,
+        })
+      }
+    }
+  }
+
+  return findings
+}
+
 export function getAiSubmissionViewModel(row: SubmissionHistoryItem) {
   const extractedObject = parseExtractedObject(row.extractedJson)
   const responseObject = getNestedObject(extractedObject, 'response')
@@ -329,19 +451,39 @@ export function getAiSubmissionViewModel(row: SubmissionHistoryItem) {
   const citations = parseCitations(row, extractedObject)
   const targetValue = row.aiTargetValue || getStringValue(getObjectValue(calculatedMetrics, 'target_value'))
   const variancePercentage = row.aiVariance || getStringValue(getObjectValue(calculatedMetrics, 'variance_percentage'))
-  const redFlags = parseStringArray(row.aiRedFlags)
-  const yellowFlags = parseStringArray(row.aiYellowFlags)
-  const greenFlags = parseStringArray(row.aiGreenFlags)
+
+  const docConfidenceNum = typeof confidencePercent === 'number' && Number.isFinite(confidencePercent)
+    ? confidencePercent / 100
+    : null
+
+  const structuredRedFlags = parseStructuredFlagItems(
+    row.aiRedFlags || getObjectValue(flagsObject, 'red_flags'),
+    docConfidenceNum,
+    'critical_conflict'
+  )
+  const structuredYellowFlags = parseStructuredFlagItems(
+    row.aiYellowFlags || getObjectValue(flagsObject, 'yellow_flags'),
+    docConfidenceNum,
+    'investigate'
+  )
+  const structuredGreenFlags = parseStructuredFlagItems(
+    row.aiGreenFlags || getObjectValue(flagsObject, 'green_flags'),
+    docConfidenceNum,
+    'confirmed'
+  )
+
+  const finalRedFlags = structuredRedFlags.map((f) => f.text)
+  const finalYellowFlags = structuredYellowFlags.map((f) => f.text)
+  const finalGreenFlags = structuredGreenFlags.map((f) => f.text)
+
+  const structuredFindings: DocumentStructuredFindings = {
+    redFlags: structuredRedFlags,
+    yellowFlags: structuredYellowFlags,
+    greenFlags: structuredGreenFlags,
+  }
+
   const valuationObject = getNestedObject(extractedObject, 'valuation')
   const investmentThesisObject = getNestedObject(extractedObject, 'investment_thesis')
-
-  const fallbackRedFlags = getStringArray(getObjectValue(flagsObject, 'red_flags'))
-  const fallbackYellowFlags = getStringArray(getObjectValue(flagsObject, 'yellow_flags'))
-  const fallbackGreenFlags = getStringArray(getObjectValue(flagsObject, 'green_flags'))
-
-  const finalRedFlags = redFlags.length > 0 ? redFlags : fallbackRedFlags
-  const finalYellowFlags = yellowFlags.length > 0 ? yellowFlags : fallbackYellowFlags
-  const finalGreenFlags = greenFlags.length > 0 ? greenFlags : fallbackGreenFlags
 
   const reasonCode = row.aiEscalationReason || getStringValue(getObjectValue(escalationObject, 'reason_code'))
   const escalationReasons = parseTextList(reasonCode)
@@ -371,6 +513,7 @@ export function getAiSubmissionViewModel(row: SubmissionHistoryItem) {
     redFlags: finalRedFlags,
     yellowFlags: finalYellowFlags,
     greenFlags: finalGreenFlags,
+    structuredFindings,
     reasonCode,
     escalationReasons,
     displayMetrics,

@@ -312,4 +312,20 @@ export const TAB_METADATA: Record<WorkspaceTab, TabMetadata> = {
         tourStepCount: 2,
         suggestedFocus: 'Troubleshooting failed extractions or webhook errors',
     },
+    account: {
+        id: 'account',
+        label: 'Account & Settings',
+        category: 'Profile & Settings',
+        badge: 'Workspace Identity',
+        whatItIsFor: 'User profile management, privacy controls, AI model configuration, and claimed deal portfolio overview.',
+        keyDeliverables: [
+            'User identity and team affiliation management',
+            'Data isolation toggle for personal vs team workspaces',
+            'Active AI model and parser pipeline defaults',
+            'Personal portfolio of claimed acquisitions and deal packets',
+        ],
+        recommendedRole: 'All Workspace Users & Administrators',
+        tourStepCount: 3,
+        suggestedFocus: 'Managing user profile, isolation boundaries, and AI model preferences',
+    },
 }

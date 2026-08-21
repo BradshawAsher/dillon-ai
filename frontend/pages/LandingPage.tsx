@@ -21,6 +21,7 @@ import {
     Layers,
     Loader2,
     Lock,
+    LogIn,
     Play,
     ShieldCheck,
     Sparkles,
@@ -41,9 +42,10 @@ import { submitAccessRequest } from '../services/accessRequestService'
 
 interface LandingPageProps {
     onLaunchDashboard: () => void
+    onGoToLogin?: () => void
 }
 
-export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
+export default function LandingPage({ onLaunchDashboard, onGoToLogin }: LandingPageProps) {
     const [showWalkthroughModal, setShowWalkthroughModal] = useState(false)
     const [selectedWalkthroughDemoId, setSelectedWalkthroughDemoId] = useState<DemoVariantId>('short-supademo')
     const [showAccessModal, setShowAccessModal] = useState(false)
@@ -246,10 +248,11 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
                             type="button"
                             variant="ghost"
                             size="sm"
-                            className="hidden lg:inline-flex text-xs font-semibold"
-                            onClick={() => setShowAccessModal(true)}
+                            className="text-xs font-semibold hover:bg-muted"
+                            onClick={onGoToLogin || onLaunchDashboard}
                         >
-                            Apply for Access
+                            <LogIn className="mr-1.5 h-3.5 w-3.5" />
+                            <span>Sign In</span>
                         </Button>
                         <Button
                             type="button"
@@ -288,16 +291,28 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
 
                         {/* PRIMARY STANDOUT CTA */}
                         <div className="pt-2 flex flex-col items-center justify-center gap-3">
-                            <Button
-                                type="button"
-                                size="lg"
-                                className="w-full sm:w-auto bg-gradient-to-r from-primary via-indigo-600 to-purple-600 px-10 py-7 text-lg sm:text-xl font-black text-white shadow-xl shadow-primary/30 hover:scale-[1.03] transition-all cursor-pointer rounded-2xl"
-                                onClick={onLaunchDashboard}
-                            >
-                                <Sparkles className="mr-2.5 h-6 w-6 text-amber-300 animate-pulse" />
-                                <span>Launch App Dashboard</span>
-                                <ArrowRight className="ml-2.5 h-6 w-6" />
-                            </Button>
+                            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full sm:w-auto">
+                                <Button
+                                    type="button"
+                                    size="lg"
+                                    className="w-full sm:w-auto bg-gradient-to-r from-primary via-indigo-600 to-purple-600 px-8 py-7 text-lg font-black text-white shadow-xl shadow-primary/30 hover:scale-[1.03] transition-all cursor-pointer rounded-2xl"
+                                    onClick={onLaunchDashboard}
+                                >
+                                    <Sparkles className="mr-2.5 h-5 w-5 text-amber-300 animate-pulse" />
+                                    <span>Launch App Dashboard</span>
+                                    <ArrowRight className="ml-2.5 h-5 w-5" />
+                                </Button>
+                                <Button
+                                    type="button"
+                                    size="lg"
+                                    variant="outline"
+                                    className="w-full sm:w-auto border-border/80 bg-background/80 hover:bg-muted px-6 py-7 text-base font-bold shadow-md hover:scale-[1.02] transition-all cursor-pointer rounded-2xl"
+                                    onClick={onGoToLogin || onLaunchDashboard}
+                                >
+                                    <LogIn className="mr-2 h-4 w-4 text-primary" />
+                                    <span>Create Account / Sign In</span>
+                                </Button>
+                            </div>
 
                             {/* Secondary Actions: Direct Walkthrough Launchers */}
                             <div className="flex flex-wrap items-center justify-center gap-2.5 pt-2">

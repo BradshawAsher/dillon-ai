@@ -10,7 +10,17 @@ const STORAGE_KEY = 'dueDiligenceDashboard.analystIdentity'
 
 export function getIdentity(): AnalystIdentity | null {
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY)
+    const rawAuth = typeof window !== 'undefined' ? window.localStorage.getItem('mergeworks.auth') : null
+    if (rawAuth) {
+      const parsedAuth = JSON.parse(rawAuth)
+      if (parsedAuth && typeof parsedAuth.email === 'string' && parsedAuth.email.trim().length > 0) {
+        return {
+          name: parsedAuth.name || parsedAuth.email.split('@')[0],
+          email: parsedAuth.email.trim(),
+        }
+      }
+    }
+    const raw = typeof window !== 'undefined' ? window.localStorage.getItem(STORAGE_KEY) : null
     if (!raw) {
       return null
     }

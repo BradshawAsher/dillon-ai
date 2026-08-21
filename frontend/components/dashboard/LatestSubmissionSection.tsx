@@ -511,6 +511,7 @@ export default function LatestSubmissionSection({
                                     {
                                         title: 'Red flags',
                                         flags: liveSubmitInsight.redFlags,
+                                        findings: liveSubmitInsight.structuredFindings?.redFlags,
                                         badge: 'destructive' as const,
                                         sectionClass: 'border-destructive/30 bg-destructive/5',
                                         itemClass: 'border-destructive/20',
@@ -519,6 +520,7 @@ export default function LatestSubmissionSection({
                                     {
                                         title: 'Yellow flags',
                                         flags: liveSubmitInsight.yellowFlags,
+                                        findings: liveSubmitInsight.structuredFindings?.yellowFlags,
                                         badge: 'warning' as const,
                                         sectionClass: 'border-warning/30 bg-warning/5',
                                         itemClass: 'border-warning/20',
@@ -527,6 +529,7 @@ export default function LatestSubmissionSection({
                                     {
                                         title: 'Green flags',
                                         flags: liveSubmitInsight.greenFlags,
+                                        findings: liveSubmitInsight.structuredFindings?.greenFlags,
                                         badge: 'success' as const,
                                         sectionClass: 'border-success/30 bg-success/5',
                                         itemClass: 'border-success/20',
@@ -537,18 +540,22 @@ export default function LatestSubmissionSection({
                                         <ExpandableInsightGroup
                                             title={group.title}
                                             items={group.flags}
+                                            findings={group.findings}
                                             badgeVariant={group.badge}
                                             className={group.sectionClass}
                                             itemClassName={group.itemClass}
                                             emptyLabel="None"
                                             defaultOpen
-                                            onItemClick={(item) => {
+                                            onItemClick={(item, index) => {
                                                 if (setActiveEvidence) {
+                                                    const finding = group.findings?.[index]
+                                                    const firstCitation = finding?.citations?.[0]
                                                     setActiveEvidence({
                                                         title: `${group.title.replace(' flags', ' flag')}: finding`,
-                                                        sourceFile: displayedSubmissionRow?.fileName || 'Uploaded document',
-                                                        sourceLocation: group.title,
+                                                        sourceFile: firstCitation?.sourceFile || displayedSubmissionRow?.fileName || 'Uploaded document',
+                                                        sourceLocation: firstCitation?.rowOrCell || group.title,
                                                         excerpt: item,
+                                                        confidence: finding?.confidence ?? undefined,
                                                         status: group.badge === 'destructive' ? 'Risk' : group.badge === 'warning' ? 'Caution' : 'Confirmed',
                                                         provenance: `Document-level ${group.title.toLowerCase()} analysis`,
                                                         documentId: displayedSubmissionRow?.storageFileId,

@@ -11,6 +11,7 @@ import TechnicalFaqWorkspaceTab from '../TechnicalFaqWorkspaceTab'
 import KeyboardShortcutsWorkspaceView from './KeyboardShortcutsWorkspaceView'
 import WorkflowErrorLogCard from '../WorkflowErrorLogCard'
 import SubmissionHistoryCard from '../SubmissionHistoryCard'
+import { AccountWorkspaceView } from './AccountWorkspaceView'
 
 describe('Workspace Tab Components Validation', () => {
     it('successfully loads and initializes ProjectPortfolioCard without TDZ errors', () => {
@@ -61,5 +62,10 @@ describe('Workspace Tab Components Validation', () => {
     it('successfully loads and initializes SubmissionHistoryCard', () => {
         expect(SubmissionHistoryCard).toBeDefined()
         expect(typeof SubmissionHistoryCard).toBe('function')
+    })
+
+    it('successfully loads and initializes AccountWorkspaceView', () => {
+        expect(AccountWorkspaceView).toBeDefined()
+        expect(typeof AccountWorkspaceView).toBe('function')
     })
 })
