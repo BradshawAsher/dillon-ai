@@ -15,6 +15,8 @@ type RawRequestOptions = {
   method?: string
   bodyType?: string
   formData?: Array<{ key: string; value?: string; file?: string; filename?: string }>
+  json?: Record<string, unknown> | unknown
+  body?: any
 }
 
 const MIME_MAP: Record<string, string> = {
@@ -65,6 +67,11 @@ export function installRetoolGlobals() {
           }
         }
         init.body = body
+      } else if (options.json !== undefined || options.body !== undefined || options.bodyType === 'json') {
+        headers['Content-Type'] = 'application/json'
+        init.body = typeof (options.json ?? options.body) === 'string'
+          ? (options.json ?? options.body) as string
+          : JSON.stringify(options.json ?? options.body ?? {})
       }
 
       const controller = new AbortController()

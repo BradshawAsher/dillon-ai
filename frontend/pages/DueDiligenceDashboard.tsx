@@ -1992,20 +1992,24 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         if (!window.confirm('Run a new project synthesis using the currently completed, included documents? This does not re-upload or reprocess files.')) return
         setBatchSubmissionMessage('Starting a new project synthesis from the completed documents…')
         try {
-            const response = await fetch('https://merge-works.app.n8n.cloud/webhook/e276e917-f61a-46e6-9015-f78e385f42b8', {
+            const response = await fetch('/api/diligence/run-synthesis', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ projectId: activeProjectId })
+                body: JSON.stringify({ projectId: activeProjectId, environment: activeHistoryEnvironment })
             })
-            if (!response.ok) throw new Error('Failed to trigger webhook synthesis')
-            setBatchSubmissionMessage('Project synthesis successfully triggered!')
-            await handleRefreshHistory(activeHistoryEnvironment)
+            if (!response.ok) throw new Error('Failed to trigger project synthesis')
+            setBatchSubmissionMessage('Project synthesis successfully triggered! The consolidator is now running…')
+            await Promise.all([
+                handleRefreshHistory(activeHistoryEnvironment),
+                triggerProjectSynthesis({ environment: activeHistoryEnvironment }, { skipCache: true }).result,
+            ])
         } catch (err) {
             setBatchSubmissionMessage(err instanceof Error ? err.message : 'Unable to start synthesis')
         }
     }
 
     const [runningSynthesisWithoutLoi, setRunningSynthesisWithoutLoi] = useState(false)
+    const [isRerunningBatch, setIsRerunningBatch] = useState(false)
 
     const handleRunSynthesisWithoutLoi = async () => {
         const projectDocs = submissionHistory.filter((row) => getProjectKey(row) === activeProjectId)
@@ -2038,10 +2042,10 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
             await new Promise(r => setTimeout(r, 1000))
 
-            const response = await fetch('https://merge-works.app.n8n.cloud/webhook/e276e917-f61a-46e6-9015-f78e385f42b8', {
+            const response = await fetch('/api/diligence/run-synthesis', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ projectId: activeProjectId })
+                body: JSON.stringify({ projectId: activeProjectId, environment: activeHistoryEnvironment })
             })
             if (!response.ok) throw new Error('Failed to trigger synthesis webhook')
 
@@ -2055,12 +2059,90 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                     setBatchSubmissionMessage('Pre-LOI synthesis running. Please manually re-include the LOI document after results appear.')
                 }
                 setRunningSynthesisWithoutLoi(false)
-                await handleRefreshHistory(activeHistoryEnvironment)
+                await Promise.all([
+                    handleRefreshHistory(activeHistoryEnvironment),
+                    triggerProjectSynthesis({ environment: activeHistoryEnvironment }, { skipCache: true }).result,
+                ])
             }, 5000)
         } catch (err) {
             await triggerSubmissionConsideration({ requestID: loiRequestId, action: 'considered', environment: activeHistoryEnvironment }).result.catch(() => {})
             setRunningSynthesisWithoutLoi(false)
             setBatchSubmissionMessage(err instanceof Error ? err.message : 'Unable to run pre-LOI synthesis')
+        }
+    }
+
+    const handleRerunLatestBatch = async () => {
+        const batchDocs = activeBatchRows.length > 0 ? activeBatchRows : activeProjectDocuments
+        const validDocs = batchDocs.filter(d => Boolean(d.requestID))
+        if (validDocs.length === 0) {
+            setBatchSubmissionMessage('No documents with valid request IDs found in the batch.')
+            return
+        }
+        if (!window.confirm(`Re-run all ${validDocs.length} documents in this batch?\n\nEach document will be re-extracted in real-time. Project synthesis will trigger automatically once all documents finish.`)) return
+
+        setIsRerunningBatch(true)
+        setBatchSubmissionMessage(`Queueing batch re-run for ${validDocs.length} documents…`)
+        setActiveSubmissionBatch({
+            id: activeProjectId,
+            expectedDocumentCount: validDocs.length,
+            environment: activeHistoryEnvironment,
+            startedAt: Date.now(),
+        })
+
+        try {
+            await Promise.all(
+                validDocs.map(doc =>
+                    fetch('/api/diligence/retry-failed-document', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ requestID: doc.requestID, environment: activeHistoryEnvironment }),
+                    }).catch(() => null)
+                )
+            )
+            setBatchSubmissionMessage(`Batch re-run active (${validDocs.length} documents). Extraction is running in parallel, and synthesis will automatically trigger once finished.`)
+            await triggerSubmissionHistory({ environment: activeHistoryEnvironment }, { skipCache: true }).result
+        } catch (err) {
+            setBatchSubmissionMessage(err instanceof Error ? err.message : 'Failed to re-run batch')
+        } finally {
+            setIsRerunningBatch(false)
+        }
+    }
+
+    const handleRerunAllProjectDocuments = async (targetProjectId?: string) => {
+        const projId = targetProjectId || activeProjectId
+        const projectDocs = submissionHistory.filter(r => (getProjectKey(r) === projId || r.projectId === projId) && r.isConsidered !== false)
+        const validDocs = projectDocs.filter(d => Boolean(d.requestID))
+        if (validDocs.length === 0) {
+            setBatchSubmissionMessage('No documents with valid request IDs found in this project.')
+            return
+        }
+        if (!window.confirm(`Re-run all ${validDocs.length} documents in this project?\n\nEach document will be re-extracted in real-time. Project synthesis will automatically consolidate once all documents finish.`)) return
+
+        setIsRerunningBatch(true)
+        setBatchSubmissionMessage(`Queueing re-run for all ${validDocs.length} documents in project…`)
+        setActiveSubmissionBatch({
+            id: projId,
+            expectedDocumentCount: validDocs.length,
+            environment: activeHistoryEnvironment,
+            startedAt: Date.now(),
+        })
+
+        try {
+            await Promise.all(
+                validDocs.map(doc =>
+                    fetch('/api/diligence/retry-failed-document', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ requestID: doc.requestID, environment: activeHistoryEnvironment }),
+                    }).catch(() => null)
+                )
+            )
+            setBatchSubmissionMessage(`Re-running all ${validDocs.length} documents in project in real-time. Project synthesis will automatically consolidate once completed.`)
+            await triggerSubmissionHistory({ environment: activeHistoryEnvironment }, { skipCache: true }).result
+        } catch (err) {
+            setBatchSubmissionMessage(err instanceof Error ? err.message : 'Failed to re-run project documents')
+        } finally {
+            setIsRerunningBatch(false)
         }
     }
 
@@ -2719,7 +2801,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
                     {activeWorkspaceTab === 'diligence' ? (
                         <div className="space-y-6">
-                            {(activeSubmissionBatch || activeBatchProcessingCount > 0 || simulatedWalkthroughBatch) ? (
+                            {(activeSubmissionBatch || activeBatchProcessingCount > 0 || simulatedWalkthroughBatch || activeBatchExpectedCount > 0 || activeBatchRows.length > 0 || activeProjectDocuments.length > 0) ? (
                                 <div id="diligence-batch" className="scroll-mt-6">
                                     <BatchProgressCard
                                         activeSubmissionBatch={activeSubmissionBatch ?? (simulatedWalkthroughBatch ? {
@@ -2751,6 +2833,12 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                                         retryingRequestId={retryingRequestId ?? undefined}
                                         handleRetryFailedDocument={(requestID) => { void handleRetryFailedDocument(requestID) }}
                                         handleOpenProjectSynthesis={handleOpenProjectSynthesis}
+                                        batchDocuments={activeBatchRows.length > 0 ? activeBatchRows : activeProjectDocuments}
+                                        handleRerunLatestBatch={handleRerunLatestBatch}
+                                        handleRerunAllProjectDocs={handleRerunAllProjectDocuments}
+                                        isRerunningBatch={isRerunningBatch}
+                                        handleRunSynthesis={handleRunSynthesis}
+                                        isAwaitingSynthesis={isCurrentProjectAwaitingSynthesis}
                                     />
                                 </div>
                             ) : null}
@@ -2810,6 +2898,10 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                                     activeProjectSynthesis={activeProjectSynthesis ?? undefined}
                                     isCurrentProjectAwaitingSynthesis={isCurrentProjectAwaitingSynthesis}
                                     setActiveEvidence={setActiveEvidence}
+                                    handleRerunLatestBatch={handleRerunLatestBatch}
+                                    handleRerunAllProjectDocs={handleRerunAllProjectDocuments}
+                                    handleRunSynthesis={handleRunSynthesis}
+                                    isRerunningBatch={isRerunningBatch}
                                 />
                             ) : null}
 
@@ -2837,6 +2929,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                                 setProjectChecklistById={setProjectChecklistById}
                                 impact={impact}
                                 onReturnToLanding={onReturnToLanding}
+                                handleRunSynthesis={handleRunSynthesis}
+                                isCurrentProjectAwaitingSynthesis={isCurrentProjectAwaitingSynthesis}
                             />
                         </div>
                     ) : null}
@@ -2855,6 +2949,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                             handleRunSynthesis={handleRunSynthesis}
                             isCurrentProjectAwaitingSynthesis={isCurrentProjectAwaitingSynthesis}
                             setSelectedProjectKey={setSelectedProjectKey}
+                            handleRerunAllProjectDocs={handleRerunAllProjectDocuments}
                         />
                     ) : null}
 

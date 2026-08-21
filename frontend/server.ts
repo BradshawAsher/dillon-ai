@@ -26,6 +26,7 @@ import getWorkflowErrorsImport from '../backend/diligence/getWorkflowErrors'
 import retryFailedDocumentImport from '../backend/diligence/retryFailedDocument'
 import stopBatchSubmissionImport from '../backend/diligence/stopBatchSubmission'
 import stopProjectSynthesisImport from '../backend/diligence/stopProjectSynthesis'
+import triggerProjectSynthesisImport from '../backend/diligence/triggerProjectSynthesis'
 import submitDealPacketImport from '../backend/diligence/submitDealPacket'
 import updateSubmissionRowImport from '../backend/diligence/updateSubmissionRow'
 import handleAccessRequestImport from '../backend/diligence/handleAccessRequest'
@@ -57,6 +58,7 @@ const getSubmissionHistory = interopDefault(getSubmissionHistoryImport)
 const retryFailedDocument = interopDefault(retryFailedDocumentImport)
 const stopBatchSubmission = interopDefault(stopBatchSubmissionImport)
 const stopProjectSynthesis = interopDefault(stopProjectSynthesisImport)
+const triggerProjectSynthesis = interopDefault(triggerProjectSynthesisImport)
 const submitDealPacket = interopDefault(submitDealPacketImport)
 const updateSubmissionRow = interopDefault(updateSubmissionRowImport)
 const handleAccessRequest = interopDefault(handleAccessRequestImport)
@@ -258,6 +260,14 @@ app.post('/api/diligence/stop-batch', express.json(), async (req, res) => {
 app.post('/api/diligence/stop-synthesis', express.json(), async (req, res) => {
     try {
         res.json(await stopProjectSynthesis({ params: req.body, user: userFromHeaders(req.headers) }))
+    } catch (error) {
+        res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
+    }
+})
+
+app.post(['/api/diligence/run-synthesis', '/api/diligence/trigger-project-synthesis'], express.json(), async (req, res) => {
+    try {
+        res.json(await triggerProjectSynthesis({ params: req.body, user: userFromHeaders(req.headers) }))
     } catch (error) {
         res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
     }

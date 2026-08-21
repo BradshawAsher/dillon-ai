@@ -1478,32 +1478,60 @@ export default function ProjectSynthesisCard({
                             {(synthesis.valuationBaseEstimate && synthesis.valuationBaseEstimate !== '0') || (synthesis.valuationLowerBound && synthesis.valuationLowerBound !== '0') || (synthesis.valuationUpperBound && synthesis.valuationUpperBound !== '0') ? (
                                 <div id="synthesis-valuation" className="scroll-mt-6">
                                     {(() => {
+                                        let parsedVal: any = null
+                                        try {
+                                            const fj = typeof synthesis.finalJudgmentJson === 'string' ? JSON.parse(synthesis.finalJudgmentJson) : synthesis.finalJudgmentJson
+                                            parsedVal = fj?.valuation || fj?.response?.valuation || null
+                                        } catch { /* skip */ }
+
+                                        const targetAskingPrice = parsedVal?.target_asking_or_loi_price ?? null
+                                        const impliedDiscountAmount = parsedVal?.implied_discount_or_premium_amount ?? (targetAskingPrice && synthesis.valuationBaseEstimate ? (Number(targetAskingPrice) - Number(synthesis.valuationBaseEstimate)) : null)
+                                        const impliedDiscountPercentage = parsedVal?.implied_discount_percentage ?? (targetAskingPrice && impliedDiscountAmount ? (Number(impliedDiscountAmount) / Number(targetAskingPrice) * 100) : null)
+                                        const rationale = parsedVal?.valuation_rationale ?? null
+
                                         const conf = parseFloat(synthesis.valuationConfidence || synthesis.aiConfidence || '')
-                                        if (!Number.isFinite(conf)) return null
-                                        const pct = conf <= 1 ? Math.round(conf * 100) : Math.round(conf)
-                                        const label = pct >= 70 ? 'High' : pct >= 40 ? 'Medium' : 'Low'
-                                        const color = pct >= 70 ? 'text-green-600 dark:text-green-400' : pct >= 40 ? 'text-amber-600 dark:text-amber-400' : 'text-destructive'
+                                        const pct = Number.isFinite(conf) ? (conf <= 1 ? Math.round(conf * 100) : Math.round(conf)) : null
+                                        const label = pct !== null ? (pct >= 70 ? 'High' : pct >= 40 ? 'Medium' : 'Low') : null
+                                        const color = pct !== null ? (pct >= 70 ? 'text-green-600 dark:text-green-400' : pct >= 40 ? 'text-amber-600 dark:text-amber-400' : 'text-destructive') : ''
+
                                         return (
-                                            <div className="mb-2 flex items-center gap-2">
-                                                <Badge variant="outline" className={color}>{label} confidence ({pct}%)</Badge>
-                                                {synthesis.valuationCurrency ? <span className="text-xs text-muted-foreground">{synthesis.valuationCurrency}</span> : null}
+                                            <div className="space-y-2.5">
+                                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                                    <div className="flex items-center gap-2">
+                                                        {pct !== null ? <Badge variant="outline" className={color}>{label} confidence ({pct}%)</Badge> : null}
+                                                        {synthesis.valuationCurrency ? <span className="text-xs text-muted-foreground">{synthesis.valuationCurrency}</span> : null}
+                                                    </div>
+                                                    {targetAskingPrice ? (
+                                                        <div className="flex items-center gap-2 text-xs">
+                                                            <span className="text-muted-foreground">Seller Ask: <strong className="text-foreground">{formatCurrencyValue(String(targetAskingPrice), synthesis.valuationCurrency)}</strong></span>
+                                                            {impliedDiscountAmount && Number(impliedDiscountAmount) > 0 ? (
+                                                                <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold">
+                                                                    -{formatCurrencyValue(String(impliedDiscountAmount), synthesis.valuationCurrency)} ({Math.round(Number(impliedDiscountPercentage) || 0)}% Negotiation Target)
+                                                                </Badge>
+                                                            ) : null}
+                                                        </div>
+                                                    ) : null}
+                                                </div>
+                                                <div className="grid gap-2 md:grid-cols-3">
+                                                    <div className="rounded-md border border-border bg-background px-3 py-2">
+                                                        <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Lower bound (Bear)</p>
+                                                        <p className="mt-1 text-sm font-semibold text-foreground">{formatCurrencyValue(synthesis.valuationLowerBound, synthesis.valuationCurrency) || 'Pending'}</p>
+                                                    </div>
+                                                    <div className="rounded-md border border-primary/40 bg-primary/5 px-3 py-2 shadow-xs">
+                                                        <p className="text-[11px] font-semibold uppercase tracking-wide text-primary">Base estimate (Buyer Fair Value)</p>
+                                                        <p className="mt-1 text-base font-bold text-foreground">{formatCurrencyValue(synthesis.valuationBaseEstimate, synthesis.valuationCurrency) || 'Pending'}</p>
+                                                    </div>
+                                                    <div className="rounded-md border border-border bg-background px-3 py-2">
+                                                        <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Upper bound (Bull)</p>
+                                                        <p className="mt-1 text-sm font-semibold text-foreground">{formatCurrencyValue(synthesis.valuationUpperBound, synthesis.valuationCurrency) || 'Pending'}</p>
+                                                    </div>
+                                                </div>
+                                                {rationale ? (
+                                                    <p className="text-xs text-muted-foreground italic">{rationale}</p>
+                                                ) : null}
                                             </div>
                                         )
                                     })()}
-                                    <div className="grid gap-2 md:grid-cols-3">
-                                        <div className="rounded-md border border-border bg-background px-3 py-2">
-                                            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Lower bound</p>
-                                            <p className="mt-1 text-sm text-foreground">{formatCurrencyValue(synthesis.valuationLowerBound, synthesis.valuationCurrency) || 'Pending'}</p>
-                                        </div>
-                                        <div className="rounded-md border border-border bg-background px-3 py-2">
-                                            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Base estimate</p>
-                                            <p className="mt-1 text-sm text-foreground">{formatCurrencyValue(synthesis.valuationBaseEstimate, synthesis.valuationCurrency) || 'Pending'}</p>
-                                        </div>
-                                        <div className="rounded-md border border-border bg-background px-3 py-2">
-                                            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Upper bound</p>
-                                            <p className="mt-1 text-sm text-foreground">{formatCurrencyValue(synthesis.valuationUpperBound, synthesis.valuationCurrency) || 'Pending'}</p>
-                                        </div>
-                                    </div>
                                 </div>
                             ) : (
                                 (() => {

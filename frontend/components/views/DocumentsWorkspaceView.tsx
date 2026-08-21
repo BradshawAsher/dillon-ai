@@ -15,6 +15,7 @@ type DocumentsWorkspaceViewProps = {
     handleRunSynthesis: () => Promise<void>
     isCurrentProjectAwaitingSynthesis: boolean
     setSelectedProjectKey: (key: string) => void
+    handleRerunAllProjectDocs?: (projectKey?: string) => void
 }
 
 export function DocumentsWorkspaceView({
@@ -30,6 +31,7 @@ export function DocumentsWorkspaceView({
     handleRunSynthesis,
     isCurrentProjectAwaitingSynthesis,
     setSelectedProjectKey,
+    handleRerunAllProjectDocs,
 }: DocumentsWorkspaceViewProps) {
     return (
         <section id="project-portfolio" className="scroll-mt-6 space-y-4">
@@ -61,6 +63,7 @@ export function DocumentsWorkspaceView({
                             document.querySelector('[data-project-intake]')?.scrollIntoView({ behavior: 'smooth' })
                         }, 100)
                     }}
+                    onRerunAllProjectDocs={handleRerunAllProjectDocs}
                 />
             </div>
         </section>
