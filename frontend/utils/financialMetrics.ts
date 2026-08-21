@@ -8,6 +8,34 @@ export type ResolvedFinancialMetrics = {
     multiple: string
 }
 
+function safeParseJson(value: any): any {
+    if (!value) return null
+    if (typeof value === 'object') return value
+    if (typeof value === 'string') {
+        try {
+            return JSON.parse(value)
+        } catch {
+            return null
+        }
+    }
+    return null
+}
+
+function formatMagnitude(num: number): string {
+    if (isNaN(num)) return 'N/A'
+    if (Math.abs(num) >= 1_000_000) {
+        const val = num / 1_000_000
+        const formatted = val % 1 === 0 ? val.toFixed(0) : Number(val.toFixed(2)).toString()
+        return `$${formatted}M`
+    }
+    if (Math.abs(num) >= 1_000) {
+        const val = num / 1_000
+        const formatted = val % 1 === 0 ? val.toFixed(0) : Number(val.toFixed(1)).toString()
+        return `$${formatted}K`
+    }
+    return `$${num.toLocaleString()}`
+}
+
 export function resolveFinancialMetricsForProject(
     synthesis: any,
     projectDocs: any[] = [],
@@ -25,6 +53,7 @@ export function resolveFinancialMetricsForProject(
     })
 
     const activeSynth = synthesis || matchedGt
+    const finalJudgment = safeParseJson(activeSynth?.finalJudgementJson || activeSynth?.final_judgement_json)
 
     // Helper to extract dollar amounts specifically associated with a keyword
     const extractAmountNearKeyword = (text: string, keywordPattern: RegExp): string | null => {
@@ -32,19 +61,34 @@ export function resolveFinancialMetricsForProject(
         return match ? match[1] : null
     }
 
-    // 2. Resolve Valuation / Asking Price
-    let askingPrice = activeSynth?.askingPrice || activeSynth?.financialOverview?.askingPrice || activeSynth?.valuationBaseEstimate || activeSynth?.valuationUsd
-    if (!askingPrice && activeSynth?.valuationLowerBound && activeSynth?.valuationUpperBound) {
-        askingPrice = `${activeSynth.valuationLowerBound} - ${activeSynth.valuationUpperBound}`
+    // 2. Resolve Valuation Range & Base Estimate
+    let valuation = activeSynth?.valuationUsd || activeSynth?.financialOverview?.valuationUsd || activeSynth?.valuationRange || activeSynth?.suggestedValuationRange
+
+    const rawValLow = Number(activeSynth?.valuationLowerBound || activeSynth?.valuation_lower_bound || finalJudgment?.valuation?.lower_bound)
+    const rawValHigh = Number(activeSynth?.valuationUpperBound || activeSynth?.valuation_upper_bound || finalJudgment?.valuation?.upper_bound)
+    const rawValBase = Number(activeSynth?.valuationBaseEstimate || activeSynth?.valuation_base_estimate || finalJudgment?.valuation?.base_estimate)
+
+    if (!valuation && !isNaN(rawValLow) && rawValLow > 0 && !isNaN(rawValHigh) && rawValHigh > 0) {
+        valuation = `${formatMagnitude(rawValLow)} - ${formatMagnitude(rawValHigh)}`
+    } else if (!valuation && !isNaN(rawValBase) && rawValBase > 0) {
+        valuation = formatMagnitude(rawValBase)
     }
 
-    let valuation = activeSynth?.valuationUsd || activeSynth?.financialOverview?.valuationUsd || activeSynth?.valuationBaseEstimate
+    // 3. Resolve Asking / Purchase Price (Keep decoupled from AI valuation estimate)
+    let askingPrice = activeSynth?.askingPrice || activeSynth?.purchasePrice || activeSynth?.financialOverview?.askingPrice || activeSynth?.financialOverview?.purchasePrice
 
-    // 3. Resolve Revenue
+    // 4. Resolve Revenue
     let revenue = activeSynth?.revenueUsd || activeSynth?.revenue || activeSynth?.financialOverview?.revenueUsd
-    if (!revenue && activeSynth?.keyTakeaways && Array.isArray(activeSynth.keyTakeaways)) {
-        for (const t of activeSynth.keyTakeaways) {
-            const extracted = extractAmountNearKeyword(String(t), /revenue[^\$]*(\$\d+(?:\.\d+)?\s*[MBk]?)/i)
+    const takeaways = [
+        ...(Array.isArray(activeSynth?.keyTakeaways) ? activeSynth.keyTakeaways : []),
+        ...(Array.isArray(finalJudgment?.key_acquisition_takeaways)
+            ? finalJudgment.key_acquisition_takeaways.map((t: any) => (typeof t === 'string' ? t : `${t.takeaway || ''} ${t.impact || ''}`))
+            : []),
+    ]
+
+    if (!revenue && takeaways.length > 0) {
+        for (const t of takeaways) {
+            const extracted = extractAmountNearKeyword(String(t), /(?:revenue|income)[^\$]*(\$\d+(?:\.\d+)?\s*(?:million|billion|M|B|K|mm)?)/i)
             if (extracted) {
                 revenue = extracted
                 break
@@ -52,11 +96,11 @@ export function resolveFinancialMetricsForProject(
         }
     }
 
-    // 4. Resolve EBITDA
+    // 5. Resolve EBITDA / SDE
     let ebitda = activeSynth?.ebitdaUsd || activeSynth?.ebitda || activeSynth?.financialOverview?.ebitdaUsd || activeSynth?.adjustedEbitda
-    if (!ebitda && activeSynth?.keyTakeaways && Array.isArray(activeSynth.keyTakeaways)) {
-        for (const t of activeSynth.keyTakeaways) {
-            const extracted = extractAmountNearKeyword(String(t), /EBITDA[^\$]*(\$\d+(?:\.\d+)?\s*[MBk]?)/i)
+    if (!ebitda && takeaways.length > 0) {
+        for (const t of takeaways) {
+            const extracted = extractAmountNearKeyword(String(t), /EBITDA[^\$]*(\$\d+(?:\.\d+)?\s*(?:million|billion|M|B|K|mm)?)/i)
             if (extracted) {
                 ebitda = extracted
                 break
@@ -64,20 +108,63 @@ export function resolveFinancialMetricsForProject(
         }
     }
 
-    // 5. Resolve Multiple
+    // 6. Check projectDocs / rows for extracted document metrics and financial facts
+    if (projectDocs.length > 0) {
+        for (const doc of projectDocs) {
+            // Check direct document properties
+            if (!askingPrice && (doc.askingPrice || doc.purchasePrice)) {
+                askingPrice = doc.askingPrice || doc.purchasePrice
+            }
+            if ((!revenue || revenue === 'N/A') && (doc.revenueUsd || doc.revenue || doc.metrics?.revenue)) {
+                revenue = doc.revenueUsd || doc.revenue || doc.metrics?.revenue
+            }
+            if ((!ebitda || ebitda === 'N/A') && (doc.ebitdaUsd || doc.ebitda || doc.metrics?.ebitda)) {
+                ebitda = doc.ebitdaUsd || doc.ebitda || doc.metrics?.ebitda
+            }
+
+            // Parse financialFactsJson
+            const factsJson = safeParseJson(doc.financialFactsJson || doc.financial_facts_json || doc.documented_facts_json)
+            if (Array.isArray(factsJson)) {
+                for (const fact of factsJson) {
+                    const metricName = String(fact.metric || '').toLowerCase()
+                    const val = fact.normalized_value ?? fact.raw_value
+                    if (!askingPrice && (metricName === 'asking_price' || metricName === 'purchase_price') && val != null) {
+                        askingPrice = typeof val === 'number' ? formatMagnitude(val) : String(val)
+                    }
+                    if ((!revenue || revenue === 'N/A') && (metricName === 'revenue' || metricName === 'income') && val != null) {
+                        revenue = typeof val === 'number' ? formatMagnitude(val) : String(val)
+                    }
+                    if ((!ebitda || ebitda === 'N/A') && (metricName === 'ebitda_sde' || metricName === 'ebitda' || metricName === 'adjusted_ebitda') && val != null) {
+                        ebitda = typeof val === 'number' ? formatMagnitude(val) : String(val)
+                    }
+                }
+            }
+        }
+    }
+
+    // 7. Resolve Multiple
     let multiple = activeSynth?.impliedMultiple || activeSynth?.multiple || activeSynth?.financialOverview?.impliedMultiple
 
-    // 6. Check projectDocs / rows for extracted document metrics
-    if ((!revenue || revenue === 'N/A') && projectDocs.length > 0) {
-        const docWithRev = projectDocs.find(d => d.revenueUsd || d.revenue || d.metrics?.revenue)
-        if (docWithRev) revenue = docWithRev.revenueUsd || docWithRev.revenue || docWithRev.metrics?.revenue
-    }
-    if ((!ebitda || ebitda === 'N/A') && projectDocs.length > 0) {
-        const docWithEbitda = projectDocs.find(d => d.ebitdaUsd || d.ebitda || d.metrics?.ebitda)
-        if (docWithEbitda) ebitda = docWithEbitda.ebitdaUsd || docWithEbitda.ebitda || docWithEbitda.metrics?.ebitda
+    // If multiple not explicitly provided, calculate from price/valuation and ebitda if numeric
+    if (!multiple || multiple === 'N/A') {
+        const parseNum = (val: any) => {
+            if (!val) return null
+            if (typeof val === 'number') return val
+            const cleaned = String(val).replace(/[^0-9.-]+/g, '')
+            const n = parseFloat(cleaned)
+            if (isNaN(n)) return null
+            if (/M|million/i.test(String(val))) return n * 1_000_000
+            if (/K|thousand/i.test(String(val))) return n * 1_000
+            return n
+        }
+        const numPrice = parseNum(askingPrice) || (!isNaN(rawValBase) && rawValBase > 0 ? rawValBase : null)
+        const numEbitda = parseNum(ebitda)
+        if (numPrice && numEbitda && numEbitda > 0) {
+            multiple = `${(numPrice / numEbitda).toFixed(1)}x`
+        }
     }
 
-    // 7. Benchmark Fallback Map for known benchmark deals
+    // 8. Benchmark Fallback Map for known benchmark deals
     const benchmarkFinancialMap: Record<string, ResolvedFinancialMetrics> = {
         'quarry': { askingPrice: '$8,250,000', revenue: '$13.39M', ebitda: '$1.50M', valuation: '$6.77M - $8.25M', multiple: '5.5x' },
         'cascadia': { askingPrice: '$6,300,000', revenue: '$8.50M', ebitda: '$1.26M', valuation: '$5.67M - $6.30M', multiple: '5.0x' },
@@ -115,9 +202,6 @@ export function resolveFinancialMetricsForProject(
     const fmt = (val: any) => {
         if (!val || val === 'N/A') return 'N/A'
         const s = String(val).trim()
-        // Pass through already-formatted values and ranges ("$5.67M - $6.30M").
-        // Match a spaced hyphen for the range so a bare negative number ("-500000")
-        // still gets formatted below rather than leaking through unstyled.
         if (s.startsWith('$') || s.endsWith('x') || s.endsWith('M') || s.endsWith('K') || s.includes(' - ')) return s
         const num = Number(s.replace(/[^0-9.-]+/g, ''))
         if (Number.isFinite(num) && num !== 0) {
@@ -126,9 +210,6 @@ export function resolveFinancialMetricsForProject(
         return s
     }
 
-    // A multiple is expressed with a trailing "x" (e.g. "5.5x"), never as a
-    // dollar amount. A bare number like 5.5 must not be passed through the
-    // money formatter, which would render it as "$5.5".
     const fmtMultiple = (val: any) => {
         if (!val || val === 'N/A') return 'N/A'
         const s = String(val).trim()

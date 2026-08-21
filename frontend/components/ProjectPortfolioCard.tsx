@@ -161,7 +161,7 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
             projectName: project.projectName,
             companyName: project.companyName || project.projectName,
             projectId: project.projectId || project.projectKey,
-            stage: project.stage && project.stage !== 'Stage not captured' ? formatProjectStage(project.stage) : 'In Diligence',
+            stage: activeSynth ? (activeSynth.letterOfIntentPresent ? 'Post-LOI' : 'Pre-LOI') : (project.stage && project.stage !== 'Stage not captured' ? formatProjectStage(project.stage) : 'In Diligence'),
             documentsCount: project.documents.length,
             askingPrice: fin.askingPrice,
             revenue: fin.revenue,

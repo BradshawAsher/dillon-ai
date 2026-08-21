@@ -21,6 +21,9 @@ describe('dealEmailDraft Generator Utility', () => {
             finalTrafficLight: 'YELLOW',
             finalRiskLevel: 'YELLOW',
             finalJudgmentSummary: 'ESCALATE pending financial-statement completion and revenue reconciliation.',
+            valuationLowerBound: '1500000',
+            valuationUpperBound: '2500000',
+            valuationBaseEstimate: '2000000',
             redFlags: ['38% customer concentration with key account expiring in Q4', 'Unreconciled payroll variance on 941 filings'],
             negotiationLevers: ['Demand $250k escrow holdback for customer churn risk'],
         }
@@ -49,6 +52,8 @@ describe('dealEmailDraft Generator Utility', () => {
         expect(draft.body).toContain('Escalate file to Senior Investment Committee')
         expect(draft.body).toContain('Revenue: $446K')
         expect(draft.body).toContain('EBITDA/SDE: $1.7M')
+        expect(draft.body).toContain('Estimated Valuation Range: $1.5M – $2.5M (Base: $2.0M)')
+        expect(draft.valuationRangeFormatted).toBe('$1.5M – $2.5M (Base: $2.0M)')
         expect(draft.body).toContain('Price: $2.0M')
         expect(draft.body).toContain('https://app.mergeworks.ai/?view=dashboard&project=project-20260820-scenario-communications')
     })
