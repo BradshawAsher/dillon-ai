@@ -83,7 +83,7 @@ export function ProjectsSidePanel({
 
             {/* Slide-over Drawer Panel */}
             <aside
-                className="fixed right-0 top-0 bottom-0 z-50 flex w-full sm:w-[320px] max-w-[88vw] flex-col border-l border-border bg-card/98 shadow-2xl backdrop-blur-xl transition-transform duration-300 ease-in-out"
+                className="fixed right-0 top-0 bottom-0 z-50 flex w-full sm:w-[480px] md:w-[520px] max-w-[95vw] flex-col border-l border-border bg-card shadow-2xl transition-transform duration-300 ease-in-out"
                 role="dialog"
                 aria-modal="true"
                 aria-label="Projects drawer"

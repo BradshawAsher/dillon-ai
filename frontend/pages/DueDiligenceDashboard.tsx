@@ -1619,7 +1619,32 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         )
     }, [activeProjectDocuments, isExampleMode, isSubmittingFile, activeSubmissionBatch, activeBatchFinishedCount, activeBatchExpectedCount])
 
+    const [isManualSynthesisRunning, setIsManualSynthesisRunning] = useState(false)
+
+    // Reset manual synthesis running flag when fresh synthesis completes or fails
+    useEffect(() => {
+        if (isManualSynthesisRunning) {
+            const synthStatus = (activeProjectSynthesis?.projectStatus || '').trim().toLowerCase()
+            const fjJson = (activeProjectSynthesis?.finalJudgmentJson || '').trim()
+            const hasFinished = ['synthesized', 'completed', 'success', 'failed', 'error'].includes(synthStatus) ||
+                ((activeProjectSynthesis?.finalRecommendation || '').trim().length > 0 ||
+                 (fjJson.length > 0 && fjJson !== '{}'))
+            if (hasFinished) {
+                const timer = setTimeout(() => setIsManualSynthesisRunning(false), 2000)
+                return () => clearTimeout(timer)
+            }
+        }
+    }, [activeProjectSynthesis?.projectStatus, activeProjectSynthesis?.finalRecommendation, activeProjectSynthesis?.finalJudgmentJson, isManualSynthesisRunning])
+
+    // Safety timeout for manual synthesis flag (90s max)
+    useEffect(() => {
+        if (!isManualSynthesisRunning) return
+        const timer = setTimeout(() => setIsManualSynthesisRunning(false), 90_000)
+        return () => clearTimeout(timer)
+    }, [isManualSynthesisRunning])
+
     const isCurrentProjectSynthesisRunning = useMemo(() => {
+        if (isManualSynthesisRunning) return true
         if (isExampleMode || activeProjectDocuments.length === 0) return false
         if (isCurrentProjectExtractingDocs) return false
 
@@ -1647,11 +1672,11 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         }
 
         return false
-    }, [activeProjectDocuments, activeProjectSynthesis, isCurrentProjectExtractingDocs, isExampleMode])
+    }, [activeProjectDocuments, activeProjectSynthesis, isCurrentProjectExtractingDocs, isExampleMode, isManualSynthesisRunning])
 
     const isCurrentProjectAwaitingSynthesis = useMemo(() => {
-        return isCurrentProjectExtractingDocs || isCurrentProjectSynthesisRunning
-    }, [isCurrentProjectExtractingDocs, isCurrentProjectSynthesisRunning])
+        return isCurrentProjectExtractingDocs || isCurrentProjectSynthesisRunning || isManualSynthesisRunning
+    }, [isCurrentProjectExtractingDocs, isCurrentProjectSynthesisRunning, isManualSynthesisRunning])
 
     // Periodic refresh effect (3s polling when batch/processing/synthesis active, 10s idle)
     useEffect(() => {
@@ -1990,6 +2015,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             return
         }
         if (!window.confirm('Run a new project synthesis using the currently completed, included documents? This does not re-upload or reprocess files.')) return
+        setIsManualSynthesisRunning(true)
         setBatchSubmissionMessage('Starting a new project synthesis from the completed documents…')
         try {
             const response = await fetch('/api/diligence/run-synthesis', {
@@ -2004,6 +2030,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 triggerProjectSynthesis({ environment: activeHistoryEnvironment }, { skipCache: true }).result,
             ])
         } catch (err) {
+            setIsManualSynthesisRunning(false)
             setBatchSubmissionMessage(err instanceof Error ? err.message : 'Unable to start synthesis')
         }
     }
@@ -2238,6 +2265,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         if (!activeProjectId) return
         if (!window.confirm('Stop the current synthesis for this project? This marks the synthesis as stopped so you can retry or re-run it later.')) return
         setIsStoppingSynthesis(true)
+        setIsManualSynthesisRunning(false)
         try {
             const response = await fetch('/api/diligence/stop-synthesis', {
                 method: 'POST',

@@ -215,7 +215,7 @@ export default function DashboardFaqSidebar({
                 role="dialog"
                 aria-modal="true"
                 aria-label="FAQs and Guidance Sidebar"
-                className="fixed right-0 top-0 bottom-0 z-50 flex w-full flex-col border-l border-border bg-card/98 shadow-2xl backdrop-blur-xl transition-transform duration-300 sm:w-[320px] max-w-[88vw]"
+                className="fixed right-0 top-0 bottom-0 z-50 flex w-full flex-col border-l border-border bg-card shadow-2xl transition-transform duration-300 sm:w-[480px] md:w-[520px] max-w-[95vw]"
             >
                 {/* Header */}
                 <div className="flex items-center justify-between border-b border-border/80 p-3.5 bg-muted/40">

@@ -94,21 +94,21 @@ export function BatchProcessingSidePanel({
 
             {/* Right Slide-over Drawer Panel */}
             <aside
-                className="fixed right-0 top-0 bottom-0 z-50 flex w-full sm:w-[320px] max-w-[88vw] flex-col border-l border-border bg-card/98 shadow-2xl backdrop-blur-xl transition-transform duration-300 ease-in-out"
+                className="fixed right-0 top-0 bottom-0 z-50 flex w-full sm:w-[480px] md:w-[520px] max-w-[95vw] flex-col border-l border-border bg-card shadow-2xl transition-transform duration-300 ease-in-out"
                 role="dialog"
                 aria-modal="true"
                 aria-label="Batch processing drawer"
             >
                 {/* Header */}
-                <div className="flex items-center justify-between border-b border-border/80 p-3.5 bg-muted/40">
-                    <div className="flex items-center gap-2.5">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <div className="flex items-center justify-between border-b border-border p-4 bg-muted/40">
+                    <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shrink-0">
                             <Activity className="h-5 w-5 animate-pulse" />
                         </div>
                         <div>
-                            <h2 className="text-lg font-bold text-foreground">Batch Processing Activity</h2>
-                            <p className="text-xs text-muted-foreground">
-                                Real-time AI extraction & queue status
+                            <h2 className="text-base sm:text-lg font-bold text-foreground">Batch Processing Activity</h2>
+                            <p className="text-xs text-muted-foreground font-medium">
+                                Real-time AI extraction &amp; queue status
                             </p>
                         </div>
                     </div>
@@ -117,7 +117,7 @@ export function BatchProcessingSidePanel({
                         variant="ghost"
                         size="icon"
                         onClick={onClose}
-                        className="h-8 w-8 rounded-full"
+                        className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
                         aria-label="Close batch activity panel"
                     >
                         <X className="h-4 w-4" />
@@ -125,7 +125,7 @@ export function BatchProcessingSidePanel({
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-5">
+                <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-5">
                     {/* Paused Guided Tour Resume Card */}
                     {resumeState && onResumeTour && (
                         <div className="rounded-xl border border-primary/40 bg-gradient-to-br from-primary/15 via-emerald-500/10 to-primary/5 p-4 space-y-2.5 shadow-sm">
@@ -134,7 +134,7 @@ export function BatchProcessingSidePanel({
                                     <Sparkles className="h-3.5 w-3.5 animate-pulse text-primary" />
                                     Paused Guided Tour
                                 </span>
-                                <Badge variant="outline" className="font-mono text-[10px] border-primary/30 text-primary">
+                                <Badge variant="outline" className="font-mono text-[10px] border-primary/30 text-primary font-bold">
                                     Step {resumeState.stepIndex + 1} of {resumeState.totalSteps}
                                 </Badge>
                             </div>
@@ -142,7 +142,7 @@ export function BatchProcessingSidePanel({
                                 <p className="text-xs font-semibold text-foreground">
                                     {resumeState.playlistTitle}
                                 </p>
-                                <p className="text-[11px] text-muted-foreground truncate">
+                                <p className="text-xs text-muted-foreground font-medium truncate mt-0.5">
                                     {resumeState.stepTitle}
                                 </p>
                             </div>
@@ -165,40 +165,42 @@ export function BatchProcessingSidePanel({
                     {(inFlightBatch || activeProcessingRows.length > 0) ? (() => {
                         const isFinished = batchExpectedCount > 0 && batchFinishedCount >= batchExpectedCount && activeProcessingRows.length === 0
                         return (
-                            <div className={`rounded-xl border p-4 space-y-3 ${isFinished ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-primary/30 bg-primary/5'}`}>
+                            <div className={`rounded-xl border p-4 sm:p-5 space-y-3.5 shadow-sm ${isFinished ? 'border-emerald-500/40 bg-emerald-500/10' : 'border-primary/40 bg-primary/5'}`}>
                                 <div className="flex items-center justify-between">
                                     <span className="text-sm font-bold text-foreground flex items-center gap-2">
                                         {isFinished ? (
-                                            <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                                             <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                                         ) : (
                                             <Loader2 className="h-4 w-4 animate-spin text-primary" />
                                         )}
                                         {isFinished ? 'Batch Completed' : 'Active Processing Batch'}
                                     </span>
-                                    <Badge variant={isFinished ? 'success' : 'secondary'} className="gap-1 font-mono text-xs">
+                                    <Badge variant={isFinished ? 'success' : 'secondary'} className="gap-1 font-mono text-xs font-semibold px-2.5 py-0.5">
                                         <Clock className="h-3 w-3" />
                                         {formatTime(batchElapsedSeconds)}
                                     </Badge>
                                 </div>
 
                                 <div className="space-y-1.5">
-                                    <div className="flex items-center justify-between text-xs font-semibold">
+                                    <div className="flex items-center justify-between text-xs font-semibold text-foreground">
                                         <span>Progress: {batchFinishedCount} / {batchExpectedCount || activeProcessingRows.length} documents</span>
-                                        <span>{batchProgressPercent}%</span>
+                                        <span className="font-mono">{batchProgressPercent}%</span>
                                     </div>
-                                    <Progress value={batchProgressPercent} className="h-2" />
+                                    <Progress value={batchProgressPercent} className="h-2.5" />
                                 </div>
 
                                 {batchSubmissionMessage && (
-                                    <p className="text-xs text-muted-foreground bg-background/60 rounded p-2 border border-border/40">
+                                    <p className="text-xs text-foreground font-medium bg-muted/60 rounded-lg p-2.5 border border-border leading-relaxed">
                                         {batchSubmissionMessage}
                                     </p>
                                 )}
 
                                 {!isFinished && (
-                                    <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 p-2.5 text-[11px] text-amber-900 dark:text-amber-200 space-y-1">
-                                        <p className="font-semibold">⚠️ 4-Minute Timeout Rules:</p>
-                                        <p className="opacity-90">
+                                    <div className="rounded-lg bg-amber-500/15 border border-amber-500/30 p-3 text-xs text-amber-950 dark:text-amber-100 font-medium space-y-1 leading-relaxed">
+                                        <p className="font-bold flex items-center gap-1.5 text-amber-900 dark:text-amber-200">
+                                            <span>⚠️</span> 4-Minute Timeout Rules:
+                                        </p>
+                                        <p className="opacity-95">
                                             Documents are monitored individually. If a file takes longer than <strong>4 minutes per document</strong> without a response from n8n, it is automatically marked as failed so you can retry or switch keys.
                                         </p>
                                     </div>
@@ -212,7 +214,7 @@ export function BatchProcessingSidePanel({
                                             size="sm"
                                             onClick={onStopBatch}
                                             disabled={isStoppingBatch}
-                                            className="gap-1.5"
+                                            className="gap-1.5 text-xs font-semibold"
                                         >
                                             <StopCircle className="h-3.5 w-3.5" />
                                             {isStoppingBatch ? 'Stopping…' : 'Stop Batch'}
@@ -222,10 +224,10 @@ export function BatchProcessingSidePanel({
                             </div>
                         )
                     })() : (
-                        <div className="rounded-xl border border-dashed border-border bg-muted/10 p-5 text-center space-y-1">
-                            <CheckCircle2 className="h-6 w-6 text-success mx-auto" />
-                            <p className="text-sm font-semibold text-foreground">No active batches running</p>
-                            <p className="text-xs text-muted-foreground">
+                        <div className="rounded-xl border border-dashed border-border bg-muted/20 p-6 text-center space-y-2">
+                            <CheckCircle2 className="h-8 w-8 text-emerald-600 dark:text-emerald-400 mx-auto" />
+                            <p className="text-sm font-bold text-foreground">No active batches running</p>
+                            <p className="text-xs text-muted-foreground font-medium">
                                 All submitted documents have finished processing.
                             </p>
                         </div>
@@ -233,7 +235,7 @@ export function BatchProcessingSidePanel({
 
                     {/* Active Document Items */}
                     {activeBatchRows.length > 0 && (
-                        <div className="space-y-2">
+                        <div className="space-y-2.5">
                             <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                                 Current Batch Files ({activeBatchRows.length})
                             </h3>
@@ -245,13 +247,13 @@ export function BatchProcessingSidePanel({
                                     return (
                                         <div
                                             key={`${doc.requestID}-${doc.fileName}`}
-                                            className="flex items-center justify-between rounded-lg border border-border bg-card p-3 text-xs"
+                                            className="flex items-center justify-between rounded-lg border border-border bg-muted/30 hover:bg-muted/50 p-3 text-xs gap-3 transition-colors shadow-xs"
                                         >
-                                            <div className="space-y-0.5 min-w-0 flex-1 pr-2">
-                                                <p className="font-semibold text-foreground truncate">{doc.fileName}</p>
-                                                <p className="text-[11px] text-muted-foreground">{doc.documentType || 'Document'} · {doc.dealName || 'Project'}</p>
+                                            <div className="space-y-0.5 min-w-0 flex-1 pr-1">
+                                                <p className="font-semibold text-foreground text-xs leading-snug break-words">{doc.fileName}</p>
+                                                <p className="text-[11px] text-muted-foreground font-medium">{doc.documentType || 'Document'} · {doc.dealName || 'Project'}</p>
                                             </div>
-                                            <Badge variant={isDone ? 'success' : isFailed ? 'destructive' : 'secondary'} className="shrink-0 text-[10px]">
+                                            <Badge variant={isDone ? 'success' : isFailed ? 'destructive' : 'secondary'} className="shrink-0 text-[10px] font-semibold">
                                                 {formatSubmissionStatus(doc.status)}
                                             </Badge>
                                         </div>
@@ -263,25 +265,25 @@ export function BatchProcessingSidePanel({
 
                     {/* Failed Files / Quick Actions */}
                     {failedRows.length > 0 && (
-                        <div className="space-y-2 border-t border-border pt-4">
+                        <div className="space-y-2.5 border-t border-border pt-4">
                             <div className="flex items-center justify-between">
                                 <h3 className="text-xs font-bold uppercase tracking-wider text-destructive flex items-center gap-1.5">
                                     <AlertTriangle className="h-3.5 w-3.5" />
                                     Failed Files ({failedRows.length})
                                 </h3>
                             </div>
-                            <div className="space-y-2">
+                            <div className="space-y-2.5">
                                 {failedRows.map((doc) => (
                                     <div
                                         key={`${doc.requestID}-${doc.fileName}`}
-                                        className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-xs space-y-2"
+                                        className="rounded-xl border border-destructive/40 bg-destructive/10 p-3.5 text-xs space-y-2.5 shadow-xs"
                                     >
                                         <div className="flex items-start justify-between gap-2">
-                                            <div>
-                                                <p className="font-bold text-foreground">{doc.fileName}</p>
-                                                <p className="text-[11px] text-muted-foreground">{doc.dealName} · {doc.errorMessage || 'Processing stalled or failed'}</p>
+                                            <div className="min-w-0 flex-1">
+                                                <p className="font-bold text-foreground text-xs break-words">{doc.fileName}</p>
+                                                <p className="text-xs text-muted-foreground font-medium mt-0.5">{doc.dealName} · {doc.errorMessage || 'Processing stalled or failed'}</p>
                                             </div>
-                                            <Badge variant="destructive" className="shrink-0 text-[10px]">Failed</Badge>
+                                            <Badge variant="destructive" className="shrink-0 text-[10px] font-semibold">Failed</Badge>
                                         </div>
 
                                         <div className="flex items-center justify-end gap-2 pt-1 border-t border-border/40">
@@ -289,11 +291,11 @@ export function BatchProcessingSidePanel({
                                                 type="button"
                                                 variant="outline"
                                                 size="sm"
-                                                className="h-7 text-[11px]"
+                                                className="h-7 text-xs font-semibold"
                                                 disabled={retryingRequestId === doc.requestID}
                                                 onClick={() => onRetryDocument(doc.requestID)}
                                             >
-                                                <RefreshCw className={`mr-1 h-3 w-3 ${retryingRequestId === doc.requestID ? 'animate-spin' : ''}`} />
+                                                <RefreshCw className={`mr-1.5 h-3 w-3 ${retryingRequestId === doc.requestID ? 'animate-spin' : ''}`} />
                                                 Retry
                                             </Button>
                                             {onRequeueNewProject && (
@@ -301,13 +303,13 @@ export function BatchProcessingSidePanel({
                                                     type="button"
                                                     variant="secondary"
                                                     size="sm"
-                                                    className="h-7 text-[11px]"
+                                                    className="h-7 text-xs font-semibold"
                                                     onClick={() => {
                                                         onRequeueNewProject(doc.requestID)
                                                         onClose()
                                                     }}
                                                 >
-                                                    <FolderPlus className="mr-1 h-3 w-3" />
+                                                    <FolderPlus className="mr-1.5 h-3 w-3" />
                                                     Try in new project
                                                 </Button>
                                             )}
@@ -320,8 +322,8 @@ export function BatchProcessingSidePanel({
                 </div>
 
                 {/* Footer hint */}
-                <div className="border-t border-border p-3 text-center bg-muted/10 text-xs text-muted-foreground">
-                    Tip: Press <kbd className="rounded border bg-muted px-1.5 py-0.5 text-[10px] font-mono">Ctrl</kbd> + <kbd className="rounded border bg-muted px-1.5 py-0.5 text-[10px] font-mono">Shift</kbd> + <kbd className="rounded border bg-muted px-1.5 py-0.5 text-[10px] font-mono">B</kbd> to open this drawer anytime.
+                <div className="border-t border-border p-3 text-center bg-muted/20 text-xs text-muted-foreground font-medium">
+                    Tip: Press <kbd className="rounded border bg-muted px-1.5 py-0.5 text-[10px] font-mono text-foreground font-bold">Ctrl</kbd> + <kbd className="rounded border bg-muted px-1.5 py-0.5 text-[10px] font-mono text-foreground font-bold">Shift</kbd> + <kbd className="rounded border bg-muted px-1.5 py-0.5 text-[10px] font-mono text-foreground font-bold">B</kbd> to open this drawer anytime.
                 </div>
             </aside>
         </>
