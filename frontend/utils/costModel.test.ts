@@ -147,4 +147,20 @@ describe('sumMeasuredCost', () => {
         expect(s.totalCost).toBeCloseTo(0.03, 6)
         expect(s.hasMeasured).toBe(true)
     })
+
+    it('coerces stringified and non-finite telemetry to finite numbers', () => {
+        const s = sumMeasuredCost({
+            documents: [
+                { costUsd: '0.05' as unknown as number, totalTokens: '6000' as unknown as number },
+                { costUsd: NaN, totalTokens: 4000 },
+            ],
+            synthesis: { costUsd: '0.10' as unknown as number, totalTokens: 8000 },
+        })
+        // "0.05" is added numerically (not concatenated), and NaN is treated as 0.
+        expect(s.docCost).toBeCloseTo(0.05, 6)
+        expect(s.docTokens).toBe(10000)
+        expect(s.synthesisCost).toBeCloseTo(0.10, 6)
+        expect(s.totalCost).toBeCloseTo(0.15, 6)
+        expect(s.hasMeasured).toBe(true)
+    })
 })

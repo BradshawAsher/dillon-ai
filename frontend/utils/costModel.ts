@@ -159,10 +159,18 @@ export type MeasuredCostSummary = {
  * its synthesis.
  */
 export function sumMeasuredCost(input: MeasuredCostInput): MeasuredCostSummary {
-    const docCost = input.documents.reduce((sum, d) => sum + (d.costUsd ?? 0), 0)
-    const docTokens = input.documents.reduce((sum, d) => sum + (d.totalTokens ?? 0), 0)
-    const synthesisCost = input.synthesis?.costUsd ?? 0
-    const synthesisTokens = input.synthesis?.totalTokens ?? 0
+    // Telemetry rows come from the DB / n8n, where a numeric field can arrive as
+    // a stringified number or a non-finite value. Coerce each to a finite number
+    // so one bad row can't concatenate a string ("0" + "0.05" = "00.05") or
+    // poison the totals with NaN.
+    const finite = (value: unknown): number => {
+        const n = typeof value === 'number' ? value : Number(value)
+        return Number.isFinite(n) ? n : 0
+    }
+    const docCost = input.documents.reduce((sum, d) => sum + finite(d.costUsd), 0)
+    const docTokens = input.documents.reduce((sum, d) => sum + finite(d.totalTokens), 0)
+    const synthesisCost = finite(input.synthesis?.costUsd)
+    const synthesisTokens = finite(input.synthesis?.totalTokens)
     const totalCost = docCost + synthesisCost
     const totalTokens = docTokens + synthesisTokens
     return {
