@@ -259,40 +259,10 @@ function getConfidencePercent(row: SubmissionHistoryItem, extractedObject: Parse
   return confidenceToPercent(rawConfidence)
 }
 
-function parseCitations(row: SubmissionHistoryItem, extractedObject: ParsedJson | null): ParsedCitation[] {
-  const parsedRawCitations = parseJsonValue(row.aiCitations)
-
-  if (Array.isArray(parsedRawCitations)) {
-    return parsedRawCitations
-      .map((entry) => {
-        if (!entry || Array.isArray(entry) || typeof entry !== 'object') {
-          return null
-        }
-
-        const record = entry as Record<string, unknown>
-        const sourceFile = getStringValue(record['source_file'])
-        const rowOrCell = getStringValue(record['row_or_cell'])
-
-        if (sourceFile.length === 0 && rowOrCell.length === 0) {
-          return null
-        }
-
-        return {
-          sourceFile,
-          rowOrCell,
-        }
-      })
-      .filter((entry): entry is ParsedCitation => entry !== null)
-  }
-
-  const responseObject = getNestedObject(extractedObject, 'response')
-  const responseCitations = getObjectValue(responseObject, 'citations')
-
-  if (!Array.isArray(responseCitations)) {
-    return []
-  }
-
-  return responseCitations
+/** Normalizes a raw citation array into typed entries, dropping any that are
+ *  not objects or that carry neither a source file nor a row/cell location. */
+function normalizeCitationList(entries: unknown[]): ParsedCitation[] {
+  return entries
     .map((entry) => {
       if (!entry || Array.isArray(entry) || typeof entry !== 'object') {
         return null
@@ -306,12 +276,26 @@ function parseCitations(row: SubmissionHistoryItem, extractedObject: ParsedJson 
         return null
       }
 
-      return {
-        sourceFile,
-        rowOrCell,
-      }
+      return { sourceFile, rowOrCell }
     })
     .filter((entry): entry is ParsedCitation => entry !== null)
+}
+
+function parseCitations(row: SubmissionHistoryItem, extractedObject: ParsedJson | null): ParsedCitation[] {
+  const parsedRawCitations = parseJsonValue(row.aiCitations)
+
+  if (Array.isArray(parsedRawCitations)) {
+    return normalizeCitationList(parsedRawCitations)
+  }
+
+  const responseObject = getNestedObject(extractedObject, 'response')
+  const responseCitations = getObjectValue(responseObject, 'citations')
+
+  if (!Array.isArray(responseCitations)) {
+    return []
+  }
+
+  return normalizeCitationList(responseCitations)
 }
 
 export function getSubmissionInsightTone(trafficLight: string) {
