@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { FolderKanban, Moon, Sun, Key, Globe, Play, Compass, Sparkles, Keyboard, Link2, Check } from 'lucide-react'
+import { FolderKanban, Moon, Sun, Key, Globe, Play, Compass, Sparkles, Keyboard, Link2, Check, User } from 'lucide-react'
 import { Badge } from '../../lib/shadcn/badge'
 import { Button } from '../../lib/shadcn/button'
 import DealStageIndicator from '../DealStageIndicator'
@@ -232,7 +232,17 @@ export function WorkspaceHeader({
                             <span className="hidden sm:inline">Shortcuts</span>
                             <kbd className="hidden md:inline-flex rounded bg-muted px-1 py-0.2 text-[10px] font-mono border border-border">?</kbd>
                         </Button>
-                        <LoginButton />
+                        <Button
+                            type="button"
+                            variant="outline"
+                            className="gap-1.5 px-3 py-2 text-sm"
+                            onClick={() => setActiveWorkspaceTab('account')}
+                            title="Account & Workspace Settings"
+                        >
+                            <User className="h-4 w-4 text-primary" />
+                            <span className="hidden sm:inline">Account</span>
+                        </Button>
+                        <LoginButton onNavigateAccount={() => setActiveWorkspaceTab('account')} />
                     </div>
                     <p className="max-w-4xl text-sm text-muted-foreground">
                         Shift from one-off document extraction to project-level diligence. Group uploads into a shared project, poll n8n for document progress, and prepare the agent to reconcile multiple files into one acquisition judgment.
@@ -261,16 +271,25 @@ export function WorkspaceHeader({
                     </div>
                     {(() => {
                         const verdict = activeProjectSynthesis?.finalRecommendation || activeProjectSynthesis?.finalTrafficLight || 'Pending'
+                        const upper = verdict.toUpperCase()
+                        
+                        let colorClass = 'text-foreground'
+                        if (upper.includes('PROCEED WITH') || upper.includes('CONDITIONS') || upper.includes('YELLOW') || upper.includes('HOLD') || upper.includes('REVISE')) {
+                            colorClass = 'text-amber-600 dark:text-amber-400'
+                        } else if (upper.includes('PROCEED') || upper.includes('GREEN') || upper.includes('FAVORABLE')) {
+                            colorClass = 'text-emerald-600 dark:text-emerald-400'
+                        } else if (upper.includes('REJECT') || upper.includes('RED') || upper.includes('TERMINATE') || upper.includes('UNFAVORABLE')) {
+                            colorClass = 'text-rose-600 dark:text-rose-400'
+                        }
+
                         const fontSize =
                             verdict.length <= 4
-                                ? 'text-xl sm:text-2xl'
-                                : verdict.length <= 7
-                                ? 'text-lg sm:text-xl'
-                                : verdict.length <= 10
-                                ? 'text-[15px] sm:text-base'
+                                ? 'text-xl sm:text-2xl font-bold'
+                                : verdict.length <= 8
+                                ? 'text-lg sm:text-xl font-bold'
                                 : verdict.length <= 14
-                                ? 'text-sm sm:text-[15px]'
-                                : 'text-xs sm:text-sm'
+                                ? 'text-sm sm:text-base font-bold'
+                                : 'text-xs sm:text-sm font-semibold'
 
                         return (
                             <div className="rounded-lg border border-border bg-background px-3 py-2.5 min-w-0 flex flex-col justify-between">
@@ -278,7 +297,7 @@ export function WorkspaceHeader({
                                     Synthesis verdict
                                 </p>
                                 <p
-                                    className={`my-0.5 font-bold tracking-tight text-foreground whitespace-nowrap leading-tight ${fontSize}`}
+                                    className={`my-0.5 tracking-tight break-words line-clamp-2 leading-tight ${fontSize} ${colorClass}`}
                                     title={verdict}
                                 >
                                     {verdict}

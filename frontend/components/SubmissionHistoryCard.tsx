@@ -1069,6 +1069,7 @@ export default function SubmissionHistoryCard({
                                                             {
                                                                 title: 'Red flags',
                                                                 flags: aiViewModel.redFlags,
+                                                                findings: aiViewModel.structuredFindings?.redFlags,
                                                                 badge: 'destructive' as const,
                                                                 sectionClass: 'border-destructive/30 bg-destructive/5',
                                                                 itemClass: 'border-destructive/20',
@@ -1077,6 +1078,7 @@ export default function SubmissionHistoryCard({
                                                             {
                                                                 title: 'Yellow flags',
                                                                 flags: aiViewModel.yellowFlags,
+                                                                findings: aiViewModel.structuredFindings?.yellowFlags,
                                                                 badge: 'warning' as const,
                                                                 sectionClass: 'border-warning/30 bg-warning/5',
                                                                 itemClass: 'border-warning/20',
@@ -1085,6 +1087,7 @@ export default function SubmissionHistoryCard({
                                                             {
                                                                 title: 'Green flags',
                                                                 flags: aiViewModel.greenFlags,
+                                                                findings: aiViewModel.structuredFindings?.greenFlags,
                                                                 badge: 'success' as const,
                                                                 sectionClass: 'border-success/30 bg-success/5',
                                                                 itemClass: 'border-success/20',
@@ -1095,21 +1098,27 @@ export default function SubmissionHistoryCard({
                                                                 key={group.title}
                                                                 title={group.title}
                                                                 items={group.flags}
+                                                                findings={group.findings}
                                                                 badgeVariant={group.badge}
                                                                 className={group.sectionClass}
                                                                 itemClassName={group.itemClass}
                                                                 emptyLabel="None"
                                                                 defaultOpen={group.title === 'Red flags'}
-                                                                onItemClick={onOpenEvidence ? (item) => onOpenEvidence({
-                                                                    title: `${group.title.replace(' flags', ' flag')}: finding`,
-                                                                    sourceFile: selectedRow.fileName || 'Uploaded document',
-                                                                    sourceLocation: group.title,
-                                                                    excerpt: item,
-                                                                    status: group.status,
-                                                                    provenance: `Document-level ${group.title.toLowerCase()} analysis`,
-                                                                    documentId: selectedRow.storageFileId,
-                                                                    documentUrl: selectedRow.storageFileUrl,
-                                                                }) : undefined}
+                                                                onItemClick={onOpenEvidence ? (item, index) => {
+                                                                    const finding = group.findings?.[index]
+                                                                    const firstCitation = finding?.citations?.[0]
+                                                                    onOpenEvidence({
+                                                                        title: `${group.title.replace(' flags', ' flag')}: finding`,
+                                                                        sourceFile: firstCitation?.sourceFile || selectedRow.fileName || 'Uploaded document',
+                                                                        sourceLocation: firstCitation?.rowOrCell || group.title,
+                                                                        excerpt: item,
+                                                                        confidence: finding?.confidence ?? undefined,
+                                                                        status: group.status,
+                                                                        provenance: `Document-level ${group.title.toLowerCase()} analysis`,
+                                                                        documentId: selectedRow.storageFileId,
+                                                                        documentUrl: selectedRow.storageFileUrl,
+                                                                    })
+                                                                } : undefined}
                                                             />
                                                         ))}
                                                     </div>

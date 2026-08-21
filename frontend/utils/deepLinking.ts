@@ -20,6 +20,7 @@ export const VALID_WORKSPACE_TABS: WorkspaceTab[] = [
     'history',
     'email',
     'errors',
+    'account',
 ]
 
 const TAB_ALIASES: Record<string, WorkspaceTab> = {
@@ -34,10 +35,13 @@ const TAB_ALIASES: Record<string, WorkspaceTab> = {
     error: 'errors',
     audit: 'history',
     intake: 'diligence',
+    profile: 'account',
+    settings: 'account',
+    user: 'account',
 }
 
 export interface ParsedDeepLink {
-    view: 'landing' | 'dashboard' | null
+    view: 'landing' | 'login' | 'dashboard' | null
     projectQuery: string | null
     tab: WorkspaceTab | null
 }
@@ -52,11 +56,13 @@ export function parseUrlDeepLinkState(search: string): ParsedDeepLink {
     const params = new URLSearchParams(search.startsWith('?') ? search : `?${search}`)
     
     // View detection
-    let view: 'landing' | 'dashboard' | null = null
-    if (params.get('view') === 'dashboard' || params.get('app') === 'true' || params.has('project') || params.has('deal') || params.has('tab')) {
-        view = 'dashboard'
-    } else if (params.get('view') === 'landing') {
+    let view: 'landing' | 'login' | 'dashboard' | null = null
+    if (params.get('view') === 'landing') {
         view = 'landing'
+    } else if (params.get('view') === 'login' || params.get('auth') === 'true' || params.get('signin') === 'true') {
+        view = 'login'
+    } else if (params.get('view') === 'dashboard' || params.get('app') === 'true' || params.has('project') || params.has('deal') || params.has('tab')) {
+        view = 'dashboard'
     }
 
     // Project query

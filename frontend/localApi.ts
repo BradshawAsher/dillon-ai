@@ -62,6 +62,15 @@ async function handleRequest(
         return
     }
 
+    if (route === '/upload-url' && req.method === 'POST') {
+        const params = await readJsonBody(req)
+        const mod = await server.ssrLoadModule(backendModuleUrl('createUploadUrl.ts'))
+        const result: unknown = await mod.default({ params, user })
+        res.setHeader('Content-Type', 'application/json')
+        res.end(JSON.stringify(result))
+        return
+    }
+
     if (route === '/submit' && req.method === 'POST') {
         const params = await readJsonBody(req)
         const mod = await server.ssrLoadModule(backendModuleUrl('submitDealPacket.ts'))

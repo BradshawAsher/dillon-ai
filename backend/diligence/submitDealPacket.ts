@@ -1,12 +1,12 @@
 import { getSubmitPath, normalizeWebhookResponse, type N8nSubmitResponse } from './submissionPayload'
-import getSubmissionHistory from './getSubmissionHistory'
+import { supabase } from '../supabaseClient'
 
 type Params = {
   environment?: 'production' | 'test'
   fileName: string
   fileSize: number
   fileType: string
-  fileBase64: string
+  fileBase64?: string
   dealName: string
   companyName: string
   workstream: string
@@ -16,6 +16,8 @@ type Params = {
   documentType: string
   submissionBatchId?: string
   expectedBatchDocumentCount?: number
+  storageFileUrl?: string
+  storagePath?: string
 }
 
 export default async function submitDealPacket(req: { params: Params; user: User }) {
@@ -25,58 +27,59 @@ export default async function submitDealPacket(req: { params: Params; user: User
   const normalizedProjectId = req.params.projectId.trim().toLowerCase()
   const normalizedFileName = req.params.fileName.trim().toLowerCase()
 
-  // The browser performs the same check for immediate feedback, but repeat it
-  // on the server so stale browser state cannot re-queue an already-known
-  // document through the normal dashboard API path.
-  const priorSubmissions = await getSubmissionHistory({
-    params: { environment },
-    user: req.user,
-  })
-  const existingDocument = priorSubmissions.find((submission) => {
-    const isSameFile = submission.projectId.trim().toLowerCase() === normalizedProjectId
-      && submission.fileName.trim().toLowerCase() === normalizedFileName
-      && submission.fileSize === req.params.fileSize
-    const isFinished = submission.status.trim().toLowerCase() === 'completed'
-    return isSameFile && isFinished
-  })
+  // Fast targeted duplicate check directly via Supabase rather than loading
+  // full submission history and syncing data tables (which adds 2-4s latency).
+  try {
+    const { data: duplicateDocs } = await supabase
+      .from('documents')
+      .select('id, request_id, created_at, updated_at, status')
+      .ilike('project_id', normalizedProjectId)
+      .ilike('file_name', normalizedFileName)
+      .eq('file_size', req.params.fileSize)
+      .eq('status', 'completed')
+      .limit(1)
 
-  if (existingDocument) {
-    return {
-      status: 'duplicate',
-      environment,
-      target: 'duplicate-check',
-      method: 'POST' as const,
-      submittedAt: triggerTimestamp,
-      submittedBy: req.user.email,
-      payload: {
-        fileName: req.params.fileName,
-        fileSize: req.params.fileSize,
-        fileType: req.params.fileType,
-        dealName: req.params.dealName,
-        companyName: req.params.companyName,
-        workstream: req.params.workstream,
-        submissionNotes: req.params.submissionNotes,
-        projectId: req.params.projectId,
-        projectStage: req.params.projectStage,
-        documentType: req.params.documentType,
-        submissionBatchId: req.params.submissionBatchId ?? '',
-        expectedBatchDocumentCount: req.params.expectedBatchDocumentCount ?? 1,
-        analystName: req.user.fullName,
-        analystEmail: req.user.email,
-        triggerTimestamp,
-        requestID,
-        environment,
-      },
-      response: {
-        requestID: existingDocument.requestID,
+    if (duplicateDocs && duplicateDocs.length > 0) {
+      const existingDocument = duplicateDocs[0]
+      return {
         status: 'duplicate',
-        receivedAt: existingDocument.receivedAt || existingDocument.createdAt || triggerTimestamp,
-        id: existingDocument.id,
-        createdAt: existingDocument.createdAt || triggerTimestamp,
-        updatedAt: existingDocument.updatedAt || triggerTimestamp,
         environment,
-      },
+        target: 'duplicate-check',
+        method: 'POST' as const,
+        submittedAt: triggerTimestamp,
+        submittedBy: req.user.email,
+        payload: {
+          fileName: req.params.fileName,
+          fileSize: req.params.fileSize,
+          fileType: req.params.fileType,
+          dealName: req.params.dealName,
+          companyName: req.params.companyName,
+          workstream: req.params.workstream,
+          submissionNotes: req.params.submissionNotes,
+          projectId: req.params.projectId,
+          projectStage: req.params.projectStage,
+          documentType: req.params.documentType,
+          submissionBatchId: req.params.submissionBatchId ?? '',
+          expectedBatchDocumentCount: req.params.expectedBatchDocumentCount ?? 1,
+          analystName: req.user.fullName,
+          analystEmail: req.user.email,
+          triggerTimestamp,
+          requestID,
+          environment,
+        },
+        response: {
+          requestID: existingDocument.request_id || requestID,
+          status: 'duplicate',
+          receivedAt: existingDocument.created_at || triggerTimestamp,
+          id: existingDocument.id,
+          createdAt: existingDocument.created_at || triggerTimestamp,
+          updatedAt: existingDocument.updated_at || triggerTimestamp,
+          environment,
+        },
+      }
     }
+  } catch {
+    // If Supabase check fails (e.g. offline/table not configured), proceed to submission
   }
 
   const path = getSubmitPath(environment)
@@ -98,9 +101,42 @@ export default async function submitDealPacket(req: { params: Params; user: User
     triggerTimestamp,
     requestID,
     environment,
+    storageFileUrl: req.params.storageFileUrl ?? '',
+    storagePath: req.params.storagePath ?? '',
   }
 
-  const formData = [
+  // Pre-insert queued document row to Supabase so it immediately appears in history
+  try {
+    await supabase.from('documents').upsert(
+      {
+        request_id: requestID,
+        project_id: normalizedProjectId,
+        deal_name: req.params.dealName,
+        company_name: req.params.companyName,
+        workstream: req.params.workstream,
+        submission_notes: req.params.submissionNotes,
+        analyst_name: req.user.fullName,
+        analyst_email: req.user.email,
+        project_stage: req.params.projectStage,
+        document_type: req.params.documentType,
+        file_name: req.params.fileName,
+        file_size: req.params.fileSize,
+        file_type: req.params.fileType,
+        trigger_timestamp: triggerTimestamp,
+        received_at: triggerTimestamp,
+        status: 'queued',
+        environment,
+        storage_file_url: req.params.storageFileUrl || '',
+        submission_batch_id: req.params.submissionBatchId || '',
+        expected_batch_document_count: req.params.expectedBatchDocumentCount ?? 1,
+      },
+      { onConflict: 'request_id' }
+    )
+  } catch {
+    // Non-blocking if table is syncing
+  }
+
+  const formData: Array<{ key: string; value: string } | { key: string; file: string; filename: string }> = [
     { key: 'fileName', value: req.params.fileName },
     { key: 'fileSize', value: String(req.params.fileSize) },
     { key: 'fileType', value: req.params.fileType },
@@ -118,8 +154,17 @@ export default async function submitDealPacket(req: { params: Params; user: User
     { key: 'triggerTimestamp', value: triggerTimestamp },
     { key: 'requestID', value: requestID },
     { key: 'environment', value: environment },
-    { key: 'file', file: req.params.fileBase64, filename: req.params.fileName },
   ]
+
+  if (req.params.storageFileUrl) {
+    formData.push({ key: 'storageFileUrl', value: req.params.storageFileUrl })
+  }
+  if (req.params.storagePath) {
+    formData.push({ key: 'storagePath', value: req.params.storagePath })
+  }
+  if (req.params.fileBase64) {
+    formData.push({ key: 'file', file: req.params.fileBase64, filename: req.params.fileName })
+  }
 
   const response = await n8nFinancialAgent.rawRequest<N8nSubmitResponse>({
     path,

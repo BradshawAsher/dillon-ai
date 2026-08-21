@@ -24,7 +24,9 @@ import DealEmailDraftCard from '../components/DealEmailDraftCard'
 import { lazyWithRetry } from '../utils/lazyWithRetry'
 const CommandPalette = lazyWithRetry(() => import('../components/CommandPalette'))
 const SystemArchitectureCard = lazyWithRetry(() => import('../components/SystemArchitectureCard'))
-import LoginButton, { getStoredAuth, isDataIsolationEnabled } from '../components/AuthGate'
+import LoginButton, { getStoredAuth, isDataIsolationEnabled, DATA_ISOLATION_EVENT } from '../components/AuthGate'
+import { uploadDocumentToSupabaseStorage } from '../services/supabaseStorage'
+import { DataIsolationBanner } from '../components/dashboard/DataIsolationBanner'
 import { buildMarkdownReport, buildJsonExport, downloadFile } from '../components/ExportDealButton'
 import KeyboardShortcutsDialog from '../components/KeyboardShortcutsDialog'
 import { type Notification } from '../components/NotificationCenter'
@@ -48,6 +50,7 @@ import { AnalysisWorkspaceView } from '../components/views/AnalysisWorkspaceView
 import { DiagnosticsWorkspaceView } from '../components/views/DiagnosticsWorkspaceView'
 import { DocumentsWorkspaceView } from '../components/views/DocumentsWorkspaceView'
 import { WorkspaceHeader } from '../components/views/WorkspaceHeader'
+import { AccountWorkspaceView } from '../components/views/AccountWorkspaceView'
 import { useDealWorkspaceState, type WorkspaceTab } from '../hooks/useDealWorkspaceState'
 import { parseUrlDeepLinkState, matchProjectFromQuery, syncBrowserUrl } from '../utils/deepLinking'
 import DealWorkspaceNav from '../components/DealWorkspaceNav'
@@ -866,10 +869,24 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         return [...liveProjectSynthesesData, ...missingBenchmarkRows]
     }, [isExampleMode, liveProjectSynthesesData])
 
+    const [isolationModeEnabled, setIsolationModeEnabled] = useState(isDataIsolationEnabled)
+
+    useEffect(() => {
+        const handleIsolationChange = (e: Event) => {
+            const customEvent = e as CustomEvent<{ enabled: boolean }>
+            if (customEvent.detail && typeof customEvent.detail.enabled === 'boolean') {
+                setIsolationModeEnabled(customEvent.detail.enabled)
+            } else {
+                setIsolationModeEnabled(isDataIsolationEnabled())
+            }
+        }
+        window.addEventListener(DATA_ISOLATION_EVENT, handleIsolationChange)
+        return () => window.removeEventListener(DATA_ISOLATION_EVENT, handleIsolationChange)
+    }, [])
+
     const submissionHistory = useMemo(() => {
-        const isolationEnabled = isDataIsolationEnabled()
         const user = getStoredAuth()
-        const base = (!isolationEnabled || !user || user.role === 'admin')
+        const base = (!isolationModeEnabled || !user || user.role === 'admin')
             ? rawSubmissionHistory
             : rawSubmissionHistory.filter((row: SubmissionHistoryItem) => isOwnedByUser(getProjectKey(row), user.email))
 
@@ -878,12 +895,11 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             return [...DEMO_FALLBACK_DOCS, ...other]
         }
         return base
-    }, [rawSubmissionHistory, walkthrough.isActive, simulatedWalkthroughBatch])
+    }, [rawSubmissionHistory, isolationModeEnabled, walkthrough.isActive, simulatedWalkthroughBatch])
 
     const visibleProjectSyntheses = useMemo(() => {
-        const isolationEnabled = isDataIsolationEnabled()
         const user = getStoredAuth()
-        const base = (!isolationEnabled || !user || user.role === 'admin')
+        const base = (!isolationModeEnabled || !user || user.role === 'admin')
             ? rawProjectSyntheses
             : rawProjectSyntheses.filter((s: any) => isOwnedByUser(s.projectId || '', user.email))
 
@@ -892,7 +908,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             return [DEMO_FALLBACK_SYNTHESIS, DEMO_FALLBACK_SYNTHESIS_CASCADIA, ...other]
         }
         return base
-    }, [rawProjectSyntheses, walkthrough.isActive, simulatedWalkthroughBatch])
+    }, [rawProjectSyntheses, isolationModeEnabled, walkthrough.isActive, simulatedWalkthroughBatch])
 
     const [selectedFiles, setSelectedFiles] = useState<File[]>([])
     const [isSubmittingFile, setIsSubmittingFile] = useState(false)
@@ -1088,8 +1104,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     }, [activeSubmissionBatch, dealName, projectStage, submissionHistory])
 
     const projectSummaries = useMemo(
-        () => createProjectSummaries(submissionHistory, inFlightBatchPlaceholder),
-        [submissionHistory, inFlightBatchPlaceholder]
+        () => createProjectSummaries(rawSubmissionHistory, inFlightBatchPlaceholder),
+        [rawSubmissionHistory, inFlightBatchPlaceholder]
     )
 
     const availableProjects = useMemo(() => {
@@ -1181,8 +1197,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
     // Automatically restore active viewing project from deep link, stored active project, or default to the most recently submitted live project on initial page load / refresh once backend query completes
     useEffect(() => {
-        if (!isExampleMode && submissionHistoryData === null) return
-        if (submissionHistoryLoading || projectSynthesisLoading) return
+        if (!isExampleMode && (submissionHistoryLoading || submissionHistoryData === null)) return
         if (hasRestoredLatestProject || projectSummaries.length === 0) return
 
         let urlProjectTarget: any = null
@@ -1212,7 +1227,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             }
         }
         setHasRestoredLatestProject(true)
-    }, [submissionHistoryLoading, projectSynthesisLoading, hasRestoredLatestProject, projectSummaries, activeViewProjectId, setActiveViewProjectId, isExampleMode, submissionHistoryData])
+    }, [submissionHistoryLoading, hasRestoredLatestProject, projectSummaries, activeViewProjectId, setActiveViewProjectId, isExampleMode, submissionHistoryData])
 
     // Keep project fields in sync whenever selectedProjectKey changes, auto-resolving orphaned keys
     useEffect(() => {
@@ -1352,6 +1367,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
     const mostRecentProject = useMemo(() => projectSummaries[0] ?? null, [projectSummaries])
     const isViewingOlderDeal = Boolean(
+        hasRestoredLatestProject &&
+        !submissionHistoryLoading &&
         !isExampleMode &&
         !isTourActive &&
         mostRecentProject &&
@@ -2371,7 +2388,25 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
             for (const file of filesToQueue) {
                 try {
-                    const fileBase64 = await readFileAsBase64(file)
+                    let storageFileUrl = ''
+                    let storagePath = ''
+                    try {
+                        const uploadRes = await uploadDocumentToSupabaseStorage({
+                            file,
+                            projectId: targetProjectId,
+                        })
+                        storageFileUrl = uploadRes.storageFileUrl
+                        storagePath = uploadRes.storagePath
+                    } catch (storageErr) {
+                        console.warn('Direct storage upload failed, falling back to base64 inline:', storageErr)
+                    }
+
+                    // For files <= 3.5MB, keep base64 for n8n Google Drive compatibility.
+                    // For files > 3.5MB, omit base64 to prevent Vercel 4.5MB request cap (n8n/Supabase uses storageFileUrl).
+                    let fileBase64 = ''
+                    if (file.size <= 3.5 * 1024 * 1024) {
+                        fileBase64 = await readFileAsBase64(file)
+                    }
 
                     const result = await triggerSubmitDealPacket({
                         environment,
@@ -2379,6 +2414,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                         fileSize: file.size,
                         fileType: file.type || 'application/octet-stream',
                         fileBase64,
+                        storageFileUrl,
+                        storagePath,
                         dealName: dealName || suggestedProjectName,
                         companyName: dealName || suggestedProjectName,
                         workstream: '',
@@ -2651,6 +2688,9 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                         </div>
                     </div>
                 ) : null}
+
+                {/* Data Isolation Privacy Callout Banner */}
+                <DataIsolationBanner />
 
                 {/* Interactive Product Walkthrough & Video Gallery Dock */}
                 <WorkspaceDemoGalleryBar
@@ -3193,6 +3233,25 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                             <div id="errors-arch" className="scroll-mt-6">
                                 <SystemArchitectureCard />
                             </div>
+                        </section>
+                    ) : null}
+
+                    {activeWorkspaceTab === 'account' ? (
+                        <section id="account-settings" className="scroll-mt-6 space-y-6">
+                            <AccountWorkspaceView
+                                projectSummaries={projectSummaries}
+                                onSelectProject={(id) => {
+                                    setActiveViewProjectId(id)
+                                }}
+                                onSwitchTab={(tab) => {
+                                    setActiveWorkspaceTab(tab)
+                                    const workspace = document.getElementById('deal-workspace')
+                                    if (workspace) {
+                                        workspace.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                                    }
+                                }}
+                                onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
+                            />
                         </section>
                     ) : null}
                 </Suspense>

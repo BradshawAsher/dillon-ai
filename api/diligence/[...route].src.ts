@@ -14,6 +14,7 @@ import retryFailedDocument from '../../backend/diligence/retryFailedDocument'
 import stopBatchSubmission from '../../backend/diligence/stopBatchSubmission'
 import stopProjectSynthesis from '../../backend/diligence/stopProjectSynthesis'
 import submitDealPacket from '../../backend/diligence/submitDealPacket'
+import createUploadUrl from '../../backend/diligence/createUploadUrl'
 import updateSubmissionRow from '../../backend/diligence/updateSubmissionRow'
 import handleAccessRequest from '../../backend/diligence/handleAccessRequest'
 import { installRetoolGlobals, readJsonBody, userFromHeaders } from '../_lib/retoolRuntime'
@@ -89,6 +90,11 @@ export default async function handler(req: ApiRequest, res: ServerResponse) {
         if (route === 'submission-consideration' && req.method === 'POST') {
             const params = await readJsonBody(req) as Parameters<typeof updateSubmissionRow>[0]['params']
             sendJson(res, 200, await updateSubmissionRow({ params, user }))
+            return
+        }
+        if (route === 'upload-url' && req.method === 'POST') {
+            const params = await readJsonBody(req) as Parameters<typeof createUploadUrl>[0]['params']
+            sendJson(res, 200, await createUploadUrl({ params, user }))
             return
         }
         if (route === 'submit' && req.method === 'POST') {

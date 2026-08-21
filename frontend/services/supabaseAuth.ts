@@ -1,0 +1,261 @@
+import { createClient, type User, type Session } from '@supabase/supabase-js'
+
+const SUPABASE_URL = 'https://sihpsqrunkwkxhhnwoqe.supabase.co'
+const SUPABASE_ANON_KEY = 'REDACTED_SUPABASE_ANON_KEY'
+
+export const supabaseAuthClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+    },
+})
+
+export interface AppAuthUser {
+    id?: string
+    email: string
+    name: string
+    team: string
+    role: 'admin' | 'tester'
+    avatarUrl?: string
+}
+
+const STORAGE_KEY = 'mergeworks.auth'
+
+const ADMIN_EMAILS = [
+    'bradshaw@mergeworks.io',
+    'brad@mergeworks.io',
+    'srijan@mergeworks.io',
+    'admin@mergeworks.io',
+    'info@mergeworks.org',
+    'bradshin231@gmail.com',
+    's-basher@outlook.com',
+    'srijanchallapalli@gmail.com',
+    'ykakarl1@umbc.edu',
+    'basher2@uw.edu',
+    'basher2@cs.washington.edu',
+]
+
+export function mapSupabaseUserToAppUser(user: User | null, customTeam?: string): AppAuthUser | null {
+    if (!user || !user.email) return null
+    const email = user.email.trim().toLowerCase()
+    const metadata = user.user_metadata || {}
+    const name = metadata.full_name || metadata.name || email.split('@')[0] || 'User'
+    const team = customTeam || metadata.team || 'Pod 1'
+    const role: 'admin' | 'tester' = ADMIN_EMAILS.includes(email) ? 'admin' : 'tester'
+
+    return {
+        id: user.id,
+        email,
+        name,
+        team,
+        role,
+        avatarUrl: metadata.avatar_url || metadata.picture,
+    }
+}
+
+export const AUTH_CHANGE_EVENT = 'mergeworks:auth-change'
+
+export function saveAppAuth(user: AppAuthUser | null) {
+    if (typeof window === 'undefined') return
+    if (user) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(user))
+    } else {
+        localStorage.removeItem(STORAGE_KEY)
+    }
+    window.dispatchEvent(new CustomEvent(AUTH_CHANGE_EVENT, { detail: { user } }))
+}
+
+export function getLocalAppAuth(): AppAuthUser | null {
+    if (typeof window === 'undefined') return null
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY)
+        if (!raw) return null
+        const user = JSON.parse(raw) as AppAuthUser
+        if (!user.role) {
+            user.role = ADMIN_EMAILS.includes((user.email || '').toLowerCase()) ? 'admin' : 'tester'
+        }
+        return user
+    } catch {
+        return null
+    }
+}
+
+/**
+ * Sign Up with Email and Password
+ */
+export async function signUpWithPassword(email: string, password: string, fullName: string, team: string = 'Pod 1') {
+    const { data, error } = await supabaseAuthClient.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+            data: {
+                full_name: fullName.trim(),
+                team: team.trim(),
+            },
+        },
+    })
+
+    if (error) {
+        return { success: false, error: error.message, user: null }
+    }
+
+    const appUser = mapSupabaseUserToAppUser(data.user, team) || {
+        id: data.user?.id,
+        email: email.trim().toLowerCase(),
+        name: fullName.trim() || email.split('@')[0],
+        team,
+        role: ADMIN_EMAILS.includes(email.trim().toLowerCase()) ? 'admin' as const : 'tester' as const,
+    }
+
+    saveAppAuth(appUser)
+    return { success: true, error: null, user: appUser, session: data.session }
+}
+
+/**
+ * Sign In with Email and Password
+ */
+export async function signInWithPassword(email: string, password: string) {
+    const { data, error } = await supabaseAuthClient.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+    })
+
+    if (error) {
+        return { success: false, error: error.message, user: null }
+    }
+
+    const appUser = mapSupabaseUserToAppUser(data.user)
+    if (appUser) {
+        saveAppAuth(appUser)
+    }
+
+    return { success: true, error: null, user: appUser, session: data.session }
+}
+
+/**
+ * Sign In with Google OAuth
+ */
+export async function signInWithGoogle() {
+    try {
+        const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}?view=dashboard` : undefined
+        const { data, error } = await supabaseAuthClient.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+                redirectTo: redirectUrl,
+            },
+        })
+
+        if (error) {
+            const msg = error.message?.toLowerCase() || ''
+            if (msg.includes('not enabled') || msg.includes('validation_failed') || (error as any).status === 400) {
+                return {
+                    success: false,
+                    error: 'Google OAuth is not enabled in your Supabase project dashboard (Auth -> Providers -> Google). Please sign in with Email & Password or configure Google credentials.',
+                }
+            }
+            return { success: false, error: error.message }
+        }
+
+        return { success: true, url: data.url }
+    } catch (err: any) {
+        return { success: false, error: err?.message || 'Google authentication error' }
+    }
+}
+
+/**
+ * Sign In with GitHub OAuth
+ */
+export async function signInWithGithub() {
+    try {
+        const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}?view=dashboard` : undefined
+        const { data, error } = await supabaseAuthClient.auth.signInWithOAuth({
+            provider: 'github',
+            options: {
+                redirectTo: redirectUrl,
+            },
+        })
+
+        if (error) {
+            const msg = error.message?.toLowerCase() || ''
+            if (msg.includes('not enabled') || msg.includes('validation_failed') || (error as any).status === 400) {
+                return {
+                    success: false,
+                    error: 'GitHub OAuth is not enabled in your Supabase project dashboard (Auth -> Providers -> GitHub). Please sign in with Email & Password or configure GitHub credentials.',
+                }
+            }
+            return { success: false, error: error.message }
+        }
+
+        return { success: true, url: data.url }
+    } catch (err: any) {
+        return { success: false, error: err?.message || 'GitHub authentication error' }
+    }
+}
+
+/**
+ * Sign Out (Instant local clear + background remote signout)
+ */
+export async function signOutUser() {
+    saveAppAuth(null)
+    try {
+        await supabaseAuthClient.auth.signOut().catch(() => {})
+    } catch {
+        // ignore network error on signout
+    }
+}
+
+/**
+ * Initialize and listen to Auth Changes
+ */
+export function initAuthListener(onUserChange: (user: AppAuthUser | null) => void) {
+    // 1. Initial check (synchronous local read)
+    const initial = getLocalAppAuth()
+    if (initial) {
+        onUserChange(initial)
+    }
+
+    // 2. Initial remote session check
+    supabaseAuthClient.auth.getSession().then(({ data: { session } }) => {
+        if (session?.user) {
+            const appUser = mapSupabaseUserToAppUser(session.user)
+            if (appUser) {
+                saveAppAuth(appUser)
+                onUserChange(appUser)
+                return
+            }
+        }
+    }).catch(() => {})
+
+    // 3. Listen to instant custom app event
+    const handleCustomChange = (e: Event) => {
+        const ce = e as CustomEvent<{ user: AppAuthUser | null }>
+        if (ce.detail !== undefined) {
+            onUserChange(ce.detail.user)
+        }
+    }
+    if (typeof window !== 'undefined') {
+        window.addEventListener(AUTH_CHANGE_EVENT, handleCustomChange)
+    }
+
+    // 4. Real-time Supabase auth state listener
+    const { data: { subscription } } = supabaseAuthClient.auth.onAuthStateChange((_event, session) => {
+        if (session?.user) {
+            const appUser = mapSupabaseUserToAppUser(session.user)
+            if (appUser) {
+                saveAppAuth(appUser)
+                onUserChange(appUser)
+            }
+        } else if (_event === 'SIGNED_OUT') {
+            saveAppAuth(null)
+            onUserChange(null)
+        }
+    })
+
+    return () => {
+        if (typeof window !== 'undefined') {
+            window.removeEventListener(AUTH_CHANGE_EVENT, handleCustomChange)
+        }
+        subscription.unsubscribe()
+    }
+}

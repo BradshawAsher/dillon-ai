@@ -29,6 +29,21 @@ describe('Deep Linking Utilities', () => {
             expect(parsed.tab).toBe('synthesis')
         })
 
+        it('parses login view correctly', () => {
+            const parsed1 = parseUrlDeepLinkState('?view=login')
+            expect(parsed1.view).toBe('login')
+
+            const parsed2 = parseUrlDeepLinkState('?auth=true')
+            expect(parsed2.view).toBe('login')
+        })
+
+        it('parses landing view correctly even with project or tab params', () => {
+            const parsed = parseUrlDeepLinkState('?view=landing&project=heliopet&tab=synthesis')
+            expect(parsed.view).toBe('landing')
+            expect(parsed.projectQuery).toBe('heliopet')
+            expect(parsed.tab).toBe('synthesis')
+        })
+
         it('ignores invalid tabs', () => {
             const parsed = parseUrlDeepLinkState('?tab=nonexistent-tab')
             expect(parsed.tab).toBeNull()

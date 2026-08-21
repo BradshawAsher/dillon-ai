@@ -139,4 +139,45 @@ describe('getAiSubmissionViewModel', () => {
         // Decimals must also be grouped (previously rendered "1234567.50").
         expect(byLabel['Dscr']).toBe('1,234,567.50')
     })
+
+    it('parses structured flag objects with individual confidence scores and citations', () => {
+        const row = makeRow({
+            aiConfidence: '0.90',
+            aiRedFlags: JSON.stringify([
+                {
+                    description: 'Material EBITDA inconsistency between CIM and tax return.',
+                    confidence_score: 0.98,
+                    severity: 'critical',
+                    citations: [{ source_file: 'Tax_Return_2023.pdf', row_or_cell: 'Page 1, Line 21' }]
+                }
+            ]),
+            aiYellowFlags: JSON.stringify([
+                {
+                    description: 'Customer concentration above 25% threshold.',
+                    confidence_score: 0.74,
+                    status: 'investigate'
+                }
+            ]),
+            aiGreenFlags: JSON.stringify([
+                'Strong recurring revenue base with 92% retention.'
+            ])
+        })
+
+        const vm = getAiSubmissionViewModel(row)
+        expect(vm.redFlags).toEqual(['Material EBITDA inconsistency between CIM and tax return.'])
+        expect(vm.structuredFindings.redFlags).toHaveLength(1)
+        expect(vm.structuredFindings.redFlags[0].text).toBe('Material EBITDA inconsistency between CIM and tax return.')
+        expect(vm.structuredFindings.redFlags[0].confidence).toBe(0.98)
+        expect(vm.structuredFindings.redFlags[0].severity).toBe('critical')
+        expect(vm.structuredFindings.redFlags[0].citations).toEqual([
+            { sourceFile: 'Tax_Return_2023.pdf', rowOrCell: 'Page 1, Line 21' }
+        ])
+
+        expect(vm.yellowFlags).toEqual(['Customer concentration above 25% threshold.'])
+        expect(vm.structuredFindings.yellowFlags[0].confidence).toBe(0.74)
+
+        expect(vm.greenFlags).toEqual(['Strong recurring revenue base with 92% retention.'])
+        // Falls back to document-level confidence (0.90) for plain string flags
+        expect(vm.structuredFindings.greenFlags[0].confidence).toBe(0.90)
+    })
 })
