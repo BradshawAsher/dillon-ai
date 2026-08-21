@@ -108,6 +108,15 @@ describe('driveEmbedUrl', () => {
         )
     })
 
+    it('does not fold a trailing query or fragment into the extracted id', () => {
+        expect(driveEmbedUrl(undefined, 'https://drive.google.com/file/d/xyz789?usp=sharing')).toBe(
+            'https://drive.google.com/file/d/xyz789/preview',
+        )
+        expect(driveEmbedUrl(undefined, 'https://drive.google.com/open?id=open123#heading')).toBe(
+            'https://drive.google.com/file/d/open123/preview',
+        )
+    })
+
     it('returns null when neither yields a usable id', () => {
         expect(driveEmbedUrl()).toBeNull()
         expect(driveEmbedUrl('', 'https://example.com/not-a-drive-link')).toBeNull()
