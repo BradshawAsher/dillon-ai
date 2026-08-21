@@ -1,5 +1,5 @@
 import React from 'react'
-import { ChevronLeft, ChevronRight, Clock3, DollarSign } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Clock3, DollarSign, Loader2, RefreshCw, RotateCw, Sparkles } from 'lucide-react'
 
 import ExpandableText from '../ExpandableText'
 import ExpandableInsightGroup from '../ExpandableInsightGroup'
@@ -63,6 +63,10 @@ export type LatestSubmissionSectionProps = {
     activeProjectSynthesis?: any
     isCurrentProjectAwaitingSynthesis?: boolean
     setActiveEvidence?: (evidence: any) => void
+    handleRerunLatestBatch?: () => void
+    handleRerunAllProjectDocs?: () => void
+    handleRunSynthesis?: () => void
+    isRerunningBatch?: boolean
 }
 
 export default function LatestSubmissionSection({
@@ -96,6 +100,10 @@ export default function LatestSubmissionSection({
     isCurrentProjectAwaitingSynthesis,
     setActiveEvidence,
     setUserHasNavigatedBatchDocs,
+    handleRerunLatestBatch,
+    handleRerunAllProjectDocs,
+    handleRunSynthesis,
+    isRerunningBatch = false,
 }: LatestSubmissionSectionProps & { setUserHasNavigatedBatchDocs?: (navigated: boolean) => void }) {
     const liveSubmitInsight = displayedSubmissionRow ? getAiSubmissionViewModel(displayedSubmissionRow) : null
     const trafficLight = displayedSubmitTrafficLight || displayedSubmissionRow?.trafficLight || ''
@@ -129,9 +137,26 @@ export default function LatestSubmissionSection({
                                 <span>Batch Total: ${batchTotalCost.toFixed(4)} ({latestBatchRows.length} doc{latestBatchRows.length > 1 ? 's' : ''}, incl. retries)</span>
                             </Badge>
                         )}
-                        {displayedSubmissionRow && ['failed', 'error', 'rejected', 'needs_review', 'needs review'].includes(displayedSubmitStatus.trim().toLowerCase()) && displayedSubmissionRow.requestID && handleRetryFailedDocument ? (
-                            <Button type="button" variant="outline" disabled={retryingRequestId === displayedSubmissionRow.requestID} onClick={() => handleRetryFailedDocument(displayedSubmissionRow.requestID)}>
-                                {retryingRequestId === displayedSubmissionRow.requestID ? 'Retrying document…' : 'Retry document'}
+                        {displayedSubmissionRow?.requestID && handleRetryFailedDocument ? (
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="gap-1.5 text-xs font-semibold"
+                                disabled={retryingRequestId === displayedSubmissionRow.requestID}
+                                onClick={() => handleRetryFailedDocument(displayedSubmissionRow.requestID)}
+                            >
+                                {retryingRequestId === displayedSubmissionRow.requestID ? (
+                                    <>
+                                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                        <span>Re-running doc…</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <RotateCw className="h-3.5 w-3.5" />
+                                        <span>Re-run this document</span>
+                                    </>
+                                )}
                             </Button>
                         ) : null}
                         <Badge variant={getSubmissionStatusVariant(displayedSubmitStatus)}>
@@ -152,9 +177,68 @@ export default function LatestSubmissionSection({
 
             <CardContent className="space-y-4 p-4">
                 <div className="flex flex-wrap items-center gap-3">
-                    <Button type="button" variant="default" onClick={() => handleOpenProjectSynthesis(displayedSubmissionRow?.projectId || projectId)} disabled={!(displayedSubmissionRow?.projectId || projectId)}>
-                        View this project&apos;s synthesis
+                    <Button
+                        type="button"
+                        className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-xs hover:shadow-md transition-all cursor-pointer border border-emerald-500/30"
+                        onClick={() => handleOpenProjectSynthesis(displayedSubmissionRow?.projectId || projectId)}
+                        disabled={!(displayedSubmissionRow?.projectId || projectId)}
+                    >
+                        <Sparkles className="h-4 w-4" />
+                        <span>View this project&apos;s synthesis</span>
                     </Button>
+                    {handleRunSynthesis ? (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            className="gap-1.5 font-bold"
+                            onClick={handleRunSynthesis}
+                            disabled={isCurrentProjectAwaitingSynthesis}
+                        >
+                            {isCurrentProjectAwaitingSynthesis ? (
+                                <>
+                                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                                    <span>Synthesizing project…</span>
+                                </>
+                            ) : (
+                                <>
+                                    <RefreshCw className="h-4 w-4 text-primary" />
+                                    <span>Re-run synthesis</span>
+                                </>
+                            )}
+                        </Button>
+                    ) : null}
+                    {handleRerunLatestBatch && latestBatchRows.length > 0 ? (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            className="gap-1.5 font-bold"
+                            onClick={handleRerunLatestBatch}
+                            disabled={isRerunningBatch}
+                        >
+                            {isRerunningBatch ? (
+                                <>
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    <span>Re-running batch…</span>
+                                </>
+                            ) : (
+                                <>
+                                    <RotateCw className="h-4 w-4" />
+                                    <span>Re-run latest batch ({latestBatchRows.length})</span>
+                                </>
+                            )}
+                        </Button>
+                    ) : null}
+                    {handleRerunAllProjectDocs && (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            className="gap-1.5 font-bold"
+                            onClick={handleRerunAllProjectDocs}
+                        >
+                            <RefreshCw className="h-4 w-4" />
+                            <span>Re-run all docs in project</span>
+                        </Button>
+                    )}
                     <Button type="button" variant="outline" className="gap-1.5 font-bold" onClick={() => {
                         const targetProj = displayedSubmissionRow?.companyName || displayedSubmissionRow?.dealName || projectId || 'this project'
                         const el = document.getElementById('upload-section')
@@ -577,9 +661,23 @@ export default function LatestSubmissionSection({
                 ) : null}
 
                 <div className="flex flex-wrap items-center gap-3 border-t border-border pt-4">
-                    <Button type="button" variant="default" onClick={() => handleOpenProjectSynthesis(displayedSubmissionRow?.projectId || projectId)} disabled={!(displayedSubmissionRow?.projectId || projectId)}>
-                        View this project&apos;s synthesis
-                        {activeProjectSynthesis ? <Badge variant="success" className="ml-2">Ready</Badge> : isCurrentProjectAwaitingSynthesis ? <Badge variant="warning" className="ml-2">Running</Badge> : null}
+                    <Button
+                        type="button"
+                        className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-xs hover:shadow-md transition-all cursor-pointer border border-emerald-500/30"
+                        onClick={() => handleOpenProjectSynthesis(displayedSubmissionRow?.projectId || projectId)}
+                        disabled={!(displayedSubmissionRow?.projectId || projectId)}
+                    >
+                        <Sparkles className="h-4 w-4" />
+                        <span>View this project&apos;s synthesis</span>
+                        {activeProjectSynthesis ? (
+                            <Badge variant="secondary" className="ml-1.5 bg-white/20 text-white hover:bg-white/30 border-white/30 text-[10px]">
+                                Ready
+                            </Badge>
+                        ) : isCurrentProjectAwaitingSynthesis ? (
+                            <Badge variant="warning" className="ml-1.5 text-[10px]">
+                                Running
+                            </Badge>
+                        ) : null}
                     </Button>
                     <Button type="button" variant="outline" className="gap-1.5 font-bold" onClick={() => {
                         const targetProj = displayedSubmissionRow?.companyName || displayedSubmissionRow?.dealName || projectId || 'this project'

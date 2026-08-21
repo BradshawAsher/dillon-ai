@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react'
-import { Globe } from 'lucide-react'
+import { Globe, Loader2, Sparkles } from 'lucide-react'
 import { Badge } from '../../lib/shadcn/badge'
 import { Button } from '../../lib/shadcn/button'
 import ProjectComparisonCard from '../ProjectComparisonCard'
@@ -48,6 +48,8 @@ type DiligenceWorkspaceViewProps = {
     setProjectChecklistById: React.Dispatch<React.SetStateAction<Record<string, any>>>
     impact: any
     onReturnToLanding?: () => void
+    handleRunSynthesis?: () => void
+    isCurrentProjectAwaitingSynthesis?: boolean
 }
 
 export function DiligenceWorkspaceView({
@@ -74,6 +76,8 @@ export function DiligenceWorkspaceView({
     setProjectChecklistById,
     impact,
     onReturnToLanding,
+    handleRunSynthesis,
+    isCurrentProjectAwaitingSynthesis = false,
 }: DiligenceWorkspaceViewProps) {
     return (
         <section id="deal-diligence" className="space-y-6 scroll-mt-6">
@@ -92,17 +96,35 @@ export function DiligenceWorkspaceView({
                         Inspect extracted line items, evidence citations, mathematical checks, and risk analysis for active deal room ({activeProjectId}).
                     </p>
                 </div>
-                {onReturnToLanding && (
-                    <Button
-                        type="button"
-                        variant="outline"
-                        className="gap-2 border-primary/40 bg-background hover:bg-primary/10 text-primary font-bold text-xs shrink-0 shadow-2xs"
-                        onClick={onReturnToLanding}
-                    >
-                        <Globe className="h-4 w-4 text-primary" />
-                        <span>Go to Landing Page</span>
-                    </Button>
-                )}
+                <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                    {handleRunSynthesis && (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            className="gap-2 border-primary/40 bg-background hover:bg-primary/10 text-primary font-bold text-xs shrink-0 shadow-2xs"
+                            onClick={handleRunSynthesis}
+                            disabled={isCurrentProjectAwaitingSynthesis}
+                        >
+                            {isCurrentProjectAwaitingSynthesis ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                                <Sparkles className="h-3.5 w-3.5 text-primary" />
+                            )}
+                            <span>Re-run Synthesis</span>
+                        </Button>
+                    )}
+                    {onReturnToLanding && (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            className="gap-2 border-border bg-background hover:bg-muted text-foreground font-bold text-xs shrink-0 shadow-2xs"
+                            onClick={onReturnToLanding}
+                        >
+                            <Globe className="h-4 w-4 text-primary" />
+                            <span>Go to Landing Page</span>
+                        </Button>
+                    )}
+                </div>
             </div>
 
             {/* Live Re-Synthesis Disclaimer Banner when a document is in processing */}

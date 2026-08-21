@@ -1,5 +1,5 @@
-import React from 'react'
-import { AlertCircle, AlertTriangle, CheckCircle2, Clock, Loader2, Square } from 'lucide-react'
+import React, { useState } from 'react'
+import { AlertCircle, AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, Clock, FileText, Loader2, RefreshCw, RotateCw, Sparkles, Square } from 'lucide-react'
 import { Badge } from '../../lib/shadcn/badge'
 import { Button } from '../../lib/shadcn/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../lib/shadcn/card'
@@ -27,6 +27,12 @@ type BatchProgressCardProps = {
     retryingRequestId?: string
     handleRetryFailedDocument: (requestID: string) => void
     handleOpenProjectSynthesis: (targetProjectId: string) => void
+    batchDocuments?: any[]
+    handleRerunLatestBatch?: () => void
+    handleRerunAllProjectDocs?: () => void
+    isRerunningBatch?: boolean
+    handleRunSynthesis?: () => void
+    isAwaitingSynthesis?: boolean
 }
 
 export function BatchProgressCard({
@@ -42,14 +48,21 @@ export function BatchProgressCard({
     batchElapsedSeconds,
     activeBatchImpact,
     activeBatchStuckRows,
-    activeBatchErrors,
-    activeBatchAdvisories,
-    activeBatchCompletedCount,
+    activeBatchErrors = [],
+    activeBatchAdvisories = [],
+    activeBatchCompletedCount = 0,
     activeProjectId,
     retryingRequestId,
     handleRetryFailedDocument,
     handleOpenProjectSynthesis,
+    batchDocuments = [],
+    handleRerunLatestBatch,
+    handleRerunAllProjectDocs,
+    isRerunningBatch = false,
+    handleRunSynthesis,
+    isAwaitingSynthesis = false,
 }: BatchProgressCardProps) {
+    const [isDocsExpanded, setIsDocsExpanded] = useState(false)
     const isFinished = activeBatchExpectedCount > 0 && activeBatchFinishedCount >= activeBatchExpectedCount
     const isStopped = Boolean(activeSubmissionBatch.stoppedAt)
 
@@ -68,12 +81,26 @@ export function BatchProgressCard({
                             Batch ID: <span className="font-mono">{activeSubmissionBatch.id}</span> ({activeSubmissionBatch.environment})
                         </CardDescription>
                     </div>
-                    {!isFinished && !isStopped ? (
-                        <Button variant="outline" size="sm" onClick={handleStopBatch} disabled={isStoppingBatch} className="text-destructive hover:bg-destructive/10 border-destructive/30">
-                            {isStoppingBatch ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <Square className="h-3.5 w-3.5 mr-1.5 fill-current" />}
-                            Stop batch
-                        </Button>
-                    ) : null}
+                    <div className="flex flex-wrap items-center gap-2">
+                        {handleRerunLatestBatch ? (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleRerunLatestBatch}
+                                disabled={isRerunningBatch || (!isFinished && !isStopped)}
+                                className="gap-1.5 text-xs font-semibold"
+                            >
+                                {isRerunningBatch ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCw className="h-3.5 w-3.5" />}
+                                Re-run latest batch
+                            </Button>
+                        ) : null}
+                        {!isFinished && !isStopped ? (
+                            <Button variant="outline" size="sm" onClick={handleStopBatch} disabled={isStoppingBatch} className="text-destructive hover:bg-destructive/10 border-destructive/30">
+                                {isStoppingBatch ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <Square className="h-3.5 w-3.5 mr-1.5 fill-current" />}
+                                Stop batch
+                            </Button>
+                        ) : null}
+                    </div>
                 </div>
             </CardHeader>
             <CardContent className="p-4 sm:p-6 pt-2 space-y-4">
@@ -154,6 +181,55 @@ export function BatchProgressCard({
                     </p>
                 ) : null}
 
+                {batchDocuments && batchDocuments.length > 0 ? (
+                    <div className="rounded-lg border border-border bg-card/50 overflow-hidden">
+                        <button
+                            type="button"
+                            onClick={() => setIsDocsExpanded(!isDocsExpanded)}
+                            className="w-full flex items-center justify-between p-3 text-xs font-semibold text-foreground hover:bg-muted/30 transition-colors"
+                        >
+                            <span className="flex items-center gap-2">
+                                <FileText className="h-4 w-4 text-primary" />
+                                Documents in this batch ({batchDocuments.length})
+                            </span>
+                            {isDocsExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                        </button>
+                        {isDocsExpanded && (
+                            <div className="p-3 pt-0 space-y-2 divide-y divide-border/40">
+                                {batchDocuments.map((doc: any) => {
+                                    const reqId = doc.requestID || String(doc.id || '')
+                                    const st = (doc.status || 'unknown').trim().toLowerCase()
+                                    return (
+                                        <div key={reqId || doc.fileName} className="pt-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+                                            <div className="min-w-0 max-w-sm">
+                                                <p className="font-medium text-foreground truncate">{doc.fileName || 'Untitled document'}</p>
+                                                <p className="text-muted-foreground text-[11px]">{doc.documentType || 'Document'} · {doc.status || 'pending'}</p>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <Badge variant={st === 'completed' ? 'success' : ['failed', 'error', 'rejected'].includes(st) ? 'destructive' : 'outline'} className="text-[10px]">
+                                                    {doc.status || 'pending'}
+                                                </Badge>
+                                                {reqId ? (
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        className="h-7 text-xs gap-1 hover:bg-primary/10"
+                                                        onClick={() => handleRetryFailedDocument(reqId)}
+                                                        disabled={retryingRequestId === reqId}
+                                                    >
+                                                        {retryingRequestId === reqId ? <Loader2 className="h-3 w-3 animate-spin" /> : <RotateCw className="h-3 w-3" />}
+                                                        Re-run doc
+                                                    </Button>
+                                                ) : null}
+                                            </div>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        )}
+                    </div>
+                ) : null}
+
                 {activeBatchErrors.length > 0 ? (
                     <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs space-y-2">
                         <p className="font-semibold text-destructive flex items-center gap-1.5">
@@ -179,20 +255,57 @@ export function BatchProgressCard({
                             <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
                             Batch advisories
                         </p>
-                        {activeBatchAdvisories.map((adv, idx) => (
+                        {activeBatchAdvisories.map((adv: { fileName: string; message: string }, idx: number) => (
                             <p key={idx} className="text-muted-foreground">{adv.fileName}: {adv.message}</p>
                         ))}
                     </div>
                 ) : null}
 
-                {isFinished && activeBatchCompletedCount > 0 ? (
-                    <div className="pt-2 flex items-center justify-between">
-                        <p className="text-xs text-success font-medium">All batch documents have reached terminal status.</p>
-                        <Button size="sm" onClick={() => { if (activeProjectId) handleOpenProjectSynthesis(activeProjectId) }}>
-                            View project synthesis
-                        </Button>
+                <div className="pt-2 flex flex-wrap items-center justify-between gap-2 border-t border-border/50">
+                    <div className="flex items-center gap-2">
+                        {isFinished ? (
+                            <p className="text-xs text-success font-medium flex items-center gap-1">
+                                <CheckCircle2 className="h-3.5 w-3.5 text-success" />
+                                All batch documents have reached terminal status.
+                            </p>
+                        ) : null}
                     </div>
-                ) : null}
+                    <div className="flex flex-wrap items-center gap-2">
+                        {handleRerunAllProjectDocs && activeProjectId ? (
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-xs gap-1.5"
+                                onClick={handleRerunAllProjectDocs}
+                            >
+                                <RefreshCw className="h-3.5 w-3.5" />
+                                Re-run all docs in project
+                            </Button>
+                        ) : null}
+                        {handleRunSynthesis && activeBatchCompletedCount > 0 ? (
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-xs gap-1.5 border-primary/40 bg-primary/5 hover:bg-primary/10 text-primary font-semibold"
+                                onClick={handleRunSynthesis}
+                                disabled={isAwaitingSynthesis}
+                            >
+                                {isAwaitingSynthesis ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                                Re-run synthesis
+                            </Button>
+                        ) : null}
+                        {activeBatchCompletedCount > 0 && activeProjectId ? (
+                            <Button
+                                size="sm"
+                                className="text-xs gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-xs"
+                                onClick={() => handleOpenProjectSynthesis(activeProjectId)}
+                            >
+                                <Sparkles className="h-3.5 w-3.5" />
+                                <span>View project synthesis</span>
+                            </Button>
+                        ) : null}
+                    </div>
+                </div>
             </CardContent>
         </Card>
     )

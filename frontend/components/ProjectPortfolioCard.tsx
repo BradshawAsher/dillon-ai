@@ -45,6 +45,7 @@ type ProjectPortfolioCardProps = {
     onRunSynthesis: () => void
     runningSynthesis: boolean
     onAddDocuments?: (projectKey: string) => void
+    onRerunAllProjectDocs?: (projectKey: string) => void
 }
 
 function SummaryMetric({
@@ -95,7 +96,7 @@ function resolveProjectAiModels(projectDocs: SubmissionHistoryItem[], synthesis:
     }
 }
 
-export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey, onProjectSelect, onExcludeDocument, onIncludeDocument, onRetryDocument, onRequeueNewProject, retryingRequestId, onRunSynthesis, runningSynthesis, onAddDocuments }: ProjectPortfolioCardProps) {
+export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey, onProjectSelect, onExcludeDocument, onIncludeDocument, onRetryDocument, onRequeueNewProject, retryingRequestId, onRunSynthesis, runningSynthesis, onAddDocuments, onRerunAllProjectDocs }: ProjectPortfolioCardProps) {
     const [hideDuplicateDocs, setHideDuplicateDocs] = useState(true)
     const [projectSearch, setProjectSearch] = useState('')
     const [workstreamFilter, setWorkstreamFilter] = useState('all')
@@ -637,14 +638,32 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                                         </div>
 
                                         <details id={isPrimaryActiveCard ? 'project-card-documents' : undefined} open className="mt-4 rounded-lg border border-border bg-muted/20 p-4 scroll-mt-6">
-                                            <summary className="cursor-pointer text-sm font-semibold text-foreground">
-                                                Documents in this project ({visibleDocuments.length}
-                                                {hiddenDuplicateCount > 0 ? ` shown · ${hiddenDuplicateCount} duplicate${hiddenDuplicateCount === 1 ? '' : 's'} hidden` : ''})
-                                            </summary>
+                                            <div className="flex flex-wrap items-center justify-between gap-2 pb-2">
+                                                <summary className="cursor-pointer text-sm font-semibold text-foreground">
+                                                    Documents in this project ({visibleDocuments.length}
+                                                    {hiddenDuplicateCount > 0 ? ` shown · ${hiddenDuplicateCount} duplicate${hiddenDuplicateCount === 1 ? '' : 's'} hidden` : ''})
+                                                </summary>
+                                                {onRerunAllProjectDocs && visibleDocuments.length > 0 && (
+                                                    <Button
+                                                        type="button"
+                                                        size="sm"
+                                                        variant="outline"
+                                                        className="gap-1.5 text-xs font-semibold"
+                                                        onClick={(e) => {
+                                                            e.preventDefault()
+                                                            e.stopPropagation()
+                                                            onRerunAllProjectDocs(project.projectKey)
+                                                        }}
+                                                    >
+                                                        <RefreshCw className="h-3.5 w-3.5" />
+                                                        Re-run all docs in this project
+                                                    </Button>
+                                                )}
+                                            </div>
                                             <div className="mt-3 space-y-2">
                                                 {visibleDocuments.map((document) => {
                                                     const status = document.status.trim().toLowerCase()
-                                                    const canRetry = ['failed', 'error', 'rejected', 'needs_review', 'needs review', 'stopped'].includes(status) && document.requestID
+                                                    const isFailed = ['failed', 'error', 'rejected', 'needs_review', 'needs review', 'stopped'].includes(status)
                                                     return (
                                                         <div key={`${document.requestID}-${document.fileName}`} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-background/70 px-3 py-2 text-sm">
                                                             <div>
@@ -653,18 +672,24 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                                                             </div>
                                                             <div className="flex items-center gap-2">
                                                                 <Badge variant={document.isConsidered ? 'outline' : 'secondary'}>{document.isConsidered ? (document.processedAt || 'Pending') : 'Excluded'}</Badge>
-                                                                {canRetry ? (
-                                                                    <>
-                                                                        <Button type="button" size="sm" variant="outline" disabled={retryingRequestId === document.requestID} onClick={() => onRetryDocument(document.requestID)}>
-                                                                            {retryingRequestId === document.requestID ? <RefreshCw className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}Retry
-                                                                        </Button>
-                                                                        {onRequeueNewProject && (
-                                                                            <Button type="button" size="sm" variant="secondary" onClick={() => onRequeueNewProject(document.requestID)}>
-                                                                                Try in new project
-                                                                            </Button>
-                                                                        )}
-                                                                    </>
+                                                                {document.requestID ? (
+                                                                    <Button
+                                                                        type="button"
+                                                                        size="sm"
+                                                                        variant={isFailed ? 'destructive' : 'outline'}
+                                                                        disabled={retryingRequestId === document.requestID}
+                                                                        onClick={() => onRetryDocument(document.requestID)}
+                                                                        className="gap-1 text-xs"
+                                                                    >
+                                                                        {retryingRequestId === document.requestID ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                                                                        {isFailed ? 'Retry' : 'Re-run'}
+                                                                    </Button>
                                                                 ) : null}
+                                                                {isFailed && onRequeueNewProject && (
+                                                                    <Button type="button" size="sm" variant="secondary" onClick={() => onRequeueNewProject(document.requestID)}>
+                                                                        Try in new project
+                                                                    </Button>
+                                                                )}
                                                                 {document.isConsidered ? (
                                                                     <Button
                                                                         type="button"

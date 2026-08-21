@@ -154,6 +154,14 @@ async function handleRequest(
         res.end(JSON.stringify(result))
         return
     }
+    if ((route === '/run-synthesis' || route === '/trigger-project-synthesis') && req.method === 'POST') {
+        const params = await readJsonBody(req)
+        const mod = await server.ssrLoadModule(backendModuleUrl('triggerProjectSynthesis.ts'))
+        const result: unknown = await mod.default({ params, user })
+        res.setHeader('Content-Type', 'application/json')
+        res.end(JSON.stringify(result))
+        return
+    }
 
     res.statusCode = 404
     res.setHeader('Content-Type', 'application/json')

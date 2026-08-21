@@ -69,6 +69,12 @@ If the user asks to change project synthesis behavior, the agent should:
 - NEVER automatically run `git commit` or `git push` without an explicit, direct instruction from the user asking to commit and/or push.
 - Keep local changes in the working tree for the user to review. Only commit or push when the user explicitly says to do so.
 
+## Structured Output Parser Schema Protocol
+- ALWAYS format JSON schemas in LangChain / n8n Structured Output Parsers with clean, human-readable 2-space indentation (`json.dumps(schema, indent=2)`).
+- NEVER squish, minify, or collapse JSON schemas into a single unreadable line.
+- ALWAYS validate that the JSON schema parses cleanly with `json.loads()` and has zero escaped quote syntax errors (`\"` vs `\\"`) before saving or applying workflow updates.
+
+
 
 
 

@@ -15,8 +15,10 @@ declare const n8nFinancialAgent: {
   rawRequest<T>(options: {
     path: string
     method?: string
-    bodyType?: 'form-data'
+    bodyType?: 'form-data' | 'json'
     formData?: RetoolFormDataEntry[]
+    json?: Record<string, unknown> | unknown
+    body?: any
   }): Promise<{ data: T }>
 }
 
