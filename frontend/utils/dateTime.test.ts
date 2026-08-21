@@ -30,6 +30,14 @@ describe('formatEasternTime', () => {
         expect(formatted).toContain('12:30')
     })
 
+    it('accepts a numeric epoch value and null/undefined without throwing', () => {
+        const formatted = formatEasternTime(Date.parse('2024-01-15T17:30:00Z'))
+        expect(formatted).toContain('Jan 15, 2024')
+        expect(formatted).toContain('12:30')
+        expect(formatEasternTime(null)).toBe('Pending')
+        expect(formatEasternTime(undefined, 'Not started')).toBe('Not started')
+    })
+
     it('formats a UTC timestamp in the America/New_York zone', () => {
         // 17:30 UTC in January is 12:30 EST.
         const formatted = formatEasternTime('2024-01-15T17:30:00Z')
