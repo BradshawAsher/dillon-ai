@@ -42,6 +42,22 @@ describe('deriveDocumentedFacts', () => {
         expect(deriveDocumentedFacts([doc(facts)]).revenue.value).toBe(200)
     })
 
+    it('treats an undated TTM label as more recent than a dated fiscal year', () => {
+        const facts = JSON.stringify([
+            fact({ normalized_value: 200, period: 'FY2024' }),
+            fact({ normalized_value: 250, period: 'TTM' }),
+        ])
+        expect(deriveDocumentedFacts([doc(facts)]).revenue.value).toBe(250)
+    })
+
+    it('still ranks a dated TTM label by its explicit year', () => {
+        const facts = JSON.stringify([
+            fact({ normalized_value: 250, period: 'TTM 2022' }),
+            fact({ normalized_value: 300, period: 'FY2024' }),
+        ])
+        expect(deriveDocumentedFacts([doc(facts)]).revenue.value).toBe(300)
+    })
+
     it('prefers a confirmed fact over an unconfirmed one in the same period', () => {
         const facts = JSON.stringify([
             fact({ normalized_value: 100, period: 'FY24', status: 'reported', confidence: 0.9 }),
