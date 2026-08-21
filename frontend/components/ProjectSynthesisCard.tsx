@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import { CheckCircle, ChevronLeft, ChevronRight, Clock, Download, FileText, Filter, FolderPlus, Landmark, Layers, Loader2, MessageCircleQuestion, RefreshCw, Scale, Search, ShieldAlert, TriangleAlert } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { CheckCircle, ChevronLeft, ChevronRight, Clock, Download, FileText, Filter, FolderPlus, Landmark, Layers, Loader2, MessageCircleQuestion, RefreshCw, Scale, Search, ShieldAlert, Sparkles, TriangleAlert } from 'lucide-react'
 
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
@@ -287,6 +287,25 @@ export default function ProjectSynthesisCard({
     const currentProject = projects.find((project) => (project.projectId || project.projectKey) === normalizedProjectId)
     const targetName = (currentProject?.projectName || currentProject?.companyName || normalizedProjectId).toLowerCase()
 
+    const isPostLoiCheck = useCallback((item: ProjectSynthesisItem | null | undefined) => {
+        if (!item) return false
+        try {
+            const parsed = typeof item?.finalJudgmentJson === 'string' ? JSON.parse(item.finalJudgmentJson) : item?.finalJudgmentJson
+            if (parsed && typeof parsed === 'object' && typeof parsed.letter_of_intent_present === 'boolean') {
+                return parsed.letter_of_intent_present
+            }
+        } catch { /* skip */ }
+
+        const summary = (item.finalJudgmentSummary || '').toLowerCase()
+        if (summary.includes('pre-loi') || summary.includes('pass 1 pre-loi')) return false
+
+        const hasLoiCitation = (item.citations || []).some((c: string) => {
+            const lower = (c || '').toLowerCase()
+            return lower.includes('letter_of_intent') || lower.includes('loi') || lower.includes('letter-of-intent')
+        })
+        return hasLoiCitation
+    }, [])
+
     const rawVisibleSyntheses = useMemo(() => {
         const targetCompanyNorm = (currentProject?.companyName || targetName || '').toLowerCase()
 
@@ -299,24 +318,6 @@ export default function ProjectSynthesisCard({
                 return false
             }
             return true
-        }
-
-        const isPostLoiCheck = (item: ProjectSynthesisItem) => {
-            try {
-                const parsed = typeof item?.finalJudgmentJson === 'string' ? JSON.parse(item.finalJudgmentJson) : item?.finalJudgmentJson
-                if (parsed && typeof parsed === 'object' && typeof parsed.letter_of_intent_present === 'boolean') {
-                    return parsed.letter_of_intent_present
-                }
-            } catch { /* skip */ }
-
-            const summary = (item.finalJudgmentSummary || '').toLowerCase()
-            if (summary.includes('pre-loi') || summary.includes('pass 1 pre-loi')) return false
-
-            const hasLoiCitation = (item.citations || []).some((c: string) => {
-                const lower = (c || '').toLowerCase()
-                return lower.includes('letter_of_intent') || lower.includes('loi') || lower.includes('letter-of-intent')
-            })
-            return hasLoiCitation
         }
 
         const matchedItems: ProjectSynthesisItem[] = []
@@ -347,40 +348,15 @@ export default function ProjectSynthesisCard({
             }
         })
 
-        // Group by phase (pre_loi vs post_loi) and keep only the latest synthesis item per phase
-        const phaseMap = new Map<string, ProjectSynthesisItem>()
-
-        matchedItems.forEach((item) => {
-            const isPost = isPostLoiCheck(item)
-            const phaseKey = isPost ? 'post_loi' : 'pre_loi'
-            const existing = phaseMap.get(phaseKey)
-
-            if (!existing) {
-                phaseMap.set(phaseKey, item)
-            } else {
-                const timeItem = new Date(item.updatedAt || item.createdAt || 0).getTime()
-                const timeExisting = new Date(existing.updatedAt || existing.createdAt || 0).getTime()
-                const idItem = item.id || 0
-                const idExisting = existing.id || 0
-
-                if (timeItem > timeExisting || (timeItem === timeExisting && idItem > idExisting)) {
-                    phaseMap.set(phaseKey, item)
-                }
-            }
-        })
-
-        return [...phaseMap.values()].sort((a, b) => {
-            const postLoiA = isPostLoiCheck(a)
-            const postLoiB = isPostLoiCheck(b)
-            if (postLoiA !== postLoiB) {
-                return postLoiB ? 1 : -1
-            }
+        // Sort all matched synthesis passes from newest to oldest
+        return matchedItems.sort((a, b) => {
+            const timeA = new Date(a.updatedAt || a.createdAt || 0).getTime()
+            const timeB = new Date(b.updatedAt || b.createdAt || 0).getTime()
+            if (timeB !== timeA) return timeB - timeA
 
             const idA = a.id || 0
             const idB = b.id || 0
-            if (idA !== idB) return idB - idA
-
-            return 0
+            return idB - idA
         })
     }, [syntheses, currentProject, targetName, normalizedProjectId, projects])
 
@@ -466,14 +442,20 @@ export default function ProjectSynthesisCard({
         }
     }, [rawVisibleSyntheses, projectDocuments, documentThesisTakeaways, currentProjectName, normalizedProjectId])
 
-    // Reset synthesis version index when selected project changes
+    const isFallbackSynthesis = rawVisibleSyntheses.length === 0 && fallbackSynthesis !== null
+    const visibleSyntheses = rawVisibleSyntheses.length > 0 ? rawVisibleSyntheses : (fallbackSynthesis ? [fallbackSynthesis] : [])
+    const activeSynthesis = visibleSyntheses[activeSynthesisIndex] || visibleSyntheses[0]
+
+    // Reset synthesis version index when selected project changes or bounds exceed
     useEffect(() => {
         setActiveSynthesisIndex(0)
     }, [normalizedProjectId])
 
-    const isFallbackSynthesis = rawVisibleSyntheses.length === 0 && fallbackSynthesis !== null
-    const visibleSyntheses = rawVisibleSyntheses.length > 0 ? rawVisibleSyntheses : (fallbackSynthesis ? [fallbackSynthesis] : [])
-    const activeSynthesis = visibleSyntheses[activeSynthesisIndex] || visibleSyntheses[0]
+    useEffect(() => {
+        if (activeSynthesisIndex >= visibleSyntheses.length && visibleSyntheses.length > 0) {
+            setActiveSynthesisIndex(0)
+        }
+    }, [activeSynthesisIndex, visibleSyntheses.length])
 
     const failedProjectDocuments = projectDocuments.filter((document) => ['failed', 'error', 'rejected'].includes(document.status.trim().toLowerCase()))
     const completedProjectDocumentsWithAnalysis = projectDocuments.filter((document) => {
@@ -494,7 +476,7 @@ export default function ProjectSynthesisCard({
     })
 
     const derivedCitations = useMemo(() => {
-        const synthesis = visibleSyntheses[0]
+        const synthesis = activeSynthesis
         if (synthesis?.citationDetails && synthesis.citationDetails.length > 0) {
             return synthesis.citationDetails
         }
@@ -544,29 +526,27 @@ export default function ProjectSynthesisCard({
         return docCitations
     }, [visibleSyntheses, projectDocuments])
 
-    const firstDocTimestamp = projectDocuments[0]?.processingStartedAt || projectDocuments[0]?.triggerTimestamp || projectDocuments[0]?.receivedAt
-    const realStartMs = firstDocTimestamp ? Date.parse(firstDocTimestamp) : null
+    const isSynthActive = Boolean(runningSynthesis || synthesisPending)
 
-    useEffect(() => {
-        if (!synthesisPending) {
-            setSynthesisElapsedSeconds(0)
-            return
-        }
+    const dynamicSynthProgress = useMemo(() => {
+        if (!isSynthActive) return 100
+        if (synthesisProgress && synthesisProgress > 0 && synthesisProgress < 100) return synthesisProgress
+        if (synthesisElapsedSeconds <= 4) return Math.min(25, Math.round(15 + (synthesisElapsedSeconds / 4) * 10))
+        if (synthesisElapsedSeconds <= 16) return Math.min(60, Math.round(25 + ((synthesisElapsedSeconds - 4) / 12) * 35))
+        if (synthesisElapsedSeconds <= 32) return Math.min(88, Math.round(60 + ((synthesisElapsedSeconds - 16) / 16) * 28))
+        return Math.min(96, Math.round(88 + Math.min(8, (synthesisElapsedSeconds - 32) * 0.3)))
+    }, [isSynthActive, synthesisProgress, synthesisElapsedSeconds])
 
-        const updateClock = () => {
-            if (realStartMs && !Number.isNaN(realStartMs)) {
-                const diff = Math.max(0, Math.floor((Date.now() - realStartMs) / 1000))
-                setSynthesisElapsedSeconds(diff)
-            } else {
-                setSynthesisElapsedSeconds((prev) => prev + 1)
-            }
-        }
+    const activeSynthStage = useMemo(() => {
+        if (dynamicSynthProgress <= 25) return { step: 1, title: 'Document Evidence Loading', desc: 'Loading extracted financial tables, P&L statements & contract clauses' }
+        if (dynamicSynthProgress <= 60) return { step: 2, title: 'Forensic Cross-Document Reconciliation', desc: 'Reconciling figures across documents, flagging discrepancies & calculating adjustments' }
+        if (dynamicSynthProgress <= 88) return { step: 3, title: 'Valuation & EBITDA Recalculation', desc: 'Reconstructing adjusted EBITDA, multi-scenario valuations & deal multiples' }
+        return { step: 4, title: 'Final Acquisition Judgment Synthesis', desc: 'Structuring executive summary, key risks, open diligence questions & persisting record' }
+    }, [dynamicSynthProgress])
 
-        updateClock()
-        const interval = window.setInterval(updateClock, 1000)
-
-        return () => window.clearInterval(interval)
-    }, [synthesisPending, realStartMs])
+    const extractionTotalCount = projectDocuments.length
+    const extractionFinishedCount = projectDocuments.filter((d) => ['completed', 'failed', 'error', 'rejected'].includes((d.status || '').trim().toLowerCase())).length
+    const extractionProgressPercent = extractionTotalCount > 0 ? Math.round((extractionFinishedCount / extractionTotalCount) * 100) : 10
 
     return (
         <Card className="overflow-hidden">
@@ -628,11 +608,11 @@ export default function ProjectSynthesisCard({
             <CardContent className="space-y-6 p-4">
                 {/* Live Active Re-Synthesis Card with Live Timer & Stage Breakdown */}
                 {documentAnalysisPending || projectDocuments.some((d) => ['processing', 'queued', 'submitted'].includes(d.status)) ? (
-                    <div className="rounded-xl border-2 border-amber-500/80 bg-amber-500/10 p-5 text-amber-950 dark:text-amber-100 shadow-xl space-y-4 animate-pulse">
+                    <div className="rounded-xl border-2 border-amber-500/80 bg-amber-500/10 p-5 text-amber-950 dark:text-amber-100 shadow-xl space-y-4 animate-in fade-in duration-300">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-amber-500/20 pb-3">
                             <div className="flex items-center gap-3">
-                                <div className="relative">
-                                    <RefreshCw className="h-6 w-6 animate-spin text-amber-600 dark:text-amber-400" />
+                                <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/20 border border-amber-500/40 shrink-0">
+                                    <RefreshCw className="h-5 w-5 animate-spin text-amber-600 dark:text-amber-400" />
                                     <span className="absolute -top-1 -right-1 flex h-3 w-3">
                                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
                                         <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
@@ -642,12 +622,12 @@ export default function ProjectSynthesisCard({
                                     <h4 className="font-bold text-base text-amber-900 dark:text-amber-200">
                                         📄 Document Evidence Extraction in Progress
                                     </h4>
-                                    <p className="text-xs text-amber-800/80 dark:text-amber-300">
-                                        Parsing financial tables, P&L statements, and contract traps. Cross-document synthesis will start automatically when extraction finishes.
+                                    <p className="text-xs text-amber-800/90 dark:text-amber-300 font-medium">
+                                        Parsing financial tables, P&amp;L statements, and contract traps. Cross-document synthesis will start automatically when extraction finishes.
                                     </p>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-2 bg-amber-900/10 dark:bg-amber-950/60 border border-amber-500/40 rounded-lg px-3 py-1.5 shrink-0">
+                            <div className="flex items-center gap-2 bg-amber-900/10 dark:bg-amber-950/60 border border-amber-500/40 rounded-lg px-3 py-1.5 shrink-0 self-start sm:self-center">
                                 <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400 animate-bounce" />
                                 <span className="text-xs font-mono font-bold text-amber-900 dark:text-amber-200">
                                     Elapsed: {formatElapsed(synthesisElapsedSeconds)}
@@ -655,62 +635,132 @@ export default function ProjectSynthesisCard({
                             </div>
                         </div>
 
+                        <div className="space-y-1.5">
+                            <div className="flex items-center justify-between text-xs font-semibold text-amber-950 dark:text-amber-100">
+                                <span>Extraction: {extractionFinishedCount} / {extractionTotalCount || 1} documents processed</span>
+                                <span className="font-mono">{extractionProgressPercent}%</span>
+                            </div>
+                            <Progress value={extractionProgressPercent} className="h-2.5 bg-amber-500/20" />
+                        </div>
+
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
-                            <div className="flex items-center gap-2 bg-amber-500/20 rounded-md p-2 border border-amber-500/30 font-bold text-amber-900 dark:text-amber-100">
-                                <Loader2 className="h-4 w-4 animate-spin text-amber-500 shrink-0" />
+                            <div className="flex items-center gap-2 bg-amber-500/20 rounded-md p-2.5 border border-amber-500/30 font-bold text-amber-900 dark:text-amber-100">
+                                <Loader2 className="h-4 w-4 animate-spin text-amber-600 dark:text-amber-400 shrink-0" />
                                 <span>1. Parsing Document Artifacts...</span>
                             </div>
-                            <div className="flex items-center gap-2 bg-amber-500/10 rounded-md p-2 border border-amber-500/10 text-muted-foreground">
+                            <div className="flex items-center gap-2 bg-amber-500/10 rounded-md p-2.5 border border-amber-500/10 text-muted-foreground font-medium">
                                 <div className="h-2 w-2 rounded-full bg-amber-400/40 shrink-0" />
                                 <span>2. AI Forensic Chain Queued</span>
                             </div>
-                            <div className="flex items-center gap-2 bg-amber-500/10 rounded-md p-2 border border-amber-500/10 text-muted-foreground">
+                            <div className="flex items-center gap-2 bg-amber-500/10 rounded-md p-2.5 border border-amber-500/10 text-muted-foreground font-medium">
                                 <div className="h-2 w-2 rounded-full bg-amber-400/40 shrink-0" />
                                 <span>3. Save Synthesis to Database</span>
                             </div>
                         </div>
                     </div>
-                ) : (runningSynthesis || synthesisPending) ? (
-                    <div className="rounded-xl border-2 border-blue-500/80 bg-blue-500/10 p-5 text-blue-950 dark:text-blue-100 shadow-xl space-y-4 animate-pulse">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-blue-500/20 pb-3">
+                ) : isSynthActive ? (
+                    <div className="rounded-xl border-2 border-primary/60 bg-gradient-to-br from-primary/10 via-primary/5 to-background p-5 text-foreground shadow-xl space-y-4 animate-in fade-in duration-300">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/80 pb-3.5">
                             <div className="flex items-center gap-3">
-                                <div className="relative">
-                                    <RefreshCw className="h-6 w-6 animate-spin text-blue-600 dark:text-blue-400" />
+                                <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-primary/20 border border-primary/30 shrink-0">
+                                    <Sparkles className="h-5 w-5 text-primary animate-pulse" />
                                     <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                                        <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
                                     </span>
                                 </div>
                                 <div>
-                                    <h4 className="font-bold text-base text-blue-900 dark:text-blue-200">
-                                        ⚡ AI Forensic Consolidator is Re-Synthesizing Deal Model
+                                    <h4 className="font-bold text-base text-foreground flex items-center gap-2">
+                                        ⚡ AI Forensic Consolidator is Synthesizing Deal Model
                                     </h4>
-                                    <p className="text-xs text-blue-800/80 dark:text-blue-300">
-                                        Executing live cross-document Quality of Earnings reconciliation & valuation range re-calculation.
+                                    <p className="text-xs text-muted-foreground font-medium">
+                                        Cross-document Quality of Earnings reconciliation &amp; valuation recalculation for {currentProjectName}.
                                     </p>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-2 bg-blue-900/10 dark:bg-blue-950/60 border border-blue-500/40 rounded-lg px-3 py-1.5 shrink-0">
-                                <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400 animate-bounce" />
-                                <span className="text-xs font-mono font-bold text-blue-900 dark:text-blue-200">
+                            <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
+                                <Badge variant="outline" className="font-mono text-xs font-bold border-primary/40 bg-primary/10 px-2.5 py-1 text-primary gap-1">
+                                    <Clock className="h-3.5 w-3.5" />
                                     Elapsed: {formatElapsed(synthesisElapsedSeconds)}
-                                </span>
+                                </Badge>
+                                <Badge variant="secondary" className="text-xs font-semibold px-2.5 py-1 text-foreground border border-border">
+                                    OpenAI 5.6 Terra
+                                </Badge>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
-                            <div className="flex items-center gap-2 bg-blue-500/15 rounded-md p-2 border border-blue-500/20 font-medium">
-                                <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0" />
-                                <span>1. Document Evidence Loaded</span>
+                        {/* Live Synthesis Progress Bar */}
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-between text-xs font-semibold text-foreground">
+                                <span className="flex items-center gap-1.5 text-primary">
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                    Stage {activeSynthStage.step} of 4: {activeSynthStage.title}
+                                </span>
+                                <span className="font-mono font-bold text-primary">{dynamicSynthProgress}%</span>
                             </div>
-                            <div className="flex items-center gap-2 bg-blue-500/20 rounded-md p-2 border border-blue-500/30 font-bold text-blue-900 dark:text-blue-100">
-                                <Loader2 className="h-4 w-4 animate-spin text-blue-500 shrink-0" />
-                                <span>2. LLM Forensic Chain Active...</span>
+                            <Progress value={dynamicSynthProgress} className="h-2.5 rounded-full" />
+                            <p className="text-xs text-muted-foreground font-medium">
+                                {activeSynthStage.desc}
+                            </p>
+                        </div>
+
+                        {/* 4-Phase Step Progression Grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 text-xs">
+                            <div className={`flex items-center gap-2 rounded-lg p-2.5 border transition-colors ${activeSynthStage.step > 1 ? 'bg-emerald-500/10 border-emerald-500/30 text-foreground font-semibold' : activeSynthStage.step === 1 ? 'bg-primary/20 border-primary/40 text-foreground font-bold' : 'bg-muted/30 border-border text-muted-foreground'}`}>
+                                {activeSynthStage.step > 1 ? (
+                                    <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                ) : (
+                                    <Loader2 className="h-4 w-4 animate-spin text-primary shrink-0" />
+                                )}
+                                <span className="truncate">1. Evidence Loaded</span>
                             </div>
-                            <div className="flex items-center gap-2 bg-blue-500/10 rounded-md p-2 border border-blue-500/10 text-muted-foreground">
-                                <div className="h-2 w-2 rounded-full bg-blue-400/40 shrink-0" />
-                                <span>3. Save Synthesis to Database</span>
+                            <div className={`flex items-center gap-2 rounded-lg p-2.5 border transition-colors ${activeSynthStage.step > 2 ? 'bg-emerald-500/10 border-emerald-500/30 text-foreground font-semibold' : activeSynthStage.step === 2 ? 'bg-primary/20 border-primary/40 text-foreground font-bold' : 'bg-muted/30 border-border text-muted-foreground'}`}>
+                                {activeSynthStage.step > 2 ? (
+                                    <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                ) : activeSynthStage.step === 2 ? (
+                                    <Loader2 className="h-4 w-4 animate-spin text-primary shrink-0" />
+                                ) : (
+                                    <div className="h-2 w-2 rounded-full bg-muted-foreground/30 shrink-0" />
+                                )}
+                                <span className="truncate">2. Cross-Doc Forensic</span>
                             </div>
+                            <div className={`flex items-center gap-2 rounded-lg p-2.5 border transition-colors ${activeSynthStage.step > 3 ? 'bg-emerald-500/10 border-emerald-500/30 text-foreground font-semibold' : activeSynthStage.step === 3 ? 'bg-primary/20 border-primary/40 text-foreground font-bold' : 'bg-muted/30 border-border text-muted-foreground'}`}>
+                                {activeSynthStage.step > 3 ? (
+                                    <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                ) : activeSynthStage.step === 3 ? (
+                                    <Loader2 className="h-4 w-4 animate-spin text-primary shrink-0" />
+                                ) : (
+                                    <div className="h-2 w-2 rounded-full bg-muted-foreground/30 shrink-0" />
+                                )}
+                                <span className="truncate">3. Valuation &amp; EBITDA</span>
+                            </div>
+                            <div className={`flex items-center gap-2 rounded-lg p-2.5 border transition-colors ${activeSynthStage.step === 4 ? 'bg-primary/20 border-primary/40 text-foreground font-bold' : 'bg-muted/30 border-border text-muted-foreground'}`}>
+                                {activeSynthStage.step === 4 ? (
+                                    <Loader2 className="h-4 w-4 animate-spin text-primary shrink-0" />
+                                ) : (
+                                    <div className="h-2 w-2 rounded-full bg-muted-foreground/30 shrink-0" />
+                                )}
+                                <span className="truncate">4. Final Deal Verdict</span>
+                            </div>
+                        </div>
+
+                        {/* Footer Subtext and Stop Action */}
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 pt-1 border-t border-border/60 text-xs">
+                            <p className="text-muted-foreground font-medium">
+                                Cross-document synthesis typically completes in 25–45 seconds. Polling live results every 3 seconds…
+                            </p>
+                            {onStopSynthesis && (
+                                <Button
+                                    type="button"
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={onStopSynthesis}
+                                    disabled={stoppingSynthesis}
+                                    className="gap-1.5 text-xs font-semibold shrink-0"
+                                >
+                                    {stoppingSynthesis ? 'Stopping…' : 'Stop Synthesis'}
+                                </Button>
+                            )}
                         </div>
                     </div>
                 ) : null}
@@ -857,26 +907,12 @@ export default function ProjectSynthesisCard({
                         return name.includes('loi') || name.includes('letter_of_intent') || name.includes('letter-of-intent')
                     })
                     const hasLoiInDocs = Boolean(loiDoc)
-                    const hasPreLoiVersion = visibleSyntheses.some(s => {
-                        const summary = (s.finalJudgmentSummary || '').toLowerCase()
-                        if (summary.includes('pre-loi') || summary.includes('pass 1')) return true
-                        try {
-                            const parsed = typeof s.finalJudgmentJson === 'string' ? JSON.parse(s.finalJudgmentJson) : s.finalJudgmentJson
-                            if (parsed?.letter_of_intent_present === false) return true
-                        } catch {}
-                        return false
-                    })
-                    const hasPostLoiVersion = visibleSyntheses.some(s => {
-                        try {
-                            const parsed = typeof s.finalJudgmentJson === 'string' ? JSON.parse(s.finalJudgmentJson) : s.finalJudgmentJson
-                            if (parsed?.letter_of_intent_present === true) return true
-                        } catch {}
-                        const hasCit = (s.citations || []).some((c: string) => (c || '').toLowerCase().includes('loi') || (c || '').toLowerCase().includes('letter_of_intent'))
-                        return hasCit
-                    })
+                    const hasPreLoiVersion = visibleSyntheses.some(s => !isPostLoiCheck(s))
+                    const hasPostLoiVersion = visibleSyntheses.some(s => isPostLoiCheck(s))
 
                     if (hasLoiInDocs && hasPreLoiVersion && hasPostLoiVersion) {
-                        const isViewingPreLoi = activeSynthesisIndex === visibleSyntheses.length - 1
+                        const activeItem = visibleSyntheses[activeSynthesisIndex] || visibleSyntheses[0]
+                        const isViewingPreLoi = !isPostLoiCheck(activeItem)
                         return (
                             <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-indigo-400/40 bg-indigo-500/10 p-3 text-xs shadow-xs">
                                 <div className="flex items-center gap-2">
@@ -895,9 +931,11 @@ export default function ProjectSynthesisCard({
                                     className="gap-1.5 font-bold text-xs border-indigo-400/60 bg-indigo-500/15 text-indigo-900 dark:text-indigo-200 hover:bg-indigo-500/25"
                                     onClick={() => {
                                         if (isViewingPreLoi) {
-                                            setActiveSynthesisIndex(0)
+                                            const postLoiIdx = visibleSyntheses.findIndex((s) => isPostLoiCheck(s))
+                                            setActiveSynthesisIndex(postLoiIdx >= 0 ? postLoiIdx : 0)
                                         } else {
-                                            setActiveSynthesisIndex(visibleSyntheses.length - 1)
+                                            const preLoiIdx = visibleSyntheses.findIndex((s) => !isPostLoiCheck(s))
+                                            setActiveSynthesisIndex(preLoiIdx >= 0 ? preLoiIdx : 0)
                                         }
                                     }}
                                 >
@@ -961,37 +999,7 @@ export default function ProjectSynthesisCard({
                                 Version {visibleSyntheses.length - activeSynthesisIndex} of {visibleSyntheses.length}
                                 {(() => {
                                     const item = visibleSyntheses[activeSynthesisIndex]
-
-                                    let loiPresentFromSchema: boolean | null = null
-                                    try {
-                                        const parsed = typeof item?.finalJudgmentJson === 'string' ? JSON.parse(item.finalJudgmentJson) : item?.finalJudgmentJson
-                                        if (parsed && typeof parsed === 'object' && typeof parsed.letter_of_intent_present === 'boolean') {
-                                            loiPresentFromSchema = parsed.letter_of_intent_present
-                                        }
-                                    } catch { /* skip */ }
-
-                                    const summaryText = (item?.finalJudgmentSummary || '').toLowerCase()
-                                    const isExplicitPreLoi = summaryText.includes('pre-loi') || summaryText.includes('pass 1 pre-loi')
-
-                                    const hasLoiCitation = (item?.citations || []).some((c: string) => {
-                                        const lower = (c || '').toLowerCase()
-                                        return lower.includes('letter_of_intent') || lower.includes('loi') || lower.includes('letter-of-intent')
-                                    })
-
-                                    let isPostLoi = false
-                                    if (loiPresentFromSchema !== null) {
-                                        isPostLoi = loiPresentFromSchema
-                                    } else if (isExplicitPreLoi) {
-                                        isPostLoi = false
-                                    } else if (hasLoiCitation) {
-                                        isPostLoi = true
-                                    } else {
-                                        const itemDocCount = Math.max(item?.documentsReceivedCount || 0, item?.citations?.length || 0)
-                                        if (itemDocCount >= 23) {
-                                            isPostLoi = true
-                                        }
-                                    }
-
+                                    const isPostLoi = isPostLoiCheck(item)
                                     const passNumber = visibleSyntheses.length - activeSynthesisIndex
                                     const stageLabel = isPostLoi ? 'Post-LOI Negotiation' : 'Pre-LOI Discovery'
 

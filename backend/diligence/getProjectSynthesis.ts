@@ -331,34 +331,8 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
     if (error) throw new Error(`Supabase read failed: ${error.message}`)
     if (!rows) return []
 
-    // Deduplicate to keep at most 2 syntheses per project: 1 latest Pre-LOI and 1 latest Post-LOI
-    const perProject: Record<string, { preLoi?: any; postLoi?: any }> = {}
-    const deduplicatedRows: any[] = []
-
-    for (const row of (rows as Array<Record<string, any>>)) {
-        const rawPid = (row.project_id ?? '').trim().toLowerCase()
-        if (!rawPid) continue
-        const dealMatch = rawPid.match(/dd-\d+/)
-        const normPid = dealMatch ? dealMatch[0] : rawPid.replace(/-+$/, '')
-
-        if (!perProject[normPid]) perProject[normPid] = {}
-        const entry = perProject[normPid]
-        const isPostLoi = row.letter_of_intent_present === true || row.letter_of_intent_present === 'true'
-
-        if (isPostLoi) {
-            if (!entry.postLoi) {
-                entry.postLoi = row
-                deduplicatedRows.push(row)
-            }
-        } else {
-            if (!entry.preLoi) {
-                entry.preLoi = row
-                deduplicatedRows.push(row)
-            }
-        }
-    }
-
-    return deduplicatedRows
+    return (rows as Array<Record<string, any>>)
+        .filter((row) => (row.project_id ?? '').trim().length > 0)
         .map((row): ProjectSynthesisItem => {
             const judgment = getJudgmentValues(row.final_judgement_json ?? row.final_judgment_json)
 

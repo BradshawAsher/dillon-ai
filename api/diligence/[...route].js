@@ -21789,29 +21789,7 @@ async function getProjectSynthesis(req) {
   const { data: rows, error } = await supabase.from("project_syntheses").select("*").or("is_placeholder.is.null,is_placeholder.eq.false").order("id", { ascending: false }).limit(200);
   if (error) throw new Error(`Supabase read failed: ${error.message}`);
   if (!rows) return [];
-  const perProject = {};
-  const deduplicatedRows = [];
-  for (const row of rows) {
-    const rawPid = (row.project_id ?? "").trim().toLowerCase();
-    if (!rawPid) continue;
-    const dealMatch = rawPid.match(/dd-\d+/);
-    const normPid = dealMatch ? dealMatch[0] : rawPid.replace(/-+$/, "");
-    if (!perProject[normPid]) perProject[normPid] = {};
-    const entry = perProject[normPid];
-    const isPostLoi = row.letter_of_intent_present === true || row.letter_of_intent_present === "true";
-    if (isPostLoi) {
-      if (!entry.postLoi) {
-        entry.postLoi = row;
-        deduplicatedRows.push(row);
-      }
-    } else {
-      if (!entry.preLoi) {
-        entry.preLoi = row;
-        deduplicatedRows.push(row);
-      }
-    }
-  }
-  return deduplicatedRows.map((row) => {
+  return rows.filter((row) => (row.project_id ?? "").trim().length > 0).map((row) => {
     const judgment = getJudgmentValues(row.final_judgement_json ?? row.final_judgment_json);
     const missingDocuments = getStringListValue(row.missing_documents_json);
     const crossDocumentConflicts = getStringListValue(row.cross_document_conflicts_json, formatConflict);
@@ -22649,6 +22627,9 @@ function installRetoolGlobals() {
           }
         }
         init.body = body;
+      } else if (options.json !== void 0 || options.body !== void 0 || options.bodyType === "json") {
+        headers["Content-Type"] = "application/json";
+        init.body = typeof (options.json ?? options.body) === "string" ? options.json ?? options.body : JSON.stringify(options.json ?? options.body ?? {});
       }
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 18e4);
