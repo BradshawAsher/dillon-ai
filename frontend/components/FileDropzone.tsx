@@ -1,11 +1,45 @@
 import { ChangeEvent, DragEvent, useRef, useState } from 'react'
-import { FileText, FolderKanban, Trash2, Upload } from 'lucide-react'
+import { Archive, FileText, FolderKanban, Loader2, Trash2, Upload } from 'lucide-react'
 
 import { Button } from '../lib/shadcn/button'
 import { cn } from '../lib/shadcn/utils'
+import { extractZipArchive } from '../utils/zipExtractor'
 
-const ACCEPTED_EXTENSIONS = new Set(['.pdf', '.doc', '.docx', '.xlsx', '.xls', '.xlsm', '.xltx', '.csv', '.ppt', '.pptx', '.txt'])
-const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024 // 50 MB per file — accommodates large Excel financial models
+export const ACCEPTED_EXTENSIONS = new Set([
+    '.pdf',
+    '.doc',
+    '.docx',
+    '.xlsx',
+    '.xls',
+    '.xlsm',
+    '.xlsb',
+    '.xltx',
+    '.csv',
+    '.tsv',
+    '.ppt',
+    '.pptx',
+    '.key',
+    '.txt',
+    '.rtf',
+    '.odt',
+    '.eml',
+    '.msg',
+    '.png',
+    '.jpg',
+    '.jpeg',
+    '.tiff',
+    '.tif',
+    '.webp',
+    '.mov',
+    '.mp4',
+    '.m4v',
+    '.webm',
+    '.mp3',
+    '.m4a',
+    '.wav',
+    '.aac',
+])
+export const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024 // 50 MB per file — accommodates large Excel financial models and high-res scans
 
 type FileDropzoneProps = {
     selectedFiles: File[]
@@ -17,17 +51,51 @@ export default function FileDropzone({ selectedFiles, onFileSelect, className }:
     const inputRef = useRef<HTMLInputElement | null>(null)
     const folderInputRef = useRef<HTMLInputElement | null>(null)
     const [isDragging, setIsDragging] = useState(false)
+    const [isExtractingZip, setIsExtractingZip] = useState(false)
+    const [zipExtractionNotice, setZipExtractionNotice] = useState<string | null>(null)
     const [hasNumbersFile, setHasNumbersFile] = useState(false)
     const [rejectedNames, setRejectedNames] = useState<string[]>([])
     const [oversizedNames, setOversizedNames] = useState<string[]>([])
 
-    const processFileList = (fileArray: File[]) => {
+    const processFileList = async (fileArray: File[]) => {
+        const directFiles: File[] = []
+        const zipFiles: File[] = []
+
+        for (const file of fileArray) {
+            if (file.name.toLowerCase().endsWith('.zip')) {
+                zipFiles.push(file)
+            } else {
+                directFiles.push(file)
+            }
+        }
+
+        let extractedFromZips: File[] = []
+        let totalZipsUnpacked = 0
+
+        if (zipFiles.length > 0) {
+            setIsExtractingZip(true)
+            for (const zf of zipFiles) {
+                try {
+                    const res = await extractZipArchive(zf, ACCEPTED_EXTENSIONS)
+                    extractedFromZips = extractedFromZips.concat(res.files)
+                    totalZipsUnpacked++
+                } catch (err) {
+                    console.error('Failed to extract zip:', err)
+                }
+            }
+            setIsExtractingZip(false)
+            if (extractedFromZips.length > 0) {
+                setZipExtractionNotice(`Extracted ${extractedFromZips.length} document${extractedFromZips.length === 1 ? '' : 's'} from ${totalZipsUnpacked} VDR ZIP archive${totalZipsUnpacked === 1 ? '' : 's'}`)
+            }
+        }
+
+        const allCandidates = [...directFiles, ...extractedFromZips]
         const accepted: File[] = []
         const rejected: string[] = []
         const oversized: string[] = []
         let numbersDetected = false
 
-        for (const file of fileArray) {
+        for (const file of allCandidates) {
             if (file.name === 'manifest.json') continue // Skip internal benchmark manifest
             const ext = file.name.includes('.') ? ('.' + file.name.split('.').pop()!.toLowerCase()) : ''
             if (ext === '.numbers') {
@@ -48,7 +116,7 @@ export default function FileDropzone({ selectedFiles, onFileSelect, className }:
     }
 
     const updateFiles = (fileList: FileList | null) => {
-        processFileList(Array.from(fileList ?? []))
+        void processFileList(Array.from(fileList ?? []))
     }
 
     const handleDragOver = (event: DragEvent<HTMLLabelElement>) => {
@@ -107,7 +175,7 @@ export default function FileDropzone({ selectedFiles, onFileSelect, className }:
         await Promise.all(promises)
 
         if (extractedFiles.length > 0) {
-            processFileList(extractedFiles)
+            void processFileList(extractedFiles)
         } else {
             updateFiles(event.dataTransfer.files)
         }
@@ -123,7 +191,8 @@ export default function FileDropzone({ selectedFiles, onFileSelect, className }:
             <label
                 className={cn(
                     'flex min-h-[96px] flex-1 cursor-pointer flex-col items-stretch justify-between gap-4 rounded-lg border border-dashed border-border bg-background px-4 py-4 transition-colors sm:flex-row sm:items-center',
-                    isDragging && 'border-primary bg-accent/40'
+                    isDragging && 'border-primary bg-accent/40',
+                    isExtractingZip && 'border-primary/70 bg-primary/5'
                 )}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
@@ -135,7 +204,7 @@ export default function FileDropzone({ selectedFiles, onFileSelect, className }:
                     type="file"
                     className="sr-only"
                     onChange={handleChange}
-                    accept=".pdf,.doc,.docx,.xlsx,.xls,.xlsm,.xltx,.csv,.ppt,.pptx,.txt"
+                    accept=".pdf,.doc,.docx,.xlsx,.xls,.xlsm,.xlsb,.xltx,.csv,.tsv,.ppt,.pptx,.key,.txt,.rtf,.odt,.eml,.msg,.zip,.png,.jpg,.jpeg,.tiff,.tif,.webp,.mov,.mp4,.m4v,.webm,.mp3,.m4a,.wav,.aac,application/zip,application/x-zip-compressed,image/png,image/jpeg,image/webp,image/tiff,video/mp4,video/quicktime,video/webm,audio/mpeg,audio/mp4,audio/wav,audio/x-m4a,audio/aac"
                     multiple
                 />
 
@@ -152,21 +221,31 @@ export default function FileDropzone({ selectedFiles, onFileSelect, className }:
 
                 <div className="flex min-w-0 items-start gap-3 sm:items-center">
                     <div className="flex h-11 w-11 items-center justify-center rounded-full bg-secondary text-secondary-foreground">
-                        {selectedFiles.length > 0 ? <FileText className="h-5 w-5" /> : <Upload className="h-5 w-5" />}
+                        {isExtractingZip ? (
+                            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                        ) : selectedFiles.length > 0 ? (
+                            <FileText className="h-5 w-5" />
+                        ) : (
+                            <Upload className="h-5 w-5" />
+                        )}
                     </div>
                     <div className="space-y-1">
                         <p className="text-sm font-medium text-foreground">
-                            {selectedFiles.length > 0
+                            {isExtractingZip
+                                ? 'Unpacking VDR ZIP archive...'
+                                : selectedFiles.length > 0
                                 ? `${selectedFiles.length} document${selectedFiles.length === 1 ? '' : 's'} selected`
-                                : 'Drop a deal packet or folder here'}
+                                : 'Drop a deal packet, folder, or VDR ZIP here'}
                         </p>
                         <p className="break-words text-sm text-muted-foreground">
-                            {selectedFiles.length > 0
+                            {isExtractingZip
+                                ? 'Decompressing documents and preserving folder hierarchy...'
+                                : selectedFiles.length > 0
                                 ? selectedFiles.map((file) => {
                                       const pathLabel = file.webkitRelativePath || file.name
                                       return `${pathLabel} (${Math.max(1, Math.round(file.size / 1024))} KB)`
                                   }).join(' • ')
-                                : 'Supports dragging entire deal folders or individual files. Supports PDF, Excel (.xlsx, .xlsm), Word, CSV, and text files.'}
+                                : 'Supports dragging entire deal folders, VDR ZIP archives, or individual files. Supports PDF, Excel (.xlsx, .xlsb, .xlsm), Word, CSV, TSV, Emails (.eml, .msg), Legal (.rtf), Images, Presentations, and Management Call Audio/Video (.mov, .mp4, .mp3, .m4a).'}
                         </p>
                     </div>
                 </div>
@@ -214,6 +293,7 @@ export default function FileDropzone({ selectedFiles, onFileSelect, className }:
                                 setRejectedNames([])
                                 setOversizedNames([])
                                 setHasNumbersFile(false)
+                                setZipExtractionNotice(null)
                                 onFileSelect([])
                             }}
                         >
@@ -223,6 +303,12 @@ export default function FileDropzone({ selectedFiles, onFileSelect, className }:
                     )}
                 </div>
             </label>
+            {zipExtractionNotice ? (
+                <div className="flex items-center gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-700 dark:text-emerald-300">
+                    <Archive className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                    <span>{zipExtractionNotice}</span>
+                </div>
+            ) : null}
             {hasNumbersFile ? (
                 <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-800/50 dark:bg-amber-950/30 dark:text-amber-300">
                     <strong>🍎 Apple .numbers File Detected:</strong> Apple Numbers uses a proprietary package format. Please open the file in Apple Numbers and select <strong>File &rarr; Export To &rarr; Excel (.xlsx)</strong> or <strong>PDF</strong> before uploading.

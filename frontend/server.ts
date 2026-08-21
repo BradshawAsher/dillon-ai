@@ -28,6 +28,7 @@ import stopBatchSubmissionImport from '../backend/diligence/stopBatchSubmission'
 import stopProjectSynthesisImport from '../backend/diligence/stopProjectSynthesis'
 import submitDealPacketImport from '../backend/diligence/submitDealPacket'
 import updateSubmissionRowImport from '../backend/diligence/updateSubmissionRow'
+import handleAccessRequestImport from '../backend/diligence/handleAccessRequest'
 import { cleanOrphanRecords } from '../backend/diligence/cleanOrphans'
 import getEvalRunsImport from '../backend/diligence/getEvalRuns'
 import { installRetoolGlobals, userFromHeaders } from './retoolRuntime'
@@ -58,6 +59,7 @@ const stopBatchSubmission = interopDefault(stopBatchSubmissionImport)
 const stopProjectSynthesis = interopDefault(stopProjectSynthesisImport)
 const submitDealPacket = interopDefault(submitDealPacketImport)
 const updateSubmissionRow = interopDefault(updateSubmissionRowImport)
+const handleAccessRequest = interopDefault(handleAccessRequestImport)
 const getEvalRuns = interopDefault(getEvalRunsImport)
 
 installRetoolGlobals()
@@ -256,6 +258,14 @@ app.post('/api/diligence/stop-batch', express.json(), async (req, res) => {
 app.post('/api/diligence/stop-synthesis', express.json(), async (req, res) => {
     try {
         res.json(await stopProjectSynthesis({ params: req.body, user: userFromHeaders(req.headers) }))
+    } catch (error) {
+        res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
+    }
+})
+
+app.post('/api/diligence/access-request', express.json(), async (req, res) => {
+    try {
+        res.json(await handleAccessRequest({ params: req.body, user: userFromHeaders(req.headers) }))
     } catch (error) {
         res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
     }

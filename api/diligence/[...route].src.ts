@@ -15,6 +15,7 @@ import stopBatchSubmission from '../../backend/diligence/stopBatchSubmission'
 import stopProjectSynthesis from '../../backend/diligence/stopProjectSynthesis'
 import submitDealPacket from '../../backend/diligence/submitDealPacket'
 import updateSubmissionRow from '../../backend/diligence/updateSubmissionRow'
+import handleAccessRequest from '../../backend/diligence/handleAccessRequest'
 import { installRetoolGlobals, readJsonBody, userFromHeaders } from '../_lib/retoolRuntime'
 import { getClientIp, rateLimit } from '../_lib/rateLimit'
 import { messageFromError, statusFromError } from '../_lib/httpError'
@@ -108,6 +109,11 @@ export default async function handler(req: ApiRequest, res: ServerResponse) {
         if (route === 'stop-synthesis' && req.method === 'POST') {
             const params = await readJsonBody(req) as Parameters<typeof stopProjectSynthesis>[0]['params']
             sendJson(res, 200, await stopProjectSynthesis({ params, user }))
+            return
+        }
+        if (route === 'access-request' && req.method === 'POST') {
+            const params = await readJsonBody(req) as Parameters<typeof handleAccessRequest>[0]['params']
+            sendJson(res, 200, await handleAccessRequest({ params, user }))
             return
         }
 

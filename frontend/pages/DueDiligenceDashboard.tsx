@@ -1480,7 +1480,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             s.projectId === activeProjectId || 
             isRowMatchingProject({ projectId: s.projectId } as any, activeProjectId, projectSummaries)
         ) ?? null
-        return found ?? DEMO_FALLBACK_SYNTHESIS
+        return found
     }, [activeProjectId, visibleProjectSyntheses, projectSummaries, isTourActive, isExampleMode])
 
     const effectiveDealName = isTourActive
@@ -1531,85 +1531,6 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     const hasActiveSubmissions = useMemo(() => {
         return submissionHistory.some((row) => isActiveSubmissionStatus(row.status))
     }, [submissionHistory])
-
-    const isCurrentProjectProcessingDocuments = useMemo(() => {
-        return activeProjectDocuments.some((doc) => {
-            const st = (doc.status || '').trim().toLowerCase()
-            return ['uploading', 'processing', 'running'].includes(st)
-        })
-    }, [activeProjectDocuments])
-
-    const isCurrentProjectExtractingDocs = useMemo(() => {
-        if (isExampleMode || activeProjectDocuments.length === 0) return false
-        return activeProjectDocuments.some((d) =>
-            ['processing', 'running', 'uploading'].includes((d.status || '').trim().toLowerCase())
-        )
-    }, [activeProjectDocuments, isExampleMode])
-
-    const isCurrentProjectSynthesisRunning = useMemo(() => {
-        if (isExampleMode || activeProjectDocuments.length === 0) return false
-        if (isCurrentProjectExtractingDocs) return false
-
-        const completedDocs = activeProjectDocuments.filter((d) =>
-            ['completed', 'approved'].includes((d.status || '').trim().toLowerCase())
-        )
-        const completedDocCount = completedDocs.length
-
-        if (completedDocCount === 0) return false
-
-        if (!activeProjectSynthesis) {
-            return false
-        }
-
-        const synthStatus = (activeProjectSynthesis.projectStatus || '').trim().toLowerCase()
-        const isSynthRunning = ['processing', 'pending', 'queued', 'running'].includes(synthStatus)
-        const fjJson = (activeProjectSynthesis.finalJudgmentJson || '').trim()
-        const hasFinishedSynthResults = ['synthesized', 'completed', 'success'].includes(synthStatus) ||
-            ((activeProjectSynthesis.finalRecommendation || '').trim().length > 0 ||
-                (activeProjectSynthesis.finalJudgmentSummary || '').trim().length > 0 ||
-                (fjJson.length > 0 && fjJson !== '{}'))
-
-        if (isSynthRunning || (!hasFinishedSynthResults && synthStatus.length > 0)) {
-            return true
-        }
-
-        return false
-    }, [activeProjectDocuments, activeProjectSynthesis, isCurrentProjectExtractingDocs, isExampleMode])
-
-    const isCurrentProjectAwaitingSynthesis = useMemo(() => {
-        return isCurrentProjectExtractingDocs || isCurrentProjectSynthesisRunning
-    }, [isCurrentProjectExtractingDocs, isCurrentProjectSynthesisRunning])
-
-    // Periodic refresh effect (3s polling when batch/processing/synthesis active, 10s idle)
-    useEffect(() => {
-        const pollInterval = (activeSubmissionBatch || hasActiveSubmissions || isCurrentProjectProcessingDocuments || isCurrentProjectAwaitingSynthesis) ? 3_000 : 10_000
-
-        const interval = setInterval(() => {
-            void triggerSubmissionHistory({ environment: 'production' })
-            void triggerProjectSynthesis({ environment: 'production' })
-            void triggerEvalRuns()
-        }, pollInterval)
-        return () => clearInterval(interval)
-    }, [
-        triggerSubmissionHistory,
-        triggerProjectSynthesis,
-        triggerEvalRuns,
-        activeSubmissionBatch,
-        hasActiveSubmissions,
-        isCurrentProjectProcessingDocuments,
-        isCurrentProjectAwaitingSynthesis,
-    ])
-
-    const activeProjectSynthesisSucceeded = useMemo(() => {
-        if (!activeProjectSynthesis || isCurrentProjectAwaitingSynthesis) return false
-        const st = (activeProjectSynthesis.projectStatus || '').trim().toLowerCase()
-        return ['synthesized', 'completed', 'success'].includes(st) || (activeProjectSynthesis.finalRecommendation || '').trim().length > 0
-    }, [activeProjectSynthesis, isCurrentProjectAwaitingSynthesis])
-
-    const currentSynthesisProgress = useMemo(
-        () => deriveSynthesisProgress(activeProjectSynthesis?.projectStatus, isCurrentProjectAwaitingSynthesis),
-        [activeProjectSynthesis?.projectStatus, isCurrentProjectAwaitingSynthesis]
-    )
 
     const latestBatchRows = useMemo(() => {
         if (isTourActive || isExampleMode) {
@@ -1680,6 +1601,88 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     const activeBatchAdvisories = batchProgress.advisories
     const activeBatchProcessingPercent = Math.min(100, Math.round((activeBatchProcessingCount / (activeBatchExpectedCount || 1)) * 100))
     const activeBatchProgressPercent = Math.min(100, Math.round((activeBatchFinishedCount / (activeBatchExpectedCount || 1)) * 100))
+
+    const isCurrentProjectProcessingDocuments = useMemo(() => {
+        return activeProjectDocuments.some((doc) => {
+            const st = (doc.status || '').trim().toLowerCase()
+            return ['uploading', 'processing', 'running'].includes(st)
+        })
+    }, [activeProjectDocuments])
+
+    const isCurrentProjectExtractingDocs = useMemo(() => {
+        if (isExampleMode) return false
+        if (isSubmittingFile) return true
+        if (activeSubmissionBatch && activeBatchFinishedCount < activeBatchExpectedCount) return true
+        if (activeProjectDocuments.length === 0) return false
+        return activeProjectDocuments.some((d) =>
+            ['processing', 'running', 'uploading'].includes((d.status || '').trim().toLowerCase())
+        )
+    }, [activeProjectDocuments, isExampleMode, isSubmittingFile, activeSubmissionBatch, activeBatchFinishedCount, activeBatchExpectedCount])
+
+    const isCurrentProjectSynthesisRunning = useMemo(() => {
+        if (isExampleMode || activeProjectDocuments.length === 0) return false
+        if (isCurrentProjectExtractingDocs) return false
+
+        const completedDocs = activeProjectDocuments.filter((d) =>
+            ['completed', 'approved'].includes((d.status || '').trim().toLowerCase())
+        )
+        const completedDocCount = completedDocs.length
+
+        if (completedDocCount === 0) return false
+
+        if (!activeProjectSynthesis) {
+            return false
+        }
+
+        const synthStatus = (activeProjectSynthesis.projectStatus || '').trim().toLowerCase()
+        const isSynthRunning = ['processing', 'pending', 'queued', 'running'].includes(synthStatus)
+        const fjJson = (activeProjectSynthesis.finalJudgmentJson || '').trim()
+        const hasFinishedSynthResults = ['synthesized', 'completed', 'success'].includes(synthStatus) ||
+            ((activeProjectSynthesis.finalRecommendation || '').trim().length > 0 ||
+                (activeProjectSynthesis.finalJudgmentSummary || '').trim().length > 0 ||
+                (fjJson.length > 0 && fjJson !== '{}'))
+
+        if (isSynthRunning || (!hasFinishedSynthResults && synthStatus.length > 0)) {
+            return true
+        }
+
+        return false
+    }, [activeProjectDocuments, activeProjectSynthesis, isCurrentProjectExtractingDocs, isExampleMode])
+
+    const isCurrentProjectAwaitingSynthesis = useMemo(() => {
+        return isCurrentProjectExtractingDocs || isCurrentProjectSynthesisRunning
+    }, [isCurrentProjectExtractingDocs, isCurrentProjectSynthesisRunning])
+
+    // Periodic refresh effect (3s polling when batch/processing/synthesis active, 10s idle)
+    useEffect(() => {
+        const pollInterval = (activeSubmissionBatch || hasActiveSubmissions || isCurrentProjectProcessingDocuments || isCurrentProjectAwaitingSynthesis) ? 3_000 : 10_000
+
+        const interval = setInterval(() => {
+            void triggerSubmissionHistory({ environment: 'production' })
+            void triggerProjectSynthesis({ environment: 'production' })
+            void triggerEvalRuns()
+        }, pollInterval)
+        return () => clearInterval(interval)
+    }, [
+        triggerSubmissionHistory,
+        triggerProjectSynthesis,
+        triggerEvalRuns,
+        activeSubmissionBatch,
+        hasActiveSubmissions,
+        isCurrentProjectProcessingDocuments,
+        isCurrentProjectAwaitingSynthesis,
+    ])
+
+    const activeProjectSynthesisSucceeded = useMemo(() => {
+        if (!activeProjectSynthesis || isCurrentProjectAwaitingSynthesis) return false
+        const st = (activeProjectSynthesis.projectStatus || '').trim().toLowerCase()
+        return ['synthesized', 'completed', 'success'].includes(st) || (activeProjectSynthesis.finalRecommendation || '').trim().length > 0
+    }, [activeProjectSynthesis, isCurrentProjectAwaitingSynthesis])
+
+    const currentSynthesisProgress = useMemo(
+        () => deriveSynthesisProgress(activeProjectSynthesis?.projectStatus, isCurrentProjectAwaitingSynthesis),
+        [activeProjectSynthesis?.projectStatus, isCurrentProjectAwaitingSynthesis]
+    )
 
     const [batchNowTimestamp, setBatchNowTimestamp] = useState(() => Date.now())
     useEffect(() => {
