@@ -20,17 +20,16 @@ export interface AccessRequestResponse {
     error?: string
 }
 
+const DEFAULT_SLACK_WEBHOOK = 'https://hooks.slack.com/services/REDACTED/REDACTED/REDACTED'
+
 /**
- * Sends a formatted Slack notification to #pod-1-agent-alerts via webhook if configured.
+ * Sends a formatted Slack notification to #pod-1-agent-alerts via webhook.
+ * Uses text/plain and no-cors mode to bypass browser CORS preflight blocks.
  */
 async function sendSlackAlert(payload: AccessRequestPayload, requestId: string): Promise<void> {
     const webhookUrl = (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_SLACK_WEBHOOK_URL
         || (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_ACCESS_REQUEST_WEBHOOK_URL
-
-    if (!webhookUrl) {
-        console.info('[AccessRequest] VITE_SLACK_WEBHOOK_URL not configured. Lead recorded in Supabase.')
-        return
-    }
+        || DEFAULT_SLACK_WEBHOOK
 
     const timestamp = new Date().toLocaleString('en-US', {
         timeZone: 'UTC',
@@ -86,8 +85,9 @@ async function sendSlackAlert(payload: AccessRequestPayload, requestId: string):
     try {
         await fetch(webhookUrl, {
             method: 'POST',
+            mode: 'no-cors',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'text/plain'
             },
             body: JSON.stringify(slackMessage)
         })
@@ -97,9 +97,41 @@ async function sendSlackAlert(payload: AccessRequestPayload, requestId: string):
 }
 
 /**
- * Submits an access request to Supabase and triggers Slack alert.
+ * Submits an access request. Tries backend API first (serverless/express),
+ * and falls back to direct Supabase + client-side Slack webhook.
  */
 export async function submitAccessRequest(payload: AccessRequestPayload): Promise<AccessRequestResponse> {
+    const fullPayload: AccessRequestPayload = {
+        ...payload,
+        metadata: {
+            ...payload.metadata,
+            referrer: typeof document !== 'undefined' ? document.referrer : '',
+            userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
+            submittedAt: new Date().toISOString()
+        }
+    }
+
+    // 1. Try server-side API endpoint first (handles DB write + server-side Slack dispatch)
+    try {
+        const apiRes = await fetch('/api/diligence/access-request', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(fullPayload)
+        })
+
+        if (apiRes.ok) {
+            const data = await apiRes.json() as AccessRequestResponse
+            if (data.success) {
+                return data
+            }
+        }
+    } catch {
+        // Fall through to client-side direct fallback
+    }
+
+    // 2. Direct client fallback via Supabase SDK + no-cors Slack webhook
     try {
         const requestId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `req_${Date.now()}`
 
@@ -113,12 +145,7 @@ export async function submitAccessRequest(payload: AccessRequestPayload): Promis
                     firm_name: payload.firmName.trim(),
                     role: payload.role?.trim() || null,
                     notes: payload.notes || null,
-                    metadata: {
-                        ...payload.metadata,
-                        referrer: typeof document !== 'undefined' ? document.referrer : '',
-                        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
-                        submittedAt: new Date().toISOString()
-                    }
+                    metadata: fullPayload.metadata
                 }
             ])
 
@@ -130,8 +157,8 @@ export async function submitAccessRequest(payload: AccessRequestPayload): Promis
             }
         }
 
-        // Fire Slack webhook notification asynchronously in background
-        void sendSlackAlert(payload, requestId)
+        // Fire Slack webhook notification
+        await sendSlackAlert(payload, requestId)
 
         return {
             success: true,

@@ -21907,6 +21907,8 @@ async function getProjectSynthesis(req) {
       outputTokens: Number(row.output_tokens ?? 0),
       totalTokens: Number(row.total_tokens ?? 0),
       costUsd: Number(row.cost_usd ?? 0),
+      modelUsed: row.model_used ?? "",
+      model_used: row.model_used ?? "",
       id: row.id ?? 0,
       letterOfIntentPresent: Boolean(row.letter_of_intent_present),
       createdAt: row.created_at ?? "",
@@ -22082,7 +22084,8 @@ async function syncPendingRowsFromN8nDataTable(rows) {
           input_tokens: match.inputTokens || 0,
           output_tokens: match.outputTokens || 0,
           total_tokens: match.totalTokens || 0,
-          cost_usd: match.costUsd || 0
+          cost_usd: match.costUsd || 0,
+          model_used: match.modelUsed || match.model_used || ""
         };
         Object.assign(pendingRow, updatePayload);
         void supabase.from("documents").update(updatePayload).eq("id", pendingRow.id);
@@ -22170,6 +22173,8 @@ async function getSubmissionHistory(req) {
       outputTokens: Number(row.output_tokens ?? 0),
       totalTokens: Number(row.total_tokens ?? 0),
       costUsd: Number(row.cost_usd ?? 0),
+      modelUsed: row.model_used ?? "",
+      model_used: row.model_used ?? "",
       id: row.id ?? 0,
       createdAt: row.created_at ?? "",
       updatedAt: row.updated_at ?? ""
@@ -22460,6 +22465,127 @@ async function updateSubmissionRow(req) {
   return { ok: true };
 }
 
+// backend/diligence/handleAccessRequest.ts
+import https from "node:https";
+import crypto2 from "node:crypto";
+var DEFAULT_SLACK_WEBHOOK = "https://hooks.slack.com/services/REDACTED/REDACTED/REDACTED";
+async function dispatchSlackNotification(params, requestId) {
+  const webhookUrl = process.env.VITE_SLACK_WEBHOOK_URL || process.env.SLACK_WEBHOOK_URL || DEFAULT_SLACK_WEBHOOK;
+  const timestamp = (/* @__PURE__ */ new Date()).toLocaleString("en-US", {
+    timeZone: "UTC",
+    dateStyle: "medium",
+    timeStyle: "short"
+  });
+  const slackMessage = {
+    channel: "#pod-1-agent-alerts",
+    text: `\u{1F6A8} New MergeWorks Access Request: *${params.fullName}* from *${params.firmName}*`,
+    blocks: [
+      {
+        type: "header",
+        text: {
+          type: "plain_text",
+          text: "\u{1F6A8} New MergeWorks Workspace Access Request",
+          emoji: true
+        }
+      },
+      {
+        type: "section",
+        fields: [
+          {
+            type: "mrkdwn",
+            text: `*\u{1F464} Applicant:*
+${params.fullName}`
+          },
+          {
+            type: "mrkdwn",
+            text: `*\u{1F4E7} Work Email:*
+<mailto:${params.workEmail}|${params.workEmail}>`
+          },
+          {
+            type: "mrkdwn",
+            text: `*\u{1F3E2} Firm / Fund:*
+${params.firmName}`
+          },
+          {
+            type: "mrkdwn",
+            text: `*\u{1F4BC} Role:*
+${params.role || "Not specified"}`
+          }
+        ]
+      },
+      {
+        type: "context",
+        elements: [
+          {
+            type: "mrkdwn",
+            text: `*Target Channel:* \`#pod-1-agent-alerts\`  |  *Request ID:* \`${requestId}\`  |  *Submitted:* ${timestamp} UTC`
+          }
+        ]
+      }
+    ]
+  };
+  const payloadString = JSON.stringify(slackMessage);
+  try {
+    const url = new URL(webhookUrl);
+    await new Promise((resolve, reject) => {
+      const req = https.request(
+        {
+          hostname: url.hostname,
+          path: url.pathname + url.search,
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Content-Length": Buffer.byteLength(payloadString)
+          }
+        },
+        (res) => {
+          res.resume();
+          if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+            resolve();
+          } else {
+            reject(new Error(`Slack webhook returned status ${res.statusCode}`));
+          }
+        }
+      );
+      req.on("error", reject);
+      req.write(payloadString);
+      req.end();
+    });
+  } catch (err) {
+    console.warn("[AccessRequest] Failed to dispatch Slack webhook from server:", err);
+  }
+}
+async function handleAccessRequest(req) {
+  const { fullName, workEmail, firmName, role, notes, metadata } = req.params;
+  if (!fullName || !workEmail || !firmName) {
+    throw new Error("fullName, workEmail, and firmName are required");
+  }
+  const requestId = crypto2.randomUUID ? crypto2.randomUUID() : `req_${Date.now()}`;
+  const { error } = await supabase.from("access_requests").insert([
+    {
+      id: requestId,
+      full_name: fullName.trim(),
+      work_email: workEmail.trim().toLowerCase(),
+      firm_name: firmName.trim(),
+      role: role?.trim() || null,
+      notes: notes || null,
+      metadata: {
+        ...metadata,
+        submittedAt: (/* @__PURE__ */ new Date()).toISOString()
+      }
+    }
+  ]);
+  if (error) {
+    console.error("[AccessRequest] Supabase insert error:", error);
+    throw new Error(error.message || "Failed to insert access request");
+  }
+  await dispatchSlackNotification(req.params, requestId);
+  return {
+    success: true,
+    id: requestId
+  };
+}
+
 // api/_lib/httpError.ts
 var HttpError = class _HttpError extends Error {
   status;
@@ -22735,6 +22861,11 @@ async function handler(req, res) {
     if (route === "stop-synthesis" && req.method === "POST") {
       const params = await readJsonBody(req);
       sendJson(res, 200, await stopProjectSynthesis({ params, user }));
+      return;
+    }
+    if (route === "access-request" && req.method === "POST") {
+      const params = await readJsonBody(req);
+      sendJson(res, 200, await handleAccessRequest({ params, user }));
       return;
     }
     sendJson(res, 404, { error: "Unknown API route: " + (req.method ?? "GET") + " /api/diligence/" + route });

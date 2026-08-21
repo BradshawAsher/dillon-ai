@@ -98,7 +98,7 @@ export default function LandingPage({ onLaunchDashboard }: LandingPageProps) {
         },
         {
             question: 'What document formats and file types are supported?',
-            answer: 'Dillon AI accepts native PDFs, scanned PDF documents, Excel spreadsheets (.xlsx, .xltx), Word documents (.docx), and CSV financial tables.',
+            answer: 'Dillon AI accepts VDR ZIP archives (auto-unpacked in-browser), native & scanned PDFs, Excel spreadsheets (.xlsx, .xlsb, .xlsm), Word documents (.docx), CSV/TSV financial tables, PowerPoint & Keynote presentations (.pptx, .key), deal correspondence emails (.eml, .msg), legal contracts (.rtf, .odt), financial image scans/charts (.png, .jpg, .webp), and founder/management presentation call recordings (.mov, .mp4, .mp3, .m4a).',
             badge: 'FILE SUPPORT',
         },
         {
