@@ -18,10 +18,14 @@ export interface DealEmailDraftResult {
 }
 
 export function formatDraftMoney(value: number | null | undefined): string | null {
-    if (value === null || value === undefined || isNaN(value)) return null
-    if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`
-    if (value >= 1_000) return `$${(value / 1_000).toFixed(0)}K`
-    return `$${value.toFixed(0)}`
+    if (value === null || value === undefined || !Number.isFinite(value)) return null
+    // Place the sign before the dollar amount and compact the magnitude, so a
+    // negative EBITDA renders as "-$2.0M" rather than leaking as "$-2000000".
+    const sign = value < 0 ? '-' : ''
+    const abs = Math.abs(value)
+    if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(1)}M`
+    if (abs >= 1_000) return `${sign}$${(abs / 1_000).toFixed(0)}K`
+    return `${sign}$${abs.toFixed(0)}`
 }
 
 export function buildDealEmailDraft(options: {
