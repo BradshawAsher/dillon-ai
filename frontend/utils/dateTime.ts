@@ -1,5 +1,8 @@
-export function formatEasternTime(value: string, fallback = 'Pending') {
-  const trimmed = value.trim()
+export function formatEasternTime(value: string | number | null | undefined, fallback = 'Pending') {
+  // n8n rows sometimes hand back a numeric epoch as an actual number (not a
+  // string), and callers occasionally pass null/undefined. Coerce first so a
+  // non-string value formats instead of throwing on `.trim()`.
+  const trimmed = (typeof value === 'string' ? value : value == null ? '' : String(value)).trim()
 
   if (trimmed.length === 0) {
     return fallback
