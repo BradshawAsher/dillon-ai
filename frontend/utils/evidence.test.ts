@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { SubmissionHistoryItem } from './submissionHistory'
 import {
+    buildFactEvidence,
     driveEmbedUrl,
     findCitedDocument,
     getEvidenceStatusPresentation,
@@ -162,5 +163,27 @@ describe('getProvenanceCategoryPresentation', () => {
 
     it('getProvenanceCategory delegates to the presentation helper', () => {
         expect(getProvenanceCategory({ formula: 'x' })).toEqual(getProvenanceCategoryPresentation({ formula: 'x' }))
+    })
+})
+
+describe('buildFactEvidence P&L source fallback', () => {
+    const namedDoc = (fileName: string): SubmissionHistoryItem => ({ fileName } as SubmissionHistoryItem)
+    const facts = { revenue: {} }
+
+    it('does not attribute a P&L fact to a document that merely contains "pl" inside a word', () => {
+        const documents = [namedDoc('supplier_contract.pdf'), namedDoc('employee_list.xlsx'), namedDoc('template.docx')]
+        const evidence = buildFactEvidence({ field: 'revenue', title: 'Revenue', facts, documents })
+        // No genuine P&L/financial document present, so the loose "pl" match must
+        // not pick an unrelated file — it falls back to the "not returned" label.
+        expect(evidence.sourceFile).toBe('Source file was not returned')
+    })
+
+    it('still matches a delimited pl abbreviation and financial-statement files', () => {
+        expect(
+            buildFactEvidence({ field: 'revenue', title: 'Revenue', facts, documents: [namedDoc('company_pl.pdf')] }).sourceFile,
+        ).toBe('company_pl.pdf')
+        expect(
+            buildFactEvidence({ field: 'revenue', title: 'Revenue', facts, documents: [namedDoc('2024_income_statement.pdf')] }).sourceFile,
+        ).toBe('2024_income_statement.pdf')
     })
 })

@@ -205,7 +205,13 @@ export function buildFactEvidence(args: {
 
     let sourceFile = citation?.source_file
     if (!sourceFile && args.documents.length > 0) {
-        const plDoc = args.documents.find((d) => /p&l|p_and_l|pl|financial|statement|tax/i.test(d.fileName))
+        // The bare "pl" abbreviation must be delimited (underscore counts as a
+        // delimiter here, so \b is too strict) — otherwise it matches inside
+        // ordinary words like "supplier", "template", or "employee_list" and
+        // mis-attributes a financial fact's source to an unrelated document.
+        const plDoc = args.documents.find((d) =>
+            /p&l|p_and_l|(?<![a-z0-9])pl(?![a-z0-9])|financial|statement|tax/i.test(d.fileName)
+        )
         if (plDoc) {
             sourceFile = plDoc.fileName
         }
