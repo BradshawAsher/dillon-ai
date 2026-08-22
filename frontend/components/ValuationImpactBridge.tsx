@@ -39,20 +39,22 @@ export default function ValuationImpactBridge({ synthesis, baseValue, documents 
         const structuredConflicts = synthesis.structuredFindings?.crossDocumentConflicts || []
 
         if (structuredConflicts.length > 0) {
-            return structuredConflicts.map((finding, index) => {
-                const primaryCitation = finding.citations?.[0]
-                return {
-                    id: `${index}-${finding.text}`,
-                    finding: finding.text,
-                    mechanism: classifyMechanism(finding.text),
-                    amount: '',
-                    sourceFile: primaryCitation?.sourceFile,
-                    sourceLocation: primaryCitation?.sourceLocation,
-                    excerpt: primaryCitation?.excerpt,
-                    confidence: finding.confidence,
-                    status: finding.status,
-                }
-            })
+            return structuredConflicts
+                .filter((finding) => Boolean(finding && finding.text))
+                .map((finding, index) => {
+                    const primaryCitation = finding.citations?.[0]
+                    return {
+                        id: `${index}-${finding.text}`,
+                        finding: finding.text,
+                        mechanism: classifyMechanism(finding.text),
+                        amount: '',
+                        sourceFile: primaryCitation?.sourceFile,
+                        sourceLocation: primaryCitation?.sourceLocation,
+                        excerpt: primaryCitation?.excerpt,
+                        confidence: finding?.confidence ?? undefined,
+                        status: finding?.status ?? undefined,
+                    }
+                })
         }
 
         return (synthesis.crossDocumentConflicts || []).map((finding, index) => ({ id: `${index}-${finding}`, finding, mechanism: classifyMechanism(finding), amount: '' }))

@@ -38,17 +38,18 @@ function parseConcentrationFromSynthesis(synthesis: ProjectSynthesisItem): Conce
     const findings: ConcentrationFinding[] = []
 
     const allFindings = [
-        ...synthesis.structuredFindings.redFlags.map((item) => ({ finding: item, sev: 'critical' as const })),
-        ...synthesis.structuredFindings.yellowFlags.map((item) => ({ finding: item, sev: 'medium' as const })),
-        ...synthesis.structuredFindings.crossDocumentConflicts.map((item) => ({ finding: item, sev: 'medium' as const })),
-        ...synthesis.structuredFindings.openQuestions.map((item) => ({ finding: item, sev: 'low' as const })),
-        ...synthesis.structuredFindings.negotiationLevers.map((item) => ({ finding: item, sev: 'low' as const })),
-        ...synthesis.structuredFindings.keyTakeaways.map((item) => ({ finding: item, sev: 'low' as const })),
+        ...(synthesis.structuredFindings?.redFlags ?? []).map((item) => ({ finding: item, sev: 'critical' as const })),
+        ...(synthesis.structuredFindings?.yellowFlags ?? []).map((item) => ({ finding: item, sev: 'medium' as const })),
+        ...(synthesis.structuredFindings?.crossDocumentConflicts ?? []).map((item) => ({ finding: item, sev: 'medium' as const })),
+        ...(synthesis.structuredFindings?.openQuestions ?? []).map((item) => ({ finding: item, sev: 'low' as const })),
+        ...(synthesis.structuredFindings?.negotiationLevers ?? []).map((item) => ({ finding: item, sev: 'low' as const })),
+        ...(synthesis.structuredFindings?.keyTakeaways ?? []).map((item) => ({ finding: item, sev: 'low' as const })),
     ]
 
     const concentrationPattern = /customer|client|concentration|revenue.*(?:\d+%|percent)|top.+(?:account|customer|client)|single.*(?:customer|client)|depend(?:en|an)/i
 
     for (const { finding, sev } of allFindings) {
+        if (!finding || !finding.text) continue
         const text = finding.text
         if (!concentrationPattern.test(text)) continue
 
@@ -67,23 +68,23 @@ function parseConcentrationFromSynthesis(synthesis: ProjectSynthesisItem): Conce
             source: primaryCitation?.sourceFile || (revenueShare && revenueShare > 0.3 ? 'High concentration risk' : 'Customer dependency noted'),
             sourceLocation: primaryCitation?.sourceLocation,
             excerpt: primaryCitation?.excerpt,
-            confidence: finding.confidence,
-            status: finding.status,
+            confidence: finding?.confidence ?? undefined,
+            status: finding?.status ?? undefined,
         })
     }
 
     if (findings.length === 0) {
         const fallbackFindings = [
-            ...synthesis.redFlags.map((text) => ({ text, sev: 'critical' as const })),
-            ...synthesis.yellowFlags.map((text) => ({ text, sev: 'medium' as const })),
-            ...synthesis.crossDocumentConflicts.map((text) => ({ text, sev: 'medium' as const })),
-            ...synthesis.openQuestions.map((text) => ({ text, sev: 'low' as const })),
-            ...synthesis.negotiationLevers.map((text) => ({ text, sev: 'low' as const })),
-            ...synthesis.keyTakeaways.map((text) => ({ text, sev: 'low' as const })),
+            ...(synthesis.redFlags ?? []).map((text) => ({ text, sev: 'critical' as const })),
+            ...(synthesis.yellowFlags ?? []).map((text) => ({ text, sev: 'medium' as const })),
+            ...(synthesis.crossDocumentConflicts ?? []).map((text) => ({ text, sev: 'medium' as const })),
+            ...(synthesis.openQuestions ?? []).map((text) => ({ text, sev: 'low' as const })),
+            ...(synthesis.negotiationLevers ?? []).map((text) => ({ text, sev: 'low' as const })),
+            ...(synthesis.keyTakeaways ?? []).map((text) => ({ text, sev: 'low' as const })),
         ]
 
         for (const { text, sev } of fallbackFindings) {
-            if (!concentrationPattern.test(text)) continue
+            if (!text || !concentrationPattern.test(text)) continue
             const percentMatch = text.match(/(\d{1,3})(?:\.\d+)?%/)
             const customerMatch = text.match(/(?:top|largest|single|#1|primary)\s+(?:customer|client|account)\s+(?:is\s+)?([^,.\d]+)/i)
             findings.push({
@@ -101,13 +102,13 @@ function parseConcentrationFromSynthesis(synthesis: ProjectSynthesisItem): Conce
 
 function parseTop5Breakdown(synthesis: ProjectSynthesisItem, findings: ConcentrationFinding[]): Top5CustomerBreakdown | null {
     const allTexts = [
-        ...synthesis.redFlags,
-        ...synthesis.yellowFlags,
-        ...synthesis.crossDocumentConflicts,
-        ...synthesis.keyTakeaways,
-        ...synthesis.structuredFindings.redFlags.map((f) => f.text),
-        ...synthesis.structuredFindings.yellowFlags.map((f) => f.text),
-        ...synthesis.structuredFindings.keyTakeaways.map((f) => f.text),
+        ...(synthesis.redFlags ?? []),
+        ...(synthesis.yellowFlags ?? []),
+        ...(synthesis.crossDocumentConflicts ?? []),
+        ...(synthesis.keyTakeaways ?? []),
+        ...(synthesis.structuredFindings?.redFlags ?? []).map((f) => f?.text || ''),
+        ...(synthesis.structuredFindings?.yellowFlags ?? []).map((f) => f?.text || ''),
+        ...(synthesis.structuredFindings?.keyTakeaways ?? []).map((f) => f?.text || ''),
     ].join(' ')
 
     // 1. Extract Top 1 Customer Name & Share

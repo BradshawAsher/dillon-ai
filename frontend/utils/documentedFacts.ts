@@ -124,7 +124,9 @@ function isDerivedFact(fact: RawFact): boolean {
  * period a confirmed fact beats an unconfirmed one, explicitly sourced facts
  * beat reconstructed ones, then higher confidence.
  */
-function isBetter(candidate: RawFact, current: RawFact): boolean {
+function isBetter(candidate?: RawFact | null, current?: RawFact | null): boolean {
+    if (!candidate) return false
+    if (!current) return true
     const cp = periodRank(candidate.period)
     const pp = periodRank(current.period)
     if (cp !== pp) return cp > pp
@@ -333,6 +335,7 @@ export function deriveDocumentedFacts(documents: SubmissionHistoryItem[]): Recor
         if (facts.length === 0) continue
 
         for (const fact of facts) {
+            if (!fact) continue
             const metric = (fact.metric ?? '').trim().toLowerCase()
             if (metric.length === 0 || !isNumber(fact.normalized_value)) continue
 

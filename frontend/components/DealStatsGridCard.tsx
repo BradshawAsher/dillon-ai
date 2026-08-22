@@ -37,25 +37,23 @@ export default function DealStatsGridCard({ model }: Props) {
     const [activeIndex, setActiveIndex] = useState<number | null>(null)
 
     // The whole grid is derived from the same handful of documented facts, so a
-    // single status badge (Confirmed / Estimated / Illustrative) tells the
-    // viewer how much authority these numbers carry before they read them.
     const factStatus = useMemo(() => {
-        const facts = parseDocumentedFacts(model.documentedFactsJson)
+        const facts = parseDocumentedFacts(model?.documentedFactsJson)
         const primary = [facts.revenue, facts.ebitda_sde, facts.total_assets, facts.total_liabilities]
             .find((fact) => fact && typeof fact.value === 'number')
         if (!primary) return null
         const presentation = getEvidenceStatusPresentation(primary.status, primary.provenance)
-        const confidence = typeof primary.confidence === 'number'
+        const confidence = typeof primary?.confidence === 'number'
             ? `${Math.round(primary.confidence <= 1 ? primary.confidence * 100 : primary.confidence)}%`
             : null
         return { ...presentation, confidence }
-    }, [model.documentedFactsJson])
+    }, [model?.documentedFactsJson])
 
     const stats = useMemo(() => {
-        const facts = parseDocumentedFacts(model.documentedFactsJson)
+        const facts = parseDocumentedFacts(model?.documentedFactsJson)
         const ebitda = typeof facts.ebitda_sde?.value === 'number' ? facts.ebitda_sde.value : null
         const revenue = typeof facts.revenue?.value === 'number' ? facts.revenue.value : null
-        const price = model.purchasePrice ?? model.askingPrice
+        const price = model?.purchasePrice ?? model?.askingPrice
         const totalAssets = typeof facts.total_assets?.value === 'number' ? facts.total_assets.value : null
         const totalLiabilities = typeof facts.total_liabilities?.value === 'number' ? facts.total_liabilities.value : null
         const employees = typeof facts.employees?.value === 'number' ? facts.employees.value : null

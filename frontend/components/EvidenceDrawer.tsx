@@ -127,6 +127,8 @@ export default function EvidenceDrawer({ evidence, onClose }: { evidence: Eviden
         return () => document.removeEventListener('keydown', handleKeyDown)
     }, [evidence, onClose])
 
+    if (!evidence) return null
+
     const formattedConfidence = formatEvidenceConfidence(evidence.confidence)
     const confidence = formattedConfidence
     const status = getEvidenceStatusPresentation(evidence.status, evidence.provenance)

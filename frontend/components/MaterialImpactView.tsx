@@ -73,18 +73,20 @@ export default function MaterialImpactView({ synthesis, onOpenEvidence, document
 
     const findings = useMemo(() => {
         const result: CategorizedFinding[] = []
-        const groups: Array<{ key: string; items: typeof synthesis.structuredFindings.redFlags | string[] }> = [
-            { key: 'red-flag', items: synthesis.structuredFindings?.redFlags?.length ? synthesis.structuredFindings.redFlags : synthesis.redFlags },
-            { key: 'yellow-flag', items: synthesis.structuredFindings?.yellowFlags?.length ? synthesis.structuredFindings.yellowFlags : synthesis.yellowFlags },
-            { key: 'conflict', items: synthesis.structuredFindings?.crossDocumentConflicts?.length ? synthesis.structuredFindings.crossDocumentConflicts : synthesis.crossDocumentConflicts },
-            { key: 'negotiation-lever', items: synthesis.structuredFindings?.negotiationLevers?.length ? synthesis.structuredFindings.negotiationLevers : synthesis.negotiationLevers },
-            { key: 'missing-document', items: synthesis.structuredFindings?.missingDocuments?.length ? synthesis.structuredFindings.missingDocuments : synthesis.missingDocuments },
-            { key: 'open-question', items: synthesis.structuredFindings?.openQuestions?.length ? synthesis.structuredFindings.openQuestions : synthesis.openQuestions },
+        const groups: Array<{ key: string; items: any[] }> = [
+            { key: 'red-flag', items: synthesis?.structuredFindings?.redFlags?.length ? synthesis.structuredFindings.redFlags : (synthesis?.redFlags ?? []) },
+            { key: 'yellow-flag', items: synthesis?.structuredFindings?.yellowFlags?.length ? synthesis.structuredFindings.yellowFlags : (synthesis?.yellowFlags ?? []) },
+            { key: 'conflict', items: synthesis?.structuredFindings?.crossDocumentConflicts?.length ? synthesis.structuredFindings.crossDocumentConflicts : (synthesis?.crossDocumentConflicts ?? []) },
+            { key: 'negotiation-lever', items: synthesis?.structuredFindings?.negotiationLevers?.length ? synthesis.structuredFindings.negotiationLevers : (synthesis?.negotiationLevers ?? []) },
+            { key: 'missing-document', items: synthesis?.structuredFindings?.missingDocuments?.length ? synthesis.structuredFindings.missingDocuments : (synthesis?.missingDocuments ?? []) },
+            { key: 'open-question', items: synthesis?.structuredFindings?.openQuestions?.length ? synthesis.structuredFindings.openQuestions : (synthesis?.openQuestions ?? []) },
         ]
         for (const group of groups) {
-            for (let i = 0; i < group.items.length; i++) {
+            for (let i = 0; i < (group.items ?? []).length; i++) {
                 const item = group.items[i]
+                if (!item) continue
                 const text = typeof item === 'string' ? item : item.text
+                if (!text) continue
                 const firstCitation = typeof item === 'string' ? undefined : item.citations?.[0]
                 result.push({
                     id: `${group.key}-${i}`,
@@ -99,7 +101,7 @@ export default function MaterialImpactView({ synthesis, onOpenEvidence, document
                         excerpt: firstCitation.excerpt,
                         period: firstCitation.period,
                         currency: firstCitation.currency,
-                        confidence: firstCitation.confidence,
+                        confidence: firstCitation?.confidence ?? undefined,
                         status: firstCitation.status,
                     } : undefined,
                     status: typeof item === 'string' ? undefined : item.status,
@@ -157,7 +159,7 @@ export default function MaterialImpactView({ synthesis, onOpenEvidence, document
                                 currency: finding.citation?.currency,
                                 status: finding.status || (finding.severity === 'critical' ? 'Risk' : finding.severity === 'medium' ? 'Needs review' : 'Confirmed'),
                                 provenance: 'Material-impact mapping',
-                                confidence: finding.confidence,
+                                confidence: finding?.confidence ?? undefined,
                                 documents,
                             }))}
                             className={`flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-colors hover:border-primary/40 ${IMPACT_STYLES[finding.impact]}`}
