@@ -16,37 +16,25 @@ The Financial Due Diligence Agent automates two core M&A workflow stages (see [`
    - Cross-checks bank statement cash, inventory subledgers, and tax filings to detect cross-document accounting discrepancies.
    - Auto-generates dollar-for-dollar purchase price reduction levers, working capital peg adjustments, closing escrows, and Deal Memos.
 
-## Current architecture
+## Key Documentation Links
+
+- **[System Architecture & Technical Specification (`ARCHITECTURE.md`)](ARCHITECTURE.md)** — Comprehensive architecture diagrams, data flow sequence charts, component deep-dives, and interview masterclass talking points.
+- **[Evaluation Harness & Benchmark Guide (`EVALS.md`)](EVALS.md)** — 58-document golden benchmark dataset, 5-dimension scoring rubric, and 1-card Pre/Post-LOI toggle design.
+- **[Dual Core Agent Capabilities (`PURPOSE.md`)](PURPOSE.md)** — Pre-LOI Valuation Discovery & Post-LOI Deal Negotiation frameworks.
+- **[Deterministic Math Verification (`DETERMINISTIC_MATH_CHECKS.md`)](DETERMINISTIC_MATH_CHECKS.md)** — Zero-hallucination accounting verification rules.
+
+## Current Architecture & Data Flow
 
 ```text
-Browser
-  -> same-origin REST API (/api/diligence/*)
-  -> n8n webhooks
-  -> n8n Data Tables
-  -> document processing and project synthesizer workflows
-  -> polling responses back to the dashboard
+Browser (React 19 SPA)
+  ├── 1. Direct-to-Cloud Uploads (Presigned URLs -> Supabase Storage S3)
+  ├── 2. Batch Dispatch -> same-origin REST API (/api/diligence/*) -> Pod 1 n8n Webhooks
+  ├── 3. Parallel Extraction -> OpenAI 5.6 Terra (Primary) / Sol (Backup) -> Math Engine
+  ├── 4. Project Synthesis -> Cross-Document Contradiction Engine -> IC Deal Memo
+  └── 5. Real-Time Stream -> Supabase PostgreSQL & n8n High-Throughput Tables
 ```
 
-The browser never calls n8n directly. The local REST layer is part of this
-repository:
-
-| Runtime | REST implementation | Purpose |
-| --- | --- | --- |
-| `npm start` | `frontend/server.ts` | Express server that serves the production build and `/api/diligence/*` |
-| `npm run dev` | `frontend/localApi.ts` | Vite dev-server middleware with the same API contract |
-
-The API invokes the normalized backend functions in `backend/diligence/`,
-which forward requests to n8n through `frontend/retoolRuntime.ts`.
-
-### Data ownership
-
-- **n8n Data Tables** are the source of truth for submitted documents, their
-  AI output, and project-level synthesis results.
-- **n8n Cloud workflows** perform intake, document analysis, document counts,
-  and project-wide synthesis.
-- The legacy `getDiligenceData` query still references Retool DB, but the
-  standalone app does not use that database. Its retired sample data is kept
-  only as a code backup and is not rendered in the UI.
+See the full diagrams and sequence charts in **[`ARCHITECTURE.md`](ARCHITECTURE.md)**.
 
 Pod 1's live n8n Cloud/Enterprise workflows are the workflow source of truth.
 Inspect them through n8n MCP. If MCP access is unavailable, request access
@@ -220,26 +208,29 @@ The configured deployment URL is:
 
 ## Key UI features
 
-- **Overview tab** with Summary / Deep Analysis sub-tabs — Deal Memo shown first
-- **AI Chatbot** (floating panel) — context-aware Q&A about the active project and all other projects in the portfolio
-- **Deterministic math checks** — pure arithmetic cross-verification of extracted financials (see [DETERMINISTIC_MATH_CHECKS.md](DETERMINISTIC_MATH_CHECKS.md))
-- **Deal Grade** — letter grade (A–F) across pricing, profitability, risk, data quality, payback
-- **Quick Valuation** — back-of-napkin valuation ranges with price marker
-- **Radar Chart** — 5-dimension SVG spider chart (no Recharts dependency)
-- **Risk Matrix** — 2×2 likelihood × impact grid
-- **Confidence Meter** — circular gauge across 4 dimensions
-- **Seller Questions / DD Request List / Email Draft** — auto-generated from deal state
-- **Project Portfolio** — per-project "Add documents" button and synthesis download
-- **Keyboard shortcuts** — Cmd/Ctrl+K command palette, C for chat, Escape to close panels
-- **Resilient analysis modules** — 40+ analysis cards are lazy-loaded and wrapped
-  in per-section error boundaries (`SafeSuspense`), so a single card failing to
-  load or render degrades to a local retry message instead of blanking the page
+- **Multi-Modal VDR Ingestion Dropzone** — Ingests 9 asset classes (PDF, XLSX, DOCX, EML, WEBP, PPTX, MP3, MP4, and client-side unpacked ZIP archives) with direct presigned cloud uploads.
+- **Interactive Evals & Harness Tab** — 1-Card per deal with real-time `Pre-LOI Discovery` ↔ `Post-LOI Negotiation` toggle, 58 golden benchmark documents, and per-document precision inspection.
+- **Guided Walkthrough & Simulated VDR Modal** — macOS-style interactive VDR file explorer, step-by-step feature tours, and mission quests.
+- **Overview tab** with Summary / Deep Analysis sub-tabs — Deal Memo shown first.
+- **AI Chatbot** (floating panel) — context-aware Q&A about the active project and all other projects in the portfolio.
+- **Deterministic math checks** — pure arithmetic cross-verification of extracted financials (see [DETERMINISTIC_MATH_CHECKS.md](DETERMINISTIC_MATH_CHECKS.md)).
+- **Deal Grade** — letter grade (A–F) across pricing, profitability, risk, data quality, payback.
+- **Quick Valuation & Bridge** — back-of-napkin valuation ranges with price markers, seller add-back adjustments, and escrow recommendations.
+- **Radar Chart** — 5-dimension SVG spider chart (no Recharts dependency).
+- **Risk Matrix** — 2×2 likelihood × impact grid with cross-document contradiction detection.
+- **Confidence Meter** — circular gauge across 4 dimensions.
+- **Seller Questions / DD Request List / Email Draft** — auto-generated from deal state.
+- **Project Portfolio** — per-project "Add documents" button and synthesis download.
+- **Keyboard shortcuts** — Cmd/Ctrl+K command palette, C for chat, Escape to close panels.
+- **Resilient analysis modules** — 40+ analysis cards are lazy-loaded and wrapped in per-section error boundaries (`SafeSuspense`), so a single card failing degrades locally without breaking the dashboard.
 
 ## Project map
 
 | Path | Role |
 | --- | --- |
+| `ARCHITECTURE.md` | **System architecture, end-to-end data flow diagrams & interview prep guide** |
 | `frontend/pages/` and `frontend/components/` | React interface |
+| `frontend/components/walkthrough/` | Interactive walkthrough tour engine & simulated VDR modal |
 | `frontend/hooks/backend/diligence.ts` | Live/mock query hooks used by the UI |
 | `frontend/server.ts` | Standalone Express API and production static server |
 | `frontend/localApi.ts` | Development API middleware |
@@ -257,8 +248,8 @@ The configured deployment URL is:
 
 The dashboard originated as a Retool export. Some compatibility names remain
 (`n8nFinancialAgent`, generated-hook-shaped APIs, and `retoolRuntime.ts`), but
-the standalone dashboard's active document and synthesis data path is n8n,
-not Retool DB.
+the standalone dashboard's active document and synthesis data path is n8n and
+Supabase PostgreSQL/Storage, not Retool DB.
 
 ## Team handoff
 
