@@ -42,7 +42,7 @@ export default function DealValuationCard({ synthesis, askingPrice, model, onMod
     const revenue = confirmed('revenue'), ebitda = confirmed('ebitda_sde'), assets = confirmed('total_assets'), liabilities = confirmed('total_liabilities')
     const factEvidence = (field: string, title: string) => buildFactEvidence({ field, title, facts: documentedFacts, documents })
     const synthesisEvidence = (title: string, text: string, index = 0): EvidenceItem => {
-        const finding = synthesis?.structuredFindings.crossDocumentConflicts[index]
+        const finding = synthesis?.structuredFindings?.crossDocumentConflicts?.[index]
         const citation = finding?.citations?.[0] || synthesis?.citationDetails?.[0]
         return buildDocumentLinkedEvidence({
             title,

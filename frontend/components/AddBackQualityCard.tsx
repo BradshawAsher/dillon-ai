@@ -45,15 +45,16 @@ function parseAddBacksFromSynthesis(synthesis: ProjectSynthesisItem | undefined,
 
     const addBackPattern = /add.?back|adjustment|owner.?(?:salary|comp|benefit|perquisite|perk)|personal|non.?recurring|one.?time/i
     const structuredGroups = [
-        ...synthesis.structuredFindings.redFlags,
-        ...synthesis.structuredFindings.yellowFlags,
-        ...synthesis.structuredFindings.crossDocumentConflicts,
-        ...synthesis.structuredFindings.openQuestions,
-        ...synthesis.structuredFindings.negotiationLevers,
-        ...synthesis.structuredFindings.keyTakeaways,
+        ...(synthesis.structuredFindings?.redFlags ?? []),
+        ...(synthesis.structuredFindings?.yellowFlags ?? []),
+        ...(synthesis.structuredFindings?.crossDocumentConflicts ?? []),
+        ...(synthesis.structuredFindings?.openQuestions ?? []),
+        ...(synthesis.structuredFindings?.negotiationLevers ?? []),
+        ...(synthesis.structuredFindings?.keyTakeaways ?? []),
     ]
 
     for (const finding of structuredGroups) {
+        if (!finding || !finding.text) continue
         if (!addBackPattern.test(finding.text)) continue
         const amountMatch = finding.text.match(/\$[\d,]+(?:\.\d+)?[KkMm]?|\d+(?:,\d{3})+/)
         let amount: number | null = null
@@ -76,8 +77,8 @@ function parseAddBacksFromSynthesis(synthesis: ProjectSynthesisItem | undefined,
             sourceFile: primaryCitation?.sourceFile,
             sourceLocation: primaryCitation?.sourceLocation,
             excerpt: primaryCitation?.excerpt,
-            confidence: finding.confidence,
-            status: finding.status,
+            confidence: finding?.confidence ?? undefined,
+            status: finding?.status ?? undefined,
         })
     }
 

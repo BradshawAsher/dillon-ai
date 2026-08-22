@@ -135,9 +135,9 @@ export default function ExpandableInsightGroup({
                     </div>
                     {finding ? (
                       <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                        {confidenceBadge(finding.confidence)}
-                        {severityBadge(finding.severity)}
-                        {finding.impact ? <span className="text-[10px] text-muted-foreground">{finding.impact}</span> : null}
+                        {confidenceBadge(finding?.confidence ?? null)}
+                        {severityBadge(finding?.severity)}
+                        {finding?.impact ? <span className="text-[10px] text-muted-foreground">{finding.impact}</span> : null}
                       </div>
                     ) : null}
                     {isClickable ? (

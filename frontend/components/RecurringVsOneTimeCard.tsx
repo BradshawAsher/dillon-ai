@@ -54,14 +54,15 @@ function extractQualityItems(synthesis?: ProjectSynthesisItem): ClassifiedItem[]
     const items: ClassifiedItem[] = []
 
     const structuredGroups = [
-        ...synthesis.structuredFindings.redFlags.map((finding) => ({ finding, source: 'red-flag' as const })),
-        ...synthesis.structuredFindings.yellowFlags.map((finding) => ({ finding, source: 'yellow-flag' as const })),
-        ...synthesis.structuredFindings.greenFlags.map((finding) => ({ finding, source: 'green-flag' as const })),
-        ...synthesis.structuredFindings.openQuestions.map((finding) => ({ finding, source: 'open-question' as const })),
+        ...(synthesis.structuredFindings?.redFlags ?? []).map((finding) => ({ finding, source: 'red-flag' as const })),
+        ...(synthesis.structuredFindings?.yellowFlags ?? []).map((finding) => ({ finding, source: 'yellow-flag' as const })),
+        ...(synthesis.structuredFindings?.greenFlags ?? []).map((finding) => ({ finding, source: 'green-flag' as const })),
+        ...(synthesis.structuredFindings?.openQuestions ?? []).map((finding) => ({ finding, source: 'open-question' as const })),
     ]
 
     if (structuredGroups.length > 0) {
         for (const { finding, source } of structuredGroups) {
+            if (!finding || !finding.text) continue
             const primaryCitation = finding.citations?.[0]
             items.push({
                 text: finding.text,
@@ -70,22 +71,22 @@ function extractQualityItems(synthesis?: ProjectSynthesisItem): ClassifiedItem[]
                 sourceFile: primaryCitation?.sourceFile,
                 sourceLocation: primaryCitation?.sourceLocation,
                 excerpt: primaryCitation?.excerpt,
-                confidence: finding.confidence,
-                status: finding.status,
+                confidence: finding?.confidence ?? undefined,
+                status: finding?.status ?? undefined,
             })
         }
     } else {
-        for (const flag of synthesis.redFlags) {
-            items.push({ text: flag, classification: classifyItem(flag), source: 'red-flag' })
+        for (const flag of (synthesis.redFlags ?? [])) {
+            if (flag) items.push({ text: flag, classification: classifyItem(flag), source: 'red-flag' })
         }
-        for (const flag of synthesis.yellowFlags) {
-            items.push({ text: flag, classification: classifyItem(flag), source: 'yellow-flag' })
+        for (const flag of (synthesis.yellowFlags ?? [])) {
+            if (flag) items.push({ text: flag, classification: classifyItem(flag), source: 'yellow-flag' })
         }
-        for (const flag of synthesis.greenFlags) {
-            items.push({ text: flag, classification: classifyItem(flag), source: 'green-flag' })
+        for (const flag of (synthesis.greenFlags ?? [])) {
+            if (flag) items.push({ text: flag, classification: classifyItem(flag), source: 'green-flag' })
         }
-        for (const q of synthesis.openQuestions) {
-            items.push({ text: q, classification: classifyItem(q), source: 'open-question' })
+        for (const q of (synthesis.openQuestions ?? [])) {
+            if (q) items.push({ text: q, classification: classifyItem(q), source: 'open-question' })
         }
     }
 

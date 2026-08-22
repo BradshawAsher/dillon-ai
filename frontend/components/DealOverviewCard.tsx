@@ -174,9 +174,9 @@ export default function DealOverviewCard({ syntheses, projects, currentProjectId
     const decisionDrivers = synthesis ? [
         {
             label: 'Primary risk',
-            value: synthesis.crossDocumentConflicts[0] || 'No cross-document conflict recorded.',
+            value: synthesis.crossDocumentConflicts?.[0] || 'No cross-document conflict recorded.',
             evidence: (() => {
-                const finding = synthesis.structuredFindings.crossDocumentConflicts[0]
+                const finding = synthesis.structuredFindings?.crossDocumentConflicts?.[0]
                 const citation = finding?.citations?.[0]
                 return buildDocumentLinkedEvidence({
                     title: 'Primary risk evidence',
@@ -184,7 +184,7 @@ export default function DealOverviewCard({ syntheses, projects, currentProjectId
                     fallbackSourceFile: synthesis.citationDetails?.[0]?.sourceFile || synthesis.citations?.[0] || 'Project synthesis',
                     sourceLocation: citation?.sourceLocation,
                     fallbackSourceLocation: synthesis.citationDetails?.[0]?.sourceLocation || 'Project-level synthesis',
-                    excerpt: citation?.excerpt || finding?.text || synthesis.crossDocumentConflicts[0],
+                    excerpt: citation?.excerpt || finding?.text || synthesis.crossDocumentConflicts?.[0],
                     period: citation?.period,
                     currency: citation?.currency,
                     confidence: finding?.confidence ?? citation?.confidence ?? undefined,
@@ -196,9 +196,9 @@ export default function DealOverviewCard({ syntheses, projects, currentProjectId
         },
         {
             label: 'Negotiation leverage',
-            value: synthesis.negotiationLevers[0] || 'No negotiation lever surfaced yet.',
+            value: synthesis.negotiationLevers?.[0] || 'No negotiation lever surfaced yet.',
             evidence: (() => {
-                const finding = synthesis.structuredFindings.negotiationLevers[0]
+                const finding = synthesis.structuredFindings?.negotiationLevers?.[0]
                 const citation = finding?.citations?.[0]
                 return buildDocumentLinkedEvidence({
                     title: 'Negotiation leverage evidence',
@@ -206,7 +206,7 @@ export default function DealOverviewCard({ syntheses, projects, currentProjectId
                     fallbackSourceFile: synthesis.citationDetails?.[0]?.sourceFile || synthesis.citations?.[0] || 'Project synthesis',
                     sourceLocation: citation?.sourceLocation,
                     fallbackSourceLocation: synthesis.citationDetails?.[0]?.sourceLocation || 'Project-level synthesis',
-                    excerpt: citation?.excerpt || finding?.text || synthesis.negotiationLevers[0],
+                    excerpt: citation?.excerpt || finding?.text || synthesis.negotiationLevers?.[0],
                     period: citation?.period,
                     currency: citation?.currency,
                     confidence: finding?.confidence ?? citation?.confidence ?? undefined,
@@ -218,9 +218,9 @@ export default function DealOverviewCard({ syntheses, projects, currentProjectId
         },
         {
             label: 'Open diligence question',
-            value: synthesis.openQuestions[0] || 'No open management question recorded.',
+            value: synthesis.openQuestions?.[0] || 'No open management question recorded.',
             evidence: (() => {
-                const finding = synthesis.structuredFindings.openQuestions[0]
+                const finding = synthesis.structuredFindings?.openQuestions?.[0]
                 const citation = finding?.citations?.[0]
                 return buildDocumentLinkedEvidence({
                     title: 'Open diligence question evidence',
@@ -228,7 +228,7 @@ export default function DealOverviewCard({ syntheses, projects, currentProjectId
                     fallbackSourceFile: synthesis.citationDetails?.[0]?.sourceFile || synthesis.citations?.[0] || 'Project synthesis',
                     sourceLocation: citation?.sourceLocation,
                     fallbackSourceLocation: synthesis.citationDetails?.[0]?.sourceLocation || 'Project-level synthesis',
-                    excerpt: citation?.excerpt || finding?.text || synthesis.openQuestions[0],
+                    excerpt: citation?.excerpt || finding?.text || synthesis.openQuestions?.[0],
                     period: citation?.period,
                     currency: citation?.currency,
                     confidence: finding?.confidence ?? citation?.confidence ?? undefined,
@@ -323,7 +323,7 @@ export default function DealOverviewCard({ syntheses, projects, currentProjectId
                             </>
                         )
                     })()}
-                    {synthesis?.missingDocuments.length ? <div className="mt-3 rounded-md border border-warning/25 bg-warning/5 p-3 text-sm text-foreground"><span className="font-medium">Synthesis requests ({synthesis.missingDocuments.length}):</span><div className="mt-2 flex flex-wrap gap-2">{synthesis.missingDocuments.map((item, index) => { const finding = synthesis.structuredFindings.missingDocuments[index]; const citation = finding?.citations?.[0]; return <button key={`${item}-${index}`} type="button" onClick={() => onOpenEvidence(buildDocumentLinkedEvidence({ title: 'Missing diligence material', sourceFile: citation?.sourceFile, fallbackSourceFile: synthesis.citationDetails?.[0]?.sourceFile || synthesis.citations?.[0] || 'Project synthesis', sourceLocation: citation?.sourceLocation, fallbackSourceLocation: synthesis.citationDetails?.[0]?.sourceLocation || 'Project-level synthesis', excerpt: citation?.excerpt || finding?.text || item, period: citation?.period, currency: citation?.currency, confidence: finding?.confidence ?? citation?.confidence ?? undefined, status: finding?.status || citation?.status || 'Needs review', provenance: 'Project synthesis', documents }))} className="rounded-full border border-warning/30 bg-background px-3 py-1 text-left text-xs font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-muted/30">{item}</button> })}</div></div> : null}
+                    {synthesis?.missingDocuments.length ? <div className="mt-3 rounded-md border border-warning/25 bg-warning/5 p-3 text-sm text-foreground"><span className="font-medium">Synthesis requests ({synthesis.missingDocuments.length}):</span><div className="mt-2 flex flex-wrap gap-2">{synthesis.missingDocuments.map((item, index) => { const finding = synthesis.structuredFindings?.missingDocuments?.[index]; const citation = finding?.citations?.[0]; return <button key={`${item}-${index}`} type="button" onClick={() => onOpenEvidence(buildDocumentLinkedEvidence({ title: 'Missing diligence material', sourceFile: citation?.sourceFile, fallbackSourceFile: synthesis.citationDetails?.[0]?.sourceFile || synthesis.citations?.[0] || 'Project synthesis', sourceLocation: citation?.sourceLocation, fallbackSourceLocation: synthesis.citationDetails?.[0]?.sourceLocation || 'Project-level synthesis', excerpt: citation?.excerpt || finding?.text || item, period: citation?.period, currency: citation?.currency, confidence: finding?.confidence ?? citation?.confidence ?? undefined, status: finding?.status || citation?.status || 'Needs review', provenance: 'Project synthesis', documents }))} className="rounded-full border border-warning/30 bg-background px-3 py-1 text-left text-xs font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-muted/30">{item}</button> })}</div></div> : null}
                 </div>
 
                 <div className="rounded-xl border border-primary/20 bg-primary/[0.04] p-4">
