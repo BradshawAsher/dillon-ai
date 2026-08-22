@@ -11,6 +11,7 @@ import {
     Loader2,
     Play,
     RotateCcw,
+    Search,
     ShieldCheck,
     SlidersHorizontal,
     X,
@@ -21,6 +22,8 @@ import { ExportDiligenceModal } from '../components/ExportDiligenceModal'
 import { ReportIssueModal } from '../components/ReportIssueModal'
 import { ProjectsSidePanel } from '../components/ProjectsSidePanel'
 import DealHealthKPIs from '../components/DealHealthKPIs'
+import ScrollDownPrompt from '../components/ScrollDownPrompt'
+import RightSideQuickActions from '../components/RightSideQuickActions'
 import DealEmailDraftCard from '../components/DealEmailDraftCard'
 import { lazyWithRetry } from '../utils/lazyWithRetry'
 const CommandPalette = lazyWithRetry(() => import('../components/CommandPalette'))
@@ -2541,6 +2544,17 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                     isActiveSubmissionStatus={isActiveSubmissionStatus}
                     onReturnToLanding={onReturnToLanding}
                     onOpenWalkthrough={() => setIsWalkthroughModalOpen(true)}
+                    onOpenIntake={() => {
+                        const intakeEl = document.querySelector('[data-project-intake]') || document.getElementById('deal-intake')
+                        if (intakeEl) {
+                            intakeEl.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                        } else {
+                            setActiveWorkspaceTab('documents')
+                            setTimeout(() => {
+                                document.querySelector('[data-project-intake]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                            }, 100)
+                        }
+                    }}
                     resumeState={walkthrough.resumeState}
                     onResumeTour={handleResumeTour}
                     activeProjectId={activeProjectId}
@@ -2549,66 +2563,34 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                     onOpenReportIssue={() => setIsReportIssueOpen(true)}
                 />
 
-                <div className="mx-auto max-w-[1440px] px-4 pb-5 sm:px-6 lg:px-8">
-                <div className="rounded-xl border-2 border-primary/35 bg-primary/10 px-5 py-5 shadow-sm sm:flex sm:items-center sm:justify-between sm:gap-6">
-                    <div className="max-w-3xl">
-                        <p className="text-lg font-semibold text-foreground">
-                            Workspace Data Source: {isExampleMode ? 'Example Mode (Mock Data)' : 'Live n8n Mode (Production Engine)'}
-                        </p>
-                        <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                            Switch between live n8n workflow execution and mock example records, or return to the product Landing Page.
-                        </p>
-                    </div>
-                    <div className="mt-4 flex flex-wrap items-center gap-2.5 shrink-0 sm:mt-0">
-                        <Button
-                            size="default"
-                            variant={isExampleMode ? 'default' : 'outline'}
-                            onClick={() => setDataSource('mock')}
-                        >
-                            Example Mode
-                        </Button>
-                        <Button
-                            size="default"
-                            variant={!isExampleMode ? 'default' : 'outline'}
-                            onClick={() => setDataSource('live')}
-                        >
-                            Live n8n
-                        </Button>
-                        <Button
-                            id="export-memo-btn"
-                            data-export-btn="true"
-                            size="default"
-                            variant="outline"
-                            className="gap-2 border-primary/40 bg-background text-primary hover:bg-primary/10 font-bold"
-                            onClick={() => setIsExportModalOpen(true)}
-                            title="Export print-ready Diligence Memo or download Markdown"
-                        >
-                            <FileDown className="h-4 w-4 text-primary" />
-                            <span>Export Memo</span>
-                        </Button>
-                        <Button
-                            size="default"
-                            variant="outline"
-                            className="gap-2 border-primary/40 bg-background text-primary hover:bg-primary/10 font-bold"
-                            onClick={() => setIsFaqSidebarOpen(true)}
-                        >
-                            <HelpCircle className="h-4 w-4 text-primary" />
-                            <span>FAQs &amp; Guide</span>
-                        </Button>
-                        {onReturnToLanding && (
+                <div className="mx-auto max-w-[1440px] px-4 pb-2 sm:px-6 lg:px-8">
+                    <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-lg border border-border/60 bg-muted/30 px-3.5 py-1.5 text-xs text-muted-foreground shadow-2xs">
+                        <div className="flex items-center gap-2">
+                            <span className="flex h-2 w-2 rounded-full bg-primary shrink-0" />
+                            <span>
+                                <strong className="font-semibold text-foreground">Data Source:</strong> {isExampleMode ? 'Example Mode (Mock Data)' : 'Live n8n Mode (Production Engine)'}
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
                             <Button
-                                size="default"
-                                variant="outline"
-                                className="gap-2 border-primary/40 bg-background text-primary hover:bg-primary/10 font-bold"
-                                onClick={onReturnToLanding}
+                                size="sm"
+                                variant={isExampleMode ? 'default' : 'outline'}
+                                className="h-7 px-2.5 text-xs cursor-pointer"
+                                onClick={() => setDataSource('mock')}
                             >
-                                <Globe className="h-4 w-4 text-primary" />
-                                <span>Landing Page</span>
+                                Example Mode
                             </Button>
-                        )}
+                            <Button
+                                size="sm"
+                                variant={!isExampleMode ? 'default' : 'outline'}
+                                className="h-7 px-2.5 text-xs cursor-pointer"
+                                onClick={() => setDataSource('live')}
+                            >
+                                Live n8n
+                            </Button>
+                        </div>
                     </div>
                 </div>
-            </div>
 
             <div className="mx-auto max-w-[1440px] px-4 pt-4 sm:px-6 lg:px-8">
                 {(() => {
@@ -2638,6 +2620,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                             docCost={topDocCost}
                             totalCost={topTotalDealCost}
                             todayStats={todayPipelineStats}
+                            projectSummaries={projectSummaries}
                         />
                     )
                 })()}
@@ -2739,6 +2722,24 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                     </div>
                 )}
 
+                {/* Secondary Global Search Bar right above Navigation Bar */}
+                <div className="w-full">
+                    <button
+                        type="button"
+                        onClick={() => setCommandPaletteOpen(true)}
+                        className="w-full flex items-center justify-between gap-4 px-4 py-2.5 rounded-xl border border-primary/25 bg-background/80 hover:bg-background hover:border-primary/50 text-muted-foreground hover:text-foreground text-sm shadow-xs transition-all cursor-pointer group hover:shadow-md"
+                        title="Global Search across projects, tabs, metrics, flags, and actions (⌘K or Ctrl+K)"
+                    >
+                        <span className="flex items-center gap-2.5 min-w-0">
+                            <Search className="h-4 w-4 text-primary shrink-0 group-hover:scale-110 transition-transform" />
+                            <span className="font-medium text-foreground/80 truncate">Search deals, tabs, metrics, findings, actions...</span>
+                        </span>
+                        <kbd className="inline-flex items-center gap-1 rounded bg-muted/90 px-2 py-0.5 text-[11px] font-mono font-semibold border border-border text-foreground shadow-2xs shrink-0">
+                            ⌘K
+                        </kbd>
+                    </button>
+                </div>
+
                 <DealWorkspaceNav
                     activeTab={activeWorkspaceTab}
                     isDiligenceComplete={activeProjectDocuments.length > 0 && !isCurrentProjectProcessingDocuments}
@@ -2782,6 +2783,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                         activeProjectImpact={activeProjectImpact}
                         setActiveWorkspaceTab={setActiveWorkspaceTab}
                         todayStats={todayPipelineStats}
+                        projectSummaries={projectSummaries}
                     />
                 ) : null}
 
@@ -3290,58 +3292,31 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             </main>
         </div>
 
-            {/* Right Side Sticky Drawers: FAQ & Activity (Leaves Left side exclusively for TOC) */}
-            <button
-                type="button"
-                onClick={() => setIsFaqSidebarOpen((prev) => !prev)}
-                className={`fixed right-0 top-36 z-40 flex items-center gap-2 rounded-l-xl border border-r-0 bg-background/95 px-3 py-2 shadow-xl backdrop-blur-md transition-all duration-200 hover:bg-muted hover:pl-3.5 group cursor-pointer ${
-                    isFaqSidebarOpen
-                        ? 'border-primary/60 bg-primary/10 text-primary font-bold'
-                        : 'border-border/80 text-foreground hover:text-primary'
-                }`}
-                title="FAQs & Deal Guide"
-                aria-label="Toggle FAQs & Deal Guide sidebar"
-            >
-                <HelpCircle className="h-4 w-4 shrink-0 text-primary" />
-                <span className="text-xs font-bold tracking-tight hidden sm:inline">
-                    {isFaqSidebarOpen ? 'FAQs Guide' : 'FAQs'}
-                </span>
-            </button>
-
-            <button
-                type="button"
-                onClick={() => setIsBatchDrawerOpen(true)}
-                className={`fixed right-0 top-48 z-40 flex items-center gap-2 rounded-l-xl border border-r-0 border-border/80 bg-background/95 px-3 py-2 shadow-xl backdrop-blur-md transition-all duration-200 hover:bg-muted hover:pl-3.5 group cursor-pointer ${
-                    hasActiveSubmissions || inFlightBatchPlaceholder ? 'border-primary/60 text-primary animate-pulse' : 'text-foreground hover:text-primary'
-                }`}
-                title="Open Batch Processing Activity (Ctrl+Shift+B)"
-                aria-label="Open batch processing drawer"
-            >
-                <div className="flex flex-col gap-1 w-3.5">
-                    <span className="h-0.5 w-full bg-current rounded-full transition-transform group-hover:scale-x-110" />
-                    <span className="h-0.5 w-full bg-current rounded-full transition-transform group-hover:scale-x-110" />
-                    <span className="h-0.5 w-full bg-current rounded-full transition-transform group-hover:scale-x-110" />
-                </div>
-                <span className="text-xs font-bold tracking-tight hidden sm:inline">
-                    {hasActiveSubmissions || inFlightBatchPlaceholder ? 'Batch Running…' : 'Activity'}
-                </span>
-            </button>
-
-            {/* Resume Guided Tour Button (Directly under Activity, identical size & styling) */}
-            {walkthrough.resumeState && !walkthrough.isActive && (
-                <button
-                    type="button"
-                    onClick={handleResumeTour}
-                    className="fixed right-0 top-60 z-40 flex items-center gap-2 rounded-l-xl border border-r-0 border-border/80 bg-background/95 px-3 py-2 shadow-xl backdrop-blur-md transition-all duration-200 hover:bg-muted hover:pl-3.5 group text-foreground hover:text-primary cursor-pointer"
-                    title={`Resume ${walkthrough.resumeState.playlistTitle} (Step ${walkthrough.resumeState.stepIndex + 1}/${walkthrough.resumeState.totalSteps})`}
-                    aria-label="Resume Guided Tour"
-                >
-                    <Play className="h-3.5 w-3.5 shrink-0 fill-primary text-primary" />
-                    <span className="text-xs font-bold tracking-tight hidden sm:inline">
-                        Tour ({walkthrough.resumeState.stepIndex + 1}/{walkthrough.resumeState.totalSteps})
-                    </span>
-                </button>
-            )}
+            {/* Right Side Sticky Navigation Dock: FAQ, Activity, Tour, Project Intake & Report Issue */}
+            <RightSideQuickActions
+                isFaqOpen={isFaqSidebarOpen}
+                onToggleFaq={() => setIsFaqSidebarOpen((prev) => !prev)}
+                hasActiveSubmissions={hasActiveSubmissions}
+                inFlightBatchPlaceholder={Boolean(inFlightBatchPlaceholder)}
+                onOpenActivity={() => setIsBatchDrawerOpen(true)}
+                resumeState={walkthrough.resumeState}
+                isTourActive={walkthrough.isActive}
+                onOpenTour={() => setIsWalkthroughModalOpen(true)}
+                onResumeTour={handleResumeTour}
+                onOpenIntake={() => {
+                    const intakeEl = document.querySelector('[data-project-intake]') || document.getElementById('deal-intake')
+                    if (intakeEl) {
+                        intakeEl.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                    } else {
+                        setActiveWorkspaceTab('documents')
+                        setTimeout(() => {
+                            document.querySelector('[data-project-intake]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                        }, 100)
+                    }
+                }}
+                onOpenReportIssue={() => setIsReportIssueOpen(true)}
+                isEvidenceDrawerOpen={Boolean(activeEvidence)}
+            />
 
             <aside
                 aria-label="Quick Actions"
@@ -3557,6 +3532,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 walkthrough={walkthrough}
                 dealName={effectiveDealName || (isExampleMode ? 'Apex Industrial Technologies (Atlas Demo)' : (activeProjectId ? `Project #${activeProjectId}` : 'Apex Industrial Technologies'))}
             />
+            <ScrollDownPrompt />
         </div>
     )
 }

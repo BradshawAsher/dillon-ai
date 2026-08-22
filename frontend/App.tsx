@@ -54,6 +54,7 @@ export default function App() {
   const handleLaunchDashboard = () => {
     setView('dashboard')
     if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
       window.history.pushState({}, '', '?view=dashboard')
     }
   }
@@ -61,6 +62,7 @@ export default function App() {
   const handleGoToLogin = () => {
     setView('login')
     if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
       window.history.pushState({}, '', '?view=login')
     }
   }
@@ -69,6 +71,7 @@ export default function App() {
     setCurrentUser(user)
     setView('dashboard')
     if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
       window.history.pushState({}, '', '?view=dashboard')
     }
   }
@@ -76,6 +79,7 @@ export default function App() {
   const handleReturnToLanding = () => {
     setView('landing')
     if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
       window.history.pushState({}, '', window.location.pathname)
     }
   }
