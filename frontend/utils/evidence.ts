@@ -53,6 +53,25 @@ export type EvidenceItem = {
     inputs?: MetricInput[]
 }
 
+/** Formats a confidence score or label into a clean, human-readable display string without arbitrary hardcoded fallbacks. */
+export function formatEvidenceConfidence(confidence?: string | number | null): string {
+    if (confidence === undefined || confidence === null || confidence === '') {
+        return 'Unrated'
+    }
+    const cleanStr = String(confidence).trim()
+    const numericCandidate = cleanStr.endsWith('%') ? cleanStr.slice(0, -1).trim() : cleanStr
+    const num = typeof confidence === 'number' ? confidence : Number(numericCandidate)
+    if (Number.isFinite(num)) {
+        const val = num <= 1 && num > 0 ? Math.round(num * 100) : Math.round(num)
+        return `${val}% (${val >= 85 ? 'High Confidence' : val >= 60 ? 'Medium Confidence' : 'Low Confidence'})`
+    }
+    const lower = cleanStr.toLowerCase()
+    if (lower === 'high' || lower.includes('high')) return 'High Confidence'
+    if (lower === 'medium' || lower === 'med' || lower.includes('med')) return 'Medium Confidence'
+    if (lower === 'low' || lower.includes('low')) return 'Low Confidence'
+    return cleanStr
+}
+
 export function parseDocumentedFacts(json: string | undefined | null): Record<string, DocumentedFact> {
     if (!json) {
         return {}

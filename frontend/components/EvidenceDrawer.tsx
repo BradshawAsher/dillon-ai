@@ -7,7 +7,7 @@ import { Button } from '../lib/shadcn/button'
 import DocumentHighlightViewer from './DocumentHighlightViewer'
 import ExpandableText from './ExpandableText'
 import ProvenanceBadge from './ProvenanceBadge'
-import { driveEmbedUrl, getEvidenceStatusPresentation, type EvidenceItem, type MetricInput } from '../utils/evidence'
+import { driveEmbedUrl, formatEvidenceConfidence, getEvidenceStatusPresentation, type EvidenceItem, type MetricInput } from '../utils/evidence'
 
 // The canonical definition now lives in utils/evidence.ts; re-exported here so
 // existing imports keep working.
@@ -127,23 +127,7 @@ export default function EvidenceDrawer({ evidence, onClose }: { evidence: Eviden
         return () => document.removeEventListener('keydown', handleKeyDown)
     }, [evidence, onClose])
 
-    if (!evidence) return null
-
-    const formattedConfidence = (() => {
-        if (evidence.confidence === undefined || evidence.confidence === null || evidence.confidence === '') {
-            return '85% (High Confidence)'
-        }
-        const num = typeof evidence.confidence === 'number' ? evidence.confidence : Number(evidence.confidence)
-        if (Number.isFinite(num)) {
-            const val = num <= 1 && num > 0 ? Math.round(num * 100) : Math.round(num)
-            return `${val}% (${val >= 85 ? 'High Confidence' : val >= 60 ? 'Medium Confidence' : 'Low Confidence'})`
-        }
-        const str = String(evidence.confidence).trim().toLowerCase()
-        if (str === 'high' || str.includes('high')) return '88% (High Confidence)'
-        if (str === 'medium' || str === 'med' || str.includes('med')) return '68% (Medium Confidence)'
-        if (str === 'low' || str.includes('low')) return '45% (Low Confidence)'
-        return String(evidence.confidence)
-    })()
+    const formattedConfidence = formatEvidenceConfidence(evidence.confidence)
     const confidence = formattedConfidence
     const status = getEvidenceStatusPresentation(evidence.status, evidence.provenance)
 
@@ -236,8 +220,8 @@ export default function EvidenceDrawer({ evidence, onClose }: { evidence: Eviden
                     <Detail
                         label="Extraction confidence"
                         value={
-                            confidence === 'Not returned' || !confidence
-                                ? 'High (Document-level qualitative insight)'
+                            confidence === 'Unrated' || confidence === 'Not returned' || !confidence
+                                ? 'Document-level qualitative insight'
                                 : confidence
                         }
                     />

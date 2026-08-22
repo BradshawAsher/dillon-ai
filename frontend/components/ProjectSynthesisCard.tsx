@@ -396,8 +396,10 @@ export default function ProjectSynthesisCard({
         .slice(0, 4)
     const currentProjectName = projectNameById.get(normalizedProjectId) ?? normalizedProjectId ?? 'this project'
 
+    const isSynthActive = Boolean(runningSynthesis || synthesisPending || documentAnalysisPending)
+
     const fallbackSynthesis: ProjectSynthesisItem | null = useMemo(() => {
-        if (rawVisibleSyntheses.length > 0 || projectDocuments.length === 0) return null
+        if (rawVisibleSyntheses.length > 0 || projectDocuments.length === 0 || isSynthActive) return null
         const completedDocs = projectDocuments.filter((d) => d.status.trim().toLowerCase() === 'completed')
         if (completedDocs.length === 0) return null
 
@@ -440,10 +442,10 @@ export default function ProjectSynthesisCard({
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
         }
-    }, [rawVisibleSyntheses, projectDocuments, documentThesisTakeaways, currentProjectName, normalizedProjectId])
+    }, [rawVisibleSyntheses, projectDocuments, documentThesisTakeaways, currentProjectName, normalizedProjectId, isSynthActive])
 
-    const isFallbackSynthesis = rawVisibleSyntheses.length === 0 && fallbackSynthesis !== null
-    const visibleSyntheses = rawVisibleSyntheses.length > 0 ? rawVisibleSyntheses : (fallbackSynthesis ? [fallbackSynthesis] : [])
+    const isFallbackSynthesis = rawVisibleSyntheses.length === 0 && fallbackSynthesis !== null && !isSynthActive
+    const visibleSyntheses = rawVisibleSyntheses.length > 0 ? rawVisibleSyntheses : (!isSynthActive && fallbackSynthesis ? [fallbackSynthesis] : [])
     const activeSynthesis = visibleSyntheses[activeSynthesisIndex] || visibleSyntheses[0]
 
     // Reset synthesis version index when selected project changes or bounds exceed
@@ -525,8 +527,6 @@ export default function ProjectSynthesisCard({
         })
         return docCitations
     }, [visibleSyntheses, projectDocuments])
-
-    const isSynthActive = Boolean(runningSynthesis || synthesisPending)
 
     const dynamicSynthProgress = useMemo(() => {
         if (!isSynthActive) return 100
@@ -1208,18 +1208,47 @@ export default function ProjectSynthesisCard({
 
                 {selectedProjectDocument ? <div className="rounded-lg border border-primary/25 bg-primary/[0.035] p-4"><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><p className="text-sm font-semibold text-foreground">Document analysis</p><p className="mt-1 text-sm text-muted-foreground">{selectedProjectDocument.fileName}</p></div><Button type="button" variant="ghost" size="sm" onClick={() => setSelectedDocumentRequestId('')}>Close</Button></div><div className="mt-4 flex flex-wrap gap-2"><Badge variant="outline">{selectedProjectDocument.status || 'Pending'}</Badge>{detectedTypes(selectedProjectDocument).map((type) => <Badge key={type} variant="secondary">{type}</Badge>)}</div>{selectedProjectDocument.aiSummary ? <div className="mt-4"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">AI summary</p><p className="mt-1 text-xs text-muted-foreground">This is the full document-level summary returned for this file. It is not intentionally cut off; expand it to read the full text.</p><ExpandableText text={selectedProjectDocument.aiSummary} maxHeight={180} className="mt-1" /></div> : <p className="mt-4 text-sm text-muted-foreground">No document-specific summary has returned yet.</p>}<div className="mt-4 grid gap-3 md:grid-cols-2">{selectedProjectDocument.aiRedFlags ? <div className="rounded-md border border-destructive/25 bg-destructive/5 p-3"><p className="text-xs font-semibold uppercase tracking-wide text-destructive">Red flags</p><ul className="mt-2 list-disc space-y-1 pl-4 text-sm text-foreground">{shortList(selectedProjectDocument.aiRedFlags).map((item) => <li key={item}>{item}</li>)}</ul></div> : null}{selectedProjectDocument.aiYellowFlags ? <div className="rounded-md border border-warning/25 bg-warning/5 p-3"><p className="text-xs font-semibold uppercase tracking-wide text-warning">Items to review</p><ul className="mt-2 list-disc space-y-1 pl-4 text-sm text-foreground">{shortList(selectedProjectDocument.aiYellowFlags).map((item) => <li key={item}>{item}</li>)}</ul></div> : null}</div>{onOpenEvidence && (selectedProjectDocument.storageFileId || selectedProjectDocument.storageFileUrl) ? <Button type="button" variant="outline" className="mt-4" onClick={() => onOpenEvidence({ title: `Source document: ${selectedProjectDocument.fileName}`, sourceFile: selectedProjectDocument.fileName, sourceLocation: 'Document-level analysis', excerpt: selectedProjectDocument.aiSummary, status: selectedProjectDocument.status, provenance: 'Uploaded document', documentId: selectedProjectDocument.storageFileId, documentUrl: selectedProjectDocument.storageFileUrl })}>Open source document</Button> : null}</div> : null}
 
-                {!error && synthesisPending ? (
+                {!error && isSynthActive && rawVisibleSyntheses.length === 0 ? (
+                    <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-8 text-center space-y-4 shadow-sm">
+                        <div className="flex justify-center">
+                            <div className="relative">
+                                <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                                <Sparkles className="h-4 w-4 text-primary absolute -top-1 -right-1 animate-pulse" />
+                            </div>
+                        </div>
+                        <div className="space-y-1">
+                            <h3 className="text-lg font-bold text-foreground">
+                                {documentAnalysisPending
+                                    ? 'Awaiting Batch Document Analysis Completion...'
+                                    : 'Synthesizing Project-Wide Acquisition Intelligence...'}
+                            </h3>
+                            <p className="text-sm text-muted-foreground max-w-xl mx-auto">
+                                {documentAnalysisPending
+                                    ? `Processing document extractions for ${currentProjectName}. Synthesis will launch automatically as soon as batch documents complete.`
+                                    : `Synthesizing ${currentProjectName} across ${projectDocuments.filter(d => d.status.toLowerCase() === 'completed').length} completed document${projectDocuments.filter(d => d.status.toLowerCase() === 'completed').length === 1 ? '' : 's'}. Reconciling adjusted EBITDA, working capital pegs, and multi-document risk factors.`}
+                            </p>
+                        </div>
+                        <div className="max-w-md mx-auto space-y-2 pt-2">
+                            <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                <span className="font-medium text-primary">{activeSynthStage?.title || synthesisStage || 'Synthesizing deal model...'}</span>
+                                <span className="font-mono">{dynamicSynthProgress}% • {synthesisElapsedSeconds}s elapsed</span>
+                            </div>
+                            <Progress value={dynamicSynthProgress} className="h-2.5" />
+                            <p className="text-xs text-muted-foreground">Estimated completion: ~90 seconds</p>
+                        </div>
+                    </div>
+                ) : null}
+
+                {!error && synthesisPending && rawVisibleSyntheses.length > 0 ? (
                     <div className="rounded-lg border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-foreground">
                         <div className="flex items-center gap-3">
                             <Loader2 className="h-5 w-5 shrink-0 animate-spin text-primary" />
                             <div>
-                                <p className="font-medium">{hasPriorSynthesis ? 'Refreshing the project synthesis' : 'Synthesis starting'}</p>
+                                <p className="font-medium">Refreshing the project synthesis</p>
                                 <p className="text-xs font-medium text-primary">Synthesizing {currentProjectName} — {synthesisElapsedSeconds} seconds</p>
                                 <p className="text-xs text-muted-foreground">Estimated completion: about 1 min 30 sec</p>
                                 <p className="mt-1 text-muted-foreground">
-                                    {hasPriorSynthesis
-                                        ? 'The previous synthesis remains visible below while n8n incorporates the most recent document. This page will update automatically when the new pass is complete.'
-                                        : 'All submitted documents are complete. The n8n consolidator is preparing the first project-level judgment and this page will refresh automatically.'}
+                                    The previous synthesis remains visible below while n8n incorporates the most recent document. This page will update automatically when the new pass is complete.
                                 </p>
                             </div>
                         </div>
@@ -1237,25 +1266,6 @@ export default function ProjectSynthesisCard({
                                 </div>
                             </div>
                         ) : null}
-                    </div>
-                ) : null}
-
-                {!error && documentAnalysisPending ? (
-                    <div className="rounded-lg border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-foreground">
-                        <div className="flex items-center gap-3">
-                            <Loader2 className="h-5 w-5 shrink-0 animate-spin text-warning" />
-                            <div>
-                                <p className="font-medium">Waiting for document-specific analysis to finish…</p>
-                                <p className="mt-1 text-muted-foreground">
-                                    The project synthesizer will start after every document reaches a terminal status. This section refreshes automatically.
-                                </p>
-                            </div>
-                        </div>
-                        <div className="mt-3 flex items-center justify-between gap-3 text-xs text-muted-foreground">
-                            <span>{synthesisStage}</span>
-                            <span>{synthesisProgress}%</span>
-                        </div>
-                        <Progress value={synthesisProgress} className="mt-2 h-2.5" />
                     </div>
                 ) : null}
 
