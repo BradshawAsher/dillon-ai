@@ -2364,8 +2364,9 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         if (environment === 'production') {
             setActiveWorkspaceTab('diligence')
             window.setTimeout(() => {
-                document.getElementById('deal-workspace')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-            }, 0)
+                const target = document.getElementById('diligence-batch') || document.getElementById('deal-workspace')
+                target?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            }, 60)
         }
 
         setIsSubmittingFile(true)

@@ -251,40 +251,48 @@ export default function FileDropzone({ selectedFiles, onFileSelect, className }:
                 </div>
 
                 <div className="flex flex-col sm:flex-row items-center gap-2">
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="w-full sm:w-auto font-medium"
-                        onClick={(event) => {
-                            event.preventDefault()
-                            inputRef.current?.click()
-                        }}
-                    >
-                        Browse files
-                    </Button>
-                    <Button
-                        id="browse-vdr-btn"
-                        data-browse-vdr="true"
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        className="w-full sm:w-auto font-semibold gap-1"
-                        title="Upload an entire data room folder containing subdirectories"
-                        onClick={(event) => {
-                            event.preventDefault()
-                            folderInputRef.current?.click()
-                        }}
-                    >
-                        <FolderKanban className="h-3.5 w-3.5" />
-                        <span>Browse Folder / Data Room</span>
-                    </Button>
+                    {/* Unified Action: Browse Files or VDR Folder */}
+                    <div className="inline-flex w-full sm:w-auto rounded-lg border border-border/80 bg-background/80 shadow-2xs overflow-hidden p-0.5">
+                        <Button
+                            id="browse-files-btn"
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-3 text-xs font-semibold hover:bg-accent hover:text-accent-foreground rounded-md gap-1.5 cursor-pointer"
+                            title="Select one or more files from your computer"
+                            onClick={(event) => {
+                                event.preventDefault()
+                                inputRef.current?.click()
+                            }}
+                        >
+                            <Upload className="h-3.5 w-3.5 text-primary" />
+                            <span>Browse Files</span>
+                        </Button>
+                        <div className="w-[1px] bg-border my-1" />
+                        <Button
+                            id="browse-vdr-btn"
+                            data-browse-vdr="true"
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-3 text-xs font-semibold hover:bg-primary/10 hover:text-primary rounded-md gap-1.5 cursor-pointer text-muted-foreground hover:text-foreground"
+                            title="Select an entire data room folder containing subdirectories"
+                            onClick={(event) => {
+                                event.preventDefault()
+                                folderInputRef.current?.click()
+                            }}
+                        >
+                            <FolderKanban className="h-3.5 w-3.5 text-amber-500" />
+                            <span>Browse Folder</span>
+                        </Button>
+                    </div>
+
                     {selectedFiles.length > 0 && (
                         <Button
                             type="button"
                             variant="destructive"
                             size="sm"
-                            className="w-full sm:w-auto text-xs font-medium gap-1 bg-destructive/15 text-destructive hover:bg-destructive/25 border border-destructive/30"
+                            className="h-8 w-full sm:w-auto text-xs font-medium gap-1 bg-destructive/15 text-destructive hover:bg-destructive/25 border border-destructive/30 cursor-pointer"
                             title="Clear all selected files"
                             onClick={(event) => {
                                 event.preventDefault()
@@ -298,7 +306,7 @@ export default function FileDropzone({ selectedFiles, onFileSelect, className }:
                             }}
                         >
                             <Trash2 className="h-3.5 w-3.5" />
-                            <span>Clear files</span>
+                            <span>Clear</span>
                         </Button>
                     )}
                 </div>

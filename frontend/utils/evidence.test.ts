@@ -5,6 +5,7 @@ import {
     buildFactEvidence,
     driveEmbedUrl,
     findCitedDocument,
+    formatEvidenceConfidence,
     getEvidenceStatusPresentation,
     getProvenanceCategory,
     getProvenanceCategoryPresentation,
@@ -196,3 +197,37 @@ describe('buildFactEvidence P&L source fallback', () => {
         ).toBe('2024_income_statement.pdf')
     })
 })
+
+describe('formatEvidenceConfidence', () => {
+    it('returns Unrated for undefined, null, or empty string', () => {
+        expect(formatEvidenceConfidence(undefined)).toBe('Unrated')
+        expect(formatEvidenceConfidence(null)).toBe('Unrated')
+        expect(formatEvidenceConfidence('')).toBe('Unrated')
+    })
+
+    it('formats 0..1 floating point confidences with percentage and band', () => {
+        expect(formatEvidenceConfidence(0.95)).toBe('95% (High Confidence)')
+        expect(formatEvidenceConfidence(0.85)).toBe('85% (High Confidence)')
+        expect(formatEvidenceConfidence(0.72)).toBe('72% (Medium Confidence)')
+        expect(formatEvidenceConfidence(0.40)).toBe('40% (Low Confidence)')
+    })
+
+    it('formats 1..100 integer/float confidences properly', () => {
+        expect(formatEvidenceConfidence(92)).toBe('92% (High Confidence)')
+        expect(formatEvidenceConfidence(65)).toBe('65% (Medium Confidence)')
+        expect(formatEvidenceConfidence(30)).toBe('30% (Low Confidence)')
+    })
+
+    it('formats string percentages properly', () => {
+        expect(formatEvidenceConfidence('95%')).toBe('95% (High Confidence)')
+        expect(formatEvidenceConfidence('75%')).toBe('75% (Medium Confidence)')
+        expect(formatEvidenceConfidence('45%')).toBe('45% (Low Confidence)')
+    })
+
+    it('formats qualitative strings properly', () => {
+        expect(formatEvidenceConfidence('high')).toBe('High Confidence')
+        expect(formatEvidenceConfidence('medium')).toBe('Medium Confidence')
+        expect(formatEvidenceConfidence('low')).toBe('Low Confidence')
+    })
+})
+

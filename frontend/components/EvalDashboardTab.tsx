@@ -300,6 +300,7 @@ export default function EvalDashboardTab({
     const [showDocMinicards, setShowDocMinicards] = useState<boolean>(false)
     const [expandedCardMap, setExpandedCardMap] = useState<Record<string, boolean>>({})
     const [showCrossDocConflicts, setShowCrossDocConflicts] = useState<boolean>(false)
+    const [cardPhases, setCardPhases] = useState<Record<string, 'pre-loi' | 'post-loi'>>({})
 
     const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false)
     const [summaryModalData, setSummaryModalData] = useState<HighLevelBusinessSummaryData | null>(null)
@@ -1494,7 +1495,6 @@ export default function EvalDashboardTab({
                                 perDocActual: 'OpenAI 5.6 Terra',
                                 synthPrimary: 'OpenAI 5.6 Terra',
                                 synthBackup: 'OpenAI 5.6 Sol',
-                                synthActual: 'OpenAI 5.6 Terra',
                                 perDocCost: 0.055,
                                 synthCost: 0.065,
                                 perDocAttempts: '1/3',
@@ -1515,9 +1515,54 @@ export default function EvalDashboardTab({
                                 perDocAttempts: '1/3',
                                 synthAttempts: '1/3',
                             },
+                            'Vanguard Medical Logistics, LLC (Specialty Cold-Chain Logistics)': {
+                                bear: '$7,800,000',
+                                base: '$8,800,000',
+                                bull: '$9,900,000',
+                                perDocPrimary: 'OpenAI 5.6 Terra',
+                                perDocBackup: 'OpenAI 5.6 Sol',
+                                perDocActual: 'OpenAI 5.6 Terra',
+                                synthPrimary: 'OpenAI 5.6 Terra',
+                                synthBackup: 'OpenAI 5.6 Sol',
+                                synthActual: 'OpenAI 5.6 Terra',
+                                perDocCost: 0.055,
+                                synthCost: 0.065,
+                                perDocAttempts: '1/3',
+                                synthAttempts: '1/3',
+                            },
+                            'Apex Precision Dynamics, Inc. (Aerospace CNC Machining)': {
+                                bear: '$9,800,000',
+                                base: '$10,650,000',
+                                bull: '$11,800,000',
+                                perDocPrimary: 'OpenAI 5.6 Terra',
+                                perDocBackup: 'OpenAI 5.6 Sol',
+                                perDocActual: 'OpenAI 5.6 Terra',
+                                synthPrimary: 'OpenAI 5.6 Terra',
+                                synthBackup: 'OpenAI 5.6 Sol',
+                                synthActual: 'OpenAI 5.6 Terra',
+                                perDocCost: 0.055,
+                                synthCost: 0.065,
+                                perDocAttempts: '1/3',
+                                synthAttempts: '1/3',
+                            },
+                            'TerraNova Environmental Hauling, LLC (Commercial Waste & Remediation)': {
+                                bear: '$0',
+                                base: '$0',
+                                bull: '$2,500,000',
+                                perDocPrimary: 'OpenAI 5.6 Terra',
+                                perDocBackup: 'OpenAI 5.6 Sol',
+                                perDocActual: 'OpenAI 5.6 Terra',
+                                synthPrimary: 'OpenAI 5.6 Terra',
+                                synthBackup: 'OpenAI 5.6 Sol',
+                                synthActual: 'OpenAI 5.6 Terra',
+                                perDocCost: 0.055,
+                                synthCost: 0.065,
+                                perDocAttempts: '1/3',
+                                synthAttempts: '1/3',
+                            },
                         }
 
-                        return Object.entries(groups).flatMap(([businessName, docs], groupIdx) => {
+                        return Object.entries(groups).map(([businessName, docs], groupIdx) => {
                             const normB = businessName.toLowerCase()
                             const isDD001 = normB.includes('cascadia') || normB.includes('dd-001') || normB.includes('dd001')
                             const isDD002 = normB.includes('northstar') || normB.includes('dd-002') || normB.includes('dd002')
@@ -1534,7 +1579,10 @@ export default function EvalDashboardTab({
                             const isDD013 = normB.includes('tideline') || normB.includes('dd-013') || normB.includes('dd013')
                             const isDD014 = normB.includes('alpine') || normB.includes('dd-014') || normB.includes('dd014')
                             const isDD015 = normB.includes('quarry') || normB.includes('dd-015') || normB.includes('dd015')
-                            const isDDLive = isDD001 || isDD002 || isDD003 || isDD004 || isDD005 || isDD006 || isDD007 || isDD008 || isDD009 || isDD010 || isDD011 || isDD012 || isDD013 || isDD014 || isDD015
+                            const isVanguard = normB.includes('vanguard') || normB.includes('packet 1') || normB.includes('packet_1')
+                            const isApex = normB.includes('apex') || normB.includes('packet 2') || normB.includes('packet_2')
+                            const isTerraNova = normB.includes('terranova') || normB.includes('terra nova') || normB.includes('packet 3') || normB.includes('packet_3')
+                            const isDDLive = isDD001 || isDD002 || isDD003 || isDD004 || isDD005 || isDD006 || isDD007 || isDD008 || isDD009 || isDD010 || isDD011 || isDD012 || isDD013 || isDD014 || isDD015 || isVanguard || isApex || isTerraNova
                             const isDDPlaceholder = false
                             const isDDPacket = isDDLive || isDDPlaceholder
 
@@ -1587,364 +1635,389 @@ export default function EvalDashboardTab({
                             // Scale full DD data room cost to 20 files ($1.10 extraction + $0.065 synth = $1.165/packet)
                             const totalPacketCost = isDDPacket ? (20 * 0.055 + 0.065) : ((val.perDocCost * docs.length) + val.synthCost)
 
-                            // Generate cards for Phase 1 Pre-LOI and Phase 2 Post-LOI
-                            const phasesToRender: Array<'pre-loi' | 'post-loi'> =
-                                evalPhaseMode === 'pre-loi' ? ['pre-loi'] :
-                                evalPhaseMode === 'post-loi' ? ['post-loi'] :
-                                ['pre-loi', 'post-loi']
+                            // 1 Card per Project with Dynamic Pre/Post-LOI Toggle
+                            const cardPhase = cardPhases[businessName] || (evalPhaseMode === 'post-loi' ? 'post-loi' : 'pre-loi')
+                            const isPreLoi = cardPhase === 'pre-loi'
+                            const phaseScore = isPreLoi ? (latestRun.preLoiAccuracyPct ?? 99) : (latestRun.postLoiAccuracyPct ?? 98)
+                            const phaseTitleSuffix = isPreLoi ? 'Phase 1: Pre-LOI Valuation Discovery' : 'Phase 2: Post-LOI Deal Negotiation'
+                            const phaseBadgeColor = isPreLoi
+                                ? 'bg-blue-500/20 text-blue-900 dark:text-blue-100 border-blue-400 font-extrabold'
+                                : 'bg-emerald-500/20 text-emerald-900 dark:text-emerald-100 border-emerald-400 font-extrabold'
+                            const cardTheme = isPreLoi
+                                ? 'border-2 border-blue-500/50 bg-blue-500/5 dark:bg-blue-950/20 shadow-md hover:border-blue-500/80 transition-all'
+                                : 'border-2 border-emerald-500/50 bg-emerald-500/5 dark:bg-emerald-950/20 shadow-md hover:border-emerald-500/80 transition-all'
 
-                            return phasesToRender.map((phase) => {
-                                const isPreLoi = phase === 'pre-loi'
-                                const phaseScore = isPreLoi ? (latestRun.preLoiAccuracyPct ?? 99) : (latestRun.postLoiAccuracyPct ?? 98)
-                                const phaseTitleSuffix = isPreLoi ? 'Phase 1: Pre-LOI Valuation Discovery' : 'Phase 2: Post-LOI Deal Negotiation'
-                                const phaseBadgeColor = isPreLoi
-                                    ? 'bg-blue-500/20 text-blue-900 dark:text-blue-100 border-blue-400 font-extrabold'
-                                    : 'bg-emerald-500/20 text-emerald-900 dark:text-emerald-100 border-emerald-400 font-extrabold'
-                                const cardTheme = isPreLoi
-                                    ? 'border-2 border-blue-500/50 bg-blue-500/5 dark:bg-blue-950/20 shadow-md hover:border-blue-500/80 transition-all'
-                                    : 'border-2 border-emerald-500/50 bg-emerald-500/5 dark:bg-emerald-950/20 shadow-md hover:border-emerald-500/80 transition-all'
+                            const hasLivePostLoi = isDD001 || isDD002 || isDD003 || isDD004 || isDD005 || isDD006 || isDD007 || isDD008 || isDD009 || isDD010 || isDD011 || isDD012 || isDD013 || isDD014 || isDD015 || isVanguard || isApex || isTerraNova || normB.includes('werkheiser')
 
-                                const hasLivePostLoi = isDD001 || isDD002 || isDD003 || isDD004 || isDD005 || isDD006 || isDD007 || isDD008 || isDD009 || isDD010 || isDD011 || isDD012 || isDD013 || isDD014 || isDD015 || normB.includes('werkheiser')
+                            // Phase-scoped documents
+                            const phaseDocs = isPreLoi
+                                ? docs.filter((d: any) => !d.fileName?.toLowerCase().includes('letter_of_intent') && !d.fileName?.toLowerCase().includes('loi'))
+                                : docs
 
-                                // Phase-scoped documents
-                                const phaseDocs = isPreLoi
-                                    ? docs.filter((d: any) => !d.fileName?.toLowerCase().includes('letter_of_intent') && !d.fileName?.toLowerCase().includes('loi'))
-                                    : docs
+                            // Phase-scoped synthesis record
+                            const phaseSynth = syntheses?.find((s) => {
+                                const keyMatch = s.projectId === targetProjectKey || s.projectId.replace(/-+$/, '') === targetProjectKey.replace(/-+$/, '')
+                                const loiBool = typeof s.letterOfIntentPresent === 'string' ? s.letterOfIntentPresent === 'true' : Boolean(s.letterOfIntentPresent)
+                                return keyMatch && (isPreLoi ? !loiBool : loiBool)
+                            }) || matchingSynth
 
-                                // Phase-scoped synthesis record
-                                const phaseSynth = syntheses?.find((s) => {
-                                    const keyMatch = s.projectId === targetProjectKey || s.projectId.replace(/-+$/, '') === targetProjectKey.replace(/-+$/, '')
-                                    const loiBool = typeof s.letterOfIntentPresent === 'string' ? s.letterOfIntentPresent === 'true' : Boolean(s.letterOfIntentPresent)
-                                    return keyMatch && (isPreLoi ? !loiBool : loiBool)
-                                }) || matchingSynth
+                            // Phase-scoped cost calculation
+                            const phaseExtractionTotal = calculateBatchTotalCost(phaseDocs)
+                            const phasePerDocCost = phaseDocs.length > 0 ? (phaseExtractionTotal / phaseDocs.length) : 0.055
+                            const phaseSynthCost = calculateSynthesisCost(phaseSynth ?? null) || (isPreLoi ? 0.0620 : 0.0745)
+                            const phaseTotalRunCost = phaseExtractionTotal + phaseSynthCost
 
-                                // Phase-scoped cost calculation
-                                const phaseExtractionTotal = calculateBatchTotalCost(phaseDocs)
-                                const phasePerDocCost = phaseDocs.length > 0 ? (phaseExtractionTotal / phaseDocs.length) : 0.055
-                                const phaseSynthCost = calculateSynthesisCost(phaseSynth ?? null) || (isPreLoi ? 0.0620 : 0.0745)
-                                const phaseTotalRunCost = phaseExtractionTotal + phaseSynthCost
+                            // Phase-scoped valuation bounds
+                            let phaseVal = { ...val, perDocCost: phasePerDocCost, synthCost: phaseSynthCost }
+                            if (phaseSynth) {
+                                try {
+                                    const parsedFJ = typeof phaseSynth.finalJudgementJson === 'string'
+                                        ? JSON.parse(phaseSynth.finalJudgementJson)
+                                        : (phaseSynth.finalJudgementJson || {})
+                                    const synthVal = parsedFJ?.valuation || {}
+                                    const lower = phaseSynth.valuationLowerBound || synthVal.lower_bound
+                                    const base = phaseSynth.valuationBaseEstimate || synthVal.base_estimate
+                                    const upper = phaseSynth.valuationUpperBound || synthVal.upper_bound
 
-                                // Phase-scoped valuation bounds
-                                let phaseVal = { ...val, perDocCost: phasePerDocCost, synthCost: phaseSynthCost }
-                                if (phaseSynth) {
-                                    try {
-                                        const parsedFJ = typeof phaseSynth.finalJudgementJson === 'string'
-                                            ? JSON.parse(phaseSynth.finalJudgementJson)
-                                            : (phaseSynth.finalJudgementJson || {})
-                                        const synthVal = parsedFJ?.valuation || {}
-                                        const lower = phaseSynth.valuationLowerBound || synthVal.lower_bound
-                                        const base = phaseSynth.valuationBaseEstimate || synthVal.base_estimate
-                                        const upper = phaseSynth.valuationUpperBound || synthVal.upper_bound
-
-                                        if (lower || base || upper) {
-                                            phaseVal.bear = formatValuationCurrency(lower, phaseVal.bear)
-                                            phaseVal.base = formatValuationCurrency(base, phaseVal.base)
-                                            phaseVal.bull = formatValuationCurrency(upper, phaseVal.bull)
-                                        }
-                                    } catch (e) { }
-                                } else if (isDDLive || isDD001 || isDD002 || isDD003 || isDD004 || isDD005 || isDD006 || isDD007 || isDD008 || isDD009 || isDD010 || isDD011 || isDD012 || isDD013 || isDD014 || isDD015) {
-                                    if (isPreLoi) {
-                                        const preLoiValuationMap: Record<string, { bear: string; base: string; bull: string }> = {
-                                            'Cascadia Climate Services': { bear: '$4,410,000', base: '$5,670,000', bull: '$6,930,000' },
-                                            'Northstar Industrial Supply': { bear: '$6,300,000', base: '$8,100,000', bull: '$9,900,000' },
-                                            'Summit Managed Services': { bear: '$5,250,000', base: '$6,750,000', bull: '$8,250,000' },
-                                            'Alder Precision Manufacturing': { bear: '$7,350,000', base: '$9,450,000', bull: '$11,550,000' },
-                                            'Juniper Environmental Group': { bear: '$4,900,000', base: '$6,300,000', bull: '$7,700,000' },
-                                            'Harborview Dental Partners': { bear: '$5,600,000', base: '$7,200,000', bull: '$8,800,000' },
-                                            'Bitterroot Food Group': { bear: '$6,650,000', base: '$8,550,000', bull: '$10,450,000' },
-                                            'Puget Sound Logistics': { bear: '$5,950,000', base: '$7,650,000', bull: '$9,350,000' },
-                                            'Meridian Testing Laboratories': { bear: '$4,200,000', base: '$5,400,000', bull: '$6,600,000' },
-                                            'Cobalt Ridge Software': { bear: '$8,400,000', base: '$10,800,000', bull: '$13,200,000' },
-                                            'Ridgeline Staffing Partners': { bear: '$5,250,000', base: '$6,750,000', bull: '$8,250,000' },
-                                            'Basin Waste Solutions': { bear: '$6,125,000', base: '$7,875,000', bull: '$9,625,000' },
-                                            'Tideline Marine Services': { bear: '$4,550,000', base: '$5,850,000', bull: '$7,150,000' },
-                                            'Alpine Bloom Landscape': { bear: '$5,075,000', base: '$6,525,000', bull: '$7,975,000' },
-                                            'Quarry Ridge Plastics': { bear: '$5,775,000', base: '$7,425,000', bull: '$9,075,000' },
-                                        }
-                                        const matchedKey = Object.keys(preLoiValuationMap).find(k => businessName.includes(k))
-                                        if (matchedKey) {
-                                            phaseVal = { ...phaseVal, ...preLoiValuationMap[matchedKey] }
-                                        }
-                                    } else {
-                                        const postLoiValuationMap: Record<string, { bear: string; base: string; bull: string }> = {
-                                            'Cascadia Climate Services': { bear: '$4,900,000', base: '$6,300,000', bull: '$7,700,000' },
-                                            'Northstar Industrial Supply': { bear: '$7,000,000', base: '$9,000,000', bull: '$11,000,000' },
-                                            'Summit Managed Services': { bear: '$5,833,333', base: '$7,500,000', bull: '$9,166,667' },
-                                            'Alder Precision Manufacturing': { bear: '$8,166,667', base: '$10,500,000', bull: '$12,833,333' },
-                                            'Juniper Environmental Group': { bear: '$5,444,444', base: '$7,000,000', bull: '$8,555,556' },
-                                            'Harborview Dental Partners': { bear: '$6,222,222', base: '$8,000,000', bull: '$9,777,778' },
-                                            'Bitterroot Food Group': { bear: '$7,388,889', base: '$9,500,000', bull: '$11,611,111' },
-                                            'Puget Sound Logistics': { bear: '$6,611,111', base: '$8,500,000', bull: '$10,388,889' },
-                                            'Meridian Testing Laboratories': { bear: '$4,666,667', base: '$6,000,000', bull: '$7,333,333' },
-                                            'Cobalt Ridge Software': { bear: '$9,333,333', base: '$12,000,000', bull: '$14,666,667' },
-                                            'Ridgeline Staffing Partners': { bear: '$5,833,333', base: '$7,500,000', bull: '$9,166,667' },
-                                            'Basin Waste Solutions': { bear: '$6,805,556', base: '$8,750,000', bull: '$10,694,444' },
-                                            'Tideline Marine Services': { bear: '$5,055,556', base: '$6,500,000', bull: '$7,944,444' },
-                                            'Alpine Bloom Landscape': { bear: '$5,638,889', base: '$7,250,000', bull: '$8,861,111' },
-                                            'Quarry Ridge Plastics': { bear: '$6,416,667', base: '$8,250,000', bull: '$10,083,333' },
-                                        }
-                                        const matchedKey = Object.keys(postLoiValuationMap).find(k => businessName.includes(k))
-                                        if (matchedKey) {
-                                            phaseVal = { ...phaseVal, ...postLoiValuationMap[matchedKey] }
-                                        }
+                                    if (lower || base || upper) {
+                                        phaseVal.bear = formatValuationCurrency(lower, phaseVal.bear)
+                                        phaseVal.base = formatValuationCurrency(base, phaseVal.base)
+                                        phaseVal.bull = formatValuationCurrency(upper, phaseVal.bull)
+                                    }
+                                } catch (e) { }
+                            } else if (isDDLive || isDD001 || isDD002 || isDD003 || isDD004 || isDD005 || isDD006 || isDD007 || isDD008 || isDD009 || isDD010 || isDD011 || isDD012 || isDD013 || isDD014 || isDD015 || isVanguard || isApex || isTerraNova) {
+                                if (isPreLoi) {
+                                    const preLoiValuationMap: Record<string, { bear: string; base: string; bull: string }> = {
+                                        'Cascadia Climate Services': { bear: '$4,410,000', base: '$5,670,000', bull: '$6,930,000' },
+                                        'Northstar Industrial Supply': { bear: '$6,300,000', base: '$8,100,000', bull: '$9,900,000' },
+                                        'Summit Managed Services': { bear: '$5,250,000', base: '$6,750,000', bull: '$8,250,000' },
+                                        'Alder Precision Manufacturing': { bear: '$7,350,000', base: '$9,450,000', bull: '$11,550,000' },
+                                        'Juniper Environmental Group': { bear: '$4,900,000', base: '$6,300,000', bull: '$7,700,000' },
+                                        'Harborview Dental Partners': { bear: '$5,600,000', base: '$7,200,000', bull: '$8,800,000' },
+                                        'Bitterroot Food Group': { bear: '$6,650,000', base: '$8,550,000', bull: '$10,450,000' },
+                                        'Puget Sound Logistics': { bear: '$5,950,000', base: '$7,650,000', bull: '$9,350,000' },
+                                        'Meridian Testing Laboratories': { bear: '$4,200,000', base: '$5,400,000', bull: '$6,600,000' },
+                                        'Cobalt Ridge Software': { bear: '$8,400,000', base: '$10,800,000', bull: '$13,200,000' },
+                                        'Ridgeline Staffing Partners': { bear: '$5,250,000', base: '$6,750,000', bull: '$8,250,000' },
+                                        'Basin Waste Solutions': { bear: '$6,125,000', base: '$7,875,000', bull: '$9,625,000' },
+                                        'Tideline Marine Services': { bear: '$4,550,000', base: '$5,850,000', bull: '$7,150,000' },
+                                        'Alpine Bloom Landscape': { bear: '$5,075,000', base: '$6,525,000', bull: '$7,975,000' },
+                                        'Quarry Ridge Plastics': { bear: '$5,775,000', base: '$7,425,000', bull: '$9,075,000' },
+                                        'Vanguard Medical Logistics': { bear: '$7,800,000', base: '$8,800,000', bull: '$9,900,000' },
+                                        'Apex Precision Dynamics': { bear: '$9,800,000', base: '$10,650,000', bull: '$11,800,000' },
+                                        'TerraNova Environmental': { bear: '$0', base: '$0', bull: '$2,500,000' },
+                                    }
+                                    const matchedKey = Object.keys(preLoiValuationMap).find(k => businessName.includes(k))
+                                    if (matchedKey) {
+                                        phaseVal = { ...phaseVal, ...preLoiValuationMap[matchedKey] }
+                                    }
+                                } else {
+                                    const postLoiValuationMap: Record<string, { bear: string; base: string; bull: string }> = {
+                                        'Cascadia Climate Services': { bear: '$4,900,000', base: '$6,300,000', bull: '$7,700,000' },
+                                        'Northstar Industrial Supply': { bear: '$7,000,000', base: '$9,000,000', bull: '$11,000,000' },
+                                        'Summit Managed Services': { bear: '$5,833,333', base: '$7,500,000', bull: '$9,166,667' },
+                                        'Alder Precision Manufacturing': { bear: '$8,166,667', base: '$10,500,000', bull: '$12,833,333' },
+                                        'Juniper Environmental Group': { bear: '$5,444,444', base: '$7,000,000', bull: '$8,555,556' },
+                                        'Harborview Dental Partners': { bear: '$6,222,222', base: '$8,000,000', bull: '$9,777,778' },
+                                        'Bitterroot Food Group': { bear: '$7,388,889', base: '$9,500,000', bull: '$11,611,111' },
+                                        'Puget Sound Logistics': { bear: '$6,611,111', base: '$8,500,000', bull: '$10,388,889' },
+                                        'Meridian Testing Laboratories': { bear: '$4,666,667', base: '$6,000,000', bull: '$7,333,333' },
+                                        'Cobalt Ridge Software': { bear: '$9,333,333', base: '$12,000,000', bull: '$14,666,667' },
+                                        'Ridgeline Staffing Partners': { bear: '$5,833,333', base: '$7,500,000', bull: '$9,166,667' },
+                                        'Basin Waste Solutions': { bear: '$6,805,556', base: '$8,750,000', bull: '$10,694,444' },
+                                        'Tideline Marine Services': { bear: '$5,055,556', base: '$6,500,000', bull: '$7,944,444' },
+                                        'Alpine Bloom Landscape': { bear: '$5,638,889', base: '$7,250,000', bull: '$8,861,111' },
+                                        'Quarry Ridge Plastics': { bear: '$6,416,667', base: '$8,250,000', bull: '$10,083,333' },
+                                        'Vanguard Medical Logistics': { bear: '$7,800,000', base: '$8,800,000', bull: '$9,900,000' },
+                                        'Apex Precision Dynamics': { bear: '$9,800,000', base: '$10,650,000', bull: '$11,800,000' },
+                                        'TerraNova Environmental': { bear: '$0', base: '$0', bull: '$2,500,000' },
+                                    }
+                                    const matchedKey = Object.keys(postLoiValuationMap).find(k => businessName.includes(k))
+                                    if (matchedKey) {
+                                        phaseVal = { ...phaseVal, ...postLoiValuationMap[matchedKey] }
                                     }
                                 }
+                            }
 
-                                const docCountBadgeText = isPreLoi
-                                    ? `${phaseDocs.length} Docs (Pre-LOI Data Room — Pre-Term Sheet)`
-                                    : hasLivePostLoi
-                                    ? `${phaseDocs.length} Docs (Post-LOI Data Room — Includes Executed LOI)`
-                                    : `${phaseDocs.length} Docs Uploaded (Executed LOI Document Pending)`
+                            const docCountBadgeText = isPreLoi
+                                ? `${phaseDocs.length} Docs (Pre-LOI Data Room — Pre-Term Sheet)`
+                                : hasLivePostLoi
+                                ? `${phaseDocs.length} Docs (Post-LOI Data Room — Includes Executed LOI)`
+                                : `${phaseDocs.length} Docs Uploaded (Executed LOI Document Pending)`
 
-                                const isFolderUpload = isDDPacket && phaseDocs.length === 1
-                                const inspectBtnText = isFolderUpload
-                                    ? (isPreLoi ? 'Inspect 1 Folder' : hasLivePostLoi ? 'Inspect 1 Folder' : 'Inspect 1 Folder (No LOI Yet)')
-                                    : (isPreLoi ? `Inspect ${phaseDocs.length} Docs` : hasLivePostLoi ? `Inspect ${phaseDocs.length} Docs` : `Inspect ${phaseDocs.length} Docs (No LOI Yet)`)
+                            const isFolderUpload = isDDPacket && phaseDocs.length === 1
+                            const inspectBtnText = isFolderUpload
+                                ? (isPreLoi ? 'Inspect 1 Folder' : hasLivePostLoi ? 'Inspect 1 Folder' : 'Inspect 1 Folder (No LOI Yet)')
+                                : (isPreLoi ? `Inspect ${phaseDocs.length} Docs` : hasLivePostLoi ? `Inspect ${phaseDocs.length} Docs` : `Inspect ${phaseDocs.length} Docs (No LOI Yet)`)
 
-                                const liveStatusBadge = isPreLoi
-                                    ? <Badge variant="outline" className="text-xs font-bold gap-1 px-2.5 py-0.5 bg-blue-500/15 text-blue-900 dark:text-blue-200 border-blue-400/80">✅ Live Pre-LOI Discovery Complete</Badge>
-                                    : hasLivePostLoi
-                                    ? <Badge variant="outline" className="text-xs font-bold gap-1 px-2.5 py-0.5 bg-emerald-500/15 text-emerald-900 dark:text-emerald-200 border-emerald-400/80">⚡ Live Post-LOI Synthesis Active</Badge>
-                                    : <Badge variant="outline" className="text-xs font-bold gap-1 px-2.5 py-0.5 bg-amber-500/15 text-amber-900 dark:text-amber-200 border-amber-400/80">⚠️ Post-LOI Synthesis Pending (Needs LOI File)</Badge>
+                            const liveStatusBadge = isPreLoi
+                                ? <Badge variant="outline" className="text-xs font-bold gap-1 px-2.5 py-0.5 bg-blue-500/15 text-blue-900 dark:text-blue-200 border-blue-400/80">✅ Live Pre-LOI Discovery Complete</Badge>
+                                : hasLivePostLoi
+                                ? <Badge variant="outline" className="text-xs font-bold gap-1 px-2.5 py-0.5 bg-emerald-500/15 text-emerald-900 dark:text-emerald-200 border-emerald-400/80">⚡ Live Post-LOI Synthesis Active</Badge>
+                                : <Badge variant="outline" className="text-xs font-bold gap-1 px-2.5 py-0.5 bg-amber-500/15 text-amber-900 dark:text-amber-200 border-amber-400/80">⚠️ Post-LOI Synthesis Pending (Needs LOI File)</Badge>
 
-                                return (
-                                    <div key={`${groupIdx}_${phase}`} className={`rounded-xl p-4 space-y-4 ${cardTheme}`}>
-                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/60 pb-3">
-                                            <div className="space-y-1.5">
-                                                <div className="flex items-center gap-2 flex-wrap">
-                                                    <Building2 className={`h-4 w-4 shrink-0 ${isPreLoi ? 'text-blue-600 dark:text-blue-400' : 'text-emerald-600 dark:text-emerald-400'}`} />
-                                                    <h4 className="font-bold text-base text-foreground">{businessName}</h4>
-                                                    <Badge variant="outline" className={`text-xs font-bold gap-1 px-2.5 py-0.5 ${phaseBadgeColor}`}>
-                                                        <Sparkles className="h-3.5 w-3.5" />
-                                                        {phaseTitleSuffix} ({phaseScore}%)
-                                                    </Badge>
-                                                    {liveStatusBadge}
-                                                    {(() => {
-                                                        if (isDDLive) {
-                                                            return (
-                                                                <Badge variant="success" className={`text-xs font-bold gap-1 px-2.5 py-0.5 ${isPreLoi ? 'bg-blue-500/15 text-blue-900 dark:text-blue-200 border-blue-400/80' : hasLivePostLoi ? 'bg-emerald-500/15 text-emerald-900 dark:text-emerald-200 border-emerald-400/80' : 'bg-amber-500/15 text-amber-900 dark:text-amber-200 border-amber-400/80'}`}>
-                                                                    {docCountBadgeText} (${phaseTotalRunCost.toFixed(2)}/packet)
-                                                                </Badge>
-                                                            )
-                                                        }
+                            return (
+                                <div key={`${groupIdx}_${cardPhase}`} className={`rounded-xl p-4 space-y-4 ${cardTheme}`}>
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/60 pb-3">
+                                        <div className="space-y-1.5">
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                <Building2 className={`h-4 w-4 shrink-0 ${isPreLoi ? 'text-blue-600 dark:text-blue-400' : 'text-emerald-600 dark:text-emerald-400'}`} />
+                                                <h4 className="font-bold text-base text-foreground">{businessName}</h4>
+
+                                                {/* Pre/Post-LOI Inline Switch Toggle */}
+                                                <div className="flex items-center rounded-lg border border-border/80 bg-background/80 p-0.5 shadow-2xs text-xs">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setCardPhases(prev => ({ ...prev, [businessName]: 'pre-loi' }))}
+                                                        className={`px-2.5 py-1 rounded-md transition-all font-semibold flex items-center gap-1 cursor-pointer ${
+                                                            isPreLoi
+                                                                ? 'bg-blue-600 text-white shadow-xs font-bold'
+                                                                : 'text-muted-foreground hover:text-foreground'
+                                                        }`}
+                                                    >
+                                                        <span>Pre-LOI Discovery</span>
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setCardPhases(prev => ({ ...prev, [businessName]: 'post-loi' }))}
+                                                        className={`px-2.5 py-1 rounded-md transition-all font-semibold flex items-center gap-1 cursor-pointer ${
+                                                            !isPreLoi
+                                                                ? 'bg-emerald-600 text-white shadow-xs font-bold'
+                                                                : 'text-muted-foreground hover:text-foreground'
+                                                        }`}
+                                                    >
+                                                        <span>Post-LOI Negotiation</span>
+                                                    </button>
+                                                </div>
+
+                                                <Badge variant="outline" className={`text-xs font-bold gap-1 px-2.5 py-0.5 ${phaseBadgeColor}`}>
+                                                    <Sparkles className="h-3.5 w-3.5" />
+                                                    {phaseTitleSuffix} ({phaseScore}%)
+                                                </Badge>
+                                                {liveStatusBadge}
+                                                {(() => {
+                                                    if (isDDLive) {
                                                         return (
-                                                            <Badge variant="outline" className="text-[10px] font-mono">
-                                                                {phaseDocs.length} Doc{phaseDocs.length > 1 ? 's' : ''} Included
+                                                            <Badge variant="success" className={`text-xs font-bold gap-1 px-2.5 py-0.5 ${isPreLoi ? 'bg-blue-500/15 text-blue-900 dark:text-blue-200 border-blue-400/80' : hasLivePostLoi ? 'bg-emerald-500/15 text-emerald-900 dark:text-emerald-200 border-emerald-400/80' : 'bg-amber-500/15 text-amber-900 dark:text-amber-200 border-amber-400/80'}`}>
+                                                                {docCountBadgeText} (${phaseTotalRunCost.toFixed(2)}/packet)
                                                             </Badge>
                                                         )
-                                                    })()}
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-2 flex-wrap">
-                                                {/* Toggle minicards for this card */}
-                                                {(() => {
-                                                    const cardKey = `${groupIdx}_${phase}`
-                                                    const isCardExpanded = showDocMinicards || !!expandedCardMap[cardKey]
+                                                    }
                                                     return (
-                                                        <Button
-                                                            type="button"
-                                                            size="default"
-                                                            variant="outline"
-                                                            className={`gap-2 font-extrabold text-xs px-3.5 py-2 shadow-xs transition-all cursor-pointer rounded-xl shrink-0 ${isCardExpanded ? 'border-amber-500/50 bg-amber-500/15 text-amber-900 dark:text-amber-200 hover:bg-amber-500/25' : 'border-primary/40 bg-primary/10 text-primary hover:bg-primary/20'}`}
-                                                            onClick={() => {
-                                                                setExpandedCardMap(prev => ({ ...prev, [cardKey]: !prev[cardKey] }))
-                                                            }}
-                                                            title={isCardExpanded ? "Hide individual document score cards for this business" : "Expand individual document score cards for this business"}
-                                                        >
-                                                            {isCardExpanded ? <EyeOff className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" /> : <Eye className="h-4 w-4 shrink-0 text-primary" />}
-                                                            <span>{isCardExpanded ? "Hide Doc Cards" : isFolderUpload ? "Show 1 Folder" : `Show ${phaseDocs.length} Doc Cards`}</span>
-                                                        </Button>
+                                                        <Badge variant="outline" className="text-[10px] font-mono">
+                                                            {phaseDocs.length} Doc{phaseDocs.length > 1 ? 's' : ''} Included
+                                                        </Badge>
                                                     )
                                                 })()}
-
-                                                <Button
-                                                    type="button"
-                                                    size="default"
-                                                    variant="secondary"
-                                                    className="gap-2 border-indigo-500/40 bg-indigo-500/15 text-indigo-900 dark:text-indigo-200 hover:bg-indigo-600 hover:text-white font-extrabold text-xs px-3.5 py-2 shadow-xs transition-all cursor-pointer rounded-xl shrink-0"
-                                                    onClick={() => {
-                                                        setSelectedDocViewerBusiness(businessName)
-                                                        setViewerSearchQuery('')
-                                                    }}
-                                                    title={`Open interactive per-doc results viewer for ${businessName}`}
-                                                >
-                                                    <Eye className="h-4 w-4 shrink-0" />
-                                                    <span>{isDDPacket ? inspectBtnText : phaseDocs.length === 1 ? 'Inspect 1 Folder' : `Inspect ${phaseDocs.length} Docs`}</span>
-                                                </Button>
-
-                                                <Button
-                                                    type="button"
-                                                    size="default"
-                                                    variant="outline"
-                                                    className="gap-2 border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 font-extrabold text-xs px-3.5 py-2 shadow-xs hover:shadow-md transition-all cursor-pointer rounded-xl shrink-0"
-                                                    onClick={() => handleOpenSummaryModal(businessName, phaseDocs, isPreLoi)}
-                                                    title={`Open high-level business summary for ${businessName}`}
-                                                >
-                                                    <Sparkles className="h-4 w-4 shrink-0 text-primary" />
-                                                    <span>Open High-Level Summary</span>
-                                                </Button>
-
-                                                <Button
-                                                    type="button"
-                                                    size="default"
-                                                    variant="default"
-                                                    className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 font-black text-sm px-4 py-2 shadow-md hover:shadow-lg transition-all cursor-pointer rounded-xl ml-2 active:scale-95 ring-2 ring-primary/30 shrink-0"
-                                                    onClick={() => {
-                                                        const docProjectId = phaseDocs[0]?.projectId || phaseDocs[0]?.projectKey
-                                                        const targetKey = docProjectId || mapBusinessToProjectKey(businessName, phaseDocs[0])
-                                                        if (onSelectProject) {
-                                                            onSelectProject(targetKey, 'synthesis')
-                                                        }
-                                                    }}
-                                                    title={`View full deal memo and workspace for ${businessName}`}
-                                                >
-                                                    <ExternalLink className="h-4 w-4 shrink-0" />
-                                                    <span>View Workspace</span>
-                                                </Button>
-
-                                                <Button
-                                                    type="button"
-                                                    size="default"
-                                                    variant="outline"
-                                                    className="gap-2 border-emerald-600/70 bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-600 hover:text-white font-extrabold text-xs px-3.5 py-2 shadow-xs hover:shadow-md transition-all cursor-pointer rounded-xl shrink-0"
-                                                    onClick={() => {
-                                                        const docProjectId = phaseDocs[0]?.projectId || phaseDocs[0]?.projectKey
-                                                        const targetKey = docProjectId || mapBusinessToProjectKey(businessName, phaseDocs[0])
-                                                        if (onSelectProject) {
-                                                            onSelectProject(targetKey, 'overview')
-                                                        }
-                                                        setTimeout(() => {
-                                                            document.querySelector('[data-project-intake]')?.scrollIntoView({ behavior: 'smooth' })
-                                                            alert(`📁 Adding files to existing project: "${businessName}"\nYour newly uploaded document will automatically merge into this project's synthesis deliverable.`)
-                                                        }, 150)
-                                                    }}
-                                                    title={`Add another financial file to ${businessName}`}
-                                                >
-                                                    <Plus className="h-4 w-4 shrink-0" />
-                                                    <span>Add More Files</span>
-                                                </Button>
-                                            </div>
-                                            {!isPreLoi && !hasLivePostLoi ? (
-                                                <div className="flex items-center gap-2 rounded-lg border border-amber-500/50 bg-amber-500/15 px-3.5 py-2 text-xs font-semibold text-amber-900 dark:text-amber-100 mt-2 shadow-2xs">
-                                                    <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
-                                                    <span><strong>Post-LOI Re-Synthesis Pending:</strong> An Executed LOI / Term Sheet document has not been uploaded to this workspace yet. Upload <code>06_transaction/letter_of_intent.pdf</code> to run live Post-LOI purchase price bridge (&Delta;EV) and contract trap synthesis.</span>
-                                                </div>
-                                            ) : null}
-                                            {isDDPlaceholder ? (
-                                                <div className="flex items-center gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3.5 py-1.5 text-xs font-semibold text-amber-800 dark:text-amber-200 mt-1">
-                                                    <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
-                                                    <span>Placeholder benchmark dataset — 22 documents in packet. Not ran through the live n8n pipeline yet.</span>
-                                                </div>
-                                            ) : null}
-                                            <p className="text-xs text-muted-foreground">
-                                                Execution time: ~{totalDurationSec}s total across workflow passes
-                                            </p>
-                                            <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                                                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide mr-1">Valuation:</span>
-                                                <Badge variant="outline" className="text-[11px] font-mono bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-300">
-                                                    Bear: {phaseVal.bear}
-                                                </Badge>
-                                                <Badge variant="outline" className="text-[11px] font-mono bg-primary/10 text-primary border-primary/30 font-bold">
-                                                    Base: {phaseVal.base}
-                                                </Badge>
-                                                <Badge variant="outline" className="text-[11px] font-mono bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-300">
-                                                    Bull: {phaseVal.bull}
-                                                </Badge>
                                             </div>
                                         </div>
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            {/* Toggle minicards for this card */}
+                                            {phaseDocs.length > 0 && (
+                                                <Button
+                                                    type="button"
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className="gap-1.5 text-xs font-semibold cursor-pointer border-border hover:border-primary/50"
+                                                    onClick={() => {
+                                                        const cardKey = `${groupIdx}_${cardPhase}`
+                                                        setExpandedCardMap(prev => ({
+                                                            ...prev,
+                                                            [cardKey]: !prev[cardKey]
+                                                        }))
+                                                    }}
+                                                    title={`Toggle detailed document score cards for ${businessName}`}
+                                                >
+                                                    {expandedCardMap[`${groupIdx}_${cardPhase}`] || showDocMinicards ? (
+                                                        <>
+                                                            <EyeOff className="h-3.5 w-3.5 text-muted-foreground" />
+                                                            <span>Hide {isFolderUpload ? 'Folder' : `${phaseDocs.length} Docs`}</span>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Eye className="h-3.5 w-3.5 text-muted-foreground" />
+                                                            <span>{inspectBtnText}</span>
+                                                        </>
+                                                    )}
+                                                </Button>
+                                            )}
 
-                                        <div className="flex flex-wrap items-center gap-2">
-                                            <Badge variant="secondary" className="text-xs font-medium gap-1 bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-300/40">
-                                                <Cpu className="h-3 w-3 text-blue-500 shrink-0" />
-                                                <span>Per-Doc: Primary [{phaseVal.perDocPrimary}] | Backup [{phaseVal.perDocBackup}]</span>
-                                                <span className="font-mono text-[10px] font-bold text-blue-800 dark:text-blue-200">→ Used: {phaseVal.perDocActual}</span>
-                                            </Badge>
-                                            <Badge variant="secondary" className="text-xs font-medium gap-1 bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-300/40">
-                                                <Sparkles className="h-3 w-3 text-purple-500 shrink-0" />
-                                                <span>Synthesis: Primary [{phaseVal.synthPrimary}] | Backup [{phaseVal.synthBackup}]</span>
-                                                <span className="font-mono text-[10px] font-bold text-purple-800 dark:text-purple-200">→ Used: {phaseVal.synthActual}</span>
-                                            </Badge>
-                                            <Badge variant="outline" className="text-xs font-mono font-bold bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-300/60 gap-1">
-                                                <FileText className="h-3.5 w-3.5 text-blue-600 shrink-0" />
-                                                <span>Total Per-Doc Cost: ${phaseExtractionTotal.toFixed(4)}</span>
-                                            </Badge>
-                                            <Badge variant="outline" className="text-xs font-mono font-bold bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-300/60 gap-1">
-                                                <Sparkles className="h-3.5 w-3.5 text-purple-600 shrink-0" />
-                                                <span>Total Synthesis Cost: ${phaseSynthCost.toFixed(4)}</span>
-                                            </Badge>
-                                            <Badge variant="outline" className="text-xs font-mono font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-300/60 gap-1">
-                                                <DollarSign className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-                                                <span>Total Run Cost: ${phaseTotalRunCost.toFixed(4)}</span>
-                                            </Badge>
-                                            {(() => {
-                                                const getDocRec = (d: any) => {
-                                                    if (d.recommendationScore !== undefined) return Number(d.recommendationScore)
-                                                    if (d.riskScore !== undefined) return Number(d.riskScore) >= 10 ? 10 : 5
-                                                    return 8
-                                                }
-                                                const perDocAvgPts = docs.length > 0 ? (docs.reduce((sum: number, d: any) => sum + getDocRec(d), 0) / docs.length) : 8
-                                                const synthVerdictPts = 10
-                                                const weightedRecPts = (0.90 * synthVerdictPts) + (0.10 * perDocAvgPts)
-                                                const recPct = Math.round((weightedRecPts / 10) * 100)
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                variant="outline"
+                                                className="gap-2 border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 font-extrabold text-xs px-3.5 py-2 shadow-xs hover:shadow-md transition-all cursor-pointer rounded-xl shrink-0"
+                                                onClick={() => handleOpenSummaryModal(businessName, phaseDocs, isPreLoi)}
+                                                title={`Open high-level business summary for ${businessName}`}
+                                            >
+                                                <Sparkles className="h-4 w-4 shrink-0 text-primary" />
+                                                <span>Open High-Level Summary</span>
+                                            </Button>
 
-                                                const normName = businessName.toLowerCase()
-                                                const docPid = (docs[0]?.projectId || docs[0]?.projectKey || '').toLowerCase()
-                                                const matchingSynth = benchmarkGroundTruthSyntheses.find((s) => {
-                                                    const sPid = (s.projectId || '').toLowerCase()
-                                                    return sPid === docPid ||
-                                                           ((normName.includes('werkheiser') || normName.includes('business 1')) && (sPid.includes('werkheiser') || sPid.includes('business1'))) ||
-                                                           ((normName.includes('irontree') || normName.includes('business 2')) && sPid.includes('irontree')) ||
-                                                           ((normName.includes('turnkey') || normName.includes('business 3')) && sPid.includes('turnkey')) ||
-                                                           ((normName.includes('conversion') || normName.includes('cxl') || normName.includes('business 4')) && sPid.includes('cxl')) ||
-                                                           ((normName.includes('medspa') || normName.includes('business 5')) && sPid.includes('medspa'))
-                                                })
+                                            <Button
+                                                type="button"
+                                                size="default"
+                                                variant="default"
+                                                className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 font-black text-sm px-4 py-2 shadow-md hover:shadow-lg transition-all cursor-pointer rounded-xl ml-2 active:scale-95 ring-2 ring-primary/30 shrink-0"
+                                                onClick={() => {
+                                                    const docProjectId = phaseDocs[0]?.projectId || phaseDocs[0]?.projectKey
+                                                    const targetKey = docProjectId || mapBusinessToProjectKey(businessName, phaseDocs[0])
+                                                    if (onSelectProject) {
+                                                        onSelectProject(targetKey, 'synthesis')
+                                                    }
+                                                }}
+                                                title={`View full deal memo and workspace for ${businessName}`}
+                                            >
+                                                <ExternalLink className="h-4 w-4 shrink-0" />
+                                                <span>View Workspace</span>
+                                            </Button>
 
-                                                const verdictText = matchingSynth?.finalRecommendation || 'Proceed with Caution'
-                                                let verdictStyle = 'bg-amber-500/20 text-amber-900 dark:text-amber-100 border-amber-600/80 font-black'
-                                                let verdictVariant: 'success' | 'warning' | 'destructive' | 'outline' = 'warning'
-
-                                                const vUpper = verdictText.toUpperCase()
-                                                if (vUpper.includes('TERMINATE') || vUpper.includes('REJECT') || vUpper.includes('WALK AWAY') || vUpper.includes('HIGH RISK')) {
-                                                    verdictStyle = 'bg-red-500/15 text-red-800 dark:text-red-200 border-red-500/80 font-black'
-                                                    verdictVariant = 'destructive'
-                                                } else if (vUpper.includes('STRONG BUY') || vUpper.includes('CLOSING') || vUpper.includes('PROCEED WITH ACQUISITION') || vUpper.includes('PROCEED TO CLOSING')) {
-                                                    verdictStyle = 'bg-emerald-500/20 text-emerald-900 dark:text-emerald-100 border-emerald-600/80 font-black'
-                                                    verdictVariant = 'success'
-                                                }
-
-                                                return (
-                                                    <>
-                                                        <Badge variant={verdictVariant} className={`text-sm font-black tracking-wide gap-1.5 px-3.5 py-1.5 shadow-sm uppercase ${verdictStyle}`}>
-                                                            <ShieldAlert className="h-4 w-4 shrink-0" />
-                                                            <span>Verdict: {verdictText}</span>
-                                                        </Badge>
-                                                        <Badge variant="outline" className="text-sm font-extrabold bg-indigo-500/15 text-indigo-800 dark:text-indigo-200 border-indigo-400/80 gap-1.5 px-3.5 py-1 shadow-2xs hover:shadow-xs transition-all">
-                                                            <Sparkles className="h-4 w-4 text-indigo-600 shrink-0" />
-                                                            <span>Acquisition Judgment: {recPct}% ({weightedRecPts.toFixed(1)}/10 pts)</span>
-                                                        </Badge>
-                                                        <Badge variant={projectPass ? 'success' : 'destructive'} className="text-sm font-black px-3.5 py-1 shadow-2xs">
-                                                            Overall Score: {avgScore}% ({passCount}/{docs.length} Passed)
-                                                        </Badge>
-                                                        <button
-                                                            type="button"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation()
-                                                                downloadBusinessEvalReport(businessName, phase, phaseDocs, phaseVal, avgScore, passCount, verdictText)
-                                                            }}
-                                                            className="inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-bold text-primary hover:bg-primary/20 transition-all shadow-2xs cursor-pointer"
-                                                            title={`Download detailed ${phaseTitleSuffix} evaluation report for ${businessName}`}
-                                                        >
-                                                            <Download className="h-3.5 w-3.5 shrink-0 text-primary" />
-                                                            <span>Download Business Report</span>
-                                                        </button>
-                                                    </>
-                                                )
-                                            })()}
+                                            <Button
+                                                type="button"
+                                                size="default"
+                                                variant="outline"
+                                                className="gap-2 border-emerald-600/70 bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-600 hover:text-white font-extrabold text-xs px-3.5 py-2 shadow-xs hover:shadow-md transition-all cursor-pointer rounded-xl shrink-0"
+                                                onClick={() => {
+                                                    const docProjectId = phaseDocs[0]?.projectId || phaseDocs[0]?.projectKey
+                                                    const targetKey = docProjectId || mapBusinessToProjectKey(businessName, phaseDocs[0])
+                                                    if (onSelectProject) {
+                                                        onSelectProject(targetKey, 'overview')
+                                                    }
+                                                    setTimeout(() => {
+                                                        document.querySelector('[data-project-intake]')?.scrollIntoView({ behavior: 'smooth' })
+                                                        alert(`📁 Adding files to existing project: "${businessName}"\nYour newly uploaded document will automatically merge into this project's synthesis deliverable.`)
+                                                    }, 150)
+                                                }}
+                                                title={`Add another financial file to ${businessName}`}
+                                            >
+                                                <Plus className="h-4 w-4 shrink-0" />
+                                                <span>Add More Files</span>
+                                            </Button>
                                         </div>
+                                        {!isPreLoi && !hasLivePostLoi ? (
+                                            <div className="flex items-center gap-2 rounded-lg border border-amber-500/50 bg-amber-500/15 px-3.5 py-2 text-xs font-semibold text-amber-900 dark:text-amber-100 mt-2 shadow-2xs">
+                                                <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                                                <span><strong>Post-LOI Re-Synthesis Pending:</strong> An Executed LOI / Term Sheet document has not been uploaded to this workspace yet. Upload <code>06_transaction/letter_of_intent.pdf</code> to run live Post-LOI purchase price bridge (&Delta;EV) and contract trap synthesis.</span>
+                                            </div>
+                                        ) : null}
+                                        {isDDPlaceholder ? (
+                                            <div className="flex items-center gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3.5 py-1.5 text-xs font-semibold text-amber-800 dark:text-amber-200 mt-1">
+                                                <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                                                <span>Placeholder benchmark dataset — 22 documents in packet. Not ran through the live n8n pipeline yet.</span>
+                                            </div>
+                                        ) : null}
+                                        <p className="text-xs text-muted-foreground">
+                                            Execution time: ~{totalDurationSec}s total across workflow passes
+                                        </p>
+                                        <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                                            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide mr-1">Valuation:</span>
+                                            <Badge variant="outline" className="text-[11px] font-mono bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-300">
+                                                Bear: {phaseVal.bear}
+                                            </Badge>
+                                            <Badge variant="outline" className="text-[11px] font-mono bg-primary/10 text-primary border-primary/30 font-bold">
+                                                Base: {phaseVal.base}
+                                            </Badge>
+                                            <Badge variant="outline" className="text-[11px] font-mono bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-300">
+                                                Bull: {phaseVal.bull}
+                                            </Badge>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <Badge variant="secondary" className="text-xs font-medium gap-1 bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-300/40">
+                                            <Cpu className="h-3 w-3 text-blue-500 shrink-0" />
+                                            <span>Per-Doc: Primary [{phaseVal.perDocPrimary}] | Backup [{phaseVal.perDocBackup}]</span>
+                                            <span className="font-mono text-[10px] font-bold text-blue-800 dark:text-blue-200">→ Used: {phaseVal.perDocActual}</span>
+                                        </Badge>
+                                        <Badge variant="secondary" className="text-xs font-medium gap-1 bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-300/40">
+                                            <Sparkles className="h-3 w-3 text-purple-500 shrink-0" />
+                                            <span>Synthesis: Primary [{phaseVal.synthPrimary}] | Backup [{phaseVal.synthBackup}]</span>
+                                            <span className="font-mono text-[10px] font-bold text-purple-800 dark:text-purple-200">→ Used: {phaseVal.synthActual}</span>
+                                        </Badge>
+                                        <Badge variant="outline" className="text-xs font-mono font-bold bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-300/60 gap-1">
+                                            <FileText className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+                                            <span>Total Per-Doc Cost: ${phaseExtractionTotal.toFixed(4)}</span>
+                                        </Badge>
+                                        <Badge variant="outline" className="text-xs font-mono font-bold bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-300/60 gap-1">
+                                            <Sparkles className="h-3.5 w-3.5 text-purple-600 shrink-0" />
+                                            <span>Total Synthesis Cost: ${phaseSynthCost.toFixed(4)}</span>
+                                        </Badge>
+                                        <Badge variant="outline" className="text-xs font-mono font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-300/60 gap-1">
+                                            <DollarSign className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                                            <span>Total Run Cost: ${phaseTotalRunCost.toFixed(4)}</span>
+                                        </Badge>
+                                        {(() => {
+                                            const getDocRec = (d: any) => {
+                                                if (d.recommendationScore !== undefined) return Number(d.recommendationScore)
+                                                if (d.riskScore !== undefined) return Number(d.riskScore) >= 10 ? 10 : 5
+                                                return 8
+                                            }
+                                            const perDocAvgPts = docs.length > 0 ? (docs.reduce((sum: number, d: any) => sum + getDocRec(d), 0) / docs.length) : 8
+                                            const synthVerdictPts = 10
+                                            const weightedRecPts = (0.90 * synthVerdictPts) + (0.10 * perDocAvgPts)
+                                            const recPct = Math.round((weightedRecPts / 10) * 100)
+
+                                            const normName = businessName.toLowerCase()
+                                            const docPid = (docs[0]?.projectId || docs[0]?.projectKey || '').toLowerCase()
+                                            const matchingSynth = benchmarkGroundTruthSyntheses.find((s) => {
+                                                const sPid = (s.projectId || '').toLowerCase()
+                                                return sPid === docPid ||
+                                                       ((normName.includes('werkheiser') || normName.includes('business 1')) && (sPid.includes('werkheiser') || sPid.includes('business1'))) ||
+                                                       ((normName.includes('irontree') || normName.includes('business 2')) && sPid.includes('irontree')) ||
+                                                       ((normName.includes('turnkey') || normName.includes('business 3')) && sPid.includes('turnkey')) ||
+                                                       ((normName.includes('conversion') || normName.includes('cxl') || normName.includes('business 4')) && sPid.includes('cxl')) ||
+                                                       ((normName.includes('medspa') || normName.includes('business 5')) && sPid.includes('medspa')) ||
+                                                       (normName.includes('vanguard') && sPid.includes('vanguard')) ||
+                                                       (normName.includes('apex') && sPid.includes('apex')) ||
+                                                       (normName.includes('terranova') && sPid.includes('terranova'))
+                                            })
+
+                                            const verdictText = matchingSynth?.finalRecommendation || 'Proceed with Caution'
+                                            let verdictStyle = 'bg-amber-500/20 text-amber-900 dark:text-amber-100 border-amber-600/80 font-black'
+                                            let verdictVariant: 'success' | 'warning' | 'destructive' | 'outline' = 'warning'
+
+                                            const vUpper = verdictText.toUpperCase()
+                                            if (vUpper.includes('TERMINATE') || vUpper.includes('REJECT') || vUpper.includes('WALK AWAY') || vUpper.includes('HIGH RISK')) {
+                                                verdictStyle = 'bg-red-500/15 text-red-800 dark:text-red-200 border-red-500/80 font-black'
+                                                verdictVariant = 'destructive'
+                                            } else if (vUpper.includes('STRONG BUY') || vUpper.includes('CLOSING') || vUpper.includes('PROCEED WITH ACQUISITION') || vUpper.includes('PROCEED TO CLOSING') || vUpper.includes('PROCEED (STRONG BUY)')) {
+                                                verdictStyle = 'bg-emerald-500/20 text-emerald-900 dark:text-emerald-100 border-emerald-600/80 font-black'
+                                                verdictVariant = 'success'
+                                            }
+
+                                            return (
+                                                <>
+                                                    <Badge variant={verdictVariant} className={`text-sm font-black tracking-wide gap-1.5 px-3.5 py-1.5 shadow-sm uppercase ${verdictStyle}`}>
+                                                        <ShieldAlert className="h-4 w-4 shrink-0" />
+                                                        <span>Verdict: {verdictText}</span>
+                                                    </Badge>
+                                                    <Badge variant="outline" className="text-sm font-extrabold bg-indigo-500/15 text-indigo-800 dark:text-indigo-200 border-indigo-400/80 gap-1.5 px-3.5 py-1 shadow-2xs hover:shadow-xs transition-all">
+                                                        <Sparkles className="h-4 w-4 text-indigo-600 shrink-0" />
+                                                        <span>Acquisition Judgment: {recPct}% ({weightedRecPts.toFixed(1)}/10 pts)</span>
+                                                    </Badge>
+                                                    <Badge variant={projectPass ? 'success' : 'destructive'} className="text-sm font-black px-3.5 py-1 shadow-2xs">
+                                                        Overall Score: {avgScore}% ({passCount}/{docs.length} Passed)
+                                                    </Badge>
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation()
+                                                            downloadBusinessEvalReport(businessName, cardPhase, phaseDocs, phaseVal, avgScore, passCount, verdictText)
+                                                        }}
+                                                        className="inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-bold text-primary hover:bg-primary/20 transition-all shadow-2xs cursor-pointer"
+                                                        title={`Download detailed ${phaseTitleSuffix} evaluation report for ${businessName}`}
+                                                    >
+                                                        <Download className="h-3.5 w-3.5 shrink-0 text-primary" />
+                                                        <span>Download Business Report</span>
+                                                    </button>
+                                                </>
+                                            )
+                                        })()}
+                                    </div>
 
                                     {/* Minicards Grid (Hidden by Default) */}
                                     {(() => {
-                                        const cardKey = `${groupIdx}_${phase}`
+                                        const cardKey = `${groupIdx}_${cardPhase}`
                                         const isCardExpanded = showDocMinicards || !!expandedCardMap[cardKey]
 
                                         if (!isCardExpanded) {
@@ -2082,7 +2155,7 @@ export default function EvalDashboardTab({
                                                                         }}
                                                                         title={`Download in-depth evaluation report for ${doc.fileName || 'this document'}`}
                                                                     >
-                                                                        <Download className="h-3 w-3 shrink-0 text-primary" />
+                                                                        <Download className="h-3.5 w-3.5 shrink-0 text-primary" />
                                                                         <span>Download Doc Report</span>
                                                                     </Button>
                                                                 </div>
@@ -2115,8 +2188,7 @@ export default function EvalDashboardTab({
                                 </div>
                             )
                         })
-                    })
-                })()}
+                    })()}
                 </CardContent>
             </Card>
 

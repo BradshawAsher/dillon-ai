@@ -8,6 +8,11 @@ import { happyPathGroundTruth } from './testing1_happy_path'
 import { docs24GroundTruth } from './testing_suite_docs24'
 import { widgetcoGroundTruth } from './widgetco_forensic'
 import { mmlMandaBenchmarkSyntheses } from './mml_manda_benchmark'
+import {
+    vanguardMedicalGroundTruth,
+    apexPrecisionGroundTruth,
+    terranovaEnvironmentalGroundTruth,
+} from './packet_deal_benchmarks'
 
 export {
     werkheiserGroundTruthPass1,
@@ -20,6 +25,9 @@ export {
     docs24GroundTruth,
     widgetcoGroundTruth,
     mmlMandaBenchmarkSyntheses,
+    vanguardMedicalGroundTruth,
+    apexPrecisionGroundTruth,
+    terranovaEnvironmentalGroundTruth,
 }
 
 export const benchmarkGroundTruthSyntheses: ProjectSynthesisItem[] = [
@@ -32,5 +40,8 @@ export const benchmarkGroundTruthSyntheses: ProjectSynthesisItem[] = [
     happyPathGroundTruth,
     docs24GroundTruth,
     widgetcoGroundTruth,
+    vanguardMedicalGroundTruth,
+    apexPrecisionGroundTruth,
+    terranovaEnvironmentalGroundTruth,
     ...mmlMandaBenchmarkSyntheses,
 ]

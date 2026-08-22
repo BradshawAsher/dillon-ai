@@ -120,6 +120,37 @@ export default function LatestSubmissionSection({
     const batchTotalCost = calculateBatchTotalCost(latestBatchRows)
     const formattedConfidence = formatConfidencePercent(confidence)
 
+    const docConfidenceFraction = typeof liveSubmitInsight?.confidencePercent === 'number' && Number.isFinite(liveSubmitInsight.confidencePercent)
+        ? liveSubmitInsight.confidencePercent / 100
+        : (() => {
+            if (!confidence) return null
+            const clean = String(confidence).trim().replace('%', '')
+            const parsed = Number(clean)
+            if (!Number.isFinite(parsed)) return null
+            return parsed > 1 ? parsed / 100 : parsed
+        })()
+
+    const summaryItems = React.useMemo(() => splitReadableText(aiSummary), [aiSummary])
+    const summaryFindings = React.useMemo(() => summaryItems.map((text) => ({
+        text,
+        confidence: docConfidenceFraction,
+        severity: 'info',
+        impact: 'Informational',
+        status: 'Synthesized',
+    })), [summaryItems, docConfidenceFraction])
+
+    const escalationItems = React.useMemo(
+        () => (liveSubmitInsight?.escalationReasons || []).flatMap((reason) => splitReadableText(reason)),
+        [liveSubmitInsight?.escalationReasons],
+    )
+    const escalationFindings = React.useMemo(() => escalationItems.map((text) => ({
+        text,
+        confidence: docConfidenceFraction,
+        severity: 'warning',
+        impact: 'Requires Review',
+        status: 'Needs review',
+    })), [escalationItems, docConfidenceFraction])
+
     return (
         <Card id="latest-submission-section" data-latest-submission className="overflow-hidden">
             <CardHeader className="border-b border-border bg-card/80">
@@ -448,25 +479,28 @@ export default function LatestSubmissionSection({
                             <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">EBITDA Extracted</p>
                             <p className="mt-1 text-foreground">{displayedSubmissionRow.ebitdaExtracted || 'Pending'}</p>
                         </div>
-                        {(liveSubmitInsight?.escalationReasons.length || aiSummary) ? (
+                        {(escalationItems.length > 0 || summaryItems.length > 0) ? (
                             <div className="grid gap-3 xl:col-span-4 xl:grid-cols-2">
-                                {liveSubmitInsight?.escalationReasons.length ? (
+                                {escalationItems.length > 0 ? (
                                     <div>
                                         <ExpandableInsightGroup
                                             title="Escalation reasons"
-                                            items={liveSubmitInsight.escalationReasons.flatMap((reason) => splitReadableText(reason))}
+                                            items={escalationItems}
+                                            findings={escalationFindings}
                                             badgeVariant="warning"
                                             className="border-warning/30 bg-warning/10"
                                             itemClassName="border-warning/30"
                                             emptyLabel="No escalation reasons returned."
                                             defaultOpen
-                                            onItemClick={(item) => {
+                                            onItemClick={(item, index) => {
                                                 if (setActiveEvidence) {
+                                                    const finding = escalationFindings[index]
                                                     setActiveEvidence({
                                                         title: 'Escalation reason',
                                                         sourceFile: displayedSubmissionRow?.fileName || 'Uploaded document',
                                                         sourceLocation: 'Escalation analysis',
                                                         excerpt: item,
+                                                        confidence: finding?.confidence ?? docConfidenceFraction ?? undefined,
                                                         status: 'Needs review',
                                                         provenance: 'Document-level escalation',
                                                         documentId: displayedSubmissionRow?.storageFileId,
@@ -477,22 +511,25 @@ export default function LatestSubmissionSection({
                                         />
                                     </div>
                                 ) : null}
-                                {aiSummary ? (
+                                {summaryItems.length > 0 ? (
                                     <div id="latest-doc-ai-summary" className="scroll-mt-6">
                                         <ExpandableInsightGroup
                                             title="AI Summary"
-                                            items={splitReadableText(aiSummary)}
+                                            items={summaryItems}
+                                            findings={summaryFindings}
                                             defaultOpen
                                             className="border-border bg-card"
                                             itemClassName="border-border"
                                             emptyLabel="No AI summary returned."
-                                            onItemClick={(item) => {
+                                            onItemClick={(item, index) => {
                                                 if (setActiveEvidence) {
+                                                    const finding = summaryFindings[index]
                                                     setActiveEvidence({
                                                         title: 'AI Summary finding',
                                                         sourceFile: displayedSubmissionRow?.fileName || 'Uploaded document',
                                                         sourceLocation: 'AI document summary',
                                                         excerpt: item,
+                                                        confidence: finding?.confidence ?? docConfidenceFraction ?? undefined,
                                                         status: 'Synthesized',
                                                         provenance: 'Document-level AI summary',
                                                         documentId: displayedSubmissionRow?.storageFileId,

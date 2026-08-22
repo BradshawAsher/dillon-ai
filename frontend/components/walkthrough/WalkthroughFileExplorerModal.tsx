@@ -1,8 +1,13 @@
-import React, { useState, useEffect } from 'react'
 import {
     Folder,
     FileText,
     FileSpreadsheet,
+    FileCode,
+    Headphones,
+    Video,
+    Mail,
+    Image as ImageIcon,
+    Presentation,
     CheckSquare,
     Square,
     UploadCloud,
@@ -20,7 +25,7 @@ import { Badge } from '../../lib/shadcn/badge'
 export interface VDRMockFile {
     id: string
     name: string
-    extension: 'pdf' | 'xlsx'
+    extension: 'pdf' | 'xlsx' | 'docx' | 'mp3' | 'mp4' | 'eml' | 'webp' | 'pptx'
     sizeStr: string
     sizeBytes: number
     category: string
@@ -73,6 +78,72 @@ export const MOCK_VDR_FILES: VDRMockFile[] = [
         badge: 'IRS Form 1120 Verified',
         dateModified: 'Oct 28, 2025',
         color: 'text-amber-500 bg-amber-500/10 border-amber-500/20',
+    },
+    {
+        id: 'file-audio',
+        name: 'Apex_Founder_Management_Interview_Q3.mp3',
+        extension: 'mp3',
+        sizeStr: '14.2 MB',
+        sizeBytes: 1024 * 14500,
+        category: 'Executive Due Diligence',
+        badge: 'Management Audio Call (.mp3)',
+        dateModified: 'Nov 05, 2025',
+        color: 'text-cyan-500 bg-cyan-500/10 border-cyan-500/20',
+    },
+    {
+        id: 'file-video',
+        name: 'Apex_Factory_Walkthrough_Equipment_Tour.mp4',
+        extension: 'mp4',
+        sizeStr: '38.5 MB',
+        sizeBytes: 1024 * 39400,
+        category: 'Operations & CapEx',
+        badge: 'Facility Site Video (.mp4)',
+        dateModified: 'Nov 06, 2025',
+        color: 'text-purple-500 bg-purple-500/10 border-purple-500/20',
+    },
+    {
+        id: 'file-memo',
+        name: 'Apex_Customer_Concentration_Memo.docx',
+        extension: 'docx',
+        sizeStr: '920 KB',
+        sizeBytes: 1024 * 920,
+        category: 'Commercial Diligence',
+        badge: 'Word Diligence Memo (.docx)',
+        dateModified: 'Nov 08, 2025',
+        color: 'text-blue-500 bg-blue-500/10 border-blue-500/20',
+    },
+    {
+        id: 'file-email',
+        name: 'Lockheed_Tier1_Renewal_Correspondence.eml',
+        extension: 'eml',
+        sizeStr: '340 KB',
+        sizeBytes: 1024 * 340,
+        category: 'Legal & Customer Communications',
+        badge: 'Email Correspondence (.eml)',
+        dateModified: 'Nov 09, 2025',
+        color: 'text-pink-500 bg-pink-500/10 border-pink-500/20',
+    },
+    {
+        id: 'file-image',
+        name: 'Apex_CNC_5Axis_Spindle_Inspection_Scan.webp',
+        extension: 'webp',
+        sizeStr: '1.2 MB',
+        sizeBytes: 1024 * 1220,
+        category: 'Asset Verification & Scans',
+        badge: 'Scanned Asset Photo (.webp)',
+        dateModified: 'Nov 10, 2025',
+        color: 'text-teal-500 bg-teal-500/10 border-teal-500/20',
+    },
+    {
+        id: 'file-deck',
+        name: 'Apex_Confidential_Investor_Presentation.pptx',
+        extension: 'pptx',
+        sizeStr: '5.8 MB',
+        sizeBytes: 1024 * 5930,
+        category: 'Management Presentations',
+        badge: 'Investor Pitch Deck (.pptx)',
+        dateModified: 'Nov 11, 2025',
+        color: 'text-orange-500 bg-orange-500/10 border-orange-500/20',
     },
 ]
 
@@ -226,7 +297,7 @@ export function WalkthroughFileExplorerModal({
                                 <span>
                                     {selectedFileIds.size === MOCK_VDR_FILES.length
                                         ? 'Deselect All'
-                                        : 'Select All 4 Documents'}
+                                        : `Select All ${MOCK_VDR_FILES.length} Documents`}
                                 </span>
                             </button>
                             <span className="text-muted-foreground text-2xs">
@@ -234,7 +305,7 @@ export function WalkthroughFileExplorerModal({
                             </span>
                         </div>
                         <Badge variant="outline" className="text-2xs font-mono">
-                            Total Packet: 8.14 MB
+                            Total Packet: 68.3 MB (Multi-Modal VDR)
                         </Badge>
                     </div>
 
@@ -265,8 +336,20 @@ export function WalkthroughFileExplorerModal({
                                         >
                                             {file.extension === 'pdf' ? (
                                                 <FileText className="h-5 w-5" />
-                                            ) : (
+                                            ) : file.extension === 'xlsx' ? (
                                                 <FileSpreadsheet className="h-5 w-5" />
+                                            ) : file.extension === 'docx' ? (
+                                                <FileCode className="h-5 w-5" />
+                                            ) : file.extension === 'mp3' ? (
+                                                <Headphones className="h-5 w-5" />
+                                            ) : file.extension === 'mp4' ? (
+                                                <Video className="h-5 w-5" />
+                                            ) : file.extension === 'eml' ? (
+                                                <Mail className="h-5 w-5" />
+                                            ) : file.extension === 'webp' ? (
+                                                <ImageIcon className="h-5 w-5" />
+                                            ) : (
+                                                <Presentation className="h-5 w-5" />
                                             )}
                                         </div>
                                         <div className="min-w-0">
