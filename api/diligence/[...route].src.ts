@@ -26,9 +26,12 @@ type ApiRequest = IncomingMessage
 // n8n client still needed for submit + retry (workflow triggers).
 installRetoolGlobals()
 
-function sendJson(res: ServerResponse, status: number, body: unknown) {
+function sendJson(res: ServerResponse, status: number, body: unknown, cacheControl?: string) {
     res.statusCode = status
     res.setHeader('Content-Type', 'application/json; charset=utf-8')
+    if (cacheControl) {
+        res.setHeader('Cache-Control', cacheControl)
+    }
     res.end(JSON.stringify(body))
 }
 
@@ -53,19 +56,19 @@ export default async function handler(req: ApiRequest, res: ServerResponse) {
         const user = userFromHeaders(req.headers)
 
         if (route === 'eval-runs' && req.method === 'GET') {
-            sendJson(res, 200, await getEvalRuns())
+            sendJson(res, 200, await getEvalRuns(), 'public, s-maxage=60, stale-while-revalidate=300')
             return
         }
         if (route === 'history' && req.method === 'GET') {
-            sendJson(res, 200, await getSubmissionHistory({ params: { environment }, user }))
+            sendJson(res, 200, await getSubmissionHistory({ params: { environment }, user }), 'private, no-cache, no-store, must-revalidate')
             return
         }
         if (route === 'workflow-errors' && req.method === 'GET') {
-            sendJson(res, 200, await getWorkflowErrors({ params: { environment }, user }))
+            sendJson(res, 200, await getWorkflowErrors({ params: { environment }, user }), 'private, no-cache, no-store, must-revalidate')
             return
         }
         if (route === 'synthesis' && req.method === 'GET') {
-            sendJson(res, 200, await getProjectSynthesis({ params: { environment }, user }))
+            sendJson(res, 200, await getProjectSynthesis({ params: { environment }, user }), 'private, no-cache, no-store, must-revalidate')
             return
         }
         if (route === 'deal-models' && req.method === 'GET') {

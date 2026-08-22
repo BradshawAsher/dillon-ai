@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowUpRight, Bot, Compass, ExternalLink, FolderKanban, Move, RotateCcw, Send, Sparkles, ThumbsDown, ThumbsUp, X } from 'lucide-react'
+import { ArrowUpRight, Bot, Compass, ExternalLink, FolderKanban, Move, RotateCcw, Send, Sparkles, ThumbsDown, ThumbsUp, X, AlertTriangle, Bug } from 'lucide-react'
 
 import { Button } from '../lib/shadcn/button'
 import { Card } from '../lib/shadcn/card'
@@ -11,6 +11,8 @@ import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import type { WorkspaceTab } from '../hooks/useDealWorkspaceState'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { normalizeEquityFraction } from '../utils/dealMath'
+import { sendIssueReportSlackAlert, type IssueCategory } from '../services/slackAlertService'
+import { getStoredUser } from '../services/supabaseAuth'
 
 export type ResponseTier = 'cloud_ai' | 'direct_llm' | 'local_heuristics'
 
@@ -241,6 +243,52 @@ function bulletList(items: string[], limit = items.length): string {
     return items.slice(0, limit).map(item => `- ${item}`).join('\n')
 }
 
+export function detectIssueReportIntent(query: string): {
+    isIssueIntent: boolean
+    category: IssueCategory
+    title: string
+} {
+    const q = query.toLowerCase().trim()
+    const isIssue =
+        q.includes('report a bug') ||
+        q.includes('report an issue') ||
+        q.includes('report issue') ||
+        q.includes('report bug') ||
+        q.includes('file a bug') ||
+        q.includes('file an issue') ||
+        q.includes('file a ticket') ||
+        q.includes('found a bug') ||
+        q.includes('found an issue') ||
+        q.includes('something is broken') ||
+        q.includes('there is an error') ||
+        q.includes('bug report') ||
+        q.includes('issue report') ||
+        q.includes('submit bug') ||
+        q.includes('submit issue') ||
+        (q.startsWith('report') && (q.includes('bug') || q.includes('error') || q.includes('broken') || q.includes('discrepancy') || q.includes('improvement') || q.includes('glitch')))
+
+    if (!isIssue) {
+        return { isIssueIntent: false, category: 'bug', title: '' }
+    }
+
+    let category: IssueCategory = 'bug'
+    if (q.includes('ui') || q.includes('design') || q.includes('layout') || q.includes('visual') || q.includes('button') || q.includes('theme') || q.includes('dark mode') || q.includes('improvement')) {
+        category = 'ui_improvement'
+    } else if (q.includes('ebitda') || q.includes('dcf') || q.includes('irr') || q.includes('valuation') || q.includes('calculation') || q.includes('number') || q.includes('math') || q.includes('financial') || q.includes('multiple')) {
+        category = 'data_accuracy'
+    } else if (q.includes('feature') || q.includes('add support') || q.includes('can you add') || q.includes('could we have')) {
+        category = 'feature_request'
+    }
+
+    const cleanTitle = query.length > 90 ? query.slice(0, 90) + '...' : query
+
+    return {
+        isIssueIntent: true,
+        category,
+        title: cleanTitle,
+    }
+}
+
 /**
  * Resolves at most 1–2 highly specialized links depending on the user's query intent.
  * Differentiates between broad domain exploration and specific card-level queries.
@@ -467,6 +515,25 @@ function getLocalResponse(
     const keyTakeaways = synthesis?.keyTakeaways ?? []
     const completedDocuments = synthesis?.documentsCompletedCount ?? documents?.filter(d => d.status === 'completed').length ?? 0
     const totalDocuments = synthesis?.documentsReceivedCount ?? documents?.length ?? completedDocuments
+
+    // 0.0 Issue Reporting / Bug / UI Feedback
+    const issueCheck = detectIssueReportIntent(question)
+    if (issueCheck.isIssueIntent) {
+        return {
+            matched: true,
+            content: `### 🚨 Issue Report Dispatched to Engineering
+
+I've captured your feedback and dispatched an alert directly to our engineering team on **\`#pod-1-agent-alerts\`**!
+
+**Report Summary:**
+- **Category:** \`${issueCheck.category.replace('_', ' ').toUpperCase()}\`
+- **Subject:** ${issueCheck.title}
+- **Active Deal:** ${projectName || 'General Workspace'}
+- **Destination:** \`#pod-1-agent-alerts\`
+
+Our deal pod engineering team has received your report. If you'd like to include screenshots or more details, you can also click the **Report Issue** button in the top navigation bar.`,
+        }
+    }
 
     // 0.1 Getting Started & Beginner Guide (Baby Boomer & Gen X Friendly)
     if (
@@ -1363,7 +1430,9 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
         if (synthesis?.negotiationLevers?.length) suggestions.push('Best negotiation strategy?')
         else suggestions.push('Compare all projects')
 
-        return suggestions.slice(0, 5)
+        suggestions.push('🚨 Report an issue or bug')
+
+        return suggestions.slice(0, 6)
     }, [synthesis, model, documents])
 
     const handleResizeStart = useCallback((direction: ResizeDirection, event: React.PointerEvent) => {
@@ -1480,6 +1549,67 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
         setIsTyping(true)
         setTypingElapsed(0)
         typingTimerRef.current = setInterval(() => setTypingElapsed(t => t + 1), 1000)
+
+        // Check for issue reporting / bug intent to dispatch directly to #pod-1-agent-alerts
+        const issueCheck = detectIssueReportIntent(trimmed)
+        if (issueCheck.isIssueIntent) {
+            try {
+                const user = getStoredUser()
+                const recentHistory = messages
+                    .slice(-4)
+                    .map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content.slice(0, 160)}`)
+                    .join('\n')
+
+                const chatSummary = recentHistory
+                    ? `Recent chat dialogue:\n${recentHistory}\n\nLatest user issue report: ${trimmed}`
+                    : `User reported issue via chat: ${trimmed}`
+
+                await sendIssueReportSlackAlert({
+                    reporterName: user?.name || undefined,
+                    reporterEmail: user?.email || undefined,
+                    category: issueCheck.category,
+                    title: issueCheck.title,
+                    description: trimmed,
+                    projectName: projectName || model?.companyName || 'General Workspace',
+                    tabName: 'Deal Chat AI',
+                    chatSummary,
+                    source: 'chatbot',
+                })
+
+                const botReply = `### 🚨 Issue Report Dispatched to Engineering\n\n` +
+                    `I've captured your report and pushed an alert directly to our engineering team on **\`#pod-1-agent-alerts\`**!\n\n` +
+                    `**Report Summary:**\n` +
+                    `- **Category:** \`${issueCheck.category.replace('_', ' ').toUpperCase()}\`\n` +
+                    `- **Deal Context:** ${projectName || 'Active Deal'}\n` +
+                    `- **Subject:** ${issueCheck.title}\n` +
+                    `- **Context Attached:** Recent chat dialogue & deal parameters\n\n` +
+                    `Our deal pod engineers have been alerted on Slack in real time. If you have screenshots or want to submit extra attachments, you can also use the **[Report Issue](tab:modal)** button in the top navigation bar.`
+
+                setMessages(prev => [...prev, {
+                    id: `assistant-${Date.now()}`,
+                    role: 'assistant',
+                    content: botReply,
+                    timestamp: Date.now(),
+                    tier: 'cloud_ai',
+                    providerName: 'Slack Agent Alert Bot',
+                    userPrompt: trimmed,
+                }])
+            } catch {
+                setMessages(prev => [...prev, {
+                    id: `assistant-${Date.now()}`,
+                    role: 'assistant',
+                    content: `### 🚨 Issue Report Dispatched\n\nI've recorded your issue ("${issueCheck.title}") and notified our engineering team on **\`#pod-1-agent-alerts\`**.`,
+                    timestamp: Date.now(),
+                    tier: 'local_heuristics',
+                    providerName: 'Local M&A Engine',
+                    userPrompt: trimmed,
+                }])
+            } finally {
+                setIsTyping(false)
+                if (typingTimerRef.current) { clearInterval(typingTimerRef.current); typingTimerRef.current = null }
+            }
+            return
+        }
 
         const context = buildContext(synthesis, model, projectName, documents, allSyntheses)
 

@@ -48,6 +48,28 @@ describe('Deep Linking Utilities', () => {
             const parsed = parseUrlDeepLinkState('?tab=nonexistent-tab')
             expect(parsed.tab).toBeNull()
         })
+
+        it('parses hash anchors and routes to appropriate tab', () => {
+            const parsedEvals = parseUrlDeepLinkState('?view=dashboard', '#evals')
+            expect(parsedEvals.tab).toBe('evals')
+            expect(parsedEvals.view).toBe('dashboard')
+
+            const parsedBenchmarks = parseUrlDeepLinkState('', '#benchmark-models')
+            expect(parsedBenchmarks.tab).toBe('evals')
+            expect(parsedBenchmarks.view).toBe('dashboard')
+
+            const parsedSpending = parseUrlDeepLinkState('', '#spending-model')
+            expect(parsedSpending.tab).toBe('spending')
+
+            const parsedAccount = parseUrlDeepLinkState('', '#account-profile')
+            expect(parsedAccount.tab).toBe('account')
+
+            const parsedIssue = parseUrlDeepLinkState('?tab=bug')
+            expect(parsedIssue.tab).toBe('report_issue')
+
+            const parsedFeedback = parseUrlDeepLinkState('?tab=feedback')
+            expect(parsedFeedback.tab).toBe('report_issue')
+        })
     })
 
     describe('matchProjectFromQuery', () => {

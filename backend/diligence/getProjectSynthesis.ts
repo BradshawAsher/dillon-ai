@@ -82,6 +82,20 @@ export type ProjectSynthesisItem = {
     yellow_flags?: string[]
     green_flags?: string[]
     open_questions?: string[]
+    askingPrice?: string
+    asking_price?: string
+    revenue?: string
+    revenueUsd?: string
+    ebitda?: string
+    ebitdaUsd?: string
+    impliedMultiple?: string
+    multiple?: string
+    valuationUsd?: string
+    dealGrade?: string
+    deal_grade?: string
+    executiveSummary?: string
+    aliases?: string[]
+    renegotiationPoints?: string[]
 }
 
 // --- JSON parsing helpers (same logic as before, reads structured JSON from DB) ---

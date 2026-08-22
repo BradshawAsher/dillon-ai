@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { FolderKanban, Search, X, Plus, Download, ArrowRight, Archive, ArchiveRestore } from 'lucide-react'
+import { FolderKanban, Search, X, Plus, Download, ArrowRight, Archive, ArchiveRestore, Shield, CheckCircle2 } from 'lucide-react'
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
 import { Input } from '../lib/shadcn/input'
@@ -7,6 +7,8 @@ import type { ProjectSummary } from '../utils/projectWorkspace'
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { downloadSynthesisReport } from './ProjectSynthesisCard'
 import { archiveProjectKey, getProjectStatusVariant, unarchiveProjectKey } from '../utils/projectWorkspace'
+import { getLocalAppAuth } from '../services/supabaseAuth'
+import { sendAdminAccessRequestSlackAlert } from '../services/slackAlertService'
 
 interface ProjectsSidePanelProps {
     isOpen: boolean
@@ -30,6 +32,25 @@ export function ProjectsSidePanel({
     const [searchTerm, setSearchTerm] = useState('')
     const [showArchived, setShowArchived] = useState(false)
     const [, setUpdateTick] = useState(0)
+    const [adminApplied, setAdminApplied] = useState(false)
+    const [isApplying, setIsApplying] = useState(false)
+    const authUser = getLocalAppAuth()
+
+    const handleApplyAdmin = async () => {
+        if (!authUser) return
+        setIsApplying(true)
+        try {
+            await sendAdminAccessRequestSlackAlert({
+                fullName: authUser.name || 'MergeWorks User',
+                email: authUser.email,
+                team: authUser.team,
+                reason: 'User applied from Projects Drawer to view all 62+ pushed projects firm-wide.',
+            })
+            setAdminApplied(true)
+        } finally {
+            setIsApplying(false)
+        }
+    }
 
     // Close panel on Escape key
     useEffect(() => {
@@ -150,6 +171,36 @@ export function ProjectsSidePanel({
                             aria-label="Search projects in side panel"
                         />
                     </div>
+
+                    {/* Admin Access Callout for Non-Admin Users */}
+                    {authUser?.role !== 'admin' && (
+                        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-2.5 text-xs flex flex-col gap-2">
+                            <div className="flex items-start justify-between gap-2">
+                                <div className="flex items-center gap-1.5 text-amber-700 dark:text-amber-400 font-semibold">
+                                    <Shield className="h-3.5 w-3.5 shrink-0" />
+                                    <span>Want admin access to view all projects that have been pushed?</span>
+                                </div>
+                            </div>
+                            <div className="flex items-center justify-between gap-2">
+                                <span className="text-[11px] text-muted-foreground">
+                                    {adminApplied ? 'Alert dispatched to #pod-1-agent-alerts' : 'Request full portfolio visibility firm-wide'}
+                                </span>
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    onClick={handleApplyAdmin}
+                                    disabled={isApplying || adminApplied}
+                                    className={`h-6 px-2.5 text-[11px] font-bold shrink-0 ${
+                                        adminApplied
+                                            ? 'bg-emerald-600 text-white'
+                                            : 'bg-amber-600 hover:bg-amber-700 text-white shadow-xs'
+                                    }`}
+                                >
+                                    {isApplying ? 'Sending...' : adminApplied ? '✓ Request Sent' : 'Apply for admin access now'}
+                                </Button>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Project List */}

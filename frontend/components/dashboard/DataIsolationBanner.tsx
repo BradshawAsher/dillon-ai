@@ -3,6 +3,7 @@ import { Shield, ShieldCheck, Lock, Users } from 'lucide-react'
 import { Button } from '../../lib/shadcn/button'
 import { Badge } from '../../lib/shadcn/badge'
 import { getStoredAuth, isDataIsolationEnabled, setDataIsolation, DATA_ISOLATION_EVENT } from '../AuthGate'
+import { sendAdminAccessRequestSlackAlert } from '../../services/slackAlertService'
 
 interface DataIsolationBannerProps {
     onOpenAuthModal?: () => void
@@ -12,6 +13,8 @@ interface DataIsolationBannerProps {
 export function DataIsolationBanner({ onOpenAuthModal, className = '' }: DataIsolationBannerProps) {
     const [isolationEnabled, setIsolationEnabled] = useState(isDataIsolationEnabled)
     const [user, setUser] = useState(getStoredAuth)
+    const [adminRequested, setAdminRequested] = useState(false)
+    const [isApplying, setIsApplying] = useState(false)
 
     useEffect(() => {
         const handleIsolationChange = (e: Event) => {
@@ -40,6 +43,25 @@ export function DataIsolationBanner({ onOpenAuthModal, className = '' }: DataIso
         setDataIsolation(next)
         setIsolationEnabled(next)
     }, [isolationEnabled])
+
+    const handleApplyAdmin = useCallback(async () => {
+        if (!user) {
+            onOpenAuthModal?.()
+            return
+        }
+        setIsApplying(true)
+        try {
+            await sendAdminAccessRequestSlackAlert({
+                fullName: user.name || 'MergeWorks User',
+                email: user.email,
+                team: user.team,
+                reason: 'User applied from Data Isolation Banner to view all 62+ pushed projects firm-wide.',
+            })
+            setAdminRequested(true)
+        } finally {
+            setIsApplying(false)
+        }
+    }, [user, onOpenAuthModal])
 
     return (
         <div
@@ -95,7 +117,31 @@ export function DataIsolationBanner({ onOpenAuthModal, className = '' }: DataIso
                     </div>
                 </div>
 
-                <div className="flex shrink-0 items-center gap-2.5 sm:self-center">
+                <div className="flex flex-wrap shrink-0 items-center gap-2.5 sm:self-center">
+                    {user?.role !== 'admin' && (
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={handleApplyAdmin}
+                            disabled={isApplying || adminRequested}
+                            className={`gap-1.5 font-semibold text-xs transition-all ${
+                                adminRequested
+                                    ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                                    : 'border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20'
+                            }`}
+                            title="Want admin access to view all projects that have been pushed? Apply for admin access now"
+                        >
+                            <Shield className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                            <span>
+                                {isApplying
+                                    ? 'Applying...'
+                                    : adminRequested
+                                    ? '✓ Alert Sent to #pod-1-agent-alerts'
+                                    : 'Apply for Admin Access'}
+                            </span>
+                        </Button>
+                    )}
                     <Button
                         type="button"
                         size="sm"

@@ -21538,6 +21538,9 @@ var _client = null;
 var DEFAULT_SUPABASE_URL = "https://sihpsqrunkwkxhhnwoqe.supabase.co";
 function getClient() {
   if (_client) return _client;
+  if (process.env.NODE_ENV !== "production" && !process.env.NODE_TLS_REJECT_UNAUTHORIZED) {
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+  }
   const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || "";
   if (!key) {
@@ -22819,9 +22822,12 @@ function rateLimit(ip, route, method) {
 
 // api/diligence/[...route].src.ts
 installRetoolGlobals();
-function sendJson(res, status, body) {
+function sendJson(res, status, body, cacheControl) {
   res.statusCode = status;
   res.setHeader("Content-Type", "application/json; charset=utf-8");
+  if (cacheControl) {
+    res.setHeader("Cache-Control", cacheControl);
+  }
   res.end(JSON.stringify(body));
 }
 async function handler(req, res) {
@@ -22840,19 +22846,19 @@ async function handler(req, res) {
   try {
     const user = userFromHeaders(req.headers);
     if (route === "eval-runs" && req.method === "GET") {
-      sendJson(res, 200, await getEvalRuns());
+      sendJson(res, 200, await getEvalRuns(), "public, s-maxage=60, stale-while-revalidate=300");
       return;
     }
     if (route === "history" && req.method === "GET") {
-      sendJson(res, 200, await getSubmissionHistory({ params: { environment }, user }));
+      sendJson(res, 200, await getSubmissionHistory({ params: { environment }, user }), "private, no-cache, no-store, must-revalidate");
       return;
     }
     if (route === "workflow-errors" && req.method === "GET") {
-      sendJson(res, 200, await getWorkflowErrors({ params: { environment }, user }));
+      sendJson(res, 200, await getWorkflowErrors({ params: { environment }, user }), "private, no-cache, no-store, must-revalidate");
       return;
     }
     if (route === "synthesis" && req.method === "GET") {
-      sendJson(res, 200, await getProjectSynthesis({ params: { environment }, user }));
+      sendJson(res, 200, await getProjectSynthesis({ params: { environment }, user }), "private, no-cache, no-store, must-revalidate");
       return;
     }
     if (route === "deal-models" && req.method === "GET") {

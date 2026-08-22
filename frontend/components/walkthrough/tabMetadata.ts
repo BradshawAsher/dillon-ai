@@ -328,4 +328,20 @@ export const TAB_METADATA: Record<WorkspaceTab, TabMetadata> = {
         tourStepCount: 3,
         suggestedFocus: 'Managing user profile, isolation boundaries, and AI model preferences',
     },
+    report_issue: {
+        id: 'report_issue',
+        label: 'Report an Issue',
+        category: 'Support & Feedback',
+        badge: 'Direct Feedback',
+        whatItIsFor: 'Direct channel to report software bugs, request UI improvements, highlight financial math inaccuracies, or submit feature requests directly to engineering.',
+        keyDeliverables: [
+            'Instant webhook dispatch to #pod-1-agent-alerts Slack channel',
+            'Automated capture of active deal context, selected tab, and user session',
+            'Multi-category reporting for bugs, UI enhancements, and model accuracy',
+            'Severity and urgency classification for prioritization',
+        ],
+        recommendedRole: 'All Analysts, M&A Associates & Workspace Users',
+        tourStepCount: 2,
+        suggestedFocus: 'Reporting defects and submitting product feedback directly to engineering',
+    },
 }

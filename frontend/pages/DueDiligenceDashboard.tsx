@@ -18,6 +18,7 @@ import {
 
 import { ApiKeyModal } from '../components/ApiKeyModal'
 import { ExportDiligenceModal } from '../components/ExportDiligenceModal'
+import { ReportIssueModal } from '../components/ReportIssueModal'
 import { ProjectsSidePanel } from '../components/ProjectsSidePanel'
 import DealHealthKPIs from '../components/DealHealthKPIs'
 import DealEmailDraftCard from '../components/DealEmailDraftCard'
@@ -68,6 +69,7 @@ const EvalDashboardTab = lazyWithRetry(() => import('../components/EvalDashboard
 const SpendingAnalyticsTab = lazyWithRetry(() => import('../components/SpendingAnalyticsTab'))
 const TechnicalFaqWorkspaceTab = lazyWithRetry(() => import('../components/TechnicalFaqWorkspaceTab'))
 const KeyboardShortcutsWorkspaceView = lazyWithRetry(() => import('../components/views/KeyboardShortcutsWorkspaceView'))
+const ReportIssueWorkspaceView = lazyWithRetry(() => import('../components/views/ReportIssueWorkspaceView'))
 import LatestSubmissionSection from '../components/dashboard/LatestSubmissionSection'
 import { BatchProgressCard } from '../components/dashboard/BatchProgressCard'
 import LegacyDiligenceBackupCard from '../components/dashboard/LegacyDiligenceBackupCard'
@@ -773,6 +775,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     } = useDealWorkspaceState()
 
     const [isWalkthroughModalOpen, setIsWalkthroughModalOpen] = useState(false)
+    const [isReportIssueOpen, setIsReportIssueOpen] = useState(false)
     const [selectedWalkthroughDemoId, setSelectedWalkthroughDemoId] = useState<DemoVariantId>('short-supademo')
     const [isLeftQuickDockVisible, setIsLeftQuickDockVisible] = useState(true)
 
@@ -2542,6 +2545,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                     onResumeTour={handleResumeTour}
                     activeProjectId={activeProjectId}
                     activeWorkspaceTab={activeWorkspaceTab}
+                    onOpenSearch={() => setCommandPaletteOpen(true)}
+                    onOpenReportIssue={() => setIsReportIssueOpen(true)}
                 />
 
                 <div className="mx-auto max-w-[1440px] px-4 pb-5 sm:px-6 lg:px-8">
@@ -3236,6 +3241,23 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                         </section>
                     ) : null}
 
+                    {activeWorkspaceTab === 'report_issue' ? (
+                        <section id="report-an-issue" className="scroll-mt-6 space-y-6">
+                            <ReportIssueWorkspaceView
+                                currentDealName={dealName || suggestedProjectName}
+                                activeWorkspaceTab={activeWorkspaceTab}
+                                onSwitchTab={(tab) => {
+                                    setActiveWorkspaceTab(tab)
+                                    const workspace = document.getElementById('deal-workspace')
+                                    if (workspace) {
+                                        workspace.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                                    }
+                                }}
+                                onOpenChat={() => setIsChatOpen(true)}
+                            />
+                        </section>
+                    ) : null}
+
                     {activeWorkspaceTab === 'account' ? (
                         <section id="account-settings" className="scroll-mt-6 space-y-6">
                             <AccountWorkspaceView
@@ -3495,10 +3517,17 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                     onScrollToUpload={() => { document.querySelector('[data-project-intake]')?.scrollIntoView({ behavior: 'smooth' }) }}
                     onStartTour={(tourId) => handleStartTour(tourId)}
                     onOpenWalkthrough={() => setIsWalkthroughModalOpen(true)}
+                    onOpenReportIssue={() => setIsReportIssueOpen(true)}
                 />
             </Suspense>
 
             <ApiKeyModal open={isApiKeyModalOpen} onOpenChange={setIsApiKeyModalOpen} />
+            <ReportIssueModal
+                open={isReportIssueOpen}
+                onOpenChange={setIsReportIssueOpen}
+                projectName={effectiveDealName || suggestedProjectName || (activeProjectId ? `Project #${activeProjectId}` : 'General Workspace')}
+                activeTab={activeWorkspaceTab || 'Overview'}
+            />
             <ExportDiligenceModal
                 open={isExportModalOpen}
                 onOpenChange={setIsExportModalOpen}

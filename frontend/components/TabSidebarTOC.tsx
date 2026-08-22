@@ -7,7 +7,7 @@ type TOCSection = {
     indent?: boolean
 }
 
-export type WorkspaceTab = 'overview' | 'analysis' | 'diagnostics' | 'diligence' | 'synthesis' | 'spending' | 'compare' | 'valuation' | 'returns' | 'growth' | 'structure' | 'negotiation' | 'documents' | 'shortcuts' | 'history' | 'errors' | 'email' | 'evals' | 'faqs' | 'account'
+export type WorkspaceTab = 'overview' | 'analysis' | 'diagnostics' | 'diligence' | 'synthesis' | 'spending' | 'compare' | 'valuation' | 'returns' | 'growth' | 'structure' | 'negotiation' | 'documents' | 'shortcuts' | 'history' | 'errors' | 'email' | 'evals' | 'faqs' | 'report_issue' | 'account'
 
 const TAB_SECTIONS: Partial<Record<WorkspaceTab, TOCSection[]>> = {
     overview: [

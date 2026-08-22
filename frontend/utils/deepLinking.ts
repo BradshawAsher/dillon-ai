@@ -20,6 +20,7 @@ export const VALID_WORKSPACE_TABS: WorkspaceTab[] = [
     'history',
     'email',
     'errors',
+    'report_issue',
     'account',
 ]
 
@@ -29,15 +30,84 @@ const TAB_ALIASES: Record<string, WorkspaceTab> = {
     docs: 'documents',
     risk: 'diagnostics',
     playbook: 'diagnostics',
-    benchmark: 'analysis',
+    benchmark: 'evals',
+    benchmarks: 'evals',
+    eval: 'evals',
+    evals: 'evals',
+    evaluations: 'evals',
+    evaluation: 'evals',
+    harness: 'evals',
+    scoring: 'evals',
     billing: 'spending',
+    costs: 'spending',
+    cost: 'spending',
     faq: 'faqs',
+    faqs: 'faqs',
     error: 'errors',
+    errors: 'errors',
+    logs: 'errors',
     audit: 'history',
     intake: 'diligence',
+    upload: 'diligence',
+    issue: 'report_issue',
+    issues: 'report_issue',
+    bug: 'report_issue',
+    bugs: 'report_issue',
+    feedback: 'report_issue',
+    support: 'report_issue',
+    report: 'report_issue',
+    'report-issue': 'report_issue',
+    report_issue: 'report_issue',
     profile: 'account',
     settings: 'account',
     user: 'account',
+    account: 'account',
+    myaccount: 'account',
+    me: 'account',
+}
+
+const SECTION_ANCHOR_MAP: Record<string, WorkspaceTab> = {
+    // overview
+    'overview-snapshot': 'overview',
+    'overview-health': 'overview',
+    'overview-actions': 'overview',
+    'overview-timeline': 'overview',
+    // analysis
+    'analysis-deal-on-a-page': 'analysis',
+    'analysis-scorecard': 'analysis',
+    'analysis-snapshot': 'analysis',
+    'analysis-opportunity': 'analysis',
+    'analysis-risk-valuation': 'analysis',
+    // diagnostics
+    'diag-quick-insights': 'diagnostics',
+    'diag-thesis': 'diagnostics',
+    'diag-decision': 'diagnostics',
+    'diag-playbook': 'diagnostics',
+    // diligence
+    'project-intake': 'diligence',
+    'latest-submission-section': 'diligence',
+    'diligence-document-flags': 'diligence',
+    'diligence-project-synth': 'diligence',
+    // synthesis
+    'synthesis-judgment': 'synthesis',
+    'synthesis-valuation': 'synthesis',
+    'synthesis-material-impact': 'synthesis',
+    'synthesis-filters': 'synthesis',
+    // spending
+    'spending-model': 'spending',
+    'spending-api-calls': 'spending',
+    'spending-forecast': 'spending',
+    // evals
+    'evals-benchmarks': 'evals',
+    'evals-accuracy': 'evals',
+    'evals-latency': 'evals',
+    'benchmark-models': 'evals',
+    'extraction-accuracy': 'evals',
+    'latency-throughput': 'evals',
+    // account
+    'account-profile': 'account',
+    'account-security': 'account',
+    'account-preferences': 'account',
 }
 
 export interface ParsedDeepLink {
@@ -47,36 +117,65 @@ export interface ParsedDeepLink {
 }
 
 /**
- * Parses URL search string for deep linking parameters.
+ * Resolves a raw tab string or hash anchor to a valid WorkspaceTab.
  */
-export function parseUrlDeepLinkState(search: string): ParsedDeepLink {
-    if (!search || typeof search !== 'string') {
-        return { view: null, projectQuery: null, tab: null }
+export function resolveWorkspaceTab(raw: string | null | undefined): WorkspaceTab | null {
+    if (!raw || typeof raw !== 'string') return null
+    const cleaned = raw.toLowerCase().replace(/^#+/, '').trim()
+    if (!cleaned) return null
+
+    if (VALID_WORKSPACE_TABS.includes(cleaned as WorkspaceTab)) {
+        return cleaned as WorkspaceTab
     }
-    const params = new URLSearchParams(search.startsWith('?') ? search : `?${search}`)
+    if (TAB_ALIASES[cleaned]) {
+        return TAB_ALIASES[cleaned]
+    }
+    if (SECTION_ANCHOR_MAP[cleaned]) {
+        return SECTION_ANCHOR_MAP[cleaned]
+    }
+    for (const prefix of VALID_WORKSPACE_TABS) {
+        if (cleaned.startsWith(`${prefix}-`) || cleaned.startsWith(`${prefix}_`)) {
+            return prefix
+        }
+    }
+    if (cleaned.startsWith('diag-')) return 'diagnostics'
+    if (cleaned.startsWith('doc-') || cleaned.startsWith('docs-')) return 'documents'
+    return null
+}
+
+/**
+ * Parses URL search string and optional hash for deep linking parameters.
+ */
+export function parseUrlDeepLinkState(search: string, hash?: string): ParsedDeepLink {
+    const rawSearch = search && typeof search === 'string' ? search : ''
+    const params = new URLSearchParams(rawSearch.startsWith('?') ? rawSearch : `?${rawSearch}`)
     
+    // Project query
+    const projectQuery = params.get('project') || params.get('deal') || params.get('projectId') || null
+
+    // Tab detection with query param priority, then hash fallback
+    const rawTabParam = (params.get('tab') || '').toLowerCase().trim()
+    let tab: WorkspaceTab | null = resolveWorkspaceTab(rawTabParam)
+
+    if (!tab && hash) {
+        tab = resolveWorkspaceTab(hash)
+    }
+
     // View detection
     let view: 'landing' | 'login' | 'dashboard' | null = null
     if (params.get('view') === 'landing') {
         view = 'landing'
     } else if (params.get('view') === 'login' || params.get('auth') === 'true' || params.get('signin') === 'true') {
         view = 'login'
-    } else if (params.get('view') === 'dashboard' || params.get('app') === 'true' || params.has('project') || params.has('deal') || params.has('tab')) {
+    } else if (
+        params.get('view') === 'dashboard' ||
+        params.get('app') === 'true' ||
+        params.has('project') ||
+        params.has('deal') ||
+        params.has('tab') ||
+        tab !== null
+    ) {
         view = 'dashboard'
-    }
-
-    // Project query
-    const projectQuery = params.get('project') || params.get('deal') || params.get('projectId') || null
-
-    // Tab detection with alias support
-    const rawTab = (params.get('tab') || '').toLowerCase().trim()
-    let tab: WorkspaceTab | null = null
-    if (rawTab) {
-        if (VALID_WORKSPACE_TABS.includes(rawTab as WorkspaceTab)) {
-            tab = rawTab as WorkspaceTab
-        } else if (TAB_ALIASES[rawTab]) {
-            tab = TAB_ALIASES[rawTab]
-        }
     }
 
     return { view, projectQuery, tab }

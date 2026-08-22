@@ -11,6 +11,10 @@ const DEFAULT_SUPABASE_URL = 'https://sihpsqrunkwkxhhnwoqe.supabase.co'
 function getClient(): SupabaseClient {
     if (_client) return _client
 
+    if (process.env.NODE_ENV !== 'production' && !process.env.NODE_TLS_REJECT_UNAUTHORIZED) {
+        process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
+    }
+
     const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || ''
 

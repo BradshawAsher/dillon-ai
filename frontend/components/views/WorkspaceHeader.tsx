@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { FolderKanban, Moon, Sun, Key, Globe, Play, Compass, Sparkles, Keyboard, Link2, Check, User } from 'lucide-react'
+import { FolderKanban, Moon, Sun, Key, Globe, Play, Compass, Sparkles, Keyboard, Link2, Check, User, Search, Bug } from 'lucide-react'
 import { Badge } from '../../lib/shadcn/badge'
 import { Button } from '../../lib/shadcn/button'
 import DealStageIndicator from '../DealStageIndicator'
@@ -38,6 +38,8 @@ type WorkspaceHeaderProps = {
     onResumeTour?: () => void
     activeProjectId?: string
     activeWorkspaceTab?: string
+    onOpenSearch?: () => void
+    onOpenReportIssue?: () => void
 }
 
 export function WorkspaceHeader({
@@ -65,6 +67,8 @@ export function WorkspaceHeader({
     onResumeTour,
     activeProjectId,
     activeWorkspaceTab,
+    onOpenSearch,
+    onOpenReportIssue,
 }: WorkspaceHeaderProps) {
     const [copiedLink, setCopiedLink] = useState(false)
 
@@ -97,6 +101,22 @@ export function WorkspaceHeader({
                             hasActiveSubmissions={activeProjectDocuments.some((d) => isActiveSubmissionStatus(d.status))}
                             hasErrors={activeProjectDocuments.some((d) => ['failed', 'error', 'rejected'].includes(String(d.status ?? '').trim().toLowerCase()))}
                         />
+                        {onOpenSearch && (
+                            <button
+                                type="button"
+                                onClick={onOpenSearch}
+                                className="flex items-center justify-between gap-3 px-3.5 py-1.5 min-w-[220px] sm:min-w-[280px] lg:min-w-[340px] rounded-lg border border-primary/30 bg-primary/5 hover:bg-primary/10 hover:border-primary/50 text-muted-foreground hover:text-foreground text-xs shadow-xs transition-all cursor-pointer group"
+                                title="Global Search across projects, tabs, metrics, flags, and actions (⌘K or Ctrl+K)"
+                            >
+                                <span className="flex items-center gap-2">
+                                    <Search className="h-4 w-4 text-primary group-hover:scale-110 transition-transform" />
+                                    <span className="font-medium text-foreground/80">Search deals, tabs, metrics...</span>
+                                </span>
+                                <kbd className="inline-flex items-center gap-0.5 rounded bg-background px-2 py-0.5 text-[10px] font-mono font-semibold border border-border/80 text-foreground shadow-2xs">
+                                    ⌘K
+                                </kbd>
+                            </button>
+                        )}
                         {resumeState && onResumeTour && (
                             <Button
                                 type="button"
@@ -154,6 +174,21 @@ export function WorkspaceHeader({
                                 {projectSummaries.length}
                             </Badge>
                         </Button>
+                        {onOpenSearch && (
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="gap-2 border-primary/30 bg-primary/5 hover:bg-primary/10 font-medium text-muted-foreground hover:text-foreground text-xs px-3 py-2 shadow-xs"
+                                onClick={onOpenSearch}
+                                title="Quick search projects, tabs, flags, and actions (Ctrl+K or ⌘K)"
+                            >
+                                <Search className="h-3.5 w-3.5 text-primary" />
+                                <span className="hidden sm:inline">Search</span>
+                                <kbd className="hidden sm:inline-flex items-center rounded bg-muted px-1.5 py-0.5 text-[10px] font-mono border border-border text-muted-foreground">
+                                    ⌘K
+                                </kbd>
+                            </Button>
+                        )}
                         <Button
                             type="button"
                             variant="outline"
@@ -211,6 +246,18 @@ export function WorkspaceHeader({
                                 }
                             }}
                         />
+                        {onOpenReportIssue && (
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="gap-1.5 px-3 py-2 text-sm border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/15 text-amber-700 dark:text-amber-300 font-semibold"
+                                onClick={onOpenReportIssue}
+                                title="Report a bug or UI improvement directly to #pod-1-agent-alerts on Slack"
+                            >
+                                <Bug className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                                <span className="hidden sm:inline">Report Issue</span>
+                            </Button>
+                        )}
                         <Button
                             type="button"
                             variant="outline"
