@@ -1649,15 +1649,18 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         if (isManualSynthesisRunning) {
             const synthStatus = (activeProjectSynthesis?.projectStatus || '').trim().toLowerCase()
             const fjJson = (activeProjectSynthesis?.finalJudgmentJson || '').trim()
-            const hasFinished = ['synthesized', 'completed', 'success', 'failed', 'error'].includes(synthStatus) ||
-                ((activeProjectSynthesis?.finalRecommendation || '').trim().length > 0 ||
-                 (fjJson.length > 0 && fjJson !== '{}'))
-            if (hasFinished) {
+            const isFinishedStatus = ['synthesized', 'completed', 'success'].includes(synthStatus)
+            const isErrorStatus = ['failed', 'error', 'synthesis_blocked', 'synthesis_refresh_failed'].includes(synthStatus)
+            const hasRealResults = ((activeProjectSynthesis?.finalRecommendation || '').trim().length > 0 && !(activeProjectSynthesis?.finalRecommendation || '').toUpperCase().includes('SYNTHESIS PENDING')) ||
+                (activeProjectSynthesis?.finalJudgmentSummary || '').trim().length > 0 ||
+                (fjJson.length > 0 && fjJson !== '{}')
+
+            if (isErrorStatus || (isFinishedStatus && hasRealResults)) {
                 const timer = setTimeout(() => setIsManualSynthesisRunning(false), 2000)
                 return () => clearTimeout(timer)
             }
         }
-    }, [activeProjectSynthesis?.projectStatus, activeProjectSynthesis?.finalRecommendation, activeProjectSynthesis?.finalJudgmentJson, isManualSynthesisRunning])
+    }, [activeProjectSynthesis?.projectStatus, activeProjectSynthesis?.finalRecommendation, activeProjectSynthesis?.finalJudgmentSummary, activeProjectSynthesis?.finalJudgmentJson, isManualSynthesisRunning])
 
     // Safety timeout for manual synthesis flag (90s max)
     useEffect(() => {
@@ -1679,18 +1682,18 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         if (completedDocCount === 0) return false
 
         if (!activeProjectSynthesis) {
-            return false
+            return true
         }
 
         const synthStatus = (activeProjectSynthesis.projectStatus || '').trim().toLowerCase()
-        const isSynthRunning = ['processing', 'pending', 'queued', 'running'].includes(synthStatus)
+        const isSynthRunning = ['processing', 'pending', 'queued', 'running', 'awaiting_synthesis', 'started'].includes(synthStatus)
         const fjJson = (activeProjectSynthesis.finalJudgmentJson || '').trim()
-        const hasFinishedSynthResults = ['synthesized', 'completed', 'success'].includes(synthStatus) ||
-            ((activeProjectSynthesis.finalRecommendation || '').trim().length > 0 ||
+        const hasFinishedSynthResults = ['synthesized', 'completed', 'success'].includes(synthStatus) &&
+            (((activeProjectSynthesis.finalRecommendation || '').trim().length > 0 && !(activeProjectSynthesis.finalRecommendation || '').toUpperCase().includes('SYNTHESIS PENDING')) ||
                 (activeProjectSynthesis.finalJudgmentSummary || '').trim().length > 0 ||
                 (fjJson.length > 0 && fjJson !== '{}'))
 
-        if (isSynthRunning || (!hasFinishedSynthResults && synthStatus.length > 0)) {
+        if (isSynthRunning || !hasFinishedSynthResults) {
             return true
         }
 
@@ -1724,7 +1727,10 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     const activeProjectSynthesisSucceeded = useMemo(() => {
         if (!activeProjectSynthesis || isCurrentProjectAwaitingSynthesis) return false
         const st = (activeProjectSynthesis.projectStatus || '').trim().toLowerCase()
-        return ['synthesized', 'completed', 'success'].includes(st) || (activeProjectSynthesis.finalRecommendation || '').trim().length > 0
+        const hasRealRecommendation = (activeProjectSynthesis.finalRecommendation || '').trim().length > 0 && !(activeProjectSynthesis.finalRecommendation || '').toUpperCase().includes('SYNTHESIS PENDING')
+        const hasRealSummary = (activeProjectSynthesis.finalJudgmentSummary || '').trim().length > 0
+        const isCompletedStatus = ['synthesized', 'completed', 'success'].includes(st)
+        return isCompletedStatus && (hasRealRecommendation || hasRealSummary)
     }, [activeProjectSynthesis, isCurrentProjectAwaitingSynthesis])
 
     const currentSynthesisProgress = useMemo(
