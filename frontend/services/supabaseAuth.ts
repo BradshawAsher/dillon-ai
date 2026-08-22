@@ -1,4 +1,5 @@
 import { createClient, type User, type Session } from '@supabase/supabase-js'
+import { sendNewAccountSlackAlert } from './slackAlertService'
 
 const SUPABASE_URL = 'https://sihpsqrunkwkxhhnwoqe.supabase.co'
 const SUPABASE_ANON_KEY = 'REDACTED_SUPABASE_ANON_KEY'
@@ -81,6 +82,8 @@ export function getLocalAppAuth(): AppAuthUser | null {
     }
 }
 
+export const getStoredUser = getLocalAppAuth
+
 /**
  * Sign Up with Email and Password
  */
@@ -109,6 +112,14 @@ export async function signUpWithPassword(email: string, password: string, fullNa
     }
 
     saveAppAuth(appUser)
+    // Dispatch Slack alert to #pod-1-agent-alerts
+    sendNewAccountSlackAlert({
+        fullName: appUser.name,
+        email: appUser.email,
+        team: appUser.team,
+        authMethod: 'Email & Password',
+    }).catch(() => {})
+
     return { success: true, error: null, user: appUser, session: data.session }
 }
 
@@ -245,6 +256,21 @@ export function initAuthListener(onUserChange: (user: AppAuthUser | null) => voi
             if (appUser) {
                 saveAppAuth(appUser)
                 onUserChange(appUser)
+
+                // Trigger Slack alert for first-time sign-ins (e.g. OAuth/Google/GitHub)
+                if (_event === 'SIGNED_IN' && typeof window !== 'undefined') {
+                    const alertKey = `mergeworks.signupAlertSent.${session.user.id}`
+                    if (!localStorage.getItem(alertKey)) {
+                        localStorage.setItem(alertKey, 'true')
+                        const provider = session.user.app_metadata?.provider || 'OAuth / SSO'
+                        sendNewAccountSlackAlert({
+                            fullName: appUser.name,
+                            email: appUser.email,
+                            team: appUser.team,
+                            authMethod: `${provider.toUpperCase()} Sign-In`,
+                        }).catch(() => {})
+                    }
+                }
             }
         } else if (_event === 'SIGNED_OUT') {
             saveAppAuth(null)

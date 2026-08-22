@@ -31,6 +31,7 @@ type CommandPaletteProps = {
     onScrollToUpload?: () => void
     onStartTour?: (tourId: 'core-fast' | 'deep-dive' | 'interactive-quest') => void
     onOpenWalkthrough?: () => void
+    onOpenReportIssue?: () => void
 }
 
 type Command = {
@@ -54,6 +55,7 @@ export default function CommandPalette({
     onScrollToUpload,
     onStartTour,
     onOpenWalkthrough,
+    onOpenReportIssue,
 }: CommandPaletteProps) {
     const [query, setQuery] = useState('')
     const [selectedIndex, setSelectedIndex] = useState(0)
@@ -218,6 +220,13 @@ export default function CommandPalette({
             icon: <FileText className="h-4 w-4" />,
             action: onScrollToUpload,
             group: 'Actions',
+        }] : []),
+        ...(onOpenReportIssue ? [{
+            id: 'report-issue',
+            label: 'Report an Issue / Bug / UI Feedback (Alerts #pod-1-agent-alerts)',
+            icon: <AlertTriangle className="h-4 w-4 text-amber-500" />,
+            action: onOpenReportIssue,
+            group: 'Support & Feedback',
         }] : []),
     ]
 

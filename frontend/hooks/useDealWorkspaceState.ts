@@ -10,14 +10,14 @@ export { createUnusedProjectId }
 export function useDealWorkspaceState() {
     const [activeWorkspaceTab, setActiveWorkspaceTab] = useState<WorkspaceTab>(() => {
         if (typeof window !== 'undefined') {
-            const parsed = parseUrlDeepLinkState(window.location.search)
+            const parsed = parseUrlDeepLinkState(window.location.search, window.location.hash)
             if (parsed.tab) return parsed.tab as WorkspaceTab
         }
         return 'overview'
     })
     const [activeViewProjectId, setActiveViewProjectId] = useState<string>(() => {
         if (typeof window !== 'undefined') {
-            const parsed = parseUrlDeepLinkState(window.location.search)
+            const parsed = parseUrlDeepLinkState(window.location.search, window.location.hash)
             if (parsed.projectQuery) return parsed.projectQuery
             try {
                 const stored = window.localStorage.getItem('mergeworks.activeProjectKey') || ''
@@ -126,6 +126,24 @@ export function useDealWorkspaceState() {
             window.localStorage.setItem('mergeworks.tocWidth', String(tocWidth))
         } catch {}
     }, [tocWidth])
+
+    useEffect(() => {
+        const handleLocationChange = () => {
+            const parsed = parseUrlDeepLinkState(window.location.search, window.location.hash)
+            if (parsed.tab) {
+                setActiveWorkspaceTab(parsed.tab as WorkspaceTab)
+            }
+            if (parsed.projectQuery) {
+                setActiveViewProjectId(parsed.projectQuery)
+            }
+        }
+        window.addEventListener('hashchange', handleLocationChange)
+        window.addEventListener('popstate', handleLocationChange)
+        return () => {
+            window.removeEventListener('hashchange', handleLocationChange)
+            window.removeEventListener('popstate', handleLocationChange)
+        }
+    }, [])
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {

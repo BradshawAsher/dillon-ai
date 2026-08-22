@@ -12,6 +12,7 @@ import KeyboardShortcutsWorkspaceView from './KeyboardShortcutsWorkspaceView'
 import WorkflowErrorLogCard from '../WorkflowErrorLogCard'
 import SubmissionHistoryCard from '../SubmissionHistoryCard'
 import { AccountWorkspaceView } from './AccountWorkspaceView'
+import ReportIssueWorkspaceView from './ReportIssueWorkspaceView'
 
 describe('Workspace Tab Components Validation', () => {
     it('successfully loads and initializes ProjectPortfolioCard without TDZ errors', () => {
@@ -67,5 +68,10 @@ describe('Workspace Tab Components Validation', () => {
     it('successfully loads and initializes AccountWorkspaceView', () => {
         expect(AccountWorkspaceView).toBeDefined()
         expect(typeof AccountWorkspaceView).toBe('function')
+    })
+
+    it('successfully loads and initializes ReportIssueWorkspaceView', () => {
+        expect(ReportIssueWorkspaceView).toBeDefined()
+        expect(typeof ReportIssueWorkspaceView).toBe('function')
     })
 })

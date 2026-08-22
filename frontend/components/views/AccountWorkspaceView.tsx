@@ -26,6 +26,7 @@ import {
     AUTH_CHANGE_EVENT,
     type AppAuthUser,
 } from '../../services/supabaseAuth'
+import { sendAdminAccessRequestSlackAlert } from '../../services/slackAlertService'
 import {
     isDataIsolationEnabled,
     setDataIsolation,
@@ -53,6 +54,9 @@ export function AccountWorkspaceView({
     const [editName, setEditName] = useState(user?.name || '')
     const [editTeam, setEditTeam] = useState(user?.team || 'Pod 1 (Acquisitions & Diligence)')
     const [saveSuccess, setSaveSuccess] = useState(false)
+    const [isSubmittingAdminRequest, setIsSubmittingAdminRequest] = useState(false)
+    const [adminRequestSent, setAdminRequestSent] = useState(false)
+    const [adminRequestError, setAdminRequestError] = useState<string | null>(null)
 
     useEffect(() => {
         const handleIsolationChange = (e: Event) => {
@@ -102,6 +106,29 @@ export function AccountWorkspaceView({
         await signOutUser()
         setUser(null)
     }, [])
+
+    const handleApplyAdminAccess = useCallback(async () => {
+        if (!user) return
+        setIsSubmittingAdminRequest(true)
+        setAdminRequestError(null)
+        try {
+            const success = await sendAdminAccessRequestSlackAlert({
+                fullName: user.name || 'MergeWorks User',
+                email: user.email,
+                team: user.team,
+                reason: 'User requested administrator permissions to view all 62+ pushed projects and diligence syntheses across the firm.',
+            })
+            if (success) {
+                setAdminRequestSent(true)
+            } else {
+                setAdminRequestError('Failed to dispatch alert to Slack. Please check network connectivity.')
+            }
+        } catch (err) {
+            setAdminRequestError(err instanceof Error ? err.message : 'Error submitting request')
+        } finally {
+            setIsSubmittingAdminRequest(false)
+        }
+    }, [user])
 
     const userEmail = user?.email || 'localdev@mergeworks.io'
     const claimedKeys = getOwnedProjects(userEmail)
@@ -250,6 +277,55 @@ export function AccountWorkspaceView({
                             </div>
                         )}
                     </div>
+
+                    {/* Apply for Admin Access Card (For Non-Admin Accounts) */}
+                    {user?.role !== 'admin' && (
+                        <div className="rounded-xl border border-amber-500/40 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent p-6 shadow-sm">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                <div className="space-y-1.5 max-w-xl">
+                                    <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+                                        <Shield className="h-5 w-5 shrink-0" />
+                                        <h3 className="text-base font-bold text-foreground">
+                                            Want admin access to view all projects that have been pushed?
+                                        </h3>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground leading-relaxed">
+                                        Upgrade to an <strong>Administrator</strong> account to view all 62+ active and historical diligence projects, multi-document syntheses, and valuation matrices across all deal pods.
+                                    </p>
+                                </div>
+                                <div className="shrink-0">
+                                    <Button
+                                        type="button"
+                                        variant={adminRequestSent ? 'outline' : 'default'}
+                                        size="default"
+                                        onClick={handleApplyAdminAccess}
+                                        disabled={isSubmittingAdminRequest || adminRequestSent}
+                                        className={adminRequestSent
+                                            ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold'
+                                            : 'bg-amber-600 hover:bg-amber-700 text-white font-bold shadow-sm'
+                                        }
+                                    >
+                                        {isSubmittingAdminRequest
+                                            ? 'Sending Alert...'
+                                            : adminRequestSent
+                                            ? '✓ Request Sent to #pod-1-agent-alerts'
+                                            : 'Apply for Admin Access Now'}
+                                    </Button>
+                                </div>
+                            </div>
+                            {adminRequestSent && (
+                                <p className="mt-3 text-xs font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                                    <CheckCircle2 className="h-4 w-4 shrink-0" />
+                                    Your request has been dispatched directly to <code>#pod-1-agent-alerts</code> on Slack. A Pod 1 administrator will review your account.
+                                </p>
+                            )}
+                            {adminRequestError && (
+                                <p className="mt-3 text-xs font-medium text-destructive">
+                                    {adminRequestError}
+                                </p>
+                            )}
+                        </div>
+                    )}
 
                     {/* Data Isolation Card */}
                     <div id="isolation" className="rounded-xl border border-border/80 bg-card p-6 shadow-sm scroll-mt-6">

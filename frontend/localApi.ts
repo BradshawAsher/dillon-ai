@@ -21,6 +21,11 @@ try {
     // no .env file — env vars may still come from the shell
 }
 
+if (process.env.NODE_ENV !== 'production' && !process.env.NODE_TLS_REJECT_UNAUTHORIZED) {
+    // In local development, bypass Windows Node intermediate certificate verification drops to allow Supabase REST/Auth calls
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
+}
+
 function backendModuleUrl(fileName: string) {
     const frontendDir = path.dirname(fileURLToPath(import.meta.url))
     const absolutePath = path.resolve(frontendDir, '../backend/diligence', fileName)
