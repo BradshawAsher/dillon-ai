@@ -266,18 +266,6 @@ export default function ProjectSynthesisCard({
         try { window.sessionStorage.removeItem('mergeworks.synthesisHistoryByProject') } catch {}
     }, [])
 
-    useEffect(() => {
-        let interval: any
-        if (runningSynthesis || synthesisPending || documentAnalysisPending) {
-            interval = setInterval(() => {
-                setSynthesisElapsedSeconds((prev) => prev + 1)
-            }, 1000)
-        } else {
-            setSynthesisElapsedSeconds(0)
-        }
-        return () => clearInterval(interval)
-    }, [runningSynthesis, synthesisPending, documentAnalysisPending])
-
     const formatElapsed = (sec: number) => {
         const mins = Math.floor(sec / 60)
         const secs = sec % 60
@@ -396,57 +384,27 @@ export default function ProjectSynthesisCard({
         .slice(0, 4)
     const currentProjectName = projectNameById.get(normalizedProjectId) ?? normalizedProjectId ?? 'this project'
 
-    const isSynthActive = Boolean(runningSynthesis || synthesisPending || documentAnalysisPending)
+    const hasCompletedDocs = projectDocuments.some((d) => ['completed', 'approved'].includes(d.status.trim().toLowerCase()))
+    const hasRealSynthesis = rawVisibleSyntheses.length > 0 && Boolean(
+        rawVisibleSyntheses[0]?.finalJudgmentSummary?.trim() ||
+        (rawVisibleSyntheses[0]?.finalRecommendation?.trim() && !rawVisibleSyntheses[0]?.finalRecommendation?.toUpperCase().includes('SYNTHESIS PENDING'))
+    )
+    const isSynthActive = Boolean(runningSynthesis || synthesisPending || documentAnalysisPending || (!hasRealSynthesis && hasCompletedDocs))
 
-    const fallbackSynthesis: ProjectSynthesisItem | null = useMemo(() => {
-        if (rawVisibleSyntheses.length > 0 || projectDocuments.length === 0 || isSynthActive) return null
-        const completedDocs = projectDocuments.filter((d) => d.status.trim().toLowerCase() === 'completed')
-        if (completedDocs.length === 0) return null
-
-        const takeaways = documentThesisTakeaways.map((t) => t.takeaway)
-        const rec = 'PROCEED WITH CAUTION — SYNTHESIS PENDING'
-        const summary = takeaways.length > 0
-            ? takeaways.join(' ')
-            : `Project ${currentProjectName} documents analyzed. Cross-document synthesis complete across ${completedDocs.length} materials.`
-
-        return {
-            id: 9999,
-            projectId: normalizedProjectId,
-            projectStatus: 'synthesized',
-            documentsReceivedCount: projectDocuments.length,
-            documentsCompletedCount: completedDocs.length,
-            missingDocuments: [],
-            crossDocumentConflicts: [],
-            openQuestions: [],
-            negotiationLevers: [],
-            keyTakeaways: takeaways,
-            redFlags: [],
-            yellowFlags: [],
-            greenFlags: [],
-            citations: projectDocuments.map((d) => d.fileName),
-            citationDetails: [],
-            structuredFindings: { keyTakeaways: [], redFlags: [], yellowFlags: [], greenFlags: [], crossDocumentConflicts: [], openQuestions: [], negotiationLevers: [], missingDocuments: [] },
-            finalRiskLevel: 'Low',
-            finalTrafficLight: 'Green',
-            finalRecommendation: rec,
-            finalJudgmentSummary: summary,
-            finalJudgmentJson: '',
-            aiErrorMessage: '',
-            aiConfidence: '0.90',
-            valuationConfidence: '0.88',
-            valuationLowerBound: '',
-            valuationBaseEstimate: '',
-            valuationUpperBound: '',
-            valuationCurrency: 'USD',
-            projectProcessedAt: new Date().toISOString(),
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
+    useEffect(() => {
+        let interval: any
+        if (isSynthActive) {
+            interval = setInterval(() => {
+                setSynthesisElapsedSeconds((prev) => prev + 1)
+            }, 1000)
+        } else {
+            setSynthesisElapsedSeconds(0)
         }
-    }, [rawVisibleSyntheses, projectDocuments, documentThesisTakeaways, currentProjectName, normalizedProjectId, isSynthActive])
+        return () => clearInterval(interval)
+    }, [isSynthActive])
 
-    const isFallbackSynthesis = rawVisibleSyntheses.length === 0 && fallbackSynthesis !== null && !isSynthActive
-    const visibleSyntheses = rawVisibleSyntheses.length > 0 ? rawVisibleSyntheses : (!isSynthActive && fallbackSynthesis ? [fallbackSynthesis] : [])
-    const activeSynthesis = visibleSyntheses[activeSynthesisIndex] || visibleSyntheses[0]
+    const visibleSyntheses = rawVisibleSyntheses
+    const activeSynthesis = visibleSyntheses[activeSynthesisIndex] || visibleSyntheses[0] || null
 
     // Reset synthesis version index when selected project changes or bounds exceed
     useEffect(() => {
@@ -1042,14 +1000,16 @@ export default function ProjectSynthesisCard({
                     </div>
                 ) : null}
 
-                <AcquisitionJudgmentCallout
-                    synthesis={activeSynthesis}
-                    impact={impact}
-                    onSwitchTab={onSwitchTab}
-                    model={model}
-                    projectName={currentProject ? formatProjectDisplayName(currentProject) : (activeSynthesis?.projectName || activeSynthesis?.companyName || normalizedProjectId)}
-                    projectId={normalizedProjectId}
-                />
+                {activeSynthesis ? (
+                    <AcquisitionJudgmentCallout
+                        synthesis={activeSynthesis}
+                        impact={impact}
+                        onSwitchTab={onSwitchTab}
+                        model={model}
+                        projectName={currentProject ? formatProjectDisplayName(currentProject) : (activeSynthesis?.projectName || activeSynthesis?.companyName || normalizedProjectId)}
+                        projectId={normalizedProjectId}
+                    />
+                ) : null}
                 {error ? (
                     <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-foreground">
                         <p className="font-medium">Synthesis endpoint not reachable yet.</p>
@@ -1292,20 +1252,20 @@ export default function ProjectSynthesisCard({
                     </div>
                 ) : null}
 
-                {isFallbackSynthesis && (
-                    <div className="rounded-xl border-2 border-amber-500/80 bg-amber-500/10 p-4 text-amber-950 dark:text-amber-200 shadow-md">
-                        <div className="flex items-start gap-3">
-                            <TriangleAlert className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
-                            <div className="space-y-1">
-                                <p className="font-bold text-sm">Synthesis Workflow Never Ran — Per-Document Takeaways Only</p>
-                                <p className="text-xs leading-5">
-                                    An n8n project-level synthesis pass was not recorded in <code className="bg-amber-500/20 px-1 py-0.5 rounded font-mono text-amber-900 dark:text-amber-100">project_syntheses</code> for this deal ID.
-                                    The judgment and takeaways below have been compiled directly from individual document extractions.
-                                </p>
-                            </div>
-                        </div>
+                {!error && !isSynthActive && rawVisibleSyntheses.length === 0 && !localSynthesisBlocked ? (
+                    <div className="rounded-xl border border-dashed border-border bg-card/50 p-8 text-center space-y-3">
+                        <Layers className="mx-auto h-8 w-8 text-muted-foreground" />
+                        <h4 className="text-base font-bold text-foreground">No Project Synthesis Available Yet</h4>
+                        <p className="text-xs text-muted-foreground max-w-md mx-auto">
+                            Project-wide cross-document reconciliation has not been generated for this deal yet. Upload documents or click below to launch the synthesis consolidator.
+                        </p>
+                        {onRunSynthesis ? (
+                            <Button type="button" size="sm" onClick={onRunSynthesis} disabled={runningSynthesis || documentAnalysisPending} className="mt-2 font-semibold">
+                                Run Project Synthesis
+                            </Button>
+                        ) : null}
                     </div>
-                )}
+                ) : null}
 
                 {[activeSynthesis].filter((s): s is ProjectSynthesisItem => Boolean(s)).map((synthesis) => {
                     const displayName = synthesis.companyName || synthesis.projectName || projectNameById.get(synthesis.projectId) || synthesis.projectId || 'Unknown project'
