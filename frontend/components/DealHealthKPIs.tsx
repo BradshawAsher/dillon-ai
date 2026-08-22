@@ -6,6 +6,8 @@ import {
     DollarSign,
     FileCheck,
     FolderCheck,
+    FolderKanban,
+    Layers,
     Sparkles,
     TrendingUp,
 } from 'lucide-react'
@@ -46,6 +48,7 @@ export default function DealHealthKPIs({
     docCost,
     totalCost,
     todayStats,
+    projectSummaries,
 }: {
     synthesis?: ProjectSynthesisItem
     model: DealModel
@@ -54,6 +57,7 @@ export default function DealHealthKPIs({
     docCost?: number
     totalCost?: number
     todayStats?: TodayPipelineStats
+    projectSummaries?: any[]
 }) {
     const facts = parseDocumentedFacts(model.documentedFactsJson)
     const revenue = facts.revenue?.status === 'confirmed' && typeof facts.revenue?.value === 'number' ? facts.revenue.value : null
@@ -61,6 +65,28 @@ export default function DealHealthKPIs({
     const price = model.purchasePrice ?? model.askingPrice
 
     const kpis: KPIItem[] = []
+
+    // Synthesis Verdict KPI
+    if (synthesis) {
+        const verdict = synthesis.finalRecommendation || synthesis.finalTrafficLight || 'Pending'
+        const upper = verdict.toUpperCase()
+        let verdictVariant: 'success' | 'warning' | 'destructive' | 'default' = 'default'
+        if (upper.includes('PROCEED WITH') || upper.includes('CONDITIONS') || upper.includes('YELLOW') || upper.includes('HOLD') || upper.includes('REVISE') || upper.includes('RENEGOTIATE')) {
+            verdictVariant = 'warning'
+        } else if (upper.includes('PROCEED') || upper.includes('GREEN') || upper.includes('FAVORABLE')) {
+            verdictVariant = 'success'
+        } else if (upper.includes('REJECT') || upper.includes('RED') || upper.includes('TERMINATE') || upper.includes('UNFAVORABLE')) {
+            verdictVariant = 'destructive'
+        }
+
+        kpis.push({
+            label: 'Synthesis Verdict',
+            value: verdict,
+            subtext: 'Acquisition judgment',
+            icon: <Sparkles className="h-5 w-5" />,
+            variant: verdictVariant,
+        })
+    }
 
     // Deal risk signal
     if (synthesis) {
@@ -112,15 +138,6 @@ export default function DealHealthKPIs({
         })
     }
 
-    // Documents processed
-    kpis.push({
-        label: 'Documents',
-        value: `${impact.completedDocuments}/${documentsCount}`,
-        subtext: impact.completedDocuments === documentsCount && documentsCount > 0 ? 'All processed' : 'In progress',
-        icon: <FileCheck className="h-5 w-5" />,
-        variant: impact.completedDocuments === documentsCount && documentsCount > 0 ? 'success' : documentsCount > 0 ? 'warning' : 'default',
-    })
-
     // Data completeness
     const confirmedFacts = Object.values(facts).filter((f) => f?.status === 'confirmed' && typeof f?.value === 'number').length
     const totalCoreFacts = 5
@@ -130,6 +147,44 @@ export default function DealHealthKPIs({
         subtext: 'Core facts confirmed',
         icon: <CheckCircle2 className="h-5 w-5" />,
         variant: confirmedFacts >= 4 ? 'success' : confirmedFacts >= 2 ? 'warning' : 'destructive',
+    })
+
+    // Portfolio project totals KPIs
+    if (projectSummaries && projectSummaries.length > 0) {
+        kpis.push({
+            label: 'Projects',
+            value: `${projectSummaries.length}`,
+            subtext: 'Grouped submissions',
+            icon: <FolderKanban className="h-5 w-5" />,
+            variant: 'default',
+        })
+
+        const activeProjectsCount = projectSummaries.filter((p) => (p.activeCount ?? 0) > 0).length
+        kpis.push({
+            label: 'Active Projects',
+            value: `${activeProjectsCount}`,
+            subtext: 'In processing pipeline',
+            icon: <Activity className="h-5 w-5" />,
+            variant: activeProjectsCount > 0 ? 'warning' : 'default',
+        })
+
+        const totalDocsCount = projectSummaries.reduce((sum, p) => sum + (p.documentCount || 0), 0)
+        kpis.push({
+            label: 'Total Documents',
+            value: `${totalDocsCount}`,
+            subtext: 'Cross-project total',
+            icon: <Layers className="h-5 w-5" />,
+            variant: 'default',
+        })
+    }
+
+    // Documents processed for active deal
+    kpis.push({
+        label: 'Deal Documents',
+        value: `${impact.completedDocuments}/${documentsCount}`,
+        subtext: impact.completedDocuments === documentsCount && documentsCount > 0 ? 'All processed' : 'In progress',
+        icon: <FileCheck className="h-5 w-5" />,
+        variant: impact.completedDocuments === documentsCount && documentsCount > 0 ? 'success' : documentsCount > 0 ? 'warning' : 'default',
     })
 
     // Total deal execution cost KPI
@@ -183,9 +238,9 @@ export default function DealHealthKPIs({
                 <CardInfoPopover cardId="deal-health-kpis" />
             </div>
             <CardContent className="p-4 sm:p-5">
-                <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3.5">
                     {kpis.map((kpi) => (
-                        <div key={kpi.label} className="flex items-center gap-3 rounded-xl border border-primary/15 bg-background/60 p-3 shadow-xs transition-all duration-200 hover:border-primary/40 hover:bg-background/90 hover:shadow-md">
+                        <div key={kpi.label} className="flex items-center gap-3 rounded-xl border border-primary/15 bg-background/60 p-3.5 shadow-xs transition-all duration-200 hover:border-primary/40 hover:bg-background/90 hover:shadow-md">
                             <div className={`rounded-xl p-2.5 shrink-0 ${kpi.variant === 'success' ? 'bg-success/10 text-success'
                                     : kpi.variant === 'warning' ? 'bg-warning/10 text-warning'
                                         : kpi.variant === 'destructive' ? 'bg-destructive/10 text-destructive'
@@ -194,14 +249,14 @@ export default function DealHealthKPIs({
                                 {kpi.icon}
                             </div>
                             <div className="min-w-0 flex-1">
-                                <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/80 truncate" title={kpi.label}>
+                                <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/80 leading-snug line-clamp-2" title={kpi.label}>
                                     {kpi.label}
                                 </p>
-                                <p className="text-lg sm:text-xl font-black text-foreground tracking-tight truncate mt-0.5">
+                                <p className={`font-black text-foreground tracking-tight leading-tight mt-0.5 break-words ${kpi.value.length > 16 ? 'text-xs sm:text-sm' : kpi.value.length > 10 ? 'text-sm sm:text-base' : 'text-base sm:text-lg'}`} title={kpi.value}>
                                     {kpi.value}
                                 </p>
                                 {kpi.subtext && (
-                                    <p className="text-xs font-medium text-muted-foreground truncate mt-0.5">
+                                    <p className="text-xs font-medium text-muted-foreground leading-snug break-words mt-0.5" title={kpi.subtext}>
                                         {kpi.subtext}
                                     </p>
                                 )}

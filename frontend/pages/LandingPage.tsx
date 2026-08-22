@@ -39,6 +39,7 @@ import { WorkspaceDemoGalleryBar } from '../components/WorkspaceDemoGalleryBar'
 import { WalkthroughLauncherModal } from '../components/walkthrough/WalkthroughLauncherModal'
 import type { TourPlaylistId } from '../components/walkthrough/walkthroughTypes'
 import { submitAccessRequest } from '../services/accessRequestService'
+import { DillonLogo } from '../components/DillonLogo'
 
 interface LandingPageProps {
     onLaunchDashboard: () => void
@@ -65,6 +66,10 @@ export default function LandingPage({ onLaunchDashboard, onGoToLogin }: LandingP
     }
     const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0)
     const [activeSection, setActiveSection] = useState('hero')
+
+    useEffect(() => {
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+    }, [])
 
     useEffect(() => {
         const sectionIds = ['hero', 'features', 'live-preview', 'evidence', 'pipeline', 'cost-model', 'faqs']
@@ -207,11 +212,9 @@ export default function LandingPage({ onLaunchDashboard, onGoToLogin }: LandingP
             <header className="sticky top-0 z-40 border-b border-border/80 bg-background/80 backdrop-blur-md">
                 <div className="w-full flex items-center justify-between px-4 py-3 sm:px-8">
                     <div className="flex items-center gap-3.5 shrink-0">
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary via-indigo-600 to-purple-600 text-white shadow-md shadow-primary/20">
-                            <Sparkles className="h-6 w-6" />
-                        </div>
+                        <DillonLogo size="lg" />
                         <div className="flex flex-col justify-center">
-                            <span className="text-2xl sm:text-[26px] font-black tracking-tight text-foreground leading-none">Dillon AI</span>
+                            <span className="text-2xl sm:text-[26px] font-black tracking-tight text-black dark:text-white leading-none">Dillon AI</span>
                             <span className="text-xs font-semibold text-muted-foreground mt-1 leading-none whitespace-nowrap">
                                 Autonomous M&amp;A Due Diligence • by MergeWorks
                             </span>
@@ -945,9 +948,7 @@ export default function LandingPage({ onLaunchDashboard, onGoToLogin }: LandingP
             <footer className="border-t border-border bg-card py-12">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-6">
                     <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white font-bold">
-                            D
-                        </div>
+                        <DillonLogo size="sm" />
                         <span className="text-sm font-bold text-foreground">Dillon AI • Built by MergeWorks</span>
                     </div>
 
