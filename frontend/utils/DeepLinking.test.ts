@@ -70,6 +70,17 @@ describe('Deep Linking Utilities', () => {
             const parsedFeedback = parseUrlDeepLinkState('?tab=feedback')
             expect(parsedFeedback.tab).toBe('report_issue')
         })
+
+        it('routes OAuth callback tokens in hash and PKCE code to dashboard', () => {
+            const parsedOAuthHash = parseUrlDeepLinkState('', '#access_token=mock-token&refresh_token=mock-refresh&token_type=bearer')
+            expect(parsedOAuthHash.view).toBe('dashboard')
+
+            const parsedOAuthCode = parseUrlDeepLinkState('?code=493d56b0-f4ca-4361-9c60-4fbbe2e26002')
+            expect(parsedOAuthCode.view).toBe('dashboard')
+
+            const parsedOAuthError = parseUrlDeepLinkState('', '#error=unauthorized_client&error_description=Access+denied')
+            expect(parsedOAuthError.view).toBe('login')
+        })
     })
 
     describe('matchProjectFromQuery', () => {

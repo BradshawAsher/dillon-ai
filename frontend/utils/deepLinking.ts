@@ -149,6 +149,9 @@ export function resolveWorkspaceTab(raw: string | null | undefined): WorkspaceTa
 export function parseUrlDeepLinkState(search: string, hash?: string): ParsedDeepLink {
     const rawSearch = search && typeof search === 'string' ? search : ''
     const params = new URLSearchParams(rawSearch.startsWith('?') ? rawSearch : `?${rawSearch}`)
+    const rawHash = hash && typeof hash === 'string' ? hash : ''
+    const cleanHash = rawHash.replace(/^#+/, '').trim()
+    const hashParams = new URLSearchParams(cleanHash)
     
     // Project query
     const projectQuery = params.get('project') || params.get('deal') || params.get('projectId') || null
@@ -157,13 +160,29 @@ export function parseUrlDeepLinkState(search: string, hash?: string): ParsedDeep
     const rawTabParam = (params.get('tab') || '').toLowerCase().trim()
     let tab: WorkspaceTab | null = resolveWorkspaceTab(rawTabParam)
 
-    if (!tab && hash) {
-        tab = resolveWorkspaceTab(hash)
+    if (!tab && rawHash) {
+        tab = resolveWorkspaceTab(rawHash)
     }
+
+    const isOAuthSuccessCallback = params.has('code') || 
+                                   params.has('token_hash') || 
+                                   hashParams.has('access_token') || 
+                                   hashParams.has('refresh_token') || 
+                                   cleanHash.includes('access_token=')
+
+    const isOAuthErrorCallback = params.has('error') || 
+                                 params.has('error_description') || 
+                                 hashParams.has('error') || 
+                                 hashParams.has('error_description') || 
+                                 cleanHash.includes('error_description=')
 
     // View detection
     let view: 'landing' | 'login' | 'dashboard' | null = null
-    if (params.get('view') === 'landing') {
+    if (isOAuthErrorCallback) {
+        view = 'login'
+    } else if (isOAuthSuccessCallback) {
+        view = 'dashboard'
+    } else if (params.get('view') === 'landing') {
         view = 'landing'
     } else if (params.get('view') === 'login' || params.get('auth') === 'true' || params.get('signin') === 'true') {
         view = 'login'
