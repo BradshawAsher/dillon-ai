@@ -49,6 +49,7 @@ export default function DataSourceToggle() {
             const url = new URL(window.location.href)
             const isAlreadyDashboard = url.searchParams.get('view') === 'dashboard' || url.searchParams.get('app') === 'true'
             url.searchParams.set('view', 'dashboard')
+            url.hash = 'upload-section'
 
             if (isAlreadyDashboard) {
                 window.location.reload()

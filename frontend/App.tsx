@@ -63,8 +63,13 @@ export default function App() {
   const handleLaunchDashboard = () => {
     setView('dashboard')
     if (typeof window !== 'undefined') {
-      window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
-      window.history.pushState({}, '', '?view=dashboard')
+      window.history.pushState({}, '', '?view=dashboard#upload-section')
+      setTimeout(() => {
+        const el = document.querySelector('[data-project-intake]') || document.getElementById('upload-section')
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+      }, 100)
     }
   }
 
@@ -80,8 +85,13 @@ export default function App() {
     setCurrentUser(user)
     setView('dashboard')
     if (typeof window !== 'undefined') {
-      window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
-      window.history.pushState({}, '', '?view=dashboard')
+      window.history.pushState({}, '', '?view=dashboard#upload-section')
+      setTimeout(() => {
+        const el = document.querySelector('[data-project-intake]') || document.getElementById('upload-section')
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+      }, 100)
     }
   }
 

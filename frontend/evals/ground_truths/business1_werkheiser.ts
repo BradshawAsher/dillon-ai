@@ -72,9 +72,9 @@ export const werkheiserGroundTruthPass2: ProjectSynthesisItem = {
         'business1',
         'business 1 - roofing co pa',
     ],
-    projectProcessedAt: new Date().toISOString(),
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    projectProcessedAt: '2026-08-11T14:30:00.000Z',
+    createdAt: '2026-08-11T14:30:00.000Z',
+    updatedAt: '2026-08-11T14:30:00.000Z',
 }
 
 export const werkheiserGroundTruthPass1: ProjectSynthesisItem = {
@@ -102,7 +102,7 @@ export const werkheiserGroundTruthPass1: ProjectSynthesisItem = {
     valuationLowerBound: '$3.20M',
     valuationBaseEstimate: '$3.55M',
     valuationUpperBound: '$3.90M',
-    projectProcessedAt: new Date(Date.now() - 86400000).toISOString(),
-    createdAt: new Date(Date.now() - 86400000).toISOString(),
-    updatedAt: new Date(Date.now() - 86400000).toISOString(),
+    projectProcessedAt: '2026-08-10T14:30:00.000Z',
+    createdAt: '2026-08-10T14:30:00.000Z',
+    updatedAt: '2026-08-10T14:30:00.000Z',
 }

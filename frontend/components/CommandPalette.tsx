@@ -16,6 +16,7 @@ import {
     Clock3,
     AlertTriangle,
     Sparkles,
+    Upload,
 } from 'lucide-react'
 
 type CommandPaletteProps = {
@@ -63,6 +64,20 @@ export default function CommandPalette({
     const listRef = useRef<HTMLDivElement>(null)
 
     const commands: Command[] = [
+        {
+            id: 'scroll-to-intake',
+            label: 'Project Intake / Upload Diligence Documents',
+            icon: <Upload className="h-4 w-4" />,
+            action: () => {
+                if (onScrollToUpload) {
+                    onScrollToUpload()
+                } else {
+                    const el = document.querySelector('[data-project-intake]') || document.getElementById('upload-section')
+                    el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                }
+            },
+            group: 'Navigation',
+        },
         {
             id: 'tab-overview',
             label: 'Switch to Overview tab',

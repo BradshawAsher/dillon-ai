@@ -23,6 +23,7 @@ import getProjectActionTrackerImport from '../backend/diligence/getProjectAction
 import saveProjectActionTrackerImport from '../backend/diligence/saveProjectActionTracker'
 import getSubmissionHistoryImport from '../backend/diligence/getSubmissionHistory'
 import getWorkflowErrorsImport from '../backend/diligence/getWorkflowErrors'
+import getWatchdogEventsImport from '../backend/diligence/getWatchdogEvents'
 import retryFailedDocumentImport from '../backend/diligence/retryFailedDocument'
 import stopBatchSubmissionImport from '../backend/diligence/stopBatchSubmission'
 import stopProjectSynthesisImport from '../backend/diligence/stopProjectSynthesis'
@@ -54,6 +55,7 @@ const saveDealModel = interopDefault(saveDealModelImport)
 const getProjectActionTracker = interopDefault(getProjectActionTrackerImport)
 const saveProjectActionTracker = interopDefault(saveProjectActionTrackerImport)
 const getWorkflowErrors = interopDefault(getWorkflowErrorsImport)
+const getWatchdogEvents = interopDefault(getWatchdogEventsImport)
 const getSubmissionHistory = interopDefault(getSubmissionHistoryImport)
 const retryFailedDocument = interopDefault(retryFailedDocumentImport)
 const stopBatchSubmission = interopDefault(stopBatchSubmissionImport)
@@ -228,6 +230,15 @@ app.get('/api/diligence/workflow-errors', async (req, res) => {
     try {
         const environment = req.query.environment === 'test' ? 'test' : 'production'
         res.json(await getWorkflowErrors({ params: { environment }, user: userFromHeaders(req.headers) }))
+    } catch (error) {
+        res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
+    }
+})
+
+app.get('/api/diligence/watchdog-events', async (req, res) => {
+    try {
+        const environment = req.query.environment === 'test' ? 'test' : 'production'
+        res.json(await getWatchdogEvents({ params: { environment }, user: userFromHeaders(req.headers) }))
     } catch (error) {
         res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
     }
