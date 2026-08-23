@@ -52,7 +52,7 @@ If the user asks to change project synthesis behavior, the agent should:
 
 ## Model Naming & Identifier Protocol
 
-- **Ground Truth Documentation**: See [`docs/AI_MODELS_AND_ENDPOINTS.md`](file:///docs/AI_MODELS_AND_ENDPOINTS.md) for full REST endpoints, authentication headers, and valid model identifiers across all providers.
+- **Ground Truth Documentation**: See [`AI_MODELS_AND_ENDPOINTS.md`](file:///AI_MODELS_AND_ENDPOINTS.md) for full REST endpoints, authentication headers, and valid model identifiers across all providers.
 - **UI / Benchmark Display Labels**: The application UI, Evals tab, and marketing pages feature benchmark model names (e.g. `GPT 5.6 Terra`, `Claude Sonnet 5`, `Gemini 3.7 Flash`, `DeepSeek V4 Flash`).
 - **LLM API Endpoints & Valid Identifiers**:
   - **Anthropic** (`https://api.anthropic.com/v1/messages`): `claude-sonnet-5`, `claude-opus-5`, `claude-fable-5`, `claude-haiku-4-5`

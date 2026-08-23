@@ -305,6 +305,17 @@ export default function EvalDashboardTab({
     const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false)
     const [summaryModalData, setSummaryModalData] = useState<HighLevelBusinessSummaryData | null>(null)
 
+    useEffect(() => {
+        if (!selectedDocViewerBusiness) return
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                setSelectedDocViewerBusiness(null)
+            }
+        }
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [selectedDocViewerBusiness])
+
     const handleOpenSummaryModal = (businessName: string, phaseDocs: any[], isPreLoi: boolean) => {
         const docProjectId = phaseDocs[0]?.projectId || phaseDocs[0]?.projectKey
         const targetKey = docProjectId || mapBusinessToProjectKey(businessName, phaseDocs[0])

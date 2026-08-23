@@ -15,6 +15,8 @@ import {
     hasAnySavedApiKey,
     getActiveProviders,
     DEFAULT_MODEL_CONFIGS,
+    PROVIDER_MODEL_OPTIONS,
+    mapModelNameToApiIdentifier,
     getUserModelConfig,
     saveUserModelConfig,
     getEffectiveModelPipeline,
@@ -216,5 +218,51 @@ describe('ApiKeyModal BYOK Storage and Helpers', () => {
         expect(effective.docBackup).toBe('DeepSeek V4 Pro')
         expect(effective.synthPrimary).toBe('DeepSeek V4 Pro')
         expect(effective.synthBackup).toBe('DeepSeek V4 Flash')
+    })
+
+    it('exposes full catalog in PROVIDER_MODEL_OPTIONS', () => {
+        expect(PROVIDER_MODEL_OPTIONS.openai).toContain('OpenAI 5.6 Luna')
+        expect(PROVIDER_MODEL_OPTIONS.openai).toContain('OpenAI 5.6 Terra')
+        expect(PROVIDER_MODEL_OPTIONS.openai).toContain('OpenAI 5.6 Sol')
+        expect(PROVIDER_MODEL_OPTIONS.gemini).toContain('Gemini 3.7 Flash')
+        expect(PROVIDER_MODEL_OPTIONS.gemini).toContain('Gemini 3.6 Flash')
+        expect(PROVIDER_MODEL_OPTIONS.gemini).toContain('Gemini 3.5 Flash')
+        expect(PROVIDER_MODEL_OPTIONS.gemini).toContain('Gemini 3.5 Flash Lite')
+        expect(PROVIDER_MODEL_OPTIONS.anthropic).toContain('Claude Sonnet 5')
+        expect(PROVIDER_MODEL_OPTIONS.anthropic).toContain('Claude Opus 5')
+        expect(PROVIDER_MODEL_OPTIONS.deepseek).toContain('DeepSeek V4 Flash')
+        expect(PROVIDER_MODEL_OPTIONS.deepseek).toContain('DeepSeek V4 Pro')
+    })
+
+    it('maps UI model names to valid API model identifiers via mapModelNameToApiIdentifier', () => {
+        // OpenAI
+        expect(mapModelNameToApiIdentifier('openai', 'OpenAI 5.6 Terra')).toBe('gpt-5.6-terra')
+        expect(mapModelNameToApiIdentifier('openai', 'OpenAI 5.6 Luna')).toBe('gpt-5.6-luna')
+        expect(mapModelNameToApiIdentifier('openai', 'OpenAI 5.6 Sol')).toBe('gpt-5.6-sol')
+        expect(mapModelNameToApiIdentifier('openai', 'OpenAI o1')).toBe('o1')
+        expect(mapModelNameToApiIdentifier('openai', 'OpenAI o3-mini')).toBe('o3-mini')
+        expect(mapModelNameToApiIdentifier('openai', 'GPT-4o')).toBe('gpt-4o')
+
+        // Anthropic
+        expect(mapModelNameToApiIdentifier('anthropic', 'Claude Sonnet 5')).toBe('claude-sonnet-5')
+        expect(mapModelNameToApiIdentifier('anthropic', 'Claude Opus 5')).toBe('claude-opus-5')
+        expect(mapModelNameToApiIdentifier('anthropic', 'Claude Fable 5')).toBe('claude-fable-5')
+        expect(mapModelNameToApiIdentifier('anthropic', 'Claude Haiku 4.5')).toBe('claude-haiku-4-5')
+        expect(mapModelNameToApiIdentifier('anthropic', 'Claude 3.7 Sonnet')).toBe('claude-3-7-sonnet-20250219')
+        expect(mapModelNameToApiIdentifier('anthropic', 'Claude 3.5 Sonnet')).toBe('claude-3-5-sonnet-20241022')
+
+        // Gemini
+        expect(mapModelNameToApiIdentifier('gemini', 'Gemini 3.7 Flash')).toBe('gemini-3.7-flash')
+        expect(mapModelNameToApiIdentifier('gemini', 'Gemini 3.6 Flash')).toBe('gemini-3.6-flash')
+        expect(mapModelNameToApiIdentifier('gemini', 'Gemini 3.5 Flash')).toBe('gemini-3.5-flash')
+        expect(mapModelNameToApiIdentifier('gemini', 'Gemini 3.5 Flash Lite')).toBe('gemini-3.5-flash-lite')
+        expect(mapModelNameToApiIdentifier('gemini', 'Gemini 3.1 Flash Lite')).toBe('gemini-3.1-flash-lite')
+        expect(mapModelNameToApiIdentifier('gemini', 'Gemini 2.5 Pro')).toBe('gemini-2.5-pro')
+
+        // DeepSeek
+        expect(mapModelNameToApiIdentifier('deepseek', 'DeepSeek V4 Flash')).toBe('deepseek-v4-flash')
+        expect(mapModelNameToApiIdentifier('deepseek', 'DeepSeek V4 Pro')).toBe('deepseek-v4-pro')
+        expect(mapModelNameToApiIdentifier('deepseek', 'DeepSeek V3')).toBe('deepseek-chat')
+        expect(mapModelNameToApiIdentifier('deepseek', 'DeepSeek R1')).toBe('deepseek-reasoner')
     })
 })

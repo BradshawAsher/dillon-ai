@@ -110,6 +110,17 @@ export function ReportIssueModal({
         }
     }, [open, initialCategory, initialTitle, initialDescription])
 
+    useEffect(() => {
+        if (!open) return
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                onOpenChange(false)
+            }
+        }
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [open, onOpenChange])
+
     if (!open) return null
 
     const handleSubmit = async (e: React.FormEvent) => {

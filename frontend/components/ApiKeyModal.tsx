@@ -57,6 +57,8 @@ export const PROVIDER_MODEL_OPTIONS: Record<'anthropic' | 'openai' | 'gemini' | 
     ],
     gemini: [
         'Gemini 3.7 Flash',
+        'Gemini 3.6 Flash',
+        'Gemini 3.5 Flash',
         'Gemini 3.5 Flash Lite',
         'Gemini 3.1 Flash Lite',
         'Gemini 3.1 Pro',
@@ -68,6 +70,7 @@ export const PROVIDER_MODEL_OPTIONS: Record<'anthropic' | 'openai' | 'gemini' | 
     ],
     openai: [
         'OpenAI 5.6 Terra',
+        'OpenAI 5.6 Luna',
         'OpenAI 5.6 Sol',
         'OpenAI o1',
         'OpenAI o3-mini',
@@ -81,6 +84,60 @@ export const PROVIDER_MODEL_OPTIONS: Record<'anthropic' | 'openai' | 'gemini' | 
         'DeepSeek V3',
         'DeepSeek R1',
     ],
+}
+
+export function mapModelNameToApiIdentifier(provider: 'anthropic' | 'openai' | 'gemini' | 'deepseek', modelName?: string): string {
+    const raw = (modelName || '').trim()
+    const norm = raw.toLowerCase()
+
+    if (provider === 'openai') {
+        if (norm.includes('5.6 terra') || norm === 'gpt-5.6-terra') return 'gpt-5.6-terra'
+        if (norm.includes('5.6 luna') || norm === 'gpt-5.6-luna') return 'gpt-5.6-luna'
+        if (norm.includes('5.6 sol') || norm === 'gpt-5.6-sol') return 'gpt-5.6-sol'
+        if (norm === 'openai o1' || norm === 'o1') return 'o1'
+        if (norm === 'openai o3-mini' || norm === 'o3-mini') return 'o3-mini'
+        if (norm === 'gpt-4o' || norm === 'openai gpt-4o') return 'gpt-4o'
+        if (norm === 'gpt-4o mini' || norm === 'gpt-4o-mini') return 'gpt-4o-mini'
+        if (norm.includes('4.5')) return 'gpt-4.5-preview'
+        return raw.startsWith('gpt-') || raw.startsWith('o1') || raw.startsWith('o3') ? raw : 'gpt-5.6-terra'
+    }
+
+    if (provider === 'anthropic') {
+        if (norm.includes('sonnet 5') || norm === 'claude-sonnet-5') return 'claude-sonnet-5'
+        if (norm.includes('opus 5') || norm === 'claude-opus-5') return 'claude-opus-5'
+        if (norm.includes('fable 5') || norm === 'claude-fable-5') return 'claude-fable-5'
+        if (norm.includes('haiku 4.5') || norm.includes('haiku 4-5')) return 'claude-haiku-4-5'
+        if (norm.includes('3.7 sonnet')) return 'claude-3-7-sonnet-20250219'
+        if (norm.includes('3.5 sonnet')) return 'claude-3-5-sonnet-20241022'
+        if (norm.includes('3.5 haiku')) return 'claude-3-5-haiku-20241022'
+        if (norm.includes('3 opus')) return 'claude-3-opus-20240229'
+        return raw.startsWith('claude-') ? raw : 'claude-sonnet-5'
+    }
+
+    if (provider === 'gemini') {
+        if (norm.includes('3.7 flash') || norm === 'gemini-3.7-flash') return 'gemini-3.7-flash'
+        if (norm.includes('3.6 flash') || norm === 'gemini-3.6-flash') return 'gemini-3.6-flash'
+        if (norm.includes('3.5 flash lite') || norm === 'gemini-3.5-flash-lite') return 'gemini-3.5-flash-lite'
+        if (norm.includes('3.5 flash') || norm === 'gemini-3.5-flash') return 'gemini-3.5-flash'
+        if (norm.includes('3.1 flash lite') || norm === 'gemini-3.1-flash-lite') return 'gemini-3.1-flash-lite'
+        if (norm.includes('3.1 pro')) return 'gemini-3.1-pro-preview'
+        if (norm.includes('2.5 pro')) return 'gemini-2.5-pro'
+        if (norm.includes('2.5 flash-lite')) return 'gemini-2.5-flash-lite'
+        if (norm.includes('2.5 flash')) return 'gemini-2.5-flash'
+        if (norm.includes('1.5 pro')) return 'gemini-1.5-pro'
+        if (norm.includes('1.5 flash')) return 'gemini-1.5-flash'
+        return raw.startsWith('gemini-') ? raw : 'gemini-3.7-flash'
+    }
+
+    if (provider === 'deepseek') {
+        if (norm.includes('v4 flash') || norm === 'deepseek-v4-flash') return 'deepseek-v4-flash'
+        if (norm.includes('v4 pro') || norm === 'deepseek-v4-pro') return 'deepseek-v4-pro'
+        if (norm.includes('r1') || norm.includes('reasoner')) return 'deepseek-reasoner'
+        if (norm.includes('v3') || norm.includes('chat')) return 'deepseek-chat'
+        return raw.startsWith('deepseek-') ? raw : 'deepseek-v4-flash'
+    }
+
+    return raw
 }
 
 export function getUserModelConfig(provider: 'anthropic' | 'openai' | 'gemini' | 'deepseek'): ProviderModelConfig {
@@ -227,6 +284,17 @@ export function ApiKeyModal({ open, onOpenChange }: ApiKeyModalProps) {
             setSaved(false)
         }
     }, [open])
+
+    useEffect(() => {
+        if (!open) return
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                onOpenChange(false)
+            }
+        }
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [open, onOpenChange])
 
     if (!open) return null
 

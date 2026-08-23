@@ -188,8 +188,8 @@ const SHORTCUTS: ShortcutItem[] = [
         id: 'tour-exit',
         category: 'Tours & HUD',
         keys: ['Esc'],
-        label: 'Exit Guided Tour / Close Overlays',
-        description: 'Closes the active walkthrough HUD, modal dialogs, and floating menus.',
+        label: 'Close Interactive Viewers, Drawers & Modals',
+        description: 'Closes any active interactive viewer, document inspector, modal dialog, drawer, or guided tour overlay.',
     },
 ]
 

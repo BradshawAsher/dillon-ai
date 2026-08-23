@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { AlertTriangle, Eye, FolderKanban, Info, Key, Loader2, Plus, Upload, X, XCircle } from 'lucide-react'
 
 import FileDropzone from './FileDropzone'
@@ -117,6 +117,17 @@ export default function ProjectIntakeCard({
 }: ProjectIntakeCardProps) {
     const [showNoKeyPrompt, setShowNoKeyPrompt] = useState(false)
     const [fileRequiredWarning, setFileRequiredWarning] = useState(false)
+
+    useEffect(() => {
+        if (!showNoKeyPrompt) return
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                setShowNoKeyPrompt(false)
+            }
+        }
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [showNoKeyPrompt])
 
     const userKeysStatus = useMemo(() => {
         if (typeof window === 'undefined') return { count: 0, labels: [] as string[], summary: '' }
