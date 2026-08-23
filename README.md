@@ -31,7 +31,7 @@ Browser (React 19 SPA)
   ├── 2. Batch Dispatch -> same-origin REST API (/api/diligence/*) -> Pod 1 n8n Webhooks
   ├── 3. Parallel Extraction -> OpenAI 5.6 Terra (Primary) / Sol (Backup) -> Math Engine
   ├── 4. Project Synthesis -> Cross-Document Contradiction Engine -> IC Deal Memo
-  └── 5. Real-Time Stream -> Supabase PostgreSQL & n8n High-Throughput Tables
+  └── 5. Real-Time Stream -> Supabase Realtime CDC (WebSockets) & PostgreSQL
 ```
 
 See the full diagrams and sequence charts in **[`ARCHITECTURE.md`](ARCHITECTURE.md)**.

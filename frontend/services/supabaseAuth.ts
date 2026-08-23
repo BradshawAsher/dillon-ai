@@ -205,6 +205,37 @@ export async function signInWithGithub() {
 }
 
 /**
+ * Sign In with Microsoft (Azure) OAuth
+ */
+export async function signInWithMicrosoft() {
+    try {
+        const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}?view=dashboard` : undefined
+        const { data, error } = await supabaseAuthClient.auth.signInWithOAuth({
+            provider: 'azure',
+            options: {
+                scopes: 'email profile openid',
+                redirectTo: redirectUrl,
+            },
+        })
+
+        if (error) {
+            const msg = error.message?.toLowerCase() || ''
+            if (msg.includes('not enabled') || msg.includes('validation_failed') || (error as any).status === 400) {
+                return {
+                    success: false,
+                    error: 'Microsoft (Azure) OAuth is not enabled in your Supabase project dashboard (Auth -> Providers -> Azure). Please configure your Azure Client ID & Secret or sign in with Email & Password.',
+                }
+            }
+            return { success: false, error: error.message }
+        }
+
+        return { success: true, url: data.url }
+    } catch (err: any) {
+        return { success: false, error: err?.message || 'Microsoft authentication error' }
+    }
+}
+
+/**
  * Sign Out (Instant local clear + background remote signout)
  */
 export async function signOutUser() {

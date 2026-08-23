@@ -52,14 +52,23 @@ If the user asks to change project synthesis behavior, the agent should:
 
 ## Model Naming & Identifier Protocol
 
-- **UI / Benchmark Display Labels**: The application UI, Evals tab, and marketing pages feature benchmark model names (e.g. `GPT 5.6 Terra`, `Claude Sonnet 5`, `Gemini 3.1 Flash Lite`).
-- **LLM API Endpoints**: When configuring n8n workflows, HTTP requests, or AI model node parameters, agents MUST pass valid production model identifiers recognized by LLM providers (`gpt-4o`, `gpt-4o-mini`, `claude-3-5-sonnet-20241022`, `claude-3-7-sonnet-20250219`). Do not pass synthetic branding strings directly into raw API model parameter fields without confirming proxy endpoint support.
+- **Ground Truth Documentation**: See [`docs/AI_MODELS_AND_ENDPOINTS.md`](file:///docs/AI_MODELS_AND_ENDPOINTS.md) for full REST endpoints, authentication headers, and valid model identifiers across all providers.
+- **UI / Benchmark Display Labels**: The application UI, Evals tab, and marketing pages feature benchmark model names (e.g. `GPT 5.6 Terra`, `Claude Sonnet 5`, `Gemini 3.7 Flash`, `DeepSeek V4 Flash`).
+- **LLM API Endpoints & Valid Identifiers**:
+  - **Anthropic** (`https://api.anthropic.com/v1/messages`): `claude-sonnet-5`, `claude-opus-5`, `claude-fable-5`, `claude-haiku-4-5`
+  - **OpenAI** (`https://api.openai.com/v1/chat/completions`): `gpt-5.6-terra`, `gpt-5.6-sol`, `o1`, `o3-mini`, `gpt-4o`, `gpt-4o-mini`
+  - **Google Gemini** (`https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent`): `gemini-3.7-flash`, `gemini-3.5-flash-lite`, `gemini-3.1-pro-preview`, `gemini-2.5-pro`, `gemini-2.5-flash`
+  - **DeepSeek** (`https://api.deepseek.com/chat/completions`): `deepseek-v4-flash`, `deepseek-v4-pro`, `deepseek-chat`, `deepseek-reasoner`
+- When configuring n8n workflows, HTTP requests, or AI model node parameters, agents MUST pass valid production model identifiers recognized by LLM providers. Do not pass synthetic branding strings directly into raw API model parameter fields without confirming proxy endpoint support.
 
 ## Active Production Model Architecture & Benchmark Defaults
-- **Per-Document Extraction Primary Model**: `OpenAI 5.6 Terra`
-- **Per-Document Extraction Backup Model**: `OpenAI 5.6 Sol`
-- **Project Synthesis Pass Primary Model**: `OpenAI 5.6 Terra`
-- **Project Synthesis Pass Backup Model**: `OpenAI 5.6 Sol`
+- **Per-Document Extraction Primary Model**: `OpenAI 5.6 Terra` (`gpt-5.6-terra`)
+- **Per-Document Extraction Backup Model**: `OpenAI 5.6 Sol` (`gpt-5.6-sol`)
+- **Project Synthesis Pass Primary Model**: `OpenAI 5.6 Terra` (`gpt-5.6-terra`)
+- **Project Synthesis Pass Backup Model**: `OpenAI 5.6 Sol` (`gpt-5.6-sol`)
+- **Anthropic BYOK Default**: Doc Primary = `Claude Sonnet 5`, Doc Backup = `Claude Opus 5`, Synth Primary = `Claude Opus 5`, Synth Backup = `Claude Fable 5`
+- **Gemini BYOK Default**: Doc Primary = `Gemini 3.7 Flash`, Doc Backup = `Gemini 3.5 Flash Lite`, Synth Primary = `Gemini 3.7 Flash`, Synth Backup = `Gemini 3.5 Flash Lite`
+- **DeepSeek BYOK Default**: Doc Primary = `DeepSeek V4 Flash`, Doc Backup = `DeepSeek V4 Pro`, Synth Primary = `DeepSeek V4 Pro`, Synth Backup = `DeepSeek V4 Flash`
 
 ## Surgical Code Insertion Protocol
 - ALWAYS perform careful, targeted insertions and minimal replacements rather than rewriting entire files or large blocks of code.

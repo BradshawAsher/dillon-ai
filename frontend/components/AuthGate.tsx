@@ -11,6 +11,7 @@ import {
     signUpWithPassword,
     signInWithGoogle,
     signInWithGithub,
+    signInWithMicrosoft,
     initAuthListener,
     type AppAuthUser,
 } from '../services/supabaseAuth'
@@ -55,7 +56,7 @@ export default function LoginButton({ onNavigateAccount }: { onNavigateAccount?:
     const [team, setTeam] = useState('Pod 1 (Acquisitions & Diligence)')
     const [isolation, setIsolation] = useState(isDataIsolationEnabled)
     const [loading, setLoading] = useState(false)
-    const [socialLoading, setSocialLoading] = useState<'google' | 'github' | null>(null)
+    const [socialLoading, setSocialLoading] = useState<'google' | 'github' | 'microsoft' | null>(null)
     const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
     useEffect(() => {
@@ -133,6 +134,19 @@ export default function LoginButton({ onNavigateAccount }: { onNavigateAccount?:
             if (!res.success) setErrorMessage(res.error || 'GitHub login failed')
         } catch (err: any) {
             setErrorMessage(err?.message || 'GitHub login failed')
+        } finally {
+            setSocialLoading(null)
+        }
+    }, [])
+
+    const handleMicrosoft = useCallback(async () => {
+        setSocialLoading('microsoft')
+        setErrorMessage(null)
+        try {
+            const res = await signInWithMicrosoft()
+            if (!res.success) setErrorMessage(res.error || 'Microsoft login failed')
+        } catch (err: any) {
+            setErrorMessage(err?.message || 'Microsoft login failed')
         } finally {
             setSocialLoading(null)
         }
@@ -291,6 +305,26 @@ export default function LoginButton({ onNavigateAccount }: { onNavigateAccount?:
                                     </svg>
                                 )}
                                 <span>Continue with GitHub</span>
+                            </Button>
+
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="w-full h-9 justify-center gap-2 text-xs font-semibold"
+                                onClick={handleMicrosoft}
+                                disabled={!!socialLoading || loading}
+                            >
+                                {socialLoading === 'microsoft' ? (
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                    <svg className="h-3.5 w-3.5" viewBox="0 0 21 21">
+                                        <rect x="1" y="1" width="9" height="9" fill="#f25022" />
+                                        <rect x="11" y="1" width="9" height="9" fill="#7fba00" />
+                                        <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
+                                        <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
+                                    </svg>
+                                )}
+                                <span>Continue with Microsoft</span>
                             </Button>
                         </div>
 

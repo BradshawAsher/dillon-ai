@@ -21789,7 +21789,7 @@ function getCitationDetails(judgmentJson, aiCitations) {
   return found.slice(0, 30);
 }
 async function getProjectSynthesis(req) {
-  const { data: rows, error } = await supabase.from("project_syntheses").select("*").or("is_placeholder.is.null,is_placeholder.eq.false").order("id", { ascending: false }).limit(200);
+  const { data: rows, error } = await supabase.from("project_syntheses").select("*").or("is_placeholder.is.null,is_placeholder.eq.false").order("id", { ascending: false }).limit(50);
   if (error) throw new Error(`Supabase read failed: ${error.message}`);
   if (!rows) return [];
   return rows.filter((row) => (row.project_id ?? "").trim().length > 0).map((row) => {
@@ -22077,7 +22077,7 @@ async function syncPendingRowsFromN8nDataTable(rows) {
 }
 async function getSubmissionHistory(req) {
   const environment = req.params.environment === "test" ? "test" : "production";
-  const { data: rows, error } = await supabase.from("documents").select("*").eq("environment", environment).order("updated_at", { ascending: false }).limit(500);
+  const { data: rows, error } = await supabase.from("documents").select("*").eq("environment", environment).order("updated_at", { ascending: false }).limit(100);
   if (error) throw new Error(`Supabase read failed: ${error.message}`);
   if (!rows) return [];
   await syncPendingRowsFromN8nDataTable(rows);
@@ -22256,11 +22256,42 @@ async function retryFailedDocument(req) {
   const requestID = req.params.requestID?.trim();
   if (!requestID) throw new Error("requestID is required");
   const path2 = req.params.environment === "test" ? "webhook-test/dd-retry-failed-document" : "webhook/dd-retry-failed-document";
+  const formData = [{ key: "requestID", value: requestID }];
+  if (req.params.userAnthropicApiKey) {
+    formData.push({ key: "userAnthropicApiKey", value: req.params.userAnthropicApiKey });
+  }
+  if (req.params.userOpenAiApiKey) {
+    formData.push({ key: "userOpenAiApiKey", value: req.params.userOpenAiApiKey });
+  }
+  if (req.params.userGeminiApiKey) {
+    formData.push({ key: "userGeminiApiKey", value: req.params.userGeminiApiKey });
+  }
+  if (req.params.userDeepseekApiKey) {
+    formData.push({ key: "userDeepseekApiKey", value: req.params.userDeepseekApiKey });
+  }
+  if (req.params.userApiKey) {
+    formData.push({ key: "userApiKey", value: req.params.userApiKey });
+  }
+  if (req.params.userProvider) {
+    formData.push({ key: "userProvider", value: req.params.userProvider });
+  }
+  if (req.params.docPrimaryModel) {
+    formData.push({ key: "docPrimaryModel", value: req.params.docPrimaryModel });
+  }
+  if (req.params.docBackupModel) {
+    formData.push({ key: "docBackupModel", value: req.params.docBackupModel });
+  }
+  if (req.params.synthPrimaryModel) {
+    formData.push({ key: "synthPrimaryModel", value: req.params.synthPrimaryModel });
+  }
+  if (req.params.synthBackupModel) {
+    formData.push({ key: "synthBackupModel", value: req.params.synthBackupModel });
+  }
   const response = await n8nFinancialAgent.rawRequest({
     path: path2,
     method: "POST",
     bodyType: "form-data",
-    formData: [{ key: "requestID", value: requestID }]
+    formData
   });
   return response.data;
 }
@@ -22445,6 +22476,36 @@ async function submitDealPacket(req) {
   }
   if (req.params.fileBase64) {
     formData.push({ key: "file", file: req.params.fileBase64, filename: req.params.fileName });
+  }
+  if (req.params.userAnthropicApiKey) {
+    formData.push({ key: "userAnthropicApiKey", value: req.params.userAnthropicApiKey });
+  }
+  if (req.params.userOpenAiApiKey) {
+    formData.push({ key: "userOpenAiApiKey", value: req.params.userOpenAiApiKey });
+  }
+  if (req.params.userGeminiApiKey) {
+    formData.push({ key: "userGeminiApiKey", value: req.params.userGeminiApiKey });
+  }
+  if (req.params.userDeepseekApiKey) {
+    formData.push({ key: "userDeepseekApiKey", value: req.params.userDeepseekApiKey });
+  }
+  if (req.params.userApiKey) {
+    formData.push({ key: "userApiKey", value: req.params.userApiKey });
+  }
+  if (req.params.userProvider) {
+    formData.push({ key: "userProvider", value: req.params.userProvider });
+  }
+  if (req.params.docPrimaryModel) {
+    formData.push({ key: "docPrimaryModel", value: req.params.docPrimaryModel });
+  }
+  if (req.params.docBackupModel) {
+    formData.push({ key: "docBackupModel", value: req.params.docBackupModel });
+  }
+  if (req.params.synthPrimaryModel) {
+    formData.push({ key: "synthPrimaryModel", value: req.params.synthPrimaryModel });
+  }
+  if (req.params.synthBackupModel) {
+    formData.push({ key: "synthBackupModel", value: req.params.synthBackupModel });
   }
   const response = await n8nFinancialAgent.rawRequest({
     path: path2,

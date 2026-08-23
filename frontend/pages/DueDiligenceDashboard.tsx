@@ -17,7 +17,7 @@ import {
     X,
 } from 'lucide-react'
 
-import { ApiKeyModal } from '../components/ApiKeyModal'
+import { ApiKeyModal, getEffectiveModelPipeline } from '../components/ApiKeyModal'
 import { ExportDiligenceModal } from '../components/ExportDiligenceModal'
 import { ReportIssueModal } from '../components/ReportIssueModal'
 import { ProjectsSidePanel } from '../components/ProjectsSidePanel'
@@ -42,6 +42,8 @@ import { WorkspaceDemoGalleryBar } from '../components/WorkspaceDemoGalleryBar'
 import { useNativeWalkthrough } from '../components/walkthrough/useNativeWalkthrough'
 import { WalkthroughLauncherModal } from '../components/walkthrough/WalkthroughLauncherModal'
 import { NativeWalkthroughOverlay } from '../components/walkthrough/NativeWalkthroughOverlay'
+import { WalkthroughNudgeBeacon } from '../components/walkthrough/WalkthroughNudgeBeacon'
+import { useUserEngagement } from '../hooks/useUserEngagement'
 import WorkspaceTabTutorialBanner from '../components/walkthrough/WorkspaceTabTutorialBanner'
 import { OverviewWorkspaceView } from '../components/views/OverviewWorkspaceView'
 import { DiligenceWorkspaceView } from '../components/views/DiligenceWorkspaceView'
@@ -96,6 +98,7 @@ import {
 import { Button } from '../lib/shadcn/button'
 import { getStoredTheme, setStoredTheme } from '../lib/darkMode'
 import { getDataSource, setDataSource } from '../lib/dataSource'
+import { supabaseAuthClient } from '../services/supabaseAuth'
 import {
     buildReturnsDisplayModel,
     createUnusedProjectId,
@@ -787,6 +790,14 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         onTabChange: setActiveWorkspaceTab,
     })
 
+    const {
+        shouldShowNudge,
+        nudgeReason,
+        dismissNudge,
+        snoozeNudge,
+        markWalkthroughCompleted,
+    } = useUserEngagement()
+
     const [simulatedWalkthroughBatch, setSimulatedWalkthroughBatch] = useState<{
         id: string
         expectedDocumentCount: number
@@ -856,6 +867,33 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     const liveSubmissionHistory = (Array.isArray(submissionHistoryData) ? submissionHistoryData : []) as SubmissionHistoryItem[]
     const liveProjectSynthesesData = (Array.isArray(projectSynthesisData) ? projectSynthesisData : []) as ProjectSynthesisItem[]
     const isExampleMode = getDataSource() === 'mock'
+
+    // Real-time WebSocket sync via Supabase CDC (Zero-polling instantaneous updates)
+    useEffect(() => {
+        if (isExampleMode) return
+
+        const channel = supabaseAuthClient
+            .channel('dashboard-realtime-sync')
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'documents' },
+                () => {
+                    void triggerSubmissionHistory({ environment: 'production', skipCache: true })
+                }
+            )
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'project_syntheses' },
+                () => {
+                    void triggerProjectSynthesis({ environment: 'production', skipCache: true })
+                }
+            )
+            .subscribe()
+
+        return () => {
+            void supabaseAuthClient.removeChannel(channel)
+        }
+    }, [isExampleMode, triggerSubmissionHistory, triggerProjectSynthesis])
 
     const rawSubmissionHistory = useMemo(() => {
         if (isExampleMode) return exampleSubmissionHistoryRows
@@ -1704,15 +1742,22 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         return isCurrentProjectExtractingDocs || isCurrentProjectSynthesisRunning || isManualSynthesisRunning
     }, [isCurrentProjectExtractingDocs, isCurrentProjectSynthesisRunning, isManualSynthesisRunning])
 
-    // Periodic refresh effect (3s polling when batch/processing/synthesis active, 10s idle)
+    // Periodic refresh effect: ONLY poll (3s) when batch/processing/synthesis is active; completely disabled when idle to preserve database quota
     useEffect(() => {
-        const pollInterval = (activeSubmissionBatch || hasActiveSubmissions || isCurrentProjectProcessingDocuments || isCurrentProjectAwaitingSynthesis) ? 3_000 : 10_000
+        const isActivelyProcessing = Boolean(
+            activeSubmissionBatch ||
+            hasActiveSubmissions ||
+            isCurrentProjectProcessingDocuments ||
+            isCurrentProjectAwaitingSynthesis
+        )
+
+        if (!isActivelyProcessing) return
 
         const interval = setInterval(() => {
             void triggerSubmissionHistory({ environment: 'production' })
             void triggerProjectSynthesis({ environment: 'production' })
             void triggerEvalRuns()
-        }, pollInterval)
+        }, 3_000)
         return () => clearInterval(interval)
     }, [
         triggerSubmissionHistory,
@@ -1723,6 +1768,27 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         isCurrentProjectProcessingDocuments,
         isCurrentProjectAwaitingSynthesis,
     ])
+
+    // Refresh on tab focus / visibility change only if more than 30s have passed
+    useEffect(() => {
+        let lastFocusFetch = 0
+        const handleVisibility = () => {
+            if (document.visibilityState === 'visible') {
+                const now = Date.now()
+                if (now - lastFocusFetch > 30_000) {
+                    lastFocusFetch = now
+                    void triggerSubmissionHistory({ environment: 'production' })
+                    void triggerProjectSynthesis({ environment: 'production' })
+                }
+            }
+        }
+        document.addEventListener('visibilitychange', handleVisibility)
+        window.addEventListener('focus', handleVisibility)
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibility)
+            window.removeEventListener('focus', handleVisibility)
+        }
+    }, [triggerSubmissionHistory, triggerProjectSynthesis])
 
     const activeProjectSynthesisSucceeded = useMemo(() => {
         if (!activeProjectSynthesis || isCurrentProjectAwaitingSynthesis) return false
@@ -2047,10 +2113,25 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         setIsManualSynthesisRunning(true)
         setBatchSubmissionMessage('Starting a new project synthesis from the completed documents…')
         try {
+            const userOpenAiApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_openai_key') || '') : ''
+            const userAnthropicApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_anthropic_key') || '') : ''
+            const userGeminiApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_gemini_key') || '') : ''
+            const userDeepseekApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_deepseek_key') || '') : ''
+            const modelPipeline = getEffectiveModelPipeline()
+
             const response = await fetch('/api/diligence/run-synthesis', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ projectId: activeProjectId, environment: activeHistoryEnvironment })
+                body: JSON.stringify({
+                    projectId: activeProjectId,
+                    environment: activeHistoryEnvironment,
+                    userOpenAiApiKey,
+                    userAnthropicApiKey,
+                    userGeminiApiKey,
+                    userDeepseekApiKey,
+                    synthPrimaryModel: modelPipeline.synthPrimary,
+                    synthBackupModel: modelPipeline.synthBackup,
+                })
             })
             if (!response.ok) throw new Error('Failed to trigger project synthesis')
             setBatchSubmissionMessage('Project synthesis successfully triggered! The consolidator is now running…')
@@ -2098,10 +2179,25 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
             await new Promise(r => setTimeout(r, 1000))
 
+            const userOpenAiApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_openai_key') || '') : ''
+            const userAnthropicApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_anthropic_key') || '') : ''
+            const userGeminiApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_gemini_key') || '') : ''
+            const userDeepseekApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_deepseek_key') || '') : ''
+            const modelPipeline = getEffectiveModelPipeline()
+
             const response = await fetch('/api/diligence/run-synthesis', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ projectId: activeProjectId, environment: activeHistoryEnvironment })
+                body: JSON.stringify({
+                    projectId: activeProjectId,
+                    environment: activeHistoryEnvironment,
+                    userOpenAiApiKey,
+                    userAnthropicApiKey,
+                    userGeminiApiKey,
+                    userDeepseekApiKey,
+                    synthPrimaryModel: modelPipeline.synthPrimary,
+                    synthBackupModel: modelPipeline.synthBackup,
+                })
             })
             if (!response.ok) throw new Error('Failed to trigger synthesis webhook')
 
@@ -2145,13 +2241,30 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             startedAt: Date.now(),
         })
 
+        const userOpenAiApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_openai_key') || '') : ''
+        const userAnthropicApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_anthropic_key') || '') : ''
+        const userGeminiApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_gemini_key') || '') : ''
+        const userDeepseekApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_deepseek_key') || '') : ''
+        const modelPipeline = getEffectiveModelPipeline()
+
         try {
             await Promise.all(
                 validDocs.map(doc =>
                     fetch('/api/diligence/retry-failed-document', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ requestID: doc.requestID, environment: activeHistoryEnvironment }),
+                        body: JSON.stringify({
+                            requestID: doc.requestID,
+                            environment: activeHistoryEnvironment,
+                            userOpenAiApiKey,
+                            userAnthropicApiKey,
+                            userGeminiApiKey,
+                            userDeepseekApiKey,
+                            docPrimaryModel: modelPipeline.docPrimary,
+                            docBackupModel: modelPipeline.docBackup,
+                            synthPrimaryModel: modelPipeline.synthPrimary,
+                            synthBackupModel: modelPipeline.synthBackup,
+                        }),
                     }).catch(() => null)
                 )
             )
@@ -2183,13 +2296,30 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             startedAt: Date.now(),
         })
 
+        const userOpenAiApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_openai_key') || '') : ''
+        const userAnthropicApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_anthropic_key') || '') : ''
+        const userGeminiApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_gemini_key') || '') : ''
+        const userDeepseekApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_deepseek_key') || '') : ''
+        const modelPipeline = getEffectiveModelPipeline()
+
         try {
             await Promise.all(
                 validDocs.map(doc =>
                     fetch('/api/diligence/retry-failed-document', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ requestID: doc.requestID, environment: activeHistoryEnvironment }),
+                        body: JSON.stringify({
+                            requestID: doc.requestID,
+                            environment: activeHistoryEnvironment,
+                            userOpenAiApiKey,
+                            userAnthropicApiKey,
+                            userGeminiApiKey,
+                            userDeepseekApiKey,
+                            docPrimaryModel: modelPipeline.docPrimary,
+                            docBackupModel: modelPipeline.docBackup,
+                            synthPrimaryModel: modelPipeline.synthPrimary,
+                            synthBackupModel: modelPipeline.synthBackup,
+                        }),
                     }).catch(() => null)
                 )
             )
@@ -2213,10 +2343,27 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         setRetryingRequestId(requestID)
         setBatchSubmissionMessage('')
         try {
+            const userOpenAiApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_openai_key') || '') : ''
+            const userAnthropicApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_anthropic_key') || '') : ''
+            const userGeminiApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_gemini_key') || '') : ''
+            const userDeepseekApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_deepseek_key') || '') : ''
+            const modelPipeline = getEffectiveModelPipeline()
+
             const response = await fetch('/api/diligence/retry-failed-document', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ requestID, environment: activeHistoryEnvironment }),
+                body: JSON.stringify({
+                    requestID,
+                    environment: activeHistoryEnvironment,
+                    userOpenAiApiKey,
+                    userAnthropicApiKey,
+                    userGeminiApiKey,
+                    userDeepseekApiKey,
+                    docPrimaryModel: modelPipeline.docPrimary,
+                    docBackupModel: modelPipeline.docBackup,
+                    synthPrimaryModel: modelPipeline.synthPrimary,
+                    synthBackupModel: modelPipeline.synthBackup,
+                }),
             })
             const body = await response.json() as { error?: string; status?: string }
             if (!response.ok) throw new Error(body.error || 'Unable to queue retry')
@@ -2421,6 +2568,12 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                         fileBase64 = await readFileAsBase64(file)
                     }
 
+                    const userOpenAiApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_openai_key') || '') : ''
+                    const userAnthropicApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_anthropic_key') || '') : ''
+                    const userGeminiApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_gemini_key') || '') : ''
+                    const userDeepseekApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_deepseek_key') || '') : ''
+                    const modelPipeline = getEffectiveModelPipeline()
+
                     const result = await triggerSubmitDealPacket({
                         environment,
                         fileName: file.name,
@@ -2438,6 +2591,14 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                         documentType,
                         submissionBatchId,
                         expectedBatchDocumentCount,
+                        userOpenAiApiKey,
+                        userAnthropicApiKey,
+                        userGeminiApiKey,
+                        userDeepseekApiKey,
+                        docPrimaryModel: modelPipeline.docPrimary,
+                        docBackupModel: modelPipeline.docBackup,
+                        synthPrimaryModel: modelPipeline.synthPrimary,
+                        synthBackupModel: modelPipeline.synthBackup,
                     }).result
 
                     if (result?.status === 'duplicate') {
@@ -3534,6 +3695,16 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 onResumeTour={handleResumeTour}
                 initialTab={selectedWalkthroughDemoId === 'short-yt' || selectedWalkthroughDemoId === 'short-supademo' || selectedWalkthroughDemoId === 'deep-supademo' ? 'video' : 'interactive'}
                 initialVideoMode={selectedWalkthroughDemoId === 'short-supademo' ? 'quick' : selectedWalkthroughDemoId === 'deep-supademo' ? 'deep' : 'yt'}
+            />
+            <WalkthroughNudgeBeacon
+                isOpen={shouldShowNudge && !walkthrough.isActive}
+                reason={nudgeReason}
+                onStartTour={() => {
+                    handleStartTour('core-fast')
+                    markWalkthroughCompleted()
+                }}
+                onSnooze={() => snoozeNudge(7 * 24 * 60 * 60 * 1000)}
+                onDismiss={dismissNudge}
             />
             <NativeWalkthroughOverlay
                 walkthrough={walkthrough}

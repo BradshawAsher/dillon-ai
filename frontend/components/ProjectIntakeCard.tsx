@@ -118,6 +118,16 @@ export default function ProjectIntakeCard({
     const [showNoKeyPrompt, setShowNoKeyPrompt] = useState(false)
     const [fileRequiredWarning, setFileRequiredWarning] = useState(false)
 
+    const userKeysStatus = useMemo(() => {
+        if (typeof window === 'undefined') return { count: 0, labels: [] as string[], summary: '' }
+        const labels: string[] = []
+        if (localStorage.getItem('mergeworks_user_openai_key')) labels.push('OpenAI')
+        if (localStorage.getItem('mergeworks_user_anthropic_key')) labels.push('Anthropic')
+        if (localStorage.getItem('mergeworks_user_gemini_key')) labels.push('Gemini')
+        if (localStorage.getItem('mergeworks_user_deepseek_key')) labels.push('DeepSeek')
+        return { count: labels.length, labels, summary: labels.join('/') }
+    }, [showNoKeyPrompt])
+
     const handleCustomKeySubmit = () => {
         if (selectedFiles.length === 0) {
             setFileRequiredWarning(true)
@@ -125,8 +135,13 @@ export default function ProjectIntakeCard({
             return
         }
         setFileRequiredWarning(false)
-        const key = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_anthropic_key') || '') : ''
-        if (!key) {
+        const hasKey = typeof window !== 'undefined' && Boolean(
+            localStorage.getItem('mergeworks_user_openai_key') ||
+            localStorage.getItem('mergeworks_user_anthropic_key') ||
+            localStorage.getItem('mergeworks_user_gemini_key') ||
+            localStorage.getItem('mergeworks_user_deepseek_key')
+        )
+        if (!hasKey) {
             setShowNoKeyPrompt(true)
         } else {
             onSubmit('production')
@@ -463,13 +478,21 @@ export default function ProjectIntakeCard({
                             <Button
                                 type="button"
                                 variant="secondary"
-                                className="gap-1.5 border border-primary/20"
+                                className={
+                                    userKeysStatus.count > 0
+                                        ? 'gap-1.5 border border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20 shadow-2xs font-medium'
+                                        : 'gap-1.5 border border-primary/20'
+                                }
                                 disabled={disabled}
                                 onClick={handleCustomKeySubmit}
-                                title="Queue using your custom Anthropic API key saved in BYOK settings"
+                                title={
+                                    userKeysStatus.count > 0
+                                        ? `Queue using your custom ${userKeysStatus.summary} key saved in BYOK settings`
+                                        : 'Queue using your custom OpenAI, Anthropic, or Gemini API key'
+                                }
                             >
-                                <Key className="h-3.5 w-3.5 text-primary" />
-                                Queue with custom key
+                                <Key className={`h-3.5 w-3.5 ${userKeysStatus.count > 0 ? 'text-emerald-500' : 'text-primary'}`} />
+                                <span>{userKeysStatus.count > 0 ? `Queue with BYOK (${userKeysStatus.summary})` : 'Queue with custom key'}</span>
                             </Button>
                         </div>
                     </div>
@@ -597,7 +620,7 @@ export default function ProjectIntakeCard({
                                     No Custom API Key Saved
                                 </CardTitle>
                                 <CardDescription>
-                                    You clicked <strong>Queue with custom key</strong>, but no custom Anthropic API key is saved in your browser local storage yet.
+                                    You clicked <strong>Queue with custom key</strong>, but no custom OpenAI, Anthropic, or Gemini API key is saved in your browser local storage yet.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-3 py-2 text-sm text-muted-foreground">

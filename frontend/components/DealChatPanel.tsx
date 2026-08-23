@@ -1120,7 +1120,7 @@ function clampChatPanelSize(width: number, height: number): ChatPanelSize {
 async function callDirectUserLlm(
     prompt: string,
     context: string,
-    keys: { openai?: string; anthropic?: string; gemini?: string }
+    keys: { openai?: string; anthropic?: string; gemini?: string; deepseek?: string }
 ): Promise<{ text: string; provider: string } | null> {
     const systemPrompt = `You are MergeWorks AI, an expert M&A due diligence advisor and general AI assistant.
 You have access to the current project context below. You can answer specific questions about the deal, financial metrics, valuation, red flags, or answer ANY general question (general finance, negotiation, coding, business, or regular conversation) just like ChatGPT or Claude.
@@ -1128,6 +1128,31 @@ You have access to the current project context below. You can answer specific qu
 --- CURRENT DEAL CONTEXT ---
 ${context}
 --- END CONTEXT ---`
+
+    if (keys.deepseek && keys.deepseek.trim()) {
+        try {
+            const res = await fetch('https://api.deepseek.com/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${keys.deepseek.trim()}`,
+                },
+                body: JSON.stringify({
+                    model: 'deepseek-chat',
+                    messages: [
+                        { role: 'system', content: systemPrompt },
+                        { role: 'user', content: prompt }
+                    ],
+                    temperature: 0.3,
+                })
+            })
+            if (res.ok) {
+                const data = await res.json()
+                const text = data.choices?.[0]?.message?.content
+                if (text) return { text, provider: 'DeepSeek (V4/Chat)' }
+            }
+        } catch { }
+    }
 
     if (keys.openai && keys.openai.trim()) {
         try {
@@ -1617,6 +1642,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
             const userAnthropicApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_anthropic_key') || '') : ''
             const userOpenAiApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_openai_key') || '') : ''
             const userGeminiApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_gemini_key') || '') : ''
+            const userDeepseekApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_deepseek_key') || '') : ''
 
             let answer = ''
             let tier: ResponseTier = 'cloud_ai'
@@ -1633,6 +1659,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                         userAnthropicApiKey,
                         userOpenAiApiKey,
                         userGeminiApiKey,
+                        userDeepseekApiKey,
                     }),
                 })
                 if (res.ok) {
@@ -1645,12 +1672,13 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                 }
             } catch { }
 
-            // If n8n failed or was empty, check if user provided direct API keys for direct ChatGPT/Claude/Gemini generation
-            if (!answer && (userOpenAiApiKey || userAnthropicApiKey || userGeminiApiKey)) {
+            // If n8n failed or was empty, check if user provided direct API keys for direct ChatGPT/Claude/Gemini/DeepSeek generation
+            if (!answer && (userOpenAiApiKey || userAnthropicApiKey || userGeminiApiKey || userDeepseekApiKey)) {
                 const directRes = await callDirectUserLlm(trimmed, context, {
                     openai: userOpenAiApiKey,
                     anthropic: userAnthropicApiKey,
                     gemini: userGeminiApiKey,
+                    deepseek: userDeepseekApiKey,
                 })
                 if (directRes) {
                     answer = directRes.text
@@ -1706,6 +1734,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
             const userAnthropicApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_anthropic_key') || '') : ''
             const userOpenAiApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_openai_key') || '') : ''
             const userGeminiApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_gemini_key') || '') : ''
+            const userDeepseekApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_deepseek_key') || '') : ''
 
             let answer = ''
             let tier: ResponseTier = 'cloud_ai'
@@ -1722,6 +1751,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                         userAnthropicApiKey,
                         userOpenAiApiKey,
                         userGeminiApiKey,
+                        userDeepseekApiKey,
                     }),
                 })
                 if (res.ok) {
@@ -1734,11 +1764,12 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                 }
             } catch { }
 
-            if (!answer && (userOpenAiApiKey || userAnthropicApiKey || userGeminiApiKey)) {
+            if (!answer && (userOpenAiApiKey || userAnthropicApiKey || userGeminiApiKey || userDeepseekApiKey)) {
                 const directRes = await callDirectUserLlm(prompt, context, {
                     openai: userOpenAiApiKey,
                     anthropic: userAnthropicApiKey,
                     gemini: userGeminiApiKey,
+                    deepseek: userDeepseekApiKey,
                 })
                 if (directRes) {
                     answer = directRes.text
