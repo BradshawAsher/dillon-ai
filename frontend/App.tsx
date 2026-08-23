@@ -10,7 +10,7 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState<AppAuthUser | null>(null)
   const [view, setView] = useState<'landing' | 'login' | 'dashboard'>(() => {
     if (typeof window !== 'undefined') {
-      const parsed = parseUrlDeepLinkState(window.location.search)
+      const parsed = parseUrlDeepLinkState(window.location.search, window.location.hash)
       if (parsed.view === 'login') {
         return 'login'
       }
@@ -25,12 +25,21 @@ export default function App() {
     // 1. Initialize Supabase Auth state listener
     const unsubscribe = initAuthListener((user) => {
       setCurrentUser(user)
+      if (user && typeof window !== 'undefined') {
+        const isOAuthCallback = window.location.search.includes('code=') || 
+                                window.location.hash.includes('access_token=') ||
+                                window.location.search.includes('token_hash=')
+        const parsed = parseUrlDeepLinkState(window.location.search, window.location.hash)
+        if (isOAuthCallback || parsed.view === 'dashboard' || parsed.view === 'login') {
+          setView('dashboard')
+        }
+      }
     })
 
     // 2. Browser history popstate navigation
     if (typeof window !== 'undefined') {
       const handlePopState = () => {
-        const parsed = parseUrlDeepLinkState(window.location.search)
+        const parsed = parseUrlDeepLinkState(window.location.search, window.location.hash)
         if (parsed.view === 'login') {
           setView('login')
         } else if (parsed.view === 'dashboard') {

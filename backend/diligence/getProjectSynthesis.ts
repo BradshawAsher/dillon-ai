@@ -340,7 +340,7 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
         .select('*')
         .or('is_placeholder.is.null,is_placeholder.eq.false')
         .order('id', { ascending: false })
-        .limit(50)
+        .limit(500)
 
     if (error) throw new Error(`Supabase read failed: ${error.message}`)
     if (!rows) return []
