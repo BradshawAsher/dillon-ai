@@ -19,6 +19,7 @@ import {
     signUpWithPassword,
     signInWithGoogle,
     signInWithGithub,
+    signInWithMicrosoft,
     type AppAuthUser,
 } from '../services/supabaseAuth'
 
@@ -41,7 +42,7 @@ export default function LoginPage({
     const [fullName, setFullName] = useState('')
     const [team, setTeam] = useState('Pod 1 (Acquisitions & Diligence)')
     const [isLoading, setIsLoading] = useState(false)
-    const [socialLoading, setSocialLoading] = useState<'google' | 'github' | null>(null)
+    const [socialLoading, setSocialLoading] = useState<'google' | 'github' | 'microsoft' | null>(null)
     const [errorMessage, setErrorMessage] = useState<string | null>(null)
     const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
@@ -114,6 +115,21 @@ export default function LoginPage({
             }
         } catch (err: any) {
             setErrorMessage(err?.message || 'Failed to initialize GitHub Sign In.')
+        } finally {
+            setSocialLoading(null)
+        }
+    }
+
+    const handleMicrosoftAuth = async () => {
+        setErrorMessage(null)
+        setSocialLoading('microsoft')
+        try {
+            const res = await signInWithMicrosoft()
+            if (!res.success) {
+                setErrorMessage(res.error || 'Microsoft authentication failed.')
+            }
+        } catch (err: any) {
+            setErrorMessage(err?.message || 'Failed to initialize Microsoft Sign In.')
         } finally {
             setSocialLoading(null)
         }
@@ -215,6 +231,26 @@ export default function LoginPage({
                                     </svg>
                                 )}
                                 <span>Continue with GitHub</span>
+                            </Button>
+
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="w-full h-11 justify-center gap-3 font-semibold border-border/80 hover:bg-muted/80"
+                                onClick={handleMicrosoftAuth}
+                                disabled={!!socialLoading || isLoading}
+                            >
+                                {socialLoading === 'microsoft' ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                    <svg className="h-4 w-4" viewBox="0 0 21 21">
+                                        <rect x="1" y="1" width="9" height="9" fill="#f25022" />
+                                        <rect x="11" y="1" width="9" height="9" fill="#7fba00" />
+                                        <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
+                                        <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
+                                    </svg>
+                                )}
+                                <span>Continue with Microsoft</span>
                             </Button>
                         </div>
 

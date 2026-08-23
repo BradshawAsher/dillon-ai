@@ -1,6 +1,17 @@
 import { supabase } from '../supabaseClient'
 
-type Params = { projectId: string; environment?: 'production' | 'test' }
+type Params = {
+  projectId: string
+  environment?: 'production' | 'test'
+  userAnthropicApiKey?: string
+  userOpenAiApiKey?: string
+  userGeminiApiKey?: string
+  userDeepseekApiKey?: string
+  userApiKey?: string
+  userProvider?: string
+  synthPrimaryModel?: string
+  synthBackupModel?: string
+}
 
 export default async function triggerProjectSynthesis(req: { params: Params; user: User }) {
   const projectId = req.params.projectId?.trim()
@@ -29,7 +40,17 @@ export default async function triggerProjectSynthesis(req: { params: Params; use
     path,
     method: 'POST',
     bodyType: 'json',
-    json: { projectId },
+    json: {
+      projectId,
+      userAnthropicApiKey: req.params.userAnthropicApiKey || '',
+      userOpenAiApiKey: req.params.userOpenAiApiKey || '',
+      userGeminiApiKey: req.params.userGeminiApiKey || '',
+      userDeepseekApiKey: req.params.userDeepseekApiKey || '',
+      userApiKey: req.params.userApiKey || '',
+      userProvider: req.params.userProvider || '',
+      synthPrimaryModel: req.params.synthPrimaryModel || '',
+      synthBackupModel: req.params.synthBackupModel || '',
+    },
   })
 
   return { ok: true, projectId, status: 'started', data: response.data }

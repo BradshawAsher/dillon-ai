@@ -120,7 +120,7 @@ export default async function getSubmissionHistory(req: {
         .select('*')
         .eq('environment', environment)
         .order('updated_at', { ascending: false })
-        .limit(500)
+        .limit(100)
 
     if (error) throw new Error(`Supabase read failed: ${error.message}`)
     if (!rows) return []

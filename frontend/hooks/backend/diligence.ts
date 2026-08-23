@@ -131,6 +131,12 @@ type SubmitPayload = {
     triggerTimestamp: string
     requestID: string
     environment: 'production' | 'test'
+    userAnthropicApiKey?: string
+    userOpenAiApiKey?: string
+    userGeminiApiKey?: string
+    userDeepseekApiKey?: string
+    userApiKey?: string
+    userProvider?: string
 }
 
 type SubmitResponse = {
@@ -206,9 +212,25 @@ function useLiveSubmissionHistory() {
     return useQuery(
         useCallback(async (params: Record<string, unknown> = {}) => {
             const environment = params.environment === 'test' ? 'test' : 'production'
-            return fetchJson<SubmissionHistoryItem[]>(`/api/diligence/history?environment=${environment}`, {
+            const CACHE_KEY = `mergeworks_history_cache_${environment}`
+            const CACHE_TTL_MS = 3_000
+            if (!params.skipCache) {
+                try {
+                    const cached = sessionStorage.getItem(CACHE_KEY)
+                    if (cached) {
+                        const parsed = JSON.parse(cached)
+                        if (parsed.timestamp && Date.now() - parsed.timestamp < CACHE_TTL_MS && Array.isArray(parsed.data)) {
+                            return parsed.data as SubmissionHistoryItem[]
+                        }
+                    }
+                } catch {}
+            }
+
+            const data = await fetchJson<SubmissionHistoryItem[]>(`/api/diligence/history?environment=${environment}`, {
                 headers: identityHeaders(),
             })
+            try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ timestamp: Date.now(), data })) } catch {}
+            return data
         }, [])
     )
 }
@@ -217,9 +239,25 @@ function useLiveProjectSynthesis() {
     return useQuery(
         useCallback(async (params: Record<string, unknown> = {}) => {
             const environment = params.environment === 'test' ? 'test' : 'production'
-            return fetchJson<ProjectSynthesisItem[]>(`/api/diligence/synthesis?environment=${environment}`, {
+            const CACHE_KEY = `mergeworks_synthesis_cache_${environment}`
+            const CACHE_TTL_MS = 3_000
+            if (!params.skipCache) {
+                try {
+                    const cached = sessionStorage.getItem(CACHE_KEY)
+                    if (cached) {
+                        const parsed = JSON.parse(cached)
+                        if (parsed.timestamp && Date.now() - parsed.timestamp < CACHE_TTL_MS && Array.isArray(parsed.data)) {
+                            return parsed.data as ProjectSynthesisItem[]
+                        }
+                    }
+                } catch {}
+            }
+
+            const data = await fetchJson<ProjectSynthesisItem[]>(`/api/diligence/synthesis?environment=${environment}`, {
                 headers: identityHeaders(),
             })
+            try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ timestamp: Date.now(), data })) } catch {}
+            return data
         }, [])
     )
 }
