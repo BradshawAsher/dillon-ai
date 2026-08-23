@@ -46,18 +46,14 @@ const originalWindow = globalThis.window
 
 describe('ApiKeyModal BYOK Storage and Helpers', () => {
     beforeEach(() => {
-        mockStorage.clear()
-        // @ts-expect-error mock environment assignment
-        globalThis.localStorage = mockStorage
-        // @ts-expect-error mock environment assignment
-        globalThis.window = { localStorage: mockStorage }
+        mockStorage.clear();
+        (globalThis as any).localStorage = mockStorage;
+        (globalThis as any).window = { localStorage: mockStorage };
     })
 
     afterAll(() => {
-        // @ts-expect-error mock environment assignment
-        globalThis.localStorage = originalLocalStorage
-        // @ts-expect-error mock environment assignment
-        globalThis.window = originalWindow
+        (globalThis as any).localStorage = originalLocalStorage;
+        (globalThis as any).window = originalWindow;
     })
 
     it('manages Anthropic Claude custom key storage correctly', () => {

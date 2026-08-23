@@ -256,6 +256,19 @@ export default function LoginButton({ onNavigateAccount }: { onNavigateAccount?:
                             </Button>
                         </div>
 
+                        {/* Maintenance Disclaimer */}
+                        <div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-2.5 text-[11px] text-amber-300">
+                            <div className="flex items-start gap-2">
+                                <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5 text-amber-400" />
+                                <div className="space-y-0.5">
+                                    <p className="font-semibold text-amber-200">SSO Maintenance Notice</p>
+                                    <p className="text-amber-300/90 leading-tight">
+                                        Single Sign-On is undergoing scheduled maintenance until <strong>August 27</strong>. Please use <strong>Email & Password</strong> or Demo Mode.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
                         {/* Social Sign-In */}
                         <div className="mt-4 space-y-2">
                             <Button

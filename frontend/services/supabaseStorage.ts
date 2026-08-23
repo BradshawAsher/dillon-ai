@@ -77,6 +77,7 @@ export async function uploadDocumentToSupabaseStorage(options: {
     .uploadToSignedUrl(ticket.path, ticket.token, options.file, {
       contentType: fileType || 'application/octet-stream',
       upsert: true,
+      cacheControl: '31536000',
     })
 
   if (error || !data) {
@@ -85,6 +86,7 @@ export async function uploadDocumentToSupabaseStorage(options: {
       method: 'PUT',
       headers: {
         'Content-Type': fileType || 'application/octet-stream',
+        'Cache-Control': 'public, max-age=31536000, immutable',
       },
       body: options.file,
     })

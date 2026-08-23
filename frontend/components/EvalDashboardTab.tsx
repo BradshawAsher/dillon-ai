@@ -1495,6 +1495,7 @@ export default function EvalDashboardTab({
                                 perDocActual: 'OpenAI 5.6 Terra',
                                 synthPrimary: 'OpenAI 5.6 Terra',
                                 synthBackup: 'OpenAI 5.6 Sol',
+                                synthActual: 'OpenAI 5.6 Terra',
                                 perDocCost: 0.055,
                                 synthCost: 0.065,
                                 perDocAttempts: '1/3',

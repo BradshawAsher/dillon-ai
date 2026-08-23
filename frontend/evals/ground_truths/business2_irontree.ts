@@ -12,7 +12,7 @@ export const irontreeGroundTruth: ProjectSynthesisItem = {
         'TTM Revenue of $4.255M and adjusted EBITDA of $1.063M.',
         'Heavy equipment fleet fully owned with low remaining debt.',
     ],
-    redFlags: [],
+    redFlags: ['Capex requirement: 2 bucket trucks due for replacement in FY26 ($180k obligation)'],
     yellowFlags: ['Capex requirement for 2 bucket trucks due in FY26 ($180k requirement).'],
     greenFlags: ['High gross margin profile (48%) supported by municipal contracts.'],
     finalRiskLevel: 'Medium',
@@ -43,8 +43,5 @@ export const irontreeGroundTruth: ProjectSynthesisItem = {
         'business 2 - data-cyber company in pa',
         'data-cyber',
         'cyber',
-    ],
-    redFlags: [
-        'Capex requirement: 2 bucket trucks due for replacement in FY26 ($180k obligation)',
     ],
 }

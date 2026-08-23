@@ -12,7 +12,7 @@ export const turnkeyGroundTruth: ProjectSynthesisItem = {
         'TTM Revenue of $3.50M and adjusted EBITDA of $875.0K.',
         'Diversified B2B product management clients with average 4.2-year contract tenure.',
     ],
-    redFlags: [],
+    redFlags: ['2 key account managers hold 60%+ of client relationships without non-competes'],
     yellowFlags: ['2 key account managers hold major client relationships.'],
     greenFlags: ['Zero inventory liability; pure high-margin software & service operations.'],
     finalRiskLevel: 'Low',
@@ -41,8 +41,5 @@ export const turnkeyGroundTruth: ProjectSynthesisItem = {
         'business3',
         'business 3 - turnkey product management',
         'logistics',
-    ],
-    redFlags: [
-        '2 key account managers hold 60%+ of client relationships without non-competes',
     ],
 }

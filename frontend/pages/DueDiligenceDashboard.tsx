@@ -1742,7 +1742,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         return isCurrentProjectExtractingDocs || isCurrentProjectSynthesisRunning || isManualSynthesisRunning
     }, [isCurrentProjectExtractingDocs, isCurrentProjectSynthesisRunning, isManualSynthesisRunning])
 
-    // Periodic refresh effect: ONLY poll (3s) when batch/processing/synthesis is active; completely disabled when idle to preserve database quota
+    // Periodic refresh effect: Fallback polling during active processing (Realtime WebSockets is the primary stream).
+    // Safeguard: Circuit breaker steps down from 3s to 30s after 5 minutes (100 ticks) to protect against stuck workflows.
     useEffect(() => {
         const isActivelyProcessing = Boolean(
             activeSubmissionBatch ||
@@ -1753,7 +1754,13 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
         if (!isActivelyProcessing) return
 
+        let pollCount = 0
         const interval = setInterval(() => {
+            pollCount++
+            // After 5 minutes (100 ticks at 3s), throttle to once every 30s (every 10th tick)
+            if (pollCount > 100 && pollCount % 10 !== 0) {
+                return
+            }
             void triggerSubmissionHistory({ environment: 'production' })
             void triggerProjectSynthesis({ environment: 'production' })
             void triggerEvalRuns()
@@ -3423,7 +3430,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                                         workspace.scrollIntoView({ behavior: 'smooth', block: 'start' })
                                     }
                                 }}
-                                onOpenChat={() => setIsChatOpen(true)}
+                                onOpenChat={() => {}}
                             />
                         </section>
                     ) : null}
