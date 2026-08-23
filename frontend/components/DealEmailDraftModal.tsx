@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Check, Copy, ExternalLink, Link2, Mail, X } from 'lucide-react'
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { Badge } from '../lib/shadcn/badge'
@@ -26,6 +26,17 @@ export default function DealEmailDraftModal({
     const [copiedModalEmail, setCopiedModalEmail] = useState(false)
     const [copiedModalSubject, setCopiedModalSubject] = useState(false)
     const [copiedModalLink, setCopiedModalLink] = useState(false)
+
+    useEffect(() => {
+        if (!isOpen) return
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                onClose()
+            }
+        }
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [isOpen, onClose])
 
     if (!isOpen) return null
 

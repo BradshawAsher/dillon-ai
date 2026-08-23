@@ -13,6 +13,7 @@ import { parseDocumentedFacts } from '../utils/evidence'
 import { normalizeEquityFraction } from '../utils/dealMath'
 import { sendIssueReportSlackAlert, type IssueCategory } from '../services/slackAlertService'
 import { getStoredUser } from '../services/supabaseAuth'
+import { getUserModelConfig, mapModelNameToApiIdentifier } from './ApiKeyModal'
 
 export type ResponseTier = 'cloud_ai' | 'direct_llm' | 'local_heuristics'
 
@@ -1117,20 +1118,371 @@ function clampChatPanelSize(width: number, height: number): ChatPanelSize {
     }
 }
 
+interface ClientSideToolContext {
+    synthesis?: ProjectSynthesisItem
+    model: DealModel
+    projectName: string
+    documents?: SubmissionHistoryItem[]
+    allSyntheses?: ProjectSynthesisItem[]
+}
+
+const CHAT_AGENT_OPENAI_TOOLS = [
+    {
+        type: 'function',
+        function: {
+            name: 'calculate_deal_financials',
+            description: 'Calculate crucial M&A financial metrics such as Debt Service Coverage Ratio (DSCR), Seller Discretionary Earnings (SDE) bridge, implied EBITDA multiples, and SBA 7(a) loan amortizations.',
+            parameters: {
+                type: 'object',
+                properties: {
+                    operation: {
+                        type: 'string',
+                        enum: ['dscr', 'sde_bridge', 'ebitda_multiple', 'loan_amortization'],
+                        description: 'The financial calculation to perform'
+                    },
+                    operatingCashFlow: { type: 'number', description: 'Annual operating cash flow or EBITDA for DSCR' },
+                    loanAmount: { type: 'number', description: 'Total debt or loan amount requested' },
+                    interestRatePercent: { type: 'number', description: 'Annual interest rate percentage (e.g. 11.5 for 11.5%)' },
+                    loanTermYears: { type: 'number', description: 'Loan maturity term in years (e.g. 10 for SBA 7a)' },
+                    netIncome: { type: 'number', description: 'Net income before adjustments' },
+                    ownerSalary: { type: 'number', description: 'Owner compensation/salary add-back' },
+                    discretionaryAddBacks: { type: 'number', description: 'One-off or discretionary add-backs' },
+                    adjustedEbitda: { type: 'number', description: 'Confirmed adjusted EBITDA' },
+                    purchasePrice: { type: 'number', description: 'Total transaction enterprise value or purchase price' }
+                },
+                required: ['operation']
+            }
+        }
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'smb_valuation_benchmarks',
+            description: 'Look up standard SMB valuation multiples (EV/EBITDA, EV/Revenue), target profit margins, key risk drivers, and SBA underwriting limits for specific industries (HVAC, SaaS, Healthcare, Dental, Manufacturing, E-Commerce, Professional Services).',
+            parameters: {
+                type: 'object',
+                properties: {
+                    industry: {
+                        type: 'string',
+                        description: 'Industry sector name (e.g. "hvac", "saas", "healthcare", "dental", "manufacturing", "ecommerce", "services")'
+                    }
+                },
+                required: ['industry']
+            }
+        }
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'query_deal_data',
+            description: 'Inspect live deal facts, balance sheet line items, flags, or document inventory for the active deal project.',
+            parameters: {
+                type: 'object',
+                properties: {
+                    queryType: {
+                        type: 'string',
+                        enum: ['summary', 'documented_facts', 'flags', 'valuation', 'documents'],
+                        description: 'Aspect of the deal to query'
+                    }
+                },
+                required: ['queryType']
+            }
+        }
+    }
+]
+
+const CHAT_AGENT_ANTHROPIC_TOOLS = [
+    {
+        name: 'calculate_deal_financials',
+        description: 'Calculate crucial M&A financial metrics such as Debt Service Coverage Ratio (DSCR), Seller Discretionary Earnings (SDE) bridge, implied EBITDA multiples, and SBA 7(a) loan amortizations.',
+        input_schema: {
+            type: 'object',
+            properties: {
+                operation: {
+                    type: 'string',
+                    enum: ['dscr', 'sde_bridge', 'ebitda_multiple', 'loan_amortization'],
+                    description: 'The financial calculation to perform'
+                },
+                operatingCashFlow: { type: 'number', description: 'Annual operating cash flow or EBITDA for DSCR' },
+                loanAmount: { type: 'number', description: 'Total debt or loan amount requested' },
+                interestRatePercent: { type: 'number', description: 'Annual interest rate percentage (e.g. 11.5 for 11.5%)' },
+                loanTermYears: { type: 'number', description: 'Loan maturity term in years (e.g. 10 for SBA 7a)' },
+                netIncome: { type: 'number', description: 'Net income before adjustments' },
+                ownerSalary: { type: 'number', description: 'Owner compensation/salary add-back' },
+                discretionaryAddBacks: { type: 'number', description: 'One-off or discretionary add-backs' },
+                adjustedEbitda: { type: 'number', description: 'Confirmed adjusted EBITDA' },
+                purchasePrice: { type: 'number', description: 'Total transaction enterprise value or purchase price' }
+            },
+            required: ['operation']
+        }
+    },
+    {
+        name: 'smb_valuation_benchmarks',
+        description: 'Look up standard SMB valuation multiples (EV/EBITDA, EV/Revenue), target profit margins, key risk drivers, and SBA underwriting limits for specific industries (HVAC, SaaS, Healthcare, Dental, Manufacturing, E-Commerce, Professional Services).',
+        input_schema: {
+            type: 'object',
+            properties: {
+                industry: {
+                    type: 'string',
+                    description: 'Industry sector name (e.g. "hvac", "saas", "healthcare", "dental", "manufacturing", "ecommerce", "services")'
+                }
+            },
+            required: ['industry']
+        }
+    },
+    {
+        name: 'query_deal_data',
+        description: 'Inspect live deal facts, balance sheet line items, flags, or document inventory for the active deal project.',
+        input_schema: {
+            type: 'object',
+            properties: {
+                queryType: {
+                    type: 'string',
+                    enum: ['summary', 'documented_facts', 'flags', 'valuation', 'documents'],
+                    description: 'Aspect of the deal to query'
+                }
+            },
+            required: ['queryType']
+        }
+    }
+]
+
+function executeClientSideTool(name: string, args: any, context: ClientSideToolContext): any {
+    if (name === 'calculate_deal_financials') {
+        const op = String(args.operation || 'dscr').toLowerCase()
+        if (op === 'dscr' || op === 'debt_service_coverage') {
+            const cf = Number(args.operatingCashFlow || args.ebitda || 0)
+            const loan = Number(args.loanAmount || 0)
+            const rate = Number(args.interestRatePercent || 11.5) / 100
+            const term = Number(args.loanTermYears || 10)
+            const monthlyRate = rate / 12
+            const numPayments = term * 12
+            const monthlyPayment = monthlyRate > 0 && numPayments > 0
+                ? (loan * monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1)
+                : (loan / (term * 12 || 1))
+            const annualDebtService = monthlyPayment * 12
+            const dscr = annualDebtService > 0 ? (cf / annualDebtService) : 0
+            const sbaQualified = dscr >= 1.25
+            return {
+                operation: 'dscr',
+                operatingCashFlow: cf,
+                loanAmount: loan,
+                interestRatePercent: Number((rate * 100).toFixed(2)),
+                loanTermYears: term,
+                monthlyPayment: Math.round(monthlyPayment),
+                annualDebtService: Math.round(annualDebtService),
+                dscr: Number(dscr.toFixed(2)),
+                sbaUnderwritingQualified: sbaQualified,
+                sbaMarginOfSafety: Number(((dscr - 1.25) / 1.25 * 100).toFixed(1)) + '%',
+                assessment: sbaQualified ? 'STRONG: Meets SBA 7(a) minimum 1.25x DSCR benchmark' : 'CRITICAL WARNING: Fails SBA 7(a) minimum 1.25x DSCR threshold'
+            }
+        }
+        if (op === 'sde_bridge' || op === 'sde') {
+            const netIncome = Number(args.netIncome || 0)
+            const ownerSalary = Number(args.ownerSalary || 0)
+            const addBacks = Number(args.discretionaryAddBacks || 0)
+            const interest = Number(args.interestExpense || 0)
+            const tax = Number(args.taxExpense || 0)
+            const depreciation = Number(args.depreciationExpense || 0)
+            const sde = netIncome + ownerSalary + addBacks + interest + tax + depreciation
+            return {
+                operation: 'sde_bridge',
+                netIncome,
+                ownerSalary,
+                discretionaryAddBacks: addBacks,
+                depreciation,
+                interest,
+                tax,
+                calculatedSDE: sde,
+                recommendedMultipleRange: '2.5x - 3.5x SDE',
+                impliedValuationRange: `$${Math.round(sde * 2.5).toLocaleString()} - $${Math.round(sde * 3.5).toLocaleString()}`
+            }
+        }
+        if (op === 'ebitda_multiple' || op === 'valuation') {
+            const ebitda = Number(args.adjustedEbitda || args.ebitda || 0)
+            const price = Number(args.purchasePrice || args.askingPrice || 0)
+            const multiple = ebitda > 0 ? (price / ebitda) : 0
+            return {
+                operation: 'ebitda_multiple',
+                adjustedEbitda: ebitda,
+                purchasePrice: price,
+                impliedEvEbitdaMultiple: Number(multiple.toFixed(2)) + 'x',
+                benchmarkComparison: multiple < 3.5 ? 'ATTRACTIVE (Below average market multiple)' : multiple <= 5.5 ? 'FAIR MARKET (Within normal 3.5x - 5.5x range)' : 'PREMIUM (Above 5.5x standard SMB range - requires strong recurring revenue)'
+            }
+        }
+        if (op === 'loan_amortization') {
+            const loan = Number(args.loanAmount || 0)
+            const rate = Number(args.interestRatePercent || 11.5) / 100
+            const term = Number(args.loanTermYears || 10)
+            const monthlyRate = rate / 12
+            const numPayments = term * 12
+            const monthlyPayment = monthlyRate > 0 && numPayments > 0
+                ? (loan * monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1)
+                : (loan / (term * 12 || 1))
+            const totalPaid = monthlyPayment * numPayments
+            const totalInterest = totalPaid - loan
+            return {
+                operation: 'loan_amortization',
+                loanAmount: loan,
+                annualInterestRate: Number((rate * 100).toFixed(2)),
+                loanTermYears: term,
+                monthlyPayment: Math.round(monthlyPayment),
+                totalInterestPaid: Math.round(totalInterest),
+                totalCostOfDebt: Math.round(totalPaid)
+            }
+        }
+    }
+
+    if (name === 'smb_valuation_benchmarks') {
+        const q = String(args.industry || args.sector || args.query || '').toLowerCase()
+        const benchmarks: Record<string, any> = {
+            hvac_trades: {
+                name: 'HVAC, Plumbing, Electrical & Mechanical Trades',
+                medianEvEbitda: '3.5x - 5.5x',
+                medianEvRevenue: '0.8x - 1.4x',
+                targetEbitdaMargin: '15% - 22%',
+                keyDrivers: ['Recurring maintenance agreements (>30% of revenue)', 'Technician retention rate', 'Commercial vs Residential mix'],
+                sbaUnderwritingMaxLeverage: '3.5x Senior SBA 7(a) + 0.5x-1.0x Seller Note',
+            },
+            saas: {
+                name: 'B2B Micro-SaaS / Software',
+                medianEvEbitda: '5.0x - 8.0x (or 2.5x - 5.0x ARR for growing SaaS)',
+                medianEvRevenue: '2.5x - 5.0x ARR',
+                targetEbitdaMargin: '20% - 35%',
+                keyDrivers: ['Net Revenue Retention (>100%)', 'Gross Margins (>75%)', 'Customer Concentration (<15% max single customer)'],
+                sbaUnderwritingMaxLeverage: '2.5x Senior + Buyer Equity (Asset-light)',
+            },
+            healthcare_dental: {
+                name: 'Healthcare, Dental & Veterinary Clinics',
+                medianEvEbitda: '4.0x - 6.5x',
+                medianEvRevenue: '1.0x - 1.8x',
+                targetEbitdaMargin: '18% - 28%',
+                keyDrivers: ['Provider employment contracts & non-competes', 'Payer mix (Private vs Medicaid)', 'Equipment age & capex'],
+                sbaUnderwritingMaxLeverage: '3.75x Senior SBA 7(a) 10-year term',
+            },
+            manufacturing: {
+                name: 'Light Precision Manufacturing & Fabrication',
+                medianEvEbitda: '3.5x - 5.0x',
+                medianEvRevenue: '0.7x - 1.2x',
+                targetEbitdaMargin: '12% - 20%',
+                keyDrivers: ['Customer concentration (<20% top client)', 'Equipment replacement cycle / capex', 'Proprietary tooling/IP'],
+                sbaUnderwritingMaxLeverage: '3.5x Senior + Equipment financing',
+            },
+            ecommerce_dtc: {
+                name: 'E-Commerce, Amazon FBA & DTC Brands',
+                medianEvEbitda: '2.5x - 4.0x SDE/EBITDA',
+                medianEvRevenue: '0.5x - 1.0x Revenue',
+                targetEbitdaMargin: '12% - 20%',
+                keyDrivers: ['Platform risk (Amazon TOS)', 'SKU concentration', 'Ad spend ROAS & TACoS trend'],
+                sbaUnderwritingMaxLeverage: '2.5x Senior max due to inventory volatility',
+            },
+            professional_services: {
+                name: 'Professional Services, Accounting & IT Consulting',
+                medianEvEbitda: '3.0x - 4.5x',
+                medianEvRevenue: '0.8x - 1.3x',
+                targetEbitdaMargin: '15% - 25%',
+                keyDrivers: ['Key-person dependency on founder', 'Client retention rate', 'Billable utilization'],
+                sbaUnderwritingMaxLeverage: '3.0x Senior max',
+            }
+        }
+        for (const [key, val] of Object.entries(benchmarks)) {
+            if (q.includes(key.replace('_', ' ')) || q.includes(key.split('_')[0]) || val.name.toLowerCase().includes(q)) {
+                return val
+            }
+        }
+        return {
+            generalSMBBenchmark: {
+                medianEvEbitda: '3.0x - 5.0x adjusted EBITDA / SDE',
+                medianEvRevenue: '0.6x - 1.5x Revenue',
+                targetEbitdaMargin: '15% - 25%',
+                targetGrossMargin: '>40%',
+                sba7aDebtCoverageMinimum: '1.25x DSCR',
+                maxSafeSeniorLeverage: '3.5x EBITDA',
+                availableSectors: Object.keys(benchmarks)
+            }
+        }
+    }
+
+    if (name === 'query_deal_data') {
+        const type = String(args.queryType || 'summary').toLowerCase()
+        const facts = parseDocumentedFacts(context.model.documentedFactsJson)
+        if (type === 'documented_facts' || type === 'facts') {
+            return { projectName: context.projectName, documentedFacts: facts }
+        }
+        if (type === 'flags') {
+            return {
+                redFlags: context.synthesis?.redFlags || [],
+                yellowFlags: context.synthesis?.yellowFlags || [],
+                greenFlags: context.synthesis?.greenFlags || [],
+                crossDocumentConflicts: context.synthesis?.crossDocumentConflicts || []
+            }
+        }
+        if (type === 'valuation') {
+            return {
+                askingPrice: context.model.askingPrice,
+                purchasePrice: context.model.purchasePrice,
+                lowerBound: context.synthesis?.valuationLowerBound,
+                baseEstimate: context.synthesis?.valuationBaseEstimate,
+                upperBound: context.synthesis?.valuationUpperBound,
+                confidence: context.synthesis?.valuationConfidence
+            }
+        }
+        if (type === 'documents') {
+            return {
+                documentsCount: context.documents?.length || 0,
+                documents: context.documents?.map(d => ({ name: d.fileName, status: d.status, type: d.documentType })) || []
+            }
+        }
+        return {
+            projectName: context.projectName,
+            trafficLight: context.synthesis?.finalTrafficLight,
+            riskLevel: context.synthesis?.finalRiskLevel,
+            recommendation: context.synthesis?.finalRecommendation,
+            summary: context.synthesis?.finalJudgmentSummary
+        }
+    }
+
+    return { error: `Unknown tool: ${name}` }
+}
+
 async function callDirectUserLlm(
     prompt: string,
     context: string,
-    keys: { openai?: string; anthropic?: string; gemini?: string; deepseek?: string }
+    keys: { openai?: string; anthropic?: string; gemini?: string; deepseek?: string },
+    recentMessages: Message[] = [],
+    toolContext?: ClientSideToolContext
 ): Promise<{ text: string; provider: string } | null> {
-    const systemPrompt = `You are MergeWorks AI, an expert M&A due diligence advisor and general AI assistant.
-You have access to the current project context below. You can answer specific questions about the deal, financial metrics, valuation, red flags, or answer ANY general question (general finance, negotiation, coding, business, or regular conversation) just like ChatGPT or Claude.
+    const systemPrompt = `You are MergeWorks AI, an expert M&A due diligence advisor and financial intelligence assistant.
+You have access to live financial tools (calculate_deal_financials, smb_valuation_benchmarks, query_deal_data) and memory of the active conversation.
+You can calculate DSCR, SDE bridges, loan amortizations, and analyze deal metrics with institutional rigor.
 
 --- CURRENT DEAL CONTEXT ---
 ${context}
 --- END CONTEXT ---`
 
+    const effectiveToolCtx: ClientSideToolContext = toolContext || {
+        model: {} as any,
+        projectName: 'Active Deal'
+    }
+
+    // Format recent conversation history for memory buffer (last 8 turns)
+    const historyBuffer = recentMessages.slice(-8).map(m => ({
+        role: m.role === 'user' ? 'user' : 'assistant',
+        content: m.content
+    }))
+
+    // 1. DeepSeek BYOK (OpenAI-Compatible ReAct Tool Calling)
     if (keys.deepseek && keys.deepseek.trim()) {
         try {
+            const deepseekConfig = getUserModelConfig('deepseek')
+            const deepseekModel = mapModelNameToApiIdentifier('deepseek', deepseekConfig.synthPrimary || deepseekConfig.docPrimary || 'DeepSeek V4 Flash')
+
+            const messages: any[] = [
+                { role: 'system', content: systemPrompt },
+                ...historyBuffer,
+                { role: 'user', content: prompt }
+            ]
+
             const res = await fetch('https://api.deepseek.com/chat/completions', {
                 method: 'POST',
                 headers: {
@@ -1138,24 +1490,63 @@ ${context}
                     'Authorization': `Bearer ${keys.deepseek.trim()}`,
                 },
                 body: JSON.stringify({
-                    model: 'deepseek-chat',
-                    messages: [
-                        { role: 'system', content: systemPrompt },
-                        { role: 'user', content: prompt }
-                    ],
-                    temperature: 0.3,
+                    model: deepseekModel,
+                    messages,
+                    tools: CHAT_AGENT_OPENAI_TOOLS,
+                    temperature: 0.2,
                 })
             })
             if (res.ok) {
                 const data = await res.json()
-                const text = data.choices?.[0]?.message?.content
-                if (text) return { text, provider: 'DeepSeek (V4/Chat)' }
+                const choice = data.choices?.[0]?.message
+                if (choice?.tool_calls && choice.tool_calls.length > 0) {
+                    messages.push(choice)
+                    for (const call of choice.tool_calls) {
+                        let parsedArgs = {}
+                        try { parsedArgs = JSON.parse(call.function.arguments || '{}') } catch { }
+                        const toolResult = executeClientSideTool(call.function.name, parsedArgs, effectiveToolCtx)
+                        messages.push({
+                            role: 'tool',
+                            tool_call_id: call.id,
+                            content: JSON.stringify(toolResult)
+                        })
+                    }
+                    const followUpRes = await fetch('https://api.deepseek.com/chat/completions', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${keys.deepseek.trim()}`,
+                        },
+                        body: JSON.stringify({
+                            model: deepseekModel,
+                            messages,
+                            temperature: 0.2,
+                        })
+                    })
+                    if (followUpRes.ok) {
+                        const followUpData = await followUpRes.json()
+                        const finalContent = followUpData.choices?.[0]?.message?.content
+                        if (finalContent) return { text: finalContent, provider: `DeepSeek (${deepseekModel})` }
+                    }
+                } else if (choice?.content) {
+                    return { text: choice.content, provider: `DeepSeek (${deepseekModel})` }
+                }
             }
         } catch { }
     }
 
+    // 2. OpenAI BYOK (GPT-5.6 Terra / Sol / Luna ReAct Tool Calling)
     if (keys.openai && keys.openai.trim()) {
         try {
+            const openaiConfig = getUserModelConfig('openai')
+            const openaiModel = mapModelNameToApiIdentifier('openai', openaiConfig.synthPrimary || openaiConfig.docPrimary || 'OpenAI 5.6 Terra')
+
+            const messages: any[] = [
+                { role: 'system', content: systemPrompt },
+                ...historyBuffer,
+                { role: 'user', content: prompt }
+            ]
+
             const res = await fetch('https://api.openai.com/v1/chat/completions', {
                 method: 'POST',
                 headers: {
@@ -1163,24 +1554,62 @@ ${context}
                     'Authorization': `Bearer ${keys.openai.trim()}`,
                 },
                 body: JSON.stringify({
-                    model: 'gpt-4o',
-                    messages: [
-                        { role: 'system', content: systemPrompt },
-                        { role: 'user', content: prompt }
-                    ],
-                    temperature: 0.3,
+                    model: openaiModel,
+                    messages,
+                    tools: CHAT_AGENT_OPENAI_TOOLS,
+                    temperature: 0.2,
                 })
             })
             if (res.ok) {
                 const data = await res.json()
-                const text = data.choices?.[0]?.message?.content
-                if (text) return { text, provider: 'OpenAI (GPT-4o)' }
+                const choice = data.choices?.[0]?.message
+                if (choice?.tool_calls && choice.tool_calls.length > 0) {
+                    messages.push(choice)
+                    for (const call of choice.tool_calls) {
+                        let parsedArgs = {}
+                        try { parsedArgs = JSON.parse(call.function.arguments || '{}') } catch { }
+                        const toolResult = executeClientSideTool(call.function.name, parsedArgs, effectiveToolCtx)
+                        messages.push({
+                            role: 'tool',
+                            tool_call_id: call.id,
+                            content: JSON.stringify(toolResult)
+                        })
+                    }
+                    const followUpRes = await fetch('https://api.openai.com/v1/chat/completions', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${keys.openai.trim()}`,
+                        },
+                        body: JSON.stringify({
+                            model: openaiModel,
+                            messages,
+                            temperature: 0.2,
+                        })
+                    })
+                    if (followUpRes.ok) {
+                        const followUpData = await followUpRes.json()
+                        const finalContent = followUpData.choices?.[0]?.message?.content
+                        if (finalContent) return { text: finalContent, provider: `OpenAI (${openaiModel})` }
+                    }
+                } else if (choice?.content) {
+                    return { text: choice.content, provider: `OpenAI (${openaiModel})` }
+                }
             }
         } catch { }
     }
 
+    // 3. Anthropic BYOK (Claude Sonnet 5 / Opus 5 Tool Use)
     if (keys.anthropic && keys.anthropic.trim()) {
         try {
+            const anthropicConfig = getUserModelConfig('anthropic')
+            const anthropicModel = mapModelNameToApiIdentifier('anthropic', anthropicConfig.synthPrimary || anthropicConfig.docPrimary || 'Claude Sonnet 5')
+
+            const messages: any[] = [
+                ...historyBuffer.map(h => ({ role: h.role, content: h.content })),
+                { role: 'user', content: prompt }
+            ]
+
             const res = await fetch('https://api.anthropic.com/v1/messages', {
                 method: 'POST',
                 headers: {
@@ -1190,35 +1619,82 @@ ${context}
                     'dangerously-allow-browser': 'true',
                 },
                 body: JSON.stringify({
-                    model: 'claude-3-5-sonnet-20241022',
-                    max_tokens: 2000,
+                    model: anthropicModel,
+                    max_tokens: 2500,
                     system: systemPrompt,
-                    messages: [{ role: 'user', content: prompt }]
+                    tools: CHAT_AGENT_ANTHROPIC_TOOLS,
+                    messages
                 })
             })
             if (res.ok) {
                 const data = await res.json()
-                const text = data.content?.[0]?.text
-                if (text) return { text, provider: 'Claude (Sonnet 3.5)' }
+                const toolUseBlocks = data.content?.filter((b: any) => b.type === 'tool_use') || []
+                if (toolUseBlocks.length > 0) {
+                    messages.push({ role: 'assistant', content: data.content })
+                    const toolResults = toolUseBlocks.map((b: any) => {
+                        const result = executeClientSideTool(b.name, b.input || {}, effectiveToolCtx)
+                        return {
+                            type: 'tool_result',
+                            tool_use_id: b.id,
+                            content: JSON.stringify(result)
+                        }
+                    })
+                    messages.push({ role: 'user', content: toolResults })
+
+                    const followUpRes = await fetch('https://api.anthropic.com/v1/messages', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'x-api-key': keys.anthropic.trim(),
+                            'anthropic-version': '2023-06-01',
+                            'dangerously-allow-browser': 'true',
+                        },
+                        body: JSON.stringify({
+                            model: anthropicModel,
+                            max_tokens: 2500,
+                            system: systemPrompt,
+                            messages
+                        })
+                    })
+                    if (followUpRes.ok) {
+                        const followUpData = await followUpRes.json()
+                        const finalContent = followUpData.content?.find((b: any) => b.type === 'text')?.text
+                        if (finalContent) return { text: finalContent, provider: `Claude (${anthropicModel})` }
+                    }
+                } else {
+                    const text = data.content?.find((b: any) => b.type === 'text')?.text
+                    if (text) return { text, provider: `Claude (${anthropicModel})` }
+                }
             }
         } catch { }
     }
 
+    // 4. Google Gemini BYOK (Gemini 3.7 Flash / 3.5 Flash Lite)
     if (keys.gemini && keys.gemini.trim()) {
         try {
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(keys.gemini.trim())}`, {
+            const geminiConfig = getUserModelConfig('gemini')
+            const geminiModel = mapModelNameToApiIdentifier('gemini', geminiConfig.synthPrimary || geminiConfig.docPrimary || 'Gemini 3.7 Flash')
+
+            const contents = [
+                ...historyBuffer.map(h => ({
+                    role: h.role === 'user' ? 'user' : 'model',
+                    parts: [{ text: h.content }]
+                })),
+                {
+                    role: 'user',
+                    parts: [{ text: `${systemPrompt}\n\nUser Question: ${prompt}` }]
+                }
+            ]
+
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(geminiModel)}:generateContent?key=${encodeURIComponent(keys.gemini.trim())}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [
-                        { role: 'user', parts: [{ text: `${systemPrompt}\n\nUser Question: ${prompt}` }] }
-                    ]
-                })
+                body: JSON.stringify({ contents })
             })
             if (res.ok) {
                 const data = await res.json()
                 const text = data.candidates?.[0]?.content?.parts?.[0]?.text
-                if (text) return { text, provider: 'Google (Gemini 2.5 Flash)' }
+                if (text) return { text, provider: `Google (${geminiModel})` }
             }
         } catch { }
     }
@@ -1674,12 +2150,18 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
 
             // If n8n failed or was empty, check if user provided direct API keys for direct ChatGPT/Claude/Gemini/DeepSeek generation
             if (!answer && (userOpenAiApiKey || userAnthropicApiKey || userGeminiApiKey || userDeepseekApiKey)) {
-                const directRes = await callDirectUserLlm(trimmed, context, {
-                    openai: userOpenAiApiKey,
-                    anthropic: userAnthropicApiKey,
-                    gemini: userGeminiApiKey,
-                    deepseek: userDeepseekApiKey,
-                })
+                const directRes = await callDirectUserLlm(
+                    trimmed,
+                    context,
+                    {
+                        openai: userOpenAiApiKey,
+                        anthropic: userAnthropicApiKey,
+                        gemini: userGeminiApiKey,
+                        deepseek: userDeepseekApiKey,
+                    },
+                    messages,
+                    { synthesis, model, projectName, documents, allSyntheses }
+                )
                 if (directRes) {
                     answer = directRes.text
                     tier = 'direct_llm'
@@ -1719,7 +2201,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
             setIsTyping(false)
             if (typingTimerRef.current) { clearInterval(typingTimerRef.current); typingTimerRef.current = null }
         }
-    }, [allSyntheses, documents, model, projectName, sessionId, synthesis])
+    }, [allSyntheses, documents, messages, model, projectName, sessionId, synthesis])
 
     const handleRerunWithLiveLlm = useCallback(async (messageId: string, promptOverride?: string) => {
         const targetMsg = messages.find(m => m.id === messageId)
@@ -1765,12 +2247,18 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
             } catch { }
 
             if (!answer && (userOpenAiApiKey || userAnthropicApiKey || userGeminiApiKey || userDeepseekApiKey)) {
-                const directRes = await callDirectUserLlm(prompt, context, {
-                    openai: userOpenAiApiKey,
-                    anthropic: userAnthropicApiKey,
-                    gemini: userGeminiApiKey,
-                    deepseek: userDeepseekApiKey,
-                })
+                const directRes = await callDirectUserLlm(
+                    prompt,
+                    context,
+                    {
+                        openai: userOpenAiApiKey,
+                        anthropic: userAnthropicApiKey,
+                        gemini: userGeminiApiKey,
+                        deepseek: userDeepseekApiKey,
+                    },
+                    messages.filter(m => m.id !== messageId),
+                    { synthesis, model, projectName, documents, allSyntheses }
+                )
                 if (directRes) {
                     answer = directRes.text
                     tier = 'direct_llm'

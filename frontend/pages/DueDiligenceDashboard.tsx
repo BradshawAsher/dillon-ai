@@ -1472,7 +1472,14 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         }
         const matching = submissionHistory.filter((row) => isRowMatchingProject(row, activeProjectId, projectSummaries))
         if (matching.length === 0) {
-            return DEMO_FALLBACK_DOCS
+            const normPid = (activeProjectId || '').trim().toLowerCase()
+            if (normPid === 'apex-industrial-tech' || (normPid.includes('apex') && !normPid.includes('vanguard'))) {
+                return DEMO_FALLBACK_DOCS.filter(d => (d.projectId || '').includes('apex'))
+            }
+            if (normPid === 'cascadia-climate-services' || normPid.includes('cascadia')) {
+                return DEMO_FALLBACK_DOCS.filter(d => (d.projectId || '').includes('cascadia'))
+            }
+            return []
         }
         const sorted = [...matching].sort((a, b) => {
             const timeA = new Date(a.processedAt || a.createdAt || a.receivedAt || a.updatedAt || 0).getTime()
@@ -1718,24 +1725,10 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         const completedDocCount = completedDocs.length
 
         if (completedDocCount === 0) return false
-
-        if (!activeProjectSynthesis) {
-            return true
-        }
+        if (!activeProjectSynthesis) return false
 
         const synthStatus = (activeProjectSynthesis.projectStatus || '').trim().toLowerCase()
-        const isSynthRunning = ['processing', 'pending', 'queued', 'running', 'awaiting_synthesis', 'started'].includes(synthStatus)
-        const fjJson = (activeProjectSynthesis.finalJudgmentJson || '').trim()
-        const hasFinishedSynthResults = ['synthesized', 'completed', 'success'].includes(synthStatus) &&
-            (((activeProjectSynthesis.finalRecommendation || '').trim().length > 0 && !(activeProjectSynthesis.finalRecommendation || '').toUpperCase().includes('SYNTHESIS PENDING')) ||
-                (activeProjectSynthesis.finalJudgmentSummary || '').trim().length > 0 ||
-                (fjJson.length > 0 && fjJson !== '{}'))
-
-        if (isSynthRunning || !hasFinishedSynthResults) {
-            return true
-        }
-
-        return false
+        return ['processing', 'pending', 'queued', 'running', 'awaiting_synthesis', 'started'].includes(synthStatus)
     }, [activeProjectDocuments, activeProjectSynthesis, isCurrentProjectExtractingDocs, isExampleMode, isManualSynthesisRunning])
 
     const isCurrentProjectAwaitingSynthesis = useMemo(() => {
@@ -1980,6 +1973,46 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         window.addEventListener('keydown', handleCtrlShiftP)
         return () => window.removeEventListener('keydown', handleCtrlShiftP)
     }, [setIsProjectsPanelOpen])
+
+    useEffect(() => {
+        function handleGlobalEscape(e: KeyboardEvent) {
+            if (e.key === 'Escape') {
+                if (activeEvidence) setActiveEvidence(null)
+                if (isWalkthroughModalOpen) setIsWalkthroughModalOpen(false)
+                if (isReportIssueOpen) setIsReportIssueOpen(false)
+                if (isExportModalOpen) setIsExportModalOpen(false)
+                if (isApiKeyModalOpen) setIsApiKeyModalOpen(false)
+                if (isBatchDrawerOpen) setIsBatchDrawerOpen(false)
+                if (isProjectsPanelOpen) setIsProjectsPanelOpen(false)
+                if (isFaqSidebarOpen) setIsFaqSidebarOpen(false)
+                if (isShortcutsOpen) setIsShortcutsOpen(false)
+                if (commandPaletteOpen) setCommandPaletteOpen(false)
+            }
+        }
+        window.addEventListener('keydown', handleGlobalEscape)
+        return () => window.removeEventListener('keydown', handleGlobalEscape)
+    }, [
+        activeEvidence,
+        commandPaletteOpen,
+        isApiKeyModalOpen,
+        isBatchDrawerOpen,
+        isExportModalOpen,
+        isFaqSidebarOpen,
+        isProjectsPanelOpen,
+        isReportIssueOpen,
+        isShortcutsOpen,
+        isWalkthroughModalOpen,
+        setActiveEvidence,
+        setCommandPaletteOpen,
+        setIsApiKeyModalOpen,
+        setIsBatchDrawerOpen,
+        setIsExportModalOpen,
+        setIsFaqSidebarOpen,
+        setIsProjectsPanelOpen,
+        setIsReportIssueOpen,
+        setIsShortcutsOpen,
+        setIsWalkthroughModalOpen,
+    ])
 
     const handleCreateProject = () => {
         const usedProjectIds = projectSummaries.map((project: any) => project.projectId || project.projectKey)

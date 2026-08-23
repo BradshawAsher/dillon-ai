@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../lib/shadcn/card'
 import { Button } from '../lib/shadcn/button'
 import { Badge } from '../lib/shadcn/badge'
@@ -139,6 +139,17 @@ export function ExportDiligenceModal({
     documents
 }: ExportDiligenceModalProps) {
     const [copied, setCopied] = useState(false)
+
+    useEffect(() => {
+        if (!open) return
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                onOpenChange(false)
+            }
+        }
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [open, onOpenChange])
 
     if (!open) return null
 

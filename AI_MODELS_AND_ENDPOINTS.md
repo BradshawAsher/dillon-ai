@@ -9,8 +9,8 @@ This document serves as the ground-truth technical specification for all AI mode
 | Provider | Base URL / REST Endpoint | Supported Auth Header | Context Window | Default Active Models |
 | :--- | :--- | :--- | :--- | :--- |
 | **Anthropic** | `https://api.anthropic.com/v1/messages` | `x-api-key: <KEY>`<br>`anthropic-version: 2023-06-01` | 1M Tokens (Fable/Opus/Sonnet 5)<br>200k (Haiku 4.5) | `claude-sonnet-5`<br>`claude-opus-5`<br>`claude-fable-5`<br>`claude-haiku-4-5` |
-| **OpenAI** | `https://api.openai.com/v1/chat/completions` | `Authorization: Bearer <KEY>` | 128k–1M Tokens | `gpt-5.6-terra`<br>`gpt-5.6-sol`<br>`o1`<br>`o3-mini`<br>`gpt-4o`<br>`gpt-4o-mini` |
-| **Google Gemini** | `https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key=<KEY>` | Query Param `?key=<KEY>` or `x-goog-api-key: <KEY>` | 1M–2M Tokens | `gemini-3.7-flash`<br>`gemini-3.5-flash-lite`<br>`gemini-3.1-pro-preview`<br>`gemini-2.5-pro`<br>`gemini-2.5-flash` |
+| **OpenAI** | `https://api.openai.com/v1/chat/completions` | `Authorization: Bearer <KEY>` | 128k–1M Tokens | `gpt-5.6-terra`<br>`gpt-5.6-luna`<br>`gpt-5.6-sol`<br>`o1`<br>`o3-mini`<br>`gpt-4o`<br>`gpt-4o-mini` |
+| **Google Gemini** | `https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key=<KEY>` | Query Param `?key=<KEY>` or `x-goog-api-key: <KEY>` | 1M–2M Tokens | `gemini-3.7-flash`<br>`gemini-3.6-flash`<br>`gemini-3.5-flash`<br>`gemini-3.5-flash-lite`<br>`gemini-3.1-flash-lite`<br>`gemini-3.1-pro-preview`<br>`gemini-2.5-pro`<br>`gemini-2.5-flash` |
 | **DeepSeek** | `https://api.deepseek.com/chat/completions`<br>*(or `/anthropic/v1/messages`)* | `Authorization: Bearer <KEY>` | 1M Tokens (V4 series) | `deepseek-v4-flash`<br>`deepseek-v4-pro`<br>`deepseek-chat`<br>`deepseek-reasoner` |
 
 ---
@@ -64,6 +64,7 @@ This document serves as the ground-truth technical specification for all AI mode
 
 #### Model Catalog & Identifiers
 - **`gpt-5.6-terra`**: Primary production model for deep financial OCR, reconciliations, and portfolio-level synthesis.
+- **`gpt-5.6-luna`**: Low-latency balanced reasoning model for real-time diligence chat, conversational verification, and quick calculations.
 - **`gpt-5.6-sol`**: High-throughput backup model for document parsing and fast verification.
 - **`o1`**: Deep chain-of-thought reasoning for complex debt waterfall and tax adjustment verification.
 - **`o3-mini`**: Fast reasoning model supporting adjustable `reasoning_effort` (`"low"`, `"medium"`, `"high"`).
@@ -101,8 +102,11 @@ This document serves as the ground-truth technical specification for all AI mode
   ```
 
 #### Model Catalog & Identifiers
-- **`gemini-3.7-flash`**: High-speed multimodal OCR and complex document understanding.
+- **`gemini-3.7-flash`**: High-speed multimodal OCR and complex document understanding with native thinking budget.
+- **`gemini-3.6-flash`**: High-efficiency frontier multimodal model for rapid document classification and cross-schedule validation.
+- **`gemini-3.5-flash`**: Balanced latency and multimodal OCR extraction model.
 - **`gemini-3.5-flash-lite`**: Ultra-low latency extraction and high-concurrency batch parsing.
+- **`gemini-3.1-flash-lite`**: High-speed lightweight model for batch fact validation.
 - **`gemini-3.1-pro-preview`**: Multi-step agentic reasoning and complex valuation modeling.
 - **`gemini-2.5-pro`**: Deep reasoning with adaptive thinking budget and 1M token context.
 - **`gemini-2.5-flash`**: Balanced workhorse model.

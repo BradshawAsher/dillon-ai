@@ -10,7 +10,7 @@ const SHORTCUTS = [
     { keys: ['Ctrl', 'Shift', 'P'], description: 'Open Projects portfolio panel' },
     { keys: ['Ctrl', 'Shift', 'B'], description: 'Open Batch Processing activity' },
     { keys: ['?'], description: 'Toggle this shortcuts cheatsheet' },
-    { keys: ['Esc'], description: 'Close active drawer / popover / modal' },
+    { keys: ['Esc'], description: 'Close any interactive viewer, drawer, or modal' },
     { keys: ['Ctrl', 'P'], description: 'Print / Export deal PDF report' },
 ] as const
 
