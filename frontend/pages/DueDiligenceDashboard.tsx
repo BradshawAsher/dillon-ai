@@ -89,6 +89,7 @@ import {
     useGetDealModels,
     useGetProjectSynthesis,
     useGetWorkflowErrors,
+    useGetWatchdogEvents,
     useGetSubmissionHistory,
     useGetEvalRuns,
     useSubmitDealPacket,
@@ -845,6 +846,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     const { data: dealModelsData, trigger: triggerDealModels } = useGetDealModels()
     const { trigger: triggerSaveDealModel } = useSaveDealModel()
     const { data: workflowErrorData, loading: workflowErrorsLoading, error: workflowErrorsError, trigger: triggerWorkflowErrors } = useGetWorkflowErrors()
+    const { data: watchdogEventsData, trigger: triggerWatchdogEvents } = useGetWatchdogEvents()
     const { data: evalRunsData, trigger: triggerEvalRuns } = useGetEvalRuns()
     const { trigger: triggerSubmissionConsideration } = useUpdateSubmissionConsideration()
 
@@ -854,8 +856,9 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         void triggerProjectSynthesis({ environment: 'production' })
         void triggerDealModels()
         void triggerWorkflowErrors({ environment: 'production' })
+        void triggerWatchdogEvents({ environment: 'production' })
         void triggerEvalRuns()
-    }, [triggerSubmissionHistory, triggerProjectSynthesis, triggerDealModels, triggerWorkflowErrors, triggerEvalRuns])
+    }, [triggerSubmissionHistory, triggerProjectSynthesis, triggerDealModels, triggerWorkflowErrors, triggerWatchdogEvents, triggerEvalRuns])
 
     const diligenceFindings = useMemo(() => {
         if (Array.isArray(diligenceData) && diligenceData.length > 0) {
@@ -1176,6 +1179,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
         // 1. Docs finished today
         const completedDocsToday = (submissionHistory || []).filter(doc => {
+            if (!isExampleMode && (doc.requestID?.startsWith('mock-') || doc.requestID?.startsWith('bm-'))) return false
             const status = String(doc.status || '').trim().toLowerCase()
             const isCompleted = ['completed', 'processed', 'passed', 'extracted'].includes(status)
             if (!isCompleted) return false
@@ -1186,16 +1190,24 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
         // 2. Syntheses finished today
         const completedSynthesesToday = (visibleProjectSyntheses || []).filter((synth: any) => {
-            const status = String(synth.status || '').trim().toLowerCase()
-            const isCompleted = ['synthesized', 'completed', 'ready', 'success'].includes(status) || Boolean(synth.finalRecommendation || synth.finalJudgmentSummary)
+            if (!isExampleMode && (synth.projectId?.startsWith('benchmark-') || synth.projectId?.startsWith('gt-') || synth.projectId === 'werkheiser-pass-1' || synth.projectId === 'werkheiser-pass-2')) return false
+            const status = String(synth.status || synth.projectStatus || '').trim().toLowerCase()
+            const hasSubstantiveOutput = Boolean(
+                (synth.finalRecommendation && synth.finalRecommendation.trim().length > 0) ||
+                (synth.finalJudgmentSummary && synth.finalJudgmentSummary.trim().length > 0) ||
+                (synth.costUsd && synth.costUsd > 0) ||
+                (synth.totalTokens && synth.totalTokens > 0)
+            )
+            const isCompleted = (['synthesized', 'completed', 'ready', 'success'].includes(status) || hasSubstantiveOutput) && hasSubstantiveOutput
             if (!isCompleted) return false
-            const timestamp = synth.createdAt || synth.created_at || synth.updatedAt
+            const timestamp = synth.projectProcessedAt || synth.createdAt || synth.created_at || synth.updatedAt
             return isToday(timestamp)
         })
         const synthesesFinishedTodayCount = completedSynthesesToday.length
 
         // 3. Projects finished processing today
         const completedProjectsToday = (projectSummaries || []).filter((p: any) => {
+            if (!isExampleMode && (p.projectId?.startsWith('benchmark-') || p.projectId?.startsWith('gt-') || p.projectId === 'werkheiser-pass-1' || p.projectId === 'werkheiser-pass-2')) return false
             const status = String(p.synthesisStatus || '').trim().toLowerCase()
             const inProgress = typeof p.inProgressCount === 'number' ? p.inProgressCount : 0
             const isCompleted = ['synthesized', 'ready for synthesis', 'ready', 'completed'].includes(status) || (p.completedCount > 0 && inProgress === 0)
@@ -1205,28 +1217,35 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         })
         const projectsFinishedTodayCount = completedProjectsToday.length
 
-        // 4. Total cost used today
-        const docCostToday = completedDocsToday.reduce((acc, doc) => acc + (typeof doc.costUsd === 'number' && doc.costUsd > 0 ? doc.costUsd : 0.055), 0)
-        const synthCostToday = completedSynthesesToday.reduce((acc, synth: any) => acc + (typeof synth.costUsd === 'number' && synth.costUsd > 0 ? synth.costUsd : 0.065), 0)
+        // 4. Total cost used today (strictly measured actual telemetry from today's runs, $0.00 if nothing ran)
+        const docCostToday = completedDocsToday.reduce((acc, doc) => {
+            const cost = typeof doc.costUsd === 'number' ? doc.costUsd : Number((doc as any).cost_usd) || (doc.totalTokens ? doc.totalTokens * 0.0000075 : 0)
+            return acc + (Number.isFinite(cost) && cost > 0 ? cost : 0)
+        }, 0)
+        const synthCostToday = completedSynthesesToday.reduce((acc, synth: any) => {
+            const cost = typeof synth.costUsd === 'number' ? synth.costUsd : Number(synth.cost_usd) || (synth.totalTokens ? synth.totalTokens * 0.0000075 : 0)
+            return acc + (Number.isFinite(cost) && cost > 0 ? cost : 0)
+        }, 0)
         const totalCostToday = docCostToday + synthCostToday
-
-        // Fallbacks to dataset metrics if timestamps predate current calendar date
-        const fallbackCompletedDocs = (submissionHistory || []).filter(d => ['completed', 'processed', 'passed', 'extracted'].includes(String(d.status || '').trim().toLowerCase()))
-        const fallbackCompletedSyntheses = (visibleProjectSyntheses || []).filter((s: any) => Boolean(s.finalRecommendation || s.finalJudgmentSummary || ['synthesized', 'completed', 'ready'].includes(String(s.status || '').trim().toLowerCase())))
-        const fallbackCompletedProjects = (projectSummaries || []).filter((p: any) => p.completedCount > 0 && (p.inProgressCount ?? 0) === 0)
-
-        const finalDocsCount = docsFinishedTodayCount > 0 ? docsFinishedTodayCount : fallbackCompletedDocs.length
-        const finalSynthCount = synthesesFinishedTodayCount > 0 ? synthesesFinishedTodayCount : fallbackCompletedSyntheses.length
-        const finalProjectsCount = projectsFinishedTodayCount > 0 ? projectsFinishedTodayCount : fallbackCompletedProjects.length
-        const finalCostToday = totalCostToday > 0 ? totalCostToday : (finalDocsCount * 0.055 + finalSynthCount * 0.065)
-
         return {
-            projectsFinishedToday: finalProjectsCount,
-            synthesesFinishedToday: finalSynthCount,
-            docsFinishedToday: finalDocsCount,
-            totalCostToday: finalCostToday,
+            projectsFinishedToday: projectsFinishedTodayCount,
+            synthesesFinishedToday: synthesesFinishedTodayCount,
+            docsFinishedToday: docsFinishedTodayCount,
+            totalCostToday: totalCostToday,
         }
-    }, [submissionHistory, visibleProjectSyntheses, projectSummaries])
+    }, [submissionHistory, visibleProjectSyntheses, projectSummaries, isExampleMode])
+
+    const portfolioAllTimeCost = useMemo(() => {
+        const docCost = (submissionHistory || []).reduce((acc, doc) => {
+            const cost = typeof doc.costUsd === 'number' ? doc.costUsd : Number((doc as any).cost_usd) || (doc.totalTokens ? doc.totalTokens * 0.0000075 : 0.055)
+            return acc + (Number.isFinite(cost) && cost > 0 ? cost : 0)
+        }, 0)
+        const synthCost = (visibleProjectSyntheses || []).reduce((acc, synth: any) => {
+            const cost = typeof synth.costUsd === 'number' ? synth.costUsd : Number(synth.cost_usd) || (synth.totalTokens ? synth.totalTokens * 0.0000075 : 0.069)
+            return acc + (Number.isFinite(cost) && cost > 0 ? cost : 0)
+        }, 0)
+        return docCost + synthCost
+    }, [submissionHistory, visibleProjectSyntheses])
 
     const [activeHistoryEnvironment, setActiveHistoryEnvironment] = useState<SubmitEnvironment>('production')
     const [currentTheme, setCurrentTheme] = useState(getStoredTheme)
@@ -1387,6 +1406,27 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         if (!activeProjectId) return
         syncBrowserUrl(activeViewProject?.key || activeProjectId, activeWorkspaceTab)
     }, [activeProjectId, activeViewProject, activeWorkspaceTab, isTourActive, isExampleMode])
+
+    // Scroll directly to Project Intake section when opening the dashboard from landing page, data source toggle, or direct URL entry
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        const hash = window.location.hash
+        // If no explicit sub-tab anchor hash (e.g. #synthesis, #kpis, #financials, #conflicts) is specified, scroll to Project Intake
+        if (!hash || hash === '#upload-section' || hash === '#project-intake') {
+            const scrollToIntake = () => {
+                const intakeEl = document.querySelector('[data-project-intake]') || document.getElementById('upload-section')
+                if (intakeEl) {
+                    intakeEl.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                }
+            }
+            const t1 = setTimeout(scrollToIntake, 100)
+            const t2 = setTimeout(scrollToIntake, 350)
+            return () => {
+                clearTimeout(t1)
+                clearTimeout(t2)
+            }
+        }
+    }, [])
 
     const handleAppendToActiveProject = useCallback(() => {
         if (!activeViewProject) return
@@ -2827,6 +2867,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                             documentsCount={activeProjectDocuments.length}
                             docCost={topDocCost}
                             totalCost={topTotalDealCost}
+                            portfolioTotalCost={portfolioAllTimeCost}
                             todayStats={todayPipelineStats}
                             projectSummaries={projectSummaries}
                         />
@@ -2992,6 +3033,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                         setActiveWorkspaceTab={setActiveWorkspaceTab}
                         todayStats={todayPipelineStats}
                         projectSummaries={projectSummaries}
+                        portfolioTotalCost={portfolioAllTimeCost}
                     />
                 ) : null}
 
@@ -3440,9 +3482,13 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                             <div id="errors-header" className="scroll-mt-6">
                                 <WorkflowErrorLogCard
                                     rows={Array.isArray(workflowErrorData) ? workflowErrorData : []}
+                                    watchdogEvents={Array.isArray(watchdogEventsData) ? watchdogEventsData : []}
                                     loading={workflowErrorsLoading}
                                     error={workflowErrorsError}
-                                    onRefresh={() => { void triggerWorkflowErrors({ environment: activeHistoryEnvironment }) }}
+                                    onRefresh={() => {
+                                        void triggerWorkflowErrors({ environment: activeHistoryEnvironment })
+                                        void triggerWatchdogEvents({ environment: activeHistoryEnvironment })
+                                    }}
                                 />
                             </div>
                             <div id="errors-arch" className="scroll-mt-6">

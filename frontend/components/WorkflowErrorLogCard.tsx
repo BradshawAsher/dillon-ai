@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { AlertTriangle, Bot, CheckCircle2, Clock3, Cpu, Layers, RefreshCw, ShieldCheck, Trash2 } from 'lucide-react'
 
 import type { WorkflowErrorItem } from '../../backend/diligence/getWorkflowErrors'
+import type { WatchdogEventItem } from '../../backend/diligence/getWatchdogEvents'
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
@@ -9,7 +10,13 @@ import CardInfoPopover from './common/CardInfoPopover'
 import { formatEasternTime } from '../utils/dateTime'
 import { classifyError } from '../utils/errorClassifier'
 
-type Props = { rows: WorkflowErrorItem[]; loading: boolean; error: string | null; onRefresh: () => void }
+type Props = {
+    rows: WorkflowErrorItem[]
+    watchdogEvents?: WatchdogEventItem[]
+    loading: boolean
+    error: string | null
+    onRefresh: () => void
+}
 
 type WorkflowSummary = {
     workflowName: string
@@ -85,7 +92,7 @@ function guidanceFor(row: WorkflowErrorItem) {
     return 'Review the failed node and execution ID, then compare the active workflow version against the latest known-good history before making changes.'
 }
 
-export default function WorkflowErrorLogCard({ rows, loading, error, onRefresh }: Props) {
+export default function WorkflowErrorLogCard({ rows, watchdogEvents = [], loading, error, onRefresh }: Props) {
     const [clearedErrorIds, setClearedErrorIds] = useState<Set<string>>(() => {
         if (typeof window === 'undefined') return new Set()
         try {
@@ -275,6 +282,59 @@ export default function WorkflowErrorLogCard({ rows, loading, error, onRefresh }
                         ))}
                     </div>
                 ) : null}
+
+                {/* Watchdog Telemetry & Auto-Healing Section */}
+                <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                            <span className="relative flex h-3 w-3">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                            </span>
+                            <p className="text-sm font-semibold text-foreground">Stuck Document Watchdog (Live Pod 1 Cron)</p>
+                            <Badge variant="outline" className="border-emerald-500/40 text-emerald-700 dark:text-emerald-300 font-mono text-[10px]">
+                                Every 15m Cron
+                            </Badge>
+                            <Badge variant="outline" className="border-emerald-500/40 text-emerald-700 dark:text-emerald-300 font-mono text-[10px]">
+                                Hybrid: n8n + Supabase
+                            </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                            Auto-retries Drive-backed documents stuck &gt; 30m
+                        </p>
+                    </div>
+
+                    {watchdogEvents && watchdogEvents.length > 0 ? (
+                        <div className="mt-3 space-y-2">
+                            <p className="text-xs font-medium text-foreground">Recent Auto-Recovery Events ({watchdogEvents.length})</p>
+                            <div className="grid gap-2">
+                                {watchdogEvents.slice(0, 5).map((evt, idx) => (
+                                    <div key={evt.id ?? idx} className="rounded-md border border-emerald-500/20 bg-background/80 p-3 text-xs">
+                                        <div className="flex flex-wrap items-center justify-between gap-2">
+                                            <div className="flex items-center gap-2">
+                                                <p className="font-semibold text-foreground">{evt.filename || evt.dealName || 'Stuck Document'}</p>
+                                                {evt.durationStuckMinutes ? (
+                                                    <Badge variant="warning" className="text-[10px]">Stuck {evt.durationStuckMinutes}m</Badge>
+                                                ) : null}
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <Badge variant="outline" className="border-emerald-500/40 text-emerald-700 dark:text-emerald-300 text-[10px] uppercase font-bold">
+                                                    {evt.status || 'recovered'}
+                                                </Badge>
+                                                <span className="text-muted-foreground">{formatEasternTime(evt.createdAt)}</span>
+                                            </div>
+                                        </div>
+                                        <p className="mt-1 text-muted-foreground">{evt.details || evt.actionTaken || 'Auto-recovered and retriggered analysis.'}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ) : (
+                        <p className="mt-2 text-xs text-muted-foreground">
+                            ✓ No stuck documents currently detected. All active pipeline executions are completing within standard SLA thresholds.
+                        </p>
+                    )}
+                </div>
 
                 <div id="errors-arch" className="scroll-mt-6 flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/[0.04] p-4 text-sm text-foreground">
                     <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" />

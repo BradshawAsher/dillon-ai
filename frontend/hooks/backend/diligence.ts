@@ -15,12 +15,13 @@ import { useCallback, useState } from 'react'
 
 import type { ProjectSynthesisItem } from '../../../backend/diligence/getProjectSynthesis'
 import type { WorkflowErrorItem } from '../../../backend/diligence/getWorkflowErrors'
+import type { WatchdogEventItem } from '../../../backend/diligence/getWatchdogEvents'
 import { getDataSource } from '../../lib/dataSource'
 import { identityHeaders } from '../../lib/identity'
 import type { DiligenceFinding } from '../../utils/diligence'
 import type { SubmissionHistoryItem } from '../../utils/submissionHistory'
 
-export type { ProjectSynthesisItem, SubmissionHistoryItem }
+export type { ProjectSynthesisItem, SubmissionHistoryItem, WatchdogEventItem }
 
 const USE_MOCKS = getDataSource() === 'mock'
 
@@ -576,6 +577,13 @@ function useLiveWorkflowErrors() {
     }, []))
 }
 
+function useLiveWatchdogEvents() {
+    return useQuery(useCallback(async (params: Record<string, unknown> = {}) => {
+        const environment = params.environment === 'test' ? 'test' : 'production'
+        return fetchJson<WatchdogEventItem[]>(`/api/diligence/watchdog-events?environment=${environment}`, { headers: identityHeaders() })
+    }, []))
+}
+
 function useLiveUpdateSubmissionConsideration() {
     return useQuery(useCallback(async (params: Record<string, unknown> = {}) => {
         const environment = params.environment === 'test' ? 'test' : 'production'
@@ -610,6 +618,13 @@ function useMockSubmissionHistory() {
 
 function useMockWorkflowErrors() {
     return useQuery(useCallback(async (): Promise<WorkflowErrorItem[]> => {
+        await delay(100)
+        return []
+    }, []), [])
+}
+
+function useMockWatchdogEvents() {
+    return useQuery(useCallback(async (): Promise<WatchdogEventItem[]> => {
         await delay(100)
         return []
     }, []), [])
@@ -749,6 +764,7 @@ export const useSubmitDealPacket = USE_MOCKS ? useMockSubmitDealPacket : useLive
 
 export const useGetProjectSynthesis = USE_MOCKS ? useMockProjectSynthesis : useLiveProjectSynthesis
 export const useGetWorkflowErrors = USE_MOCKS ? useMockWorkflowErrors : useLiveWorkflowErrors
+export const useGetWatchdogEvents = USE_MOCKS ? useMockWatchdogEvents : useLiveWatchdogEvents
 export const useGetDealModels = useLiveDealModels
 export const useSaveDealModel = useLiveSaveDealModel
 export const useGetProjectActionTracker = useLiveProjectActionTracker

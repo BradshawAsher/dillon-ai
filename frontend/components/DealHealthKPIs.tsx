@@ -47,6 +47,7 @@ export default function DealHealthKPIs({
     documentsCount,
     docCost,
     totalCost,
+    portfolioTotalCost,
     todayStats,
     projectSummaries,
 }: {
@@ -56,6 +57,7 @@ export default function DealHealthKPIs({
     documentsCount: number
     docCost?: number
     totalCost?: number
+    portfolioTotalCost?: number
     todayStats?: TodayPipelineStats
     projectSummaries?: any[]
 }) {
@@ -187,14 +189,25 @@ export default function DealHealthKPIs({
         variant: impact.completedDocuments === documentsCount && documentsCount > 0 ? 'success' : documentsCount > 0 ? 'warning' : 'default',
     })
 
-    // Total deal execution cost KPI
+    // Active deal execution cost KPI (specific to the currently selected project)
     if (typeof totalCost === 'number' && totalCost > 0) {
         kpis.push({
-            label: 'Total Deal Cost',
+            label: 'Active Deal Cost',
             value: `$${totalCost.toFixed(3)}`,
-            subtext: typeof docCost === 'number' && docCost > 0 ? `Doc analysis: $${docCost.toFixed(3)}` : 'Live token telemetry',
+            subtext: typeof docCost === 'number' && docCost > 0 ? `Active deal · Doc: $${docCost.toFixed(3)}` : 'Selected deal execution',
             icon: <DollarSign className="h-5 w-5" />,
             variant: 'success',
+        })
+    }
+
+    // Portfolio all-time execution cost (across all projects in the portfolio)
+    if (typeof portfolioTotalCost === 'number' && portfolioTotalCost > 0) {
+        kpis.push({
+            label: 'All-Time Spend',
+            value: `$${portfolioTotalCost.toFixed(2)}`,
+            subtext: 'Cross-portfolio total',
+            icon: <Coins className="h-5 w-5" />,
+            variant: 'default',
         })
     }
 
