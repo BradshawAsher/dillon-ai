@@ -2176,6 +2176,22 @@ export const TAB_TOUR_STEPS: Record<WorkspaceTab, WalkthroughStep[]> = {
             durationMs: 7000,
         },
     ],
+    report_issue: [
+        {
+            id: 'report-issue-step-1',
+            num: 1,
+            title: 'Report Issues & Feedback to Engineering',
+            tab: 'report_issue',
+            targetElementId: 'report-issue-card',
+            targetSelector: '#report-issue-card, .report-issue-container',
+            tag: 'Support & Feedback',
+            badge: 'Issue Reporting',
+            narrative: 'Submit bugs, calculation questions, or feature feedback directly to the engineering team with instant Slack alert integration.',
+            keyTakeaway: 'Direct line to engineering for rapid triage.',
+            cursorPlacement: 'top-left',
+            durationMs: 7000,
+        },
+    ],
 }
 
 export function getTabTourPlaylist(tabId: WorkspaceTab): TourPlaylist {

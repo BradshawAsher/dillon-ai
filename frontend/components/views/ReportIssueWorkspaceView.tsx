@@ -91,7 +91,7 @@ export default function ReportIssueWorkspaceView({
     const [description, setDescription] = useState('')
     const [customDeal, setCustomDeal] = useState(currentDealName || '')
     const [customTab, setCustomTab] = useState(activeWorkspaceTab || 'overview')
-    const [reporterName, setReporterName] = useState(user?.user_metadata?.full_name || user?.user_metadata?.name || '')
+    const [reporterName, setReporterName] = useState(user?.name || '')
     const [reporterEmail, setReporterEmail] = useState(user?.email || '')
     const [submitting, setSubmitting] = useState(false)
     const [submitted, setSubmitted] = useState(false)
@@ -116,10 +116,10 @@ export default function ReportIssueWorkspaceView({
                 category,
                 title: `[${severity.toUpperCase()}] ${title.trim()}`,
                 description: description.trim(),
-                currentDealName: customDeal || currentDealName,
-                activeTab: customTab || activeWorkspaceTab,
-                userName: reporterName || undefined,
-                userEmail: reporterEmail || undefined,
+                projectName: customDeal || currentDealName,
+                tabName: customTab || activeWorkspaceTab,
+                reporterName: reporterName || undefined,
+                reporterEmail: reporterEmail || undefined,
             })
 
             if (success) {

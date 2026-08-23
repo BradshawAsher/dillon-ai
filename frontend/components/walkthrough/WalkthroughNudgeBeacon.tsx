@@ -255,7 +255,7 @@ export function WalkthroughNudgeBeacon({
                     <Button
                         type="button"
                         variant="ghost"
-                        size="xs"
+                        size="sm"
                         onClick={() => onSnooze(7)}
                         className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1.5 h-7 px-2 font-medium"
                         title="Snooze this reminder for 7 days"
@@ -266,7 +266,7 @@ export function WalkthroughNudgeBeacon({
 
                     <Button
                         type="button"
-                        size="xs"
+                        size="sm"
                         onClick={onStartTour}
                         className="text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-1.5 h-7 px-3 shadow-sm transition-transform active:scale-95 cursor-pointer"
                     >

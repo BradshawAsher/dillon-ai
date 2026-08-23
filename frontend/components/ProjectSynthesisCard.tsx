@@ -48,6 +48,8 @@ type ProjectSynthesisCardProps = {
     onSwitchTab?: (tab: any) => void
 }
 
+type StructuredFinding = NonNullable<NonNullable<ProjectSynthesisItem['structuredFindings']>['redFlags']>[number]
+
 function getRiskVariant(riskLevel: string): 'destructive' | 'warning' | 'secondary' | 'outline' {
     const normalized = riskLevel.trim().toLowerCase()
 

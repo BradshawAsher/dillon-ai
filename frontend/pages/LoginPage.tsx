@@ -182,6 +182,19 @@ export default function LoginPage({
 
                     {/* Auth Card */}
                     <div className="rounded-2xl border border-border/80 bg-card p-6 sm:p-8 shadow-xl space-y-6">
+                        {/* Maintenance Disclaimer */}
+                        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs text-amber-300">
+                            <div className="flex items-start gap-2.5">
+                                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-amber-400" />
+                                <div className="space-y-1">
+                                    <p className="font-semibold text-amber-200">Scheduled Login Maintenance Notice</p>
+                                    <p className="text-amber-300/90 leading-relaxed">
+                                        Single Sign-On (Google, GitHub, Microsoft) is undergoing scheduled maintenance until <strong>August 27</strong>. Please register or sign in with your <strong>Email & Password</strong> below, or explore the platform using <strong>Demo Mode</strong>.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
                         {/* Social Sign-In Buttons */}
                         <div className="space-y-3">
                             <Button

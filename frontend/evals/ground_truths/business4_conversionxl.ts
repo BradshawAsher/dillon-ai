@@ -12,7 +12,7 @@ export const conversionxlGroundTruth: ProjectSynthesisItem = {
         'TTM Revenue of $2.48M and adjusted EBITDA of $620.0K.',
         'Top 2 accounts represent 38% of total agency revenue.',
     ],
-    redFlags: ['Client concentration risk — top customer renewal in 6 months.'],
+    redFlags: ['Client concentration risk — top 2 accounts (38% revenue) up for renewal within 6 months'],
     yellowFlags: ['Project-based revenue mixed with monthly retainers.'],
     greenFlags: ['Conversion rate optimization IP yields 72% gross margins.'],
     finalRiskLevel: 'Medium',
@@ -42,8 +42,5 @@ export const conversionxlGroundTruth: ProjectSynthesisItem = {
         'business4',
         'business 4 - conversionxl (saas product)',
         'saas',
-    ],
-    redFlags: [
-        'Client concentration risk — top 2 accounts (38% revenue) up for renewal within 6 months',
     ],
 }

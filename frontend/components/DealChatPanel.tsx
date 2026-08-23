@@ -1595,7 +1595,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                     category: issueCheck.category,
                     title: issueCheck.title,
                     description: trimmed,
-                    projectName: projectName || model?.companyName || 'General Workspace',
+                    projectName: projectName || (model as unknown as Record<string, unknown>)?.companyName as string || (model as unknown as Record<string, unknown>)?.company_name as string || 'General Workspace',
                     tabName: 'Deal Chat AI',
                     chatSummary,
                     source: 'chatbot',
