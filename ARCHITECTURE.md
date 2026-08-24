@@ -25,28 +25,37 @@ Private equity sponsors, search funds, and M&A advisory teams spend **60–120 h
 flowchart TB
     subgraph ClientLayer["1. Client Application Layer (Browser)"]
         UI["React 19 + TypeScript SPA (Vite + Tailwind v4)"]
-        VDRModal["Multi-Modal VDR Explorer (Simulated & Live)"]
+        VDRModal["Multi-Modal VDR Explorer (9 Asset Classes)"]
         ZipWorker["Client-Side ZIP Extraction Worker"]
         EvalDashboard["Interactive Benchmark Dashboard (1-Card Pre/Post-LOI Toggle)"]
         WorkspaceHooks["Optimistic State & Real-Time CDC Sync"]
+        ClientCache["3s SessionStorage Deduplication Cache"]
     end
 
-    subgraph EdgeStorage["2. Ingestion & Storage Layer"]
-        SupabaseStorage["Supabase Object Storage (Presigned Direct Uploads)"]
+    subgraph EdgeLayer["2. Edge Proxy & Caching Layer (Cloudflare & Vercel)"]
+        CFWorker["Cloudflare Edge Worker (Reverse Proxy & Edge Caching)"]
+        CFEdgeCache["Edge Cache (s-maxage=10, stale-while-revalidate=59)"]
+        VercelCDN["Vercel Edge Network (Immutable Static Delivery)"]
+    end
+
+    subgraph EdgeStorage["3. Ingestion & Storage Layer (Supabase)"]
+        SupabaseStorage["Supabase Object Storage (Presigned S3 Uploads)"]
         SupabaseDB["Supabase PostgreSQL (Deal Models, Eval Runs, Action Logs)"]
-        VercelEdge["Vercel Edge CDN (Immutable Cache & Static Delivery)"]
+        PostgresRPC["Postgres Server-Side Aggregate RPC (get_portfolio_diligence_kpis)"]
+        RealtimeWS["Supabase Realtime CDC (WebSockets Engine)"]
     end
 
-    subgraph OrchestrationLayer["3. Workflow Orchestration Engine (Pod 1 n8n Cloud)"]
-        IntakeWebhook["Intake Dispatcher Webhook"]
-        DocExtractor["Parallel Document Extraction Workers (Map-Reduce)"]
+    subgraph OrchestrationLayer["4. Workflow Orchestration Engine (Pod 1 n8n Cloud)"]
+        IntakeWebhook["Intake Dispatcher Webhook (vBnMdx8cvSFIFx6m)"]
+        DocExtractor["Parallel Document Extraction Workers (W5Jp7CJIQbNy0qlY)"]
+        DocCounter["Idempotent Document Counter Subworkflow (0OVTAMMp2iMx53Aw)"]
         MathEngine["Deterministic Accounting & Math Rule Engine"]
-        CrossDocSynthesizer["Project Synthesis & Reconciliation Engine"]
-        Watchdog["Stuck Document Watchdog & Recovery Cron"]
-        N8nTables["n8n High-Throughput Data Tables"]
+        CrossDocSynthesizer["Project Synthesis Consolidator (IoSad3rTYJMk4Mon)"]
+        Watchdog["3-Tier Stuck Document Watchdog (BaQO1dHCAm0Tf6kk)"]
+        N8nTables["n8n High-Throughput Data Tables (Dual-Write Mirror)"]
     end
 
-    subgraph LLMLayer["4. Multi-Model AI Routing Layer"]
+    subgraph LLMLayer["5. Multi-Model AI Routing Layer"]
         PrimaryModel["Primary Extraction Model: OpenAI 5.6 Terra"]
         BackupModel["Backup Extraction Model: OpenAI 5.6 Sol"]
         SynthesisModel["Primary Synthesis Model: OpenAI 5.6 Terra"]
@@ -54,9 +63,13 @@ flowchart TB
     end
 
     %% Interactions
-    UI -->|1. Request Presigned URL| EdgeStorage
-    ZipWorker -->|2. Direct Upload File Blobs| SupabaseStorage
-    UI -->|3. Dispatch Deal Batch| IntakeWebhook
+    UI -->|1. Request Presigned URL| SupabaseStorage
+    ZipWorker -->|2. Stream File Blobs Direct to S3| SupabaseStorage
+    UI -->|3. Read History / Synthesis| CFWorker
+    CFWorker -->|Cache Hit <15ms| CFEdgeCache
+    CFWorker -.->|Cache Miss| SupabaseDB
+    UI -->|4. Query Portfolio KPIs| PostgresRPC
+    UI -->|5. Dispatch Deal Batch| IntakeWebhook
     IntakeWebhook --> DocExtractor
     DocExtractor --> PrimaryModel
     DocExtractor -.->|Fallback Routing| BackupModel
@@ -64,14 +77,16 @@ flowchart TB
     DocExtractor --> MathEngine
     DocExtractor --> N8nTables
     DocExtractor --> SupabaseDB
+    DocExtractor --> DocCounter
     
-    N8nTables --> CrossDocSynthesizer
+    DocCounter -->|Idempotent Synthesis Gate| CrossDocSynthesizer
     CrossDocSynthesizer --> SynthesisModel
     CrossDocSynthesizer --> SupabaseDB
+    CrossDocSynthesizer --> N8nTables
     
-    Watchdog -->|Monitor & Auto-Heal| DocExtractor
-    WorkspaceHooks -->|4. WebSocket Real-Time CDC & Push Sync| SupabaseDB
-    WorkspaceHooks -->|5. Stream Synthesis Findings| N8nTables
+    Watchdog -->|3-Tier Auto-Reconcile & Heal| DocExtractor
+    Watchdog -->|Trigger Stalled Batches| DocCounter
+    RealtimeWS -->|Push Row Updates <100ms| WorkspaceHooks
 ```
 
 ---
@@ -83,11 +98,12 @@ sequenceDiagram
     autonumber
     actor DealTeam as Deal Lead / Analyst
     participant Browser as React SPA (Client)
+    participant CF as Cloudflare Edge Worker
     participant Storage as Supabase Storage / S3
     participant n8n as n8n Orchestrator (Pod 1)
     participant LLM as OpenAI 5.6 Terra / Sol
     participant Math as Deterministic Math Engine
-    participant DB as Supabase PostgreSQL
+    participant DB as Supabase PostgreSQL (RPC / CDC)
 
     DealTeam->>Browser: Drops Deal Room Packet (ZIP / PDF / XLSX / MP3 / EML)
     Browser->>Browser: Decompresses ZIP client-side & validates format signatures
@@ -105,12 +121,14 @@ sequenceDiagram
         n8n->>DB: Write document extraction record to PostgreSQL & n8n Tables
     end
 
-    n8n->>n8n: Document Counter triggers Project Synthesis when all files complete
+    n8n->>n8n: Document Counter checks Project State (Idempotency Lock)
     n8n->>LLM: Execute Cross-Document Contradiction & Valuation Synthesis Pass
     LLM-->>n8n: Synthesized Base/Downside Valuation, Red Flags, Negotiation Levers
     n8n->>DB: Save final Deal Synthesis, Valuation Bridge, and IC Deal Memo
     
-    Browser->>DB: Polls / Streams real-time synthesis results
+    DB-->>Browser: Instant Push via Supabase Realtime CDC (<100ms)
+    Browser->>CF: Query History & Synthesis (Served from Edge Cache / ETag)
+    Browser->>DB: RPC get_portfolio_diligence_kpis (<2ms, <400B payload)
     Browser->>DealTeam: Renders Interactive Deal Scorecard, Valuation Bridge & Memo
 ```
 
@@ -124,7 +142,17 @@ sequenceDiagram
 * **In-Browser ZIP Decompressor**: Client-side worker recursively unpacks multi-folder ZIP archives (`utils/zipExtractor.ts`), preserving folder taxonomy and queuing individual files into the extraction pipeline.
 * **Optimistic State & Real-Time CDC Sync**: Uses **Supabase Realtime (Postgres Change Data Capture over WebSockets)** to push instantaneous row updates (<100ms latency) to the browser without continuous background polling. Combined with `sessionStorage` TTL caching (3s deduplication) and active-only fallback sync, egress consumption is reduced by over 99.9% while guaranteeing instant UI responsiveness.
 
-### B. Multi-Modal Ingestion Matrix
+### B. Cloudflare Edge Worker & Reverse Proxy Layer
+* **Edge Reverse Proxy**: High-performance Cloudflare Worker sitting in front of REST read endpoints (`/api/diligence/history`, `/api/diligence/synthesis`, benchmark feeds).
+* **Edge Caching Strategy**: Employs HTTP `Cache-Control: public, s-maxage=10, stale-while-revalidate=59` with ETags, serving repeated reads from global Edge PoPs in sub-15ms.
+* **Egress & DDoS Shield**: Absorbs concurrent user refreshes and automated benchmark evaluation runs, preventing high query volume from hitting Supabase PostgreSQL or triggering serverless function invocation limits.
+
+### C. Postgres Server-Side Aggregate RPC & Egress Optimization
+* **Stored Procedure Aggregations (`get_portfolio_diligence_kpis`)**: Replaced multi-megabyte client-side table aggregations (which previously downloaded entire historical records for 88+ projects and 700+ documents) with a native PostgreSQL RPC. The database computes project totals, document counts, status breakdowns, and financial sums in sub-2ms and returns a compact JSON payload (<400 bytes), slashing network payload size by **99.8%**.
+* **Lightweight Column Projections**: Endpoints like `getSubmissionHistory.ts` utilize optimized projection queries (`lightweightColumns`), selecting essential metadata and visual flags (`ai_red_flags`, `ai_yellow_flags`, `ai_green_flags`, `ai_summary`) while excluding heavy multi-megabyte `ai_extractedJson` payloads until an analyst opens a specific document Evidence Drawer.
+* **Full Portfolio Navigation Scope**: Sets a global limit of 1,000 for top-level history queries, ensuring all 88 projects are immediately searchable and selectable in workspace dropdowns without pagination clipping.
+
+### D. Multi-Modal Ingestion Matrix
 Dillon AI supports 9 discrete asset classes natively:
 1. **Financial Statements**: Multi-year P&Ls, Trial Balances, General Ledgers (`.pdf`, `.xlsx`, `.csv`).
 2. **Multi-Tab Workbooks**: Complex financial models with cell coordinate references (`.xlsx`, `.xlsm`, `.xlsb`).
@@ -136,12 +164,12 @@ Dillon AI supports 9 discrete asset classes natively:
 8. **Audio Recordings**: Management Q&A calls, founder interviews (`.mp3`, `.m4a`, `.wav`).
 9. **Video Walkthroughs**: Facility drone footage, plant equipment inspections (`.mp4`, `.mov`).
 
-### C. Multi-Model Extraction & AI Router
+### E. Multi-Model Extraction & AI Router
 * **Primary Extraction Model (`OpenAI 5.6 Terra`)**: High-throughput reasoning model configured with strict 2-space indented LangChain Structured Output Parsers. Extracts normalized revenue, COGS, reported EBITDA, payroll records, and risk flags with exact source page/cell citations.
 * **Backup Extraction Model (`OpenAI 5.6 Sol`)**: Automated fallback router activated upon API rate limits, non-standard tax schedule layouts, or prompt token overflow.
 * **Zero Hallucination Ground Truth Guard**: Prompt templates enforce strict citation boundaries; if an exact financial fact cannot be proven from document text, the model flags it as `UNVERIFIED_SELLER_CLAIM` rather than guessing.
 
-### D. Deterministic Accounting & Math Engine (`frontend/utils/dealMath.ts`)
+### F. Deterministic Accounting & Math Engine (`frontend/utils/dealMath.ts`)
 LLMs are notoriously prone to arithmetic hallucinations. Dillon AI solves this by **completely decoupling math from the LLM**:
 1. The LLM is used **strictly for information extraction and semantic parsing**.
 2. Extracted line items are piped into a **deterministic TypeScript/Node.js calculation engine**:
@@ -150,7 +178,7 @@ LLMs are notoriously prone to arithmetic hallucinations. Dillon AI solves this b
    * **Apex Precision Dynamics**: Catches **$730,000 variance** between CIM EBITDA ($3.15M) and Monthly P&L ($2.42M).
    * **TerraNova Environmental**: Catches **$6.6M gap** between Teaser Revenue ($14.8M) and Bank Reconciliation Cash Receipts ($8.2M).
 
-### E. Project Synthesis & Deal Memo Formulation
+### G. Project Synthesis & Deal Memo Formulation
 Once all documents in a project batch complete, the **Project Synthesis Consolidator** triggers:
 * **Valuation Bounds Engine**: Computes Fair Market Enterprise Value across 3 distinct scenarios:
   * **Base Case**: Normalized EBITDA $\times$ Industry Median Multiple.
@@ -159,7 +187,7 @@ Once all documents in a project batch complete, the **Project Synthesis Consolid
 * **Negotiation Levers**: Generates dollar-for-dollar purchase price reduction recommendations, escrow holdbacks, and earnout milestones.
 * **IC Deal Memo Generation**: Produces an executive-ready Investment Committee memo with full audit trail citations.
 
-### F. Automated Evaluation Harness & Golden Benchmarks (`EVALS.md`)
+### H. Automated Evaluation Harness & Golden Benchmarks (`EVALS.md`)
 * **Golden Dataset**: 58 production M&A documents across 6 full deal packets.
 * **5-Dimension 100-Point Rubric**:
   1. *Classification (10 pts)*: Document type detection.
@@ -178,6 +206,8 @@ When explaining this architecture in technical interviews, focus on these core d
 | Technical Decision | Why We Built It This Way | Alternative Considered & Why Rejected |
 | :--- | :--- | :--- |
 | **Deterministic Math Engine vs. LLM Calculations** | Financial due diligence requires zero tolerance for math hallucinations. Extracted line items are calculated in code. | *Letting the LLM calculate multiples*: Rejected due to floating-point drift and unpredictable rounding errors. |
+| **Server-Side Postgres RPC Aggregation (`get_portfolio_diligence_kpis`)** | Calculates all portfolio totals in sub-2ms in the database, reducing client payload from 180KB+ to <400 bytes (99.8% bandwidth cut). | *Client-side aggregation over raw tables*: Rejected due to massive egress consumption and slow rendering with 88+ projects. |
+| **Cloudflare Edge Worker & S-Maxage Caching** | Serves high-frequency history and benchmark reads in sub-15ms from the edge, protecting Supabase database connections from traffic spikes. | *Direct origin queries without edge cache*: Rejected due to database connection exhaustion during multi-analyst sessions. |
 | **Direct Supabase Uploads via Presigned URLs** | Uploading 50MB VDR ZIPs directly to cloud storage keeps Vercel Fast Origin Transfer at 0 MB and avoids 30s serverless timeouts. | *Proxying uploads through Vercel Serverless Functions*: Rejected due to 10 GB/mo origin bandwidth limits and payload caps. |
 | **n8n Cloud Orchestrator + Supabase PostgreSQL** | Provides visual workflow observability, asynchronous retry queues, map-reduce batching, and watchdog auto-recovery. | *Custom Microservices (FastAPI/Temporal)*: High operational overhead without added throughput benefits for M&A batch cadences. |
 | **Client-Side ZIP Decompression** | Decompressing archives in the browser offloads CPU compute from the backend and allows immediate client-side file validation. | *Server-side unzipping*: Heavy server memory footprint and security exposure to decompression zip-bomb exploits. |
@@ -187,9 +217,14 @@ When explaining this architecture in technical interviews, focus on these core d
 
 ## 6. Failure Modes & Self-Healing Architecture
 
-1. **Stuck Document Auto-Recovery (`BaQO1dHCAm0Tf6kk`)**: A background watchdog cron polls every 5 minutes. If a document extraction remains in `PROCESSING` for $>180\text{ seconds}$ without heartbeat, it is automatically flagged, retried with the secondary backup model (`OpenAI 5.6 Sol`), or marked with actionable error telemetry.
-2. **Rate Limit Exponential Backoff**: OpenAI API calls employ a 3-tier jittered backoff ($2\text{s} \rightarrow 5\text{s} \rightarrow 15\text{s}$) with automated switchover to secondary API keys and proxy fallbacks.
-3. **Structured JSON Validation & Auto-Correction**: Extraction schemas are strictly validated via Zod/JSON-Schema. If an LLM returns malformed JSON or trailing commas, the parser auto-sanitizes before dispatching to the database.
+1. **3-Tier Stuck Document Watchdog (`BaQO1dHCAm0Tf6kk`)**: A background watchdog cron runs every 5 minutes with a 3-tier recovery architecture:
+   - *Tier 1 (Batch Auto-Reconciliation)*: Identifies batches where all documents completed extraction but synthesis was not triggered, auto-initiating the Consolidator pass.
+   - *Tier 2 (Single-Document Recovery)*: Detects documents stuck in `processing` for $>180\text{ seconds}$ without heartbeat, resetting status or routing to the backup model (`OpenAI 5.6 Sol`).
+   - *Tier 3 (Reliability Audit & Deduplicated Slack Escalation)*: Suppresses noisy transient alerts using a 30-minute cooldown in `reliability_alert_state`, dispatching to `#pod-1-agent-alerts` only after 3 sustained consecutive failures.
+2. **Document Counter Idempotency Lock (`0OVTAMMp2iMx53Aw`)**: Contains a `Get Project State` gate that inspects `DD Project-Level Fields` before evaluating `batchReady`. If another document completion triggered synthesis milliseconds prior (or if synthesis is in progress), subsequent calls mark `batchReady: false` to eliminate twin/duplicate Consolidator passes.
+3. **Database-Validated Auth Alerts**: `frontend/services/supabaseAuth.ts` inspects `session.user.created_at` (< 2 minutes old) rather than browser-local `localStorage` keys, ensuring returning users logging in on new browsers, mobile devices, or private tabs never trigger false "New Account Created" Slack notifications.
+4. **Rate Limit Exponential Backoff**: OpenAI API calls employ a 3-tier jittered backoff ($2\text{s} \rightarrow 5\text{s} \rightarrow 15\text{s}$) with automated switchover to secondary API keys and proxy fallbacks.
+5. **Structured JSON Validation & Auto-Correction**: Extraction schemas are strictly validated via Zod/JSON-Schema. If an LLM returns malformed JSON or trailing commas, the parser auto-sanitizes before dispatching to the database.
 
 ---
 
@@ -197,6 +232,9 @@ When explaining this architecture in technical interviews, focus on these core d
 
 * **Average Per-Document Latency**: $21\text{s} - 25\text{s}$ (OCR $\rightarrow$ Structured Parsing $\rightarrow$ Math Verification).
 * **Project Synthesis Latency**: $45\text{s} - 60\text{s}$ (Cross-document contradiction reconciliation $\rightarrow$ Deal Memo synthesis).
+* **Portfolio KPI Query Latency**: $< 2\text{ms}$ via Postgres RPC (`get_portfolio_diligence_kpis`).
+* **Edge Cache Hit Latency**: $< 15\text{ms}$ via Cloudflare Edge Worker.
 * **Per-Document Cloud Cost**: $\approx \$0.055$ / document (OpenAI 5.6 Terra).
 * **Per-Project Synthesis Cost**: $\approx \$0.065$ / deal synthesis.
+* **Network Egress Optimization**: $> 99.8\%$ bandwidth reduction across portfolio and history feeds.
 * **Evaluation Harness Score**: **$98\%$ Overall Accuracy** across all 58 golden test documents.

@@ -15,13 +15,13 @@ parallel. The Supabase credential used is ID `2bjegcUtAn2gvy8A`.
 | --- | --- | --- | --- | --- |
 | Submit Button Webhook Trigger | `vBnMdx8cvSFIFx6m` | Receives a document submission, checks duplicates, and starts processing. | Supabase `documents` | Supabase `documents` + `project_syntheses` + `deal_models` & n8n tables |
 | Per Document AI Analysis | `W5Jp7CJIQbNy0qlY` | Downloads, parses, analyzes, and updates one document row. | Drive / Inbound Payload | Supabase `documents` & n8n `rBFHVB1W7ldSiObM` |
-| DOCUMENT COUNTER UTILITY SUBWORKFLOW | `0OVTAMMp2iMx53Aw` | Tracks batch completion and starts project synthesis when considered documents are terminal. | Supabase `documents` | Supabase `project_syntheses` & n8n `DTrLU8hBUwYzmBig` |
+| DOCUMENT COUNTER UTILITY SUBWORKFLOW | `0OVTAMMp2iMx53Aw` | Tracks batch completion with an idempotent `Get Project State` lock, preventing twin/duplicate Consolidator passes when docs complete concurrently. | Supabase `documents` + `DD Project-Level Fields` | Supabase `project_syntheses` & n8n `DTrLU8hBUwYzmBig` |
 | SUBWORKFLOW PROJECT-WIDE CONSOLIDATOR WORKFLOW | `IoSad3rTYJMk4Mon` | Reconciles considered document outputs into a project-level synthesis. | Supabase `documents` | Supabase `project_syntheses` & n8n `DTrLU8hBUwYzmBig` |
 | Project Documented Facts Bridge | `uAI6pABZWdIy2V17` | Reads considered documents, consolidates LOI terms and accounting facts, and syncs full metric columns. | Supabase `documents` | Supabase `deal_models` & n8n `eU2nnH4bVmdPocI8` |
 | Deal Model Write API | `O2fi0mKmKHxewuN5` | Saves user-entered deal model assumptions (30 financial parameters). | Inbound HTTP Payload | Supabase `deal_models` & n8n `eU2nnH4bVmdPocI8` |
 | Retry Failed Document | `iOaYHcZLktC6aO2u` | Retries a failed document via Drive file ID and dispatches to per-document analysis. | Supabase `documents` | Dispatches to `W5Jp7CJIQbNy0qlY` (Dual-Writes) |
 | Document Consideration Webhook | `lXz9fVKY4RaTlDFM` | Marks a document `isConsidered=false` without deleting it, then refreshes batch readiness. | Supabase `documents` | Supabase `documents` & n8n `rBFHVB1W7ldSiObM` |
-| Stuck Document Watchdog | `BaQO1dHCAm0Tf6kk` | Detects stuck documents, triggers re-analysis, and manages deduplicated reliability alert state. | Supabase `documents` + `workflow_errors` + `reliability_alert_state` | Supabase `reliability_alert_state` & n8n `FSvRhLe3YI4EZcJk` |
+| Stuck Document Watchdog | `BaQO1dHCAm0Tf6kk` | 3-tier self-healing cron: Auto-reconciles stalled batches, resets stuck docs (>180s), and logs deduplicated Slack alerts with a 30-min cooldown. | Supabase `documents` + `workflow_errors` + `reliability_alert_state` | Supabase `reliability_alert_state` & n8n `FSvRhLe3YI4EZcJk` |
 | Workflow Error Audit | `4dqKa3CyLjjaFn8C` | Records uncaught production errors after local recovery has been exhausted. | Error Trigger Payload | Supabase `workflow_errors` & n8n `aSPSRYm0ScfGsV0b` |
 | Chat Assistant | `LBZVN8zeFT03Wn12` | Answers analyst questions with rich deal context and cross-project portfolio analysis. | Inbound Context Payload | Stateless Agent Response |
 

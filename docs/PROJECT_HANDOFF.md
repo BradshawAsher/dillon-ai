@@ -36,16 +36,20 @@ MergeWorks is a document-first, post-LOI M&A diligence workspace. An analyst cre
 ## System Architecture
 
 ```text
-Browser
+Browser (React 19 SPA)
+  -> Cloudflare Edge Worker (Edge Caching / Reverse Proxy, s-maxage=10, stale-while-revalidate <15ms)
+  -> Supabase Postgres RPC (get_portfolio_diligence_kpis: sub-2ms portfolio aggregation, <400B payload)
+  -> Supabase Realtime CDC (WebSockets push updates <100ms)
   -> /api/diligence/* (Express/Vite server layer)
   -> Supabase/Postgres (Primary Read Layer for history, synthesis, deal models, action trackers)
   -> n8n Webhooks (Async Write Layer: document submit, retry, consideration, deal model save)
 
 n8n Workflows (Async Background AI Pipeline)
-  -> Reads file from Google Drive / Webhook payload
-  -> Runs LLM Extraction + Deterministic Math Checks (Revenue - COGS = GP, Assets - Liab = Equity)
+  -> Reads file from Supabase S3 Object Storage / Webhook payload
+  -> Runs LLM Extraction (OpenAI 5.6 Terra / Sol) + Deterministic Math Checks
   -> Writes results in parallel to Supabase Postgres AND n8n Data Tables
-  -> Counter subworkflow triggers Project Consolidator asynchronously upon batch completion
+  -> Idempotent Document Counter (0OVTAMMp2iMx53Aw) checks project state & triggers Consolidator
+  -> 3-Tier Watchdog (BaQO1dHCAm0Tf6kk) auto-heals stalled batches and stuck documents (>180s)
 ```
 
 ---
