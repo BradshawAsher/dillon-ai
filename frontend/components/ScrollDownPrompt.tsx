@@ -28,9 +28,9 @@ export default function ScrollDownPrompt() {
     }, [isDismissed])
 
     const handleScrollDown = () => {
-        const workspace = document.getElementById('deal-workspace') || document.querySelector('[data-project-intake]')
-        if (workspace) {
-            workspace.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        const intake = document.querySelector('[data-project-intake]') || document.getElementById('project-intake') || document.getElementById('deal-workspace')
+        if (intake) {
+            intake.scrollIntoView({ behavior: 'smooth', block: 'start' })
         } else {
             window.scrollBy({ top: 400, behavior: 'smooth' })
         }
