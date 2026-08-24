@@ -337,11 +337,13 @@ function getCitationDetails(judgmentJson: string, aiCitations: string): ProjectC
 // --- Main export ---
 
 export default async function getProjectSynthesis(req: { params: Params; user: User }): Promise<ProjectSynthesisItem[]> {
+    const isScoped = Boolean(req.params.projectId && req.params.projectId.trim().length > 0)
+    const defaultLimit = isScoped ? 10 : 50
     const limitNum = typeof req.params.limit === 'number'
         ? req.params.limit
         : typeof req.params.limit === 'string' && parseInt(req.params.limit, 10) > 0
             ? parseInt(req.params.limit, 10)
-            : 100
+            : defaultLimit
 
     let query = supabase
         .from('project_syntheses')

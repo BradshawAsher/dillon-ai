@@ -7,6 +7,8 @@ type DealWorkspaceNavProps = {
     isDiligenceRunning?: boolean
     isSynthesisReady?: boolean
     isSynthesisRunning?: boolean
+    isSynthesisWaiting?: boolean
+    synthesisElapsedSeconds?: number
     onStartTabTour?: (tabId: WorkspaceTab) => void
 }
 
@@ -41,6 +43,7 @@ import { createPortal } from 'react-dom'
 import { ChevronLeft, ChevronRight, History, Check } from 'lucide-react'
 import TabInfoPopover from './walkthrough/TabInfoPopover'
 import { useFloatingPosition } from '../hooks/useFloatingPosition'
+import { formatElapsedDuration } from '../utils/diligenceDashboardUtils'
 
 export default function DealWorkspaceNav({
     activeTab,
@@ -49,6 +52,8 @@ export default function DealWorkspaceNav({
     isDiligenceRunning = false,
     isSynthesisReady = false,
     isSynthesisRunning = false,
+    isSynthesisWaiting = false,
+    synthesisElapsedSeconds = 0,
     onStartTabTour,
 }: DealWorkspaceNavProps) {
     const [navHistory, setNavHistory] = useState<WorkspaceTab[]>(() => {
@@ -241,6 +246,7 @@ export default function DealWorkspaceNav({
                         const isDiligenceHighlighted = tab.id === 'diligence' && isDiligenceComplete && !isDiligenceRunning
                         const isSynthesisRunningHighlighted = tab.id === 'synthesis' && isSynthesisRunning
                         const isSynthesisReadyHighlighted = tab.id === 'synthesis' && isSynthesisReady && !isSynthesisRunning
+                        const isSynthesisWaitingHighlighted = tab.id === 'synthesis' && !isSynthesisRunning && !isSynthesisReady && Boolean(isSynthesisWaiting || isDiligenceRunning)
 
                         let buttonClass = isActive
                             ? 'rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-all duration-200 ease-out cursor-pointer'
@@ -250,14 +256,18 @@ export default function DealWorkspaceNav({
                             buttonClass = isActive
                                 ? 'rounded-lg bg-amber-600 px-3 py-2 text-sm font-bold text-white shadow-sm ring-2 ring-amber-500/50 flex items-center gap-1.5 transition-all duration-200 cursor-pointer'
                                 : 'rounded-lg bg-amber-500/15 dark:bg-amber-500/25 border border-amber-500/50 px-3 py-2 text-sm font-bold text-amber-700 dark:text-amber-300 shadow-xs shadow-amber-500/20 hover:bg-amber-500/30 flex items-center gap-1.5 transition-all duration-200 cursor-pointer'
+                        } else if (isSynthesisWaitingHighlighted) {
+                            buttonClass = isActive
+                                ? 'rounded-lg bg-blue-600 px-3 py-2 text-sm font-bold text-white shadow-sm ring-2 ring-blue-500/50 flex items-center gap-1.5 transition-all duration-200 cursor-pointer'
+                                : 'rounded-lg bg-blue-500/15 dark:bg-blue-500/25 border border-blue-500/50 px-3 py-2 text-sm font-bold text-blue-700 dark:text-blue-300 shadow-xs shadow-blue-500/20 hover:bg-blue-500/30 flex items-center gap-1.5 transition-all duration-200 cursor-pointer'
                         } else if (isDiligenceHighlighted) {
                             buttonClass = isActive
                                 ? 'rounded-lg bg-emerald-600 px-3 py-2 text-sm font-bold text-white shadow-sm ring-2 ring-emerald-500/50 flex items-center gap-1.5 transition-all duration-200 cursor-pointer'
                                 : 'rounded-lg bg-emerald-500/15 dark:bg-emerald-500/25 border border-emerald-500/50 px-3 py-2 text-sm font-bold text-emerald-700 dark:text-emerald-300 shadow-xs shadow-emerald-500/20 hover:bg-emerald-500/30 flex items-center gap-1.5 transition-all duration-200 cursor-pointer'
                         } else if (isSynthesisReadyHighlighted) {
                             buttonClass = isActive
-                                ? 'rounded-lg bg-violet-600 px-3 py-2 text-sm font-bold text-white shadow-sm ring-2 ring-violet-500/50 flex items-center gap-1.5 transition-all duration-200 cursor-pointer'
-                                : 'rounded-lg bg-violet-500/15 dark:bg-violet-500/25 border border-violet-500/50 px-3 py-2 text-sm font-bold text-violet-700 dark:text-violet-300 shadow-xs shadow-violet-500/20 hover:bg-violet-500/30 flex items-center gap-1.5 transition-all duration-200 cursor-pointer'
+                                ? 'rounded-lg bg-purple-600 px-3 py-2 text-sm font-bold text-white shadow-sm ring-2 ring-purple-500/50 flex items-center gap-1.5 transition-all duration-200 cursor-pointer'
+                                : 'rounded-lg bg-purple-500/15 dark:bg-purple-500/25 border border-purple-500/50 px-3 py-2 text-sm font-bold text-purple-900 dark:text-purple-200 shadow-xs shadow-purple-500/20 hover:bg-purple-500/30 flex items-center gap-1.5 transition-all duration-200 cursor-pointer'
                         }
 
                         return (
@@ -274,37 +284,66 @@ export default function DealWorkspaceNav({
                                 >
                                     <span>{tab.label}</span>
                                     {isDiligenceRunningHighlighted && (
-                                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/20 dark:bg-amber-500/30 px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-amber-800 dark:text-amber-200">
+                                        <span className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ${
+                                            isActive
+                                                ? 'bg-white/20 text-white border border-white/30'
+                                                : 'bg-amber-500/20 dark:bg-amber-500/30 text-amber-900 dark:text-amber-100 border border-amber-500/30'
+                                        }`}>
                                             <span className="relative flex h-1.5 w-1.5">
-                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                                                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-500"></span>
+                                                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${isActive ? 'bg-white' : 'bg-amber-400'} opacity-75`}></span>
+                                                <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${isActive ? 'bg-white' : 'bg-amber-500'}`}></span>
                                             </span>
                                             Running
                                         </span>
                                     )}
                                     {isDiligenceHighlighted && (
-                                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 dark:bg-emerald-500/30 px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-emerald-800 dark:text-emerald-200">
+                                        <span className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ${
+                                            isActive
+                                                ? 'bg-white/20 text-white border border-white/30'
+                                                : 'bg-emerald-500/20 dark:bg-emerald-500/30 text-emerald-900 dark:text-emerald-100 border border-emerald-500/30'
+                                        }`}>
                                             <span className="relative flex h-1.5 w-1.5">
-                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                                                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${isActive ? 'bg-white' : 'bg-emerald-400'} opacity-75`}></span>
+                                                <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${isActive ? 'bg-white' : 'bg-emerald-500'}`}></span>
                                             </span>
                                             Done
                                         </span>
                                     )}
-                                    {isSynthesisRunningHighlighted && (
-                                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/20 dark:bg-amber-500/30 px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-amber-800 dark:text-amber-200">
+                                    {isSynthesisWaitingHighlighted && (
+                                        <span className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ${
+                                            isActive
+                                                ? 'bg-white/20 text-white border border-white/30'
+                                                : 'bg-blue-500/20 dark:bg-blue-500/30 text-blue-900 dark:text-blue-100 border border-blue-500/30'
+                                        }`}>
                                             <span className="relative flex h-1.5 w-1.5">
-                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                                                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-500"></span>
+                                                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${isActive ? 'bg-white' : 'bg-blue-400'} opacity-75`}></span>
+                                                <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${isActive ? 'bg-white' : 'bg-blue-500'}`}></span>
                                             </span>
-                                            Running
+                                            Waiting
+                                        </span>
+                                    )}
+                                    {isSynthesisRunningHighlighted && (
+                                        <span className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider font-mono ${
+                                            isActive
+                                                ? 'bg-white/20 text-white border border-white/30'
+                                                : 'bg-amber-500/20 dark:bg-amber-500/30 text-amber-900 dark:text-amber-100 border border-amber-500/30'
+                                        }`}>
+                                            <span className="relative flex h-1.5 w-1.5">
+                                                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${isActive ? 'bg-white' : 'bg-amber-400'} opacity-75`}></span>
+                                                <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${isActive ? 'bg-white' : 'bg-amber-500'}`}></span>
+                                            </span>
+                                            Running{synthesisElapsedSeconds > 0 ? ` (${formatElapsedDuration(synthesisElapsedSeconds)})` : ''}
                                         </span>
                                     )}
                                     {isSynthesisReadyHighlighted && (
-                                        <span className="inline-flex items-center gap-1 rounded-full bg-violet-500/20 dark:bg-violet-500/30 px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-violet-800 dark:text-violet-200">
+                                        <span className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ${
+                                            isActive
+                                                ? 'bg-white/25 text-white border border-white/40 shadow-xs'
+                                                : 'bg-purple-100 dark:bg-purple-950/80 text-purple-950 dark:text-purple-100 border border-purple-400/50 dark:border-purple-500/50 shadow-xs'
+                                        }`}>
                                             <span className="relative flex h-1.5 w-1.5">
-                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span>
-                                                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-violet-500"></span>
+                                                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${isActive ? 'bg-white' : 'bg-purple-400'} opacity-75`}></span>
+                                                <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${isActive ? 'bg-white' : 'bg-purple-600 dark:bg-purple-300'}`}></span>
                                             </span>
                                             Done
                                         </span>

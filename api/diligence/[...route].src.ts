@@ -8,6 +8,7 @@ import saveDealModel from '../../backend/diligence/saveDealModel'
 import getSubmissionHistory from '../../backend/diligence/getSubmissionHistory'
 import getEvalRuns from '../../backend/diligence/getEvalRuns'
 import getWorkflowErrors from '../../backend/diligence/getWorkflowErrors'
+import { getDiligenceKpis } from '../../backend/diligence/getDiligenceKpis'
 import getProjectActionTracker from '../../backend/diligence/getProjectActionTracker'
 import saveProjectActionTracker from '../../backend/diligence/saveProjectActionTracker'
 import retryFailedDocument from '../../backend/diligence/retryFailedDocument'
@@ -17,6 +18,7 @@ import submitDealPacket from '../../backend/diligence/submitDealPacket'
 import createUploadUrl from '../../backend/diligence/createUploadUrl'
 import updateSubmissionRow from '../../backend/diligence/updateSubmissionRow'
 import handleAccessRequest from '../../backend/diligence/handleAccessRequest'
+import crypto from 'node:crypto'
 import { installRetoolGlobals, readJsonBody, userFromHeaders } from '../_lib/retoolRuntime'
 import { getClientIp, rateLimit } from '../_lib/rateLimit'
 import { messageFromError, statusFromError } from '../_lib/httpError'
@@ -26,13 +28,24 @@ type ApiRequest = IncomingMessage
 // n8n client still needed for submit + retry (workflow triggers).
 installRetoolGlobals()
 
-function sendJson(res: ServerResponse, status: number, body: unknown, cacheControl?: string) {
-    res.statusCode = status
+function sendJson(req: ApiRequest, res: ServerResponse, status: number, body: unknown, cacheControl?: string) {
+    const jsonString = JSON.stringify(body)
+    const etag = `"${crypto.createHash('md5').update(jsonString).digest('hex')}"`
+
     res.setHeader('Content-Type', 'application/json; charset=utf-8')
+    res.setHeader('ETag', etag)
     if (cacheControl) {
         res.setHeader('Cache-Control', cacheControl)
     }
-    res.end(JSON.stringify(body))
+
+    if (req.headers['if-none-match'] === etag) {
+        res.statusCode = 304
+        res.end()
+        return
+    }
+
+    res.statusCode = status
+    res.end(jsonString)
 }
 
 export default async function handler(req: ApiRequest, res: ServerResponse) {
@@ -48,7 +61,7 @@ export default async function handler(req: ApiRequest, res: ServerResponse) {
     res.setHeader('X-RateLimit-Remaining', String(limit.remaining))
     if (!limit.allowed) {
         res.setHeader('Retry-After', String(limit.retryAfterSec))
-        sendJson(res, 429, { error: `Rate limit exceeded. Retry in ${limit.retryAfterSec}s.` })
+        sendJson(req, res, 429, { error: `Rate limit exceeded. Retry in ${limit.retryAfterSec}s.` })
         return
     }
 
@@ -56,80 +69,90 @@ export default async function handler(req: ApiRequest, res: ServerResponse) {
         const user = userFromHeaders(req.headers)
 
         if (route === 'eval-runs' && req.method === 'GET') {
-            sendJson(res, 200, await getEvalRuns(), 'public, s-maxage=60, stale-while-revalidate=300')
+            sendJson(req, res, 200, await getEvalRuns(), 'public, s-maxage=60, stale-while-revalidate=300')
             return
         }
         if (route === 'history' && req.method === 'GET') {
-            sendJson(res, 200, await getSubmissionHistory({ params: { environment }, user }), 'private, no-cache, no-store, must-revalidate')
+            const projectId = requestUrl.searchParams.get('projectId') ?? undefined
+            const limitNum = requestUrl.searchParams.get('limit') ?? undefined
+            const full = requestUrl.searchParams.get('full') === 'true'
+            sendJson(req, res, 200, await getSubmissionHistory({ params: { environment, projectId, limit: limitNum, full }, user }), 'private, max-age=5, stale-while-revalidate=30')
             return
         }
         if (route === 'workflow-errors' && req.method === 'GET') {
-            sendJson(res, 200, await getWorkflowErrors({ params: { environment }, user }), 'private, no-cache, no-store, must-revalidate')
+            sendJson(req, res, 200, await getWorkflowErrors({ params: { environment }, user }), 'private, max-age=10, stale-while-revalidate=30')
             return
         }
         if (route === 'synthesis' && req.method === 'GET') {
-            sendJson(res, 200, await getProjectSynthesis({ params: { environment }, user }), 'private, no-cache, no-store, must-revalidate')
+            const projectId = requestUrl.searchParams.get('projectId') ?? undefined
+            const limitNum = requestUrl.searchParams.get('limit') ?? undefined
+            sendJson(req, res, 200, await getProjectSynthesis({ params: { environment, projectId, limit: limitNum }, user }), 'private, max-age=5, stale-while-revalidate=30')
+            return
+        }
+        if (route === 'kpis' && req.method === 'GET') {
+            const projectId = requestUrl.searchParams.get('projectId') ?? undefined
+            sendJson(req, res, 200, await getDiligenceKpis({ params: { environment, projectId }, user }), 'private, max-age=5, stale-while-revalidate=30')
             return
         }
         if (route === 'deal-models' && req.method === 'GET') {
-            sendJson(res, 200, await getDealModels({ params: { projectId: requestUrl.searchParams.get('projectId') ?? '' }, user }))
+            sendJson(req, res, 200, await getDealModels({ params: { projectId: requestUrl.searchParams.get('projectId') ?? '' }, user }))
             return
         }
         if (route === 'deal-models' && req.method === 'POST') {
             const params = await readJsonBody(req) as Parameters<typeof saveDealModel>[0]['params']
-            sendJson(res, 200, await saveDealModel({ params, user }))
+            sendJson(req, res, 200, await saveDealModel({ params, user }))
             return
         }
         if (route === 'project-action-tracker' && req.method === 'GET') {
             const projectId = requestUrl.searchParams.get('projectId') ?? ''
-            sendJson(res, 200, await getProjectActionTracker({ params: { projectId }, user }))
+            sendJson(req, res, 200, await getProjectActionTracker({ params: { projectId }, user }))
             return
         }
         if (route === 'project-action-tracker' && req.method === 'POST') {
             const params = await readJsonBody(req) as Parameters<typeof saveProjectActionTracker>[0]['params']
-            sendJson(res, 200, await saveProjectActionTracker({ params, user }))
+            sendJson(req, res, 200, await saveProjectActionTracker({ params, user }))
             return
         }
         if (route === 'submission-consideration' && req.method === 'POST') {
             const params = await readJsonBody(req) as Parameters<typeof updateSubmissionRow>[0]['params']
-            sendJson(res, 200, await updateSubmissionRow({ params, user }))
+            sendJson(req, res, 200, await updateSubmissionRow({ params, user }))
             return
         }
         if (route === 'upload-url' && req.method === 'POST') {
             const params = await readJsonBody(req) as Parameters<typeof createUploadUrl>[0]['params']
-            sendJson(res, 200, await createUploadUrl({ params, user }))
+            sendJson(req, res, 200, await createUploadUrl({ params, user }))
             return
         }
         if (route === 'submit' && req.method === 'POST') {
             const params = await readJsonBody(req) as Parameters<typeof submitDealPacket>[0]['params']
-            sendJson(res, 200, await submitDealPacket({ params, user }))
+            sendJson(req, res, 200, await submitDealPacket({ params, user }))
             return
         }
         if (route === 'retry-failed-document' && req.method === 'POST') {
             const params = await readJsonBody(req) as Parameters<typeof retryFailedDocument>[0]['params']
-            sendJson(res, 202, await retryFailedDocument({ params, user }))
+            sendJson(req, res, 202, await retryFailedDocument({ params, user }))
             return
         }
         if (route === 'stop-batch' && req.method === 'POST') {
             const params = await readJsonBody(req) as Parameters<typeof stopBatchSubmission>[0]['params']
-            sendJson(res, 200, await stopBatchSubmission({ params, user }))
+            sendJson(req, res, 200, await stopBatchSubmission({ params, user }))
             return
         }
         if (route === 'stop-synthesis' && req.method === 'POST') {
             const params = await readJsonBody(req) as Parameters<typeof stopProjectSynthesis>[0]['params']
-            sendJson(res, 200, await stopProjectSynthesis({ params, user }))
+            sendJson(req, res, 200, await stopProjectSynthesis({ params, user }))
             return
         }
         if (route === 'access-request' && req.method === 'POST') {
             const params = await readJsonBody(req) as Parameters<typeof handleAccessRequest>[0]['params']
-            sendJson(res, 200, await handleAccessRequest({ params, user }))
+            sendJson(req, res, 200, await handleAccessRequest({ params, user }))
             return
         }
 
-        sendJson(res, 404, { error: 'Unknown API route: ' + (req.method ?? 'GET') + ' /api/diligence/' + route })
+        sendJson(req, res, 404, { error: 'Unknown API route: ' + (req.method ?? 'GET') + ' /api/diligence/' + route })
     } catch (error) {
         // HttpError carries an intended 4xx status (bad input); everything else
         // is an unexpected failure and stays a 500.
-        sendJson(res, statusFromError(error), { error: messageFromError(error) })
+        sendJson(req, res, statusFromError(error), { error: messageFromError(error) })
     }
 }
