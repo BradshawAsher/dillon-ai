@@ -168,7 +168,7 @@ export default async function getSubmissionHistory(req: {
     const isScopedProject = Boolean(req.params.projectId && req.params.projectId.trim().length > 0)
     const isFull = req.params.full === true || req.params.full === 'true' || isScopedProject
 
-    const defaultLimit = isScopedProject ? 100 : 100
+    const defaultLimit = isScopedProject ? 100 : 1000
     const limitNum = typeof req.params.limit === 'number'
         ? req.params.limit
         : typeof req.params.limit === 'string' && parseInt(req.params.limit, 10) > 0
@@ -200,7 +200,7 @@ export default async function getSubmissionHistory(req: {
         submission_batch_id, expected_batch_document_count, file_name, file_size, file_type,
         trigger_timestamp, status, environment, received_at, processing_started_at, processed_at,
         error_message, risk_level, category, traffic_light, ebitda_extracted,
-        storage_file_id, storage_file_url, needs_human_review, ai_summary, ai_target_value,
+        storage_file_id, storage_file_url, needs_human_review, ai_summary, ai_red_flags, ai_yellow_flags, ai_green_flags, ai_target_value,
         ai_variance, ai_escalation_reason, ai_confidence, valuation_lower_bound,
         valuation_base_estimate, valuation_upper_bound, valuation_currency, valuation_confidence,
         investment_is_favorable, investment_confidence, is_considered,
