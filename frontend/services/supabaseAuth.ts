@@ -288,10 +288,13 @@ export function initAuthListener(onUserChange: (user: AppAuthUser | null) => voi
                 saveAppAuth(appUser)
                 onUserChange(appUser)
 
-                // Trigger Slack alert for first-time sign-ins (e.g. OAuth/Google/GitHub)
+                // Trigger Slack alert only for genuinely new user creations (created in the last 2 minutes)
                 if (_event === 'SIGNED_IN' && typeof window !== 'undefined') {
+                    const userCreatedAt = session.user.created_at ? new Date(session.user.created_at).getTime() : 0
+                    const isGenuineNewAccount = userCreatedAt > 0 && (Date.now() - userCreatedAt) < 120000 // within 2 minutes of signup
                     const alertKey = `mergeworks.signupAlertSent.${session.user.id}`
-                    if (!localStorage.getItem(alertKey)) {
+
+                    if (isGenuineNewAccount && !localStorage.getItem(alertKey)) {
                         localStorage.setItem(alertKey, 'true')
                         const provider = session.user.app_metadata?.provider || 'OAuth / SSO'
                         sendNewAccountSlackAlert({
