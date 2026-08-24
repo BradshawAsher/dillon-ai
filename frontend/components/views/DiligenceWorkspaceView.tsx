@@ -50,6 +50,8 @@ type DiligenceWorkspaceViewProps = {
     onReturnToLanding?: () => void
     handleRunSynthesis?: () => void
     isCurrentProjectAwaitingSynthesis?: boolean
+    isCurrentProjectSynthesisRunning?: boolean
+    isCurrentProjectExtractingDocs?: boolean
 }
 
 export function DiligenceWorkspaceView({
@@ -78,34 +80,33 @@ export function DiligenceWorkspaceView({
     onReturnToLanding,
     handleRunSynthesis,
     isCurrentProjectAwaitingSynthesis = false,
+    isCurrentProjectSynthesisRunning = false,
+    isCurrentProjectExtractingDocs = false,
 }: DiligenceWorkspaceViewProps) {
     return (
-        <section id="deal-diligence" className="space-y-6 scroll-mt-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4 shadow-2xs">
-                <div className="space-y-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 font-mono text-xs">
-                            DATA &amp; DILIGENCE TAB
+        <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-border">
+                <div>
+                    <h2 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
+                        <span>Project Diligence &amp; Findings</span>
+                        <Badge variant="secondary" className="font-mono text-[10px] font-normal tracking-wide">
+                            {activeProjectDocuments?.length || 0} Docs
                         </Badge>
-                        <Badge variant="secondary" className="bg-emerald-500/20 text-emerald-900 dark:text-emerald-100 border-emerald-500/50 font-mono text-xs font-bold px-2.5 py-0.5 shadow-2xs">
-                            ACTIVE DEAL: {dealName || suggestedProjectName || activeProjectId}
-                        </Badge>
-                    </div>
-                    <h3 className="text-base font-bold text-foreground">Extracted Financial Statements &amp; Audit Trail for {dealName || suggestedProjectName || activeProjectId}</h3>
-                    <p className="text-xs text-muted-foreground">
-                        Inspect extracted line items, evidence citations, mathematical checks, and risk analysis for active deal room ({activeProjectId}).
+                    </h2>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                        Consolidated findings, cross-document math reconciliation, and financial data quality for {suggestedProjectName || dealName || activeProjectId}.
                     </p>
                 </div>
-                <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                     {handleRunSynthesis && (
                         <Button
                             type="button"
                             variant="outline"
                             className="gap-2 border-primary/40 bg-background hover:bg-primary/10 text-primary font-bold text-xs shrink-0 shadow-2xs"
                             onClick={handleRunSynthesis}
-                            disabled={isCurrentProjectAwaitingSynthesis}
+                            disabled={isCurrentProjectAwaitingSynthesis || isCurrentProjectSynthesisRunning}
                         >
-                            {isCurrentProjectAwaitingSynthesis ? (
+                            {isCurrentProjectAwaitingSynthesis || isCurrentProjectSynthesisRunning ? (
                                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
                             ) : (
                                 <Sparkles className="h-3.5 w-3.5 text-primary" />
@@ -127,21 +128,55 @@ export function DiligenceWorkspaceView({
                 </div>
             </div>
 
-            {/* Live Re-Synthesis Disclaimer Banner when a document is in processing */}
-            {activeProjectDocuments?.some((d: any) => ['processing', 'queued', 'submitted'].includes(d.status)) && (
-                <div className="rounded-xl border-2 border-amber-500/40 bg-amber-500/10 p-4 text-xs font-semibold text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-pulse shadow-xs">
+            {/* Document Extraction In Progress Banner */}
+            {(isCurrentProjectExtractingDocs || activeProjectDocuments?.some((d: any) => ['processing', 'queued', 'submitted'].includes(d.status))) && (
+                <div className="rounded-xl border-2 border-blue-500/40 bg-blue-500/10 p-4 text-xs font-semibold text-blue-900 dark:text-blue-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs animate-pulse">
                     <div className="space-y-1">
-                        <div className="flex items-center gap-2 font-bold text-sm text-amber-700 dark:text-amber-300">
-                            <span className="inline-block h-2 w-2 rounded-full bg-amber-500 animate-ping shrink-0" />
-                            <span>⚡ New Synthesis Version Generating in Background...</span>
+                        <div className="flex items-center gap-2 font-bold text-sm text-blue-700 dark:text-blue-300">
+                            <Loader2 className="h-4 w-4 animate-spin text-blue-600 dark:text-blue-400 shrink-0" />
+                            <span>Document Extraction in Progress...</span>
                         </div>
                         <p className="text-xs text-muted-foreground font-normal">
-                            New document(s) uploaded. The AI Synthesizer is re-processing cross-document findings in the background. Please wait for updated results or view current active synthesis below.
+                            Financial statements, schedules, and disclosures are being extracted and verified. Individual document flags will appear below as each file finishes.
                         </p>
                     </div>
-                    <Badge variant="outline" className="border-amber-500/50 bg-amber-500/20 text-amber-800 dark:text-amber-200 font-mono font-bold text-[10px] shrink-0 uppercase">
-                        Background Synthesizing
+                    <Badge variant="outline" className="border-blue-500/50 bg-blue-500/20 text-blue-800 dark:text-blue-200 font-mono font-bold text-[10px] shrink-0 uppercase">
+                        Extracting Documents
                     </Badge>
+                </div>
+            )}
+
+            {/* Prominent "Project Synthesis Has Begun" Card during the gap between Diligence Done and Synthesis Done */}
+            {!isExampleMode && !activeProjectDocuments?.some((d: any) => ['processing', 'queued', 'submitted'].includes(d.status)) && (isCurrentProjectSynthesisRunning || isCurrentProjectAwaitingSynthesis) && (
+                <div className="rounded-xl border-2 border-amber-500/50 bg-amber-500/10 p-5 text-amber-900 dark:text-amber-200 shadow-md">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="flex items-start gap-3.5">
+                            <div className="relative mt-0.5">
+                                <Loader2 className="h-6 w-6 animate-spin text-amber-600 dark:text-amber-400 shrink-0" />
+                                <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
+                                </span>
+                            </div>
+                            <div className="space-y-1">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <h4 className="font-bold text-base text-amber-800 dark:text-amber-200 flex items-center gap-1.5">
+                                        ⚡ Project Synthesis Has Begun
+                                    </h4>
+                                    <Badge className="border-amber-500/50 bg-amber-500/20 text-amber-900 dark:text-amber-100 font-semibold text-[11px] uppercase tracking-wider">
+                                        Consolidating Deal Evidence
+                                    </Badge>
+                                </div>
+                                <p className="text-xs text-foreground/85 leading-relaxed max-w-2xl">
+                                    All <strong>{activeProjectDocuments.length} documents</strong> in this batch have completed individual extraction. The AI Synthesis Engine is now performing cross-document math reconciliation, uncovering discrepancies across tax filings, general ledger, and CIM disclosures, and computing unified deal valuation bounds.
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0 bg-background/90 dark:bg-card/90 border border-border px-3.5 py-2 rounded-lg shadow-2xs">
+                            <Sparkles className="h-4 w-4 text-amber-500 animate-pulse shrink-0" />
+                            <span className="text-xs font-mono font-medium text-foreground">Reconciling Evidence...</span>
+                        </div>
+                    </div>
                 </div>
             )}
 
@@ -242,6 +277,6 @@ export function DiligenceWorkspaceView({
                     <WhatsNewCard />
                 </Suspense>
             </div>
-        </section>
+        </div>
     )
 }

@@ -8,6 +8,8 @@ type Params = {
 }
 
 const BUCKET_NAME = 'deal-documents'
+const SUPABASE_STORAGE_ORIGIN = 'https://sihpsqrunkwkxhhnwoqe.supabase.co'
+const STORAGE_CDN_URL = (process.env.VITE_STORAGE_CDN_URL || process.env.STORAGE_CDN_URL || 'https://dillon-ai-worker.bradshin231.workers.dev').replace(/\/+$/, '')
 
 export default async function createUploadUrl(req: { params: Params; user: User }) {
   const fileName = req.params.fileName || 'document.pdf'
@@ -30,11 +32,13 @@ export default async function createUploadUrl(req: { params: Params; user: User 
     .from(BUCKET_NAME)
     .getPublicUrl(path)
 
+  const publicUrl = (publicData.publicUrl || '').replace(SUPABASE_STORAGE_ORIGIN, STORAGE_CDN_URL)
+
   return {
     signedUrl: data.signedUrl,
     path: data.path,
     token: data.token,
-    publicUrl: publicData.publicUrl,
+    publicUrl,
     bucket: BUCKET_NAME,
   }
 }
