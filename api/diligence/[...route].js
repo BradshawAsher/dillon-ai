@@ -21789,7 +21789,12 @@ function getCitationDetails(judgmentJson, aiCitations) {
   return found.slice(0, 30);
 }
 async function getProjectSynthesis(req) {
-  const { data: rows, error } = await supabase.from("project_syntheses").select("*").or("is_placeholder.is.null,is_placeholder.eq.false").order("id", { ascending: false }).limit(50);
+  const limitNum = typeof req.params.limit === "number" ? req.params.limit : typeof req.params.limit === "string" && parseInt(req.params.limit, 10) > 0 ? parseInt(req.params.limit, 10) : 100;
+  let query = supabase.from("project_syntheses").select("*").or("is_placeholder.is.null,is_placeholder.eq.false");
+  if (req.params.projectId && req.params.projectId.trim().length > 0) {
+    query = query.eq("project_id", req.params.projectId.trim());
+  }
+  const { data: rows, error } = await query.order("id", { ascending: false }).limit(limitNum);
   if (error) throw new Error(`Supabase read failed: ${error.message}`);
   if (!rows) return [];
   return rows.filter((row) => (row.project_id ?? "").trim().length > 0).map((row) => {
@@ -21997,6 +22002,15 @@ async function saveDealModel(req) {
 }
 
 // backend/diligence/getSubmissionHistory.ts
+var STORAGE_CDN_URL = (process.env.VITE_STORAGE_CDN_URL || process.env.STORAGE_CDN_URL || "https://dillon-ai-worker.bradshin231.workers.dev").replace(/\/+$/, "");
+var SUPABASE_STORAGE_ORIGIN = "https://sihpsqrunkwkxhhnwoqe.supabase.co";
+function resolveStorageCdnUrl(url) {
+  if (!url || typeof url !== "string") return "";
+  if (url.startsWith(SUPABASE_STORAGE_ORIGIN)) {
+    return url.replace(SUPABASE_STORAGE_ORIGIN, STORAGE_CDN_URL);
+  }
+  return url;
+}
 var activeSubmissionStatuses = /* @__PURE__ */ new Set([
   "uploading",
   "accepted",
@@ -22075,15 +22089,78 @@ async function syncPendingRowsFromN8nDataTable(rows) {
   } catch {
   }
 }
+function unpackExtractedFallback(row) {
+  let parsed = null;
+  if (row.extracted_json && typeof row.extracted_json === "string") {
+    try {
+      parsed = JSON.parse(row.extracted_json);
+    } catch {
+    }
+  } else if (row.extracted_json && typeof row.extracted_json === "object") {
+    parsed = row.extracted_json;
+  }
+  if (!parsed) return {};
+  const res = parsed.response || parsed.output?.response || parsed;
+  const flags = res.flags || parsed.flags || {};
+  const redFlags = Array.isArray(flags.red_flags) ? flags.red_flags : [];
+  const yellowFlags = Array.isArray(flags.yellow_flags) ? flags.yellow_flags : [];
+  const greenFlags = Array.isArray(flags.green_flags) ? flags.green_flags : [];
+  const summary = typeof res.summary === "string" ? res.summary : typeof parsed.summary === "string" ? parsed.summary : "";
+  const riskLevel = parsed.risk_flag || parsed.riskLevel || parsed.risk_level || "";
+  const trafficLight = parsed.traffic_light || parsed.trafficLight || "";
+  const category = parsed.category || parsed.output?.category || parsed.document_type || "";
+  const confidence = parsed.global_confidence ?? parsed.ai_confidence ?? parsed.output?.global_confidence ?? null;
+  return {
+    summary,
+    redFlags: redFlags.length > 0 ? JSON.stringify(redFlags) : "",
+    yellowFlags: yellowFlags.length > 0 ? JSON.stringify(yellowFlags) : "",
+    greenFlags: greenFlags.length > 0 ? JSON.stringify(greenFlags) : "",
+    riskLevel,
+    trafficLight,
+    category,
+    confidence
+  };
+}
 async function getSubmissionHistory(req) {
   const environment = req.params.environment === "test" ? "test" : "production";
-  const { data: rows, error } = await supabase.from("documents").select("*").eq("environment", environment).order("updated_at", { ascending: false }).limit(100);
+  const limitNum = typeof req.params.limit === "number" ? req.params.limit : typeof req.params.limit === "string" && parseInt(req.params.limit, 10) > 0 ? parseInt(req.params.limit, 10) : 150;
+  let query = supabase.from("documents").select(`
+            id, request_id, deal_name, company_name, workstream, submission_notes,
+            analyst_name, analyst_email, project_id, project_stage, document_type,
+            detected_document_type, detected_document_types_json, table_structure_status,
+            table_structure_issues, detected_header_row, column_map_confidence, validated_column_map,
+            employee_count, employee_type, employee_as_of_date, employee_confidence, employee_citation,
+            employee_evidence_status, financial_facts_json, reconciliation_json, math_check_status,
+            submission_batch_id, expected_batch_document_count, file_name, file_size, file_type,
+            trigger_timestamp, status, environment, received_at, processing_started_at, processed_at,
+            error_message, risk_level, category, traffic_light, ebitda_extracted, extracted_json,
+            storage_file_id, storage_file_url, needs_human_review, ai_summary, ai_target_value,
+            ai_variance, ai_escalation_reason, ai_intent, ai_citations, ai_red_flags,
+            ai_yellow_flags, ai_green_flags, ai_confidence, valuation_lower_bound,
+            valuation_base_estimate, valuation_upper_bound, valuation_currency, valuation_confidence,
+            investment_is_favorable, investment_buy_reasoning, investment_confidence, is_considered,
+            input_tokens, output_tokens, total_tokens, cost_usd, model_used, created_at, updated_at
+        `).eq("environment", environment);
+  if (req.params.projectId && req.params.projectId.trim().length > 0) {
+    query = query.eq("project_id", req.params.projectId.trim());
+  }
+  const { data: rows, error } = await query.order("updated_at", { ascending: false }).limit(limitNum);
   if (error) throw new Error(`Supabase read failed: ${error.message}`);
   if (!rows) return [];
   await syncPendingRowsFromN8nDataTable(rows);
   return rows.map((row) => {
     const derivedStatus = deriveSubmissionStatus(row);
     const isCompleted = derivedStatus === "completed";
+    const fallback = unpackExtractedFallback(row);
+    const resolvedSummary = hasText(row.ai_summary) ? row.ai_summary : fallback.summary || "";
+    const resolvedRedFlags = hasText(row.ai_red_flags) && row.ai_red_flags !== "[]" ? row.ai_red_flags : fallback.redFlags || row.ai_red_flags || "[]";
+    const resolvedYellowFlags = hasText(row.ai_yellow_flags) && row.ai_yellow_flags !== "[]" ? row.ai_yellow_flags : fallback.yellowFlags || row.ai_yellow_flags || "[]";
+    const resolvedGreenFlags = hasText(row.ai_green_flags) && row.ai_green_flags !== "[]" ? row.ai_green_flags : fallback.greenFlags || row.ai_green_flags || "[]";
+    const resolvedRiskLevel = hasText(row.risk_level) ? row.risk_level : fallback.riskLevel || "";
+    const resolvedTrafficLight = hasText(row.traffic_light) ? row.traffic_light : fallback.trafficLight || "";
+    const rawDetectedType = (row.detected_document_type || "").trim();
+    const resolvedDetectedType = rawDetectedType && rawDetectedType.toLowerCase() !== "auto-detect" ? rawDetectedType : hasText(row.category) && row.category.toLowerCase() !== "auto-detect" ? row.category : fallback.category && fallback.category.toLowerCase() !== "auto-detect" ? fallback.category : hasText(row.document_type) && row.document_type.toLowerCase() !== "auto-detect" ? row.document_type : "Not detected";
+    const resolvedConfidence = row.ai_confidence !== null && row.ai_confidence !== void 0 && row.ai_confidence !== "" ? row.ai_confidence : fallback.confidence !== null && fallback.confidence !== void 0 ? fallback.confidence : "";
     return {
       requestID: row.request_id ?? "",
       dealName: row.deal_name ?? "",
@@ -22095,7 +22172,7 @@ async function getSubmissionHistory(req) {
       projectId: row.project_id ?? "",
       projectStage: row.project_stage ?? "",
       documentType: row.document_type ?? "",
-      detectedDocumentType: row.detected_document_type ?? "",
+      detectedDocumentType: resolvedDetectedType,
       detectedDocumentTypesJson: row.detected_document_types_json ?? "[]",
       tableStructureStatus: row.table_structure_status ?? "",
       tableStructureIssues: row.table_structure_issues ?? "",
@@ -22123,24 +22200,24 @@ async function getSubmissionHistory(req) {
       processingStartedAt: row.processing_started_at ?? "",
       processedAt: row.processed_at ?? "",
       errorMessage: isCompleted ? "" : row.error_message || (derivedStatus === "failed" ? "Document processing stalled or stopped (Anthropic API credit limit or n8n node failure)." : ""),
-      riskLevel: row.risk_level ?? "",
+      riskLevel: resolvedRiskLevel,
       category: row.category ?? "",
-      trafficLight: row.traffic_light ?? "",
+      trafficLight: resolvedTrafficLight,
       ebitdaExtracted: row.ebitda_extracted ?? "",
       extractedJson: row.extracted_json ?? "",
       storageFileId: row.storage_file_id ?? "",
-      storageFileUrl: row.storage_file_url ?? "",
+      storageFileUrl: resolveStorageCdnUrl(row.storage_file_url),
       needsHumanReview: row.needs_human_review ?? false,
-      aiSummary: row.ai_summary ?? "",
+      aiSummary: resolvedSummary,
       aiTargetValue: row.ai_target_value ?? "",
       aiVariance: row.ai_variance ?? "",
       aiEscalationReason: row.ai_escalation_reason ?? "",
       aiIntent: row.ai_intent ?? "",
       aiCitations: row.ai_citations ?? "",
-      aiRedFlags: row.ai_red_flags ?? "",
-      aiYellowFlags: row.ai_yellow_flags ?? "",
-      aiGreenFlags: row.ai_green_flags ?? "",
-      aiConfidence: row.ai_confidence ?? "",
+      aiRedFlags: resolvedRedFlags,
+      aiYellowFlags: resolvedYellowFlags,
+      aiGreenFlags: resolvedGreenFlags,
+      aiConfidence: resolvedConfidence,
       valuationLowerBound: row.valuation_lower_bound ?? "",
       valuationBaseEstimate: row.valuation_base_estimate ?? "",
       valuationUpperBound: row.valuation_upper_bound ?? "",
@@ -22532,6 +22609,8 @@ async function submitDealPacket(req) {
 
 // backend/diligence/createUploadUrl.ts
 var BUCKET_NAME = "deal-documents";
+var SUPABASE_STORAGE_ORIGIN2 = "https://sihpsqrunkwkxhhnwoqe.supabase.co";
+var STORAGE_CDN_URL2 = (process.env.VITE_STORAGE_CDN_URL || process.env.STORAGE_CDN_URL || "https://dillon-ai-worker.bradshin231.workers.dev").replace(/\/+$/, "");
 async function createUploadUrl(req) {
   const fileName = req.params.fileName || "document.pdf";
   const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
@@ -22542,11 +22621,12 @@ async function createUploadUrl(req) {
     throw new Error(`Failed to generate signed upload URL: ${error?.message || "Unknown error"}`);
   }
   const { data: publicData } = supabase.storage.from(BUCKET_NAME).getPublicUrl(path2);
+  const publicUrl = (publicData.publicUrl || "").replace(SUPABASE_STORAGE_ORIGIN2, STORAGE_CDN_URL2);
   return {
     signedUrl: data.signedUrl,
     path: data.path,
     token: data.token,
-    publicUrl: publicData.publicUrl,
+    publicUrl,
     bucket: BUCKET_NAME
   };
 }

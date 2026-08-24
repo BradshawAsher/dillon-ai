@@ -9,6 +9,17 @@ export interface StorageUploadResult {
   fileSize: number
 }
 
+const STORAGE_CDN_URL = (import.meta.env.VITE_STORAGE_CDN_URL || 'https://dillon-ai-worker.bradshin231.workers.dev').replace(/\/+$/, '')
+const SUPABASE_STORAGE_ORIGIN = 'https://sihpsqrunkwkxhhnwoqe.supabase.co'
+
+export function resolveStorageCdnUrl(url: string | undefined | null): string {
+  if (!url || typeof url !== 'string') return ''
+  if (url.startsWith(SUPABASE_STORAGE_ORIGIN)) {
+    return url.replace(SUPABASE_STORAGE_ORIGIN, STORAGE_CDN_URL)
+  }
+  return url
+}
+
 export async function requestSignedUploadUrl(params: {
   fileName: string
   fileType?: string
@@ -98,7 +109,7 @@ export async function uploadDocumentToSupabaseStorage(options: {
   options.onProgress?.(100)
 
   return {
-    storageFileUrl: ticket.publicUrl,
+    storageFileUrl: resolveStorageCdnUrl(ticket.publicUrl),
     storagePath: ticket.path,
     fileName,
     fileSize,

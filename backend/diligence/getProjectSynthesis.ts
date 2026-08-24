@@ -2,6 +2,8 @@ import { supabase } from '../supabaseClient'
 
 type Params = {
     environment?: 'production' | 'test'
+    projectId?: string
+    limit?: number | string
 }
 
 export type ProjectStructuredFinding = {
@@ -335,12 +337,24 @@ function getCitationDetails(judgmentJson: string, aiCitations: string): ProjectC
 // --- Main export ---
 
 export default async function getProjectSynthesis(req: { params: Params; user: User }): Promise<ProjectSynthesisItem[]> {
-    const { data: rows, error } = await supabase
+    const limitNum = typeof req.params.limit === 'number'
+        ? req.params.limit
+        : typeof req.params.limit === 'string' && parseInt(req.params.limit, 10) > 0
+            ? parseInt(req.params.limit, 10)
+            : 100
+
+    let query = supabase
         .from('project_syntheses')
         .select('*')
         .or('is_placeholder.is.null,is_placeholder.eq.false')
+
+    if (req.params.projectId && req.params.projectId.trim().length > 0) {
+        query = query.eq('project_id', req.params.projectId.trim())
+    }
+
+    const { data: rows, error } = await query
         .order('id', { ascending: false })
-        .limit(500)
+        .limit(limitNum)
 
     if (error) throw new Error(`Supabase read failed: ${error.message}`)
     if (!rows) return []

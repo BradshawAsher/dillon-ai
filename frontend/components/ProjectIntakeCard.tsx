@@ -129,6 +129,29 @@ export default function ProjectIntakeCard({
         return () => window.removeEventListener('keydown', handleKeyDown)
     }, [showNoKeyPrompt])
 
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        const rawHash = (window.location.hash || '').toLowerCase().trim()
+        const isIntakeTargetHash =
+            !rawHash ||
+            rawHash === '#' ||
+            rawHash === '#overview' ||
+            rawHash === '#dashboard' ||
+            rawHash === '#deal-workspace' ||
+            rawHash === '#upload-section' ||
+            rawHash === '#project-intake' ||
+            rawHash === '#deal-intake' ||
+            rawHash === '#intake' ||
+            rawHash === '#upload'
+
+        if (isIntakeTargetHash) {
+            const cardEl = document.querySelector('[data-project-intake]') || document.getElementById('project-intake')
+            if (cardEl) {
+                cardEl.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            }
+        }
+    }, [])
+
     const userKeysStatus = useMemo(() => {
         if (typeof window === 'undefined') return { count: 0, labels: [] as string[], summary: '' }
         const labels: string[] = []
@@ -222,7 +245,7 @@ export default function ProjectIntakeCard({
     }, [selectedFiles, selectedProjectKey, dealName, suggestedProjectName, availableProjects])
 
     return (
-        <Card className="overflow-hidden" data-project-intake>
+        <Card id="project-intake" className="overflow-hidden scroll-mt-6" data-project-intake>
             <CardHeader className="border-b border-border bg-card/80">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="space-y-1">

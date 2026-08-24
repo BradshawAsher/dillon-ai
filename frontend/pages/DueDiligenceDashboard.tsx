@@ -58,6 +58,7 @@ import { DocumentsWorkspaceView } from '../components/views/DocumentsWorkspaceVi
 import { WorkspaceHeader } from '../components/views/WorkspaceHeader'
 import { AccountWorkspaceView } from '../components/views/AccountWorkspaceView'
 import { useDealWorkspaceState, type WorkspaceTab } from '../hooks/useDealWorkspaceState'
+import { useSupabaseRealtimeDiligence } from '../hooks/backend/useSupabaseRealtimeDiligence'
 import { parseUrlDeepLinkState, matchProjectFromQuery, syncBrowserUrl } from '../utils/deepLinking'
 import DealWorkspaceNav from '../components/DealWorkspaceNav'
 import TabSidebarTOC, { TabTopNavTOC } from '../components/TabSidebarTOC'
@@ -1407,23 +1408,54 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         syncBrowserUrl(activeViewProject?.key || activeProjectId, activeWorkspaceTab)
     }, [activeProjectId, activeViewProject, activeWorkspaceTab, isTourActive, isExampleMode])
 
-    // Scroll directly to Project Intake section when opening the dashboard from landing page, data source toggle, or direct URL entry
+    // Scroll directly to Project Intake section when opening or refreshing the dashboard from landing page, data source toggle, or direct URL entry
     useEffect(() => {
         if (typeof window === 'undefined') return
-        const hash = window.location.hash
-        // If no explicit sub-tab anchor hash (e.g. #synthesis, #kpis, #financials, #conflicts) is specified, scroll to Project Intake
-        if (!hash || hash === '#upload-section' || hash === '#project-intake') {
+
+        if ('scrollRestoration' in window.history) {
+            try {
+                window.history.scrollRestoration = 'manual'
+            } catch {
+                // Ignore in restricted iframe environments
+            }
+        }
+
+        const rawHash = (window.location.hash || '').toLowerCase().trim()
+        const isIntakeTargetHash =
+            !rawHash ||
+            rawHash === '#' ||
+            rawHash === '#overview' ||
+            rawHash === '#dashboard' ||
+            rawHash === '#deal-workspace' ||
+            rawHash === '#upload-section' ||
+            rawHash === '#project-intake' ||
+            rawHash === '#deal-intake' ||
+            rawHash === '#intake' ||
+            rawHash === '#upload'
+
+        if (isIntakeTargetHash) {
             const scrollToIntake = () => {
-                const intakeEl = document.querySelector('[data-project-intake]') || document.getElementById('upload-section')
+                const intakeEl = (document.querySelector('[data-project-intake]') ||
+                    document.getElementById('upload-section') ||
+                    document.getElementById('project-intake') ||
+                    document.getElementById('deal-intake')) as HTMLElement | null
+
                 if (intakeEl) {
                     intakeEl.scrollIntoView({ behavior: 'smooth', block: 'start' })
                 }
             }
-            const t1 = setTimeout(scrollToIntake, 100)
-            const t2 = setTimeout(scrollToIntake, 350)
+
+            const timeouts = [
+                setTimeout(scrollToIntake, 0),
+                setTimeout(scrollToIntake, 50),
+                setTimeout(scrollToIntake, 150),
+                setTimeout(scrollToIntake, 350),
+                setTimeout(scrollToIntake, 700),
+                setTimeout(scrollToIntake, 1200),
+            ]
+
             return () => {
-                clearTimeout(t1)
-                clearTimeout(t2)
+                timeouts.forEach(clearTimeout)
             }
         }
     }, [])
@@ -1727,6 +1759,34 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         )
     }, [activeProjectDocuments, isExampleMode, isSubmittingFile, activeSubmissionBatch, activeBatchFinishedCount, activeBatchExpectedCount])
 
+    const isCurrentProjectDiligenceRunning = useMemo(() => {
+        if (isExampleMode) return false
+        return (
+            isSubmittingFile ||
+            isCurrentProjectExtractingDocs ||
+            isCurrentProjectProcessingDocuments ||
+            Boolean(activeSubmissionBatch && activeBatchFinishedCount < activeBatchExpectedCount)
+        )
+    }, [
+        isExampleMode,
+        isSubmittingFile,
+        isCurrentProjectExtractingDocs,
+        isCurrentProjectProcessingDocuments,
+        activeSubmissionBatch,
+        activeBatchFinishedCount,
+        activeBatchExpectedCount,
+    ])
+
+    const isCurrentProjectDiligenceComplete = useMemo(() => {
+        if (isExampleMode) return activeProjectDocuments.length > 0
+        if (isCurrentProjectDiligenceRunning) return false
+        if (activeProjectDocuments.length === 0) return false
+        return activeProjectDocuments.some((doc) => {
+            const st = (doc.status || '').trim().toLowerCase()
+            return ['completed', 'processed', 'success', 'approved', 'done'].includes(st)
+        })
+    }, [isExampleMode, isCurrentProjectDiligenceRunning, activeProjectDocuments])
+
     const [isManualSynthesisRunning, setIsManualSynthesisRunning] = useState(false)
 
     // Reset manual synthesis running flag when fresh synthesis completes or fails
@@ -1775,8 +1835,21 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         return isCurrentProjectExtractingDocs || isCurrentProjectSynthesisRunning || isManualSynthesisRunning
     }, [isCurrentProjectExtractingDocs, isCurrentProjectSynthesisRunning, isManualSynthesisRunning])
 
-    // Periodic refresh effect: Fallback polling during active processing (Realtime WebSockets is the primary stream).
-    // Safeguard: Circuit breaker steps down from 3s to 30s after 5 minutes (100 ticks) to protect against stuck workflows.
+    // Supabase Realtime WebSocket subscription for live documents and synthesis updates
+    const { isConnected: isRealtimeConnected } = useSupabaseRealtimeDiligence({
+        enabled: !isExampleMode,
+        projectId: activeProjectId,
+        onDocumentChange: () => {
+            void triggerSubmissionHistory({ environment: 'production', skipCache: true })
+        },
+        onSynthesisChange: () => {
+            void triggerProjectSynthesis({ environment: 'production', skipCache: true })
+        },
+    })
+
+    // Periodic refresh effect: Gentle fallback heartbeat during active processing.
+    // When Realtime WebSocket is connected, updates are pushed instantly via WebSockets and heartbeat runs every 20s.
+    // If Realtime is disconnected, heartbeat runs every 6s.
     useEffect(() => {
         const isActivelyProcessing = Boolean(
             activeSubmissionBatch ||
@@ -1787,19 +1860,15 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
         if (!isActivelyProcessing) return
 
-        let pollCount = 0
+        const pollIntervalMs = isRealtimeConnected ? 20_000 : 6_000
         const interval = setInterval(() => {
-            pollCount++
-            // After 5 minutes (100 ticks at 3s), throttle to once every 30s (every 10th tick)
-            if (pollCount > 100 && pollCount % 10 !== 0) {
-                return
-            }
             void triggerSubmissionHistory({ environment: 'production' })
             void triggerProjectSynthesis({ environment: 'production' })
             void triggerEvalRuns()
-        }, 3_000)
+        }, pollIntervalMs)
         return () => clearInterval(interval)
     }, [
+        isRealtimeConnected,
         triggerSubmissionHistory,
         triggerProjectSynthesis,
         triggerEvalRuns,
@@ -2991,8 +3060,9 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
                 <DealWorkspaceNav
                     activeTab={activeWorkspaceTab}
-                    isDiligenceComplete={activeProjectDocuments.length > 0 && !isCurrentProjectProcessingDocuments}
-                    isSynthesisReady={Boolean(activeProjectSynthesis && !isCurrentProjectSynthesisRunning && !isCurrentProjectProcessingDocuments)}
+                    isDiligenceRunning={isCurrentProjectDiligenceRunning}
+                    isDiligenceComplete={isCurrentProjectDiligenceComplete}
+                    isSynthesisReady={Boolean(activeProjectSynthesis && !isCurrentProjectSynthesisRunning && !isCurrentProjectDiligenceRunning)}
                     isSynthesisRunning={isCurrentProjectSynthesisRunning}
                     onStartTabTour={walkthrough.startTabTour}
                     onTabChange={(tab) => {
@@ -3256,6 +3326,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                                 onReturnToLanding={onReturnToLanding}
                                 handleRunSynthesis={handleRunSynthesis}
                                 isCurrentProjectAwaitingSynthesis={isCurrentProjectAwaitingSynthesis}
+                                isCurrentProjectSynthesisRunning={isCurrentProjectSynthesisRunning}
+                                isCurrentProjectExtractingDocs={isCurrentProjectExtractingDocs}
                             />
                         </div>
                     ) : null}
