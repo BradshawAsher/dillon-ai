@@ -1814,6 +1814,15 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         return () => clearTimeout(timer)
     }, [isManualSynthesisRunning])
 
+    const activeProjectSynthesisSucceeded = useMemo(() => {
+        if (!activeProjectSynthesis) return false
+        const st = (activeProjectSynthesis.projectStatus || '').trim().toLowerCase()
+        const hasRealRecommendation = (activeProjectSynthesis.finalRecommendation || '').trim().length > 0 && !(activeProjectSynthesis.finalRecommendation || '').toUpperCase().includes('SYNTHESIS PENDING')
+        const hasRealSummary = (activeProjectSynthesis.finalJudgmentSummary || '').trim().length > 0
+        const isCompletedStatus = ['synthesized', 'completed', 'success'].includes(st)
+        return isCompletedStatus && (hasRealRecommendation || hasRealSummary)
+    }, [activeProjectSynthesis])
+
     const isCurrentProjectSynthesisRunning = useMemo(() => {
         if (isManualSynthesisRunning) return true
         if (isExampleMode || activeProjectDocuments.length === 0) return false
@@ -1825,11 +1834,20 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         const completedDocCount = completedDocs.length
 
         if (completedDocCount === 0) return false
-        if (!activeProjectSynthesis) return false
+        if (activeProjectSynthesisSucceeded) return false
+
+        if (!activeProjectSynthesis) {
+            return true
+        }
 
         const synthStatus = (activeProjectSynthesis.projectStatus || '').trim().toLowerCase()
-        return ['processing', 'pending', 'queued', 'running', 'awaiting_synthesis', 'started'].includes(synthStatus)
-    }, [activeProjectDocuments, activeProjectSynthesis, isCurrentProjectExtractingDocs, isExampleMode, isManualSynthesisRunning])
+        if (['processing', 'pending', 'queued', 'running', 'awaiting_synthesis', 'started'].includes(synthStatus)) {
+            return true
+        }
+
+        const isErrorStatus = ['failed', 'error'].includes(synthStatus)
+        return !isErrorStatus && !activeProjectSynthesisSucceeded
+    }, [activeProjectDocuments, activeProjectSynthesis, activeProjectSynthesisSucceeded, isCurrentProjectExtractingDocs, isExampleMode, isManualSynthesisRunning])
 
     const isCurrentProjectAwaitingSynthesis = useMemo(() => {
         return isCurrentProjectExtractingDocs || isCurrentProjectSynthesisRunning || isManualSynthesisRunning
@@ -1899,14 +1917,6 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         }
     }, [triggerSubmissionHistory, triggerProjectSynthesis])
 
-    const activeProjectSynthesisSucceeded = useMemo(() => {
-        if (!activeProjectSynthesis || isCurrentProjectAwaitingSynthesis) return false
-        const st = (activeProjectSynthesis.projectStatus || '').trim().toLowerCase()
-        const hasRealRecommendation = (activeProjectSynthesis.finalRecommendation || '').trim().length > 0 && !(activeProjectSynthesis.finalRecommendation || '').toUpperCase().includes('SYNTHESIS PENDING')
-        const hasRealSummary = (activeProjectSynthesis.finalJudgmentSummary || '').trim().length > 0
-        const isCompletedStatus = ['synthesized', 'completed', 'success'].includes(st)
-        return isCompletedStatus && (hasRealRecommendation || hasRealSummary)
-    }, [activeProjectSynthesis, isCurrentProjectAwaitingSynthesis])
 
     const currentSynthesisProgress = useMemo(
         () => deriveSynthesisProgress(activeProjectSynthesis?.projectStatus, isCurrentProjectAwaitingSynthesis),
@@ -3062,7 +3072,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                     activeTab={activeWorkspaceTab}
                     isDiligenceRunning={isCurrentProjectDiligenceRunning}
                     isDiligenceComplete={isCurrentProjectDiligenceComplete}
-                    isSynthesisReady={Boolean(activeProjectSynthesis && !isCurrentProjectSynthesisRunning && !isCurrentProjectDiligenceRunning)}
+                    isSynthesisReady={activeProjectSynthesisSucceeded}
                     isSynthesisRunning={isCurrentProjectSynthesisRunning}
                     onStartTabTour={walkthrough.startTabTour}
                     onTabChange={(tab) => {

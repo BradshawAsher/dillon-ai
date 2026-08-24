@@ -22108,7 +22108,8 @@ function unpackExtractedFallback(row) {
   const summary = typeof res.summary === "string" ? res.summary : typeof parsed.summary === "string" ? parsed.summary : "";
   const riskLevel = parsed.risk_flag || parsed.riskLevel || parsed.risk_level || "";
   const trafficLight = parsed.traffic_light || parsed.trafficLight || "";
-  const category = parsed.category || parsed.output?.category || parsed.document_type || "";
+  const category = parsed.category || parsed.output?.category || parsed.document_type || parsed.output?.document_type || (Array.isArray(parsed.document_types) ? parsed.document_types[0] : "") || "";
+  const companyName = parsed.company_name || parsed.output?.company_name || res.company_name || "";
   const confidence = parsed.global_confidence ?? parsed.ai_confidence ?? parsed.output?.global_confidence ?? null;
   return {
     summary,
@@ -22118,12 +22119,13 @@ function unpackExtractedFallback(row) {
     riskLevel,
     trafficLight,
     category,
+    companyName,
     confidence
   };
 }
 async function getSubmissionHistory(req) {
   const environment = req.params.environment === "test" ? "test" : "production";
-  const limitNum = typeof req.params.limit === "number" ? req.params.limit : typeof req.params.limit === "string" && parseInt(req.params.limit, 10) > 0 ? parseInt(req.params.limit, 10) : 150;
+  const limitNum = typeof req.params.limit === "number" ? req.params.limit : typeof req.params.limit === "string" && parseInt(req.params.limit, 10) > 0 ? parseInt(req.params.limit, 10) : 1e3;
   let query = supabase.from("documents").select(`
             id, request_id, deal_name, company_name, workstream, submission_notes,
             analyst_name, analyst_email, project_id, project_stage, document_type,
@@ -22159,12 +22161,14 @@ async function getSubmissionHistory(req) {
     const resolvedRiskLevel = hasText(row.risk_level) ? row.risk_level : fallback.riskLevel || "";
     const resolvedTrafficLight = hasText(row.traffic_light) ? row.traffic_light : fallback.trafficLight || "";
     const rawDetectedType = (row.detected_document_type || "").trim();
-    const resolvedDetectedType = rawDetectedType && rawDetectedType.toLowerCase() !== "auto-detect" ? rawDetectedType : hasText(row.category) && row.category.toLowerCase() !== "auto-detect" ? row.category : fallback.category && fallback.category.toLowerCase() !== "auto-detect" ? fallback.category : hasText(row.document_type) && row.document_type.toLowerCase() !== "auto-detect" ? row.document_type : "Not detected";
+    const isGenericType = !rawDetectedType || ["auto-detect", "not detected", "other", "unknown"].includes(rawDetectedType.toLowerCase());
+    const resolvedDetectedType = !isGenericType ? rawDetectedType : hasText(fallback.category) && !["auto-detect", "not detected", "other"].includes(fallback.category.toLowerCase()) ? fallback.category : hasText(row.category) && !["auto-detect", "not detected", "other"].includes(row.category.toLowerCase()) ? row.category : hasText(row.document_type) && !["auto-detect", "not detected"].includes(row.document_type.toLowerCase()) ? row.document_type : rawDetectedType || fallback.category || row.category || "Other";
+    const resolvedCompanyName = hasText(row.company_name) ? row.company_name : fallback.companyName || row.deal_name || "";
     const resolvedConfidence = row.ai_confidence !== null && row.ai_confidence !== void 0 && row.ai_confidence !== "" ? row.ai_confidence : fallback.confidence !== null && fallback.confidence !== void 0 ? fallback.confidence : "";
     return {
       requestID: row.request_id ?? "",
       dealName: row.deal_name ?? "",
-      companyName: row.company_name ?? "",
+      companyName: resolvedCompanyName,
       workstream: row.workstream ?? "",
       submissionNotes: row.submission_notes ?? "",
       analystName: row.analyst_name ?? "",
