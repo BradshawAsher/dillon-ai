@@ -213,7 +213,10 @@ function useLiveSubmissionHistory() {
     return useQuery(
         useCallback(async (params: Record<string, unknown> = {}) => {
             const environment = params.environment === 'test' ? 'test' : 'production'
-            const CACHE_KEY = `mergeworks_history_cache_${environment}`
+            const projectId = typeof params.projectId === 'string' && params.projectId.trim().length > 0 ? params.projectId.trim() : ''
+            const full = params.full === true || params.full === 'true'
+            const limit = params.limit ? String(params.limit) : ''
+            const CACHE_KEY = `mergeworks_history_cache_${environment}_${projectId}_${full}_${limit}`
             const CACHE_TTL_MS = 3_000
             if (!params.skipCache) {
                 try {
@@ -227,7 +230,12 @@ function useLiveSubmissionHistory() {
                 } catch {}
             }
 
-            const data = await fetchJson<SubmissionHistoryItem[]>(`/api/diligence/history?environment=${environment}`, {
+            const queryParams = new URLSearchParams({ environment })
+            if (projectId) queryParams.set('projectId', projectId)
+            if (full) queryParams.set('full', 'true')
+            if (limit) queryParams.set('limit', limit)
+
+            const data = await fetchJson<SubmissionHistoryItem[]>(`/api/diligence/history?${queryParams.toString()}`, {
                 headers: identityHeaders(),
             })
             try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ timestamp: Date.now(), data })) } catch {}
@@ -240,7 +248,9 @@ function useLiveProjectSynthesis() {
     return useQuery(
         useCallback(async (params: Record<string, unknown> = {}) => {
             const environment = params.environment === 'test' ? 'test' : 'production'
-            const CACHE_KEY = `mergeworks_synthesis_cache_${environment}`
+            const projectId = typeof params.projectId === 'string' && params.projectId.trim().length > 0 ? params.projectId.trim() : ''
+            const limit = params.limit ? String(params.limit) : ''
+            const CACHE_KEY = `mergeworks_synthesis_cache_${environment}_${projectId}_${limit}`
             const CACHE_TTL_MS = 3_000
             if (!params.skipCache) {
                 try {
@@ -254,7 +264,11 @@ function useLiveProjectSynthesis() {
                 } catch {}
             }
 
-            const data = await fetchJson<ProjectSynthesisItem[]>(`/api/diligence/synthesis?environment=${environment}`, {
+            const queryParams = new URLSearchParams({ environment })
+            if (projectId) queryParams.set('projectId', projectId)
+            if (limit) queryParams.set('limit', limit)
+
+            const data = await fetchJson<ProjectSynthesisItem[]>(`/api/diligence/synthesis?${queryParams.toString()}`, {
                 headers: identityHeaders(),
             })
             try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ timestamp: Date.now(), data })) } catch {}

@@ -46,6 +46,7 @@ type ProjectSynthesisCardProps = {
     stoppingSynthesis?: boolean
     model?: DealModel
     onSwitchTab?: (tab: any) => void
+    synthesisElapsedSeconds?: number
 }
 
 type StructuredFinding = NonNullable<NonNullable<ProjectSynthesisItem['structuredFindings']>['redFlags']>[number]
@@ -249,8 +250,12 @@ export default function ProjectSynthesisCard({
     stoppingSynthesis,
     model,
     onSwitchTab,
+    synthesisElapsedSeconds: propSynthesisElapsedSeconds,
 }: ProjectSynthesisCardProps) {
-    const [synthesisElapsedSeconds, setSynthesisElapsedSeconds] = useState(0)
+    const [localSynthesisElapsedSeconds, setLocalSynthesisElapsedSeconds] = useState(0)
+    const synthesisElapsedSeconds = propSynthesisElapsedSeconds !== undefined && propSynthesisElapsedSeconds !== null
+        ? propSynthesisElapsedSeconds
+        : localSynthesisElapsedSeconds
     const [selectedDocumentRequestId, setSelectedDocumentRequestId] = useState<string | null>(null)
     const [severityFilter, setSeverityFilter] = useState<SeverityFilter>('all')
     const [typeFilter, setTypeFilter] = useState<TypeFilter>('all')
@@ -394,16 +399,17 @@ export default function ProjectSynthesisCard({
     const isSynthActive = Boolean(runningSynthesis || synthesisPending || documentAnalysisPending || (!hasRealSynthesis && hasCompletedDocs))
 
     useEffect(() => {
+        if (propSynthesisElapsedSeconds !== undefined && propSynthesisElapsedSeconds !== null) return
         let interval: any
         if (isSynthActive) {
             interval = setInterval(() => {
-                setSynthesisElapsedSeconds((prev) => prev + 1)
+                setLocalSynthesisElapsedSeconds((prev) => prev + 1)
             }, 1000)
         } else {
-            setSynthesisElapsedSeconds(0)
+            setLocalSynthesisElapsedSeconds(0)
         }
         return () => clearInterval(interval)
-    }, [isSynthActive])
+    }, [isSynthActive, propSynthesisElapsedSeconds])
 
     const visibleSyntheses = rawVisibleSyntheses
     const activeSynthesis = visibleSyntheses[activeSynthesisIndex] || visibleSyntheses[0] || null

@@ -2,6 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } fro
 import {
     Activity,
     AlertCircle,
+    Clock,
     FileDown,
     Globe,
     HelpCircle,
@@ -104,6 +105,7 @@ import { supabaseAuthClient } from '../services/supabaseAuth'
 import {
     buildReturnsDisplayModel,
     createUnusedProjectId,
+    formatElapsedDuration,
     hydrateModelFactsFromDocuments,
     isDuplicateProjectDocument,
     PENDING_EXAMPLE_MODE_SUBMISSION_KEY,
@@ -979,6 +981,22 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         } catch { return null }
     })
 
+    // Warn user before reloading if an active file upload batch is in progress
+    useEffect(() => {
+        if (!isSubmittingFile) return
+
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            e.preventDefault()
+            e.returnValue = 'Documents are currently being uploaded and queued. If you reload or close the tab now, the batch upload will be interrupted.'
+            return e.returnValue
+        }
+
+        window.addEventListener('beforeunload', handleBeforeUnload)
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload)
+        }
+    }, [isSubmittingFile])
+
     const simulatedBatchTimerRef = useRef<any>(null)
 
     const clearSimulatedBatchTimer = useCallback(() => {
@@ -1742,6 +1760,13 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     const activeBatchProcessingPercent = Math.min(100, Math.round((activeBatchProcessingCount / (activeBatchExpectedCount || 1)) * 100))
     const activeBatchProgressPercent = Math.min(100, Math.round((activeBatchFinishedCount / (activeBatchExpectedCount || 1)) * 100))
 
+    const isInterruptedBatch = useMemo(() => {
+        if (isExampleMode || isSubmittingFile) return false
+        if (activeBatchProcessingCount > 0) return false
+        if (activeBatchRows.length === 0) return false
+        return activeBatchRows.length === activeBatchFinishedCount && activeBatchFinishedCount < activeBatchExpectedCount
+    }, [isExampleMode, isSubmittingFile, activeBatchProcessingCount, activeBatchRows.length, activeBatchFinishedCount, activeBatchExpectedCount])
+
     const isCurrentProjectProcessingDocuments = useMemo(() => {
         return activeProjectDocuments.some((doc) => {
             const st = (doc.status || '').trim().toLowerCase()
@@ -1752,15 +1777,18 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     const isCurrentProjectExtractingDocs = useMemo(() => {
         if (isExampleMode) return false
         if (isSubmittingFile) return true
+        if (activeBatchProcessingCount > 0) return true
+        if (isInterruptedBatch) return false
         if (activeSubmissionBatch && activeBatchFinishedCount < activeBatchExpectedCount) return true
         if (activeProjectDocuments.length === 0) return false
         return activeProjectDocuments.some((d) =>
             ['processing', 'running', 'uploading'].includes((d.status || '').trim().toLowerCase())
         )
-    }, [activeProjectDocuments, isExampleMode, isSubmittingFile, activeSubmissionBatch, activeBatchFinishedCount, activeBatchExpectedCount])
+    }, [activeProjectDocuments, isExampleMode, isSubmittingFile, activeBatchProcessingCount, isInterruptedBatch, activeSubmissionBatch, activeBatchFinishedCount, activeBatchExpectedCount])
 
     const isCurrentProjectDiligenceRunning = useMemo(() => {
         if (isExampleMode) return false
+        if (isInterruptedBatch) return false
         return (
             isSubmittingFile ||
             isCurrentProjectExtractingDocs ||
@@ -1769,6 +1797,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         )
     }, [
         isExampleMode,
+        isInterruptedBatch,
         isSubmittingFile,
         isCurrentProjectExtractingDocs,
         isCurrentProjectProcessingDocuments,
@@ -1932,6 +1961,88 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
     const batchElapsedSeconds = activeSubmissionBatch?.startedAt ? Math.max(0, Math.floor(((activeSubmissionBatch.endedAt || batchNowTimestamp) - activeSubmissionBatch.startedAt) / 1000)) : 0
     const activeBatchImpact = useMemo(() => computeImpactMetrics(activeBatchRows), [activeBatchRows])
+
+    const [synthesisStartTimestamps, setSynthesisStartTimestamps] = useState<Record<string, number>>(() => {
+        try {
+            const raw = window.sessionStorage.getItem('mergeworks.synthesisStartTimestamps')
+            return raw ? JSON.parse(raw) : {}
+        } catch {
+            return {}
+        }
+    })
+
+    const recordSynthesisStartTime = useCallback((pid: string, time = Date.now()) => {
+        if (!pid) return
+        setSynthesisStartTimestamps((prev) => {
+            if (prev[pid] && prev[pid] > 0) return prev
+            const next = { ...prev, [pid]: time }
+            try { window.sessionStorage.setItem('mergeworks.synthesisStartTimestamps', JSON.stringify(next)) } catch {}
+            return next
+        })
+    }, [])
+
+    const clearSynthesisStartTime = useCallback((pid: string) => {
+        if (!pid) return
+        setSynthesisStartTimestamps((prev) => {
+            if (!prev[pid]) return prev
+            const { [pid]: _, ...next } = prev
+            try { window.sessionStorage.setItem('mergeworks.synthesisStartTimestamps', JSON.stringify(next)) } catch {}
+            return next
+        })
+    }, [])
+
+    // Clear synthesis start timestamp when a new document extraction begins
+    useEffect(() => {
+        if (isCurrentProjectExtractingDocs) {
+            clearSynthesisStartTime(activeProjectId)
+        }
+    }, [isCurrentProjectExtractingDocs, activeProjectId, clearSynthesisStartTime])
+
+    const isAnySynthesisRunning = !isCurrentProjectExtractingDocs && (isCurrentProjectSynthesisRunning || isManualSynthesisRunning)
+
+    // Synchronize synthesis start timestamp only when document extraction is done and synthesis becomes active
+    useEffect(() => {
+        if (!isAnySynthesisRunning) return
+        if (synthesisStartTimestamps[activeProjectId]) return
+
+        let start = Date.now()
+        if (activeProjectSynthesis?.createdAt) {
+            const t = new Date(activeProjectSynthesis.createdAt).getTime()
+            if (!isNaN(t) && t > 0 && t <= Date.now()) {
+                const completedDocs = activeProjectDocuments.filter((d) =>
+                    ['completed', 'approved'].includes((d.status || '').trim().toLowerCase())
+                )
+                const latestDocTime = completedDocs.length > 0
+                    ? Math.max(...completedDocs.map((d) => new Date(d.processedAt || d.createdAt || d.updatedAt || 0).getTime()))
+                    : 0
+                if (latestDocTime > 0 && t >= latestDocTime - 5000) {
+                    start = t
+                }
+            }
+        }
+        recordSynthesisStartTime(activeProjectId, start)
+    }, [
+        isAnySynthesisRunning,
+        activeProjectId,
+        synthesisStartTimestamps,
+        activeProjectSynthesis?.createdAt,
+        activeProjectDocuments,
+        recordSynthesisStartTime,
+    ])
+
+    const [synthesisNowTimestamp, setSynthesisNowTimestamp] = useState(() => Date.now())
+    useEffect(() => {
+        if (!isAnySynthesisRunning) return
+        const timer = setInterval(() => setSynthesisNowTimestamp(Date.now()), 1000)
+        return () => clearInterval(timer)
+    }, [isAnySynthesisRunning])
+
+    const currentSynthesisElapsedSeconds = useMemo(() => {
+        if (!isAnySynthesisRunning) return 0
+        const start = synthesisStartTimestamps[activeProjectId]
+        if (!start) return 0
+        return Math.max(0, Math.floor((synthesisNowTimestamp - start) / 1000))
+    }, [isAnySynthesisRunning, synthesisStartTimestamps, activeProjectId, synthesisNowTimestamp])
 
     const [selectedBatchDocIndex, setSelectedBatchDocIndex] = useState<number>(0)
     const [userHasNavigatedBatchDocs, setUserHasNavigatedBatchDocs] = useState(false)
@@ -2261,15 +2372,14 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     const handleRunSynthesis = async () => {
         const sourceDocument = submissionHistory.find((row) => getProjectKey(row) === activeProjectId
             && row.isConsidered
-            && row.status.trim().toLowerCase() === 'completed'
-            && row.extractedJson.trim().length > 0
-            && row.extractedJson.trim() !== 'null')
+            && (row.status.trim().toLowerCase() === 'completed' || row.status.trim().toLowerCase() === 'approved'))
         if (!sourceDocument) {
             setBatchSubmissionMessage('A completed document with saved analysis is required before synthesis can run.')
             return
         }
         if (!window.confirm('Run a new project synthesis using the currently completed, included documents? This does not re-upload or reprocess files.')) return
         setIsManualSynthesisRunning(true)
+        recordSynthesisStartTime(activeProjectId, Date.now())
         setBatchSubmissionMessage('Starting a new project synthesis from the completed documents…')
         try {
             const userOpenAiApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_openai_key') || '') : ''
@@ -2300,6 +2410,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             ])
         } catch (err) {
             setIsManualSynthesisRunning(false)
+            clearSynthesisStartTime(activeProjectId)
             setBatchSubmissionMessage(err instanceof Error ? err.message : 'Unable to start synthesis')
         }
     }
@@ -2331,6 +2442,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         )) return
 
         setRunningSynthesisWithoutLoi(true)
+        setIsManualSynthesisRunning(true)
+        recordSynthesisStartTime(activeProjectId, Date.now())
         setBatchSubmissionMessage('Excluding LOI for pre-LOI synthesis run…')
 
         try {
@@ -2705,67 +2818,71 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 startedAt: now,
             })
 
-            for (const file of filesToQueue) {
-                try {
-                    let storageFileUrl = ''
-                    let storagePath = ''
+            const CONCURRENCY = 3
+            for (let i = 0; i < filesToQueue.length; i += CONCURRENCY) {
+                const chunk = filesToQueue.slice(i, i + CONCURRENCY)
+                await Promise.all(chunk.map(async (file) => {
                     try {
-                        const uploadRes = await uploadDocumentToSupabaseStorage({
-                            file,
+                        let storageFileUrl = ''
+                        let storagePath = ''
+                        try {
+                            const uploadRes = await uploadDocumentToSupabaseStorage({
+                                file,
+                                projectId: targetProjectId,
+                            })
+                            storageFileUrl = uploadRes.storageFileUrl
+                            storagePath = uploadRes.storagePath
+                        } catch (storageErr) {
+                            console.warn('Direct storage upload failed, falling back to base64 inline:', storageErr)
+                        }
+
+                        // For files <= 3.5MB, keep base64 for n8n Google Drive compatibility.
+                        // For files > 3.5MB, omit base64 to prevent Vercel 4.5MB request cap (n8n/Supabase uses storageFileUrl).
+                        let fileBase64 = ''
+                        if (file.size <= 3.5 * 1024 * 1024) {
+                            fileBase64 = await readFileAsBase64(file)
+                        }
+
+                        const userOpenAiApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_openai_key') || '') : ''
+                        const userAnthropicApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_anthropic_key') || '') : ''
+                        const userGeminiApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_gemini_key') || '') : ''
+                        const userDeepseekApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_deepseek_key') || '') : ''
+                        const modelPipeline = getEffectiveModelPipeline()
+
+                        const result = await triggerSubmitDealPacket({
+                            environment,
+                            fileName: file.name,
+                            fileSize: file.size,
+                            fileType: file.type || 'application/octet-stream',
+                            fileBase64,
+                            storageFileUrl,
+                            storagePath,
+                            dealName: dealName || suggestedProjectName,
+                            companyName: dealName || suggestedProjectName,
+                            workstream: '',
+                            submissionNotes,
                             projectId: targetProjectId,
-                        })
-                        storageFileUrl = uploadRes.storageFileUrl
-                        storagePath = uploadRes.storagePath
-                    } catch (storageErr) {
-                        console.warn('Direct storage upload failed, falling back to base64 inline:', storageErr)
+                            projectStage,
+                            documentType,
+                            submissionBatchId,
+                            expectedBatchDocumentCount,
+                            userOpenAiApiKey,
+                            userAnthropicApiKey,
+                            userGeminiApiKey,
+                            userDeepseekApiKey,
+                            docPrimaryModel: modelPipeline.docPrimary,
+                            docBackupModel: modelPipeline.docBackup,
+                            synthPrimaryModel: modelPipeline.synthPrimary,
+                            synthBackupModel: modelPipeline.synthBackup,
+                        }).result
+
+                        if (result?.status === 'duplicate') {
+                            duplicateFileNames.push(file.name)
+                        }
+                    } catch {
+                        failedFileNames.push(file.name)
                     }
-
-                    // For files <= 3.5MB, keep base64 for n8n Google Drive compatibility.
-                    // For files > 3.5MB, omit base64 to prevent Vercel 4.5MB request cap (n8n/Supabase uses storageFileUrl).
-                    let fileBase64 = ''
-                    if (file.size <= 3.5 * 1024 * 1024) {
-                        fileBase64 = await readFileAsBase64(file)
-                    }
-
-                    const userOpenAiApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_openai_key') || '') : ''
-                    const userAnthropicApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_anthropic_key') || '') : ''
-                    const userGeminiApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_gemini_key') || '') : ''
-                    const userDeepseekApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_deepseek_key') || '') : ''
-                    const modelPipeline = getEffectiveModelPipeline()
-
-                    const result = await triggerSubmitDealPacket({
-                        environment,
-                        fileName: file.name,
-                        fileSize: file.size,
-                        fileType: file.type || 'application/octet-stream',
-                        fileBase64,
-                        storageFileUrl,
-                        storagePath,
-                        dealName: dealName || suggestedProjectName,
-                        companyName: dealName || suggestedProjectName,
-                        workstream: '',
-                        submissionNotes,
-                        projectId: targetProjectId,
-                        projectStage,
-                        documentType,
-                        submissionBatchId,
-                        expectedBatchDocumentCount,
-                        userOpenAiApiKey,
-                        userAnthropicApiKey,
-                        userGeminiApiKey,
-                        userDeepseekApiKey,
-                        docPrimaryModel: modelPipeline.docPrimary,
-                        docBackupModel: modelPipeline.docBackup,
-                        synthPrimaryModel: modelPipeline.synthPrimary,
-                        synthBackupModel: modelPipeline.synthBackup,
-                    }).result
-
-                    if (result?.status === 'duplicate') {
-                        duplicateFileNames.push(file.name)
-                    }
-                } catch {
-                    failedFileNames.push(file.name)
-                }
+                }))
             }
 
             const queuedFileCount = expectedBatchDocumentCount - failedFileNames.length - duplicateFileNames.length
@@ -3074,6 +3191,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                     isDiligenceComplete={isCurrentProjectDiligenceComplete}
                     isSynthesisReady={activeProjectSynthesisSucceeded}
                     isSynthesisRunning={isCurrentProjectSynthesisRunning}
+                    isSynthesisWaiting={isCurrentProjectExtractingDocs || isCurrentProjectDiligenceRunning || isCurrentProjectProcessingDocuments}
+                    synthesisElapsedSeconds={currentSynthesisElapsedSeconds}
                     onStartTabTour={walkthrough.startTabTour}
                     onTabChange={(tab) => {
                         setActiveWorkspaceTab(tab)
@@ -3249,25 +3368,81 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                             ) : null}
 
                             {!isExampleMode && isCurrentProjectExtractingDocs ? (
-                                <div className="flex items-start gap-3 rounded-lg border border-blue-300 bg-blue-50 p-4 dark:border-blue-800/50 dark:bg-blue-900/15">
-                                    <Loader2 className="mt-0.5 h-5 w-5 shrink-0 animate-spin text-blue-600 dark:text-blue-400" />
-                                    <div>
-                                        <p className="text-sm font-semibold text-foreground">Document extraction in progress</p>
-                                        <p className="mt-1 text-sm text-muted-foreground">
-                                            Per-document extraction is currently running for uploaded files. Project synthesis will trigger automatically once all documents finish processing.
-                                        </p>
+                                <div className="space-y-3">
+                                    <div className="flex items-start gap-3 rounded-lg border border-blue-300 bg-blue-50 p-4 dark:border-blue-800/50 dark:bg-blue-900/15">
+                                        <Loader2 className="mt-0.5 h-5 w-5 shrink-0 animate-spin text-blue-600 dark:text-blue-400" />
+                                        <div>
+                                            <p className="text-sm font-semibold text-foreground">Document extraction in progress</p>
+                                            <p className="mt-1 text-sm text-muted-foreground">
+                                                Per-document extraction is currently running for uploaded files. Project synthesis will trigger automatically once all documents finish processing.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-start gap-3 rounded-lg border border-slate-300 bg-slate-50/80 p-4 dark:border-slate-700/60 dark:bg-slate-900/25">
+                                        <Clock className="mt-0.5 h-5 w-5 shrink-0 text-slate-500 dark:text-slate-400 animate-pulse" />
+                                        <div>
+                                            <p className="text-sm font-semibold text-foreground">Project synthesis has not started (Queued)</p>
+                                            <p className="mt-1 text-sm text-muted-foreground">
+                                                Multi-document evidence reconciliation and valuation analysis will start automatically as soon as batch document extraction completes.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : null}
+
+                            {!isExampleMode && isInterruptedBatch ? (
+                                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-lg border border-amber-300 bg-amber-50/90 p-4 dark:border-amber-800/60 dark:bg-amber-950/30">
+                                    <div className="flex items-start gap-3">
+                                        <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
+                                        <div>
+                                            <p className="text-sm font-semibold text-foreground">
+                                                Batch upload was interrupted ({activeBatchFinishedCount} of {activeBatchExpectedCount} files received)
+                                            </p>
+                                            <p className="mt-1 text-sm text-muted-foreground">
+                                                A page reload occurred while queueing documents. All {activeBatchFinishedCount} received documents have finished extraction and analysis. You can proceed directly to synthesis with these documents or upload the remaining files.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                if (activeSubmissionBatch) {
+                                                    setActiveSubmissionBatch({
+                                                        ...activeSubmissionBatch,
+                                                        expectedDocumentCount: activeBatchFinishedCount,
+                                                    })
+                                                }
+                                                void handleRunSynthesis()
+                                            }}
+                                            className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-md shadow-sm transition-colors flex items-center gap-1.5"
+                                        >
+                                            <Play className="h-3.5 w-3.5 fill-current" />
+                                            <span>Proceed to Synthesis ({activeBatchFinishedCount} Files)</span>
+                                        </button>
                                     </div>
                                 </div>
                             ) : null}
 
                             {!isExampleMode && !isCurrentProjectProcessingDocuments && isCurrentProjectSynthesisRunning ? (
-                                <div className="flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-800/50 dark:bg-amber-900/15">
-                                    <Loader2 className="mt-0.5 h-5 w-5 shrink-0 animate-spin text-amber-600" />
-                                    <div>
-                                        <p className="text-sm font-semibold text-foreground">Project synthesis in progress</p>
-                                        <p className="mt-1 text-sm text-muted-foreground">
-                                            All documents finished processing, so the agent is now consolidating them into one project judgment.
-                                        </p>
+                                <div className="flex items-start justify-between gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-800/50 dark:bg-amber-900/15">
+                                    <div className="flex items-start gap-3">
+                                        <Loader2 className="mt-0.5 h-5 w-5 shrink-0 animate-spin text-amber-600" />
+                                        <div>
+                                            <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                                                <span>Project synthesis in progress</span>
+                                                <span className="font-mono text-xs text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/40 px-2 py-0.5 rounded">
+                                                    {formatElapsedDuration(currentSynthesisElapsedSeconds)}
+                                                </span>
+                                            </p>
+                                            <p className="mt-1 text-sm text-muted-foreground">
+                                                All documents finished processing, so the agent is now consolidating them into one project judgment.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="hidden sm:flex items-center gap-1.5 font-mono text-xs font-semibold text-amber-700 dark:text-amber-300 shrink-0 bg-background/80 dark:bg-card/80 px-2.5 py-1 rounded border border-amber-300 dark:border-amber-700/50">
+                                        <Clock className="h-3.5 w-3.5 animate-pulse" />
+                                        <span>{formatElapsedDuration(currentSynthesisElapsedSeconds)}</span>
                                     </div>
                                 </div>
                             ) : null}
@@ -3338,6 +3513,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                                 isCurrentProjectAwaitingSynthesis={isCurrentProjectAwaitingSynthesis}
                                 isCurrentProjectSynthesisRunning={isCurrentProjectSynthesisRunning}
                                 isCurrentProjectExtractingDocs={isCurrentProjectExtractingDocs}
+                                synthesisElapsedSeconds={currentSynthesisElapsedSeconds}
                             />
                         </div>
                     ) : null}
@@ -3452,7 +3628,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                                 onRunSynthesis={handleRunSynthesis}
                                 onRunSynthesisWithoutLoi={handleRunSynthesisWithoutLoi}
                                 runningSynthesisWithoutLoi={runningSynthesisWithoutLoi}
-                                runningSynthesis={isCurrentProjectAwaitingSynthesis}
+                                runningSynthesis={isCurrentProjectAwaitingSynthesis || isCurrentProjectSynthesisRunning}
+                                synthesisElapsedSeconds={currentSynthesisElapsedSeconds}
                                 onRefresh={() => {
                                     void triggerProjectSynthesis({ environment: activeHistoryEnvironment }, { skipCache: true }).result
                                 }}

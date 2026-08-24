@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react'
-import { Globe, Loader2, Sparkles } from 'lucide-react'
+import { Globe, Loader2, Sparkles, Clock } from 'lucide-react'
 import { Badge } from '../../lib/shadcn/badge'
 import { Button } from '../../lib/shadcn/button'
 import ProjectComparisonCard from '../ProjectComparisonCard'
@@ -18,6 +18,7 @@ import CostPerRunCard from '../CostPerRunCard'
 import ProjectChecklistCard from '../ProjectChecklistCard'
 import { sumMeasuredCost } from '../../utils/costModel'
 import { isRowMatchingProject } from '../../utils/projectWorkspace'
+import { formatElapsedDuration } from '../../utils/diligenceDashboardUtils'
 
 import { lazyWithRetry } from '../../utils/lazyWithRetry'
 const EbitdaReconstructionCard = lazyWithRetry(() => import('../EbitdaReconstructionCard'))
@@ -52,6 +53,7 @@ type DiligenceWorkspaceViewProps = {
     isCurrentProjectAwaitingSynthesis?: boolean
     isCurrentProjectSynthesisRunning?: boolean
     isCurrentProjectExtractingDocs?: boolean
+    synthesisElapsedSeconds?: number
 }
 
 export function DiligenceWorkspaceView({
@@ -82,6 +84,7 @@ export function DiligenceWorkspaceView({
     isCurrentProjectAwaitingSynthesis = false,
     isCurrentProjectSynthesisRunning = false,
     isCurrentProjectExtractingDocs = false,
+    synthesisElapsedSeconds = 0,
 }: DiligenceWorkspaceViewProps) {
     return (
         <div className="space-y-6">
@@ -94,7 +97,7 @@ export function DiligenceWorkspaceView({
                         </Badge>
                     </h2>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                        Consolidated findings, cross-document math reconciliation, and financial data quality for {suggestedProjectName || dealName || activeProjectId}.
+                        Document-by-document forensic extraction, evidence cross-checking, and live risk flags.
                     </p>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
@@ -128,26 +131,52 @@ export function DiligenceWorkspaceView({
                 </div>
             </div>
 
-            {/* Document Extraction In Progress Banner */}
-            {(isCurrentProjectExtractingDocs || activeProjectDocuments?.some((d: any) => ['processing', 'queued', 'submitted'].includes(d.status))) && (
-                <div className="rounded-xl border-2 border-blue-500/40 bg-blue-500/10 p-4 text-xs font-semibold text-blue-900 dark:text-blue-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs animate-pulse">
-                    <div className="space-y-1">
-                        <div className="flex items-center gap-2 font-bold text-sm text-blue-700 dark:text-blue-300">
-                            <Loader2 className="h-4 w-4 animate-spin text-blue-600 dark:text-blue-400 shrink-0" />
-                            <span>Document Extraction in Progress...</span>
+            {/* Phase 1: During Document Extraction - Show 2 Companion Cards (Extraction in Progress + Synthesis Queued) */}
+            {(isCurrentProjectExtractingDocs || activeProjectDocuments?.some((d: any) => ['processing', 'queued', 'submitted'].includes((d.status || '').trim().toLowerCase()))) ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Card 1: Document Extraction in Progress (Blue) */}
+                    <div className="rounded-xl border-2 border-blue-500/40 bg-blue-500/10 p-4 text-xs font-semibold text-blue-900 dark:text-blue-200 flex flex-col justify-between gap-3 shadow-xs">
+                        <div className="space-y-1.5">
+                            <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2 font-bold text-sm text-blue-700 dark:text-blue-300">
+                                    <Loader2 className="h-4 w-4 animate-spin text-blue-600 dark:text-blue-400 shrink-0" />
+                                    <span>Document Extraction in Progress...</span>
+                                </div>
+                                <Badge variant="outline" className="border-blue-500/50 bg-blue-500/20 text-blue-800 dark:text-blue-200 font-mono font-bold text-[10px] shrink-0 uppercase">
+                                    Extracting Docs
+                                </Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground font-normal leading-relaxed">
+                                Financial statements, schedules, and disclosures are being extracted and verified. Individual document flags will appear below as each file finishes.
+                            </p>
                         </div>
-                        <p className="text-xs text-muted-foreground font-normal">
-                            Financial statements, schedules, and disclosures are being extracted and verified. Individual document flags will appear below as each file finishes.
-                        </p>
                     </div>
-                    <Badge variant="outline" className="border-blue-500/50 bg-blue-500/20 text-blue-800 dark:text-blue-200 font-mono font-bold text-[10px] shrink-0 uppercase">
-                        Extracting Documents
-                    </Badge>
-                </div>
-            )}
 
-            {/* Prominent "Project Synthesis Has Begun" Card during the gap between Diligence Done and Synthesis Done */}
-            {!isExampleMode && !activeProjectDocuments?.some((d: any) => ['processing', 'queued', 'submitted'].includes(d.status)) && (isCurrentProjectSynthesisRunning || isCurrentProjectAwaitingSynthesis) && (
+                    {/* Card 2: Synthesis Has Not Started (Queued / Waiting) */}
+                    <div className="rounded-xl border-2 border-slate-300 dark:border-slate-700/60 bg-slate-100/70 dark:bg-slate-900/40 p-4 text-xs font-semibold text-slate-800 dark:text-slate-200 flex flex-col justify-between gap-3 shadow-xs">
+                        <div className="space-y-1.5">
+                            <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2 font-bold text-sm text-slate-700 dark:text-slate-300">
+                                    <Clock className="h-4 w-4 text-slate-500 dark:text-slate-400 animate-pulse shrink-0" />
+                                    <span>Synthesis Has Not Started</span>
+                                </div>
+                                <Badge variant="outline" className="border-slate-400/50 dark:border-slate-600/50 bg-slate-200/60 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 font-mono font-bold text-[10px] shrink-0 uppercase">
+                                    Queued
+                                </Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground font-normal leading-relaxed">
+                                Reconciles multi-document financial facts, cross-checks disclosures, and computes valuation bounds. Triggers automatically once document extraction finishes.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            ) : null}
+
+            {/* Phase 2: When Document Batch Finishes - Show 1 Prominent Project Synthesis Card */}
+            {!isExampleMode &&
+                !activeProjectDocuments?.some((d: any) => ['processing', 'queued', 'submitted'].includes((d.status || '').trim().toLowerCase())) &&
+                !isCurrentProjectExtractingDocs &&
+                (isCurrentProjectSynthesisRunning || isCurrentProjectAwaitingSynthesis) && (
                 <div className="rounded-xl border-2 border-amber-500/50 bg-amber-500/10 p-5 text-amber-900 dark:text-amber-200 shadow-md">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div className="flex items-start gap-3.5">
@@ -161,10 +190,10 @@ export function DiligenceWorkspaceView({
                             <div className="space-y-1">
                                 <div className="flex items-center gap-2 flex-wrap">
                                     <h4 className="font-bold text-base text-amber-800 dark:text-amber-200 flex items-center gap-1.5">
-                                        ⚡ Project Synthesis Has Begun
+                                        ⚡ Project Synthesis in Progress
                                     </h4>
-                                    <Badge className="border-amber-500/50 bg-amber-500/20 text-amber-900 dark:text-amber-100 font-semibold text-[11px] uppercase tracking-wider">
-                                        Consolidating Deal Evidence
+                                    <Badge className="border-amber-500/50 bg-amber-500/20 text-amber-900 dark:text-amber-100 font-semibold text-[11px] uppercase tracking-wider font-mono">
+                                        Consolidating Deal Evidence • {formatElapsedDuration(synthesisElapsedSeconds)}
                                     </Badge>
                                 </div>
                                 <p className="text-xs text-foreground/85 leading-relaxed max-w-2xl">
@@ -173,8 +202,10 @@ export function DiligenceWorkspaceView({
                             </div>
                         </div>
                         <div className="flex items-center gap-2 shrink-0 bg-background/90 dark:bg-card/90 border border-border px-3.5 py-2 rounded-lg shadow-2xs">
-                            <Sparkles className="h-4 w-4 text-amber-500 animate-pulse shrink-0" />
-                            <span className="text-xs font-mono font-medium text-foreground">Reconciling Evidence...</span>
+                            <Clock className="h-4 w-4 text-amber-500 animate-pulse shrink-0" />
+                            <span className="text-xs font-mono font-bold text-foreground">
+                                Reconciling Evidence... ({formatElapsedDuration(synthesisElapsedSeconds)})
+                            </span>
                         </div>
                     </div>
                 </div>

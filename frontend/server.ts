@@ -23,6 +23,7 @@ import getProjectActionTrackerImport from '../backend/diligence/getProjectAction
 import saveProjectActionTrackerImport from '../backend/diligence/saveProjectActionTracker'
 import getSubmissionHistoryImport from '../backend/diligence/getSubmissionHistory'
 import getWorkflowErrorsImport from '../backend/diligence/getWorkflowErrors'
+import { getDiligenceKpis as getDiligenceKpisImport } from '../backend/diligence/getDiligenceKpis'
 import getWatchdogEventsImport from '../backend/diligence/getWatchdogEvents'
 import retryFailedDocumentImport from '../backend/diligence/retryFailedDocument'
 import stopBatchSubmissionImport from '../backend/diligence/stopBatchSubmission'
@@ -150,8 +151,11 @@ app.use('/api/diligence', (req, res, next) => {
 app.get('/api/diligence/history', async (req, res) => {
     try {
         const environment = req.query.environment === 'test' ? 'test' : 'production'
+        const projectId = typeof req.query.projectId === 'string' ? req.query.projectId : undefined
+        const limit = typeof req.query.limit === 'string' || typeof req.query.limit === 'number' ? req.query.limit : undefined
+        const full = req.query.full === 'true'
         const rows = await getSubmissionHistory({
-            params: { environment },
+            params: { environment, projectId, limit, full },
             user: userFromHeaders(req.headers),
         })
         res.json(rows)
@@ -163,11 +167,27 @@ app.get('/api/diligence/history', async (req, res) => {
 app.get('/api/diligence/synthesis', async (req, res) => {
     try {
         const environment = req.query.environment === 'test' ? 'test' : 'production'
+        const projectId = typeof req.query.projectId === 'string' ? req.query.projectId : undefined
+        const limit = typeof req.query.limit === 'string' || typeof req.query.limit === 'number' ? req.query.limit : undefined
         const rows = await getProjectSynthesis({
-            params: { environment },
+            params: { environment, projectId, limit },
             user: userFromHeaders(req.headers),
         })
         res.json(rows)
+    } catch (error) {
+        res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
+    }
+})
+
+app.get('/api/diligence/kpis', async (req, res) => {
+    try {
+        const environment = req.query.environment === 'test' ? 'test' : 'production'
+        const projectId = typeof req.query.projectId === 'string' ? req.query.projectId : undefined
+        const data = await getDiligenceKpisImport({
+            params: { environment, projectId },
+            user: userFromHeaders(req.headers),
+        })
+        res.json(data)
     } catch (error) {
         res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
     }

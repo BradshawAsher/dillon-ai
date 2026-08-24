@@ -4,6 +4,7 @@ type Params = {
     environment?: 'production' | 'test'
     projectId?: string
     limit?: number | string
+    full?: boolean | string
 }
 
 const STORAGE_CDN_URL = (process.env.VITE_STORAGE_CDN_URL || process.env.STORAGE_CDN_URL || 'https://dillon-ai-worker.bradshin231.workers.dev').replace(/\/+$/, '')
@@ -164,31 +165,50 @@ export default async function getSubmissionHistory(req: {
     user: User
 }) {
     const environment = req.params.environment === 'test' ? 'test' : 'production'
+    const isScopedProject = Boolean(req.params.projectId && req.params.projectId.trim().length > 0)
+    const isFull = req.params.full === true || req.params.full === 'true' || isScopedProject
+
+    const defaultLimit = isScopedProject ? 100 : 100
     const limitNum = typeof req.params.limit === 'number'
         ? req.params.limit
         : typeof req.params.limit === 'string' && parseInt(req.params.limit, 10) > 0
             ? parseInt(req.params.limit, 10)
-            : 1000
+            : defaultLimit
 
-    let query = supabase
-        .from('documents')
-        .select(`
-            id, request_id, deal_name, company_name, workstream, submission_notes,
-            analyst_name, analyst_email, project_id, project_stage, document_type,
-            detected_document_type, detected_document_types_json, table_structure_status,
-            table_structure_issues, detected_header_row, column_map_confidence, validated_column_map,
-            employee_count, employee_type, employee_as_of_date, employee_confidence, employee_citation,
-            employee_evidence_status, financial_facts_json, reconciliation_json, math_check_status,
-            submission_batch_id, expected_batch_document_count, file_name, file_size, file_type,
-            trigger_timestamp, status, environment, received_at, processing_started_at, processed_at,
-            error_message, risk_level, category, traffic_light, ebitda_extracted, extracted_json,
-            storage_file_id, storage_file_url, needs_human_review, ai_summary, ai_target_value,
-            ai_variance, ai_escalation_reason, ai_intent, ai_citations, ai_red_flags,
-            ai_yellow_flags, ai_green_flags, ai_confidence, valuation_lower_bound,
-            valuation_base_estimate, valuation_upper_bound, valuation_currency, valuation_confidence,
-            investment_is_favorable, investment_buy_reasoning, investment_confidence, is_considered,
-            input_tokens, output_tokens, total_tokens, cost_usd, model_used, created_at, updated_at
-        `)
+    const fullColumns = `
+        id, request_id, deal_name, company_name, workstream, submission_notes,
+        analyst_name, analyst_email, project_id, project_stage, document_type,
+        detected_document_type, detected_document_types_json, table_structure_status,
+        table_structure_issues, detected_header_row, column_map_confidence, validated_column_map,
+        employee_count, employee_type, employee_as_of_date, employee_confidence, employee_citation,
+        employee_evidence_status, financial_facts_json, reconciliation_json, math_check_status,
+        submission_batch_id, expected_batch_document_count, file_name, file_size, file_type,
+        trigger_timestamp, status, environment, received_at, processing_started_at, processed_at,
+        error_message, risk_level, category, traffic_light, ebitda_extracted, extracted_json,
+        storage_file_id, storage_file_url, needs_human_review, ai_summary, ai_target_value,
+        ai_variance, ai_escalation_reason, ai_intent, ai_citations, ai_red_flags,
+        ai_yellow_flags, ai_green_flags, ai_confidence, valuation_lower_bound,
+        valuation_base_estimate, valuation_upper_bound, valuation_currency, valuation_confidence,
+        investment_is_favorable, investment_buy_reasoning, investment_confidence, is_considered,
+        input_tokens, output_tokens, total_tokens, cost_usd, model_used, created_at, updated_at
+    `
+
+    const lightweightColumns = `
+        id, request_id, deal_name, company_name, workstream, submission_notes,
+        analyst_name, analyst_email, project_id, project_stage, document_type,
+        detected_document_type, table_structure_status, math_check_status,
+        submission_batch_id, expected_batch_document_count, file_name, file_size, file_type,
+        trigger_timestamp, status, environment, received_at, processing_started_at, processed_at,
+        error_message, risk_level, category, traffic_light, ebitda_extracted,
+        storage_file_id, storage_file_url, needs_human_review, ai_summary, ai_target_value,
+        ai_variance, ai_escalation_reason, ai_confidence, valuation_lower_bound,
+        valuation_base_estimate, valuation_upper_bound, valuation_currency, valuation_confidence,
+        investment_is_favorable, investment_confidence, is_considered,
+        input_tokens, output_tokens, total_tokens, cost_usd, model_used, created_at, updated_at
+    `
+
+    let query = (supabase.from('documents') as any)
+        .select(isFull ? fullColumns : lightweightColumns)
         .eq('environment', environment)
 
     if (req.params.projectId && req.params.projectId.trim().length > 0) {
