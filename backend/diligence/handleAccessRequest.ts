@@ -11,10 +11,14 @@ export interface AccessRequestParams {
   metadata?: Record<string, unknown>
 }
 
-const DEFAULT_SLACK_WEBHOOK = 'https://hooks.slack.com/services/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'
+const DEFAULT_SLACK_WEBHOOK = process.env.VITE_SLACK_WEBHOOK_URL || process.env.SLACK_WEBHOOK_URL || ''
 
 async function dispatchSlackNotification(params: AccessRequestParams, requestId: string): Promise<void> {
   const webhookUrl = process.env.VITE_SLACK_WEBHOOK_URL || process.env.SLACK_WEBHOOK_URL || DEFAULT_SLACK_WEBHOOK
+  if (!webhookUrl) {
+    console.warn('[SlackAlert] No SLACK_WEBHOOK_URL configured; skipping alert dispatch.')
+    return
+  }
 
   const timestamp = new Date().toLocaleString('en-US', {
     timeZone: 'UTC',

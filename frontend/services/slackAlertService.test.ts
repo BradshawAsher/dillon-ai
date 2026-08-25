@@ -9,6 +9,7 @@ describe('slackAlertService', () => {
     const originalFetch = globalThis.fetch
 
     beforeEach(() => {
+        process.env.VITE_SLACK_WEBHOOK_URL = 'https://hooks.slack.com/services/test/test/test'
         globalThis.fetch = vi.fn().mockResolvedValue({
             ok: true,
             status: 200,
@@ -17,6 +18,7 @@ describe('slackAlertService', () => {
     })
 
     afterEach(() => {
+        delete process.env.VITE_SLACK_WEBHOOK_URL
         globalThis.fetch = originalFetch
         vi.restoreAllMocks()
     })
