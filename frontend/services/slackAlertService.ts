@@ -1,4 +1,4 @@
-const DEFAULT_SLACK_WEBHOOK = 'https://hooks.slack.com/services/REDACTED/REDACTED/REDACTED'
+const DEFAULT_SLACK_WEBHOOK = ''
 
 function getSlackWebhookUrl(): string {
     if (typeof window !== 'undefined') {
@@ -13,6 +13,9 @@ function getSlackWebhookUrl(): string {
  */
 async function postSlackWebhook(payload: Record<string, unknown>): Promise<boolean> {
     const webhookUrl = getSlackWebhookUrl()
+    if (!webhookUrl) {
+        return false
+    }
     const payloadString = JSON.stringify(payload)
 
     try {

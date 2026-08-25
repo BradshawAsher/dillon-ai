@@ -21789,7 +21789,9 @@ function getCitationDetails(judgmentJson, aiCitations) {
   return found.slice(0, 30);
 }
 async function getProjectSynthesis(req) {
-  const limitNum = typeof req.params.limit === "number" ? req.params.limit : typeof req.params.limit === "string" && parseInt(req.params.limit, 10) > 0 ? parseInt(req.params.limit, 10) : 100;
+  const isScoped = Boolean(req.params.projectId && req.params.projectId.trim().length > 0);
+  const defaultLimit = isScoped ? 10 : 50;
+  const limitNum = typeof req.params.limit === "number" ? req.params.limit : typeof req.params.limit === "string" && parseInt(req.params.limit, 10) > 0 ? parseInt(req.params.limit, 10) : defaultLimit;
   let query = supabase.from("project_syntheses").select("*").or("is_placeholder.is.null,is_placeholder.eq.false");
   if (req.params.projectId && req.params.projectId.trim().length > 0) {
     query = query.eq("project_id", req.params.projectId.trim());
@@ -22125,24 +22127,41 @@ function unpackExtractedFallback(row) {
 }
 async function getSubmissionHistory(req) {
   const environment = req.params.environment === "test" ? "test" : "production";
-  const limitNum = typeof req.params.limit === "number" ? req.params.limit : typeof req.params.limit === "string" && parseInt(req.params.limit, 10) > 0 ? parseInt(req.params.limit, 10) : 1e3;
-  let query = supabase.from("documents").select(`
-            id, request_id, deal_name, company_name, workstream, submission_notes,
-            analyst_name, analyst_email, project_id, project_stage, document_type,
-            detected_document_type, detected_document_types_json, table_structure_status,
-            table_structure_issues, detected_header_row, column_map_confidence, validated_column_map,
-            employee_count, employee_type, employee_as_of_date, employee_confidence, employee_citation,
-            employee_evidence_status, financial_facts_json, reconciliation_json, math_check_status,
-            submission_batch_id, expected_batch_document_count, file_name, file_size, file_type,
-            trigger_timestamp, status, environment, received_at, processing_started_at, processed_at,
-            error_message, risk_level, category, traffic_light, ebitda_extracted, extracted_json,
-            storage_file_id, storage_file_url, needs_human_review, ai_summary, ai_target_value,
-            ai_variance, ai_escalation_reason, ai_intent, ai_citations, ai_red_flags,
-            ai_yellow_flags, ai_green_flags, ai_confidence, valuation_lower_bound,
-            valuation_base_estimate, valuation_upper_bound, valuation_currency, valuation_confidence,
-            investment_is_favorable, investment_buy_reasoning, investment_confidence, is_considered,
-            input_tokens, output_tokens, total_tokens, cost_usd, model_used, created_at, updated_at
-        `).eq("environment", environment);
+  const isScopedProject = Boolean(req.params.projectId && req.params.projectId.trim().length > 0);
+  const isFull = req.params.full === true || req.params.full === "true" || isScopedProject;
+  const defaultLimit = isScopedProject ? 100 : 1e3;
+  const limitNum = typeof req.params.limit === "number" ? req.params.limit : typeof req.params.limit === "string" && parseInt(req.params.limit, 10) > 0 ? parseInt(req.params.limit, 10) : defaultLimit;
+  const fullColumns = `
+        id, request_id, deal_name, company_name, workstream, submission_notes,
+        analyst_name, analyst_email, project_id, project_stage, document_type,
+        detected_document_type, detected_document_types_json, table_structure_status,
+        table_structure_issues, detected_header_row, column_map_confidence, validated_column_map,
+        employee_count, employee_type, employee_as_of_date, employee_confidence, employee_citation,
+        employee_evidence_status, financial_facts_json, reconciliation_json, math_check_status,
+        submission_batch_id, expected_batch_document_count, file_name, file_size, file_type,
+        trigger_timestamp, status, environment, received_at, processing_started_at, processed_at,
+        error_message, risk_level, category, traffic_light, ebitda_extracted, extracted_json,
+        storage_file_id, storage_file_url, needs_human_review, ai_summary, ai_target_value,
+        ai_variance, ai_escalation_reason, ai_intent, ai_citations, ai_red_flags,
+        ai_yellow_flags, ai_green_flags, ai_confidence, valuation_lower_bound,
+        valuation_base_estimate, valuation_upper_bound, valuation_currency, valuation_confidence,
+        investment_is_favorable, investment_buy_reasoning, investment_confidence, is_considered,
+        input_tokens, output_tokens, total_tokens, cost_usd, model_used, created_at, updated_at
+    `;
+  const lightweightColumns = `
+        id, request_id, deal_name, company_name, workstream, submission_notes,
+        analyst_name, analyst_email, project_id, project_stage, document_type,
+        detected_document_type, table_structure_status, math_check_status,
+        submission_batch_id, expected_batch_document_count, file_name, file_size, file_type,
+        trigger_timestamp, status, environment, received_at, processing_started_at, processed_at,
+        error_message, risk_level, category, traffic_light, ebitda_extracted,
+        storage_file_id, storage_file_url, needs_human_review, ai_summary, ai_red_flags, ai_yellow_flags, ai_green_flags, ai_target_value,
+        ai_variance, ai_escalation_reason, ai_confidence, valuation_lower_bound,
+        valuation_base_estimate, valuation_upper_bound, valuation_currency, valuation_confidence,
+        investment_is_favorable, investment_confidence, is_considered,
+        input_tokens, output_tokens, total_tokens, cost_usd, model_used, created_at, updated_at
+    `;
+  let query = supabase.from("documents").select(isFull ? fullColumns : lightweightColumns).eq("environment", environment);
   if (req.params.projectId && req.params.projectId.trim().length > 0) {
     query = query.eq("project_id", req.params.projectId.trim());
   }
@@ -22297,6 +22316,31 @@ async function getWorkflowErrors(req) {
     lastNodeExecuted: row.last_node_executed ?? "",
     severity: row.severity ?? "uncaught"
   }));
+}
+
+// backend/diligence/getDiligenceKpis.ts
+async function getDiligenceKpis({ params } = {}) {
+  const environment = params?.environment === "test" ? "test" : "production";
+  const projectId = typeof params?.projectId === "string" ? params.projectId.trim() : "";
+  if (projectId) {
+    const { data: data2, error: error2 } = await supabase.rpc("get_project_diligence_kpis", {
+      p_project_id: projectId,
+      p_environment: environment
+    });
+    if (error2) {
+      console.error("[getDiligenceKpis] Supabase RPC error:", error2);
+      throw error2;
+    }
+    return data2;
+  }
+  const { data, error } = await supabase.rpc("get_portfolio_diligence_kpis", {
+    p_environment: environment
+  });
+  if (error) {
+    console.error("[getDiligenceKpis] Supabase RPC error:", error);
+    throw error;
+  }
+  return data;
 }
 
 // backend/diligence/getProjectActionTracker.ts
@@ -22649,9 +22693,13 @@ async function updateSubmissionRow(req) {
 // backend/diligence/handleAccessRequest.ts
 import https from "node:https";
 import crypto2 from "node:crypto";
-var DEFAULT_SLACK_WEBHOOK = "https://hooks.slack.com/services/REDACTED/REDACTED/REDACTED";
+var DEFAULT_SLACK_WEBHOOK = process.env.VITE_SLACK_WEBHOOK_URL || process.env.SLACK_WEBHOOK_URL || "";
 async function dispatchSlackNotification(params, requestId) {
   const webhookUrl = process.env.VITE_SLACK_WEBHOOK_URL || process.env.SLACK_WEBHOOK_URL || DEFAULT_SLACK_WEBHOOK;
+  if (!webhookUrl) {
+    console.warn("[SlackAlert] No SLACK_WEBHOOK_URL configured; skipping alert dispatch.");
+    return;
+  }
   const timestamp = (/* @__PURE__ */ new Date()).toLocaleString("en-US", {
     timeZone: "UTC",
     dateStyle: "medium",
@@ -22766,6 +22814,9 @@ async function handleAccessRequest(req) {
     id: requestId
   };
 }
+
+// api/diligence/[...route].src.ts
+import crypto3 from "node:crypto";
 
 // api/_lib/httpError.ts
 var HttpError = class _HttpError extends Error {
@@ -22967,13 +23018,21 @@ function rateLimit(ip, route, method) {
 
 // api/diligence/[...route].src.ts
 installRetoolGlobals();
-function sendJson(res, status, body, cacheControl) {
-  res.statusCode = status;
+function sendJson(req, res, status, body, cacheControl) {
+  const jsonString = JSON.stringify(body);
+  const etag = `"${crypto3.createHash("md5").update(jsonString).digest("hex")}"`;
   res.setHeader("Content-Type", "application/json; charset=utf-8");
+  res.setHeader("ETag", etag);
   if (cacheControl) {
     res.setHeader("Cache-Control", cacheControl);
   }
-  res.end(JSON.stringify(body));
+  if (req.headers["if-none-match"] === etag) {
+    res.statusCode = 304;
+    res.end();
+    return;
+  }
+  res.statusCode = status;
+  res.end(jsonString);
 }
 async function handler(req, res) {
   const requestUrl = new URL(req.url ?? "/", "https://dashboard.local");
@@ -22985,84 +23044,94 @@ async function handler(req, res) {
   res.setHeader("X-RateLimit-Remaining", String(limit.remaining));
   if (!limit.allowed) {
     res.setHeader("Retry-After", String(limit.retryAfterSec));
-    sendJson(res, 429, { error: `Rate limit exceeded. Retry in ${limit.retryAfterSec}s.` });
+    sendJson(req, res, 429, { error: `Rate limit exceeded. Retry in ${limit.retryAfterSec}s.` });
     return;
   }
   try {
     const user = userFromHeaders(req.headers);
     if (route === "eval-runs" && req.method === "GET") {
-      sendJson(res, 200, await getEvalRuns(), "public, s-maxage=60, stale-while-revalidate=300");
+      sendJson(req, res, 200, await getEvalRuns(), "public, s-maxage=60, stale-while-revalidate=300");
       return;
     }
     if (route === "history" && req.method === "GET") {
-      sendJson(res, 200, await getSubmissionHistory({ params: { environment }, user }), "private, no-cache, no-store, must-revalidate");
+      const projectId = requestUrl.searchParams.get("projectId") ?? void 0;
+      const limitNum = requestUrl.searchParams.get("limit") ?? void 0;
+      const full = requestUrl.searchParams.get("full") === "true";
+      sendJson(req, res, 200, await getSubmissionHistory({ params: { environment, projectId, limit: limitNum, full }, user }), "private, max-age=5, stale-while-revalidate=30");
       return;
     }
     if (route === "workflow-errors" && req.method === "GET") {
-      sendJson(res, 200, await getWorkflowErrors({ params: { environment }, user }), "private, no-cache, no-store, must-revalidate");
+      sendJson(req, res, 200, await getWorkflowErrors({ params: { environment }, user }), "private, max-age=10, stale-while-revalidate=30");
       return;
     }
     if (route === "synthesis" && req.method === "GET") {
-      sendJson(res, 200, await getProjectSynthesis({ params: { environment }, user }), "private, no-cache, no-store, must-revalidate");
+      const projectId = requestUrl.searchParams.get("projectId") ?? void 0;
+      const limitNum = requestUrl.searchParams.get("limit") ?? void 0;
+      sendJson(req, res, 200, await getProjectSynthesis({ params: { environment, projectId, limit: limitNum }, user }), "private, max-age=5, stale-while-revalidate=30");
+      return;
+    }
+    if (route === "kpis" && req.method === "GET") {
+      const projectId = requestUrl.searchParams.get("projectId") ?? void 0;
+      sendJson(req, res, 200, await getDiligenceKpis({ params: { environment, projectId }, user }), "private, max-age=5, stale-while-revalidate=30");
       return;
     }
     if (route === "deal-models" && req.method === "GET") {
-      sendJson(res, 200, await getDealModels({ params: { projectId: requestUrl.searchParams.get("projectId") ?? "" }, user }));
+      sendJson(req, res, 200, await getDealModels({ params: { projectId: requestUrl.searchParams.get("projectId") ?? "" }, user }));
       return;
     }
     if (route === "deal-models" && req.method === "POST") {
       const params = await readJsonBody(req);
-      sendJson(res, 200, await saveDealModel({ params, user }));
+      sendJson(req, res, 200, await saveDealModel({ params, user }));
       return;
     }
     if (route === "project-action-tracker" && req.method === "GET") {
       const projectId = requestUrl.searchParams.get("projectId") ?? "";
-      sendJson(res, 200, await getProjectActionTracker({ params: { projectId }, user }));
+      sendJson(req, res, 200, await getProjectActionTracker({ params: { projectId }, user }));
       return;
     }
     if (route === "project-action-tracker" && req.method === "POST") {
       const params = await readJsonBody(req);
-      sendJson(res, 200, await saveProjectActionTracker({ params, user }));
+      sendJson(req, res, 200, await saveProjectActionTracker({ params, user }));
       return;
     }
     if (route === "submission-consideration" && req.method === "POST") {
       const params = await readJsonBody(req);
-      sendJson(res, 200, await updateSubmissionRow({ params, user }));
+      sendJson(req, res, 200, await updateSubmissionRow({ params, user }));
       return;
     }
     if (route === "upload-url" && req.method === "POST") {
       const params = await readJsonBody(req);
-      sendJson(res, 200, await createUploadUrl({ params, user }));
+      sendJson(req, res, 200, await createUploadUrl({ params, user }));
       return;
     }
     if (route === "submit" && req.method === "POST") {
       const params = await readJsonBody(req);
-      sendJson(res, 200, await submitDealPacket({ params, user }));
+      sendJson(req, res, 200, await submitDealPacket({ params, user }));
       return;
     }
     if (route === "retry-failed-document" && req.method === "POST") {
       const params = await readJsonBody(req);
-      sendJson(res, 202, await retryFailedDocument({ params, user }));
+      sendJson(req, res, 202, await retryFailedDocument({ params, user }));
       return;
     }
     if (route === "stop-batch" && req.method === "POST") {
       const params = await readJsonBody(req);
-      sendJson(res, 200, await stopBatchSubmission({ params, user }));
+      sendJson(req, res, 200, await stopBatchSubmission({ params, user }));
       return;
     }
     if (route === "stop-synthesis" && req.method === "POST") {
       const params = await readJsonBody(req);
-      sendJson(res, 200, await stopProjectSynthesis({ params, user }));
+      sendJson(req, res, 200, await stopProjectSynthesis({ params, user }));
       return;
     }
     if (route === "access-request" && req.method === "POST") {
       const params = await readJsonBody(req);
-      sendJson(res, 200, await handleAccessRequest({ params, user }));
+      sendJson(req, res, 200, await handleAccessRequest({ params, user }));
       return;
     }
-    sendJson(res, 404, { error: "Unknown API route: " + (req.method ?? "GET") + " /api/diligence/" + route });
+    sendJson(req, res, 404, { error: "Unknown API route: " + (req.method ?? "GET") + " /api/diligence/" + route });
   } catch (error) {
-    sendJson(res, statusFromError(error), { error: messageFromError(error) });
+    sendJson(req, res, statusFromError(error), { error: messageFromError(error) });
   }
 }
 export {

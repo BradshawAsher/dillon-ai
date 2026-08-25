@@ -28,7 +28,7 @@ export interface AccessRequestResponse {
     error?: string
 }
 
-const DEFAULT_SLACK_WEBHOOK = 'https://hooks.slack.com/services/REDACTED/REDACTED/REDACTED'
+const DEFAULT_SLACK_WEBHOOK = ''
 
 /**
  * Sends a formatted Slack notification to #pod-1-agent-alerts via webhook.
@@ -38,6 +38,8 @@ async function sendSlackAlert(payload: AccessRequestPayload, requestId: string):
     const webhookUrl = (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_SLACK_WEBHOOK_URL
         || (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_ACCESS_REQUEST_WEBHOOK_URL
         || DEFAULT_SLACK_WEBHOOK
+
+    if (!webhookUrl) return
 
     const timestamp = new Date().toLocaleString('en-US', {
         timeZone: 'UTC',
