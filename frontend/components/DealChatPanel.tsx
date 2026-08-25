@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowUpRight, Bot, Compass, ExternalLink, FolderKanban, Move, RotateCcw, Send, Sparkles, ThumbsDown, ThumbsUp, X, AlertTriangle, Bug } from 'lucide-react'
+import { ArrowUpRight, Bot, Compass, Edit2, ExternalLink, FolderKanban, Maximize2, MessageSquare, Minimize2, Move, PanelLeft, Plus, RotateCcw, Search, Send, Sparkles, ThumbsDown, ThumbsUp, Trash2, X, AlertTriangle, Bug } from 'lucide-react'
 
 import { Button } from '../lib/shadcn/button'
 import { Card } from '../lib/shadcn/card'
@@ -290,6 +290,96 @@ export function detectIssueReportIntent(query: string): {
     }
 }
 
+export function detectDebateIntent(query: string): boolean {
+    const q = query.toLowerCase().trim()
+    return (
+        q.includes('debate') ||
+        q.includes('bull vs bear') ||
+        q.includes('bull vs. bear') ||
+        q.includes('bull and bear') ||
+        q.includes('bull case') ||
+        q.includes('bear case') ||
+        q.includes('council') ||
+        q.includes('multi-agent') ||
+        q.includes('multi agent') ||
+        q.includes('arbiter') ||
+        q.includes('investment committee') ||
+        q.includes('ic debate')
+    )
+}
+
+export function buildMultiAgentDebateResponse(details: {
+    synthesis?: ProjectSynthesisItem
+    model: DealModel
+    projectName: string
+    documents?: SubmissionHistoryItem[]
+    allSyntheses?: ProjectSynthesisItem[]
+}, _query?: string): string {
+    const { synthesis, model, projectName } = details
+    const facts = parseDocumentedFacts(model.documentedFactsJson)
+    const companyName = synthesis?.companyName || projectName || 'Target Company'
+    const askingPrice = model.askingPrice ? formatMoney(model.askingPrice) : 'N/A'
+    const revenue = typeof facts.revenue?.value === 'number' ? formatMoney(facts.revenue.value) : (model.revenue ? formatMoney(model.revenue) : 'N/A')
+    const ebitda = typeof facts.ebitda_sde?.value === 'number' ? formatMoney(facts.ebitda_sde.value) : (model.ebitda ? formatMoney(model.ebitda) : 'N/A')
+    const trafficLight = synthesis?.finalTrafficLight || 'Yellow'
+    const riskLevel = synthesis?.finalRiskLevel || 'Medium'
+    const rec = synthesis?.finalRecommendation || (trafficLight === 'Green' ? 'Proceed with Phase 2 Acquisition' : trafficLight === 'Yellow' ? 'Proceed with Conditional Covenants & Price Adjustments' : 'Walk Away / Exceeds Risk Tolerance')
+    const redFlags = synthesis?.redFlags ?? []
+    const yellowFlags = synthesis?.yellowFlags ?? []
+    const greenFlags = synthesis?.greenFlags ?? []
+    const negotiationLevers = synthesis?.negotiationLevers ?? []
+    const valLow = synthesis?.valuationLowerBound ? `$${synthesis.valuationLowerBound}` : null
+    const valBase = synthesis?.valuationBaseEstimate && synthesis.valuationBaseEstimate !== '0' ? `$${synthesis.valuationBaseEstimate}` : null
+    const valHigh = synthesis?.valuationUpperBound ? `$${synthesis.valuationUpperBound}` : null
+
+    const verdictEmoji = trafficLight === 'Green' ? '🟢' : trafficLight === 'Yellow' ? '🟡' : '🔴'
+
+    const bullPoints: string[] = []
+    if (revenue !== 'N/A') bullPoints.push(`**Scale & Revenue Stability**: Established operating history with **${revenue}** recorded top-line revenue.`)
+    if (ebitda !== 'N/A') bullPoints.push(`**Cash Flow Foundation**: Generates **${ebitda}** in normalized cash generation / EBITDA.`)
+    if (greenFlags.length > 0) {
+        greenFlags.slice(0, 3).forEach(g => bullPoints.push(`**Operational Asset**: ${g}`))
+    } else {
+        bullPoints.push(`**Core Operations**: Physical assets, customer relationships, and staff are operationally functional.`)
+    }
+    if (valHigh) bullPoints.push(`**Upside Valuation Ceiling**: Post-acquisition synergy and multiple expansion models support upside valuation up to **${valHigh}**.`)
+
+    const bearPoints: string[] = []
+    if (redFlags.length > 0) {
+        redFlags.slice(0, 3).forEach(r => bearPoints.push(`**Severe Red Flag**: ${r}`))
+    }
+    if (yellowFlags.length > 0) {
+        yellowFlags.slice(0, 2).forEach(y => bearPoints.push(`**Audit Caution**: ${y}`))
+    }
+    if (redFlags.length === 0 && yellowFlags.length === 0) {
+        bearPoints.push(`**Execution Exposure**: Macro sensitivity, owner dependency, and working capital peg variance risks.`)
+    }
+    if (valLow) bearPoints.push(`**Downside Valuation Floor**: Stressed cash flow and customer churn scenarios compress valuation to **${valLow}**.`)
+
+    const arbiterPoints: string[] = []
+    arbiterPoints.push(`- **Consensus IC Posture**: ${verdictEmoji} **${rec.toUpperCase()}** (${riskLevel} Risk Profile)`)
+    if (valBase) arbiterPoints.push(`- **Fair Enterprise Value Benchmark**: Base case fair valuation is pegged at **${valBase}** against asking price of **${askingPrice}**.`)
+    if (negotiationLevers.length > 0) {
+        arbiterPoints.push(`- **Primary Negotiation Lever**: ${negotiationLevers[0]}`)
+    }
+    arbiterPoints.push(`- **Mandatory Closing Conditions**: Require 12–18 month indemnity escrow (10–15% of purchase price) and dollar-for-dollar working capital true-up at close.`)
+
+    return `### ⚔️ Multi-Agent IC Council Debate: **${companyName}**
+
+#### 🐂 Bull Agent (Growth & Synergies Lead)
+${bullPoints.map(p => `- ${p}`).join('\n')}
+
+#### 🐻 Bear Agent (Forensic Risk Auditor)
+${bearPoints.map(p => `- ${p}`).join('\n')}
+
+#### ⚖️ Arbiter Agent (Lead Partner & IC Chair Consensus)
+${arbiterPoints.join('\n')}
+
+👉 [Open Synthesis Verdict](tab:synthesis#synthesis-judgment)
+👉 [Open Negotiation Levers](tab:negotiation)
+👉 [Generate LOI Term Sheet](tab:analysis#analysis-term-sheet)`
+}
+
 /**
  * Resolves at most 1–2 highly specialized links depending on the user's query intent.
  * Differentiates between broad domain exploration and specific card-level queries.
@@ -499,7 +589,8 @@ function getLocalResponse(
         projectName: string
         documents?: SubmissionHistoryItem[]
         allSyntheses?: ProjectSynthesisItem[]
-    }
+    },
+    isDebateMode?: boolean
 ): LocalResponse {
     const q = question.toLowerCase().trim()
     const { synthesis, model, projectName, documents, allSyntheses } = details
@@ -533,6 +624,14 @@ I've captured your feedback and dispatched an alert directly to our engineering 
 - **Destination:** \`#pod-1-agent-alerts\`
 
 Our deal pod engineering team has received your report. If you'd like to include screenshots or more details, you can also click the **Report Issue** button in the top navigation bar.`,
+        }
+    }
+
+    // 0.05 Multi-Agent IC Council Debate Mode (Bull vs. Bear vs. Arbiter)
+    if (isDebateMode || detectDebateIntent(question)) {
+        return {
+            matched: true,
+            content: buildMultiAgentDebateResponse(details, question),
         }
     }
 
@@ -1045,7 +1144,39 @@ function renderSimpleMarkdown(
             return <span key={pIdx} dangerouslySetInnerHTML={{ __html: processed }} />
         })
 
-        if (/^#{1,3}\s/.test(line)) {
+        if (/^###\s+⚔️/.test(line)) {
+            return (
+                <div key={i} className="mt-2.5 mb-1.5 rounded-lg border border-purple-500/30 bg-purple-500/10 p-2 text-xs font-bold text-purple-900 dark:text-purple-200 flex items-center gap-1.5 shadow-2xs">
+                    <span className="text-sm">⚔️</span>
+                    <span>{renderedLineParts}</span>
+                </div>
+            )
+        }
+        if (/^####\s+🐂/.test(line)) {
+            return (
+                <div key={i} className="mt-2.5 mb-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-900 dark:text-emerald-200 flex items-center gap-1.5">
+                    <span>🐂</span>
+                    <span>{renderedLineParts}</span>
+                </div>
+            )
+        }
+        if (/^####\s+🐻/.test(line)) {
+            return (
+                <div key={i} className="mt-2.5 mb-1 rounded-md border border-rose-500/30 bg-rose-500/10 px-2.5 py-1 text-xs font-bold text-rose-900 dark:text-rose-200 flex items-center gap-1.5">
+                    <span>🐻</span>
+                    <span>{renderedLineParts}</span>
+                </div>
+            )
+        }
+        if (/^####\s+⚖️/.test(line)) {
+            return (
+                <div key={i} className="mt-2.5 mb-1 rounded-md border border-purple-500/35 bg-purple-500/15 px-2.5 py-1 text-xs font-bold text-purple-950 dark:text-purple-100 flex items-center gap-1.5">
+                    <span>⚖️</span>
+                    <span>{renderedLineParts}</span>
+                </div>
+            )
+        }
+        if (/^#{1,4}\s/.test(line)) {
             return <p key={i} className="font-semibold text-foreground mt-1.5 mb-0.5 text-xs">{renderedLineParts}</p>
         }
         if (/^[-•]\s/.test(line)) {
@@ -1089,12 +1220,68 @@ function detectReferencedProject(question: string, currentProjectName: string, a
     }) ?? null
 }
 
-const CHAT_STORAGE_KEY = 'mergeworks.chatHistory'
+export type ChatSession = {
+    id: string
+    title: string
+    createdAt: number
+    updatedAt: number
+    messages: Message[]
+    projectName?: string
+    isDebateMode?: boolean
+}
+
+export const CHAT_STORAGE_KEY = 'mergeworks.chatHistory'
+export const CHAT_SESSIONS_STORAGE_KEY = 'mergeworks.chatSessions.v1'
+export const CHAT_ACTIVE_SESSION_KEY = 'mergeworks.chatActiveSessionId.v1'
 const CHAT_PANEL_SIZE_KEY = 'mergeworks.chatPanelSize'
 const CHAT_PANEL_POS_KEY = 'mergeworks.chatPanelPos'
 const DEFAULT_CHAT_PANEL_SIZE = { width: 440, height: 520 }
 const MIN_CHAT_PANEL_WIDTH = 380
 const MIN_CHAT_PANEL_HEIGHT = 420
+
+export function generateSessionTitle(prompt: string): string {
+    const clean = prompt.trim().replace(/^([#*\-\s]+)/, '').replace(/\n+/g, ' ')
+    if (!clean) return 'New Conversation'
+    if (clean.length <= 36) return clean
+    return clean.slice(0, 36).trim() + '...'
+}
+
+export function createInitialSession(projectName?: string, initialMessages: Message[] = []): ChatSession {
+    const id = `session-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+    let title = 'New Conversation'
+    if (initialMessages.length > 0) {
+        const firstUser = initialMessages.find(m => m.role === 'user')
+        if (firstUser) {
+            title = generateSessionTitle(firstUser.content)
+        } else if (projectName) {
+            title = `${projectName} Diligence`
+        }
+    }
+    return {
+        id,
+        title,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        messages: initialMessages,
+        projectName,
+        isDebateMode: false,
+    }
+}
+
+export function formatRelativeDate(timestamp: number): string {
+    const diffMs = Date.now() - timestamp
+    const diffSec = Math.floor(diffMs / 1000)
+    const diffMin = Math.floor(diffSec / 60)
+    const diffHours = Math.floor(diffMin / 60)
+    const diffDays = Math.floor(diffHours / 24)
+
+    if (diffMin < 1) return 'Just now'
+    if (diffMin < 60) return `${diffMin}m ago`
+    if (diffHours < 24) return `${diffHours}h ago`
+    if (diffDays === 1) return 'Yesterday'
+    if (diffDays < 7) return `${diffDays}d ago`
+    return new Date(timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+}
 
 type ChatPanelSize = {
     width: number
@@ -1450,11 +1637,36 @@ async function callDirectUserLlm(
     context: string,
     keys: { openai?: string; anthropic?: string; gemini?: string; deepseek?: string },
     recentMessages: Message[] = [],
-    toolContext?: ClientSideToolContext
+    toolContext?: ClientSideToolContext,
+    isDebateMode?: boolean
 ): Promise<{ text: string; provider: string } | null> {
+    const isDebate = Boolean(isDebateMode || detectDebateIntent(prompt))
+    const debateInstruction = isDebate ? `
+
+--- MULTI-AGENT IC COUNCIL DEBATE MODE ---
+You must orchestrate a comprehensive 3-agent Investment Committee debate on this acquisition:
+1. 🐂 **Bull Agent (Growth & Synergies Lead)**: Present the strongest possible case for the deal. Highlight revenue scale, gross margin defensibility, recurring revenue, upside growth vectors, and multiple expansion potential.
+2. 🐻 **Bear Agent (Forensic Risk Auditor)**: Stress-test the deal aggressively. Scrutinize unsupported seller add-backs, customer concentration (>10%), working capital deficits, legal/tax/EPA liabilities, and downside cash flow risks.
+3. ⚖️ **Arbiter Agent (Lead IC Partner Consensus)**: Reconcile Bull vs. Bear arguments against verified ground facts. Deliver a definitive consensus verdict (🟢 PROCEED / 🟡 RENEGOTIATE / 🔴 WALK AWAY), recommended purchase price haircut, and closing indemnity escrow terms.
+
+Format your output with clean Markdown headings:
+### ⚔️ Multi-Agent IC Council Debate: [Company Name]
+
+#### 🐂 Bull Agent (Growth & Synergies Lead)
+- [Bullet points]
+
+#### 🐻 Bear Agent (Forensic Risk Auditor)
+- [Bullet points]
+
+#### ⚖️ Arbiter Agent (Lead Partner & IC Chair Consensus)
+- **Consensus Verdict**: [🟢 PROCEED / 🟡 RENEGOTIATE / 🔴 WALK AWAY]
+- **Fair Value & Price Levers**: [Haircut / Valuation adjustments]
+- **Mandatory Closing Conditions**: [Escrow & True-up terms]
+` : ''
+
     const systemPrompt = `You are MergeWorks AI, an expert M&A due diligence advisor and financial intelligence assistant.
 You have access to live financial tools (calculate_deal_financials, smb_valuation_benchmarks, query_deal_data) and memory of the active conversation.
-You can calculate DSCR, SDE bridges, loan amortizations, and analyze deal metrics with institutional rigor.
+You can calculate DSCR, SDE bridges, loan amortizations, and analyze deal metrics with institutional rigor.${debateInstruction}
 
 --- CURRENT DEAL CONTEXT ---
 ${context}
@@ -1705,12 +1917,77 @@ ${context}
 export default function DealChatPanel({ synthesis, model, projectName, documents, allSyntheses, onSuggestProjectSwitch, onOpenProjectsPanel, projectsCount, onNavigateTab }: Props) {
     const [isOpen, setIsOpen] = useState(false)
     const [unreadCount, setUnreadCount] = useState<number>(0)
-    const [messages, setMessages] = useState<Message[]>(() => {
+
+    const [sessions, setSessions] = useState<ChatSession[]>(() => {
+        if (typeof window === 'undefined') return [createInitialSession(projectName)]
         try {
-            const stored = localStorage.getItem(CHAT_STORAGE_KEY)
-            return stored ? JSON.parse(stored) : []
-        } catch { return [] }
+            const storedSessions = window.localStorage.getItem(CHAT_SESSIONS_STORAGE_KEY)
+            if (storedSessions) {
+                const parsed = JSON.parse(storedSessions) as ChatSession[]
+                if (Array.isArray(parsed) && parsed.length > 0) return parsed
+            }
+            const legacyHistory = window.localStorage.getItem(CHAT_STORAGE_KEY)
+            if (legacyHistory) {
+                const parsedLegacy = JSON.parse(legacyHistory) as Message[]
+                if (Array.isArray(parsedLegacy) && parsedLegacy.length > 0) {
+                    return [createInitialSession(projectName, parsedLegacy)]
+                }
+            }
+        } catch { }
+        return [createInitialSession(projectName)]
     })
+
+    const [activeSessionId, setActiveSessionId] = useState<string>(() => {
+        if (typeof window === 'undefined') return ''
+        try {
+            const storedActive = window.localStorage.getItem(CHAT_ACTIVE_SESSION_KEY)
+            if (storedActive) return storedActive
+        } catch { }
+        return ''
+    })
+
+    const [isHistorySidebarOpen, setIsHistorySidebarOpen] = useState(false)
+    const [sessionSearchQuery, setSessionSearchQuery] = useState('')
+    const [editingSessionId, setEditingSessionId] = useState<string | null>(null)
+    const [editingTitle, setEditingTitle] = useState('')
+
+    const effectiveActiveSessionId = useMemo(() => {
+        if (sessions.some(s => s.id === activeSessionId)) return activeSessionId
+        return sessions[0]?.id || ''
+    }, [sessions, activeSessionId])
+
+    const activeSession = useMemo(() => {
+        return sessions.find(s => s.id === effectiveActiveSessionId) || sessions[0] || createInitialSession(projectName)
+    }, [sessions, effectiveActiveSessionId, projectName])
+
+    const messages = useMemo(() => activeSession?.messages || [], [activeSession])
+
+    const setMessages = useCallback((updater: Message[] | ((prev: Message[]) => Message[])) => {
+        setSessions(prevSessions => {
+            return prevSessions.map(session => {
+                if (session.id === effectiveActiveSessionId) {
+                    const nextMessages = typeof updater === 'function' ? updater(session.messages || []) : updater
+                    let newTitle = session.title
+                    if (
+                        (!session.title || session.title === 'New Conversation' || session.title === 'Initial Diligence Chat') &&
+                        nextMessages.length > 0
+                    ) {
+                        const firstUserMsg = nextMessages.find(m => m.role === 'user')
+                        if (firstUserMsg) {
+                            newTitle = generateSessionTitle(firstUserMsg.content)
+                        }
+                    }
+                    return {
+                        ...session,
+                        title: newTitle,
+                        messages: nextMessages,
+                        updatedAt: Date.now(),
+                    }
+                }
+                return session
+            })
+        })
+    }, [effectiveActiveSessionId])
 
     const lastMessageCountRef = useRef(messages.length)
 
@@ -1738,6 +2015,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
     const textareaRef = useRef<HTMLTextAreaElement>(null)
     const [ratings, setRatings] = useState<Record<string, 'up' | 'down'>>({})
     const [suggestedProject, setSuggestedProject] = useState<ProjectSynthesisItem | null>(null)
+    const [isDebateModeActive, setIsDebateModeActive] = useState(false)
 
     const [panelSize, setPanelSize] = useState<ChatPanelSize>(() => {
         if (typeof window === 'undefined') return DEFAULT_CHAT_PANEL_SIZE
@@ -1792,8 +2070,12 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
     const dragHeaderRef = useRef<{ startMouseX: number; startMouseY: number; startPanelX: number; startPanelY: number } | null>(null)
 
     useEffect(() => {
-        try { localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages.slice(-50))) } catch { }
-    }, [messages])
+        try {
+            window.localStorage.setItem(CHAT_SESSIONS_STORAGE_KEY, JSON.stringify(sessions))
+            window.localStorage.setItem(CHAT_ACTIVE_SESSION_KEY, effectiveActiveSessionId)
+            window.localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages.slice(-50)))
+        } catch { }
+    }, [sessions, effectiveActiveSessionId, messages])
 
     useEffect(() => {
         try { localStorage.setItem(CHAT_PANEL_SIZE_KEY, JSON.stringify(panelSize)) } catch { }
@@ -1902,7 +2184,59 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
         scrollToBottom()
     }, [messages, scrollToBottom])
 
-    const sessionId = useRef(`chat-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`).current
+    const sessionId = effectiveActiveSessionId
+
+    const handleNewSession = useCallback(() => {
+        const newSession = createInitialSession(projectName)
+        setSessions(prev => [newSession, ...prev])
+        setActiveSessionId(newSession.id)
+        setRatings({})
+        setInput('')
+        setIsDebateModeActive(false)
+        if (panelSize.width < 700) {
+            setIsHistorySidebarOpen(false)
+        }
+        setTimeout(() => textareaRef.current?.focus(), 50)
+    }, [panelSize.width, projectName])
+
+    const handleSelectSession = useCallback((id: string) => {
+        setActiveSessionId(id)
+        setRatings({})
+        if (panelSize.width < 700) {
+            setIsHistorySidebarOpen(false)
+        }
+    }, [panelSize.width])
+
+    const handleDeleteSession = useCallback((id: string, e?: React.MouseEvent) => {
+        e?.stopPropagation()
+        setSessions(prev => {
+            const filtered = prev.filter(s => s.id !== id)
+            if (filtered.length === 0) {
+                const fresh = createInitialSession(projectName)
+                setActiveSessionId(fresh.id)
+                return [fresh]
+            }
+            if (effectiveActiveSessionId === id) {
+                setActiveSessionId(filtered[0].id)
+            }
+            return filtered
+        })
+    }, [effectiveActiveSessionId, projectName])
+
+    const handleRenameSession = useCallback((id: string, newTitle: string) => {
+        const trimmed = newTitle.trim() || 'Untitled Chat'
+        setSessions(prev => prev.map(s => s.id === id ? { ...s, title: trimmed, updatedAt: Date.now() } : s))
+        setEditingSessionId(null)
+    }, [])
+
+    const filteredSessions = useMemo(() => {
+        if (!sessionSearchQuery.trim()) return sessions
+        const q = sessionSearchQuery.toLowerCase()
+        return sessions.filter(s =>
+            s.title.toLowerCase().includes(q) ||
+            s.messages.some(m => m.content.toLowerCase().includes(q))
+        )
+    }, [sessions, sessionSearchQuery])
 
     const smartSuggestions = useMemo(() => {
         const suggestions: string[] = []
@@ -1912,6 +2246,8 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
         const hasEbitda = typeof facts.ebitda_sde?.value === 'number'
         const price = model.purchasePrice ?? model.askingPrice
         const failedDocs = documents?.filter(d => d.status === 'failed' || d.errorMessage) || []
+
+        suggestions.push('⚔️ Run Bull vs. Bear IC Debate')
 
         if (failedDocs.length > 0) {
             suggestions.push('🛠️ Troubleshoot upload error')
@@ -1933,7 +2269,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
 
         suggestions.push('🚨 Report an issue or bug')
 
-        return suggestions.slice(0, 6)
+        return suggestions.slice(0, 7)
     }, [synthesis, model, documents])
 
     const handleResizeStart = useCallback((direction: ResizeDirection, event: React.PointerEvent) => {
@@ -2015,16 +2351,21 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
     const handleHalfScreen = useCallback(() => {
         if (typeof window === 'undefined') return
         setPanelSize(clampChatPanelSize(window.innerWidth * 0.5, window.innerHeight * 0.5))
+        if (window.innerWidth * 0.5 >= 700) {
+            setIsHistorySidebarOpen(true)
+        }
     }, [])
 
     const handleFullScreen = useCallback(() => {
         if (typeof window === 'undefined') return
         setPanelSize(clampChatPanelSize(window.innerWidth - 48, window.innerHeight - 112))
+        setIsHistorySidebarOpen(true)
     }, [])
 
     const handleResetPositionAndSize = useCallback(() => {
         setPanelPosition(null)
         setPanelSize(clampChatPanelSize(DEFAULT_CHAT_PANEL_SIZE.width, DEFAULT_CHAT_PANEL_SIZE.height))
+        setIsHistorySidebarOpen(false)
         try {
             localStorage.removeItem(CHAT_PANEL_POS_KEY)
             localStorage.removeItem(CHAT_PANEL_SIZE_KEY)
@@ -2132,6 +2473,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                         question: trimmed,
                         context,
                         sessionId,
+                        isDebateMode: isDebateModeActive || detectDebateIntent(trimmed),
                         userAnthropicApiKey,
                         userOpenAiApiKey,
                         userGeminiApiKey,
@@ -2160,7 +2502,8 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                         deepseek: userDeepseekApiKey,
                     },
                     messages,
-                    { synthesis, model, projectName, documents, allSyntheses }
+                    { synthesis, model, projectName, documents, allSyntheses },
+                    isDebateModeActive
                 )
                 if (directRes) {
                     answer = directRes.text
@@ -2181,13 +2524,17 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                 userPrompt: trimmed,
             }])
         } catch {
-            const fallback = getLocalResponse(trimmed, {
-                synthesis,
-                model,
-                projectName,
-                documents,
-                allSyntheses,
-            })
+            const fallback = getLocalResponse(
+                trimmed,
+                {
+                    synthesis,
+                    model,
+                    projectName,
+                    documents,
+                    allSyntheses,
+                },
+                isDebateModeActive
+            )
             setMessages(prev => [...prev, {
                 id: `assistant-${Date.now()}`,
                 role: 'assistant',
@@ -2201,7 +2548,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
             setIsTyping(false)
             if (typingTimerRef.current) { clearInterval(typingTimerRef.current); typingTimerRef.current = null }
         }
-    }, [allSyntheses, documents, messages, model, projectName, sessionId, synthesis])
+    }, [allSyntheses, documents, isDebateModeActive, messages, model, projectName, sessionId, synthesis])
 
     const handleRerunWithLiveLlm = useCallback(async (messageId: string, promptOverride?: string) => {
         const targetMsg = messages.find(m => m.id === messageId)
@@ -2230,6 +2577,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                         question: prompt,
                         context,
                         sessionId,
+                        isDebateMode: isDebateModeActive || detectDebateIntent(prompt),
                         userAnthropicApiKey,
                         userOpenAiApiKey,
                         userGeminiApiKey,
@@ -2257,7 +2605,8 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                         deepseek: userDeepseekApiKey,
                     },
                     messages.filter(m => m.id !== messageId),
-                    { synthesis, model, projectName, documents, allSyntheses }
+                    { synthesis, model, projectName, documents, allSyntheses },
+                    isDebateModeActive
                 )
                 if (directRes) {
                     answer = directRes.text
@@ -2399,299 +2748,500 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                 onPointerDown={handleHeaderPointerDown}
                 onPointerMove={handleHeaderPointerMove}
                 onPointerUp={handleHeaderPointerUp}
-                className="flex items-center justify-between border-b border-border bg-muted/60 px-3.5 py-2 select-none cursor-move group"
+                className="flex items-center justify-between border-b border-border bg-muted/70 px-3 py-2 select-none cursor-move group gap-1.5"
                 title="Click and drag anywhere to move window"
             >
-                <div className="flex items-center gap-2 min-w-0">
-                    <Bot className="h-4 w-4 text-primary shrink-0" />
-                    <span className="text-xs font-bold text-foreground truncate">Dillon AI Assistant</span>
+                {/* Left: Sidebar Toggle + New Chat + Bot Identity */}
+                <div className="flex items-center gap-1 min-w-0 shrink-0">
+                    <button
+                        type="button"
+                        onClick={() => setIsHistorySidebarOpen(prev => !prev)}
+                        className={`rounded-md p-1 transition-colors cursor-pointer ${
+                            isHistorySidebarOpen
+                                ? 'bg-primary/20 text-primary'
+                                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                        }`}
+                        title={isHistorySidebarOpen ? "Hide chat history" : "Show chat history (ChatGPT / Gemini style)"}
+                        aria-label="Toggle history sidebar"
+                    >
+                        <PanelLeft className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleNewSession}
+                        className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-primary transition-colors cursor-pointer"
+                        title="New Chat (+)"
+                        aria-label="New chat"
+                    >
+                        <Plus className="h-3.5 w-3.5" />
+                    </button>
+                    <Bot className="h-4 w-4 text-primary shrink-0 ml-0.5" />
+                    <span className="text-xs font-bold text-foreground truncate max-w-[80px] sm:max-w-none">Dillon AI</span>
                     <CardInfoPopover cardId="deal-chat-copilot" />
-                    <span className="text-[10px] text-muted-foreground shrink-0 hidden sm:inline">M&A Diligence</span>
                 </div>
-                <div className="flex items-center gap-1 shrink-0">
-                    {onOpenProjectsPanel ? (
+
+                {/* Right: Actions & Window Controls */}
+                <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+                    {/* Deal Actions Cluster */}
+                    <div className="flex items-center gap-1">
+                        {onOpenProjectsPanel ? (
+                            <button
+                                type="button"
+                                onClick={onOpenProjectsPanel}
+                                className="flex items-center gap-1 rounded-md border border-border/70 bg-background/90 px-1.5 py-0.5 text-[10px] font-semibold text-foreground transition-colors hover:bg-muted cursor-pointer"
+                                title="Open Projects Portfolio Drawer"
+                            >
+                                <FolderKanban className="h-3 w-3 text-primary" />
+                                <span className="hidden sm:inline">Projects</span>
+                                {typeof projectsCount === 'number' && (
+                                    <span className="text-[9px] text-muted-foreground font-mono">({projectsCount})</span>
+                                )}
+                            </button>
+                        ) : null}
                         <button
                             type="button"
-                            onClick={onOpenProjectsPanel}
-                            className="flex items-center gap-1 rounded border border-border/70 bg-background/90 px-2 py-0.5 text-[10px] font-semibold text-foreground transition-colors hover:bg-muted cursor-pointer"
-                            title="Open Projects Portfolio Drawer"
+                            onClick={() => setIsDebateModeActive(prev => !prev)}
+                            className={`flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold transition-all cursor-pointer ${
+                                isDebateModeActive
+                                    ? 'bg-purple-600 text-white shadow-xs font-bold'
+                                    : 'border border-purple-500/40 text-purple-700 dark:text-purple-300 hover:bg-purple-500/10'
+                            }`}
+                            title={isDebateModeActive ? 'Multi-Agent IC Debate Mode is ACTIVE (Bull vs. Bear vs. Arbiter)' : 'Enable Multi-Agent IC Debate Mode (Bull vs. Bear vs. Arbiter)'}
                         >
-                            <FolderKanban className="h-3 w-3 text-primary" />
-                            <span>Projects</span>
-                            {typeof projectsCount === 'number' && (
-                                <span className="text-[9px] text-muted-foreground font-mono">({projectsCount})</span>
+                            <span>⚔️</span>
+                            <span>Debate {isDebateModeActive ? 'ON' : 'Mode'}</span>
+                        </button>
+                    </div>
+
+                    {/* Subtle Divider */}
+                    <div className="h-3.5 w-px bg-border/80 mx-0.5" />
+
+                    {/* Window Controls Cluster */}
+                    <div className="flex items-center gap-0.5">
+                        <button
+                            type="button"
+                            onClick={handleResetPositionAndSize}
+                            className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
+                            title="Reset window position & size"
+                            aria-label="Reset window"
+                        >
+                            <RotateCcw className="h-3.5 w-3.5" />
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => {
+                                const isFull = panelSize.width >= (typeof window !== 'undefined' ? window.innerWidth - 80 : 900)
+                                if (isFull) {
+                                    handleResetPositionAndSize()
+                                } else {
+                                    handleFullScreen()
+                                }
+                            }}
+                            className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
+                            title={panelSize.width >= (typeof window !== 'undefined' ? window.innerWidth - 80 : 900) ? "Restore default window size" : "Expand full window"}
+                            aria-label="Toggle full window"
+                        >
+                            {panelSize.width >= (typeof window !== 'undefined' ? window.innerWidth - 80 : 900) ? (
+                                <Minimize2 className="h-3.5 w-3.5" />
+                            ) : (
+                                <Maximize2 className="h-3.5 w-3.5" />
                             )}
                         </button>
-                    ) : null}
-                    <button
-                        type="button"
-                        onClick={handleResetPositionAndSize}
-                        className="flex items-center gap-1 rounded border border-border/60 bg-background/80 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
-                        title="Reset window position and size"
-                    >
-                        <RotateCcw className="h-2.5 w-2.5" />
-                        <span>Reset</span>
-                    </button>
-                    <button
-                        type="button"
-                        onClick={handleHalfScreen}
-                        className="rounded px-1.5 py-0.5 text-[10px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
-                        title="Resize chat to 50% screen"
-                    >
-                        50%
-                    </button>
-                    <button
-                        type="button"
-                        onClick={handleFullScreen}
-                        className="rounded px-1.5 py-0.5 text-[10px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
-                        title="Resize chat to full screen"
-                    >
-                        100%
-                    </button>
-                    {messages.length > 0 && (
+
+                        {messages.length > 0 && (
+                            <button
+                                type="button"
+                                onClick={() => { setMessages([]); setRatings({}) }}
+                                className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400 cursor-pointer"
+                                title="Clear conversation history in this thread"
+                                aria-label="Clear chat"
+                            >
+                                <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                        )}
+
                         <button
                             type="button"
-                            onClick={() => { setMessages([]); setRatings({}) }}
-                            className="rounded px-1.5 py-0.5 text-[10px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
-                            title="Clear conversation history"
+                            onClick={() => setIsOpen(false)}
+                            className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer ml-0.5"
+                            aria-label="Close chat"
+                            title="Close chat"
                         >
-                            Clear
+                            <X className="h-3.5 w-3.5" />
                         </button>
-                    )}
-                    <button
-                        type="button"
-                        onClick={() => setIsOpen(false)}
-                        className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
-                        aria-label="Close chat"
-                    >
-                        <X className="h-3.5 w-3.5" />
-                    </button>
+                    </div>
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto overscroll-contain p-3 space-y-3">
-                {messages.length === 0 && (
-                    <div className="flex h-full flex-col items-center justify-center text-center p-2">
-                        <div className="rounded-full bg-primary/10 p-3 ring-1 ring-primary/25 mb-2">
-                            <Bot className="h-7 w-7 text-primary" />
-                        </div>
-                        <p className="text-sm font-bold text-foreground">Ask Dillon AI</p>
-                        <p className="mt-1 text-xs text-muted-foreground max-w-xs leading-relaxed">
-                            Your M&A due diligence copilot. Ask about deal risks, valuation multiples, breakeven, or click below for instant answers.
-                        </p>
-                        <div className="mt-3.5 flex flex-wrap justify-center gap-1.5">
-                            {smartSuggestions.map(suggestion => (
+            {/* Body Container: [Sidebar (if open)] + [Main Chat Canvas] */}
+            <div className="flex flex-1 min-h-0 overflow-hidden relative">
+                {/* Left History Sidebar */}
+                {isHistorySidebarOpen && (
+                    <aside className={`
+                        ${panelSize.width >= 700
+                            ? 'w-64 border-r border-border bg-muted/30 shrink-0 flex flex-col z-10'
+                            : 'absolute inset-y-0 left-0 w-64 border-r border-border bg-card/95 backdrop-blur-md shadow-2xl z-20 flex flex-col'
+                        }
+                    `}>
+                        {/* Sidebar Header: New Chat & Search */}
+                        <div className="p-2.5 border-b border-border/70 space-y-2 shrink-0">
+                            <div className="flex items-center justify-between gap-1.5">
                                 <button
-                                    key={suggestion}
                                     type="button"
-                                    onClick={() => { sendMessageText(suggestion) }}
-                                    className="rounded-full border border-primary/20 bg-background/90 px-2.5 py-1 text-[11px] font-medium text-foreground transition-all hover:bg-primary/10 hover:border-primary/50 cursor-pointer shadow-2xs"
+                                    onClick={handleNewSession}
+                                    className="flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary border border-primary/25 px-2.5 py-1.5 text-xs font-semibold transition-all shadow-2xs hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
                                 >
-                                    {suggestion}
+                                    <Plus className="h-3.5 w-3.5" />
+                                    <span>New Chat</span>
                                 </button>
-                            ))}
+                                {panelSize.width < 700 && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsHistorySidebarOpen(false)}
+                                        className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+                                        title="Close sidebar"
+                                    >
+                                        <X className="h-3.5 w-3.5" />
+                                    </button>
+                                )}
+                            </div>
+                            <div className="relative">
+                                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                                <input
+                                    type="text"
+                                    placeholder="Search chats..."
+                                    value={sessionSearchQuery}
+                                    onChange={e => setSessionSearchQuery(e.target.value)}
+                                    className="w-full rounded-md border border-border/80 bg-background/90 pl-7 pr-2.5 py-1 text-[11px] text-foreground placeholder:text-muted-foreground/70 focus:outline-hidden focus:ring-1 focus:ring-primary/40"
+                                />
+                            </div>
                         </div>
-                    </div>
-                )}
 
-                {messages.map(msg => (
-                    <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                        <div className="max-w-[88%]">
-                            <div className={`rounded-lg px-3 py-2 text-xs leading-relaxed shadow-xs ${msg.role === 'user'
-                                ? 'bg-primary text-primary-foreground whitespace-pre-wrap font-medium'
-                                : 'bg-muted/90 text-foreground space-y-1.5 border border-border/60'
-                                }`}>
-                                {msg.role === 'assistant' && msg.tier === 'local_heuristics' && (
-                                    <div className="mb-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 rounded border border-amber-500/30 bg-amber-500/10 px-2 py-1.5 text-[10.5px] text-amber-900 dark:text-amber-200">
-                                        <div className="flex items-center gap-1 font-medium">
-                                            <span>⚙️ In-browser instant answer (deterministic engine)</span>
+                        {/* Sidebar Chat List */}
+                        <div className="flex-1 overflow-y-auto overscroll-contain p-2 space-y-1">
+                            {filteredSessions.length === 0 ? (
+                                <div className="p-4 text-center text-xs text-muted-foreground">
+                                    No chats found
+                                </div>
+                            ) : (
+                                filteredSessions.map(session => {
+                                    const isActive = session.id === effectiveActiveSessionId
+                                    const isEditing = editingSessionId === session.id
+                                    return (
+                                        <div
+                                            key={session.id}
+                                            onClick={() => !isEditing && handleSelectSession(session.id)}
+                                            className={`group flex items-center justify-between rounded-lg px-2.5 py-2 text-xs transition-colors cursor-pointer ${
+                                                isActive
+                                                    ? 'bg-primary/15 text-foreground font-semibold border border-primary/25 shadow-2xs'
+                                                    : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground'
+                                            }`}
+                                        >
+                                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                                                <MessageSquare className={`h-3.5 w-3.5 shrink-0 ${isActive ? 'text-primary' : 'text-muted-foreground/70'}`} />
+                                                {isEditing ? (
+                                                    <input
+                                                        type="text"
+                                                        value={editingTitle}
+                                                        onChange={e => setEditingTitle(e.target.value)}
+                                                        onKeyDown={e => {
+                                                            if (e.key === 'Enter') handleRenameSession(session.id, editingTitle)
+                                                            if (e.key === 'Escape') setEditingSessionId(null)
+                                                        }}
+                                                        onBlur={() => handleRenameSession(session.id, editingTitle)}
+                                                        autoFocus
+                                                        className="w-full bg-background border border-primary rounded px-1 py-0.5 text-xs text-foreground focus:outline-hidden"
+                                                        onClick={e => e.stopPropagation()}
+                                                    />
+                                                ) : (
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="truncate text-xs leading-tight" title={session.title}>
+                                                            {session.title}
+                                                        </p>
+                                                        <span className="text-[10px] text-muted-foreground/70 font-normal">
+                                                            {session.messages?.length || 0} msgs • {formatRelativeDate(session.updatedAt)}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity ml-1 shrink-0">
+                                                {!isEditing && (
+                                                    <>
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation()
+                                                                setEditingSessionId(session.id)
+                                                                setEditingTitle(session.title)
+                                                            }}
+                                                            className="rounded p-1 text-muted-foreground hover:text-foreground hover:bg-background/80"
+                                                            title="Rename chat"
+                                                        >
+                                                            <Edit2 className="h-3 w-3" />
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => handleDeleteSession(session.id, e)}
+                                                            className="rounded p-1 text-muted-foreground hover:text-red-600 hover:bg-red-500/10"
+                                                            title="Delete chat"
+                                                        >
+                                                            <Trash2 className="h-3 w-3" />
+                                                        </button>
+                                                    </>
+                                                )}
+                                            </div>
                                         </div>
+                                    )
+                                })
+                            )}
+                        </div>
+                    </aside>
+                )}
+
+                {/* Right / Main Chat Canvas */}
+                <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
+                    <div className="flex-1 overflow-y-auto overscroll-contain p-3 space-y-3">
+                        {messages.length === 0 && (
+                            <div className="flex h-full flex-col items-center justify-center text-center p-2">
+                                <div className="rounded-full bg-primary/10 p-3 ring-1 ring-primary/25 mb-2">
+                                    <Bot className="h-7 w-7 text-primary" />
+                                </div>
+                                <p className="text-sm font-bold text-foreground">Ask Dillon AI</p>
+                                <p className="mt-1 text-xs text-muted-foreground max-w-xs leading-relaxed">
+                                    Your M&A due diligence copilot. Ask about deal risks, valuation multiples, breakeven, or click below for instant answers.
+                                </p>
+                                <div className="mt-3.5 flex flex-wrap justify-center gap-1.5">
+                                    {smartSuggestions.map(suggestion => (
                                         <button
+                                            key={suggestion}
                                             type="button"
-                                            onClick={() => handleRerunWithLiveLlm(msg.id, msg.userPrompt)}
-                                            disabled={msg.isRerunning}
-                                            className="inline-flex items-center gap-1 rounded bg-amber-600/20 hover:bg-amber-600/30 active:bg-amber-600/40 px-2 py-0.5 font-semibold text-[10px] text-amber-950 dark:text-amber-100 transition-colors cursor-pointer disabled:opacity-50"
-                                            title="Bypass local heuristics and run this question against the live cloud AI model"
+                                            onClick={() => { sendMessageText(suggestion) }}
+                                            className="rounded-full border border-primary/20 bg-background/90 px-2.5 py-1 text-[11px] font-medium text-foreground transition-all hover:bg-primary/10 hover:border-primary/50 cursor-pointer shadow-2xs"
                                         >
-                                            {msg.isRerunning ? (
-                                                <>
-                                                    <RotateCcw className="h-3 w-3 animate-spin text-amber-600" />
-                                                    <span>Querying Live AI...</span>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <Sparkles className="h-3 w-3 text-amber-600 dark:text-amber-300" />
-                                                    <span>Run with Live LLM</span>
-                                                </>
-                                            )}
+                                            {suggestion}
                                         </button>
-                                    </div>
-                                )}
-                                {msg.rerunError && (
-                                    <div className="mb-2 rounded border border-red-500/30 bg-red-500/10 px-2 py-1 text-[10px] text-red-700 dark:text-red-300">
-                                        ⚠️ {msg.rerunError}
-                                    </div>
-                                )}
-                                {msg.role === 'assistant' ? renderSimpleMarkdown(msg.content, onNavigateTab) : msg.content}
+                                    ))}
+                                </div>
                             </div>
-                            <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                                <span className="text-[9px] text-muted-foreground/60">{relativeTime(msg.timestamp)}</span>
-                                {msg.role === 'assistant' && (
-                                    <>
-                                        {msg.tier && (
-                                            <span
-                                                className={`inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[9px] font-medium transition-colors ${msg.tier === 'cloud_ai'
-                                                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
-                                                    : msg.tier === 'direct_llm'
-                                                        ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'
-                                                        : 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20'
-                                                    }`}
-                                                title={
-                                                    msg.tier === 'cloud_ai'
-                                                        ? 'Tier 1: Powered by live n8n Cloud LLM Webhook (OpenAI GPT-4o / Claude / Gemini)'
-                                                        : msg.tier === 'direct_llm'
-                                                            ? `Tier 2: Powered directly via user API key (${msg.providerName})`
-                                                            : 'Tier 3: Powered by MergeWorks local deterministic M&A rules (offline fallback)'
-                                                }
-                                            >
-                                                {msg.tier === 'cloud_ai' && '⚡ Tier 1 • Cloud AI'}
-                                                {msg.tier === 'direct_llm' && `⚡ Tier 2 • ${msg.providerName || 'Direct LLM'}`}
-                                                {msg.tier === 'local_heuristics' && '⚙️ Tier 3 • Local M&A Engine'}
-                                            </span>
+                        )}
+
+                        {messages.map(msg => (
+                            <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                <div className="max-w-[88%]">
+                                    <div className={`rounded-lg px-3 py-2 text-xs leading-relaxed shadow-xs ${msg.role === 'user'
+                                        ? 'bg-primary text-primary-foreground whitespace-pre-wrap font-medium'
+                                        : 'bg-muted/90 text-foreground space-y-1.5 border border-border/60'
+                                        }`}>
+                                        {msg.role === 'assistant' && msg.tier === 'local_heuristics' && (
+                                            <div className="mb-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 rounded border border-amber-500/30 bg-amber-500/10 px-2 py-1.5 text-[10.5px] text-amber-900 dark:text-amber-200">
+                                                <div className="flex items-center gap-1 font-medium">
+                                                    <span>⚙️ In-browser instant answer (deterministic engine)</span>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRerunWithLiveLlm(msg.id, msg.userPrompt)}
+                                                    disabled={msg.isRerunning}
+                                                    className="inline-flex items-center gap-1 rounded bg-amber-600/20 hover:bg-amber-600/30 active:bg-amber-600/40 px-2 py-0.5 font-semibold text-[10px] text-amber-950 dark:text-amber-100 transition-colors cursor-pointer disabled:opacity-50"
+                                                    title="Bypass local heuristics and run this question against the live cloud AI model"
+                                                >
+                                                    {msg.isRerunning ? (
+                                                        <>
+                                                            <RotateCcw className="h-3 w-3 animate-spin" />
+                                                            <span>Contacting Cloud AI...</span>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Sparkles className="h-3 w-3" />
+                                                            <span>Rerun with Live LLM</span>
+                                                        </>
+                                                    )}
+                                                </button>
+                                            </div>
                                         )}
-                                        <button
-                                            type="button"
-                                            onClick={() => setRatings(prev => ({ ...prev, [msg.id]: prev[msg.id] === 'up' ? undefined as never : 'up' }))}
-                                            className={`rounded p-0.5 transition-colors cursor-pointer ${ratings[msg.id] === 'up' ? 'text-green-600' : 'text-muted-foreground/40 hover:text-muted-foreground'}`}
-                                            title="Helpful"
-                                            aria-label="Rate this answer helpful"
-                                            aria-pressed={ratings[msg.id] === 'up'}
-                                        >
-                                            <ThumbsUp className="h-3 w-3" />
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setRatings(prev => ({ ...prev, [msg.id]: prev[msg.id] === 'down' ? undefined as never : 'down' }))}
-                                            className={`rounded p-0.5 transition-colors cursor-pointer ${ratings[msg.id] === 'down' ? 'text-red-600' : 'text-muted-foreground/40 hover:text-muted-foreground'}`}
-                                            title="Not helpful"
-                                            aria-label="Rate this answer not helpful"
-                                            aria-pressed={ratings[msg.id] === 'down'}
-                                        >
-                                            <ThumbsDown className="h-3 w-3" />
-                                        </button>
-                                    </>
-                                )}
+                                        {msg.role === 'assistant' && msg.rerunError && (
+                                            <div className="mb-2 rounded border border-red-500/30 bg-red-500/10 px-2 py-1 text-[10.5px] text-red-700 dark:text-red-300">
+                                                {msg.rerunError}
+                                            </div>
+                                        )}
+                                        <MarkdownContent content={msg.content} onNavigateTab={onNavigateTab} />
+                                        {msg.role === 'assistant' && (
+                                            <div className="mt-1 flex items-center justify-between pt-1 text-[10px] text-muted-foreground border-t border-border/40">
+                                                <span>{formatTime(msg.timestamp)}</span>
+                                                <div className="flex items-center gap-1">
+                                                    {msg.tier && (
+                                                        <span
+                                                            className={`rounded px-1.5 py-0.2 font-mono text-[9px] font-semibold ${
+                                                                msg.tier === 'cloud_ai'
+                                                                    ? 'bg-primary/15 text-primary border border-primary/25'
+                                                                    : msg.tier === 'direct_llm'
+                                                                        ? 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20'
+                                                                        : 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20'
+                                                                }`}
+                                                            title={
+                                                                msg.tier === 'cloud_ai'
+                                                                    ? 'Tier 1: Powered by live n8n Cloud LLM Webhook (OpenAI GPT-4o / Claude / Gemini)'
+                                                                    : msg.tier === 'direct_llm'
+                                                                        ? `Tier 2: Powered directly via user API key (${msg.providerName})`
+                                                                        : 'Tier 3: Powered by MergeWorks local deterministic M&A rules (offline fallback)'
+                                                            }
+                                                        >
+                                                            {msg.tier === 'cloud_ai' && '⚡ Tier 1 • Cloud AI'}
+                                                            {msg.tier === 'direct_llm' && `⚡ Tier 2 • ${msg.providerName || 'Direct LLM'}`}
+                                                            {msg.tier === 'local_heuristics' && '⚙️ Tier 3 • Local M&A Engine'}
+                                                        </span>
+                                                    )}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setRatings(prev => ({ ...prev, [msg.id]: prev[msg.id] === 'up' ? undefined as never : 'up' }))}
+                                                        className={`rounded p-0.5 transition-colors cursor-pointer ${ratings[msg.id] === 'up' ? 'text-green-600' : 'text-muted-foreground/40 hover:text-muted-foreground'}`}
+                                                        title="Helpful"
+                                                        aria-label="Rate this answer helpful"
+                                                        aria-pressed={ratings[msg.id] === 'up'}
+                                                    >
+                                                        <ThumbsUp className="h-3 w-3" />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setRatings(prev => ({ ...prev, [msg.id]: prev[msg.id] === 'down' ? undefined as never : 'down' }))}
+                                                        className={`rounded p-0.5 transition-colors cursor-pointer ${ratings[msg.id] === 'down' ? 'text-red-600' : 'text-muted-foreground/40 hover:text-muted-foreground'}`}
+                                                        title="Not helpful"
+                                                        aria-label="Rate this answer not helpful"
+                                                        aria-pressed={ratings[msg.id] === 'down'}
+                                                    >
+                                                        <ThumbsDown className="h-3 w-3" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    </div>
-                ))}
-
-                {!isTyping && suggestedProject && onSuggestProjectSwitch ? (
-                    <div className="rounded-lg border border-primary/25 bg-primary/5 px-3 py-2 text-xs text-foreground">
-                        <p className="font-medium">You mentioned another project.</p>
-                        <p className="mt-1 text-muted-foreground">Switch to {suggestedProject.projectName || suggestedProject.projectId} to chat with that project as the active context.</p>
-                        <div className="mt-2 flex gap-2">
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    onSuggestProjectSwitch(suggestedProject.projectId)
-                                    setSuggestedProject(null)
-                                }}
-                                className="rounded-full bg-primary px-3 py-1 text-[11px] font-medium text-primary-foreground transition-colors hover:opacity-90 cursor-pointer"
-                            >
-                                Switch project
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setSuggestedProject(null)}
-                                className="rounded-full border border-border bg-background px-3 py-1 text-[11px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
-                            >
-                                Stay here
-                            </button>
-                        </div>
-                    </div>
-                ) : null}
-
-                {!isTyping && messages.length > 0 && messages[messages.length - 1].role === 'assistant' && (
-                    <div className="flex flex-wrap gap-1 px-1">
-                        {['Tell me more', 'Where is the scorecard?', 'What are the red flags?'].map(q => (
-                            <button
-                                key={q}
-                                type="button"
-                                onClick={() => sendMessageText(q)}
-                                className="rounded-full border border-border bg-background px-2 py-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
-                            >
-                                {q}
-                            </button>
                         ))}
+
+                        {!isTyping && suggestedProject && onSuggestProjectSwitch ? (
+                            <div className="rounded-lg border border-primary/25 bg-primary/5 px-3 py-2 text-xs text-foreground">
+                                <p className="font-medium">You mentioned another project.</p>
+                                <p className="mt-1 text-muted-foreground">Switch to {suggestedProject.projectName || suggestedProject.projectId} to chat with that project as the active context.</p>
+                                <div className="mt-2 flex gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            onSuggestProjectSwitch(suggestedProject.projectId)
+                                            setSuggestedProject(null)
+                                        }}
+                                        className="rounded-full bg-primary px-3 py-1 text-[11px] font-medium text-primary-foreground transition-colors hover:opacity-90 cursor-pointer"
+                                    >
+                                        Switch project
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setSuggestedProject(null)}
+                                        className="rounded-full border border-border bg-background px-3 py-1 text-[11px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
+                                    >
+                                        Stay here
+                                    </button>
+                                </div>
+                            </div>
+                        ) : null}
+
+                        {!isTyping && messages.length > 0 && messages[messages.length - 1].role === 'assistant' && (
+                            <div className="flex flex-wrap gap-1 px-1">
+                                {['Tell me more', 'Where is the scorecard?', 'What are the red flags?'].map(q => (
+                                    <button
+                                        key={q}
+                                        type="button"
+                                        onClick={() => sendMessageText(q)}
+                                        className="rounded-full border border-border bg-background px-2 py-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
+                                    >
+                                        {q}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
+                        {isTyping && (
+                            <div className="flex justify-start">
+                                <div className="rounded-lg bg-muted px-3 py-2 border border-border/60">
+                                    <span className="flex items-center gap-2">
+                                        <span className="flex gap-1">
+                                            <span className="h-2 w-2 animate-bounce rounded-full bg-primary/70 [animation-delay:0ms]" />
+                                            <span className="h-2 w-2 animate-bounce rounded-full bg-primary/70 [animation-delay:150ms]" />
+                                            <span className="h-2 w-2 animate-bounce rounded-full bg-primary/70 [animation-delay:300ms]" />
+                                        </span>
+                                        {typingElapsed > 2 && (
+                                            <span className="text-[10px] text-muted-foreground font-mono">{typingElapsed}s</span>
+                                        )}
+                                    </span>
+                                </div>
+                            </div>
+                        )}
+
+                        <div ref={messagesEndRef} />
                     </div>
-                )}
 
-                {isTyping && (
-                    <div className="flex justify-start">
-                        <div className="rounded-lg bg-muted px-3 py-2 border border-border/60">
-                            <span className="flex items-center gap-2">
-                                <span className="flex gap-1">
-                                    <span className="h-2 w-2 animate-bounce rounded-full bg-primary/70 [animation-delay:0ms]" />
-                                    <span className="h-2 w-2 animate-bounce rounded-full bg-primary/70 [animation-delay:150ms]" />
-                                    <span className="h-2 w-2 animate-bounce rounded-full bg-primary/70 [animation-delay:300ms]" />
-                                </span>
-                                {typingElapsed > 2 && (
-                                    <span className="text-[10px] text-muted-foreground font-mono">{typingElapsed}s</span>
-                                )}
-                            </span>
-                        </div>
-                    </div>
-                )}
-
-                <div ref={messagesEndRef} />
-            </div>
-
-            <div
-                onPointerDown={handleHeaderPointerDown}
-                onPointerMove={handleHeaderPointerMove}
-                onPointerUp={handleHeaderPointerUp}
-                className="relative border-t border-border p-3 pr-8 bg-background/60 select-none cursor-move"
-                title="Click and drag to move window"
-            >
-                <div className="flex items-end gap-2">
-                    <Textarea
-                        ref={textareaRef}
-                        value={input}
-                        onChange={e => setInput(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        placeholder="Ask about this deal, M&A terms, or where a feature is..."
-                        aria-label="Ask about this deal"
-                        className="min-h-[38px] max-h-[100px] resize-none text-xs"
-                        rows={1}
-                    />
-                    <Button
-                        size="icon"
-                        onClick={handleSend}
-                        disabled={!input.trim()}
-                        className="h-[38px] w-[38px] shrink-0 cursor-pointer"
-                        aria-label="Send message"
+                    <div
+                        onPointerDown={handleHeaderPointerDown}
+                        onPointerMove={handleHeaderPointerMove}
+                        onPointerUp={handleHeaderPointerUp}
+                        className="relative border-t border-border p-3 pr-8 bg-background/60 select-none cursor-move"
+                        title="Click and drag to move window"
                     >
-                        <Send className="h-4 w-4" />
-                    </Button>
+                        {isDebateModeActive && (
+                            <div className="mb-2 flex items-center justify-between rounded-md bg-purple-500/15 px-2.5 py-1 text-[11px] font-medium text-purple-900 dark:text-purple-200 border border-purple-500/30 shadow-2xs">
+                                <span className="flex items-center gap-1.5">
+                                    <span>⚔️</span>
+                                    <span><strong>Multi-Agent IC Debate Mode</strong> active (Bull, Bear & Arbiter Council)</span>
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsDebateModeActive(false)}
+                                    className="text-[10px] font-bold text-purple-700 dark:text-purple-300 hover:underline cursor-pointer"
+                                >
+                                    Turn Off
+                                </button>
+                            </div>
+                        )}
+                        <div className="flex items-end gap-2">
+                            <Textarea
+                                ref={textareaRef}
+                                value={input}
+                                onChange={e => setInput(e.target.value)}
+                                onKeyDown={handleKeyDown}
+                                placeholder={isDebateModeActive ? "Prompt the IC Council (e.g. 'Should we acquire this business at asking price?')..." : "Ask about this deal, M&A terms, or where a feature is..."}
+                                aria-label="Ask about this deal"
+                                className="min-h-[38px] max-h-[100px] resize-none text-xs"
+                                rows={1}
+                            />
+                            <Button
+                                size="icon"
+                                onClick={handleSend}
+                                disabled={!input.trim()}
+                                className="h-[38px] w-[38px] shrink-0 cursor-pointer"
+                                aria-label="Send message"
+                            >
+                                <Send className="h-4 w-4" />
+                            </Button>
+                        </div>
+                        <div className="mt-1.5 flex items-center justify-between text-[9px] text-muted-foreground">
+                            <span className="flex items-center gap-1.5">
+                                <span>Press <kbd className="font-mono bg-muted px-1 rounded">Enter</kbd></span>
+                                <span className="text-muted-foreground/30">•</span>
+                                <span className="cursor-help text-muted-foreground/80 hover:text-foreground" title="3-Tier AI: Tier 1 Cloud AI → Tier 2 Direct Provider API → Tier 3 Local M&A Engine">3-Tier AI Routing</span>
+                            </span>
+                            <span>{panelSize.width} × {panelSize.height}</span>
+                        </div>
+                        <button
+                            type="button"
+                            onPointerDown={(e) => handleResizeStart('bottom-right', e)}
+                            className="absolute bottom-1.5 right-1.5 flex h-5 w-5 items-end justify-end rounded-sm text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground cursor-nwse-resize z-30"
+                            title="Resize chat panel"
+                            aria-label="Resize chat panel from bottom-right corner"
+                        >
+                            <span className="font-mono text-[11px] leading-none">⤡</span>
+                        </button>
+                    </div>
                 </div>
-                <div className="mt-1.5 flex items-center justify-between text-[9px] text-muted-foreground">
-                    <span className="flex items-center gap-1.5">
-                        <span>Press <kbd className="font-mono bg-muted px-1 rounded">Enter</kbd></span>
-                        <span className="text-muted-foreground/30">•</span>
-                        <span className="cursor-help text-muted-foreground/80 hover:text-foreground" title="3-Tier AI: Tier 1 Cloud AI → Tier 2 Direct Provider API → Tier 3 Local M&A Engine">3-Tier AI Routing</span>
-                    </span>
-                    <span>{panelSize.width} × {panelSize.height}</span>
-                </div>
-                <button
-                    type="button"
-                    onPointerDown={(e) => handleResizeStart('bottom-right', e)}
-                    className="absolute bottom-1.5 right-1.5 flex h-5 w-5 items-end justify-end rounded-sm text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground cursor-nwse-resize z-30"
-                    title="Resize chat panel"
-                    aria-label="Resize chat panel from bottom-right corner"
-                >
-                    <span className="font-mono text-[11px] leading-none">⤡</span>
-                </button>
             </div>
 
             {/* 8-Direction Resizing Border & Corner Handles */}
