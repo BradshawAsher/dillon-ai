@@ -3064,10 +3064,10 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                                                 {msg.rerunError}
                                             </div>
                                         )}
-                                        <MarkdownContent content={msg.content} onNavigateTab={onNavigateTab} />
+                                        {msg.role === 'assistant' ? renderSimpleMarkdown(msg.content, onNavigateTab) : msg.content}
                                         {msg.role === 'assistant' && (
                                             <div className="mt-1 flex items-center justify-between pt-1 text-[10px] text-muted-foreground border-t border-border/40">
-                                                <span>{formatTime(msg.timestamp)}</span>
+                                                <span>{relativeTime(msg.timestamp)}</span>
                                                 <div className="flex items-center gap-1">
                                                     {msg.tier && (
                                                         <span
