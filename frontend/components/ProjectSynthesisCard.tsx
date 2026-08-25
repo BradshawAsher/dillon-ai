@@ -391,12 +391,16 @@ export default function ProjectSynthesisCard({
         .slice(0, 4)
     const currentProjectName = projectNameById.get(normalizedProjectId) ?? normalizedProjectId ?? 'this project'
 
+    const activeSynthStatus = (rawVisibleSyntheses[0]?.projectStatus || '').trim().toLowerCase()
+    const isSynthStoppedOrFailed = ['stopped', 'cancelled', 'canceled', 'failed', 'error', 'synthesis_refresh_failed', 'synthesis_blocked', 'idle'].includes(activeSynthStatus)
+    const isActivelySynthesizingStatus = ['processing', 'pending', 'queued', 'running', 'awaiting_synthesis', 'started'].includes(activeSynthStatus)
+
     const hasCompletedDocs = projectDocuments.some((d) => ['completed', 'approved'].includes(d.status.trim().toLowerCase()))
     const hasRealSynthesis = rawVisibleSyntheses.length > 0 && Boolean(
         rawVisibleSyntheses[0]?.finalJudgmentSummary?.trim() ||
         (rawVisibleSyntheses[0]?.finalRecommendation?.trim() && !rawVisibleSyntheses[0]?.finalRecommendation?.toUpperCase().includes('SYNTHESIS PENDING'))
     )
-    const isSynthActive = Boolean(runningSynthesis || synthesisPending || documentAnalysisPending || (!hasRealSynthesis && hasCompletedDocs))
+    const isSynthActive = Boolean(!isSynthStoppedOrFailed && (runningSynthesis || (synthesisPending && !isSynthStoppedOrFailed) || isActivelySynthesizingStatus))
 
     useEffect(() => {
         if (propSynthesisElapsedSeconds !== undefined && propSynthesisElapsedSeconds !== null) return
@@ -836,8 +840,38 @@ export default function ProjectSynthesisCard({
                     )
                 })() : null}
 
+                {/* 2.5 Stopped Synthesis Alert Banner */}
+                {activeSynthStatus === 'stopped' ? (
+                    <div role="alert" className="rounded-xl border-2 border-amber-500/50 bg-amber-500/10 p-4 text-sm text-foreground shadow-sm animate-in fade-in duration-200">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div className="flex items-start gap-3">
+                                <Clock className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+                                <div className="space-y-1">
+                                    <p className="font-bold text-amber-900 dark:text-amber-100 text-base">
+                                        ⏸️ Synthesis Stopped by User
+                                    </p>
+                                    <p className="text-sm text-amber-950/80 dark:text-amber-200/80 leading-relaxed">
+                                        Synthesis execution for this project was manually stopped. All {completedProjectDocumentsWithAnalysis} completed document extractions are preserved in the database.
+                                    </p>
+                                </div>
+                            </div>
+                            {onRunSynthesis ? (
+                                <Button
+                                    type="button"
+                                    onClick={onRunSynthesis}
+                                    disabled={runningSynthesis || documentAnalysisPending}
+                                    className="gap-2 shrink-0 self-start sm:self-center"
+                                >
+                                    <RefreshCw className={runningSynthesis ? 'animate-spin' : undefined} />
+                                    {runningSynthesis ? 'Starting synthesis…' : 'Run Synthesis'}
+                                </Button>
+                            ) : null}
+                        </div>
+                    </div>
+                ) : null}
+
                 {/* 3. Synthesizer Status Card */}
-                {(!visibleSyntheses[0]?.finalRecommendation && !visibleSyntheses[0]?.finalJudgmentSummary && visibleSyntheses[0]?.projectStatus !== 'synthesized') && projectDocuments.length > 0 ? (
+                {activeSynthStatus !== 'stopped' && (!visibleSyntheses[0]?.finalRecommendation && !visibleSyntheses[0]?.finalJudgmentSummary && visibleSyntheses[0]?.projectStatus !== 'synthesized') && projectDocuments.length > 0 ? (
                     completedProjectDocumentsWithAnalysis === 0 ? (
                         <div role="alert" className="rounded-xl border-2 border-warning/60 bg-warning/10 p-4 text-sm text-foreground shadow-sm">
                             <div className="flex items-start gap-3">

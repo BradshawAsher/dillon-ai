@@ -116,18 +116,22 @@ export default function ProjectIntakeCard({
     onSubmit,
 }: ProjectIntakeCardProps) {
     const [showNoKeyPrompt, setShowNoKeyPrompt] = useState(false)
+    const [showDestinationModal, setShowDestinationModal] = useState(false)
+    const [pendingFiles, setPendingFiles] = useState<File[]>([])
     const [fileRequiredWarning, setFileRequiredWarning] = useState(false)
 
     useEffect(() => {
-        if (!showNoKeyPrompt) return
+        if (!showNoKeyPrompt && !showDestinationModal) return
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
                 setShowNoKeyPrompt(false)
+                setShowDestinationModal(false)
+                setPendingFiles([])
             }
         }
         window.addEventListener('keydown', handleKeyDown)
         return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [showNoKeyPrompt])
+    }, [showNoKeyPrompt, showDestinationModal])
 
     useEffect(() => {
         if (typeof window === 'undefined') return
@@ -190,6 +194,24 @@ export default function ProjectIntakeCard({
         }
         setFileRequiredWarning(false)
         onSubmit('production')
+    }
+
+    const targetProject = useMemo(() => {
+        return availableProjects.find((p) => p.key === selectedProjectKey) || null
+    }, [availableProjects, selectedProjectKey])
+
+    const handleFileDropSelect = (files: File[]) => {
+        setFileRequiredWarning(false)
+        if (!files || files.length === 0) return
+
+        // If an existing project is actively selected, confirm destination with the user
+        if (selectedProjectKey !== 'new') {
+            setPendingFiles(files)
+            setShowDestinationModal(true)
+            return
+        }
+
+        onFileSelect(files)
     }
 
     const detectedExistingMatch = useMemo(() => {
@@ -406,7 +428,7 @@ export default function ProjectIntakeCard({
                     <p className="mt-1 text-sm text-muted-foreground">
                         Each queued batch uses the same project metadata for every selected file, so you can add multiple related documents at once and still keep the project context consistent.
                     </p>
-                    <FileDropzone selectedFiles={selectedFiles} onFileSelect={(files) => { setFileRequiredWarning(false); onFileSelect(files) }} className="mt-4" />
+                    <FileDropzone selectedFiles={selectedFiles} onFileSelect={handleFileDropSelect} className="mt-4" />
                 </div>
 
                 {detectedExistingMatch && selectedProjectKey === 'new' && (
@@ -693,6 +715,110 @@ export default function ProjectIntakeCard({
                                 >
                                     <Key className="h-3.5 w-3.5" />
                                     Enter Custom Key
+                                </Button>
+                            </CardFooter>
+                        </Card>
+                    </div>
+                )}
+
+                {showDestinationModal && pendingFiles.length > 0 && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in-0 duration-200">
+                        <Card className="relative w-full max-w-lg shadow-2xl border-primary/30 bg-card text-card-foreground">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setShowDestinationModal(false)
+                                    setPendingFiles([])
+                                }}
+                                className="absolute right-4 top-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:outline-none cursor-pointer"
+                            >
+                                <X className="h-4 w-4 text-muted-foreground" />
+                                <span className="sr-only">Close</span>
+                            </button>
+                            <CardHeader className="pb-3 border-b border-border/60">
+                                <div className="flex items-center gap-2.5">
+                                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary border border-primary/20">
+                                        <FolderKanban className="h-5 w-5" />
+                                    </div>
+                                    <div>
+                                        <CardTitle className="text-lg font-bold">Confirm Project Destination</CardTitle>
+                                        <CardDescription className="text-xs">
+                                            Please confirm whether you are adding files to an existing deal or starting a new project.
+                                        </CardDescription>
+                                    </div>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="space-y-4 pt-4 text-sm text-foreground">
+                                <div className="rounded-lg border border-border bg-muted/30 p-3.5 space-y-2 text-xs">
+                                    <div className="flex items-center justify-between text-muted-foreground">
+                                        <span>Active Project Selected:</span>
+                                        <Badge variant="outline" className="font-semibold text-foreground border-primary/40 bg-primary/5">
+                                            {targetProject?.label || targetProject?.name || dealName || selectedProjectKey}
+                                        </Badge>
+                                    </div>
+                                    <div className="flex items-center justify-between text-muted-foreground">
+                                        <span>New Files Selected:</span>
+                                        <span className="font-medium text-foreground">{pendingFiles.length} document{pendingFiles.length === 1 ? '' : 's'}</span>
+                                    </div>
+                                    <div className="pt-1.5 border-t border-border/50 max-h-28 overflow-y-auto space-y-1">
+                                        {pendingFiles.slice(0, 4).map((f, idx) => (
+                                            <p key={idx} className="truncate text-2xs text-muted-foreground flex items-center gap-1.5">
+                                                <span className="text-primary font-mono">•</span>
+                                                <span className="font-medium text-foreground">{f.name}</span>
+                                                <span className="text-muted-foreground font-mono">({Math.round(f.size / 1024)} KB)</span>
+                                            </p>
+                                        ))}
+                                        {pendingFiles.length > 4 && (
+                                            <p className="text-2xs text-muted-foreground italic pl-3">
+                                                + {pendingFiles.length - 4} more files
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <p className="text-xs text-muted-foreground leading-relaxed">
+                                    Would you like to merge these files into the existing project <strong>{targetProject?.label || targetProject?.name || dealName || selectedProjectKey}</strong> and re-trigger synthesis, or start a <strong>New Standalone Project</strong>?
+                                </p>
+                            </CardContent>
+                            <CardFooter className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 border-t border-border pt-4 bg-muted/10">
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                        setShowDestinationModal(false)
+                                        setPendingFiles([])
+                                    }}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className="border-primary/40 hover:bg-primary/10 gap-1.5 font-semibold text-xs cursor-pointer"
+                                    onClick={() => {
+                                        onCreateProject()
+                                        onFileSelect(pendingFiles)
+                                        setShowDestinationModal(false)
+                                        setPendingFiles([])
+                                    }}
+                                >
+                                    <Plus className="h-3.5 w-3.5" />
+                                    Create as New Project
+                                </Button>
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs gap-1.5 shadow-sm cursor-pointer"
+                                    onClick={() => {
+                                        onFileSelect(pendingFiles)
+                                        setShowDestinationModal(false)
+                                        setPendingFiles([])
+                                    }}
+                                >
+                                    <FolderKanban className="h-3.5 w-3.5" />
+                                    Add & Merge into {targetProject?.name || dealName || selectedProjectKey}
                                 </Button>
                             </CardFooter>
                         </Card>

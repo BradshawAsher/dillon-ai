@@ -123,7 +123,7 @@ import {
 } from '../utils/projectWorkspace'
 import { sumMeasuredCost } from '../utils/costModel'
 import { isActiveSubmissionStatus, type SubmissionHistoryItem } from '../utils/submissionHistory'
-import { isOwnedByUser, claimProject } from '../utils/projectOwnership'
+import { isOwnedByUser, claimProject, getProjectOwner } from '../utils/projectOwnership'
 import {
     playCompletionSound,
     playErrorSound,
@@ -936,9 +936,14 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
     const submissionHistory = useMemo(() => {
         const user = getStoredAuth()
-        const base = (!isolationModeEnabled || !user || user.role === 'admin')
+        const base = (!isolationModeEnabled || (user && user.role === 'admin' && !isolationModeEnabled))
             ? rawSubmissionHistory
-            : rawSubmissionHistory.filter((row: SubmissionHistoryItem) => isOwnedByUser(getProjectKey(row), user.email))
+            : rawSubmissionHistory.filter((row: SubmissionHistoryItem) => {
+                const pk = getProjectKey(row)
+                if (user?.email) return isOwnedByUser(pk, user.email)
+                const owner = getProjectOwner(pk)
+                return !owner || owner === 'guest' || owner === 'localdev@mergeworks.io'
+            })
 
         if (walkthrough.isActive || simulatedWalkthroughBatch) {
             const other = base.filter((r: any) => r.projectId !== 'apex-industrial-tech' && r.projectId !== 'cascadia-climate-services')
@@ -949,9 +954,14 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
     const visibleProjectSyntheses = useMemo(() => {
         const user = getStoredAuth()
-        const base = (!isolationModeEnabled || !user || user.role === 'admin')
+        const base = (!isolationModeEnabled || (user && user.role === 'admin' && !isolationModeEnabled))
             ? rawProjectSyntheses
-            : rawProjectSyntheses.filter((s: any) => isOwnedByUser(s.projectId || '', user.email))
+            : rawProjectSyntheses.filter((s: any) => {
+                const pk = s.projectId || ''
+                if (user?.email) return isOwnedByUser(pk, user.email)
+                const owner = getProjectOwner(pk)
+                return !owner || owner === 'guest' || owner === 'localdev@mergeworks.io'
+            })
 
         if (walkthrough.isActive || simulatedWalkthroughBatch) {
             const other = base.filter((s: any) => s.projectId !== 'apex-industrial-tech' && s.projectId !== 'cascadia-climate-services')
@@ -1866,7 +1876,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         if (activeProjectSynthesisSucceeded) return false
 
         if (!activeProjectSynthesis) {
-            return true
+            return false
         }
 
         const synthStatus = (activeProjectSynthesis.projectStatus || '').trim().toLowerCase()
@@ -1874,8 +1884,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             return true
         }
 
-        const isErrorStatus = ['failed', 'error'].includes(synthStatus)
-        return !isErrorStatus && !activeProjectSynthesisSucceeded
+        return false
     }, [activeProjectDocuments, activeProjectSynthesis, activeProjectSynthesisSucceeded, isCurrentProjectExtractingDocs, isExampleMode, isManualSynthesisRunning])
 
     const isCurrentProjectAwaitingSynthesis = useMemo(() => {
@@ -2097,9 +2106,10 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         setSelectedBatchDocIndex((prev) => (prev !== targetIdx ? targetIdx : prev))
     }, [activeProjectDocuments, latestBatchRows, userHasNavigatedBatchDocs, pendingTargetDocFileName])
 
-    const safeBatchDocIndex = Math.min(Math.max(0, selectedBatchDocIndex), Math.max(0, latestBatchRows.length - 1))
+    const activeDocList = activeProjectDocuments.length > 0 ? activeProjectDocuments : latestBatchRows
+    const safeBatchDocIndex = Math.min(Math.max(0, selectedBatchDocIndex), Math.max(0, activeDocList.length - 1))
 
-    const displayedSubmissionRow = latestBatchRows[safeBatchDocIndex] ?? activeProjectDocuments[0] ?? submissionHistory[0]
+    const displayedSubmissionRow = activeDocList[safeBatchDocIndex] ?? activeProjectDocuments[0] ?? submissionHistory[0]
     const liveSubmittedRow = displayedSubmissionRow
 
     const webhookResponse = useMemo(() => {
@@ -2712,6 +2722,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         if (!window.confirm('Stop the current synthesis for this project? This marks the synthesis as stopped so you can retry or re-run it later.')) return
         setIsStoppingSynthesis(true)
         setIsManualSynthesisRunning(false)
+        clearSynthesisStartTime(activeProjectId)
         try {
             const response = await fetch('/api/diligence/stop-synthesis', {
                 method: 'POST',
@@ -2725,6 +2736,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         } catch (err) {
             setBatchSubmissionMessage(err instanceof Error ? err.message : 'Unable to stop synthesis')
         } finally {
+            clearSynthesisStartTime(activeProjectId)
             setIsStoppingSynthesis(false)
         }
     }
@@ -3071,6 +3083,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
             <main className="mx-auto max-w-[1440px] space-y-8 px-4 py-4 sm:px-6 sm:py-8 lg:px-8">
                 <div id="upload-section" className="scroll-mt-6" />
+                <div id="project-intake" className="scroll-mt-6" />
                 <ProjectIntakeCard
                     dealName={dealName}
                     askingPrice={askingPrice}
@@ -3976,6 +3989,13 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                     onOpenProjectsPanel={() => setIsProjectsPanelOpen(true)}
                     projectsCount={projectSummaries.length}
                     onNavigateTab={(tab, anchorId) => {
+                        if (anchorId === 'project-intake' || anchorId === 'upload-section' || (tab as string) === 'intake' || (tab as string) === 'upload') {
+                            const el = document.getElementById('project-intake') || document.getElementById('upload-section')
+                            if (el) {
+                                el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                            }
+                            return
+                        }
                         setActiveWorkspaceTab(tab)
                         if (anchorId) {
                             setTimeout(() => {
