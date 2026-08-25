@@ -4,9 +4,9 @@ import { queryClient, diligenceQueryKeys, invalidateProjectDiligence } from '../
 describe('TanStack Query Diligence Integration', () => {
   it('configures QueryClient with enterprise defaults', () => {
     const defaultOptions = queryClient.getDefaultOptions()
-    expect(defaultOptions.queries?.staleTime).toBe(10_000)
-    expect(defaultOptions.queries?.gcTime).toBe(300_000)
-    expect(defaultOptions.queries?.refetchOnWindowFocus).toBe(true)
+    expect(defaultOptions.queries?.staleTime).toBe(60_000)
+    expect(defaultOptions.queries?.gcTime).toBe(600_000)
+    expect(defaultOptions.queries?.refetchOnWindowFocus).toBe(false)
     expect(defaultOptions.queries?.retry).toBe(2)
   })
 

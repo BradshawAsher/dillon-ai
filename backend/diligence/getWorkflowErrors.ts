@@ -16,11 +16,13 @@ export default async function getWorkflowErrors(req: {
   params: { environment?: 'production' | 'test' }
   user: User
 }): Promise<WorkflowErrorItem[]> {
+  const errorColumns = 'id, occurred_at, workflow_id, workflow_name, execution_id, failed_node, error_message, last_node_executed, severity'
+
   const { data: rows, error } = await supabase
     .from('workflow_errors')
-    .select('*')
+    .select(errorColumns)
     .order('created_at', { ascending: false })
-    .limit(200)
+    .limit(50)
 
   if (error) throw new Error(`Supabase read failed: ${error.message}`)
   if (!rows) return []

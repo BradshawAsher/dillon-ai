@@ -5,11 +5,23 @@ type Params = { projectId?: string }
 export default async function getDealModels(req: { params: Params; user: User }) {
   const projectId = req.params.projectId?.trim() ?? ''
 
-  let query = supabase.from('deal_models').select('*')
+  const dealModelColumns = `
+    project_id, asking_price, purchase_price, debt_assumed, cash_acquired,
+    working_capital_requirement, transaction_fees, hold_period_years, tax_rate,
+    closing_costs, maintenance_capex, exit_multiple, exit_costs,
+    equity_contribution_percent, interest_rate, amortization_years,
+    seller_note_amount, bear_revenue_growth, base_revenue_growth, bull_revenue_growth,
+    bear_ebitda_margin, base_ebitda_margin, bull_ebitda_margin,
+    bear_exit_multiple, base_exit_multiple, bull_exit_multiple,
+    revenue_multiple, ebitda_multiple, asset_haircut_percent,
+    documented_facts_json, documented_facts_status, model_updated_at, model_updated_by
+  `
+
+  let query = supabase.from('deal_models').select(dealModelColumns)
   if (projectId) {
     query = query.eq('project_id', projectId)
   }
-  query = query.order('updated_at', { ascending: false }).limit(100)
+  query = query.order('updated_at', { ascending: false }).limit(projectId ? 10 : 50)
 
   const { data: rows, error } = await query
   if (error) throw new Error(`Supabase read failed: ${error.message}`)

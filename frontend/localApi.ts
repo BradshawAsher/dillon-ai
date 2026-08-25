@@ -60,8 +60,10 @@ async function handleRequest(
     }
 
     if (route === '/eval-runs' && req.method === 'GET') {
+        const full = requestUrl.searchParams.get('full') === 'true'
+        const limit = requestUrl.searchParams.get('limit') ?? undefined
         const mod = await server.ssrLoadModule(backendModuleUrl('getEvalRuns.ts'))
-        const rows: unknown = await mod.default()
+        const rows: unknown = await mod.default({ params: { full, limit } })
         res.setHeader('Content-Type', 'application/json')
         res.end(JSON.stringify(rows))
         return

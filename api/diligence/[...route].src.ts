@@ -48,6 +48,22 @@ function sendJson(req: ApiRequest, res: ServerResponse, status: number, body: un
     res.end(jsonString)
 }
 
+const memCache = new Map<string, { data: unknown; expiresAt: number }>()
+
+async function withMemCache<T>(key: string, fn: () => Promise<T>, ttlMs = 8_000): Promise<T> {
+    const cached = memCache.get(key)
+    if (cached && Date.now() < cached.expiresAt) {
+        return cached.data as T
+    }
+    const data = await fn()
+    memCache.set(key, { data, expiresAt: Date.now() + ttlMs })
+    return data
+}
+
+function invalidateMemCache() {
+    memCache.clear()
+}
+
 export default async function handler(req: ApiRequest, res: ServerResponse) {
     const requestUrl = new URL(req.url ?? '/', 'https://dashboard.local')
     const route = requestUrl.pathname.replace(/^\/api\/diligence\/?/, '')
@@ -69,51 +85,67 @@ export default async function handler(req: ApiRequest, res: ServerResponse) {
         const user = userFromHeaders(req.headers)
 
         if (route === 'eval-runs' && req.method === 'GET') {
-            sendJson(req, res, 200, await getEvalRuns(), 'public, s-maxage=60, stale-while-revalidate=300')
+            const full = requestUrl.searchParams.get('full') === 'true'
+            const limitNum = requestUrl.searchParams.get('limit') ?? undefined
+            const data = await withMemCache(`eval-runs-${full}-${limitNum ?? 'default'}`, () => getEvalRuns({ params: { full, limit: limitNum } }), 60_000)
+            sendJson(req, res, 200, data, 'public, s-maxage=120, stale-while-revalidate=600')
             return
         }
         if (route === 'history' && req.method === 'GET') {
             const projectId = requestUrl.searchParams.get('projectId') ?? undefined
             const limitNum = requestUrl.searchParams.get('limit') ?? undefined
             const full = requestUrl.searchParams.get('full') === 'true'
-            sendJson(req, res, 200, await getSubmissionHistory({ params: { environment, projectId, limit: limitNum, full }, user }), 'private, max-age=5, stale-while-revalidate=30')
+            const cacheKey = `history-${environment}-${projectId ?? 'all'}-${full}-${limitNum ?? 'default'}`
+            const data = await withMemCache(cacheKey, () => getSubmissionHistory({ params: { environment, projectId, limit: limitNum, full }, user }), 6_000)
+            sendJson(req, res, 200, data, 'public, s-maxage=10, stale-while-revalidate=60')
             return
         }
         if (route === 'workflow-errors' && req.method === 'GET') {
-            sendJson(req, res, 200, await getWorkflowErrors({ params: { environment }, user }), 'private, max-age=10, stale-while-revalidate=30')
+            const data = await withMemCache(`workflow-errors-${environment}`, () => getWorkflowErrors({ params: { environment }, user }), 15_000)
+            sendJson(req, res, 200, data, 'public, s-maxage=15, stale-while-revalidate=60')
             return
         }
         if (route === 'synthesis' && req.method === 'GET') {
             const projectId = requestUrl.searchParams.get('projectId') ?? undefined
             const limitNum = requestUrl.searchParams.get('limit') ?? undefined
-            sendJson(req, res, 200, await getProjectSynthesis({ params: { environment, projectId, limit: limitNum }, user }), 'private, max-age=5, stale-while-revalidate=30')
+            const cacheKey = `synthesis-${environment}-${projectId ?? 'all'}-${limitNum ?? 'default'}`
+            const data = await withMemCache(cacheKey, () => getProjectSynthesis({ params: { environment, projectId, limit: limitNum }, user }), 6_000)
+            sendJson(req, res, 200, data, 'public, s-maxage=10, stale-while-revalidate=60')
             return
         }
         if (route === 'kpis' && req.method === 'GET') {
             const projectId = requestUrl.searchParams.get('projectId') ?? undefined
-            sendJson(req, res, 200, await getDiligenceKpis({ params: { environment, projectId }, user }), 'private, max-age=5, stale-while-revalidate=30')
+            const cacheKey = `kpis-${environment}-${projectId ?? 'all'}`
+            const data = await withMemCache(cacheKey, () => getDiligenceKpis({ params: { environment, projectId }, user }), 10_000)
+            sendJson(req, res, 200, data, 'public, s-maxage=15, stale-while-revalidate=60')
             return
         }
         if (route === 'deal-models' && req.method === 'GET') {
-            sendJson(req, res, 200, await getDealModels({ params: { projectId: requestUrl.searchParams.get('projectId') ?? '' }, user }))
+            const projectId = requestUrl.searchParams.get('projectId') ?? ''
+            const data = await withMemCache(`deal-models-${projectId}`, () => getDealModels({ params: { projectId }, user }), 6_000)
+            sendJson(req, res, 200, data, 'public, s-maxage=10, stale-while-revalidate=60')
             return
         }
         if (route === 'deal-models' && req.method === 'POST') {
+            invalidateMemCache()
             const params = await readJsonBody(req) as Parameters<typeof saveDealModel>[0]['params']
             sendJson(req, res, 200, await saveDealModel({ params, user }))
             return
         }
         if (route === 'project-action-tracker' && req.method === 'GET') {
             const projectId = requestUrl.searchParams.get('projectId') ?? ''
-            sendJson(req, res, 200, await getProjectActionTracker({ params: { projectId }, user }))
+            const data = await withMemCache(`action-tracker-${projectId}`, () => getProjectActionTracker({ params: { projectId }, user }), 6_000)
+            sendJson(req, res, 200, data, 'public, s-maxage=10, stale-while-revalidate=60')
             return
         }
         if (route === 'project-action-tracker' && req.method === 'POST') {
+            invalidateMemCache()
             const params = await readJsonBody(req) as Parameters<typeof saveProjectActionTracker>[0]['params']
             sendJson(req, res, 200, await saveProjectActionTracker({ params, user }))
             return
         }
         if (route === 'submission-consideration' && req.method === 'POST') {
+            invalidateMemCache()
             const params = await readJsonBody(req) as Parameters<typeof updateSubmissionRow>[0]['params']
             sendJson(req, res, 200, await updateSubmissionRow({ params, user }))
             return
@@ -124,21 +156,25 @@ export default async function handler(req: ApiRequest, res: ServerResponse) {
             return
         }
         if (route === 'submit' && req.method === 'POST') {
+            invalidateMemCache()
             const params = await readJsonBody(req) as Parameters<typeof submitDealPacket>[0]['params']
             sendJson(req, res, 200, await submitDealPacket({ params, user }))
             return
         }
         if (route === 'retry-failed-document' && req.method === 'POST') {
+            invalidateMemCache()
             const params = await readJsonBody(req) as Parameters<typeof retryFailedDocument>[0]['params']
             sendJson(req, res, 202, await retryFailedDocument({ params, user }))
             return
         }
         if (route === 'stop-batch' && req.method === 'POST') {
+            invalidateMemCache()
             const params = await readJsonBody(req) as Parameters<typeof stopBatchSubmission>[0]['params']
             sendJson(req, res, 200, await stopBatchSubmission({ params, user }))
             return
         }
         if (route === 'stop-synthesis' && req.method === 'POST') {
+            invalidateMemCache()
             const params = await readJsonBody(req) as Parameters<typeof stopProjectSynthesis>[0]['params']
             sendJson(req, res, 200, await stopProjectSynthesis({ params, user }))
             return
