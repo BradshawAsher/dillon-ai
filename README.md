@@ -23,7 +23,14 @@ The Financial Due Diligence Agent automates two core M&A workflow stages (see [`
 - **[Dual Core Agent Capabilities (`PURPOSE.md`)](PURPOSE.md)** — Pre-LOI Valuation Discovery & Post-LOI Deal Negotiation frameworks.
 - **[Deterministic Math Verification (`DETERMINISTIC_MATH_CHECKS.md`)](DETERMINISTIC_MATH_CHECKS.md)** — Zero-hallucination accounting verification rules.
 
-## Current Architecture & Data Flow
+## Distributed Multi-Agent Architecture & Data Flow
+
+Dillon AI is engineered as an event-driven, 5-tier multi-agent pipeline:
+1. **Tier 1 (Parallel Extraction Workers)**: Multi-model asynchronous document parsing (`OpenAI 5.6 Terra` / `Sol`).
+2. **Tier 2 (Deterministic Neurosymbolic Engine)**: Arithmetic integrity and balance sheet verification in native code.
+3. **Tier 3 (State Watchdog & Idempotency Orchestrator)**: Coordinated batch progression and self-healing cron recovery.
+4. **Tier 4 (Synthesis Consolidator Agent)**: Cross-document contradiction arbitration and IC Investment Memo formulation.
+5. **Tier 5 (Conversational Deal Copilot)**: Interactive deal room chat with tool calling and citation drawer links.
 
 ```text
 Browser (React 19 SPA + TanStack Query v5 + TanStack Table)
@@ -31,12 +38,12 @@ Browser (React 19 SPA + TanStack Query v5 + TanStack Table)
   ├── 2. Storage CDN & Edge Caching (Cloudflare Worker -> Storage Proxy max-age=1yr / REST s-maxage=10 <15ms)
   ├── 3. Instant Portfolio Metrics -> PostgreSQL RPC (get_portfolio_diligence_kpis <2ms, <400B)
   ├── 4. Batch Dispatch -> same-origin REST API (/api/diligence/*) -> Pod 1 n8n Webhooks
-  ├── 5. Parallel Extraction -> OpenAI 5.6 Terra (Primary) / Sol (Backup) -> Math Engine
-  ├── 6. Project Synthesis -> Idempotent Counter Gate -> Cross-Doc Contradiction Engine -> IC Memo
-  └── 7. Real-Time Stream -> Supabase Realtime CDC (WebSockets push <100ms) & TanStack Query Cache Invalidation
+  ├── 5. Tier 1-2 Extraction Agents & Deterministic Math Engine (Zero-Hallucination Guard)
+  ├── 6. Tier 3-4 Synthesis Consolidator & Idempotent Watchdog Gate -> IC Deal Memo
+  └── 7. Tier 5 Deal Copilot & Real-Time Stream -> Supabase Realtime CDC (WebSockets push <15ms)
 ```
 
-See the full diagrams and sequence charts in **[`ARCHITECTURE.md`](ARCHITECTURE.md)**.
+See the complete multi-agent diagrams, tables, and sequence charts in **[`ARCHITECTURE.md`](ARCHITECTURE.md)**.
 
 Pod 1's live n8n Cloud/Enterprise workflows are the workflow source of truth.
 Inspect them through n8n MCP. If MCP access is unavailable, request access

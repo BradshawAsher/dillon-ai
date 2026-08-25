@@ -376,7 +376,7 @@ export default function LatestSubmissionSection({
                         </div>
                         <div className="rounded-lg border border-primary/25 bg-background/90 p-3">
                             <p className="text-xs text-muted-foreground">Detected document type</p>
-                            <p className="mt-1 text-lg font-bold truncate" title={displayedSubmissionRow?.detectedDocumentType || displayedSubmissionRow?.documentType || documentType || 'Pending'}>
+                            <p className="mt-1 text-sm sm:text-base font-bold leading-snug break-words" title={displayedSubmissionRow?.detectedDocumentType || displayedSubmissionRow?.documentType || documentType || 'Pending'}>
                                 {displayedSubmissionRow?.detectedDocumentType || displayedSubmissionRow?.documentType || documentType || 'Pending'}
                             </p>
                         </div>

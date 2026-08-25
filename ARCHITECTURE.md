@@ -91,7 +91,62 @@ flowchart TB
 
 ---
 
-## 3. End-to-End Data Flow Sequence Diagram
+## 3. Distributed Event-Driven Multi-Agent Pipeline Architecture
+
+Dillon AI implements a distributed, 5-tier multi-agent pipeline designed for high-throughput Virtual Data Room (VDR) ingestion, mathematical integrity, and autonomous acquisition judgment without token explosion:
+
+```mermaid
+graph TD
+    subgraph Tier1["1. Parallel Extraction Worker Agents (Asynchronous Ingestion)"]
+        Doc1["Financial Statement / P&L"] --> Worker1["Extraction Worker Agent 1 (OpenAI 5.6)"]
+        Doc2["Seller CIM / Pitch Deck"] --> Worker2["Extraction Worker Agent 2 (OpenAI 5.6)"]
+        Doc3["IRS Tax Return 1120-S"] --> Worker3["Extraction Worker Agent 3 (OpenAI 5.6)"]
+        Doc4["Executed LOI / Purchase Agreement"] --> Worker4["Extraction Worker Agent 4 (OpenAI 5.6)"]
+        Doc5["Customer Master & AR Aging"] --> Worker5["Extraction Worker Agent 5 (OpenAI 5.6)"]
+    end
+
+    subgraph Tier2["2. Deterministic Neurosymbolic Tool Tier (Zero-Hallucination Guard)"]
+        Worker1 --> MathEngine["Deterministic TypeScript Accounting Engine"]
+        Worker2 --> MathEngine
+        Worker3 --> MathEngine
+        Worker4 --> MathEngine
+        Worker5 --> MathEngine
+        MathEngine -- "EBITDA Bridge & Ratio Audit" --> DB[(Supabase PostgreSQL)]
+    end
+
+    subgraph Tier3["3. State Machine & Watchdog Orchestrator (Idempotent Event Gate)"]
+        DB --> DocCounter["Document Counter & Project State Machine"]
+        DocCounter -- "Idempotency Lock (batchReady == true)" --> SynthTrigger{"All Docs Ready (5/5)?"}
+        Watchdog["3-Tier Self-Healing Watchdog Cron"] -.->|Auto-Reconcile Stalled Batches| DocCounter
+    end
+
+    subgraph Tier4["4. Cross-Document Synthesis Tier (Multi-File Arbiter Agent)"]
+        SynthTrigger -- "Yes" --> ConsolidatorAgent["Project Synthesis Consolidator Agent"]
+        ConsolidatorAgent -- "Cross-Doc Conflict Analysis" --> LLMSynth["OpenAI 5.6 Terra Synthesis Engine"]
+        LLMSynth --> ValuationBridge["Valuation Multiples & IC Investment Memo"]
+        ValuationBridge --> DB
+    end
+
+    subgraph Tier5["5. Interactive Conversational Tier (Real-Time Deal Copilot)"]
+        DB --> RealtimeCDC["Supabase Realtime CDC (WebSockets Push <15ms)"]
+        RealtimeCDC --> CopilotAgent["3-Tier Conversational Deal Copilot"]
+        CopilotAgent -- "Agent Tool Calling" --> CalcTools["Financial Calc Tools & Citation Grounding"]
+    end
+```
+
+### 5-Tier Multi-Agent System Roles & Contracts
+
+| Agent / Tier | Archetype | Responsibilities | Latency & SLA |
+| :--- | :--- | :--- | :--- |
+| **Tier 1: Document Extraction Workers** | Parallel Worker Agents | Ingests multi-modal VDR files, classifies document taxonomy, extracts financial metrics, and generates page-level citation anchors. Fallback routing from `OpenAI 5.6 Terra` to `OpenAI 5.6 Sol`. | $21\text{s} - 25\text{s}$ per doc (Parallel) |
+| **Tier 2: Accounting Guardrail Tool** | Deterministic Neurosymbolic Engine | Audits reported EBITDA, verifies arithmetic balance sheets, computes add-back haircuts, and calculates debt coverage ratios in native code to eliminate LLM arithmetic hallucinations. | $< 5\text{ms}$ (Native code) |
+| **Tier 3: Document Counter & Watchdog** | Event State Coordinator & Self-Healing Agent | Manages batch progression, verifies completion thresholds (e.g. 5/5), acquires distributed idempotency locks to prevent duplicate synthesis runs, and auto-heals stalled documents via background crons. | $< 50\text{ms}$ per state transition |
+| **Tier 4: Synthesis Consolidator** | Multi-Document Arbiter Agent | Ingests all extracted document representations simultaneously, cross-examines contradictions (e.g. CIM claims vs. Bank cash vs. Tax returns), calculates Base/Downside/Upside valuation bounds, and authors the IC Deal Memo. | $7\text{s} - 10\text{s}$ (LLM reasoning) |
+| **Tier 5: 3-Tier Deal Copilot** | Conversational Tool-Calling Copilot | Interactive chat agent equipped with sliding deal memory, dynamic financial calculation tools, and citation drawer deep-linking for buy-side investment committees. | Streaming $< 200\text{ms}$ TTFT |
+
+---
+
+## 4. End-to-End Data Flow Sequence Diagram
 
 ```mermaid
 sequenceDiagram
@@ -129,12 +184,11 @@ sequenceDiagram
     DB-->>Browser: Instant Push via Supabase Realtime CDC (<100ms)
     Browser->>CF: Query History & Synthesis (Served from Edge Cache / ETag)
     Browser->>DB: RPC get_portfolio_diligence_kpis (<2ms, <400B payload)
-    Browser->>DealTeam: Renders Interactive Deal Scorecard, Valuation Bridge & Memo
 ```
 
 ---
 
-## 4. Deep-Dive Component Architecture
+## 5. Deep-Dive Component Architecture
 
 ### A. Client-Side Workspace & Ingestion (`frontend/`)
 * **Framework & Tooling**: React 19, TypeScript, Vite 8, Tailwind CSS v4.
@@ -184,9 +238,9 @@ LLMs are notoriously prone to arithmetic hallucinations. Dillon AI solves this b
 ### G. Project Synthesis & Deal Memo Formulation
 Once all documents in a project batch complete, the **Project Synthesis Consolidator** triggers:
 * **Valuation Bounds Engine**: Computes Fair Market Enterprise Value across 3 distinct scenarios:
-  * **Base Case**: Normalized EBITDA $\times$ Industry Median Multiple.
-  * **Downside Case**: Haircut for top-customer concentration, unrecorded tax liabilities, and working capital deficits.
-  * **Upside Case**: Expansion multiple unlocked by addressing operational bottlenecks.
+   * **Base Case**: Normalized EBITDA $\times$ Industry Median Multiple.
+   * **Downside Case**: Haircut for top-customer concentration, unrecorded tax liabilities, and working capital deficits.
+   * **Upside Case**: Expansion multiple unlocked by addressing operational bottlenecks.
 * **Negotiation Levers**: Generates dollar-for-dollar purchase price reduction recommendations, escrow holdbacks, and earnout milestones.
 * **IC Deal Memo Generation**: Produces an executive-ready Investment Committee memo with full audit trail citations.
 
@@ -202,7 +256,7 @@ Once all documents in a project batch complete, the **Project Synthesis Consolid
 
 ---
 
-## 5. Technical Decision Matrix & Interview Masterclass
+## 6. Technical Decision Matrix & Interview Masterclass
 
 When explaining this architecture in technical interviews, focus on these core design decisions and trade-offs:
 
@@ -218,7 +272,7 @@ When explaining this architecture in technical interviews, focus on these core d
 
 ---
 
-## 6. Failure Modes & Self-Healing Architecture
+## 7. Failure Modes & Self-Healing Architecture
 
 1. **3-Tier Stuck Document Watchdog (`BaQO1dHCAm0Tf6kk`)**: A background watchdog cron runs every 5 minutes with a 3-tier recovery architecture:
    - *Tier 1 (Batch Auto-Reconciliation)*: Identifies batches where all documents completed extraction but synthesis was not triggered, auto-initiating the Consolidator pass.
@@ -231,7 +285,7 @@ When explaining this architecture in technical interviews, focus on these core d
 
 ---
 
-## 7. Performance & Cost Benchmarks
+## 8. Performance & Cost Benchmarks
 
 * **Average Per-Document Latency**: $21\text{s} - 25\text{s}$ (OCR $\rightarrow$ Structured Parsing $\rightarrow$ Math Verification).
 * **Project Synthesis Latency**: $45\text{s} - 60\text{s}$ (Cross-document contradiction reconciliation $\rightarrow$ Deal Memo synthesis).
