@@ -1911,14 +1911,12 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         const interval = setInterval(() => {
             void triggerSubmissionHistory({ environment: 'production' })
             void triggerProjectSynthesis({ environment: 'production' })
-            void triggerEvalRuns()
         }, pollIntervalMs)
         return () => clearInterval(interval)
     }, [
         isRealtimeConnected,
         triggerSubmissionHistory,
         triggerProjectSynthesis,
-        triggerEvalRuns,
         activeSubmissionBatch,
         hasActiveSubmissions,
         isCurrentProjectProcessingDocuments,

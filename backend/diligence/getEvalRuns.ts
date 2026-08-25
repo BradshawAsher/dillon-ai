@@ -13,16 +13,34 @@ export type EvalRunRecord = {
     report_json: any
 }
 
-export default async function getEvalRuns() {
+export default async function getEvalRuns(req?: { params?: { full?: boolean | string; limit?: number | string } }) {
+    const isFull = req?.params?.full === true || req?.params?.full === 'true'
+    const limitNum = typeof req?.params?.limit === 'number'
+        ? req?.params?.limit
+        : typeof req?.params?.limit === 'string' && parseInt(req?.params?.limit, 10) > 0
+            ? parseInt(req?.params?.limit, 10)
+            : 15
+
+    const summaryColumns = 'id, run_at, commit_sha, total_documents, passed_documents, overall_percentage, status'
+
     try {
         const { data: rows, error } = await supabase
             .from('eval_runs')
-            .select('*')
+            .select(isFull ? '*' : summaryColumns)
             .order('run_at', { ascending: false })
-            .limit(50)
+            .limit(limitNum)
 
         if (!error && rows && rows.length > 0) {
-            return rows as EvalRunRecord[]
+            return rows.map((r: any) => ({
+                id: r.id,
+                run_at: r.run_at,
+                commit_sha: r.commit_sha,
+                total_documents: r.total_documents,
+                passed_documents: r.passed_documents,
+                overall_percentage: r.overall_percentage,
+                status: r.status,
+                report_json: r.report_json ?? null,
+            })) as EvalRunRecord[]
         }
     } catch {
         // Fallback to local report file if database table is empty or unpopulated

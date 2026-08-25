@@ -217,7 +217,7 @@ function useLiveSubmissionHistory() {
             const full = params.full === true || params.full === 'true'
             const limit = params.limit ? String(params.limit) : ''
             const CACHE_KEY = `mergeworks_history_cache_${environment}_${projectId}_${full}_${limit}`
-            const CACHE_TTL_MS = 3_000
+            const CACHE_TTL_MS = 30_000
             if (!params.skipCache) {
                 try {
                     const cached = sessionStorage.getItem(CACHE_KEY)
@@ -251,7 +251,7 @@ function useLiveProjectSynthesis() {
             const projectId = typeof params.projectId === 'string' && params.projectId.trim().length > 0 ? params.projectId.trim() : ''
             const limit = params.limit ? String(params.limit) : ''
             const CACHE_KEY = `mergeworks_synthesis_cache_${environment}_${projectId}_${limit}`
-            const CACHE_TTL_MS = 3_000
+            const CACHE_TTL_MS = 30_000
             if (!params.skipCache) {
                 try {
                     const cached = sessionStorage.getItem(CACHE_KEY)

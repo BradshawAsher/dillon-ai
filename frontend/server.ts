@@ -193,9 +193,11 @@ app.get('/api/diligence/kpis', async (req, res) => {
     }
 })
 
-app.get('/api/diligence/eval-runs', async (_req, res) => {
+app.get('/api/diligence/eval-runs', async (req, res) => {
     try {
-        res.json(await getEvalRuns())
+        const full = req.query.full === 'true'
+        const limit = typeof req.query.limit === 'string' || typeof req.query.limit === 'number' ? req.query.limit : undefined
+        res.json(await getEvalRuns({ params: { full, limit } }))
     } catch (error) {
         res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
     }

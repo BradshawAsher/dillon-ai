@@ -21792,7 +21792,18 @@ async function getProjectSynthesis(req) {
   const isScoped = Boolean(req.params.projectId && req.params.projectId.trim().length > 0);
   const defaultLimit = isScoped ? 10 : 50;
   const limitNum = typeof req.params.limit === "number" ? req.params.limit : typeof req.params.limit === "string" && parseInt(req.params.limit, 10) > 0 ? parseInt(req.params.limit, 10) : defaultLimit;
-  let query = supabase.from("project_syntheses").select("*").or("is_placeholder.is.null,is_placeholder.eq.false");
+  const synthesisColumns = `
+        id, project_id, project_name, company_name, project_status,
+        documents_received_count, documents_completed_count,
+        missing_documents_json, cross_document_conflicts_json, open_questions_json, negotiation_levers_json,
+        final_judgement_json, final_recommendation, final_risk_level, final_traffic_light,
+        ai_error_message, ai_global_confidence, ai_citations,
+        valuation_lower_bound, valuation_base_estimate, valuation_upper_bound, valuation_currency,
+        project_processed_at, created_at, updated_at,
+        input_tokens, output_tokens, total_tokens, cost_usd, model_used,
+        valuation_confidence_score, investment_confidence_score, is_placeholder
+    `;
+  let query = supabase.from("project_syntheses").select(synthesisColumns).or("is_placeholder.is.null,is_placeholder.eq.false");
   if (req.params.projectId && req.params.projectId.trim().length > 0) {
     query = query.eq("project_id", req.params.projectId.trim());
   }
@@ -21908,11 +21919,22 @@ async function getProjectSynthesis(req) {
 // backend/diligence/getDealModels.ts
 async function getDealModels(req) {
   const projectId = req.params.projectId?.trim() ?? "";
-  let query = supabase.from("deal_models").select("*");
+  const dealModelColumns = `
+    project_id, asking_price, purchase_price, debt_assumed, cash_acquired,
+    working_capital_requirement, transaction_fees, hold_period_years, tax_rate,
+    closing_costs, maintenance_capex, exit_multiple, exit_costs,
+    equity_contribution_percent, interest_rate, amortization_years,
+    seller_note_amount, bear_revenue_growth, base_revenue_growth, bull_revenue_growth,
+    bear_ebitda_margin, base_ebitda_margin, bull_ebitda_margin,
+    bear_exit_multiple, base_exit_multiple, bull_exit_multiple,
+    revenue_multiple, ebitda_multiple, asset_haircut_percent,
+    documented_facts_json, documented_facts_status, model_updated_at, model_updated_by
+  `;
+  let query = supabase.from("deal_models").select(dealModelColumns);
   if (projectId) {
     query = query.eq("project_id", projectId);
   }
-  query = query.order("updated_at", { ascending: false }).limit(100);
+  query = query.order("updated_at", { ascending: false }).limit(projectId ? 10 : 50);
   const { data: rows, error } = await query;
   if (error) throw new Error(`Supabase read failed: ${error.message}`);
   if (!rows) return [];
@@ -22266,11 +22288,23 @@ async function getSubmissionHistory(req) {
 // backend/diligence/getEvalRuns.ts
 import * as fs from "fs";
 import * as path from "path";
-async function getEvalRuns() {
+async function getEvalRuns(req) {
+  const isFull = req?.params?.full === true || req?.params?.full === "true";
+  const limitNum = typeof req?.params?.limit === "number" ? req?.params?.limit : typeof req?.params?.limit === "string" && parseInt(req?.params?.limit, 10) > 0 ? parseInt(req?.params?.limit, 10) : 15;
+  const summaryColumns = "id, run_at, commit_sha, total_documents, passed_documents, overall_percentage, status";
   try {
-    const { data: rows, error } = await supabase.from("eval_runs").select("*").order("run_at", { ascending: false }).limit(50);
+    const { data: rows, error } = await supabase.from("eval_runs").select(isFull ? "*" : summaryColumns).order("run_at", { ascending: false }).limit(limitNum);
     if (!error && rows && rows.length > 0) {
-      return rows;
+      return rows.map((r) => ({
+        id: r.id,
+        run_at: r.run_at,
+        commit_sha: r.commit_sha,
+        total_documents: r.total_documents,
+        passed_documents: r.passed_documents,
+        overall_percentage: r.overall_percentage,
+        status: r.status,
+        report_json: r.report_json ?? null
+      }));
     }
   } catch {
   }
@@ -22302,7 +22336,8 @@ async function getEvalRuns() {
 
 // backend/diligence/getWorkflowErrors.ts
 async function getWorkflowErrors(req) {
-  const { data: rows, error } = await supabase.from("workflow_errors").select("*").order("created_at", { ascending: false }).limit(200);
+  const errorColumns = "id, occurred_at, workflow_id, workflow_name, execution_id, failed_node, error_message, last_node_executed, severity";
+  const { data: rows, error } = await supabase.from("workflow_errors").select(errorColumns).order("created_at", { ascending: false }).limit(50);
   if (error) throw new Error(`Supabase read failed: ${error.message}`);
   if (!rows) return [];
   return rows.map((row) => ({
@@ -23034,6 +23069,19 @@ function sendJson(req, res, status, body, cacheControl) {
   res.statusCode = status;
   res.end(jsonString);
 }
+var memCache = /* @__PURE__ */ new Map();
+async function withMemCache(key, fn, ttlMs = 8e3) {
+  const cached = memCache.get(key);
+  if (cached && Date.now() < cached.expiresAt) {
+    return cached.data;
+  }
+  const data = await fn();
+  memCache.set(key, { data, expiresAt: Date.now() + ttlMs });
+  return data;
+}
+function invalidateMemCache() {
+  memCache.clear();
+}
 async function handler(req, res) {
   const requestUrl = new URL(req.url ?? "/", "https://dashboard.local");
   const route = requestUrl.pathname.replace(/^\/api\/diligence\/?/, "");
@@ -23050,51 +23098,67 @@ async function handler(req, res) {
   try {
     const user = userFromHeaders(req.headers);
     if (route === "eval-runs" && req.method === "GET") {
-      sendJson(req, res, 200, await getEvalRuns(), "public, s-maxage=60, stale-while-revalidate=300");
+      const full = requestUrl.searchParams.get("full") === "true";
+      const limitNum = requestUrl.searchParams.get("limit") ?? void 0;
+      const data = await withMemCache(`eval-runs-${full}-${limitNum ?? "default"}`, () => getEvalRuns({ params: { full, limit: limitNum } }), 6e4);
+      sendJson(req, res, 200, data, "public, s-maxage=120, stale-while-revalidate=600");
       return;
     }
     if (route === "history" && req.method === "GET") {
       const projectId = requestUrl.searchParams.get("projectId") ?? void 0;
       const limitNum = requestUrl.searchParams.get("limit") ?? void 0;
       const full = requestUrl.searchParams.get("full") === "true";
-      sendJson(req, res, 200, await getSubmissionHistory({ params: { environment, projectId, limit: limitNum, full }, user }), "private, max-age=5, stale-while-revalidate=30");
+      const cacheKey = `history-${environment}-${projectId ?? "all"}-${full}-${limitNum ?? "default"}`;
+      const data = await withMemCache(cacheKey, () => getSubmissionHistory({ params: { environment, projectId, limit: limitNum, full }, user }), 6e3);
+      sendJson(req, res, 200, data, "public, s-maxage=10, stale-while-revalidate=60");
       return;
     }
     if (route === "workflow-errors" && req.method === "GET") {
-      sendJson(req, res, 200, await getWorkflowErrors({ params: { environment }, user }), "private, max-age=10, stale-while-revalidate=30");
+      const data = await withMemCache(`workflow-errors-${environment}`, () => getWorkflowErrors({ params: { environment }, user }), 15e3);
+      sendJson(req, res, 200, data, "public, s-maxage=15, stale-while-revalidate=60");
       return;
     }
     if (route === "synthesis" && req.method === "GET") {
       const projectId = requestUrl.searchParams.get("projectId") ?? void 0;
       const limitNum = requestUrl.searchParams.get("limit") ?? void 0;
-      sendJson(req, res, 200, await getProjectSynthesis({ params: { environment, projectId, limit: limitNum }, user }), "private, max-age=5, stale-while-revalidate=30");
+      const cacheKey = `synthesis-${environment}-${projectId ?? "all"}-${limitNum ?? "default"}`;
+      const data = await withMemCache(cacheKey, () => getProjectSynthesis({ params: { environment, projectId, limit: limitNum }, user }), 6e3);
+      sendJson(req, res, 200, data, "public, s-maxage=10, stale-while-revalidate=60");
       return;
     }
     if (route === "kpis" && req.method === "GET") {
       const projectId = requestUrl.searchParams.get("projectId") ?? void 0;
-      sendJson(req, res, 200, await getDiligenceKpis({ params: { environment, projectId }, user }), "private, max-age=5, stale-while-revalidate=30");
+      const cacheKey = `kpis-${environment}-${projectId ?? "all"}`;
+      const data = await withMemCache(cacheKey, () => getDiligenceKpis({ params: { environment, projectId }, user }), 1e4);
+      sendJson(req, res, 200, data, "public, s-maxage=15, stale-while-revalidate=60");
       return;
     }
     if (route === "deal-models" && req.method === "GET") {
-      sendJson(req, res, 200, await getDealModels({ params: { projectId: requestUrl.searchParams.get("projectId") ?? "" }, user }));
+      const projectId = requestUrl.searchParams.get("projectId") ?? "";
+      const data = await withMemCache(`deal-models-${projectId}`, () => getDealModels({ params: { projectId }, user }), 6e3);
+      sendJson(req, res, 200, data, "public, s-maxage=10, stale-while-revalidate=60");
       return;
     }
     if (route === "deal-models" && req.method === "POST") {
+      invalidateMemCache();
       const params = await readJsonBody(req);
       sendJson(req, res, 200, await saveDealModel({ params, user }));
       return;
     }
     if (route === "project-action-tracker" && req.method === "GET") {
       const projectId = requestUrl.searchParams.get("projectId") ?? "";
-      sendJson(req, res, 200, await getProjectActionTracker({ params: { projectId }, user }));
+      const data = await withMemCache(`action-tracker-${projectId}`, () => getProjectActionTracker({ params: { projectId }, user }), 6e3);
+      sendJson(req, res, 200, data, "public, s-maxage=10, stale-while-revalidate=60");
       return;
     }
     if (route === "project-action-tracker" && req.method === "POST") {
+      invalidateMemCache();
       const params = await readJsonBody(req);
       sendJson(req, res, 200, await saveProjectActionTracker({ params, user }));
       return;
     }
     if (route === "submission-consideration" && req.method === "POST") {
+      invalidateMemCache();
       const params = await readJsonBody(req);
       sendJson(req, res, 200, await updateSubmissionRow({ params, user }));
       return;
@@ -23105,21 +23169,25 @@ async function handler(req, res) {
       return;
     }
     if (route === "submit" && req.method === "POST") {
+      invalidateMemCache();
       const params = await readJsonBody(req);
       sendJson(req, res, 200, await submitDealPacket({ params, user }));
       return;
     }
     if (route === "retry-failed-document" && req.method === "POST") {
+      invalidateMemCache();
       const params = await readJsonBody(req);
       sendJson(req, res, 202, await retryFailedDocument({ params, user }));
       return;
     }
     if (route === "stop-batch" && req.method === "POST") {
+      invalidateMemCache();
       const params = await readJsonBody(req);
       sendJson(req, res, 200, await stopBatchSubmission({ params, user }));
       return;
     }
     if (route === "stop-synthesis" && req.method === "POST") {
+      invalidateMemCache();
       const params = await readJsonBody(req);
       sendJson(req, res, 200, await stopProjectSynthesis({ params, user }));
       return;
