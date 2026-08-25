@@ -36,10 +36,10 @@ MergeWorks is a document-first, post-LOI M&A diligence workspace. An analyst cre
 ## System Architecture
 
 ```text
-Browser (React 19 SPA)
-  -> Cloudflare Edge Worker (Edge Caching / Reverse Proxy, s-maxage=10, stale-while-revalidate <15ms)
+Browser (React 19 SPA + TanStack Query v5 + TanStack Table)
+  -> Cloudflare Edge Worker (Storage CDN max-age=1yr / REST Edge Caching s-maxage=10 <15ms)
   -> Supabase Postgres RPC (get_portfolio_diligence_kpis: sub-2ms portfolio aggregation, <400B payload)
-  -> Supabase Realtime CDC (WebSockets push updates <100ms)
+  -> Supabase Realtime CDC (WebSockets push updates <100ms -> TanStack Query cache invalidation)
   -> /api/diligence/* (Express/Vite server layer)
   -> Supabase/Postgres (Primary Read Layer for history, synthesis, deal models, action trackers)
   -> n8n Webhooks (Async Write Layer: document submit, retry, consideration, deal model save)

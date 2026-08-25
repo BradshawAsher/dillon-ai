@@ -7,6 +7,7 @@
 // user cannot trace is a number they cannot defend in a negotiation.
 import type { ResolvedInput } from './dealMath'
 import type { SubmissionHistoryItem } from './submissionHistory'
+import { resolveStorageCdnUrl } from '../services/supabaseStorage'
 
 export type FactCitation = {
     source_file?: string
@@ -282,7 +283,7 @@ export function buildDocumentLinkedEvidence(args: {
         confidence: args.confidence ?? document?.aiConfidence,
         status: args.status,
         provenance: args.provenance,
-        documentUrl: document?.storageFileUrl,
+        documentUrl: resolveStorageCdnUrl(document?.storageFileUrl),
         documentId: document?.storageFileId,
     }
 }

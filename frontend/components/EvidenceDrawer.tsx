@@ -8,6 +8,7 @@ import DocumentHighlightViewer from './DocumentHighlightViewer'
 import ExpandableText from './ExpandableText'
 import ProvenanceBadge from './ProvenanceBadge'
 import { driveEmbedUrl, formatEvidenceConfidence, getEvidenceStatusPresentation, type EvidenceItem, type MetricInput } from '../utils/evidence'
+import { resolveStorageCdnUrl } from '../services/supabaseStorage'
 
 // The canonical definition now lives in utils/evidence.ts; re-exported here so
 // existing imports keep working.
@@ -19,9 +20,10 @@ function canOpen(url?: string) {
 
 function CitedDocumentViewer({ evidence }: { evidence: EvidenceItem }) {
     const [showInline, setShowInline] = useState(false)
-    const embedUrl = driveEmbedUrl(evidence.documentId, evidence.documentUrl)
-    const openUrl = evidence.documentUrl && canOpen(evidence.documentUrl)
-        ? evidence.documentUrl
+    const resolvedDocUrl = resolveStorageCdnUrl(evidence.documentUrl)
+    const embedUrl = driveEmbedUrl(evidence.documentId, resolvedDocUrl)
+    const openUrl = resolvedDocUrl && canOpen(resolvedDocUrl)
+        ? resolvedDocUrl
         : evidence.documentId
             ? `https://drive.google.com/file/d/${encodeURIComponent(evidence.documentId)}/view`
             : null
