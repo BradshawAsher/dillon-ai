@@ -1,9 +1,11 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { QueryClientProvider } from '@tanstack/react-query'
 
 import App from './App'
 import DataSourceToggle from './lib/DataSourceToggle'
 import { initTheme } from './lib/darkMode'
+import { queryClient } from './lib/queryClient'
 import './tailwind.css'
 import './orgTheme.css'
 
@@ -19,7 +21,10 @@ if (typeof window !== 'undefined') {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
-    <DataSourceToggle />
+    <QueryClientProvider client={queryClient}>
+      <App />
+      <DataSourceToggle />
+    </QueryClientProvider>
   </StrictMode>
 )
+

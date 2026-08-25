@@ -137,17 +137,20 @@ sequenceDiagram
 ## 4. Deep-Dive Component Architecture
 
 ### A. Client-Side Workspace & Ingestion (`frontend/`)
-* **Framework**: React 19, TypeScript, Vite 8, Tailwind CSS v4.
+* **Framework & Tooling**: React 19, TypeScript, Vite 8, Tailwind CSS v4.
+* **TanStack Query & Table Architecture**:
+  - **`@tanstack/react-query` (v5)**: Manages all asynchronous server state with a unified `QueryClient` (`staleTime: 10,000ms`, `gcTime: 300,000ms`, `refetchOnWindowFocus: true`). Eliminates redundant network calls, manages background refetches, and provides typed hooks (`useSubmissionHistoryQuery`, `useProjectSynthesisQuery`, `usePortfolioKpisQuery`, `useDealModelsQuery`).
+  - **`@tanstack/react-table`**: Powers high-performance, virtualized, multi-column sorting and filtering across deal history and financial fact reconciliation tables.
 * **Direct-to-Cloud Storage**: Rather than streaming multi-gigabyte VDR uploads through serverless proxies (which causes Fast Origin Transfer bottlenecks and function timeouts), the client requests presigned URLs via `/api/diligence/upload-url` and streams binaries directly to **Supabase Object Storage**.
 * **In-Browser ZIP Decompressor**: Client-side worker recursively unpacks multi-folder ZIP archives (`utils/zipExtractor.ts`), preserving folder taxonomy and queuing individual files into the extraction pipeline.
-* **Optimistic State & Real-Time CDC Sync**: Uses **Supabase Realtime (Postgres Change Data Capture over WebSockets)** to push instantaneous row updates (<100ms latency) to the browser without continuous background polling. Combined with `sessionStorage` TTL caching (3s deduplication) and active-only fallback sync, egress consumption is reduced by over 99.9% while guaranteeing instant UI responsiveness.
+* **Optimistic State & Real-Time CDC Sync**: Uses **Supabase Realtime (Postgres Change Data Capture over WebSockets)** to push instantaneous row updates (<100ms latency) to the browser without continuous background polling. When a CDC event arrives, it automatically invalidates TanStack Query in-memory caches, reducing egress by over 99.9% while guaranteeing instant UI responsiveness.
 
-### B. Cloudflare Edge Worker & Reverse Proxy Layer
-* **Edge Reverse Proxy**: High-performance Cloudflare Worker sitting in front of REST read endpoints (`/api/diligence/history`, `/api/diligence/synthesis`, benchmark feeds).
-* **Edge Caching Strategy**: Employs HTTP `Cache-Control: public, s-maxage=10, stale-while-revalidate=59` with ETags, serving repeated reads from global Edge PoPs in sub-15ms.
-* **Egress & DDoS Shield**: Absorbs concurrent user refreshes and automated benchmark evaluation runs, preventing high query volume from hitting Supabase PostgreSQL or triggering serverless function invocation limits.
+### B. Cloudflare Edge Worker & Reverse Proxy Layer (Steps A & C)
+* **REST Edge Reverse Proxy (Step A)**: High-performance Cloudflare Worker sitting in front of REST read endpoints (`/api/diligence/history`, `/api/diligence/synthesis`, benchmark feeds) with `Cache-Control: public, s-maxage=10, stale-while-revalidate=59` and ETags, serving repeated reads from global Edge PoPs in sub-15ms.
+* **Storage CDN Proxy & Egress Shield (Step C)**: High-throughput CDN proxy intercepting `/storage/v1/object/public/*` requests to Supabase Object Storage (`deal-documents`). Serves document downloads and inline PDF/image previews through Cloudflare's global edge cache with `Cache-Control: public, max-age=31536000, immutable`, completely shielding Supabase Storage from redundant egress.
+* **DDoS & Origin Protection**: Absorbs concurrent user refreshes and automated benchmark evaluation runs, preventing high query volume from hitting Supabase PostgreSQL or triggering serverless function invocation limits.
 
-### C. Postgres Server-Side Aggregate RPC & Egress Optimization
+### C. Postgres Server-Side Aggregate RPC & Egress Optimization (Step B)
 * **Stored Procedure Aggregations (`get_portfolio_diligence_kpis`)**: Replaced multi-megabyte client-side table aggregations (which previously downloaded entire historical records for 88+ projects and 700+ documents) with a native PostgreSQL RPC. The database computes project totals, document counts, status breakdowns, and financial sums in sub-2ms and returns a compact JSON payload (<400 bytes), slashing network payload size by **99.8%**.
 * **Lightweight Column Projections**: Endpoints like `getSubmissionHistory.ts` utilize optimized projection queries (`lightweightColumns`), selecting essential metadata and visual flags (`ai_red_flags`, `ai_yellow_flags`, `ai_green_flags`, `ai_summary`) while excluding heavy multi-megabyte `ai_extractedJson` payloads until an analyst opens a specific document Evidence Drawer.
 * **Full Portfolio Navigation Scope**: Sets a global limit of 1,000 for top-level history queries, ensuring all 88 projects are immediately searchable and selectable in workspace dropdowns without pagination clipping.

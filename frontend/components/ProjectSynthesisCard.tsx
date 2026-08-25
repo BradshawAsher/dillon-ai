@@ -427,9 +427,9 @@ export default function ProjectSynthesisCard({
 
     const failedProjectDocuments = projectDocuments.filter((document) => ['failed', 'error', 'rejected'].includes(document.status.trim().toLowerCase()))
     const completedProjectDocumentsWithAnalysis = projectDocuments.filter((document) => {
+        const s = document.status.trim().toLowerCase()
         return document.isConsidered
-            && document.status.trim().toLowerCase() === 'completed'
-            && document.extractedJson.trim().length > 0
+            && (s === 'completed' || s === 'approved' || (document.aiSummary && document.aiSummary.trim().length > 0) || document.extractedJson.trim().length > 0)
     }).length
     const localSynthesisBlocked = !error
         && visibleSyntheses.length === 0
@@ -836,24 +836,47 @@ export default function ProjectSynthesisCard({
                     )
                 })() : null}
 
-                {/* 3. Synthesizer Disclaimer (Only shown when NO valid synthesis output exists AND 0 documents completed) */}
-                {(!visibleSyntheses[0]?.finalRecommendation && !visibleSyntheses[0]?.finalJudgmentSummary && visibleSyntheses[0]?.projectStatus !== 'synthesized') && completedProjectDocumentsWithAnalysis === 0 && projectDocuments.length > 0 ? (
-                    <div role="alert" className="rounded-xl border-2 border-warning/60 bg-warning/10 p-4 text-sm text-foreground shadow-sm">
-                        <div className="flex items-start gap-3">
-                            <TriangleAlert className="h-5 w-5 shrink-0 text-warning mt-0.5" />
-                            <div className="space-y-1">
-                                <p className="font-bold text-warning text-base">
-                                    ⚠️ Synthesizer Awaiting Document Extraction — 0 of {projectDocuments.length} Documents Completed
-                                </p>
-                                <p className="text-sm text-foreground leading-relaxed">
-                                    The n8n project consolidator workflow requires completed document extraction to generate a judgment. None of the {projectDocuments.length} uploaded file(s) for this project have completed processing yet.
-                                </p>
-                                <p className="text-xs text-muted-foreground mt-2">
-                                    👉 Go to the <strong className="text-foreground">Diligence tab</strong> to review document status and click <strong className="text-foreground">&quot;Retry&quot;</strong> if a file failed.
-                                </p>
+                {/* 3. Synthesizer Status Card */}
+                {(!visibleSyntheses[0]?.finalRecommendation && !visibleSyntheses[0]?.finalJudgmentSummary && visibleSyntheses[0]?.projectStatus !== 'synthesized') && projectDocuments.length > 0 ? (
+                    completedProjectDocumentsWithAnalysis === 0 ? (
+                        <div role="alert" className="rounded-xl border-2 border-warning/60 bg-warning/10 p-4 text-sm text-foreground shadow-sm">
+                            <div className="flex items-start gap-3">
+                                <TriangleAlert className="h-5 w-5 shrink-0 text-warning mt-0.5" />
+                                <div className="space-y-1">
+                                    <p className="font-bold text-warning text-base">
+                                        ⚠️ Synthesizer Awaiting Document Extraction — 0 of {projectDocuments.length} Documents Completed
+                                    </p>
+                                    <p className="text-sm text-foreground leading-relaxed">
+                                        The n8n project consolidator workflow requires completed document extraction to generate a judgment. None of the {projectDocuments.length} uploaded file(s) for this project have completed processing yet.
+                                    </p>
+                                    <p className="text-xs text-muted-foreground mt-2">
+                                        👉 Go to the <strong className="text-foreground">Diligence tab</strong> to review document status and click <strong className="text-foreground">&quot;Retry&quot;</strong> if a file failed.
+                                    </p>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    ) : (
+                        <div role="alert" className="rounded-xl border-2 border-primary/40 bg-primary/5 p-4 text-sm text-foreground shadow-sm">
+                            <div className="flex items-start gap-3">
+                                <Loader2 className="h-5 w-5 shrink-0 text-primary animate-spin mt-0.5" />
+                                <div className="space-y-1">
+                                    <p className="font-bold text-primary text-base">
+                                        {completedProjectDocumentsWithAnalysis === projectDocuments.length
+                                            ? `⏳ Synthesis Consolidator In Progress — All ${projectDocuments.length} of ${projectDocuments.length} Documents Completed`
+                                            : `⏳ Synthesizer Awaiting Document Extraction — ${completedProjectDocumentsWithAnalysis} of ${projectDocuments.length} Documents Completed`}
+                                    </p>
+                                    <p className="text-sm text-foreground leading-relaxed">
+                                        {completedProjectDocumentsWithAnalysis === projectDocuments.length
+                                            ? `All ${projectDocuments.length} document(s) have finished extraction. The n8n project consolidator is now executing cross-document reconciliation, calculating valuation add-backs, and synthesizing the final IC Deal Memo.`
+                                            : `${completedProjectDocumentsWithAnalysis} of ${projectDocuments.length} uploaded document(s) have completed analysis. The cross-document synthesizer will generate the final deal judgment once the remaining documents finish processing.`}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground mt-2">
+                                        ⚡ Updates stream in real-time via Supabase Realtime CDC over WebSockets.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )
                 ) : (completedProjectDocumentsWithAnalysis < projectDocuments.length && projectDocuments.length > 0 && (visibleSyntheses[0]?.finalRecommendation || visibleSyntheses[0]?.finalJudgmentSummary)) ? (
                     <div role="alert" className="rounded-xl border border-primary/30 bg-primary/5 p-3 text-xs text-foreground flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -1187,13 +1210,13 @@ export default function ProjectSynthesisCard({
                         <div className="space-y-1">
                             <h3 className="text-lg font-bold text-foreground">
                                 {documentAnalysisPending
-                                    ? 'Awaiting Batch Document Analysis Completion...'
+                                    ? `Awaiting Batch Document Extraction (${completedProjectDocumentsWithAnalysis} of ${projectDocuments.length} Completed)...`
                                     : 'Synthesizing Project-Wide Acquisition Intelligence...'}
                             </h3>
                             <p className="text-sm text-muted-foreground max-w-xl mx-auto">
                                 {documentAnalysisPending
-                                    ? `Processing document extractions for ${currentProjectName}. Synthesis will launch automatically as soon as batch documents complete.`
-                                    : `Synthesizing ${currentProjectName} across ${projectDocuments.filter(d => d.status.toLowerCase() === 'completed').length} completed document${projectDocuments.filter(d => d.status.toLowerCase() === 'completed').length === 1 ? '' : 's'}. Reconciling adjusted EBITDA, working capital pegs, and multi-document risk factors.`}
+                                    ? `Processing document extractions for ${currentProjectName} (${completedProjectDocumentsWithAnalysis} of ${projectDocuments.length} files finished). Synthesis will launch automatically as soon as batch documents complete.`
+                                    : `Synthesizing ${currentProjectName} across ${completedProjectDocumentsWithAnalysis} completed document${completedProjectDocumentsWithAnalysis === 1 ? '' : 's'}. Reconciling adjusted EBITDA, working capital pegs, and multi-document risk factors.`}
                             </p>
                         </div>
                         <div className="max-w-md mx-auto space-y-2 pt-2">

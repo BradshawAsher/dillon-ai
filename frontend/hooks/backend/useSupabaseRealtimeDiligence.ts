@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabaseAuthClient } from '../../services/supabaseAuth'
+import { queryClient } from '../../lib/queryClient'
 
 export interface RealtimeDiligenceOptions {
     enabled?: boolean
@@ -10,7 +11,7 @@ export interface RealtimeDiligenceOptions {
 
 /**
  * Subscribes to Supabase Realtime postgres_changes on `documents` and `project_syntheses` tables.
- * This eliminates the need for high-frequency REST polling, saving >99% in Supabase egress bandwidth.
+ * Seamlessly syncs WebSocket push notifications with TanStack Query in-memory cache.
  */
 export function useSupabaseRealtimeDiligence({
     enabled = true,
@@ -47,6 +48,12 @@ export function useSupabaseRealtimeDiligence({
                 (payload) => {
                     if (docDebounceTimer) clearTimeout(docDebounceTimer)
                     docDebounceTimer = setTimeout(() => {
+                        const targetProjId = (payload.new as any)?.project_id || activeProjectRef.current
+                        void queryClient.invalidateQueries({ queryKey: ['diligence', 'history'] })
+                        if (targetProjId) {
+                            void queryClient.invalidateQueries({ queryKey: ['diligence', 'history', targetProjId] })
+                        }
+                        void queryClient.invalidateQueries({ queryKey: ['diligence', 'kpis'] })
                         onDocRef.current?.(payload)
                     }, 150)
                 }
@@ -57,6 +64,12 @@ export function useSupabaseRealtimeDiligence({
                 (payload) => {
                     if (synthDebounceTimer) clearTimeout(synthDebounceTimer)
                     synthDebounceTimer = setTimeout(() => {
+                        const targetProjId = (payload.new as any)?.project_id || activeProjectRef.current
+                        void queryClient.invalidateQueries({ queryKey: ['diligence', 'synthesis'] })
+                        if (targetProjId) {
+                            void queryClient.invalidateQueries({ queryKey: ['diligence', 'synthesis', targetProjId] })
+                        }
+                        void queryClient.invalidateQueries({ queryKey: ['diligence', 'kpis'] })
                         onSynthRef.current?.(payload)
                     }, 150)
                 }

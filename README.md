@@ -26,14 +26,14 @@ The Financial Due Diligence Agent automates two core M&A workflow stages (see [`
 ## Current Architecture & Data Flow
 
 ```text
-Browser (React 19 SPA)
+Browser (React 19 SPA + TanStack Query v5 + TanStack Table)
   ├── 1. Direct-to-Cloud Uploads (Presigned URLs -> Supabase Storage S3)
-  ├── 2. Edge Caching & Proxy (Cloudflare Edge Worker -> s-maxage=10 / ETag <15ms)
+  ├── 2. Storage CDN & Edge Caching (Cloudflare Worker -> Storage Proxy max-age=1yr / REST s-maxage=10 <15ms)
   ├── 3. Instant Portfolio Metrics -> PostgreSQL RPC (get_portfolio_diligence_kpis <2ms, <400B)
   ├── 4. Batch Dispatch -> same-origin REST API (/api/diligence/*) -> Pod 1 n8n Webhooks
   ├── 5. Parallel Extraction -> OpenAI 5.6 Terra (Primary) / Sol (Backup) -> Math Engine
   ├── 6. Project Synthesis -> Idempotent Counter Gate -> Cross-Doc Contradiction Engine -> IC Memo
-  └── 7. Real-Time Stream -> Supabase Realtime CDC (WebSockets push <100ms) & PostgreSQL
+  └── 7. Real-Time Stream -> Supabase Realtime CDC (WebSockets push <100ms) & TanStack Query Cache Invalidation
 ```
 
 See the full diagrams and sequence charts in **[`ARCHITECTURE.md`](ARCHITECTURE.md)**.
