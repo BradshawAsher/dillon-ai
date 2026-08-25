@@ -3,6 +3,7 @@ import { Shield, ShieldCheck, Lock, Users } from 'lucide-react'
 import { Button } from '../../lib/shadcn/button'
 import { Badge } from '../../lib/shadcn/badge'
 import { getStoredAuth, isDataIsolationEnabled, setDataIsolation, DATA_ISOLATION_EVENT } from '../AuthGate'
+import { AUTH_CHANGE_EVENT, AppAuthUser } from '../../services/supabaseAuth'
 import { sendAdminAccessRequestSlackAlert } from '../../services/slackAlertService'
 
 interface DataIsolationBannerProps {
@@ -12,7 +13,7 @@ interface DataIsolationBannerProps {
 
 export function DataIsolationBanner({ onOpenAuthModal, className = '' }: DataIsolationBannerProps) {
     const [isolationEnabled, setIsolationEnabled] = useState(isDataIsolationEnabled)
-    const [user, setUser] = useState(getStoredAuth)
+    const [user, setUser] = useState<AppAuthUser | null>(getStoredAuth)
     const [adminRequested, setAdminRequested] = useState(false)
     const [isApplying, setIsApplying] = useState(false)
 
@@ -26,14 +27,25 @@ export function DataIsolationBanner({ onOpenAuthModal, className = '' }: DataIso
             }
         }
 
+        const handleAuthChange = (e: Event) => {
+            const customEvent = e as CustomEvent<{ user: AppAuthUser | null }>
+            if (customEvent.detail !== undefined) {
+                setUser(customEvent.detail.user)
+            } else {
+                setUser(getStoredAuth())
+            }
+        }
+
         const checkAuth = () => {
             setUser(getStoredAuth())
         }
 
         window.addEventListener(DATA_ISOLATION_EVENT, handleIsolationChange)
+        window.addEventListener(AUTH_CHANGE_EVENT, handleAuthChange)
         window.addEventListener('storage', checkAuth)
         return () => {
             window.removeEventListener(DATA_ISOLATION_EVENT, handleIsolationChange)
+            window.removeEventListener(AUTH_CHANGE_EVENT, handleAuthChange)
             window.removeEventListener('storage', checkAuth)
         }
     }, [])

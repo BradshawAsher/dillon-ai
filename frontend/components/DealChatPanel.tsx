@@ -205,16 +205,47 @@ function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealMo
     }
 
     parts.push(`\n## Persona & Guidance:
-- You are Dillon AI, an institutional M&A due diligence advisor and copilot.
-- Speak in clear, direct, plain-English without confusing buzzwords or AI fluff (ideal for Baby Boomers, Gen X searchers, and PE operators).
-- BE SNAPPY & TARGETED: Answer ONLY the specific question asked in 1–3 bullet points or a concise paragraph. DO NOT dump an unsolicited full-deal summary, financial overview, or multiple unrelated metrics unless the user explicitly asks for an overview.
-- When users ask how to get started or troubleshoot errors, give structured 1-2-3 steps with clickable deep-links.
+- You are Dillon, an institutional M&A due diligence advisor and IT/Platform Specialist for MergeWorks.
+- Dual Capabilities:
+  1. M&A Diligence: Forensic QoE, EBITDA adjustments, debt service & DSCR covenants, customer concentration, red flags, and 3-agent IC debate simulations (Bull vs. Bear vs. Arbiter).
+  2. Platform & IT Specialist: Navigating all 21 workspace tabs, guiding project intake & batch uploads, explaining OCR & synthesis pipelines, keyboard shortcuts, and BYOK AI models.
+- Speak in clear, direct, plain English without confusing buzzwords or AI fluff (ideal for Baby Boomers, Gen X searchers, and PE operators).
+- When recommending platform features or navigation, ALWAYS format clickable buttons like [Label](#project-intake), [Label](tab:tabName#anchorId), or [Label](tab:tabName).
 
-## Strict Deep-Link & Navigation Rules:
-- When recommending where to find features or navigate, provide AT MOST 1–2 clickable links formatted like [Label](tab:tabName#anchorId) or [Label](tab:tabName).
-- If the user's question is BROAD (e.g., "where do I find deal structuring?"), provide the high-level tab link: [Deal Capital Structure](tab:structure).
-- If the user's question is SPECIFIC (e.g., "where is the debt amortization schedule?"), provide the direct card anchor link: [Debt Amortization](tab:structure#structure-debt-schedule).
-- NEVER output more than 2 links in a single response.
+## 6-Step Diligence Workflow:
+1. 📁 Step 1: Project Intake & Upload -> Use link [Project Intake](#project-intake) (Enter deal name, asking price, drag-and-drop files).
+2. ⚡ Step 2: Queue Deal Analysis -> Dispatches files to Dillon AI OCR engine.
+3. 🔍 Step 3: Diligence Tab -> Use link [Diligence](tab:diligence) (Live batch carousel, per-document confidence, extracted facts).
+4. 🧠 Step 4: Synthesis Tab -> Use link [Synthesis](tab:synthesis) (Multi-document Buy/Pass verdict 🟢/🟡/🔴, EBITDA reconstruction, red flags).
+5. 📊 Step 5: Valuation & Deal Structure Tabs -> Use links [Valuation](tab:valuation) and [Deal Structure](tab:structure) (LBO model, SBA 7(a) debt, DSCR covenant check).
+6. 📄 Step 6: Export & Email -> Use link [Email Drafts](tab:email) (Download Investment Committee memo, draft broker inquiries).
+
+## Full Platform Tab Directory (21 Tabs):
+- overview: Executive 1-pager, investment summary, key metrics, top flags -> [Overview](tab:overview)
+- analysis: Quality of Earnings (QoE), seller add-backs, customer concentration, management interview tracker -> [Analysis](tab:analysis)
+- diagnostics: Risk & Playbook — financial/operational/legal/market risk + 100-day execution plan -> [Risk & Playbook](tab:diagnostics)
+- diligence: Document intake & OCR — real-time batch carousel, per-doc confidence, extracted facts -> [Diligence](tab:diligence)
+- synthesis: Cross-document verdict engine — 🟢/🟡/🔴 Buy/Pass signal, EBITDA reconstruction, discrepancies -> [Synthesis](tab:synthesis)
+- spending: Token usage & cost analytics per document and per synthesis pass -> [Spending & Billing](tab:spending)
+- compare: Side-by-side comparison matrix of all deals across portfolio -> [Compare Deals](tab:compare)
+- valuation: DCF, comp multiples, entry multiple modeling, confidence intervals -> [Valuation](tab:valuation)
+- returns: IRR & MoIC sensitivity heatmaps across exit multiples and hold periods -> [Returns](tab:returns)
+- growth: Base/Bull/Bear revenue and margin trajectories (3–7 yr) -> [Growth](tab:growth)
+- structure: SBA 7(a) debt, seller notes, equity check, DSCR covenant testing -> [Deal Structure](tab:structure)
+- negotiation: Price levers, seller concessions, indemnity holdbacks, R&W terms -> [Negotiation](tab:negotiation)
+- documents: Projects & Portfolio Repository — browse, switch, or create deals across portfolio (Navbar tab: "Projects") -> [Projects](tab:documents)
+- shortcuts: Hotkey reference (C = Chat, D = Diligence, S = Synthesis, M = Model, / = search, ? = shortcuts) -> [Shortcuts](tab:shortcuts)
+- evals: Live AI model benchmark harness (OpenAI 5.6 Terra, Claude Sonnet 5, Gemini 3.7 Flash, DeepSeek V4 Flash) -> [Evals & Harness](tab:evals)
+- faqs: Architecture documentation, BYOK setup, Data Isolation FAQs -> [FAQs & Guide](tab:faqs)
+- history: Audit trail — submission timestamps, model versions, analyst edits -> [Audit Trail](tab:history)
+- email: Auto-generated broker emails, LOI term sheets, IC memos -> [Email Drafts](tab:email)
+- errors: Workflow error log & extraction retry diagnostics -> [Errors](tab:errors)
+- report_issue: Direct Slack feedback to engineering (#pod-1-agent-alerts) -> [Report an Issue](tab:report_issue)
+- account: BYOK API key setup, Data Isolation toggle, user profile -> [Account & Settings](tab:account)
+
+## Navigation Button Link Rules:
+- For Project Intake (top card on dashboard): ALWAYS use [Project Intake](#project-intake).
+- For Projects Portfolio tab: ALWAYS use [Projects](tab:documents).
 - Available Tabs & Primary Anchors:
   - tab:structure (anchors: #structure-sources-uses, #structure-debt-schedule, #structure-covenants)
   - tab:valuation (anchors: #valuation-summary, #valuation-multiples, #valuation-dcf, #valuation-precedent)
@@ -226,7 +257,12 @@ function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealMo
   - tab:synthesis (anchors: #synthesis-judgment, #synthesis-valuation, #synthesis-red-flags)
   - tab:compare (anchors: #compare-kpis, #compare-filters, #compare-matrix)
   - tab:documents (anchors: #projects-summary-metrics, #project-card-active, #project-card-documents)
-  - tab:spending (anchors: #spending-model, #spending-api-calls)`)
+  - tab:spending (anchors: #spending-model, #spending-api-calls)
+  - tab:evals
+  - tab:faqs
+  - tab:shortcuts
+  - tab:account
+  - tab:report_issue`)
 
     return parts.join('\n')
 }
@@ -635,6 +671,58 @@ Our deal pod engineering team has received your report. If you'd like to include
         }
     }
 
+    // 0.08 Chatbot Self-Knowledge & How to Use Dillon AI
+    if (
+        q.includes('who are you') ||
+        q.includes('what are you') ||
+        q.includes('who is dillon') ||
+        q.includes('what is dillon') ||
+        q.includes('about yourself') ||
+        q.includes('tell me about yourself') ||
+        q.includes('how do i use this chat') ||
+        q.includes('how to use the chatbot') ||
+        q.includes('how do i use the chatbot') ||
+        q.includes('how does the chatbot work') ||
+        q.includes('what can you do') ||
+        q.includes('what are your capabilities') ||
+        q.includes('what tools do you have') ||
+        q.includes('help with chat')
+    ) {
+        return {
+            matched: true,
+            content: `### 🤖 I am Dillon — Your AI Due Diligence & Platform Specialist
+
+I am your institutional co-pilot for acquisition diligence and platform navigation across MergeWorks.
+
+---
+
+### 💼 What I Can Do for You:
+
+1. **📊 M&A Financial & Forensic Diligence:**
+   - **QoE & Add-Back Audit**: Scrutinize seller add-backs, EBITDA normalization, and owner compensation.
+   - **Debt & DSCR Covenants**: Calculate SBA 7(a) loan debt service, fixed-charge coverage ratios, and equity requirements.
+   - **Risk & Red Flag Detection**: Highlight customer concentration, tax lien risks, declining gross margins, and unverified financials.
+   - **Multi-Agent IC Debate**: Run an interactive Investment Committee simulation with **Bull Agent 🐂**, **Bear Agent 🐻**, and **Arbiter ⚖️**.
+
+2. **🧭 Platform & IT Navigation:**
+   - **Instant Deep-Linking**: I output clickable navigation buttons (e.g. [Project Intake](#project-intake), [Diligence](tab:diligence), [Synthesis](tab:synthesis)) that instantly scroll to any section or switch to any of our 21 workspace tabs.
+   - **Multi-Deal Portfolio Switching**: I maintain live context on all projects in your portfolio and can compare deals or help you switch projects.
+   - **Direct Bug & Feedback Dispatch**: Mention any issue and I will dispatch an alert directly to our engineering team on Slack (\`#pod-1-agent-alerts\`).
+
+---
+
+### 💡 How to Interact with Me:
+
+- **Quick Action Prompts**:
+  - *"How do I get started?"* → Step-by-step onboarding walkthrough.
+  - *"What is the adjusted EBITDA?"* → Verified financial summary.
+  - *"Run an IC debate"* → 3-agent Bull/Bear/Arbiter debate.
+  - *"Tell me the tabs on the website"* → Full 21-tab directory.
+- **Model Switching & BYOK**: You can switch my underlying AI model (OpenAI 5.6 Terra, Claude Sonnet 5, Gemini 3.7 Flash, DeepSeek V4 Flash) or configure your own API keys in [Account & Settings](tab:account).
+- **Keyboard Shortcut**: Press \`C\` anywhere on the dashboard to toggle this chat panel!`,
+        }
+    }
+
     // 0.1 Getting Started & Beginner Guide (Baby Boomer & Gen X Friendly)
     if (
         q.includes('how do i get started') ||
@@ -662,27 +750,88 @@ Our deal pod engineering team has received your report. If you'd like to include
             matched: true,
             content: `### 🚀 Welcome to MergeWorks Due Diligence!
 
-Here is your straightforward **3-Step Diligence Gameplan**:
+Here is your straightforward **6-Step Diligence & IT Workflow**:
 
-1. **📁 Step 1: Upload Your Deal Documents**
-   - Head over to the **Diligence Tab** to drag and drop CIMs, Profit & Loss statements, Tax Returns, or LOIs.
-   - Our AI OCR engine extracts reported Revenue, EBITDA, SDE, add-backs, and flags red lines in ~25 seconds per document.
-   👉 [Go to Diligence Uploads](tab:diligence#diligence-documents)
+1. **📁 Step 1: Project Intake & Upload**
+   - Click the link below to scroll directly to the **Project Intake** card at the top of the dashboard.
+   - Enter your **Deal Name** and **Asking Price**, then drag and drop your financial files (P&Ls, Balance Sheets, Tax Returns, CIMs).
+   👉 [Go to Project Intake](#project-intake)
 
-2. **📊 Step 2: Audit Financials & Red Flags**
-   - Go to the **Analysis Tab** to see normalized earnings, seller add-back quality (QoE), and customer concentration risks.
-   - You'll find auto-generated questions for the seller and a closing checklist.
-   👉 [Open Deal 1-Pager](tab:analysis#analysis-deal-on-a-page)
-   👉 [Open EBITDA Quality](tab:analysis#analysis-ebitda-quality)
-   👉 [Open Deal Scorecard](tab:analysis#analysis-scorecard)
+2. **⚡ Step 2: Queue Deal Analysis**
+   - Click **"Queue Deal Analysis"** to dispatch your files to our Dillon AI OCR engine.
 
-3. **🎯 Step 3: Test Valuation & Structure the Deal**
-   - In the **Valuation Tab**, adjust purchase price multiples, model SBA 7(a) debt payments, test debt service coverage (DSCR), and export an institutional Investment Committee memo.
+3. **🔍 Step 3: Diligence Tab**
+   - Watch the live batch processing carousel.
+   - Inspect per-document confidence scores, risk flags, and extracted financial line items.
+   👉 [Open Diligence Tab](tab:diligence)
+
+4. **🧠 Step 4: Synthesis Tab**
+   - Review the multi-document **Buy/Pass Signal** (🟢 Proceed / 🟡 Renegotiate / 🔴 Walk Away).
+   - Inspect EBITDA add-back schedules, cross-document discrepancies, and negotiation levers.
+   👉 [Open Synthesis Tab](tab:synthesis)
+
+5. **📊 Step 5: Valuation & Deal Structure**
+   - In the **Valuation** and **Structure** tabs, model purchase price multiples, senior SBA 7(a) debt, seller notes, and test DSCR covenants.
    👉 [Open Valuation Explorer](tab:valuation)
-   👉 [Open Financing Scenarios](tab:analysis#analysis-financing-scenarios)
+   👉 [Open Deal Structure](tab:structure)
 
-💡 **Want a visual walkthrough?**
-Click the **"⚡ 10-Step Tour (2 min)"** or **"🎥 2-Min Video Walkthrough"** button in the top walkthrough bar any time!`
+6. **📄 Step 6: Export & Email**
+   - Generate formal Investment Committee memos or draft broker inquiry emails with one click.
+   👉 [Open Email Drafts](tab:email)
+
+💡 **Projects Portfolio**: View, switch, or archive any deal in your portfolio via 👉 [Projects](tab:documents).
+💡 **Keyboard Shortcuts**: Press \`C\` for Chat, \`D\` for Diligence, \`S\` for Synthesis, \`M\` for Valuation, \`?\` for all shortcuts.
+💡 **Want a tour?** Click **"⚡ 10-Step Tour (2 min)"** or **"🎥 2-Min Video Walkthrough"** at the top any time!`
+        }
+    }
+
+    // 0.15 Platform Tab Directory & Navigation Guide
+    if (
+        q.includes('tell me the tabs') ||
+        q.includes('what tabs') ||
+        q.includes('list tabs') ||
+        q.includes('all tabs') ||
+        q.includes('tabs on the website') ||
+        q.includes('tabs on this website') ||
+        q.includes('website tabs') ||
+        q.includes('tab list') ||
+        q.includes('tab directory') ||
+        q.includes('what pages') ||
+        q.includes('list pages') ||
+        q.includes('all pages')
+    ) {
+        return {
+            matched: true,
+            content: `### 🗂️ MergeWorks Workspace Tabs Directory (21 Tabs)
+
+Here is a full breakdown of the tabs available across the platform:
+
+#### 🔍 Deal Diligence & Forensics
+- **[Overview](tab:overview)**: Executive deal 1-pager with headline metrics, quick health signals, and top flags.
+- **[Analysis](tab:analysis)**: Forensic QoE, EBITDA add-backs, customer concentration, and management Q&A tracker.
+- **[Diagnostics](tab:diagnostics)**: Risk audit across financial/operational/legal dimensions + 100-day playbook.
+- **[Diligence](tab:diligence)**: Document intake, OCR batch processing carousel, and per-doc extracted facts.
+- **[Synthesis](tab:synthesis)**: Multi-document Buy/Pass traffic light verdict (🟢/🟡/🔴), conflict reconciliation, and thesis summary.
+
+#### 💰 Valuation & Deal Structuring
+- **[Valuation](tab:valuation)**: DCF, comp multiples, entry multiple modeling, and valuation confidence ranges.
+- **[Returns](tab:returns)**: IRR and MoIC sensitivity heatmaps across hold periods and exit multiples.
+- **[Growth](tab:growth)**: Base, Bull, and Bear case revenue growth and margin projection scenarios.
+- **[Structure](tab:structure)**: SBA 7(a) debt, seller notes, equity check, and DSCR covenant test.
+- **[Negotiation](tab:negotiation)**: Price negotiation levers, seller concessions, and indemnity holdback recommendations.
+
+#### 📁 Portfolio & Utility
+- **[Compare](tab:compare)**: Side-by-side matrix comparing all deals across your pipeline.
+- **[Projects](tab:documents)**: Central project repository to browse, switch, create, or archive deals across your portfolio.
+- **[Spending](tab:spending)**: Token usage and API cost analytics per document and synthesis pass.
+- **[Shortcuts](tab:shortcuts)**: Quick hotkeys guide (\`C\` = Chat, \`D\` = Diligence, \`S\` = Synthesis, \`M\` = Model, \`?\` = Help).
+- **[Evals](tab:evals)**: Head-to-head AI benchmark harness comparing OpenAI 5.6, Claude Sonnet 5, Gemini 3.7, and DeepSeek V4.
+- **[FAQs](tab:faqs)**: Platform architecture, data privacy, BYOK instructions, and security FAQs.
+- **[History](tab:history)**: Audit timeline of all submissions, OCR timestamps, and edits.
+- **[Email](tab:email)**: Auto-generated broker emails and IC memos.
+- **[Errors](tab:errors)**: Extraction retry and n8n execution debug log.
+- **[Report Issue](tab:report_issue)**: Direct Slack dispatch to engineering (#pod-1-agent-alerts).
+- **[Account](tab:account)**: BYOK API keys, Data Isolation toggle, and account settings.`
         }
     }
 
@@ -1080,8 +1229,12 @@ function renderSimpleMarkdown(
                     const withoutPrefix = url.slice(4)
                     if (withoutPrefix.includes('#')) {
                         const [t, a] = withoutPrefix.split('#')
-                        targetTab = t as WorkspaceTab
+                        targetTab = (t === 'projects' || t === 'project') ? 'documents' : (t as WorkspaceTab)
                         anchorId = a
+                    } else if (withoutPrefix === 'intake' || withoutPrefix === 'upload') {
+                        anchorId = 'project-intake'
+                    } else if (withoutPrefix === 'projects' || withoutPrefix === 'portfolio') {
+                        targetTab = 'documents'
                     } else {
                         targetTab = withoutPrefix as WorkspaceTab
                     }
@@ -1091,6 +1244,9 @@ function renderSimpleMarkdown(
                     else if (anchorId.startsWith('diligence-')) targetTab = 'diligence'
                     else if (anchorId.startsWith('synthesis-')) targetTab = 'synthesis'
                     else if (anchorId.startsWith('overview-')) targetTab = 'overview'
+                    else if (anchorId === 'project-intake' || anchorId === 'upload-section') {
+                        targetTab = null
+                    }
                 }
 
                 elements.push(
@@ -1098,7 +1254,14 @@ function renderSimpleMarkdown(
                         key={`${i}-${matchIndex}`}
                         type="button"
                         onClick={() => {
-                            if (targetTab && onNavigateTab) {
+                            if (anchorId === 'project-intake' || anchorId === 'upload-section') {
+                                const el = document.getElementById('project-intake') || document.getElementById('upload-section')
+                                if (el) {
+                                    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                                    const input = el.querySelector('input')
+                                    if (input) (input as HTMLElement).focus()
+                                }
+                            } else if (targetTab && onNavigateTab) {
                                 onNavigateTab(targetTab, anchorId)
                             } else if (anchorId) {
                                 const el = document.getElementById(anchorId)
@@ -1664,11 +1827,12 @@ Format your output with clean Markdown headings:
 - **Mandatory Closing Conditions**: [Escrow & True-up terms]
 ` : ''
 
-    const systemPrompt = `You are MergeWorks AI, an expert M&A due diligence advisor and financial intelligence assistant.
+    const systemPrompt = `You are MergeWorks AI, an expert M&A due diligence advisor and IT/Platform Specialist for the MergeWorks platform.
 You have access to live financial tools (calculate_deal_financials, smb_valuation_benchmarks, query_deal_data) and memory of the active conversation.
-You can calculate DSCR, SDE bridges, loan amortizations, and analyze deal metrics with institutional rigor.${debateInstruction}
+You can calculate DSCR, SDE bridges, loan amortizations, and analyze deal metrics with institutional rigor.
+You can also answer user questions about getting started, navigating the 21 workspace tabs, uploading deal documents, and troubleshooting.${debateInstruction}
 
---- CURRENT DEAL CONTEXT ---
+--- CURRENT DEAL CONTEXT & PLATFORM GUIDE ---
 ${context}
 --- END CONTEXT ---`
 
@@ -2176,13 +2340,25 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
         return () => window.removeEventListener('keydown', handleKeyDown)
     }, [isOpen])
 
-    const scrollToBottom = useCallback(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
+        messagesEndRef.current?.scrollIntoView({ behavior })
     }, [])
 
+    // Scroll to bottom when new messages arrive or change
     useEffect(() => {
-        scrollToBottom()
+        scrollToBottom('smooth')
     }, [messages, scrollToBottom])
+
+    // Scroll to bottom immediately whenever the chat panel is opened or active session is switched
+    useEffect(() => {
+        if (isOpen) {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'auto' })
+            const timer = setTimeout(() => {
+                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+            }, 60)
+            return () => clearTimeout(timer)
+        }
+    }, [isOpen, effectiveActiveSessionId])
 
     const sessionId = effectiveActiveSessionId
 

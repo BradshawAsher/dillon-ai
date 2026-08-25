@@ -18,6 +18,8 @@ import {
     FileText,
     FolderKanban,
     Layers,
+    LayoutGrid,
+    List,
     Play,
     Plus,
     RotateCcw,
@@ -301,6 +303,7 @@ export default function EvalDashboardTab({
     const [expandedCardMap, setExpandedCardMap] = useState<Record<string, boolean>>({})
     const [showCrossDocConflicts, setShowCrossDocConflicts] = useState<boolean>(false)
     const [cardPhases, setCardPhases] = useState<Record<string, 'pre-loi' | 'post-loi'>>({})
+    const [evalLayoutMode, setEvalLayoutMode] = useState<'grid' | 'list'>('grid')
 
     const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false)
     const [summaryModalData, setSummaryModalData] = useState<HighLevelBusinessSummaryData | null>(null)
@@ -1191,6 +1194,36 @@ export default function EvalDashboardTab({
                                     <option value="name_asc">File Name: A to Z</option>
                                 </select>
 
+                                {/* Layout Mode Toggle: Side-by-Side Grid vs Full-Width List */}
+                                <div className="flex items-center rounded-lg border border-border/80 bg-muted/40 p-0.5 shadow-2xs text-xs">
+                                    <button
+                                        type="button"
+                                        onClick={() => setEvalLayoutMode('grid')}
+                                        className={`px-2.5 py-1 rounded-md transition-all font-semibold flex items-center gap-1.5 cursor-pointer ${
+                                            evalLayoutMode === 'grid'
+                                                ? 'bg-primary text-primary-foreground shadow-xs font-bold'
+                                                : 'text-muted-foreground hover:text-foreground'
+                                        }`}
+                                        title="2-Column Side-by-Side Grid View"
+                                    >
+                                        <LayoutGrid className="h-3.5 w-3.5" />
+                                        <span>Side-by-Side</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setEvalLayoutMode('list')}
+                                        className={`px-2.5 py-1 rounded-md transition-all font-semibold flex items-center gap-1.5 cursor-pointer ${
+                                            evalLayoutMode === 'list'
+                                                ? 'bg-primary text-primary-foreground shadow-xs font-bold'
+                                                : 'text-muted-foreground hover:text-foreground'
+                                        }`}
+                                        title="1-Column Full Width List View"
+                                    >
+                                        <List className="h-3.5 w-3.5" />
+                                        <span>Full Width</span>
+                                    </button>
+                                </div>
+
                                 {/* Toggle All Doc Minicards */}
                                 <Button
                                     variant={showDocMinicards ? "secondary" : "default"}
@@ -1226,7 +1259,7 @@ export default function EvalDashboardTab({
                     )
                 })()}
 
-                <CardContent className="space-y-6 max-h-[2320px] overflow-y-auto pr-2 scrollbar-thin pt-4">
+                <CardContent className="pr-2 scrollbar-thin pt-4">
                     {(() => {
                         const results = latestRun.documentResults || defaultReport.documentResults
 
@@ -1574,7 +1607,9 @@ export default function EvalDashboardTab({
                             },
                         }
 
-                        return Object.entries(groups).map(([businessName, docs], groupIdx) => {
+                        return (
+                            <div className={evalLayoutMode === 'grid' ? "grid grid-cols-1 xl:grid-cols-2 gap-5 items-start" : "space-y-6"}>
+                                {Object.entries(groups).map(([businessName, docs], groupIdx) => {
                             const normB = businessName.toLowerCase()
                             const isDD001 = normB.includes('cascadia') || normB.includes('dd-001') || normB.includes('dd001')
                             const isDD002 = normB.includes('northstar') || normB.includes('dd-002') || normB.includes('dd002')
@@ -1769,7 +1804,7 @@ export default function EvalDashboardTab({
                                 : <Badge variant="outline" className="text-xs font-bold gap-1 px-2.5 py-0.5 bg-amber-500/15 text-amber-900 dark:text-amber-200 border-amber-400/80">⚠️ Post-LOI Synthesis Pending (Needs LOI File)</Badge>
 
                             return (
-                                <div key={`${groupIdx}_${cardPhase}`} className={`rounded-xl p-4 space-y-4 ${cardTheme}`}>
+                                <div key={`${groupIdx}_${cardPhase}`} className={`rounded-xl p-4.5 space-y-4 flex flex-col justify-between transition-all ${cardTheme}`}>
                                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/60 pb-3">
                                         <div className="space-y-1.5">
                                             <div className="flex items-center gap-2 flex-wrap">
@@ -2053,7 +2088,8 @@ export default function EvalDashboardTab({
                                         }
                                         return (
                                             <div className="space-y-3">
-                                                <div className={`grid gap-3 ${docs.length > 10 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'md:grid-cols-2'}`}>
+                                                <div className="max-h-[380px] overflow-y-auto pr-1.5 scrollbar-thin rounded-lg">
+                                                    <div className={`grid gap-2.5 ${evalLayoutMode === 'grid' ? 'grid-cols-1 sm:grid-cols-2' : (docs.length > 10 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid-cols-1 md:grid-cols-2')}`}>
                                                     {docs.map((doc: any, docIdx: number) => {
                                                         const isPass = isDocPassed(doc)
                                                         const docCost = doc.costUsd || val.perDocCost
@@ -2174,6 +2210,7 @@ export default function EvalDashboardTab({
                                                             </div>
                                                         )
                                                     })}
+                                                    </div>
                                                 </div>
 
                                                 {/* Bottom Collapse Control */}
@@ -2199,7 +2236,9 @@ export default function EvalDashboardTab({
                                     })()}
                                 </div>
                             )
-                        })
+                                })}
+                            </div>
+                        )
                     })()}
                 </CardContent>
             </Card>
