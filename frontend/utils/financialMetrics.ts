@@ -21,18 +21,17 @@ function safeParseJson(value: any): any {
     return null
 }
 
-function formatMagnitude(num: number): string {
+export function formatMagnitude(num: number): string {
     if (isNaN(num)) return 'N/A'
-    if (Math.abs(num) >= 1_000_000) {
-        const val = num / 1_000_000
-        const formatted = val % 1 === 0 ? val.toFixed(0) : Number(val.toFixed(2)).toString()
-        return `$${formatted}M`
-    }
-    if (Math.abs(num) >= 1_000) {
-        const val = num / 1_000
-        const formatted = val % 1 === 0 ? val.toFixed(0) : Number(val.toFixed(1)).toString()
-        return `$${formatted}K`
-    }
+    const abs = Math.abs(num)
+    // Strip a trailing ".0" so whole magnitudes read as "$5M" rather than "$5.0M".
+    const trim = (val: number, dp: number) => (val % 1 === 0 ? val.toFixed(0) : Number(val.toFixed(dp)).toString())
+    // Rounding-aware tier edges: a value at the top of a tier can round up into
+    // the next one, so 999,999 promotes to "$1M" (not "$1000K") and billions get
+    // their own suffix instead of an unbounded "$2500M".
+    if (abs >= 999_995_000) return `$${trim(num / 1_000_000_000, 2)}B`
+    if (abs >= 999_950) return `$${trim(num / 1_000_000, 2)}M`
+    if (abs >= 1_000) return `$${trim(num / 1_000, 1)}K`
     return `$${num.toLocaleString()}`
 }
 
