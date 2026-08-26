@@ -23,7 +23,11 @@ export function formatDraftMoney(value: number | null | undefined): string | nul
     // negative EBITDA renders as "-$2.0M" rather than leaking as "$-2000000".
     const sign = value < 0 ? '-' : ''
     const abs = Math.abs(value)
-    if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(1)}M`
+    // Rounding-aware tier edges: 999.95M+ rounds up to a billion, and 999,500+
+    // rounds up to a million, so promote them instead of printing "$1000K" or
+    // "$1000.0M" (see formatCompactMoney for the shared rationale).
+    if (abs >= 999_950_000) return `${sign}$${(abs / 1_000_000_000).toFixed(1)}B`
+    if (abs >= 999_500) return `${sign}$${(abs / 1_000_000).toFixed(1)}M`
     if (abs >= 1_000) return `${sign}$${(abs / 1_000).toFixed(0)}K`
     return `${sign}$${abs.toFixed(0)}`
 }
