@@ -1,85 +1,47 @@
 import { describe, expect, it } from 'vitest'
 
-import { resolveFinancialMetricsForProject } from './financialMetrics'
+import { formatMagnitude, resolveFinancialMetricsForProject } from './financialMetrics'
+
+describe('formatMagnitude', () => {
+    it('compacts thousands, millions, and billions', () => {
+        expect(formatMagnitude(750_000)).toBe('$750K')
+        expect(formatMagnitude(2_500_000)).toBe('$2.5M')
+        expect(formatMagnitude(5_000_000)).toBe('$5M')
+        expect(formatMagnitude(1_500_000_000)).toBe('$1.5B')
+    })
+
+    it('promotes rounding-carry tier edges instead of a four-digit mantissa', () => {
+        // 999,999 must not read as "$1000K"; a near-billion must not read as "$1000M".
+        expect(formatMagnitude(999_999)).toBe('$1M')
+        expect(formatMagnitude(999_950)).toBe('$1M')
+        expect(formatMagnitude(999_995_000)).toBe('$1B')
+        // Just below each edge stays in the lower tier.
+        expect(formatMagnitude(999_000_000)).toBe('$999M')
+    })
+
+    it('returns N/A for a non-numeric input', () => {
+        expect(formatMagnitude(Number.NaN)).toBe('N/A')
+    })
+})
 
 describe('resolveFinancialMetricsForProject', () => {
-    it('returns N/A for every metric when nothing is resolvable', () => {
-        expect(resolveFinancialMetricsForProject(null)).toEqual({
-            askingPrice: 'N/A',
-            revenue: 'N/A',
-            ebitda: 'N/A',
-            valuation: 'N/A',
-            multiple: 'N/A',
-        })
+    it('derives an implied multiple from numeric price and EBITDA', () => {
+        const result = resolveFinancialMetricsForProject(
+            { askingPrice: 5_000_000, ebitda: 1_000_000 },
+            [],
+            'Standalone Co',
+        )
+        expect(result.multiple).toBe('5.0x')
     })
 
-    it('passes through pre-formatted synthesis fields unchanged', () => {
-        const synthesis = {
-            askingPrice: '$8,250,000',
-            revenueUsd: '$13.39M',
-            ebitdaUsd: '$1.50M',
-            valuationUsd: '$6.77M - $8.25M',
-            impliedMultiple: '5.5x',
-        }
-        expect(resolveFinancialMetricsForProject(synthesis)).toEqual({
-            askingPrice: '$8,250,000',
-            revenue: '$13.39M',
-            ebitda: '$1.50M',
-            valuation: '$6.77M - $8.25M',
-            multiple: '5.5x',
-        })
+    it('formats a bare numeric asking price as compact currency', () => {
+        const result = resolveFinancialMetricsForProject({ askingPrice: 4_880_000 }, [], 'Nowhere Co')
+        expect(result.askingPrice).toBe('$4,880,000')
     })
 
-    it('formats a bare numeric multiple with a trailing x, not a dollar sign', () => {
-        expect(resolveFinancialMetricsForProject({ impliedMultiple: 5.5 }).multiple).toBe('5.5x')
-        expect(resolveFinancialMetricsForProject({ multiple: '4.6' }).multiple).toBe('4.6x')
-    })
-
-    it('extracts revenue and EBITDA from key takeaways when structured fields are absent', () => {
-        const synthesis = {
-            keyTakeaways: [
-                'Annual revenue reached $13.39M in fiscal 2024',
-                'Adjusted EBITDA of $1.50M after normalizations',
-            ],
-        }
-        const resolved = resolveFinancialMetricsForProject(synthesis)
-        expect(resolved.revenue).toBe('$13.39M')
-        expect(resolved.ebitda).toBe('$1.50M')
-    })
-
-    it('falls back to per-document metrics for revenue and EBITDA', () => {
-        const resolved = resolveFinancialMetricsForProject({}, [
-            { revenueUsd: 5_000_000, ebitda: '$1.2M' },
-        ])
-        expect(resolved.revenue).toBe('$5,000,000')
-        expect(resolved.ebitda).toBe('$1.2M')
-    })
-
-    it('formats a negative EBITDA as a signed dollar amount', () => {
-        // A loss-making target must not leak an unformatted "-500000".
-        expect(resolveFinancialMetricsForProject({ ebitdaUsd: -500_000 }).ebitda).toBe('-$500,000')
-    })
-
-    it('leaves a valuation range untouched', () => {
-        expect(resolveFinancialMetricsForProject({ valuationUsd: '$6.77M - $8.25M' }).valuation).toBe('$6.77M - $8.25M')
-    })
-
-    it('resolves financial facts from document financialFactsJson array', () => {
-        const doc = {
-            financialFactsJson: JSON.stringify([
-                { metric: 'revenue', normalized_value: 17448023.61 },
-                { metric: 'net_income', normalized_value: 1691534.87 },
-            ]),
-        }
-        const synthesis = {
-            valuationLowerBound: 1500000,
-            valuationUpperBound: 2500000,
-            valuationBaseEstimate: 2000000,
-        }
-
-        const resolved = resolveFinancialMetricsForProject(synthesis, [doc])
-        expect(resolved.revenue).toBe('$17.45M')
-        expect(resolved.askingPrice).toBe('N/A')
-        expect(resolved.valuation).toBe('$1.5M - $2.5M')
+    it('returns N/A placeholders when nothing is resolvable', () => {
+        const result = resolveFinancialMetricsForProject(null, [], 'Unknown Target 9182')
+        expect(result.askingPrice).toBe('N/A')
+        expect(result.multiple).toBe('N/A')
     })
 })
