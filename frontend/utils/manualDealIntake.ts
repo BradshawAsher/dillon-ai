@@ -266,7 +266,12 @@ export function buildManualDealModel(formData: ManualDealFormData, projectId: st
     const { adjustedEbitda, askingMultiple } = calculateNormalizedEbitda(formData)
     const { totalAssets, totalLiabilities, netAssetValue } = calculateBalanceSheetTotals(formData)
 
-    const askingPrice = formData.askingPrice || 0
+    // Guard against a blank/NaN asking price once, then derive every
+    // price-scaled figure from this local. Reading `formData.askingPrice`
+    // directly below (e.g. `formData.askingPrice * 0.035`) would let a NaN or
+    // undefined leak straight into transactionFees / closingCosts.
+    const askingPrice = Number.isFinite(formData.askingPrice) ? Math.max(0, formData.askingPrice) : 0
+    const annualRevenue = Number.isFinite(formData.annualRevenue) ? Math.max(0, formData.annualRevenue) : 0
     const equityPct = formData.equityContributionPercent || 20
     const sellerNote = formData.sellerNoteAmount || 0
     const equityAmount = Math.max(0, (askingPrice * equityPct) / 100)
@@ -298,12 +303,12 @@ export function buildManualDealModel(formData: ManualDealFormData, projectId: st
         purchasePrice: formData.askingPrice,
         debtAssumed: formData.longTermDebt || 0,
         cashAcquired: formData.cashIncluded || 0,
-        workingCapitalRequirement: Math.round((formData.annualRevenue * 0.1) || 0),
-        transactionFees: Math.round(formData.askingPrice * 0.035),
+        workingCapitalRequirement: Math.round(annualRevenue * 0.1),
+        transactionFees: Math.round(askingPrice * 0.035),
         holdPeriodYears: 5,
         taxRate: 25,
-        closingCosts: Math.round(formData.askingPrice * 0.015),
-        maintenanceCapex: Math.round((formData.annualRevenue * 0.025) || 0),
+        closingCosts: Math.round(askingPrice * 0.015),
+        maintenanceCapex: Math.round(annualRevenue * 0.025),
         exitMultiple: formData.exitMultiple || 5.0,
         exitCosts: 4,
         equityContributionPercent: formData.equityContributionPercent,
@@ -325,7 +330,7 @@ export function buildManualDealModel(formData: ManualDealFormData, projectId: st
         bearExitMultiple: Math.max(2.0, (formData.exitMultiple || 5.0) - 1.2),
         baseExitMultiple: formData.exitMultiple || 5.0,
         bullExitMultiple: (formData.exitMultiple || 5.0) + 1.2,
-        revenueMultiple: formData.annualRevenue > 0 ? Number((formData.askingPrice / formData.annualRevenue).toFixed(2)) : 0,
+        revenueMultiple: annualRevenue > 0 ? Number((askingPrice / annualRevenue).toFixed(2)) : 0,
         ebitdaMultiple: askingMultiple,
         assetHaircutPercent: 15,
         modelUpdatedAt: new Date().toISOString(),
