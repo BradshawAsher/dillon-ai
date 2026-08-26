@@ -137,22 +137,28 @@ export function formatSubmissionStatus(status: string | null | undefined) {
 }
 
 export function hasAiEnrichment(row: SubmissionHistoryItem) {
+    // DB / n8n rows can hand back null/undefined for any string column even
+    // though the type says string, so guard each field rather than calling
+    // `.trim()` on it directly — a bare `.trim()` on a null throws and takes
+    // down the whole row render. Matches the defensive coercion the status and
+    // date helpers already use.
+    const hasText = (value: unknown) => typeof value === 'string' && value.trim().length > 0
     return (
-        row.riskLevel.trim().length > 0
-        || row.category.trim().length > 0
-        || row.trafficLight.trim().length > 0
-        || row.ebitdaExtracted.trim().length > 0
-        || row.extractedJson.trim().length > 0
-        || row.aiSummary.trim().length > 0
-        || row.aiTargetValue.trim().length > 0
-        || row.aiConfidence.trim().length > 0
-        || row.projectId.trim().length > 0
-        || row.projectStage.trim().length > 0
-        || row.documentType.trim().length > 0
-        || row.valuationLowerBound.trim().length > 0
-        || row.valuationBaseEstimate.trim().length > 0
-        || row.valuationUpperBound.trim().length > 0
-        || row.investmentBuyReasoning.trim().length > 0
-        || row.needsHumanReview
+        hasText(row.riskLevel)
+        || hasText(row.category)
+        || hasText(row.trafficLight)
+        || hasText(row.ebitdaExtracted)
+        || hasText(row.extractedJson)
+        || hasText(row.aiSummary)
+        || hasText(row.aiTargetValue)
+        || hasText(row.aiConfidence)
+        || hasText(row.projectId)
+        || hasText(row.projectStage)
+        || hasText(row.documentType)
+        || hasText(row.valuationLowerBound)
+        || hasText(row.valuationBaseEstimate)
+        || hasText(row.valuationUpperBound)
+        || hasText(row.investmentBuyReasoning)
+        || row.needsHumanReview === true
     )
 }
