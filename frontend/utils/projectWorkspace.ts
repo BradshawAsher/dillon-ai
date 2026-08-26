@@ -367,16 +367,25 @@ export function isRowMatchingProject(row: SubmissionHistoryItem, targetProjectId
     // 2. If targetProjectId is a specific instance ID (e.g. "project-20260807-f82ade4b"), match explicit PID/PK or mapped business name
     if (rawTarget.startsWith('project-') || rawTarget.startsWith('batch-') || rawTarget.startsWith('sub-')) {
         if (explicitPid === rawTarget || pk === rawTarget) return true
-        const project = projectSummaries.find((p: any) => {
-            const pKey = (p.projectKey || '').toLowerCase().trim()
-            const pId = (p.projectId || '').toLowerCase().trim()
-            return pKey === rawTarget || pId === rawTarget
-        })
-        if (project) {
-            const pName = (project.projectName || project.companyName || '').toLowerCase()
-            const rowCompany = (detectCompanyName(row) || row.companyName || row.dealName || '').toLowerCase()
-            if (pName.length > 2 && rowCompany.length > 2 && (pName.includes(rowCompany) || rowCompany.includes(pName))) {
-                return true
+
+        // If the row explicitly belongs to a DIFFERENT project ID, strictly forbid cross-project matching
+        if (explicitPid && (explicitPid.startsWith('project-') || explicitPid.startsWith('batch-') || explicitPid.startsWith('sub-')) && explicitPid !== rawTarget) {
+            return false
+        }
+
+        // Only for legacy rows WITHOUT an explicit project ID, allow matching by company name
+        if (!explicitPid) {
+            const project = projectSummaries.find((p: any) => {
+                const pKey = (p.projectKey || '').toLowerCase().trim()
+                const pId = (p.projectId || '').toLowerCase().trim()
+                return pKey === rawTarget || pId === rawTarget
+            })
+            if (project) {
+                const pName = (project.projectName || project.companyName || '').toLowerCase()
+                const rowCompany = (detectCompanyName(row) || row.companyName || row.dealName || '').toLowerCase()
+                if (pName.length > 2 && rowCompany.length > 2 && (pName.includes(rowCompany) || rowCompany.includes(pName))) {
+                    return true
+                }
             }
         }
         return false

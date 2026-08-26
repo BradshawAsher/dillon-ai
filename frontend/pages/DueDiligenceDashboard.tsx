@@ -1185,12 +1185,31 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     )
 
     const availableProjects = useMemo(() => {
-        return projectSummaries.map((ps: any) => ({
-            key: ps.projectKey,
-            label: ps.projectName,
-            name: ps.projectName,
-            id: ps.projectId || ps.projectKey,
-        }))
+        const nameCounts = new Map<string, number>()
+        projectSummaries.forEach((ps: any) => {
+            const name = (ps.projectName || ps.companyName || ps.projectKey || '').trim()
+            nameCounts.set(name, (nameCounts.get(name) || 0) + 1)
+        })
+
+        return projectSummaries.map((ps: any) => {
+            const baseName = ps.projectName || ps.companyName || ps.projectKey || 'Untitled Deal'
+            const count = ps.documentCount ?? 0
+            const countLabel = count === 1 ? '1 doc' : `${count} docs`
+            const hasDuplicateName = (nameCounts.get(baseName.trim()) || 0) > 1
+
+            let label = `${baseName} (${countLabel})`
+            if (hasDuplicateName) {
+                const shortId = (ps.projectId || ps.projectKey || '').replace(/^project-/, '').substring(0, 8)
+                label = `${baseName} (${countLabel} • #${shortId})`
+            }
+
+            return {
+                key: ps.projectKey,
+                label,
+                name: baseName,
+                id: ps.projectId || ps.projectKey,
+            }
+        })
     }, [projectSummaries])
 
     const todayPipelineStats = useMemo(() => {
@@ -1876,11 +1895,11 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         if (activeProjectSynthesisSucceeded) return false
 
         if (!activeProjectSynthesis) {
-            return false
+            return true
         }
 
         const synthStatus = (activeProjectSynthesis.projectStatus || '').trim().toLowerCase()
-        if (['processing', 'pending', 'queued', 'running', 'awaiting_synthesis', 'started'].includes(synthStatus)) {
+        if (['processing', 'pending', 'queued', 'running', 'awaiting_synthesis', 'awaiting_documents', 'started', ''].includes(synthStatus)) {
             return true
         }
 
@@ -3162,7 +3181,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                         <div className="flex items-center gap-2.5">
                             <Info className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
                             <span>
-                                You are currently viewing: <strong className="font-bold text-amber-950 dark:text-amber-100">{activeViewProject?.name || effectiveDealName || activeProjectId}</strong> (this is not the most recent project).
+                                You are currently viewing: <strong className="font-bold text-amber-950 dark:text-amber-100">{activeViewProject?.name || effectiveDealName || activeProjectId} ({activeProjectDocuments.length} {activeProjectDocuments.length === 1 ? 'doc' : 'docs'})</strong> (this is not the most recent project).
                             </span>
                         </div>
                         <Button
@@ -3173,7 +3192,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                             onClick={() => handlePortfolioProjectSelect(mostRecentProject.projectKey || mostRecentProject.projectId)}
                         >
                             <RotateCcw className="h-3.5 w-3.5" />
-                            Switch back to most recent project ({mostRecentProject.projectName || mostRecentProject.companyName || mostRecentProject.projectKey})
+                            Switch back to most recent project ({mostRecentProject.projectName || mostRecentProject.companyName || mostRecentProject.projectKey} • {mostRecentProject.documentCount} {mostRecentProject.documentCount === 1 ? 'doc' : 'docs'})
                         </Button>
                     </div>
                 )}
