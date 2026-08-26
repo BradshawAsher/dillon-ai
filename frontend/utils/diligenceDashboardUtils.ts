@@ -247,10 +247,13 @@ export function createUnusedProjectId(usedProjectIds: Iterable<string> = []) {
         Array.from(usedProjectIds, (id) => id.trim().toLowerCase()).filter((id) => id.length > 0)
     )
 
+    // Reference crypto off globalThis so this never throws a ReferenceError in an
+    // environment without a global `crypto` binding; fall back to Math.random.
+    const cryptoObj = typeof globalThis !== 'undefined' ? globalThis.crypto : undefined
     let candidate = ''
     do {
-        const randomSuffix = typeof crypto.randomUUID === 'function'
-            ? crypto.randomUUID().slice(0, 8)
+        const randomSuffix = typeof cryptoObj?.randomUUID === 'function'
+            ? cryptoObj.randomUUID().slice(0, 8)
             : Math.random().toString(36).slice(2, 10)
         candidate = 'project-' + new Date().toISOString().slice(0, 10).replaceAll('-', '') + '-' + randomSuffix
     } while (used.has(candidate.toLowerCase()))
