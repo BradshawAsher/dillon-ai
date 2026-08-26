@@ -13,6 +13,13 @@ describe('normalizeSubmissionStatus', () => {
     it('trims and lowercases', () => {
         expect(normalizeSubmissionStatus('  PROCESSING ')).toBe('processing')
     })
+
+    it('coerces null/undefined to an empty string instead of throwing', () => {
+        expect(normalizeSubmissionStatus(null as unknown as string)).toBe('')
+        expect(normalizeSubmissionStatus(undefined as unknown as string)).toBe('')
+        expect(isActiveSubmissionStatus(null as unknown as string)).toBe(false)
+        expect(formatSubmissionStatus(null as unknown as string)).toBe('Unknown')
+    })
 })
 
 describe('isActiveSubmissionStatus', () => {

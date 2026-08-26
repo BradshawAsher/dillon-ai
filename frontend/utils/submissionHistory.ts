@@ -98,28 +98,31 @@ const stoppedSubmissionStatuses = new Set([
     'stopped_by_user',
 ])
 
-export function normalizeSubmissionStatus(status: string) {
-    return status.trim().toLowerCase()
+export function normalizeSubmissionStatus(status: string | null | undefined) {
+    // Coerce first: DB / n8n rows can hand back null or a non-string status, and
+    // a bare `.trim()` would throw. Matches the defensive coercion the variant
+    // and date helpers already use.
+    return (typeof status === 'string' ? status : status == null ? '' : String(status)).trim().toLowerCase()
 }
 
 // Membership lookups compare against underscore-delimited tokens (e.g.
 // "stopped_by_user"). A source that reports the same status with spaces or
 // hyphens ("Stopped By User") should still match, so collapse those to a
 // single underscore for the comparison only.
-function statusToken(status: string) {
+function statusToken(status: string | null | undefined) {
     return normalizeSubmissionStatus(status).replace(/[\s-]+/g, '_')
 }
 
-export function isActiveSubmissionStatus(status: string) {
+export function isActiveSubmissionStatus(status: string | null | undefined) {
     return activeSubmissionStatuses.has(statusToken(status))
 }
 
-export function isStoppedSubmissionStatus(status: string) {
+export function isStoppedSubmissionStatus(status: string | null | undefined) {
     return stoppedSubmissionStatuses.has(statusToken(status))
 }
 
-export function formatSubmissionStatus(status: string) {
-    const trimmed = status.trim()
+export function formatSubmissionStatus(status: string | null | undefined) {
+    const trimmed = (typeof status === 'string' ? status : status == null ? '' : String(status)).trim()
 
     if (trimmed.length === 0) {
         return 'Unknown'
