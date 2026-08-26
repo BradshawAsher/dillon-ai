@@ -435,12 +435,16 @@ export function hasReachedProcessingStage(status: string | null | undefined) {
 }
 
 export function isDuplicateProjectDocument(file: File, projectId: string, rows: SubmissionHistoryItem[]) {
-    const normalizedProjectId = projectId.trim().toLowerCase()
-    const normalizedFileName = file.name.trim().toLowerCase()
+    // Coerce every compared field: `projectId`, a row's `projectId`/`fileName`,
+    // and even `file.name` can be null/undefined on partially-populated data, and
+    // a bare `.trim()` on any of them would throw mid-scan.
+    const norm = (value: unknown) => (typeof value === 'string' ? value : '').trim().toLowerCase()
+    const normalizedProjectId = norm(projectId)
+    const normalizedFileName = norm(file?.name)
 
     return rows.some((row) => {
-        return row.projectId.trim().toLowerCase() === normalizedProjectId
-            && row.fileName.trim().toLowerCase() === normalizedFileName
+        return norm(row.projectId) === normalizedProjectId
+            && norm(row.fileName) === normalizedFileName
             && row.fileSize === file.size
     })
 }
