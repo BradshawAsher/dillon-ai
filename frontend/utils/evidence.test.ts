@@ -118,6 +118,18 @@ describe('driveEmbedUrl', () => {
         )
     })
 
+    it('extracts the id from Docs, Sheets, and Slides share links, not only /file/d/', () => {
+        expect(driveEmbedUrl(undefined, 'https://docs.google.com/document/d/DOC123/edit')).toBe(
+            'https://drive.google.com/file/d/DOC123/preview',
+        )
+        expect(driveEmbedUrl(undefined, 'https://docs.google.com/spreadsheets/d/SHEET9/edit#gid=0')).toBe(
+            'https://drive.google.com/file/d/SHEET9/preview',
+        )
+        expect(driveEmbedUrl(undefined, 'https://docs.google.com/presentation/d/SLIDE7/edit?usp=sharing')).toBe(
+            'https://drive.google.com/file/d/SLIDE7/preview',
+        )
+    })
+
     it('returns null when neither yields a usable id', () => {
         expect(driveEmbedUrl()).toBeNull()
         expect(driveEmbedUrl('', 'https://example.com/not-a-drive-link')).toBeNull()
