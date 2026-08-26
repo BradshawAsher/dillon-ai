@@ -97,6 +97,11 @@ describe('hasReachedProcessingStage', () => {
         expect(hasReachedProcessingStage('completed')).toBe(true)
         expect(hasReachedProcessingStage('draft')).toBe(false)
     })
+
+    it('does not throw on null/undefined status', () => {
+        expect(hasReachedProcessingStage(null as unknown as string)).toBe(false)
+        expect(hasReachedProcessingStage(undefined as unknown as string)).toBe(false)
+    })
 })
 
 describe('isDuplicateProjectDocument', () => {

@@ -426,8 +426,12 @@ export function withDerivedCapitalStack(model: DealModel): DealModel {
     }
 }
 
-export function hasReachedProcessingStage(status: string) {
-    return processingReachedStatuses.has(status.trim().toLowerCase())
+export function hasReachedProcessingStage(status: string | null | undefined) {
+    // A row's status can arrive null/undefined from the DB / n8n, and a bare
+    // `.trim()` would throw. Coerce first, consistent with the other status
+    // helpers, so a missing status simply reads as "not yet processing".
+    const normalized = (typeof status === 'string' ? status : '').trim().toLowerCase()
+    return processingReachedStatuses.has(normalized)
 }
 
 export function isDuplicateProjectDocument(file: File, projectId: string, rows: SubmissionHistoryItem[]) {
