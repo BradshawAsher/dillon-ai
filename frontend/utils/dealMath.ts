@@ -227,7 +227,12 @@ export function computeAllCashReturns(inputs: DealMathInputs): AllCashReturns {
     const workingCapital = resolve('workingCapital', inputs.workingCapital, DEAL_MATH_DEFAULTS.workingCapital)
     const taxRate = resolve('taxRate', inputs.taxRate, DEAL_MATH_DEFAULTS.taxRate)
     const capex = resolve('maintenanceCapex', inputs.maintenanceCapex, DEAL_MATH_DEFAULTS.maintenanceCapex)
-    const holdPeriodYears = resolve('holdPeriodYears', inputs.holdPeriodYears, DEAL_MATH_DEFAULTS.holdPeriodYears)
+    // The cash-flow schedule is a whole number of annual periods (Array.from
+    // floors a fractional length anyway), so normalize the hold to an integer up
+    // front. Otherwise a fractional hold (e.g. 5.5) made cumulativeHoldCashFlow
+    // count 5.5 years while the generated schedule — and therefore MOIC/IRR —
+    // only ran 5, silently disagreeing.
+    const holdPeriodYears = Math.max(0, Math.floor(resolve('holdPeriodYears', inputs.holdPeriodYears, DEAL_MATH_DEFAULTS.holdPeriodYears)))
     // Default to a flat multiple — exit at what you paid. Inventing an
     // unrelated constant here is what turns an ordinary deal into a fake
     // catastrophe (an 8.7x entry "exiting" at 4x can only lose money).
