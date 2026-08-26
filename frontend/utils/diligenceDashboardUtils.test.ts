@@ -195,6 +195,21 @@ describe('formatCompactMoney', () => {
         expect(formatCompactMoney(undefined)).toBe('—')
         expect(formatCompactMoney(Number.NaN)).toBe('—')
     })
+
+    it('compacts billions', () => {
+        expect(formatCompactMoney(1_500_000_000)).toBe('$1.5B')
+        expect(formatCompactMoney(-2_000_000_000)).toBe('-$2.0B')
+    })
+
+    it('promotes tier edges instead of emitting a four-digit mantissa', () => {
+        // 999,999 must not read as "$1000K"; 999.96M must not read as "$1000.0M".
+        expect(formatCompactMoney(999_999)).toBe('$1.0M')
+        expect(formatCompactMoney(999_500)).toBe('$1.0M')
+        expect(formatCompactMoney(999_960_000)).toBe('$1.0B')
+        // Just below each edge still renders in the lower tier.
+        expect(formatCompactMoney(999_400)).toBe('$999K')
+        expect(formatCompactMoney(999_000_000)).toBe('$999.0M')
+    })
 })
 
 describe('confidenceToPercent', () => {

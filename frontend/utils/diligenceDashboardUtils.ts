@@ -71,15 +71,24 @@ export function safeFormatCurrency(value: number, rawCurrency?: string, options?
 }
 
 /**
- * Compact money label ("$2.4M", "$750K", "-$1.2M") for dense card headers.
- * Handles negatives by placing the sign before the dollar amount and still
- * compacting the magnitude, and renders a non-finite/absent value as an em-dash.
+ * Compact money label ("$2.4M", "$750K", "-$1.2M", "$1.5B") for dense card
+ * headers. Handles negatives by placing the sign before the dollar amount and
+ * still compacting the magnitude, and renders a non-finite/absent value as an
+ * em-dash.
+ *
+ * The tier thresholds are rounding-aware: a value at the very top of a tier can
+ * round up into the next one (999,999 would naively render as "$1000K", and
+ * 999.96M as "$1000.0M"). The boundaries below promote such values so they read
+ * as "$1.0M" / "$1.0B" instead of an impossible four-digit mantissa.
  */
 export function formatCompactMoney(value: number | null | undefined): string {
     if (value === null || value === undefined || !Number.isFinite(value)) return '—'
     const sign = value < 0 ? '-' : ''
     const abs = Math.abs(value)
-    if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(1)}M`
+    // 999.95M+ rounds to 1.0B at one decimal, so promote to the billions tier.
+    if (abs >= 999_950_000) return `${sign}$${(abs / 1_000_000_000).toFixed(1)}B`
+    // 999,500+ rounds to 1000K at zero decimals, so promote to the millions tier.
+    if (abs >= 999_500) return `${sign}$${(abs / 1_000_000).toFixed(1)}M`
     if (abs >= 1_000) return `${sign}$${(abs / 1_000).toFixed(0)}K`
     return `${sign}$${abs.toFixed(0)}`
 }
