@@ -94,6 +94,24 @@ describe('manualDealIntake utilities', () => {
             expect(facts.companyName).toBe('Apex Precision Dynamics')
             expect(facts.intakeSource).toBe('manual_questionnaire')
         })
+
+        it('does not leak NaN into price/revenue-scaled fields when inputs are blank', () => {
+            const model = buildManualDealModel(
+                {
+                    ...MANUAL_DEAL_PRESETS.manufacturing.data,
+                    askingPrice: NaN as unknown as number,
+                    annualRevenue: NaN as unknown as number,
+                },
+                'project-manual-blank',
+            )
+
+            expect(model.transactionFees).toBe(0)
+            expect(model.closingCosts).toBe(0)
+            expect(model.maintenanceCapex).toBe(0)
+            expect(model.workingCapitalRequirement).toBe(0)
+            expect(model.revenueMultiple).toBe(0)
+            expect(model.seniorDebtAmount).toBe(0)
+        })
     })
 
     describe('buildManualProjectSynthesis', () => {
