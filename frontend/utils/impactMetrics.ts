@@ -76,7 +76,12 @@ export function formatHours(hours: number) {
         return '0h'
     }
     if (hours < 1) {
-        return `${Math.round(hours * 60)}m`
+        const minutes = Math.round(hours * 60)
+        // A value like 0.999h rounds to 60 minutes; render that as "1.0h" rather
+        // than the impossible "60m".
+        if (minutes < 60) {
+            return `${minutes}m`
+        }
     }
     return `${hours.toFixed(hours < 10 ? 1 : 0)}h`
 }

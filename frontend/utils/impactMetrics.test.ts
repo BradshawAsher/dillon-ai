@@ -65,6 +65,10 @@ describe('formatHours', () => {
         expect(formatHours(0.5)).toBe('30m')
     })
 
+    it('promotes a sub-hour value that rounds to 60 minutes into hours', () => {
+        expect(formatHours(0.999)).toBe('1.0h')
+    })
+
     it('renders one decimal below ten hours and whole numbers above', () => {
         expect(formatHours(2.5)).toBe('2.5h')
         expect(formatHours(42)).toBe('42h')
