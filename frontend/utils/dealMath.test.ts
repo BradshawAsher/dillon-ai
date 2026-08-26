@@ -117,6 +117,14 @@ describe('computeAllCashReturns — golden case', () => {
         expect(result.assumedInputs).toEqual([])
         expect(result.missingInputs).toEqual([])
     })
+
+    it('keeps the cumulative cash flow consistent with the schedule for a fractional hold', () => {
+        const result = computeAllCashReturns({ ...inputs, holdPeriodYears: 5.5 })
+        // 5.5 floors to 5 whole annual periods: cumulative must be 5 x 8.1M, and
+        // the schedule must have exactly 5 operating years (+1 initial outflow).
+        expect(result.cumulativeHoldCashFlow).toBeCloseTo(40_500_000, 6)
+        expect(result.cashFlows).toHaveLength(6)
+    })
 })
 
 describe('computeAllCashReturns — transparency about assumptions', () => {
