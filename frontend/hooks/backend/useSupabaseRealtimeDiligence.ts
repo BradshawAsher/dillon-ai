@@ -36,7 +36,7 @@ export function useSupabaseRealtimeDiligence({
             return
         }
 
-        // Debounce triggers slightly (150ms) to prevent burst re-renders when multiple documents finish simultaneously
+        // Debounce triggers (1200ms) to coalesce burst events when multiple documents in a batch update simultaneously
         let docDebounceTimer: ReturnType<typeof setTimeout> | null = null
         let synthDebounceTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -55,7 +55,7 @@ export function useSupabaseRealtimeDiligence({
                         }
                         void queryClient.invalidateQueries({ queryKey: ['diligence', 'kpis'] })
                         onDocRef.current?.(payload)
-                    }, 150)
+                    }, 1200)
                 }
             )
             .on(
@@ -71,7 +71,7 @@ export function useSupabaseRealtimeDiligence({
                         }
                         void queryClient.invalidateQueries({ queryKey: ['diligence', 'kpis'] })
                         onSynthRef.current?.(payload)
-                    }, 150)
+                    }, 1200)
                 }
             )
             .subscribe((status) => {

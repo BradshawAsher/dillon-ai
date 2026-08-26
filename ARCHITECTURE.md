@@ -238,6 +238,19 @@ LLMs are notoriously prone to arithmetic hallucinations. Dillon AI solves this b
 1. The LLM is used **strictly for information extraction and semantic parsing**.
 2. Extracted line items are piped into a **deterministic TypeScript/Node.js calculation engine**:
    $$\text{Normalized EBITDA} = \text{Reported EBITDA} + \text{Audited Add-backs} - \text{Unsupported Owner Add-backs} - \text{Pro-forma Market Wage Deficits}$$
+
+### G. Dual Intake Pipeline: Document VDR vs. Quick Deal Questionnaire
+Dillon AI supports two complementary ingestion modalities:
+1. **Unstructured Multi-Modal VDR Ingestion (Cloud Pipeline)**:
+   - For complete diligence rooms: uploaded files are streamed directly to Supabase Object Storage, triggering n8n OCR, multi-model extraction (Terra/Sol), and cross-document synthesis.
+2. **Quick Deal Questionnaire Intake (`frontend/utils/manualDealIntake.ts` & `frontend/components/ManualDealIntakeForm.tsx`)**:
+   - For fast, pre-LOI screening or when users only have high-level numbers on hand (e.g. broker teasers or initial phone screens).
+   - Operates **100% client-side** with zero cloud egress and zero LLM latency:
+     - **Normalized EBITDA calculation**: Automatically adjusts for disallowed owner perks, discretionary travel, and replacement management wages.
+     - **Balance Sheet Aggregation**: Computes Net Asset Value (NAV), Tangible Net Worth, and debt-to-equity ratios.
+     - **Capital Stack Sizing**: Evaluates SBA 7(a) senior debt multiples, seller note coverage, and buyer equity requirements.
+     - **Autonomous Acquisition Judgment**: Generates instant GREEN/YELLOW/RED signal scores, strategic flags, and specific negotiation levers.
+     - **Immediate Workspace Hydration**: Instantly populates the entire 10-tab Diligence Workspace, Deal Models, and Dillon AI conversational assistant.
 3. **Contradiction Detection Matrix**: Automatically cross-references independent documents within the same deal:
    * **Apex Precision Dynamics**: Catches **$730,000 variance** between CIM EBITDA ($3.15M) and Monthly P&L ($2.42M).
    * **TerraNova Environmental**: Catches **$6.6M gap** between Teaser Revenue ($14.8M) and Bank Reconciliation Cash Receipts ($8.2M).
