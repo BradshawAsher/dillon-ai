@@ -81,7 +81,7 @@ export default function ManualDealIntakeForm({ onComplete, disabled = false }: M
     }
 
     const handleSubmit = () => {
-        const timestamp = new Date().toISOString().replace(/[-:T.Z]/g, '').slice(0, 14)
+        const timestamp = new Date().toISOString().replace(/\D/g, '').slice(0, 14)
         const randomHash = Math.random().toString(36).substring(2, 8)
         const projectId = `project-${timestamp}-${randomHash}`
 
