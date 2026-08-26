@@ -1,5 +1,22 @@
 import React from 'react'
-import { ChevronLeft, ChevronRight, Clock3, DollarSign, Loader2, RefreshCw, RotateCw, Sparkles } from 'lucide-react'
+import {
+    AlertCircle,
+    AlertTriangle,
+    CheckCircle2,
+    ChevronLeft,
+    ChevronRight,
+    Clock3,
+    DollarSign,
+    FileCheck,
+    FileSpreadsheet,
+    FileText,
+    Loader2,
+    RefreshCw,
+    RotateCw,
+    ShieldAlert,
+    ShieldCheck,
+    Sparkles,
+} from 'lucide-react'
 
 import ExpandableText from '../ExpandableText'
 import ExpandableInsightGroup from '../ExpandableInsightGroup'
@@ -31,6 +48,152 @@ function getSubmissionStatusVariant(status: string): 'success' | 'warning' | 'de
     if (['accepted', 'queued', 'processing', 'submitted', 'human review', 'human_review', 'needs review'].includes(normalized)) return 'warning'
     if (['error', 'failed', 'rejected'].includes(normalized)) return 'destructive'
     return 'secondary'
+}
+
+function getRiskSignalCardStyle(trafficLight: string, riskLevel: string) {
+    const raw = (trafficLight || riskLevel || '').trim().toLowerCase()
+    if (['red', 'high', 'critical', 'escalate', 'reject'].includes(raw)) {
+        return {
+            containerClass: 'border-rose-500/40 bg-rose-500/10 dark:bg-rose-950/30 dark:border-rose-800/60 shadow-xs',
+            labelClass: 'text-rose-700 dark:text-rose-400 font-bold',
+            textClass: 'text-rose-700 dark:text-rose-300 font-black',
+            iconBoxClass: 'bg-rose-500/20 text-rose-600 dark:text-rose-400',
+            badgeClass: 'bg-rose-500/20 text-rose-700 dark:text-rose-300 border-rose-400/50',
+            icon: 'alert-triangle' as const,
+            label: 'Risk signal',
+        }
+    }
+    if (['yellow', 'medium', 'warning', 'caution', 'moderate'].includes(raw)) {
+        return {
+            containerClass: 'border-amber-500/40 bg-amber-500/10 dark:bg-amber-950/30 dark:border-amber-800/60 shadow-xs',
+            labelClass: 'text-amber-700 dark:text-amber-400 font-bold',
+            textClass: 'text-amber-700 dark:text-amber-300 font-black',
+            iconBoxClass: 'bg-amber-500/20 text-amber-600 dark:text-amber-400',
+            badgeClass: 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-400/50',
+            icon: 'alert-circle' as const,
+            label: 'Risk signal',
+        }
+    }
+    if (['green', 'low', 'safe', 'approved', 'pass'].includes(raw)) {
+        return {
+            containerClass: 'border-emerald-500/40 bg-emerald-500/10 dark:bg-emerald-950/30 dark:border-emerald-800/60 shadow-xs',
+            labelClass: 'text-emerald-700 dark:text-emerald-400 font-bold',
+            textClass: 'text-emerald-700 dark:text-emerald-300 font-black',
+            iconBoxClass: 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400',
+            badgeClass: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-400/50',
+            icon: 'check-circle' as const,
+            label: 'Risk signal',
+        }
+    }
+    return {
+        containerClass: 'border-sky-500/30 bg-sky-500/5 dark:bg-sky-950/20 dark:border-sky-800/40 shadow-xs',
+        labelClass: 'text-sky-700 dark:text-sky-400 font-bold',
+        textClass: 'text-sky-700 dark:text-sky-300 font-bold',
+        iconBoxClass: 'bg-sky-500/20 text-sky-600 dark:text-sky-400',
+        badgeClass: 'bg-sky-500/20 text-sky-700 dark:text-sky-300 border-sky-400/50',
+        icon: 'loader' as const,
+        label: 'Risk signal',
+    }
+}
+
+function getConfidenceCardStyle(confidenceFraction: number | null) {
+    if (typeof confidenceFraction === 'number' && Number.isFinite(confidenceFraction)) {
+        if (confidenceFraction >= 0.8) {
+            return {
+                containerClass: 'border-emerald-500/40 bg-emerald-500/10 dark:bg-emerald-950/30 dark:border-emerald-800/60 shadow-xs',
+                labelClass: 'text-emerald-700 dark:text-emerald-400 font-bold',
+                textClass: 'text-emerald-700 dark:text-emerald-300 font-black',
+                iconBoxClass: 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400',
+                tierBadge: 'High',
+                tierClass: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-400/40',
+            }
+        }
+        if (confidenceFraction >= 0.6) {
+            return {
+                containerClass: 'border-amber-500/40 bg-amber-500/10 dark:bg-amber-950/30 dark:border-amber-800/60 shadow-xs',
+                labelClass: 'text-amber-700 dark:text-amber-400 font-bold',
+                textClass: 'text-amber-700 dark:text-amber-300 font-black',
+                iconBoxClass: 'bg-amber-500/20 text-amber-600 dark:text-amber-400',
+                tierBadge: 'Moderate',
+                tierClass: 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-400/40',
+            }
+        }
+        return {
+            containerClass: 'border-rose-500/40 bg-rose-500/10 dark:bg-rose-950/30 dark:border-rose-800/60 shadow-xs',
+            labelClass: 'text-rose-700 dark:text-rose-400 font-bold',
+            textClass: 'text-rose-700 dark:text-rose-300 font-black',
+            iconBoxClass: 'bg-rose-500/20 text-rose-600 dark:text-rose-400',
+            tierBadge: 'Low',
+            tierClass: 'bg-rose-500/20 text-rose-700 dark:text-rose-300 border-rose-400/40',
+        }
+    }
+    return {
+        containerClass: 'border-primary/25 bg-background/90 text-foreground',
+        labelClass: 'text-muted-foreground',
+        textClass: 'text-foreground font-bold',
+        iconBoxClass: 'bg-muted text-muted-foreground',
+        tierBadge: '',
+        tierClass: 'bg-muted text-muted-foreground',
+    }
+}
+
+function getDocTypeCardStyle(docType: string) {
+    const raw = (docType || '').toLowerCase()
+    const isSpreadsheet = raw.includes('sheet') || raw.includes('excel') || raw.includes('model') || raw.includes('csv') || raw.includes('xltx') || raw.includes('xlsx')
+    const isTaxOrLegal = raw.includes('tax') || raw.includes('legal') || raw.includes('contract') || raw.includes('loi') || raw.includes('agreement')
+    const isPending = !docType || raw === 'pending' || raw === 'not set' || raw === 'auto-detect'
+
+    if (isPending) {
+        return {
+            containerClass: 'border-primary/25 bg-background/90 text-foreground',
+            labelClass: 'text-muted-foreground',
+            textClass: 'text-foreground font-bold',
+            iconBoxClass: 'bg-muted text-muted-foreground',
+            icon: 'file-text' as const,
+        }
+    }
+    return {
+        containerClass: 'border-indigo-500/40 bg-indigo-500/10 dark:bg-indigo-950/30 dark:border-indigo-800/60 shadow-xs hover:border-indigo-500/60 transition-all',
+        labelClass: 'text-indigo-700 dark:text-indigo-400 font-bold',
+        textClass: 'text-indigo-900 dark:text-indigo-200 font-black',
+        iconBoxClass: 'bg-indigo-500/20 text-indigo-600 dark:text-indigo-400',
+        icon: isSpreadsheet ? ('file-spreadsheet' as const) : isTaxOrLegal ? ('file-check' as const) : ('file-text' as const),
+    }
+}
+
+function getActionNeededCardStyle(hasEscalations: boolean, status: string) {
+    const norm = (status || '').trim().toLowerCase()
+    if (hasEscalations || ['error', 'failed', 'rejected', 'human review', 'needs review'].includes(norm)) {
+        return {
+            actionText: hasEscalations ? 'Review flags' : norm === 'failed' || norm === 'error' ? 'Retry document' : 'Review required',
+            containerClass: 'border-rose-500/40 bg-rose-500/10 dark:bg-rose-950/30 dark:border-rose-800/60 shadow-xs',
+            labelClass: 'text-rose-700 dark:text-rose-400 font-bold',
+            textClass: 'text-rose-700 dark:text-rose-300 font-black',
+            iconBoxClass: 'bg-rose-500/20 text-rose-600 dark:text-rose-400',
+            badgeClass: 'bg-rose-500/20 text-rose-700 dark:text-rose-300 border-rose-400/40',
+            icon: 'shield-alert' as const,
+        }
+    }
+    if (norm === 'completed' || norm === 'approved') {
+        return {
+            actionText: 'Ready to use',
+            containerClass: 'border-emerald-500/40 bg-emerald-500/10 dark:bg-emerald-950/30 dark:border-emerald-800/60 shadow-xs',
+            labelClass: 'text-emerald-700 dark:text-emerald-400 font-bold',
+            textClass: 'text-emerald-700 dark:text-emerald-300 font-black',
+            iconBoxClass: 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400',
+            badgeClass: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-400/40',
+            icon: 'shield-check' as const,
+        }
+    }
+    return {
+        actionText: 'Wait for analysis',
+        containerClass: 'border-sky-500/40 bg-sky-500/10 dark:bg-sky-950/30 dark:border-sky-800/60 shadow-xs',
+        labelClass: 'text-sky-700 dark:text-sky-400 font-bold',
+        textClass: 'text-sky-700 dark:text-sky-300 font-black',
+        iconBoxClass: 'bg-sky-500/20 text-sky-600 dark:text-sky-400',
+        badgeClass: 'bg-sky-500/20 text-sky-700 dark:text-sky-300 border-sky-400/40',
+        icon: 'loader' as const,
+    }
 }
 
 export type LatestSubmissionSectionProps = {
@@ -365,32 +528,110 @@ export default function LatestSubmissionSection({
                         )}
                     </div>
 
-                    <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-                        <div className="rounded-lg border border-primary/25 bg-background/90 p-3">
-                            <p className="text-xs text-muted-foreground">Risk signal</p>
-                            <p className="mt-1 text-lg font-bold">{trafficLight || riskLevel || 'Still processing'}</p>
-                        </div>
-                        <div className="rounded-lg border border-primary/25 bg-background/90 p-3">
-                            <p className="text-xs text-muted-foreground">AI confidence</p>
-                            <p className="mt-1 text-lg font-bold">{formattedConfidence}</p>
-                        </div>
-                        <div className="rounded-lg border border-primary/25 bg-background/90 p-3">
-                            <p className="text-xs text-muted-foreground">Detected document type</p>
-                            <p className="mt-1 text-sm sm:text-base font-bold leading-snug break-words" title={displayedSubmissionRow?.detectedDocumentType || displayedSubmissionRow?.documentType || documentType || 'Pending'}>
-                                {displayedSubmissionRow?.detectedDocumentType || displayedSubmissionRow?.documentType || documentType || 'Pending'}
-                            </p>
-                        </div>
-                        <div className="rounded-lg border border-primary/25 bg-background/90 p-3">
-                            <p className="text-xs text-muted-foreground">Extraction Cost</p>
-                            <p className="mt-1 text-lg font-bold text-emerald-600 dark:text-emerald-400 font-mono">
-                                {formatDocumentCostDisplay(displayedSubmissionRow).formatted}
-                            </p>
-                        </div>
-                        <div className="rounded-lg border border-primary/25 bg-background/90 p-3">
-                            <p className="text-xs text-muted-foreground">Action needed</p>
-                            <p className="mt-1 text-lg font-bold">{liveSubmitInsight?.escalationReasons.length ? 'Review flags' : displayedSubmitStatus.toLowerCase() === 'completed' ? 'Ready to use' : 'Wait for analysis'}</p>
-                        </div>
-                    </div>
+                    {(() => {
+                        const riskCardStyle = getRiskSignalCardStyle(trafficLight, riskLevel)
+                        const confCardStyle = getConfidenceCardStyle(docConfidenceFraction)
+                        const detectedDocType = displayedSubmissionRow?.detectedDocumentType || displayedSubmissionRow?.documentType || documentType || 'Pending'
+                        const docTypeCardStyle = getDocTypeCardStyle(detectedDocType)
+                        const hasEscalations = Boolean(liveSubmitInsight?.escalationReasons && liveSubmitInsight.escalationReasons.length > 0)
+                        const actionCardStyle = getActionNeededCardStyle(hasEscalations, displayedSubmitStatus)
+
+                        return (
+                            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                                {/* 1. Risk Signal */}
+                                <div className={`rounded-xl border p-3 flex flex-col justify-between transition-all duration-200 ${riskCardStyle.containerClass}`}>
+                                    <div className="flex items-center justify-between gap-1.5">
+                                        <span className={`text-xs ${riskCardStyle.labelClass}`}>{riskCardStyle.label}</span>
+                                        <div className={`rounded-lg p-1.5 ${riskCardStyle.iconBoxClass}`}>
+                                            {riskCardStyle.icon === 'alert-triangle' ? (
+                                                <AlertTriangle className="h-4 w-4" />
+                                            ) : riskCardStyle.icon === 'alert-circle' ? (
+                                                <AlertCircle className="h-4 w-4" />
+                                            ) : riskCardStyle.icon === 'check-circle' ? (
+                                                <CheckCircle2 className="h-4 w-4" />
+                                            ) : (
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                            )}
+                                        </div>
+                                    </div>
+                                    <p className={`mt-2 text-lg leading-tight tracking-tight ${riskCardStyle.textClass}`}>
+                                        {trafficLight || riskLevel || 'Still processing'}
+                                    </p>
+                                </div>
+
+                                {/* 2. AI Confidence */}
+                                <div className={`rounded-xl border p-3 flex flex-col justify-between transition-all duration-200 ${confCardStyle.containerClass}`}>
+                                    <div className="flex items-center justify-between gap-1.5">
+                                        <span className={`text-xs ${confCardStyle.labelClass}`}>AI confidence</span>
+                                        <div className="flex items-center gap-1.5">
+                                            {confCardStyle.tierBadge ? (
+                                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${confCardStyle.tierClass}`}>
+                                                    {confCardStyle.tierBadge}
+                                                </span>
+                                            ) : null}
+                                            <div className={`rounded-lg p-1.5 ${confCardStyle.iconBoxClass}`}>
+                                                <Sparkles className="h-4 w-4" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p className={`mt-2 text-lg leading-tight tracking-tight ${confCardStyle.textClass}`}>
+                                        {formattedConfidence}
+                                    </p>
+                                </div>
+
+                                {/* 3. Detected Document Type */}
+                                <div className={`rounded-xl border p-3 flex flex-col justify-between transition-all duration-200 ${docTypeCardStyle.containerClass}`}>
+                                    <div className="flex items-center justify-between gap-1.5">
+                                        <span className={`text-xs ${docTypeCardStyle.labelClass}`}>Detected document type</span>
+                                        <div className={`rounded-lg p-1.5 ${docTypeCardStyle.iconBoxClass}`}>
+                                            {docTypeCardStyle.icon === 'file-spreadsheet' ? (
+                                                <FileSpreadsheet className="h-4 w-4" />
+                                            ) : docTypeCardStyle.icon === 'file-check' ? (
+                                                <FileCheck className="h-4 w-4" />
+                                            ) : (
+                                                <FileText className="h-4 w-4" />
+                                            )}
+                                        </div>
+                                    </div>
+                                    <p className={`mt-2 text-sm sm:text-base font-bold leading-snug break-words ${docTypeCardStyle.textClass}`} title={detectedDocType}>
+                                        {detectedDocType}
+                                    </p>
+                                </div>
+
+                                {/* 4. Extraction Cost */}
+                                <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 dark:bg-emerald-950/30 dark:border-emerald-800/60 p-3 shadow-xs flex flex-col justify-between transition-all duration-200">
+                                    <div className="flex items-center justify-between gap-1.5">
+                                        <span className="text-xs text-emerald-700 dark:text-emerald-400 font-bold">Extraction Cost</span>
+                                        <div className="rounded-lg p-1.5 bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+                                            <DollarSign className="h-4 w-4" />
+                                        </div>
+                                    </div>
+                                    <p className="mt-2 text-lg font-bold text-emerald-700 dark:text-emerald-300 font-mono leading-tight">
+                                        {formatDocumentCostDisplay(displayedSubmissionRow).formatted}
+                                    </p>
+                                </div>
+
+                                {/* 5. Action Needed */}
+                                <div className={`rounded-xl border p-3 flex flex-col justify-between transition-all duration-200 ${actionCardStyle.containerClass}`}>
+                                    <div className="flex items-center justify-between gap-1.5">
+                                        <span className={`text-xs ${actionCardStyle.labelClass}`}>Action needed</span>
+                                        <div className={`rounded-lg p-1.5 ${actionCardStyle.iconBoxClass}`}>
+                                            {actionCardStyle.icon === 'shield-alert' ? (
+                                                <ShieldAlert className="h-4 w-4" />
+                                            ) : actionCardStyle.icon === 'shield-check' ? (
+                                                <ShieldCheck className="h-4 w-4" />
+                                            ) : (
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                            )}
+                                        </div>
+                                    </div>
+                                    <p className={`mt-2 text-lg leading-tight tracking-tight ${actionCardStyle.textClass}`}>
+                                        {actionCardStyle.actionText}
+                                    </p>
+                                </div>
+                            </div>
+                        )
+                    })()}
 
                     <ExpandableText text={aiSummary || (liveSubmitInsight?.escalationReasons.length ? "The document has items that need review before relying on its findings." : "This panel will surface the document’s key result as soon as n8n returns it.")} maxHeight={120} className="mt-4" />
                 </div>
@@ -459,15 +700,23 @@ export default function LatestSubmissionSection({
                         </div>
                         <div className="rounded-md border border-border bg-card px-3 py-2">
                             <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Risk Level</p>
-                            <p className="mt-1 text-foreground">{riskLevel || 'Pending'}</p>
+                            <div className="mt-1">
+                                {riskLevel ? (
+                                    <Badge variant={getSubmissionInsightTone(trafficLight || riskLevel)}>
+                                        {riskLevel}
+                                    </Badge>
+                                ) : (
+                                    <span className="text-muted-foreground">Pending</span>
+                                )}
+                            </div>
                         </div>
                         <div className="rounded-md border border-border bg-card px-3 py-2">
                             <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Category</p>
-                            <p className="mt-1 text-foreground">{displayedSubmitCategory || 'Pending'}</p>
+                            <p className="mt-1 font-semibold text-indigo-700 dark:text-indigo-300">{displayedSubmitCategory || 'Pending'}</p>
                         </div>
                         <div className="rounded-md border border-border bg-card px-3 py-2">
                             <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Confidence</p>
-                            <p className="mt-1 text-foreground">
+                            <p className="mt-1 font-bold text-foreground">
                                 {formattedConfidence}
                             </p>
                         </div>
@@ -477,7 +726,7 @@ export default function LatestSubmissionSection({
                         </div>
                         <div className="rounded-md border border-border bg-card px-3 py-2">
                             <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">EBITDA Extracted</p>
-                            <p className="mt-1 text-foreground">{displayedSubmissionRow.ebitdaExtracted || 'Pending'}</p>
+                            <p className="mt-1 font-mono font-semibold text-foreground">{displayedSubmissionRow.ebitdaExtracted || 'Pending'}</p>
                         </div>
                         {(escalationItems.length > 0 || summaryItems.length > 0) ? (
                             <div className="grid gap-3 xl:col-span-4 xl:grid-cols-2">

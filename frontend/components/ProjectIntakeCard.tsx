@@ -780,7 +780,7 @@ export default function ProjectIntakeCard({
 
                 {showDestinationModal && pendingFiles.length > 0 && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in-0 duration-200">
-                        <Card className="relative w-full max-w-lg shadow-2xl border-primary/30 bg-card text-card-foreground">
+                        <Card className="relative w-full max-w-xl shadow-2xl border-primary/30 bg-card text-card-foreground">
                             <button
                                 type="button"
                                 onClick={() => {
@@ -837,7 +837,7 @@ export default function ProjectIntakeCard({
                                     Would you like to merge these files into the existing project <strong>{targetProject?.label || targetProject?.name || dealName || selectedProjectKey}</strong> and re-trigger synthesis, or start a <strong>New Standalone Project</strong>?
                                 </p>
                             </CardContent>
-                            <CardFooter className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 border-t border-border pt-4 bg-muted/10">
+                            <CardFooter className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5 border-t border-border pt-4 bg-muted/10">
                                 <Button
                                     type="button"
                                     variant="ghost"
@@ -849,34 +849,37 @@ export default function ProjectIntakeCard({
                                 >
                                     Cancel
                                 </Button>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    className="border-primary/40 hover:bg-primary/10 gap-1.5 font-semibold text-xs cursor-pointer"
-                                    onClick={() => {
-                                        onCreateProject()
-                                        onFileSelect(pendingFiles)
-                                        setShowDestinationModal(false)
-                                        setPendingFiles([])
-                                    }}
-                                >
-                                    <Plus className="h-3.5 w-3.5" />
-                                    Create as New Project
-                                </Button>
-                                <Button
-                                    type="button"
-                                    size="sm"
-                                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs gap-1.5 shadow-sm cursor-pointer"
-                                    onClick={() => {
-                                        onFileSelect(pendingFiles)
-                                        setShowDestinationModal(false)
-                                        setPendingFiles([])
-                                    }}
-                                >
-                                    <FolderKanban className="h-3.5 w-3.5" />
-                                    Add & Merge into {targetProject?.name || dealName || selectedProjectKey}
-                                </Button>
+                                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        className="border-primary/40 hover:bg-primary/10 gap-1.5 font-semibold text-xs cursor-pointer whitespace-nowrap"
+                                        onClick={() => {
+                                            onCreateProject()
+                                            onFileSelect(pendingFiles)
+                                            setShowDestinationModal(false)
+                                            setPendingFiles([])
+                                        }}
+                                    >
+                                        <Plus className="h-3.5 w-3.5" />
+                                        Create as New Project
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs gap-1.5 shadow-sm cursor-pointer whitespace-nowrap"
+                                        title={`Add & Merge into ${targetProject?.name || dealName || selectedProjectKey || 'Active Project'}`}
+                                        onClick={() => {
+                                            onFileSelect(pendingFiles)
+                                            setShowDestinationModal(false)
+                                            setPendingFiles([])
+                                        }}
+                                    >
+                                        <FolderKanban className="h-3.5 w-3.5 shrink-0" />
+                                        <span>Add & Merge into Deal</span>
+                                    </Button>
+                                </div>
                             </CardFooter>
                         </Card>
                     </div>
