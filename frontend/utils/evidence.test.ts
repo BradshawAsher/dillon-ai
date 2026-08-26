@@ -224,6 +224,11 @@ describe('formatEvidenceConfidence', () => {
         expect(formatEvidenceConfidence('45%')).toBe('45% (Low Confidence)')
     })
 
+    it('clamps out-of-range numeric confidences to 0..100', () => {
+        expect(formatEvidenceConfidence(150)).toBe('100% (High Confidence)')
+        expect(formatEvidenceConfidence('120%')).toBe('100% (High Confidence)')
+    })
+
     it('formats qualitative strings properly', () => {
         expect(formatEvidenceConfidence('high')).toBe('High Confidence')
         expect(formatEvidenceConfidence('medium')).toBe('Medium Confidence')
