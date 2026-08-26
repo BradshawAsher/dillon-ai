@@ -53,6 +53,11 @@ describe('resolveFinancialMetricsForProject', () => {
         expect(result.askingPrice).toBe('$4,880,000')
     })
 
+    it('preserves a billions-suffixed asking price instead of dropping the B', () => {
+        const result = resolveFinancialMetricsForProject({ askingPrice: '5.5B' }, [], 'Zzxq 90210')
+        expect(result.askingPrice).toBe('5.5B')
+    })
+
     it('returns N/A placeholders when nothing is resolvable', () => {
         const result = resolveFinancialMetricsForProject(null, [], 'Unknown Target 9182')
         expect(result.askingPrice).toBe('N/A')
