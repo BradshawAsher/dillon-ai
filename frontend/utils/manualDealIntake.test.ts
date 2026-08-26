@@ -25,6 +25,19 @@ describe('manualDealIntake utilities', () => {
             expect(result.askingMultiple).toBe(5.0)
         })
 
+        it('reports a 0% margin when revenue is blank but EBITDA is present', () => {
+            const result = calculateNormalizedEbitda({
+                ...MANUAL_DEAL_PRESETS.manufacturing.data,
+                annualRevenue: 0,
+                reportedEbitda: 1250000,
+                disallowedAddBacks: 0,
+            })
+
+            expect(result.adjustedEbitda).toBe(1250000)
+            // Must not blow up into a millions-of-percent margin against a 1-dollar sentinel.
+            expect(result.ebitdaMargin).toBe(0)
+        })
+
         it('handles zero revenue and zero EBITDA safely without NaN', () => {
             const result = calculateNormalizedEbitda({
                 ...MANUAL_DEAL_PRESETS.manufacturing.data,
