@@ -49,4 +49,12 @@ describe('filterFaqs', () => {
     it('returns empty when nothing matches', () => {
         expect(filterFaqs(faqs, { query: 'zzz-nonexistent' })).toHaveLength(0)
     })
+
+    it('matches multi-term queries across fields and out of order (AND)', () => {
+        // "earnings" is in the answer, "ebitda" in the question — both must hit.
+        expect(filterFaqs(faqs, { query: 'ebitda earnings' })).toHaveLength(1)
+        expect(filterFaqs(faqs, { query: 'earnings ebitda' })).toHaveLength(1)
+        // A term that appears in no field excludes the entry.
+        expect(filterFaqs(faqs, { query: 'ebitda upload' })).toHaveLength(0)
+    })
 })

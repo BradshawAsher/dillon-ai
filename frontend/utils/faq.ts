@@ -22,18 +22,21 @@ function normalizeForSearch(value: string): string {
     return value.toLowerCase().replace(/\s+/g, ' ').trim()
 }
 
-/** Filters a FAQ list by category and case-insensitive text query. */
+/** Filters a FAQ list by category and case-insensitive text query.
+ *
+ * A multi-word query is matched term-by-term (AND) against the combined
+ * question + answer + category label, so "risk score" still matches an entry
+ * where "risk" is in the question and "score" is in the answer, and the terms
+ * need not appear together or in order. A single-term query behaves like the
+ * previous substring match. */
 export function filterFaqs<T extends FaqLike>(faqs: T[], filter: FaqFilter = {}): T[] {
     const category = filter.category ?? 'all'
-    const query = normalizeForSearch(filter.query ?? '')
+    const terms = normalizeForSearch(filter.query ?? '').split(' ').filter(Boolean)
 
     return faqs.filter((faq) => {
         const matchesCategory = category === 'all' || faq.category === category
-        const matchesSearch =
-            query === '' ||
-            normalizeForSearch(faq.question).includes(query) ||
-            normalizeForSearch(faq.answer).includes(query) ||
-            normalizeForSearch(faq.categoryLabel).includes(query)
+        const haystack = normalizeForSearch(`${faq.question} ${faq.answer} ${faq.categoryLabel}`)
+        const matchesSearch = terms.length === 0 || terms.every((term) => haystack.includes(term))
         return matchesCategory && matchesSearch
     })
 }
