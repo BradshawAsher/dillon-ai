@@ -7,6 +7,7 @@ import {
     getArchivedProjectKeys,
     getProjectStatusVariant,
     isProjectArchivedKey,
+    isRowMatchingProject,
 } from './projectWorkspace'
 
 describe('getProjectStatusVariant', () => {
@@ -84,3 +85,60 @@ describe('archived project key storage', () => {
         expect(getArchivedProjectKeys()).toEqual(['ok', 'fine'])
     })
 })
+
+describe('isRowMatchingProject strict multi-run isolation', () => {
+    const rowProjectA: any = {
+        id: 847,
+        projectId: 'project-20260826-34a89d0b',
+        fileName: 'Apex_Draft_Purchase_Agreement.docx',
+        dealName: 'Apex Precision Dynamics CIM',
+        companyName: 'Apex Precision Dynamics',
+    }
+
+    const rowProjectB: any = {
+        id: 807,
+        projectId: 'project-20260825-38c6c9ee',
+        fileName: 'Apex_CIM_Older_Run.docx',
+        dealName: 'Apex Precision Dynamics CIM',
+        companyName: 'Apex Precision Dynamics',
+    }
+
+    const projectSummaries: any[] = [
+        {
+            projectId: 'project-20260826-34a89d0b',
+            projectKey: 'project-20260826-34a89d0b',
+            projectName: 'Apex Precision Dynamics CIM',
+            companyName: 'Apex Precision Dynamics',
+        },
+        {
+            projectId: 'project-20260825-38c6c9ee',
+            projectKey: 'project-20260825-38c6c9ee',
+            projectName: 'Apex Precision Dynamics CIM',
+            companyName: 'Apex Precision Dynamics',
+        },
+    ]
+
+    it('matches rows to their exact project ID', () => {
+        expect(isRowMatchingProject(rowProjectA, 'project-20260826-34a89d0b', projectSummaries)).toBe(true)
+        expect(isRowMatchingProject(rowProjectB, 'project-20260825-38c6c9ee', projectSummaries)).toBe(true)
+    })
+
+    it('strictly prevents rows from leaking across different runs with identical company names', () => {
+        // Project A row must NOT match Project B's active ID
+        expect(isRowMatchingProject(rowProjectA, 'project-20260825-38c6c9ee', projectSummaries)).toBe(false)
+        // Project B row must NOT match Project A's active ID
+        expect(isRowMatchingProject(rowProjectB, 'project-20260826-34a89d0b', projectSummaries)).toBe(false)
+    })
+
+    it('allows fallback company matching only for legacy rows without explicit project ID', () => {
+        const legacyRow: any = {
+            id: 100,
+            projectId: '',
+            fileName: 'Apex_Legacy.docx',
+            dealName: 'Apex Precision Dynamics CIM',
+            companyName: 'Apex Precision Dynamics',
+        }
+        expect(isRowMatchingProject(legacyRow, 'project-20260826-34a89d0b', projectSummaries)).toBe(true)
+    })
+})
+

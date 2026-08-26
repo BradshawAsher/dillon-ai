@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowUpRight, Bot, Compass, Edit2, ExternalLink, FolderKanban, Maximize2, MessageSquare, Minimize2, Move, PanelLeft, Plus, RotateCcw, Search, Send, Sparkles, ThumbsDown, ThumbsUp, Trash2, X, AlertTriangle, Bug } from 'lucide-react'
+import { ArrowUpRight, Bot, Compass, Edit2, ExternalLink, FolderKanban, Maximize2, MessageSquare, Minimize2, Move, PanelLeft, Plus, RotateCcw, Search, Send, Sparkles, ThumbsDown, ThumbsUp, Trash2, X, AlertTriangle, Bug, Brain, Terminal, Cpu, ChevronDown, ChevronRight, CheckCircle2, Loader2 } from 'lucide-react'
 
 import { Button } from '../lib/shadcn/button'
 import { Card } from '../lib/shadcn/card'
@@ -17,7 +17,22 @@ import { getUserModelConfig, mapModelNameToApiIdentifier } from './ApiKeyModal'
 
 export type ResponseTier = 'cloud_ai' | 'direct_llm' | 'local_heuristics'
 
-type Message = {
+export type ToolCallTrace = {
+    id: string
+    toolName: string
+    args: Record<string, any>
+    result?: any
+    status: 'running' | 'completed' | 'failed'
+}
+
+export type StreamCallbacks = {
+    onThoughtDelta?: (thoughtChunk: string) => void
+    onTextDelta?: (textChunk: string) => void
+    onToolStart?: (toolName: string, args: Record<string, any>) => void
+    onToolEnd?: (toolName: string, result: any) => void
+}
+
+export type Message = {
     id: string
     role: 'user' | 'assistant'
     content: string
@@ -27,6 +42,11 @@ type Message = {
     userPrompt?: string
     isRerunning?: boolean
     rerunError?: string
+    isStreaming?: boolean
+    thinkingContent?: string
+    isThinking?: boolean
+    thinkingDurationSeconds?: number
+    toolCalls?: ToolCallTrace[]
 }
 
 type Props = {
@@ -1795,22 +1815,269 @@ function executeClientSideTool(name: string, args: any, context: ClientSideToolC
     return { error: `Unknown tool: ${name}` }
 }
 
-async function callDirectUserLlm(
+/**
+ * Streams OpenAI / DeepSeek SSE responses chunk by chunk and parses reasoning/thinking tokens
+ */
+async function streamOpenAiOrDeepSeekSse(
+    url: string,
+    apiKey: string,
+    payload: any,
+    callbacks?: StreamCallbacks
+): Promise<{ text: string; reasoning: string }> {
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey.trim()}`,
+        },
+        body: JSON.stringify({
+            ...payload,
+            stream: true,
+        }),
+    })
+
+    if (!res.ok) {
+        throw new Error(`API error ${res.status}: ${res.statusText}`)
+    }
+
+    const reader = res.body?.getReader()
+    if (!reader) throw new Error('Response body is not readable')
+
+    const decoder = new TextDecoder()
+    let buffer = ''
+    let fullText = ''
+    let fullReasoning = ''
+    let inThinkTag = false
+
+    while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+
+        for (const line of lines) {
+            const trimmed = line.trim()
+            if (!trimmed || trimmed.startsWith(':')) continue
+            if (trimmed === 'data: [DONE]') continue
+            if (trimmed.startsWith('data: ')) {
+                try {
+                    const parsed = JSON.parse(trimmed.slice(6))
+                    const delta = parsed.choices?.[0]?.delta
+                    if (!delta) continue
+
+                    // 1. DeepSeek R1 / V4 native reasoning_content
+                    if (delta.reasoning_content) {
+                        fullReasoning += delta.reasoning_content
+                        callbacks?.onThoughtDelta?.(delta.reasoning_content)
+                    }
+
+                    // 2. Normal text content or inline <think> tags
+                    if (delta.content) {
+                        const chunk: string = delta.content
+                        if (chunk.includes('<think>')) {
+                            inThinkTag = true
+                            const parts = chunk.split('<think>')
+                            if (parts[0]) {
+                                fullText += parts[0]
+                                callbacks?.onTextDelta?.(parts[0])
+                            }
+                            if (parts[1]) {
+                                if (parts[1].includes('</think>')) {
+                                    inThinkTag = false
+                                    const sub = parts[1].split('</think>')
+                                    fullReasoning += sub[0]
+                                    callbacks?.onThoughtDelta?.(sub[0])
+                                    if (sub[1]) {
+                                        fullText += sub[1]
+                                        callbacks?.onTextDelta?.(sub[1])
+                                    }
+                                } else {
+                                    fullReasoning += parts[1]
+                                    callbacks?.onThoughtDelta?.(parts[1])
+                                }
+                            }
+                        } else if (inThinkTag) {
+                            if (chunk.includes('</think>')) {
+                                inThinkTag = false
+                                const parts = chunk.split('</think>')
+                                fullReasoning += parts[0]
+                                callbacks?.onThoughtDelta?.(parts[0])
+                                if (parts[1]) {
+                                    fullText += parts[1]
+                                    callbacks?.onTextDelta?.(parts[1])
+                                }
+                            } else {
+                                fullReasoning += chunk
+                                callbacks?.onThoughtDelta?.(chunk)
+                            }
+                        } else {
+                            fullText += chunk
+                            callbacks?.onTextDelta?.(chunk)
+                        }
+                    }
+                } catch { }
+            }
+        }
+    }
+
+    return { text: fullText, reasoning: fullReasoning }
+}
+
+/**
+ * Streams Anthropic Claude SSE responses chunk by chunk and parses thinking delta blocks
+ */
+async function streamAnthropicSse(
+    url: string,
+    apiKey: string,
+    payload: any,
+    callbacks?: StreamCallbacks
+): Promise<{ text: string; reasoning: string }> {
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey.trim(),
+            'anthropic-version': '2023-06-01',
+            'dangerously-allow-browser': 'true',
+        },
+        body: JSON.stringify({
+            ...payload,
+            stream: true,
+        }),
+    })
+
+    if (!res.ok) {
+        throw new Error(`Anthropic error ${res.status}: ${res.statusText}`)
+    }
+
+    const reader = res.body?.getReader()
+    if (!reader) throw new Error('Anthropic response stream not readable')
+
+    const decoder = new TextDecoder()
+    let buffer = ''
+    let fullText = ''
+    let fullReasoning = ''
+
+    while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+
+        for (const line of lines) {
+            const trimmed = line.trim()
+            if (!trimmed || trimmed.startsWith(':')) continue
+            if (trimmed.startsWith('data: ')) {
+                try {
+                    const parsed = JSON.parse(trimmed.slice(6))
+                    if (parsed.type === 'content_block_delta') {
+                        if (parsed.delta?.type === 'text_delta' && parsed.delta.text) {
+                            fullText += parsed.delta.text
+                            callbacks?.onTextDelta?.(parsed.delta.text)
+                        } else if (parsed.delta?.type === 'thinking_delta' && parsed.delta.thinking) {
+                            fullReasoning += parsed.delta.thinking
+                            callbacks?.onThoughtDelta?.(parsed.delta.thinking)
+                        }
+                    }
+                } catch { }
+            }
+        }
+    }
+
+    return { text: fullText, reasoning: fullReasoning }
+}
+
+/**
+ * Streams Google Gemini SSE responses chunk by chunk
+ */
+async function streamGeminiSse(
+    geminiModel: string,
+    apiKey: string,
+    contents: any[],
+    callbacks?: StreamCallbacks
+): Promise<{ text: string }> {
+    const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(geminiModel)}:streamGenerateContent?alt=sse&key=${encodeURIComponent(apiKey.trim())}`,
+        {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents }),
+        }
+    )
+
+    if (!res.ok) {
+        throw new Error(`Gemini error ${res.status}: ${res.statusText}`)
+    }
+
+    const reader = res.body?.getReader()
+    if (!reader) throw new Error('Gemini response stream not readable')
+
+    const decoder = new TextDecoder()
+    let buffer = ''
+    let fullText = ''
+
+    while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+
+        for (const line of lines) {
+            const trimmed = line.trim()
+            if (!trimmed || trimmed.startsWith(':')) continue
+            if (trimmed.startsWith('data: ')) {
+                try {
+                    const parsed = JSON.parse(trimmed.slice(6))
+                    const textChunk = parsed.candidates?.[0]?.content?.parts?.[0]?.text
+                    if (textChunk) {
+                        fullText += textChunk
+                        callbacks?.onTextDelta?.(textChunk)
+                    }
+                } catch { }
+            }
+        }
+    }
+
+    return { text: fullText }
+}
+
+/**
+ * Rapid simulated typewriter effect for local deterministic or full-block responses
+ */
+export async function streamTypewriterText(
+    text: string,
+    onChunk: (chunk: string) => void,
+    delayMs = 8
+) {
+    const tokens = text.split(/(\s+)/)
+    for (let i = 0; i < tokens.length; i += 2) {
+        const chunk = tokens.slice(i, i + 2).join('')
+        onChunk(chunk)
+        await new Promise(resolve => setTimeout(resolve, delayMs))
+    }
+}
+
+export async function callDirectUserLlm(
     prompt: string,
     context: string,
     keys: { openai?: string; anthropic?: string; gemini?: string; deepseek?: string },
     recentMessages: Message[] = [],
     toolContext?: ClientSideToolContext,
-    isDebateMode?: boolean
-): Promise<{ text: string; provider: string } | null> {
-    const isDebate = Boolean(isDebateMode || detectDebateIntent(prompt))
-    const debateInstruction = isDebate ? `
-
---- MULTI-AGENT IC COUNCIL DEBATE MODE ---
-You must orchestrate a comprehensive 3-agent Investment Committee debate on this acquisition:
-1. 🐂 **Bull Agent (Growth & Synergies Lead)**: Present the strongest possible case for the deal. Highlight revenue scale, gross margin defensibility, recurring revenue, upside growth vectors, and multiple expansion potential.
-2. 🐻 **Bear Agent (Forensic Risk Auditor)**: Stress-test the deal aggressively. Scrutinize unsupported seller add-backs, customer concentration (>10%), working capital deficits, legal/tax/EPA liabilities, and downside cash flow risks.
-3. ⚖️ **Arbiter Agent (Lead IC Partner Consensus)**: Reconcile Bull vs. Bear arguments against verified ground facts. Deliver a definitive consensus verdict (🟢 PROCEED / 🟡 RENEGOTIATE / 🔴 WALK AWAY), recommended purchase price haircut, and closing indemnity escrow terms.
+    isDebateModeActive = false,
+    callbacks?: StreamCallbacks
+): Promise<{ text: string; provider: string; reasoning?: string } | null> {
+    const debateInstruction = isDebateModeActive ? `
+CRITICAL MULTI-AGENT IC DEBATE COUNCIL PROTOCOL:
+You are acting as the MergeWorks Investment Committee Multi-Agent Council. You MUST format your response as a structured 3-way debate:
+1. 🐂 **Bull Agent (Growth & Synergies Lead)**: Aggressively champions growth, market upsides, expansion, margin enhancement, and customer lifetime value.
+2. 🐻 **Bear Agent (Forensic Risk Auditor)**: Relentlessly critiques customer concentration, earnings quality, unverified add-backs, churn risks, and hidden balance sheet liabilities.
+3. ⚖️ **Arbiter Agent (Lead Partner & IC Chair Consensus)**: Synthesizes both arguments and renders a final binding transaction decision:
+   - **Consensus Verdict**: [🟢 PROCEED / 🟡 RENEGOTIATE / 🔴 WALK AWAY]
+   - **Fair Value & Price Levers**: Recommended valuation discount, escrow true-ups, or earnouts.
+   - **Mandatory Closing Conditions**: Non-negotiable covenants, representations, and indemnities.
 
 Format your output with clean Markdown headings:
 ### ⚔️ Multi-Agent IC Council Debate: [Company Name]
@@ -1847,7 +2114,7 @@ ${context}
         content: m.content
     }))
 
-    // 1. DeepSeek BYOK (OpenAI-Compatible ReAct Tool Calling)
+    // 1. DeepSeek BYOK (OpenAI-Compatible ReAct Tool Calling & Streaming)
     if (keys.deepseek && keys.deepseek.trim()) {
         try {
             const deepseekConfig = getUserModelConfig('deepseek')
@@ -1880,38 +2147,31 @@ ${context}
                     for (const call of choice.tool_calls) {
                         let parsedArgs = {}
                         try { parsedArgs = JSON.parse(call.function.arguments || '{}') } catch { }
+                        callbacks?.onToolStart?.(call.function.name, parsedArgs)
                         const toolResult = executeClientSideTool(call.function.name, parsedArgs, effectiveToolCtx)
+                        callbacks?.onToolEnd?.(call.function.name, toolResult)
                         messages.push({
                             role: 'tool',
                             tool_call_id: call.id,
                             content: JSON.stringify(toolResult)
                         })
                     }
-                    const followUpRes = await fetch('https://api.deepseek.com/chat/completions', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${keys.deepseek.trim()}`,
-                        },
-                        body: JSON.stringify({
-                            model: deepseekModel,
-                            messages,
-                            temperature: 0.2,
-                        })
-                    })
-                    if (followUpRes.ok) {
-                        const followUpData = await followUpRes.json()
-                        const finalContent = followUpData.choices?.[0]?.message?.content
-                        if (finalContent) return { text: finalContent, provider: `DeepSeek (${deepseekModel})` }
-                    }
+                    const streamResult = await streamOpenAiOrDeepSeekSse(
+                        'https://api.deepseek.com/chat/completions',
+                        keys.deepseek.trim(),
+                        { model: deepseekModel, messages, temperature: 0.2 },
+                        callbacks
+                    )
+                    if (streamResult.text) return { text: streamResult.text, provider: `DeepSeek (${deepseekModel})`, reasoning: streamResult.reasoning }
                 } else if (choice?.content) {
+                    await streamTypewriterText(choice.content, chunk => callbacks?.onTextDelta?.(chunk))
                     return { text: choice.content, provider: `DeepSeek (${deepseekModel})` }
                 }
             }
         } catch { }
     }
 
-    // 2. OpenAI BYOK (GPT-5.6 Terra / Sol / Luna ReAct Tool Calling)
+    // 2. OpenAI BYOK (GPT-5.6 Terra / Sol / Luna ReAct Tool Calling & Streaming)
     if (keys.openai && keys.openai.trim()) {
         try {
             const openaiConfig = getUserModelConfig('openai')
@@ -1944,38 +2204,31 @@ ${context}
                     for (const call of choice.tool_calls) {
                         let parsedArgs = {}
                         try { parsedArgs = JSON.parse(call.function.arguments || '{}') } catch { }
+                        callbacks?.onToolStart?.(call.function.name, parsedArgs)
                         const toolResult = executeClientSideTool(call.function.name, parsedArgs, effectiveToolCtx)
+                        callbacks?.onToolEnd?.(call.function.name, toolResult)
                         messages.push({
                             role: 'tool',
                             tool_call_id: call.id,
                             content: JSON.stringify(toolResult)
                         })
                     }
-                    const followUpRes = await fetch('https://api.openai.com/v1/chat/completions', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${keys.openai.trim()}`,
-                        },
-                        body: JSON.stringify({
-                            model: openaiModel,
-                            messages,
-                            temperature: 0.2,
-                        })
-                    })
-                    if (followUpRes.ok) {
-                        const followUpData = await followUpRes.json()
-                        const finalContent = followUpData.choices?.[0]?.message?.content
-                        if (finalContent) return { text: finalContent, provider: `OpenAI (${openaiModel})` }
-                    }
+                    const streamResult = await streamOpenAiOrDeepSeekSse(
+                        'https://api.openai.com/v1/chat/completions',
+                        keys.openai.trim(),
+                        { model: openaiModel, messages, temperature: 0.2 },
+                        callbacks
+                    )
+                    if (streamResult.text) return { text: streamResult.text, provider: `OpenAI (${openaiModel})`, reasoning: streamResult.reasoning }
                 } else if (choice?.content) {
+                    await streamTypewriterText(choice.content, chunk => callbacks?.onTextDelta?.(chunk))
                     return { text: choice.content, provider: `OpenAI (${openaiModel})` }
                 }
             }
         } catch { }
     }
 
-    // 3. Anthropic BYOK (Claude Sonnet 5 / Opus 5 Tool Use)
+    // 3. Anthropic BYOK (Claude Sonnet 5 / Opus 5 Tool Use & Streaming)
     if (keys.anthropic && keys.anthropic.trim()) {
         try {
             const anthropicConfig = getUserModelConfig('anthropic')
@@ -2008,7 +2261,9 @@ ${context}
                 if (toolUseBlocks.length > 0) {
                     messages.push({ role: 'assistant', content: data.content })
                     const toolResults = toolUseBlocks.map((b: any) => {
+                        callbacks?.onToolStart?.(b.name, b.input || {})
                         const result = executeClientSideTool(b.name, b.input || {}, effectiveToolCtx)
+                        callbacks?.onToolEnd?.(b.name, result)
                         return {
                             type: 'tool_result',
                             tool_use_id: b.id,
@@ -2017,35 +2272,30 @@ ${context}
                     })
                     messages.push({ role: 'user', content: toolResults })
 
-                    const followUpRes = await fetch('https://api.anthropic.com/v1/messages', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'x-api-key': keys.anthropic.trim(),
-                            'anthropic-version': '2023-06-01',
-                            'dangerously-allow-browser': 'true',
-                        },
-                        body: JSON.stringify({
+                    const streamResult = await streamAnthropicSse(
+                        'https://api.anthropic.com/v1/messages',
+                        keys.anthropic.trim(),
+                        {
                             model: anthropicModel,
                             max_tokens: 2500,
                             system: systemPrompt,
                             messages
-                        })
-                    })
-                    if (followUpRes.ok) {
-                        const followUpData = await followUpRes.json()
-                        const finalContent = followUpData.content?.find((b: any) => b.type === 'text')?.text
-                        if (finalContent) return { text: finalContent, provider: `Claude (${anthropicModel})` }
-                    }
+                        },
+                        callbacks
+                    )
+                    if (streamResult.text) return { text: streamResult.text, provider: `Claude (${anthropicModel})`, reasoning: streamResult.reasoning }
                 } else {
                     const text = data.content?.find((b: any) => b.type === 'text')?.text
-                    if (text) return { text, provider: `Claude (${anthropicModel})` }
+                    if (text) {
+                        await streamTypewriterText(text, chunk => callbacks?.onTextDelta?.(chunk))
+                        return { text, provider: `Claude (${anthropicModel})` }
+                    }
                 }
             }
         } catch { }
     }
 
-    // 4. Google Gemini BYOK (Gemini 3.7 Flash / 3.5 Flash Lite)
+    // 4. Google Gemini BYOK (Gemini 3.7 Flash / 3.5 Flash Lite Streaming)
     if (keys.gemini && keys.gemini.trim()) {
         try {
             const geminiConfig = getUserModelConfig('gemini')
@@ -2062,16 +2312,8 @@ ${context}
                 }
             ]
 
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(geminiModel)}:generateContent?key=${encodeURIComponent(keys.gemini.trim())}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents })
-            })
-            if (res.ok) {
-                const data = await res.json()
-                const text = data.candidates?.[0]?.content?.parts?.[0]?.text
-                if (text) return { text, provider: `Google (${geminiModel})` }
-            }
+            const streamResult = await streamGeminiSse(geminiModel, keys.gemini.trim(), contents, callbacks)
+            if (streamResult.text) return { text: streamResult.text, provider: `Google (${geminiModel})` }
         } catch { }
     }
 
@@ -2176,10 +2418,14 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
     const [typingElapsed, setTypingElapsed] = useState(0)
     const typingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
     const messagesEndRef = useRef<HTMLDivElement>(null)
+    const isAutoScrollActiveRef = useRef<boolean>(true)
+    const [showScrollBottomBtn, setShowScrollBottomBtn] = useState<boolean>(false)
     const textareaRef = useRef<HTMLTextAreaElement>(null)
     const [ratings, setRatings] = useState<Record<string, 'up' | 'down'>>({})
     const [suggestedProject, setSuggestedProject] = useState<ProjectSynthesisItem | null>(null)
     const [isDebateModeActive, setIsDebateModeActive] = useState(false)
+    const [expandedThoughts, setExpandedThoughts] = useState<Record<string, boolean>>({})
+    const [expandedTools, setExpandedTools] = useState<Record<string, boolean>>({})
 
     const [panelSize, setPanelSize] = useState<ChatPanelSize>(() => {
         if (typeof window === 'undefined') return DEFAULT_CHAT_PANEL_SIZE
@@ -2342,16 +2588,30 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
 
     const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
         messagesEndRef.current?.scrollIntoView({ behavior })
+        isAutoScrollActiveRef.current = true
+        setShowScrollBottomBtn(false)
     }, [])
 
-    // Scroll to bottom when new messages arrive or change
+    const handleChatScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+        const el = e.currentTarget
+        const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
+        const isNearBottom = distanceFromBottom <= 80
+        isAutoScrollActiveRef.current = isNearBottom
+        setShowScrollBottomBtn(!isNearBottom)
+    }, [])
+
+    // Scroll to bottom when new messages arrive or change ONLY if user hasn't scrolled up
     useEffect(() => {
-        scrollToBottom('smooth')
+        if (isAutoScrollActiveRef.current) {
+            scrollToBottom('smooth')
+        }
     }, [messages, scrollToBottom])
 
     // Scroll to bottom immediately whenever the chat panel is opened or active session is switched
     useEffect(() => {
         if (isOpen) {
+            isAutoScrollActiveRef.current = true
+            setShowScrollBottomBtn(false)
             messagesEndRef.current?.scrollIntoView({ behavior: 'auto' })
             const timer = setTimeout(() => {
                 messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -2564,9 +2824,12 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
 
         setMessages(prev => [...prev, userMessage])
         setInput('')
+        isAutoScrollActiveRef.current = true
+        setShowScrollBottomBtn(false)
         setIsTyping(true)
         setTypingElapsed(0)
         typingTimerRef.current = setInterval(() => setTypingElapsed(t => t + 1), 1000)
+        setTimeout(() => scrollToBottom('smooth'), 20)
 
         // Check for issue reporting / bug intent to dispatch directly to #pod-1-agent-alerts
         const issueCheck = detectIssueReportIntent(trimmed)
@@ -2631,6 +2894,73 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
 
         const context = buildContext(synthesis, model, projectName, documents, allSyntheses)
 
+        const assistantMsgId = `assistant-${Date.now()}`
+        setMessages(prev => [...prev, {
+            id: assistantMsgId,
+            role: 'assistant',
+            content: '',
+            timestamp: Date.now(),
+            isStreaming: true,
+            isThinking: false,
+            thinkingContent: '',
+            toolCalls: [],
+            userPrompt: trimmed,
+        }])
+
+        const thinkingStartTime = Date.now()
+        let hadThinking = false
+
+        const streamCallbacks: StreamCallbacks = {
+            onThoughtDelta: (thoughtChunk) => {
+                hadThinking = true
+                setMessages(prev => prev.map(m => {
+                    if (m.id !== assistantMsgId) return m
+                    return {
+                        ...m,
+                        isThinking: true,
+                        thinkingContent: (m.thinkingContent || '') + thoughtChunk
+                    }
+                }))
+            },
+            onTextDelta: (textChunk) => {
+                const duration = hadThinking ? Math.max(1, Math.round((Date.now() - thinkingStartTime) / 1000)) : undefined
+                setMessages(prev => prev.map(m => {
+                    if (m.id !== assistantMsgId) return m
+                    return {
+                        ...m,
+                        isThinking: false,
+                        thinkingDurationSeconds: m.thinkingDurationSeconds || duration,
+                        content: (m.content || '') + textChunk
+                    }
+                }))
+            },
+            onToolStart: (toolName, args) => {
+                setMessages(prev => prev.map(m => {
+                    if (m.id !== assistantMsgId) return m
+                    const existing = m.toolCalls || []
+                    return {
+                        ...m,
+                        toolCalls: [...existing, { id: `tool-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, toolName, args, status: 'running' }]
+                    }
+                }))
+            },
+            onToolEnd: (toolName, result) => {
+                setMessages(prev => prev.map(m => {
+                    if (m.id !== assistantMsgId) return m
+                    const updated = (m.toolCalls || []).map(tc => {
+                        if (tc.toolName === toolName && tc.status === 'running') {
+                            return { ...tc, result, status: 'completed' as const }
+                        }
+                        return tc
+                    })
+                    return {
+                        ...m,
+                        toolCalls: updated
+                    }
+                }))
+            }
+        }
+
         try {
             const userAnthropicApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_anthropic_key') || '') : ''
             const userOpenAiApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_openai_key') || '') : ''
@@ -2641,33 +2971,8 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
             let tier: ResponseTier = 'cloud_ai'
             let providerName = 'Cloud AI'
 
-            try {
-                const res = await fetch('https://merge-works.app.n8n.cloud/webhook/dd-chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        question: trimmed,
-                        context,
-                        sessionId,
-                        isDebateMode: isDebateModeActive || detectDebateIntent(trimmed),
-                        userAnthropicApiKey,
-                        userOpenAiApiKey,
-                        userGeminiApiKey,
-                        userDeepseekApiKey,
-                    }),
-                })
-                if (res.ok) {
-                    const data = await res.json()
-                    answer = data.answer || data.output || data.text || ''
-                    if (answer) {
-                        tier = 'cloud_ai'
-                        providerName = 'Cloud LLM'
-                    }
-                }
-            } catch { }
-
-            // If n8n failed or was empty, check if user provided direct API keys for direct ChatGPT/Claude/Gemini/DeepSeek generation
-            if (!answer && (userOpenAiApiKey || userAnthropicApiKey || userGeminiApiKey || userDeepseekApiKey)) {
+            // 1. Check if user provided direct API keys for direct ChatGPT/Claude/Gemini/DeepSeek generation & streaming
+            if (userOpenAiApiKey || userAnthropicApiKey || userGeminiApiKey || userDeepseekApiKey) {
                 const directRes = await callDirectUserLlm(
                     trimmed,
                     context,
@@ -2679,7 +2984,8 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                     },
                     messages,
                     { synthesis, model, projectName, documents, allSyntheses },
-                    isDebateModeActive
+                    isDebateModeActive,
+                    streamCallbacks
                 )
                 if (directRes) {
                     answer = directRes.text
@@ -2688,17 +2994,45 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                 }
             }
 
+            // 2. If direct LLMs not active or returned empty, dispatch to live n8n cloud webhook
+            if (!answer) {
+                try {
+                    const res = await fetch('https://merge-works.app.n8n.cloud/webhook/dd-chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            question: trimmed,
+                            context,
+                            sessionId,
+                            isDebateMode: isDebateModeActive || detectDebateIntent(trimmed),
+                            userAnthropicApiKey,
+                            userOpenAiApiKey,
+                            userGeminiApiKey,
+                            userDeepseekApiKey,
+                        }),
+                    })
+                    if (res.ok) {
+                        const data = await res.json()
+                        answer = data.answer || data.output || data.text || ''
+                        if (answer) {
+                            tier = 'cloud_ai'
+                            providerName = 'Cloud LLM'
+                            await streamTypewriterText(answer, chunk => streamCallbacks.onTextDelta?.(chunk))
+                        }
+                    }
+                } catch { }
+            }
+
             if (!answer) throw new Error('Empty response from live LLMs, fallback to local heuristics')
 
-            setMessages(prev => [...prev, {
-                id: `assistant-${Date.now()}`,
-                role: 'assistant',
+            setMessages(prev => prev.map(m => m.id === assistantMsgId ? {
+                ...m,
                 content: answer,
-                timestamp: Date.now(),
                 tier,
                 providerName,
-                userPrompt: trimmed,
-            }])
+                isStreaming: false,
+                isThinking: false,
+            } : m))
         } catch {
             const fallback = getLocalResponse(
                 trimmed,
@@ -2711,15 +3045,15 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                 },
                 isDebateModeActive
             )
-            setMessages(prev => [...prev, {
-                id: `assistant-${Date.now()}`,
-                role: 'assistant',
+            await streamTypewriterText(fallback.content, chunk => streamCallbacks.onTextDelta?.(chunk))
+            setMessages(prev => prev.map(m => m.id === assistantMsgId ? {
+                ...m,
                 content: fallback.content,
-                timestamp: Date.now(),
                 tier: 'local_heuristics',
                 providerName: 'Local M&A Engine',
-                userPrompt: trimmed,
-            }])
+                isStreaming: false,
+                isThinking: false,
+            } : m))
         } finally {
             setIsTyping(false)
             if (typingTimerRef.current) { clearInterval(typingTimerRef.current); typingTimerRef.current = null }
@@ -2731,7 +3065,70 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
         const prompt = promptOverride || targetMsg?.userPrompt
         if (!prompt) return
 
-        setMessages(prev => prev.map(m => m.id === messageId ? { ...m, isRerunning: true, rerunError: undefined } : m))
+        setMessages(prev => prev.map(m => m.id === messageId ? {
+            ...m,
+            isRerunning: true,
+            rerunError: undefined,
+            isStreaming: true,
+            isThinking: false,
+            thinkingContent: '',
+            content: '',
+            toolCalls: [],
+        } : m))
+
+        const thinkingStartTime = Date.now()
+        let hadThinking = false
+
+        const rerunCallbacks: StreamCallbacks = {
+            onThoughtDelta: (thoughtChunk) => {
+                hadThinking = true
+                setMessages(prev => prev.map(m => {
+                    if (m.id !== messageId) return m
+                    return {
+                        ...m,
+                        isThinking: true,
+                        thinkingContent: (m.thinkingContent || '') + thoughtChunk
+                    }
+                }))
+            },
+            onTextDelta: (textChunk) => {
+                const duration = hadThinking ? Math.max(1, Math.round((Date.now() - thinkingStartTime) / 1000)) : undefined
+                setMessages(prev => prev.map(m => {
+                    if (m.id !== messageId) return m
+                    return {
+                        ...m,
+                        isThinking: false,
+                        thinkingDurationSeconds: m.thinkingDurationSeconds || duration,
+                        content: (m.content || '') + textChunk
+                    }
+                }))
+            },
+            onToolStart: (toolName, args) => {
+                setMessages(prev => prev.map(m => {
+                    if (m.id !== messageId) return m
+                    const existing = m.toolCalls || []
+                    return {
+                        ...m,
+                        toolCalls: [...existing, { id: `tool-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, toolName, args, status: 'running' }]
+                    }
+                }))
+            },
+            onToolEnd: (toolName, result) => {
+                setMessages(prev => prev.map(m => {
+                    if (m.id !== messageId) return m
+                    const updated = (m.toolCalls || []).map(tc => {
+                        if (tc.toolName === toolName && tc.status === 'running') {
+                            return { ...tc, result, status: 'completed' as const }
+                        }
+                        return tc
+                    })
+                    return {
+                        ...m,
+                        toolCalls: updated
+                    }
+                }))
+            }
+        }
 
         const context = buildContext(synthesis, model, projectName, documents, allSyntheses)
 
@@ -2745,32 +3142,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
             let tier: ResponseTier = 'cloud_ai'
             let providerName = 'Cloud AI'
 
-            try {
-                const res = await fetch('https://merge-works.app.n8n.cloud/webhook/dd-chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        question: prompt,
-                        context,
-                        sessionId,
-                        isDebateMode: isDebateModeActive || detectDebateIntent(prompt),
-                        userAnthropicApiKey,
-                        userOpenAiApiKey,
-                        userGeminiApiKey,
-                        userDeepseekApiKey,
-                    }),
-                })
-                if (res.ok) {
-                    const data = await res.json()
-                    answer = data.answer || data.output || data.text || ''
-                    if (answer) {
-                        tier = 'cloud_ai'
-                        providerName = 'Cloud LLM'
-                    }
-                }
-            } catch { }
-
-            if (!answer && (userOpenAiApiKey || userAnthropicApiKey || userGeminiApiKey || userDeepseekApiKey)) {
+            if (userOpenAiApiKey || userAnthropicApiKey || userGeminiApiKey || userDeepseekApiKey) {
                 const directRes = await callDirectUserLlm(
                     prompt,
                     context,
@@ -2782,13 +3154,42 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                     },
                     messages.filter(m => m.id !== messageId),
                     { synthesis, model, projectName, documents, allSyntheses },
-                    isDebateModeActive
+                    isDebateModeActive,
+                    rerunCallbacks
                 )
                 if (directRes) {
                     answer = directRes.text
                     tier = 'direct_llm'
                     providerName = directRes.provider
                 }
+            }
+
+            if (!answer) {
+                try {
+                    const res = await fetch('https://merge-works.app.n8n.cloud/webhook/dd-chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            question: prompt,
+                            context,
+                            sessionId,
+                            isDebateMode: isDebateModeActive || detectDebateIntent(prompt),
+                            userAnthropicApiKey,
+                            userOpenAiApiKey,
+                            userGeminiApiKey,
+                            userDeepseekApiKey,
+                        }),
+                    })
+                    if (res.ok) {
+                        const data = await res.json()
+                        answer = data.answer || data.output || data.text || ''
+                        if (answer) {
+                            tier = 'cloud_ai'
+                            providerName = 'Cloud LLM'
+                            await streamTypewriterText(answer, chunk => rerunCallbacks.onTextDelta?.(chunk))
+                        }
+                    }
+                } catch { }
             }
 
             if (!answer) {
@@ -2801,6 +3202,8 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                 tier,
                 providerName,
                 isRerunning: false,
+                isStreaming: false,
+                isThinking: false,
                 rerunError: undefined,
             } : m))
         } catch (err: any) {
@@ -2957,7 +3360,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                 </div>
 
                 {/* Right: Actions & Window Controls */}
-                <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+                <div className="flex items-center gap-1 shrink-0 ml-auto">
                     {/* Deal Actions Cluster */}
                     <div className="flex items-center gap-1">
                         {onOpenProjectsPanel ? (
@@ -2968,7 +3371,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                                 title="Open Projects Portfolio Drawer"
                             >
                                 <FolderKanban className="h-3 w-3 text-primary" />
-                                <span className="hidden sm:inline">Projects</span>
+                                {panelSize.width >= 500 && <span className="hidden sm:inline">Projects</span>}
                                 {typeof projectsCount === 'number' && (
                                     <span className="text-[9px] text-muted-foreground font-mono">({projectsCount})</span>
                                 )}
@@ -2985,7 +3388,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                             title={isDebateModeActive ? 'Multi-Agent IC Debate Mode is ACTIVE (Bull vs. Bear vs. Arbiter)' : 'Enable Multi-Agent IC Debate Mode (Bull vs. Bear vs. Arbiter)'}
                         >
                             <span>⚔️</span>
-                            <span>Debate {isDebateModeActive ? 'ON' : 'Mode'}</span>
+                            <span>{panelSize.width < 480 ? (isDebateModeActive ? 'Debate' : 'Debate') : `Debate ${isDebateModeActive ? 'ON' : 'Mode'}`}</span>
                         </button>
                     </div>
 
@@ -2993,7 +3396,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                     <div className="h-3.5 w-px bg-border/80 mx-0.5" />
 
                     {/* Window Controls Cluster */}
-                    <div className="flex items-center gap-0.5">
+                    <div className="flex items-center gap-0.5 shrink-0">
                         <button
                             type="button"
                             onClick={handleResetPositionAndSize}
@@ -3040,11 +3443,11 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                         <button
                             type="button"
                             onClick={() => setIsOpen(false)}
-                            className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer ml-0.5"
-                            aria-label="Close chat"
-                            title="Close chat"
+                            className="rounded-md p-1.5 text-muted-foreground transition-all hover:bg-destructive/15 hover:text-destructive dark:hover:text-red-400 cursor-pointer ml-1"
+                            aria-label="Close Dillon AI"
+                            title="Close Dillon AI (Esc)"
                         >
-                            <X className="h-3.5 w-3.5" />
+                            <X className="h-4 w-4" />
                         </button>
                     </div>
                 </div>
@@ -3176,8 +3579,8 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                 )}
 
                 {/* Right / Main Chat Canvas */}
-                <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
-                    <div className="flex-1 overflow-y-auto overscroll-contain p-3 space-y-3">
+                <div className="flex flex-1 flex-col min-w-0 overflow-hidden relative">
+                    <div className="flex-1 overflow-y-auto overscroll-contain p-3 space-y-3" onScroll={handleChatScroll}>
                         {messages.length === 0 && (
                             <div className="flex h-full flex-col items-center justify-center text-center p-2">
                                 <div className="rounded-full bg-primary/10 p-3 ring-1 ring-primary/25 mb-2">
@@ -3202,98 +3605,220 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                             </div>
                         )}
 
-                        {messages.map(msg => (
-                            <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                <div className="max-w-[88%]">
-                                    <div className={`rounded-lg px-3 py-2 text-xs leading-relaxed shadow-xs ${msg.role === 'user'
-                                        ? 'bg-primary text-primary-foreground whitespace-pre-wrap font-medium'
-                                        : 'bg-muted/90 text-foreground space-y-1.5 border border-border/60'
-                                        }`}>
-                                        {msg.role === 'assistant' && msg.tier === 'local_heuristics' && (
-                                            <div className="mb-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 rounded border border-amber-500/30 bg-amber-500/10 px-2 py-1.5 text-[10.5px] text-amber-900 dark:text-amber-200">
-                                                <div className="flex items-center gap-1 font-medium">
-                                                    <span>⚙️ In-browser instant answer (deterministic engine)</span>
-                                                </div>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleRerunWithLiveLlm(msg.id, msg.userPrompt)}
-                                                    disabled={msg.isRerunning}
-                                                    className="inline-flex items-center gap-1 rounded bg-amber-600/20 hover:bg-amber-600/30 active:bg-amber-600/40 px-2 py-0.5 font-semibold text-[10px] text-amber-950 dark:text-amber-100 transition-colors cursor-pointer disabled:opacity-50"
-                                                    title="Bypass local heuristics and run this question against the live cloud AI model"
-                                                >
-                                                    {msg.isRerunning ? (
-                                                        <>
-                                                            <RotateCcw className="h-3 w-3 animate-spin" />
-                                                            <span>Contacting Cloud AI...</span>
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <Sparkles className="h-3 w-3" />
-                                                            <span>Rerun with Live LLM</span>
-                                                        </>
-                                                    )}
-                                                </button>
-                                            </div>
-                                        )}
-                                        {msg.role === 'assistant' && msg.rerunError && (
-                                            <div className="mb-2 rounded border border-red-500/30 bg-red-500/10 px-2 py-1 text-[10.5px] text-red-700 dark:text-red-300">
-                                                {msg.rerunError}
-                                            </div>
-                                        )}
-                                        {msg.role === 'assistant' ? renderSimpleMarkdown(msg.content, onNavigateTab) : msg.content}
-                                        {msg.role === 'assistant' && (
-                                            <div className="mt-1 flex items-center justify-between pt-1 text-[10px] text-muted-foreground border-t border-border/40">
-                                                <span>{relativeTime(msg.timestamp)}</span>
-                                                <div className="flex items-center gap-1">
-                                                    {msg.tier && (
-                                                        <span
-                                                            className={`rounded px-1.5 py-0.2 font-mono text-[9px] font-semibold ${
-                                                                msg.tier === 'cloud_ai'
-                                                                    ? 'bg-primary/15 text-primary border border-primary/25'
-                                                                    : msg.tier === 'direct_llm'
-                                                                        ? 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20'
-                                                                        : 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20'
+                        {messages.map(msg => {
+                            const isThoughtExpanded = expandedThoughts[msg.id] ?? (msg.isThinking === true)
+                            const isToolsExpanded = expandedTools[msg.id] ?? false
+
+                            return (
+                                <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                    <div className="max-w-[88%] w-full">
+                                        <div className={`rounded-lg px-3 py-2 text-xs leading-relaxed shadow-xs ${msg.role === 'user'
+                                            ? 'bg-primary text-primary-foreground whitespace-pre-wrap font-medium ml-auto w-fit'
+                                            : 'bg-muted/90 text-foreground space-y-2 border border-border/60'
+                                            }`}>
+
+                                            {/* 1. Tool Call Execution Badges */}
+                                            {msg.role === 'assistant' && msg.toolCalls && msg.toolCalls.length > 0 && (
+                                                <div className="rounded border border-indigo-500/20 bg-indigo-500/5 p-2 text-[11px] space-y-1.5">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setExpandedTools(prev => ({ ...prev, [msg.id]: !isToolsExpanded }))}
+                                                        className="flex w-full items-center justify-between text-indigo-800 dark:text-indigo-300 font-medium hover:opacity-80 transition-opacity cursor-pointer text-left"
+                                                    >
+                                                        <div className="flex items-center gap-1.5">
+                                                            <Cpu className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
+                                                            <span>Agent Tools Executed ({msg.toolCalls.length})</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                                                            {isToolsExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                                                        </div>
+                                                    </button>
+
+                                                    <div className="flex flex-wrap gap-1.5 pt-0.5">
+                                                        {msg.toolCalls.map(tc => (
+                                                            <div
+                                                                key={tc.id}
+                                                                className={`inline-flex items-center gap-1.5 rounded px-2 py-0.5 font-mono text-[10px] border ${
+                                                                    tc.status === 'running'
+                                                                        ? 'bg-amber-500/10 text-amber-800 dark:text-amber-200 border-amber-500/30 animate-pulse'
+                                                                        : 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/20'
                                                                 }`}
-                                                            title={
-                                                                msg.tier === 'cloud_ai'
-                                                                    ? 'Tier 1: Powered by live n8n Cloud LLM Webhook (OpenAI GPT-4o / Claude / Gemini)'
-                                                                    : msg.tier === 'direct_llm'
-                                                                        ? `Tier 2: Powered directly via user API key (${msg.providerName})`
-                                                                        : 'Tier 3: Powered by MergeWorks local deterministic M&A rules (offline fallback)'
-                                                            }
-                                                        >
-                                                            {msg.tier === 'cloud_ai' && '⚡ Tier 1 • Cloud AI'}
-                                                            {msg.tier === 'direct_llm' && `⚡ Tier 2 • ${msg.providerName || 'Direct LLM'}`}
-                                                            {msg.tier === 'local_heuristics' && '⚙️ Tier 3 • Local M&A Engine'}
-                                                        </span>
+                                                            >
+                                                                {tc.status === 'running' ? (
+                                                                    <Loader2 className="h-2.5 w-2.5 animate-spin text-amber-600" />
+                                                                ) : (
+                                                                    <CheckCircle2 className="h-2.5 w-2.5 text-emerald-600 dark:text-emerald-400" />
+                                                                )}
+                                                                <span>{tc.toolName}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+
+                                                    {isToolsExpanded && (
+                                                        <div className="mt-2 space-y-1.5 pt-1.5 border-t border-indigo-500/15">
+                                                            {msg.toolCalls.map(tc => (
+                                                                <div key={tc.id} className="rounded bg-background/70 p-2 font-mono text-[10px] border border-border/50 space-y-1">
+                                                                    <div className="flex items-center justify-between text-muted-foreground">
+                                                                        <span className="font-semibold text-foreground">⚡ {tc.toolName}</span>
+                                                                        <span className="text-[9px] uppercase">{tc.status}</span>
+                                                                    </div>
+                                                                    <div className="text-muted-foreground">
+                                                                        <span className="font-semibold text-foreground/80">Input:</span> {JSON.stringify(tc.args)}
+                                                                    </div>
+                                                                    {tc.result && (
+                                                                        <div className="text-muted-foreground">
+                                                                            <span className="font-semibold text-foreground/80">Result:</span> {typeof tc.result === 'object' ? JSON.stringify(tc.result) : String(tc.result)}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            ))}
+                                                        </div>
                                                     )}
+                                                </div>
+                                            )}
+
+                                            {/* 2. Reasoning / Thinking Process Accordion */}
+                                            {msg.role === 'assistant' && (msg.thinkingContent || msg.isThinking) && (
+                                                <div className="rounded border border-purple-500/20 bg-purple-500/5 p-2 text-[11px] space-y-1">
                                                     <button
                                                         type="button"
-                                                        onClick={() => setRatings(prev => ({ ...prev, [msg.id]: prev[msg.id] === 'up' ? undefined as never : 'up' }))}
-                                                        className={`rounded p-0.5 transition-colors cursor-pointer ${ratings[msg.id] === 'up' ? 'text-green-600' : 'text-muted-foreground/40 hover:text-muted-foreground'}`}
-                                                        title="Helpful"
-                                                        aria-label="Rate this answer helpful"
-                                                        aria-pressed={ratings[msg.id] === 'up'}
+                                                        onClick={() => setExpandedThoughts(prev => ({ ...prev, [msg.id]: !isThoughtExpanded }))}
+                                                        className="flex w-full items-center justify-between text-purple-900 dark:text-purple-300 font-medium hover:opacity-80 transition-opacity cursor-pointer text-left"
                                                     >
-                                                        <ThumbsUp className="h-3 w-3" />
+                                                        <div className="flex items-center gap-1.5">
+                                                            <Brain className={`h-3.5 w-3.5 text-purple-600 dark:text-purple-400 ${msg.isThinking ? 'animate-pulse text-purple-500' : ''}`} />
+                                                            <span>
+                                                                {msg.isThinking ? 'Thinking Process...' : 'Thought Process'}
+                                                            </span>
+                                                            {msg.thinkingDurationSeconds ? (
+                                                                <span className="font-mono text-[10px] text-purple-700/70 dark:text-purple-300/70 font-normal">
+                                                                    ({msg.thinkingDurationSeconds}s)
+                                                                </span>
+                                                            ) : null}
+                                                        </div>
+                                                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                                                            {isThoughtExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                                                        </div>
                                                     </button>
+
+                                                    {isThoughtExpanded && (
+                                                        <div className="mt-1.5 rounded bg-background/60 p-2 font-mono text-[10.5px] leading-relaxed text-muted-foreground border border-border/40 max-h-48 overflow-y-auto whitespace-pre-wrap">
+                                                            {msg.thinkingContent}
+                                                            {msg.isThinking && (
+                                                                <span className="inline-block w-1.5 h-3 ml-0.5 bg-purple-500 animate-pulse align-middle" />
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {/* 3. Deterministic In-Browser Engine Banner */}
+                                            {msg.role === 'assistant' && msg.tier === 'local_heuristics' && !msg.isStreaming && (
+                                                <div className="mb-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 rounded border border-amber-500/30 bg-amber-500/10 px-2 py-1.5 text-[10.5px] text-amber-900 dark:text-amber-200">
+                                                    <div className="flex items-center gap-1 font-medium">
+                                                        <span>⚙️ In-browser instant answer (deterministic engine)</span>
+                                                    </div>
                                                     <button
                                                         type="button"
-                                                        onClick={() => setRatings(prev => ({ ...prev, [msg.id]: prev[msg.id] === 'down' ? undefined as never : 'down' }))}
-                                                        className={`rounded p-0.5 transition-colors cursor-pointer ${ratings[msg.id] === 'down' ? 'text-red-600' : 'text-muted-foreground/40 hover:text-muted-foreground'}`}
-                                                        title="Not helpful"
-                                                        aria-label="Rate this answer not helpful"
-                                                        aria-pressed={ratings[msg.id] === 'down'}
+                                                        onClick={() => handleRerunWithLiveLlm(msg.id, msg.userPrompt)}
+                                                        disabled={msg.isRerunning}
+                                                        className="inline-flex items-center gap-1 rounded bg-amber-600/20 hover:bg-amber-600/30 active:bg-amber-600/40 px-2 py-0.5 font-semibold text-[10px] text-amber-950 dark:text-amber-100 transition-colors cursor-pointer disabled:opacity-50"
+                                                        title="Bypass local heuristics and run this question against the live cloud AI model"
                                                     >
-                                                        <ThumbsDown className="h-3 w-3" />
+                                                        {msg.isRerunning ? (
+                                                            <>
+                                                                <RotateCcw className="h-3 w-3 animate-spin" />
+                                                                <span>Contacting Cloud AI...</span>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <Sparkles className="h-3 w-3" />
+                                                                <span>Rerun with Live LLM</span>
+                                                            </>
+                                                        )}
                                                     </button>
                                                 </div>
-                                            </div>
-                                        )}
+                                            )}
+
+                                            {msg.role === 'assistant' && msg.rerunError && (
+                                                <div className="mb-2 rounded border border-red-500/30 bg-red-500/10 px-2 py-1 text-[10.5px] text-red-700 dark:text-red-300">
+                                                    {msg.rerunError}
+                                                </div>
+                                            )}
+
+                                            {/* 4. Main Message Content */}
+                                            {msg.role === 'assistant' ? (
+                                                <div>
+                                                    {msg.content ? renderSimpleMarkdown(msg.content, onNavigateTab) : null}
+                                                    {msg.isStreaming && !msg.content && !msg.isThinking && (
+                                                        <div className="flex items-center gap-1.5 text-muted-foreground text-[11px] py-1">
+                                                            <Loader2 className="h-3 w-3 animate-spin text-primary" />
+                                                            <span>Generating response...</span>
+                                                        </div>
+                                                    )}
+                                                    {msg.isStreaming && msg.content && (
+                                                        <span className="inline-block w-1.5 h-3 ml-0.5 bg-primary animate-pulse align-middle" />
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                msg.content
+                                            )}
+
+                                            {/* 5. Footer & Tier Badges */}
+                                            {msg.role === 'assistant' && !msg.isStreaming && (
+                                                <div className="mt-1 flex items-center justify-between pt-1 text-[10px] text-muted-foreground border-t border-border/40">
+                                                    <span>{relativeTime(msg.timestamp)}</span>
+                                                    <div className="flex items-center gap-1">
+                                                        {msg.tier && (
+                                                            <span
+                                                                className={`rounded px-1.5 py-0.2 font-mono text-[9px] font-semibold ${
+                                                                    msg.tier === 'cloud_ai'
+                                                                        ? 'bg-primary/15 text-primary border border-primary/25'
+                                                                        : msg.tier === 'direct_llm'
+                                                                            ? 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20'
+                                                                            : 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20'
+                                                                    }`}
+                                                                title={
+                                                                    msg.tier === 'cloud_ai'
+                                                                        ? 'Tier 1: Powered by live n8n Cloud LLM Webhook (OpenAI GPT-4o / Claude / Gemini)'
+                                                                        : msg.tier === 'direct_llm'
+                                                                            ? `Tier 2: Powered directly via user API key (${msg.providerName})`
+                                                                            : 'Tier 3: Powered by MergeWorks local deterministic M&A rules (offline fallback)'
+                                                                }
+                                                            >
+                                                                {msg.tier === 'cloud_ai' && '⚡ Tier 1 • Cloud AI'}
+                                                                {msg.tier === 'direct_llm' && `⚡ Tier 2 • ${msg.providerName || 'Direct LLM'}`}
+                                                                {msg.tier === 'local_heuristics' && '⚙️ Tier 3 • Local M&A Engine'}
+                                                            </span>
+                                                        )}
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setRatings(prev => ({ ...prev, [msg.id]: prev[msg.id] === 'up' ? undefined as never : 'up' }))}
+                                                            className={`rounded p-0.5 transition-colors cursor-pointer ${ratings[msg.id] === 'up' ? 'text-green-600' : 'text-muted-foreground/40 hover:text-muted-foreground'}`}
+                                                            title="Helpful"
+                                                            aria-label="Rate this answer helpful"
+                                                            aria-pressed={ratings[msg.id] === 'up'}
+                                                        >
+                                                            <ThumbsUp className="h-3 w-3" />
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setRatings(prev => ({ ...prev, [msg.id]: prev[msg.id] === 'down' ? undefined as never : 'down' }))}
+                                                            className={`rounded p-0.5 transition-colors cursor-pointer ${ratings[msg.id] === 'down' ? 'text-red-600' : 'text-muted-foreground/40 hover:text-muted-foreground'}`}
+                                                            title="Not helpful"
+                                                            aria-label="Rate this answer not helpful"
+                                                            aria-pressed={ratings[msg.id] === 'down'}
+                                                        >
+                                                            <ThumbsDown className="h-3 w-3" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            )
+                        })}
 
                         {!isTyping && suggestedProject && onSuggestProjectSwitch ? (
                             <div className="rounded-lg border border-primary/25 bg-primary/5 px-3 py-2 text-xs text-foreground">
@@ -3350,6 +3875,19 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                                         )}
                                     </span>
                                 </div>
+                            </div>
+                        )}
+
+                        {showScrollBottomBtn && (
+                            <div className="sticky bottom-2 flex justify-center pointer-events-none z-20">
+                                <button
+                                    type="button"
+                                    onClick={() => scrollToBottom('smooth')}
+                                    className="pointer-events-auto flex items-center gap-1.5 rounded-full bg-background/95 hover:bg-background text-foreground border border-border/80 px-3 py-1 text-xs font-medium shadow-md backdrop-blur-xs transition-all animate-in fade-in cursor-pointer hover:border-primary/50"
+                                >
+                                    <span>Jump to latest</span>
+                                    <ChevronDown className="h-3.5 w-3.5" />
+                                </button>
                             </div>
                         )}
 
