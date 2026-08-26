@@ -46,9 +46,22 @@ const MIME_MAP: Record<string, string> = {
     '.aac': 'audio/aac',
 }
 
+/**
+ * Lower-cased extension (including the leading dot) of a path's final segment,
+ * or '' when the base name has no dot. Deriving it from the base name — not the
+ * whole path — avoids two bugs in the naive `path.slice(path.lastIndexOf('.'))`:
+ * a dotless name like "Makefile" would slice to its last character ("e"), and a
+ * dotless file inside a dotted folder ("v1.2/ledger") would pick up ".2/ledger".
+ */
+export function fileExtension(path: string): string {
+    const base = path.replace(/\\/g, '/').split('/').pop() ?? ''
+    const dot = base.lastIndexOf('.')
+    // A leading-dot dotfile ("._x", ".DS_Store") has no real extension.
+    return dot > 0 ? base.slice(dot).toLowerCase() : ''
+}
+
 function getMimeType(fileName: string): string {
-    const ext = fileName.slice(fileName.lastIndexOf('.')).toLowerCase()
-    return MIME_MAP[ext] || 'application/octet-stream'
+    return MIME_MAP[fileExtension(fileName)] || 'application/octet-stream'
 }
 
 function isNoisePath(filePath: string): boolean {
@@ -119,7 +132,7 @@ export async function extractZipArchive(
                 continue
             }
 
-            const ext = rawPath.slice(rawPath.lastIndexOf('.')).toLowerCase()
+            const ext = fileExtension(rawPath)
             if (!acceptedExtensions.has(ext)) {
                 skippedUnsupportedCount++
                 continue
@@ -195,7 +208,7 @@ export async function extractZipArchive(
                 continue
             }
 
-            const ext = rawPath.slice(rawPath.lastIndexOf('.')).toLowerCase()
+            const ext = fileExtension(rawPath)
             if (!acceptedExtensions.has(ext)) {
                 skippedUnsupportedCount++
                 offset = dataOffset + compSize
