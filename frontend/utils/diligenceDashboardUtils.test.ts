@@ -116,6 +116,16 @@ describe('isDuplicateProjectDocument', () => {
     it('is not a duplicate when size differs', () => {
         expect(isDuplicateProjectDocument(file, 'p1', [row({ fileSize: 200 })])).toBe(false)
     })
+
+    it('does not throw when a row has null projectId/fileName', () => {
+        const nulledRow = row({
+            projectId: null as unknown as string,
+            fileName: null as unknown as string,
+        })
+        expect(isDuplicateProjectDocument(file, 'p1', [nulledRow])).toBe(false)
+        // A real matching row alongside a broken one is still detected.
+        expect(isDuplicateProjectDocument(file, 'p1', [nulledRow, row({})])).toBe(true)
+    })
 })
 
 describe('formatElapsedDuration', () => {
