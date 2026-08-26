@@ -132,6 +132,15 @@ describe('Deep Linking Utilities', () => {
             const matched = matchProjectFromQuery('non-existent-deal', mockProjects)
             expect(matched).toBeNull()
         })
+
+        it('does not spuriously match a project whose name is a 1-2 char substring of the query', () => {
+            const projects = [
+                { projectId: 'p1', projectKey: 'ab', projectName: 'AB', companyName: 'AB' },
+                { projectId: 'p2', projectKey: 'northstar', projectName: 'Northstar Capital', companyName: 'Northstar' },
+            ]
+            // "grabber" contains "ab" but must not resolve to the two-letter project.
+            expect(matchProjectFromQuery('grabber-deal', projects)).toBeNull()
+        })
     })
 
     describe('buildProjectPermalink', () => {
