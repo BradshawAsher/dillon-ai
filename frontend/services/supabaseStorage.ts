@@ -9,7 +9,25 @@ export interface StorageUploadResult {
   fileSize: number
 }
 
+export interface UploadTicket {
+  storageProvider?: 'r2' | 'supabase'
+  uploadUrl?: string
+  signedUrl: string
+  path: string
+  token?: string
+  publicUrl: string
+  bucket?: string
+  supabaseFallback?: {
+    signedUrl: string
+    path: string
+    token: string
+    publicUrl: string
+    bucket: string
+  }
+}
+
 const STORAGE_CDN_URL = (import.meta.env.VITE_STORAGE_CDN_URL || 'https://dillon-ai-worker.bradshin231.workers.dev').replace(/\/+$/, '')
+const R2_PUBLIC_URL = (import.meta.env.VITE_R2_PUBLIC_URL || 'https://pub-3b04d9f4c75546caae7c86bd7b6847de.r2.dev').replace(/\/+$/, '')
 const SUPABASE_STORAGE_ORIGIN = 'https://sihpsqrunkwkxhhnwoqe.supabase.co'
 
 export function resolveStorageCdnUrl(url: string | undefined | null): string {
@@ -25,7 +43,7 @@ export async function requestSignedUploadUrl(params: {
   fileType?: string
   fileSize?: number
   projectId?: string
-}): Promise<{ signedUrl: string; path: string; token: string; publicUrl: string; bucket: string }> {
+}): Promise<UploadTicket> {
   const response = await fetch('/api/diligence/upload-url', {
     method: 'POST',
     headers: {
@@ -65,7 +83,7 @@ export async function uploadDocumentToSupabaseStorage(options: {
   if (isMock) {
     options.onProgress?.(100)
     return {
-      storageFileUrl: `https://sihpsqrunkwkxhhnwoqe.supabase.co/storage/v1/object/public/deal-documents/mock/${Date.now()}-${fileName}`,
+      storageFileUrl: `${R2_PUBLIC_URL}/mock/${Date.now()}-${fileName}`,
       storagePath: `mock/${Date.now()}-${fileName}`,
       fileName,
       fileSize,
@@ -81,35 +99,76 @@ export async function uploadDocumentToSupabaseStorage(options: {
     projectId,
   })
 
-  // Step 2: Direct client upload to Supabase Storage using signed token / URL
+  // Step 2: Upload binary
   options.onProgress?.(30)
-  const { data, error } = await supabaseAuthClient.storage
-    .from(ticket.bucket || 'deal-documents')
-    .uploadToSignedUrl(ticket.path, ticket.token, options.file, {
-      contentType: fileType || 'application/octet-stream',
-      upsert: true,
-      cacheControl: '31536000',
-    })
+  let uploadSucceeded = false
+  let resolvedPublicUrl = ticket.publicUrl
 
-  if (error || !data) {
-    // Fallback: direct PUT to signedUrl
-    const putRes = await fetch(ticket.signedUrl, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': fileType || 'application/octet-stream',
-        'Cache-Control': 'public, max-age=31536000, immutable',
-      },
-      body: options.file,
-    })
-    if (!putRes.ok) {
-      throw new Error(`Direct storage upload failed: ${error?.message || `HTTP ${putRes.status}`}`)
+  // Primary: Cloudflare R2 direct PUT upload
+  if (ticket.uploadUrl) {
+    try {
+      const r2Res = await fetch(ticket.uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': fileType || 'application/octet-stream',
+        },
+        body: options.file,
+      })
+      if (r2Res.ok) {
+        uploadSucceeded = true
+      } else {
+        console.warn(`[storage] R2 direct PUT returned ${r2Res.status}, attempting Supabase fallback...`)
+      }
+    } catch (r2Err) {
+      console.warn('[storage] R2 direct PUT network error, attempting Supabase fallback...', r2Err)
     }
+  }
+
+  // Fallback: Supabase Storage if R2 upload did not complete
+  if (!uploadSucceeded) {
+    const fallbackTicket = ticket.supabaseFallback || ticket
+    const bucket = fallbackTicket.bucket || 'deal-documents'
+    const path = fallbackTicket.path || ticket.path
+    const token = fallbackTicket.token || ticket.token
+
+    if (token) {
+      const { data, error } = await supabaseAuthClient.storage
+        .from(bucket)
+        .uploadToSignedUrl(path, token, options.file, {
+          contentType: fileType || 'application/octet-stream',
+          upsert: true,
+          cacheControl: '31536000',
+        })
+      if (data && !error) {
+        uploadSucceeded = true
+        resolvedPublicUrl = fallbackTicket.publicUrl || ticket.publicUrl
+      }
+    }
+
+    if (!uploadSucceeded && fallbackTicket.signedUrl) {
+      const putRes = await fetch(fallbackTicket.signedUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': fileType || 'application/octet-stream',
+          'Cache-Control': 'public, max-age=31536000, immutable',
+        },
+        body: options.file,
+      })
+      if (putRes.ok) {
+        uploadSucceeded = true
+        resolvedPublicUrl = fallbackTicket.publicUrl || ticket.publicUrl
+      }
+    }
+  }
+
+  if (!uploadSucceeded) {
+    throw new Error('Storage upload failed across both R2 and Supabase storage providers.')
   }
 
   options.onProgress?.(100)
 
   return {
-    storageFileUrl: resolveStorageCdnUrl(ticket.publicUrl),
+    storageFileUrl: resolveStorageCdnUrl(resolvedPublicUrl),
     storagePath: ticket.path,
     fileName,
     fileSize,

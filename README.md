@@ -34,8 +34,8 @@ Dillon AI is engineered as an event-driven, 5-tier multi-agent pipeline:
 
 ```text
 Browser (React 19 SPA + TanStack Query v5 + TanStack Table)
-  ├── 1. Direct-to-Cloud Uploads (Presigned URLs -> Supabase Storage S3)
-  ├── 2. Storage CDN & Edge Caching (Cloudflare Worker -> Storage Proxy max-age=1yr / REST s-maxage=10 <15ms)
+  ├── 1. Direct-to-Cloud Uploads (Cloudflare R2 Zero-Egress Storage `dillon-deal-documents` / Worker PUT)
+  ├── 2. Storage CDN & Edge Caching (Cloudflare Worker -> R2 Public CDN max-age=1yr / REST s-maxage=10 <15ms)
   ├── 3. Instant Portfolio Metrics -> PostgreSQL RPC (get_portfolio_diligence_kpis <2ms, <400B)
   ├── 4. Batch Dispatch -> same-origin REST API (/api/diligence/*) -> Pod 1 n8n Webhooks
   ├── 5. Tier 1-2 Extraction Agents & Deterministic Math Engine (Zero-Hallucination Guard)

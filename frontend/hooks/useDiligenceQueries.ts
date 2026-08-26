@@ -50,7 +50,7 @@ export function useSubmissionHistoryQuery(params: SubmissionHistoryQueryParams =
       })
     },
     enabled,
-    staleTime: 10_000,
+    staleTime: 30_000,
   })
 }
 
@@ -79,7 +79,7 @@ export function useProjectSynthesisQuery(params: ProjectSynthesisQueryParams = {
       })
     },
     enabled,
-    staleTime: 10_000,
+    staleTime: 30_000,
   })
 }
 
@@ -102,7 +102,7 @@ export function usePortfolioKpisQuery(options: { enabled?: boolean } = {}) {
       })
     },
     enabled: options.enabled ?? true,
-    staleTime: 15_000,
+    staleTime: 30_000,
   })
 }
 
@@ -117,7 +117,7 @@ export function useDealModelsQuery(projectId?: string, options: { enabled?: bool
       return fetchJson<DealModel[]>(url, { headers: identityHeaders() })
     },
     enabled: options.enabled ?? true,
-    staleTime: 10_000,
+    staleTime: 30_000,
   })
 }
 
@@ -153,7 +153,7 @@ export function useProjectActionTrackerQuery(projectId?: string, options: { enab
       )
     },
     enabled: Boolean(projectId) && (options.enabled ?? true),
-    staleTime: 10_000,
+    staleTime: 30_000,
   })
 }
 

@@ -24,3 +24,6 @@ GEMINI.md
 scratch/
 CLAUDE.md
 SUPADEMO_RECORDING_PLAN.md
+.cursor/
+.freebuff/
+.vscode/

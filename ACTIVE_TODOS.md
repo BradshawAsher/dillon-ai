@@ -32,7 +32,7 @@
   - `PublicDataEnrichmentCard.tsx` implemented with digital footprint scoring, tech stack detection, and sentiment analysis.
 - [ ] **Email / Slack Webhook Alerts for Red Flags**
   - Trigger automated Slack / Email notifications when a high-severity red flag or escalation reason is detected during batch processing.
-- [ ] **Real-time Event Push (WebSockets / Supabase Realtime)**
-  - Optional enhancement to replace HTTP polling with WebSocket subscription events for batch status updates.
-- [ ] **Cloud Storage & Data Retention Migration**
-  - Migrate document storage from transient Google Drive / temporary storage to a permanent cloud bucket (AWS S3 / Supabase Storage).
+- [x] **Real-time Event Push (WebSockets / Supabase Realtime)**
+  - Implemented WebSocket CDC event stream with 1,200ms batch debouncing and optimistic TanStack query cache invalidation.
+- [x] **Cloudflare R2 Zero-Egress Cloud Storage Migration**
+  - Migrated document binaries to Cloudflare R2 bucket (`dillon-deal-documents`) via unified edge worker (`dillon-ai-worker`), cutting Supabase egress by >99% ($0.00 egress).

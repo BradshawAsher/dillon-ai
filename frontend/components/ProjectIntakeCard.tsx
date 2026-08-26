@@ -529,9 +529,9 @@ export default function ProjectIntakeCard({
                                         <FolderKanban className="h-3.5 w-3.5" />
                                         Append to {detectedExistingMatch.label || detectedExistingMatch.name}
                                     </Button>
-                                    <span className="text-2xs text-amber-800/80 dark:text-amber-400">
-                                        or leave as "Create new project" to queue as a separate new packet.
-                                    </span>
+                                    <div className="flex items-center gap-1.5 rounded-lg border border-amber-600/30 bg-amber-500/20 dark:bg-amber-900/40 px-3 py-1.5 text-xs font-semibold text-amber-950 dark:text-amber-100 shadow-2xs">
+                                        <span>Or leave as <strong className="font-bold underline decoration-amber-600/60 underline-offset-2">"Create new project"</strong> to queue as a separate new packet.</span>
+                                    </div>
                                 </div>
                             </div>
                         )}
