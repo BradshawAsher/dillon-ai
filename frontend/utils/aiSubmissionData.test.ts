@@ -53,6 +53,11 @@ describe('getSubmissionInsightTone', () => {
         expect(getSubmissionInsightTone('green')).toBe('success')
         expect(getSubmissionInsightTone('')).toBe('secondary')
     })
+
+    it('coerces null/undefined to the neutral tone instead of throwing', () => {
+        expect(getSubmissionInsightTone(null as unknown as string)).toBe('secondary')
+        expect(getSubmissionInsightTone(undefined as unknown as string)).toBe('secondary')
+    })
 })
 
 describe('splitReadableText', () => {

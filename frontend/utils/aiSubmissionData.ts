@@ -316,8 +316,10 @@ function parseCitations(row: SubmissionHistoryItem, extractedObject: ParsedJson 
   return normalizeCitationList(responseCitations)
 }
 
-export function getSubmissionInsightTone(trafficLight: string) {
-  const normalized = trafficLight.trim().toLowerCase()
+export function getSubmissionInsightTone(trafficLight: string | null | undefined) {
+  // Coerce first: a row can carry a null/undefined traffic light, and a bare
+  // `.trim()` would throw. An unknown value falls through to 'secondary'.
+  const normalized = (typeof trafficLight === 'string' ? trafficLight : '').trim().toLowerCase()
 
   if (normalized === 'red') {
     return 'destructive' as const
