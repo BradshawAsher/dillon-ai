@@ -23,7 +23,10 @@ function safeParseJson(value: any): any {
 }
 
 export function formatMagnitude(num: number): string {
-    if (isNaN(num)) return 'N/A'
+    // Guard the full non-finite set, not just NaN: an Infinity from a divide-by-
+    // zero upstream would otherwise fall through the tiers and render as
+    // "$InfinityB".
+    if (!Number.isFinite(num)) return 'N/A'
     const abs = Math.abs(num)
     // Strip a trailing ".0" so whole magnitudes read as "$5M" rather than "$5.0M".
     const trim = (val: number, dp: number) => (val % 1 === 0 ? val.toFixed(0) : Number(val.toFixed(dp)).toString())

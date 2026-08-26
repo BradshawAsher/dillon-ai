@@ -22,6 +22,11 @@ describe('formatMagnitude', () => {
     it('returns N/A for a non-numeric input', () => {
         expect(formatMagnitude(Number.NaN)).toBe('N/A')
     })
+
+    it('returns N/A for a non-finite input instead of "$InfinityB"', () => {
+        expect(formatMagnitude(Number.POSITIVE_INFINITY)).toBe('N/A')
+        expect(formatMagnitude(Number.NEGATIVE_INFINITY)).toBe('N/A')
+    })
 })
 
 describe('resolveFinancialMetricsForProject', () => {
