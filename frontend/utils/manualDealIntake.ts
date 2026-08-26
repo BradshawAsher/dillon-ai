@@ -212,8 +212,12 @@ export function calculateNormalizedEbitda(formData: ManualDealFormData): {
     const reported = Math.max(0, formData.reportedEbitda || 0)
     const disallowed = Math.max(0, formData.disallowedAddBacks || 0)
     const adjusted = Math.max(0, reported - disallowed)
-    const revenue = Math.max(1, formData.annualRevenue || 1)
-    const margin = (adjusted / revenue) * 100
+    const revenue = Math.max(0, formData.annualRevenue || 0)
+    // Margin is only meaningful against a positive revenue base. When revenue is
+    // blank/zero, report 0% rather than dividing by a `Math.max(1, …)` sentinel,
+    // which would turn a $1.25M EBITDA with no revenue into a nonsensical
+    // 125,000,000% margin in the live intake preview.
+    const margin = revenue > 0 ? (adjusted / revenue) * 100 : 0
     const asking = Math.max(0, formData.askingPrice || 0)
     const multiple = adjusted > 0 ? asking / adjusted : 0
 
