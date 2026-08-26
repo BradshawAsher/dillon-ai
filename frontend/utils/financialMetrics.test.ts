@@ -34,6 +34,15 @@ describe('resolveFinancialMetricsForProject', () => {
         expect(result.multiple).toBe('5.0x')
     })
 
+    it('derives a multiple from billion-scale string inputs', () => {
+        const result = resolveFinancialMetricsForProject(
+            { askingPrice: '$1.2B', ebitda: '$300M' },
+            [],
+            'Bigco 5571',
+        )
+        expect(result.multiple).toBe('4.0x')
+    })
+
     it('formats a bare numeric asking price as compact currency', () => {
         const result = resolveFinancialMetricsForProject({ askingPrice: 4_880_000 }, [], 'Nowhere Co')
         expect(result.askingPrice).toBe('$4,880,000')

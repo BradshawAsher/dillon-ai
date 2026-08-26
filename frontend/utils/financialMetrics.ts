@@ -1,4 +1,5 @@
 import { benchmarkGroundTruthSyntheses } from '../evals/ground_truths'
+import { parseMagnitudeMoney } from './documentedFacts'
 
 export type ResolvedFinancialMetrics = {
     askingPrice: string
@@ -171,16 +172,11 @@ export function resolveFinancialMetricsForProject(
 
     // If multiple not explicitly provided, calculate from price/valuation and ebitda if numeric
     if (!multiple || multiple === 'N/A') {
-        const parseNum = (val: any) => {
-            if (!val) return null
-            if (typeof val === 'number') return val
-            const cleaned = String(val).replace(/[^0-9.-]+/g, '')
-            const n = parseFloat(cleaned)
-            if (isNaN(n)) return null
-            if (/M|million/i.test(String(val))) return n * 1_000_000
-            if (/K|thousand/i.test(String(val))) return n * 1_000
-            return n
-        }
+        // Reuse the canonical magnitude parser so "$1.2B" / "$4.88M" / "875K"
+        // all scale correctly. The previous inline parser silently dropped the
+        // billions suffix, turning a $1.2B price into a bare 1.2 and producing a
+        // nonsensical multiple.
+        const parseNum = (val: any) => parseMagnitudeMoney(val)
         const numPrice = parseNum(askingPrice) || (!isNaN(rawValBase) && rawValBase > 0 ? rawValBase : null)
         const numEbitda = parseNum(ebitda)
         if (numPrice && numEbitda && numEbitda > 0) {
