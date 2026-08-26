@@ -798,8 +798,11 @@ export function createProjectSummaries(
     })
 }
 
-export function formatProjectStage(stage: string) {
-    const trimmed = stage.trim()
+export function formatProjectStage(stage: string | null | undefined) {
+    // A project's stage can be absent (null/undefined) on rows that never made
+    // it past intake; coerce first so the placeholder path is taken instead of
+    // throwing on `.trim()`.
+    const trimmed = (typeof stage === 'string' ? stage : '').trim()
 
     if (trimmed.length === 0) {
         return 'Stage not captured'

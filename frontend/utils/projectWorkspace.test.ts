@@ -45,6 +45,11 @@ describe('formatProjectStage', () => {
         expect(formatProjectStage('   ')).toBe('Stage not captured')
     })
 
+    it('returns the placeholder instead of throwing on null/undefined', () => {
+        expect(formatProjectStage(null as unknown as string)).toBe('Stage not captured')
+        expect(formatProjectStage(undefined as unknown as string)).toBe('Stage not captured')
+    })
+
     it('title-cases and de-slugs a stage token', () => {
         expect(formatProjectStage('post-loi')).toBe('Post Loi')
         expect(formatProjectStage('due_diligence')).toBe('Due Diligence')
