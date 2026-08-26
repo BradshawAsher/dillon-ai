@@ -90,4 +90,26 @@ describe('hasAiEnrichment', () => {
         expect(hasAiEnrichment(makeRow({ aiSummary: 'Looks strong' }))).toBe(true)
         expect(hasAiEnrichment(makeRow({ needsHumanReview: true }))).toBe(true)
     })
+
+    it('does not throw when string columns arrive as null/undefined', () => {
+        const nulledRow = makeRow({
+            riskLevel: null as unknown as string,
+            category: undefined as unknown as string,
+            trafficLight: null as unknown as string,
+            ebitdaExtracted: null as unknown as string,
+            extractedJson: null as unknown as string,
+            aiSummary: null as unknown as string,
+            aiTargetValue: null as unknown as string,
+            aiConfidence: null as unknown as string,
+            projectId: null as unknown as string,
+            projectStage: null as unknown as string,
+            documentType: null as unknown as string,
+            valuationLowerBound: null as unknown as string,
+            valuationBaseEstimate: null as unknown as string,
+            valuationUpperBound: null as unknown as string,
+            investmentBuyReasoning: null as unknown as string,
+        })
+        expect(hasAiEnrichment(nulledRow)).toBe(false)
+        expect(hasAiEnrichment({ ...nulledRow, aiSummary: 'Populated' })).toBe(true)
+    })
 })
