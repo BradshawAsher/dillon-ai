@@ -80,7 +80,7 @@ export default function TechnicalFaqWorkspaceTab({ onSwitchTab }: TechnicalFaqWo
             category: 'getting-started',
             categoryLabel: 'Getting Started',
             question: 'How do I start analyzing a new deal packet from scratch?',
-            answer: 'Navigate to the "Projects" or "Overview" tab. In the Document Intake card, drag and drop your deal files (PDF P&Ls, Excel balance sheets, Word LOIs). Click "Process Deal Packet" to trigger automated OCR and fact extraction.',
+            answer: 'Navigate to the "Overview" tab. You have two intake options:\n1. 📁 Upload Documents: Drag and drop your deal files (PDF P&Ls, Excel balance sheets, Word LOIs) and click "Process Deal Packet" for autonomous OCR and multi-model extraction.\n2. ✍️ Quick Deal Questionnaire: If you do not have files on hand, switch to the Questionnaire mode to enter high-level revenue, EBITDA, add-backs, and balance sheet figures for instant financial modeling and synthesis.',
             actionLabel: 'Go to Intake in Overview',
             targetTab: 'overview',
         },

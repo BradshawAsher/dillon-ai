@@ -132,6 +132,7 @@ import {
 import { computeImpactMetrics } from '../utils/impactMetrics'
 import { getAiSubmissionViewModel } from '../utils/aiSubmissionData'
 import { base64ToFile, readFileAsBase64 } from '../utils/fileEncoding'
+import type { ManualDealFormData } from '../utils/manualDealIntake'
 
 const SHOW_LEGACY_DILIGENCE_BACKUP = false
 
@@ -874,50 +875,44 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     const liveProjectSynthesesData = (Array.isArray(projectSynthesisData) ? projectSynthesisData : []) as ProjectSynthesisItem[]
     const isExampleMode = getDataSource() === 'mock'
 
-    // Real-time WebSocket sync via Supabase CDC (Zero-polling instantaneous updates)
-    useEffect(() => {
-        if (isExampleMode) return
 
-        const channel = supabaseAuthClient
-            .channel('dashboard-realtime-sync')
-            .on(
-                'postgres_changes',
-                { event: '*', schema: 'public', table: 'documents' },
-                () => {
-                    void triggerSubmissionHistory({ environment: 'production', skipCache: true })
-                }
-            )
-            .on(
-                'postgres_changes',
-                { event: '*', schema: 'public', table: 'project_syntheses' },
-                () => {
-                    void triggerProjectSynthesis({ environment: 'production', skipCache: true })
-                }
-            )
-            .subscribe()
-
-        return () => {
-            void supabaseAuthClient.removeChannel(channel)
+    const [manualSubmissions, setManualSubmissions] = useState<SubmissionHistoryItem[]>(() => {
+        if (typeof window === 'undefined') return []
+        try {
+            const saved = localStorage.getItem('mergeworks_manual_submissions')
+            return saved ? JSON.parse(saved) : []
+        } catch {
+            return []
         }
-    }, [isExampleMode, triggerSubmissionHistory, triggerProjectSynthesis])
+    })
+
+    const [manualSyntheses, setManualSyntheses] = useState<ProjectSynthesisItem[]>(() => {
+        if (typeof window === 'undefined') return []
+        try {
+            const saved = localStorage.getItem('mergeworks_manual_syntheses')
+            return saved ? JSON.parse(saved) : []
+        } catch {
+            return []
+        }
+    })
 
     const rawSubmissionHistory = useMemo(() => {
-        if (isExampleMode) return exampleSubmissionHistoryRows
+        if (isExampleMode) return [...manualSubmissions, ...exampleSubmissionHistoryRows]
         const liveKeys = new Set(liveSubmissionHistory.map((r: any) => (r.projectId || r.dealName || '').toLowerCase()))
         const missingBenchmarkRows = exampleSubmissionHistoryRows.filter(
             (r: any) => !liveKeys.has((r.projectId || '').toLowerCase()) && !liveKeys.has((r.dealName || '').toLowerCase())
         )
-        return [...liveSubmissionHistory, ...missingBenchmarkRows]
-    }, [isExampleMode, liveSubmissionHistory])
+        return [...manualSubmissions, ...liveSubmissionHistory, ...missingBenchmarkRows]
+    }, [isExampleMode, liveSubmissionHistory, manualSubmissions])
 
     const rawProjectSyntheses = useMemo(() => {
-        if (isExampleMode) return exampleProjectSyntheses
+        if (isExampleMode) return [...manualSyntheses, ...exampleProjectSyntheses]
         const liveKeys = new Set(liveProjectSynthesesData.map((s: any) => (s.projectId || '').toLowerCase().replace(/-+$/, '')))
         const missingBenchmarkRows = exampleProjectSyntheses.filter(
             (s: any) => !liveKeys.has((s.projectId || '').toLowerCase().replace(/-+$/, ''))
         )
-        return [...liveProjectSynthesesData, ...missingBenchmarkRows]
-    }, [isExampleMode, liveProjectSynthesesData])
+        return [...manualSyntheses, ...liveProjectSynthesesData, ...missingBenchmarkRows]
+    }, [isExampleMode, liveProjectSynthesesData, manualSyntheses])
 
     const [isolationModeEnabled, setIsolationModeEnabled] = useState(isDataIsolationEnabled)
 
@@ -2283,6 +2278,69 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         setSubmissionNotes('')
     }
 
+    const handleManualDealComplete = useCallback((
+        newDealModel: DealModel,
+        newSynthesis: ProjectSynthesisItem,
+        formData: ManualDealFormData
+    ) => {
+        const submissionRow: SubmissionHistoryItem = {
+            id: Math.floor(Math.random() * 900000) + 100000,
+            projectId: newDealModel.projectId,
+            projectName: formData.dealName,
+            dealName: formData.dealName,
+            fileName: `${formData.dealName.replace(/[^a-zA-Z0-9_-]/g, '_')}_Quick_Intake.json`,
+            fileType: 'application/json',
+            fileSize: 2048,
+            documentType: 'Deal Questionnaire / Manual Intake',
+            status: 'COMPLETE',
+            requestID: `manual-${newDealModel.projectId}`,
+            receivedAt: new Date().toISOString(),
+            completedAt: new Date().toISOString(),
+            extractedData: {
+                companyName: formData.companyName,
+                industry: formData.industry,
+                askingPrice: formData.askingPrice,
+                revenue: formData.annualRevenue,
+                ebitda: newDealModel.ebitda,
+                disallowedAddBacks: formData.disallowedAddBacks,
+                notes: formData.generalNotes,
+            },
+            intakeSource: 'manual_questionnaire',
+        }
+
+        setManualSubmissions((prev) => {
+            const next = [submissionRow, ...prev.filter(r => r.projectId !== newDealModel.projectId)]
+            try { localStorage.setItem('mergeworks_manual_submissions', JSON.stringify(next)) } catch {}
+            return next
+        })
+
+        setManualSyntheses((prev) => {
+            const next = [newSynthesis, ...prev.filter(s => s.projectId !== newDealModel.projectId)]
+            try { localStorage.setItem('mergeworks_manual_syntheses', JSON.stringify(next)) } catch {}
+            return next
+        })
+
+        // Save deal model to state/store
+        void triggerSaveDealModel(newDealModel)
+
+        // Switch workspace and project view
+        setDealName(formData.dealName)
+        setAskingPrice(String(formData.askingPrice))
+        setProjectId(newDealModel.projectId)
+        setSelectedProjectKey(newDealModel.projectId)
+        setActiveViewProjectId(newDealModel.projectId)
+        setActiveWorkspaceTab('overview')
+
+        if (typeof window !== 'undefined') {
+            window.localStorage.setItem('mergeworks.activeProjectKey', newDealModel.projectId)
+            window.location.hash = '#overview'
+            window.setTimeout(() => {
+                const el = document.getElementById('deal-overview') || document.querySelector('[data-deal-overview]')
+                el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            }, 50)
+        }
+    }, [triggerSaveDealModel, setDealName, setAskingPrice, setProjectId, setSelectedProjectKey, setActiveViewProjectId, setActiveWorkspaceTab])
+
     const handlePortfolioProjectSelect = (projectKey: string, targetTab: WorkspaceTab = 'synthesis') => {
         setActiveViewProjectId(projectKey)
         setActiveWorkspaceTab(targetTab)
@@ -3132,6 +3190,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                     onSwitchActiveViewProject={handleSwitchActiveViewProject}
                     onFileSelect={setSelectedFiles}
                     onSubmit={(environment) => { void handleSubmit(environment) }}
+                    onManualDealComplete={handleManualDealComplete}
                 />
 
                 {submitError ? (
