@@ -227,6 +227,12 @@ describe('confidenceToPercent', () => {
         expect(confidenceToPercent('')).toBeNull()
         expect(confidenceToPercent('high')).toBeNull()
     })
+
+    it('clamps out-of-range values to 0..100', () => {
+        expect(confidenceToPercent('150')).toBe(100)
+        expect(confidenceToPercent(120)).toBe(100)
+        expect(confidenceToPercent('-10')).toBe(0)
+    })
 })
 
 describe('getModelTokenRates', () => {

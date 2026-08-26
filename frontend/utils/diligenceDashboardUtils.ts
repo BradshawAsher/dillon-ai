@@ -104,10 +104,10 @@ export function formatConfidencePercent(rawConfidence?: string | number | null):
     // The "<= 1 is a fraction" heuristic only applies to a bare number like
     // 0.87. A value already written with a percent sign ("1%") is in percentage
     // units, so scaling it up to "100%" would be wrong — honor the sign.
-    if (num <= 1 && !hasPercentSign) {
-        return `${Math.round(num * 100)}%`
-    }
-    return `${Math.round(num)}%`
+    const pct = num <= 1 && !hasPercentSign ? num * 100 : num
+    // Clamp to a valid 0..100 percentage so a malformed value never displays as
+    // "150%" or a negative percent.
+    return `${Math.round(Math.min(100, Math.max(0, pct)))}%`
 }
 
 /**
@@ -126,7 +126,9 @@ export function confidenceToPercent(raw: string | number | null | undefined): nu
     const num = Number(str.replace('%', '').trim())
     if (!Number.isFinite(num)) return null
     const pct = num <= 1 && !hasPercentSign ? num * 100 : num
-    return Math.round(pct)
+    // A confidence is a 0..100 percentage; clamp so a malformed upstream value
+    // ("150", 1.5) can't render as an out-of-range 150% in a meter or badge.
+    return Math.round(Math.min(100, Math.max(0, pct)))
 }
 
 /**
