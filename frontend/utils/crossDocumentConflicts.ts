@@ -13,6 +13,7 @@
 // harness `ActualRunDoc[]` shape onto a common `FactObservation[]`, and the
 // core `detectContradictions` runs over that. The same logic therefore powers
 // both the live dashboard and the scored eval dimension.
+import { parseMagnitudeMoney } from './documentedFacts'
 
 /** One observed value of a metric from a single source document. */
 export type FactObservation = {
@@ -186,10 +187,17 @@ type DocumentLike = {
     financialFactsJson?: string
 }
 
-/** Reads a fact's numeric value under either snake_case or camelCase. */
+/** Reads a fact's numeric value under either snake_case or camelCase.
+ *
+ * Falls back to the magnitude parser when the raw value is a formatted string
+ * ("$1,200,000", "1.2M") that bare Number() would turn into NaN — otherwise a
+ * genuine cross-document conflict on a string-formatted figure is silently
+ * dropped. */
 function readFactValue(fact: any): number | null {
-    const value = Number(fact?.normalizedValue ?? fact?.normalized_value ?? fact?.value)
-    return Number.isFinite(value) ? value : null
+    const raw = fact?.normalizedValue ?? fact?.normalized_value ?? fact?.value
+    const value = Number(raw)
+    if (Number.isFinite(value)) return value
+    return typeof raw === 'string' ? parseMagnitudeMoney(raw) : null
 }
 
 function readFactCitations(fact: any): FactObservation['citations'] {

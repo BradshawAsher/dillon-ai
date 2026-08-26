@@ -170,6 +170,17 @@ describe('adapters', () => {
         expect(observationsFromDocuments([{ fileName: 'x.pdf', financialFactsJson: '{not json' }])).toHaveLength(0)
     })
 
+    it('parses formatted string fact values instead of dropping them', () => {
+        const documents = [
+            { fileName: 'seller.pdf', financialFactsJson: JSON.stringify([{ metric: 'revenue', value: '$4,880,000', period: '2024' }]) },
+            { fileName: 'buyer.xlsx', financialFactsJson: JSON.stringify([{ metric: 'revenue', value: '4.2M', period: '2024' }]) },
+        ]
+        const observations = observationsFromDocuments(documents)
+        expect(observations).toHaveLength(2)
+        expect(observations.map((o) => o.value)).toEqual([4_880_000, 4_200_000])
+        expect(detectContradictions(observations)).toHaveLength(1)
+    })
+
     it('observationsFromRunDocs handles both financialFacts and extractedFacts', () => {
         const fromFinancial = observationsFromRunDocs([
             { fileName: 'a', financialFacts: [{ metric: 'revenue', normalizedValue: 100, period: '2024' }] },
