@@ -244,18 +244,22 @@ export function matchProjectFromQuery<T extends { projectId?: string; projectKey
 
     // 4. Substring containment match (e.g. "scenario" matches "Scenario Communications")
     if (normQuery.length >= 3) {
-        const containsMatch = projectSummaries.find((p) => {
-            const pName = normalizeForMatching(p.projectName || '')
-            const cName = normalizeForMatching(p.companyName || '')
-            const pKey = normalizeForMatching(p.projectKey || '')
-            const pId = normalizeForMatching(p.projectId || '')
-            return (
-                (pName && (pName.includes(normQuery) || normQuery.includes(pName))) ||
-                (cName && (cName.includes(normQuery) || normQuery.includes(cName))) ||
-                (pKey && (pKey.includes(normQuery) || normQuery.includes(pKey))) ||
-                (pId && (pId.includes(normQuery) || normQuery.includes(pId)))
+        // Two-way containment: either the candidate contains the query, or the
+        // query contains a candidate that is itself specific enough (>= 3 chars).
+        // Without the candidate-length floor, a project whose normalized name is
+        // one or two characters would be "contained" by almost any query and win
+        // spuriously.
+        const contains = (candidate: string) =>
+            candidate.length > 0 && (
+                candidate.includes(normQuery) ||
+                (candidate.length >= 3 && normQuery.includes(candidate))
             )
-        })
+        const containsMatch = projectSummaries.find((p) =>
+            contains(normalizeForMatching(p.projectName || '')) ||
+            contains(normalizeForMatching(p.companyName || '')) ||
+            contains(normalizeForMatching(p.projectKey || '')) ||
+            contains(normalizeForMatching(p.projectId || ''))
+        )
         if (containsMatch) return containsMatch
     }
 
