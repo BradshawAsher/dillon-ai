@@ -32,6 +32,11 @@ describe('getProjectStatusVariant', () => {
         expect(getProjectStatusVariant('archived')).toBe('secondary')
         expect(getProjectStatusVariant('')).toBe('secondary')
     })
+
+    it('does not throw on null/undefined status', () => {
+        expect(getProjectStatusVariant(null as unknown as string)).toBe('secondary')
+        expect(getProjectStatusVariant(undefined as unknown as string)).toBe('secondary')
+    })
 })
 
 describe('formatProjectStage', () => {
