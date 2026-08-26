@@ -17,6 +17,7 @@ import type { DealModel } from '../hooks/backend/diligence'
 import { Card, CardContent } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
 import { parseDocumentedFacts } from '../utils/evidence'
+import { formatCompactMoney } from '../utils/diligenceDashboardUtils'
 import type { ImpactMetrics } from '../utils/impactMetrics'
 
 export type TodayPipelineStats = {
@@ -34,10 +35,11 @@ type KPIItem = {
     variant: 'success' | 'warning' | 'destructive' | 'default'
 }
 
+// Delegate to the shared compact formatter so this card renders money exactly
+// like the rest of the dashboard — including negatives, a billions tier, and
+// the tier-edge rounding fix — instead of its own inline variant.
 function money(value: number) {
-    if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`
-    if (value >= 1_000) return `$${(value / 1_000).toFixed(0)}K`
-    return `$${value.toFixed(0)}`
+    return formatCompactMoney(value)
 }
 
 export default function DealHealthKPIs({
