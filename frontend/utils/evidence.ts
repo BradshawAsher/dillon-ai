@@ -304,10 +304,13 @@ export function driveEmbedUrl(documentId?: string, documentUrl?: string): string
     // Fall back to extracting the id from a share URL. Drive hands these out in
     // several shapes: /file/d/<id>/…, open?id=<id>, and uc?id=<id>.
     const url = documentUrl ?? ''
-    // Stop the capture at a query (`?`) or fragment (`#`) boundary too, not just
-    // `/` or `&` — otherwise ".../file/d/ABC?usp=sharing" or "open?id=ABC#h"
-    // folds the trailing query/fragment into the id and yields a broken preview.
-    const match = url.match(/\/file\/d\/([^/?#]+)/) ?? url.match(/[?&]id=([^&#]+)/)
+    // Match the id after any Drive/Docs "/d/" segment — /file/d/, /document/d/,
+    // /spreadsheets/d/, /presentation/d/ — so a cited Google Doc, Sheet, or
+    // Slides share link previews too, not only /file/d/ uploads. Stop the
+    // capture at a query (`?`) or fragment (`#`) boundary as well as `/` or `&`,
+    // otherwise ".../d/ABC?usp=sharing" or "open?id=ABC#h" folds the trailing
+    // query/fragment into the id and yields a broken preview.
+    const match = url.match(/\/d\/([^/?#]+)/) ?? url.match(/[?&]id=([^&#]+)/)
     if (match) {
         return `https://drive.google.com/file/d/${encodeURIComponent(decodeURIComponent(match[1]))}/preview`
     }
