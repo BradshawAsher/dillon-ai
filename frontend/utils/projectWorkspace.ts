@@ -123,8 +123,11 @@ const requiredCoverageRules = [
     { label: 'Customer concentration / revenue detail', keywords: ['customer concentration', 'revenue detail', 'customer', 'sales by customer'] },
 ]
 
-function normalizeText(value: string) {
-    return value.trim().toLowerCase()
+function normalizeText(value: string | null | undefined) {
+    // Status/name values can arrive null/undefined from the DB, and several
+    // callers (getProjectStatusVariant, isGenericName, ...) pass them straight
+    // through. Coerce first so a bare `.trim()` never throws.
+    return (typeof value === 'string' ? value : '').trim().toLowerCase()
 }
 
 function isGenericName(name: string): boolean {
@@ -607,7 +610,7 @@ function getProjectSynthesisFields(row: SubmissionHistoryItem) {
     return fields
 }
 
-export function getProjectStatusVariant(statusLabel: string): 'success' | 'warning' | 'destructive' | 'secondary' | 'outline' {
+export function getProjectStatusVariant(statusLabel: string | null | undefined): 'success' | 'warning' | 'destructive' | 'secondary' | 'outline' {
     const normalized = normalizeText(statusLabel)
 
     if (normalized === 'ready for synthesis') {
