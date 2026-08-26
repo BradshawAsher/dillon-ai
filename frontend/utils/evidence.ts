@@ -63,7 +63,10 @@ export function formatEvidenceConfidence(confidence?: string | number | null): s
     const numericCandidate = cleanStr.endsWith('%') ? cleanStr.slice(0, -1).trim() : cleanStr
     const num = typeof confidence === 'number' ? confidence : Number(numericCandidate)
     if (Number.isFinite(num)) {
-        const val = num <= 1 && num > 0 ? Math.round(num * 100) : Math.round(num)
+        const scaled = num <= 1 && num > 0 ? Math.round(num * 100) : Math.round(num)
+        // Clamp to a valid 0..100 percentage so a malformed value ("150") can't
+        // render as "150% (High Confidence)".
+        const val = Math.min(100, Math.max(0, scaled))
         return `${val}% (${val >= 85 ? 'High Confidence' : val >= 60 ? 'Medium Confidence' : 'Low Confidence'})`
     }
     const lower = cleanStr.toLowerCase()
