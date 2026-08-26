@@ -23,4 +23,15 @@ describe('base64ToFile', () => {
         const file = base64ToFile('', 'empty.bin', 'application/octet-stream')
         expect(file.size).toBe(0)
     })
+
+    it('decodes a URL-safe, unpadded, line-wrapped payload', async () => {
+        // Bytes chosen so standard base64 contains both "+" and "/".
+        const original = String.fromCharCode(0xfb, 0xff, 0xbf, 0xff)
+        const urlSafe = btoa(original).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+        // Inject a newline the way a 76-char-wrapping encoder would.
+        const wrapped = `${urlSafe.slice(0, 2)}\n${urlSafe.slice(2)}`
+        const file = base64ToFile(wrapped, 'blob.bin', 'application/octet-stream')
+        const bytes = new Uint8Array(await file.arrayBuffer())
+        expect(Array.from(bytes)).toEqual([0xfb, 0xff, 0xbf, 0xff])
+    })
 })
