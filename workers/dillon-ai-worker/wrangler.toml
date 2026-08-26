@@ -1,0 +1,7 @@
+﻿name = "dillon-ai-worker"
+main = "index.js"
+compatibility_date = "2026-08-26"
+
+[[r2_buckets]]
+binding = "DEAL_DOCUMENTS"
+bucket_name = "dillon-deal-documents"

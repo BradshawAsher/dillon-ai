@@ -6,7 +6,8 @@ let _client: SupabaseClient | null = null
 // default is harmless. The key is NOT: the service-role key bypasses RLS and is
 // a server-only secret, so it must come from the environment and never be
 // committed or shipped to the browser.
-const DEFAULT_SUPABASE_URL = 'https://sihpsqrunkwkxhhnwoqe.supabase.co'
+// Edge proxy routes reads through Cloudflare Edge Cache (30s s-maxage), saving Supabase PostgREST egress
+const DEFAULT_SUPABASE_URL = 'https://dillon-ai-worker.bradshin231.workers.dev'
 
 function getClient(): SupabaseClient {
     if (_client) return _client

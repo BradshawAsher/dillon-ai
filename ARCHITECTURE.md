@@ -38,8 +38,9 @@ flowchart TB
         VercelCDN["Vercel Edge Network (Immutable Static Delivery)"]
     end
 
-    subgraph EdgeStorage["3. Ingestion & Storage Layer (Supabase)"]
-        SupabaseStorage["Supabase Object Storage (Presigned S3 Uploads)"]
+    subgraph EdgeStorage["3. Ingestion & Storage Layer (Cloudflare R2 + Supabase)"]
+        R2Storage["Cloudflare R2 Object Storage (dillon-deal-documents, $0 Egress)"]
+        SupabaseStorage["Supabase Object Storage (Presigned S3 Fallback)"]
         SupabaseDB["Supabase PostgreSQL (Deal Models, Eval Runs, Action Logs)"]
         PostgresRPC["Postgres Server-Side Aggregate RPC (get_portfolio_diligence_kpis)"]
         RealtimeWS["Supabase Realtime CDC (WebSockets Engine)"]
@@ -63,8 +64,8 @@ flowchart TB
     end
 
     %% Interactions
-    UI -->|1. Request Presigned URL| SupabaseStorage
-    ZipWorker -->|2. Stream File Blobs Direct to S3| SupabaseStorage
+    UI -->|1. Request Upload Ticket| R2Storage
+    ZipWorker -->|2. Stream File Blobs Direct to R2 ($0 Egress)| R2Storage
     UI -->|3. Read History / Synthesis| CFWorker
     CFWorker -->|Cache Hit <15ms| CFEdgeCache
     CFWorker -.->|Cache Miss| SupabaseDB
@@ -195,13 +196,13 @@ sequenceDiagram
 * **TanStack Query & Table Architecture**:
   - **`@tanstack/react-query` (v5)**: Manages all asynchronous server state with a unified `QueryClient` (`staleTime: 10,000ms`, `gcTime: 300,000ms`, `refetchOnWindowFocus: true`). Eliminates redundant network calls, manages background refetches, and provides typed hooks (`useSubmissionHistoryQuery`, `useProjectSynthesisQuery`, `usePortfolioKpisQuery`, `useDealModelsQuery`).
   - **`@tanstack/react-table`**: Powers high-performance, virtualized, multi-column sorting and filtering across deal history and financial fact reconciliation tables.
-* **Direct-to-Cloud Storage**: Rather than streaming multi-gigabyte VDR uploads through serverless proxies (which causes Fast Origin Transfer bottlenecks and function timeouts), the client requests presigned URLs via `/api/diligence/upload-url` and streams binaries directly to **Supabase Object Storage**.
+* **Direct-to-Cloud R2 Storage**: Rather than streaming multi-gigabyte VDR uploads through serverless proxies (which causes Fast Origin Transfer bottlenecks and function timeouts), the client requests upload tickets via `/api/diligence/upload-url` and streams binaries directly to **Cloudflare R2 Object Storage** (`dillon-deal-documents`) via the unified edge worker (`dillon-ai-worker`). R2 provides 100% zero-egress document storage, allowing unlimited document downloads, previews, and OCR passes at $0 bandwidth cost.
 * **In-Browser ZIP Decompressor**: Client-side worker recursively unpacks multi-folder ZIP archives (`utils/zipExtractor.ts`), preserving folder taxonomy and queuing individual files into the extraction pipeline.
 * **Optimistic State & Real-Time CDC Sync**: Uses **Supabase Realtime (Postgres Change Data Capture over WebSockets)** to push instantaneous row updates (<100ms latency) to the browser without continuous background polling. When a CDC event arrives, it automatically invalidates TanStack Query in-memory caches, reducing egress by over 99.9% while guaranteeing instant UI responsiveness.
 
 ### B. Cloudflare Edge Worker & Reverse Proxy Layer (Steps A & C)
 * **REST Edge Reverse Proxy (Step A)**: High-performance Cloudflare Worker sitting in front of REST read endpoints (`/api/diligence/history`, `/api/diligence/synthesis`, benchmark feeds) with `Cache-Control: public, s-maxage=10, stale-while-revalidate=59` and ETags, serving repeated reads from global Edge PoPs in sub-15ms.
-* **Storage CDN Proxy & Egress Shield (Step C)**: High-throughput CDN proxy intercepting `/storage/v1/object/public/*` requests to Supabase Object Storage (`deal-documents`). Serves document downloads and inline PDF/image previews through Cloudflare's global edge cache with `Cache-Control: public, max-age=31536000, immutable`, completely shielding Supabase Storage from redundant egress.
+* **Unified R2 Storage & Supabase Egress Shield (Step C)**: High-throughput worker (`dillon-ai-worker`) that handles direct PUT uploads and GET reads for Cloudflare R2 (`pub-3b04d9f4c75546caae7c86bd7b6847de.r2.dev`) while also intercepting legacy `/storage/v1/object/public/*` requests with edge caching (`Cache-Control: public, max-age=31536000, immutable`), completely shielding Supabase from redundant binary egress.
 * **DDoS & Origin Protection**: Absorbs concurrent user refreshes and automated benchmark evaluation runs, preventing high query volume from hitting Supabase PostgreSQL or triggering serverless function invocation limits.
 
 ### C. Postgres Server-Side Aggregate RPC & Egress Optimization (Step B)

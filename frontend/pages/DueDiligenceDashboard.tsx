@@ -1607,7 +1607,11 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 uniqueDocs.set(fileKey, row)
             }
         })
-        return [...uniqueDocs.values()]
+        return [...uniqueDocs.values()].sort((a, b) => {
+            const timeA = new Date(a.createdAt || a.receivedAt || a.updatedAt || 0).getTime()
+            const timeB = new Date(b.createdAt || b.receivedAt || b.updatedAt || 0).getTime()
+            return timeA - timeB
+        })
     }, [activeProjectId, submissionHistory, projectSummaries, isTourActive, isExampleMode])
 
     const handleStartTour = useCallback((tourId: string) => {

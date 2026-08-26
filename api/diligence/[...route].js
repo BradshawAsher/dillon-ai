@@ -21535,7 +21535,7 @@ if (shouldShowDeprecationWarning()) console.warn("\u26A0\uFE0F  Node.js 20 and b
 
 // backend/supabaseClient.ts
 var _client = null;
-var DEFAULT_SUPABASE_URL = "https://sihpsqrunkwkxhhnwoqe.supabase.co";
+var DEFAULT_SUPABASE_URL = "https://dillon-ai-worker.bradshin231.workers.dev";
 function getClient() {
   if (_client) return _client;
   if (process.env.NODE_ENV !== "production" && !process.env.NODE_TLS_REJECT_UNAUTHORIZED) {
@@ -22694,23 +22694,45 @@ async function submitDealPacket(req) {
 var BUCKET_NAME = "deal-documents";
 var SUPABASE_STORAGE_ORIGIN2 = "https://sihpsqrunkwkxhhnwoqe.supabase.co";
 var STORAGE_CDN_URL2 = (process.env.VITE_STORAGE_CDN_URL || process.env.STORAGE_CDN_URL || "https://dillon-ai-worker.bradshin231.workers.dev").replace(/\/+$/, "");
+var R2_PUBLIC_URL = (process.env.VITE_R2_PUBLIC_URL || process.env.R2_PUBLIC_URL || "https://pub-3b04d9f4c75546caae7c86bd7b6847de.r2.dev").replace(/\/+$/, "");
 async function createUploadUrl(req) {
   const fileName = req.params.fileName || "document.pdf";
   const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
   const projectId = (req.params.projectId || "general").trim().toLowerCase().replace(/[^a-zA-Z0-9_-]/g, "_");
   const path2 = `${projectId}/${Date.now()}-${sanitizedFileName}`;
-  const { data, error } = await supabase.storage.from(BUCKET_NAME).createSignedUploadUrl(path2);
-  if (error || !data) {
-    throw new Error(`Failed to generate signed upload URL: ${error?.message || "Unknown error"}`);
-  }
-  const { data: publicData } = supabase.storage.from(BUCKET_NAME).getPublicUrl(path2);
-  const publicUrl = (publicData.publicUrl || "").replace(SUPABASE_STORAGE_ORIGIN2, STORAGE_CDN_URL2);
-  return {
-    signedUrl: data.signedUrl,
-    path: data.path,
-    token: data.token,
-    publicUrl,
+  let supabaseFallback = {
+    signedUrl: "",
+    path: path2,
+    token: "",
+    publicUrl: "",
     bucket: BUCKET_NAME
+  };
+  try {
+    const { data } = await supabase.storage.from(BUCKET_NAME).createSignedUploadUrl(path2);
+    const { data: publicData } = supabase.storage.from(BUCKET_NAME).getPublicUrl(path2);
+    if (data) {
+      supabaseFallback = {
+        signedUrl: data.signedUrl || "",
+        path: data.path || path2,
+        token: data.token || "",
+        publicUrl: (publicData?.publicUrl || "").replace(SUPABASE_STORAGE_ORIGIN2, STORAGE_CDN_URL2),
+        bucket: BUCKET_NAME
+      };
+    }
+  } catch (err) {
+    console.warn("[createUploadUrl] Supabase fallback ticket generation warning:", err);
+  }
+  const r2PublicUrl = `${R2_PUBLIC_URL}/${path2}`;
+  const r2UploadUrl = `${STORAGE_CDN_URL2}/upload?path=${encodeURIComponent(path2)}`;
+  return {
+    storageProvider: "r2",
+    uploadUrl: r2UploadUrl,
+    signedUrl: supabaseFallback.signedUrl || r2UploadUrl,
+    path: path2,
+    token: supabaseFallback.token,
+    publicUrl: r2PublicUrl,
+    bucket: "dillon-deal-documents",
+    supabaseFallback
   };
 }
 
