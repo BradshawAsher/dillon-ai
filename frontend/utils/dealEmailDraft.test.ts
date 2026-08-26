@@ -21,6 +21,13 @@ describe('dealEmailDraft Generator Utility', () => {
         expect(formatDraftMoney(NaN)).toBeNull()
     })
 
+    it('compacts billions and promotes rounding-carry tier edges', () => {
+        expect(formatDraftMoney(1_500_000_000)).toBe('$1.5B')
+        expect(formatDraftMoney(999_999)).toBe('$1.0M')
+        expect(formatDraftMoney(999_960_000)).toBe('$1.0B')
+        expect(formatDraftMoney(999_400)).toBe('$999K')
+    })
+
     it('correctly classifies Scenario Communications as RED / ESCALATE even if trafficLight is YELLOW', () => {
         const synthesis: Partial<ProjectSynthesisItem> = {
             projectId: 'project-20260820-scenario-communications',
