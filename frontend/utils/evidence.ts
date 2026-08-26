@@ -108,14 +108,27 @@ export function findCitedDocument(sourceFile: string | undefined, documents: Sub
         return undefined
     }
 
-    const normalizeFileName = (value: string) => decodeURIComponent(value)
-        .replace(/\\/g, '/')
-        .split('/').pop()!
-        .replace(/\?.*$/, '')
-        .replace(/\.[a-z0-9]{1,6}$/i, '')
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, ' ')
-        .trim()
+    const normalizeFileName = (value: string | null | undefined) => {
+        // A document row can carry a null/undefined fileName, and an LLM-supplied
+        // citation can contain malformed percent-encoding ("%E0%A4"), which makes
+        // decodeURIComponent throw. Guard both so one bad entry can't crash the
+        // whole citation-matching pass.
+        if (typeof value !== 'string' || value.length === 0) return ''
+        let decoded = value
+        try {
+            decoded = decodeURIComponent(value)
+        } catch {
+            // Fall back to the raw string on malformed encoding.
+        }
+        return decoded
+            .replace(/\\/g, '/')
+            .split('/').pop()!
+            .replace(/\?.*$/, '')
+            .replace(/\.[a-z0-9]{1,6}$/i, '')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, ' ')
+            .trim()
+    }
 
     const needle = normalizeFileName(sourceFile)
 

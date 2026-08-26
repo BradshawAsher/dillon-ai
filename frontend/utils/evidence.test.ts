@@ -157,6 +157,15 @@ describe('findCitedDocument', () => {
     it('returns undefined when nothing overlaps enough', () => {
         expect(findCitedDocument('completely unrelated citation', [doc('tax-memo.pdf')])).toBeUndefined()
     })
+
+    it('does not throw when a document row has a null fileName', () => {
+        const documents = [doc(null as unknown as string), doc('tax-memo.pdf')]
+        expect(findCitedDocument('tax memo', documents)).toBe(documents[1])
+    })
+
+    it('tolerates malformed percent-encoding in the citation', () => {
+        expect(() => findCitedDocument('%E0%A4-invoice', [doc('tax-memo.pdf')])).not.toThrow()
+    })
 })
 
 describe('getProvenanceCategoryPresentation', () => {
