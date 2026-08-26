@@ -18,7 +18,11 @@ export function downloadTextFile(fileName: string, content: string, mimeType = '
 export const MAX_FILE_SAFE_NAME_LENGTH = 100
 
 export function fileSafeName(value: string) {
-  const slug = value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+  // Fold accented letters to their ASCII base first (Café -> Cafe) so a
+  // diacritic isn't dropped as a separator, which would truncate "Café" to
+  // "caf" instead of "cafe".
+  const folded = value.normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+  const slug = folded.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
   // Truncate overly long names, then re-trim any trailing hyphen the cut left
   // behind so we never emit "long-name-".
   const capped = slug.slice(0, MAX_FILE_SAFE_NAME_LENGTH).replace(/-+$/, '')

@@ -11,6 +11,11 @@ describe('fileSafeName', () => {
         expect(fileSafeName('a___b   c')).toBe('a-b-c')
     })
 
+    it('folds accented letters to their ASCII base instead of dropping them', () => {
+        expect(fileSafeName('Café Résumé')).toBe('cafe-resume')
+        expect(fileSafeName('Zürich Söhne')).toBe('zurich-sohne')
+    })
+
     it('trims leading and trailing separators', () => {
         expect(fileSafeName('  -Hello!-  ')).toBe('hello')
     })
