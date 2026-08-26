@@ -285,7 +285,11 @@ export function resolveFinancialMetricsForProject(
     const fmt = (val: any) => {
         if (!val || val === 'N/A') return 'N/A'
         const s = String(val).trim()
-        if (s.startsWith('$') || s.endsWith('x') || s.endsWith('M') || s.endsWith('K') || s.includes(' - ')) return s
+        // Treat a trailing magnitude suffix as already-formatted. 'B' was missing
+        // from this list, so a billions figure like "5.5B" fell through to the
+        // numeric branch below, which strips non-digits and drops the suffix —
+        // rendering it as "$5.5" (a 1-billion-fold understatement).
+        if (s.startsWith('$') || s.endsWith('x') || s.endsWith('M') || s.endsWith('K') || s.endsWith('B') || s.includes(' - ')) return s
         const num = Number(s.replace(/[^0-9.-]+/g, ''))
         if (Number.isFinite(num) && num !== 0) {
             return num < 0 ? `-$${Math.abs(num).toLocaleString()}` : `$${num.toLocaleString()}`
