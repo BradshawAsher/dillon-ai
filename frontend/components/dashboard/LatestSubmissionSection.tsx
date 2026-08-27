@@ -10,6 +10,7 @@ import {
     FileCheck,
     FileSpreadsheet,
     FileText,
+    Info,
     Loader2,
     RefreshCw,
     RotateCw,
@@ -450,14 +451,15 @@ export default function LatestSubmissionSection({
                 </div>
 
                 {liveSubmitInsight ? (
-                    <div className="rounded-xl border-2 border-primary bg-gradient-to-br from-primary/15 via-primary/5 to-background p-5 shadow-md space-y-2">
+                    <div className="rounded-xl border border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-background p-5 shadow-sm space-y-3">
                         <div className="flex flex-wrap items-center justify-between gap-2">
                             <div className="flex items-center gap-2">
-                                <p className="text-sm font-bold uppercase tracking-wide text-primary">Document Investment Thesis — Start Here</p>
-                                <Badge variant="outline" className="text-[10px]">Single-Doc Scope</Badge>
+                                <Sparkles className="h-4 w-4 text-primary" />
+                                <p className="text-xs font-bold uppercase tracking-wider text-primary">Document Investment Thesis — Start Here</p>
+                                <Badge variant="outline" className="text-[10px] font-medium border-primary/30 text-primary/90">Single-Doc Scope</Badge>
                             </div>
                             {liveSubmitInsight.investmentIsFavorable !== null ? (
-                                <Badge variant={liveSubmitInsight.investmentIsFavorable ? 'success' : 'destructive'}>
+                                <Badge variant={liveSubmitInsight.investmentIsFavorable ? 'success' : 'destructive'} className="font-semibold text-xs">
                                     {liveSubmitInsight.investmentIsFavorable ? 'Favorable indicator' : 'Caution indicator'}
                                 </Badge>
                             ) : null}
@@ -465,16 +467,28 @@ export default function LatestSubmissionSection({
 
                         {liveSubmitInsight.investmentBuyReasoning && liveSubmitInsight.investmentBuyReasoning.trim().length > 0 ? (
                             <>
-                                <p className="mt-2 text-sm leading-6 text-foreground">{liveSubmitInsight.investmentBuyReasoning}</p>
-                                <div className="rounded-md border border-amber-300/40 bg-amber-50/50 p-2.5 dark:border-amber-800/40 dark:bg-amber-950/20 text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2 mt-2">
-                                    <span className="shrink-0 font-bold">⚠️ Single-Doc Scope:</span>
-                                    <span>This decision was made purely from this individual document alone. Please wait for <strong>Project Synthesis</strong> for the definitive acquisition decision.</span>
+                                <p className="text-sm leading-relaxed text-foreground font-normal">{liveSubmitInsight.investmentBuyReasoning}</p>
+                                <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 dark:border-amber-500/20 dark:bg-amber-950/30 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2.5">
+                                    <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                                    <div className="space-y-0.5">
+                                        <span className="font-semibold text-amber-900 dark:text-amber-200">Single-Document Scope: </span>
+                                        <span className="text-amber-800/90 dark:text-amber-300/90 leading-relaxed">This decision was made purely from this individual document alone. Please wait for <strong>Project Synthesis</strong> for the definitive acquisition decision.</span>
+                                    </div>
                                 </div>
                             </>
                         ) : (
-                            <div className="rounded-md border border-muted bg-muted/30 p-3 text-xs text-muted-foreground flex items-start gap-2 mt-1">
-                                <span className="shrink-0 font-semibold text-foreground">ℹ️ Insufficient Data:</span>
-                                <span>There is not enough narrative data in this individual document to produce an investment thesis. Please wait for <strong>Project Synthesis</strong> to run for the definitive investment thesis.</span>
+                            <div className="rounded-lg border border-border/60 bg-muted/40 p-3.5 text-xs flex items-start gap-3 text-muted-foreground transition-all">
+                                <div className="rounded-md bg-background/80 p-1.5 border border-border/40 shadow-2xs shrink-0 text-muted-foreground mt-0.5">
+                                    <Info className="h-4 w-4 text-primary/80" />
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="font-semibold text-foreground text-xs flex items-center gap-1.5">
+                                        Insufficient Narrative Data
+                                    </p>
+                                    <p className="leading-relaxed text-xs text-muted-foreground">
+                                        There is not enough narrative data in this individual document to produce an investment thesis. Please wait for <strong className="text-foreground font-semibold">Project Synthesis</strong> to run for the definitive investment thesis.
+                                    </p>
+                                </div>
                             </div>
                         )}
                     </div>
@@ -766,9 +780,9 @@ export default function LatestSubmissionSection({
                                             title="AI Summary"
                                             items={summaryItems}
                                             findings={summaryFindings}
+                                            icon={<Sparkles className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />}
+                                            colorTheme="indigo"
                                             defaultOpen
-                                            className="border-border bg-card"
-                                            itemClassName="border-border"
                                             emptyLabel="No AI summary returned."
                                             onItemClick={(item, index) => {
                                                 if (setActiveEvidence) {
@@ -916,14 +930,15 @@ export default function LatestSubmissionSection({
                             </div>
                         ) : null}
                         {liveSubmitInsight ? (
-                            <div className="rounded-md border border-border bg-card p-3.5 xl:col-span-4 space-y-2">
+                            <div className="rounded-xl border border-border bg-card p-4 xl:col-span-4 space-y-3 shadow-2xs">
                                 <div className="flex flex-wrap items-center justify-between gap-2">
                                     <div className="flex items-center gap-2">
-                                        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Document-Level Investment Thesis</p>
-                                        <Badge variant="outline" className="text-[10px]">Single-File Intake</Badge>
+                                        <Sparkles className="h-3.5 w-3.5 text-primary" />
+                                        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Document-Level Investment Thesis</p>
+                                        <Badge variant="outline" className="text-[10px] border-border text-muted-foreground">Single-File Intake</Badge>
                                     </div>
                                     {liveSubmitInsight.investmentIsFavorable !== null ? (
-                                        <Badge variant={liveSubmitInsight.investmentIsFavorable ? 'success' : 'destructive'}>
+                                        <Badge variant={liveSubmitInsight.investmentIsFavorable ? 'success' : 'destructive'} className="text-xs font-semibold">
                                             {liveSubmitInsight.investmentIsFavorable ? 'Favorable indicator' : 'Not favorable'}
                                         </Badge>
                                     ) : null}
@@ -931,16 +946,28 @@ export default function LatestSubmissionSection({
 
                                 {liveSubmitInsight.investmentBuyReasoning && liveSubmitInsight.investmentBuyReasoning.trim().length > 0 ? (
                                     <>
-                                        <ExpandableText text={liveSubmitInsight.investmentBuyReasoning} maxHeight={120} className="whitespace-pre-wrap text-sm leading-6 text-foreground" />
-                                        <div className="rounded-md border border-amber-300/40 bg-amber-50/50 p-2.5 dark:border-amber-800/40 dark:bg-amber-950/20 text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2 mt-2">
-                                            <span className="shrink-0 font-bold">⚠️ Single-Doc Scope:</span>
-                                            <span>This preliminary thesis was derived purely from this individual document in isolation. Please await <strong>Project Synthesis</strong> for the final, cross-document acquisition verdict.</span>
+                                        <ExpandableText text={liveSubmitInsight.investmentBuyReasoning} maxHeight={120} className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90 font-normal mt-1" />
+                                        <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 dark:border-amber-500/20 dark:bg-amber-950/30 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2.5 mt-2">
+                                            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                                            <div className="space-y-0.5">
+                                                <span className="font-semibold text-amber-900 dark:text-amber-200">Single-Doc Scope: </span>
+                                                <span className="text-amber-800/90 dark:text-amber-300/90 leading-relaxed">This preliminary thesis was derived purely from this individual document in isolation. Please await <strong>Project Synthesis</strong> for the final, cross-document acquisition verdict.</span>
+                                            </div>
                                         </div>
                                     </>
                                 ) : (
-                                    <div className="rounded-md border border-muted bg-muted/30 p-3 text-xs text-muted-foreground flex items-start gap-2 mt-1">
-                                        <span className="shrink-0 font-semibold text-foreground">ℹ️ Insufficient Data:</span>
-                                        <span>There is not enough narrative data in this individual document to produce a standalone investment thesis. Please wait for <strong>Project Synthesis</strong> to consolidate all deal files into a definitive investment thesis.</span>
+                                    <div className="rounded-lg border border-border/60 bg-muted/40 p-3.5 text-xs flex items-start gap-3 text-muted-foreground mt-1 transition-all">
+                                        <div className="rounded-md bg-background/80 p-1.5 border border-border/40 shadow-2xs shrink-0 text-muted-foreground mt-0.5">
+                                            <Info className="h-4 w-4 text-primary/80" />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="font-semibold text-foreground text-xs flex items-center gap-1.5">
+                                                Insufficient Narrative Data
+                                            </p>
+                                            <p className="leading-relaxed text-xs text-muted-foreground">
+                                                There is not enough narrative data in this individual document to produce a standalone investment thesis. Please wait for <strong className="text-foreground font-semibold">Project Synthesis</strong> to consolidate all deal files into a definitive investment thesis.
+                                            </p>
+                                        </div>
                                     </div>
                                 )}
                             </div>

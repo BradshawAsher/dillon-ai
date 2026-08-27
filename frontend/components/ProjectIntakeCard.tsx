@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react'
-import { AlertTriangle, Calculator, Eye, FolderKanban, Info, Key, Loader2, Plus, Upload, X, XCircle } from 'lucide-react'
+import { AlertTriangle, Calculator, CheckCircle2, Eye, FolderKanban, FolderPlus, Info, Key, Loader2, Plus, Upload, X, XCircle } from 'lucide-react'
 
 import FileDropzone from './FileDropzone'
 import ManualDealIntakeForm from './ManualDealIntakeForm'
@@ -123,21 +123,23 @@ export default function ProjectIntakeCard({
     const [intakeMode, setIntakeMode] = useState<'upload' | 'manual'>('upload')
     const [showNoKeyPrompt, setShowNoKeyPrompt] = useState(false)
     const [showDestinationModal, setShowDestinationModal] = useState(false)
+    const [pendingQueueEnv, setPendingQueueEnv] = useState<SubmitEnvironment | null>(null)
     const [pendingFiles, setPendingFiles] = useState<File[]>([])
     const [fileRequiredWarning, setFileRequiredWarning] = useState(false)
 
     useEffect(() => {
-        if (!showNoKeyPrompt && !showDestinationModal) return
+        if (!showNoKeyPrompt && !showDestinationModal && !pendingQueueEnv) return
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
                 setShowNoKeyPrompt(false)
                 setShowDestinationModal(false)
                 setPendingFiles([])
+                setPendingQueueEnv(null)
             }
         }
         window.addEventListener('keydown', handleKeyDown)
         return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [showNoKeyPrompt, showDestinationModal])
+    }, [showNoKeyPrompt, showDestinationModal, pendingQueueEnv])
 
     useEffect(() => {
         if (typeof window === 'undefined') return
@@ -188,7 +190,7 @@ export default function ProjectIntakeCard({
         if (!hasKey) {
             setShowNoKeyPrompt(true)
         } else {
-            onSubmit('production')
+            setPendingQueueEnv('production')
         }
     }
 
@@ -199,7 +201,7 @@ export default function ProjectIntakeCard({
             return
         }
         setFileRequiredWarning(false)
-        onSubmit('production')
+        setPendingQueueEnv('production')
     }
 
     const targetProject = useMemo(() => {
@@ -878,6 +880,178 @@ export default function ProjectIntakeCard({
                                     >
                                         <FolderKanban className="h-3.5 w-3.5 shrink-0" />
                                         <span>Add & Merge into Deal</span>
+                                    </Button>
+                                </div>
+                            </CardFooter>
+                        </Card>
+                    </div>
+                )}
+
+                {pendingQueueEnv && selectedFiles.length > 0 && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in-0 duration-200">
+                        <Card className="relative w-full max-w-xl shadow-2xl border-primary/30 bg-card text-card-foreground">
+                            <button
+                                type="button"
+                                onClick={() => setPendingQueueEnv(null)}
+                                className="absolute right-4 top-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:outline-none cursor-pointer"
+                            >
+                                <X className="h-4 w-4 text-muted-foreground" />
+                                <span className="sr-only">Close</span>
+                            </button>
+                            <CardHeader className="pb-3 border-b border-border/60">
+                                <div className="flex items-center gap-2.5">
+                                    <div className={`flex h-10 w-10 items-center justify-center rounded-xl border ${
+                                        selectedProjectKey === 'new'
+                                            ? 'border-primary/30 bg-primary/10 text-primary'
+                                            : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                                    }`}>
+                                        {selectedProjectKey === 'new' ? (
+                                            <FolderPlus className="h-5 w-5" />
+                                        ) : (
+                                            <FolderKanban className="h-5 w-5" />
+                                        )}
+                                    </div>
+                                    <div>
+                                        <CardTitle className="text-lg font-bold">
+                                            {selectedProjectKey === 'new'
+                                                ? 'Confirm New Project Queue'
+                                                : 'Confirm Queue & Append to Deal'}
+                                        </CardTitle>
+                                        <CardDescription className="text-xs">
+                                            {selectedProjectKey === 'new'
+                                                ? 'Review your new project setup before dispatching files to the Dillon AI diligence engine.'
+                                                : 'Confirm that you want to append new files into your existing deal workspace.'}
+                                        </CardDescription>
+                                    </div>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="space-y-4 pt-4 text-sm text-foreground">
+                                {/* State banner */}
+                                <div className={`rounded-xl border p-4 space-y-3 ${
+                                    selectedProjectKey === 'new'
+                                        ? 'border-primary/30 bg-primary/5 text-foreground'
+                                        : 'border-emerald-500/30 bg-emerald-500/5 text-foreground'
+                                }`}>
+                                    <div className="flex items-start gap-3">
+                                        {selectedProjectKey === 'new' ? (
+                                            <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                                        ) : (
+                                            <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                                        )}
+                                        <div className="space-y-1">
+                                            <p className="text-sm font-bold text-foreground">
+                                                {selectedProjectKey === 'new'
+                                                    ? 'You are about to queue in a NEW PROJECT. Proceed?'
+                                                    : `You are about to queue and append into "${targetProject?.label || targetProject?.name || dealName || selectedProjectKey}". Proceed?`}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground leading-relaxed">
+                                                {selectedProjectKey === 'new'
+                                                    ? 'This batch will create a fresh standalone diligence workspace with its own multi-document synthesis.'
+                                                    : 'These documents will be extracted and automatically reconciled with the existing deal documents in this workspace.'}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Parameter Summary Grid */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2 border-t border-border/50 text-xs">
+                                        <div className="flex items-center justify-between rounded-lg bg-background/70 border border-border/60 px-3 py-2">
+                                            <span className="text-muted-foreground font-medium">Destination:</span>
+                                            <Badge
+                                                variant="outline"
+                                                className={
+                                                    selectedProjectKey === 'new'
+                                                        ? 'bg-primary/10 text-primary border-primary/30 font-semibold'
+                                                        : 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-500/40 font-semibold'
+                                                }
+                                            >
+                                                {selectedProjectKey === 'new' ? 'New Standalone Project' : (targetProject?.label || targetProject?.name || dealName || selectedProjectKey)}
+                                            </Badge>
+                                        </div>
+
+                                        <div className="flex items-center justify-between rounded-lg bg-background/70 border border-border/60 px-3 py-2">
+                                            <span className="text-muted-foreground font-medium">Deal Stage:</span>
+                                            <span className="font-semibold text-foreground">
+                                                {projectStage === 'post_loi' ? 'Post-LOI (Deep Forensic)' : 'Pre-LOI (Assessment)'}
+                                            </span>
+                                        </div>
+
+                                        <div className="flex items-center justify-between rounded-lg bg-background/70 border border-border/60 px-3 py-2">
+                                            <span className="text-muted-foreground font-medium">Files Queued:</span>
+                                            <span className="font-semibold text-foreground">{selectedFiles.length} document{selectedFiles.length === 1 ? '' : 's'}</span>
+                                        </div>
+
+                                        <div className="flex items-center justify-between rounded-lg bg-background/70 border border-border/60 px-3 py-2">
+                                            <span className="text-muted-foreground font-medium">Execution Engine:</span>
+                                            <span className="font-semibold text-foreground">
+                                                {userKeysStatus.count > 0 ? `BYOK (${userKeysStatus.summary})` : 'Dillon AI Prod'}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Document List */}
+                                    <div className="pt-2 border-t border-border/50">
+                                        <p className="text-2xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Documents to be processed:</p>
+                                        <div className="max-h-28 overflow-y-auto space-y-1 rounded-lg bg-background/50 border border-border/40 p-2">
+                                            {selectedFiles.slice(0, 5).map((f, idx) => (
+                                                <div key={idx} className="flex items-center justify-between text-2xs">
+                                                    <span className="font-medium text-foreground truncate max-w-[280px] sm:max-w-[360px] flex items-center gap-1.5">
+                                                        <span className="text-primary font-mono">•</span>
+                                                        {f.name}
+                                                    </span>
+                                                    <span className="text-muted-foreground font-mono shrink-0">
+                                                        {Math.round(f.size / 1024)} KB
+                                                    </span>
+                                                </div>
+                                            ))}
+                                            {selectedFiles.length > 5 && (
+                                                <p className="text-2xs text-muted-foreground italic pl-3 pt-0.5">
+                                                    + {selectedFiles.length - 5} more files in batch
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardContent>
+                            <CardFooter className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5 border-t border-border pt-4 bg-muted/10">
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setPendingQueueEnv(null)}
+                                >
+                                    Cancel
+                                </Button>
+                                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                                    {selectedProjectKey !== 'new' && (
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            className="border-primary/40 hover:bg-primary/10 gap-1.5 font-semibold text-xs cursor-pointer whitespace-nowrap"
+                                            onClick={() => {
+                                                onCreateProject()
+                                            }}
+                                        >
+                                            <Plus className="h-3.5 w-3.5" />
+                                            Queue as New Project Instead
+                                        </Button>
+                                    )}
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        className={
+                                            selectedProjectKey === 'new'
+                                                ? 'bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs gap-1.5 shadow-md cursor-pointer whitespace-nowrap px-5 py-2.5'
+                                                : 'bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs gap-1.5 shadow-md cursor-pointer whitespace-nowrap px-5 py-2.5'
+                                        }
+                                        onClick={() => {
+                                            const env = pendingQueueEnv || 'production'
+                                            setPendingQueueEnv(null)
+                                            onSubmit(env)
+                                        }}
+                                    >
+                                        <Upload className="h-4 w-4" />
+                                        <span>Proceed & Queue {selectedProjectKey === 'new' ? 'New Project' : 'to Deal'}</span>
                                     </Button>
                                 </div>
                             </CardFooter>
