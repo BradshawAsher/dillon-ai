@@ -42,6 +42,13 @@ describe('projectOwnership', () => {
         expect(getOwnedProjects('a@example.com')).toEqual([])
     })
 
+    it('does not throw on a null/undefined email', () => {
+        expect(() => claimProject('proj-x', null as unknown as string)).not.toThrow()
+        expect(getProjectOwner('proj-x')).toBeNull()
+        expect(isOwnedByUser('proj-x', undefined as unknown as string)).toBe(false)
+        expect(getOwnedProjects(null as unknown as string)).toEqual([])
+    })
+
     it('lists only the projects owned by a given email', () => {
         claimProject('p1', 'a@example.com')
         claimProject('p2', 'b@example.com')

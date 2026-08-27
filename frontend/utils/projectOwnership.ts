@@ -30,11 +30,18 @@ function saveMap(map: OwnershipMap) {
     }
 }
 
+// A caller can pass a null/undefined email (unauthenticated session, missing
+// profile field); coerce first so a bare `.trim()` never throws.
+function normalizeEmail(email: string | null | undefined): string {
+    return (typeof email === 'string' ? email : '').trim().toLowerCase()
+}
+
 export function claimProject(projectKey: string, email: string) {
-    if (!projectKey || !email.trim()) return
+    const normalizedEmail = normalizeEmail(email)
+    if (!projectKey || !normalizedEmail) return
     const map = getMap()
     if (!map[projectKey]) {
-        map[projectKey] = email.trim().toLowerCase()
+        map[projectKey] = normalizedEmail
         saveMap(map)
     }
 }
@@ -45,15 +52,16 @@ export function getProjectOwner(projectKey: string): string | null {
 }
 
 export function isOwnedByUser(projectKey: string, email: string): boolean {
-    if (!email.trim()) return false
+    const normalizedEmail = normalizeEmail(email)
+    if (!normalizedEmail) return false
     const owner = getProjectOwner(projectKey)
     if (!owner) return false
-    return owner === email.trim().toLowerCase()
+    return owner === normalizedEmail
 }
 
 export function getOwnedProjects(email: string): string[] {
-    if (!email.trim()) return []
-    const normalizedEmail = email.trim().toLowerCase()
+    const normalizedEmail = normalizeEmail(email)
+    if (!normalizedEmail) return []
     const map = getMap()
     return Object.entries(map)
         .filter(([, ownerEmail]) => ownerEmail === normalizedEmail)
