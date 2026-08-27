@@ -425,7 +425,10 @@ export function deriveDocumentedFacts(documents: SubmissionHistoryItem[]): Recor
             period: fact.period ?? '',
             provenance: fact.provenance ?? (isDerivedFact(fact) ? 'Calculated from uploaded documents' : 'Extracted from uploaded documents'),
             confidence: isNumber(fact.confidence)
-                ? (fact.confidence <= 1 ? Math.round(fact.confidence * 100) : Math.round(fact.confidence))
+                // Clamp to a valid 0..100 percentage so a malformed upstream
+                // confidence (1.5, 150, a negative) can't surface as an
+                // out-of-range meter value downstream.
+                ? Math.min(100, Math.max(0, Math.round(fact.confidence <= 1 ? fact.confidence * 100 : fact.confidence)))
                 : 0,
             citations: fact.citation
                 ? [{

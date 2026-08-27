@@ -33,6 +33,18 @@ describe('deriveDocumentedFacts', () => {
         expect(result.revenue.value).toBe(1000)
     })
 
+    it('clamps an out-of-range fact confidence to 0..100', () => {
+        const high = JSON.stringify([fact({ normalized_value: 1000, confidence: 150 })])
+        expect(deriveDocumentedFacts([doc(high)]).revenue.confidence).toBe(100)
+
+        const negative = JSON.stringify([fact({ normalized_value: 1000, confidence: -0.5 })])
+        expect(deriveDocumentedFacts([doc(negative)]).revenue.confidence).toBe(0)
+
+        // A normal fractional confidence still scales to a whole percent.
+        const fractional = JSON.stringify([fact({ normalized_value: 1000, confidence: 0.82 })])
+        expect(deriveDocumentedFacts([doc(fractional)]).revenue.confidence).toBe(82)
+    })
+
     it('prefers the latest period for the same metric', () => {
         const facts = JSON.stringify([
             fact({ normalized_value: 100, period: 'FY2022' }),
