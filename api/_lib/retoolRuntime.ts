@@ -143,12 +143,39 @@ export function userFromHeaders(headers: IncomingHttpHeaders): ApiUser {
   return fullName.length > 0 && email.length > 0 ? { fullName, email } : fallbackUser
 }
 
+// The /api/diligence/* routes are internet-reachable and unauthenticated, and
+// a request body only ever carries metadata + storage URLs (file bytes go
+// straight to storage via the upload-url flow, never through here). Cap how
+// much we buffer so an abusive client can't stream an unbounded body and
+// exhaust a serverless instance's memory. 5 MB is far above any legitimate
+// metadata payload.
+export const MAX_REQUEST_BODY_BYTES = 5 * 1024 * 1024
+
 export function readJsonBody(req: IncomingMessage): Promise<Record<string, unknown>> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = []
-    req.on('data', (chunk: Buffer) => chunks.push(chunk))
-    req.on('error', reject)
-    req.on('end', () => {
+    let receivedBytes = 0
+    let settled = false
+    // First error/limit/end wins; a later event must not resolve or reject again.
+    const finish = (run: () => void) => {
+      if (settled) return
+      settled = true
+      run()
+    }
+    req.on('data', (chunk: Buffer) => {
+      if (settled) return
+      receivedBytes += chunk.length
+      if (receivedBytes > MAX_REQUEST_BODY_BYTES) {
+        finish(() => {
+          req.destroy?.()
+          reject(new HttpError(413, 'Request body too large.'))
+        })
+        return
+      }
+      chunks.push(chunk)
+    })
+    req.on('error', (error) => finish(() => reject(error)))
+    req.on('end', () => finish(() => {
       const raw = Buffer.concat(chunks).toString('utf8')
       if (raw.length === 0) {
         resolve({})
@@ -169,6 +196,6 @@ export function readJsonBody(req: IncomingMessage): Promise<Record<string, unkno
         return
       }
       resolve(parsed as Record<string, unknown>)
-    })
+    }))
   })
 }
