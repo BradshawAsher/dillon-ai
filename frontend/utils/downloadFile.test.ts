@@ -25,6 +25,11 @@ describe('fileSafeName', () => {
         expect(fileSafeName('***')).toBe('report')
     })
 
+    it('does not throw on a null/undefined name', () => {
+        expect(fileSafeName(null as unknown as string)).toBe('report')
+        expect(fileSafeName(undefined as unknown as string)).toBe('report')
+    })
+
     it('caps very long names and trims a trailing hyphen left by the cut', () => {
         const result = fileSafeName('a'.repeat(80) + ' ' + 'b'.repeat(80))
         expect(result.length).toBeLessThanOrEqual(MAX_FILE_SAFE_NAME_LENGTH)

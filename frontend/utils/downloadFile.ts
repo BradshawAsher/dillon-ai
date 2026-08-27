@@ -17,11 +17,15 @@ export function downloadTextFile(fileName: string, content: string, mimeType = '
  *  leaving room for a caller-added suffix and extension. */
 export const MAX_FILE_SAFE_NAME_LENGTH = 100
 
-export function fileSafeName(value: string) {
+export function fileSafeName(value: string | null | undefined) {
+  // Callers derive this from a project/deal name that can be absent; coerce
+  // first so a bare `.normalize()` on null/undefined doesn't throw and abort
+  // the download. An empty name falls through to the 'report' default below.
+  const safeValue = typeof value === 'string' ? value : ''
   // Fold accented letters to their ASCII base first (Café -> Cafe) so a
   // diacritic isn't dropped as a separator, which would truncate "Café" to
   // "caf" instead of "cafe".
-  const folded = value.normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+  const folded = safeValue.normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
   const slug = folded.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
   // Truncate overly long names, then re-trim any trailing hyphen the cut left
   // behind so we never emit "long-name-".
