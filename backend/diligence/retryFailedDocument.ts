@@ -1,3 +1,6 @@
+import { supabase } from '../supabaseClient'
+import submitDealPacket from './submitDealPacket'
+
 type Params = {
   requestID: string
   environment?: 'production' | 'test'
@@ -17,7 +20,71 @@ export default async function retryFailedDocument(req: { params: Params; user: U
   const requestID = req.params.requestID?.trim()
   if (!requestID) throw new Error('requestID is required')
 
-  const path = req.params.environment === 'test'
+  const environment = req.params.environment === 'test' ? 'test' : 'production'
+  const { data: failedDocument, error: documentError } = await supabase
+    .from('documents')
+    .select(`
+      request_id, status, storage_file_url, file_name, file_size, file_type,
+      deal_name, company_name, workstream, submission_notes, project_id,
+      project_stage, document_type, submission_batch_id, expected_batch_document_count
+    `)
+    .eq('request_id', requestID)
+    .eq('environment', environment)
+    .maybeSingle()
+
+  if (documentError) throw new Error(`Unable to load failed document: ${documentError.message}`)
+
+  const failedStatus = String(failedDocument?.status || '').trim().toLowerCase()
+  if (failedStatus === 'upload_failed') {
+    if (!failedDocument) throw new Error('The failed document could not be loaded for retry')
+    const storageFileUrl = String(failedDocument?.storage_file_url || '').trim()
+    if (!storageFileUrl) {
+      throw new Error('This upload failed before a reusable file was stored. Re-upload the document to try again.')
+    }
+
+    const submissionBatchId = failedDocument.submission_batch_id || failedDocument.project_id || ''
+    const expectedBatchDocumentCount = Number(failedDocument.expected_batch_document_count || 1)
+    const recovered = await submitDealPacket({
+      user: req.user,
+      params: {
+        environment,
+        fileName: failedDocument.file_name || 'document',
+        fileSize: Number(failedDocument.file_size || 0),
+        fileType: failedDocument.file_type || 'application/octet-stream',
+        dealName: failedDocument.deal_name || '',
+        companyName: failedDocument.company_name || failedDocument.deal_name || '',
+        workstream: failedDocument.workstream || 'General',
+        submissionNotes: failedDocument.submission_notes || '',
+        projectId: failedDocument.project_id || '',
+        projectStage: failedDocument.project_stage || '',
+        documentType: failedDocument.document_type || 'auto-detect',
+        submissionBatchId,
+        expectedBatchDocumentCount,
+        storageFileUrl,
+        userAnthropicApiKey: req.params.userAnthropicApiKey,
+        userOpenAiApiKey: req.params.userOpenAiApiKey,
+        userGeminiApiKey: req.params.userGeminiApiKey,
+        userDeepseekApiKey: req.params.userDeepseekApiKey,
+        userApiKey: req.params.userApiKey,
+        userProvider: req.params.userProvider,
+        docPrimaryModel: req.params.docPrimaryModel,
+        docBackupModel: req.params.docBackupModel,
+        synthPrimaryModel: req.params.synthPrimaryModel,
+        synthBackupModel: req.params.synthBackupModel,
+      },
+    })
+
+    return {
+      ok: true,
+      status: 'retry_queued',
+      requestID: recovered.response.requestID,
+      originalRequestID: requestID,
+      submissionBatchId,
+      recoverySource: 'stored_file',
+    }
+  }
+
+  const path = environment === 'test'
     ? 'webhook-test/dd-retry-failed-document'
     : 'webhook/dd-retry-failed-document'
 

@@ -4,7 +4,9 @@ import {
     formatSubmissionStatus,
     hasAiEnrichment,
     isActiveSubmissionStatus,
+    isFailedSubmissionStatus,
     isStoppedSubmissionStatus,
+    isTerminalSubmissionStatus,
     normalizeSubmissionStatus,
     type SubmissionHistoryItem,
 } from './submissionHistory'
@@ -43,6 +45,21 @@ describe('isStoppedSubmissionStatus', () => {
         expect(isStoppedSubmissionStatus('Stopped By User')).toBe(true)
         expect(isStoppedSubmissionStatus('stopped-by-user')).toBe(true)
         expect(isStoppedSubmissionStatus('processing')).toBe(false)
+    })
+})
+
+describe('terminal failure statuses', () => {
+    it('treats upload failures as failed and terminal', () => {
+        expect(isFailedSubmissionStatus('upload_failed')).toBe(true)
+        expect(isFailedSubmissionStatus('Upload Failed')).toBe(true)
+        expect(isTerminalSubmissionStatus('upload-failed')).toBe(true)
+        expect(isActiveSubmissionStatus('upload_failed')).toBe(false)
+    })
+
+    it('keeps processing active and completed terminal', () => {
+        expect(isTerminalSubmissionStatus('processing')).toBe(false)
+        expect(isTerminalSubmissionStatus('completed')).toBe(true)
+        expect(isTerminalSubmissionStatus('stopped_by_user')).toBe(true)
     })
 })
 

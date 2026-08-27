@@ -32,7 +32,13 @@ export function getSubmissionStatusVariant(status: string): 'success' | 'warning
     ) {
         return 'warning'
     }
-    if (normalized === 'error' || normalized === 'failed' || normalized === 'rejected') return 'destructive'
+    if (
+        normalized === 'error'
+        || normalized === 'failed'
+        || normalized === 'processing_failed'
+        || normalized === 'rejected'
+        || normalized === 'upload_failed'
+    ) return 'destructive'
     // A user/system-halted batch is an attention state, not a neutral one.
     if (normalized === 'stopped' || normalized === 'stopped_by_user') return 'warning'
     return 'secondary'
@@ -478,6 +484,7 @@ export type SubmissionBatch = {
     expectedDocumentCount: number
     environment: SubmitEnvironment
     startedAt: number
+    requestIDs?: string[]
     endedAt?: number
     stoppedAt?: number
 }
