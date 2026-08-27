@@ -1,3 +1,20 @@
+# Dependency Security Cleanup (2026-08-27)
+
+## Verified Root Causes
+
+- GitHub reports 15 alerts against the stale `frontend/pnpm-lock.yaml`; the supported Vercel, Render, CI, and documented local workflows all install with npm. The unused pnpm workspace file also contains an unresolved placeholder build setting.
+- The active frontend npm lockfile resolves PostCSS's transitive `nanoid` dependency to 3.3.16. GHSA-2v37-7h3g-55p8 is fixed in 3.3.18, which is published and satisfies PostCSS's existing `^3.3.16` range.
+- The frontend audit's 13 affected package entries all trace to that one advisory. The root and production-only frontend audits report zero issues.
+
+## Targeted Changes And Verification
+
+1. Use `npm update nanoid --ignore-scripts --no-fund` in `frontend` to update only the existing compatible dependency and lockfile; inspect the structured lockfile diff for unrelated version changes. No forced upgrades or new dependency overrides.
+2. Remove the unused `frontend/pnpm-lock.yaml` and placeholder `frontend/pnpm-workspace.yaml`; document npm as the supported package manager in README. Keep deployment and application behavior unchanged.
+3. Verify lockfile installation consistency, full root/frontend security audits, TypeScript, all unit tests, the frontend production build, and the generated API build. Confirm no unintended generated changes remain.
+4. Keep changes local and uncommitted. GitHub alerts require the resulting changes on the default branch and a dependency rescan before they can be confirmed closed.
+
+---
+
 # TypeScript Error Cleanup (2026-08-27)
 
 ## Verified Root Causes
