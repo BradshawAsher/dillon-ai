@@ -80,6 +80,10 @@ Numbers below are measured from live n8n execution telemetry and Supabase databa
 
 Use Node `22.x` for local development and Vercel compatibility.
 
+Use npm for this repository. The root and frontend `package-lock.json` files
+are the dependency source of truth used by deployments. Use `npm ci` for a
+reproducible install; do not generate a separate pnpm or Yarn lockfile.
+
 On Windows, `nvm-windows` is recommended so you can switch to the project Node
 version without affecting other repos.
 
