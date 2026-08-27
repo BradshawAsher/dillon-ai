@@ -30,7 +30,8 @@ import { lazyWithRetry } from '../utils/lazyWithRetry'
 import { batchCompletionTime, createBatchQueue, getBatchStopTarget, requireConfirmedBatchStop, type BatchStopResponse } from '../utils/batchStop'
 const CommandPalette = lazyWithRetry(() => import('../components/CommandPalette'))
 const SystemArchitectureCard = lazyWithRetry(() => import('../components/SystemArchitectureCard'))
-import LoginButton, { getStoredAuth, isDataIsolationEnabled, DATA_ISOLATION_EVENT } from '../components/AuthGate'
+import LoginButton, { getStoredAuth, isDataIsolationEnabled, DATA_ISOLATION_EVENT, openAuthModal } from '../components/AuthGate'
+import { AUTH_CHANGE_EVENT, type AppAuthUser } from '../services/supabaseAuth'
 import { uploadDocumentToSupabaseStorage } from '../services/supabaseStorage'
 import { DataIsolationBanner } from '../components/dashboard/DataIsolationBanner'
 import { buildMarkdownReport, buildJsonExport, downloadFile } from '../components/ExportDealButton'
@@ -916,6 +917,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     }, [isExampleMode, liveProjectSynthesesData, manualSyntheses])
 
     const [isolationModeEnabled, setIsolationModeEnabled] = useState(isDataIsolationEnabled)
+    const [authUser, setAuthUser] = useState<AppAuthUser | null>(getStoredAuth)
 
     useEffect(() => {
         const handleIsolationChange = (e: Event) => {
@@ -926,19 +928,36 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 setIsolationModeEnabled(isDataIsolationEnabled())
             }
         }
+        const handleAuthChange = (e: Event) => {
+            const customEvent = e as CustomEvent<{ user: AppAuthUser | null }>
+            if (customEvent.detail !== undefined) {
+                setAuthUser(customEvent.detail.user)
+            } else {
+                setAuthUser(getStoredAuth())
+            }
+        }
+        const checkStorage = () => {
+            setAuthUser(getStoredAuth())
+        }
         window.addEventListener(DATA_ISOLATION_EVENT, handleIsolationChange)
-        return () => window.removeEventListener(DATA_ISOLATION_EVENT, handleIsolationChange)
+        window.addEventListener(AUTH_CHANGE_EVENT, handleAuthChange)
+        window.addEventListener('storage', checkStorage)
+        return () => {
+            window.removeEventListener(DATA_ISOLATION_EVENT, handleIsolationChange)
+            window.removeEventListener(AUTH_CHANGE_EVENT, handleAuthChange)
+            window.removeEventListener('storage', checkStorage)
+        }
     }, [])
 
     const submissionHistory = useMemo(() => {
-        const user = getStoredAuth()
+        const user = authUser || getStoredAuth()
         const base = (!isolationModeEnabled || (user && user.role === 'admin' && !isolationModeEnabled))
             ? rawSubmissionHistory
             : rawSubmissionHistory.filter((row: SubmissionHistoryItem) => {
                 const pk = getProjectKey(row)
                 if (user?.email) return isOwnedByUser(pk, user.email)
                 const owner = getProjectOwner(pk)
-                return !owner || owner === 'guest' || owner === 'localdev@mergeworks.io'
+                return owner === 'guest' || owner === 'localdev@mergeworks.io'
             })
 
         if (walkthrough.isActive || simulatedWalkthroughBatch) {
@@ -946,17 +965,17 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             return [...DEMO_FALLBACK_DOCS, ...other]
         }
         return base
-    }, [rawSubmissionHistory, isolationModeEnabled, walkthrough.isActive, simulatedWalkthroughBatch])
+    }, [rawSubmissionHistory, isolationModeEnabled, walkthrough.isActive, simulatedWalkthroughBatch, authUser])
 
     const visibleProjectSyntheses = useMemo(() => {
-        const user = getStoredAuth()
+        const user = authUser || getStoredAuth()
         const base = (!isolationModeEnabled || (user && user.role === 'admin' && !isolationModeEnabled))
             ? rawProjectSyntheses
             : rawProjectSyntheses.filter((s: any) => {
                 const pk = s.projectId || ''
                 if (user?.email) return isOwnedByUser(pk, user.email)
                 const owner = getProjectOwner(pk)
-                return !owner || owner === 'guest' || owner === 'localdev@mergeworks.io'
+                return owner === 'guest' || owner === 'localdev@mergeworks.io'
             })
 
         if (walkthrough.isActive || simulatedWalkthroughBatch) {
@@ -964,7 +983,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             return [DEMO_FALLBACK_SYNTHESIS, DEMO_FALLBACK_SYNTHESIS_CASCADIA, ...other]
         }
         return base
-    }, [rawProjectSyntheses, isolationModeEnabled, walkthrough.isActive, simulatedWalkthroughBatch])
+    }, [rawProjectSyntheses, isolationModeEnabled, walkthrough.isActive, simulatedWalkthroughBatch, authUser])
 
     const [selectedFiles, setSelectedFiles] = useState<File[]>([])
     const [isSubmittingFile, setIsSubmittingFile] = useState(false)
@@ -3306,7 +3325,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 ) : null}
 
                 {/* Data Isolation Privacy Callout Banner */}
-                <DataIsolationBanner />
+                <DataIsolationBanner onOpenAuthModal={openAuthModal} />
 
                 {/* Interactive Product Walkthrough & Video Gallery Dock */}
                 <WorkspaceDemoGalleryBar

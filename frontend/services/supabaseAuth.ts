@@ -1,5 +1,5 @@
 import { createClient, type User, type Session } from '@supabase/supabase-js'
-import { sendNewAccountSlackAlert } from './slackAlertService'
+import { sendNewAccountSlackAlert, sendSignInSlackAlert } from './slackAlertService'
 
 const SUPABASE_URL = 'https://sihpsqrunkwkxhhnwoqe.supabase.co'
 const SUPABASE_ANON_KEY = 'REDACTED_SUPABASE_ANON_KEY'
@@ -71,12 +71,33 @@ export function getLocalAppAuth(): AppAuthUser | null {
     if (typeof window === 'undefined') return null
     try {
         const raw = localStorage.getItem(STORAGE_KEY)
-        if (!raw) return null
-        const user = JSON.parse(raw) as AppAuthUser
-        if (!user.role) {
-            user.role = ADMIN_EMAILS.includes((user.email || '').toLowerCase()) ? 'admin' : 'tester'
+        if (raw) {
+            const user = JSON.parse(raw) as AppAuthUser
+            if (!user.role) {
+                user.role = ADMIN_EMAILS.includes((user.email || '').toLowerCase()) ? 'admin' : 'tester'
+            }
+            return user
         }
-        return user
+
+        // Synchronous fallback: inspect Supabase auth token if present in localStorage
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i)
+            if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
+                const sbRaw = localStorage.getItem(key)
+                if (sbRaw) {
+                    const parsed = JSON.parse(sbRaw)
+                    const userObj = parsed?.user || parsed?.currentSession?.user
+                    if (userObj) {
+                        const appUser = mapSupabaseUserToAppUser(userObj)
+                        if (appUser) {
+                            localStorage.setItem(STORAGE_KEY, JSON.stringify(appUser))
+                            return appUser
+                        }
+                    }
+                }
+            }
+        }
+        return null
     } catch {
         return null
     }
@@ -127,18 +148,34 @@ export async function signUpWithPassword(email: string, password: string, fullNa
  * Sign In with Email and Password
  */
 export async function signInWithPassword(email: string, password: string) {
+    const cleanEmail = email.trim().toLowerCase()
     const { data, error } = await supabaseAuthClient.auth.signInWithPassword({
-        email: email.trim(),
+        email: cleanEmail,
         password,
     })
 
     if (error) {
+        sendSignInSlackAlert({
+            fullName: cleanEmail.split('@')[0] || 'User',
+            email: cleanEmail,
+            authMethod: 'Email & Password',
+            status: 'Failed',
+            errorMessage: error.message,
+        }).catch(() => {})
         return { success: false, error: error.message, user: null }
     }
 
     const appUser = mapSupabaseUserToAppUser(data.user)
     if (appUser) {
         saveAppAuth(appUser)
+        sendSignInSlackAlert({
+            fullName: appUser.name,
+            email: appUser.email,
+            role: appUser.role,
+            team: appUser.team,
+            authMethod: 'Email & Password',
+            status: 'Success',
+        }).catch(() => {})
     }
 
     return { success: true, error: null, user: appUser, session: data.session }
@@ -159,18 +196,32 @@ export async function signInWithGoogle() {
 
         if (error) {
             const msg = error.message?.toLowerCase() || ''
-            if (msg.includes('not enabled') || msg.includes('validation_failed') || (error as any).status === 400) {
-                return {
-                    success: false,
-                    error: 'Google OAuth is not enabled in your Supabase project dashboard (Auth -> Providers -> Google). Please sign in with Email & Password or configure Google credentials.',
-                }
-            }
-            return { success: false, error: error.message }
+            const errorMsg = (msg.includes('not enabled') || msg.includes('validation_failed') || (error as any).status === 400)
+                ? 'Google OAuth is not enabled in your Supabase project dashboard (Auth -> Providers -> Google). Please sign in with Email & Password or configure Google credentials.'
+                : error.message
+
+            sendSignInSlackAlert({
+                fullName: 'Google OAuth User',
+                email: 'oauth-initiation@google.com',
+                authMethod: 'Google OAuth',
+                status: 'Failed',
+                errorMessage: errorMsg,
+            }).catch(() => {})
+
+            return { success: false, error: errorMsg }
         }
 
         return { success: true, url: data.url }
     } catch (err: any) {
-        return { success: false, error: err?.message || 'Google authentication error' }
+        const errorMsg = err?.message || 'Google authentication error'
+        sendSignInSlackAlert({
+            fullName: 'Google OAuth User',
+            email: 'oauth-initiation@google.com',
+            authMethod: 'Google OAuth',
+            status: 'Failed',
+            errorMessage: errorMsg,
+        }).catch(() => {})
+        return { success: false, error: errorMsg }
     }
 }
 
@@ -189,18 +240,32 @@ export async function signInWithGithub() {
 
         if (error) {
             const msg = error.message?.toLowerCase() || ''
-            if (msg.includes('not enabled') || msg.includes('validation_failed') || (error as any).status === 400) {
-                return {
-                    success: false,
-                    error: 'GitHub OAuth is not enabled in your Supabase project dashboard (Auth -> Providers -> GitHub). Please sign in with Email & Password or configure GitHub credentials.',
-                }
-            }
-            return { success: false, error: error.message }
+            const errorMsg = (msg.includes('not enabled') || msg.includes('validation_failed') || (error as any).status === 400)
+                ? 'GitHub OAuth is not enabled in your Supabase project dashboard (Auth -> Providers -> GitHub). Please sign in with Email & Password or configure GitHub credentials.'
+                : error.message
+
+            sendSignInSlackAlert({
+                fullName: 'GitHub OAuth User',
+                email: 'oauth-initiation@github.com',
+                authMethod: 'GitHub OAuth',
+                status: 'Failed',
+                errorMessage: errorMsg,
+            }).catch(() => {})
+
+            return { success: false, error: errorMsg }
         }
 
         return { success: true, url: data.url }
     } catch (err: any) {
-        return { success: false, error: err?.message || 'GitHub authentication error' }
+        const errorMsg = err?.message || 'GitHub authentication error'
+        sendSignInSlackAlert({
+            fullName: 'GitHub OAuth User',
+            email: 'oauth-initiation@github.com',
+            authMethod: 'GitHub OAuth',
+            status: 'Failed',
+            errorMessage: errorMsg,
+        }).catch(() => {})
+        return { success: false, error: errorMsg }
     }
 }
 
@@ -220,18 +285,32 @@ export async function signInWithMicrosoft() {
 
         if (error) {
             const msg = error.message?.toLowerCase() || ''
-            if (msg.includes('not enabled') || msg.includes('validation_failed') || (error as any).status === 400) {
-                return {
-                    success: false,
-                    error: 'Microsoft (Azure) OAuth is not enabled in your Supabase project dashboard (Auth -> Providers -> Azure). Please configure your Azure Client ID & Secret or sign in with Email & Password.',
-                }
-            }
-            return { success: false, error: error.message }
+            const errorMsg = (msg.includes('not enabled') || msg.includes('validation_failed') || (error as any).status === 400)
+                ? 'Microsoft (Azure) OAuth is not enabled in your Supabase project dashboard (Auth -> Providers -> Azure). Please configure your Azure Client ID & Secret or sign in with Email & Password.'
+                : error.message
+
+            sendSignInSlackAlert({
+                fullName: 'Microsoft OAuth User',
+                email: 'oauth-initiation@microsoft.com',
+                authMethod: 'Microsoft Azure AD',
+                status: 'Failed',
+                errorMessage: errorMsg,
+            }).catch(() => {})
+
+            return { success: false, error: errorMsg }
         }
 
         return { success: true, url: data.url }
     } catch (err: any) {
-        return { success: false, error: err?.message || 'Microsoft authentication error' }
+        const errorMsg = err?.message || 'Microsoft authentication error'
+        sendSignInSlackAlert({
+            fullName: 'Microsoft OAuth User',
+            email: 'oauth-initiation@microsoft.com',
+            authMethod: 'Microsoft Azure AD',
+            status: 'Failed',
+            errorMessage: errorMsg,
+        }).catch(() => {})
+        return { success: false, error: errorMsg }
     }
 }
 
@@ -303,6 +382,22 @@ export function initAuthListener(onUserChange: (user: AppAuthUser | null) => voi
                             team: appUser.team,
                             authMethod: `${provider.toUpperCase()} Sign-In`,
                         }).catch(() => {})
+                    } else {
+                        // Regular sign-in alert with 15-minute session debounce
+                        const sessionAlertKey = `mergeworks.signInAlertSent.${session.user.id}.${Math.floor(Date.now() / (1000 * 60 * 15))}`
+                        if (!sessionStorage.getItem(sessionAlertKey)) {
+                            sessionStorage.setItem(sessionAlertKey, 'true')
+                            const rawProvider = session.user.app_metadata?.provider || 'Google OAuth'
+                            const providerLabel = rawProvider.charAt(0).toUpperCase() + rawProvider.slice(1) + (rawProvider.includes('email') ? '' : ' OAuth')
+                            sendSignInSlackAlert({
+                                fullName: appUser.name,
+                                email: appUser.email,
+                                role: appUser.role,
+                                team: appUser.team,
+                                authMethod: providerLabel,
+                                status: 'Success',
+                            }).catch(() => {})
+                        }
                     }
                 }
             }

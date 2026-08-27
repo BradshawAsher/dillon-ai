@@ -4,10 +4,10 @@ import DueDiligenceDashboard from './pages/DueDiligenceDashboard'
 import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
 import { parseUrlDeepLinkState } from './utils/deepLinking'
-import { initAuthListener, type AppAuthUser } from './services/supabaseAuth'
+import { initAuthListener, getLocalAppAuth, type AppAuthUser } from './services/supabaseAuth'
 
 export default function App() {
-  const [currentUser, setCurrentUser] = useState<AppAuthUser | null>(null)
+  const [currentUser, setCurrentUser] = useState<AppAuthUser | null>(getLocalAppAuth)
   const [view, setView] = useState<'landing' | 'login' | 'dashboard'>(() => {
     if (typeof window !== 'undefined') {
       const parsed = parseUrlDeepLinkState(window.location.search, window.location.hash)
@@ -109,6 +109,8 @@ export default function App() {
         <LandingPage
           onLaunchDashboard={handleLaunchDashboard}
           onGoToLogin={handleGoToLogin}
+          currentUser={currentUser}
+          onSignOut={() => setCurrentUser(null)}
         />
       )}
       {view === 'login' && (
@@ -116,6 +118,7 @@ export default function App() {
           onLoginSuccess={handleLoginSuccess}
           onLaunchDashboardDirectly={handleLaunchDashboard}
           onReturnToLanding={handleReturnToLanding}
+          currentUser={currentUser}
         />
       )}
       {view === 'dashboard' && (

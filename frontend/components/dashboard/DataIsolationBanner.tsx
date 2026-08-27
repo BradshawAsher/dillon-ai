@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { Shield, ShieldCheck, Lock, Users } from 'lucide-react'
 import { Button } from '../../lib/shadcn/button'
 import { Badge } from '../../lib/shadcn/badge'
-import { getStoredAuth, isDataIsolationEnabled, setDataIsolation, DATA_ISOLATION_EVENT } from '../AuthGate'
+import { getStoredAuth, isDataIsolationEnabled, setDataIsolation, DATA_ISOLATION_EVENT, openAuthModal } from '../AuthGate'
 import { AUTH_CHANGE_EVENT, AppAuthUser } from '../../services/supabaseAuth'
 import { sendAdminAccessRequestSlackAlert } from '../../services/slackAlertService'
 
@@ -58,7 +58,11 @@ export function DataIsolationBanner({ onOpenAuthModal, className = '' }: DataIso
 
     const handleApplyAdmin = useCallback(async () => {
         if (!user) {
-            onOpenAuthModal?.()
+            if (onOpenAuthModal) {
+                onOpenAuthModal()
+            } else {
+                openAuthModal()
+            }
             return
         }
         setIsApplying(true)
