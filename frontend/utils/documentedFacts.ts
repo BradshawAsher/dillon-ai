@@ -110,6 +110,11 @@ export function parseMagnitudeMoney(value: string | number | null | undefined): 
         : unit === 'thousand' || unit === 'k' ? 1_000
         : 1
     const numericPart = unit ? normalized.slice(0, normalized.length - unit.length) : normalized
+    // A magnitude suffix with no leading number ("$M", "$K", "$bn") or an empty
+    // payload ("$") is not a real figure. Reject it rather than letting Number('')
+    // read it as $0 — a spurious zero would mask "no data" as a genuine value and
+    // skew any downstream sum or comparison.
+    if (numericPart.length === 0) return null
     const parsed = Number(numericPart)
     return Number.isFinite(parsed) && parsed >= 0 ? parsed * multiplier : null
 }
