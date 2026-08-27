@@ -32,9 +32,10 @@ function hasText(value: unknown) {
     return typeof value === 'string' && value.trim().length > 0
 }
 
-function deriveSubmissionStatus(row: Record<string, any>) {
+export function deriveSubmissionStatus(row: Record<string, any>) {
     const rawStatus = typeof row.status === 'string' ? row.status.trim() : ''
     const normalizedStatus = rawStatus.toLowerCase()
+    if (normalizedStatus === 'stopped' || normalizedStatus === 'stopped_by_user') return rawStatus
     const hasExtractedAnalysis = hasText(row.extracted_json) || hasText(row.financial_facts_json)
     const failedAfterRetries = String(row.ai_escalation_reason ?? '').trim().toLowerCase() === 'processing_failure'
 

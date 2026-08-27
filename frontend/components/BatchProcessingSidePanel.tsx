@@ -20,6 +20,8 @@ interface BatchProcessingSidePanelProps {
     batchElapsedSeconds: number
     batchSubmissionMessage: string
     isStoppingBatch: boolean
+    batchStopped?: boolean
+    batchStopError?: string
     onStopBatch: () => void
     onRetryDocument: (requestID: string) => void
     onRequeueNewProject?: (requestID?: string) => void
@@ -42,6 +44,8 @@ export function BatchProcessingSidePanel({
     batchElapsedSeconds,
     batchSubmissionMessage,
     isStoppingBatch,
+    batchStopped = false,
+    batchStopError,
     onStopBatch,
     onRetryDocument,
     onRequeueNewProject,
@@ -68,7 +72,7 @@ export function BatchProcessingSidePanel({
         return `${mins}m ${secs < 10 ? '0' : ''}${secs}s`
     }
 
-    const activeProcessingRows = submissionHistory.filter((row) => isActiveSubmissionStatus(row.status))
+    const activeProcessingRows = activeBatchRows.filter((row) => isActiveSubmissionStatus(row.status))
     
     // Group by filename/requestID so files that succeeded on a subsequent retry are not counted as failed
     const latestRowByFile = new Map<string, SubmissionHistoryItem>()
@@ -162,18 +166,20 @@ export function BatchProcessingSidePanel({
                     )}
 
                     {/* Active In-Flight Batch Banner */}
-                    {(inFlightBatch || activeProcessingRows.length > 0) ? (() => {
-                        const isFinished = batchExpectedCount > 0 && batchFinishedCount >= batchExpectedCount && activeProcessingRows.length === 0
+                    {(inFlightBatch || activeProcessingRows.length > 0 || batchStopped || batchStopError) ? (() => {
+                        const isFinished = !batchStopError && batchExpectedCount > 0 && batchFinishedCount >= batchExpectedCount && activeProcessingRows.length === 0
                         return (
                             <div className={`rounded-xl border p-4 sm:p-5 space-y-3.5 shadow-sm ${isFinished ? 'border-emerald-500/40 bg-emerald-500/10' : 'border-primary/40 bg-primary/5'}`}>
                                 <div className="flex items-center justify-between">
                                     <span className="text-sm font-bold text-foreground flex items-center gap-2">
-                                        {isFinished ? (
+                                        {batchStopped ? (
+                                            <StopCircle className="h-4 w-4 text-destructive" />
+                                        ) : isFinished ? (
                                              <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                                         ) : (
                                             <Loader2 className="h-4 w-4 animate-spin text-primary" />
                                         )}
-                                        {isFinished ? 'Batch Completed' : 'Active Processing Batch'}
+                                        {isStoppingBatch ? 'Stopping Batch' : batchStopped ? 'Batch Stopped' : batchStopError ? 'Stop Not Confirmed' : isFinished ? 'Batch Completed' : 'Active Processing Batch'}
                                     </span>
                                     <Badge variant={isFinished ? 'success' : 'secondary'} className="gap-1 font-mono text-xs font-semibold px-2.5 py-0.5">
                                         <Clock className="h-3 w-3" />
@@ -195,7 +201,7 @@ export function BatchProcessingSidePanel({
                                     </p>
                                 )}
 
-                                {!isFinished && (
+                                {!isFinished && !batchStopped && (
                                     <div className="rounded-lg bg-amber-500/15 border border-amber-500/30 p-3 text-xs text-amber-950 dark:text-amber-100 font-medium space-y-1 leading-relaxed">
                                         <p className="font-bold flex items-center gap-1.5 text-amber-900 dark:text-amber-200">
                                             <span>⚠️</span> 4-Minute Timeout Rules:
@@ -206,7 +212,7 @@ export function BatchProcessingSidePanel({
                                     </div>
                                 )}
 
-                                {!isFinished && (
+                                {!isFinished && !batchStopped && (
                                     <div className="flex items-center justify-end gap-2 pt-1">
                                         <Button
                                             type="button"
@@ -217,7 +223,7 @@ export function BatchProcessingSidePanel({
                                             className="gap-1.5 text-xs font-semibold"
                                         >
                                             <StopCircle className="h-3.5 w-3.5" />
-                                            {isStoppingBatch ? 'Stopping…' : 'Stop Batch'}
+                                            {isStoppingBatch ? 'Stopping…' : batchStopError ? 'Retry Stop' : 'Stop Batch'}
                                         </Button>
                                     </div>
                                 )}

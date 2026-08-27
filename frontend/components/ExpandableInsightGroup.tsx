@@ -68,7 +68,7 @@ function severityBadge(severity: string) {
   return <span className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-medium leading-none ${color}`}>{severity}</span>
 }
 
-function resolveTheme(colorTheme?: InsightColorTheme, badgeVariant?: string): InsightColorTheme {
+function resolveTheme(colorTheme?: InsightColorTheme, badgeVariant?: BadgeProps['variant']): InsightColorTheme {
   if (colorTheme) return colorTheme
   if (badgeVariant === 'destructive') return 'destructive'
   if (badgeVariant === 'warning') return 'warning'

@@ -86,6 +86,8 @@ export type SubmissionHistoryItem = {
 const activeSubmissionStatuses = new Set([
     'accepted',
     'queued',
+    'pending',
+    'waiting',
     'processing',
     'received',
     'running',

@@ -484,10 +484,12 @@ export type SubmitWebhookResponse = {
 
 export type SubmissionBatch = {
     id: string
+    projectId?: string
     expectedDocumentCount: number
     environment: SubmitEnvironment
     startedAt: number
     requestIDs?: string[]
     endedAt?: number
     stoppedAt?: number
+    stopError?: string
 }

@@ -120,6 +120,62 @@ body of `{}` is accepted by n8n but means the dashboard has no rows to show.
 
 ## 2. Row update webhook (future — TODO #2/#14)
 
+### Stop Batch Contract (Verified 2026-08-27)
+
+`POST /api/diligence/stop-batch` accepts `projectId`, `environment`, and either
+`submissionBatchId` or explicit `requestIDs`. Project-only stops are rejected.
+Explicit IDs must belong to the selected project, batch (when supplied), and
+environment. Completed/failed documents are retained.
+
+The server requires `N8N_API_KEY` with execution list/read/stop permissions.
+It paginates running, waiting, new (queued), and unknown executions. Matching
+uses structured trigger input, not arbitrary strings in later node results.
+These filters and cursor pagination follow the [n8n executions API contract](https://github.com/n8n-io/n8n/blob/master/packages/cli/src/public-api/v1/handlers/executions/spec/paths/executions.yml).
+Project-wide synthesis executions with only a project ID are deliberately not
+canceled by a batch action. Missing execution input or API access returns an
+unconfirmed stop rather than guessing ownership.
+
+The browser stops dispatching local uploads and waits for requests already in
+flight before asking the server to cancel. The server verifies cancellation,
+marks active documents through the published consideration webhook, then
+checks executions again. This cannot undo provider calls already submitted,
+and independent submissions from another browser are not globally locked.
+
+The consideration workflow `lXz9fVKY4RaTlDFM` now validates project/batch scope,
+preserves terminal rows, writes `ai_processedAt` in the n8n Data Table, and
+maps that value to Supabase `processed_at`. The Data Table has no environment
+column; environment verification is performed against Supabase, including
+the sync filter. Its confirmed order is:
+
+```text
+Webhook -> Validate request -> Get document -> Validate scope
+        -> Update Data Table -> Sync Supabase -> Refresh readiness -> Respond
+```
+
+The response includes `{ ok, requestID, action, status }`. Test-environment
+documents use this same published control webhook, not `webhook-test`, which
+requires an active editor listener.
+
+The API returns `{ ok, stopped, requestIDs, matchedExecutions,
+canceledExecutions, cancellationAvailable, errors }`. Any failed cancellation,
+unreadable execution, or unconfirmed document write makes `ok: false`.
+Clients must inspect this body even on HTTP 200. Only confirmed success closes
+the batch and freezes the timer; partial failure leaves Retry Stop available.
+
+Published version verified: `3d7e10f3-3221-4c0d-8c01-14ff643b320e`.
+No customer executions were stopped during verification. Live write behavior
+still needs a controlled end-to-end test after the app code is deployed.
+
+Verification evidence: 32 assertions evaluated the published workflow's
+expressions against synthetic records (active, completed, failed, stopped,
+and mismatched scopes). Read-only authenticated API checks returned HTTP 200
+for all four execution-state filters. An isolated browser fixture exercised
+the actual dashboard: simulated 503 -> Retry Stop with advancing timer ->
+confirmed success -> 0 running and stable elapsed time. Its request contained
+only the selected batch, not the other batch/project present in the fixture.
+
+### Historical Row Update Proposal
+
 For "delete document" / "mark row nonconsidered" from the dashboard. When
 someone builds it, use this contract so the frontend work is a drop-in:
 
