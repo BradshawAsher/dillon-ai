@@ -181,6 +181,17 @@ describe('adapters', () => {
         expect(detectContradictions(observations)).toHaveLength(1)
     })
 
+    it('parses negative (loss) figures written with a sign or accounting parens', () => {
+        const documents = [
+            { fileName: 'seller.pdf', financialFactsJson: JSON.stringify([{ metric: 'ebitda', value: '-$1.2M', period: '2024' }]) },
+            { fileName: 'buyer.xlsx', financialFactsJson: JSON.stringify([{ metric: 'ebitda', value: '($900,000)', period: '2024' }]) },
+        ]
+        const observations = observationsFromDocuments(documents)
+        expect(observations.map((o) => o.value)).toEqual([-1_200_000, -900_000])
+        // The two losses disagree by a third — a real conflict that used to be dropped.
+        expect(detectContradictions(observations)).toHaveLength(1)
+    })
+
     it('observationsFromRunDocs handles both financialFacts and extractedFacts', () => {
         const fromFinancial = observationsFromRunDocs([
             { fileName: 'a', financialFacts: [{ metric: 'revenue', normalizedValue: 100, period: '2024' }] },

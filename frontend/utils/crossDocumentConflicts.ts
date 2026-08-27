@@ -197,7 +197,17 @@ function readFactValue(fact: any): number | null {
     const raw = fact?.normalizedValue ?? fact?.normalized_value ?? fact?.value
     const value = Number(raw)
     if (Number.isFinite(value)) return value
-    return typeof raw === 'string' ? parseMagnitudeMoney(raw) : null
+    if (typeof raw !== 'string') return null
+    // parseMagnitudeMoney only accepts non-negative magnitudes, but a fact can be
+    // a loss written as "-$1.2M" or in accounting notation "($1.2M)". Detect the
+    // sign, parse the magnitude of the absolute value, then re-apply it —
+    // otherwise a genuine cross-document conflict on a negative figure (e.g. a
+    // seller-claimed vs buyer-restated negative EBITDA) is silently dropped.
+    const trimmed = raw.trim()
+    const isNegative = trimmed.startsWith('-') || /^\(.*\)$/.test(trimmed)
+    const magnitude = parseMagnitudeMoney(trimmed.replace(/^[-(]/, '').replace(/\)$/, ''))
+    if (magnitude === null) return null
+    return isNegative ? -magnitude : magnitude
 }
 
 function readFactCitations(fact: any): FactObservation['citations'] {
