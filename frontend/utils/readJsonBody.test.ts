@@ -4,7 +4,7 @@ import { Readable } from 'node:stream'
 import { describe, expect, it } from 'vitest'
 
 import { HttpError } from '../../api/_lib/httpError'
-import { readJsonBody } from '../../api/_lib/retoolRuntime'
+import { MAX_REQUEST_BODY_BYTES, readJsonBody } from '../../api/_lib/retoolRuntime'
 
 function mockReq(body: string): IncomingMessage {
     const parts = body.length > 0 ? [Buffer.from(body, 'utf8')] : []
@@ -31,5 +31,19 @@ describe('readJsonBody', () => {
         await expect(readJsonBody(mockReq('[1,2,3]'))).rejects.toBeInstanceOf(HttpError)
         await expect(readJsonBody(mockReq('42'))).rejects.toBeInstanceOf(HttpError)
         await expect(readJsonBody(mockReq('null'))).rejects.toBeInstanceOf(HttpError)
+    })
+
+    it('rejects a body over the size cap with a 413', async () => {
+        // A JSON object string just past the cap: an abusive unbounded body.
+        const oversized = `{"x":"${'a'.repeat(MAX_REQUEST_BODY_BYTES)}"}`
+        await expect(readJsonBody(mockReq(oversized))).rejects.toMatchObject({
+            constructor: HttpError,
+            status: 413,
+        })
+    })
+
+    it('accepts a large body that stays under the cap', async () => {
+        const payload = `{"x":"${'a'.repeat(1024)}"}`
+        await expect(readJsonBody(mockReq(payload))).resolves.toMatchObject({ x: expect.any(String) })
     })
 })
