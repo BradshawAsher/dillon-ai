@@ -11,8 +11,12 @@ export function formatEasternTime(value: string | number | null | undefined, fal
   // n8n data-table rows sometimes carry a numeric epoch (seconds or
   // milliseconds) rather than an ISO string; Date.parse rejects those, so
   // handle an all-digits value explicitly before falling back to Date.parse.
-  const epochTimestamp = /^\d+$/.test(trimmed)
-    ? Number(trimmed) * (trimmed.length <= 10 ? 1000 : 1)
+  // Require a realistic epoch length (>= 10 digits: 10 = seconds, more = ms) so
+  // a short all-digit string — a bare year like "2026" — is NOT read as an
+  // epoch (which rendered it as a 1970 date) and instead passes through as-is.
+  const isAllDigits = /^\d+$/.test(trimmed)
+  const epochTimestamp = isAllDigits
+    ? (trimmed.length >= 10 ? Number(trimmed) * (trimmed.length <= 10 ? 1000 : 1) : Number.NaN)
     : Date.parse(trimmed)
 
   if (Number.isNaN(epochTimestamp)) {

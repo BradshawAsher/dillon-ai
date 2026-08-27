@@ -16,6 +16,13 @@ describe('formatEasternTime', () => {
         expect(formatEasternTime('not-a-date')).toBe('not-a-date')
     })
 
+    it('does not misread a short all-digit string (a bare year) as a 1970 epoch', () => {
+        // "2026" is 4 digits, not a plausible epoch — it must pass through, not
+        // resolve to Jan 1970.
+        expect(formatEasternTime('2026')).toBe('2026')
+        expect(formatEasternTime('123')).toBe('123')
+    })
+
     it('accepts an epoch-millisecond timestamp string', () => {
         // 2024-01-15T17:30:00Z in epoch ms.
         const formatted = formatEasternTime(String(Date.parse('2024-01-15T17:30:00Z')))
