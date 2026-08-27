@@ -267,6 +267,14 @@ describe('getModelTokenRates', () => {
         expect(getModelTokenRates(null)).toEqual(terra)
         expect(getModelTokenRates('')).toEqual(terra)
     })
+
+    it('does not mistake "sol" inside an unrelated word for the Sol model', () => {
+        const terra = { inputRate: 0.000002, outputRate: 0.000012 }
+        expect(getModelTokenRates('console-model')).toEqual(terra)
+        expect(getModelTokenRates('resolver-v2')).toEqual(terra)
+        // But a genuine Sol id in any casing/position still resolves to Sol rates.
+        expect(getModelTokenRates('OpenAI 5.6 Sol')).toEqual({ inputRate: 0.000005, outputRate: 0.000030 })
+    })
 })
 
 describe('calculateDocumentCost', () => {

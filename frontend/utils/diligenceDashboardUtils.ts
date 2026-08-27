@@ -147,7 +147,10 @@ export function confidenceToPercent(raw: string | number | null | undefined): nu
  */
 export function getModelTokenRates(modelStr?: string | null): { inputRate: number; outputRate: number } {
     const s = String(modelStr || '').toLowerCase()
-    if (s.includes('sol')) {
+    // Match "sol" only as a delimited token (e.g. "openai-5-6-sol"), not as a
+    // substring — otherwise an unrelated model name containing it ("console",
+    // "solutions", "absolute") would be mispriced at the expensive Sol rate.
+    if (/(^|[^a-z0-9])sol([^a-z0-9]|$)/.test(s)) {
         return { inputRate: 0.000005, outputRate: 0.000030 }
     }
     if (s.includes('opus')) {
