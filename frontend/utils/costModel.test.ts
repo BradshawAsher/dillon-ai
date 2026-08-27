@@ -39,6 +39,12 @@ describe('estimateCallCost', () => {
         const unknown = estimateCallCost(1_000_000, 1_000_000, 'model-not-in-table' as never)
         expect(unknown).toBeCloseTo(14, 6) // Terra: $2 + $12
     })
+
+    it('coerces non-finite / negative token counts to zero rather than NaN', () => {
+        expect(estimateCallCost(NaN, 1_000_000, 'sonnet-5')).toBeCloseTo(10, 6) // input dropped
+        expect(estimateCallCost(1_000_000, Number.POSITIVE_INFINITY, 'sonnet-5')).toBeCloseTo(2, 6) // output dropped
+        expect(estimateCallCost(-1_000_000, -1_000_000, 'sonnet-5')).toBe(0)
+    })
 })
 
 describe('estimatePerDocumentCost', () => {

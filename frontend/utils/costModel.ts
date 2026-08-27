@@ -42,7 +42,12 @@ export const SAMPLE_DOCUMENT_LEGS: ModelLeg[] = [
 /** USD cost of one model call from its token counts. */
 export function estimateCallCost(inputTokens: number, outputTokens: number, model: AnthropicModel): number {
     const rate = MODEL_RATES[model] || MODEL_RATES['openai-5-6-terra']
-    return (inputTokens / 1_000_000) * rate.inputPerMTok + (outputTokens / 1_000_000) * rate.outputPerMTok
+    // Token counts come from provider telemetry, which can hand back a
+    // stringified, negative, or non-finite value. Coerce each to a non-negative
+    // finite number so one bad row can't poison a summed cost with NaN or drive
+    // a nonsensical negative charge.
+    const safe = (tokens: number) => (Number.isFinite(tokens) && tokens > 0 ? tokens : 0)
+    return (safe(inputTokens) / 1_000_000) * rate.inputPerMTok + (safe(outputTokens) / 1_000_000) * rate.outputPerMTok
 }
 
 /** USD cost of one document from all of its model calls (legs). */
