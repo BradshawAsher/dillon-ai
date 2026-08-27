@@ -92,6 +92,21 @@ describe('evaluateDocument financial-fact matching', () => {
         const exact = baseActual({ financialFacts: [{ metric: 'ebitda', normalizedValue: -500_000, period: '2025' }] })
         expect(evaluateDocument(gt, exact).factsScore).toBe(10)
     })
+
+    it('does not throw when an actual fact is missing its metric', () => {
+        const gt = baseGroundTruth({
+            financialFacts: [{ metric: 'revenue', normalizedValue: 1_000_000, period: '2025' }],
+        })
+        const actual = baseActual({
+            financialFacts: [
+                { metric: undefined as unknown as string, normalizedValue: 999_999, period: '2025' },
+                { metric: 'revenue', normalizedValue: 1_000_000, period: '2025' },
+            ],
+        })
+        expect(() => evaluateDocument(gt, actual)).not.toThrow()
+        // The well-formed matching fact is still scored.
+        expect(evaluateDocument(gt, actual).factsScore).toBe(10)
+    })
 })
 
 describe('evaluateDocument component scores', () => {
