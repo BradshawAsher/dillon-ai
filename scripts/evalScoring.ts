@@ -387,16 +387,20 @@ export function evaluateDocument(gt: GroundTruth, actual: ActualRunDoc): DocScor
     const actualFacts = Array.isArray(actual.financialFacts) ? actual.financialFacts : []
     const usedActualIdx = new Set<number>()
 
+    // A model-produced fact can arrive without a metric; lower-case defensively
+    // so one malformed row doesn't throw and abort the whole document's score.
+    const metricKey = (metric: unknown) => (typeof metric === 'string' ? metric.toLowerCase() : '')
     if (totalGtFacts > 0) {
         for (const gtFact of gt.financialFacts) {
+            const gtKey = metricKey(gtFact.metric)
             const gtYear = extractYear(gtFact.period)
             let matchIdx = actualFacts.findIndex((f, i) =>
                 !usedActualIdx.has(i)
-                && f.metric.toLowerCase() === gtFact.metric.toLowerCase()
+                && metricKey(f.metric) === gtKey
                 && (gtYear === '' || extractYear(f.period) === gtYear))
             if (matchIdx === -1) {
                 matchIdx = actualFacts.findIndex((f, i) =>
-                    !usedActualIdx.has(i) && f.metric.toLowerCase() === gtFact.metric.toLowerCase())
+                    !usedActualIdx.has(i) && metricKey(f.metric) === gtKey)
             }
             if (matchIdx !== -1) {
                 usedActualIdx.add(matchIdx)
