@@ -64,7 +64,7 @@ export function BatchProgressCard({
     isAwaitingSynthesis = false,
 }: BatchProgressCardProps) {
     const [isDocsExpanded, setIsDocsExpanded] = useState(false)
-    const isFinished = activeBatchExpectedCount > 0 && activeBatchFinishedCount >= activeBatchExpectedCount
+    const isFinished = !activeSubmissionBatch.stopError && activeBatchExpectedCount > 0 && activeBatchFinishedCount >= activeBatchExpectedCount
     const isStopped = Boolean(activeSubmissionBatch.stoppedAt)
 
     return (
@@ -73,9 +73,9 @@ export function BatchProgressCard({
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
                         <CardTitle className="text-base font-semibold flex items-center gap-2">
-                            <span>Batch processing run in progress</span>
-                            <Badge variant={isFinished ? 'success' : isStopped ? 'destructive' : 'outline'}>
-                                {isFinished ? 'Complete' : isStopped ? 'Stopped' : 'Processing'}
+                            <span>Batch processing</span>
+                            <Badge variant={isStopped ? 'destructive' : isFinished ? 'success' : 'outline'}>
+                                {isStoppingBatch ? 'Stopping' : isStopped ? 'Stopped' : activeSubmissionBatch.stopError ? 'Stop not confirmed' : isFinished ? 'Complete' : 'Processing'}
                             </Badge>
                         </CardTitle>
                         <CardDescription className="text-xs text-muted-foreground mt-0.5">
@@ -98,7 +98,7 @@ export function BatchProgressCard({
                         {!isFinished && !isStopped ? (
                             <Button variant="outline" size="sm" onClick={handleStopBatch} disabled={isStoppingBatch} className="text-destructive hover:bg-destructive/10 border-destructive/30">
                                 {isStoppingBatch ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <Square className="h-3.5 w-3.5 mr-1.5 fill-current" />}
-                                Stop batch
+                                {isStoppingBatch ? 'Stopping...' : activeSubmissionBatch.stopError ? 'Retry stop' : 'Stop batch'}
                             </Button>
                         ) : null}
                     </div>

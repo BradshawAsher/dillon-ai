@@ -1,0 +1,52 @@
+import type { SubmissionBatch, SubmitEnvironment } from './diligenceDashboardUtils'
+import { isTerminalSubmissionStatus, type SubmissionHistoryItem } from './submissionHistory'
+
+export function getBatchStopTarget(rows: SubmissionHistoryItem[], projectId: string, environment: SubmitEnvironment, batch: SubmissionBatch | null) {
+    const scoped = rows.filter((row) => row.projectId === projectId && row.environment === environment)
+    const explicitIds = batch?.requestIDs?.length ? new Set(batch.requestIDs) : null
+    const latest = [...scoped].sort((a, b) => Date.parse(b.createdAt || b.receivedAt) - Date.parse(a.createdAt || a.receivedAt))[0]
+    const submissionBatchId = explicitIds ? '' : batch?.id && batch.id !== projectId ? batch.id : latest?.submissionBatchId || ''
+    const selected = scoped.filter((row) => explicitIds ? explicitIds.has(row.requestID) : submissionBatchId && row.submissionBatchId === submissionBatchId)
+    return { projectId, environment, submissionBatchId, requestIDs: [...new Set(selected.map((row) => row.requestID).filter(Boolean))] }
+}
+
+export type BatchStopResponse = {
+    ok?: boolean
+    error?: string
+    stopped?: number
+    canceledExecutions?: number
+    cancellationAvailable?: boolean
+    errors?: string[]
+}
+
+export function requireConfirmedBatchStop(response: BatchStopResponse) {
+    if (response.ok !== true || response.cancellationAvailable !== true || response.errors?.length) {
+        throw new Error(response.errors?.join(' ') || response.error || 'Stop was not confirmed. Retry Stop Batch.')
+    }
+}
+
+export function batchCompletionTime(batch: SubmissionBatch, rows: SubmissionHistoryItem[]) {
+    if (batch.stopError || rows.length === 0 || rows.length < batch.expectedDocumentCount || !rows.every((row) => isTerminalSubmissionStatus(row.status))) return undefined
+    const times = rows.map((row) => Date.parse(row.processedAt || row.updatedAt || '')).filter(Number.isFinite)
+    return times.length === rows.length && times.every((time) => time >= batch.startedAt) ? Math.max(...times) : undefined
+}
+
+export function createBatchQueue(id: string) {
+    let canceled = false
+    const pending = new Set<Promise<unknown>>()
+    return {
+        id,
+        requestIDs: new Set<string>(),
+        get canceled() { return canceled },
+        async run<T>(work: () => Promise<T>): Promise<T | undefined> {
+            if (canceled) return undefined
+            const task = work()
+            pending.add(task)
+            try { return await task } finally { pending.delete(task) }
+        },
+        async stop() {
+            canceled = true
+            await Promise.allSettled([...pending])
+        },
+    }
+}

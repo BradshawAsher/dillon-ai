@@ -128,6 +128,24 @@ describe('manualDealIntake utilities', () => {
             expect(synthesis.finalRecommendation).toBeTruthy()
         })
 
+        it('keeps missing document labels and structured findings consistent', () => {
+            const formData = MANUAL_DEAL_PRESETS.manufacturing.data
+            const model = buildManualDealModel(formData, 'project-manual-missing')
+            const synthesis = buildManualProjectSynthesis(formData, model, model.projectId)
+
+            expect(synthesis.missingDocuments).toHaveLength(3)
+            expect(synthesis.structuredFindings.missingDocuments).toEqual(
+                synthesis.missingDocuments.map((text) => ({
+                    text,
+                    confidence: null,
+                    severity: 'medium',
+                    impact: '',
+                    status: 'Needs review',
+                    citations: [],
+                })),
+            )
+        })
+
         it('assigns RED traffic light if multiple critical flags exist', () => {
             const highRiskData = {
                 ...MANUAL_DEAL_PRESETS.manufacturing.data,

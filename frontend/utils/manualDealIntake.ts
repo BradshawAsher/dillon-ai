@@ -1,4 +1,5 @@
-import type { DealModel, ProjectSynthesisItem, ProjectCitation, ProjectStructuredFindingGroups } from '../hooks/backend/diligence'
+import type { ProjectCitation, ProjectStructuredFindingGroups } from '../../backend/diligence/getProjectSynthesis'
+import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
 
 export type ManualDealFormData = {
     // 1. Business Basics
@@ -422,6 +423,8 @@ export function buildManualProjectSynthesis(
         status: 'validated',
     }
 
+    const missingDocuments = ['Full 3-Year Tax Returns (Form 1120-S)', 'Detailed Monthly P&L by SKU/Account', 'Bank Statements (12 Mo Proof of Cash)']
+
     const structuredFindings: ProjectStructuredFindingGroups = {
         keyTakeaways: keyTakeaways.map((t) => ({ text: t, confidence: 0.95, severity: 'info', impact: 'high', status: 'valid', citations: [mockCitation] })),
         redFlags: redFlags.map((t) => ({ text: t, confidence: 0.92, severity: 'critical', impact: 'high', status: 'valid', citations: [mockCitation] })),
@@ -430,7 +433,7 @@ export function buildManualProjectSynthesis(
         crossDocumentConflicts: [],
         openQuestions: openQuestions.map((t) => ({ text: t, confidence: 0.88, severity: 'info', impact: 'medium', status: 'open', citations: [mockCitation] })),
         negotiationLevers: negotiationLevers.map((t) => ({ text: t, confidence: 0.92, severity: 'actionable', impact: 'high', status: 'valid', citations: [mockCitation] })),
-        missingDocuments: ['Full 3-Year Tax Returns (Form 1120-S)', 'Detailed Monthly P&L by SKU/Account', 'Bank Statements (12 Mo Proof of Cash)'],
+        missingDocuments: missingDocuments.map((text) => ({ text, confidence: null, severity: 'medium', impact: '', status: 'Needs review', citations: [] })),
     }
 
     const judgmentSummary = `${recommendation}: ${formData.companyName || formData.dealName} is evaluated at ${trafficLight} signal. Asking price $${formData.askingPrice.toLocaleString()} represents ${askingMultiple}x normalized EBITDA ($${adjustedEbitda.toLocaleString()}). Base fair value is modeled at $${baseValuation.toLocaleString()}. ${redFlags.length > 0 ? `Primary risk: ${redFlags[0]}` : 'Key strengths: Stable cash flows and balanced capital stack.'}`
@@ -443,7 +446,7 @@ export function buildManualProjectSynthesis(
         projectStatus: 'synthesized',
         documentsReceivedCount: 1,
         documentsCompletedCount: 1,
-        missingDocuments: structuredFindings.missingDocuments,
+        missingDocuments,
         crossDocumentConflicts: [],
         openQuestions,
         negotiationLevers,

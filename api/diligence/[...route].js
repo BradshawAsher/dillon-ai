@@ -17529,9 +17529,9 @@ function createFetchClient(options) {
         },
         body: body ? JSON.stringify(body) : void 0
       });
-      const text = await res.text();
+      const text2 = await res.text();
       const isJson = (res.headers.get("content-type") || "").includes("application/json");
-      const data = isJson && text ? JSON.parse(text) : text;
+      const data = isJson && text2 ? JSON.parse(text2) : text2;
       if (!res.ok) {
         const errBody = isJson ? data : void 0;
         const errorDetail = errBody?.error;
@@ -21590,12 +21590,12 @@ function getCitationFromRecord(record) {
   };
 }
 function getStructuredFinding(record, fallbackStatus) {
-  const text = getRecordString(record, ["description", "question", "takeaway", "suggestion", "summary", "text", "theme", "topic", "label", "title"]);
-  if (!text) return null;
+  const text2 = getRecordString(record, ["description", "question", "takeaway", "suggestion", "summary", "text", "theme", "topic", "label", "title"]);
+  if (!text2) return null;
   const rawCitations = Array.isArray(record.citations) ? record.citations : [];
   const citations = rawCitations.map((item) => item && typeof item === "object" ? getCitationFromRecord(item) : null).filter((item) => item !== null);
   return {
-    text,
+    text: text2,
     confidence: getNumberOrNull(record.confidence_score ?? record.confidence),
     severity: getRecordString(record, ["severity", "priority"]),
     impact: getRecordString(record, ["impact"]),
@@ -21837,7 +21837,7 @@ async function getProjectSynthesis(req) {
       crossDocumentConflicts: getStructuredFindingsFromRaw(row.cross_document_conflicts_json, "Contradicted"),
       openQuestions: getStructuredFindingsFromRaw(row.open_questions_json, "Needs review"),
       negotiationLevers: getStructuredFindingsFromRaw(row.negotiation_levers_json, "Synthesized"),
-      missingDocuments: missingDocuments.map((text) => ({ text, confidence: null, severity: "medium", impact: "", status: "Needs review", citations: [] }))
+      missingDocuments: missingDocuments.map((text2) => ({ text: text2, confidence: null, severity: "medium", impact: "", status: "Needs review", citations: [] }))
     };
     if (synthesisConfidence !== null) {
       for (const group of Object.values(structuredFindings)) {
@@ -22050,6 +22050,7 @@ function hasText(value) {
 function deriveSubmissionStatus(row) {
   const rawStatus = typeof row.status === "string" ? row.status.trim() : "";
   const normalizedStatus = rawStatus.toLowerCase();
+  if (normalizedStatus === "stopped" || normalizedStatus === "stopped_by_user") return rawStatus;
   const hasExtractedAnalysis = hasText(row.extracted_json) || hasText(row.financial_facts_json);
   const failedAfterRetries = String(row.ai_escalation_reason ?? "").trim().toLowerCase() === "processing_failure";
   if (normalizedStatus === "completed" || normalizedStatus === "approved" || hasExtractedAnalysis) {
@@ -22619,7 +22620,7 @@ async function retryFailedDocument(req) {
   const { data: failedDocument, error: documentError } = await supabase.from("documents").select(`
       request_id, status, storage_file_url, file_name, file_size, file_type,
       deal_name, company_name, workstream, submission_notes, project_id,
-      project_stage, document_type
+      project_stage, document_type, submission_batch_id, expected_batch_document_count
     `).eq("request_id", requestID).eq("environment", environment).maybeSingle();
   if (documentError) throw new Error(`Unable to load failed document: ${documentError.message}`);
   const failedStatus = String(failedDocument?.status || "").trim().toLowerCase();
@@ -22629,6 +22630,8 @@ async function retryFailedDocument(req) {
     if (!storageFileUrl) {
       throw new Error("This upload failed before a reusable file was stored. Re-upload the document to try again.");
     }
+    const submissionBatchId = failedDocument.submission_batch_id || failedDocument.project_id || "";
+    const expectedBatchDocumentCount = Number(failedDocument.expected_batch_document_count || 1);
     const recovered = await submitDealPacket({
       user: req.user,
       params: {
@@ -22643,8 +22646,8 @@ async function retryFailedDocument(req) {
         projectId: failedDocument.project_id || "",
         projectStage: failedDocument.project_stage || "",
         documentType: failedDocument.document_type || "auto-detect",
-        submissionBatchId: `retry-${requestID}-${Date.now()}`,
-        expectedBatchDocumentCount: 1,
+        submissionBatchId,
+        expectedBatchDocumentCount,
         storageFileUrl,
         userAnthropicApiKey: req.params.userAnthropicApiKey,
         userOpenAiApiKey: req.params.userOpenAiApiKey,
@@ -22663,6 +22666,7 @@ async function retryFailedDocument(req) {
       status: "retry_queued",
       requestID: recovered.response.requestID,
       originalRequestID: requestID,
+      submissionBatchId,
       recoverySource: "stored_file"
     };
   }
@@ -22707,129 +22711,201 @@ async function retryFailedDocument(req) {
   return response.data;
 }
 
-// backend/diligence/stopBatchSubmission.ts
-var N8N_BASE_URL = "https://merge-works.app.n8n.cloud";
-var ACTIVE_STATUSES = /* @__PURE__ */ new Set(["accepted", "queued", "processing", "received", "running", "submitted", "uploading"]);
-var CANCELLABLE_WORKFLOW_IDS = /* @__PURE__ */ new Set([
-  "vBnMdx8cvSFIFx6m",
-  "W5Jp7CJIQbNy0qlY",
-  "91TN7kUY3RXoMip2",
-  "iOaYHcZLktC6aO2u",
-  "0OVTAMMp2iMx53Aw",
-  "IoSad3rTYJMk4Mon"
-]);
-function normalizedText(value) {
-  return typeof value === "string" ? value.trim() : "";
-}
-function containsTarget(value, targets, depth = 0) {
-  if (depth > 30 || value == null) return false;
-  if (typeof value === "string") return targets.has(value.trim());
-  if (Array.isArray(value)) return value.some((item) => containsTarget(item, targets, depth + 1));
-  if (typeof value === "object") {
-    return Object.values(value).some((item) => containsTarget(item, targets, depth + 1));
-  }
-  return false;
-}
-async function getActiveRequestIds(params, environment) {
-  const explicitIds = Array.isArray(params.requestIDs) ? params.requestIDs.map(normalizedText).filter(Boolean) : [];
-  const rows = /* @__PURE__ */ new Map();
-  if (explicitIds.length > 0) {
-    const { data, error } = await supabase.from("documents").select("request_id, status").eq("environment", environment).in("request_id", explicitIds);
-    if (error) throw new Error(`Unable to verify active documents: ${error.message}`);
-    for (const row of data || []) rows.set(row.request_id, row);
-  }
-  const projectId = normalizedText(params.projectId);
-  const submissionBatchId = normalizedText(params.submissionBatchId);
-  if (projectId || submissionBatchId) {
-    let query = supabase.from("documents").select("request_id, status").eq("environment", environment);
-    if (projectId) query = query.eq("project_id", projectId);
-    if (submissionBatchId) query = query.eq("submission_batch_id", submissionBatchId);
-    const { data, error } = await query.limit(250);
-    if (error) throw new Error(`Unable to resolve batch documents: ${error.message}`);
-    for (const row of data || []) rows.set(row.request_id, row);
-  }
-  return [...rows.values()].filter((row) => ACTIVE_STATUSES.has(normalizedText(row.status).toLowerCase())).map((row) => normalizedText(row.request_id)).filter(Boolean);
-}
-async function stopMatchingExecutions(targets) {
-  const apiKey = normalizedText(process.env.N8N_API_KEY);
-  if (!apiKey || targets.size === 0) {
-    return { available: Boolean(apiKey), matched: 0, canceled: 0, errors: [] };
-  }
-  const headers = {
-    "Accept": "application/json",
-    "Content-Type": "application/json",
-    "X-N8N-API-KEY": apiKey
-  };
-  const listResponse = await fetch(`${N8N_BASE_URL}/api/v1/executions?status=running&limit=100&includeData=true`, { headers });
-  if (!listResponse.ok) throw new Error(`n8n execution lookup failed (${listResponse.status})`);
-  const payload = await listResponse.json();
-  const matches = (payload.data || []).filter(
-    (execution) => CANCELLABLE_WORKFLOW_IDS.has(execution.workflowId) && containsTarget(execution.data, targets)
-  );
-  const results = await Promise.all(matches.map(async (execution) => {
-    const response = await fetch(`${N8N_BASE_URL}/api/v1/executions/${encodeURIComponent(execution.id)}/stop`, {
-      method: "POST",
-      headers
-    });
-    if (response.ok) return { id: execution.id, canceled: true, error: "" };
-    const message = (await response.text()).slice(0, 200);
-    if (response.status === 404 && /find execution to stop|not found/i.test(message)) {
-      return { id: execution.id, canceled: false, error: "" };
+// backend/diligence/n8nExecutionCancellation.ts
+var BASE_URL = "https://merge-works.app.n8n.cloud/api/v1";
+var ACTIVE_STATUSES = ["running", "waiting", "new", "unknown"];
+var WORKFLOW_IDS = /* @__PURE__ */ new Set(["vBnMdx8cvSFIFx6m", "W5Jp7CJIQbNy0qlY", "91TN7kUY3RXoMip2", "iOaYHcZLktC6aO2u", "0OVTAMMp2iMx53Aw", "IoSad3rTYJMk4Mon"]);
+var TRIGGER_TYPES = /* @__PURE__ */ new Set(["n8n-nodes-base.webhook", "n8n-nodes-base.executeWorkflowTrigger"]);
+var KNOWN_TRIGGERS = /* @__PURE__ */ new Set(["Webhook", "When Executed by Another Workflow", "Retry failed document webhook"]);
+var text = (value) => typeof value === "string" ? value.trim() : "";
+function executionMatchesScope(execution, scope) {
+  const inputs = [];
+  const collect = (main) => {
+    for (const output of main || []) for (const item of output || []) {
+      if (item.json) inputs.push(item.json);
     }
-    return { id: execution.id, canceled: false, error: `Execution ${execution.id}: ${response.status} ${message}` };
-  }));
-  return {
-    available: true,
-    matched: matches.length,
-    canceled: results.filter((result) => result.canceled).length,
-    errors: results.map((result) => result.error).filter(Boolean)
   };
+  const triggerNames = execution.workflowData?.nodes ? new Set(execution.workflowData.nodes.filter((node) => TRIGGER_TYPES.has(node.type)).map((node) => node.name)) : KNOWN_TRIGGERS;
+  for (const [name, runs] of Object.entries(execution.data?.resultData?.runData || {})) {
+    if (triggerNames.has(name)) for (const run of runs) collect(run.data?.main);
+  }
+  if (inputs.length === 0) {
+    for (const entry of execution.data?.executionData?.nodeExecutionStack || []) {
+      if (TRIGGER_TYPES.has(entry.node?.type || "")) collect(entry.data?.main);
+    }
+  }
+  if (inputs.length === 0) return null;
+  return inputs.every((input) => {
+    const record = input.body && typeof input.body === "object" ? input.body : input;
+    const requestID = text(record.requestID ?? record.request_id);
+    const projectId = text(record.projectId ?? record.project_id);
+    const batchId = text(record.submissionBatchId ?? record.submission_batch_id);
+    const environment = text(record.environment);
+    const verifiedRequest = scope.requestIDs.has(requestID);
+    if (projectId && projectId !== scope.projectId) return false;
+    if (environment && environment !== scope.environment) return false;
+    if (scope.submissionBatchId && batchId && batchId !== scope.submissionBatchId) return false;
+    if (verifiedRequest) return true;
+    return Boolean(scope.submissionBatchId && batchId === scope.submissionBatchId && projectId === scope.projectId && environment === scope.environment);
+  });
 }
+async function cancelBatchExecutions(scope) {
+  const apiKey = text(process.env.N8N_API_KEY);
+  const result = { available: Boolean(apiKey), matched: 0, canceled: 0, errors: [] };
+  if (!apiKey) {
+    result.errors.push("Live cancellation is unavailable: N8N_API_KEY is not configured on the server.");
+    return result;
+  }
+  const headers = { Accept: "application/json", "X-N8N-API-KEY": apiKey };
+  const request = (path2, method = "GET") => fetch(`${BASE_URL}${path2}`, {
+    method,
+    headers,
+    signal: AbortSignal.timeout(1e4)
+  });
+  const listMatches = async () => {
+    const matches = /* @__PURE__ */ new Map();
+    for (const status of ACTIVE_STATUSES) {
+      let cursor = "";
+      const seen = /* @__PURE__ */ new Set();
+      do {
+        if (seen.has(cursor) || seen.size >= 50) throw new Error("n8n execution pagination did not finish; stop could not be verified.");
+        seen.add(cursor);
+        const query = new URLSearchParams({ status, limit: "100", includeData: "true" });
+        if (cursor) query.set("cursor", cursor);
+        const response = await request(`/executions?${query}`);
+        if (!response.ok) throw new Error(`n8n ${status} execution lookup failed (${response.status}).`);
+        const payload = await response.json();
+        if (!Array.isArray(payload.data)) throw new Error("n8n returned an invalid execution list.");
+        for (let execution of payload.data) {
+          if (!WORKFLOW_IDS.has(execution.workflowId) || !ACTIVE_STATUSES.includes(execution.status)) continue;
+          let matchesScope = executionMatchesScope(execution, scope);
+          if (matchesScope === null) {
+            const detail = await request(`/executions/${encodeURIComponent(execution.id)}?includeData=true`);
+            if (detail.status === 404) continue;
+            if (!detail.ok) throw new Error(`Unable to inspect execution ${execution.id} (${detail.status}).`);
+            execution = await detail.json();
+            if (!ACTIVE_STATUSES.includes(execution.status)) continue;
+            matchesScope = executionMatchesScope(execution, scope);
+          }
+          if (matchesScope === null) throw new Error(`Execution ${execution.id} has no readable trigger input; cancellation cannot be verified.`);
+          if (matchesScope) matches.set(execution.id, execution);
+        }
+        cursor = payload.nextCursor || "";
+      } while (cursor);
+    }
+    return [...matches.values()];
+  };
+  try {
+    const matchedIds = /* @__PURE__ */ new Set();
+    for (let pass = 0; pass < 2; pass++) {
+      const matches = await listMatches();
+      if (matches.length === 0) return result;
+      for (const execution of matches) {
+        matchedIds.add(execution.id);
+        result.matched = matchedIds.size;
+        try {
+          const response = await request(`/executions/${encodeURIComponent(execution.id)}/stop`, "POST");
+          if (!response.ok && response.status !== 404) throw new Error(`Execution ${execution.id}: cancellation failed (${response.status}).`);
+          const verify = await request(`/executions/${encodeURIComponent(execution.id)}`);
+          if (verify.status === 404) continue;
+          if (!verify.ok) throw new Error(`Execution ${execution.id}: unable to verify cancellation (${verify.status}).`);
+          const terminal = await verify.json();
+          if (ACTIVE_STATUSES.includes(terminal.status) || !terminal.status) throw new Error(`Execution ${execution.id} is still active. Retry Stop Batch.`);
+          if (terminal.status === "canceled") result.canceled++;
+        } catch (error) {
+          result.errors.push(error instanceof Error ? error.message : "n8n cancellation failed.");
+        }
+      }
+      if (result.errors.length > 0) return result;
+    }
+    if ((await listMatches()).length > 0) result.errors.push("Matching executions are still active. Retry Stop Batch.");
+  } catch (error) {
+    result.errors.push(error instanceof Error ? error.message : "Unable to verify n8n cancellation.");
+  }
+  return result;
+}
+
+// backend/diligence/stopBatchSubmission.ts
+var ACTIVE_STATUSES2 = /* @__PURE__ */ new Set(["accepted", "queued", "pending", "processing", "received", "running", "submitted", "uploading", "waiting"]);
+var TERMINAL_STATUSES = /* @__PURE__ */ new Set(["completed", "approved", "failed", "processing_failed", "error", "rejected", "upload_failed", "stopped", "stopped_by_user"]);
+var normalizedText = (value) => typeof value === "string" ? value.trim() : "";
 async function stopBatchSubmission(req) {
   const environment = req.params.environment === "test" ? "test" : "production";
   const projectId = normalizedText(req.params.projectId);
   const submissionBatchId = normalizedText(req.params.submissionBatchId);
-  const explicitIds = Array.isArray(req.params.requestIDs) ? req.params.requestIDs.map(normalizedText).filter(Boolean) : [];
-  if (explicitIds.length === 0 && !projectId && !submissionBatchId) {
-    throw new Error("requestIDs, projectId, or submissionBatchId is required");
+  const explicitIds = new Set(Array.isArray(req.params.requestIDs) ? req.params.requestIDs.map(normalizedText).filter(Boolean) : []);
+  if (!projectId || !submissionBatchId && explicitIds.size === 0) {
+    throw new Error("A projectId and submissionBatchId or requestIDs are required. Project-wide cancellation is not supported here.");
   }
-  const requestIDs = await getActiveRequestIds(req.params, environment);
-  const cancellationTargets = new Set([projectId, submissionBatchId, ...explicitIds, ...requestIDs].filter(Boolean));
-  const executionResult = await stopMatchingExecutions(cancellationTargets);
-  const path2 = environment === "test" ? "webhook-test/dd-document-consideration" : "webhook/dd-document-consideration";
-  const statusResults = await Promise.all(requestIDs.map(async (requestID) => {
-    try {
-      await n8nFinancialAgent.rawRequest({
-        path: path2,
-        method: "POST",
-        bodyType: "form-data",
-        formData: [
-          { key: "requestID", value: requestID },
-          { key: "action", value: "stop" }
-        ]
-      });
-      return { requestID, stopped: true, error: "" };
-    } catch (error) {
-      return {
-        requestID,
-        stopped: false,
-        error: error instanceof Error ? error.message : "Unknown stop error"
-      };
+  const resolveRows = async () => {
+    const rows2 = [];
+    for (let offset = 0; ; offset += 500) {
+      let query = supabase.from("documents").select("request_id, status").eq("environment", environment).eq("project_id", projectId);
+      if (submissionBatchId) query = query.eq("submission_batch_id", submissionBatchId);
+      else query = query.in("request_id", [...explicitIds]);
+      const { data, error } = await query.order("request_id").range(offset, offset + 499);
+      if (error) throw new Error(`Unable to verify batch documents: ${error.message}`);
+      rows2.push(...data || []);
+      if (!data || data.length < 500) return rows2;
     }
-  }));
-  const stoppedRequestIDs = statusResults.filter((result) => result.stopped).map((result) => result.requestID);
-  const statusErrors = statusResults.map((result) => result.error).filter(Boolean);
-  if (requestIDs.length > 0 && stoppedRequestIDs.length === 0 && executionResult.canceled === 0) {
-    throw new Error(statusErrors[0] || executionResult.errors[0] || "Unable to stop the active batch");
+  };
+  const rows = await resolveRows();
+  const verifiedIds = new Set(rows.map((row) => normalizedText(row.request_id)).filter(Boolean));
+  if ([...explicitIds].some((id) => !verifiedIds.has(id))) {
+    throw new Error("Some requested documents do not belong to this project, batch, and environment. Refresh the batch before stopping it.");
   }
+  const scope = { projectId, submissionBatchId, environment, requestIDs: verifiedIds };
+  const cancellation = await cancelBatchExecutions(scope);
+  if (cancellation.errors.length > 0) return {
+    ok: false,
+    stopped: 0,
+    requestIDs: [],
+    matchedExecutions: cancellation.matched,
+    canceledExecutions: cancellation.canceled,
+    cancellationAvailable: cancellation.available,
+    errors: cancellation.errors
+  };
+  const statusResults = [];
+  const currentRows = await resolveRows();
+  currentRows.forEach((row) => scope.requestIDs.add(row.request_id));
+  const activeRows = currentRows.filter((row) => ACTIVE_STATUSES2.has(normalizedText(row.status).toLowerCase()));
+  for (let offset = 0; offset < activeRows.length; offset += 3) {
+    statusResults.push(...await Promise.all(activeRows.slice(offset, offset + 3).map(async (row) => {
+      try {
+        const response = await n8nFinancialAgent.rawRequest({
+          // Test data still uses a published control webhook; webhook-test needs an editor listener.
+          path: "webhook/dd-document-consideration",
+          method: "POST",
+          bodyType: "form-data",
+          formData: [
+            { key: "requestID", value: row.request_id },
+            { key: "action", value: "stop" },
+            { key: "projectId", value: projectId },
+            { key: "submissionBatchId", value: submissionBatchId },
+            { key: "environment", value: environment }
+          ]
+        });
+        const ack = response.data;
+        if (ack?.ok !== true || ack.requestID !== row.request_id || ack.action !== "stop" || !TERMINAL_STATUSES.has(normalizedText(ack.status).toLowerCase())) {
+          throw new Error(`Document ${row.request_id}: stop was not confirmed by n8n.`);
+        }
+        return { requestID: row.request_id, stopped: ack.status === "stopped", error: "" };
+      } catch (error) {
+        return { requestID: row.request_id, stopped: false, error: error instanceof Error ? error.message : "Document stop failed." };
+      }
+    })));
+  }
+  const finalCheck = await cancelBatchExecutions(scope);
+  const errors = [...statusResults.map((result) => result.error).filter(Boolean), ...finalCheck.errors];
+  const stoppedIds = statusResults.filter((result) => result.stopped).map((result) => result.requestID);
   return {
-    ok: true,
-    stopped: stoppedRequestIDs.length,
-    requestIDs: stoppedRequestIDs,
-    matchedExecutions: executionResult.matched,
-    canceledExecutions: executionResult.canceled,
-    cancellationAvailable: executionResult.available,
-    errors: [...executionResult.errors, ...statusErrors]
+    ok: errors.length === 0,
+    stopped: stoppedIds.length,
+    requestIDs: stoppedIds,
+    matchedExecutions: cancellation.matched + finalCheck.matched,
+    canceledExecutions: cancellation.canceled + finalCheck.canceled,
+    cancellationAvailable: cancellation.available,
+    errors
   };
 }
 
@@ -23049,7 +23125,7 @@ function messageFromError(error) {
 }
 
 // api/_lib/retoolRuntime.ts
-var N8N_BASE_URL2 = "https://merge-works.app.n8n.cloud/";
+var N8N_BASE_URL = "https://merge-works.app.n8n.cloud/";
 var fallbackUser = {
   fullName: "MergeWorks Dashboard",
   email: "dashboard@mergeworks.local"
@@ -23076,7 +23152,7 @@ function installRetoolGlobals() {
   const globals = globalThis;
   globals.n8nFinancialAgent = {
     async rawRequest(options) {
-      const url = new URL(options.path, N8N_BASE_URL2).toString();
+      const url = new URL(options.path, N8N_BASE_URL).toString();
       const headers = {};
       const webhookSecret = process.env.N8N_WEBHOOK_SECRET ?? "";
       if (webhookSecret.length > 0) {
@@ -23111,26 +23187,26 @@ function installRetoolGlobals() {
         throw err;
       }
       clearTimeout(timeoutId);
-      const text = await response.text();
+      const text2 = await response.text();
       if (!response.ok) {
-        const lowerText = text.toLowerCase();
+        const lowerText = text2.toLowerCase();
         const isExecLimit = response.status === 429 || lowerText.includes("execution limit") || lowerText.includes("executions limit") || lowerText.includes("has reached") || lowerText.includes("limit reached") || response.status === 503 && lowerText.includes("limit");
         if (isExecLimit) {
           throw new Error("n8n has reached its execution limit for this billing period. Document processing will resume automatically when the limit resets. Your data is safe \u2014 no action needed.");
         }
-        const isEmpty = text.length === 0 || text === "{}" || text === "null";
+        const isEmpty = text2.length === 0 || text2 === "{}" || text2 === "null";
         if (isEmpty && response.status >= 500) {
           throw new Error("n8n is temporarily unavailable (returned empty response). This may indicate the execution limit has been reached. Try again later.");
         }
-        throw new Error("n8n responded " + response.status + ": " + text.slice(0, 300));
+        throw new Error("n8n responded " + response.status + ": " + text2.slice(0, 300));
       }
-      if (text.toLowerCase().includes("execution limit") || text.toLowerCase().includes("limit reached")) {
+      if (text2.toLowerCase().includes("execution limit") || text2.toLowerCase().includes("limit reached")) {
         throw new Error("n8n has reached its execution limit for this billing period. Document processing will resume automatically when the limit resets. Your data is safe \u2014 no action needed.");
       }
       try {
-        return { data: text.length > 0 ? JSON.parse(text) : {} };
+        return { data: text2.length > 0 ? JSON.parse(text2) : {} };
       } catch {
-        return { data: { raw: text } };
+        return { data: { raw: text2 } };
       }
     }
   };
@@ -23150,12 +23226,31 @@ function userFromHeaders(headers) {
   const email = decode(headers["x-analyst-email"]);
   return fullName.length > 0 && email.length > 0 ? { fullName, email } : fallbackUser;
 }
+var MAX_REQUEST_BODY_BYTES = 5 * 1024 * 1024;
 function readJsonBody(req) {
   return new Promise((resolve, reject) => {
     const chunks = [];
-    req.on("data", (chunk) => chunks.push(chunk));
-    req.on("error", reject);
-    req.on("end", () => {
+    let receivedBytes = 0;
+    let settled = false;
+    const finish = (run) => {
+      if (settled) return;
+      settled = true;
+      run();
+    };
+    req.on("data", (chunk) => {
+      if (settled) return;
+      receivedBytes += chunk.length;
+      if (receivedBytes > MAX_REQUEST_BODY_BYTES) {
+        finish(() => {
+          req.destroy?.();
+          reject(new HttpError(413, "Request body too large."));
+        });
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.on("error", (error) => finish(() => reject(error)));
+    req.on("end", () => finish(() => {
       const raw = Buffer.concat(chunks).toString("utf8");
       if (raw.length === 0) {
         resolve({});
@@ -23173,7 +23268,7 @@ function readJsonBody(req) {
         return;
       }
       resolve(parsed);
-    });
+    }));
   });
 }
 
