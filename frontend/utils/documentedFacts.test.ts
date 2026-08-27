@@ -158,6 +158,13 @@ describe('parseMagnitudeMoney', () => {
         expect(parseMagnitudeMoney('$1.5B')).toBe(1_500_000_000)
     })
 
+    it('returns null for a digitless magnitude suffix rather than reading it as $0', () => {
+        expect(parseMagnitudeMoney('$M')).toBeNull()
+        expect(parseMagnitudeMoney('$K')).toBeNull()
+        expect(parseMagnitudeMoney('$bn')).toBeNull()
+        expect(parseMagnitudeMoney('$')).toBeNull()
+    })
+
     it('applies the two-letter finance shorthands MM and bn', () => {
         expect(parseMagnitudeMoney('$1.5MM')).toBe(1_500_000)
         expect(parseMagnitudeMoney('2mm')).toBe(2_000_000)
