@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { CheckCircle, ChevronLeft, ChevronRight, Clock, Download, FileText, Filter, FolderPlus, Landmark, Layers, Loader2, MessageCircleQuestion, RefreshCw, Scale, Search, ShieldAlert, Sparkles, TriangleAlert } from 'lucide-react'
+import { CheckCircle, ChevronLeft, ChevronRight, Clock, Compass, Download, FileQuestion, FileText, Filter, FolderPlus, Handshake, Landmark, Layers, Lightbulb, Loader2, MessageCircleQuestion, RefreshCw, Scale, Search, ShieldAlert, Sparkles, TriangleAlert } from 'lucide-react'
 
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
@@ -1697,20 +1697,18 @@ export default function ProjectSynthesisCard({
                                 /></div> : null}
                                 {(severityFilter === 'all' || getSeverityForGroup('takeaway') === severityFilter) && (typeFilter === 'all' || typeFilter === 'takeaway') ? <div id="synthesis-takeaways" className="scroll-mt-6"><ExpandableInsightGroup
                                     title="Key acquisition takeaways"
-                                    icon={<Scale className="h-4 w-4 text-primary" />}
+                                    icon={<Lightbulb className="h-4 w-4 text-sky-600 dark:text-sky-400" />}
                                     items={synthesis.keyTakeaways}
                                     findings={synthesis.structuredFindings?.keyTakeaways}
                                     emptyLabel="No concise takeaways were returned by this synthesis yet."
-                                    badgeVariant="success"
-                                    className="border-primary/25 bg-primary/5"
-                                    itemClassName="border-primary/20"
+                                    colorTheme="sky"
                                     defaultOpen
                                     onItemClick={onOpenEvidence ? (item, index) => handleInsightClick('takeaway', item, index) : undefined}
                                 /></div> : null}
-                                {(severityFilter === 'all' || getSeverityForGroup('takeaway') === severityFilter) && (typeFilter === 'all' || typeFilter === 'takeaway') ? <section id="synthesis-doc-thesis" className="scroll-mt-6 rounded-lg border border-border bg-muted/20 p-4">
-                                    <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><FileText className="h-4 w-4 text-muted-foreground" /><p className="text-sm font-semibold text-foreground">Document-level thesis takeaways</p></div><Badge variant="outline">{documentThesisTakeaways.length}</Badge></div>
+                                {(severityFilter === 'all' || getSeverityForGroup('takeaway') === severityFilter) && (typeFilter === 'all' || typeFilter === 'takeaway') ? <section id="synthesis-doc-thesis" className="scroll-mt-6 rounded-lg border border-violet-500/30 bg-violet-500/5 dark:bg-violet-950/20 dark:border-violet-800/40 p-4">
+                                    <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><Compass className="h-4 w-4 text-violet-600 dark:text-violet-400" /><p className="text-sm font-semibold text-foreground">Document-level thesis takeaways</p></div><Badge variant="outline" className="border-violet-500/30 bg-violet-500/15 text-violet-700 dark:text-violet-300">{documentThesisTakeaways.length}</Badge></div>
                                     <p className="mt-1 text-xs text-muted-foreground">Each point is from one completed document—not a new project-level conclusion.</p>
-                                    {documentThesisTakeaways.length ? <div className="mt-3 max-h-[28rem] space-y-2 overflow-y-auto pr-1">{documentThesisTakeaways.map((takeaway, index) => <button key={`${takeaway.fileName}-${index}`} type="button" onClick={() => onOpenEvidence?.({ title: `Document thesis: ${takeaway.fileName}`, sourceFile: takeaway.fileName, sourceLocation: 'Document-level investment thesis', excerpt: takeaway.takeaway, status: takeaway.status || takeaway.stance, provenance: takeaway.stance, documentId: takeaway.documentId, documentUrl: takeaway.documentUrl })} className="w-full rounded-md border border-border bg-background/80 p-3 text-left text-sm leading-6 text-foreground transition-colors hover:border-primary/40 hover:bg-muted/30"><div className="flex flex-wrap items-center gap-2"><span className="font-medium">{takeaway.fileName}</span><Badge variant={takeaway.stance === 'Caution indicator' ? 'warning' : takeaway.stance === 'Supportive indicator' ? 'success' : 'outline'}>{takeaway.stance}</Badge>{takeaway?.confidence !== null && takeaway?.confidence !== undefined ? <Badge variant="secondary">{takeaway.confidence <= 1 && takeaway.confidence > 0 ? Math.round(takeaway.confidence * 100) : Math.round(takeaway.confidence)}% confidence</Badge> : null}</div><p className="mt-1">{compactTakeaway(takeaway.takeaway)}</p><span className="mt-1 block text-xs font-medium text-primary">View full source evidence</span></button>)}</div> : <p className="mt-3 rounded-md border border-border bg-background/80 px-3 py-2 text-sm text-muted-foreground">No document-level investment-thesis takeaway has returned yet.</p>}
+                                    {documentThesisTakeaways.length ? <div className="mt-3 max-h-[28rem] space-y-2 overflow-y-auto pr-1">{documentThesisTakeaways.map((takeaway, index) => <button key={`${takeaway.fileName}-${index}`} type="button" onClick={() => onOpenEvidence?.({ title: `Document thesis: ${takeaway.fileName}`, sourceFile: takeaway.fileName, sourceLocation: 'Document-level investment thesis', excerpt: takeaway.takeaway, status: takeaway.status || takeaway.stance, provenance: takeaway.stance, documentId: takeaway.documentId, documentUrl: takeaway.documentUrl })} className="w-full rounded-md border border-violet-500/25 bg-violet-500/10 dark:bg-violet-950/30 p-3 text-left text-sm leading-6 text-foreground transition-colors hover:border-violet-500/50 hover:bg-violet-500/15"><div className="flex flex-wrap items-center gap-2"><span className="font-medium">{takeaway.fileName}</span><Badge variant={takeaway.stance === 'Caution indicator' ? 'warning' : takeaway.stance === 'Supportive indicator' ? 'success' : 'outline'}>{takeaway.stance}</Badge>{takeaway?.confidence !== null && takeaway?.confidence !== undefined ? <Badge variant="secondary">{takeaway.confidence <= 1 && takeaway.confidence > 0 ? Math.round(takeaway.confidence * 100) : Math.round(takeaway.confidence)}% confidence</Badge> : null}</div><p className="mt-1">{compactTakeaway(takeaway.takeaway)}</p><span className="mt-1 block text-xs font-medium text-primary">View full source evidence</span></button>)}</div> : <p className="mt-3 rounded-md border border-border bg-background/80 px-3 py-2 text-sm text-muted-foreground">No document-level investment-thesis takeaway has returned yet.</p>}
                                 </section> : null}
                                 {(severityFilter === 'all' || getSeverityForGroup('conflict') === severityFilter) && (typeFilter === 'all' || typeFilter === 'conflict') ? <div id="synthesis-conflicts" className="scroll-mt-6"><ExpandableInsightGroup
                                     title="Cross-document conflicts"
@@ -1719,38 +1717,37 @@ export default function ProjectSynthesisCard({
                                     findings={synthesis.structuredFindings?.crossDocumentConflicts}
                                     emptyLabel="No contradictions detected across the uploaded documents."
                                     badgeVariant="destructive"
-                                    className="border-destructive/30 bg-destructive/5"
-                                    itemClassName="border-destructive/20"
+                                    colorTheme="destructive"
                                     defaultOpen
                                     onItemClick={onOpenEvidence ? (item, index) => handleInsightClick('conflict', item, index) : undefined}
                                 /></div> : null}
                                 {(severityFilter === 'all' || getSeverityForGroup('negotiation-lever') === severityFilter) && (typeFilter === 'all' || typeFilter === 'negotiation-lever') ? <div id="synthesis-negotiation" className="scroll-mt-6"><ExpandableInsightGroup
                                     title="Negotiation levers"
-                                    icon={<Landmark className="h-4 w-4 text-foreground" />}
+                                    icon={<Handshake className="h-4 w-4 text-teal-600 dark:text-teal-400" />}
                                     items={synthesis.negotiationLevers}
                                     findings={synthesis.structuredFindings?.negotiationLevers}
                                     emptyLabel="No negotiation levers surfaced yet."
+                                    colorTheme="teal"
                                     defaultOpen
                                     onItemClick={onOpenEvidence ? (item, index) => handleInsightClick('negotiation-lever', item, index) : undefined}
                                 /></div> : null}
                                 {(severityFilter === 'all' || getSeverityForGroup('missing-document') === severityFilter) && (typeFilter === 'all' || typeFilter === 'missing-document') ? <div id="synthesis-missing-docs" className="scroll-mt-6"><ExpandableInsightGroup
                                     title="Missing diligence materials"
-                                    icon={<ShieldAlert className="h-4 w-4 text-warning" />}
+                                    icon={<FileQuestion className="h-4 w-4 text-orange-600 dark:text-orange-400" />}
                                     items={synthesis.missingDocuments}
                                     findings={synthesis.structuredFindings?.missingDocuments}
                                     emptyLabel="All core diligence materials appear to be present."
-                                    badgeVariant="warning"
-                                    className="border-warning/30 bg-warning/5"
-                                    itemClassName="border-warning/20"
+                                    colorTheme="orange"
                                     defaultOpen
                                     onItemClick={onOpenEvidence ? (item, index) => handleInsightClick('missing-document', item, index) : undefined}
                                 /></div> : null}
                                 {(severityFilter === 'all' || getSeverityForGroup('open-question') === severityFilter) && (typeFilter === 'all' || typeFilter === 'open-question') ? <div id="synthesis-open-questions" className="scroll-mt-6"><ExpandableInsightGroup
                                     title="Open questions for management"
-                                    icon={<MessageCircleQuestion className="h-4 w-4 text-muted-foreground" />}
+                                    icon={<MessageCircleQuestion className="h-4 w-4 text-fuchsia-600 dark:text-fuchsia-400" />}
                                     items={synthesis.openQuestions}
                                     findings={synthesis.structuredFindings?.openQuestions}
                                     emptyLabel="No open questions recorded."
+                                    colorTheme="fuchsia"
                                     defaultOpen
                                     onItemClick={onOpenEvidence ? (item, index) => handleInsightClick('open-question', item, index) : undefined}
                                 /></div> : null}

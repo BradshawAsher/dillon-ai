@@ -4,7 +4,7 @@ This is a compact operating map of the live workflows backing the dashboard.
 It is intentionally not a workflow export: the live Pod 1 n8n Cloud project is
 the source of truth. Inspect it through n8n MCP before changing behavior.
 
-Last verified: 2026-07-31 via n8n MCP.
+Last verified: August 2026 via n8n MCP.
 
 ## Active write workflows
 
@@ -15,7 +15,7 @@ parallel. The Supabase credential used is ID `2bjegcUtAn2gvy8A`.
 | --- | --- | --- | --- | --- |
 | Submit Button Webhook Trigger | `vBnMdx8cvSFIFx6m` | Receives a document submission, checks duplicates, and starts processing. | Supabase `documents` | Supabase `documents` + `project_syntheses` + `deal_models` & n8n tables |
 | Per Document AI Analysis | `W5Jp7CJIQbNy0qlY` | Downloads, parses, analyzes, and updates one document row. | Drive / Inbound Payload | Supabase `documents` & n8n `rBFHVB1W7ldSiObM` |
-| DOCUMENT COUNTER UTILITY SUBWORKFLOW | `0OVTAMMp2iMx53Aw` | Tracks batch completion with an idempotent `Get Project State` lock, preventing twin/duplicate Consolidator passes when docs complete concurrently. | Supabase `documents` + `DD Project-Level Fields` | Supabase `project_syntheses` & n8n `DTrLU8hBUwYzmBig` |
+| DOCUMENT COUNTER UTILITY SUBWORKFLOW | `0OVTAMMp2iMx53Aw` | Tracks batch completion with an idempotent `Get Project State` lock. Evaluates incremental batch additions (`hasNewCompletedEvidence`) to trigger synthesis when new files are pushed to an existing project, and uses safe Data Table fallback expressions. | Supabase `documents` + `DD Project-Level Fields` | Supabase `project_syntheses` & n8n `DTrLU8hBUwYzmBig` |
 | SUBWORKFLOW PROJECT-WIDE CONSOLIDATOR WORKFLOW | `IoSad3rTYJMk4Mon` | Reconciles considered document outputs into a project-level synthesis. | Supabase `documents` | Supabase `project_syntheses` & n8n `DTrLU8hBUwYzmBig` |
 | Project Documented Facts Bridge | `uAI6pABZWdIy2V17` | Reads considered documents, consolidates LOI terms and accounting facts, and syncs full metric columns. | Supabase `documents` | Supabase `deal_models` & n8n `eU2nnH4bVmdPocI8` |
 | Deal Model Write API | `O2fi0mKmKHxewuN5` | Saves user-entered deal model assumptions (30 financial parameters). | Inbound HTTP Payload | Supabase `deal_models` & n8n `eU2nnH4bVmdPocI8` |
