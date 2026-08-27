@@ -115,6 +115,92 @@ export async function sendNewAccountSlackAlert(params: NewAccountAlertParams): P
     return postSlackWebhook(slackMessage)
 }
 
+export interface SignInAlertParams {
+    fullName: string
+    email: string
+    role?: 'admin' | 'tester'
+    team?: string
+    authMethod?: string
+    status?: 'Success' | 'Failed'
+    errorMessage?: string
+}
+
+/**
+ * Dispatches a formatted Slack notification to #pod-1-agent-alerts when a user signs in or an auth failure occurs.
+ */
+export async function sendSignInSlackAlert(params: SignInAlertParams): Promise<boolean> {
+    const timestamp = new Date().toLocaleString('en-US', {
+        timeZone: 'UTC',
+        dateStyle: 'medium',
+        timeStyle: 'short',
+    })
+
+    const name = params.fullName.trim() || 'User'
+    const email = params.email.trim().toLowerCase()
+    const team = params.team?.trim() || 'Pod 1 (Acquisitions & Diligence)'
+    const role = params.role === 'admin' ? '🛡️ Admin' : '👤 Member / Diligence Tester'
+    const authMethod = params.authMethod || 'Supabase Auth'
+    const status = params.status || 'Success'
+    const isSuccess = status === 'Success'
+
+    const slackMessage = {
+        channel: '#pod-1-agent-alerts',
+        text: isSuccess
+            ? `🔐 User Signed In: *${name}* (${email}) via ${authMethod}`
+            : `⚠️ Failed Sign-In Attempt: *${email}* via ${authMethod}`,
+        blocks: [
+            {
+                type: 'header',
+                text: {
+                    type: 'plain_text',
+                    text: isSuccess ? '🔐 User Signed In to Diligence Cockpit' : '⚠️ Diligence Sign-In Attempt Failed',
+                    emoji: true,
+                },
+            },
+            {
+                type: 'section',
+                fields: [
+                    {
+                        type: 'mrkdwn',
+                        text: `*👤 Full Name:*\n${name}`,
+                    },
+                    {
+                        type: 'mrkdwn',
+                        text: `*📧 Email Address:*\n<mailto:${email}|${email}>`,
+                    },
+                    {
+                        type: 'mrkdwn',
+                        text: `*🏷️ Access Role:*\n${role}`,
+                    },
+                    {
+                        type: 'mrkdwn',
+                        text: `*🏢 Assigned Team:*\n${team}`,
+                    },
+                    {
+                        type: 'mrkdwn',
+                        text: `*🔑 Auth Method:*\n${authMethod}`,
+                    },
+                    {
+                        type: 'mrkdwn',
+                        text: `*📊 Status:*\n${isSuccess ? '✅ Successful Sign-In' : `❌ ${params.errorMessage || 'Failed'}`}`,
+                    },
+                ],
+            },
+            {
+                type: 'context',
+                elements: [
+                    {
+                        type: 'mrkdwn',
+                        text: `*Target Channel:* \`#pod-1-agent-alerts\`  |  *Timestamp:* ${timestamp} UTC`,
+                    },
+                ],
+            },
+        ],
+    }
+
+    return postSlackWebhook(slackMessage)
+}
+
 export interface AdminAccessRequestAlertParams {
     fullName: string
     email: string

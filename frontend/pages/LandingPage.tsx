@@ -40,13 +40,17 @@ import { WalkthroughLauncherModal } from '../components/walkthrough/WalkthroughL
 import type { TourPlaylistId } from '../components/walkthrough/walkthroughTypes'
 import { submitAccessRequest } from '../services/accessRequestService'
 import { DillonLogo } from '../components/DillonLogo'
+import { initAuthListener, getLocalAppAuth, signOutUser, type AppAuthUser } from '../services/supabaseAuth'
 
 interface LandingPageProps {
     onLaunchDashboard: () => void
     onGoToLogin?: () => void
+    currentUser?: AppAuthUser | null
+    onSignOut?: () => void
 }
 
-export default function LandingPage({ onLaunchDashboard, onGoToLogin }: LandingPageProps) {
+export default function LandingPage({ onLaunchDashboard, onGoToLogin, currentUser: propUser, onSignOut }: LandingPageProps) {
+    const [activeUser, setActiveUser] = useState<AppAuthUser | null>(() => propUser || getLocalAppAuth())
     const [showWalkthroughModal, setShowWalkthroughModal] = useState(false)
     const [selectedWalkthroughDemoId, setSelectedWalkthroughDemoId] = useState<DemoVariantId>('short-supademo')
     const [showAccessModal, setShowAccessModal] = useState(false)
@@ -69,7 +73,16 @@ export default function LandingPage({ onLaunchDashboard, onGoToLogin }: LandingP
 
     useEffect(() => {
         window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
-    }, [])
+        if (propUser) {
+            setActiveUser(propUser)
+        }
+        const unsubscribe = initAuthListener((user) => {
+            setActiveUser(user)
+        })
+        return () => {
+            unsubscribe?.()
+        }
+    }, [propUser])
 
     useEffect(() => {
         const sectionIds = ['hero', 'features', 'live-preview', 'evidence', 'pipeline', 'cost-model', 'faqs']
@@ -247,16 +260,45 @@ export default function LandingPage({ onLaunchDashboard, onGoToLogin }: LandingP
                     </nav>
 
                     <div className="flex items-center gap-2 shrink-0 ml-auto">
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="text-xs font-semibold hover:bg-muted"
-                            onClick={onGoToLogin || onLaunchDashboard}
-                        >
-                            <LogIn className="mr-1.5 h-3.5 w-3.5" />
-                            <span>Sign In</span>
-                        </Button>
+                        {activeUser ? (
+                            <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-background/80 px-2.5 py-1 text-xs">
+                                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/20 text-primary text-[10px] font-bold">
+                                        {activeUser.name.charAt(0).toUpperCase()}
+                                    </div>
+                                    <Badge variant={activeUser.role === 'admin' ? 'default' : 'secondary'} className="text-[9px] px-1.5 py-0">
+                                        {activeUser.role === 'admin' ? 'Admin' : 'Member'}
+                                    </Badge>
+                                    <span className="font-semibold text-foreground max-w-[120px] truncate hidden sm:inline">
+                                        {activeUser.name}
+                                    </span>
+                                </div>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-xs text-muted-foreground hover:text-foreground h-8 px-2"
+                                    onClick={async () => {
+                                        await signOutUser()
+                                        setActiveUser(null)
+                                        onSignOut?.()
+                                    }}
+                                >
+                                    Sign Out
+                                </Button>
+                            </div>
+                        ) : (
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="text-xs font-semibold hover:bg-muted"
+                                onClick={onGoToLogin || onLaunchDashboard}
+                            >
+                                <LogIn className="mr-1.5 h-3.5 w-3.5" />
+                                <span>Sign In</span>
+                            </Button>
+                        )}
                         <Button
                             type="button"
                             variant="outline"
@@ -273,7 +315,7 @@ export default function LandingPage({ onLaunchDashboard, onGoToLogin }: LandingP
                             className="bg-gradient-to-r from-primary to-indigo-600 font-bold text-white shadow-sm hover:from-primary/90 hover:to-indigo-600/90 shrink-0 whitespace-nowrap text-xs px-4"
                             onClick={onLaunchDashboard}
                         >
-                            <span>Launch App Dashboard</span>
+                            <span>{activeUser ? 'Open App Dashboard' : 'Launch App Dashboard'}</span>
                             <ArrowRight className="ml-1.5 h-4 w-4 shrink-0" />
                         </Button>
                     </div>
@@ -302,19 +344,34 @@ export default function LandingPage({ onLaunchDashboard, onGoToLogin }: LandingP
                                     onClick={onLaunchDashboard}
                                 >
                                     <Sparkles className="mr-2.5 h-5 w-5 text-amber-300 animate-pulse" />
-                                    <span>Launch App Dashboard</span>
+                                    <span>{activeUser ? 'Open App Dashboard' : 'Launch App Dashboard'}</span>
                                     <ArrowRight className="ml-2.5 h-5 w-5" />
                                 </Button>
-                                <Button
-                                    type="button"
-                                    size="lg"
-                                    variant="outline"
-                                    className="w-full sm:w-auto border-border/80 bg-background/80 hover:bg-muted px-6 py-7 text-base font-bold shadow-md hover:scale-[1.02] transition-all cursor-pointer rounded-2xl"
-                                    onClick={onGoToLogin || onLaunchDashboard}
-                                >
-                                    <LogIn className="mr-2 h-4 w-4 text-primary" />
-                                    <span>Create Account / Sign In</span>
-                                </Button>
+                                {activeUser ? (
+                                    <Button
+                                        type="button"
+                                        size="lg"
+                                        variant="outline"
+                                        className="w-full sm:w-auto border-border/80 bg-background/80 hover:bg-muted px-6 py-7 text-base font-bold shadow-md hover:scale-[1.02] transition-all cursor-pointer rounded-2xl"
+                                        onClick={onLaunchDashboard}
+                                    >
+                                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/20 text-primary text-[10px] font-bold mr-2">
+                                            {activeUser.name.charAt(0).toUpperCase()}
+                                        </div>
+                                        <span>Signed in as {activeUser.name}</span>
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        type="button"
+                                        size="lg"
+                                        variant="outline"
+                                        className="w-full sm:w-auto border-border/80 bg-background/80 hover:bg-muted px-6 py-7 text-base font-bold shadow-md hover:scale-[1.02] transition-all cursor-pointer rounded-2xl"
+                                        onClick={onGoToLogin || onLaunchDashboard}
+                                    >
+                                        <LogIn className="mr-2 h-4 w-4 text-primary" />
+                                        <span>Create Account / Sign In</span>
+                                    </Button>
+                                )}
                             </div>
 
                             {/* Secondary Actions: Direct Walkthrough Launchers */}

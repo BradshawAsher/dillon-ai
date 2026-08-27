@@ -20,6 +20,9 @@ import {
     signInWithGoogle,
     signInWithGithub,
     signInWithMicrosoft,
+    initAuthListener,
+    getLocalAppAuth,
+    signOutUser,
     type AppAuthUser,
 } from '../services/supabaseAuth'
 
@@ -28,6 +31,7 @@ interface LoginPageProps {
     onLaunchDashboardDirectly: () => void
     onReturnToLanding: () => void
     initialMode?: 'signin' | 'signup'
+    currentUser?: AppAuthUser | null
 }
 
 export default function LoginPage({
@@ -35,8 +39,22 @@ export default function LoginPage({
     onLaunchDashboardDirectly,
     onReturnToLanding,
     initialMode = 'signin',
+    currentUser: propUser,
 }: LoginPageProps) {
+    const [activeUser, setActiveUser] = useState<AppAuthUser | null>(() => propUser || getLocalAppAuth())
     const [mode, setMode] = useState<'signin' | 'signup'>(initialMode)
+
+    React.useEffect(() => {
+        if (propUser) {
+            setActiveUser(propUser)
+        }
+        const unsubscribe = initAuthListener((user) => {
+            setActiveUser(user)
+        })
+        return () => {
+            unsubscribe?.()
+        }
+    }, [propUser])
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [fullName, setFullName] = useState('')
@@ -165,23 +183,63 @@ export default function LoginPage({
             {/* Main Auth Container */}
             <main className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8">
                 <div className="w-full max-w-md space-y-6">
-                    {/* Header Brand */}
-                    <div className="text-center space-y-2">
-                        <div className="inline-flex items-center justify-center h-12 w-12 rounded-xl bg-primary/10 border border-primary/20 text-primary mb-1">
-                            <Shield className="h-6 w-6" />
-                        </div>
-                        <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">
-                            {mode === 'signin' ? 'Welcome back' : 'Create your workspace account'}
-                        </h1>
-                        <p className="text-sm text-muted-foreground">
-                            {mode === 'signin'
-                                ? 'Sign in to access your private deal packets and synthesis models'
-                                : 'Start analyzing M&A deals with autonomous AI diligence'}
-                        </p>
-                    </div>
+                    {activeUser ? (
+                        <div className="rounded-2xl border border-primary/30 bg-card p-6 sm:p-8 shadow-xl space-y-6 text-center">
+                            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/20 text-primary text-2xl font-black">
+                                {activeUser.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="space-y-1">
+                                <h1 className="text-2xl font-black text-foreground">Welcome back, {activeUser.name}</h1>
+                                <p className="text-xs text-muted-foreground">{activeUser.email}</p>
+                                <div className="mt-2.5 flex items-center justify-center gap-2">
+                                    <Badge variant={activeUser.role === 'admin' ? 'default' : 'secondary'} className="text-xs">
+                                        {activeUser.role === 'admin' ? 'Admin' : 'Member'}
+                                    </Badge>
+                                    <span className="text-xs text-muted-foreground font-medium">{activeUser.team || 'Pod 1'}</span>
+                                </div>
+                            </div>
 
-                    {/* Auth Card */}
-                    <div className="rounded-2xl border border-border/80 bg-card p-6 sm:p-8 shadow-xl space-y-6">
+                            <div className="space-y-2.5 pt-3">
+                                <Button
+                                    type="button"
+                                    className="w-full font-bold text-white bg-gradient-to-r from-primary to-indigo-600 h-11 text-sm shadow-md"
+                                    onClick={() => onLoginSuccess(activeUser)}
+                                >
+                                    <span>Continue to Workspace Dashboard</span>
+                                    <ArrowRight className="ml-2 h-4 w-4" />
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="w-full text-xs h-9"
+                                    onClick={async () => {
+                                        await signOutUser()
+                                        setActiveUser(null)
+                                    }}
+                                >
+                                    Sign Out / Switch Account
+                                </Button>
+                            </div>
+                        </div>
+                    ) : (
+                        <>
+                            {/* Header Brand */}
+                            <div className="text-center space-y-2">
+                                <div className="inline-flex items-center justify-center h-12 w-12 rounded-xl bg-primary/10 border border-primary/20 text-primary mb-1">
+                                    <Shield className="h-6 w-6" />
+                                </div>
+                                <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">
+                                    {mode === 'signin' ? 'Welcome back' : 'Create your workspace account'}
+                                </h1>
+                                <p className="text-sm text-muted-foreground">
+                                    {mode === 'signin'
+                                        ? 'Sign in to access your private deal packets and synthesis models'
+                                        : 'Start analyzing M&A deals with autonomous AI diligence'}
+                                </p>
+                            </div>
+
+                            {/* Auth Card */}
+                            <div className="rounded-2xl border border-border/80 bg-card p-6 sm:p-8 shadow-xl space-y-6">
 
                         {/* Social Sign-In Buttons */}
                         <div className="space-y-3">
@@ -431,6 +489,8 @@ export default function LoginPage({
                             Launch Interactive App Dashboard as Guest &rarr;
                         </Button>
                     </div>
+                </>
+            )}
                 </div>
             </main>
 

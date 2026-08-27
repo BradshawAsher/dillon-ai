@@ -13,9 +13,11 @@ import {
     signInWithGithub,
     signInWithMicrosoft,
     initAuthListener,
+    AUTH_CHANGE_EVENT,
     type AppAuthUser,
 } from '../services/supabaseAuth'
 
+export { AUTH_CHANGE_EVENT }
 export type AuthUser = AppAuthUser
 
 const ISOLATION_KEY = 'mergeworks.dataIsolation'
@@ -40,6 +42,13 @@ export function setDataIsolation(enabled: boolean) {
     if (typeof window === 'undefined') return
     localStorage.setItem(ISOLATION_KEY, enabled ? 'true' : 'false')
     window.dispatchEvent(new CustomEvent(DATA_ISOLATION_EVENT, { detail: { enabled } }))
+}
+
+export const OPEN_AUTH_MODAL_EVENT = 'mergeworks:open-auth-modal'
+
+export function openAuthModal() {
+    if (typeof window === 'undefined') return
+    window.dispatchEvent(new CustomEvent(OPEN_AUTH_MODAL_EVENT))
 }
 
 export function clearAuth() {
@@ -72,10 +81,32 @@ export default function LoginButton({ onNavigateAccount }: { onNavigateAccount?:
                 setIsolation(isDataIsolationEnabled())
             }
         }
+
+        const handleAuthChange = (e: Event) => {
+            const customEvent = e as CustomEvent<{ user: AuthUser | null }>
+            if (customEvent.detail !== undefined) {
+                setAuthUser(customEvent.detail.user)
+            } else {
+                setAuthUser(getLocalAppAuth())
+            }
+        }
+
+        const handleStorage = () => {
+            setAuthUser(getLocalAppAuth())
+        }
+
+        const handleOpenModal = () => setShowDialog(true)
+
+        window.addEventListener(AUTH_CHANGE_EVENT, handleAuthChange)
+        window.addEventListener('storage', handleStorage)
         window.addEventListener(DATA_ISOLATION_EVENT, handleIsolationChange)
+        window.addEventListener(OPEN_AUTH_MODAL_EVENT, handleOpenModal)
         return () => {
             unsubscribe?.()
+            window.removeEventListener(AUTH_CHANGE_EVENT, handleAuthChange)
+            window.removeEventListener('storage', handleStorage)
             window.removeEventListener(DATA_ISOLATION_EVENT, handleIsolationChange)
+            window.removeEventListener(OPEN_AUTH_MODAL_EVENT, handleOpenModal)
         }
     }, [])
 

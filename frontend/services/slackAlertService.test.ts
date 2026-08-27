@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import {
     sendNewAccountSlackAlert,
+    sendSignInSlackAlert,
     sendAdminAccessRequestSlackAlert,
     sendIssueReportSlackAlert,
 } from './slackAlertService'
@@ -60,6 +61,59 @@ describe('slackAlertService', () => {
             expect(success).toBe(true)
             const body = JSON.parse((globalThis.fetch as any).mock.calls[0][1].body)
             expect(body.text).toContain('New User')
+        })
+    })
+
+    describe('sendSignInSlackAlert', () => {
+        it('should dispatch formatted payload to #pod-1-agent-alerts on successful login', async () => {
+            const success = await sendSignInSlackAlert({
+                fullName: 'Jaydon A',
+                email: 'jaydon.a42@gmail.com',
+                role: 'tester',
+                team: 'Pod 1 (Acquisitions & Diligence)',
+                authMethod: 'Google OAuth',
+                status: 'Success',
+            })
+
+            expect(success).toBe(true)
+            expect(globalThis.fetch).toHaveBeenCalledTimes(1)
+
+            const [calledUrl, calledOptions] = (globalThis.fetch as any).mock.calls[0]
+            expect(calledUrl).toContain('hooks.slack.com/services')
+            const body = JSON.parse(calledOptions.body)
+
+            expect(body.channel).toBe('#pod-1-agent-alerts')
+            expect(body.text).toContain('Jaydon A')
+            expect(body.text).toContain('jaydon.a42@gmail.com')
+            expect(body.text).toContain('Google OAuth')
+
+            expect(body.blocks[0].text.text).toContain('User Signed In')
+            const fieldTexts = body.blocks[1].fields.map((f: any) => f.text).join(' ')
+            expect(fieldTexts).toContain('Jaydon A')
+            expect(fieldTexts).toContain('jaydon.a42@gmail.com')
+            expect(fieldTexts).toContain('Google OAuth')
+            expect(fieldTexts).toContain('Successful Sign-In')
+        })
+
+        it('should dispatch formatted error payload to #pod-1-agent-alerts on failed login', async () => {
+            const success = await sendSignInSlackAlert({
+                fullName: 'Unknown',
+                email: 'attacker@bad.com',
+                authMethod: 'Email & Password',
+                status: 'Failed',
+                errorMessage: 'Invalid login credentials',
+            })
+
+            expect(success).toBe(true)
+            const body = JSON.parse((globalThis.fetch as any).mock.calls[0][1].body)
+
+            expect(body.channel).toBe('#pod-1-agent-alerts')
+            expect(body.text).toContain('Failed Sign-In Attempt')
+            expect(body.text).toContain('attacker@bad.com')
+            expect(body.blocks[0].text.text).toContain('Sign-In Attempt Failed')
+
+            const fieldTexts = body.blocks[1].fields.map((f: any) => f.text).join(' ')
+            expect(fieldTexts).toContain('Invalid login credentials')
         })
     })
 
