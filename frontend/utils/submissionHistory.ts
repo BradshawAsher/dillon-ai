@@ -98,6 +98,14 @@ const stoppedSubmissionStatuses = new Set([
     'stopped_by_user',
 ])
 
+const failedSubmissionStatuses = new Set([
+    'error',
+    'failed',
+    'processing_failed',
+    'rejected',
+    'upload_failed',
+])
+
 export function normalizeSubmissionStatus(status: string | null | undefined) {
     // Coerce first: DB / n8n rows can hand back null or a non-string status, and
     // a bare `.trim()` would throw. Matches the defensive coercion the variant
@@ -119,6 +127,18 @@ export function isActiveSubmissionStatus(status: string | null | undefined) {
 
 export function isStoppedSubmissionStatus(status: string | null | undefined) {
     return stoppedSubmissionStatuses.has(statusToken(status))
+}
+
+export function isFailedSubmissionStatus(status: string | null | undefined) {
+    return failedSubmissionStatuses.has(statusToken(status))
+}
+
+export function isTerminalSubmissionStatus(status: string | null | undefined) {
+    const token = statusToken(status)
+    return token === 'completed'
+        || token === 'approved'
+        || failedSubmissionStatuses.has(token)
+        || stoppedSubmissionStatuses.has(token)
 }
 
 export function formatSubmissionStatus(status: string | null | undefined) {

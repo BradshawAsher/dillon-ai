@@ -122,7 +122,7 @@ import {
     isSystemTestProbeFile,
 } from '../utils/projectWorkspace'
 import { sumMeasuredCost } from '../utils/costModel'
-import { isActiveSubmissionStatus, type SubmissionHistoryItem } from '../utils/submissionHistory'
+import { isActiveSubmissionStatus, isFailedSubmissionStatus, type SubmissionHistoryItem } from '../utils/submissionHistory'
 import { isOwnedByUser, claimProject, getProjectOwner } from '../utils/projectOwnership'
 import {
     playCompletionSound,
@@ -720,7 +720,7 @@ function parseDashboardMoneyInput(value: string | null | undefined): number | nu
 function deriveBatchProgress(rows: SubmissionHistoryItem[]) {
     const finishedCount = rows.filter(r => !isActiveSubmissionStatus(r.status)).length
     const processingCount = rows.filter(r => isActiveSubmissionStatus(r.status)).length
-    const failedCount = rows.filter(r => ['failed', 'error', 'rejected'].includes(r.status.trim().toLowerCase())).length
+    const failedCount = rows.filter(r => isFailedSubmissionStatus(r.status)).length
     const completedCount = rows.filter(r => r.status.trim().toLowerCase() === 'completed').length
     return {
         expectedCount: rows.length,
@@ -1759,6 +1759,10 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
     const activeBatchRows = useMemo(() => {
         if (activeSubmissionBatch?.id) {
+            if (activeSubmissionBatch.requestIDs?.length) {
+                const requestIds = new Set(activeSubmissionBatch.requestIDs)
+                return submissionHistory.filter((row) => requestIds.has(row.requestID))
+            }
             const batchRows = submissionHistory.filter((row) => {
                 if (isSystemTestProbeFile(row.fileName)) return false
                 if (row.submissionBatchId === activeSubmissionBatch.id) return true
@@ -1979,12 +1983,19 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
     const [batchNowTimestamp, setBatchNowTimestamp] = useState(() => Date.now())
     useEffect(() => {
-        if (!activeSubmissionBatch?.startedAt || activeBatchFinishedCount >= activeBatchExpectedCount) return
+        if (
+            !activeSubmissionBatch?.startedAt
+            || activeSubmissionBatch.endedAt
+            || activeSubmissionBatch.stoppedAt
+            || activeBatchFinishedCount >= activeBatchExpectedCount
+        ) return
         const timer = setInterval(() => setBatchNowTimestamp(Date.now()), 1000)
         return () => clearInterval(timer)
-    }, [activeBatchExpectedCount, activeBatchFinishedCount, activeSubmissionBatch?.startedAt])
+    }, [activeBatchExpectedCount, activeBatchFinishedCount, activeSubmissionBatch?.endedAt, activeSubmissionBatch?.startedAt, activeSubmissionBatch?.stoppedAt])
 
-    const batchElapsedSeconds = activeSubmissionBatch?.startedAt ? Math.max(0, Math.floor(((activeSubmissionBatch.endedAt || batchNowTimestamp) - activeSubmissionBatch.startedAt) / 1000)) : 0
+    const batchElapsedSeconds = activeSubmissionBatch?.startedAt
+        ? Math.max(0, Math.floor(((activeSubmissionBatch.endedAt || activeSubmissionBatch.stoppedAt || batchNowTimestamp) - activeSubmissionBatch.startedAt) / 1000))
+        : 0
     const activeBatchImpact = useMemo(() => computeImpactMetrics(activeBatchRows), [activeBatchRows])
 
     const [synthesisStartTimestamps, setSynthesisStartTimestamps] = useState<Record<string, number>>(() => {
@@ -2726,20 +2737,17 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                     synthBackupModel: modelPipeline.synthBackup,
                 }),
             })
-            const body = await response.json() as { error?: string; status?: string }
+            const body = await response.json() as { error?: string; status?: string; requestID?: string; originalRequestID?: string; submissionBatchId?: string }
             if (!response.ok) throw new Error(body.error || 'Unable to queue retry')
 
+            const retriedRequestID = body.requestID || requestID
             if (targetProjectId) {
-                setActiveSubmissionBatch({
-                    id: targetProjectId,
-                    expectedDocumentCount: 1,
-                    environment: activeHistoryEnvironment,
-                    startedAt: Date.now(),
-                })
                 setSelectedProjectKey(targetRow ? getProjectKey(targetRow) : targetProjectId)
             }
 
-            setBatchSubmissionMessage('Retry queued. The existing document is being processed again in real-time.')
+            setBatchSubmissionMessage(body.requestID && body.requestID !== requestID
+                ? 'Stored document recovered and queued as a new processing run.'
+                : 'Retry queued. The existing document is being processed again in real-time.')
             await triggerSubmissionHistory({ environment: activeHistoryEnvironment }, { skipCache: true }).result
         } catch (err) {
             setBatchSubmissionMessage(err instanceof Error ? err.message : 'Unable to queue retry')
@@ -2768,28 +2776,48 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 return isProjectMatch || isActiveSubmissionStatus(row.status)
             })
 
-        const stoppableRequestIds = candidateRows
-            .filter((row) => isActiveSubmissionStatus(row.status))
-            .map((row) => row.requestID)
-            .filter((reqId) => reqId.trim().length > 0)
+        const stoppableRequestIds = [...new Set([
+            ...(activeSubmissionBatch?.requestIDs || []),
+            ...candidateRows
+                .filter((row) => isActiveSubmissionStatus(row.status))
+                .map((row) => row.requestID),
+        ].filter((reqId) => reqId.trim().length > 0))]
 
-        if (stoppableRequestIds.length === 0) {
-            setBatchSubmissionMessage('No active documents are currently processing to stop.')
-            return
-        }
+        const submissionBatchId = activeSubmissionBatch?.requestIDs?.length
+            ? activeSubmissionBatch.id
+            : candidateRows.find((row) => row.submissionBatchId?.trim())?.submissionBatchId || ''
+        const targetProjectId = activeProjectId || candidateRows.find((row) => row.projectId?.trim())?.projectId || ''
 
-        if (!window.confirm(`Stop ${stoppableRequestIds.length} active document${stoppableRequestIds.length === 1 ? '' : 's'}? Completed documents will be kept, and synthesis will not run until you retry or re-queue documents.`)) return
+        const confirmationMessage = stoppableRequestIds.length > 0
+            ? `Stop ${stoppableRequestIds.length} active document${stoppableRequestIds.length === 1 ? '' : 's'} and cancel matching n8n executions? Completed documents will be kept.`
+            : 'Close this batch and cancel any matching n8n executions still running? Completed and failed documents will be kept.'
+        if (!window.confirm(confirmationMessage)) return
+
+        // Always close local batch state and stop timer immediately on user confirmation
+        const stoppedAt = Date.now()
+        setBatchNowTimestamp(stoppedAt)
+        setActiveSubmissionBatch((current) => current ? { ...current, stoppedAt, endedAt: stoppedAt } : current)
+
         setIsStoppingBatch(true)
         try {
             const response = await fetch('/api/diligence/stop-batch', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ requestIDs: stoppableRequestIds, environment: activeHistoryEnvironment }),
+                body: JSON.stringify({
+                    requestIDs: stoppableRequestIds,
+                    projectId: targetProjectId,
+                    submissionBatchId,
+                    batchStartedAt: activeSubmissionBatch?.startedAt,
+                    environment: activeHistoryEnvironment,
+                }),
             })
-            const body = await response.json() as { error?: string; stopped?: number }
+            const body = await response.json() as { error?: string; stopped?: number; canceledExecutions?: number; matchedExecutions?: number }
             if (!response.ok) throw new Error(body.error || 'Unable to stop the active batch')
-            setBatchSubmissionMessage(`Stopped ${body.stopped ?? stoppableRequestIds.length} active document${(body.stopped ?? stoppableRequestIds.length) === 1 ? '' : 's'}.`)
-            setActiveSubmissionBatch((current) => current ? { ...current, stoppedAt: Date.now(), endedAt: Date.now() } : current)
+            const stoppedCount = body.stopped ?? stoppableRequestIds.length
+            const canceledCount = body.canceledExecutions ?? 0
+            setBatchSubmissionMessage(stoppedCount > 0 || canceledCount > 0
+                ? `Stopped ${stoppedCount} document${stoppedCount === 1 ? '' : 's'} and canceled ${canceledCount} live n8n execution${canceledCount === 1 ? '' : 's'}.`
+                : 'Batch closed. No active documents or live n8n executions remained to stop.')
             await handleRefreshHistory(activeHistoryEnvironment)
         } catch (err) {
             setBatchSubmissionMessage(err instanceof Error ? err.message : 'Unable to stop the active batch')

@@ -4,6 +4,7 @@ import { Badge } from '../../lib/shadcn/badge'
 import { Button } from '../../lib/shadcn/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../lib/shadcn/card'
 import type { SubmissionBatch } from '../../utils/diligenceDashboardUtils'
+import { isFailedSubmissionStatus } from '../../utils/submissionHistory'
 import { formatElapsedDuration } from '../../utils/diligenceDashboardUtils'
 import { formatHours } from '../../utils/impactMetrics'
 
@@ -206,10 +207,10 @@ export function BatchProgressCard({
                                                 <p className="text-muted-foreground text-[11px]">{doc.documentType || 'Document'} · {doc.status || 'pending'}</p>
                                             </div>
                                             <div className="flex items-center gap-2">
-                                                <Badge variant={st === 'completed' ? 'success' : ['failed', 'error', 'rejected'].includes(st) ? 'destructive' : 'outline'} className="text-[10px]">
+                                                <Badge variant={st === 'completed' ? 'success' : isFailedSubmissionStatus(st) ? 'destructive' : 'outline'} className="text-[10px]">
                                                     {doc.status || 'pending'}
                                                 </Badge>
-                                                {reqId ? (
+                                                {reqId && isFailedSubmissionStatus(st) ? (
                                                     <Button
                                                         size="sm"
                                                         variant="ghost"
