@@ -26,6 +26,10 @@ describe('batch stop UI contract', () => {
     it('accepts a confirmed no-op stop', () => {
         expect(() => requireConfirmedBatchStop({ ok: true, cancellationAvailable: true, errors: [] })).not.toThrow()
     })
+    it('rejects a null/undefined response with the clean not-confirmed error', () => {
+        expect(() => requireConfirmedBatchStop(null)).toThrow('Stop was not confirmed. Retry Stop Batch.')
+        expect(() => requireConfirmedBatchStop(undefined)).toThrow('Stop was not confirmed. Retry Stop Batch.')
+    })
     it('does not freeze incomplete or failed stop timers', () => {
         const done = { ...row('a'), status: 'completed', processedAt: '2026-08-27T01:00:00Z' }
         expect(batchCompletionTime(batch, [done])).toBeUndefined()

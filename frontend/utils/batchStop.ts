@@ -26,9 +26,12 @@ export type BatchStopResponse = {
     errors?: string[]
 }
 
-export function requireConfirmedBatchStop(response: BatchStopResponse) {
-    if (response.ok !== true || response.cancellationAvailable !== true || response.errors?.length) {
-        throw new Error(response.errors?.join(' ') || response.error || 'Stop was not confirmed. Retry Stop Batch.')
+export function requireConfirmedBatchStop(response: BatchStopResponse | null | undefined) {
+    // A missing response body (network error, empty 200) must surface the same
+    // clear "not confirmed" error, not an opaque "cannot read properties of
+    // undefined" TypeError from reading `.ok` off nothing.
+    if (!response || response.ok !== true || response.cancellationAvailable !== true || response.errors?.length) {
+        throw new Error(response?.errors?.join(' ') || response?.error || 'Stop was not confirmed. Retry Stop Batch.')
     }
 }
 
