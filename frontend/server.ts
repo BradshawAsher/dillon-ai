@@ -32,6 +32,7 @@ import triggerProjectSynthesisImport from '../backend/diligence/triggerProjectSy
 import submitDealPacketImport from '../backend/diligence/submitDealPacket'
 import updateSubmissionRowImport from '../backend/diligence/updateSubmissionRow'
 import handleAccessRequestImport from '../backend/diligence/handleAccessRequest'
+import handleSlackAlertImport from '../backend/diligence/handleSlackAlert'
 import { cleanOrphanRecords } from '../backend/diligence/cleanOrphans'
 import getEvalRunsImport from '../backend/diligence/getEvalRuns'
 import { installRetoolGlobals, userFromHeaders } from './retoolRuntime'
@@ -65,6 +66,7 @@ const triggerProjectSynthesis = interopDefault(triggerProjectSynthesisImport)
 const submitDealPacket = interopDefault(submitDealPacketImport)
 const updateSubmissionRow = interopDefault(updateSubmissionRowImport)
 const handleAccessRequest = interopDefault(handleAccessRequestImport)
+const handleSlackAlert = interopDefault(handleSlackAlertImport)
 const getEvalRuns = interopDefault(getEvalRunsImport)
 
 installRetoolGlobals()
@@ -137,6 +139,11 @@ app.post('/api/login', express.json(), (req, res) => {
 })
 
 app.use('/api/diligence', (req, res, next) => {
+    // Public unauthenticated endpoints
+    if (req.path === '/access-request' || req.path === '/slack-alert') {
+        next()
+        return
+    }
     if (isAuthenticated(req)) {
         next()
         return
@@ -309,6 +316,14 @@ app.post(['/api/diligence/run-synthesis', '/api/diligence/trigger-project-synthe
 app.post('/api/diligence/access-request', express.json(), async (req, res) => {
     try {
         res.json(await handleAccessRequest({ params: req.body, user: userFromHeaders(req.headers) }))
+    } catch (error) {
+        res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
+    }
+})
+
+app.post(['/api/diligence/slack-alert', '/api/slack-alert'], express.json(), async (req, res) => {
+    try {
+        res.json(await handleSlackAlert({ params: req.body, user: userFromHeaders(req.headers) }))
     } catch (error) {
         res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
     }

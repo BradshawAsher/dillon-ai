@@ -1,8 +1,8 @@
 import { createClient, type User, type Session } from '@supabase/supabase-js'
 import { sendNewAccountSlackAlert, sendSignInSlackAlert } from './slackAlertService'
 
-const SUPABASE_URL = 'https://sihpsqrunkwkxhhnwoqe.supabase.co'
-const SUPABASE_ANON_KEY = 'REDACTED_SUPABASE_ANON_KEY'
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || ''
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
 
 export const supabaseAuthClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: {
@@ -37,12 +37,27 @@ const ADMIN_EMAILS = [
     'basher2@cs.washington.edu',
 ]
 
+export function getDefaultTeamForEmail(email: string): string {
+    const clean = (email || '').trim().toLowerCase()
+    if (clean.endsWith('@mergeworks.io') || clean.endsWith('@mergeworks.org') || ADMIN_EMAILS.includes(clean)) {
+        return 'Pod 1 (Internal)'
+    }
+    return 'External Member'
+}
+
 export function mapSupabaseUserToAppUser(user: User | null, customTeam?: string): AppAuthUser | null {
     if (!user || !user.email) return null
     const email = user.email.trim().toLowerCase()
     const metadata = user.user_metadata || {}
     const name = metadata.full_name || metadata.name || email.split('@')[0] || 'User'
-    const team = customTeam || metadata.team || 'Pod 1'
+    const defaultTeam = getDefaultTeamForEmail(email)
+    let team = (customTeam && customTeam.trim()) || metadata.team || defaultTeam
+
+    // Disallow external non-admin users from assigning themselves internal Pod 1
+    if (team.toLowerCase().startsWith('pod 1') && defaultTeam === 'External Member') {
+        team = 'External Member'
+    }
+
     const role: 'admin' | 'tester' = ADMIN_EMAILS.includes(email) ? 'admin' : 'tester'
 
     return {
@@ -108,14 +123,23 @@ export const getStoredUser = getLocalAppAuth
 /**
  * Sign Up with Email and Password
  */
-export async function signUpWithPassword(email: string, password: string, fullName: string, team: string = 'Pod 1') {
+export async function signUpWithPassword(email: string, password: string, fullName: string, customTeam?: string) {
+    const cleanEmail = email.trim().toLowerCase()
+    const defaultTeam = getDefaultTeamForEmail(cleanEmail)
+    let team = (customTeam && customTeam.trim()) ? customTeam.trim() : defaultTeam
+
+    // Disallow external non-admin users from assigning themselves internal Pod 1
+    if (team.toLowerCase().startsWith('pod 1') && defaultTeam === 'External Member') {
+        team = 'External Member'
+    }
+
     const { data, error } = await supabaseAuthClient.auth.signUp({
-        email: email.trim(),
+        email: cleanEmail,
         password,
         options: {
             data: {
                 full_name: fullName.trim(),
-                team: team.trim(),
+                team,
             },
         },
     })
@@ -126,10 +150,10 @@ export async function signUpWithPassword(email: string, password: string, fullNa
 
     const appUser = mapSupabaseUserToAppUser(data.user, team) || {
         id: data.user?.id,
-        email: email.trim().toLowerCase(),
-        name: fullName.trim() || email.split('@')[0],
+        email: cleanEmail,
+        name: fullName.trim() || cleanEmail.split('@')[0],
         team,
-        role: ADMIN_EMAILS.includes(email.trim().toLowerCase()) ? 'admin' as const : 'tester' as const,
+        role: ADMIN_EMAILS.includes(cleanEmail) ? 'admin' as const : 'tester' as const,
     }
 
     saveAppAuth(appUser)
@@ -319,6 +343,11 @@ export async function signInWithMicrosoft() {
  */
 export async function signOutUser() {
     saveAppAuth(null)
+    if (typeof window !== 'undefined') {
+        try {
+            sessionStorage.clear()
+        } catch {}
+    }
     try {
         await supabaseAuthClient.auth.signOut().catch(() => {})
     } catch {
@@ -367,28 +396,30 @@ export function initAuthListener(onUserChange: (user: AppAuthUser | null) => voi
                 saveAppAuth(appUser)
                 onUserChange(appUser)
 
-                // Trigger Slack alert only for genuinely new user creations (created in the last 2 minutes)
+                // Trigger Slack alert on SIGNED_IN event
                 if (_event === 'SIGNED_IN' && typeof window !== 'undefined') {
                     const userCreatedAt = session.user.created_at ? new Date(session.user.created_at).getTime() : 0
-                    const isGenuineNewAccount = userCreatedAt > 0 && (Date.now() - userCreatedAt) < 120000 // within 2 minutes of signup
+                    const isGenuineNewAccount = userCreatedAt > 0 && (Date.now() - userCreatedAt) < 600000 // within 10 minutes of signup
                     const alertKey = `mergeworks.signupAlertSent.${session.user.id}`
 
                     if (isGenuineNewAccount && !localStorage.getItem(alertKey)) {
                         localStorage.setItem(alertKey, 'true')
                         const provider = session.user.app_metadata?.provider || 'OAuth / SSO'
+                        console.info(`[Auth] Dispatching New Account Slack notification for ${appUser.email}`)
                         sendNewAccountSlackAlert({
                             fullName: appUser.name,
                             email: appUser.email,
                             team: appUser.team,
                             authMethod: `${provider.toUpperCase()} Sign-In`,
-                        }).catch(() => {})
+                        }).catch((err) => console.warn('[Auth] Failed to send new account alert:', err))
                     } else {
-                        // Regular sign-in alert with 15-minute session debounce
-                        const sessionAlertKey = `mergeworks.signInAlertSent.${session.user.id}.${Math.floor(Date.now() / (1000 * 60 * 15))}`
+                        // Regular sign-in alert with 30-second burst debounce
+                        const sessionAlertKey = `mergeworks.signInAlertSent.${session.user.id}.${Math.floor(Date.now() / (1000 * 30))}`
                         if (!sessionStorage.getItem(sessionAlertKey)) {
                             sessionStorage.setItem(sessionAlertKey, 'true')
                             const rawProvider = session.user.app_metadata?.provider || 'Google OAuth'
                             const providerLabel = rawProvider.charAt(0).toUpperCase() + rawProvider.slice(1) + (rawProvider.includes('email') ? '' : ' OAuth')
+                            console.info(`[Auth] Dispatching Sign-In Slack notification for ${appUser.email}`)
                             sendSignInSlackAlert({
                                 fullName: appUser.name,
                                 email: appUser.email,
@@ -396,7 +427,7 @@ export function initAuthListener(onUserChange: (user: AppAuthUser | null) => voi
                                 team: appUser.team,
                                 authMethod: providerLabel,
                                 status: 'Success',
-                            }).catch(() => {})
+                            }).catch((err) => console.warn('[Auth] Failed to send sign-in alert:', err))
                         }
                     }
                 }

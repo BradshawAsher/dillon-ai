@@ -1,6 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-
-import { claimProject, getOwnedProjects, getProjectOwner, isOwnedByUser } from './projectOwnership'
+import {
+    claimProject,
+    claimProjectWithTeam,
+    getOwnedProjects,
+    getProjectOwner,
+    getProjectTeam,
+    getProjectsForTeam,
+    isOwnedByUser,
+    isOwnedByTeam,
+    setProjectTeam,
+} from './projectOwnership'
 
 const STORAGE_KEY = 'mergeworks.projectOwnership'
 
@@ -62,5 +71,21 @@ describe('projectOwnership', () => {
         // and can still claim afterwards
         claimProject('p1', 'a@example.com')
         expect(getProjectOwner('p1')).toBe('a@example.com')
+    })
+
+    it('claims project with team and filters by team correctly', () => {
+        claimProjectWithTeam('deal-1', 'alex@acme.com', 'Acme Capital')
+        claimProjectWithTeam('deal-2', 'sarah@acme.com', 'Acme Capital')
+        claimProjectWithTeam('deal-3', 'bob@external.com', 'External Member')
+
+        expect(getProjectOwner('deal-1')).toBe('alex@acme.com')
+        expect(getProjectTeam('deal-1')).toBe('Acme Capital')
+        expect(isOwnedByTeam('deal-1', 'Acme Capital')).toBe(true)
+        expect(isOwnedByTeam('deal-1', 'Other Firm')).toBe(false)
+        expect(getProjectsForTeam('Acme Capital').sort()).toEqual(['deal-1', 'deal-2'])
+
+        setProjectTeam('deal-3', 'Beacon Search Fund')
+        expect(getProjectTeam('deal-3')).toBe('Beacon Search Fund')
+        expect(getProjectsForTeam('Beacon Search Fund')).toEqual(['deal-3'])
     })
 })

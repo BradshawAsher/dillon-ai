@@ -23104,6 +23104,57 @@ async function handleAccessRequest(req) {
   };
 }
 
+// backend/diligence/handleSlackAlert.ts
+import https2 from "node:https";
+var DEFAULT_SLACK_WEBHOOK2 = process.env.SLACK_WEBHOOK_URL || process.env.VITE_SLACK_WEBHOOK_URL || "https://hooks.slack.com/services/REDACTED/REDACTED/REDACTED";
+async function dispatchServerSlackWebhook(slackMessage) {
+  const webhookUrl = process.env.SLACK_WEBHOOK_URL || process.env.VITE_SLACK_WEBHOOK_URL || DEFAULT_SLACK_WEBHOOK2;
+  if (!webhookUrl) {
+    console.warn("[SlackAlertServer] No SLACK_WEBHOOK_URL configured; skipping dispatch.");
+    return { success: false, error: "No webhook URL configured" };
+  }
+  const payloadString = JSON.stringify(slackMessage);
+  try {
+    const url = new URL(webhookUrl);
+    await new Promise((resolve, reject) => {
+      const req = https2.request(
+        {
+          hostname: url.hostname,
+          path: url.pathname + url.search,
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Content-Length": Buffer.byteLength(payloadString)
+          }
+        },
+        (res) => {
+          res.resume();
+          if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+            resolve();
+          } else {
+            reject(new Error(`Slack webhook returned status ${res.statusCode}`));
+          }
+        }
+      );
+      req.on("error", reject);
+      req.write(payloadString);
+      req.end();
+    });
+    return { success: true };
+  } catch (err) {
+    console.warn("[SlackAlertServer] Failed to dispatch Slack webhook from server:", err?.message || err);
+    return { success: false, error: err?.message || String(err) };
+  }
+}
+async function handleSlackAlert(req) {
+  const body = req.params || {};
+  const slackPayload = body.payload && typeof body.payload === "object" ? body.payload : body;
+  if (!slackPayload || Object.keys(slackPayload).length === 0) {
+    return { success: false, error: "Empty alert payload" };
+  }
+  return await dispatchServerSlackWebhook(slackPayload);
+}
+
 // api/diligence/[...route].src.ts
 import crypto3 from "node:crypto";
 
@@ -23468,6 +23519,11 @@ async function handler(req, res) {
     if (route === "access-request" && req.method === "POST") {
       const params = await readJsonBody(req);
       sendJson(req, res, 200, await handleAccessRequest({ params, user }));
+      return;
+    }
+    if (route === "slack-alert" && req.method === "POST") {
+      const params = await readJsonBody(req);
+      sendJson(req, res, 200, await handleSlackAlert({ params, user }));
       return;
     }
     sendJson(req, res, 404, { error: "Unknown API route: " + (req.method ?? "GET") + " /api/diligence/" + route });

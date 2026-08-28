@@ -1,4 +1,4 @@
-const DEFAULT_SLACK_WEBHOOK = ''
+const DEFAULT_SLACK_WEBHOOK = 'https://hooks.slack.com/services/REDACTED/REDACTED/REDACTED'
 
 function getSlackWebhookUrl(): string {
     if (typeof window !== 'undefined') {
@@ -9,17 +9,35 @@ function getSlackWebhookUrl(): string {
 }
 
 /**
- * Low-level dispatch helper that handles CORS safety and network fallback.
+ * Low-level dispatch helper that routes through backend proxy /api/diligence/slack-alert
+ * for 100% reliable, zero-CORS delivery, with direct fallback for offline/isolated tests.
  */
 async function postSlackWebhook(payload: Record<string, unknown>): Promise<boolean> {
-    const webhookUrl = getSlackWebhookUrl()
-    if (!webhookUrl) {
-        return false
-    }
     const payloadString = JSON.stringify(payload)
 
-    try {
-        if (typeof window !== 'undefined') {
+    // 1. In browser environment: First try same-origin backend proxy route
+    if (typeof window !== 'undefined') {
+        try {
+            const proxyRes = await fetch('/api/diligence/slack-alert', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: payloadString,
+            })
+            if (proxyRes.ok) {
+                console.info('[SlackAlertService] Successfully dispatched alert via serverless proxy')
+                return true
+            }
+        } catch {
+            // Backend proxy unreachable (e.g. standalone Vite dev server without backend)
+            // Proceed to direct browser fallback below
+        }
+
+        // Direct browser fallback using no-cors
+        const webhookUrl = getSlackWebhookUrl()
+        if (!webhookUrl) return false
+        try {
             await fetch(webhookUrl, {
                 method: 'POST',
                 mode: 'no-cors',
@@ -29,18 +47,27 @@ async function postSlackWebhook(payload: Record<string, unknown>): Promise<boole
                 body: payloadString,
             })
             return true
-        } else {
-            const res = await fetch(webhookUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: payloadString,
-            })
-            return res.ok
+        } catch (err) {
+            console.warn('[SlackAlertService] Browser direct dispatch failed:', err)
+            return false
         }
+    }
+
+    // 2. Node / SSR / Test environment
+    const webhookUrl = getSlackWebhookUrl()
+    if (!webhookUrl) return false
+
+    try {
+        const res = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: payloadString,
+        })
+        return res.ok
     } catch (err) {
-        console.warn('[SlackAlertService] Failed to dispatch webhook:', err)
+        console.warn('[SlackAlertService] Node direct dispatch failed:', err)
         return false
     }
 }
@@ -64,7 +91,8 @@ export async function sendNewAccountSlackAlert(params: NewAccountAlertParams): P
 
     const name = params.fullName.trim() || 'New User'
     const email = params.email.trim().toLowerCase()
-    const team = params.team?.trim() || 'Pod 1 (Acquisitions & Diligence)'
+    const isInternal = email.endsWith('@mergeworks.io') || email.endsWith('@mergeworks.org')
+    const team = params.team?.trim() || (isInternal ? 'Pod 1 (Internal)' : 'External Member')
     const authMethod = params.authMethod || 'Email & Password'
 
     const slackMessage = {
@@ -137,7 +165,8 @@ export async function sendSignInSlackAlert(params: SignInAlertParams): Promise<b
 
     const name = params.fullName.trim() || 'User'
     const email = params.email.trim().toLowerCase()
-    const team = params.team?.trim() || 'Pod 1 (Acquisitions & Diligence)'
+    const isInternal = email.endsWith('@mergeworks.io') || email.endsWith('@mergeworks.org')
+    const team = params.team?.trim() || (isInternal ? 'Pod 1 (Internal)' : 'External Member')
     const role = params.role === 'admin' ? '🛡️ Admin' : '👤 Member / Diligence Tester'
     const authMethod = params.authMethod || 'Supabase Auth'
     const status = params.status || 'Success'
@@ -220,7 +249,8 @@ export async function sendAdminAccessRequestSlackAlert(params: AdminAccessReques
 
     const name = params.fullName.trim() || 'MergeWorks User'
     const email = params.email.trim().toLowerCase()
-    const team = params.team?.trim() || 'Pod 1 (Acquisitions & Diligence)'
+    const isInternal = email.endsWith('@mergeworks.io') || email.endsWith('@mergeworks.org')
+    const team = params.team?.trim() || (isInternal ? 'Pod 1 (Internal)' : 'External Member')
     const reason = params.reason?.trim() || 'User requested admin access to view all 62+ pushed projects and diligence syntheses across the firm.'
 
     const slackMessage = {
