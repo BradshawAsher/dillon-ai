@@ -1,6 +1,7 @@
 import type { FindingType, Severity } from './diligence'
 import type { DealModel } from '../hooks/backend/diligence'
 import type { SubmissionHistoryItem } from './submissionHistory'
+import { isFailedSubmissionStatus, normalizeSubmissionStatus } from './submissionHistory'
 import { deriveDocumentedFacts } from './documentedFacts'
 import { normalizeEquityFraction } from './dealMath'
 
@@ -452,6 +453,9 @@ export function isDuplicateProjectDocument(file: File, projectId: string, rows: 
     const normalizedFileName = norm(file?.name)
 
     return rows.some((row) => {
+        // Failed/stopped attempts must not prevent re-uploading the original
+        // file. Still block completed or potentially running duplicates.
+        if (isFailedSubmissionStatus(row.status) || ['stopped', 'stopped_by_user'].includes(normalizeSubmissionStatus(row.status))) return false
         return norm(row.projectId) === normalizedProjectId
             && norm(row.fileName) === normalizedFileName
             && row.fileSize === file.size
@@ -492,4 +496,6 @@ export type SubmissionBatch = {
     endedAt?: number
     stoppedAt?: number
     stopError?: string
+    interruptedAt?: number
+    uploadAttempts?: import('./batchState').BatchUploadAttempt[]
 }

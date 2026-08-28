@@ -35,13 +35,17 @@ export function requireConfirmedBatchStop(response: BatchStopResponse | null | u
     }
 }
 
-export function batchCompletionTime(batch: SubmissionBatch, rows: SubmissionHistoryItem[]) {
+export function batchCompletionTime(batch: SubmissionBatch, rows: SubmissionHistoryItem[], observedAt?: number) {
     // Without a positive expected count we can't assert the batch is complete:
     // `rows.length < undefined` (or `< 0`) is false, which would otherwise let a
     // batch with a missing/zero expectation report completion prematurely.
     const expected = Number.isFinite(batch.expectedDocumentCount) ? batch.expectedDocumentCount : 0
     if (expected <= 0 || batch.stopError || rows.length === 0 || rows.length < expected || !rows.every((row) => isTerminalSubmissionStatus(row.status))) return undefined
-    const times = rows.map((row) => Date.parse(row.processedAt || row.updatedAt || '')).filter(Number.isFinite)
+    if (Number.isFinite(batch.endedAt) && batch.endedAt! >= batch.startedAt) return batch.endedAt
+    const times = rows.map((row) => {
+        const time = [row.processedAt, row.statusResolvedAt, row.updatedAt].map(value => Date.parse(value || '')).find(Number.isFinite)
+        return time ?? observedAt ?? NaN
+    }).filter(Number.isFinite)
     return times.length === rows.length && times.every((time) => time >= batch.startedAt) ? Math.max(...times) : undefined
 }
 

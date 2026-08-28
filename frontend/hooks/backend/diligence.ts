@@ -91,7 +91,7 @@ export type DealModel = {
     projectName?: string | null
 }
 
-function useQuery<T>(fetcher: (params?: Record<string, unknown>) => Promise<T>, initialData: T | null = null) {
+function useQuery<T>(fetcher: (params?: Record<string, unknown>) => Promise<T>, initialData: T | null = null, throwOnError = false) {
     const [state, setState] = useState<QueryState<T>>({ data: initialData, loading: false, error: null })
 
     const trigger = useCallback(
@@ -105,12 +105,13 @@ function useQuery<T>(fetcher: (params?: Record<string, unknown>) => Promise<T>, 
                 } catch (error) {
                     const message = error instanceof Error ? error.message : String(error)
                     setState((previous) => ({ data: previous.data, loading: false, error: message }))
+                    if (throwOnError) throw error
                     return null
                 }
             })()
             return withResult(promise)
         },
-        [fetcher]
+        [fetcher, throwOnError]
     )
 
     return { ...state, trigger }
@@ -177,17 +178,18 @@ function getFriendlyErrorMessage(error: unknown): string {
 
 async function fetchJson<T>(input: string, init?: RequestInit): Promise<T> {
     let response: Response
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 240_000)
 
     try {
-        const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 240_000)
         response = await fetch(input, { ...init, signal: controller.signal })
-        clearTimeout(timeoutId)
     } catch (error) {
         if (error instanceof DOMException && error.name === 'AbortError') {
-            throw new Error('Request timed out. This usually means n8n has reached its execution limit or is unavailable. Try again later.')
+            throw new Error('Request timed out before confirmation. Check document history before retrying; the cause is not confirmed.')
         }
         throw new Error(getFriendlyErrorMessage(error))
+    } finally {
+        clearTimeout(timeoutId)
     }
 
     const body: unknown = await response.json().catch(() => null)
@@ -197,7 +199,7 @@ async function fetchJson<T>(input: string, init?: RequestInit): Promise<T> {
             throw new Error('Vercel serverless timeout (HTTP 504). The submission pipeline took longer than the serverless execution limit while dispatching to n8n. Processing may still finish in the background — please check history or try again.')
         }
         if (response.status === 413) {
-            throw new Error('Document payload exceeds Vercel Serverless Function limit (4.5 MB). Please upload a compressed version or smaller file.')
+            throw new Error('The app rejected the inline upload payload (HTTP 413). Retry using direct storage upload; large files do not need to pass through the app API.')
         }
         const message =
             body && typeof body === 'object' && 'error' in body
@@ -314,7 +316,7 @@ function useLiveSubmitDealPacket() {
                 headers: { 'Content-Type': 'application/json', ...identityHeaders() },
                 body: JSON.stringify(params),
             })
-        }, [])
+        }, []), null, true
     )
 }
 

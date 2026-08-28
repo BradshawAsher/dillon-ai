@@ -47,6 +47,23 @@ Due-Diligence-Dashboard/
 
 ---
 
+## Upload and batch ownership
+
+| File | Responsibility |
+| --- | --- |
+| `frontend/services/documentUpload.ts` | Storage-first submission and the 3 MiB inline fallback limit |
+| `frontend/services/supabaseStorage.ts` | Select resumable Supabase or R2/signed upload alternatives |
+| `frontend/services/resumableUpload.ts` | Signed TUS uploads, chunk reads, progress, and retry offsets |
+| `backend/diligence/createUploadUrl.ts` | Storage tickets independent of the Cloudflare proxy |
+| `backend/diligence/storedFileMultipart.ts` | Restricted download, verified temporary file, multipart attachment, cleanup |
+| `backend/diligence/documentHandoff.ts` | Shared local/deployed handoff deadline and stage-specific errors |
+| `frontend/utils/batchState.ts` | Expected counts and upload-attempt manifest merged with server records |
+| `frontend/utils/documentCarousel.ts` | Display-only merge retaining failed uploads; never synthesis evidence |
+| `docs/UPLOAD_AND_BATCH_RECOVERY.md` | Operational behavior, recovery, and regression checks |
+
+Keep local and deployed runtimes on the shared handoff implementation. Rebuild
+`api/diligence/[...route].js` with `node scripts/build-api.mjs` after server changes.
+
 ## Guidelines for Future Additions (Scalability & AI Performance)
 
 To ensure high performance, maintainability, and token efficiency for both human developers and Agentic AI assistants (e.g. Gemini Antigravity / Claude Sonnet / GPT-4o), follow these mandatory rules:

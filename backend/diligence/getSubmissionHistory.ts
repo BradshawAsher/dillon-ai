@@ -32,6 +32,25 @@ function hasText(value: unknown) {
     return typeof value === 'string' && value.trim().length > 0
 }
 
+export function submissionTimeoutAt(row: Record<string, any>): number {
+    const toMs = (value: unknown) => {
+        const ms = value ? new Date(value as string | number).getTime() : 0
+        return Number.isFinite(ms) ? ms : 0
+    }
+    const lastActiveMs = Math.max(toMs(row.updated_at), toMs(row.created_at))
+    const batchCount = typeof row.expected_batch_document_count === 'number' && Number.isFinite(row.expected_batch_document_count) && row.expected_batch_document_count > 0 ? row.expected_batch_document_count : 1
+    return lastActiveMs > 0 ? lastActiveMs + Math.max(600, batchCount * 300) * 1000 : 0
+}
+
+export function submissionFailureMessage(row: Record<string, any>, status: string): string {
+    if (status === 'completed') return ''
+    if (row.error_message) return row.error_message
+    if (status !== 'failed') return ''
+    return hasText(row.processing_started_at)
+        ? 'Document processing stopped reporting progress and timed out. Check the workflow execution before retrying; the cause is not confirmed.'
+        : 'Document was queued but processing never started before the timeout. Check submission or upload errors and retry this document.'
+}
+
 export function deriveSubmissionStatus(row: Record<string, any>) {
     const rawStatus = typeof row.status === 'string' ? row.status.trim() : ''
     const normalizedStatus = rawStatus.toLowerCase()
@@ -47,19 +66,8 @@ export function deriveSubmissionStatus(row: Record<string, any>) {
     // from getTime(), and Math.max(NaN, anything) is NaN — which would discard a
     // perfectly good created_at and stop the stuck-row timeout below from ever
     // firing.
-    const toMs = (value: unknown) => {
-        const ms = value ? new Date(value as string | number).getTime() : 0
-        return Number.isFinite(ms) ? ms : 0
-    }
-    const lastActiveMs = Math.max(toMs(row.updated_at), toMs(row.created_at))
-    const elapsedSeconds = lastActiveMs > 0 ? (Date.now() - lastActiveMs) / 1000 : 0
-
-    const batchCount = typeof row.expected_batch_document_count === 'number' && row.expected_batch_document_count > 0
-        ? row.expected_batch_document_count
-        : 1
-    const perDocTimeoutSeconds = Math.max(600, batchCount * 300)
-
-    if (activeSubmissionStatuses.has(normalizedStatus) && elapsedSeconds > perDocTimeoutSeconds) {
+    const timeoutAt = submissionTimeoutAt(row)
+    if (activeSubmissionStatuses.has(normalizedStatus) && timeoutAt > 0 && Date.now() > timeoutAt) {
         return 'failed'
     }
 
@@ -300,7 +308,9 @@ export default async function getSubmissionHistory(req: {
             receivedAt: row.received_at ?? '',
             processingStartedAt: row.processing_started_at ?? '',
             processedAt: row.processed_at ?? '',
-            errorMessage: isCompleted ? '' : (row.error_message || (derivedStatus === 'failed' ? 'Document processing stalled or stopped (Anthropic API credit limit or n8n node failure).' : '')),
+            statusResolvedAt: derivedStatus === 'failed' && activeSubmissionStatuses.has(String(row.status).trim().toLowerCase()) && submissionTimeoutAt(row) > 0 && Date.now() > submissionTimeoutAt(row)
+                ? new Date(submissionTimeoutAt(row)).toISOString() : '',
+            errorMessage: submissionFailureMessage(row, derivedStatus),
             riskLevel: resolvedRiskLevel,
             category: row.category ?? '',
             trafficLight: resolvedTrafficLight,

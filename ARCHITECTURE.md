@@ -36,11 +36,13 @@ flowchart TB
         CFWorker["Cloudflare Edge Worker (Reverse Proxy & Edge Caching)"]
         CFEdgeCache["Edge Cache (s-maxage=10, stale-while-revalidate=59)"]
         VercelCDN["Vercel Edge Network (Immutable Static Delivery)"]
+        AppAPI["Same-origin Node API: tickets and metadata submission"]
+        Handoff["Verified temporary file to native multipart attachment"]
     end
 
     subgraph EdgeStorage["3. Ingestion & Storage Layer (Cloudflare R2 + Supabase)"]
         R2Storage["Cloudflare R2 Object Storage (dillon-deal-documents, $0 Egress)"]
-        SupabaseStorage["Supabase Object Storage (Presigned S3 Fallback)"]
+        SupabaseStorage["Supabase Storage: signed resumable uploads and small-file fallback"]
         SupabaseDB["Supabase PostgreSQL (Deal Models, Eval Runs, Action Logs)"]
         PostgresRPC["Postgres Server-Side Aggregate RPC (get_portfolio_diligence_kpis)"]
         RealtimeWS["Supabase Realtime CDC (WebSockets Engine)"]
@@ -64,13 +66,20 @@ flowchart TB
     end
 
     %% Interactions
-    UI -->|1. Request Upload Ticket| R2Storage
-    ZipWorker -->|2. Stream File Blobs Direct to R2 ($0 Egress)| R2Storage
+    UI -->|1. Request Upload Ticket| AppAPI
+    ZipWorker -->|Unpacked Files| UI
+    UI -->|Large Files: Resumable 6 MiB Chunks| SupabaseStorage
+    UI -->|Small Files or Resumable Fallback: Worker PUT| R2Storage
     UI -->|3. Read History / Synthesis| CFWorker
     CFWorker -->|Cache Hit <15ms| CFEdgeCache
     CFWorker -.->|Cache Miss| SupabaseDB
     UI -->|4. Query Portfolio KPIs| PostgresRPC
-    UI -->|5. Dispatch Deal Batch| IntakeWebhook
+    UI -->|5. Submit Metadata and Storage URL per Document| AppAPI
+    AppAPI -->|Register Queued Document before Dispatch| SupabaseDB
+    AppAPI --> Handoff
+    R2Storage -->|Download and Verify Bytes| Handoff
+    SupabaseStorage -->|Download and Verify Bytes| Handoff
+    Handoff -->|Multipart Binary and Known Content-Length| IntakeWebhook
     IntakeWebhook --> DocExtractor
     DocExtractor --> PrimaryModel
     DocExtractor -.->|Fallback Routing| BackupModel
@@ -155,7 +164,8 @@ sequenceDiagram
     actor DealTeam as Deal Lead / Analyst
     participant Browser as React SPA (Client)
     participant CF as Cloudflare Edge Worker
-    participant Storage as Supabase Storage / S3
+    participant API as Same-origin Node API
+    participant Storage as Supabase Storage / R2 Worker
     participant n8n as n8n Orchestrator (Pod 1)
     participant LLM as OpenAI 5.6 Terra / Sol
     participant Math as Deterministic Math Engine
@@ -163,11 +173,21 @@ sequenceDiagram
 
     DealTeam->>Browser: Drops Deal Room Packet (ZIP / PDF / XLSX / MP3 / EML)
     Browser->>Browser: Decompresses ZIP client-side & validates format signatures
-    Browser->>Storage: Requests presigned upload URLs & streams blobs directly
-    Storage-->>Browser: Storage Keys generated (Bypasses Vercel FOT bottleneck)
-    
-    Browser->>n8n: POST /webhook/intake-batch (Deal metadata, asking price, file URLs)
-    n8n->>n8n: Splits batch into parallel sub-workflow extraction jobs
+    Browser->>Browser: Save expected count and upload-attempt manifest
+    Browser->>API: POST /api/diligence/upload-url
+    API-->>Browser: Scoped storage ticket and object path
+    Browser->>Storage: Upload directly; large files use resumable 6 MiB chunks
+    Storage-->>Browser: Upload confirmed
+    Browser->>API: POST /api/diligence/submit (metadata and storage URL)
+    API->>DB: Register queued document before dispatch
+    API->>Storage: Download stored file
+    Storage-->>API: File bytes to private temporary disk
+    API->>API: Verify byte count before opening n8n request
+    API->>n8n: POST submit webhook (native multipart binary attachment)
+    n8n-->>API: Document acceptance acknowledgment
+    API->>API: Validate acknowledgment and clean temporary files
+    API-->>Browser: Accepted request ID
+    Note over API,n8n: No automatic resend after ambiguous send or acknowledgment failure
     
     par Parallel Per-Document Extraction
         n8n->>LLM: Ingest document tokens + Structured JSON Output Parser
@@ -196,13 +216,15 @@ sequenceDiagram
 * **TanStack Query & Table Architecture**:
   - **`@tanstack/react-query` (v5)**: Manages all asynchronous server state with a unified `QueryClient` (`staleTime: 10,000ms`, `gcTime: 300,000ms`, `refetchOnWindowFocus: true`). Eliminates redundant network calls, manages background refetches, and provides typed hooks (`useSubmissionHistoryQuery`, `useProjectSynthesisQuery`, `usePortfolioKpisQuery`, `useDealModelsQuery`).
   - **`@tanstack/react-table`**: Powers high-performance, virtualized, multi-column sorting and filtering across deal history and financial fact reconciliation tables.
-* **Direct-to-Cloud R2 Storage**: Rather than streaming multi-gigabyte VDR uploads through serverless proxies (which causes Fast Origin Transfer bottlenecks and function timeouts), the client requests upload tickets via `/api/diligence/upload-url` and streams binaries directly to **Cloudflare R2 Object Storage** (`dillon-deal-documents`) via the unified edge worker (`dillon-ai-worker`). R2 provides 100% zero-egress document storage, allowing unlimited document downloads, previews, and OCR passes at $0 bandwidth cost.
+* **Direct Storage Uploads**: The client requests tickets via `/api/diligence/upload-url`. Files larger than 6 MiB prefer signed resumable Supabase uploads in 6 MiB chunks on the direct storage host. Smaller files prefer the R2 Worker; the providers remain alternatives if one upload path fails. Supabase upload URLs bypass the Cloudflare proxy. Only files at most 3 MiB may fall back to inline base64 after storage fails.
+* **Verified Server Handoff**: After storage succeeds, `/api/diligence/submit` receives metadata and a URL, registers the document, then downloads it to a private temporary file and verifies its size. Native FormData sends a disk-backed Blob with a known Content-Length to n8n. Local and deployed runtimes share `backend/diligence/documentHandoff.ts`; temporary attachments are cleaned up on success or failure, with a 256 MiB aggregate limit per handoff. Download, send, and acknowledgment share a 180-second deadline inside the configured 300-second Vercel function budget. The file bypasses the inbound API body, not the outbound server-to-n8n transfer.
+* **Batch State and Failure Visibility**: A session-persisted upload manifest retains attempts that never reached the database. It contains metadata, not document bytes or keys. Expected counts never shrink to received counts; progress and timer logic derive from the same batch state. Failed carousel cards retain partial results and show unavailable fields. Display-only failed attempts are not synthesis evidence. See [Upload and Batch Recovery](docs/UPLOAD_AND_BATCH_RECOVERY.md).
 * **In-Browser ZIP Decompressor**: Client-side worker recursively unpacks multi-folder ZIP archives (`utils/zipExtractor.ts`), preserving folder taxonomy and queuing individual files into the extraction pipeline.
 * **Optimistic State & Real-Time CDC Sync**: Uses **Supabase Realtime (Postgres Change Data Capture over WebSockets)** to push instantaneous row updates (<100ms latency) to the browser without continuous background polling. When a CDC event arrives, it automatically invalidates TanStack Query in-memory caches, reducing egress by over 99.9% while guaranteeing instant UI responsiveness.
 
 ### B. Cloudflare Edge Worker & Reverse Proxy Layer (Steps A & C)
 * **REST Edge Reverse Proxy (Step A)**: High-performance Cloudflare Worker sitting in front of REST read endpoints (`/api/diligence/history`, `/api/diligence/synthesis`, benchmark feeds) with `Cache-Control: public, s-maxage=10, stale-while-revalidate=59` and ETags, serving repeated reads from global Edge PoPs in sub-15ms.
-* **Unified R2 Storage & Supabase Egress Shield (Step C)**: High-throughput worker (`dillon-ai-worker`) that handles direct PUT uploads and GET reads for Cloudflare R2 (`pub-3b04d9f4c75546caae7c86bd7b6847de.r2.dev`) while also intercepting legacy `/storage/v1/object/public/*` requests with edge caching (`Cache-Control: public, max-age=31536000, immutable`), completely shielding Supabase from redundant binary egress.
+* **R2 Storage and Legacy Supabase Caching (Step C)**: The worker (`dillon-ai-worker`) handles PUT uploads and GET reads for R2 and caches legacy Supabase public-object requests that pass through it. New signed Supabase upload/public URLs remain independent of that proxy; those direct downloads are not covered by its cache.
 * **DDoS & Origin Protection**: Absorbs concurrent user refreshes and automated benchmark evaluation runs, preventing high query volume from hitting Supabase PostgreSQL or triggering serverless function invocation limits.
 
 ### C. Postgres Server-Side Aggregate RPC & Egress Optimization (Step B)
@@ -294,7 +316,7 @@ When explaining this architecture in technical interviews, focus on these core d
 | **Multi-Tier Model Failover + Emergency Candidate JSON Salvage** | Ensures 99.9%+ pipeline resilience against rate limits, schema syntax errors, and LLM JSON quirks across both per-doc and deal synthesis workflows. | *Single-model or single-retry architecture*: Rejected due to unacceptable document drop rates during provider outages. |
 | **Server-Side Postgres RPC Aggregation (`get_portfolio_diligence_kpis`)** | Calculates all portfolio totals in sub-2ms in the database, reducing client payload from 180KB+ to <400 bytes (99.8% bandwidth cut). | *Client-side aggregation over raw tables*: Rejected due to massive egress consumption and slow rendering with 88+ projects. |
 | **Cloudflare Edge Worker & S-Maxage Caching** | Serves high-frequency history and benchmark reads in sub-15ms from the edge, protecting Supabase database connections from traffic spikes. | *Direct origin queries without edge cache*: Rejected due to database connection exhaustion during multi-analyst sessions. |
-| **Direct Supabase Uploads via Presigned URLs** | Uploading 50MB VDR ZIPs directly to cloud storage keeps Vercel Fast Origin Transfer at 0 MB and avoids 30s serverless timeouts. | *Proxying uploads through Vercel Serverless Functions*: Rejected due to 10 GB/mo origin bandwidth limits and payload caps. |
+| **Resumable Direct Uploads + Staged Handoff** | Keep large documents out of the inbound API body; resume interrupted browser uploads; verify the stored file before sending a known-length multipart attachment to n8n. | Inline base64 increases payload size. Directly piping the download into n8n couples two transfers and makes failures harder to locate. Temporary staging uses disk and adds a download phase; outbound bytes still cross the server. |
 | **n8n Cloud Orchestrator + Supabase PostgreSQL** | Provides visual workflow observability, asynchronous retry queues, map-reduce batching, and watchdog auto-recovery. | *Custom Microservices (FastAPI/Temporal)*: High operational overhead without added throughput benefits for M&A batch cadences. |
 | **Client-Side ZIP Decompression** | Decompressing archives in the browser offloads CPU compute from the backend and allows immediate client-side file validation. | *Server-side unzipping*: Heavy server memory footprint and security exposure to decompression zip-bomb exploits. |
 | **Dual-Tier State Management** | n8n Data Tables act as the high-speed scratchpad for active pipelines; Supabase PostgreSQL acts as the permanent relational ledger. | *Single Database*: Risk of locking main application tables during heavy concurrent batch writes. |
@@ -302,6 +324,17 @@ When explaining this architecture in technical interviews, focus on these core d
 ---
 
 ## 7. Failure Modes & Self-Healing Architecture
+
+**Upload and handoff recovery (2026-08-28):** Storage success is not proof of
+n8n acceptance. A storage-download failure occurs before dispatch; a send or
+acknowledgment failure may occur after acceptance. Check history before retrying
+and never automatically resend an ambiguous submission. Dispatch failures only
+update rows still queued, preserving results that already advanced. Failed
+uploads remain visible even without a database record. All-success batches show
+**Complete**; terminal batches with failures show **Finished with errors**;
+missing-document batches show **Incomplete** with a separately frozen timer.
+Late arrivals can resume that timer. These changes require no database migration
+or n8n workflow rewrite. See the [recovery runbook](docs/UPLOAD_AND_BATCH_RECOVERY.md).
 
 1. **Multi-Stage Retry & Emergency JSON Salvage**:
    - Extraction (`W5Jp7CJIQbNy0qlY`): 2x Terra + 2x Sol retry loop with exponential jitter backoff ($5\text{s} \rightarrow 5\text{s} \rightarrow 10\text{s} \rightarrow 15\text{s}$). If all attempts fail, routes to an emergency LangChain repair chain using the accumulated `bestFailedOutput`.

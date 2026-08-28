@@ -33,6 +33,9 @@ import {
 } from '../../utils/aiSubmissionData'
 import {
     formatSubmissionStatus,
+    isActiveSubmissionStatus,
+    isFailedSubmissionStatus,
+    isStoppedSubmissionStatus,
     type SubmissionHistoryItem,
 } from '../../utils/submissionHistory'
 import { formatEasternTime } from '../../utils/dateTime'
@@ -47,7 +50,7 @@ function getSubmissionStatusVariant(status: string): 'success' | 'warning' | 'de
     const normalized = (status || '').trim().toLowerCase()
     if (normalized === 'completed' || normalized === 'approved') return 'success'
     if (['accepted', 'queued', 'processing', 'submitted', 'human review', 'human_review', 'needs review'].includes(normalized)) return 'warning'
-    if (['error', 'failed', 'rejected'].includes(normalized)) return 'destructive'
+    if (isFailedSubmissionStatus(normalized)) return 'destructive'
     return 'secondary'
 }
 
@@ -164,9 +167,9 @@ function getDocTypeCardStyle(docType: string) {
 
 function getActionNeededCardStyle(hasEscalations: boolean, status: string) {
     const norm = (status || '').trim().toLowerCase()
-    if (hasEscalations || ['error', 'failed', 'rejected', 'human review', 'needs review'].includes(norm)) {
+    if (hasEscalations || isFailedSubmissionStatus(norm) || isStoppedSubmissionStatus(norm) || ['human review', 'needs review'].includes(norm)) {
         return {
-            actionText: hasEscalations ? 'Review flags' : norm === 'failed' || norm === 'error' ? 'Retry document' : 'Review required',
+            actionText: isFailedSubmissionStatus(norm) || isStoppedSubmissionStatus(norm) ? 'Retry document' : hasEscalations ? 'Review flags' : 'Review required',
             containerClass: 'border-rose-500/40 bg-rose-500/10 dark:bg-rose-950/30 dark:border-rose-800/60 shadow-xs',
             labelClass: 'text-rose-700 dark:text-rose-400 font-bold',
             textClass: 'text-rose-700 dark:text-rose-300 font-black',
@@ -275,7 +278,12 @@ export default function LatestSubmissionSection({
     const trafficLight = displayedSubmitTrafficLight || displayedSubmissionRow?.trafficLight || ''
     const riskLevel = displayedSubmitRiskLevel || displayedSubmissionRow?.riskLevel || ''
     const confidence = displayedSubmitConfidence || displayedSubmissionRow?.aiConfidence || ''
-    const aiSummary = displayedSubmitAiSummary || displayedSubmissionRow?.aiSummary || ''
+    const aiSummary = displayedSubmitAiSummary || displayedSubmissionRow?.aiSummary || liveSubmitInsight?.summary || ''
+    const hasFailed = isFailedSubmissionStatus(displayedSubmitStatus)
+    const isStopped = isStoppedSubmissionStatus(displayedSubmitStatus)
+    const isUnavailable = hasFailed || isStopped
+    const missingResult = isUnavailable ? 'Unavailable — missing analysis' : 'Pending'
+    const retryableRows = latestBatchRows.filter(row => row.requestID && isFailedSubmissionStatus(row.status))
 
     const safeBatchDocIndex = typeof propSafeBatchDocIndex === 'number' ? propSafeBatchDocIndex : Math.min(
         latestBatchRows.length - 1,
@@ -284,7 +292,7 @@ export default function LatestSubmissionSection({
 
     const docCost = calculateDocumentCost(displayedSubmissionRow)
     const batchTotalCost = calculateBatchTotalCost(latestBatchRows)
-    const formattedConfidence = formatConfidencePercent(confidence)
+    const formattedConfidence = !confidence && isUnavailable ? missingResult : formatConfidencePercent(confidence)
 
     const docConfidenceFraction = typeof liveSubmitInsight?.confidencePercent === 'number' && Number.isFinite(liveSubmitInsight.confidencePercent)
         ? liveSubmitInsight.confidencePercent / 100
@@ -362,11 +370,11 @@ export default function LatestSubmissionSection({
                         <Badge variant={submitEnvironment === 'test' ? 'warning' : 'outline'}>
                             {submitEnvironment}
                         </Badge>
-                        <Badge variant={displayedSubmissionRow ? 'success' : 'secondary'}>
-                            {liveSubmittedRow ? 'Live project row found' : 'Most recent saved submission'}
+                        <Badge variant={displayedSubmissionRow?.requestID ? 'success' : 'secondary'}>
+                            {displayedSubmissionRow && !displayedSubmissionRow.requestID ? 'Upload not registered' : liveSubmittedRow ? 'Live project row found' : 'Most recent saved submission'}
                         </Badge>
                         <Badge variant="outline" className="font-mono text-xs bg-primary/10 text-primary border-primary/30">
-                            {displayedSubmissionRow?.modelUsed || 'OpenAI 5.6 Terra'}
+                            {displayedSubmissionRow?.modelUsed || (isUnavailable ? 'Model not recorded' : 'OpenAI 5.6 Terra')}
                         </Badge>
                     </div>
                 </div>
@@ -404,7 +412,7 @@ export default function LatestSubmissionSection({
                             )}
                         </Button>
                     ) : null}
-                    {handleRetryFailedBatchDocs && latestBatchRows.some((r) => ['failed', 'upload_failed', 'error'].includes((r.status || '').toLowerCase()) || Boolean(r.errorMessage)) ? (
+                    {handleRetryFailedBatchDocs && retryableRows.length > 0 ? (
                         <Button
                             type="button"
                             variant="outline"
@@ -413,7 +421,7 @@ export default function LatestSubmissionSection({
                             disabled={isRerunningBatch}
                         >
                             <RotateCw className="h-4 w-4" />
-                            <span>Retry all failed in batch ({latestBatchRows.filter((r) => ['failed', 'upload_failed', 'error'].includes((r.status || '').toLowerCase()) || Boolean(r.errorMessage)).length})</span>
+                            <span>Retry all failed in batch ({retryableRows.length})</span>
                         </Button>
                     ) : null}
                     {handleRerunLatestBatch && latestBatchRows.length > 0 ? (
@@ -456,7 +464,7 @@ export default function LatestSubmissionSection({
                     }}>
                         Add more files for this project
                     </Button>
-                    {displayedSubmitStatus && !['completed', 'failed', 'error'].includes(displayedSubmitStatus.trim().toLowerCase()) && (
+                    {isActiveSubmissionStatus(displayedSubmitStatus) && (
                         <Badge variant="secondary" className="gap-1.5">
                             <Clock3 className="h-3 w-3" />
                             Est. ~1 min remaining
@@ -464,7 +472,7 @@ export default function LatestSubmissionSection({
                     )}
                 </div>
 
-                {liveSubmitInsight ? (
+                {liveSubmitInsight && (!isUnavailable || liveSubmitInsight.investmentBuyReasoning) ? (
                     <div className="rounded-xl border border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-background p-5 shadow-sm space-y-3">
                         <div className="flex flex-wrap items-center justify-between gap-2">
                             <div className="flex items-center gap-2">
@@ -556,13 +564,27 @@ export default function LatestSubmissionSection({
                         )}
                     </div>
 
+                    {isUnavailable && (
+                        <div role="status" className="mt-4 rounded-lg border border-destructive/30 bg-destructive/5 p-4 space-y-2">
+                            <p className="font-semibold">{hasFailed ? 'Document failed' : 'Document stopped'} — results incomplete</p>
+                            <p className="text-sm break-words">{displayedSubmissionRow?.errorMessage || 'The document did not finish processing.'}</p>
+                            <p className="text-sm text-muted-foreground">This document stays in the carousel. Any returned results are preserved; missing analysis is unavailable, not a zero value or a successful result.</p>
+                            {!displayedSubmissionRow?.requestID && (
+                                <Button type="button" variant="outline" onClick={() => document.getElementById('upload-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
+                                    Re-select and upload this file
+                                </Button>
+                            )}
+                        </div>
+                    )}
+
                     {(() => {
                         const riskCardStyle = getRiskSignalCardStyle(trafficLight, riskLevel)
                         const confCardStyle = getConfidenceCardStyle(docConfidenceFraction)
-                        const detectedDocType = displayedSubmissionRow?.detectedDocumentType || displayedSubmissionRow?.documentType || documentType || 'Pending'
+                        const detectedDocType = displayedSubmissionRow?.detectedDocumentType || (isUnavailable ? missingResult : displayedSubmissionRow?.documentType || documentType || 'Pending')
                         const docTypeCardStyle = getDocTypeCardStyle(detectedDocType)
                         const hasEscalations = Boolean(liveSubmitInsight?.escalationReasons && liveSubmitInsight.escalationReasons.length > 0)
                         const actionCardStyle = getActionNeededCardStyle(hasEscalations, displayedSubmitStatus)
+                        if (isUnavailable && !displayedSubmissionRow?.requestID) actionCardStyle.actionText = 'Re-upload file'
 
                         return (
                             <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
@@ -577,13 +599,15 @@ export default function LatestSubmissionSection({
                                                 <AlertCircle className="h-4 w-4" />
                                             ) : riskCardStyle.icon === 'check-circle' ? (
                                                 <CheckCircle2 className="h-4 w-4" />
+                                            ) : isUnavailable ? (
+                                                <Info className="h-4 w-4" />
                                             ) : (
                                                 <Loader2 className="h-4 w-4 animate-spin" />
                                             )}
                                         </div>
                                     </div>
                                     <p className={`mt-2 text-lg leading-tight tracking-tight ${riskCardStyle.textClass}`}>
-                                        {trafficLight || riskLevel || 'Still processing'}
+                                        {trafficLight || riskLevel || (isUnavailable ? missingResult : 'Still processing')}
                                     </p>
                                 </div>
 
@@ -635,7 +659,7 @@ export default function LatestSubmissionSection({
                                         </div>
                                     </div>
                                     <p className="mt-2 text-lg font-bold text-emerald-700 dark:text-emerald-300 font-mono leading-tight">
-                                        {formatDocumentCostDisplay(displayedSubmissionRow).formatted}
+                                        {isUnavailable && displayedSubmissionRow?.costUsd == null && !displayedSubmissionRow?.totalTokens ? 'Not recorded' : formatDocumentCostDisplay(displayedSubmissionRow).formatted}
                                     </p>
                                 </div>
 
@@ -661,7 +685,7 @@ export default function LatestSubmissionSection({
                         )
                     })()}
 
-                    <ExpandableText text={aiSummary || (liveSubmitInsight?.escalationReasons.length ? "The document has items that need review before relying on its findings." : "This panel will surface the document’s key result as soon as n8n returns it.")} maxHeight={120} className="mt-4" />
+                    <ExpandableText text={aiSummary || (isUnavailable ? 'Summary unavailable — retry or re-upload this document to obtain the missing analysis.' : liveSubmitInsight?.escalationReasons.length ? "The document has items that need review before relying on its findings." : "This panel will surface the document’s key result as soon as n8n returns it.")} maxHeight={120} className="mt-4" />
                 </div>
 
                 <p className="text-xs text-muted-foreground">
@@ -679,7 +703,7 @@ export default function LatestSubmissionSection({
                     <div className="grid gap-2 p-3 pt-0 sm:grid-cols-2 xl:grid-cols-4">
                         <div className="rounded-md border border-border bg-card px-3 py-2">
                             <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Request ID</p>
-                            <p className="mt-1 break-all font-mono text-foreground">{webhookResponse?.requestID ?? displayedSubmissionRow?.requestID ?? 'Pending'}</p>
+                            <p className="mt-1 break-all font-mono text-foreground">{displayedSubmissionRow ? displayedSubmissionRow.requestID || 'Not registered' : webhookResponse?.requestID || 'Pending'}</p>
                         </div>
                         <div className="rounded-md border border-border bg-card px-3 py-2">
                             <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Project ID</p>
@@ -695,7 +719,7 @@ export default function LatestSubmissionSection({
                         </div>
                         <div className="rounded-md border border-border bg-card px-3 py-2">
                             <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">n8n Row ID</p>
-                            <p className="mt-1 font-mono text-foreground">{displayedSubmitRowId || 'Pending'}</p>
+                            <p className="mt-1 font-mono text-foreground">{displayedSubmitRowId || (isUnavailable ? 'Not registered' : 'Pending')}</p>
                         </div>
                         <div className="rounded-md border border-border bg-card px-3 py-2">
                             <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Received At</p>
@@ -703,11 +727,11 @@ export default function LatestSubmissionSection({
                         </div>
                         <div className="rounded-md border border-border bg-card px-3 py-2">
                             <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Deal / Project</p>
-                            <p className="mt-1 text-foreground">{submitResponse?.payload?.dealName || displayedSubmissionRow?.dealName || 'Pending'}</p>
+                            <p className="mt-1 text-foreground">{displayedSubmissionRow?.dealName || projectId || 'Not provided'}</p>
                         </div>
                         <div className="rounded-md border border-border bg-card px-3 py-2">
                             <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">File Name</p>
-                            <p className="mt-1 break-all text-foreground">{submitResponse?.payload?.fileName ?? displayedSubmissionRow?.fileName ?? 'Pending'}</p>
+                            <p className="mt-1 break-all text-foreground">{displayedSubmissionRow?.fileName ?? submitResponse?.payload?.fileName ?? 'Pending'}</p>
                         </div>
                     </div>
                 </details>
@@ -723,8 +747,8 @@ export default function LatestSubmissionSection({
                                     </Badge>
                                 ) : null}
                             </div>
-                            <p className="mt-1 text-foreground">Processing started: {displayedSubmissionRow.processingStartedAt || 'Pending'}</p>
-                            <p className="mt-1 text-foreground">Processed at: {displayedSubmissionRow.processedAt || 'Pending'}</p>
+                            <p className="mt-1 text-foreground">Processing started: {displayedSubmissionRow.processingStartedAt || (isUnavailable ? 'Not recorded' : 'Pending')}</p>
+                            <p className="mt-1 text-foreground">Processed at: {displayedSubmissionRow.processedAt || (isUnavailable ? 'Not completed' : 'Pending')}</p>
                         </div>
                         <div className="rounded-md border border-border bg-card px-3 py-2">
                             <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Risk Level</p>
@@ -734,13 +758,13 @@ export default function LatestSubmissionSection({
                                         {riskLevel}
                                     </Badge>
                                 ) : (
-                                    <span className="text-muted-foreground">Pending</span>
+                                    <span className="text-muted-foreground">{missingResult}</span>
                                 )}
                             </div>
                         </div>
                         <div className="rounded-md border border-border bg-card px-3 py-2">
                             <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Category</p>
-                            <p className="mt-1 font-semibold text-indigo-700 dark:text-indigo-300">{displayedSubmitCategory || 'Pending'}</p>
+                            <p className="mt-1 font-semibold text-indigo-700 dark:text-indigo-300">{displayedSubmitCategory || missingResult}</p>
                         </div>
                         <div className="rounded-md border border-border bg-card px-3 py-2">
                             <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Confidence</p>
@@ -750,11 +774,11 @@ export default function LatestSubmissionSection({
                         </div>
                         <div className="rounded-md border border-border bg-card px-3 py-2">
                             <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Variance</p>
-                            <p className="mt-1 text-foreground">{displayedSubmitVariance ? `${displayedSubmitVariance}%` : 'Pending'}</p>
+                            <p className="mt-1 text-foreground">{displayedSubmitVariance ? `${displayedSubmitVariance}%` : missingResult}</p>
                         </div>
                         <div className="rounded-md border border-border bg-card px-3 py-2">
                             <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">EBITDA Extracted</p>
-                            <p className="mt-1 font-mono font-semibold text-foreground">{displayedSubmissionRow.ebitdaExtracted || 'Pending'}</p>
+                            <p className="mt-1 font-mono font-semibold text-foreground">{displayedSubmissionRow.ebitdaExtracted || missingResult}</p>
                         </div>
                         {(escalationItems.length > 0 || summaryItems.length > 0) ? (
                             <div className="grid gap-3 xl:col-span-4 xl:grid-cols-2">
@@ -858,7 +882,7 @@ export default function LatestSubmissionSection({
                                             badgeVariant={group.badge}
                                             className={group.sectionClass}
                                             itemClassName={group.itemClass}
-                                            emptyLabel="None"
+                                            emptyLabel={isUnavailable ? missingResult : 'None'}
                                             defaultOpen
                                             onItemClick={(item, index) => {
                                                 if (setActiveEvidence) {
@@ -930,20 +954,20 @@ export default function LatestSubmissionSection({
                                 <div className="grid gap-2 md:grid-cols-3">
                                     <div className="rounded-md border border-border bg-card px-3 py-2">
                                         <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Lower Bound</p>
-                                        <p className="mt-1 text-sm text-foreground">{liveSubmitInsight?.formattedValuationLowerBound || 'Pending'}</p>
+                                        <p className="mt-1 text-sm text-foreground">{liveSubmitInsight?.formattedValuationLowerBound || missingResult}</p>
                                     </div>
                                     <div className="rounded-md border border-border bg-card px-3 py-2">
                                         <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Base Estimate</p>
-                                        <p className="mt-1 text-sm text-foreground">{liveSubmitInsight?.formattedValuationBaseEstimate || 'Pending'}</p>
+                                        <p className="mt-1 text-sm text-foreground">{liveSubmitInsight?.formattedValuationBaseEstimate || missingResult}</p>
                                     </div>
                                     <div className="rounded-md border border-border bg-card px-3 py-2">
                                         <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Upper Bound</p>
-                                        <p className="mt-1 text-sm text-foreground">{liveSubmitInsight?.formattedValuationUpperBound || 'Pending'}</p>
+                                        <p className="mt-1 text-sm text-foreground">{liveSubmitInsight?.formattedValuationUpperBound || missingResult}</p>
                                     </div>
                                 </div>
                             </div>
                         ) : null}
-                        {liveSubmitInsight ? (
+                        {liveSubmitInsight && (!isUnavailable || liveSubmitInsight.investmentBuyReasoning) ? (
                             <div className="rounded-xl border border-border bg-card p-4 xl:col-span-4 space-y-3 shadow-2xs">
                                 <div className="flex flex-wrap items-center justify-between gap-2">
                                     <div className="flex items-center gap-2">

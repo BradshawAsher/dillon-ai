@@ -41,6 +41,8 @@ export type SubmissionHistoryItem = {
     receivedAt: string
     processingStartedAt: string
     processedAt: string
+    /** Derived timeout instant; not an actual analysis completion timestamp. */
+    statusResolvedAt?: string
     errorMessage: string
     riskLevel: string
     category: string

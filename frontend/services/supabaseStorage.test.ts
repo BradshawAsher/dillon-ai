@@ -1,6 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { requestSignedUploadUrl, uploadDocumentToSupabaseStorage } from './supabaseStorage'
 import { supabaseAuthClient } from './supabaseAuth'
+import { uploadResumable } from './resumableUpload'
+
+vi.mock('./resumableUpload', () => ({ RESUMABLE_CHUNK_BYTES: 6 * 1024 * 1024, uploadResumable: vi.fn() }))
 
 describe('supabaseStorage service', () => {
     beforeEach(() => {
@@ -100,7 +103,12 @@ describe('supabaseStorage service', () => {
             // 2. R2 PUT fails
             .mockResolvedValueOnce({
                 ok: false,
-                status: 502,
+                status: 403,
+            })
+            // Non-retryable R2 error uses the signed Supabase upload directly.
+            .mockResolvedValueOnce({
+                ok: true,
+                status: 200,
             })
         global.fetch = fetchMock
 
@@ -123,6 +131,43 @@ describe('supabaseStorage service', () => {
         })
 
         expect(res.storagePath).toBe('deal-documents/doc.pdf')
+        expect(res.storageFileUrl).toContain('/storage/v1/object/public/deal-documents/doc.pdf')
         expect(onProgress).toHaveBeenCalledWith(100)
+    })
+
+    it('preserves both provider errors when the direct and fallback uploads fail', async () => {
+        global.fetch = vi.fn()
+            .mockResolvedValueOnce({ ok: true, json: async () => ({ storageProvider: 'r2', uploadUrl: 'https://r2/upload', path: 'p/f.pdf', publicUrl: 'https://r2/f.pdf', supabaseFallback: { signedUrl: 'https://supabase/upload', path: 'p/f.pdf', publicUrl: 'https://supabase/f.pdf' } }) })
+            .mockResolvedValueOnce({ ok: false, status: 403 })
+            .mockResolvedValueOnce({ ok: false, status: 413 })
+        await expect(uploadDocumentToSupabaseStorage({ file: new Blob(['doc']), fileName: 'f.pdf' })).rejects.toThrow('R2 HTTP 403; Supabase HTTP 413')
+    })
+
+    it('uses the actual fallback path when the signed ticket changes it', async () => {
+        global.fetch = vi.fn()
+            .mockResolvedValueOnce({ ok: true, json: async () => ({ storageProvider: 'r2', uploadUrl: 'https://r2/upload', path: 'r2/f.pdf', publicUrl: 'https://r2/f.pdf', supabaseFallback: { signedUrl: 'https://supabase/upload', path: 'fallback/f.pdf', publicUrl: 'https://supabase/f.pdf' } }) })
+            .mockResolvedValueOnce({ ok: false, status: 403 })
+            .mockResolvedValueOnce({ ok: true, status: 200 })
+        expect((await uploadDocumentToSupabaseStorage({ file: new Blob(['doc']), fileName: 'f.pdf' })).storagePath).toBe('fallback/f.pdf')
+    })
+
+    it('sends an 18 MiB PDF through signed resumable storage without a full-file PUT', async () => {
+        const fallback = { signedUrl: 'https://p.storage.supabase.co/signed', resumableUrl: 'https://p.storage.supabase.co/resumable', token: 'scoped', path: 'p/deck.pdf', publicUrl: 'https://sihpsqrunkwkxhhnwoqe.supabase.co/storage/v1/object/public/deal-documents/p/deck.pdf', bucket: 'deal-documents' }
+        global.fetch = vi.fn().mockResolvedValueOnce({ ok: true, json: async () => ({ storageProvider: 'r2', uploadUrl: 'https://worker/upload', path: 'r2/deck.pdf', publicUrl: 'https://r2/deck.pdf', supabaseFallback: fallback }) })
+        vi.mocked(uploadResumable).mockResolvedValueOnce()
+        const file = new File([new Uint8Array(18 * 1024 * 1024)], 'deck.pdf', { type: 'application/pdf' })
+        const result = await uploadDocumentToSupabaseStorage({ file })
+        expect(global.fetch).toHaveBeenCalledTimes(1)
+        expect(uploadResumable).toHaveBeenCalledWith(file, expect.objectContaining({ resumableUrl: fallback.resumableUrl, token: 'scoped' }), 'application/pdf', expect.any(Function))
+        expect(result.storageFileUrl).toBe(fallback.publicUrl)
+    })
+
+    it('does not retry an identical full upload repeatedly after a network error', async () => {
+        global.fetch = vi.fn()
+            .mockResolvedValueOnce({ ok: true, json: async () => ({ storageProvider: 'r2', uploadUrl: 'https://worker/upload', path: 'p/doc.pdf', publicUrl: 'https://r2/doc.pdf', supabaseFallback: { signedUrl: 'https://storage/signed', path: 'p/doc.pdf', publicUrl: 'https://storage/doc.pdf' } }) })
+            .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+            .mockResolvedValueOnce({ ok: true, status: 200 })
+        await expect(uploadDocumentToSupabaseStorage({ file: new Blob(['x']), fileName: 'doc.pdf' })).resolves.toMatchObject({ storageFileUrl: 'https://storage/doc.pdf' })
+        expect(global.fetch).toHaveBeenCalledTimes(3)
     })
 })

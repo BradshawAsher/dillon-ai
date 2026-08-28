@@ -4373,8 +4373,8 @@ var require_RealtimeChannel = __commonJS({
       }
       /** @internal */
       _notThisChannelEvent(event, ref) {
-        const { close, error, leave, join: join2 } = constants_1.CHANNEL_EVENTS;
-        const events = [close, error, leave, join2];
+        const { close, error, leave, join: join3 } = constants_1.CHANNEL_EVENTS;
+        const events = [close, error, leave, join3];
         return ref && events.includes(event) && ref !== this.joinPush.ref;
       }
       /** @internal */
@@ -22047,6 +22047,21 @@ var activeSubmissionStatuses = /* @__PURE__ */ new Set([
 function hasText(value) {
   return typeof value === "string" && value.trim().length > 0;
 }
+function submissionTimeoutAt(row) {
+  const toMs = (value) => {
+    const ms = value ? new Date(value).getTime() : 0;
+    return Number.isFinite(ms) ? ms : 0;
+  };
+  const lastActiveMs = Math.max(toMs(row.updated_at), toMs(row.created_at));
+  const batchCount = typeof row.expected_batch_document_count === "number" && Number.isFinite(row.expected_batch_document_count) && row.expected_batch_document_count > 0 ? row.expected_batch_document_count : 1;
+  return lastActiveMs > 0 ? lastActiveMs + Math.max(600, batchCount * 300) * 1e3 : 0;
+}
+function submissionFailureMessage(row, status) {
+  if (status === "completed") return "";
+  if (row.error_message) return row.error_message;
+  if (status !== "failed") return "";
+  return hasText(row.processing_started_at) ? "Document processing stopped reporting progress and timed out. Check the workflow execution before retrying; the cause is not confirmed." : "Document was queued but processing never started before the timeout. Check submission or upload errors and retry this document.";
+}
 function deriveSubmissionStatus(row) {
   const rawStatus = typeof row.status === "string" ? row.status.trim() : "";
   const normalizedStatus = rawStatus.toLowerCase();
@@ -22056,13 +22071,8 @@ function deriveSubmissionStatus(row) {
   if (normalizedStatus === "completed" || normalizedStatus === "approved" || hasExtractedAnalysis) {
     return "completed";
   }
-  const updatedAtMs = row.updated_at ? new Date(row.updated_at).getTime() : 0;
-  const createdAtMs = row.created_at ? new Date(row.created_at).getTime() : 0;
-  const lastActiveMs = Math.max(updatedAtMs, createdAtMs);
-  const elapsedSeconds = lastActiveMs > 0 ? (Date.now() - lastActiveMs) / 1e3 : 0;
-  const batchCount = typeof row.expected_batch_document_count === "number" && row.expected_batch_document_count > 0 ? row.expected_batch_document_count : 1;
-  const perDocTimeoutSeconds = Math.max(600, batchCount * 300);
-  if (activeSubmissionStatuses.has(normalizedStatus) && elapsedSeconds > perDocTimeoutSeconds) {
+  const timeoutAt = submissionTimeoutAt(row);
+  if (activeSubmissionStatuses.has(normalizedStatus) && timeoutAt > 0 && Date.now() > timeoutAt) {
     return "failed";
   }
   const hasTerminalFailureMarkers = activeSubmissionStatuses.has(normalizedStatus) && hasText(row.processed_at) && (hasText(row.error_message) || failedAfterRetries);
@@ -22245,7 +22255,8 @@ async function getSubmissionHistory(req) {
       receivedAt: row.received_at ?? "",
       processingStartedAt: row.processing_started_at ?? "",
       processedAt: row.processed_at ?? "",
-      errorMessage: isCompleted ? "" : row.error_message || (derivedStatus === "failed" ? "Document processing stalled or stopped (Anthropic API credit limit or n8n node failure)." : ""),
+      statusResolvedAt: derivedStatus === "failed" && activeSubmissionStatuses.has(String(row.status).trim().toLowerCase()) && submissionTimeoutAt(row) > 0 && Date.now() > submissionTimeoutAt(row) ? new Date(submissionTimeoutAt(row)).toISOString() : "",
+      errorMessage: submissionFailureMessage(row, derivedStatus),
       riskLevel: resolvedRiskLevel,
       category: row.category ?? "",
       trafficLight: resolvedTrafficLight,
@@ -22431,6 +22442,99 @@ function normalizeWebhookResponse(response, fallback) {
   };
 }
 
+// backend/diligence/storedFileMultipart.ts
+import { Readable, Transform } from "node:stream";
+import { pipeline } from "node:stream/promises";
+import { createWriteStream, openAsBlob } from "node:fs";
+import { mkdtemp, rmdir, unlink } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join as join2 } from "node:path";
+function validateDocumentStorageUrl(value) {
+  const allowed = [
+    "https://sihpsqrunkwkxhhnwoqe.supabase.co",
+    "https://dillon-ai-worker.bradshin231.workers.dev",
+    "https://pub-3b04d9f4c75546caae7c86bd7b6847de.r2.dev",
+    process.env.STORAGE_CDN_URL,
+    process.env.VITE_STORAGE_CDN_URL,
+    process.env.R2_PUBLIC_URL,
+    process.env.VITE_R2_PUBLIC_URL
+  ].filter(Boolean).map((url2) => new URL(url2).origin);
+  const url = new URL(value);
+  if (url.protocol !== "https:" || url.username || url.password || !allowed.includes(url.origin)) {
+    throw new Error("Document URL must point to configured document storage.");
+  }
+  return url.toString();
+}
+var MAX_HANDOFF_BYTES = 256 * 1024 * 1024;
+async function storedFileMultipart(entries, signal) {
+  let directory;
+  const paths = /* @__PURE__ */ new Set();
+  let totalBytes = 0;
+  const body = new FormData();
+  const cleanup = async () => {
+    for (const path2 of paths) {
+      await unlink(path2).catch((error) => {
+        if (error.code !== "ENOENT") throw error;
+      });
+      paths.delete(path2);
+    }
+    if (directory) {
+      await rmdir(directory);
+      directory = void 0;
+    }
+  };
+  try {
+    for (const entry of entries) {
+      signal.throwIfAborted();
+      if (entry.fileUrl) {
+        if (entry.fileSize !== void 0 && (!Number.isSafeInteger(entry.fileSize) || entry.fileSize < 0 || entry.fileSize > MAX_HANDOFF_BYTES - totalBytes)) {
+          throw new Error("Stored document size is invalid or exceeds the 256 MiB handoff limit.");
+        }
+        const source = await fetch(validateDocumentStorageUrl(entry.fileUrl), { signal, redirect: "error" });
+        if (!source.ok || !source.body) {
+          await source.body?.cancel();
+          throw new Error(`Stored document download failed (HTTP ${source.status}).`);
+        }
+        let bytes = 0;
+        try {
+          directory ??= await mkdtemp(join2(tmpdir(), "mergeworks-handoff-"));
+          const path2 = join2(directory, `attachment-${paths.size}`);
+          paths.add(path2);
+          await pipeline(
+            Readable.fromWeb(source.body),
+            new Transform({ transform(chunk, _encoding, callback) {
+              bytes += chunk.length;
+              totalBytes += chunk.length;
+              if (totalBytes > MAX_HANDOFF_BYTES) return callback(new Error("Stored document exceeds the 256 MiB handoff limit."));
+              if (entry.fileSize !== void 0 && bytes > entry.fileSize) return callback(new Error("Stored document size does not match the selected file. Re-upload it."));
+              callback(null, chunk);
+            } }),
+            createWriteStream(path2, { flags: "wx", mode: 384 }),
+            { signal }
+          );
+          if (entry.fileSize !== void 0 && bytes !== entry.fileSize) throw new Error("Stored document download was incomplete. Retry the download or re-upload it.");
+          signal.throwIfAborted();
+          const blob = await openAsBlob(path2, { type: entry.contentType || "application/octet-stream" });
+          body.append(entry.key, blob, entry.filename || "document");
+        } finally {
+          if (!source.body.locked) await source.body.cancel().catch(() => void 0);
+        }
+      } else if (entry.file !== void 0) {
+        const bytes = Buffer.from(entry.file, "base64");
+        totalBytes += bytes.length;
+        if (totalBytes > MAX_HANDOFF_BYTES) throw new Error("Attachments exceed the 256 MiB handoff limit.");
+        body.append(entry.key, new Blob([bytes], { type: entry.contentType || "application/octet-stream" }), entry.filename || "document");
+      } else {
+        body.append(entry.key, entry.value || "");
+      }
+    }
+    return { body, cleanup };
+  } catch (error) {
+    await cleanup().catch(() => console.warn("Could not remove temporary document handoff files."));
+    throw error;
+  }
+}
+
 // backend/diligence/submitDealPacket.ts
 async function submitDealPacket(req) {
   const triggerTimestamp = (/* @__PURE__ */ new Date()).toISOString();
@@ -22506,7 +22610,7 @@ async function submitDealPacket(req) {
     storagePath: req.params.storagePath ?? ""
   };
   try {
-    await supabase.from("documents").upsert(
+    const { error } = await supabase.from("documents").upsert(
       {
         request_id: requestID,
         project_id: normalizedProjectId,
@@ -22531,7 +22635,9 @@ async function submitDealPacket(req) {
       },
       { onConflict: "request_id" }
     );
-  } catch {
+    if (error) throw new Error(error.message);
+  } catch (error) {
+    throw new Error(`Document could not be registered for processing: ${error instanceof Error ? error.message : "database unavailable"}. The workflow was not started; retry the upload.`);
   }
   const formData = [
     { key: "fileName", value: req.params.fileName },
@@ -22557,20 +22663,6 @@ async function submitDealPacket(req) {
   }
   if (req.params.storagePath) {
     formData.push({ key: "storagePath", value: req.params.storagePath });
-  }
-  if (req.params.fileBase64) {
-    formData.push({ key: "file", file: req.params.fileBase64, filename: req.params.fileName });
-  } else if (req.params.storageFileUrl) {
-    try {
-      const fileRes = await fetch(req.params.storageFileUrl);
-      if (fileRes.ok) {
-        const arrayBuf = await fileRes.arrayBuffer();
-        const base64 = Buffer.from(arrayBuf).toString("base64");
-        formData.push({ key: "file", file: base64, filename: req.params.fileName });
-      }
-    } catch (fetchErr) {
-      console.warn("[submitDealPacket] Failed to fetch binary from storageFileUrl:", fetchErr);
-    }
   }
   if (req.params.userAnthropicApiKey) {
     formData.push({ key: "userAnthropicApiKey", value: req.params.userAnthropicApiKey });
@@ -22602,12 +22694,36 @@ async function submitDealPacket(req) {
   if (req.params.synthBackupModel) {
     formData.push({ key: "synthBackupModel", value: req.params.synthBackupModel });
   }
-  const response = await n8nFinancialAgent.rawRequest({
-    path: path2,
-    method: "POST",
-    bodyType: "form-data",
-    formData
-  });
+  let response;
+  try {
+    if (req.params.storageFileUrl) {
+      formData.push({ key: "file", fileUrl: validateDocumentStorageUrl(req.params.storageFileUrl), filename: req.params.fileName, fileSize: req.params.fileSize, contentType: req.params.fileType });
+    } else if (req.params.fileBase64) {
+      if (Buffer.byteLength(req.params.fileBase64, "base64") > 3 * 1024 * 1024) throw new Error("Large documents must be uploaded directly to storage, not sent inline.");
+      formData.push({ key: "file", file: req.params.fileBase64, filename: req.params.fileName });
+    } else {
+      throw new Error("No uploaded document is available. Re-select the file and upload it again.");
+    }
+    response = await n8nFinancialAgent.rawRequest({ path: path2, method: "POST", bodyType: "form-data", formData });
+    const acknowledgment = response.data;
+    if (!acknowledgment || acknowledgment.error || acknowledgment.ok === false || !["queued", "accepted", "received", "processing", "completed", "duplicate"].includes(String(acknowledgment.status || "").toLowerCase())) {
+      throw new Error(acknowledgment?.error || "n8n did not confirm document acceptance. Check history before retrying.");
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Submission could not be confirmed.";
+    try {
+      const { error: saveError } = await supabase.from("documents").update({
+        status: "upload_failed",
+        error_message: message,
+        processed_at: (/* @__PURE__ */ new Date()).toISOString(),
+        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+      }).eq("request_id", requestID).eq("project_id", normalizedProjectId).eq("environment", environment).eq("status", "queued");
+      if (saveError) console.warn("[submitDealPacket] Could not save dispatch failure", { requestID, code: saveError.code });
+    } catch {
+      console.warn("[submitDealPacket] Could not save dispatch failure", { requestID });
+    }
+    throw error;
+  }
   const normalizedResponse = normalizeWebhookResponse(response.data, {
     requestID,
     submittedAt: triggerTimestamp,
@@ -22949,6 +23065,11 @@ async function stopProjectSynthesis(req) {
 // backend/diligence/createUploadUrl.ts
 var BUCKET_NAME = "deal-documents";
 var SUPABASE_STORAGE_ORIGIN2 = "https://sihpsqrunkwkxhhnwoqe.supabase.co";
+var SUPABASE_DIRECT_STORAGE_ORIGIN = "https://sihpsqrunkwkxhhnwoqe.storage.supabase.co";
+function directSupabaseUrl(value, origin = SUPABASE_STORAGE_ORIGIN2) {
+  const url = new URL(value);
+  return `${origin}${url.pathname}${url.search}`;
+}
 var STORAGE_CDN_URL2 = (process.env.VITE_STORAGE_CDN_URL || process.env.STORAGE_CDN_URL || "https://dillon-ai-worker.bradshin231.workers.dev").replace(/\/+$/, "");
 var R2_PUBLIC_URL = (process.env.VITE_R2_PUBLIC_URL || process.env.R2_PUBLIC_URL || "https://pub-3b04d9f4c75546caae7c86bd7b6847de.r2.dev").replace(/\/+$/, "");
 async function createUploadUrl(req) {
@@ -22961,18 +23082,20 @@ async function createUploadUrl(req) {
     path: path2,
     token: "",
     publicUrl: "",
-    bucket: BUCKET_NAME
+    bucket: BUCKET_NAME,
+    resumableUrl: `${SUPABASE_DIRECT_STORAGE_ORIGIN}/storage/v1/upload/resumable/sign`
   };
   try {
     const { data } = await supabase.storage.from(BUCKET_NAME).createSignedUploadUrl(path2);
     const { data: publicData } = supabase.storage.from(BUCKET_NAME).getPublicUrl(path2);
     if (data) {
       supabaseFallback = {
-        signedUrl: data.signedUrl || "",
+        signedUrl: data.signedUrl ? directSupabaseUrl(data.signedUrl, SUPABASE_DIRECT_STORAGE_ORIGIN) : "",
         path: data.path || path2,
         token: data.token || "",
-        publicUrl: (publicData?.publicUrl || "").replace(SUPABASE_STORAGE_ORIGIN2, STORAGE_CDN_URL2),
-        bucket: BUCKET_NAME
+        publicUrl: publicData?.publicUrl ? directSupabaseUrl(publicData.publicUrl) : "",
+        bucket: BUCKET_NAME,
+        resumableUrl: `${SUPABASE_DIRECT_STORAGE_ORIGIN}/storage/v1/upload/resumable/sign`
       };
     }
   } catch (err) {
@@ -23137,13 +23260,20 @@ function extractGeoLocationFromHeaders(headers = {}) {
     if (Array.isArray(val)) return val[0] || "";
     return typeof val === "string" ? val : "";
   };
+  const safeDecode = (value) => {
+    try {
+      return decodeURIComponent(value);
+    } catch {
+      return value;
+    }
+  };
   const city = getHeader("x-vercel-ip-city") || getHeader("cf-ipcity") || getHeader("x-appengine-city") || "";
   const region = getHeader("x-vercel-ip-country-region") || getHeader("cf-region") || getHeader("x-appengine-region") || "";
   const country = getHeader("x-vercel-ip-country") || getHeader("cf-ipcountry") || getHeader("x-appengine-country") || "";
   const rawIp = getHeader("x-forwarded-for") || getHeader("x-real-ip") || getHeader("cf-connecting-ip") || "";
   const ip = rawIp.split(",")[0].trim() || "Direct / Localhost";
   const userAgent = getHeader("user-agent") || "Browser";
-  const parts = [decodeURIComponent(city), decodeURIComponent(region), country].filter(Boolean);
+  const parts = [safeDecode(city), safeDecode(region), country].filter(Boolean);
   const location2 = parts.length > 0 ? parts.join(", ") : "Global / Direct Visitor";
   return { location: location2, ip, country, city, userAgent };
 }
@@ -23227,6 +23357,45 @@ function messageFromError(error) {
   return error instanceof Error ? error.message : String(error);
 }
 
+// backend/diligence/documentHandoff.ts
+async function fetchWithDocumentHandoff(url, init, entries) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 18e4);
+  const hasStoredFile = entries?.some((entry) => entry.fileUrl) ?? false;
+  let stage = hasStoredFile ? "storage-download" : "n8n-send";
+  let multipart;
+  try {
+    if (hasStoredFile) {
+      multipart = await storedFileMultipart(entries, controller.signal);
+      const headers = new Headers(init.headers);
+      headers.delete("Content-Type");
+      headers.delete("Content-Length");
+      init = { ...init, headers, body: multipart.body };
+    }
+    stage = "n8n-send";
+    const response = await fetch(url, { ...init, signal: controller.signal });
+    stage = "n8n-response";
+    const text2 = await response.text();
+    return { response, text: text2 };
+  } catch (error) {
+    console.warn("Document handoff interrupted", { stage, timedOut: controller.signal.aborted });
+    if (stage === "storage-download") {
+      const detail = error instanceof Error && error.message.startsWith("Stored document") ? ` ${error.message}` : "";
+      throw new Error(`Document handoff failed during storage download${controller.signal.aborted ? " (timed out)" : ""}; the file was not sent to n8n.${detail} Retry from document history.`, { cause: error });
+    }
+    const saved = hasStoredFile ? " The uploaded file remains in storage." : "";
+    if (controller.signal.aborted) {
+      throw new Error(`Submission was not confirmed within 3 minutes.${saved} Check document history before retrying; the workflow may have received it.`, { cause: error });
+    }
+    const step = stage === "n8n-response" ? "while reading the workflow acknowledgment" : "while sending the document to n8n";
+    throw new Error(`Document handoff failed ${step}.${saved} Check document history before retrying; the workflow may have received it.`, { cause: error });
+  } finally {
+    clearTimeout(timeoutId);
+    controller.abort();
+    await multipart?.cleanup().catch(() => console.warn("Could not remove temporary document handoff files."));
+  }
+}
+
 // api/_lib/retoolRuntime.ts
 var N8N_BASE_URL = "https://merge-works.app.n8n.cloud/";
 var fallbackUser = {
@@ -23277,25 +23446,12 @@ function installRetoolGlobals() {
         headers["Content-Type"] = "application/json";
         init.body = typeof (options.json ?? options.body) === "string" ? options.json ?? options.body : JSON.stringify(options.json ?? options.body ?? {});
       }
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 18e4);
-      let response;
-      try {
-        response = await fetch(url, { ...init, signal: controller.signal });
-      } catch (err) {
-        clearTimeout(timeoutId);
-        if (err instanceof Error && err.name === "AbortError") {
-          throw new Error("n8n request timed out after 3 minutes. This usually means the execution limit has been reached or n8n is processing a large batch. Try again later.");
-        }
-        throw err;
-      }
-      clearTimeout(timeoutId);
-      const text2 = await response.text();
+      const { response, text: text2 } = await fetchWithDocumentHandoff(url, init, options.formData);
       if (!response.ok) {
         const lowerText = text2.toLowerCase();
         const isExecLimit = response.status === 429 || lowerText.includes("execution limit") || lowerText.includes("executions limit") || lowerText.includes("has reached") || lowerText.includes("limit reached") || response.status === 503 && lowerText.includes("limit");
         if (isExecLimit) {
-          throw new Error("n8n has reached its execution limit for this billing period. Document processing will resume automatically when the limit resets. Your data is safe \u2014 no action needed.");
+          throw new Error("n8n rejected the submission due to a rate or execution limit. Check workflow availability and retry when available.");
         }
         const isEmpty = text2.length === 0 || text2 === "{}" || text2 === "null";
         if (isEmpty && response.status >= 500) {

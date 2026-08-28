@@ -3,6 +3,8 @@
 import type { IncomingHttpHeaders, IncomingMessage } from 'node:http'
 
 import { HttpError } from './httpError'
+import type { MultipartEntry } from '../../backend/diligence/storedFileMultipart'
+import { fetchWithDocumentHandoff } from '../../backend/diligence/documentHandoff'
 
 const N8N_BASE_URL = 'https://merge-works.app.n8n.cloud/'
 
@@ -20,7 +22,7 @@ type RawRequestOptions = {
   path: string
   method?: string
   bodyType?: string
-  formData?: Array<{ key: string; value?: string; file?: string; filename?: string }>
+  formData?: MultipartEntry[]
   json?: Record<string, unknown> | unknown
   body?: any
 }
@@ -78,20 +80,7 @@ export function installRetoolGlobals() {
           : JSON.stringify(options.json ?? options.body ?? {})
       }
 
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 180_000)
-      let response: Response
-      try {
-        response = await fetch(url, { ...init, signal: controller.signal })
-      } catch (err) {
-        clearTimeout(timeoutId)
-        if (err instanceof Error && err.name === 'AbortError') {
-          throw new Error('n8n request timed out after 3 minutes. This usually means the execution limit has been reached or n8n is processing a large batch. Try again later.')
-        }
-        throw err
-      }
-      clearTimeout(timeoutId)
-      const text = await response.text()
+      const { response, text } = await fetchWithDocumentHandoff(url, init, options.formData)
 
       if (!response.ok) {
         const lowerText = text.toLowerCase()
@@ -102,7 +91,7 @@ export function installRetoolGlobals() {
           || lowerText.includes('limit reached')
           || (response.status === 503 && lowerText.includes('limit'))
         if (isExecLimit) {
-          throw new Error('n8n has reached its execution limit for this billing period. Document processing will resume automatically when the limit resets. Your data is safe — no action needed.')
+          throw new Error('n8n rejected the submission due to a rate or execution limit. Check workflow availability and retry when available.')
         }
         const isEmpty = text.length === 0 || text === '{}' || text === 'null'
         if (isEmpty && response.status >= 500) {
