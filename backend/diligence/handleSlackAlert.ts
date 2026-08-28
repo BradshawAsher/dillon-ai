@@ -29,16 +29,27 @@ export function extractGeoLocationFromHeaders(headers: Record<string, string | s
     return typeof val === 'string' ? val : ''
   }
 
+  // Geo headers are percent-encoded, but a malformed value (a stray '%' or a
+  // literal that isn't valid UTF-8 escaping) makes decodeURIComponent throw —
+  // which would take down the whole alert dispatch. Fall back to the raw value.
+  const safeDecode = (value: string): string => {
+    try {
+      return decodeURIComponent(value)
+    } catch {
+      return value
+    }
+  }
+
   const city = getHeader('x-vercel-ip-city') || getHeader('cf-ipcity') || getHeader('x-appengine-city') || ''
   const region = getHeader('x-vercel-ip-country-region') || getHeader('cf-region') || getHeader('x-appengine-region') || ''
   const country = getHeader('x-vercel-ip-country') || getHeader('cf-ipcountry') || getHeader('x-appengine-country') || ''
-  
+
   const rawIp = getHeader('x-forwarded-for') || getHeader('x-real-ip') || getHeader('cf-connecting-ip') || ''
   const ip = rawIp.split(',')[0].trim() || 'Direct / Localhost'
 
   const userAgent = getHeader('user-agent') || 'Browser'
 
-  const parts = [decodeURIComponent(city), decodeURIComponent(region), country].filter(Boolean)
+  const parts = [safeDecode(city), safeDecode(region), country].filter(Boolean)
   const location = parts.length > 0 ? parts.join(', ') : 'Global / Direct Visitor'
 
   return { location, ip, country, city, userAgent }
