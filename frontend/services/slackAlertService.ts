@@ -423,3 +423,144 @@ export async function sendIssueReportSlackAlert(params: IssueReportAlertParams):
 
     return postSlackWebhook(slackMessage)
 }
+
+export interface SignOutAlertParams {
+    fullName: string
+    email: string
+    team?: string
+    role?: string
+}
+
+/**
+ * Dispatches a formatted Slack notification to #pod-1-agent-alerts when a user signs out.
+ */
+export async function sendSignOutSlackAlert(params: SignOutAlertParams): Promise<boolean> {
+    const timestamp = new Date().toLocaleString('en-US', {
+        timeZone: 'UTC',
+        dateStyle: 'medium',
+        timeStyle: 'short',
+    })
+
+    const name = params.fullName.trim() || 'User'
+    const email = params.email.trim().toLowerCase()
+    const team = params.team?.trim() || 'External Member'
+    const role = params.role || 'tester'
+
+    const slackMessage = {
+        channel: '#pod-1-agent-alerts',
+        text: `🚪 User Signed Out: *${name}* (<mailto:${email}|${email}>)`,
+        blocks: [
+            {
+                type: 'header',
+                text: {
+                    type: 'plain_text',
+                    text: '🚪 User Signed Out of MergeWorks',
+                    emoji: true,
+                },
+            },
+            {
+                type: 'section',
+                fields: [
+                    {
+                        type: 'mrkdwn',
+                        text: `*👤 User:*\n${name}`,
+                    },
+                    {
+                        type: 'mrkdwn',
+                        text: `*📧 Email:*\n<mailto:${email}|${email}>`,
+                    },
+                    {
+                        type: 'mrkdwn',
+                        text: `*🏢 Team / Deal Pod:*\n${team}`,
+                    },
+                    {
+                        type: 'mrkdwn',
+                        text: `*🛡️ Role:*\n\`${role.toUpperCase()}\``,
+                    },
+                ],
+            },
+            {
+                type: 'context',
+                elements: [
+                    {
+                        type: 'mrkdwn',
+                        text: `*Channel:* \`#pod-1-agent-alerts\`  |  *Location:* {{GEO_LOCATION}}  |  *Timestamp:* ${timestamp} UTC`,
+                    },
+                ],
+            },
+        ],
+    }
+
+    return await postSlackWebhook(slackMessage)
+}
+
+export interface VisitorTrafficAlertParams {
+    path?: string
+    referrer?: string
+    userAgent?: string
+    screenResolution?: string
+    utmSource?: string
+}
+
+/**
+ * Dispatches a formatted Slack notification to #pod-1-agent-alerts when a new visitor or guest visits the platform.
+ */
+export async function sendVisitorTrafficSlackAlert(params: VisitorTrafficAlertParams = {}): Promise<boolean> {
+    const timestamp = new Date().toLocaleString('en-US', {
+        timeZone: 'UTC',
+        dateStyle: 'medium',
+        timeStyle: 'short',
+    })
+
+    const path = params.path || '/'
+    const referrer = params.referrer || 'Direct Visit / Bookmark'
+    const screen = params.screenResolution || 'Standard Display'
+    const utm = params.utmSource ? ` (Campaign: ${params.utmSource})` : ''
+
+    const slackMessage = {
+        channel: '#pod-1-agent-alerts',
+        text: `👀 New Visitor Traffic: *{{GEO_LOCATION}}* on \`${path}\``,
+        blocks: [
+            {
+                type: 'header',
+                text: {
+                    type: 'plain_text',
+                    text: '👀 New Visitor / Guest Traffic Detected',
+                    emoji: true,
+                },
+            },
+            {
+                type: 'section',
+                fields: [
+                    {
+                        type: 'mrkdwn',
+                        text: `*📍 Location:*\n*{{GEO_LOCATION}}*`,
+                    },
+                    {
+                        type: 'mrkdwn',
+                        text: `*🌐 IP Address:*\n\`{{IP_ADDRESS}}\``,
+                    },
+                    {
+                        type: 'mrkdwn',
+                        text: `*🔗 Landing View / Path:*\n\`${path}\`${utm}`,
+                    },
+                    {
+                        type: 'mrkdwn',
+                        text: `*🧭 Traffic Source / Referrer:*\n${referrer.length > 60 ? referrer.slice(0, 57) + '...' : referrer}`,
+                    },
+                ],
+            },
+            {
+                type: 'context',
+                elements: [
+                    {
+                        type: 'mrkdwn',
+                        text: `*Channel:* \`#pod-1-agent-alerts\`  |  *Device:* {{USER_AGENT}}  |  *Resolution:* \`${screen}\`  |  *Timestamp:* ${timestamp} UTC`,
+                    },
+                ],
+            },
+        ],
+    }
+
+    return await postSlackWebhook(slackMessage)
+}

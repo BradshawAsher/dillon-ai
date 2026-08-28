@@ -23107,6 +23107,22 @@ async function handleAccessRequest(req) {
 // backend/diligence/handleSlackAlert.ts
 import https2 from "node:https";
 var DEFAULT_SLACK_WEBHOOK2 = process.env.SLACK_WEBHOOK_URL || process.env.VITE_SLACK_WEBHOOK_URL || "https://hooks.slack.com/services/REDACTED/REDACTED/REDACTED";
+function extractGeoLocationFromHeaders(headers = {}) {
+  const getHeader = (key) => {
+    const val = headers[key] || headers[key.toLowerCase()];
+    if (Array.isArray(val)) return val[0] || "";
+    return typeof val === "string" ? val : "";
+  };
+  const city = getHeader("x-vercel-ip-city") || getHeader("cf-ipcity") || getHeader("x-appengine-city") || "";
+  const region = getHeader("x-vercel-ip-country-region") || getHeader("cf-region") || getHeader("x-appengine-region") || "";
+  const country = getHeader("x-vercel-ip-country") || getHeader("cf-ipcountry") || getHeader("x-appengine-country") || "";
+  const rawIp = getHeader("x-forwarded-for") || getHeader("x-real-ip") || getHeader("cf-connecting-ip") || "";
+  const ip = rawIp.split(",")[0].trim() || "Direct / Localhost";
+  const userAgent = getHeader("user-agent") || "Browser";
+  const parts = [decodeURIComponent(city), decodeURIComponent(region), country].filter(Boolean);
+  const location2 = parts.length > 0 ? parts.join(", ") : "Global / Direct Visitor";
+  return { location: location2, ip, country, city, userAgent };
+}
 async function dispatchServerSlackWebhook(slackMessage) {
   const webhookUrl = process.env.SLACK_WEBHOOK_URL || process.env.VITE_SLACK_WEBHOOK_URL || DEFAULT_SLACK_WEBHOOK2;
   if (!webhookUrl) {
@@ -23148,11 +23164,23 @@ async function dispatchServerSlackWebhook(slackMessage) {
 }
 async function handleSlackAlert(req) {
   const body = req.params || {};
-  const slackPayload = body.payload && typeof body.payload === "object" ? body.payload : body;
-  if (!slackPayload || Object.keys(slackPayload).length === 0) {
+  const rawPayload = body.payload && typeof body.payload === "object" ? body.payload : body;
+  if (!rawPayload || Object.keys(rawPayload).length === 0) {
     return { success: false, error: "Empty alert payload" };
   }
-  return await dispatchServerSlackWebhook(slackPayload);
+  if (req.headers) {
+    const geo = extractGeoLocationFromHeaders(req.headers);
+    let payloadString = JSON.stringify(rawPayload);
+    payloadString = payloadString.replace(/\{\{GEO_LOCATION\}\}/g, geo.location);
+    payloadString = payloadString.replace(/\{\{IP_ADDRESS\}\}/g, geo.ip);
+    payloadString = payloadString.replace(/\{\{USER_AGENT\}\}/g, geo.userAgent.slice(0, 100));
+    try {
+      const enrichedPayload = JSON.parse(payloadString);
+      return await dispatchServerSlackWebhook(enrichedPayload);
+    } catch {
+    }
+  }
+  return await dispatchServerSlackWebhook(rawPayload);
 }
 
 // api/diligence/[...route].src.ts
@@ -23523,7 +23551,7 @@ async function handler(req, res) {
     }
     if (route === "slack-alert" && req.method === "POST") {
       const params = await readJsonBody(req);
-      sendJson(req, res, 200, await handleSlackAlert({ params, user }));
+      sendJson(req, res, 200, await handleSlackAlert({ params, headers: req.headers, user }));
       return;
     }
     sendJson(req, res, 404, { error: "Unknown API route: " + (req.method ?? "GET") + " /api/diligence/" + route });

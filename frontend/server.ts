@@ -323,7 +323,7 @@ app.post('/api/diligence/access-request', express.json(), async (req, res) => {
 
 app.post(['/api/diligence/slack-alert', '/api/slack-alert'], express.json(), async (req, res) => {
     try {
-        res.json(await handleSlackAlert({ params: req.body, user: userFromHeaders(req.headers) }))
+        res.json(await handleSlackAlert({ params: req.body, headers: req.headers, user: userFromHeaders(req.headers) }))
     } catch (error) {
         res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
     }

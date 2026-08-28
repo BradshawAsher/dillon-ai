@@ -187,7 +187,7 @@ export default async function handler(req: ApiRequest, res: ServerResponse) {
         }
         if (route === 'slack-alert' && req.method === 'POST') {
             const params = await readJsonBody(req) as Parameters<typeof handleSlackAlert>[0]['params']
-            sendJson(req, res, 200, await handleSlackAlert({ params, user }))
+            sendJson(req, res, 200, await handleSlackAlert({ params, headers: req.headers, user }))
             return
         }
 

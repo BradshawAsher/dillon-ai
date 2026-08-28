@@ -5,6 +5,7 @@ import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
 import { parseUrlDeepLinkState } from './utils/deepLinking'
 import { initAuthListener, getLocalAppAuth, type AppAuthUser } from './services/supabaseAuth'
+import { sendVisitorTrafficSlackAlert } from './services/slackAlertService'
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState<AppAuthUser | null>(getLocalAppAuth)
@@ -36,7 +37,23 @@ export default function App() {
       }
     })
 
-    // 2. Browser history popstate navigation
+    // 2. Visitor / Guest traffic notification (debounced per browser session)
+    if (typeof window !== 'undefined') {
+      const visitorKey = 'mergeworks.visitorSessionReported'
+      if (!sessionStorage.getItem(visitorKey)) {
+        sessionStorage.setItem(visitorKey, 'true')
+        const urlParams = new URLSearchParams(window.location.search)
+        sendVisitorTrafficSlackAlert({
+          path: window.location.pathname + window.location.search,
+          referrer: document.referrer || 'Direct Visit / Bookmark',
+          userAgent: navigator.userAgent,
+          screenResolution: `${window.screen?.width || 0}x${window.screen?.height || 0}`,
+          utmSource: urlParams.get('utm_source') || urlParams.get('ref') || urlParams.get('source') || undefined,
+        }).catch(() => {})
+      }
+    }
+
+    // 3. Browser history popstate navigation
     if (typeof window !== 'undefined') {
       const handlePopState = () => {
         const parsed = parseUrlDeepLinkState(window.location.search, window.location.hash)
