@@ -117,6 +117,13 @@ describe('isDuplicateProjectDocument', () => {
     it('is not a duplicate when size differs', () => {
         expect(isDuplicateProjectDocument(file, 'p1', [row({ fileSize: 200 })])).toBe(false)
     })
+    it('allows re-upload after failure but still blocks completed or running copies', () => {
+        expect(isDuplicateProjectDocument(file, 'p1', [row({ status: 'upload_failed' })])).toBe(false)
+        expect(isDuplicateProjectDocument(file, 'p1', [row({ status: 'failed' })])).toBe(false)
+        expect(isDuplicateProjectDocument(file, 'p1', [row({ status: 'stopped_by_user' })])).toBe(false)
+        expect(isDuplicateProjectDocument(file, 'p1', [row({ status: 'processing' })])).toBe(true)
+        expect(isDuplicateProjectDocument(file, 'p1', [row({ status: 'completed' })])).toBe(true)
+    })
 
     it('does not throw when a row has null projectId/fileName', () => {
         const nulledRow = row({

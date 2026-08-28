@@ -1,5 +1,6 @@
 import { getSubmitPath, normalizeWebhookResponse, type N8nSubmitResponse } from './submissionPayload'
 import { supabase } from '../supabaseClient'
+import { validateDocumentStorageUrl } from './storedFileMultipart'
 
 type Params = {
   environment?: 'production' | 'test'
@@ -118,9 +119,10 @@ export default async function submitDealPacket(req: { params: Params; user: User
     storagePath: req.params.storagePath ?? '',
   }
 
-  // Pre-insert queued document row to Supabase so it immediately appears in history
+  // Require a durable history record before dispatch. Otherwise a successful
+  // workflow can become an invisible document that the batch cannot reconcile.
   try {
-    await supabase.from('documents').upsert(
+    const { error } = await supabase.from('documents').upsert(
       {
         request_id: requestID,
         project_id: normalizedProjectId,
@@ -145,11 +147,12 @@ export default async function submitDealPacket(req: { params: Params; user: User
       },
       { onConflict: 'request_id' }
     )
-  } catch {
-    // Non-blocking if table is syncing
+    if (error) throw new Error(error.message)
+  } catch (error) {
+    throw new Error(`Document could not be registered for processing: ${error instanceof Error ? error.message : 'database unavailable'}. The workflow was not started; retry the upload.`)
   }
 
-  const formData: Array<{ key: string; value: string } | { key: string; file: string; filename: string }> = [
+  const formData: RetoolFormDataEntry[] = [
     { key: 'fileName', value: req.params.fileName },
     { key: 'fileSize', value: String(req.params.fileSize) },
     { key: 'fileType', value: req.params.fileType },
@@ -174,20 +177,6 @@ export default async function submitDealPacket(req: { params: Params; user: User
   }
   if (req.params.storagePath) {
     formData.push({ key: 'storagePath', value: req.params.storagePath })
-  }
-  if (req.params.fileBase64) {
-    formData.push({ key: 'file', file: req.params.fileBase64, filename: req.params.fileName })
-  } else if (req.params.storageFileUrl) {
-    try {
-      const fileRes = await fetch(req.params.storageFileUrl)
-      if (fileRes.ok) {
-        const arrayBuf = await fileRes.arrayBuffer()
-        const base64 = Buffer.from(arrayBuf).toString('base64')
-        formData.push({ key: 'file', file: base64, filename: req.params.fileName })
-      }
-    } catch (fetchErr) {
-      console.warn('[submitDealPacket] Failed to fetch binary from storageFileUrl:', fetchErr)
-    }
   }
   if (req.params.userAnthropicApiKey) {
     formData.push({ key: 'userAnthropicApiKey', value: req.params.userAnthropicApiKey })
@@ -220,12 +209,36 @@ export default async function submitDealPacket(req: { params: Params; user: User
     formData.push({ key: 'synthBackupModel', value: req.params.synthBackupModel })
   }
 
-  const response = await n8nFinancialAgent.rawRequest<N8nSubmitResponse>({
-    path,
-    method: 'POST',
-    bodyType: 'form-data',
-    formData,
-  })
+  let response: { data: N8nSubmitResponse }
+  try {
+    if (req.params.storageFileUrl) {
+      formData.push({ key: 'file', fileUrl: validateDocumentStorageUrl(req.params.storageFileUrl), filename: req.params.fileName, fileSize: req.params.fileSize, contentType: req.params.fileType })
+    } else if (req.params.fileBase64) {
+      if (Buffer.byteLength(req.params.fileBase64, 'base64') > 3 * 1024 * 1024) throw new Error('Large documents must be uploaded directly to storage, not sent inline.')
+      formData.push({ key: 'file', file: req.params.fileBase64, filename: req.params.fileName })
+    } else {
+      throw new Error('No uploaded document is available. Re-select the file and upload it again.')
+    }
+    response = await n8nFinancialAgent.rawRequest<N8nSubmitResponse>({ path, method: 'POST', bodyType: 'form-data', formData })
+    const acknowledgment = response.data as (N8nSubmitResponse & { error?: string; ok?: boolean }) | null
+    if (!acknowledgment || acknowledgment.error || acknowledgment.ok === false || !['queued', 'accepted', 'received', 'processing', 'completed', 'duplicate'].includes(String(acknowledgment.status || '').toLowerCase())) {
+      throw new Error(acknowledgment?.error || 'n8n did not confirm document acceptance. Check history before retrying.')
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Submission could not be confirmed.'
+    // A rejected dispatch must not leave an eternal queued row. Do not overwrite
+    // a workflow that has already advanced to processing/completed meanwhile.
+    try {
+      const { error: saveError } = await supabase.from('documents').update({
+        status: 'upload_failed', error_message: message,
+        processed_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+      }).eq('request_id', requestID).eq('project_id', normalizedProjectId).eq('environment', environment).eq('status', 'queued')
+      if (saveError) console.warn('[submitDealPacket] Could not save dispatch failure', { requestID, code: saveError.code })
+    } catch {
+      console.warn('[submitDealPacket] Could not save dispatch failure', { requestID })
+    }
+    throw error
+  }
 
   const normalizedResponse = normalizeWebhookResponse(response.data, {
     requestID,

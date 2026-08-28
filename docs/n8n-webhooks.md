@@ -21,18 +21,41 @@ The dashboard talks to n8n for **writes only** through webhooks on
 | ~~Error log~~ | ~~GET~~ | ~~`webhook/dd-workflow-errors`~~ | 🗄️ archived — reads from Supabase |
 | ~~Action tracker~~ | ~~GET~~ | ~~`webhook/dd-project-action-tracker`~~ | 🗄️ archived — reads from Supabase |
 
-## 1. Project synthesis webhook (create this one next)
+## Document submission and storage handoff (2026-08-28)
 
-The dashboard's "Project synthesis — final acquisition judgment" panel calls
-`GET webhook/d19d24da-21d4-40f8-8626-a06a7dd54ac7` and expects the
-project-level rows the consolidator workflow writes. Until this webhook
-exists, the panel shows a friendly "not connected yet" notice — nothing else
-breaks.
+The browser requests `POST /api/diligence/upload-url`, uploads to storage, then
+calls `POST /api/diligence/submit` with metadata, the storage URL/path, and the
+project/batch identifiers. Large files do not travel in the API's JSON body.
+Only files at most 3 MiB may use inline base64 when storage is unavailable.
+
+The backend registers a queued row before dispatch. The live submit webhook
+still expects **multipart form-data with a binary `file` attachment**, alongside
+`fileName`, `fileSize`, `fileType`, `requestID`, `projectId`, `submissionBatchId`,
+`expectedBatchDocumentCount`, and other submission metadata. A storage URL alone
+does not replace that attachment contract. The shared Node handoff downloads and
+verifies a temporary file first, then native FormData supplies the multipart
+boundary and Content-Length. The webhook secret remains server-side.
+
+The app rejects missing/error acknowledgments and requires a recognized status:
+`queued`, `accepted`, `received`, `processing`, `completed`, or `duplicate`.
+Download, send, and acknowledgment reading share a 180-second deadline; this
+does not wait for final background analysis. A lost acknowledgment is not
+automatically retried, because n8n may already have accepted the document.
+Dispatch failure updates only the matching row still in `queued` state.
+
+See [Upload and Batch Recovery](UPLOAD_AND_BATCH_RECOVERY.md) for recovery and
+tests. This release does not modify the n8n workflow or require a schema migration.
+
+## 1. Archived project synthesis read webhook
+
+The following section preserves the former read-webhook contract for historical
+reference. Current history/synthesis reads go through the app API to Supabase;
+do not recreate this webhook to diagnose a current read failure.
 
 ### Workflow shape (mirrors the history workflow)
 
-> **Live status:** this workflow is already active in Pod 1. The instructions
-> below describe its required contract; they are not a creation TODO.
+> **Archived contract:** these were the read workflow's response requirements,
+> not current setup instructions. The document submission webhook remains live.
 
 1. **Webhook** node — Method `GET`, Path `d19d24da-21d4-40f8-8626-a06a7dd54ac7`,
    Authentication → Header Auth → reuse the existing **"Header Auth account"**

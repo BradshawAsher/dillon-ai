@@ -5,7 +5,7 @@
   "outputDirectory": "frontend/dist",
   "functions": {
     "api/diligence/[...route].js": {
-      "maxDuration": 30
+      "maxDuration": 300
     }
   },
   "headers": [

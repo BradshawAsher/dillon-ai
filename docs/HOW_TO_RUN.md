@@ -27,12 +27,16 @@ npm install
 If you do not use `nvm`, install Node `22.x` directly before running the same
 steps.
 
-Create `frontend/.env` (gitignored) with the webhook secret — without it,
-live mode gets 403s from n8n:
+Create `frontend/.env` (gitignored) with the server-only webhook and Supabase
+keys. n8n requires the webhook secret; database access and signed upload tickets
+require the Supabase key:
 
 ```
 N8N_WEBHOOK_SECRET=<ask Srijan / password manager>
+SUPABASE_SERVICE_ROLE_KEY=<ask the project owner / password manager>
 ```
+
+Never prefix either secret with `VITE_` or commit its value.
 
 Then either:
 
@@ -66,12 +70,17 @@ Push to `main` on GitHub → Vercel automatically creates a deployment.
 Use the Vercel deployment preview for validation, then promote it to
 production. Vercel keeps prior deployments available for rollback.
 
-Before pushing, run the checks locally from `frontend/`:
+Before pushing, run the checks locally from the repository root:
 
 ```sh
-npm run typecheck   # strict TypeScript across app + backend functions
-npm run build       # what Render runs
+node scripts/build-api.mjs
+cd frontend
+npm run check       # typecheck + tests + frontend production build
 ```
+
+Deploy frontend and API together. Large uploads need the new resumable client
+and the shared server handoff; updating only one side is not the release check.
+See [Vercel deployment](DEPLOY_VERCEL.md) for runtime requirements and smoke tests.
 
 ## Where things live
 
@@ -81,19 +90,27 @@ npm run build       # what Render runs
 | Backend functions (run in Node, originally Retool) | `backend/diligence/` |
 | Local/standalone server | `frontend/server.ts` (+ dev twin `frontend/localApi.ts`) |
 | n8n webhook contracts | [`docs/n8n-webhooks.md`](n8n-webhooks.md) |
+| Large uploads, failed documents, batch counts/timers | [Upload and Batch Recovery](UPLOAD_AND_BATCH_RECOVERY.md) |
 | n8n workflows | `merge-works.app.n8n.cloud`, project `2606-ai-fellows-mergeworks` |
 | Hosting | Vercel project `due-diligence-dashboard` |
 | Secrets | `N8N_WEBHOOK_SECRET` — Vercel Preview and Production vars + local `frontend/.env` |
 
 ## Troubleshooting
 
-- **"Synthesis endpoint not reachable"** on the synthesis panel → the
-  project-synthesis webhook hasn't been created in n8n yet; see
-  [`docs/n8n-webhooks.md`](n8n-webhooks.md).
-- **History shows an error / 403** → your `N8N_WEBHOOK_SECRET` is missing or
-  doesn't match the n8n Header Auth credential.
-- **History or synthesis shows 500** → confirm `N8N_WEBHOOK_SECRET` is set
-  in Vercel for the active environment, then redeploy.
+- **History or synthesis read fails** → these reads use the app API and
+  Supabase, not the archived n8n read webhooks. Check the response/logs and
+  server-side Supabase configuration.
+- **Submission gets a 403 from n8n** → check `N8N_WEBHOOK_SECRET` against the
+  n8n Header Auth credential.
+- **Large upload fails** → re-select a fully downloaded, unchanged local file;
+  verify direct Supabase storage is reachable. Large files do not fall back to
+  inline JSON. See the [recovery runbook](UPLOAD_AND_BATCH_RECOVERY.md).
+- **Handoff fails after upload** → inspect history and n8n executions before
+  retrying. The file may be saved and n8n may have accepted it despite a lost
+  acknowledgment; a confirmed failed document can reuse its stored copy.
+- **Batch says Incomplete or Finished with errors** → inspect individual
+  documents. A frozen timer does not mean all analyses succeeded. Failed cards
+  remain visible; after reload, files that never uploaded must be re-selected.
 - **Vercel build fails after a dependency change** → make sure you are on
   Node `22.x`, run `npm install` in `frontend/`, and commit the updated
   `package-lock.json`.

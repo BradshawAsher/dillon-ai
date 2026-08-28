@@ -10,6 +10,7 @@ declare type User = {
 declare type RetoolFormDataEntry =
   | { key: string; value: string }
   | { key: string; file: string; filename: string }
+  | { key: string; fileUrl: string; filename: string; fileSize: number; contentType: string }
 
 declare const n8nFinancialAgent: {
   rawRequest<T>(options: {

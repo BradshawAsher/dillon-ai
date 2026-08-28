@@ -19,6 +19,7 @@ The Financial Due Diligence Agent automates two core M&A workflow stages (see [`
 ## Key Documentation Links
 
 - **[System Architecture & Technical Specification (`ARCHITECTURE.md`)](ARCHITECTURE.md)** — Comprehensive architecture diagrams, data flow sequence charts, component deep-dives, and interview masterclass talking points.
+- **[Upload and Batch Recovery](docs/UPLOAD_AND_BATCH_RECOVERY.md)** — Resumable large-file uploads, verified n8n handoff, failure recovery, and batch count/timer rules.
 - **[Evaluation Harness & Benchmark Guide (`EVALS.md`)](EVALS.md)** — 58-document golden benchmark dataset, 5-dimension scoring rubric, and 1-card Pre/Post-LOI toggle design.
 - **[Dual Core Agent Capabilities (`PURPOSE.md`)](PURPOSE.md)** — Pre-LOI Valuation Discovery & Post-LOI Deal Negotiation frameworks.
 - **[Deterministic Math Verification (`DETERMINISTIC_MATH_CHECKS.md`)](DETERMINISTIC_MATH_CHECKS.md)** — Zero-hallucination accounting verification rules.
@@ -34,14 +35,24 @@ Dillon AI is engineered as an event-driven, 5-tier multi-agent pipeline:
 
 ```text
 Browser (React 19 SPA + TanStack Query v5 + TanStack Table)
-  ├── 1. Direct-to-Cloud Uploads (Cloudflare R2 Zero-Egress Storage `dillon-deal-documents` / Worker PUT)
+  ├── 1. Direct Storage Uploads (large files: signed Supabase resumable chunks; small files: R2 Worker PUT)
   ├── 2. Storage CDN & Edge Caching (Cloudflare Worker -> R2 Public CDN max-age=1yr / REST s-maxage=10 <15ms)
   ├── 3. Instant Portfolio Metrics -> PostgreSQL RPC (get_portfolio_diligence_kpis <2ms, <400B)
-  ├── 4. Batch Dispatch -> same-origin REST API (/api/diligence/*) -> Pod 1 n8n Webhooks
+  ├── 4. Metadata Dispatch -> same-origin API -> verified temporary attachment -> Pod 1 n8n Webhooks
   ├── 5. Tier 1-2 Extraction Agents & Deterministic Math Engine (Zero-Hallucination Guard)
   ├── 6. Tier 3-4 Synthesis Consolidator & Idempotent Watchdog Gate -> IC Deal Memo
   └── 7. Tier 5 Deal Copilot & Real-Time Stream -> Supabase Realtime CDC (WebSockets push <15ms)
 ```
+
+Files larger than 6 MiB use signed Supabase uploads in 6 MiB chunks, bypassing
+the Cloudflare upload proxy. After storage succeeds, the app API receives only
+metadata and a storage URL. The server downloads and verifies a temporary file
+before sending n8n its required multipart attachment; file bytes still traverse
+the server on this outbound handoff. Large files never fall back to base64 JSON.
+
+Batch tracking preserves the expected document count and failed upload cards.
+**Complete**, **Finished with errors**, and **Incomplete** are distinct states;
+an incomplete batch freezes its timer without pretending analysis succeeded.
 
 See the complete multi-agent diagrams, tables, and sequence charts in **[`ARCHITECTURE.md`](ARCHITECTURE.md)**.
 
@@ -132,12 +143,15 @@ Create `frontend/.env` (it is gitignored):
 
 ```dotenv
 N8N_WEBHOOK_SECRET=the-header-auth-secret-used-by-n8n
+SUPABASE_SERVICE_ROLE_KEY=the-server-only-key-for-the-configured-project
 PORT=3000
 VITE_USE_MOCKS=false
 ```
 
 - `N8N_WEBHOOK_SECRET` is sent server-side as `x-webhook-secret`; it is never
   exposed to the browser.
+- `SUPABASE_SERVICE_ROLE_KEY` is server-only and is used for database access
+  and signed upload tickets. Never give it a `VITE_` prefix or commit its value.
 - `VITE_USE_MOCKS=true` changes the initial local source to Example mode.
 - Access gates are currently disabled. To restore the shared-password gate for
   the local/Render server, set `ENABLE_ACCESS_GATES=true` and `APP_PASSWORD`.
@@ -158,11 +172,12 @@ The retired legacy sample findings data is not rendered in either mode.
 
 The dashboard uses these same-origin endpoints:
 
-| Dashboard API | Method | n8n purpose |
+| Dashboard API | Method | Purpose |
 | --- | --- | --- |
-| `/api/diligence/submit` | `POST` | Accept a document upload and quickly acknowledge it |
-| `/api/diligence/history` | `GET` | Return document-specific rows for polling |
-| `/api/diligence/synthesis` | `GET` | Return project-level synthesis rows for polling |
+| `/api/diligence/upload-url` | `POST` | Issue direct-storage upload tickets; no n8n call |
+| `/api/diligence/submit` | `POST` | Register metadata and forward the stored attachment to n8n |
+| `/api/diligence/history` | `GET` | Read document rows from Supabase |
+| `/api/diligence/synthesis` | `GET` | Read project synthesis rows from Supabase |
 
 The detailed live n8n webhook paths, response schema, and required response
 shape are documented in [docs/n8n-webhooks.md](docs/n8n-webhooks.md).
@@ -172,8 +187,11 @@ For the current workflow map, Data Table ownership, and operating rules, see
 The asynchronous lifecycle is:
 
 ```text
-submit document
-  -> document row is queued/processing
+upload directly to storage (resumable for large files)
+  -> submit metadata + storage URL to the app API
+  -> register a queued document row
+  -> download to temporary disk and verify bytes
+  -> send multipart attachment to n8n and validate its acknowledgment
   -> document AI workflow writes completed fields
   -> document counter updates project state
   -> project synthesizer writes project-level result
@@ -185,8 +203,8 @@ submit document
 All live n8n webhooks should use Header Auth with the `x-webhook-secret`
 credential matching `N8N_WEBHOOK_SECRET`.
 
-The project-synthesis read workflow must return project rows using the
-documented shape, for example:
+History and synthesis reads use the app API and Supabase, not n8n read webhooks.
+The synthesis API returns project rows using the documented shape, for example:
 
 ```json
 { "rows": [{ "projectId": "project-1", "projectStatus": "synthesized" }] }
@@ -207,6 +225,10 @@ The committed `vercel.json` supplies the install, build, and output settings.
 Vercel should use Node `22.x`, matching `frontend/package.json`.
 Set `N8N_WEBHOOK_SECRET` in Vercel for both Preview and Production; never
 expose it with a `VITE_` prefix.
+Also set server-only `SUPABASE_SERVICE_ROLE_KEY`. Deploy the frontend and
+API together: `vercel.json` rebuilds the API bundle and grants the diligence
+function 300 seconds; download, send, and acknowledgment share a 180-second
+handoff deadline. This is not the background AI processing timeout.
 
 Use a Vercel preview deployment to validate live history, a test upload,
 batch progress, and project synthesis before promoting a change. See
@@ -252,6 +274,7 @@ The configured deployment URL is:
 | `frontend/retoolRuntime.ts` | Node-side n8n client and Retool-global compatibility shim |
 | `backend/diligence/` | Submit, history, and synthesis normalizers |
 | `docs/n8n-webhooks.md` | n8n webhook contracts and troubleshooting |
+| `docs/UPLOAD_AND_BATCH_RECOVERY.md` | Upload transport, batch state, recovery, and verification |
 | `docs/HOW_TO_RUN.md` | Additional operating notes |
 | `PURPOSE.md` | Dual core capabilities: Pre-LOI Discovery & Post-LOI Negotiation |
 | `DETERMINISTIC_MATH_CHECKS.md` | How deterministic math checks work |

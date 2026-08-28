@@ -29,11 +29,13 @@ import RightSideQuickActions from '../components/RightSideQuickActions'
 import DealEmailDraftCard from '../components/DealEmailDraftCard'
 import { lazyWithRetry } from '../utils/lazyWithRetry'
 import { batchCompletionTime, createBatchQueue, getBatchStopTarget, requireConfirmedBatchStop, type BatchStopResponse } from '../utils/batchStop'
+import { batchDocumentKey, deriveBatchState, mergeBatchUploadAttempts, type BatchUploadAttempt } from '../utils/batchState'
+import { mergeDocumentCarouselRows } from '../utils/documentCarousel'
 const CommandPalette = lazyWithRetry(() => import('../components/CommandPalette'))
 const SystemArchitectureCard = lazyWithRetry(() => import('../components/SystemArchitectureCard'))
 import LoginButton, { getStoredAuth, isDataIsolationEnabled, DATA_ISOLATION_EVENT, openAuthModal } from '../components/AuthGate'
 import { AUTH_CHANGE_EVENT, type AppAuthUser } from '../services/supabaseAuth'
-import { uploadDocumentToSupabaseStorage } from '../services/supabaseStorage'
+import { prepareDocumentUpload } from '../services/documentUpload'
 import { DataIsolationBanner } from '../components/dashboard/DataIsolationBanner'
 import { buildMarkdownReport, buildJsonExport, downloadFile } from '../components/ExportDealButton'
 import KeyboardShortcutsDialog from '../components/KeyboardShortcutsDialog'
@@ -720,23 +722,6 @@ function parseDashboardMoneyInput(value: string | null | undefined): number | nu
     return Number.isFinite(parsed) && parsed >= 0 ? parsed * multiplier : null
 }
 
-function deriveBatchProgress(rows: SubmissionHistoryItem[]) {
-    const finishedCount = rows.filter(r => !isActiveSubmissionStatus(r.status)).length
-    const processingCount = rows.filter(r => isActiveSubmissionStatus(r.status)).length
-    const failedCount = rows.filter(r => isFailedSubmissionStatus(r.status)).length
-    const completedCount = rows.filter(r => r.status.trim().toLowerCase() === 'completed').length
-    return {
-        expectedCount: rows.length,
-        finishedCount,
-        processingCount,
-        failedCount,
-        completedCount,
-        stuckRows: [],
-        errors: rows.filter(r => r.errorMessage).map(r => ({ fileName: r.fileName, errorMessage: r.errorMessage, requestID: r.requestID })),
-        advisories: [],
-    }
-}
-
 function deriveSynthesisProgress(status?: string, awaiting?: boolean) {
     if (awaiting) return { value: 65, stage: 'Consolidating project findings...' }
     const norm = (status || '').trim().toLowerCase()
@@ -1052,6 +1037,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
     const [selectedFiles, setSelectedFiles] = useState<File[]>([])
     const [isSubmittingFile, setIsSubmittingFile] = useState(false)
+    const [batchNowTimestamp, setBatchNowTimestamp] = useState(() => Date.now())
+    const [isRerunningBatch, setIsRerunningBatch] = useState(false)
     const [isExportModalOpen, setIsExportModalOpen] = useState(false)
     const [batchSubmissionMessage, setBatchSubmissionMessage] = useState('')
     const lastUploadAttemptAtRef = useRef(0)
@@ -1816,7 +1803,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             if (batchRows.length > 0) {
                 const uniqueBatch = new Map<string, SubmissionHistoryItem>()
                 batchRows.forEach((row) => {
-                    const key = (row.fileName || row.requestID || String(row.id)).trim().toLowerCase()
+                    const key = row.fileName ? batchDocumentKey(row) : row.requestID || String(row.id)
                     if (!uniqueBatch.has(key)) uniqueBatch.set(key, row)
                 })
                 return [...uniqueBatch.values()].sort((a, b) => new Date(a.createdAt || a.receivedAt || a.updatedAt || 0).getTime() - new Date(b.createdAt || b.receivedAt || b.updatedAt || 0).getTime())
@@ -1877,39 +1864,34 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                     return timeB - timeA
                 })
                 sorted.forEach((row) => {
-                    const key = (row.fileName || row.requestID || String(row.id)).trim().toLowerCase()
+                    const key = row.fileName ? batchDocumentKey(row) : row.requestID || String(row.id)
                     if (!uniqueByFile.has(key)) {
                         uniqueByFile.set(key, row)
                     }
                 })
-                return [...uniqueByFile.values()]
+                return mergeBatchUploadAttempts(activeSubmissionBatch, [...uniqueByFile.values()], batchNowTimestamp)
             }
-            return []
+            return mergeBatchUploadAttempts(activeSubmissionBatch, [], batchNowTimestamp)
         }
         return latestBatchRows
-    }, [activeSubmissionBatch, latestBatchRows, submissionHistory, projectSummaries])
+    }, [activeSubmissionBatch, latestBatchRows, submissionHistory, projectSummaries, batchNowTimestamp])
 
-    const batchProgress = useMemo(() => deriveBatchProgress(activeBatchRows), [activeBatchRows])
-    const activeBatchExpectedCount = (activeSubmissionBatch?.expectedDocumentCount && activeSubmissionBatch.expectedDocumentCount <= activeBatchRows.length)
-        ? activeSubmissionBatch.expectedDocumentCount
-        : (activeBatchRows.length || activeSubmissionBatch?.expectedDocumentCount || batchProgress.expectedCount)
+    const batchProgress = useMemo(() => deriveBatchState(activeSubmissionBatch, activeBatchRows, isSubmittingFile || isRerunningBatch), [activeSubmissionBatch, activeBatchRows, isSubmittingFile, isRerunningBatch])
+    const activeBatchExpectedCount = batchProgress.expectedCount
     const activeBatchFinishedCount = batchProgress.finishedCount
     const activeBatchProcessingCount = batchProgress.processingCount
     const activeBatchFailedCount = batchProgress.failedCount
     const activeBatchCompletedCount = batchProgress.completedCount
-    const activeBatchStuckRows = batchProgress.stuckRows
+    const activeBatchStuckRows: never[] = []
     const activeBatchErrors = batchProgress.errors
-    const activeBatchAdvisories = batchProgress.advisories
+    const activeBatchAdvisories: never[] = []
     const activeBatchProcessingPercent = Math.min(100, Math.round((activeBatchProcessingCount / (activeBatchExpectedCount || 1)) * 100))
     const activeBatchProgressPercent = Math.min(100, Math.round((activeBatchFinishedCount / (activeBatchExpectedCount || 1)) * 100))
 
     const isInterruptedBatch = useMemo(() => {
         if (activeSubmissionBatch?.stoppedAt) return false
-        if (isExampleMode || isSubmittingFile) return false
-        if (activeBatchProcessingCount > 0) return false
-        if (activeBatchRows.length === 0) return false
-        return activeBatchRows.length === activeBatchFinishedCount && activeBatchFinishedCount < activeBatchExpectedCount
-    }, [isExampleMode, isSubmittingFile, activeBatchProcessingCount, activeBatchRows.length, activeBatchFinishedCount, activeBatchExpectedCount, activeSubmissionBatch?.stoppedAt])
+        return !isExampleMode && batchProgress.isInterrupted
+    }, [isExampleMode, batchProgress.isInterrupted, activeSubmissionBatch?.stoppedAt])
 
     const isCurrentProjectProcessingDocuments = useMemo(() => {
         return activeProjectDocuments.some((doc) => {
@@ -2093,24 +2075,30 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         [activeProjectSynthesis?.projectStatus, isCurrentProjectAwaitingSynthesis]
     )
 
-    const [batchNowTimestamp, setBatchNowTimestamp] = useState(() => Date.now())
     useEffect(() => {
-        if (!activeSubmissionBatch || activeSubmissionBatch.endedAt || activeSubmissionBatch.stoppedAt || isSubmittingFile || isStoppingBatch) return
-        const endedAt = batchCompletionTime(activeSubmissionBatch, activeBatchRows)
-        if (endedAt) setActiveSubmissionBatch((current) => current?.id === activeSubmissionBatch.id && current.startedAt === activeSubmissionBatch.startedAt ? { ...current, endedAt } : current)
-    }, [activeSubmissionBatch, activeBatchRows, isSubmittingFile, isStoppingBatch])
+        if (!activeSubmissionBatch || activeSubmissionBatch.stoppedAt || isSubmittingFile || isRerunningBatch || isStoppingBatch || activeSubmissionBatch.stopError) return
+        const observedAt = Date.now()
+        const endedAt = batchProgress.isComplete ? batchCompletionTime(activeSubmissionBatch, activeBatchRows, observedAt) : undefined
+        // Incomplete is not success. Freeze its clock separately, and resume if
+        // a delayed document appears or a retry starts.
+        const interruptedAt = isInterruptedBatch ? (activeSubmissionBatch.interruptedAt || observedAt) : undefined
+        if (endedAt !== activeSubmissionBatch.endedAt || interruptedAt !== activeSubmissionBatch.interruptedAt) {
+            setActiveSubmissionBatch(current => current?.id === activeSubmissionBatch.id && current.startedAt === activeSubmissionBatch.startedAt ? { ...current, endedAt, interruptedAt } : current)
+        }
+    }, [activeSubmissionBatch, activeBatchRows, batchProgress.isComplete, isInterruptedBatch, isSubmittingFile, isRerunningBatch, isStoppingBatch])
     useEffect(() => {
         if (
             !activeSubmissionBatch?.startedAt
             || activeSubmissionBatch.endedAt
+            || activeSubmissionBatch.interruptedAt
             || activeSubmissionBatch.stoppedAt
         ) return
         const timer = setInterval(() => setBatchNowTimestamp(Date.now()), 1000)
         return () => clearInterval(timer)
-    }, [activeBatchExpectedCount, activeBatchFinishedCount, activeSubmissionBatch?.endedAt, activeSubmissionBatch?.startedAt, activeSubmissionBatch?.stoppedAt, activeSubmissionBatch?.stopError])
+    }, [activeBatchExpectedCount, activeBatchFinishedCount, activeSubmissionBatch?.endedAt, activeSubmissionBatch?.interruptedAt, activeSubmissionBatch?.startedAt, activeSubmissionBatch?.stoppedAt, activeSubmissionBatch?.stopError])
 
     const batchElapsedSeconds = activeSubmissionBatch?.startedAt
-        ? Math.max(0, Math.floor(((activeSubmissionBatch.endedAt || activeSubmissionBatch.stoppedAt || batchNowTimestamp) - activeSubmissionBatch.startedAt) / 1000))
+        ? Math.max(0, Math.floor(((activeSubmissionBatch.endedAt || activeSubmissionBatch.interruptedAt || activeSubmissionBatch.stoppedAt || batchNowTimestamp) - activeSubmissionBatch.startedAt) / 1000))
         : 0
     const activeBatchImpact = useMemo(() => computeImpactMetrics(activeBatchRows), [activeBatchRows])
 
@@ -2200,12 +2188,19 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     const [userHasNavigatedBatchDocs, setUserHasNavigatedBatchDocs] = useState(false)
     const [pendingTargetDocFileName, setPendingTargetDocFileName] = useState<string | null>(null)
 
+    const activeDocList = useMemo(() => {
+        const projectRows = activeProjectDocuments.length > 0 ? activeProjectDocuments : latestBatchRows
+        if (isTourActive || isExampleMode) return projectRows
+        const matchingAttempts = activeBatchRows.filter(row => isRowMatchingProject(row, activeProjectId, projectSummaries))
+        return mergeDocumentCarouselRows(projectRows.filter(row => isRowMatchingProject(row, activeProjectId, projectSummaries)), matchingAttempts)
+    }, [activeProjectDocuments, latestBatchRows, activeBatchRows, activeProjectId, projectSummaries, isTourActive, isExampleMode])
+
     // Sync selectedBatchDocIndex when a target document is requested via handleEvalDocSelect
     useEffect(() => {
-        if (!pendingTargetDocFileName || latestBatchRows.length === 0) return
+        if (!pendingTargetDocFileName || activeDocList.length === 0) return
 
         // Verify latestBatchRows actually belong to the current activeProjectId before trying to match
-        const sampleRow = latestBatchRows[0]
+        const sampleRow = activeDocList[0]
         if (sampleRow && !isRowMatchingProject(sampleRow, activeProjectId, projectSummaries)) {
             return
         }
@@ -2213,7 +2208,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         const normTarget = pendingTargetDocFileName.toLowerCase().trim()
         const targetClean = normTarget.replace(/\.[^/.]+$/, '').replace(/[^a-z0-9]/g, '')
 
-        const idx = latestBatchRows.findIndex((row) => {
+        const idx = activeDocList.findIndex((row) => {
             const fn = (row.fileName || (row as any).originalFilename || '').toLowerCase().trim()
             const fnClean = fn.replace(/\.[^/.]+$/, '').replace(/[^a-z0-9]/g, '')
             return (
@@ -2232,7 +2227,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         }
 
         setPendingTargetDocFileName(null)
-    }, [pendingTargetDocFileName, latestBatchRows, activeProjectId, projectSummaries])
+    }, [pendingTargetDocFileName, activeDocList, activeProjectId, projectSummaries])
 
     // Reset userHasNavigatedBatchDocs when active project or submission batch changes
     useEffect(() => {
@@ -2241,7 +2236,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
     // Auto-select the latest completed document (or active processing document) if the user hasn't manually overridden
     useEffect(() => {
-        const targetList = activeProjectDocuments.length > 0 ? activeProjectDocuments : latestBatchRows
+        const targetList = activeDocList
         if (userHasNavigatedBatchDocs || pendingTargetDocFileName || targetList.length === 0) return
 
         const lastCompletedIdx = findLastIndex(targetList, (doc: SubmissionHistoryItem) => (doc.status || '').trim().toLowerCase() === 'completed')
@@ -2249,9 +2244,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         const targetIdx = lastCompletedIdx !== -1 ? lastCompletedIdx : (firstProcessingIndex !== -1 ? firstProcessingIndex : 0)
 
         setSelectedBatchDocIndex((prev) => (prev !== targetIdx ? targetIdx : prev))
-    }, [activeProjectDocuments, latestBatchRows, userHasNavigatedBatchDocs, pendingTargetDocFileName])
+    }, [activeDocList, userHasNavigatedBatchDocs, pendingTargetDocFileName])
 
-    const activeDocList = activeProjectDocuments.length > 0 ? activeProjectDocuments : latestBatchRows
     const safeBatchDocIndex = Math.min(Math.max(0, selectedBatchDocIndex), Math.max(0, activeDocList.length - 1))
 
     const displayedSubmissionRow = activeDocList[safeBatchDocIndex] ?? activeProjectDocuments[0] ?? submissionHistory[0]
@@ -2263,7 +2257,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     }, [submitResponse])
 
     const displayedSubmitStatus = displayedSubmissionRow?.status ?? (webhookResponse as any)?.status ?? (submitLoading ? 'queued' : '')
-    const displayedSubmitRowId = displayedSubmissionRow ? String(displayedSubmissionRow.id) : ((webhookResponse as any)?.id ? String((webhookResponse as any).id) : 'Pending')
+    const displayedSubmitRowId = displayedSubmissionRow ? (displayedSubmissionRow.id == null ? '' : String(displayedSubmissionRow.id)) : ((webhookResponse as any)?.id ? String((webhookResponse as any).id) : 'Pending')
     const displayedSubmitReceivedAt = displayedSubmissionRow?.receivedAt ?? (webhookResponse as any)?.receivedAt ?? (webhookResponse as any)?.createdAt ?? ''
     const displayedSubmitTrafficLight = displayedSubmissionRow?.trafficLight ?? ''
     const displayedSubmitRiskLevel = displayedSubmissionRow?.riskLevel ?? ''
@@ -2295,21 +2289,22 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
     useEffect(() => {
         if (!activeSubmissionBatch || activeBatchExpectedCount === 0) return
-        if (activeBatchFinishedCount < activeBatchExpectedCount) {
+        if (!batchProgress.isComplete) {
             batchInProgressNotificationId.current = activeSubmissionBatch.id
             return
         }
         if (batchInProgressNotificationId.current !== activeSubmissionBatch.id) return
         batchInProgressNotificationId.current = null
-        playCompletionSound()
-        const title = 'Document batch complete'
-        const description = `${activeBatchFinishedCount}/${activeBatchExpectedCount} documents have reached a final status.`
-        addToast({ title, description, type: 'success' })
+        if (activeBatchFailedCount > 0) playErrorSound()
+        else playCompletionSound()
+        const title = activeBatchFailedCount > 0 ? 'Document batch finished with errors' : 'Document batch complete'
+        const description = `${activeBatchCompletedCount} succeeded; ${activeBatchFailedCount} failed (${activeBatchExpectedCount} expected).`
+        addToast({ title, description, type: activeBatchFailedCount > 0 ? 'warning' : 'success' })
         if ('Notification' in window && Notification.permission === 'granted') {
             new Notification(title, { body: description })
         }
         setNotifications(prev => [{ id: `batch-${Date.now()}`, type: 'document_processed', title, description, timestamp: new Date(), read: false }, ...prev])
-    }, [activeBatchExpectedCount, activeBatchFinishedCount, activeSubmissionBatch])
+    }, [activeBatchExpectedCount, activeBatchFinishedCount, activeBatchFailedCount, activeBatchCompletedCount, batchProgress.isComplete, activeSubmissionBatch])
 
     useEffect(() => {
         if (isCurrentProjectAwaitingSynthesis) {
@@ -2638,7 +2633,6 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     }
 
     const [runningSynthesisWithoutLoi, setRunningSynthesisWithoutLoi] = useState(false)
-    const [isRerunningBatch, setIsRerunningBatch] = useState(false)
 
     const handleRunSynthesisWithoutLoi = async () => {
         const projectDocs = submissionHistory.filter((row) => getProjectKey(row) === activeProjectId)
@@ -3452,8 +3446,18 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             const submissionBatchId = `batch-${now}-${Math.random().toString(36).substring(2, 7)}`
             const expectedBatchDocumentCount = filesToQueue.length
             const failedFileNames: string[] = []
+            const failureMessages: string[] = []
+            let newDuplicateCount = 0
             const queue = createBatchQueue(submissionBatchId)
             batchQueueRef.current = queue
+            const updateAttempt = (file: File, update: Partial<BatchUploadAttempt>) => {
+                const key = batchDocumentKey({ fileName: file.name, fileSize: file.size })
+                setActiveSubmissionBatch(current => current?.id === submissionBatchId ? {
+                    ...current,
+                    uploadAttempts: current.uploadAttempts?.map(attempt => batchDocumentKey(attempt) === key
+                        ? { ...attempt, ...update, updatedAt: new Date().toISOString() } : attempt),
+                } : current)
+            }
 
             setActiveSubmissionBatch({
                 id: submissionBatchId,
@@ -3461,6 +3465,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 expectedDocumentCount: expectedBatchDocumentCount,
                 environment,
                 startedAt: now,
+                uploadAttempts: filesToQueue.map(file => ({ fileName: file.name, fileSize: file.size, fileType: file.type, status: 'uploading', updatedAt: new Date(now).toISOString() })),
             })
 
             const CONCURRENCY = 3
@@ -3469,27 +3474,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 const chunk = filesToQueue.slice(i, i + CONCURRENCY)
                 await Promise.all(chunk.map((file) => queue.run(async () => {
                     try {
-                        let storageFileUrl = ''
-                        let storagePath = ''
-                        try {
-                            const uploadRes = await uploadDocumentToSupabaseStorage({
-                                file,
-                                projectId: targetProjectId,
-                            })
-                            storageFileUrl = uploadRes.storageFileUrl
-                            storagePath = uploadRes.storagePath
-                        } catch (storageErr) {
-                            console.warn('Direct storage upload failed, falling back to base64 inline:', storageErr)
-                        }
-
-                        // For files <= 3.5MB, keep base64 for n8n Google Drive compatibility.
-                        // For files > 3.5MB, omit base64 to prevent Vercel 4.5MB request cap (n8n/Supabase uses storageFileUrl).
-                        let fileBase64 = ''
-                        if (file.size <= 3.5 * 1024 * 1024) {
-                            fileBase64 = await readFileAsBase64(file)
-                        } else if (!storageFileUrl) {
-                            throw new Error(`Direct storage upload for "${file.name}" failed. Please check your network and retry.`)
-                        }
+                        const { storageFileUrl, storagePath, fileBase64 } = await prepareDocumentUpload(file, targetProjectId, readFileAsBase64)
 
                         const userOpenAiApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_openai_key') || '') : ''
                         const userAnthropicApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_anthropic_key') || '') : ''
@@ -3525,11 +3510,22 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                             synthBackupModel: modelPipeline.synthBackup,
                         }).result
 
+                        if (!result || !['accepted', 'duplicate'].includes(result.status)) {
+                            throw new Error('The server did not confirm this submission. Check history before retrying.')
+                        }
                         if (result?.status === 'duplicate') {
                             duplicateFileNames.push(file.name)
+                            newDuplicateCount++
+                            updateAttempt(file, { status: 'duplicate' })
+                            setActiveSubmissionBatch(current => current?.id === submissionBatchId ? { ...current, expectedDocumentCount: Math.max(0, current.expectedDocumentCount - 1) } : current)
+                        } else {
+                            updateAttempt(file, { status: 'queued', requestID: result.response?.requestID || result.payload?.requestID })
                         }
-                    } catch {
+                    } catch (error) {
                         failedFileNames.push(file.name)
+                        const message = error instanceof Error ? error.message : 'Upload failed before submission was confirmed.'
+                        failureMessages.push(`${file.name}: ${message}`)
+                        updateAttempt(file, { status: 'upload_failed', errorMessage: message })
                     }
                 })))
             }
@@ -3539,7 +3535,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 return
             }
 
-            const queuedFileCount = expectedBatchDocumentCount - failedFileNames.length - duplicateFileNames.length
+            const queuedFileCount = expectedBatchDocumentCount - failedFileNames.length - newDuplicateCount
+            if (queuedFileCount === 0 && failedFileNames.length === 0) setActiveSubmissionBatch(null)
             const submissionMessages: string[] = []
             if (duplicateFileNames.length > 0) {
                 submissionMessages.push(`${duplicateFileNames.join(', ')} ${duplicateFileNames.length === 1 ? 'was' : 'were'} not queued because ${duplicateFileNames.length === 1 ? 'this document has' : 'these documents have'} already been added to this project.`)
@@ -3547,8 +3544,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             if (failedFileNames.length > 0) {
                 submissionMessages.push(
                     queuedFileCount > 0
-                        ? `${failedFileNames.length} file${failedFileNames.length === 1 ? '' : 's'} could not be queued (${failedFileNames.join(', ')}). Re-upload the failed file${failedFileNames.length === 1 ? '' : 's'} before relying on synthesis.`
-                        : `No new files could be queued (${failedFileNames.join(', ')}). Please try the non-duplicate files again.`
+                        ? `${failedFileNames.length} file${failedFileNames.length === 1 ? '' : 's'} could not be confirmed. ${failureMessages.join(' ')} Failed files remain selected for re-upload.`
+                        : `No new files could be confirmed. ${failureMessages.join(' ')} Failed files remain selected for re-upload.`
                 )
             }
             if (submissionMessages.length > 0) {
@@ -3560,7 +3557,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             setDocumentType('auto-detect')
             const resolvedKey = projectId || suggestedProjectId
             setSelectedProjectKey(resolvedKey)
-            setSelectedFiles([])
+            setSelectedFiles(filesToQueue.filter(file => failedFileNames.includes(file.name)))
             if (dealName.length === 0) setDealName(suggestedProjectName)
             if (projectId.length === 0) setProjectId(suggestedProjectId)
             const currentUser = getStoredAuth()
@@ -3999,6 +3996,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                                         activeBatchExpectedCount={simulatedWalkthroughBatch ? simulatedWalkthroughBatch.expectedDocumentCount : activeBatchExpectedCount}
                                         activeBatchFailedCount={simulatedWalkthroughBatch ? 0 : activeBatchFailedCount}
                                         isStoppingBatch={isStoppingBatch}
+                                        isSubmitting={isSubmittingFile || isRerunningBatch}
+                                        isInterrupted={isInterruptedBatch}
                                         handleStopBatch={() => { void handleStopBatch() }}
                                         activeBatchProcessingCount={simulatedWalkthroughBatch ? (simulatedWalkthroughBatch.processingCount ?? 0) : activeBatchProcessingCount}
                                         activeBatchProcessingPercent={simulatedWalkthroughBatch ? ((simulatedWalkthroughBatch.processingCount ?? 0) > 0 ? 100 : 0) : activeBatchProcessingPercent}
@@ -4056,12 +4055,12 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                                                 Batch upload was interrupted ({activeBatchFinishedCount} of {activeBatchExpectedCount} files received)
                                             </p>
                                             <p className="mt-1 text-sm text-muted-foreground">
-                                                A page reload occurred while queueing documents. All {activeBatchFinishedCount} received documents have finished extraction and analysis. You can proceed directly to synthesis with these documents or upload the remaining files.
+                                                {batchProgress.missingCount} expected document(s) never arrived. Of the received documents, {activeBatchCompletedCount} succeeded and {activeBatchFailedCount} failed. The timer is paused; upload the missing files and retry failures before relying on synthesis.
                                             </p>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
-                                        <button
+                                        {activeBatchCompletedCount > 0 && <button
                                             type="button"
                                             onClick={() => {
                                                 if (activeSubmissionBatch) {
@@ -4075,8 +4074,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                                             className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-md shadow-sm transition-colors flex items-center gap-1.5"
                                         >
                                             <Play className="h-3.5 w-3.5 fill-current" />
-                                            <span>Proceed to Synthesis ({activeBatchFinishedCount} Files)</span>
-                                        </button>
+                                            <span>Use available analysis ({activeBatchCompletedCount} Files)</span>
+                                        </button>}
                                     </div>
                                 </div>
                             ) : null}
@@ -4110,7 +4109,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                                     displayedSubmitStatus={displayedSubmitStatus}
                                     submitEnvironment={submitEnvironment}
                                     liveSubmittedRow={liveSubmittedRow}
-                                    latestBatchRows={activeProjectDocuments.length > 0 ? activeProjectDocuments : latestBatchRows}
+                                    latestBatchRows={activeDocList}
                                     safeBatchDocIndex={safeBatchDocIndex}
                                     setSelectedBatchDocIndex={setSelectedBatchDocIndex}
                                     setUserHasNavigatedBatchDocs={setUserHasNavigatedBatchDocs}

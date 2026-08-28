@@ -14,6 +14,8 @@ type BatchProgressCardProps = {
     activeBatchExpectedCount: number
     activeBatchFailedCount: number
     isStoppingBatch: boolean
+    isSubmitting?: boolean
+    isInterrupted?: boolean
     handleStopBatch: () => void
     activeBatchProcessingCount: number
     activeBatchProcessingPercent: number
@@ -43,6 +45,8 @@ export function BatchProgressCard({
     activeBatchExpectedCount,
     activeBatchFailedCount,
     isStoppingBatch,
+    isSubmitting = false,
+    isInterrupted = false,
     handleStopBatch,
     activeBatchProcessingCount,
     activeBatchProcessingPercent,
@@ -66,7 +70,7 @@ export function BatchProgressCard({
     isAwaitingSynthesis = false,
 }: BatchProgressCardProps) {
     const [isDocsExpanded, setIsDocsExpanded] = useState(false)
-    const isFinished = !activeSubmissionBatch.stopError && activeBatchExpectedCount > 0 && activeBatchFinishedCount >= activeBatchExpectedCount
+    const isFinished = !isSubmitting && !isInterrupted && !activeSubmissionBatch.stopError && activeBatchExpectedCount > 0 && activeBatchFinishedCount >= activeBatchExpectedCount
     const isStopped = Boolean(activeSubmissionBatch.stoppedAt)
 
     return (
@@ -76,8 +80,8 @@ export function BatchProgressCard({
                     <div>
                         <CardTitle className="text-base font-semibold flex items-center gap-2">
                             <span>Batch processing</span>
-                            <Badge variant={isStopped ? 'destructive' : isFinished ? 'success' : 'outline'}>
-                                {isStoppingBatch ? 'Stopping' : isStopped ? 'Stopped' : activeSubmissionBatch.stopError ? 'Stop not confirmed' : isFinished ? 'Complete' : 'Processing'}
+                            <Badge variant={isStopped || isInterrupted || (isFinished && activeBatchFailedCount > 0) ? 'destructive' : isFinished ? 'success' : 'outline'}>
+                                {isStoppingBatch ? 'Stopping' : isStopped ? 'Stopped' : activeSubmissionBatch.stopError ? 'Stop not confirmed' : isInterrupted ? 'Incomplete' : isFinished ? (activeBatchFailedCount > 0 ? 'Finished with errors' : 'Complete') : 'Processing'}
                             </Badge>
                         </CardTitle>
                         <CardDescription className="text-xs text-muted-foreground mt-0.5">
@@ -90,14 +94,14 @@ export function BatchProgressCard({
                                 variant="outline"
                                 size="sm"
                                 onClick={handleRerunLatestBatch}
-                                disabled={isRerunningBatch || (!isFinished && !isStopped)}
+                                disabled={isRerunningBatch || (!isFinished && !isStopped && !isInterrupted)}
                                 className="gap-1.5 text-xs font-semibold"
                             >
                                 {isRerunningBatch ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCw className="h-3.5 w-3.5" />}
                                 Re-run latest batch
                             </Button>
                         ) : null}
-                        {!isFinished && !isStopped ? (
+                        {!isFinished && !isStopped && !isInterrupted ? (
                             <Button variant="outline" size="sm" onClick={handleStopBatch} disabled={isStoppingBatch} className="text-destructive hover:bg-destructive/10 border-destructive/30">
                                 {isStoppingBatch ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <Square className="h-3.5 w-3.5 mr-1.5 fill-current" />}
                                 {isStoppingBatch ? 'Stopping...' : activeSubmissionBatch.stopError ? 'Retry stop' : 'Stop batch'}
@@ -242,10 +246,10 @@ export function BatchProgressCard({
                         <div className="space-y-1">
                             {activeBatchErrors.map((err, idx) => (
                                 <div key={idx} className="flex items-center justify-between gap-2 text-foreground bg-background/50 p-2 rounded border border-destructive/20">
-                                    <span className="font-medium truncate">{err.fileName}: <span className="text-muted-foreground font-normal">{err.errorMessage}</span></span>
-                                    <Button size="sm" variant="outline" onClick={() => handleRetryFailedDocument(err.requestID)} disabled={retryingRequestId === err.requestID}>
+                                    <span className="font-medium break-words min-w-0">{err.fileName}: <span className="text-muted-foreground font-normal">{err.errorMessage}</span></span>
+                                    {err.requestID ? <Button size="sm" variant="outline" onClick={() => handleRetryFailedDocument(err.requestID)} disabled={retryingRequestId === err.requestID}>
                                         {retryingRequestId === err.requestID ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Retry'}
-                                    </Button>
+                                    </Button> : <span className="shrink-0 text-muted-foreground">Re-upload this file</span>}
                                 </div>
                             ))}
                         </div>
@@ -269,12 +273,12 @@ export function BatchProgressCard({
                         {isFinished ? (
                             <p className="text-xs text-success font-medium flex items-center gap-1">
                                 <CheckCircle2 className="h-3.5 w-3.5 text-success" />
-                                All batch documents have reached terminal status.
+                                {activeBatchFailedCount > 0 ? `${activeBatchCompletedCount} succeeded; ${activeBatchFailedCount} failed. Review errors before relying on synthesis.` : 'All batch documents completed successfully.'}
                             </p>
                         ) : null}
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                        {handleRetryFailedBatchDocs && activeBatchFailedCount > 0 ? (
+                        {handleRetryFailedBatchDocs && activeBatchFailedCount > 0 && batchDocuments.some(doc => doc.requestID && isFailedSubmissionStatus(doc.status)) ? (
                             <Button
                                 size="sm"
                                 variant="outline"
@@ -283,7 +287,7 @@ export function BatchProgressCard({
                                 disabled={isRerunningBatch}
                             >
                                 <RotateCw className="h-3.5 w-3.5" />
-                                Retry all failed in batch ({activeBatchFailedCount})
+                                Retry registered failures ({batchDocuments.filter(doc => doc.requestID && isFailedSubmissionStatus(doc.status)).length})
                             </Button>
                         ) : null}
                         {handleRerunAllProjectDocs && activeProjectId ? (

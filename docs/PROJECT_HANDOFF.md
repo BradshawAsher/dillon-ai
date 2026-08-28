@@ -13,7 +13,7 @@ This document is the operational handoff for the MergeWorks team and engineering
 MergeWorks is a document-first, post-LOI M&A diligence workspace. An analyst creates or selects a project, uploads one or more deal documents, and follows:
 
 1. **Per-Document Processing & AI Extraction**: n8n runs document-level AI analysis (financial facts, risk flags, classification, citations, and deterministic math checks).
-2. **Batch Progress & 20s Stall Auto-Detection**: Real-time batch progress with automatic 20-second stall detection if n8n halts or hits API credit limits.
+2. **Batch Progress & Failure Recovery**: Preserve expected counts and failed upload cards. Complete, Finished with errors, and Incomplete are distinct; completed or interrupted batches freeze their timers. A timeout alone does not identify an AI provider or credit problem.
 3. **Audio & Chrome Browser Alerts**: Pure Web Audio API two-tone sound alerts and native OS notifications on AI failures.
 4. **Project Portfolio & Dynamic Statuses**: Cross-references live Supabase syntheses to render accurate states (`Extracting documents...`, `Awaiting processing`, `Ready for synthesis`, `Synthesized`).
 5. **Project-Wide Synthesis**: Consolidator workflow synthesizes findings, cross-document conflicts, negotiation levers, and valuation ranges.
@@ -37,15 +37,18 @@ MergeWorks is a document-first, post-LOI M&A diligence workspace. An analyst cre
 
 ```text
 Browser (React 19 SPA + TanStack Query v5 + TanStack Table)
+  -> /api/diligence/upload-url -> direct storage upload (large: Supabase resumable; small: R2)
+  -> /api/diligence/submit (metadata + storage URL) -> queued record
+  -> shared Node handoff: temporary file -> verify bytes -> multipart binary to n8n
   -> Cloudflare Edge Worker (Storage CDN max-age=1yr / REST Edge Caching s-maxage=10 <15ms)
   -> Supabase Postgres RPC (get_portfolio_diligence_kpis: sub-2ms portfolio aggregation, <400B payload)
   -> Supabase Realtime CDC (WebSockets push updates <100ms -> TanStack Query cache invalidation)
-  -> /api/diligence/* (Express/Vite server layer)
+  -> /api/diligence/* (Vercel API or Express/Vite server layer)
   -> Supabase/Postgres (Primary Read Layer for history, synthesis, deal models, action trackers)
   -> n8n Webhooks (Async Write Layer: document submit, retry, consideration, deal model save)
 
 n8n Workflows (Async Background AI Pipeline)
-  -> Reads file from Supabase S3 Object Storage / Webhook payload
+  -> Receives binary multipart attachment; retries can reuse registered storage
   -> Runs LLM Extraction (OpenAI 5.6 Terra / Sol) + Deterministic Math Checks
   -> Writes results in parallel to Supabase Postgres AND n8n Data Tables
   -> Idempotent Document Counter (0OVTAMMp2iMx53Aw) checks project state & triggers Consolidator
@@ -53,6 +56,13 @@ n8n Workflows (Async Background AI Pipeline)
 ```
 
 ---
+
+For the 2026-08-28 ingestion changes, see
+[Upload and Batch Recovery](UPLOAD_AND_BATCH_RECOVERY.md): direct resumable
+uploads, staged handoff, failure persistence, timer semantics, and verification.
+This is an app/API reliability change, not an AI prompt change or schema
+migration. Deploy frontend and API together; never automatically resubmit
+documents after a lost acknowledgment.
 
 ## Active Production AI Model Architecture
 
@@ -125,8 +135,8 @@ npm run check       # Runs typecheck + tests + build in a single gate
 
 1. Open **`https://due-diligence-dashboard.vercel.app`**.
 2. Verify existing projects populate with correct status badges (`Synthesized`, `Extracting documents...`, `Awaiting processing`).
-3. Upload a sample document to a new project.
-4. Verify document appears in the history table, displays status transitions, and shows inline errors if n8n hits an API limit.
+3. Submit an approved three-document test batch including an approximately 18 MiB PDF; this runs real analysis.
+4. Match all three history records to n8n executions. Verify 3/3 completed, final analysis fields, and a stopped timer. Use local failure fixtures to check failed cards and missing-document counts.
 5. Confirm audio alert tone plays and desktop Chrome notification fires if a processing error occurs.
 6. Verify Project Synthesis Card renders at the top of the Diligence view once document extraction completes.
 7. Open the **Evals & Harness** tab or run `npm run eval` in terminal to view evaluation scores.
@@ -140,5 +150,5 @@ npm run check       # Runs typecheck + tests + build in a single gate
 - **`docs/HOW_TO_RUN.md`**: Local development setup & debugging rules.
 - **`docs/LIVE_N8N_WORKFLOWS.md`**: Verified Pod 1 n8n Cloud workflows & table schema map.
 - **`docs/n8n-webhooks.md`**: API endpoints, payloads, and response contracts.
+- **[Upload and Batch Recovery](UPLOAD_AND_BATCH_RECOVERY.md)**: Storage/handoff boundaries, safe retries, batch states, and live verification evidence.
 - **`test-case-plan.md`**: Test plan for the 5 sample deals & 17 test documents.
-

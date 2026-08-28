@@ -1,8 +1,15 @@
 import { describe, expect, it } from 'vitest'
 
-import { deriveSubmissionStatus } from '../../backend/diligence/getSubmissionHistory'
+import { deriveSubmissionStatus, submissionTimeoutAt, submissionFailureMessage } from '../../backend/diligence/getSubmissionHistory'
 
 describe('deriveSubmissionStatus', () => {
+    it('reports the deterministic timeout separately from actual processing completion', () => {
+        const row = { created_at: '2026-08-28T19:01:56Z', updated_at: 'bad', expected_batch_document_count: 3 }
+        expect(submissionTimeoutAt(row)).toBe(Date.parse('2026-08-28T19:16:56Z'))
+        expect(submissionFailureMessage(row, 'failed')).toContain('processing never started')
+        expect(submissionFailureMessage(row, 'failed')).not.toMatch(/Anthropic|credit/)
+        expect(submissionFailureMessage({ ...row, error_message: 'HTTP 503 from upload' }, 'failed')).toBe('HTTP 503 from upload')
+    })
     it('marks a long-stalled active row as failed even when updated_at is unparseable', () => {
         // A garbage updated_at must not wipe out a valid created_at: Math.max(NaN, x)
         // is NaN, which previously skipped the stuck-row timeout entirely.
