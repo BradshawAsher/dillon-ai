@@ -58,6 +58,15 @@ describe('resolveFinancialMetricsForProject', () => {
         expect(result.askingPrice).toBe('5.5B')
     })
 
+    it('does not let an unparseable ebitdaExtracted mask a valid metrics.ebitda', () => {
+        const result = resolveFinancialMetricsForProject(
+            null,
+            [{ ebitdaExtracted: 'pending', metrics: { ebitda: 1_500_000 } }],
+            'Isolated Target 4471',
+        )
+        expect(result.ebitda).toBe('$1,500,000')
+    })
+
     it('returns N/A placeholders when nothing is resolvable', () => {
         const result = resolveFinancialMetricsForProject(null, [], 'Unknown Target 9182')
         expect(result.askingPrice).toBe('N/A')

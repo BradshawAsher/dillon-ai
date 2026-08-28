@@ -156,7 +156,12 @@ export function resolveFinancialMetricsForProject(
                 revenue = doc.revenueUsd || doc.revenue || doc.metrics?.revenue
             }
             if ((!ebitda || ebitda === 'N/A') && (doc.ebitdaUsd || doc.ebitda || doc.ebitdaExtracted || doc.metrics?.ebitda)) {
-                ebitda = doc.ebitdaUsd || doc.ebitda || (doc.ebitdaExtracted ? formatMagnitude(parseMagnitudeMoney(doc.ebitdaExtracted)) : undefined) || doc.metrics?.ebitda
+                // Only use ebitdaExtracted when it actually parses to a number.
+                // formatMagnitude(parseMagnitudeMoney('pending')) returns the
+                // truthy string 'N/A', which would mask a valid doc.metrics.ebitda
+                // fallback and surface "N/A" even though a real figure exists.
+                const extractedEbitda = doc.ebitdaExtracted ? parseMagnitudeMoney(doc.ebitdaExtracted) : null
+                ebitda = doc.ebitdaUsd || doc.ebitda || (extractedEbitda !== null ? formatMagnitude(extractedEbitda) : undefined) || doc.metrics?.ebitda
             }
 
             // Parse financialFactsJson
