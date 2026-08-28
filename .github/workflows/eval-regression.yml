@@ -22,6 +22,9 @@ jobs:
         run: npm --prefix frontend install
 
       - name: Run Frontend Unit Tests
+        env:
+          VITE_SUPABASE_URL: "https://placeholder-project.supabase.co"
+          VITE_SUPABASE_ANON_KEY: "placeholder-anon-key"
         run: npm --prefix frontend test
 
       # Fails the job (blocking the deploy check) when the suite drops below
