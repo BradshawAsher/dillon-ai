@@ -3473,57 +3473,70 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 if (queue.canceled) break
                 const chunk = filesToQueue.slice(i, i + CONCURRENCY)
                 await Promise.all(chunk.map((file) => queue.run(async () => {
-                    try {
-                        const { storageFileUrl, storagePath, fileBase64 } = await prepareDocumentUpload(file, targetProjectId, readFileAsBase64)
+                    const MAX_RETRIES = 2
+                    let lastError: unknown
+                    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+                        try {
+                            const { storageFileUrl, storagePath, fileBase64 } = await prepareDocumentUpload(file, targetProjectId, readFileAsBase64)
 
-                        const userOpenAiApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_openai_key') || '') : ''
-                        const userAnthropicApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_anthropic_key') || '') : ''
-                        const userGeminiApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_gemini_key') || '') : ''
-                        const userDeepseekApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_deepseek_key') || '') : ''
-                        const modelPipeline = getEffectiveModelPipeline()
+                            const userOpenAiApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_openai_key') || '') : ''
+                            const userAnthropicApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_anthropic_key') || '') : ''
+                            const userGeminiApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_gemini_key') || '') : ''
+                            const userDeepseekApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_deepseek_key') || '') : ''
+                            const modelPipeline = getEffectiveModelPipeline()
 
-                        if (queue.canceled) return
-                        const result = await triggerSubmitDealPacket({
-                            environment,
-                            fileName: file.name,
-                            fileSize: file.size,
-                            fileType: file.type || 'application/octet-stream',
-                            fileBase64,
-                            storageFileUrl,
-                            storagePath,
-                            dealName: dealName || suggestedProjectName,
-                            companyName: dealName || suggestedProjectName,
-                            workstream: '',
-                            submissionNotes,
-                            projectId: targetProjectId,
-                            projectStage,
-                            documentType,
-                            submissionBatchId,
-                            expectedBatchDocumentCount,
-                            userOpenAiApiKey,
-                            userAnthropicApiKey,
-                            userGeminiApiKey,
-                            userDeepseekApiKey,
-                            docPrimaryModel: modelPipeline.docPrimary,
-                            docBackupModel: modelPipeline.docBackup,
-                            synthPrimaryModel: modelPipeline.synthPrimary,
-                            synthBackupModel: modelPipeline.synthBackup,
-                        }).result
+                            if (queue.canceled) return
+                            const result = await triggerSubmitDealPacket({
+                                environment,
+                                fileName: file.name,
+                                fileSize: file.size,
+                                fileType: file.type || 'application/octet-stream',
+                                fileBase64,
+                                storageFileUrl,
+                                storagePath,
+                                dealName: dealName || suggestedProjectName,
+                                companyName: dealName || suggestedProjectName,
+                                workstream: '',
+                                submissionNotes,
+                                projectId: targetProjectId,
+                                projectStage,
+                                documentType,
+                                submissionBatchId,
+                                expectedBatchDocumentCount,
+                                userOpenAiApiKey,
+                                userAnthropicApiKey,
+                                userGeminiApiKey,
+                                userDeepseekApiKey,
+                                docPrimaryModel: modelPipeline.docPrimary,
+                                docBackupModel: modelPipeline.docBackup,
+                                synthPrimaryModel: modelPipeline.synthPrimary,
+                                synthBackupModel: modelPipeline.synthBackup,
+                            }).result
 
-                        if (!result || !['accepted', 'duplicate'].includes(result.status)) {
-                            throw new Error('The server did not confirm this submission. Check history before retrying.')
+                            if (!result || !['accepted', 'duplicate'].includes(result.status)) {
+                                throw new Error('The server did not confirm this submission. Check history before retrying.')
+                            }
+                            if (result?.status === 'duplicate') {
+                                duplicateFileNames.push(file.name)
+                                newDuplicateCount++
+                                updateAttempt(file, { status: 'duplicate' })
+                                setActiveSubmissionBatch(current => current?.id === submissionBatchId ? { ...current, expectedDocumentCount: Math.max(0, current.expectedDocumentCount - 1) } : current)
+                            } else {
+                                updateAttempt(file, { status: 'queued', requestID: result.response?.requestID || result.payload?.requestID })
+                            }
+                            lastError = undefined
+                            break
+                        } catch (error) {
+                            lastError = error
+                            if (attempt < MAX_RETRIES && !queue.canceled) {
+                                await new Promise((r) => setTimeout(r, 1500))
+                            }
                         }
-                        if (result?.status === 'duplicate') {
-                            duplicateFileNames.push(file.name)
-                            newDuplicateCount++
-                            updateAttempt(file, { status: 'duplicate' })
-                            setActiveSubmissionBatch(current => current?.id === submissionBatchId ? { ...current, expectedDocumentCount: Math.max(0, current.expectedDocumentCount - 1) } : current)
-                        } else {
-                            updateAttempt(file, { status: 'queued', requestID: result.response?.requestID || result.payload?.requestID })
-                        }
-                    } catch (error) {
+                    }
+
+                    if (lastError) {
                         failedFileNames.push(file.name)
-                        const message = error instanceof Error ? error.message : 'Upload failed before submission was confirmed.'
+                        const message = lastError instanceof Error ? lastError.message : 'Upload failed before submission was confirmed.'
                         failureMessages.push(`${file.name}: ${message}`)
                         updateAttempt(file, { status: 'upload_failed', errorMessage: message })
                     }

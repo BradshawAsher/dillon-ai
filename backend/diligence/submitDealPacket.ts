@@ -119,6 +119,18 @@ export default async function submitDealPacket(req: { params: Params; user: User
     storagePath: req.params.storagePath ?? '',
   }
 
+  // Remove any previous failed upload attempts for this file in this project so retries don't create zombie duplicate rows
+  try {
+    await supabase
+      .from('documents')
+      .delete()
+      .ilike('project_id', normalizedProjectId)
+      .ilike('file_name', normalizedFileName)
+      .eq('status', 'upload_failed')
+  } catch {
+    // Non-fatal
+  }
+
   // Require a durable history record before dispatch. Otherwise a successful
   // workflow can become an invisible document that the batch cannot reconcile.
   try {
