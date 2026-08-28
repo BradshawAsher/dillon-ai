@@ -1,5 +1,5 @@
 import { benchmarkGroundTruthSyntheses } from '../evals/ground_truths'
-import { parseMagnitudeMoney } from './documentedFacts'
+import { normalizeExtractedFinancialFact, parseMagnitudeMoney } from './documentedFacts'
 
 export type ResolvedFinancialMetrics = {
     askingPrice: string
@@ -201,19 +201,16 @@ export function resolveFinancialMetricsForProject(
                             ? extracted.facts
                             : []
                 for (const ff of rawFinancialFacts) {
-                    const typeStr = String(ff.fact_type || ff.metric || '').toLowerCase()
-                    const nameStr = String(ff.fact_name || ff.name || '').toLowerCase()
-                    const num = ff.numeric_value ?? ff.normalized_value ?? (typeof ff.value === 'number' ? ff.value : parseMagnitudeMoney(ff.text_value || ff.raw_value || ff.value))
-                    if (typeof num === 'number' && Number.isFinite(num) && num > 0) {
-                        if ((!revenue || revenue === 'N/A') && (typeStr.includes('revenue') || nameStr.includes('revenue') || nameStr.includes('total income'))) {
-                            revenue = formatMagnitude(num)
-                        }
-                        if ((!ebitda || ebitda === 'N/A') && (typeStr.includes('ebitda') || nameStr.includes('ebitda') || nameStr.includes('sde') || typeStr.includes('adjusted_ebitda'))) {
-                            ebitda = formatMagnitude(num)
-                        }
-                        if (!askingPrice && (nameStr.includes('business acquisition') || typeStr.includes('acquisition use'))) {
-                            askingPrice = formatMagnitude(num)
-                        }
+                    const fact = normalizeExtractedFinancialFact(ff)
+                    if (!fact) continue
+                    if ((!revenue || revenue === 'N/A') && fact.metric === 'revenue') {
+                        revenue = formatMagnitude(fact.value)
+                    }
+                    if ((!ebitda || ebitda === 'N/A') && fact.metric === 'ebitda_sde') {
+                        ebitda = formatMagnitude(fact.value)
+                    }
+                    if (!askingPrice && fact.metric === 'asking_price') {
+                        askingPrice = formatMagnitude(fact.value)
                     }
                 }
                 if (extracted.valuation && typeof extracted.valuation === 'object') {

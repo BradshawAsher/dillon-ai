@@ -81,4 +81,33 @@ describe('resolveFinancialMetricsForProject', () => {
         expect(result.askingPrice).toBe('N/A')
         expect(result.multiple).toBe('N/A')
     })
+
+    it('skips marketing metrics, ratios, and percentages before choosing a monetary fact', () => {
+        const result = resolveFinancialMetricsForProject(null, [{ extractedJson: JSON.stringify({ financial_facts: [
+            { fact_type: 'revenue', fact_name: 'Revenue campaign impressions', numeric_value: 12_000_000 },
+            { fact_type: 'revenue', numeric_value: 1250, text_value: '1250%' },
+            { fact_type: 'revenue', fact_name: 'Revenue multiple', numeric_value: 1500, text_value: '1500x' },
+            { fact_type: 'revenue', numeric_value: 4.88, text_value: '$4.88M' },
+        ] }) }], 'Isolated Target 4471')
+        expect(result.revenue).toBe('$4.88M')
+    })
+
+    it.each([
+        [{ numeric_value: 750, text_value: '$750' }, '$750'],
+        [{ numeric_value: 750_000, text_value: '750 thousand' }, '$750K'],
+        [{ numeric_value: 4.88, normalized_value: 4_880_000, text_value: '$4.88M' }, '$4.88M'],
+        [{ normalizedValue: 5_000 }, '$5K'],
+    ])('shares documented-fact normalization for %j', (fields, expected) => {
+        const result = resolveFinancialMetricsForProject(null, [{ extractedJson: JSON.stringify({ financial_facts: [
+            { fact_type: 'revenue', ...fields },
+        ] }) }], 'Isolated Target 4471')
+        expect(result.revenue).toBe(expected)
+    })
+
+    it('does not use operating income as EBITDA', () => {
+        const result = resolveFinancialMetricsForProject(null, [{ extractedJson: JSON.stringify({ financial_facts: [
+            { fact_type: 'operating_income', numeric_value: 180_000 },
+        ] }) }], 'Isolated Target 4471')
+        expect(result.ebitda).toBe('N/A')
+    })
 })

@@ -120,6 +120,30 @@ The quant engine recognizes and indexes the following standardized metrics:
 
 ## 5. Conflict Resolution & Arbitration Rules
 
+### Raw extraction normalization
+
+Before arbitration, raw `extractedJson` fact arrays (`financial_facts`,
+`financialFacts`, or `facts`) pass through `normalizeExtractedFinancialFact()`
+in `frontend/utils/documentedFacts.ts`. The project KPI resolver in
+`frontend/utils/financialMetrics.ts` uses the same helper. This adapter:
+
+- Excludes campaign/case-study counts, percentages, margins, concentration,
+  growth, and similar non-company amounts even when the type says `revenue`.
+- Classifies explicit revenue/EBITDA multiples before dollar amounts, uses `x`
+  as their unit, and skips multiples whose denominator is not identified.
+- Preserves normalized base-unit values; otherwise parses complete magnitude
+  strings such as `$4.88M` or `750 thousand` once. It does not discard a valid
+  monetary amount simply because it is below $1,000.
+- Does not substitute operating income for EBITDA. Malformed entries are
+  skipped, and purchase-price aliases retain the source currency.
+
+These rules apply to the raw extraction adapter; they do not alter canonical
+`financialFactsJson` ingestion, benchmark fallback policy, or live n8n workflows.
+Regression coverage is in the existing `documentedFacts.test.ts` and
+`financialMetrics.test.ts` suites.
+
+### Choosing between normalized facts
+
 When multiple documents provide values for the same metric (e.g., Revenue stated across 3 different P&Ls or sales schedules), `deriveDocumentedFacts()` runs deterministic arbitration via `isBetter(candidate, current)`:
 
 ```
