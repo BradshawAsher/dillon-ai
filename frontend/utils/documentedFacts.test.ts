@@ -116,6 +116,56 @@ describe('deriveDocumentedFacts', () => {
     })
 })
 
+describe('extracted financial fact classification', () => {
+    function extracted(facts: unknown[]) {
+        return deriveDocumentedFacts([{ fileName: 'statement.pdf', extractedJson: JSON.stringify({ financial_facts: facts }) } as SubmissionHistoryItem])
+    }
+
+    it.each([
+        [{ numeric_value: 4.88, text_value: '$4.88M' }, 4_880_000],
+        [{ numeric_value: 1.5, text_value: '$1.5bn' }, 1_500_000_000],
+        [{ numeric_value: 750, text_value: '$750' }, 750],
+        [{ numeric_value: 750_000, text_value: '750 thousand' }, 750_000],
+        [{ numeric_value: 4.88, normalized_value: 4_880_000, text_value: '$4.88M' }, 4_880_000],
+        [{ normalizedValue: 5_000 }, 5_000],
+        [{ numeric_value: 4.88, value: '$4.88M' }, 4_880_000],
+    ])('normalizes monetary units without a minimum amount or double scaling: %j', (fields, expected) => {
+        expect(extracted([{ fact_type: 'revenue', ...fields }]).revenue.value).toBe(expected)
+    })
+
+    it.each([
+        { fact_type: 'revenue', fact_name: 'Revenue campaign impressions', numeric_value: 12_000_000 },
+        { fact_type: 'revenue', fact_name: 'Revenue growth', numeric_value: 1250, text_value: '1250%' },
+        { fact_type: 'revenue', numeric_value: 1250, unit: 'percent' },
+        { fact_type: 'ebitda', fact_name: 'EBITDA margin', numeric_value: 30 },
+        { fact_type: 'case_study', fact_name: 'Revenue multiple', numeric_value: 5, text_value: '5x' },
+    ])('excludes non-company amounts even with a broad financial type: %j', fields => {
+        expect(extracted([fields])).toEqual({})
+    })
+
+    it('classifies explicit multiples before monetary metrics, without assuming a denominator', () => {
+        const facts = extracted([
+            { fact_type: 'ebitda', fact_name: 'EBITDA multiple', text_value: '4.5x' },
+            { fact_type: 'revenue_multiple', numeric_value: 3, currency: 'USD' },
+            { fact_type: 'valuation_multiple', numeric_value: 6 },
+        ])
+        expect(Object.keys(facts).sort()).toEqual(['ebitda_multiple', 'revenue_multiple'])
+        expect(facts.ebitda_multiple.value).toBe(4.5)
+        expect(facts.revenue_multiple).toMatchObject({ value: 3, currency: 'x' })
+    })
+
+    it('does not relabel operating income as EBITDA and supports dated EBITDA labels', () => {
+        expect(extracted([{ fact_type: 'operating_income', numeric_value: 180_000 }]).ebitda_sde).toBeUndefined()
+        expect(extracted([{ fact_name: 'TTM May 2027 adjusted EBITDA', numeric_value: 250_000 }]).ebitda_sde.value).toBe(250_000)
+    })
+
+    it('skips malformed entries and keeps the currency on the purchase-price alias', () => {
+        const facts = extracted([null, { fact_type: 'asking_price', numeric_value: 50_000, currency: 'CAD' }])
+        expect(facts.asking_price).toMatchObject({ value: 50_000, currency: 'CAD' })
+        expect(facts.purchase_price).toMatchObject({ value: 50_000, currency: 'CAD' })
+    })
+})
+
 describe('deriveDocumentedFactsJson', () => {
     it('returns an empty string when nothing usable is found', () => {
         expect(deriveDocumentedFactsJson([])).toBe('')

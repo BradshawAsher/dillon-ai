@@ -119,6 +119,68 @@ export function parseMagnitudeMoney(value: string | number | null | undefined): 
     return Number.isFinite(parsed) && parsed >= 0 ? parsed * multiplier : null
 }
 
+// Raw model fact arrays are less specific than the canonical financialFactsJson
+// schema. Use the same classification in both quant facts and project KPIs.
+export function normalizeExtractedFinancialFact(input: unknown): { metric: string; value: number } | null {
+    if (!input || typeof input !== 'object' || Array.isArray(input)) return null
+    const fact = input as Record<string, unknown>
+    const label = (value: unknown) => String(value ?? '').trim().toLowerCase().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ')
+    const type = label(fact.fact_type || fact.metric)
+    const name = label(fact.fact_name || fact.name)
+    const labels = `${type} ${name}`
+    const text = String(fact.text_value || fact.raw_value || (typeof fact.value === 'string' ? fact.value : '')).trim()
+    const units = `${label(fact.unit)} ${label(fact.currency)}`
+
+    // A broad type such as "revenue" does not make campaign reach or a revenue
+    // percentage a company dollar amount. Exclusions also apply to multiples.
+    if (/\b(case stud(?:y|ies)|campaign|marketing performance|impressions?|reach|views?|engagement|placements?|attendees?|guests?|partners?|percent(?:age)?|concentration|margin|growth|mix|share|churn|per client|client spend|project size|weighted (?:avg|average))\b/.test(labels)
+        || /%/.test(text + units) || /\b(percent(?:age)?|count|people|views?|impressions?)\b/.test(units)) return null
+
+    const parse = (value: unknown) => typeof value === 'number' || typeof value === 'string' ? parseMagnitudeMoney(value) : null
+    const normalized = parse(fact.normalized_value) ?? parse(fact.normalizedValue)
+    const numeric = parse(fact.numeric_value) ?? parse(fact.value)
+    const multipleText = text.match(/^(\d+(?:\.\d+)?)\s*[x×]$/i)
+    const isMultiple = /\bmultiple\b/.test(labels) || !!multipleText || /\b(?:x|times)\b|×/.test(units)
+
+    if (isMultiple) {
+        // Do not default an unqualified "valuation multiple" to EBITDA.
+        const metric = /\b(?:revenue|sales)\b/.test(labels) ? 'revenue_multiple'
+            : /\b(?:ebitda|sde)\b/.test(labels) ? 'ebitda_multiple' : ''
+        const value = normalized ?? numeric ?? (multipleText ? Number(multipleText[1]) : null)
+        return metric && value !== null && Number.isFinite(value) && value > 0 ? { metric, value } : null
+    }
+
+    // Operating income is not EBITDA without an explicit reconciliation.
+    if (/\boperating income\b/.test(labels)) return null
+
+    const aliases: Record<string, string> = {
+        revenue: 'revenue', income: 'revenue', 'total income': 'revenue', sales: 'revenue',
+        ebitda: 'ebitda_sde', 'adjusted ebitda': 'ebitda_sde', 'ebitda sde': 'ebitda_sde', sde: 'ebitda_sde',
+        'gross profit': 'gross_profit', 'net income': 'net_income',
+        debt: 'debt', 'proposed debt financing': 'debt',
+        'asking price': 'asking_price', 'purchase price': 'asking_price', valuation: 'asking_price',
+        'transaction use of funds': 'asking_price', 'acquisition use': 'asking_price',
+    }
+    let metric = Object.prototype.hasOwnProperty.call(aliases, type) ? aliases[type] : ''
+    if (!metric) {
+        if (/\b(?:revenue|total income)\b/.test(name)) metric = 'revenue'
+        else if (/\b(?:ebitda|sde)\b/.test(name)) metric = 'ebitda_sde'
+        else if (name === 'gross profit') metric = 'gross_profit'
+        else if (name === 'net income') metric = 'net_income'
+        else if (['debt', 'total proposed sba loan', 'sba loan allocation for business acquisition'].includes(name)) metric = 'debt'
+        else if (['stated valuation', 'valuation', 'business acquisition use of funds', 'asking price', 'purchase price'].includes(name)) metric = 'asking_price'
+    }
+    if (!metric) return null
+
+    // Explicitly normalized values are already in base units. Otherwise parse
+    // a complete magnitude-bearing string once ("$4.88M", "750 thousand"),
+    // rather than multiplying an arbitrary small number by a guessed unit.
+    const textValue = parse(text)
+    const hasMagnitude = /(?:billion|bn|b|million|mm|m|thousand|k)$/i.test(text)
+    const value = normalized ?? (hasMagnitude && textValue !== null ? textValue : numeric ?? textValue)
+    return value !== null && Number.isFinite(value) && value > 0 ? { metric, value } : null
+}
+
 function isDerivedFact(fact: RawFact): boolean {
     const normalized = `${fact.provenance ?? ''} ${fact.formula ?? ''} ${fact.citation?.excerpt ?? ''}`.toLowerCase()
     return /reconstruct|formula|derived|calculated|implied|computed/.test(normalized)
@@ -281,46 +343,29 @@ export function deriveDocumentedFacts(documents: SubmissionHistoryItem[]): Recor
                                 : []
 
                     for (const ff of rawFinancialFacts) {
-                        const typeStr = String(ff.fact_type || ff.metric || '').toLowerCase()
-                        const nameStr = String(ff.fact_name || ff.name || '').toLowerCase()
-                        let m = ''
-                        if (typeStr.includes('revenue') || nameStr.includes('revenue') || nameStr.includes('total income')) m = 'revenue'
-                        else if (typeStr.includes('ebitda') || nameStr.includes('ebitda') || nameStr.includes('sde') || typeStr.includes('adjusted_ebitda')) m = 'ebitda_sde'
-                        else if (typeStr.includes('gross_profit') || nameStr.includes('gross profit')) m = 'gross_profit'
-                        else if (typeStr.includes('net_income') || nameStr.includes('net income')) m = 'net_income'
-                        else if (typeStr.includes('debt') || nameStr.includes('debt') || nameStr.includes('loan amount')) m = 'debt'
-                        else if (nameStr.includes('business acquisition') || typeStr.includes('acquisition use')) m = 'asking_price'
-
-                        const num = ff.numeric_value ?? ff.normalized_value ?? ff.normalizedValue ?? (typeof ff.value === 'number' ? ff.value : parseMagnitudeMoney(ff.text_value || ff.raw_value || ff.value))
-                        if (m && typeof num === 'number' && Number.isFinite(num) && num > 0) {
-                            const c = Array.isArray(ff.citations) && ff.citations[0] ? ff.citations[0] : {
-                                source_file: document.fileName,
-                                excerpt: `${ff.fact_name || m}: ${ff.text_value || `$${num.toLocaleString()}`}`,
-                            }
-                            facts.push({
-                                metric: m,
-                                normalized_value: num,
-                                raw_value: ff.text_value || ff.raw_value || `$${num.toLocaleString()}`,
-                                period: ff.period || 'TTM',
-                                currency: ff.currency || 'USD',
-                                confidence: ff.confidence_score ?? ff.confidence ?? 0.95,
-                                status: 'confirmed',
-                                provenance: 'Extracted from document financial facts',
-                                citation: c,
-                            })
-                            if (m === 'asking_price') {
-                                facts.push({
-                                    metric: 'purchase_price',
-                                    normalized_value: num,
-                                    raw_value: ff.text_value || ff.raw_value || `$${num.toLocaleString()}`,
-                                    period: ff.period || 'Asking',
-                                    currency: ff.currency || 'USD',
-                                    confidence: ff.confidence_score ?? 0.95,
-                                    status: 'confirmed',
-                                    provenance: 'Extracted from document financial facts',
-                                    citation: c,
-                                })
-                            }
+                        const normalized = normalizeExtractedFinancialFact(ff)
+                        if (!normalized) continue
+                        const { metric, value } = normalized
+                        const multiple = metric.endsWith('_multiple')
+                        const raw = ff.text_value || ff.raw_value || (multiple ? `${value}x` : `$${value.toLocaleString()}`)
+                        const citation = Array.isArray(ff.citations) && ff.citations[0] ? ff.citations[0] : {
+                            source_file: document.fileName,
+                            excerpt: `${ff.fact_name || metric}: ${raw}`,
+                        }
+                        const extractedFact: RawFact = {
+                            metric,
+                            normalized_value: value,
+                            raw_value: raw,
+                            period: ff.period || (multiple ? 'Pricing' : 'TTM'),
+                            currency: multiple ? 'x' : ff.currency || 'USD',
+                            confidence: ff.confidence_score ?? ff.confidence ?? 0.95,
+                            status: 'confirmed',
+                            provenance: 'Extracted from document financial facts',
+                            citation,
+                        }
+                        facts.push(extractedFact)
+                        if (metric === 'asking_price') {
+                            facts.push({ ...extractedFact, metric: 'purchase_price' })
                         }
                     }
 
