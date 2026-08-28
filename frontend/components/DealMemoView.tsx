@@ -128,7 +128,13 @@ export default function DealMemoView({ model, synthesis, projectName, documents,
     const revenue = facts.revenue?.value ?? (metrics.revenue !== 'N/A' ? parseMagnitudeMoney(metrics.revenue) : null)
     const ebitda = facts.ebitda_sde?.value ?? (metrics.ebitda !== 'N/A' ? parseMagnitudeMoney(metrics.ebitda) : null)
     const price = model.askingPrice ?? model.purchasePrice ?? (metrics.askingPrice !== 'N/A' ? parseMagnitudeMoney(metrics.askingPrice) : null)
-    const multiple = price && ebitda ? (price / Number(ebitda)).toFixed(1) : null
+    const multiple = (typeof model.ebitdaMultiple === 'number' && model.ebitdaMultiple > 0)
+        ? model.ebitdaMultiple.toFixed(1)
+        : price && ebitda
+            ? (price / Number(ebitda)).toFixed(1)
+            : metrics.multiple && metrics.multiple !== 'N/A'
+                ? metrics.multiple.replace(/x$/i, '')
+                : null
 
     const handleCopy = useCallback(async () => {
         if (await copyToClipboard(buildMemoText(model, synthesis, projectName))) {

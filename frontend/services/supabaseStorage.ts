@@ -104,23 +104,29 @@ export async function uploadDocumentToSupabaseStorage(options: {
   let uploadSucceeded = false
   let resolvedPublicUrl = ticket.publicUrl
 
-  // Primary: Cloudflare R2 direct PUT upload
+  // Primary: Cloudflare R2 direct PUT upload with retry
   if (ticket.uploadUrl) {
-    try {
-      const r2Res = await fetch(ticket.uploadUrl, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': fileType || 'application/octet-stream',
-        },
-        body: options.file,
-      })
-      if (r2Res.ok) {
-        uploadSucceeded = true
-      } else {
-        console.warn(`[storage] R2 direct PUT returned ${r2Res.status}, attempting Supabase fallback...`)
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const r2Res = await fetch(ticket.uploadUrl, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': fileType || 'application/octet-stream',
+          },
+          body: options.file,
+        })
+        if (r2Res?.ok) {
+          uploadSucceeded = true
+          break
+        } else {
+          console.warn(`[storage] R2 direct PUT attempt ${attempt} returned ${r2Res?.status ?? 'unknown'}`)
+        }
+      } catch (r2Err) {
+        console.warn(`[storage] R2 direct PUT attempt ${attempt} network error:`, r2Err)
       }
-    } catch (r2Err) {
-      console.warn('[storage] R2 direct PUT network error, attempting Supabase fallback...', r2Err)
+      if (attempt < 3) {
+        await new Promise((r) => setTimeout(r, attempt * 1000))
+      }
     }
   }
 

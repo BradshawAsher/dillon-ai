@@ -3487,6 +3487,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                         let fileBase64 = ''
                         if (file.size <= 3.5 * 1024 * 1024) {
                             fileBase64 = await readFileAsBase64(file)
+                        } else if (!storageFileUrl) {
+                            throw new Error(`Direct storage upload for "${file.name}" failed. Please check your network and retry.`)
                         }
 
                         const userOpenAiApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_openai_key') || '') : ''
