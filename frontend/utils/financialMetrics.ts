@@ -103,13 +103,21 @@ export function resolveFinancialMetricsForProject(
     }
 
     // 3. Resolve Asking / Purchase Price (Keep decoupled from AI valuation estimate)
+    // finalJudgment fields come from parsed JSON and can be either a number or a
+    // formatted string ("$4.88M"). Route them through parseMagnitudeMoney first:
+    // formatMagnitude on a string returns the truthy placeholder 'N/A', which
+    // would both mask the next fallback and surface "N/A" for a real figure.
+    const formatJudgmentPrice = (value: unknown): string | undefined => {
+        const parsed = parseMagnitudeMoney(value as string | number)
+        return parsed !== null ? formatMagnitude(parsed) : undefined
+    }
     let askingPrice = activeSynth?.askingPrice ||
         activeSynth?.asking_price ||
         activeSynth?.purchasePrice ||
         activeSynth?.financialOverview?.askingPrice ||
         activeSynth?.financialOverview?.purchasePrice ||
-        (finalJudgment?.target_asking_or_loi_price ? formatMagnitude(finalJudgment.target_asking_or_loi_price) : undefined) ||
-        (finalJudgment?.target_asking_price ? formatMagnitude(finalJudgment.target_asking_price) : undefined)
+        (finalJudgment?.target_asking_or_loi_price ? formatJudgmentPrice(finalJudgment.target_asking_or_loi_price) : undefined) ||
+        (finalJudgment?.target_asking_price ? formatJudgmentPrice(finalJudgment.target_asking_price) : undefined)
 
     // 4. Resolve Revenue
     let revenue = activeSynth?.revenueUsd || activeSynth?.revenue || activeSynth?.financialOverview?.revenueUsd

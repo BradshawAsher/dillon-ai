@@ -58,6 +58,15 @@ describe('resolveFinancialMetricsForProject', () => {
         expect(result.askingPrice).toBe('5.5B')
     })
 
+    it('resolves an asking price from a string-formatted final-judgment field', () => {
+        const result = resolveFinancialMetricsForProject(
+            { finalJudgementJson: JSON.stringify({ target_asking_or_loi_price: '$4.88M' }) },
+            [],
+            'Zephyr Holdings 8823',
+        )
+        expect(result.askingPrice).toBe('$4.88M')
+    })
+
     it('does not let an unparseable ebitdaExtracted mask a valid metrics.ebitda', () => {
         const result = resolveFinancialMetricsForProject(
             null,
