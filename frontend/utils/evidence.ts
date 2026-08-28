@@ -325,7 +325,16 @@ export function driveEmbedUrl(documentId?: string, documentUrl?: string): string
     // query/fragment into the id and yields a broken preview.
     const match = url.match(/\/d\/([^/?#]+)/) ?? url.match(/[?&]id=([^&#]+)/)
     if (match) {
-        return `https://drive.google.com/file/d/${encodeURIComponent(decodeURIComponent(match[1]))}/preview`
+        // A captured id can contain a stray '%' (a truncated or malformed share
+        // URL), which makes decodeURIComponent throw. Fall back to the raw
+        // capture rather than letting the whole preview lookup blow up.
+        let rawId = match[1]
+        try {
+            rawId = decodeURIComponent(match[1])
+        } catch {
+            // keep the undecoded capture
+        }
+        return `https://drive.google.com/file/d/${encodeURIComponent(rawId)}/preview`
     }
 
     return null

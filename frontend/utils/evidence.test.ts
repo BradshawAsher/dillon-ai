@@ -134,6 +134,13 @@ describe('driveEmbedUrl', () => {
         expect(driveEmbedUrl()).toBeNull()
         expect(driveEmbedUrl('', 'https://example.com/not-a-drive-link')).toBeNull()
     })
+
+    it('does not throw when the captured id has malformed percent-encoding', () => {
+        // A stray '%' in the id would make decodeURIComponent throw.
+        expect(() => driveEmbedUrl(undefined, 'https://drive.google.com/file/d/ab%c3/view')).not.toThrow()
+        const result = driveEmbedUrl(undefined, 'https://drive.google.com/file/d/ab%zz/view')
+        expect(result).toContain('/preview')
+    })
 })
 
 describe('findCitedDocument', () => {
