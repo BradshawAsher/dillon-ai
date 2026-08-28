@@ -272,9 +272,57 @@ export function deriveDocumentedFacts(documents: SubmissionHistoryItem[]): Recor
             try {
                 const parsed = typeof document.extractedJson === 'string' ? JSON.parse(document.extractedJson) : document.extractedJson
                 if (parsed && typeof parsed === 'object') {
-                    if (Array.isArray(parsed.financial_facts)) facts.push(...parsed.financial_facts)
-                    if (Array.isArray(parsed.financialFacts)) facts.push(...parsed.financialFacts)
-                    if (Array.isArray(parsed.facts)) facts.push(...parsed.facts)
+                    const rawFinancialFacts = Array.isArray(parsed.financial_facts)
+                        ? parsed.financial_facts
+                        : Array.isArray(parsed.financialFacts)
+                            ? parsed.financialFacts
+                            : Array.isArray(parsed.facts)
+                                ? parsed.facts
+                                : []
+
+                    for (const ff of rawFinancialFacts) {
+                        const typeStr = String(ff.fact_type || ff.metric || '').toLowerCase()
+                        const nameStr = String(ff.fact_name || ff.name || '').toLowerCase()
+                        let m = ''
+                        if (typeStr.includes('revenue') || nameStr.includes('revenue') || nameStr.includes('total income')) m = 'revenue'
+                        else if (typeStr.includes('ebitda') || nameStr.includes('ebitda') || nameStr.includes('sde') || typeStr.includes('adjusted_ebitda')) m = 'ebitda_sde'
+                        else if (typeStr.includes('gross_profit') || nameStr.includes('gross profit')) m = 'gross_profit'
+                        else if (typeStr.includes('net_income') || nameStr.includes('net income')) m = 'net_income'
+                        else if (typeStr.includes('debt') || nameStr.includes('debt') || nameStr.includes('loan amount')) m = 'debt'
+                        else if (nameStr.includes('business acquisition') || typeStr.includes('acquisition use')) m = 'asking_price'
+
+                        const num = ff.numeric_value ?? ff.normalized_value ?? ff.normalizedValue ?? (typeof ff.value === 'number' ? ff.value : parseMagnitudeMoney(ff.text_value || ff.raw_value || ff.value))
+                        if (m && typeof num === 'number' && Number.isFinite(num) && num > 0) {
+                            const c = Array.isArray(ff.citations) && ff.citations[0] ? ff.citations[0] : {
+                                source_file: document.fileName,
+                                excerpt: `${ff.fact_name || m}: ${ff.text_value || `$${num.toLocaleString()}`}`,
+                            }
+                            facts.push({
+                                metric: m,
+                                normalized_value: num,
+                                raw_value: ff.text_value || ff.raw_value || `$${num.toLocaleString()}`,
+                                period: ff.period || 'TTM',
+                                currency: ff.currency || 'USD',
+                                confidence: ff.confidence_score ?? ff.confidence ?? 0.95,
+                                status: 'confirmed',
+                                provenance: 'Extracted from document financial facts',
+                                citation: c,
+                            })
+                            if (m === 'asking_price') {
+                                facts.push({
+                                    metric: 'purchase_price',
+                                    normalized_value: num,
+                                    raw_value: ff.text_value || ff.raw_value || `$${num.toLocaleString()}`,
+                                    period: ff.period || 'Asking',
+                                    currency: ff.currency || 'USD',
+                                    confidence: ff.confidence_score ?? 0.95,
+                                    status: 'confirmed',
+                                    provenance: 'Extracted from document financial facts',
+                                    citation: c,
+                                })
+                            }
+                        }
+                    }
 
                     const parsedRev = parsed.revenueTTM ?? parsed.revenue_ttm ?? parsed.revenue ?? parsed.totalRevenue ?? parsed.total_revenue
                     if (parsedRev !== undefined && parsedRev !== null) {
@@ -317,23 +365,107 @@ export function deriveDocumentedFacts(documents: SubmissionHistoryItem[]): Recor
                             })
                         }
                     }
+
+                    const v = parsed.valuation || (document as any).valuation
+                    if (v && typeof v === 'object') {
+                        const ask = v.askingPrice ?? v.asking_price ?? v.targetPrice ?? v.target_price
+                        const base = v.valuationBaseEstimate ?? v.base_estimate ?? v.baseEstimate
+                        const citations = Array.isArray(v.citations) ? v.citations : []
+                        const primaryCitation = citations[0] || {
+                            source_file: document.fileName,
+                            excerpt: `Valuation: $${(ask || base || 0).toLocaleString()}`,
+                        }
+                        if (typeof ask === 'number' && ask > 0) {
+                            facts.push({
+                                metric: 'asking_price',
+                                normalized_value: ask,
+                                raw_value: `$${ask.toLocaleString()}`,
+                                period: 'Asking',
+                                currency: v.currency || 'USD',
+                                confidence: v.valuation_confidence_score || 0.95,
+                                status: 'confirmed',
+                                provenance: 'Extracted from Prospectus / Valuation',
+                                citation: primaryCitation,
+                            })
+                            facts.push({
+                                metric: 'purchase_price',
+                                normalized_value: ask,
+                                raw_value: `$${ask.toLocaleString()}`,
+                                period: 'Asking',
+                                currency: v.currency || 'USD',
+                                confidence: v.valuation_confidence_score || 0.95,
+                                status: 'confirmed',
+                                provenance: 'Extracted from Prospectus / Valuation',
+                                citation: primaryCitation,
+                            })
+                        }
+                        if (typeof base === 'number' && base > 0) {
+                            if (!ask) {
+                                facts.push({
+                                    metric: 'purchase_price',
+                                    normalized_value: base,
+                                    raw_value: `$${base.toLocaleString()}`,
+                                    period: 'Valuation',
+                                    currency: v.currency || 'USD',
+                                    confidence: v.valuation_confidence_score || 0.95,
+                                    status: 'confirmed',
+                                    provenance: 'Extracted from Prospectus / Valuation',
+                                    citation: primaryCitation,
+                                })
+                                facts.push({
+                                    metric: 'asking_price',
+                                    normalized_value: base,
+                                    raw_value: `$${base.toLocaleString()}`,
+                                    period: 'Valuation',
+                                    currency: v.currency || 'USD',
+                                    confidence: v.valuation_confidence_score || 0.95,
+                                    status: 'confirmed',
+                                    provenance: 'Extracted from Prospectus / Valuation',
+                                    citation: primaryCitation,
+                                })
+                            }
+                        }
+                        for (const cit of citations) {
+                            const text = cit?.excerpt || ''
+                            const ebitdaMultMatch = text.match(/(\d+(?:\.\d+)?)\s*x\s*(?:adj\.?\s*)?ebitda/i)
+                            if (ebitdaMultMatch) {
+                                const mv = parseFloat(ebitdaMultMatch[1])
+                                if (Number.isFinite(mv) && mv > 0) {
+                                    facts.push({
+                                        metric: 'ebitda_multiple',
+                                        normalized_value: mv,
+                                        raw_value: `${mv}x`,
+                                        period: cit.period || 'Pricing',
+                                        currency: 'x',
+                                        confidence: cit.confidence_score || 0.95,
+                                        status: 'confirmed',
+                                        provenance: 'Extracted from valuation multiple disclosures',
+                                        citation: cit,
+                                    })
+                                }
+                            }
+                            const revMultMatch = text.match(/(\d+(?:\.\d+)?)\s*x\s*revenue/i)
+                            if (revMultMatch) {
+                                const rmv = parseFloat(revMultMatch[1])
+                                if (Number.isFinite(rmv) && rmv > 0) {
+                                    facts.push({
+                                        metric: 'revenue_multiple',
+                                        normalized_value: rmv,
+                                        raw_value: `${rmv}x`,
+                                        period: cit.period || 'Pricing',
+                                        currency: 'x',
+                                        confidence: cit.confidence_score || 0.95,
+                                        status: 'confirmed',
+                                        provenance: 'Extracted from valuation multiple disclosures',
+                                        citation: cit,
+                                    })
+                                }
+                            }
+                        }
+                    }
                 }
             } catch {
                 // ignore
-            }
-        }
-
-        if ((document as any).valuation && typeof (document as any).valuation === 'object') {
-            const v = (document as any).valuation
-            const ask = v.askingPrice ?? v.asking_price
-            const base = v.valuationBaseEstimate ?? v.base_estimate ?? v.baseEstimate
-            if (typeof ask === 'number' && ask > 0) {
-                facts.push({ metric: 'asking_price', normalized_value: ask, raw_value: `$${ask.toLocaleString()}`, period: 'Asking' })
-                facts.push({ metric: 'purchase_price', normalized_value: ask, raw_value: `$${ask.toLocaleString()}`, period: 'Asking' })
-            }
-            if (typeof base === 'number' && base > 0 && !ask) {
-                facts.push({ metric: 'purchase_price', normalized_value: base, raw_value: `$${base.toLocaleString()}`, period: 'Valuation' })
-                facts.push({ metric: 'asking_price', normalized_value: base, raw_value: `$${base.toLocaleString()}`, period: 'Valuation' })
             }
         }
 

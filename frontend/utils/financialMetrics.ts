@@ -103,7 +103,13 @@ export function resolveFinancialMetricsForProject(
     }
 
     // 3. Resolve Asking / Purchase Price (Keep decoupled from AI valuation estimate)
-    let askingPrice = activeSynth?.askingPrice || activeSynth?.asking_price || activeSynth?.purchasePrice || activeSynth?.financialOverview?.askingPrice || activeSynth?.financialOverview?.purchasePrice
+    let askingPrice = activeSynth?.askingPrice ||
+        activeSynth?.asking_price ||
+        activeSynth?.purchasePrice ||
+        activeSynth?.financialOverview?.askingPrice ||
+        activeSynth?.financialOverview?.purchasePrice ||
+        (finalJudgment?.target_asking_or_loi_price ? formatMagnitude(finalJudgment.target_asking_or_loi_price) : undefined) ||
+        (finalJudgment?.target_asking_price ? formatMagnitude(finalJudgment.target_asking_price) : undefined)
 
     // 4. Resolve Revenue
     let revenue = activeSynth?.revenueUsd || activeSynth?.revenue || activeSynth?.financialOverview?.revenueUsd
@@ -114,9 +120,12 @@ export function resolveFinancialMetricsForProject(
             : []),
     ]
 
+    const AMOUNT_PATTERN = /(?:revenue|income|sales)[^\$]*(\$\d{1,3}(?:,\d{3})*(?:\.\d+)?|\$\d+(?:\.\d+)?\s*(?:million|billion|M|B|K|mm)?)/i
+    const EBITDA_PATTERN = /EBITDA[^\$]*(\$\d{1,3}(?:,\d{3})*(?:\.\d+)?|\$\d+(?:\.\d+)?\s*(?:million|billion|M|B|K|mm)?)/i
+
     if (!revenue && takeaways.length > 0) {
         for (const t of takeaways) {
-            const extracted = extractAmountNearKeyword(String(t), /(?:revenue|income)[^\$]*(\$\d+(?:\.\d+)?\s*(?:million|billion|M|B|K|mm)?)/i)
+            const extracted = extractAmountNearKeyword(String(t), AMOUNT_PATTERN)
             if (extracted) {
                 revenue = extracted
                 break
@@ -128,7 +137,7 @@ export function resolveFinancialMetricsForProject(
     let ebitda = activeSynth?.ebitdaUsd || activeSynth?.ebitda || activeSynth?.financialOverview?.ebitdaUsd || activeSynth?.adjustedEbitda
     if (!ebitda && takeaways.length > 0) {
         for (const t of takeaways) {
-            const extracted = extractAmountNearKeyword(String(t), /EBITDA[^\$]*(\$\d+(?:\.\d+)?\s*(?:million|billion|M|B|K|mm)?)/i)
+            const extracted = extractAmountNearKeyword(String(t), EBITDA_PATTERN)
             if (extracted) {
                 ebitda = extracted
                 break
@@ -146,8 +155,8 @@ export function resolveFinancialMetricsForProject(
             if ((!revenue || revenue === 'N/A') && (doc.revenueUsd || doc.revenue || doc.metrics?.revenue)) {
                 revenue = doc.revenueUsd || doc.revenue || doc.metrics?.revenue
             }
-            if ((!ebitda || ebitda === 'N/A') && (doc.ebitdaUsd || doc.ebitda || doc.metrics?.ebitda)) {
-                ebitda = doc.ebitdaUsd || doc.ebitda || doc.metrics?.ebitda
+            if ((!ebitda || ebitda === 'N/A') && (doc.ebitdaUsd || doc.ebitda || doc.ebitdaExtracted || doc.metrics?.ebitda)) {
+                ebitda = doc.ebitdaUsd || doc.ebitda || (doc.ebitdaExtracted ? formatMagnitude(parseMagnitudeMoney(doc.ebitdaExtracted)) : undefined) || doc.metrics?.ebitda
             }
 
             // Parse financialFactsJson
@@ -167,6 +176,44 @@ export function resolveFinancialMetricsForProject(
                     }
                 }
             }
+
+            // Parse extractedJson / extracted_json
+            const extracted = safeParseJson(doc.extractedJson || doc.extracted_json)
+            if (extracted && typeof extracted === 'object') {
+                const rawFinancialFacts = Array.isArray(extracted.financial_facts)
+                    ? extracted.financial_facts
+                    : Array.isArray(extracted.financialFacts)
+                        ? extracted.financialFacts
+                        : Array.isArray(extracted.facts)
+                            ? extracted.facts
+                            : []
+                for (const ff of rawFinancialFacts) {
+                    const typeStr = String(ff.fact_type || ff.metric || '').toLowerCase()
+                    const nameStr = String(ff.fact_name || ff.name || '').toLowerCase()
+                    const num = ff.numeric_value ?? ff.normalized_value ?? (typeof ff.value === 'number' ? ff.value : parseMagnitudeMoney(ff.text_value || ff.raw_value || ff.value))
+                    if (typeof num === 'number' && Number.isFinite(num) && num > 0) {
+                        if ((!revenue || revenue === 'N/A') && (typeStr.includes('revenue') || nameStr.includes('revenue') || nameStr.includes('total income'))) {
+                            revenue = formatMagnitude(num)
+                        }
+                        if ((!ebitda || ebitda === 'N/A') && (typeStr.includes('ebitda') || nameStr.includes('ebitda') || nameStr.includes('sde') || typeStr.includes('adjusted_ebitda'))) {
+                            ebitda = formatMagnitude(num)
+                        }
+                        if (!askingPrice && (nameStr.includes('business acquisition') || typeStr.includes('acquisition use'))) {
+                            askingPrice = formatMagnitude(num)
+                        }
+                    }
+                }
+                if (extracted.valuation && typeof extracted.valuation === 'object') {
+                    const ask = extracted.valuation.askingPrice ?? extracted.valuation.asking_price ?? extracted.valuation.targetPrice
+                    const base = extracted.valuation.valuationBaseEstimate ?? extracted.valuation.base_estimate
+                    if (!askingPrice && typeof ask === 'number' && ask > 0) {
+                        askingPrice = formatMagnitude(ask)
+                    }
+                    if (!askingPrice && typeof base === 'number' && base > 0) {
+                        askingPrice = formatMagnitude(base)
+                    }
+                }
+            }
         }
     }
 
@@ -175,10 +222,6 @@ export function resolveFinancialMetricsForProject(
 
     // If multiple not explicitly provided, calculate from price/valuation and ebitda if numeric
     if (!multiple || multiple === 'N/A') {
-        // Reuse the canonical magnitude parser so "$1.2B" / "$4.88M" / "875K"
-        // all scale correctly. The previous inline parser silently dropped the
-        // billions suffix, turning a $1.2B price into a bare 1.2 and producing a
-        // nonsensical multiple.
         const parseNum = (val: any) => parseMagnitudeMoney(val)
         const numPrice = parseNum(askingPrice) || (!isNaN(rawValBase) && rawValBase > 0 ? rawValBase : null)
         const numEbitda = parseNum(ebitda)
