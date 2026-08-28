@@ -49,7 +49,9 @@ export function buildDealEmailDraft(options: {
     const ebitda = typeof facts?.ebitda_sde?.value === 'number' ? facts.ebitda_sde.value : null
     const revenue = typeof facts?.revenue?.value === 'number' ? facts.revenue.value : null
     const price = model?.purchasePrice ?? model?.askingPrice ?? null
-    const multiple = price && ebitda && ebitda > 0 ? (price / ebitda).toFixed(1) : null
+    // Require a positive price too: a zero/negative price would otherwise emit a
+    // meaningless "0.0x" or negative multiple in the outbound email.
+    const multiple = price && price > 0 && ebitda && ebitda > 0 ? (price / ebitda).toFixed(1) : null
 
     const revenueFormatted = formatDraftMoney(revenue)
     const ebitdaFormatted = formatDraftMoney(ebitda)
@@ -115,7 +117,7 @@ export function buildDealEmailDraft(options: {
     lines.push('KEY FINANCIAL METRICS & VALUATION:')
     if (revenueFormatted) lines.push(`• Revenue: ${revenueFormatted}`)
     if (ebitdaFormatted) {
-        const marginStr = revenue && ebitda ? ` (${((ebitda / revenue) * 100).toFixed(0)}% margin)` : ''
+        const marginStr = revenue && revenue > 0 && ebitda ? ` (${((ebitda / revenue) * 100).toFixed(0)}% margin)` : ''
         lines.push(`• EBITDA/SDE: ${ebitdaFormatted}${marginStr}`)
     }
     if (valuationRangeFormatted) {
