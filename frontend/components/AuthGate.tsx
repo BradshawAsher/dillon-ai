@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { LogIn, Shield, User, Lock, Mail, Loader2, AlertCircle } from 'lucide-react'
+import { LogIn, Shield, User, Lock, Mail, Loader2, AlertCircle, Building2 } from 'lucide-react'
 
 import { Button } from '../lib/shadcn/button'
 import { Badge } from '../lib/shadcn/badge'
@@ -40,7 +40,7 @@ export function isDataIsolationEnabled(): boolean {
 
 export function setDataIsolation(enabled: boolean) {
     if (typeof window === 'undefined') return
-    localStorage.setItem(ISOLATION_KEY, enabled ? 'true' : 'false')
+    localStorage.setItem(ISOLATION_KEY, String(enabled))
     window.dispatchEvent(new CustomEvent(DATA_ISOLATION_EVENT, { detail: { enabled } }))
 }
 
@@ -62,7 +62,7 @@ export default function LoginButton({ onNavigateAccount }: { onNavigateAccount?:
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [name, setName] = useState('')
-    const [team, setTeam] = useState('Pod 1 (Acquisitions & Diligence)')
+    const [team, setTeam] = useState('')
     const [isolation, setIsolation] = useState(isDataIsolationEnabled)
     const [loading, setLoading] = useState(false)
     const [socialLoading, setSocialLoading] = useState<'google' | 'github' | 'microsoft' | null>(null)
@@ -121,7 +121,7 @@ export default function LoginButton({ onNavigateAccount }: { onNavigateAccount?:
         setLoading(true)
         try {
             if (mode === 'signup') {
-                const res = await signUpWithPassword(email, password, name || email.split('@')[0], team)
+                const res = await signUpWithPassword(email, password, name || email.split('@')[0], team.trim() || undefined)
                 if (!res.success) {
                     setErrorMessage(res.error || 'Failed to create account.')
                 } else {
@@ -144,42 +144,39 @@ export default function LoginButton({ onNavigateAccount }: { onNavigateAccount?:
         }
     }, [email, password, name, team, mode])
 
-    const handleGoogle = useCallback(async () => {
+    const handleGoogleAuth = useCallback(async () => {
         setSocialLoading('google')
         setErrorMessage(null)
-        try {
-            const res = await signInWithGoogle()
-            if (!res.success) setErrorMessage(res.error || 'Google login failed')
-        } catch (err: any) {
-            setErrorMessage(err?.message || 'Google login failed')
-        } finally {
+        const res = await signInWithGoogle()
+        if (!res.success) {
+            setErrorMessage(res.error || 'Google Sign-in failed.')
             setSocialLoading(null)
+        } else if (res.url) {
+            window.location.href = res.url
         }
     }, [])
 
-    const handleGithub = useCallback(async () => {
+    const handleGithubAuth = useCallback(async () => {
         setSocialLoading('github')
         setErrorMessage(null)
-        try {
-            const res = await signInWithGithub()
-            if (!res.success) setErrorMessage(res.error || 'GitHub login failed')
-        } catch (err: any) {
-            setErrorMessage(err?.message || 'GitHub login failed')
-        } finally {
+        const res = await signInWithGithub()
+        if (!res.success) {
+            setErrorMessage(res.error || 'GitHub Sign-in failed.')
             setSocialLoading(null)
+        } else if (res.url) {
+            window.location.href = res.url
         }
     }, [])
 
-    const handleMicrosoft = useCallback(async () => {
+    const handleMicrosoftAuth = useCallback(async () => {
         setSocialLoading('microsoft')
         setErrorMessage(null)
-        try {
-            const res = await signInWithMicrosoft()
-            if (!res.success) setErrorMessage(res.error || 'Microsoft login failed')
-        } catch (err: any) {
-            setErrorMessage(err?.message || 'Microsoft login failed')
-        } finally {
+        const res = await signInWithMicrosoft()
+        if (!res.success) {
+            setErrorMessage(res.error || 'Microsoft Sign-in failed.')
             setSocialLoading(null)
+        } else if (res.url) {
+            window.location.href = res.url
         }
     }, [])
 
@@ -221,11 +218,14 @@ export default function LoginButton({ onNavigateAccount }: { onNavigateAccount?:
                 {isolationButton}
                 <button
                     type="button"
-                    onClick={onNavigateAccount}
-                    className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-background/60 hover:bg-muted/80 px-2.5 py-1.5 transition-colors cursor-pointer group"
-                    title="Open Account & Settings"
+                    onClick={() => {
+                        if (onNavigateAccount) onNavigateAccount()
+                        else setShowDialog(true)
+                    }}
+                    className="flex items-center gap-2 rounded-lg border border-border/80 bg-muted/40 px-2.5 py-1.5 hover:bg-muted/80 transition-colors text-left group"
+                    title="View Account Profile & Diligence Workspace Settings"
                 >
-                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/20 text-primary text-[10px] font-bold">
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/20 text-[10px] font-bold text-primary">
                         {authUser.name.charAt(0).toUpperCase()}
                     </div>
                     <Badge variant={authUser.role === 'admin' ? 'default' : 'secondary'} className="text-[9px] px-1.5 py-0">
@@ -235,7 +235,7 @@ export default function LoginButton({ onNavigateAccount }: { onNavigateAccount?:
                         {authUser.name}
                     </span>
                     <span className="text-[10px] text-muted-foreground hidden lg:inline">
-                        ({authUser.team || 'Pod 1'})
+                        ({authUser.team || 'External Member'})
                     </span>
                 </button>
                 {onNavigateAccount && (
@@ -294,7 +294,7 @@ export default function LoginButton({ onNavigateAccount }: { onNavigateAccount?:
                                 type="button"
                                 variant="outline"
                                 className="w-full h-9 justify-center gap-2 text-xs font-semibold"
-                                onClick={handleGoogle}
+                                onClick={handleGoogleAuth}
                                 disabled={!!socialLoading || loading}
                             >
                                 {socialLoading === 'google' ? (
@@ -326,7 +326,7 @@ export default function LoginButton({ onNavigateAccount }: { onNavigateAccount?:
                                 type="button"
                                 variant="outline"
                                 className="w-full h-9 justify-center gap-2 text-xs font-semibold"
-                                onClick={handleGithub}
+                                onClick={handleGithubAuth}
                                 disabled={!!socialLoading || loading}
                             >
                                 {socialLoading === 'github' ? (
@@ -343,7 +343,7 @@ export default function LoginButton({ onNavigateAccount }: { onNavigateAccount?:
                                 type="button"
                                 variant="outline"
                                 className="w-full h-9 justify-center gap-2 text-xs font-semibold"
-                                onClick={handleMicrosoft}
+                                onClick={handleMicrosoftAuth}
                                 disabled={!!socialLoading || loading}
                             >
                                 {socialLoading === 'microsoft' ? (
@@ -466,20 +466,25 @@ export default function LoginButton({ onNavigateAccount }: { onNavigateAccount?:
 
                             {mode === 'signup' && (
                                 <div>
-                                    <label className="mb-1 block text-xs font-medium text-foreground">
-                                        Team / Pod
-                                    </label>
-                                    <select
-                                        value={team}
-                                        onChange={e => setTeam(e.target.value)}
-                                        className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-xs text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                                    >
-                                        <option value="Pod 1 (Acquisitions & Diligence)">Pod 1 (Acquisitions &amp; Diligence)</option>
-                                        <option value="Pod 2 (Growth Equity)">Pod 2 (Growth Equity)</option>
-                                        <option value="Pod 3 (Special Situations)">Pod 3 (Special Situations)</option>
-                                        <option value="Independent Sponsor">Independent Sponsor</option>
-                                        <option value="M&A Advisory">M&amp;A Advisory</option>
-                                    </select>
+                                    <div className="flex items-center justify-between mb-1">
+                                        <label className="block text-xs font-medium text-foreground">
+                                            Custom Team / Firm <span className="font-normal text-muted-foreground">(Optional)</span>
+                                        </label>
+                                        <span className="text-[10px] text-muted-foreground">Default: External Member</span>
+                                    </div>
+                                    <div className="relative">
+                                        <Building2 className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                                        <input
+                                            type="text"
+                                            value={team}
+                                            onChange={e => setTeam(e.target.value)}
+                                            placeholder="e.g. Acme Capital, Blue Ridge Search Fund"
+                                            className="w-full rounded-md border border-border bg-background py-1.5 pl-8 pr-3 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                                        />
+                                    </div>
+                                    <p className="mt-1 text-[10px] text-muted-foreground">
+                                        Leave blank to join as External Member.
+                                    </p>
                                 </div>
                             )}
 

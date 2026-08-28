@@ -9,6 +9,7 @@ import {
     Sparkles,
     User,
     Users,
+    Building2,
     AlertCircle,
     Loader2,
 } from 'lucide-react'
@@ -58,7 +59,7 @@ export default function LoginPage({
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [fullName, setFullName] = useState('')
-    const [team, setTeam] = useState('Pod 1 (Acquisitions & Diligence)')
+    const [team, setTeam] = useState('')
     const [isLoading, setIsLoading] = useState(false)
     const [socialLoading, setSocialLoading] = useState<'google' | 'github' | 'microsoft' | null>(null)
     const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -83,7 +84,7 @@ export default function LoginPage({
 
         try {
             if (mode === 'signup') {
-                const res = await signUpWithPassword(email, password, fullName, team)
+                const res = await signUpWithPassword(email, password, fullName, team.trim() || undefined)
                 if (!res.success) {
                     setErrorMessage(res.error || 'Unable to create account. Please check your details.')
                 } else {
@@ -195,7 +196,7 @@ export default function LoginPage({
                                     <Badge variant={activeUser.role === 'admin' ? 'default' : 'secondary'} className="text-xs">
                                         {activeUser.role === 'admin' ? 'Admin' : 'Member'}
                                     </Badge>
-                                    <span className="text-xs text-muted-foreground font-medium">{activeUser.team || 'Pod 1'}</span>
+                                    <span className="text-xs text-muted-foreground font-medium">{activeUser.team || 'External Member'}</span>
                                 </div>
                             </div>
 
@@ -431,25 +432,25 @@ export default function LoginPage({
 
                             {mode === 'signup' && (
                                 <div>
-                                    <label className="block text-xs font-semibold text-foreground mb-1.5">
-                                        Team / Deal Pod
-                                    </label>
+                                    <div className="flex items-center justify-between mb-1.5">
+                                        <label className="block text-xs font-semibold text-foreground">
+                                            Custom Team / Firm Name <span className="font-normal text-muted-foreground">(Optional)</span>
+                                        </label>
+                                        <span className="text-[10px] text-muted-foreground">Default: External Member</span>
+                                    </div>
                                     <div className="relative">
-                                        <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                                        <select
+                                        <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                                        <input
+                                            type="text"
                                             value={team}
                                             onChange={(e) => setTeam(e.target.value)}
-                                            className="w-full rounded-lg border border-border bg-background py-2.5 pl-9 pr-3 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                                        >
-                                            <option value="Pod 1 (Acquisitions & Diligence)">
-                                                Pod 1 (Acquisitions &amp; Diligence)
-                                            </option>
-                                            <option value="Pod 2 (Growth Equity)">Pod 2 (Growth Equity)</option>
-                                            <option value="Pod 3 (Special Situations)">Pod 3 (Special Situations)</option>
-                                            <option value="Independent Sponsor">Independent Sponsor</option>
-                                            <option value="M&A Advisory / Brokerage">M&amp;A Advisory / Brokerage</option>
-                                        </select>
+                                            placeholder="e.g. Acme Capital, Blue Ridge Search Fund"
+                                            className="w-full rounded-lg border border-border bg-background py-2.5 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                                        />
                                     </div>
+                                    <p className="mt-1 text-[11px] text-muted-foreground">
+                                        Leave blank to join as <span className="font-medium text-foreground">External Member</span>. You can create or manage custom teams in Workspace Settings.
+                                    </p>
                                 </div>
                             )}
 

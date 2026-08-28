@@ -16,6 +16,10 @@ import {
     Mail,
     Sliders,
     Building2,
+    Users,
+    UserPlus,
+    Copy,
+    Check,
 } from 'lucide-react'
 import { Button } from '../../lib/shadcn/button'
 import { Badge } from '../../lib/shadcn/badge'
@@ -33,7 +37,7 @@ import {
     DATA_ISOLATION_EVENT,
 } from '../AuthGate'
 import type { ProjectSummary } from '../../utils/projectWorkspace'
-import { getOwnedProjects } from '../../utils/projectOwnership'
+import { getOwnedProjects, getProjectsForTeam } from '../../utils/projectOwnership'
 
 interface AccountWorkspaceViewProps {
     projectSummaries: ProjectSummary[]
@@ -52,11 +56,16 @@ export function AccountWorkspaceView({
     const [isolation, setIsolation] = useState<boolean>(isDataIsolationEnabled)
     const [isEditing, setIsEditing] = useState(false)
     const [editName, setEditName] = useState(user?.name || '')
-    const [editTeam, setEditTeam] = useState(user?.team || 'Pod 1 (Acquisitions & Diligence)')
+    const [editTeam, setEditTeam] = useState(user?.team || 'External Member')
     const [saveSuccess, setSaveSuccess] = useState(false)
     const [isSubmittingAdminRequest, setIsSubmittingAdminRequest] = useState(false)
     const [adminRequestSent, setAdminRequestSent] = useState(false)
     const [adminRequestError, setAdminRequestError] = useState<string | null>(null)
+    const [customTeamInput, setCustomTeamInput] = useState('')
+    const [isEditingTeam, setIsEditingTeam] = useState(false)
+    const [inviteEmail, setInviteEmail] = useState('')
+    const [inviteSent, setInviteSent] = useState(false)
+    const [inviteCopied, setInviteCopied] = useState(false)
 
     useEffect(() => {
         const handleIsolationChange = (e: Event) => {
@@ -180,7 +189,7 @@ export function AccountWorkspaceView({
                                     size="sm"
                                     onClick={() => {
                                         setEditName(user?.name || '')
-                                        setEditTeam(user?.team || 'Pod 1 (Acquisitions & Diligence)')
+                                        setEditTeam(user?.team || 'External Member')
                                         setIsEditing(true)
                                     }}
                                 >
@@ -217,7 +226,7 @@ export function AccountWorkspaceView({
                                             value={editTeam}
                                             onChange={(e) => setEditTeam(e.target.value)}
                                             className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                                            placeholder="Pod 1 (Acquisitions & Diligence)"
+                                            placeholder="External Member (or enter custom firm name)"
                                             required
                                         />
                                     </div>
@@ -261,10 +270,10 @@ export function AccountWorkspaceView({
                                     </p>
                                 </div>
                                 <div className="rounded-lg border border-border/50 bg-muted/20 p-3.5">
-                                    <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Assigned Team</p>
+                                    <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Assigned Team / Organization</p>
                                     <p className="mt-1 text-sm font-semibold text-foreground flex items-center gap-1.5">
                                         <Building2 className="h-3.5 w-3.5 text-primary shrink-0" />
-                                        {user?.team || 'Pod 1 (Acquisitions & Diligence)'}
+                                        {user?.team || 'External Member'}
                                     </p>
                                 </div>
                                 <div className="rounded-lg border border-border/50 bg-muted/20 p-3.5">
@@ -276,6 +285,151 @@ export function AccountWorkspaceView({
                                 </div>
                             </div>
                         )}
+                    </div>
+
+                    {/* Custom Organization & Teams Hub Card */}
+                    <div id="teams" className="rounded-xl border border-border/80 bg-card p-6 shadow-sm scroll-mt-6">
+                        <div className="flex items-center justify-between border-b border-border/50 pb-4">
+                            <div className="flex items-center gap-2">
+                                <Users className="h-5 w-5 text-primary" />
+                                <div>
+                                    <h2 className="text-base font-semibold text-foreground">Organization &amp; Team Hub</h2>
+                                    <p className="text-xs text-muted-foreground">Collaborate with colleagues in private firm workspaces</p>
+                                </div>
+                            </div>
+                            <Badge
+                                variant={user?.team && user.team !== 'External Member' ? 'default' : 'secondary'}
+                                className="text-xs font-semibold"
+                            >
+                                {user?.team && user.team !== 'External Member' ? 'Custom Team Active' : 'External Member'}
+                            </Badge>
+                        </div>
+
+                        <div className="mt-4 space-y-4">
+                            {isEditingTeam ? (
+                                <form
+                                    onSubmit={(e) => {
+                                        e.preventDefault()
+                                        if (!user) return
+                                        const cleanTeam = customTeamInput.trim() || 'External Member'
+                                        const updated: AppAuthUser = {
+                                            ...user,
+                                            team: cleanTeam,
+                                        }
+                                        saveAppAuth(updated)
+                                        setUser(updated)
+                                        setIsEditingTeam(false)
+                                    }}
+                                    className="rounded-lg border border-primary/30 bg-primary/5 p-4 space-y-3"
+                                >
+                                    <div>
+                                        <label className="text-xs font-semibold text-foreground">
+                                            Custom Team / Firm Name
+                                        </label>
+                                        <p className="text-[11px] text-muted-foreground mb-1.5">
+                                            Enter your firm name (e.g., <em>Acme Capital</em>, <em>Blue Ridge Search Fund</em>). Colleagues entering the same team name will share deal visibility in Team Mode.
+                                        </p>
+                                        <input
+                                            type="text"
+                                            value={customTeamInput}
+                                            onChange={(e) => setCustomTeamInput(e.target.value)}
+                                            placeholder="e.g. Acme Capital"
+                                            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                                            required
+                                            autoFocus
+                                        />
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Button type="submit" size="sm">
+                                            Save Team Name
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => setIsEditingTeam(false)}
+                                        >
+                                            Cancel
+                                        </Button>
+                                    </div>
+                                </form>
+                            ) : (
+                                <div className="rounded-lg border border-border/50 bg-muted/20 p-4">
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                        <div className="space-y-1">
+                                            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                                                Active Team Workspace
+                                            </p>
+                                            <p className="text-base font-bold text-foreground flex items-center gap-2">
+                                                <Building2 className="h-4 w-4 text-primary" />
+                                                {user?.team || 'External Member'}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground">
+                                                {user?.team && user.team !== 'External Member'
+                                                    ? 'Members on this team can access shared deal rooms and collaborative diligence packets.'
+                                                    : 'You are currently in an individual workspace. Create or name a custom firm team to collaborate with associates.'}
+                                            </p>
+                                        </div>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => {
+                                                setCustomTeamInput(user?.team === 'External Member' ? '' : (user?.team || ''))
+                                                setIsEditingTeam(true)
+                                            }}
+                                            className="shrink-0 gap-1.5"
+                                        >
+                                            <Building2 className="h-3.5 w-3.5 text-primary" />
+                                            {user?.team && user.team !== 'External Member' ? 'Rename Team' : '+ Create Custom Team'}
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Invite Colleague Tool */}
+                            <div className="rounded-lg border border-border/50 bg-muted/10 p-4">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                    <div className="space-y-1">
+                                        <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                                            <UserPlus className="h-4 w-4 text-primary" />
+                                            Invite Colleague to {user?.team || 'Workspace'}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">
+                                            Share your team name or copy an onboarding link for your investment partners.
+                                        </p>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => {
+                                                if (typeof window !== 'undefined') {
+                                                    const inviteUrl = `${window.location.origin}?team=${encodeURIComponent(user?.team || 'External Member')}`
+                                                    navigator.clipboard.writeText(inviteUrl).catch(() => {})
+                                                    setInviteCopied(true)
+                                                    setTimeout(() => setInviteCopied(false), 2500)
+                                                }
+                                            }}
+                                            className="gap-1.5 text-xs"
+                                        >
+                                            {inviteCopied ? (
+                                                <>
+                                                    <Check className="h-3.5 w-3.5 text-emerald-500" />
+                                                    <span>Copied!</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                                                    <span>Copy Invite Link</span>
+                                                </>
+                                            )}
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Apply for Admin Access Card (For Non-Admin Accounts) */}
@@ -341,19 +495,19 @@ export function AccountWorkspaceView({
                                 variant={isolation ? 'default' : 'secondary'}
                                 className={isolation ? 'bg-primary text-primary-foreground' : ''}
                             >
-                                {isolation ? 'Personal Isolation Active' : 'Shared Pod Workspace'}
+                                {isolation ? 'Personal Isolation Active' : `Shared ${user?.team || 'Team'} Workspace`}
                             </Badge>
                         </div>
 
                         <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-lg border border-border/60 bg-muted/20 p-4">
                             <div className="space-y-1 max-w-xl">
                                 <p className="text-sm font-medium text-foreground">
-                                    {isolation ? 'Strict Private Workspace Filter' : 'Collaborative Team Workspace'}
+                                    {isolation ? 'Strict Private Workspace Filter' : `Collaborative ${user?.team || 'Team'} Workspace`}
                                 </p>
                                 <p className="text-xs text-muted-foreground">
                                     {isolation
                                         ? 'Only projects claimed by or assigned to your email address are visible in the Projects and Synthesis tabs.'
-                                        : 'All deals uploaded by all members of Pod 1 are visible and collaborative in real time.'}
+                                        : `All deals uploaded by members of ${user?.team || 'your team'} are visible and collaborative in real time.`}
                                 </p>
                             </div>
                             <Button

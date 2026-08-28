@@ -52,15 +52,25 @@ describe('slackAlertService', () => {
             expect(fieldTexts).toContain('Email & Password')
         })
 
-        it('should handle fallback default values cleanly', async () => {
-            const success = await sendNewAccountSlackAlert({
+        it('should handle fallback default values cleanly for internal and external emails', async () => {
+            const successInternal = await sendNewAccountSlackAlert({
                 fullName: '',
                 email: 'test@mergeworks.io',
             })
+            expect(successInternal).toBe(true)
+            const bodyInternal = JSON.parse((globalThis.fetch as any).mock.calls[0][1].body)
+            expect(bodyInternal.text).toContain('New User')
+            const fieldsInternal = bodyInternal.blocks[1].fields.map((f: any) => f.text).join(' ')
+            expect(fieldsInternal).toContain('Pod 1 (Internal)')
 
-            expect(success).toBe(true)
-            const body = JSON.parse((globalThis.fetch as any).mock.calls[0][1].body)
-            expect(body.text).toContain('New User')
+            const successExternal = await sendNewAccountSlackAlert({
+                fullName: 'External Buyer',
+                email: 'buyer@acmepartners.com',
+            })
+            expect(successExternal).toBe(true)
+            const bodyExternal = JSON.parse((globalThis.fetch as any).mock.calls[1][1].body)
+            const fieldsExternal = bodyExternal.blocks[1].fields.map((f: any) => f.text).join(' ')
+            expect(fieldsExternal).toContain('External Member')
         })
     })
 
