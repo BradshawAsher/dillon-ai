@@ -36,6 +36,9 @@ describe('batch stop UI contract', () => {
         expect(batchCompletionTime({ ...batch, stopError: 'failed' }, [done, done])).toBeUndefined()
         expect(batchCompletionTime(batch, [done, done])).toBe(Date.parse(done.processedAt))
         expect(batchCompletionTime({ ...batch, startedAt: Date.parse(done.processedAt) + 1 }, [done, done])).toBeUndefined()
+        // A batch with no positive expected count cannot be declared complete.
+        expect(batchCompletionTime({ ...batch, expectedDocumentCount: 0 }, [done, done])).toBeUndefined()
+        expect(batchCompletionTime({ ...batch, expectedDocumentCount: undefined as unknown as number }, [done, done])).toBeUndefined()
     })
     it('stops new dispatches and waits for existing submissions to settle', async () => {
         const queue = createBatchQueue('batch-a')
