@@ -117,4 +117,19 @@ describe('dealEmailDraft Generator Utility', () => {
         expect(draft.body).toContain('GREEN — PROCEED TO LOI')
         expect(draft.body).toContain('Finalize confirmatory diligence checklist')
     })
+
+    it('emits an implied multiple for a positive price and none for a non-positive one', () => {
+        const facts = JSON.stringify({ revenue: { value: 1_000_000 }, ebitda_sde: { value: 250_000 } })
+        const positive = buildDealEmailDraft({
+            model: { purchasePrice: 1_000_000, documentedFactsJson: facts } as DealModel,
+            projectName: 'Multiple Co',
+        })
+        expect(positive.multipleFormatted).toBe('4.0x')
+
+        const zeroPrice = buildDealEmailDraft({
+            model: { purchasePrice: 0, askingPrice: 0, documentedFactsJson: facts } as DealModel,
+            projectName: 'Zero Co',
+        })
+        expect(zeroPrice.multipleFormatted).toBeNull()
+    })
 })
