@@ -151,13 +151,33 @@ describe('supabaseStorage service', () => {
         expect((await uploadDocumentToSupabaseStorage({ file: new Blob(['doc']), fileName: 'f.pdf' })).storagePath).toBe('fallback/f.pdf')
     })
 
-    it('sends an 18 MiB PDF through signed resumable storage without a full-file PUT', async () => {
+    it('uploads an 18 MiB PDF directly to Cloudflare R2 when available', async () => {
+        const fetchMock = vi.fn()
+            .mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({
+                    storageProvider: 'r2',
+                    uploadUrl: 'https://worker/upload',
+                    path: 'r2/deck.pdf',
+                    publicUrl: 'https://pub-3b04d9f4c75546caae7c86bd7b6847de.r2.dev/r2/deck.pdf',
+                }),
+            })
+            .mockResolvedValueOnce({ ok: true, status: 200 })
+        global.fetch = fetchMock
+        const file = new File([new Uint8Array(18 * 1024 * 1024)], 'deck.pdf', { type: 'application/pdf' })
+        const result = await uploadDocumentToSupabaseStorage({ file })
+        expect(result.storageFileUrl).toBe('https://pub-3b04d9f4c75546caae7c86bd7b6847de.r2.dev/r2/deck.pdf')
+        expect(fetchMock).toHaveBeenCalledWith('https://worker/upload', expect.objectContaining({ method: 'PUT' }))
+    })
+
+    it('falls back to Supabase resumable storage for 18 MiB PDF if R2 upload fails', async () => {
         const fallback = { signedUrl: 'https://p.storage.supabase.co/signed', resumableUrl: 'https://p.storage.supabase.co/resumable', token: 'scoped', path: 'p/deck.pdf', publicUrl: 'https://sihpsqrunkwkxhhnwoqe.supabase.co/storage/v1/object/public/deal-documents/p/deck.pdf', bucket: 'deal-documents' }
-        global.fetch = vi.fn().mockResolvedValueOnce({ ok: true, json: async () => ({ storageProvider: 'r2', uploadUrl: 'https://worker/upload', path: 'r2/deck.pdf', publicUrl: 'https://r2/deck.pdf', supabaseFallback: fallback }) })
+        global.fetch = vi.fn()
+            .mockResolvedValueOnce({ ok: true, json: async () => ({ storageProvider: 'r2', uploadUrl: 'https://worker/upload', path: 'r2/deck.pdf', publicUrl: 'https://r2/deck.pdf', supabaseFallback: fallback }) })
+            .mockResolvedValueOnce({ ok: false, status: 503 })
         vi.mocked(uploadResumable).mockResolvedValueOnce()
         const file = new File([new Uint8Array(18 * 1024 * 1024)], 'deck.pdf', { type: 'application/pdf' })
         const result = await uploadDocumentToSupabaseStorage({ file })
-        expect(global.fetch).toHaveBeenCalledTimes(1)
         expect(uploadResumable).toHaveBeenCalledWith(file, expect.objectContaining({ resumableUrl: fallback.resumableUrl, token: 'scoped' }), 'application/pdf', expect.any(Function))
         expect(result.storageFileUrl).toBe(fallback.publicUrl)
     })

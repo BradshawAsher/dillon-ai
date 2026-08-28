@@ -22445,8 +22445,8 @@ function normalizeWebhookResponse(response, fallback) {
 // backend/diligence/storedFileMultipart.ts
 import { Readable, Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
-import { createWriteStream, openAsBlob } from "node:fs";
-import { mkdtemp, rmdir, unlink } from "node:fs/promises";
+import { createWriteStream } from "node:fs";
+import { readFile, mkdtemp, rmdir, unlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join as join2 } from "node:path";
 function validateDocumentStorageUrl(value) {
@@ -22514,7 +22514,8 @@ async function storedFileMultipart(entries, signal) {
           );
           if (entry.fileSize !== void 0 && bytes !== entry.fileSize) throw new Error("Stored document download was incomplete. Retry the download or re-upload it.");
           signal.throwIfAborted();
-          const blob = await openAsBlob(path2, { type: entry.contentType || "application/octet-stream" });
+          const fileBuffer = await readFile(path2);
+          const blob = new Blob([fileBuffer], { type: entry.contentType || "application/octet-stream" });
           body.append(entry.key, blob, entry.filename || "document");
         } finally {
           if (!source.body.locked) await source.body.cancel().catch(() => void 0);
@@ -22609,6 +22610,10 @@ async function submitDealPacket(req) {
     storageFileUrl: req.params.storageFileUrl ?? "",
     storagePath: req.params.storagePath ?? ""
   };
+  try {
+    await supabase.from("documents").delete().ilike("project_id", normalizedProjectId).ilike("file_name", normalizedFileName).eq("status", "upload_failed");
+  } catch {
+  }
   try {
     const { error } = await supabase.from("documents").upsert(
       {

@@ -121,30 +121,8 @@ export async function uploadDocumentToSupabaseStorage(options: {
   const fallbackTicket = ticket.supabaseFallback || (ticket.storageProvider !== 'r2' ? ticket : undefined)
   let triedResumable = false
 
-  // Large documents use signed 6 MiB chunks on Supabase's direct storage host.
-  // No document bytes pass through Vercel or the Cloudflare proxy on this path.
-  if (fileSize > RESUMABLE_CHUNK_BYTES && fallbackTicket?.resumableUrl && fallbackTicket.token) {
-    triedResumable = true
-    try {
-      await uploadResumable(options.file, {
-        resumableUrl: fallbackTicket.resumableUrl,
-        token: fallbackTicket.token,
-        bucket: fallbackTicket.bucket || 'deal-documents',
-        path: fallbackTicket.path,
-      }, fileType, progress => options.onProgress?.(30 + Math.round(progress * 0.69)))
-      uploadSucceeded = true
-      resolvedPublicUrl = fallbackTicket.publicUrl
-      resolvedPath = fallbackTicket.path
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Supabase resumable upload failed'
-      // No provider can upload a file the browser can no longer read.
-      if (message.includes('selected file cannot be read')) throw error
-      errors.push(message)
-    }
-  }
-
-  // Primary: Cloudflare R2 direct PUT upload with retry
-  if (!uploadSucceeded && ticket.uploadUrl) {
+  // 1. Primary: Cloudflare R2 direct streaming PUT upload for ALL files up to 100 MB
+  if (ticket.uploadUrl) {
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
         const r2Res = await uploadFetch(ticket.uploadUrl, {
@@ -156,6 +134,8 @@ export async function uploadDocumentToSupabaseStorage(options: {
         })
         if (r2Res?.ok) {
           uploadSucceeded = true
+          resolvedPublicUrl = ticket.publicUrl
+          resolvedPath = ticket.path
           break
         } else {
           errors.push(`R2 HTTP ${r2Res?.status ?? 'unknown'}`)
@@ -174,14 +154,35 @@ export async function uploadDocumentToSupabaseStorage(options: {
     }
   }
 
-  // Fallback: Supabase Storage if R2 upload did not complete
+  // 2. Fallback: Supabase Storage if R2 upload did not complete
   if (!uploadSucceeded) {
     if (!fallbackTicket) throw new Error(`Direct storage upload failed (${errors.join('; ')}). No fallback upload ticket is available.`)
     const bucket = fallbackTicket.bucket || 'deal-documents'
     const path = fallbackTicket.path || ticket.path
     const token = fallbackTicket.token || ticket.token
 
-    if (!triedResumable && token && !fallbackTicket.signedUrl) {
+    // Large documents falling back to Supabase use signed 6 MiB chunks on Supabase's direct storage host.
+    if (fileSize > RESUMABLE_CHUNK_BYTES && fallbackTicket.resumableUrl && token) {
+      triedResumable = true
+      try {
+        await uploadResumable(options.file, {
+          resumableUrl: fallbackTicket.resumableUrl,
+          token,
+          bucket,
+          path,
+        }, fileType, progress => options.onProgress?.(30 + Math.round(progress * 0.69)))
+        uploadSucceeded = true
+        resolvedPublicUrl = fallbackTicket.publicUrl
+        resolvedPath = path
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Supabase resumable upload failed'
+        // No provider can upload a file the browser can no longer read.
+        if (message.includes('selected file cannot be read')) throw error
+        errors.push(message)
+      }
+    }
+
+    if (!uploadSucceeded && !triedResumable && token && !fallbackTicket.signedUrl) {
       try {
         const { data, error } = await supabaseAuthClient.storage
           .from(bucket)

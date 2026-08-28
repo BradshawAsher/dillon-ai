@@ -1,7 +1,7 @@
 import { Readable, Transform } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
-import { createWriteStream, openAsBlob } from 'node:fs'
-import { mkdtemp, rmdir, unlink } from 'node:fs/promises'
+import { createWriteStream } from 'node:fs'
+import { readFile, mkdtemp, rmdir, unlink } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -78,7 +78,8 @@ export async function storedFileMultipart(entries: MultipartEntry[], signal: Abo
                     )
                     if (entry.fileSize !== undefined && bytes !== entry.fileSize) throw new Error('Stored document download was incomplete. Retry the download or re-upload it.')
                     signal.throwIfAborted()
-                    const blob = await openAsBlob(path, { type: entry.contentType || 'application/octet-stream' })
+                    const fileBuffer = await readFile(path)
+                    const blob = new Blob([fileBuffer], { type: entry.contentType || 'application/octet-stream' })
                     body.append(entry.key, blob, entry.filename || 'document')
                 } finally {
                     // Also cancel when temporary-file creation fails before pipeline.
