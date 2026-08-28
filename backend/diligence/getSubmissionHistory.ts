@@ -43,9 +43,15 @@ export function deriveSubmissionStatus(row: Record<string, any>) {
         return 'completed'
     }
 
-    const updatedAtMs = row.updated_at ? new Date(row.updated_at).getTime() : 0
-    const createdAtMs = row.created_at ? new Date(row.created_at).getTime() : 0
-    const lastActiveMs = Math.max(updatedAtMs, createdAtMs)
+    // Coerce each timestamp to a finite epoch: an unparseable date yields NaN
+    // from getTime(), and Math.max(NaN, anything) is NaN — which would discard a
+    // perfectly good created_at and stop the stuck-row timeout below from ever
+    // firing.
+    const toMs = (value: unknown) => {
+        const ms = value ? new Date(value as string | number).getTime() : 0
+        return Number.isFinite(ms) ? ms : 0
+    }
+    const lastActiveMs = Math.max(toMs(row.updated_at), toMs(row.created_at))
     const elapsedSeconds = lastActiveMs > 0 ? (Date.now() - lastActiveMs) / 1000 : 0
 
     const batchCount = typeof row.expected_batch_document_count === 'number' && row.expected_batch_document_count > 0
