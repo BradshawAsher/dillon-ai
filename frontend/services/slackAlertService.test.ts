@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import {
     sendNewAccountSlackAlert,
     sendSignInSlackAlert,
+    sendSignOutSlackAlert,
+    sendVisitorTrafficSlackAlert,
     sendAdminAccessRequestSlackAlert,
     sendIssueReportSlackAlert,
 } from './slackAlertService'
@@ -213,6 +215,54 @@ describe('slackAlertService', () => {
             })
 
             expect(success).toBe(false)
+        })
+    })
+
+    describe('sendSignOutSlackAlert', () => {
+        it('should dispatch formatted payload to #pod-1-agent-alerts on signout', async () => {
+            const success = await sendSignOutSlackAlert({
+                fullName: 'David Ross',
+                email: 'david@mergeworks.io',
+                team: 'Pod 1 (Internal)',
+                role: 'admin',
+            })
+
+            expect(success).toBe(true)
+            expect(globalThis.fetch).toHaveBeenCalledTimes(1)
+
+            const body = JSON.parse((globalThis.fetch as any).mock.calls[0][1].body)
+            expect(body.channel).toBe('#pod-1-agent-alerts')
+            expect(body.text).toContain('User Signed Out')
+            expect(body.text).toContain('david@mergeworks.io')
+
+            const fieldTexts = body.blocks[1].fields.map((f: any) => f.text).join(' ')
+            expect(fieldTexts).toContain('David Ross')
+            expect(fieldTexts).toContain('Pod 1 (Internal)')
+            expect(fieldTexts).toContain('ADMIN')
+        })
+    })
+
+    describe('sendVisitorTrafficSlackAlert', () => {
+        it('should dispatch formatted visitor traffic payload to #pod-1-agent-alerts', async () => {
+            const success = await sendVisitorTrafficSlackAlert({
+                path: '/?utm_source=linkedin',
+                referrer: 'https://www.linkedin.com/',
+                userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
+                screenResolution: '1920x1080',
+                utmSource: 'linkedin',
+            })
+
+            expect(success).toBe(true)
+            expect(globalThis.fetch).toHaveBeenCalledTimes(1)
+
+            const body = JSON.parse((globalThis.fetch as any).mock.calls[0][1].body)
+            expect(body.channel).toBe('#pod-1-agent-alerts')
+            expect(body.text).toContain('New Visitor Traffic')
+            expect(body.blocks[0].text.text).toContain('New Visitor / Guest Traffic Detected')
+
+            const fieldTexts = body.blocks[1].fields.map((f: any) => f.text).join(' ')
+            expect(fieldTexts).toContain('Campaign: linkedin')
+            expect(fieldTexts).toContain('https://www.linkedin.com/')
         })
     })
 })

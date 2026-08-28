@@ -10,7 +10,38 @@ export interface SlackAlertParams {
   text?: string
   blocks?: unknown[]
   channel?: string
-  type?: 'new_account' | 'sign_in' | 'admin_access_request' | 'issue_report' | 'custom'
+  type?: 'new_account' | 'sign_in' | 'sign_out' | 'visitor_traffic' | 'admin_access_request' | 'issue_report' | 'custom'
+}
+
+/**
+ * Extracts geolocation summary from standard hosting headers (Vercel, Cloudflare, App Engine, AWS).
+ */
+export function extractGeoLocationFromHeaders(headers: Record<string, string | string[] | undefined> = {}): {
+  location: string
+  ip: string
+  country: string
+  city: string
+  userAgent: string
+} {
+  const getHeader = (key: string): string => {
+    const val = headers[key] || headers[key.toLowerCase()]
+    if (Array.isArray(val)) return val[0] || ''
+    return typeof val === 'string' ? val : ''
+  }
+
+  const city = getHeader('x-vercel-ip-city') || getHeader('cf-ipcity') || getHeader('x-appengine-city') || ''
+  const region = getHeader('x-vercel-ip-country-region') || getHeader('cf-region') || getHeader('x-appengine-region') || ''
+  const country = getHeader('x-vercel-ip-country') || getHeader('cf-ipcountry') || getHeader('x-appengine-country') || ''
+  
+  const rawIp = getHeader('x-forwarded-for') || getHeader('x-real-ip') || getHeader('cf-connecting-ip') || ''
+  const ip = rawIp.split(',')[0].trim() || 'Direct / Localhost'
+
+  const userAgent = getHeader('user-agent') || 'Browser'
+
+  const parts = [decodeURIComponent(city), decodeURIComponent(region), country].filter(Boolean)
+  const location = parts.length > 0 ? parts.join(', ') : 'Global / Direct Visitor'
+
+  return { location, ip, country, city, userAgent }
 }
 
 /**
@@ -64,13 +95,34 @@ export async function dispatchServerSlackWebhook(slackMessage: Record<string, un
   }
 }
 
-export default async function handleSlackAlert(req: { params: Record<string, unknown>; user?: unknown }) {
+export default async function handleSlackAlert(req: {
+  params: Record<string, unknown>
+  headers?: Record<string, string | string[] | undefined>
+  user?: unknown
+}) {
   const body = req.params || {}
-  const slackPayload = (body.payload && typeof body.payload === 'object') ? body.payload as Record<string, unknown> : body
+  const rawPayload = (body.payload && typeof body.payload === 'object') ? (body.payload as Record<string, unknown>) : body
 
-  if (!slackPayload || Object.keys(slackPayload).length === 0) {
+  if (!rawPayload || Object.keys(rawPayload).length === 0) {
     return { success: false, error: 'Empty alert payload' }
   }
 
-  return await dispatchServerSlackWebhook(slackPayload)
+  // If request headers are provided, enrich payload placeholders with Geo-IP and IP metadata
+  if (req.headers) {
+    const geo = extractGeoLocationFromHeaders(req.headers)
+    let payloadString = JSON.stringify(rawPayload)
+    
+    payloadString = payloadString.replace(/\{\{GEO_LOCATION\}\}/g, geo.location)
+    payloadString = payloadString.replace(/\{\{IP_ADDRESS\}\}/g, geo.ip)
+    payloadString = payloadString.replace(/\{\{USER_AGENT\}\}/g, geo.userAgent.slice(0, 100))
+
+    try {
+      const enrichedPayload = JSON.parse(payloadString)
+      return await dispatchServerSlackWebhook(enrichedPayload)
+    } catch {
+      // fallback to raw payload if replacement parsing fails
+    }
+  }
+
+  return await dispatchServerSlackWebhook(rawPayload)
 }

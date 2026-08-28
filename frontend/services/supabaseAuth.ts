@@ -1,5 +1,5 @@
 import { createClient, type User, type Session } from '@supabase/supabase-js'
-import { sendNewAccountSlackAlert, sendSignInSlackAlert } from './slackAlertService'
+import { sendNewAccountSlackAlert, sendSignInSlackAlert, sendSignOutSlackAlert } from './slackAlertService'
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || ''
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
@@ -342,6 +342,16 @@ export async function signInWithMicrosoft() {
  * Sign Out (Instant local clear + background remote signout)
  */
 export async function signOutUser() {
+    const currentUser = getLocalAppAuth()
+    if (currentUser) {
+        console.info(`[Auth] Dispatching Sign-Out Slack notification for ${currentUser.email}`)
+        sendSignOutSlackAlert({
+            fullName: currentUser.name,
+            email: currentUser.email,
+            team: currentUser.team,
+            role: currentUser.role,
+        }).catch((err) => console.warn('[Auth] Failed to send sign-out alert:', err))
+    }
     saveAppAuth(null)
     if (typeof window !== 'undefined') {
         try {
