@@ -4,7 +4,14 @@ import { isTerminalSubmissionStatus, type SubmissionHistoryItem } from './submis
 export function getBatchStopTarget(rows: SubmissionHistoryItem[], projectId: string, environment: SubmitEnvironment, batch: SubmissionBatch | null) {
     const scoped = rows.filter((row) => row.projectId === projectId && row.environment === environment)
     const explicitIds = batch?.requestIDs?.length ? new Set(batch.requestIDs) : null
-    const latest = [...scoped].sort((a, b) => Date.parse(b.createdAt || b.receivedAt) - Date.parse(a.createdAt || a.receivedAt))[0]
+    // A row missing both timestamps yields NaN from Date.parse, and a comparator
+    // that returns NaN leaves the sort order (and therefore the "latest" pick)
+    // undefined. Coerce to a finite epoch so the newest row is chosen deterministically.
+    const rowTime = (row: SubmissionHistoryItem) => {
+        const t = Date.parse(row.createdAt || row.receivedAt || '')
+        return Number.isFinite(t) ? t : 0
+    }
+    const latest = [...scoped].sort((a, b) => rowTime(b) - rowTime(a))[0]
     const submissionBatchId = explicitIds ? '' : batch?.id && batch.id !== projectId ? batch.id : latest?.submissionBatchId || ''
     const selected = scoped.filter((row) => explicitIds ? explicitIds.has(row.requestID) : submissionBatchId && row.submissionBatchId === submissionBatchId)
     return { projectId, environment, submissionBatchId, requestIDs: [...new Set(selected.map((row) => row.requestID).filter(Boolean))] }

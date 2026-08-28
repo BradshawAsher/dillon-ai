@@ -12,6 +12,11 @@ describe('batch stop UI contract', () => {
     it('retains a known batch ID before its first document arrives', () => {
         expect(getBatchStopTarget([row('b', 'p', 'batch-b')], 'p', 'production', batch)).toMatchObject({ submissionBatchId: 'batch-a', requestIDs: [] })
     })
+    it('still resolves a target when a scoped row is missing its timestamps', () => {
+        const noTime = { requestID: 'z', projectId: 'p', submissionBatchId: 'batch-a', environment: 'production' } as SubmissionHistoryItem
+        // The undated row must not throw or scramble the latest-row selection.
+        expect(getBatchStopTarget([noTime, row('a')], 'p', 'production', null).requestIDs.sort()).toEqual(['a', 'z'])
+    })
     it('limits synthetic rerun batches to explicitly tracked documents', () => {
         expect(getBatchStopTarget([row('a'), row('b')], 'p', 'production', { ...batch, id: 'p', requestIDs: ['a'] })).toMatchObject({ submissionBatchId: '', requestIDs: ['a'] })
     })
