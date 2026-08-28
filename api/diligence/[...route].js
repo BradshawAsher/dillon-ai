@@ -22438,48 +22438,50 @@ async function submitDealPacket(req) {
   const environment = req.params.environment === "test" ? "test" : "production";
   const normalizedProjectId = req.params.projectId.trim().toLowerCase();
   const normalizedFileName = req.params.fileName.trim().toLowerCase();
-  try {
-    const { data: duplicateDocs } = await supabase.from("documents").select("id, request_id, created_at, updated_at, status").ilike("project_id", normalizedProjectId).ilike("file_name", normalizedFileName).eq("file_size", req.params.fileSize).eq("status", "completed").limit(1);
-    if (duplicateDocs && duplicateDocs.length > 0) {
-      const existingDocument = duplicateDocs[0];
-      return {
-        status: "duplicate",
-        environment,
-        target: "duplicate-check",
-        method: "POST",
-        submittedAt: triggerTimestamp,
-        submittedBy: req.user.email,
-        payload: {
-          fileName: req.params.fileName,
-          fileSize: req.params.fileSize,
-          fileType: req.params.fileType,
-          dealName: req.params.dealName,
-          companyName: req.params.companyName,
-          workstream: req.params.workstream,
-          submissionNotes: req.params.submissionNotes,
-          projectId: req.params.projectId,
-          projectStage: req.params.projectStage,
-          documentType: req.params.documentType,
-          submissionBatchId: req.params.submissionBatchId ?? "",
-          expectedBatchDocumentCount: req.params.expectedBatchDocumentCount ?? 1,
-          analystName: req.user.fullName,
-          analystEmail: req.user.email,
-          triggerTimestamp,
-          requestID,
-          environment
-        },
-        response: {
-          requestID: existingDocument.request_id || requestID,
+  if (!req.params.skipDuplicateCheck) {
+    try {
+      const { data: duplicateDocs } = await supabase.from("documents").select("id, request_id, created_at, updated_at, status").ilike("project_id", normalizedProjectId).ilike("file_name", normalizedFileName).eq("file_size", req.params.fileSize).eq("status", "completed").limit(1);
+      if (duplicateDocs && duplicateDocs.length > 0) {
+        const existingDocument = duplicateDocs[0];
+        return {
           status: "duplicate",
-          receivedAt: existingDocument.created_at || triggerTimestamp,
-          id: existingDocument.id,
-          createdAt: existingDocument.created_at || triggerTimestamp,
-          updatedAt: existingDocument.updated_at || triggerTimestamp,
-          environment
-        }
-      };
+          environment,
+          target: "duplicate-check",
+          method: "POST",
+          submittedAt: triggerTimestamp,
+          submittedBy: req.user.email,
+          payload: {
+            fileName: req.params.fileName,
+            fileSize: req.params.fileSize,
+            fileType: req.params.fileType,
+            dealName: req.params.dealName,
+            companyName: req.params.companyName,
+            workstream: req.params.workstream,
+            submissionNotes: req.params.submissionNotes,
+            projectId: req.params.projectId,
+            projectStage: req.params.projectStage,
+            documentType: req.params.documentType,
+            submissionBatchId: req.params.submissionBatchId ?? "",
+            expectedBatchDocumentCount: req.params.expectedBatchDocumentCount ?? 1,
+            analystName: req.user.fullName,
+            analystEmail: req.user.email,
+            triggerTimestamp,
+            requestID,
+            environment
+          },
+          response: {
+            requestID: existingDocument.request_id || requestID,
+            status: "duplicate",
+            receivedAt: existingDocument.created_at || triggerTimestamp,
+            id: existingDocument.id,
+            createdAt: existingDocument.created_at || triggerTimestamp,
+            updatedAt: existingDocument.updated_at || triggerTimestamp,
+            environment
+          }
+        };
+      }
+    } catch {
     }
-  } catch {
   }
   const path2 = getSubmitPath(environment);
   const payload = {
@@ -22558,6 +22560,17 @@ async function submitDealPacket(req) {
   }
   if (req.params.fileBase64) {
     formData.push({ key: "file", file: req.params.fileBase64, filename: req.params.fileName });
+  } else if (req.params.storageFileUrl) {
+    try {
+      const fileRes = await fetch(req.params.storageFileUrl);
+      if (fileRes.ok) {
+        const arrayBuf = await fileRes.arrayBuffer();
+        const base64 = Buffer.from(arrayBuf).toString("base64");
+        formData.push({ key: "file", file: base64, filename: req.params.fileName });
+      }
+    } catch (fetchErr) {
+      console.warn("[submitDealPacket] Failed to fetch binary from storageFileUrl:", fetchErr);
+    }
   }
   if (req.params.userAnthropicApiKey) {
     formData.push({ key: "userAnthropicApiKey", value: req.params.userAnthropicApiKey });
@@ -22624,11 +22637,21 @@ async function retryFailedDocument(req) {
     `).eq("request_id", requestID).eq("environment", environment).maybeSingle();
   if (documentError) throw new Error(`Unable to load failed document: ${documentError.message}`);
   const failedStatus = String(failedDocument?.status || "").trim().toLowerCase();
-  if (failedStatus === "upload_failed") {
+  let storageFileUrl = String(failedDocument?.storage_file_url || "").trim();
+  if (!storageFileUrl && failedDocument?.file_name) {
+    try {
+      const { data: siblingDocs } = await supabase.from("documents").select("storage_file_url").eq("file_name", failedDocument.file_name).neq("storage_file_url", "").order("created_at", { ascending: false }).limit(1);
+      if (siblingDocs?.[0]?.storage_file_url) {
+        storageFileUrl = siblingDocs[0].storage_file_url;
+        await supabase.from("documents").update({ storage_file_url: storageFileUrl }).eq("request_id", requestID);
+      }
+    } catch {
+    }
+  }
+  if (failedStatus === "upload_failed" || Boolean(storageFileUrl)) {
     if (!failedDocument) throw new Error("The failed document could not be loaded for retry");
-    const storageFileUrl = String(failedDocument?.storage_file_url || "").trim();
     if (!storageFileUrl) {
-      throw new Error("This upload failed before a reusable file was stored. Re-upload the document to try again.");
+      throw new Error("This upload failed before a reusable file was stored. Please re-upload the document to try again.");
     }
     const submissionBatchId = failedDocument.submission_batch_id || failedDocument.project_id || "";
     const expectedBatchDocumentCount = Number(failedDocument.expected_batch_document_count || 1);
@@ -22658,7 +22681,8 @@ async function retryFailedDocument(req) {
         docPrimaryModel: req.params.docPrimaryModel,
         docBackupModel: req.params.docBackupModel,
         synthPrimaryModel: req.params.synthPrimaryModel,
-        synthBackupModel: req.params.synthBackupModel
+        synthBackupModel: req.params.synthBackupModel,
+        skipDuplicateCheck: true
       }
     });
     return {
@@ -22955,7 +22979,7 @@ async function createUploadUrl(req) {
     console.warn("[createUploadUrl] Supabase fallback ticket generation warning:", err);
   }
   const r2PublicUrl = `${R2_PUBLIC_URL}/${path2}`;
-  const r2UploadUrl = `${STORAGE_CDN_URL2}/upload?path=${encodeURIComponent(path2)}`;
+  const r2UploadUrl = `${STORAGE_CDN_URL2}/${path2}`;
   return {
     storageProvider: "r2",
     uploadUrl: r2UploadUrl,

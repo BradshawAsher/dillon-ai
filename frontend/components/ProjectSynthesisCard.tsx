@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { CheckCircle, ChevronLeft, ChevronRight, Clock, Compass, Download, FileQuestion, FileText, Filter, FolderPlus, Handshake, Landmark, Layers, Lightbulb, Loader2, MessageCircleQuestion, RefreshCw, Scale, Search, ShieldAlert, Sparkles, TriangleAlert } from 'lucide-react'
+import { CheckCircle, ChevronLeft, ChevronRight, Clock, Compass, Download, FileQuestion, FileText, Filter, FolderPlus, Handshake, Landmark, Layers, Lightbulb, Loader2, MessageCircleQuestion, RefreshCw, RotateCw, Scale, Search, ShieldAlert, Sparkles, TriangleAlert } from 'lucide-react'
 
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
@@ -37,6 +37,8 @@ type ProjectSynthesisCardProps = {
     onExcludeDocument?: (requestID: string) => void
     onIncludeDocument?: (requestID: string) => void
     onRetryDocument?: (requestID: string) => void
+    onOpenRetryScopeModal?: (doc: SubmissionHistoryItem, scope: 'project' | 'batch') => void
+    onRetryAllFailedDocs?: () => void
     retryingRequestId?: string | null
     onRunSynthesis?: () => void
     onRunSynthesisWithoutLoi?: () => void
@@ -241,6 +243,8 @@ export default function ProjectSynthesisCard({
     onExcludeDocument,
     onIncludeDocument,
     onRetryDocument,
+    onOpenRetryScopeModal,
+    onRetryAllFailedDocs,
     retryingRequestId,
     onRunSynthesis,
     onRunSynthesisWithoutLoi,
@@ -1101,18 +1105,42 @@ export default function ProjectSynthesisCard({
                             {/* Search & Carousel Controls Bar */}
                             {projectDocuments.length > 0 ? (
                                 <div className="flex flex-col sm:flex-row items-center justify-between gap-2 bg-card p-2 rounded-lg border border-border/60">
-                                    <div className="relative w-full sm:w-72">
-                                        <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-muted-foreground" />
-                                        <input
-                                            type="text"
-                                            placeholder="Filter project documents..."
-                                            value={docSearchQuery}
-                                            onChange={(e) => {
-                                                setDocSearchQuery(e.target.value)
-                                                setDocPage(0)
-                                            }}
-                                            className="w-full rounded-md border border-border bg-background py-1 pl-8 pr-3 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-primary"
-                                        />
+                                    <div className="flex items-center gap-2 w-full sm:w-auto flex-1">
+                                        <div className="relative w-full sm:w-72">
+                                            <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-muted-foreground" />
+                                            <input
+                                                type="text"
+                                                placeholder="Filter project documents..."
+                                                value={docSearchQuery}
+                                                onChange={(e) => {
+                                                    setDocSearchQuery(e.target.value)
+                                                    setDocPage(0)
+                                                }}
+                                                className="w-full rounded-md border border-border bg-background py-1 pl-8 pr-3 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-primary"
+                                            />
+                                        </div>
+                                        {(() => {
+                                            const failedDocsInProject = projectDocuments.filter(d => ['failed', 'upload_failed', 'error'].includes((d.status || '').toLowerCase()) || Boolean(d.errorMessage))
+                                            if (failedDocsInProject.length === 0) return null
+                                            return (
+                                                <Button
+                                                    type="button"
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className="h-7 px-2.5 text-xs font-bold border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 gap-1.5 shrink-0"
+                                                    onClick={() => {
+                                                        if (onOpenRetryScopeModal && failedDocsInProject.length > 0) {
+                                                            onOpenRetryScopeModal(failedDocsInProject[0], 'project')
+                                                        } else if (onRetryAllFailedDocs) {
+                                                            onRetryAllFailedDocs()
+                                                        }
+                                                    }}
+                                                >
+                                                    <RotateCw className="h-3 w-3" />
+                                                    <span>Retry all failed ({failedDocsInProject.length})</span>
+                                                </Button>
+                                            )
+                                        })()}
                                     </div>
 
                                     {(() => {
@@ -1174,64 +1202,175 @@ export default function ProjectSynthesisCard({
                                     return <p className="text-xs text-muted-foreground py-2 text-center">No documents matched "{docSearchQuery}".</p>
                                 }
 
-                                return pageDocs.map((document) => (
-                                    <div key={document.requestID || document.id} className="flex flex-col gap-2 rounded-md border border-border bg-card p-3 sm:flex-row sm:items-center sm:justify-between shadow-2xs hover:border-primary/40 transition-all">
-                                        <div className="min-w-0 flex-1">
-                                            <p className="truncate text-sm font-bold text-foreground" title={document.fileName}>{document.fileName}</p>
-                                            <p className="mt-0.5 text-xs text-muted-foreground">{document.documentType || 'Financial Document'} · {formatTimestamp(document.processedAt)}</p>
-                                        </div>
-                                        <div className="flex shrink-0 flex-wrap gap-1.5 items-center">
-                                            <Badge variant="outline" className="text-[10px] font-mono">{document.status || 'Pending'}</Badge>
-                                            {!document.isConsidered ? <Badge variant="secondary" className="text-[10px]">Excluded</Badge> : null}
-                                            <Button type="button" size="sm" variant="outline" className="h-7 text-xs font-semibold" onClick={() => setSelectedDocumentRequestId(document.requestID)}>
-                                                View analysis
-                                            </Button>
-                                            {document.isConsidered ? (
-                                                <Button
-                                                    type="button"
-                                                    size="sm"
-                                                    variant="outline"
-                                                    className="h-7 text-xs"
-                                                    onClick={() => {
-                                                        const autoReRun = window.confirm(
-                                                            `⚠️ Exclude document from synthesis?\n\nExcluding "${document.fileName}" will update the project scope.\n\nDo you want to re-run project synthesis now without this document?`
-                                                        )
-                                                        onExcludeDocument?.(document.requestID)
-                                                        if (autoReRun && onRunSynthesis) {
-                                                            onRunSynthesis()
-                                                        }
-                                                    }}
-                                                >
-                                                    Exclude
+                                return pageDocs.map((document) => {
+                                    const isFailed = ['failed', 'upload_failed', 'error'].includes((document.status || '').toLowerCase()) || Boolean(document.errorMessage)
+                                    const isRetrying = retryingRequestId === document.requestID
+
+                                    return (
+                                        <div key={document.requestID || document.id} className="flex flex-col gap-2 rounded-md border border-border bg-card p-3 sm:flex-row sm:items-center sm:justify-between shadow-2xs hover:border-primary/40 transition-all">
+                                            <div className="min-w-0 flex-1">
+                                                <p className="truncate text-sm font-bold text-foreground" title={document.fileName}>{document.fileName}</p>
+                                                <p className="mt-0.5 text-xs text-muted-foreground">{document.documentType || 'Financial Document'} · {formatTimestamp(document.processedAt)}</p>
+                                            </div>
+                                            <div className="flex shrink-0 flex-wrap gap-1.5 items-center">
+                                                <Badge variant={isFailed ? 'destructive' : 'outline'} className="text-[10px] font-mono">{document.status || 'Pending'}</Badge>
+                                                {!document.isConsidered ? <Badge variant="secondary" className="text-[10px]">Excluded</Badge> : null}
+                                                <Button type="button" size="sm" variant="outline" className="h-7 text-xs font-semibold" onClick={() => setSelectedDocumentRequestId(document.requestID)}>
+                                                    View analysis
                                                 </Button>
-                                            ) : (
-                                                <Button
-                                                    type="button"
-                                                    size="sm"
-                                                    variant="outline"
-                                                    className="h-7 text-xs"
-                                                    onClick={() => {
-                                                        const autoReRun = window.confirm(
-                                                            `✨ Include document back into synthesis?\n\nIncluding "${document.fileName}" will add it back to the project scope.\n\nDo you want to re-run project synthesis now with this document?`
-                                                        )
-                                                        onIncludeDocument?.(document.requestID)
-                                                        if (autoReRun && onRunSynthesis) {
-                                                            onRunSynthesis()
-                                                        }
-                                                    }}
-                                                >
-                                                    Include
-                                                </Button>
-                                            )}
+                                                {isFailed && (onOpenRetryScopeModal || onRetryDocument) ? (
+                                                    <Button
+                                                        type="button"
+                                                        size="sm"
+                                                        variant="outline"
+                                                        disabled={isRetrying}
+                                                        className="h-7 text-xs font-semibold border-amber-500/50 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
+                                                        onClick={() => {
+                                                            if (onOpenRetryScopeModal) {
+                                                                onOpenRetryScopeModal(document, 'project')
+                                                            } else if (onRetryDocument) {
+                                                                onRetryDocument(document.requestID)
+                                                            }
+                                                        }}
+                                                    >
+                                                        {isRetrying ? (
+                                                            <>
+                                                                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                                                                Retrying...
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <RefreshCw className="mr-1 h-3 w-3" />
+                                                                Retry doc
+                                                            </>
+                                                        )}
+                                                    </Button>
+                                                ) : null}
+                                                {document.isConsidered ? (
+                                                    <Button
+                                                        type="button"
+                                                        size="sm"
+                                                        variant="outline"
+                                                        className="h-7 text-xs"
+                                                        onClick={() => {
+                                                            const autoReRun = window.confirm(
+                                                                `⚠️ Exclude document from synthesis?\n\nExcluding "${document.fileName}" will update the project scope.\n\nDo you want to re-run project synthesis now without this document?`
+                                                            )
+                                                            onExcludeDocument?.(document.requestID)
+                                                            if (autoReRun && onRunSynthesis) {
+                                                                onRunSynthesis()
+                                                            }
+                                                        }}
+                                                    >
+                                                        Exclude
+                                                    </Button>
+                                                ) : (
+                                                    <Button
+                                                        type="button"
+                                                        size="sm"
+                                                        variant="outline"
+                                                        className="h-7 text-xs"
+                                                        onClick={() => {
+                                                            const autoReRun = window.confirm(
+                                                                `✨ Include document back into synthesis?\n\nIncluding "${document.fileName}" will add it back to the project scope.\n\nDo you want to re-run project synthesis now with this document?`
+                                                            )
+                                                            onIncludeDocument?.(document.requestID)
+                                                            if (autoReRun && onRunSynthesis) {
+                                                                onRunSynthesis()
+                                                            }
+                                                        }}
+                                                    >
+                                                        Include
+                                                    </Button>
+                                                )}
+                                            </div>
                                         </div>
-                                    </div>
-                                ))
+                                    )
+                                })
                             })()}
                         </div>
                     </details>
                 ) : null}
 
-                {selectedProjectDocument ? <div className="rounded-lg border border-primary/25 bg-primary/[0.035] p-4"><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><p className="text-sm font-semibold text-foreground">Document analysis</p><p className="mt-1 text-sm text-muted-foreground">{selectedProjectDocument.fileName}</p></div><Button type="button" variant="ghost" size="sm" onClick={() => setSelectedDocumentRequestId('')}>Close</Button></div><div className="mt-4 flex flex-wrap gap-2"><Badge variant="outline">{selectedProjectDocument.status || 'Pending'}</Badge>{detectedTypes(selectedProjectDocument).map((type) => <Badge key={type} variant="secondary">{type}</Badge>)}</div>{selectedProjectDocument.aiSummary ? <div className="mt-4"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">AI summary</p><p className="mt-1 text-xs text-muted-foreground">This is the full document-level summary returned for this file. It is not intentionally cut off; expand it to read the full text.</p><ExpandableText text={selectedProjectDocument.aiSummary} maxHeight={180} className="mt-1" /></div> : <p className="mt-4 text-sm text-muted-foreground">No document-specific summary has returned yet.</p>}<div className="mt-4 grid gap-3 md:grid-cols-2">{selectedProjectDocument.aiRedFlags ? <div className="rounded-md border border-destructive/25 bg-destructive/5 p-3"><p className="text-xs font-semibold uppercase tracking-wide text-destructive">Red flags</p><ul className="mt-2 list-disc space-y-1 pl-4 text-sm text-foreground">{shortList(selectedProjectDocument.aiRedFlags).map((item) => <li key={item}>{item}</li>)}</ul></div> : null}{selectedProjectDocument.aiYellowFlags ? <div className="rounded-md border border-warning/25 bg-warning/5 p-3"><p className="text-xs font-semibold uppercase tracking-wide text-warning">Items to review</p><ul className="mt-2 list-disc space-y-1 pl-4 text-sm text-foreground">{shortList(selectedProjectDocument.aiYellowFlags).map((item) => <li key={item}>{item}</li>)}</ul></div> : null}</div>{onOpenEvidence && (selectedProjectDocument.storageFileId || selectedProjectDocument.storageFileUrl) ? <Button type="button" variant="outline" className="mt-4" onClick={() => onOpenEvidence({ title: `Source document: ${selectedProjectDocument.fileName}`, sourceFile: selectedProjectDocument.fileName, sourceLocation: 'Document-level analysis', excerpt: selectedProjectDocument.aiSummary, status: selectedProjectDocument.status, provenance: 'Uploaded document', documentId: selectedProjectDocument.storageFileId, documentUrl: selectedProjectDocument.storageFileUrl })}>Open source document</Button> : null}</div> : null}
+                {selectedProjectDocument ? (
+                    <div className="rounded-lg border border-primary/25 bg-primary/[0.035] p-4">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div>
+                                <p className="text-sm font-semibold text-foreground">Document analysis</p>
+                                <p className="mt-1 text-sm text-muted-foreground">{selectedProjectDocument.fileName}</p>
+                            </div>
+                            <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedDocumentRequestId('')}>Close</Button>
+                        </div>
+                        <div className="mt-4 flex flex-wrap gap-2">
+                            <Badge variant={['failed', 'upload_failed', 'error'].includes((selectedProjectDocument.status || '').toLowerCase()) ? 'destructive' : 'outline'}>
+                                {selectedProjectDocument.status || 'Pending'}
+                            </Badge>
+                            {detectedTypes(selectedProjectDocument).map((type) => <Badge key={type} variant="secondary">{type}</Badge>)}
+                        </div>
+                        {selectedProjectDocument.errorMessage ? (
+                            <div className="mt-3 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                <div>
+                                    <p className="font-semibold uppercase tracking-wider">Processing Error</p>
+                                    <p className="mt-0.5">{selectedProjectDocument.errorMessage}</p>
+                                </div>
+                                {onOpenRetryScopeModal || onRetryDocument ? (
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="outline"
+                                        disabled={retryingRequestId === selectedProjectDocument.requestID}
+                                        className="shrink-0 h-7 text-xs border-destructive/40 text-destructive hover:bg-destructive/10"
+                                        onClick={() => {
+                                            if (onOpenRetryScopeModal) {
+                                                onOpenRetryScopeModal(selectedProjectDocument, 'project')
+                                            } else if (onRetryDocument) {
+                                                onRetryDocument(selectedProjectDocument.requestID)
+                                            }
+                                        }}
+                                    >
+                                        {retryingRequestId === selectedProjectDocument.requestID ? (
+                                            <>
+                                                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                                                Retrying...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <RefreshCw className="mr-1 h-3 w-3" />
+                                                Retry analysis now
+                                            </>
+                                        )}
+                                    </Button>
+                                ) : null}
+                            </div>
+                        ) : null}
+                        {selectedProjectDocument.aiSummary ? (
+                            <div className="mt-4">
+                                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">AI summary</p>
+                                <p className="mt-1 text-xs text-muted-foreground">This is the full document-level summary returned for this file. It is not intentionally cut off; expand it to read the full text.</p>
+                                <ExpandableText text={selectedProjectDocument.aiSummary} maxHeight={180} className="mt-1" />
+                            </div>
+                        ) : (
+                            !selectedProjectDocument.errorMessage && <p className="mt-4 text-sm text-muted-foreground">No document-specific summary has returned yet.</p>
+                        )}
+                        <div className="mt-4 grid gap-3 md:grid-cols-2">
+                            {selectedProjectDocument.aiRedFlags ? (
+                                <div className="rounded-md border border-destructive/25 bg-destructive/5 p-3">
+                                    <p className="text-xs font-semibold uppercase tracking-wide text-destructive">Red flags</p>
+                                    <ul className="mt-2 list-disc space-y-1 pl-4 text-sm text-foreground">{shortList(selectedProjectDocument.aiRedFlags).map((item) => <li key={item}>{item}</li>)}</ul>
+                                </div>
+                            ) : null}
+                            {selectedProjectDocument.aiYellowFlags ? (
+                                <div className="rounded-md border border-warning/25 bg-warning/5 p-3">
+                                    <p className="text-xs font-semibold uppercase tracking-wide text-warning">Items to review</p>
+                                    <ul className="mt-2 list-disc space-y-1 pl-4 text-sm text-foreground">{shortList(selectedProjectDocument.aiYellowFlags).map((item) => <li key={item}>{item}</li>)}</ul>
+                                </div>
+                            ) : null}
+                        </div>
+                        {onOpenEvidence && (selectedProjectDocument.storageFileId || selectedProjectDocument.storageFileUrl) ? (
+                            <Button type="button" variant="outline" className="mt-4" onClick={() => onOpenEvidence({ title: `Source document: ${selectedProjectDocument.fileName}`, sourceFile: selectedProjectDocument.fileName, sourceLocation: 'Document-level analysis', excerpt: selectedProjectDocument.aiSummary, status: selectedProjectDocument.status, provenance: 'Uploaded document', documentId: selectedProjectDocument.storageFileId, documentUrl: selectedProjectDocument.storageFileUrl })}>Open source document</Button>
+                        ) : null}
+                    </div>
+                ) : null}
 
                 {!error && isSynthActive && rawVisibleSyntheses.length === 0 ? (
                     <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-8 text-center space-y-4 shadow-sm">

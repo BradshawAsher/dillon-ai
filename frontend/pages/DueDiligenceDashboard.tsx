@@ -21,6 +21,7 @@ import {
 import { ApiKeyModal, getEffectiveModelPipeline } from '../components/ApiKeyModal'
 import { ExportDiligenceModal } from '../components/ExportDiligenceModal'
 import { ReportIssueModal } from '../components/ReportIssueModal'
+import { RetryScopeModal, type RetryTargetDoc } from '../components/RetryScopeModal'
 import { ProjectsSidePanel } from '../components/ProjectsSidePanel'
 import DealHealthKPIs from '../components/DealHealthKPIs'
 import ScrollDownPrompt from '../components/ScrollDownPrompt'
@@ -949,7 +950,38 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         }
     }, [])
 
-    const submissionHistory = useMemo(() => {
+    const [optimisticOverrides, setOptimisticOverrides] = useState<Record<string, Partial<SubmissionHistoryItem> & { retriedAt?: number }>>({})
+
+    // Auto-clear optimistic overrides when live rows from database reach terminal status or update AFTER retry started
+    useEffect(() => {
+        if (!liveSubmissionHistory.length || Object.keys(optimisticOverrides).length === 0) return
+        setOptimisticOverrides((current) => {
+            let changed = false
+            const next = { ...current }
+            liveSubmissionHistory.forEach((row: any) => {
+                const key = row.requestID || String(row.id || '')
+                if (key && next[key]) {
+                    const override = next[key]
+                    const liveStatus = (row.status || '').trim().toLowerCase()
+                    const rowTime = new Date(row.updatedAt || row.createdAt || row.processedAt || 0).getTime()
+                    const retriedAt = override.retriedAt || 0
+
+                    if (liveStatus === 'completed' || liveStatus === 'synthesized' || liveStatus === 'success') {
+                        delete next[key]
+                        changed = true
+                    } else if (retriedAt > 0 && rowTime > retriedAt) {
+                        if (liveStatus === 'processing' || liveStatus === 'running' || isFailedSubmissionStatus(liveStatus)) {
+                            delete next[key]
+                            changed = true
+                        }
+                    }
+                }
+            })
+            return changed ? next : current
+        })
+    }, [liveSubmissionHistory, optimisticOverrides])
+
+    const submissionHistory: SubmissionHistoryItem[] = useMemo(() => {
         const user = authUser || getStoredAuth()
         const base = (!isolationModeEnabled || (user && user.role === 'admin' && !isolationModeEnabled))
             ? rawSubmissionHistory
@@ -960,12 +992,45 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 return owner === 'guest' || owner === 'localdev@mergeworks.io'
             })
 
+        const withOverrides = base.map((row) => {
+            const override = (row.requestID && optimisticOverrides[row.requestID]) || (row.id && optimisticOverrides[String(row.id)])
+            return override ? { ...row, ...override } : row
+        })
+
+        // Include any pending retried/new document rows that haven't appeared in backend yet
+        Object.entries(optimisticOverrides).forEach(([reqId, override]) => {
+            if (!withOverrides.some(r => r.requestID === reqId)) {
+                withOverrides.push({
+                    requestID: reqId,
+                    fileName: override.fileName || 'Retrying document',
+                    status: override.status || 'processing',
+                    errorMessage: override.errorMessage,
+                    dealName: override.dealName || '',
+                    companyName: override.companyName || '',
+                    workstream: override.workstream || 'General',
+                    submissionNotes: override.submissionNotes || '',
+                    analystName: override.analystName || '',
+                    analystEmail: override.analystEmail || '',
+                    projectId: override.projectId || '',
+                    projectStage: override.projectStage || 'post-loi',
+                    documentType: override.documentType || 'Financial Document',
+                    submissionBatchId: override.submissionBatchId || '',
+                    expectedBatchDocumentCount: override.expectedBatchDocumentCount || 1,
+                    fileSize: override.fileSize || 0,
+                    fileType: override.fileType || 'application/pdf',
+                    triggerTimestamp: new Date(override.retriedAt || Date.now()).toISOString(),
+                    environment: (override.environment as 'production' | 'test') || 'production',
+                    isConsidered: true,
+                } as SubmissionHistoryItem)
+            }
+        })
+
         if (walkthrough.isActive || simulatedWalkthroughBatch) {
-            const other = base.filter((r: any) => r.projectId !== 'apex-industrial-tech' && r.projectId !== 'cascadia-climate-services')
+            const other = withOverrides.filter((r: any) => r.projectId !== 'apex-industrial-tech' && r.projectId !== 'cascadia-climate-services')
             return [...DEMO_FALLBACK_DOCS, ...other]
         }
-        return base
-    }, [rawSubmissionHistory, isolationModeEnabled, walkthrough.isActive, simulatedWalkthroughBatch, authUser])
+        return withOverrides
+    }, [rawSubmissionHistory, isolationModeEnabled, walkthrough.isActive, simulatedWalkthroughBatch, authUser, optimisticOverrides])
 
     const visibleProjectSyntheses = useMemo(() => {
         const user = authUser || getStoredAuth()
@@ -1781,29 +1846,53 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
     const activeBatchRows = useMemo(() => {
         if (activeSubmissionBatch?.id) {
+            let candidateRows: SubmissionHistoryItem[] = []
             if (activeSubmissionBatch.requestIDs?.length) {
                 const requestIds = new Set(activeSubmissionBatch.requestIDs)
-                return submissionHistory.filter((row) => requestIds.has(row.requestID))
-            }
-            const batchRows = submissionHistory.filter((row) => {
-                if (isSystemTestProbeFile(row.fileName)) return false
-                if (row.submissionBatchId === activeSubmissionBatch.id) return true
-                if (row.projectId === activeSubmissionBatch.id || isRowMatchingProject(row, activeSubmissionBatch.id, projectSummaries)) {
-                    if (activeSubmissionBatch.startedAt) {
-                        const rowTime = new Date(row.createdAt || row.receivedAt || row.processedAt || 0).getTime()
-                        return rowTime >= (activeSubmissionBatch.startedAt - 5000)
+                candidateRows = submissionHistory.filter((row) => requestIds.has(row.requestID))
+            } else {
+                candidateRows = submissionHistory.filter((row) => {
+                    if (isSystemTestProbeFile(row.fileName)) return false
+                    if (row.submissionBatchId === activeSubmissionBatch.id) return true
+                    if (row.projectId === activeSubmissionBatch.id || isRowMatchingProject(row, activeSubmissionBatch.id, projectSummaries)) {
+                        if (activeSubmissionBatch.startedAt) {
+                            const rowTime = new Date(row.createdAt || row.receivedAt || row.processedAt || 0).getTime()
+                            return rowTime >= (activeSubmissionBatch.startedAt - 5000)
+                        }
                     }
-                }
-                return false
-            })
-            if (batchRows.length > 0) return batchRows
+                    return false
+                })
+            }
+
+            if (candidateRows.length > 0) {
+                // Canonical deduplication by file name so retrying documents don't inflate batch counts
+                const uniqueByFile = new Map<string, SubmissionHistoryItem>()
+                // Prioritize active (processing) first, then completed, then newest
+                const sorted = [...candidateRows].sort((a, b) => {
+                    const rankA = isActiveSubmissionStatus(a.status) ? 3 : (a.status === 'completed' ? 2 : 1)
+                    const rankB = isActiveSubmissionStatus(b.status) ? 3 : (b.status === 'completed' ? 2 : 1)
+                    if (rankA !== rankB) return rankB - rankA
+                    const timeA = new Date(a.updatedAt || a.processedAt || a.createdAt || a.receivedAt || 0).getTime()
+                    const timeB = new Date(b.updatedAt || b.processedAt || b.createdAt || b.receivedAt || 0).getTime()
+                    return timeB - timeA
+                })
+                sorted.forEach((row) => {
+                    const key = (row.fileName || row.requestID || String(row.id)).trim().toLowerCase()
+                    if (!uniqueByFile.has(key)) {
+                        uniqueByFile.set(key, row)
+                    }
+                })
+                return [...uniqueByFile.values()]
+            }
             return []
         }
         return latestBatchRows
     }, [activeSubmissionBatch, latestBatchRows, submissionHistory, projectSummaries])
 
     const batchProgress = useMemo(() => deriveBatchProgress(activeBatchRows), [activeBatchRows])
-    const activeBatchExpectedCount = activeSubmissionBatch?.expectedDocumentCount || batchProgress.expectedCount
+    const activeBatchExpectedCount = (activeSubmissionBatch?.expectedDocumentCount && activeSubmissionBatch.expectedDocumentCount <= activeBatchRows.length)
+        ? activeSubmissionBatch.expectedDocumentCount
+        : (activeBatchRows.length || activeSubmissionBatch?.expectedDocumentCount || batchProgress.expectedCount)
     const activeBatchFinishedCount = batchProgress.finishedCount
     const activeBatchProcessingCount = batchProgress.processingCount
     const activeBatchFailedCount = batchProgress.failedCount
@@ -2769,18 +2858,363 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         }
     }
 
+    const [retryScopeModalState, setRetryScopeModalState] = useState<{
+        isOpen: boolean
+        targetDoc: RetryTargetDoc | null
+        scopeType: 'batch' | 'project'
+        scopeName?: string
+        totalFailedCount: number
+        failedDocNames: string[]
+    }>({
+        isOpen: false,
+        targetDoc: null,
+        scopeType: 'batch',
+        scopeName: '',
+        totalFailedCount: 0,
+        failedDocNames: [],
+    })
+
+    const handleOpenRetryScopeModal = (docOrRequestId: string | any, scope: 'batch' | 'project' = 'batch') => {
+        const targetRow = typeof docOrRequestId === 'object' && docOrRequestId !== null
+            ? docOrRequestId
+            : submissionHistory.find(r => r.requestID === docOrRequestId || String(r.id) === docOrRequestId)
+
+        let totalFailedCount = 1
+        let failedDocNames: string[] = []
+        let scopeName = ''
+
+        if (scope === 'batch') {
+            const batchId = targetRow?.submissionBatchId || activeSubmissionBatch?.id || activeBatchRows[0]?.submissionBatchId || activeProjectId
+            const batchDocs = submissionHistory.filter(r => (r.submissionBatchId === batchId || (activeSubmissionBatch && activeSubmissionBatch.requestIDs?.includes(r.requestID))) && r.isConsidered !== false)
+            const failedBatchDocs = batchDocs.filter(d => Boolean(d.requestID) && (isFailedSubmissionStatus(d.status) || Boolean(d.errorMessage)))
+            totalFailedCount = Math.max(1, failedBatchDocs.length)
+            failedDocNames = failedBatchDocs.map(d => d.fileName || 'Untitled document')
+            scopeName = batchId ? `Batch ${batchId.slice(-8)}` : 'Current Batch'
+        } else {
+            const projId = targetRow?.projectId || activeProjectId
+            const projectDocs = submissionHistory.filter(r => (getProjectKey(r) === projId || r.projectId === projId) && r.isConsidered !== false)
+            const failedProjDocs = projectDocs.filter(d => Boolean(d.requestID) && (isFailedSubmissionStatus(d.status) || Boolean(d.errorMessage)))
+            totalFailedCount = Math.max(1, failedProjDocs.length)
+            failedDocNames = failedProjDocs.map(d => d.fileName || 'Untitled document')
+            scopeName = targetRow?.dealName || targetRow?.companyName || projId
+        }
+
+        const effectiveReqId = targetRow?.requestID || (typeof docOrRequestId === 'string' ? docOrRequestId : targetRow?.id ? String(targetRow.id) : '')
+        const effectiveFileName = targetRow?.fileName || (typeof docOrRequestId === 'object' && docOrRequestId?.fileName ? docOrRequestId.fileName : 'Document')
+
+        setRetryScopeModalState({
+            isOpen: true,
+            targetDoc: {
+                requestID: effectiveReqId,
+                fileName: effectiveFileName,
+                status: targetRow?.status,
+                errorMessage: targetRow?.errorMessage,
+                projectId: targetRow?.projectId,
+                submissionBatchId: targetRow?.submissionBatchId,
+            },
+            scopeType: scope,
+            scopeName,
+            totalFailedCount,
+            failedDocNames,
+        })
+    }
+
+    const handleRetryFailedBatchDocuments = async (targetBatchId?: string) => {
+        if (stopInFlightRef.current || isRerunningBatch || isSubmittingFile) return
+        const batchId = targetBatchId || activeSubmissionBatch?.id || activeBatchRows[0]?.submissionBatchId || activeProjectId
+        const batchDocs = submissionHistory.filter(r => (r.submissionBatchId === batchId || (activeSubmissionBatch && activeSubmissionBatch.requestIDs?.includes(r.requestID))) && r.isConsidered !== false)
+        const failedDocs = batchDocs.filter(d => Boolean(d.requestID) && (isFailedSubmissionStatus(d.status) || Boolean(d.errorMessage)))
+        if (failedDocs.length === 0) {
+            setBatchSubmissionMessage('No failed documents found in this batch to retry.')
+            return
+        }
+
+        // Navigate to Diligence tab and scroll to batch progress card
+        setActiveWorkspaceTab('diligence')
+        window.setTimeout(() => {
+            const el = document.getElementById('diligence-batch') || document.getElementById('deal-workspace')
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }, 50)
+
+        // Optimistically set failed documents to processing
+        const now = Date.now()
+        const overrides: Record<string, Partial<SubmissionHistoryItem> & { retriedAt: number }> = {}
+        failedDocs.forEach((d) => {
+            if (d.requestID) {
+                overrides[d.requestID] = {
+                    status: 'processing',
+                    errorMessage: undefined,
+                    fileName: d.fileName,
+                    projectId: d.projectId,
+                    dealName: d.dealName,
+                    companyName: d.companyName,
+                    submissionBatchId: d.submissionBatchId,
+                    processedAt: new Date(now).toISOString(),
+                    retriedAt: now,
+                }
+            }
+        })
+        setOptimisticOverrides((prev) => ({ ...prev, ...overrides }))
+
+        setIsRerunningBatch(true)
+        setBatchSubmissionMessage(`Queueing retry for ${failedDocs.length} failed document${failedDocs.length === 1 ? '' : 's'} in batch…`)
+        const queue = createBatchQueue(`retry-batch-${batchId || Date.now()}`)
+        const retryErrors: string[] = []
+        failedDocs.forEach((doc) => queue.requestIDs.add(doc.requestID))
+        batchQueueRef.current = queue
+        
+        const uniqueBatchMap = new Map<string, SubmissionHistoryItem>()
+        batchDocs.forEach(r => {
+            const key = (r.fileName || r.requestID || String(r.id)).trim().toLowerCase()
+            if (!uniqueBatchMap.has(key)) uniqueBatchMap.set(key, r)
+        })
+        const allBatchDocs = [...uniqueBatchMap.values()].filter(d => Boolean(d.requestID))
+        setActiveSubmissionBatch({
+            id: queue.id,
+            projectId: failedDocs[0].projectId || activeProjectId,
+            requestIDs: allBatchDocs.length > 0 ? allBatchDocs.map(d => d.requestID) : [...queue.requestIDs],
+            expectedDocumentCount: Math.max(failedDocs.length, allBatchDocs.length),
+            environment: activeHistoryEnvironment,
+            startedAt: Date.now(),
+        })
+
+        const userOpenAiApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_openai_key') || '') : ''
+        const userAnthropicApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_anthropic_key') || '') : ''
+        const userGeminiApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_gemini_key') || '') : ''
+        const userDeepseekApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_deepseek_key') || '') : ''
+        const modelPipeline = getEffectiveModelPipeline()
+
+        try {
+            await Promise.all(
+                failedDocs.map(doc => queue.run(async () => {
+                    const response = await fetch('/api/diligence/retry-failed-document', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            requestID: doc.requestID,
+                            environment: activeHistoryEnvironment,
+                            userOpenAiApiKey,
+                            userAnthropicApiKey,
+                            userGeminiApiKey,
+                            userDeepseekApiKey,
+                            docPrimaryModel: modelPipeline.docPrimary,
+                            docBackupModel: modelPipeline.docBackup,
+                            synthPrimaryModel: modelPipeline.synthPrimary,
+                            synthBackupModel: modelPipeline.synthBackup,
+                        }),
+                    })
+                    const body = await response.json()
+                    if (!response.ok) throw new Error(body.error || 'Unable to queue retry')
+                    if (body.requestID && body.requestID !== doc.requestID) {
+                        const newReqId = body.requestID
+                        queue.requestIDs.delete(doc.requestID)
+                        queue.requestIDs.add(newReqId)
+                        setOptimisticOverrides((prev) => {
+                            const next = { ...prev }
+                            delete next[doc.requestID]
+                            next[newReqId] = {
+                                status: 'processing',
+                                errorMessage: undefined,
+                                fileName: doc.fileName,
+                                projectId: doc.projectId,
+                                dealName: doc.dealName,
+                                companyName: doc.companyName,
+                                submissionBatchId: doc.submissionBatchId,
+                                processedAt: new Date(now).toISOString(),
+                                retriedAt: now,
+                            }
+                            return next
+                        })
+                    }
+                    setActiveSubmissionBatch((current) => current?.id === queue.id ? { ...current, requestIDs: [...queue.requestIDs] } : current)
+                }).catch((error) => { retryErrors.push(error instanceof Error ? error.message : 'Unable to queue retry') }))
+            )
+            if (queue.canceled) return
+            if (retryErrors.length > 0) throw new Error(retryErrors.join(' '))
+            setBatchSubmissionMessage(`Retrying ${failedDocs.length} failed document${failedDocs.length === 1 ? '' : 's'} in batch in real-time. Project synthesis will automatically update once completed.`)
+            await triggerSubmissionHistory({ environment: activeHistoryEnvironment, skipCache: true }).result
+        } catch (err) {
+            setBatchSubmissionMessage(err instanceof Error ? err.message : 'Failed to retry batch documents')
+        } finally {
+            setIsRerunningBatch(false)
+        }
+    }
+
+    const handleRetryFailedProjectDocuments = async (targetProjectId?: string) => {
+        if (stopInFlightRef.current || isRerunningBatch || isSubmittingFile) return
+        const projId = targetProjectId || activeProjectId
+        const projectDocs = submissionHistory.filter(r => (getProjectKey(r) === projId || r.projectId === projId) && r.isConsidered !== false)
+        const failedDocs = projectDocs.filter(d => Boolean(d.requestID) && (isFailedSubmissionStatus(d.status) || Boolean(d.errorMessage)))
+        if (failedDocs.length === 0) {
+            setBatchSubmissionMessage('No failed documents found in this project to retry.')
+            return
+        }
+
+        // Navigate to Diligence tab and scroll to batch progress card
+        setActiveWorkspaceTab('diligence')
+        window.setTimeout(() => {
+            const el = document.getElementById('diligence-batch') || document.getElementById('deal-workspace')
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }, 50)
+
+        // Optimistically set failed documents to processing
+        const now = Date.now()
+        const overrides: Record<string, Partial<SubmissionHistoryItem> & { retriedAt: number }> = {}
+        failedDocs.forEach((d) => {
+            if (d.requestID) {
+                overrides[d.requestID] = {
+                    status: 'processing',
+                    errorMessage: undefined,
+                    fileName: d.fileName,
+                    projectId: d.projectId,
+                    dealName: d.dealName,
+                    companyName: d.companyName,
+                    submissionBatchId: d.submissionBatchId,
+                    processedAt: new Date(now).toISOString(),
+                    retriedAt: now,
+                }
+            }
+        })
+        setOptimisticOverrides((prev) => ({ ...prev, ...overrides }))
+
+        setIsRerunningBatch(true)
+        setBatchSubmissionMessage(`Queueing retry for ${failedDocs.length} failed document${failedDocs.length === 1 ? '' : 's'} in project…`)
+        const queue = createBatchQueue(`retry-proj-${projId || Date.now()}`)
+        const retryErrors: string[] = []
+        failedDocs.forEach((doc) => queue.requestIDs.add(doc.requestID))
+        batchQueueRef.current = queue
+
+        const uniqueProjectMap = new Map<string, SubmissionHistoryItem>()
+        projectDocs.forEach(r => {
+            const key = (r.fileName || r.requestID || String(r.id)).trim().toLowerCase()
+            if (!uniqueProjectMap.has(key)) uniqueProjectMap.set(key, r)
+        })
+        const allProjectDocs = [...uniqueProjectMap.values()].filter(d => Boolean(d.requestID))
+        setActiveSubmissionBatch({
+            id: queue.id,
+            projectId: failedDocs[0].projectId || projId,
+            requestIDs: allProjectDocs.length > 0 ? allProjectDocs.map(d => d.requestID) : [...queue.requestIDs],
+            expectedDocumentCount: Math.max(failedDocs.length, allProjectDocs.length),
+            environment: activeHistoryEnvironment,
+            startedAt: Date.now(),
+        })
+
+        const userOpenAiApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_openai_key') || '') : ''
+        const userAnthropicApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_anthropic_key') || '') : ''
+        const userGeminiApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_gemini_key') || '') : ''
+        const userDeepseekApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_deepseek_key') || '') : ''
+        const modelPipeline = getEffectiveModelPipeline()
+
+        try {
+            await Promise.all(
+                failedDocs.map(doc => queue.run(async () => {
+                    const response = await fetch('/api/diligence/retry-failed-document', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            requestID: doc.requestID,
+                            environment: activeHistoryEnvironment,
+                            userOpenAiApiKey,
+                            userAnthropicApiKey,
+                            userGeminiApiKey,
+                            userDeepseekApiKey,
+                            docPrimaryModel: modelPipeline.docPrimary,
+                            docBackupModel: modelPipeline.docBackup,
+                            synthPrimaryModel: modelPipeline.synthPrimary,
+                            synthBackupModel: modelPipeline.synthBackup,
+                        }),
+                    })
+                    const body = await response.json()
+                    if (!response.ok) throw new Error(body.error || 'Unable to queue retry')
+                    if (body.requestID && body.requestID !== doc.requestID) {
+                        const newReqId = body.requestID
+                        queue.requestIDs.delete(doc.requestID)
+                        queue.requestIDs.add(newReqId)
+                        setOptimisticOverrides((prev) => {
+                            const next = { ...prev }
+                            delete next[doc.requestID]
+                            next[newReqId] = {
+                                status: 'processing',
+                                errorMessage: undefined,
+                                fileName: doc.fileName,
+                                projectId: doc.projectId,
+                                dealName: doc.dealName,
+                                companyName: doc.companyName,
+                                submissionBatchId: doc.submissionBatchId,
+                                processedAt: new Date(now).toISOString(),
+                                retriedAt: now,
+                            }
+                            return next
+                        })
+                    }
+                    setActiveSubmissionBatch((current) => current?.id === queue.id ? { ...current, requestIDs: [...queue.requestIDs] } : current)
+                }).catch((error) => { retryErrors.push(error instanceof Error ? error.message : 'Unable to queue retry') }))
+            )
+            if (queue.canceled) return
+            if (retryErrors.length > 0) throw new Error(retryErrors.join(' '))
+            setBatchSubmissionMessage(`Retrying ${failedDocs.length} failed document${failedDocs.length === 1 ? '' : 's'} in project. Project synthesis will automatically update once completed.`)
+            await triggerSubmissionHistory({ environment: activeHistoryEnvironment, skipCache: true }).result
+        } catch (err) {
+            setBatchSubmissionMessage(err instanceof Error ? err.message : 'Failed to retry project documents')
+        } finally {
+            setIsRerunningBatch(false)
+        }
+    }
+
     const handleRetryFailedDocument = async (requestID: string) => {
         if (stopInFlightRef.current || isRerunningBatch || isSubmittingFile) return
         const targetRow = submissionHistory.find((r) => r.requestID === requestID || String(r.id) === requestID)
         const targetProjectId = targetRow?.projectId || activeProjectId
 
+        // Navigate to Diligence tab and scroll to batch progress card
         setActiveWorkspaceTab('diligence')
         window.setTimeout(() => {
-            document.getElementById('deal-workspace')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-        }, 0)
+            const el = document.getElementById('diligence-batch') || document.getElementById('deal-workspace')
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }, 50)
+
+        // Optimistically set document to processing
+        const now = Date.now()
+        setOptimisticOverrides((prev) => ({
+            ...prev,
+            [requestID]: {
+                status: 'processing',
+                errorMessage: undefined,
+                fileName: targetRow?.fileName || 'Scenario Communications Capability Deck with Case Studies.pdf',
+                projectId: targetProjectId,
+                dealName: targetRow?.dealName,
+                companyName: targetRow?.companyName,
+                submissionBatchId: targetRow?.submissionBatchId,
+                processedAt: new Date(now).toISOString(),
+                retriedAt: now,
+            },
+        }))
+
         setRetryingRequestId(requestID)
         setBatchSubmissionMessage('')
         try {
+            // Find all project/batch docs so the batch card shows the full batch context (e.g. 2 finished, 1 processing)
+            const projectDocs = submissionHistory.filter(r => (getProjectKey(r) === targetProjectId || r.projectId === targetProjectId || (targetRow?.submissionBatchId && r.submissionBatchId === targetRow.submissionBatchId)) && r.isConsidered !== false)
+            const uniqueFileMap = new Map<string, SubmissionHistoryItem>()
+            projectDocs.forEach(r => {
+                const key = (r.fileName || r.requestID || String(r.id)).trim().toLowerCase()
+                if (!uniqueFileMap.has(key)) uniqueFileMap.set(key, r)
+            })
+            const dedupedDocs = [...uniqueFileMap.values()]
+            const allReqIds = dedupedDocs.map(d => d.requestID).filter(Boolean)
+            setActiveSubmissionBatch({
+                id: targetRow?.submissionBatchId || `batch-${targetProjectId || Date.now()}`,
+                projectId: targetProjectId,
+                requestIDs: allReqIds.length > 0 ? allReqIds : [requestID],
+                expectedDocumentCount: Math.max(1, dedupedDocs.length),
+                environment: activeHistoryEnvironment,
+                startedAt: Date.now(),
+            })
+
+            if (targetProjectId) {
+                setSelectedProjectKey(targetRow ? getProjectKey(targetRow) : targetProjectId)
+            }
+
             const userOpenAiApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_openai_key') || '') : ''
             const userAnthropicApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_anthropic_key') || '') : ''
             const userGeminiApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_gemini_key') || '') : ''
@@ -2806,24 +3240,42 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             const body = await response.json() as { error?: string; status?: string; requestID?: string; originalRequestID?: string; submissionBatchId?: string }
             if (!response.ok) throw new Error(body.error || 'Unable to queue retry')
 
-            const retriedRequestID = body.requestID || requestID
-            setActiveSubmissionBatch({
-                id: `retry-${retriedRequestID}-${Date.now()}`,
-                projectId: targetProjectId,
-                requestIDs: [retriedRequestID],
-                expectedDocumentCount: 1,
-                environment: activeHistoryEnvironment,
-                startedAt: Date.now(),
-            })
-            if (targetProjectId) {
-                setSelectedProjectKey(targetRow ? getProjectKey(targetRow) : targetProjectId)
+            if (body.requestID && body.requestID !== requestID) {
+                const newReqId = body.requestID
+                setOptimisticOverrides((prev) => {
+                    const next = { ...prev }
+                    delete next[requestID]
+                    next[newReqId] = {
+                        status: 'processing',
+                        errorMessage: undefined,
+                        fileName: targetRow?.fileName || 'Scenario Communications Capability Deck with Case Studies.pdf',
+                        projectId: targetProjectId,
+                        dealName: targetRow?.dealName,
+                        companyName: targetRow?.companyName,
+                        submissionBatchId: targetRow?.submissionBatchId,
+                        processedAt: new Date(now).toISOString(),
+                        retriedAt: now,
+                    }
+                    return next
+                })
+                setActiveSubmissionBatch((current) => {
+                    if (!current) return current
+                    const updated = (current.requestIDs || []).filter(id => id !== requestID)
+                    if (!updated.includes(newReqId)) updated.push(newReqId)
+                    return { ...current, requestIDs: updated }
+                })
             }
 
             setBatchSubmissionMessage(body.requestID && body.requestID !== requestID
                 ? 'Stored document recovered and queued as a new processing run.'
-                : 'Retry queued. The existing document is being processed again in real-time.')
+                : 'Retry queued. The document is being processed again in real-time.')
             await triggerSubmissionHistory({ environment: activeHistoryEnvironment, skipCache: true }).result
         } catch (err) {
+            setOptimisticOverrides((prev) => {
+                const next = { ...prev }
+                delete next[requestID]
+                return next
+            })
             setBatchSubmissionMessage(err instanceof Error ? err.message : 'Unable to queue retry')
         } finally {
             setRetryingRequestId(null)
@@ -3557,7 +4009,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                                         activeBatchCompletedCount={simulatedWalkthroughBatch ? simulatedWalkthroughBatch.finishedCount : activeBatchCompletedCount}
                                         activeProjectId={activeProjectId}
                                         retryingRequestId={retryingRequestId ?? undefined}
-                                        handleRetryFailedDocument={(requestID) => { void handleRetryFailedDocument(requestID) }}
+                                        handleRetryFailedDocument={(requestID) => { handleOpenRetryScopeModal(requestID, 'batch') }}
+                                        handleRetryFailedBatchDocs={() => { void handleRetryFailedBatchDocuments() }}
                                         handleOpenProjectSynthesis={handleOpenProjectSynthesis}
                                         batchDocuments={activeBatchRows.length > 0 ? activeBatchRows : activeProjectDocuments}
                                         handleRerunLatestBatch={handleRerunLatestBatch}
@@ -3660,7 +4113,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                                     setSelectedBatchDocIndex={setSelectedBatchDocIndex}
                                     setUserHasNavigatedBatchDocs={setUserHasNavigatedBatchDocs}
                                     retryingRequestId={retryingRequestId ?? undefined}
-                                    handleRetryFailedDocument={(reqId) => { void handleRetryFailedDocument(reqId) }}
+                                    handleRetryFailedDocument={(reqId) => { handleOpenRetryScopeModal(reqId, 'batch') }}
+                                    handleRetryFailedBatchDocs={() => { void handleRetryFailedBatchDocuments() }}
                                     handleOpenProjectSynthesis={handleOpenProjectSynthesis}
                                     projectId={projectId}
                                     projectStage={projectStage}
@@ -3823,7 +4277,9 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                                 onOpenEvidence={setActiveEvidence}
                                 onExcludeDocument={handleExcludeDocument}
                                 onIncludeDocument={handleIncludeDocument}
-                                onRetryDocument={handleRetryFailedDocument}
+                                onRetryDocument={(reqId) => { handleOpenRetryScopeModal(reqId, 'project') }}
+                                onOpenRetryScopeModal={(doc, scope) => { handleOpenRetryScopeModal(doc, scope) }}
+                                onRetryAllFailedDocs={() => { void handleRetryFailedProjectDocuments() }}
                                 retryingRequestId={retryingRequestId}
                                 onStopSynthesis={handleStopSynthesis}
                                 stoppingSynthesis={isStoppingSynthesis}
@@ -4159,7 +4615,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 batchStopped={Boolean(activeSubmissionBatch?.stoppedAt)}
                 batchStopError={activeSubmissionBatch?.stopError}
                 onStopBatch={() => { void handleStopBatch() }}
-                onRetryDocument={(requestID) => { void handleRetryFailedDocument(requestID) }}
+                onRetryDocument={(requestID) => { handleOpenRetryScopeModal(requestID, 'batch') }}
                 onRequeueNewProject={handleRequeueNewProject}
                 retryingRequestId={retryingRequestId}
                 submissionHistory={submissionHistory}
@@ -4221,6 +4677,24 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             </Suspense>
 
             <ApiKeyModal open={isApiKeyModalOpen} onOpenChange={setIsApiKeyModalOpen} />
+            <RetryScopeModal
+                isOpen={retryScopeModalState.isOpen}
+                onClose={() => setRetryScopeModalState(prev => ({ ...prev, isOpen: false }))}
+                targetDoc={retryScopeModalState.targetDoc}
+                scopeType={retryScopeModalState.scopeType}
+                scopeName={retryScopeModalState.scopeName}
+                totalFailedCount={retryScopeModalState.totalFailedCount}
+                failedDocNames={retryScopeModalState.failedDocNames}
+                onRetrySingle={(reqId) => { void handleRetryFailedDocument(reqId) }}
+                onRetryAll={(scope) => {
+                    if (scope === 'batch') {
+                        void handleRetryFailedBatchDocuments()
+                    } else {
+                        void handleRetryFailedProjectDocuments()
+                    }
+                }}
+                isRetrying={Boolean(retryingRequestId) || isRerunningBatch}
+            />
             <ReportIssueModal
                 open={isReportIssueOpen}
                 onOpenChange={setIsReportIssueOpen}
