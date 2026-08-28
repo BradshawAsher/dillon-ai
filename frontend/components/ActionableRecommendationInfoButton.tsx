@@ -25,8 +25,11 @@ interface VerdictDetails {
 }
 
 export function getVerdictExplanation(recommendation = '', trafficLight = ''): VerdictDetails {
-    const normRec = recommendation.toLowerCase().trim()
-    const normLight = trafficLight.toUpperCase().trim()
+    // Default params only cover `undefined`; a null passed explicitly (e.g. from a
+    // synthesis field that came back null) would throw on `.toLowerCase()`. Coerce
+    // both so the verdict resolver is safe for any caller.
+    const normRec = (typeof recommendation === 'string' ? recommendation : '').toLowerCase().trim()
+    const normLight = (typeof trafficLight === 'string' ? trafficLight : '').toUpperCase().trim()
 
     const isRed =
         normLight === 'RED' ||
