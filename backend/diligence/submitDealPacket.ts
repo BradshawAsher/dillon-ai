@@ -28,6 +28,7 @@ type Params = {
   docBackupModel?: string
   synthPrimaryModel?: string
   synthBackupModel?: string
+  skipDuplicateCheck?: boolean
 }
 
 export default async function submitDealPacket(req: { params: Params; user: User }) {
@@ -39,57 +40,59 @@ export default async function submitDealPacket(req: { params: Params; user: User
 
   // Fast targeted duplicate check directly via Supabase rather than loading
   // full submission history and syncing data tables (which adds 2-4s latency).
-  try {
-    const { data: duplicateDocs } = await supabase
-      .from('documents')
-      .select('id, request_id, created_at, updated_at, status')
-      .ilike('project_id', normalizedProjectId)
-      .ilike('file_name', normalizedFileName)
-      .eq('file_size', req.params.fileSize)
-      .eq('status', 'completed')
-      .limit(1)
+  if (!req.params.skipDuplicateCheck) {
+    try {
+      const { data: duplicateDocs } = await supabase
+        .from('documents')
+        .select('id, request_id, created_at, updated_at, status')
+        .ilike('project_id', normalizedProjectId)
+        .ilike('file_name', normalizedFileName)
+        .eq('file_size', req.params.fileSize)
+        .eq('status', 'completed')
+        .limit(1)
 
-    if (duplicateDocs && duplicateDocs.length > 0) {
-      const existingDocument = duplicateDocs[0]
-      return {
-        status: 'duplicate',
-        environment,
-        target: 'duplicate-check',
-        method: 'POST' as const,
-        submittedAt: triggerTimestamp,
-        submittedBy: req.user.email,
-        payload: {
-          fileName: req.params.fileName,
-          fileSize: req.params.fileSize,
-          fileType: req.params.fileType,
-          dealName: req.params.dealName,
-          companyName: req.params.companyName,
-          workstream: req.params.workstream,
-          submissionNotes: req.params.submissionNotes,
-          projectId: req.params.projectId,
-          projectStage: req.params.projectStage,
-          documentType: req.params.documentType,
-          submissionBatchId: req.params.submissionBatchId ?? '',
-          expectedBatchDocumentCount: req.params.expectedBatchDocumentCount ?? 1,
-          analystName: req.user.fullName,
-          analystEmail: req.user.email,
-          triggerTimestamp,
-          requestID,
-          environment,
-        },
-        response: {
-          requestID: existingDocument.request_id || requestID,
+      if (duplicateDocs && duplicateDocs.length > 0) {
+        const existingDocument = duplicateDocs[0]
+        return {
           status: 'duplicate',
-          receivedAt: existingDocument.created_at || triggerTimestamp,
-          id: existingDocument.id,
-          createdAt: existingDocument.created_at || triggerTimestamp,
-          updatedAt: existingDocument.updated_at || triggerTimestamp,
           environment,
-        },
+          target: 'duplicate-check',
+          method: 'POST' as const,
+          submittedAt: triggerTimestamp,
+          submittedBy: req.user.email,
+          payload: {
+            fileName: req.params.fileName,
+            fileSize: req.params.fileSize,
+            fileType: req.params.fileType,
+            dealName: req.params.dealName,
+            companyName: req.params.companyName,
+            workstream: req.params.workstream,
+            submissionNotes: req.params.submissionNotes,
+            projectId: req.params.projectId,
+            projectStage: req.params.projectStage,
+            documentType: req.params.documentType,
+            submissionBatchId: req.params.submissionBatchId ?? '',
+            expectedBatchDocumentCount: req.params.expectedBatchDocumentCount ?? 1,
+            analystName: req.user.fullName,
+            analystEmail: req.user.email,
+            triggerTimestamp,
+            requestID,
+            environment,
+          },
+          response: {
+            requestID: existingDocument.request_id || requestID,
+            status: 'duplicate',
+            receivedAt: existingDocument.created_at || triggerTimestamp,
+            id: existingDocument.id,
+            createdAt: existingDocument.created_at || triggerTimestamp,
+            updatedAt: existingDocument.updated_at || triggerTimestamp,
+            environment,
+          },
+        }
       }
+    } catch {
+      // If Supabase check fails (e.g. offline/table not configured), proceed to submission
     }
-  } catch {
-    // If Supabase check fails (e.g. offline/table not configured), proceed to submission
   }
 
   const path = getSubmitPath(environment)
@@ -174,6 +177,17 @@ export default async function submitDealPacket(req: { params: Params; user: User
   }
   if (req.params.fileBase64) {
     formData.push({ key: 'file', file: req.params.fileBase64, filename: req.params.fileName })
+  } else if (req.params.storageFileUrl) {
+    try {
+      const fileRes = await fetch(req.params.storageFileUrl)
+      if (fileRes.ok) {
+        const arrayBuf = await fileRes.arrayBuffer()
+        const base64 = Buffer.from(arrayBuf).toString('base64')
+        formData.push({ key: 'file', file: base64, filename: req.params.fileName })
+      }
+    } catch (fetchErr) {
+      console.warn('[submitDealPacket] Failed to fetch binary from storageFileUrl:', fetchErr)
+    }
   }
   if (req.params.userAnthropicApiKey) {
     formData.push({ key: 'userAnthropicApiKey', value: req.params.userAnthropicApiKey })

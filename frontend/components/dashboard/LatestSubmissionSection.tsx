@@ -227,6 +227,7 @@ export type LatestSubmissionSectionProps = {
     activeProjectSynthesis?: any
     isCurrentProjectAwaitingSynthesis?: boolean
     setActiveEvidence?: (evidence: any) => void
+    handleRetryFailedBatchDocs?: () => void
     handleRerunLatestBatch?: () => void
     handleRerunAllProjectDocs?: () => void
     handleRunSynthesis?: () => void
@@ -264,6 +265,7 @@ export default function LatestSubmissionSection({
     isCurrentProjectAwaitingSynthesis,
     setActiveEvidence,
     setUserHasNavigatedBatchDocs,
+    handleRetryFailedBatchDocs,
     handleRerunLatestBatch,
     handleRerunAllProjectDocs,
     handleRunSynthesis,
@@ -400,6 +402,18 @@ export default function LatestSubmissionSection({
                                     <span>Re-run synthesis</span>
                                 </>
                             )}
+                        </Button>
+                    ) : null}
+                    {handleRetryFailedBatchDocs && latestBatchRows.some((r) => ['failed', 'upload_failed', 'error'].includes((r.status || '').toLowerCase()) || Boolean(r.errorMessage)) ? (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            className="gap-1.5 font-bold border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400"
+                            onClick={handleRetryFailedBatchDocs}
+                            disabled={isRerunningBatch}
+                        >
+                            <RotateCw className="h-4 w-4" />
+                            <span>Retry all failed in batch ({latestBatchRows.filter((r) => ['failed', 'upload_failed', 'error'].includes((r.status || '').toLowerCase()) || Boolean(r.errorMessage)).length})</span>
                         </Button>
                     ) : null}
                     {handleRerunLatestBatch && latestBatchRows.length > 0 ? (

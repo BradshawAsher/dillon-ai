@@ -27,6 +27,7 @@ type BatchProgressCardProps = {
     activeProjectId?: string
     retryingRequestId?: string
     handleRetryFailedDocument: (requestID: string) => void
+    handleRetryFailedBatchDocs?: () => void
     handleOpenProjectSynthesis: (targetProjectId: string) => void
     batchDocuments?: any[]
     handleRerunLatestBatch?: () => void
@@ -55,6 +56,7 @@ export function BatchProgressCard({
     activeProjectId,
     retryingRequestId,
     handleRetryFailedDocument,
+    handleRetryFailedBatchDocs,
     handleOpenProjectSynthesis,
     batchDocuments = [],
     handleRerunLatestBatch,
@@ -272,6 +274,18 @@ export function BatchProgressCard({
                         ) : null}
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
+                        {handleRetryFailedBatchDocs && activeBatchFailedCount > 0 ? (
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-xs gap-1.5 border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 font-semibold"
+                                onClick={handleRetryFailedBatchDocs}
+                                disabled={isRerunningBatch}
+                            >
+                                <RotateCw className="h-3.5 w-3.5" />
+                                Retry all failed in batch ({activeBatchFailedCount})
+                            </Button>
+                        ) : null}
                         {handleRerunAllProjectDocs && activeProjectId ? (
                             <Button
                                 size="sm"

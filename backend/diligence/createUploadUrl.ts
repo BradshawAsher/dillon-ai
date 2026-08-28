@@ -52,7 +52,7 @@ export default async function createUploadUrl(req: { params: Params; user: User 
   }
 
   const r2PublicUrl = `${R2_PUBLIC_URL}/${path}`
-  const r2UploadUrl = `${STORAGE_CDN_URL}/upload?path=${encodeURIComponent(path)}`
+  const r2UploadUrl = `${STORAGE_CDN_URL}/${path}`
 
   return {
     storageProvider: 'r2',

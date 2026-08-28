@@ -35,11 +35,36 @@ export default async function retryFailedDocument(req: { params: Params; user: U
   if (documentError) throw new Error(`Unable to load failed document: ${documentError.message}`)
 
   const failedStatus = String(failedDocument?.status || '').trim().toLowerCase()
-  if (failedStatus === 'upload_failed') {
+  let storageFileUrl = String(failedDocument?.storage_file_url || '').trim()
+
+  // If storage_file_url is empty on this row, check sibling documents with matching file_name
+  if (!storageFileUrl && failedDocument?.file_name) {
+    try {
+      const { data: siblingDocs } = await supabase
+        .from('documents')
+        .select('storage_file_url')
+        .eq('file_name', failedDocument.file_name)
+        .neq('storage_file_url', '')
+        .order('created_at', { ascending: false })
+        .limit(1)
+
+      if (siblingDocs?.[0]?.storage_file_url) {
+        storageFileUrl = siblingDocs[0].storage_file_url
+        // Update document row with the resolved storage URL for future retries
+        await supabase
+          .from('documents')
+          .update({ storage_file_url: storageFileUrl })
+          .eq('request_id', requestID)
+      }
+    } catch {
+      // Non-blocking sibling lookup
+    }
+  }
+
+  if (failedStatus === 'upload_failed' || Boolean(storageFileUrl)) {
     if (!failedDocument) throw new Error('The failed document could not be loaded for retry')
-    const storageFileUrl = String(failedDocument?.storage_file_url || '').trim()
     if (!storageFileUrl) {
-      throw new Error('This upload failed before a reusable file was stored. Re-upload the document to try again.')
+      throw new Error('This upload failed before a reusable file was stored. Please re-upload the document to try again.')
     }
 
     const submissionBatchId = failedDocument.submission_batch_id || failedDocument.project_id || ''
@@ -71,6 +96,7 @@ export default async function retryFailedDocument(req: { params: Params; user: U
         docBackupModel: req.params.docBackupModel,
         synthPrimaryModel: req.params.synthPrimaryModel,
         synthBackupModel: req.params.synthBackupModel,
+        skipDuplicateCheck: true,
       },
     })
 
