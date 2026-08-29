@@ -26,7 +26,7 @@ MergeWorks is a document-first, post-LOI M&A diligence workspace. An analyst cre
 | Area | Source of truth / owner | Location |
 | --- | --- | --- |
 | **Live Workflow Behavior** | Pod 1 n8n Cloud project (`2606-ai-fellows-mergeworks`) | `merge-works.app.n8n.cloud` via n8n MCP |
-| **Primary Data Layer** | Supabase Postgres (`sihpsqrunkwkxhhnwoqe`) | Tables: `documents`, `project_syntheses`, `deal_models`, `workflow_errors`, `project_action_trackers` |
+| **Primary Data Layer** | Supabase Postgres (`sihpsqrunkwkxhhnwoqe`) | Tables: `documents`, `project_syntheses`, `synthesis_runs`, `deal_models`, `workflow_errors`, `project_action_trackers` |
 | **Legacy Backup Writes** | n8n Data Tables (written in parallel) | Tables: `Document Specific Fields`, `Project-Level Fields`, `Deal Models` |
 | **Evaluation Suite** | Local test harness | `test_sets/ground_truth/` + `scripts/run-evals.ts` |
 | **Dashboard Web UI** | React + TypeScript + Express API | `frontend/` (Vercel deployment: `https://due-diligence-dashboard.vercel.app`) |
