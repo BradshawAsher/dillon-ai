@@ -20,9 +20,13 @@ All other executions receive `claimed=false` and stop before setting
 
 The owning execution passes the manifest, signature, run ID, and claim token to
 the Consolidator (`IoSad3rTYJMk4Mon`). The Consolidator filters its Supabase read
-to the claimed request IDs and rejects missing, changed-status, or changed-version
-evidence. The final `project_syntheses` row stores the signature and run ID, then
-the claim is marked `succeeded`.
+to the claimed request IDs and rejects missing or changed-status evidence. The
+manifest's analysis timestamp remains part of the evidence signature, but it is
+not compared for equality with Supabase `processed_at`: n8n and Supabase stamp
+their parallel writes independently, so the timestamps normally differ by a
+small amount for the same completed analysis. Stable request IDs and terminal
+status are the cross-store validation contract. The final `project_syntheses`
+row stores the signature and run ID, then the claim is marked `succeeded`.
 
 ## Retry behavior
 
@@ -50,5 +54,8 @@ Before publishing changes to the gate:
    **If Claim Acquired?**.
 5. Verify the Consolidator excludes an unclaimed third document from a pinned
    two-document manifest and propagates the run metadata to persistence.
+6. Run a cross-store fixture where n8n `ai_processedAt` and Supabase
+   `processed_at` differ slightly for the same request ID. The Consolidator must
+   accept the evidence and still reject a missing request ID or status change.
 
 Schema migrations are in `supabase/migrations/2026082903*_synthesis_claim*.sql`.
