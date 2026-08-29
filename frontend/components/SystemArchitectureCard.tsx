@@ -54,7 +54,7 @@ const architecture: ArchitectureItem[] = [
     },
     {
         area: 'Document counter & synthesis trigger',
-        description: 'Tracks how many documents in a project have completed. Once all are terminal, starts synthesis asynchronously.',
+        description: 'Tracks terminal documents, atomically claims the exact evidence set in Supabase, then starts one asynchronous synthesis.',
         n8nWorkflow: '[Pod 1] Financial DD Agent - DOCUMENT COUNTER UTILITY SUBWORKFLOW',
         n8nWorkflowId: '0OVTAMMp2iMx53Aw',
         frontendFiles: [
@@ -62,7 +62,8 @@ const architecture: ArchitectureItem[] = [
         ],
         edgeCases: [
             'Failed documents do not block synthesis of usable ones',
-            'Counter writes synthesis_pending then starts consolidator with waitForSubWorkflow: false',
+            'Only the atomic evidence-claim winner writes synthesis_pending and starts the consolidator',
+            'Duplicate completion events exit before the model call; failed or expired claims are retryable',
             'Excluded (isConsidered=false) documents are not counted toward completion',
         ],
     },

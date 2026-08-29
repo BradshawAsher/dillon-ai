@@ -120,10 +120,13 @@ Extra columns are ignored, so it's safe to add more fields to the table
 ### Completion and polling
 
 The project-level data-table row is the completion signal; do not keep an HTTP
-request open until the consolidator finishes. The document-counter workflow
-should upsert `projectStatus: synthesis_pending` before it starts the
-consolidator. The consolidator should update that same row to `synthesized`
-only after its final table upsert succeeds (or `failed` on its error path).
+request open until the consolidator finishes. When all considered documents are
+terminal, the counter first calls the Supabase `claim_project_synthesis` RPC
+with a sorted evidence manifest. Only the returned claim owner may upsert
+`projectStatus: synthesis_pending` and start the consolidator. The consolidator
+must scope its input to that manifest, write the evidence signature and run ID
+on the final version, then mark the claim `succeeded` (or `failed` on its error
+path). See [Synthesis Idempotency](SYNTHESIS_IDEMPOTENCY.md).
 
 The dashboard polls both submission history and this webhook every five
 seconds while either document processing or a project synthesis has an active

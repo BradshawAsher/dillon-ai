@@ -15,8 +15,8 @@ parallel. The Supabase credential used is ID `2bjegcUtAn2gvy8A`.
 | --- | --- | --- | --- | --- |
 | Submit Button Webhook Trigger | `vBnMdx8cvSFIFx6m` | Receives a document submission, checks duplicates, and starts processing. | Supabase `documents` | Supabase `documents` + `project_syntheses` + `deal_models` & n8n tables |
 | Per Document AI Analysis | `W5Jp7CJIQbNy0qlY` | Downloads, parses, analyzes, and updates one document row. | Drive / Inbound Payload | Supabase `documents` & n8n `rBFHVB1W7ldSiObM` |
-| DOCUMENT COUNTER UTILITY SUBWORKFLOW | `0OVTAMMp2iMx53Aw` | Tracks batch completion with an idempotent `Get Project State` lock. Evaluates incremental batch additions (`hasNewCompletedEvidence`) to trigger synthesis when new files are pushed to an existing project, and uses safe Data Table fallback expressions. | Supabase `documents` + `DD Project-Level Fields` | Supabase `project_syntheses` & n8n `DTrLU8hBUwYzmBig` |
-| SUBWORKFLOW PROJECT-WIDE CONSOLIDATOR WORKFLOW | `IoSad3rTYJMk4Mon` | Reconciles considered document outputs into a project-level synthesis. | Supabase `documents` | Supabase `project_syntheses` & n8n `DTrLU8hBUwYzmBig` |
+| DOCUMENT COUNTER UTILITY SUBWORKFLOW | `0OVTAMMp2iMx53Aw` | Tracks terminal documents, builds a sorted evidence manifest, and atomically claims that manifest through `claim_project_synthesis`. Only the claim owner may set `synthesis_pending` or start the Consolidator. | Supabase `documents` + `DD Project-Level Fields` | Supabase `synthesis_runs` & n8n `DTrLU8hBUwYzmBig` |
+| SUBWORKFLOW PROJECT-WIDE CONSOLIDATOR WORKFLOW | `IoSad3rTYJMk4Mon` | Reconciles exactly the documents in the claimed evidence manifest, stores one signed synthesis version, and completes or releases the claim. | Supabase `documents` + `synthesis_runs` | Supabase `project_syntheses` + `synthesis_runs` & n8n `DTrLU8hBUwYzmBig` |
 | Project Documented Facts Bridge | `uAI6pABZWdIy2V17` | Reads considered documents, consolidates LOI terms and accounting facts, and syncs full metric columns. | Supabase `documents` | Supabase `deal_models` & n8n `eU2nnH4bVmdPocI8` |
 | Deal Model Write API | `O2fi0mKmKHxewuN5` | Saves user-entered deal model assumptions (30 financial parameters). | Inbound HTTP Payload | Supabase `deal_models` & n8n `eU2nnH4bVmdPocI8` |
 | Retry Failed Document | `iOaYHcZLktC6aO2u` | Retries a failed document via Drive file ID and dispatches to per-document analysis. | Supabase `documents` | Dispatches to `W5Jp7CJIQbNy0qlY` (Dual-Writes) |
@@ -48,7 +48,8 @@ The dashboard backend reads exclusively from Supabase. Schema lives in
 | Table | Supabase | Purpose |
 | --- | --- | --- |
 | `documents` | one row per submitted document | Submission metadata, per-document AI output, batch fields, `is_considered` |
-| `project_syntheses` | one row per project | Project status, synthesis judgment, valuation, flags |
+| `project_syntheses` | one row per synthesis version | Project judgment, valuation, flags, evidence signature, and owning synthesis run |
+| `synthesis_runs` | one row per automatic evidence set or manual attempt | Atomic ownership, lease/retry state, evidence manifest, and completion audit |
 | `deal_models` | one row per project | User-entered and AI-derived deal model assumptions |
 | `workflow_errors` | append-only | Production error audit trail |
 | `project_action_trackers` | one row per project | User checklists and management questions |
@@ -81,6 +82,8 @@ retaining it for audit.
    active production version.
 4. Keep dashboard webhook paths and response fields aligned with
    [n8n-webhooks.md](n8n-webhooks.md).
+5. Never replace the `synthesis_runs` claim with a Data Table read/check/write
+   sequence. See [Synthesis Idempotency](SYNTHESIS_IDEMPOTENCY.md).
 
 ## Reliability baseline
 
@@ -90,6 +93,13 @@ three times with a two-second delay. The per-document analysis workflow uses the
 same policy (`maxTries: 3`, `waitBetweenTries: 2000ms`), except the two
 model-adjacent nodes back off 5000ms; exhausted processing failures route to a
 terminal document status so the batch can continue.
+
+Automatic synthesis ownership lives in Supabase, not the n8n mirror. The claim
+function uses a unique `(project_id, evidence_signature)` key and a 15-minute
+lease. Duplicate document-completion executions exit before changing the
+project status or calling the model. A failed claim can be retried immediately;
+an execution that disappears without running its error path can be reclaimed
+after its lease expires.
 
 Measured from live executions (2026-08): per-document analysis runs at ~p50 71 s
 / p95 125 s wall-clock, and the robust output-recovery path (schema validation →
