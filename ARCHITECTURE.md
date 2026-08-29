@@ -220,7 +220,7 @@ sequenceDiagram
 * **Verified Server Handoff**: After storage succeeds, `/api/diligence/submit` receives metadata and a URL, registers the document, then downloads it to a private temporary file and verifies its size. Native FormData sends a disk-backed Blob with a known Content-Length to n8n. Local and deployed runtimes share `backend/diligence/documentHandoff.ts`; temporary attachments are cleaned up on success or failure, with a 256 MiB aggregate limit per handoff. Download, send, and acknowledgment share a 180-second deadline inside the configured 300-second Vercel function budget. The file bypasses the inbound API body, not the outbound server-to-n8n transfer.
 * **Batch State and Failure Visibility**: A session-persisted upload manifest retains attempts that never reached the database. It contains metadata, not document bytes or keys. Expected counts never shrink to received counts; progress and timer logic derive from the same batch state. Failed carousel cards retain partial results and show unavailable fields. Display-only failed attempts are not synthesis evidence. See [Upload and Batch Recovery](docs/UPLOAD_AND_BATCH_RECOVERY.md).
 * **In-Browser ZIP Decompressor**: Client-side worker recursively unpacks multi-folder ZIP archives (`utils/zipExtractor.ts`), preserving folder taxonomy and queuing individual files into the extraction pipeline.
-* **Optimistic State & Real-Time CDC Sync**: Uses **Supabase Realtime (Postgres Change Data Capture over WebSockets)** to push instantaneous row updates (<100ms latency) to the browser without continuous background polling. When a CDC event arrives, it automatically invalidates TanStack Query in-memory caches, reducing egress by over 99.9% while guaranteeing instant UI responsiveness.
+* **Optimistic State & Real-Time CDC Sync**: Uses **Supabase Realtime (Postgres Change Data Capture over WebSockets)** with an active-project filter. A CDC event refreshes only that project's full rows and merges them into a compact portfolio snapshot. A project-scoped fallback heartbeat runs only while a batch or synthesis is non-terminal; completed, interrupted, stopped, and errored batches do not keep polling.
 
 ### B. Cloudflare Edge Worker & Reverse Proxy Layer (Steps A & C)
 * **REST Edge Reverse Proxy (Step A)**: High-performance Cloudflare Worker sitting in front of REST read endpoints (`/api/diligence/history`, `/api/diligence/synthesis`, benchmark feeds) with `Cache-Control: public, s-maxage=10, stale-while-revalidate=59` and ETags, serving repeated reads from global Edge PoPs in sub-15ms.
@@ -229,7 +229,7 @@ sequenceDiagram
 
 ### C. Postgres Server-Side Aggregate RPC & Egress Optimization (Step B)
 * **Stored Procedure Aggregations (`get_portfolio_diligence_kpis`)**: Replaced multi-megabyte client-side table aggregations (which previously downloaded entire historical records for 88+ projects and 700+ documents) with a native PostgreSQL RPC. The database computes project totals, document counts, status breakdowns, and financial sums in sub-2ms and returns a compact JSON payload (<400 bytes), slashing network payload size by **99.8%**.
-* **Lightweight Column Projections**: Endpoints like `getSubmissionHistory.ts` utilize optimized projection queries (`lightweightColumns`), selecting essential metadata and visual flags (`ai_red_flags`, `ai_yellow_flags`, `ai_green_flags`, `ai_summary`) while excluding heavy multi-megabyte `ai_extractedJson` payloads until an analyst opens a specific document Evidence Drawer.
+* **Two-Level Column Projections**: Portfolio history and synthesis reads select compact identity, status, count, risk, cost, and valuation metadata. Full summaries, flags, citations, extracted evidence, and synthesis judgment JSON are loaded with a `projectId` filter for the selected project and merged into the portfolio snapshot.
 * **Full Portfolio Navigation Scope**: Sets a global limit of 1,000 for top-level history queries, ensuring all 88 projects are immediately searchable and selectable in workspace dropdowns without pagination clipping.
 
 ### D. Multi-Modal Ingestion Matrix
@@ -358,5 +358,5 @@ or n8n workflow rewrite. See the [recovery runbook](docs/UPLOAD_AND_BATCH_RECOVE
 * **Edge Cache Hit Latency**: $< 15\text{ms}$ via Cloudflare Edge Worker.
 * **Per-Document Cloud Cost**: $\approx \$0.055$ / document (OpenAI 5.6 Terra).
 * **Per-Project Synthesis Cost**: $\approx \$0.065$ / deal synthesis.
-* **Network Egress Optimization**: $> 99.8\%$ bandwidth reduction across portfolio and history feeds.
+* **Network Egress Optimization**: the KPI RPC reduces aggregate reads by $> 99.8\%$; compact history/synthesis projections reduce the measured combined raw portfolio response by about $67\%$ before transfer compression, with full evidence scoped to one project.
 * **Evaluation Harness Score**: **$98\%$ Overall Accuracy** across all 58 golden test documents.

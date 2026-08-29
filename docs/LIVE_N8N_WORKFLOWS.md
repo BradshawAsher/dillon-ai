@@ -55,6 +55,18 @@ The dashboard backend reads exclusively from Supabase. Schema lives in
 | `project_action_trackers` | one row per project | User checklists and management questions |
 | `reliability_alert_state` | one row per alert key | Watchdog cooldown timestamps and alert deduplication state |
 
+### Dashboard read-efficiency contract
+
+- Unscoped portfolio reads use compact column projections. They must not include
+  full document flags, citations, extracted JSON, or project judgment JSON.
+- The selected project loads full document and synthesis rows with a
+  `projectId` filter, then merges them into the compact portfolio snapshot.
+- Supabase Realtime subscriptions are filtered to the active project. A change
+  refreshes only the corresponding project dataset.
+- The fallback heartbeat is project-scoped and runs only while document or
+  synthesis work is non-terminal. Completed, interrupted, stopped, and errored
+  batches must not keep polling.
+
 ## Legacy n8n Data Table contract (Dual-Write Fallback Mirror)
 
 - **Document Specific Fields** (`rBFHVB1W7ldSiObM`): mirrors `documents`.

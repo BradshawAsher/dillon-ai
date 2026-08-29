@@ -31,6 +31,7 @@ import { lazyWithRetry } from '../utils/lazyWithRetry'
 import { batchCompletionTime, createBatchQueue, getBatchStopTarget, requireConfirmedBatchStop, type BatchStopResponse } from '../utils/batchStop'
 import { batchDocumentKey, deriveBatchState, mergeBatchUploadAttempts, type BatchUploadAttempt } from '../utils/batchState'
 import { mergeDocumentCarouselRows } from '../utils/documentCarousel'
+import { mergeDiligenceRows, shouldPollDiligence } from '../utils/diligenceRefresh'
 const CommandPalette = lazyWithRetry(() => import('../components/CommandPalette'))
 const SystemArchitectureCard = lazyWithRetry(() => import('../components/SystemArchitectureCard'))
 import LoginButton, { getStoredAuth, isDataIsolationEnabled, DATA_ISOLATION_EVENT, openAuthModal } from '../components/AuthGate'
@@ -729,6 +730,18 @@ function deriveSynthesisProgress(status?: string, awaiting?: boolean) {
     return { value: 0, stage: 'Awaiting documents' }
 }
 
+const submissionRowKey = (row: SubmissionHistoryItem) => row.requestID || String(row.id || '')
+const synthesisRowKey = (row: ProjectSynthesisItem) => String(row.id || `${row.projectId}:${row.updatedAt || row.createdAt || ''}`)
+
+const mergeScopedSubmissionRows = (current: SubmissionHistoryItem[] | null, incoming: SubmissionHistoryItem[]) =>
+    mergeDiligenceRows(current, incoming, submissionRowKey)
+const mergePortfolioSubmissionRows = (current: SubmissionHistoryItem[] | null, incoming: SubmissionHistoryItem[]) =>
+    mergeDiligenceRows(current, incoming, submissionRowKey, false)
+const mergeScopedSynthesisRows = (current: ProjectSynthesisItem[] | null, incoming: ProjectSynthesisItem[]) =>
+    mergeDiligenceRows(current, incoming, synthesisRowKey)
+const mergePortfolioSynthesisRows = (current: ProjectSynthesisItem[] | null, incoming: ProjectSynthesisItem[]) =>
+    mergeDiligenceRows(current, incoming, synthesisRowKey, false)
+
 export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnToLanding?: () => void } = {}) {
     const {
         activeWorkspaceTab,
@@ -844,8 +857,14 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
     // Fetch initial backend data on mount
     useEffect(() => {
-        void triggerSubmissionHistory({ environment: 'production' })
-        void triggerProjectSynthesis({ environment: 'production' })
+        void triggerSubmissionHistory(
+            { environment: 'production' },
+            { mergeData: mergePortfolioSubmissionRows },
+        )
+        void triggerProjectSynthesis(
+            { environment: 'production' },
+            { mergeData: mergePortfolioSynthesisRows },
+        )
         void triggerDealModels()
         void triggerWorkflowErrors({ environment: 'production' })
         void triggerWatchdogEvents({ environment: 'production' })
@@ -1517,6 +1536,23 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         }
     }, [activeProjectId, projectSummaries])
 
+    const activeDatabaseProjectId = activeViewProject?.id || activeProjectId
+
+    // Portfolio reads stay compact. Load the selected project's full evidence
+    // separately and merge it into the portfolio snapshot without dropping
+    // other projects or losing detail when requests finish out of order.
+    useEffect(() => {
+        if (isExampleMode || !activeDatabaseProjectId) return
+        void triggerSubmissionHistory(
+            { environment: 'production', projectId: activeDatabaseProjectId, full: true, limit: 100 },
+            { mergeData: mergeScopedSubmissionRows },
+        )
+        void triggerProjectSynthesis(
+            { environment: 'production', projectId: activeDatabaseProjectId, limit: 10 },
+            { mergeData: mergeScopedSynthesisRows },
+        )
+    }, [activeDatabaseProjectId, isExampleMode, triggerProjectSynthesis, triggerSubmissionHistory])
+
     // Keep browser address bar in sync with active project and active tab for 1-click URL sharing
     useEffect(() => {
         if (isTourActive || isExampleMode) return
@@ -2007,15 +2043,38 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         return isCurrentProjectExtractingDocs || isCurrentProjectSynthesisRunning || isManualSynthesisRunning
     }, [isCurrentProjectExtractingDocs, isCurrentProjectSynthesisRunning, isManualSynthesisRunning])
 
+    const refreshProjectHistory = useCallback((targetProjectId: string, skipCache = false) => {
+        if (!targetProjectId) return
+        void triggerSubmissionHistory(
+            { environment: 'production', projectId: targetProjectId, full: true, limit: 100, skipCache },
+            { mergeData: mergeScopedSubmissionRows },
+        )
+    }, [triggerSubmissionHistory])
+
+    const refreshProjectSynthesis = useCallback((targetProjectId: string, skipCache = false) => {
+        if (!targetProjectId) return
+        void triggerProjectSynthesis(
+            { environment: 'production', projectId: targetProjectId, limit: 10, skipCache },
+            { mergeData: mergeScopedSynthesisRows },
+        )
+    }, [triggerProjectSynthesis])
+
+    const refreshProjectSnapshot = useCallback((targetProjectId: string, skipCache = false) => {
+        refreshProjectHistory(targetProjectId, skipCache)
+        refreshProjectSynthesis(targetProjectId, skipCache)
+    }, [refreshProjectHistory, refreshProjectSynthesis])
+
     // Supabase Realtime WebSocket subscription for live documents and synthesis updates
     const { isConnected: isRealtimeConnected } = useSupabaseRealtimeDiligence({
         enabled: !isExampleMode,
-        projectId: activeProjectId,
-        onDocumentChange: () => {
-            void triggerSubmissionHistory({ environment: 'production', skipCache: true })
+        projectId: activeDatabaseProjectId,
+        onDocumentChange: (payload) => {
+            const targetProjectId = payload?.new?.project_id || payload?.old?.project_id || activeDatabaseProjectId
+            refreshProjectHistory(targetProjectId, true)
         },
-        onSynthesisChange: () => {
-            void triggerProjectSynthesis({ environment: 'production', skipCache: true })
+        onSynthesisChange: (payload) => {
+            const targetProjectId = payload?.new?.project_id || payload?.old?.project_id || activeDatabaseProjectId
+            refreshProjectSynthesis(targetProjectId, true)
         },
     })
 
@@ -2023,26 +2082,27 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     // When Realtime WebSocket is connected, updates are pushed instantly via WebSockets and heartbeat runs every 20s.
     // If Realtime is disconnected, heartbeat runs every 6s.
     useEffect(() => {
-        const isActivelyProcessing = Boolean(
-            activeSubmissionBatch ||
-            hasActiveSubmissions ||
-            isCurrentProjectProcessingDocuments ||
-            isCurrentProjectAwaitingSynthesis
-        )
+        const isActivelyProcessing = shouldPollDiligence({
+            activeBatch: activeSubmissionBatch,
+            batchIsComplete: batchProgress.isComplete,
+            hasActiveSubmissions,
+            isProcessingDocuments: isCurrentProjectProcessingDocuments,
+            isAwaitingSynthesis: isCurrentProjectAwaitingSynthesis,
+        })
 
         if (!isActivelyProcessing) return
 
         const pollIntervalMs = isRealtimeConnected ? 20_000 : 6_000
         const interval = setInterval(() => {
-            void triggerSubmissionHistory({ environment: 'production' })
-            void triggerProjectSynthesis({ environment: 'production' })
+            refreshProjectSnapshot(activeDatabaseProjectId)
         }, pollIntervalMs)
         return () => clearInterval(interval)
     }, [
         isRealtimeConnected,
-        triggerSubmissionHistory,
-        triggerProjectSynthesis,
+        refreshProjectSnapshot,
+        activeDatabaseProjectId,
         activeSubmissionBatch,
+        batchProgress.isComplete,
         hasActiveSubmissions,
         isCurrentProjectProcessingDocuments,
         isCurrentProjectAwaitingSynthesis,
@@ -2056,8 +2116,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 const now = Date.now()
                 if (now - lastFocusFetch > 30_000) {
                     lastFocusFetch = now
-                    void triggerSubmissionHistory({ environment: 'production' })
-                    void triggerProjectSynthesis({ environment: 'production' })
+                    refreshProjectSnapshot(activeDatabaseProjectId)
                 }
             }
         }
@@ -2067,7 +2126,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             document.removeEventListener('visibilitychange', handleVisibility)
             window.removeEventListener('focus', handleVisibility)
         }
-    }, [triggerSubmissionHistory, triggerProjectSynthesis])
+    }, [activeDatabaseProjectId, refreshProjectSnapshot])
 
 
     const currentSynthesisProgress = useMemo(
