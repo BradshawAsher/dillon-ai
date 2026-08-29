@@ -31,20 +31,29 @@ export function useSupabaseRealtimeDiligence({
     }, [onDocumentChange, onSynthesisChange, projectId])
 
     useEffect(() => {
-        if (!enabled) {
+        const scopedProjectId = projectId?.trim() || ''
+        if (!enabled || !scopedProjectId) {
             setIsConnected(false)
             return
         }
+
+        const projectFilter = `project_id=eq.${scopedProjectId}`
+        const channelScope = scopedProjectId.replace(/[^a-zA-Z0-9_-]/g, '_')
 
         // Debounce triggers (1200ms) to coalesce burst events when multiple documents in a batch update simultaneously
         let docDebounceTimer: ReturnType<typeof setTimeout> | null = null
         let synthDebounceTimer: ReturnType<typeof setTimeout> | null = null
 
         const channel = supabaseAuthClient
-            .channel('mergeworks-diligence-realtime')
+            .channel(`mergeworks-diligence-realtime-${channelScope}`)
             .on(
                 'postgres_changes',
-                { event: '*', schema: 'public', table: 'documents' },
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'documents',
+                    filter: projectFilter,
+                },
                 (payload) => {
                     if (docDebounceTimer) clearTimeout(docDebounceTimer)
                     docDebounceTimer = setTimeout(() => {
@@ -60,7 +69,12 @@ export function useSupabaseRealtimeDiligence({
             )
             .on(
                 'postgres_changes',
-                { event: '*', schema: 'public', table: 'project_syntheses' },
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'project_syntheses',
+                    filter: projectFilter,
+                },
                 (payload) => {
                     if (synthDebounceTimer) clearTimeout(synthDebounceTimer)
                     synthDebounceTimer = setTimeout(() => {
@@ -87,7 +101,7 @@ export function useSupabaseRealtimeDiligence({
             if (synthDebounceTimer) clearTimeout(synthDebounceTimer)
             void supabaseAuthClient.removeChannel(channel)
         }
-    }, [enabled])
+    }, [enabled, projectId])
 
     return { isConnected }
 }

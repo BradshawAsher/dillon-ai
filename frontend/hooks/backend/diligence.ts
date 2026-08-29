@@ -43,6 +43,11 @@ type QueryState<T> = {
     error: string | null
 }
 
+type QueryTriggerOptions<T> = {
+    mergeData?: (previous: T | null, incoming: T) => T
+    skipCache?: boolean
+}
+
 export type DealModel = {
     projectId: string
     askingPrice: number | null
@@ -95,12 +100,16 @@ function useQuery<T>(fetcher: (params?: Record<string, unknown>) => Promise<T>, 
     const [state, setState] = useState<QueryState<T>>({ data: initialData, loading: false, error: null })
 
     const trigger = useCallback(
-        (params?: Record<string, unknown>, _options?: Record<string, unknown>) => {
+        (params?: Record<string, unknown>, options?: QueryTriggerOptions<T>) => {
             setState((previous) => ({ ...previous, loading: true }))
             const promise = (async () => {
                 try {
-                    const data = await fetcher(params)
-                    setState({ data, loading: false, error: null })
+                    const data = await fetcher(options?.skipCache ? { ...params, skipCache: true } : params)
+                    setState((previous) => ({
+                        data: options?.mergeData ? options.mergeData(previous.data, data) : data,
+                        loading: false,
+                        error: null,
+                    }))
                     return data
                 } catch (error) {
                     const message = error instanceof Error ? error.message : String(error)

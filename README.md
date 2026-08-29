@@ -77,7 +77,8 @@ Numbers below are measured from live n8n execution telemetry and Supabase databa
 
 - **Portfolio KPI Query Latency**: < 2 ms via PostgreSQL stored procedure (`get_portfolio_diligence_kpis`).
 - **Edge Cache Hit Latency**: < 15 ms via Cloudflare Edge Worker with `stale-while-revalidate`.
-- **Egress Bandwidth Reduction**: > 99.8% reduction across portfolio feeds (payload cut from 180KB+ to < 400 bytes).
+- **Portfolio KPI Egress Reduction**: > 99.8% for aggregate KPI reads (payload cut from 180KB+ to < 400 bytes).
+- **History/Synthesis Read Reduction**: compact portfolio projections reduce the measured combined raw response from about 3.70 MB to 1.20 MB (67%); full AI evidence is fetched only for the selected project.
 - **Per-document extraction latency**: ~21–25 s average per document (download → tabular preflight → LLM fact extraction → deterministic reconciliation → write).
 - **Project synthesis pass latency**: ~45–60 s average per synthesis pass (cross-document reconciliation → EV/SDE multiple bridge → deal memo generation).
 - **Combined full-deal latency**: ~p50 71 s / p95 125 s end-to-end when processing multi-document batches and final synthesis in sequence.
@@ -176,8 +177,8 @@ The dashboard uses these same-origin endpoints:
 | --- | --- | --- |
 | `/api/diligence/upload-url` | `POST` | Issue direct-storage upload tickets; no n8n call |
 | `/api/diligence/submit` | `POST` | Register metadata and forward the stored attachment to n8n |
-| `/api/diligence/history` | `GET` | Read document rows from Supabase |
-| `/api/diligence/synthesis` | `GET` | Read project synthesis rows from Supabase |
+| `/api/diligence/history` | `GET` | Read compact portfolio document metadata, or full rows when scoped by `projectId` |
+| `/api/diligence/synthesis` | `GET` | Read compact portfolio synthesis metadata, or full versions when scoped by `projectId` |
 
 The detailed live n8n webhook paths, response schema, and required response
 shape are documented in [docs/n8n-webhooks.md](docs/n8n-webhooks.md).
@@ -195,7 +196,8 @@ upload directly to storage (resumable for large files)
   -> document AI workflow writes completed fields
   -> document counter updates project state
   -> project synthesizer writes project-level result
-  -> UI polls history and synthesis rows until terminal statuses arrive
+  -> Supabase Realtime pushes project-scoped changes to the UI
+  -> a project-scoped fallback heartbeat runs only while work is non-terminal
 ```
 
 ## n8n setup notes

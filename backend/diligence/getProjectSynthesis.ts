@@ -345,7 +345,7 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
             ? parseInt(req.params.limit, 10)
             : defaultLimit
 
-    const synthesisColumns = `
+    const fullColumns = `
         id, project_id, project_name, company_name, project_status,
         documents_received_count, documents_completed_count,
         missing_documents_json, cross_document_conflicts_json, open_questions_json, negotiation_levers_json,
@@ -357,9 +357,20 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
         valuation_confidence_score, investment_confidence_score, is_placeholder
     `
 
-    let query = supabase
-        .from('project_syntheses')
-        .select(synthesisColumns)
+    const portfolioColumns = `
+        id, project_id, project_name, company_name, project_status,
+        documents_received_count, documents_completed_count,
+        final_recommendation, final_risk_level, final_traffic_light,
+        ai_error_message, ai_global_confidence,
+        valuation_lower_bound, valuation_base_estimate, valuation_upper_bound, valuation_currency,
+        project_processed_at, created_at, updated_at,
+        input_tokens, output_tokens, total_tokens, cost_usd, model_used,
+        valuation_confidence_score, investment_confidence_score, is_placeholder
+    `
+
+    let query = (supabase
+        .from('project_syntheses') as any)
+        .select(isScoped ? fullColumns : portfolioColumns)
         .or('is_placeholder.is.null,is_placeholder.eq.false')
 
     if (req.params.projectId && req.params.projectId.trim().length > 0) {

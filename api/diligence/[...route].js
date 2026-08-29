@@ -21792,7 +21792,7 @@ async function getProjectSynthesis(req) {
   const isScoped = Boolean(req.params.projectId && req.params.projectId.trim().length > 0);
   const defaultLimit = isScoped ? 10 : 50;
   const limitNum = typeof req.params.limit === "number" ? req.params.limit : typeof req.params.limit === "string" && parseInt(req.params.limit, 10) > 0 ? parseInt(req.params.limit, 10) : defaultLimit;
-  const synthesisColumns = `
+  const fullColumns = `
         id, project_id, project_name, company_name, project_status,
         documents_received_count, documents_completed_count,
         missing_documents_json, cross_document_conflicts_json, open_questions_json, negotiation_levers_json,
@@ -21803,7 +21803,17 @@ async function getProjectSynthesis(req) {
         input_tokens, output_tokens, total_tokens, cost_usd, model_used,
         valuation_confidence_score, investment_confidence_score, is_placeholder
     `;
-  let query = supabase.from("project_syntheses").select(synthesisColumns).or("is_placeholder.is.null,is_placeholder.eq.false");
+  const portfolioColumns = `
+        id, project_id, project_name, company_name, project_status,
+        documents_received_count, documents_completed_count,
+        final_recommendation, final_risk_level, final_traffic_light,
+        ai_error_message, ai_global_confidence,
+        valuation_lower_bound, valuation_base_estimate, valuation_upper_bound, valuation_currency,
+        project_processed_at, created_at, updated_at,
+        input_tokens, output_tokens, total_tokens, cost_usd, model_used,
+        valuation_confidence_score, investment_confidence_score, is_placeholder
+    `;
+  let query = supabase.from("project_syntheses").select(isScoped ? fullColumns : portfolioColumns).or("is_placeholder.is.null,is_placeholder.eq.false");
   if (req.params.projectId && req.params.projectId.trim().length > 0) {
     query = query.eq("project_id", req.params.projectId.trim());
   }
@@ -22188,10 +22198,7 @@ async function getSubmissionHistory(req) {
         submission_batch_id, expected_batch_document_count, file_name, file_size, file_type,
         trigger_timestamp, status, environment, received_at, processing_started_at, processed_at,
         error_message, risk_level, category, traffic_light, ebitda_extracted,
-        storage_file_id, storage_file_url, needs_human_review, ai_summary, ai_red_flags, ai_yellow_flags, ai_green_flags, ai_target_value,
-        ai_variance, ai_escalation_reason, ai_confidence, valuation_lower_bound,
-        valuation_base_estimate, valuation_upper_bound, valuation_currency, valuation_confidence,
-        investment_is_favorable, investment_confidence, is_considered,
+        needs_human_review, ai_confidence, is_considered,
         input_tokens, output_tokens, total_tokens, cost_usd, model_used, created_at, updated_at
     `;
   let query = supabase.from("documents").select(isFull ? fullColumns : lightweightColumns).eq("environment", environment);
