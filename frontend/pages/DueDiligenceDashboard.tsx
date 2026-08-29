@@ -2278,17 +2278,6 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
     useEffect(() => {
         if (!activeSubmissionBatch || activeBatchExpectedCount === 0) return
-        if (activeBatchFinishedCount < activeBatchExpectedCount && activeBatchProcessingCount > 0) {
-            if (batchInProgressNotificationId.current === activeSubmissionBatch.id) return
-            batchInProgressNotificationId.current = activeSubmissionBatch.id
-            if ('Notification' in window && Notification.permission === 'granted') {
-                new Notification('Document batch is processing', { body: `All ${activeBatchExpectedCount} documents have reached processing. Analysis is still running.` })
-            }
-        }
-    }, [activeBatchExpectedCount, activeBatchFinishedCount, activeBatchProcessingCount, activeSubmissionBatch])
-
-    useEffect(() => {
-        if (!activeSubmissionBatch || activeBatchExpectedCount === 0) return
         if (!batchProgress.isComplete) {
             batchInProgressNotificationId.current = activeSubmissionBatch.id
             return
