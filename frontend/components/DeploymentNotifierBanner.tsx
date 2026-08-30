@@ -22,7 +22,7 @@ export default function DeploymentNotifierBanner() {
             <div
                 role="status"
                 aria-live="polite"
-                className="fixed bottom-4 right-4 z-50 flex items-center gap-3 rounded-xl border border-amber-500/40 bg-amber-950/90 dark:bg-amber-950/95 p-3.5 text-amber-100 shadow-2xl backdrop-blur-md animate-in slide-in-from-bottom-5 duration-300 max-w-md"
+                className="fixed left-1/2 top-4 z-[60] flex w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 items-center gap-3 rounded-xl border border-amber-500/40 bg-amber-950/90 p-3.5 text-amber-100 shadow-2xl backdrop-blur-md animate-in slide-in-from-top-5 duration-300 dark:bg-amber-950/95 sm:top-5"
             >
                 <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/20 text-amber-400">
                     <Hammer className="h-4 w-4 animate-bounce" />
@@ -57,7 +57,7 @@ export default function DeploymentNotifierBanner() {
             <div
                 role="alert"
                 aria-live="assertive"
-                className="fixed bottom-4 right-4 z-50 flex flex-col sm:flex-row items-start sm:items-center gap-3.5 rounded-xl border-2 border-emerald-500/60 bg-emerald-950/95 dark:bg-emerald-950/95 p-4 text-emerald-100 shadow-2xl backdrop-blur-md animate-in slide-in-from-bottom-5 duration-300 max-w-lg"
+                className="fixed left-1/2 top-4 z-[60] flex w-[calc(100vw-2rem)] max-w-lg -translate-x-1/2 flex-col items-start gap-3.5 rounded-xl border-2 border-emerald-500/60 bg-emerald-950/95 p-4 text-emerald-100 shadow-2xl backdrop-blur-md animate-in slide-in-from-top-5 duration-300 dark:bg-emerald-950/95 sm:top-5 sm:flex-row sm:items-center"
             >
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
                     <Sparkles className="h-5 w-5 animate-pulse" />
