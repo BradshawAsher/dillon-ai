@@ -228,14 +228,17 @@ function useLiveSubmissionHistory() {
             const full = params.full === true || params.full === 'true'
             const limit = params.limit ? String(params.limit) : ''
             const CACHE_KEY = `mergeworks_history_cache_${environment}_${projectId}_${full}_${limit}`
-            const CACHE_TTL_MS = 30_000
+            const CACHE_TTL_MS = 6_000
             if (!params.skipCache) {
                 try {
                     const cached = sessionStorage.getItem(CACHE_KEY)
                     if (cached) {
                         const parsed = JSON.parse(cached)
                         if (parsed.timestamp && Date.now() - parsed.timestamp < CACHE_TTL_MS && Array.isArray(parsed.data)) {
-                            return parsed.data as SubmissionHistoryItem[]
+                            const hasActive = parsed.data.some((r: any) => ['uploading', 'accepted', 'queued', 'processing', 'received', 'running', 'submitted'].includes((r.status || '').trim().toLowerCase()))
+                            if (!hasActive || Date.now() - parsed.timestamp < 3_000) {
+                                return parsed.data as SubmissionHistoryItem[]
+                            }
                         }
                     }
                 } catch {}
@@ -262,14 +265,17 @@ function useLiveProjectSynthesis() {
             const projectId = typeof params.projectId === 'string' && params.projectId.trim().length > 0 ? params.projectId.trim() : ''
             const limit = params.limit ? String(params.limit) : ''
             const CACHE_KEY = `mergeworks_synthesis_cache_${environment}_${projectId}_${limit}`
-            const CACHE_TTL_MS = 30_000
+            const CACHE_TTL_MS = 6_000
             if (!params.skipCache) {
                 try {
                     const cached = sessionStorage.getItem(CACHE_KEY)
                     if (cached) {
                         const parsed = JSON.parse(cached)
                         if (parsed.timestamp && Date.now() - parsed.timestamp < CACHE_TTL_MS && Array.isArray(parsed.data)) {
-                            return parsed.data as ProjectSynthesisItem[]
+                            const hasActive = parsed.data.some((s: any) => ['processing', 'pending', 'queued', 'running', 'awaiting_synthesis', 'awaiting_documents', 'started'].includes((s.projectStatus || '').trim().toLowerCase()))
+                            if (!hasActive || Date.now() - parsed.timestamp < 3_000) {
+                                return parsed.data as ProjectSynthesisItem[]
+                            }
                         }
                     }
                 } catch {}
