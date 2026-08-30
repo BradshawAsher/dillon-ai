@@ -31,7 +31,7 @@ import { lazyWithRetry } from '../utils/lazyWithRetry'
 import { batchCompletionTime, createBatchQueue, getBatchStopTarget, requireConfirmedBatchStop, type BatchStopResponse } from '../utils/batchStop'
 import { batchDocumentKey, deriveBatchState, mergeBatchUploadAttempts, type BatchUploadAttempt } from '../utils/batchState'
 import { mergeDocumentCarouselRows } from '../utils/documentCarousel'
-import { mergeDiligenceRows, shouldPollDiligence } from '../utils/diligenceRefresh'
+import { isSynthesisActivityFresh, mergeDiligenceRows, shouldPollDiligence, sortSynthesisRowsNewestFirst } from '../utils/diligenceRefresh'
 const CommandPalette = lazyWithRetry(() => import('../components/CommandPalette'))
 const SystemArchitectureCard = lazyWithRetry(() => import('../components/SystemArchitectureCard'))
 import LoginButton, { getStoredAuth, isDataIsolationEnabled, DATA_ISOLATION_EVENT, openAuthModal } from '../components/AuthGate'
@@ -740,9 +740,9 @@ const mergeScopedSubmissionRows = (current: SubmissionHistoryItem[] | null, inco
 const mergePortfolioSubmissionRows = (current: SubmissionHistoryItem[] | null, incoming: SubmissionHistoryItem[]) =>
     mergeDiligenceRows(current, incoming, submissionRowKey, false)
 const mergeScopedSynthesisRows = (current: ProjectSynthesisItem[] | null, incoming: ProjectSynthesisItem[]) =>
-    mergeDiligenceRows(current, incoming, synthesisRowKey)
+    sortSynthesisRowsNewestFirst(mergeDiligenceRows(current, incoming, synthesisRowKey))
 const mergePortfolioSynthesisRows = (current: ProjectSynthesisItem[] | null, incoming: ProjectSynthesisItem[]) =>
-    mergeDiligenceRows(current, incoming, synthesisRowKey, false)
+    sortSynthesisRowsNewestFirst(mergeDiligenceRows(current, incoming, synthesisRowKey, false))
 
 export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnToLanding?: () => void } = {}) {
     const {
@@ -1051,7 +1051,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         if (walkthrough.isActive || simulatedWalkthroughBatch) {
             return [DEMO_FALLBACK_SYNTHESIS, DEMO_FALLBACK_SYNTHESIS_CASCADIA]
         }
-        return base
+        return sortSynthesisRowsNewestFirst(base)
     }, [rawProjectSyntheses, isolationModeEnabled, walkthrough.isActive, simulatedWalkthroughBatch, authUser])
 
     const [selectedFiles, setSelectedFiles] = useState<File[]>([])
@@ -2065,6 +2065,14 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         if (completedDocCount === 0) return false
         if (activeProjectSynthesisSucceeded) return false
 
+        const hasRecentActivity = isSynthesisActivityFresh([
+            ...completedDocs.flatMap((doc) => [doc.processedAt, doc.updatedAt, doc.createdAt, doc.receivedAt]),
+            activeProjectSynthesis?.updatedAt,
+            activeProjectSynthesis?.projectProcessedAt,
+            activeProjectSynthesis?.createdAt,
+        ])
+        if (!hasRecentActivity) return false
+
         if (!activeProjectSynthesis) {
             return true
         }
@@ -2117,8 +2125,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     })
 
     // Periodic refresh effect: Gentle fallback heartbeat during active processing.
-    // When Realtime WebSocket is connected, updates are pushed instantly via WebSockets and heartbeat runs every 20s.
-    // If Realtime is disconnected, heartbeat runs every 6s.
+    // When Realtime WebSocket is connected, updates are pushed instantly and the heartbeat is only a safety net.
+    // If Realtime is disconnected, poll more often while avoiding an aggressive request loop.
     useEffect(() => {
         const isActivelyProcessing = shouldPollDiligence({
             activeBatch: activeSubmissionBatch,
@@ -2130,7 +2138,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
         if (!isActivelyProcessing) return
 
-        const pollIntervalMs = isRealtimeConnected ? 20_000 : 6_000
+        const pollIntervalMs = isRealtimeConnected ? 60_000 : 15_000
         const interval = setInterval(() => {
             refreshProjectSnapshot(activeDatabaseProjectId, true, false)
         }, pollIntervalMs)

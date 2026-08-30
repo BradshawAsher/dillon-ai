@@ -29,7 +29,7 @@ createRoot(document.getElementById('root')!).render(
     <QueryClientProvider client={queryClient}>
       <App />
       <DataSourceToggle />
-      <SpeedInsights />
+      <SpeedInsights sampleRate={0.25} />
     </QueryClientProvider>
   </StrictMode>
 )

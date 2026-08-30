@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { mergeDiligenceRows, shouldPollDiligence } from './diligenceRefresh'
+import {
+    isSynthesisActivityFresh,
+    mergeDiligenceRows,
+    shouldPollDiligence,
+    sortSynthesisRowsNewestFirst,
+    SYNTHESIS_ACTIVITY_TIMEOUT_MS,
+} from './diligenceRefresh'
 
 describe('shouldPollDiligence', () => {
     const idleSignals = {
@@ -72,5 +78,41 @@ describe('mergeDiligenceRows', () => {
         )
 
         expect(result).toEqual([{ id: 1, status: 'completed', detail: 'full analysis' }])
+    })
+})
+
+describe('sortSynthesisRowsNewestFirst', () => {
+    it('puts a newly appended completed synthesis ahead of its older placeholder', () => {
+        const rows = [
+            { id: 1177, updatedAt: '2026-08-30T00:22:32.763Z', projectStatus: 'awaiting_documents' },
+            { id: 1178, updatedAt: '2026-08-30T00:23:17.001Z', projectStatus: 'synthesized' },
+        ]
+
+        expect(sortSynthesisRowsNewestFirst(rows).map((row) => row.id)).toEqual([1178, 1177])
+    })
+
+    it('falls back to the monotonic database id when timestamps are unavailable', () => {
+        expect(sortSynthesisRowsNewestFirst([{ id: 4 }, { id: 9 }]).map((row) => row.id)).toEqual([9, 4])
+    })
+})
+
+describe('isSynthesisActivityFresh', () => {
+    const now = Date.parse('2026-08-30T01:00:00.000Z')
+
+    it('keeps a recently completed document or updated synthesis active', () => {
+        expect(isSynthesisActivityFresh([
+            '2026-08-30T00:20:00.000Z',
+            '2026-08-30T00:55:00.000Z',
+        ], now)).toBe(true)
+    })
+
+    it('stops activity after the timeout instead of polling forever', () => {
+        expect(isSynthesisActivityFresh([
+            new Date(now - SYNTHESIS_ACTIVITY_TIMEOUT_MS - 1).toISOString(),
+        ], now)).toBe(false)
+    })
+
+    it('does not invent active work when no valid timestamp exists', () => {
+        expect(isSynthesisActivityFresh(['', 'not-a-date'], now)).toBe(false)
     })
 })
