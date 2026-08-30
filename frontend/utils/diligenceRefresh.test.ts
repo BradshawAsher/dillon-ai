@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
+    compactRowsNeedFullHydration,
+    documentRefreshVersion,
     isSynthesisActivityFresh,
     mergeDiligenceRows,
     shouldPollDiligence,
@@ -90,6 +92,32 @@ describe('mergeDiligenceRows', () => {
         )
 
         expect(result).toEqual([{ id: 1, status: 'completed', detail: 'full analysis' }])
+    })
+})
+
+describe('compactRowsNeedFullHydration', () => {
+    type Row = { requestID: string; status: string; processedAt: string; updatedAt: string }
+    const keyOf = (row: Row) => row.requestID
+    const completed = {
+        requestID: 'req-1',
+        status: 'completed',
+        processedAt: '2026-08-30T22:10:37.511Z',
+        updatedAt: '2026-08-30T22:10:37.704Z',
+    }
+
+    it('requests full detail when compact polling discovers a new completed version', () => {
+        expect(compactRowsNeedFullHydration([completed], new Map(), keyOf)).toBe(true)
+    })
+
+    it('does not repeat the full request after that exact version was hydrated', () => {
+        const hydrated = new Map([[completed.requestID, documentRefreshVersion(completed)]])
+        expect(compactRowsNeedFullHydration([completed], hydrated, keyOf)).toBe(false)
+    })
+
+    it('does not fully hydrate every in-progress heartbeat', () => {
+        expect(compactRowsNeedFullHydration([
+            { ...completed, status: 'processing' },
+        ], new Map(), keyOf)).toBe(false)
     })
 })
 

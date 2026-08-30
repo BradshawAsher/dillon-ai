@@ -226,12 +226,18 @@ function useLiveSubmissionHistory() {
             const environment = params.environment === 'test' ? 'test' : 'production'
             const projectId = typeof params.projectId === 'string' && params.projectId.trim().length > 0 ? params.projectId.trim() : ''
             const full = params.full === true || params.full === 'true'
+                ? 'true'
+                : params.full === false || params.full === 'false'
+                    ? 'false'
+                    : ''
             const limit = params.limit ? String(params.limit) : ''
+            const skipCache = params.skipCache === true
 
             const queryParams = new URLSearchParams({ environment })
             if (projectId) queryParams.set('projectId', projectId)
-            if (full) queryParams.set('full', 'true')
+            if (full) queryParams.set('full', full)
             if (limit) queryParams.set('limit', limit)
+            if (skipCache) queryParams.set('_refresh', String(Date.now()))
 
             const data = await fetchJson<SubmissionHistoryItem[]>(`/api/diligence/history?${queryParams.toString()}`, {
                 headers: identityHeaders(),
@@ -247,10 +253,12 @@ function useLiveProjectSynthesis() {
             const environment = params.environment === 'test' ? 'test' : 'production'
             const projectId = typeof params.projectId === 'string' && params.projectId.trim().length > 0 ? params.projectId.trim() : ''
             const limit = params.limit ? String(params.limit) : ''
+            const skipCache = params.skipCache === true
 
             const queryParams = new URLSearchParams({ environment })
             if (projectId) queryParams.set('projectId', projectId)
             if (limit) queryParams.set('limit', limit)
+            if (skipCache) queryParams.set('_refresh', String(Date.now()))
 
             const data = await fetchJson<ProjectSynthesisItem[]>(`/api/diligence/synthesis?${queryParams.toString()}`, {
                 headers: identityHeaders(),
