@@ -2,6 +2,12 @@ import { supabaseAuthClient } from './supabaseAuth'
 import { identityHeaders } from '../lib/identity'
 import { getDataSource } from '../lib/dataSource'
 import { RESUMABLE_CHUNK_BYTES, uploadResumable } from './resumableUpload'
+import { R2_PUBLIC_URL, resolveStorageCdnUrl } from './storageCdn'
+
+// Re-exported for existing importers; the implementation now lives in the
+// dependency-free storageCdn module so consumers that only rewrite URLs don't
+// pull in the Supabase auth client.
+export { resolveStorageCdnUrl }
 
 export interface StorageUploadResult {
   storageFileUrl: string
@@ -29,10 +35,6 @@ export interface UploadTicket {
   }
 }
 
-const STORAGE_CDN_URL = (import.meta.env.VITE_STORAGE_CDN_URL || 'https://dillon-ai-worker.bradshin231.workers.dev').replace(/\/+$/, '')
-const R2_PUBLIC_URL = (import.meta.env.VITE_R2_PUBLIC_URL || 'https://pub-3b04d9f4c75546caae7c86bd7b6847de.r2.dev').replace(/\/+$/, '')
-const SUPABASE_STORAGE_ORIGIN = 'https://sihpsqrunkwkxhhnwoqe.supabase.co'
-
 async function uploadFetch(url: string, init: RequestInit, timeoutMs = 180_000) {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), timeoutMs)
@@ -41,14 +43,6 @@ async function uploadFetch(url: string, init: RequestInit, timeoutMs = 180_000) 
   } finally {
     clearTimeout(timeout)
   }
-}
-
-export function resolveStorageCdnUrl(url: string | undefined | null): string {
-  if (!url || typeof url !== 'string') return ''
-  if (url.startsWith(SUPABASE_STORAGE_ORIGIN)) {
-    return url.replace(SUPABASE_STORAGE_ORIGIN, STORAGE_CDN_URL)
-  }
-  return url
 }
 
 export async function requestSignedUploadUrl(params: {

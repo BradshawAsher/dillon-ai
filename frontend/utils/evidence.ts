@@ -7,7 +7,7 @@
 // user cannot trace is a number they cannot defend in a negotiation.
 import type { ResolvedInput } from './dealMath'
 import type { SubmissionHistoryItem } from './submissionHistory'
-import { resolveStorageCdnUrl } from '../services/supabaseStorage'
+import { resolveStorageCdnUrl } from '../services/storageCdn'
 
 export type FactCitation = {
     source_file?: string
