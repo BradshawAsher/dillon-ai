@@ -17,6 +17,7 @@ import {
     SelectValue,
 } from '../lib/shadcn/select'
 import { Textarea } from '../lib/shadcn/textarea'
+import { getActiveProviders, hasAnySavedApiKey } from './ApiKeyModal'
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
 import type { ManualDealFormData } from '../utils/manualDealIntake'
 
@@ -228,12 +229,10 @@ export default function ProjectIntakeCard({
     }, [])
 
     const userKeysStatus = useMemo(() => {
-        if (typeof window === 'undefined') return { count: 0, labels: [] as string[], summary: '' }
-        const labels: string[] = []
-        if (localStorage.getItem('mergeworks_user_openai_key')) labels.push('OpenAI')
-        if (localStorage.getItem('mergeworks_user_anthropic_key')) labels.push('Anthropic')
-        if (localStorage.getItem('mergeworks_user_gemini_key')) labels.push('Gemini')
-        if (localStorage.getItem('mergeworks_user_deepseek_key')) labels.push('DeepSeek')
+        // Reuse the canonical (storage-guarded) provider detection rather than
+        // re-reading localStorage inline, which duplicated the key names and threw
+        // when storage was unavailable.
+        const labels = getActiveProviders()
         return { count: labels.length, labels, summary: labels.join('/') }
     }, [showNoKeyPrompt])
 
@@ -244,12 +243,7 @@ export default function ProjectIntakeCard({
             return
         }
         setFileRequiredWarning(false)
-        const hasKey = typeof window !== 'undefined' && Boolean(
-            localStorage.getItem('mergeworks_user_openai_key') ||
-            localStorage.getItem('mergeworks_user_anthropic_key') ||
-            localStorage.getItem('mergeworks_user_gemini_key') ||
-            localStorage.getItem('mergeworks_user_deepseek_key')
-        )
+        const hasKey = hasAnySavedApiKey()
         if (!hasKey) {
             setShowNoKeyPrompt(true)
         } else {
