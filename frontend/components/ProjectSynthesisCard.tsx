@@ -319,12 +319,19 @@ export default function ProjectSynthesisCard({
             return true
         }
 
+        const isProjectSpecific = Boolean(normalizedProjectId && (normalizedProjectId.startsWith('project-') || normalizedProjectId.startsWith('batch-') || normalizedProjectId.startsWith('sub-')))
         const matchedItems: ProjectSynthesisItem[] = []
         const targetDealCode = (normalizedProjectId.match(/dd-\d+/) || targetName.match(/dd-\d+/))?.[0] || ''
 
-        syntheses.forEach((item) => {
+        syntheses.forEach((item: ProjectSynthesisItem) => {
             if (!isSynthesisForCurrentProject(item)) return
             const itemPid = (item.projectId || '').toLowerCase()
+
+            // If the active project has an explicit project ID, strictly forbid cross-matching different project runs as versions
+            if (isProjectSpecific) {
+                if (item.projectId !== normalizedProjectId) return
+            }
+
             const isMatch =
                 item.projectId === normalizedProjectId ||
                 (Boolean(normalizedProjectId) && isRowMatchingProject({ projectId: item.projectId } as any, normalizedProjectId, projects)) ||
@@ -333,20 +340,20 @@ export default function ProjectSynthesisCard({
                  (itemPid.includes('juniper') || itemPid.includes('dd-005') || itemPid.includes('environmental'))) ||
                 ((targetName.includes('werkheiser') || targetName.includes('business 1') || normalizedProjectId.includes('werkheiser') || normalizedProjectId.includes('business1')) &&
                  (itemPid.includes('werkheiser') || itemPid.includes('business1') || itemPid.includes('commercial'))) ||
-                (itemPid === 'apex-industrial-tech' && (normalizedProjectId === 'apex-industrial-tech' || !normalizedProjectId || targetName.includes('apex')))
+                (itemPid === 'apex-industrial-tech' && normalizedProjectId === 'apex-industrial-tech')
 
             if (isMatch) {
                 matchedItems.push(item)
             }
         })
 
-        // Separate substantive syntheses from empty intake placeholders
+        // Separate substantive syntheses from empty stubs/placeholders
         const substantiveMatches = matchedItems.filter(item => {
             const hasSummary = (item.finalJudgmentSummary || '').length > 20
             const hasJson = (item.finalJudgmentJson || '').length > 20 && item.finalJudgmentJson !== '{}'
-            const hasTakeaways = (item.keyTakeaways && item.keyTakeaways.length > 0)
-            const isCompleted = ['synthesized', 'completed', 'success'].includes((item.projectStatus || '').toLowerCase())
-            return isCompleted || hasSummary || hasJson || hasTakeaways
+            const hasTakeaways = Boolean(item.keyTakeaways && item.keyTakeaways.length > 0)
+            const hasRecommendation = Boolean((item.finalRecommendation || '').trim().length > 0 && !item.finalRecommendation.toUpperCase().includes('SYNTHESIS PENDING'))
+            return hasSummary || hasJson || hasTakeaways || hasRecommendation
         })
 
         let effectiveMatches = substantiveMatches
