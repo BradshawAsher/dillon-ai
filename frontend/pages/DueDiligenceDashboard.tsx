@@ -1778,11 +1778,21 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         if (isTourActive || isExampleMode) {
             return DEMO_FALLBACK_SYNTHESIS
         }
-        const found = visibleProjectSyntheses.find((s: any) => 
+        const matches = visibleProjectSyntheses.filter((s: any) => 
             s.projectId === activeProjectId || 
             isRowMatchingProject({ projectId: s.projectId } as any, activeProjectId, projectSummaries)
-        ) ?? null
-        return found
+        )
+        if (matches.length === 0) return null
+
+        // Prioritize completed syntheses with real findings/recommendations, then newest
+        const completedMatch = matches.find((s: any) => {
+            const st = (s.projectStatus || '').trim().toLowerCase()
+            const hasSummary = (s.finalJudgmentSummary || '').trim().length > 20
+            const hasJson = (s.finalJudgmentJson || '').trim().length > 20 && s.finalJudgmentJson !== '{}'
+            const hasRec = (s.finalRecommendation || '').trim().length > 0 && !s.finalRecommendation.toUpperCase().includes('SYNTHESIS PENDING')
+            return ['synthesized', 'completed', 'success'].includes(st) || hasSummary || hasJson || hasRec
+        })
+        return completedMatch || matches[0]
     }, [activeProjectId, visibleProjectSyntheses, projectSummaries, isTourActive, isExampleMode])
 
     const effectiveDealName = isTourActive
@@ -1918,12 +1928,26 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         return latestBatchRows
     }, [activeSubmissionBatch, latestBatchRows, submissionHistory, projectSummaries, batchNowTimestamp])
 
+    const [maxObservedFinishedByBatch, setMaxObservedFinishedByBatch] = useState<Record<string, number>>({})
     const batchProgress = useMemo(() => deriveBatchState(activeSubmissionBatch, activeBatchRows, isSubmittingFile || isRerunningBatch), [activeSubmissionBatch, activeBatchRows, isSubmittingFile, isRerunningBatch])
+    const batchKey = activeSubmissionBatch?.id ? `${activeSubmissionBatch.id}-${activeSubmissionBatch.startedAt || 0}` : ''
+
+    useEffect(() => {
+        if (!batchKey) return
+        setMaxObservedFinishedByBatch((prev) => {
+            const curMax = prev[batchKey] || 0
+            if (batchProgress.finishedCount > curMax) {
+                return { ...prev, [batchKey]: batchProgress.finishedCount }
+            }
+            return prev
+        })
+    }, [batchKey, batchProgress.finishedCount])
+
     const activeBatchExpectedCount = batchProgress.expectedCount
-    const activeBatchFinishedCount = batchProgress.finishedCount
-    const activeBatchProcessingCount = batchProgress.processingCount
+    const activeBatchFinishedCount = batchKey ? Math.max(batchProgress.finishedCount, maxObservedFinishedByBatch[batchKey] || 0) : batchProgress.finishedCount
+    const activeBatchProcessingCount = Math.max(0, activeBatchExpectedCount - activeBatchFinishedCount)
     const activeBatchFailedCount = batchProgress.failedCount
-    const activeBatchCompletedCount = batchProgress.completedCount
+    const activeBatchCompletedCount = batchKey ? Math.max(batchProgress.completedCount, maxObservedFinishedByBatch[batchKey] || 0) : batchProgress.completedCount
     const activeBatchStuckRows: never[] = []
     const activeBatchErrors = batchProgress.errors
     const activeBatchAdvisories: never[] = []

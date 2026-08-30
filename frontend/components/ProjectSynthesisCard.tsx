@@ -336,20 +336,27 @@ export default function ProjectSynthesisCard({
                 (itemPid === 'apex-industrial-tech' && (normalizedProjectId === 'apex-industrial-tech' || !normalizedProjectId || targetName.includes('apex')))
 
             if (isMatch) {
-                const hasValidContent =
-                    (item.finalJudgmentSummary || '').length > 20 ||
-                    (item.finalJudgmentJson || '').length > 20 ||
-                    (item.keyTakeaways && item.keyTakeaways.length > 0) ||
-                    (item.citations && item.citations.length > 0) ||
-                    ['processing', 'pending', 'queued', 'running', 'awaiting_synthesis', 'started', 'awaiting_documents'].includes((item.projectStatus || '').trim().toLowerCase())
-                if (hasValidContent) {
-                    matchedItems.push(item)
-                }
+                matchedItems.push(item)
             }
         })
 
+        // Separate substantive syntheses from empty intake placeholders
+        const substantiveMatches = matchedItems.filter(item => {
+            const hasSummary = (item.finalJudgmentSummary || '').length > 20
+            const hasJson = (item.finalJudgmentJson || '').length > 20 && item.finalJudgmentJson !== '{}'
+            const hasTakeaways = (item.keyTakeaways && item.keyTakeaways.length > 0)
+            const isCompleted = ['synthesized', 'completed', 'success'].includes((item.projectStatus || '').toLowerCase())
+            return isCompleted || hasSummary || hasJson || hasTakeaways
+        })
+
+        let effectiveMatches = substantiveMatches
+        if (effectiveMatches.length === 0 && matchedItems.length > 0) {
+            // If no substantive synthesis exists yet (in flight for the first time), keep at most ONE in-flight record
+            effectiveMatches = [matchedItems[0]]
+        }
+
         // Sort all matched synthesis passes from newest to oldest
-        return matchedItems.sort((a, b) => {
+        return effectiveMatches.sort((a, b) => {
             const timeA = new Date(a.updatedAt || a.createdAt || 0).getTime()
             const timeB = new Date(b.updatedAt || b.createdAt || 0).getTime()
             if (timeB !== timeA) return timeB - timeA
