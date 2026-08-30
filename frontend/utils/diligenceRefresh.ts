@@ -86,6 +86,34 @@ export function mergeDiligenceRows<T extends Record<string, any>>(
     return merged
 }
 
+type DocumentRefreshVersion = {
+    status?: string | null
+    processedAt?: string | null
+    updatedAt?: string | null
+}
+
+export function documentRefreshVersion(row: DocumentRefreshVersion): string {
+    return [row.updatedAt || '', row.processedAt || '', row.status || ''].join('|')
+}
+
+/**
+ * Realtime normally requests full document detail. If Realtime misses an
+ * update, compact polling should hydrate only newly completed row versions.
+ */
+export function compactRowsNeedFullHydration<T extends DocumentRefreshVersion>(
+    rows: T[],
+    hydratedVersions: ReadonlyMap<string, string>,
+    keyOf: (row: T) => string,
+): boolean {
+    return rows.some((row) => {
+        const status = String(row.status || '').trim().toLowerCase()
+        if (status !== 'completed' && status !== 'approved') return false
+
+        const key = keyOf(row)
+        return Boolean(key) && hydratedVersions.get(key) !== documentRefreshVersion(row)
+    })
+}
+
 type SynthesisRecency = {
     id?: string | number | null
     updatedAt?: string | null

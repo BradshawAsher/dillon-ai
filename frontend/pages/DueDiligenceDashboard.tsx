@@ -31,7 +31,7 @@ import { lazyWithRetry } from '../utils/lazyWithRetry'
 import { batchCompletionTime, createBatchQueue, getBatchStopTarget, requireConfirmedBatchStop, type BatchStopResponse } from '../utils/batchStop'
 import { batchDocumentKey, deriveBatchState, mergeBatchUploadAttempts, type BatchUploadAttempt } from '../utils/batchState'
 import { mergeDocumentCarouselRows } from '../utils/documentCarousel'
-import { isSynthesisActivityFresh, mergeDiligenceRows, shouldPollDiligence, sortSynthesisRowsNewestFirst } from '../utils/diligenceRefresh'
+import { compactRowsNeedFullHydration, documentRefreshVersion, isSynthesisActivityFresh, mergeDiligenceRows, shouldPollDiligence, sortSynthesisRowsNewestFirst } from '../utils/diligenceRefresh'
 const CommandPalette = lazyWithRetry(() => import('../components/CommandPalette'))
 const SystemArchitectureCard = lazyWithRetry(() => import('../components/SystemArchitectureCard'))
 import LoginButton, { getStoredAuth, isDataIsolationEnabled, DATA_ISOLATION_EVENT, openAuthModal } from '../components/AuthGate'
@@ -890,6 +890,15 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     const { data: watchdogEventsData, trigger: triggerWatchdogEvents } = useGetWatchdogEvents()
     const { data: evalRunsData, trigger: triggerEvalRuns } = useGetEvalRuns()
     const { trigger: triggerSubmissionConsideration } = useUpdateSubmissionConsideration()
+    const hydratedDocumentVersionsRef = useRef(new Map<string, string>())
+    const fullHistoryRequestsRef = useRef(new Set<string>())
+
+    const recordHydratedDocumentVersions = useCallback((rows: SubmissionHistoryItem[]) => {
+        for (const row of rows) {
+            const key = submissionRowKey(row)
+            if (key) hydratedDocumentVersionsRef.current.set(key, documentRefreshVersion(row))
+        }
+    }, [])
 
     // Fetch initial backend data on mount
     useEffect(() => {
@@ -1577,15 +1586,18 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     // other projects or losing detail when requests finish out of order.
     useEffect(() => {
         if (isExampleMode || !activeDatabaseProjectId) return
-        void triggerSubmissionHistory(
+        const historyRequest = triggerSubmissionHistory(
             { environment: 'production', projectId: activeDatabaseProjectId, full: true, limit: 100 },
             { mergeData: mergeScopedSubmissionRows },
         )
+        void historyRequest.result.then((rows) => {
+            if (rows) recordHydratedDocumentVersions(rows)
+        })
         void triggerProjectSynthesis(
             { environment: 'production', projectId: activeDatabaseProjectId, limit: 10 },
             { mergeData: mergeScopedSynthesisRows },
         )
-    }, [activeDatabaseProjectId, isExampleMode, triggerProjectSynthesis, triggerSubmissionHistory])
+    }, [activeDatabaseProjectId, isExampleMode, recordHydratedDocumentVersions, triggerProjectSynthesis, triggerSubmissionHistory])
 
     // Keep browser address bar in sync with active project and active tab for 1-click URL sharing
     useEffect(() => {
@@ -2123,13 +2135,40 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         return isCurrentProjectExtractingDocs || isCurrentProjectSynthesisRunning || isManualSynthesisRunning
     }, [isCurrentProjectExtractingDocs, isCurrentProjectSynthesisRunning, isManualSynthesisRunning])
 
+    const fetchFullProjectHistory = useCallback(async (targetProjectId: string, skipCache = false) => {
+        if (!targetProjectId) return
+        if (fullHistoryRequestsRef.current.has(targetProjectId)) return
+
+        fullHistoryRequestsRef.current.add(targetProjectId)
+        try {
+            const rows = await triggerSubmissionHistory(
+                { environment: 'production', projectId: targetProjectId, full: true, limit: 100, skipCache },
+                { mergeData: mergeScopedSubmissionRows },
+            ).result
+            if (rows) recordHydratedDocumentVersions(rows)
+        } finally {
+            fullHistoryRequestsRef.current.delete(targetProjectId)
+        }
+    }, [recordHydratedDocumentVersions, triggerSubmissionHistory])
+
     const refreshProjectHistory = useCallback((targetProjectId: string, skipCache = false, full = true) => {
         if (!targetProjectId) return
-        void triggerSubmissionHistory(
-            { environment: 'production', projectId: targetProjectId, full, limit: 100, skipCache },
-            { mergeData: full ? mergeScopedSubmissionRows : mergeCompactSubmissionRows },
-        )
-    }, [triggerSubmissionHistory])
+        if (full) {
+            void fetchFullProjectHistory(targetProjectId, skipCache)
+            return
+        }
+
+        void (async () => {
+            const rows = await triggerSubmissionHistory(
+                { environment: 'production', projectId: targetProjectId, full: false, limit: 100, skipCache },
+                { mergeData: mergeCompactSubmissionRows },
+            ).result
+
+            if (rows && compactRowsNeedFullHydration(rows, hydratedDocumentVersionsRef.current, submissionRowKey)) {
+                await fetchFullProjectHistory(targetProjectId, true)
+            }
+        })()
+    }, [fetchFullProjectHistory, triggerSubmissionHistory])
 
     const refreshProjectSynthesis = useCallback((targetProjectId: string, skipCache = false) => {
         if (!targetProjectId) return
@@ -2174,7 +2213,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
         const pollIntervalMs = isRealtimeConnected ? 60_000 : 15_000
         const interval = setInterval(() => {
-            refreshProjectSnapshot(activeDatabaseProjectId, true, false)
+            refreshProjectSnapshot(activeDatabaseProjectId, false, false)
         }, pollIntervalMs)
         return () => clearInterval(interval)
     }, [
