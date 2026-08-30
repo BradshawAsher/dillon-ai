@@ -2417,6 +2417,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
     const [isTyping, setIsTyping] = useState(false)
     const [typingElapsed, setTypingElapsed] = useState(0)
     const typingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+    const messagesContainerRef = useRef<HTMLDivElement>(null)
     const messagesEndRef = useRef<HTMLDivElement>(null)
     const isAutoScrollActiveRef = useRef<boolean>(true)
     const [showScrollBottomBtn, setShowScrollBottomBtn] = useState<boolean>(false)
@@ -2586,8 +2587,16 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
         return () => window.removeEventListener('keydown', handleKeyDown)
     }, [isOpen])
 
-    const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
-        messagesEndRef.current?.scrollIntoView({ behavior })
+    const scrollToBottom = useCallback((behavior: ScrollBehavior = 'auto') => {
+        if (messagesContainerRef.current) {
+            if (behavior === 'smooth') {
+                messagesContainerRef.current.scrollTo({ top: messagesContainerRef.current.scrollHeight, behavior: 'smooth' })
+            } else {
+                messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight
+            }
+        } else {
+            messagesEndRef.current?.scrollIntoView({ behavior })
+        }
         isAutoScrollActiveRef.current = true
         setShowScrollBottomBtn(false)
     }, [])
@@ -2595,15 +2604,39 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
     const handleChatScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
         const el = e.currentTarget
         const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
-        const isNearBottom = distanceFromBottom <= 80
-        isAutoScrollActiveRef.current = isNearBottom
-        setShowScrollBottomBtn(!isNearBottom)
+        const isNearBottom = distanceFromBottom <= 40
+        if (isNearBottom) {
+            isAutoScrollActiveRef.current = true
+            setShowScrollBottomBtn(false)
+        } else if (distanceFromBottom > 70) {
+            isAutoScrollActiveRef.current = false
+            setShowScrollBottomBtn(true)
+        }
+    }, [])
+
+    const handleChatWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
+        if (e.deltaY < 0) {
+            // Immediate user scroll-up intent: immediately disable auto-scroll
+            isAutoScrollActiveRef.current = false
+            setShowScrollBottomBtn(true)
+        }
+    }, [])
+
+    const handleChatTouchStart = useCallback(() => {
+        const el = messagesContainerRef.current
+        if (el) {
+            const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
+            if (distanceFromBottom > 40) {
+                isAutoScrollActiveRef.current = false
+                setShowScrollBottomBtn(true)
+            }
+        }
     }, [])
 
     // Scroll to bottom when new messages arrive or change ONLY if user hasn't scrolled up
     useEffect(() => {
         if (isAutoScrollActiveRef.current) {
-            scrollToBottom('smooth')
+            scrollToBottom('auto')
         }
     }, [messages, scrollToBottom])
 
@@ -3580,7 +3613,13 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
 
                 {/* Right / Main Chat Canvas */}
                 <div className="flex flex-1 flex-col min-w-0 overflow-hidden relative">
-                    <div className="flex-1 overflow-y-auto overscroll-contain p-3 space-y-3" onScroll={handleChatScroll}>
+                    <div
+                        ref={messagesContainerRef}
+                        className="flex-1 overflow-y-auto overscroll-contain p-3 space-y-3"
+                        onScroll={handleChatScroll}
+                        onWheel={handleChatWheel}
+                        onTouchStart={handleChatTouchStart}
+                    >
                         {messages.length === 0 && (
                             <div className="flex h-full flex-col items-center justify-center text-center p-2">
                                 <div className="rounded-full bg-primary/10 p-3 ring-1 ring-primary/25 mb-2">

@@ -128,7 +128,7 @@ import {
     isSystemTestProbeFile,
 } from '../utils/projectWorkspace'
 import { sumMeasuredCost } from '../utils/costModel'
-import { isActiveSubmissionStatus, isFailedSubmissionStatus, type SubmissionHistoryItem } from '../utils/submissionHistory'
+import { isActiveSubmissionStatus, isFailedSubmissionStatus, isTerminalSubmissionStatus, type SubmissionHistoryItem } from '../utils/submissionHistory'
 import { isOwnedByUser, claimProject, getProjectOwner } from '../utils/projectOwnership'
 import {
     playCompletionSound,
@@ -1896,13 +1896,13 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             if (candidateRows.length > 0) {
                 // Canonical deduplication by file name so retrying documents don't inflate batch counts
                 const uniqueByFile = new Map<string, SubmissionHistoryItem>()
-                // Prioritize active (processing) first, then completed, then newest
+                // Prioritize terminal completed statuses first so completed documents never revert to in-flight, then processing, then newest
                 const sorted = [...candidateRows].sort((a, b) => {
-                    const rankA = isActiveSubmissionStatus(a.status) ? 3 : (a.status === 'completed' ? 2 : 1)
-                    const rankB = isActiveSubmissionStatus(b.status) ? 3 : (b.status === 'completed' ? 2 : 1)
+                    const rankA = isTerminalSubmissionStatus(a.status) ? 3 : (isActiveSubmissionStatus(a.status) ? 2 : 1)
+                    const rankB = isTerminalSubmissionStatus(b.status) ? 3 : (isActiveSubmissionStatus(b.status) ? 2 : 1)
                     if (rankA !== rankB) return rankB - rankA
-                    const timeA = new Date(a.updatedAt || a.processedAt || a.createdAt || a.receivedAt || 0).getTime()
-                    const timeB = new Date(b.updatedAt || b.processedAt || b.createdAt || b.receivedAt || 0).getTime()
+                    const timeA = new Date(a.updatedAt || a.processedAt || a.statusResolvedAt || a.createdAt || a.receivedAt || 0).getTime()
+                    const timeB = new Date(b.updatedAt || b.processedAt || b.statusResolvedAt || b.createdAt || b.receivedAt || 0).getTime()
                     return timeB - timeA
                 })
                 sorted.forEach((row) => {
@@ -2042,11 +2042,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         }
 
         const synthStatus = (activeProjectSynthesis.projectStatus || '').trim().toLowerCase()
-        if (['processing', 'pending', 'queued', 'running', 'awaiting_synthesis', 'started'].includes(synthStatus)) {
+        if (['processing', 'pending', 'queued', 'running', 'awaiting_synthesis', 'started', 'awaiting_documents', ''].includes(synthStatus)) {
             return true
-        }
-        if (synthStatus === 'awaiting_documents' || synthStatus === '') {
-            return isCurrentProjectExtractingDocs
         }
 
         return false

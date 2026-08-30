@@ -340,7 +340,8 @@ export default function ProjectSynthesisCard({
                     (item.finalJudgmentSummary || '').length > 20 ||
                     (item.finalJudgmentJson || '').length > 20 ||
                     (item.keyTakeaways && item.keyTakeaways.length > 0) ||
-                    (item.citations && item.citations.length > 0)
+                    (item.citations && item.citations.length > 0) ||
+                    ['processing', 'pending', 'queued', 'running', 'awaiting_synthesis', 'started', 'awaiting_documents'].includes((item.projectStatus || '').trim().toLowerCase())
                 if (hasValidContent) {
                     matchedItems.push(item)
                 }
