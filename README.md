@@ -321,10 +321,14 @@ The configured deployment URL is:
 | `EVALS.md` | Evaluation harness guide, 7-dimension scoring & CI/CD benchmark tests |
 | `EVAL_FAQ_AND_EDGE_CASES.md` | Evaluation edge-case handling & buyer defense FAQ |
 
-## Production Stack & Data Path
+## Production Stack & Zero-Egress Architecture
 
-The standalone dashboard runs directly on **React 19, Vite, Tailwind CSS, Supabase PostgreSQL / Storage, and n8n Cloud Webhooks**. All document extractions, real-time polling, and synthesis results stream through Supabase and n8n Cloud.
+The standalone dashboard runs directly on **React 19, Vite, Tailwind CSS, Cloudflare R2 ($0 Egress Storage & CDN), Supabase PostgreSQL, and n8n Cloud Webhooks**:
+- **Document Storage & Streaming**: **Cloudflare R2** (`dillon-deal-documents` bucket) via Worker CDN proxy (`https://dillon-ai-worker.bradshin231.workers.dev` and `https://pub-3b04d9f4c75546caae7c86bd7b6847de.r2.dev`) with **$0 egress fees** and 1-year immutable edge caching.
+- **Relational Metadata & Synthesis**: **Supabase PostgreSQL** (`documents`, `project_syntheses`, `deal_models`, `synthesis_runs`).
+- **AI Automation**: **n8n Cloud Webhooks** (`https://merge-works.app.n8n.cloud`).
 
 ## Team handoff
 
 For the operational handoff to MergeWorks—including ownership, live n8n expectations, and release verification—see [docs/PROJECT_HANDOFF.md](docs/PROJECT_HANDOFF.md).
+

@@ -181,7 +181,9 @@ export default async function getSubmissionHistory(req: {
 }) {
     const environment = req.params.environment === 'test' ? 'test' : 'production'
     const isScopedProject = Boolean(req.params.projectId && req.params.projectId.trim().length > 0)
-    const isFull = req.params.full === true || req.params.full === 'true' || isScopedProject
+    const isExplicitFull = req.params.full === true || req.params.full === 'true'
+    const isExplicitLightweight = req.params.full === false || req.params.full === 'false'
+    const isFull = isExplicitFull || (isScopedProject && !isExplicitLightweight)
 
     const defaultLimit = isScopedProject ? 100 : 1000
     const limitNum = typeof req.params.limit === 'number'

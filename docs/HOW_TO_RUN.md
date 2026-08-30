@@ -89,6 +89,8 @@ See [Vercel deployment](DEPLOY_VERCEL.md) for runtime requirements and smoke tes
 | React UI | `frontend/pages`, `frontend/components` |
 | Backend functions (run in Node / Serverless) | `backend/diligence/` |
 | Local/standalone server | `frontend/server.ts` (+ dev twin `frontend/localApi.ts`) |
+| Storage & Zero-Egress CDN | Cloudflare R2 (`dillon-deal-documents`) via `dillon-ai-worker.bradshin231.workers.dev` |
+| Relational Database | Supabase PostgreSQL (`documents`, `project_syntheses`, `deal_models`) |
 | n8n webhook contracts | [`docs/n8n-webhooks.md`](n8n-webhooks.md) |
 | Large uploads, failed documents, batch counts/timers | [Upload and Batch Recovery](UPLOAD_AND_BATCH_RECOVERY.md) |
 
@@ -100,10 +102,9 @@ See [Vercel deployment](DEPLOY_VERCEL.md) for runtime requirements and smoke tes
 - **Submission gets a 403 from n8n** → check `N8N_WEBHOOK_SECRET` against the
   n8n Header Auth credential.
 - **Large upload fails** → re-select a fully downloaded, unchanged local file;
-  verify direct Supabase storage is reachable. Large files do not fall back to
-  inline JSON. See the [recovery runbook](UPLOAD_AND_BATCH_RECOVERY.md).
+  verify Cloudflare R2 and the Worker CDN are reachable. Large files stream directly to R2 with $0 egress.
 - **Handoff fails after upload** → inspect history and n8n executions before
-  retrying. The file may be saved and n8n may have accepted it despite a lost
+  retrying. The file may be saved in R2 and n8n may have accepted it despite a lost
   acknowledgment; a confirmed failed document can reuse its stored copy.
 - **Batch says Incomplete or Finished with errors** → inspect individual
   documents. A frozen timer does not mean all analyses succeeded. Failed cards

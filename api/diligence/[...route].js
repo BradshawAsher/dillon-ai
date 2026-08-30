@@ -22187,7 +22187,9 @@ function unpackExtractedFallback(row) {
 async function getSubmissionHistory(req) {
   const environment = req.params.environment === "test" ? "test" : "production";
   const isScopedProject = Boolean(req.params.projectId && req.params.projectId.trim().length > 0);
-  const isFull = req.params.full === true || req.params.full === "true" || isScopedProject;
+  const isExplicitFull = req.params.full === true || req.params.full === "true";
+  const isExplicitLightweight = req.params.full === false || req.params.full === "false";
+  const isFull = isExplicitFull || isScopedProject && !isExplicitLightweight;
   const defaultLimit = isScopedProject ? 100 : 1e3;
   const limitNum = typeof req.params.limit === "number" ? req.params.limit : typeof req.params.limit === "string" && parseInt(req.params.limit, 10) > 0 ? parseInt(req.params.limit, 10) : defaultLimit;
   const fullColumns = `
@@ -22472,6 +22474,15 @@ var import_node_fs = require("node:fs");
 var import_promises2 = require("node:fs/promises");
 var import_node_os = require("node:os");
 var import_node_path = require("node:path");
+var STORAGE_CDN_ORIGIN = (process.env.STORAGE_CDN_URL || process.env.VITE_STORAGE_CDN_URL || "https://dillon-ai-worker.bradshin231.workers.dev").replace(/\/+$/, "");
+var SUPABASE_STORAGE_ORIGIN2 = "https://sihpsqrunkwkxhhnwoqe.supabase.co";
+function resolveCdnStorageFetchUrl(url) {
+  const validated = validateDocumentStorageUrl(url);
+  if (validated.startsWith(SUPABASE_STORAGE_ORIGIN2)) {
+    return validated.replace(SUPABASE_STORAGE_ORIGIN2, STORAGE_CDN_ORIGIN);
+  }
+  return validated;
+}
 function validateDocumentStorageUrl(value) {
   const allowed = [
     "https://sihpsqrunkwkxhhnwoqe.supabase.co",
@@ -22513,7 +22524,8 @@ async function storedFileMultipart(entries, signal) {
         if (entry.fileSize !== void 0 && (!Number.isSafeInteger(entry.fileSize) || entry.fileSize < 0 || entry.fileSize > MAX_HANDOFF_BYTES - totalBytes)) {
           throw new Error("Stored document size is invalid or exceeds the 256 MiB handoff limit.");
         }
-        const source = await fetch(validateDocumentStorageUrl(entry.fileUrl), { signal, redirect: "error" });
+        const fetchUrl = resolveCdnStorageFetchUrl(entry.fileUrl);
+        const source = await fetch(fetchUrl, { signal, redirect: "error" });
         if (!source.ok || !source.body) {
           await source.body?.cancel();
           throw new Error(`Stored document download failed (HTTP ${source.status}).`);
@@ -23092,9 +23104,9 @@ async function stopProjectSynthesis(req) {
 
 // backend/diligence/createUploadUrl.ts
 var BUCKET_NAME = "deal-documents";
-var SUPABASE_STORAGE_ORIGIN2 = "https://sihpsqrunkwkxhhnwoqe.supabase.co";
+var SUPABASE_STORAGE_ORIGIN3 = "https://sihpsqrunkwkxhhnwoqe.supabase.co";
 var SUPABASE_DIRECT_STORAGE_ORIGIN = "https://sihpsqrunkwkxhhnwoqe.storage.supabase.co";
-function directSupabaseUrl(value, origin = SUPABASE_STORAGE_ORIGIN2) {
+function directSupabaseUrl(value, origin = SUPABASE_STORAGE_ORIGIN3) {
   const url = new URL(value);
   return `${origin}${url.pathname}${url.search}`;
 }

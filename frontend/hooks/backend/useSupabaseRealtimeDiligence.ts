@@ -40,7 +40,7 @@ export function useSupabaseRealtimeDiligence({
         const projectFilter = `project_id=eq.${scopedProjectId}`
         const channelScope = scopedProjectId.replace(/[^a-zA-Z0-9_-]/g, '_')
 
-        // Debounce triggers (1200ms) to coalesce burst events when multiple documents in a batch update simultaneously
+        // Debounce triggers (2000ms) to coalesce burst events when multiple documents in a batch update simultaneously
         let docDebounceTimer: ReturnType<typeof setTimeout> | null = null
         let synthDebounceTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -64,7 +64,7 @@ export function useSupabaseRealtimeDiligence({
                         }
                         void queryClient.invalidateQueries({ queryKey: ['diligence', 'kpis'] })
                         onDocRef.current?.(payload)
-                    }, 1200)
+                    }, 2000)
                 }
             )
             .on(
@@ -85,7 +85,7 @@ export function useSupabaseRealtimeDiligence({
                         }
                         void queryClient.invalidateQueries({ queryKey: ['diligence', 'kpis'] })
                         onSynthRef.current?.(payload)
-                    }, 1200)
+                    }, 2000)
                 }
             )
             .subscribe((status) => {

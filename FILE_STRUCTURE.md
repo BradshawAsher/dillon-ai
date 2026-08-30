@@ -51,10 +51,10 @@ Due-Diligence-Dashboard/
 | File | Responsibility |
 | --- | --- |
 | `frontend/services/documentUpload.ts` | Storage-first submission and the 3 MiB inline fallback limit |
-| `frontend/services/supabaseStorage.ts` | Select resumable Supabase or R2/signed upload alternatives |
+| `frontend/services/supabaseStorage.ts` | Select R2-primary or resumable Supabase fallback upload path |
 | `frontend/services/resumableUpload.ts` | Signed TUS uploads, chunk reads, progress, and retry offsets |
-| `backend/diligence/createUploadUrl.ts` | Storage tickets independent of the Cloudflare proxy |
-| `backend/diligence/storedFileMultipart.ts` | Restricted download, verified temporary file, multipart attachment, cleanup |
+| `backend/diligence/createUploadUrl.ts` | Storage tickets (R2-primary, Supabase-fallback) |
+| `backend/diligence/storedFileMultipart.ts` | CDN-routed download (`resolveCdnStorageFetchUrl`), verified temporary file, multipart attachment, cleanup |
 | `backend/diligence/documentHandoff.ts` | Shared local/deployed handoff deadline and stage-specific errors |
 | `frontend/utils/batchState.ts` | Expected counts and upload-attempt manifest merged with server records |
 | `frontend/utils/documentCarousel.ts` | Display-only merge retaining failed uploads; never synthesis evidence |
