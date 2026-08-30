@@ -1515,7 +1515,14 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     const handleMarkAllNotificationsRead = () => setNotifications(prev => prev.map(n => ({ ...n, read: true })))
     const handleClearNotifications = () => setNotifications([])
 
-    type ToastItem = { id: string; title: string; description: string; type?: 'info' | 'success' | 'warning' | 'error' }
+    type ToastItem = {
+        id: string
+        title: string
+        description: string
+        type?: 'info' | 'success' | 'warning' | 'error'
+        projectId?: string
+        targetTab?: 'diligence' | 'synthesis'
+    }
     const [activeToasts, setActiveToasts] = useState<ToastItem[]>([])
 
     const addToast = (toast: Omit<ToastItem, 'id'>) => {
@@ -2466,12 +2473,18 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         else playCompletionSound()
         const title = activeBatchFailedCount > 0 ? 'Document batch finished with errors' : 'Document batch complete'
         const description = `${activeBatchCompletedCount} succeeded; ${activeBatchFailedCount} failed (${activeBatchExpectedCount} expected).`
-        addToast({ title, description, type: activeBatchFailedCount > 0 ? 'warning' : 'success' })
+        addToast({ title, description, type: activeBatchFailedCount > 0 ? 'warning' : 'success', projectId: activeProjectId, targetTab: 'diligence' })
         if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification(title, { body: description })
+            const desktopNotification = new Notification(title, { body: description })
+            desktopNotification.onclick = () => {
+                window.focus()
+                setActiveViewProjectId(activeProjectId)
+                setActiveWorkspaceTab('diligence')
+                desktopNotification.close()
+            }
         }
-        setNotifications(prev => [{ id: `batch-${Date.now()}`, type: 'document_processed', title, description, timestamp: new Date(), read: false }, ...prev])
-    }, [activeBatchExpectedCount, activeBatchFinishedCount, activeBatchFailedCount, activeBatchCompletedCount, batchProgress.isComplete, activeSubmissionBatch])
+        setNotifications(prev => [{ id: `batch-${Date.now()}`, type: 'document_processed', title, description, timestamp: new Date(), read: false, projectId: activeProjectId, targetTab: 'diligence' }, ...prev])
+    }, [activeBatchExpectedCount, activeBatchFinishedCount, activeBatchFailedCount, activeBatchCompletedCount, activeProjectId, batchProgress.isComplete, activeSubmissionBatch])
 
     useEffect(() => {
         if (isCurrentProjectAwaitingSynthesis) {
@@ -2483,11 +2496,17 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         playCompletionSound()
         const title = 'Project synthesis complete'
         const description = 'Your due diligence synthesis is ready to review.'
-        addToast({ title, description, type: 'success' })
+        addToast({ title, description, type: 'success', projectId: activeProjectId, targetTab: 'synthesis' })
         if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification(title, { body: description })
+            const desktopNotification = new Notification(title, { body: description })
+            desktopNotification.onclick = () => {
+                window.focus()
+                setActiveViewProjectId(activeProjectId)
+                setActiveWorkspaceTab('synthesis')
+                desktopNotification.close()
+            }
         }
-        setNotifications(prev => [{ id: `synth-${Date.now()}`, type: 'synthesis_complete', title, description, timestamp: new Date(), read: false }, ...prev])
+        setNotifications(prev => [{ id: `synth-${Date.now()}`, type: 'synthesis_complete', title, description, timestamp: new Date(), read: false, projectId: activeProjectId, targetTab: 'synthesis' }, ...prev])
     }, [activeProjectId, activeProjectSynthesisSucceeded, isCurrentProjectAwaitingSynthesis])
 
     const enableDesktopNotifications = async () => {
@@ -2654,6 +2673,25 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             const elId = targetTab === 'diligence' ? 'diligence-workspace' : 'project-synthesis'
             document.getElementById(elId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
         }, 0)
+    }
+
+    const handleNotificationNavigation = (notification: Pick<Notification, 'id' | 'type' | 'projectId' | 'targetTab'>) => {
+        handleMarkNotificationRead(notification.id)
+        const targetTab = notification.targetTab
+            || (notification.type === 'synthesis_complete' ? 'synthesis' : notification.type === 'document_processed' ? 'diligence' : null)
+        if (!targetTab) return
+
+        if (notification.projectId) {
+            setActiveViewProjectId(notification.projectId)
+            try { window.localStorage.setItem('mergeworks.activeProjectKey', notification.projectId) } catch {}
+        }
+        setActiveWorkspaceTab(targetTab)
+
+        window.setTimeout(() => {
+            const targetId = targetTab === 'synthesis' ? 'project-synthesis' : 'diligence-workspace'
+            const element = document.getElementById(targetId) || document.getElementById('deal-workspace')
+            element?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }, 100)
     }
 
     const handleEvalProjectSelect = (targetIdentifier: string, targetTab: WorkspaceTab = 'synthesis') => {
@@ -3771,7 +3809,21 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                     {activeToasts.map((toast) => (
                         <div
                             key={toast.id}
-                            className="pointer-events-auto flex items-start gap-3 p-4 rounded-xl bg-background/95 border border-primary/30 shadow-2xl backdrop-blur-md transition-all animate-in fade-in slide-in-from-top-3 duration-300"
+                            role={toast.targetTab ? 'button' : undefined}
+                            tabIndex={toast.targetTab ? 0 : undefined}
+                            aria-label={toast.targetTab ? `${toast.title}. Open ${toast.targetTab} tab.` : undefined}
+                            onClick={() => {
+                                if (!toast.targetTab) return
+                                handleNotificationNavigation({ id: toast.id, type: toast.targetTab === 'synthesis' ? 'synthesis_complete' : 'document_processed', projectId: toast.projectId, targetTab: toast.targetTab })
+                                setActiveToasts(prev => prev.filter(item => item.id !== toast.id))
+                            }}
+                            onKeyDown={(event) => {
+                                if (!toast.targetTab || (event.key !== 'Enter' && event.key !== ' ')) return
+                                event.preventDefault()
+                                handleNotificationNavigation({ id: toast.id, type: toast.targetTab === 'synthesis' ? 'synthesis_complete' : 'document_processed', projectId: toast.projectId, targetTab: toast.targetTab })
+                                setActiveToasts(prev => prev.filter(item => item.id !== toast.id))
+                            }}
+                            className={`pointer-events-auto flex items-start gap-3 p-4 rounded-xl bg-background/95 border border-primary/30 shadow-2xl backdrop-blur-md transition-all animate-in fade-in slide-in-from-top-3 duration-300 ${toast.targetTab ? 'cursor-pointer hover:border-primary/60 hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary' : ''}`}
                         >
                             <div className="flex-1 min-w-0">
                                 <p className="text-sm font-semibold text-foreground flex items-center gap-1.5">
@@ -3779,10 +3831,18 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                                     {toast.title}
                                 </p>
                                 <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{toast.description}</p>
+                                {toast.targetTab ? (
+                                    <p className="mt-1.5 text-[11px] font-semibold text-primary">
+                                        Open {toast.targetTab === 'synthesis' ? 'Synthesis' : 'Diligence'} →
+                                    </p>
+                                ) : null}
                             </div>
                             <button
                                 type="button"
-                                onClick={() => setActiveToasts(prev => prev.filter(t => t.id !== toast.id))}
+                                onClick={(event) => {
+                                    event.stopPropagation()
+                                    setActiveToasts(prev => prev.filter(t => t.id !== toast.id))
+                                }}
                                 className="text-muted-foreground hover:text-foreground text-xs p-1 rounded-md"
                             >
                                 ✕
@@ -3814,6 +3874,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                     handleMarkNotificationRead={handleMarkNotificationRead}
                     handleMarkAllNotificationsRead={handleMarkAllNotificationsRead}
                     handleClearNotifications={handleClearNotifications}
+                    handleSelectNotification={handleNotificationNavigation}
                     setActiveWorkspaceTab={setActiveWorkspaceTab}
                     setIsApiKeyModalOpen={setIsApiKeyModalOpen}
                     isActiveSubmissionStatus={isActiveSubmissionStatus}

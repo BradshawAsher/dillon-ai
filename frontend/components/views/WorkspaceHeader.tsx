@@ -30,6 +30,7 @@ type WorkspaceHeaderProps = {
     handleMarkNotificationRead: (id: string) => void
     handleMarkAllNotificationsRead: () => void
     handleClearNotifications: () => void
+    handleSelectNotification: (notification: Notification) => void
     setActiveWorkspaceTab: (tab: any) => void
     setIsApiKeyModalOpen: (open: boolean) => void
     isActiveSubmissionStatus: (status: any) => boolean
@@ -60,6 +61,7 @@ export function WorkspaceHeader({
     handleMarkNotificationRead,
     handleMarkAllNotificationsRead,
     handleClearNotifications,
+    handleSelectNotification,
     setActiveWorkspaceTab,
     setIsApiKeyModalOpen,
     isActiveSubmissionStatus,
@@ -261,22 +263,7 @@ export function WorkspaceHeader({
                         onMarkRead={handleMarkNotificationRead}
                         onMarkAllRead={handleMarkAllNotificationsRead}
                         onClear={handleClearNotifications}
-                        onSelectNotification={(notif) => {
-                            handleMarkNotificationRead(notif.id)
-                            if (notif.type === 'synthesis_complete' || notif.description.toLowerCase().includes('synthesis')) {
-                                setActiveWorkspaceTab('synthesis')
-                                setTimeout(() => {
-                                    const el = document.getElementById('project-synthesis') || document.getElementById('deal-workspace')
-                                    el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                                }, 100)
-                            } else if (notif.type === 'document_processed' || notif.description.toLowerCase().includes('document')) {
-                                setActiveWorkspaceTab('diligence')
-                                setTimeout(() => {
-                                    const el = document.getElementById('deal-diligence') || document.getElementById('deal-workspace')
-                                    el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                                }, 100)
-                            }
-                        }}
+                        onSelectNotification={handleSelectNotification}
                     />
                     {onOpenReportIssue && (
                         <Button
