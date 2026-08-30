@@ -62,4 +62,15 @@ describe('mergeDiligenceRows', () => {
 
         expect(result).toEqual([{ id: 1, status: 'completed', detail: 'full analysis' }])
     })
+
+    it('prevents stale out-of-order in-flight rows from downgrading completed rows', () => {
+        const result = mergeDiligenceRows<Row>(
+            [{ id: 1, status: 'completed', detail: 'full analysis' }],
+            [{ id: 1, status: 'processing' }],
+            keyOf,
+            true,
+        )
+
+        expect(result).toEqual([{ id: 1, status: 'completed', detail: 'full analysis' }])
+    })
 })

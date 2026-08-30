@@ -11,8 +11,10 @@ export type BatchUploadAttempt = {
     errorMessage?: string
 }
 
-export function batchDocumentKey(row: { fileName: string; fileSize: number }) {
-    return `${row.fileName.trim().toLowerCase()}::${row.fileSize}`
+export function batchDocumentKey(row: { fileName: string; fileSize?: number }) {
+    const name = (row.fileName || '').trim().toLowerCase()
+    const size = typeof row.fileSize === 'number' && row.fileSize > 0 ? row.fileSize : 0
+    return size > 0 ? `${name}::${size}` : name
 }
 
 // A session-persisted manifest keeps pre-registration upload failures visible.
@@ -25,9 +27,16 @@ export function mergeBatchUploadAttempts(batch: SubmissionBatch, rows: Submissio
             ? { ...savedAttempt, status: 'upload_failed' as const, updatedAt: new Date(timedOutAt).toISOString(), errorMessage: 'This upload never appeared in document history before the timeout. Re-select and upload the file again.' }
             : savedAttempt
         if (attempt.status === 'duplicate') continue
-        const index = merged.findIndex(row => attempt.requestID
-            ? row.requestID === attempt.requestID
-            : batchDocumentKey(row) === batchDocumentKey(attempt))
+        const index = merged.findIndex(row => {
+            if (attempt.requestID && row.requestID && attempt.requestID === row.requestID) return true
+            const rowKey = batchDocumentKey(row)
+            const attemptKey = batchDocumentKey(attempt)
+            if (rowKey === attemptKey) return true
+            if ((row.fileName || '').trim().toLowerCase() === (attempt.fileName || '').trim().toLowerCase() && (!row.fileSize || !attempt.fileSize)) {
+                return true
+            }
+            return false
+        })
         const live = merged[index]
         if (live && (attempt.status !== 'upload_failed' || live.processingStartedAt || isTerminalSubmissionStatus(live.status))) continue
         const local = {

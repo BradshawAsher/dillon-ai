@@ -1,3 +1,5 @@
+import { isActiveSubmissionStatus, isTerminalSubmissionStatus } from './submissionHistory'
+
 type RefreshBatch = {
     endedAt?: number
     interruptedAt?: number
@@ -28,7 +30,7 @@ export function shouldPollDiligence(params: {
         || params.isAwaitingSynthesis
 }
 
-export function mergeDiligenceRows<T>(
+export function mergeDiligenceRows<T extends Record<string, any>>(
     current: T[] | null,
     incoming: T[],
     keyOf: (row: T) => string,
@@ -51,9 +53,23 @@ export function mergeDiligenceRows<T>(
         }
 
         const index = indexByKey.get(key)!
-        merged[index] = incomingWins
-            ? { ...merged[index], ...row }
-            : { ...row, ...merged[index] }
+        const existing = merged[index]
+
+        // Guard against out-of-order stale in-flight polls downgrading completed rows
+        const existingIsTerminal = isTerminalSubmissionStatus(existing?.status)
+        const incomingIsActive = isActiveSubmissionStatus(row?.status)
+
+        let mergedRow: T
+        if (existingIsTerminal && incomingIsActive) {
+            // Incoming is an older in-flight snapshot arriving after completion: preserve terminal status and timestamps
+            mergedRow = { ...row, ...existing }
+        } else {
+            mergedRow = incomingWins
+                ? { ...existing, ...row }
+                : { ...row, ...existing }
+        }
+
+        merged[index] = mergedRow
     }
 
     return merged
