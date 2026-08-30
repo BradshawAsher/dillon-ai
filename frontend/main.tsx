@@ -12,11 +12,15 @@ import './orgTheme.css'
 
 initTheme()
 
-// Automatically reload page if Vite fails to fetch a stale dynamic chunk after a new deployment
+// Automatically reload page if Vite fails to fetch a stale dynamic chunk after a new deployment (debounced)
 if (typeof window !== 'undefined') {
   window.addEventListener('vite:preloadError', (event) => {
-    console.warn('Vite preload error detected, reloading page for latest deployment...', event)
-    window.location.reload()
+    const lastReload = Number(sessionStorage.getItem('mcp_last_preload_reload') || 0)
+    if (Date.now() - lastReload > 20_000) {
+      sessionStorage.setItem('mcp_last_preload_reload', String(Date.now()))
+      console.warn('Vite preload error detected, reloading page for latest deployment...', event)
+      window.location.reload()
+    }
   })
 }
 

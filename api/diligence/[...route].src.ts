@@ -89,7 +89,7 @@ export default async function handler(req: ApiRequest, res: ServerResponse) {
             const full = requestUrl.searchParams.get('full') === 'true'
             const limitNum = requestUrl.searchParams.get('limit') ?? undefined
             const data = await withMemCache(`eval-runs-${full}-${limitNum ?? 'default'}`, () => getEvalRuns({ params: { full, limit: limitNum } }), 60_000)
-            sendJson(req, res, 200, data, 'public, s-maxage=120, stale-while-revalidate=600')
+            sendJson(req, res, 200, data, 'public, s-maxage=300, stale-while-revalidate=1800')
             return
         }
         if (route === 'history' && req.method === 'GET') {
@@ -103,7 +103,7 @@ export default async function handler(req: ApiRequest, res: ServerResponse) {
         }
         if (route === 'workflow-errors' && req.method === 'GET') {
             const data = await withMemCache(`workflow-errors-${environment}`, () => getWorkflowErrors({ params: { environment }, user }), 15_000)
-            sendJson(req, res, 200, data, 'public, s-maxage=15, stale-while-revalidate=60')
+            sendJson(req, res, 200, data, 'public, s-maxage=30, stale-while-revalidate=120')
             return
         }
         if (route === 'synthesis' && req.method === 'GET') {
@@ -118,13 +118,13 @@ export default async function handler(req: ApiRequest, res: ServerResponse) {
             const projectId = requestUrl.searchParams.get('projectId') ?? undefined
             const cacheKey = `kpis-${environment}-${projectId ?? 'all'}`
             const data = await withMemCache(cacheKey, () => getDiligenceKpis({ params: { environment, projectId }, user }), 10_000)
-            sendJson(req, res, 200, data, 'public, s-maxage=15, stale-while-revalidate=60')
+            sendJson(req, res, 200, data, 'public, s-maxage=30, stale-while-revalidate=120')
             return
         }
         if (route === 'deal-models' && req.method === 'GET') {
             const projectId = requestUrl.searchParams.get('projectId') ?? ''
             const data = await withMemCache(`deal-models-${projectId}`, () => getDealModels({ params: { projectId }, user }), 6_000)
-            sendJson(req, res, 200, data, 'public, s-maxage=10, stale-while-revalidate=60')
+            sendJson(req, res, 200, data, 'public, s-maxage=30, stale-while-revalidate=120')
             return
         }
         if (route === 'deal-models' && req.method === 'POST') {
@@ -136,7 +136,7 @@ export default async function handler(req: ApiRequest, res: ServerResponse) {
         if (route === 'project-action-tracker' && req.method === 'GET') {
             const projectId = requestUrl.searchParams.get('projectId') ?? ''
             const data = await withMemCache(`action-tracker-${projectId}`, () => getProjectActionTracker({ params: { projectId }, user }), 6_000)
-            sendJson(req, res, 200, data, 'public, s-maxage=10, stale-while-revalidate=60')
+            sendJson(req, res, 200, data, 'public, s-maxage=30, stale-while-revalidate=120')
             return
         }
         if (route === 'project-action-tracker' && req.method === 'POST') {

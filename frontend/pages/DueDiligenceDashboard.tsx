@@ -2056,10 +2056,10 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         return isCurrentProjectExtractingDocs || isCurrentProjectSynthesisRunning || isManualSynthesisRunning
     }, [isCurrentProjectExtractingDocs, isCurrentProjectSynthesisRunning, isManualSynthesisRunning])
 
-    const refreshProjectHistory = useCallback((targetProjectId: string, skipCache = false) => {
+    const refreshProjectHistory = useCallback((targetProjectId: string, skipCache = false, full = true) => {
         if (!targetProjectId) return
         void triggerSubmissionHistory(
-            { environment: 'production', projectId: targetProjectId, full: true, limit: 100, skipCache },
+            { environment: 'production', projectId: targetProjectId, full, limit: 100, skipCache },
             { mergeData: mergeScopedSubmissionRows },
         )
     }, [triggerSubmissionHistory])
@@ -2072,8 +2072,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         )
     }, [triggerProjectSynthesis])
 
-    const refreshProjectSnapshot = useCallback((targetProjectId: string, skipCache = false) => {
-        refreshProjectHistory(targetProjectId, skipCache)
+    const refreshProjectSnapshot = useCallback((targetProjectId: string, skipCache = false, full = true) => {
+        refreshProjectHistory(targetProjectId, skipCache, full)
         refreshProjectSynthesis(targetProjectId, skipCache)
     }, [refreshProjectHistory, refreshProjectSynthesis])
 
@@ -2083,7 +2083,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         projectId: activeDatabaseProjectId,
         onDocumentChange: (payload) => {
             const targetProjectId = payload?.new?.project_id || payload?.old?.project_id || activeDatabaseProjectId
-            refreshProjectHistory(targetProjectId, true)
+            refreshProjectHistory(targetProjectId, true, true)
         },
         onSynthesisChange: (payload) => {
             const targetProjectId = payload?.new?.project_id || payload?.old?.project_id || activeDatabaseProjectId
@@ -2107,7 +2107,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
         const pollIntervalMs = isRealtimeConnected ? 20_000 : 6_000
         const interval = setInterval(() => {
-            refreshProjectSnapshot(activeDatabaseProjectId)
+            refreshProjectSnapshot(activeDatabaseProjectId, false, false)
         }, pollIntervalMs)
         return () => clearInterval(interval)
     }, [

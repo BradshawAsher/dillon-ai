@@ -16,9 +16,11 @@ export function isDynamicImportError(error: unknown): boolean {
   return (
     message.includes('dynamically imported module') ||
     message.includes('loading chunk') ||
-    message.includes('failed to fetch') ||
+    message.includes('failed to fetch dynamically imported module') ||
+    message.includes('error loading dynamically imported module') ||
     message.includes('importing a module script failed') ||
-    message.includes('error loading dynamically imported module')
+    message.includes('unable to preload css') ||
+    message.includes('failed to load module script')
   )
 }
 
@@ -30,21 +32,18 @@ export function lazyWithRetry<T extends ComponentType<any>>(
   componentImport: () => Promise<{ default: T }>
 ) {
   return lazy(async () => {
-    const pageHasBeenForceRefreshed =
-      typeof window !== 'undefined' &&
-      window.sessionStorage.getItem('mcp_page_has_been_force_refreshed') === 'true'
+    const lastRefreshed = Number(
+      (typeof window !== 'undefined' && window.sessionStorage.getItem('mcp_last_lazy_reload')) || 0
+    )
+    const recentlyRefreshed = Date.now() - lastRefreshed < 15_000
 
     try {
-      const component = await componentImport()
-      if (typeof window !== 'undefined') {
-        window.sessionStorage.removeItem('mcp_page_has_been_force_refreshed')
-      }
-      return component
+      return await componentImport()
     } catch (error: any) {
       const isChunkError = isDynamicImportError(error)
 
-      if (!pageHasBeenForceRefreshed && isChunkError && typeof window !== 'undefined') {
-        window.sessionStorage.setItem('mcp_page_has_been_force_refreshed', 'true')
+      if (!recentlyRefreshed && isChunkError && typeof window !== 'undefined') {
+        window.sessionStorage.setItem('mcp_last_lazy_reload', String(Date.now()))
         window.location.reload()
         return { default: (() => null) as unknown as T }
       }
