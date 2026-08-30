@@ -10,6 +10,21 @@ export const OPENAI_API_KEY_STORAGE = 'mergeworks_user_openai_key'
 export const GEMINI_API_KEY_STORAGE = 'mergeworks_user_gemini_key'
 export const DEEPSEEK_API_KEY_STORAGE = 'mergeworks_user_deepseek_key'
 
+// localStorage can throw when it is disabled or full (private mode, blocked
+// site data). Several of the accessors below run in the submission path
+// (getEffectiveModelPipeline / hasAnySavedApiKey / getActiveProviders), so route
+// every access through these guards rather than letting a storage failure crash
+// the flow — matching the try/catch pattern used across the rest of the app.
+function safeGetItem(key: string): string | null {
+    try { return localStorage.getItem(key) } catch { return null }
+}
+function safeSetItem(key: string, value: string): void {
+    try { localStorage.setItem(key, value) } catch { /* best effort */ }
+}
+function safeRemoveItem(key: string): void {
+    try { localStorage.removeItem(key) } catch { /* best effort */ }
+}
+
 export interface ProviderModelConfig {
     docPrimary: string
     docBackup: string
@@ -144,35 +159,35 @@ export function getUserModelConfig(provider: 'anthropic' | 'openai' | 'gemini' |
     const defaults = DEFAULT_MODEL_CONFIGS[provider]
     if (typeof window === 'undefined') return defaults
     return {
-        docPrimary: localStorage.getItem(`mergeworks_user_${provider}_doc_primary`) || defaults.docPrimary,
-        docBackup: localStorage.getItem(`mergeworks_user_${provider}_doc_backup`) || defaults.docBackup,
-        synthPrimary: localStorage.getItem(`mergeworks_user_${provider}_synth_primary`) || defaults.synthPrimary,
-        synthBackup: localStorage.getItem(`mergeworks_user_${provider}_synth_backup`) || defaults.synthBackup,
+        docPrimary: safeGetItem(`mergeworks_user_${provider}_doc_primary`) || defaults.docPrimary,
+        docBackup: safeGetItem(`mergeworks_user_${provider}_doc_backup`) || defaults.docBackup,
+        synthPrimary: safeGetItem(`mergeworks_user_${provider}_synth_primary`) || defaults.synthPrimary,
+        synthBackup: safeGetItem(`mergeworks_user_${provider}_synth_backup`) || defaults.synthBackup,
     }
 }
 
 export function saveUserModelConfig(provider: 'anthropic' | 'openai' | 'gemini' | 'deepseek', config: Partial<ProviderModelConfig>): void {
     if (typeof window === 'undefined') return
-    if (config.docPrimary) localStorage.setItem(`mergeworks_user_${provider}_doc_primary`, config.docPrimary)
-    if (config.docBackup) localStorage.setItem(`mergeworks_user_${provider}_doc_backup`, config.docBackup)
-    if (config.synthPrimary) localStorage.setItem(`mergeworks_user_${provider}_synth_primary`, config.synthPrimary)
-    if (config.synthBackup) localStorage.setItem(`mergeworks_user_${provider}_synth_backup`, config.synthBackup)
+    if (config.docPrimary) safeSetItem(`mergeworks_user_${provider}_doc_primary`, config.docPrimary)
+    if (config.docBackup) safeSetItem(`mergeworks_user_${provider}_doc_backup`, config.docBackup)
+    if (config.synthPrimary) safeSetItem(`mergeworks_user_${provider}_synth_primary`, config.synthPrimary)
+    if (config.synthBackup) safeSetItem(`mergeworks_user_${provider}_synth_backup`, config.synthBackup)
 }
 
 export function getEffectiveModelPipeline(): ProviderModelConfig & { activeProvider: 'openai' | 'anthropic' | 'gemini' | 'deepseek' | 'default' } {
     if (typeof window === 'undefined') {
         return { ...DEFAULT_MODEL_CONFIGS.openai, activeProvider: 'default' }
     }
-    if (localStorage.getItem(OPENAI_API_KEY_STORAGE)) {
+    if (safeGetItem(OPENAI_API_KEY_STORAGE)) {
         return { ...getUserModelConfig('openai'), activeProvider: 'openai' }
     }
-    if (localStorage.getItem(CUSTOM_API_KEY_STORAGE)) {
+    if (safeGetItem(CUSTOM_API_KEY_STORAGE)) {
         return { ...getUserModelConfig('anthropic'), activeProvider: 'anthropic' }
     }
-    if (localStorage.getItem(GEMINI_API_KEY_STORAGE)) {
+    if (safeGetItem(GEMINI_API_KEY_STORAGE)) {
         return { ...getUserModelConfig('gemini'), activeProvider: 'gemini' }
     }
-    if (localStorage.getItem(DEEPSEEK_API_KEY_STORAGE)) {
+    if (safeGetItem(DEEPSEEK_API_KEY_STORAGE)) {
         return { ...getUserModelConfig('deepseek'), activeProvider: 'deepseek' }
     }
     return { ...DEFAULT_MODEL_CONFIGS.openai, activeProvider: 'default' }
@@ -180,77 +195,77 @@ export function getEffectiveModelPipeline(): ProviderModelConfig & { activeProvi
 
 export function getSavedApiKey(): string {
     if (typeof window === 'undefined') return ''
-    return localStorage.getItem(CUSTOM_API_KEY_STORAGE) || ''
+    return safeGetItem(CUSTOM_API_KEY_STORAGE) || ''
 }
 
 export function saveApiKey(key: string): void {
     if (typeof window === 'undefined') return
     if (key.trim()) {
-        localStorage.setItem(CUSTOM_API_KEY_STORAGE, key.trim())
+        safeSetItem(CUSTOM_API_KEY_STORAGE, key.trim())
     } else {
-        localStorage.removeItem(CUSTOM_API_KEY_STORAGE)
+        safeRemoveItem(CUSTOM_API_KEY_STORAGE)
     }
 }
 
 export function getSavedOpenAIKey(): string {
     if (typeof window === 'undefined') return ''
-    return localStorage.getItem(OPENAI_API_KEY_STORAGE) || ''
+    return safeGetItem(OPENAI_API_KEY_STORAGE) || ''
 }
 
 export function saveOpenAIKey(key: string): void {
     if (typeof window === 'undefined') return
     if (key.trim()) {
-        localStorage.setItem(OPENAI_API_KEY_STORAGE, key.trim())
+        safeSetItem(OPENAI_API_KEY_STORAGE, key.trim())
     } else {
-        localStorage.removeItem(OPENAI_API_KEY_STORAGE)
+        safeRemoveItem(OPENAI_API_KEY_STORAGE)
     }
 }
 
 export function getSavedGeminiKey(): string {
     if (typeof window === 'undefined') return ''
-    return localStorage.getItem(GEMINI_API_KEY_STORAGE) || ''
+    return safeGetItem(GEMINI_API_KEY_STORAGE) || ''
 }
 
 export function saveGeminiKey(key: string): void {
     if (typeof window === 'undefined') return
     if (key.trim()) {
-        localStorage.setItem(GEMINI_API_KEY_STORAGE, key.trim())
+        safeSetItem(GEMINI_API_KEY_STORAGE, key.trim())
     } else {
-        localStorage.removeItem(GEMINI_API_KEY_STORAGE)
+        safeRemoveItem(GEMINI_API_KEY_STORAGE)
     }
 }
 
 export function getSavedDeepSeekKey(): string {
     if (typeof window === 'undefined') return ''
-    return localStorage.getItem(DEEPSEEK_API_KEY_STORAGE) || ''
+    return safeGetItem(DEEPSEEK_API_KEY_STORAGE) || ''
 }
 
 export function saveDeepSeekKey(key: string): void {
     if (typeof window === 'undefined') return
     if (key.trim()) {
-        localStorage.setItem(DEEPSEEK_API_KEY_STORAGE, key.trim())
+        safeSetItem(DEEPSEEK_API_KEY_STORAGE, key.trim())
     } else {
-        localStorage.removeItem(DEEPSEEK_API_KEY_STORAGE)
+        safeRemoveItem(DEEPSEEK_API_KEY_STORAGE)
     }
 }
 
 export function hasAnySavedApiKey(): boolean {
     if (typeof window === 'undefined') return false
     return Boolean(
-        localStorage.getItem(OPENAI_API_KEY_STORAGE) ||
-        localStorage.getItem(CUSTOM_API_KEY_STORAGE) ||
-        localStorage.getItem(GEMINI_API_KEY_STORAGE) ||
-        localStorage.getItem(DEEPSEEK_API_KEY_STORAGE)
+        safeGetItem(OPENAI_API_KEY_STORAGE) ||
+        safeGetItem(CUSTOM_API_KEY_STORAGE) ||
+        safeGetItem(GEMINI_API_KEY_STORAGE) ||
+        safeGetItem(DEEPSEEK_API_KEY_STORAGE)
     )
 }
 
 export function getActiveProviders(): string[] {
     if (typeof window === 'undefined') return []
     const providers: string[] = []
-    if (localStorage.getItem(OPENAI_API_KEY_STORAGE)) providers.push('OpenAI')
-    if (localStorage.getItem(CUSTOM_API_KEY_STORAGE)) providers.push('Anthropic')
-    if (localStorage.getItem(GEMINI_API_KEY_STORAGE)) providers.push('Gemini')
-    if (localStorage.getItem(DEEPSEEK_API_KEY_STORAGE)) providers.push('DeepSeek')
+    if (safeGetItem(OPENAI_API_KEY_STORAGE)) providers.push('OpenAI')
+    if (safeGetItem(CUSTOM_API_KEY_STORAGE)) providers.push('Anthropic')
+    if (safeGetItem(GEMINI_API_KEY_STORAGE)) providers.push('Gemini')
+    if (safeGetItem(DEEPSEEK_API_KEY_STORAGE)) providers.push('DeepSeek')
     return providers
 }
 
