@@ -994,14 +994,14 @@ export const TAB_TOUR_STEPS: Record<WorkspaceTab, WalkthroughStep[]> = {
         {
             id: 'overview-step-4',
             num: 4,
-            title: 'Acquisition Closing Roadmap & Milestones',
+            title: 'Seller Questions & Management Follow-Ups',
             tab: 'overview',
             targetElementId: 'overview-timeline',
             targetSelector: '#overview-timeline',
-            tag: 'Transaction Timeline',
-            badge: 'Milestones',
-            narrative: 'Tracks the end-to-end acquisition lifecycle across Phase I intake, Quality of Earnings audit, bank underwriting, definitive agreements, and Day 1 closing handover.',
-            keyTakeaway: 'Clear phase-by-phase visibility through transaction closing.',
+            tag: 'Management Follow-Up',
+            badge: 'Seller Questions',
+            narrative: 'Organizes the seller questions generated from unresolved diligence findings so the deal team can track management follow-ups before closing.',
+            keyTakeaway: 'Turns unresolved evidence gaps into an actionable seller inquiry list.',
             cursorPlacement: 'bottom-left',
             durationMs: 7000,
         },
@@ -1024,7 +1024,7 @@ export const TAB_TOUR_STEPS: Record<WorkspaceTab, WalkthroughStep[]> = {
         {
             id: 'analysis-step-2',
             num: 2,
-            title: 'Deal Scorecard & Opportunity Matrix',
+            title: 'Deal Scorecard',
             tab: 'analysis',
             targetElementId: 'analysis-scorecard',
             targetSelector: '#analysis-scorecard',
@@ -1038,14 +1038,14 @@ export const TAB_TOUR_STEPS: Record<WorkspaceTab, WalkthroughStep[]> = {
         {
             id: 'analysis-step-3',
             num: 3,
-            title: 'EBITDA Reconstruction & Quality of Earnings Bridge',
+            title: 'EBITDA Quality of Earnings Score',
             tab: 'analysis',
             targetElementId: 'analysis-ebitda-quality',
             targetSelector: '#analysis-ebitda-quality, [data-analysis-qoe]',
             tag: 'Quality of Earnings',
-            badge: 'QoE Waterfall',
-            narrative: 'Reconstructs reported net income to adjusted EBITDA, systematically auditing seller add-backs (owner compensation, non-operating travel, one-off legal fees) to establish true cash earnings.',
-            keyTakeaway: 'Identifies unsupported add-backs to protect buyer valuation.',
+            badge: 'QoE Score',
+            narrative: 'Scores the quality and supportability of reported EBITDA using the available synthesis findings and documented financial inputs.',
+            keyTakeaway: 'Flags whether earnings quality needs deeper reconstruction and add-back review.',
             cursorPlacement: 'center',
             durationMs: 7500,
         },
@@ -1236,7 +1236,7 @@ export const TAB_TOUR_STEPS: Record<WorkspaceTab, WalkthroughStep[]> = {
             narrative: "Let's scroll down inside the Evidence Drawer to inspect the exact cited text. Dillon AI highlights the extracted line item ($450,000 management consulting add-back) and reconciles it against Tab 'P&L Summary', Cell G42.",
             keyTakeaway: 'Granular cell-level provenance linking financial metrics directly to primary source exhibits.',
             simulatedAction: {
-                type: 'scroll_evidence',
+                type: 'simulate_open_doc_evidence',
             },
             cursorPlacement: 'center',
             durationMs: 8500,
@@ -1244,14 +1244,14 @@ export const TAB_TOUR_STEPS: Record<WorkspaceTab, WalkthroughStep[]> = {
         {
             id: 'diligence-step-8',
             num: 8,
-            title: 'Deterministic Table Extraction & Fact Sheet',
+            title: 'Extracted Financial Facts & Model Readiness',
             tab: 'diligence',
-            targetElementId: 'diligence-project-synth',
-            targetSelector: '#diligence-project-synth, [data-project-intake]',
+            targetElementId: 'diligence-documents',
+            targetSelector: '#diligence-documents, #diligence-quality',
             tag: 'Extraction Engine',
             badge: 'OCR & Parsing',
-            narrative: 'Extracts tabular line items, revenue streams, officer compensation, and depreciation schedules with 100% ground-truth document coordinate citations.',
-            keyTakeaway: 'Zero numeric hallucination via strict document extraction.',
+            narrative: 'Reviews the extracted revenue, EBITDA, asking-price, and related financial facts that are ready to feed the deal model, with links back to document evidence.',
+            keyTakeaway: 'Shows which document-backed facts are ready for valuation and returns modeling.',
             cursorPlacement: 'center',
             durationMs: 7000,
         },
@@ -1370,7 +1370,7 @@ export const TAB_TOUR_STEPS: Record<WorkspaceTab, WalkthroughStep[]> = {
             narrative: "Let's scroll down inside the Evidence Drawer to inspect the exact cited text. Dillon AI highlights the $14,210,000 gross receipts reported on Form 1120-S Page 4, Line 1a against the $15.80M CIM claim ($1.59M variance).",
             keyTakeaway: 'Granular audit trail comparing tax filing disclosures directly against seller claims.',
             simulatedAction: {
-                type: 'scroll_evidence',
+                type: 'simulate_open_evidence',
             },
             cursorPlacement: 'center',
             durationMs: 8500,
@@ -1538,13 +1538,13 @@ export const TAB_TOUR_STEPS: Record<WorkspaceTab, WalkthroughStep[]> = {
         {
             id: 'valuation-step-4',
             num: 4,
-            title: 'Comparable Transactions & Sensitivity Analysis',
+            title: 'Comparable Transactions',
             tab: 'valuation',
             targetElementId: 'valuation-comps',
-            targetSelector: '#valuation-comps, #valuation-sensitivity',
+            targetSelector: '#valuation-comps',
             tag: 'Transaction Comps',
             badge: 'Peer Multiples',
-            narrative: 'Empirical M&A comp database across Bear, Base, and Bull valuation bands paired with 2D sensitivity grids testing varying revenue growth and margin scenarios.',
+            narrative: 'Reviews empirical transaction multiples and peer valuation ranges used to benchmark the target against relevant market comparables.',
             keyTakeaway: 'Defensible market comps supporting lender and equity presentations.',
             cursorPlacement: 'bottom-left',
             durationMs: 7000,
@@ -1568,28 +1568,28 @@ export const TAB_TOUR_STEPS: Record<WorkspaceTab, WalkthroughStep[]> = {
         {
             id: 'returns-step-2',
             num: 2,
-            title: 'All-Cash vs Financed Returns Waterfall',
+            title: 'All-Cash Returns',
             tab: 'returns',
             targetElementId: 'returns-all-cash',
-            targetSelector: '#returns-all-cash, #returns-waterfall',
+            targetSelector: '#returns-all-cash',
             tag: 'Return Comparison',
             badge: 'Leverage Impact',
-            narrative: 'Compares unlevered all-cash returns against levered capital structures, illustrating the return enhancement provided by Senior SBA 7(a) debt.',
-            keyTakeaway: 'Demonstrates the power of prudent financial leverage.',
+            narrative: 'Reviews unlevered all-cash return metrics before debt structure and financing effects are introduced.',
+            keyTakeaway: 'Provides the baseline return case for comparing financed structures.',
             cursorPlacement: 'center',
             durationMs: 7000,
         },
         {
             id: 'returns-step-3',
             num: 3,
-            title: 'Financing Scenario Sensitivity & Payback',
+            title: 'Financing Scenario Comparison',
             tab: 'returns',
             targetElementId: 'returns-scenario',
-            targetSelector: '#returns-scenario, #returns-payback',
+            targetSelector: '#returns-scenario',
             tag: 'Scenario Modeling',
             badge: 'Payback Period',
-            narrative: 'Models equity payback period under Conservative, Base, and Expansion scenarios, evaluating capital preservation under adverse market conditions.',
-            keyTakeaway: 'Evaluates downside risk and cash flow durability.',
+            narrative: 'Compares financed return outcomes across alternative leverage and operating scenarios to show how capital structure changes investor returns.',
+            keyTakeaway: 'Evaluates the sensitivity of financed returns to scenario assumptions.',
             cursorPlacement: 'center',
             durationMs: 7000,
         },
@@ -1614,8 +1614,8 @@ export const TAB_TOUR_STEPS: Record<WorkspaceTab, WalkthroughStep[]> = {
             num: 1,
             title: 'Pro Forma Revenue & EBITDA Projections',
             tab: 'growth',
-            targetElementId: 'growth-header',
-            targetSelector: '#growth-header, #growth-scenario',
+            targetElementId: 'growth-scenario',
+            targetSelector: '#growth-scenario',
             tag: 'Financial Model',
             badge: '5-Year Forecast',
             narrative: 'Five-year financial model forecasting revenue growth, gross margin evolution, SG&A leverage, and EBITDA expansion post-acquisition.',
@@ -1640,10 +1640,10 @@ export const TAB_TOUR_STEPS: Record<WorkspaceTab, WalkthroughStep[]> = {
         {
             id: 'growth-step-3',
             num: 3,
-            title: 'Value Creation Plan & Operating Leverage',
+            title: 'Value Creation Plan',
             tab: 'growth',
             targetElementId: 'growth-levers',
-            targetSelector: '#growth-levers, #growth-leverage',
+            targetSelector: '#growth-levers',
             tag: 'Value Creation',
             badge: 'Operating Levers',
             narrative: 'Actionable 100-day value creation roadmap identifying pricing enhancements, procurement savings, and operational leverage opportunities post-close.',
@@ -1658,8 +1658,8 @@ export const TAB_TOUR_STEPS: Record<WorkspaceTab, WalkthroughStep[]> = {
             num: 1,
             title: 'Capital Structure & Visual Breakdown',
             tab: 'structure',
-            targetElementId: 'structure-header',
-            targetSelector: '#structure-header, #structure-visual',
+            targetElementId: 'structure-visual',
+            targetSelector: '#structure-visual',
             tag: 'Capital Structure',
             badge: 'Sources & Uses',
             narrative: 'Institutional Sources & Uses of funds balancing Senior SBA debt, seller note, rollover equity, and buyer cash equity contribution.',
@@ -1794,7 +1794,7 @@ export const TAB_TOUR_STEPS: Record<WorkspaceTab, WalkthroughStep[]> = {
             targetSelector: '#project-card-telemetry',
             tag: 'Step 3 • AI Economics & Models',
             badge: 'Model Telemetry',
-            narrative: 'Review precise compute economics ($0.285 total run cost) broken down by per-document extraction and synthesis passes, alongside active dual-pass AI models (OpenAI 5.6 Terra primary / OpenAI 5.6 Sol backup).',
+            narrative: 'Review the measured per-document, synthesis, and total run costs alongside the exact primary and backup models recorded for this project.',
             proTip: 'Every run records granular token counts and API costs for complete institutional billing auditability.',
             keyTakeaway: 'Granular unit economics tracking cost per document, synthesis passes, and model versions.',
             cursorPlacement: 'center',
@@ -1824,8 +1824,8 @@ export const TAB_TOUR_STEPS: Record<WorkspaceTab, WalkthroughStep[]> = {
             targetSelector: '#project-card-coverage',
             tag: 'Step 5 • Coverage Checklist',
             badge: 'Synthesis Gate',
-            narrative: 'Inspect the document coverage checklist auditing core diligence artifacts: CIM, 3-Year Historical P&L, IRS Tax Returns, Executed LOI, and AR Aging. Gating ensures AI cross-reconciliation runs only with sufficient data.',
-            proTip: 'A minimum of 2 financial documents is required to unlock full cross-document conflict detection.',
+            narrative: 'Inspect which core financial records are present or missing, including P&L, balance sheet, financial model, bank, general-ledger, add-back, and customer evidence. The card also shows whether the project is ready for synthesis.',
+            proTip: 'One completed document can start synthesis; broader coverage makes cross-document conflict detection more useful.',
             keyTakeaway: 'Automated document completeness verification before triggering AI synthesis.',
             cursorPlacement: 'center',
             durationMs: 8000,
@@ -1839,12 +1839,9 @@ export const TAB_TOUR_STEPS: Record<WorkspaceTab, WalkthroughStep[]> = {
             targetSelector: '#project-card-summary-btn',
             tag: 'Step 6 • Open Summary',
             badge: 'Interactive Viewer',
-            narrative: "Let's click 'Open High-Level Summary' to launch the executive summary modal. Dillon AI compiles financial metrics, institutional grade, and key deal flags into a consolidated view.",
+            narrative: "Use 'Open High-Level Summary' for a consolidated view of financial metrics, deal grade, and key flags. The tutorial opens it automatically on the next step.",
             proTip: 'The High-Level Summary provides an instant executive briefing ready for Investment Committee review.',
             keyTakeaway: '1-click access to consolidated deal rationale and financial health scorecard.',
-            simulatedAction: {
-                type: 'open_summary_modal',
-            },
             cursorPlacement: 'center',
             durationMs: 7000,
         },
@@ -1875,9 +1872,6 @@ export const TAB_TOUR_STEPS: Record<WorkspaceTab, WalkthroughStep[]> = {
             narrative: "Now let's close the High-Level Summary modal to return smoothly to the multi-project portfolio workspace.",
             proTip: 'You can reopen this summary modal or download the full synthesis report anytime.',
             keyTakeaway: 'Seamless transition between modal-level deep dives and portfolio-level management.',
-            simulatedAction: {
-                type: 'close_summary_modal',
-            },
             cursorPlacement: 'center',
             durationMs: 6500,
         },
@@ -2194,6 +2188,12 @@ export const TAB_TOUR_STEPS: Record<WorkspaceTab, WalkthroughStep[]> = {
     ],
 }
 
+const TAB_TOUR_PLAYLIST_CACHE = new Map<WorkspaceTab, TourPlaylist>()
+const TAB_TOUR_LABELS: Partial<Record<WorkspaceTab, string>> = {
+    documents: 'Projects',
+    diagnostics: 'Risk & Playbook',
+}
+
 export function getTabTourPlaylist(tabId: WorkspaceTab): TourPlaylist {
     const playlistId = `tab-${tabId}`
     if (TOUR_PLAYLISTS[playlistId]) {
@@ -2202,9 +2202,12 @@ export function getTabTourPlaylist(tabId: WorkspaceTab): TourPlaylist {
 
     const dedicatedSteps = TAB_TOUR_STEPS[tabId]
     if (dedicatedSteps && dedicatedSteps.length > 0) {
-        return {
+        const cached = TAB_TOUR_PLAYLIST_CACHE.get(tabId)
+        if (cached) return cached
+
+        const playlist: TourPlaylist = {
             id: playlistId,
-            title: `${tabId.charAt(0).toUpperCase() + tabId.slice(1)} Tab Guided Tour`,
+            title: `${TAB_TOUR_LABELS[tabId] || tabId.charAt(0).toUpperCase() + tabId.slice(1)} Tab Guided Tour`,
             subtitle: `Targeted walkthrough for the ${tabId} workspace section`,
             durationLabel: `~${Math.max(1, Math.round(dedicatedSteps.length * 0.5))} min`,
             stepCount: dedicatedSteps.length,
@@ -2213,6 +2216,8 @@ export function getTabTourPlaylist(tabId: WorkspaceTab): TourPlaylist {
             description: `A focused, step-by-step interactive tutorial for mastering the ${tabId} diligence section.`,
             steps: dedicatedSteps,
         }
+        TAB_TOUR_PLAYLIST_CACHE.set(tabId, playlist)
+        return playlist
     }
 
     // Default fallback single step if tab is ever unrecognized
@@ -2245,5 +2250,3 @@ export function getTabTourPlaylist(tabId: WorkspaceTab): TourPlaylist {
         steps: defaultSteps,
     }
 }
-
-

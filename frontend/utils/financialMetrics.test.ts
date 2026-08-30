@@ -67,6 +67,34 @@ describe('resolveFinancialMetricsForProject', () => {
         expect(result.askingPrice).toBe('$4.88M')
     })
 
+    it('reads the canonical finalJudgmentJson field', () => {
+        const result = resolveFinancialMetricsForProject(
+            { finalJudgmentJson: JSON.stringify({ target_asking_or_loi_price: '$12.5M' }) },
+            [],
+            'Isolated Tutorial Fixture 8492',
+        )
+        expect(result.askingPrice).toBe('$12.5M')
+    })
+
+    it('keeps a revenue amount that appears before the revenue label', () => {
+        const result = resolveFinancialMetricsForProject(
+            { keyTakeaways: ['Verified $15.8M TTM Revenue and $3.2M normalized EBITDA.'] },
+            [],
+            'Apex Tutorial Fixture',
+        )
+        expect(result.revenue).toBe('$15.8M')
+        expect(result.ebitda).toBe('$3.2M')
+    })
+
+    it('reads a top-level asking price from extracted document JSON', () => {
+        const result = resolveFinancialMetricsForProject(
+            null,
+            [{ extractedJson: JSON.stringify({ askingPrice: 12_500_000 }) }],
+            'Isolated Tutorial Fixture 8492',
+        )
+        expect(result.askingPrice).toBe('$12.5M')
+    })
+
     it('does not let an unparseable ebitdaExtracted mask a valid metrics.ebitda', () => {
         const result = resolveFinancialMetricsForProject(
             null,

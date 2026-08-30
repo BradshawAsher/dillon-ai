@@ -404,6 +404,11 @@ const DEMO_FALLBACK_SYNTHESIS: ProjectSynthesisItem = Object.freeze({
     projectId: 'apex-industrial-tech',
     projectName: 'Apex Industrial Technologies',
     companyName: 'Apex Industrial Technologies LLC',
+    askingPrice: '$12.5M',
+    revenueUsd: '$15.8M',
+    ebitdaUsd: '$3.2M',
+    impliedMultiple: '3.9x',
+    dealGrade: 'A-',
     projectStatus: 'synthesized',
     documentsReceivedCount: 4,
     documentsCompletedCount: 4,
@@ -1030,8 +1035,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         })
 
         if (walkthrough.isActive || simulatedWalkthroughBatch) {
-            const other = withOverrides.filter((r: any) => r.projectId !== 'apex-industrial-tech' && r.projectId !== 'cascadia-climate-services')
-            return [...DEMO_FALLBACK_DOCS, ...other]
+            return [...DEMO_FALLBACK_DOCS]
         }
         return withOverrides
     }, [rawSubmissionHistory, isolationModeEnabled, walkthrough.isActive, simulatedWalkthroughBatch, authUser, optimisticOverrides])
@@ -1048,8 +1052,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             })
 
         if (walkthrough.isActive || simulatedWalkthroughBatch) {
-            const other = base.filter((s: any) => s.projectId !== 'apex-industrial-tech' && s.projectId !== 'cascadia-climate-services')
-            return [DEMO_FALLBACK_SYNTHESIS, DEMO_FALLBACK_SYNTHESIS_CASCADIA, ...other]
+            return [DEMO_FALLBACK_SYNTHESIS, DEMO_FALLBACK_SYNTHESIS_CASCADIA]
         }
         return base
     }, [rawProjectSyntheses, isolationModeEnabled, walkthrough.isActive, simulatedWalkthroughBatch, authUser])
@@ -1268,8 +1271,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     }, [activeSubmissionBatch, dealName, projectStage, submissionHistory])
 
     const projectSummaries = useMemo(
-        () => createProjectSummaries(rawSubmissionHistory, inFlightBatchPlaceholder),
-        [rawSubmissionHistory, inFlightBatchPlaceholder]
+        () => createProjectSummaries(submissionHistory, inFlightBatchPlaceholder),
+        [submissionHistory, inFlightBatchPlaceholder]
     )
 
     const availableProjects = useMemo(() => {
@@ -1521,9 +1524,9 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     }, [isExampleMode, setAskingPrice, setDealName, setDocumentType, setProjectId, setProjectStage, setSelectedProjectKey, setSubmissionNotes])
 
     const isTourActive = walkthrough.isActive || Boolean(simulatedWalkthroughBatch)
-    const activeProjectId = isExampleMode
-        ? 'atlas-001'
-        : (isTourActive ? 'apex-industrial-tech' : (activeViewProjectId || (selectedProjectKey !== 'new' ? projectId : '') || projectSummaries[0]?.projectId || projectSummaries[0]?.projectKey || ''))
+    const activeProjectId = isTourActive
+        ? 'apex-industrial-tech'
+        : (isExampleMode ? 'atlas-001' : (activeViewProjectId || (selectedProjectKey !== 'new' ? projectId : '') || projectSummaries[0]?.projectId || projectSummaries[0]?.projectKey || ''))
 
     const activeViewProject = useMemo(() => {
         if (!activeProjectId || projectSummaries.length === 0) return null
@@ -1691,7 +1694,10 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     }, [activeProjectId, askingPrice, dealModelDraftByProject, dealModelsData, isExampleMode, isTourActive])
 
     const activeProjectDocuments = useMemo(() => {
-        if (isTourActive || isExampleMode) {
+        if (isTourActive) {
+            return DEMO_FALLBACK_DOCS.filter((document) => document.projectId === 'apex-industrial-tech')
+        }
+        if (isExampleMode) {
             return DEMO_FALLBACK_DOCS
         }
         const matching = submissionHistory.filter((row) => isRowMatchingProject(row, activeProjectId, projectSummaries))
@@ -3785,7 +3791,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
             <main className="mx-auto max-w-[1440px] space-y-8 px-4 py-4 sm:px-6 sm:py-8 lg:px-8">
                 <div id="upload-section" className="scroll-mt-6" />
-                <div id="project-intake" className="scroll-mt-6" />
+                <div className="scroll-mt-6" aria-hidden="true" />
                 <ProjectIntakeCard
                     dealName={dealName}
                     askingPrice={askingPrice}

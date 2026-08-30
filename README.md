@@ -145,14 +145,26 @@ Create `frontend/.env` (it is gitignored):
 ```dotenv
 N8N_WEBHOOK_SECRET=the-header-auth-secret-used-by-n8n
 SUPABASE_SERVICE_ROLE_KEY=the-server-only-key-for-the-configured-project
+SLACK_WEBHOOK_URL=the-server-only-incoming-webhook-for-alerts
 PORT=3000
 VITE_USE_MOCKS=false
+VITE_ENABLE_VISITOR_SLACK_ALERTS=false
+VITE_ENABLE_AUTH_ACTIVITY_SLACK_ALERTS=false
 ```
 
 - `N8N_WEBHOOK_SECRET` is sent server-side as `x-webhook-secret`; it is never
   exposed to the browser.
 - `SUPABASE_SERVICE_ROLE_KEY` is server-only and is used for database access
   and signed upload tickets. Never give it a `VITE_` prefix or commit its value.
+- `SLACK_WEBHOOK_URL` is server-only. Never expose it through a `VITE_`
+  variable because Vite embeds those values in the public browser bundle.
+- Anonymous visitor alerts are disabled by default. If
+  `VITE_ENABLE_VISITOR_SLACK_ALERTS=true`, a browser can emit at most one
+  visitor alert every seven days. Routine successful sign-in and sign-out
+  alerts are also disabled by default; set
+  `VITE_ENABLE_AUTH_ACTIVITY_SLACK_ALERTS=true` to enable them, with successful
+  sign-ins limited to one per user and browser per day. New-account, failed
+  sign-in, access-request, and issue-report alerts remain enabled.
 - `VITE_USE_MOCKS=true` changes the initial local source to Example mode.
 - Access gates are currently disabled. To restore the shared-password gate for
   the local/Render server, set `ENABLE_ACCESS_GATES=true` and `APP_PASSWORD`.

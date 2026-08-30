@@ -17,7 +17,7 @@ export function WalkthroughCursor({
 
     return (
         <div
-            className="fixed pointer-events-none z-50 transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
+            className="fixed pointer-events-none z-50 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
             style={{
                 left: `${cursorPos.x}px`,
                 top: `${cursorPos.y}px`,

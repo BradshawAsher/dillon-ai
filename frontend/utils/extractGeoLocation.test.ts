@@ -1,6 +1,9 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
-import { extractGeoLocationFromHeaders } from '../../backend/diligence/handleSlackAlert'
+import {
+    dispatchServerSlackWebhook,
+    extractGeoLocationFromHeaders,
+} from '../../backend/diligence/handleSlackAlert'
 
 describe('extractGeoLocationFromHeaders', () => {
     it('decodes percent-encoded city/region into a readable location', () => {
@@ -28,5 +31,25 @@ describe('extractGeoLocationFromHeaders', () => {
         const geo = extractGeoLocationFromHeaders({})
         expect(geo.location).toBe('Global / Direct Visitor')
         expect(geo.ip).toBe('Direct / Localhost')
+    })
+})
+
+describe('dispatchServerSlackWebhook', () => {
+    it('refuses to dispatch without the server-only Slack webhook variable', async () => {
+        const previousWebhook = process.env.SLACK_WEBHOOK_URL
+        delete process.env.SLACK_WEBHOOK_URL
+        const warning = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+        try {
+            await expect(dispatchServerSlackWebhook({ text: 'test' })).resolves.toEqual({
+                success: false,
+                error: 'No webhook URL configured',
+            })
+            expect(warning).toHaveBeenCalledOnce()
+        } finally {
+            warning.mockRestore()
+            if (previousWebhook === undefined) delete process.env.SLACK_WEBHOOK_URL
+            else process.env.SLACK_WEBHOOK_URL = previousWebhook
+        }
     })
 })

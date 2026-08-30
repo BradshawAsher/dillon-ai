@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import {
+    claimClientAlertCooldown,
     sendNewAccountSlackAlert,
     sendSignInSlackAlert,
     sendSignOutSlackAlert,
@@ -12,7 +13,7 @@ describe('slackAlertService', () => {
     const originalFetch = globalThis.fetch
 
     beforeEach(() => {
-        process.env.VITE_SLACK_WEBHOOK_URL = 'https://hooks.slack.com/services/test/test/test'
+        process.env.SLACK_WEBHOOK_URL = 'https://hooks.slack.com/services/test/test/test'
         globalThis.fetch = vi.fn().mockResolvedValue({
             ok: true,
             status: 200,
@@ -21,9 +22,33 @@ describe('slackAlertService', () => {
     })
 
     afterEach(() => {
-        delete process.env.VITE_SLACK_WEBHOOK_URL
+        delete process.env.SLACK_WEBHOOK_URL
         globalThis.fetch = originalFetch
+        vi.unstubAllGlobals()
         vi.restoreAllMocks()
+    })
+
+    describe('claimClientAlertCooldown', () => {
+        it('claims once and allows another alert only after the cooldown expires', () => {
+            const values = new Map<string, string>()
+            const storage = {
+                getItem: (key: string) => values.get(key) ?? null,
+                setItem: (key: string, value: string) => values.set(key, value),
+            }
+
+            expect(claimClientAlertCooldown(storage, 'visitor', 1_000, 10_000)).toBe(true)
+            expect(claimClientAlertCooldown(storage, 'visitor', 1_000, 10_999)).toBe(false)
+            expect(claimClientAlertCooldown(storage, 'visitor', 1_000, 11_000)).toBe(true)
+        })
+
+        it('suppresses optional alerts when browser storage is unavailable', () => {
+            const unavailableStorage = {
+                getItem: () => { throw new Error('storage disabled') },
+                setItem: () => { throw new Error('storage disabled') },
+            }
+
+            expect(claimClientAlertCooldown(unavailableStorage, 'visitor', 1_000, 10_000)).toBe(false)
+        })
     })
 
     describe('sendNewAccountSlackAlert', () => {
@@ -243,6 +268,24 @@ describe('slackAlertService', () => {
     })
 
     describe('sendVisitorTrafficSlackAlert', () => {
+        it('does not treat a skipped proxy dispatch as a successful alert or expose a browser fallback', async () => {
+            vi.stubGlobal('window', {})
+            globalThis.fetch = vi.fn().mockResolvedValue({
+                ok: true,
+                status: 200,
+                json: async () => ({ success: false, error: 'No webhook URL configured' }),
+            })
+
+            const success = await sendVisitorTrafficSlackAlert({ path: '/' })
+
+            expect(success).toBe(false)
+            expect(globalThis.fetch).toHaveBeenCalledTimes(1)
+            expect(globalThis.fetch).toHaveBeenCalledWith(
+                '/api/diligence/slack-alert',
+                expect.objectContaining({ method: 'POST' })
+            )
+        })
+
         it('should dispatch formatted visitor traffic payload to #pod-1-agent-alerts', async () => {
             const success = await sendVisitorTrafficSlackAlert({
                 path: '/?utm_source=linkedin',

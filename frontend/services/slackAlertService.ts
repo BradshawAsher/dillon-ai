@@ -1,21 +1,46 @@
-const DEFAULT_SLACK_WEBHOOK = 'https://hooks.slack.com/services/REDACTED/REDACTED/REDACTED'
+export const VISITOR_ALERT_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000
+export const AUTH_ACTIVITY_ALERT_COOLDOWN_MS = 24 * 60 * 60 * 1000
+export const NEW_ACCOUNT_ALERT_COOLDOWN_MS = 365 * 24 * 60 * 60 * 1000
+
+export function isClientSlackAlertEnabled(flagName: string): boolean {
+    if (typeof window === 'undefined') return false
+    const env = (import.meta as unknown as { env?: Record<string, string> })?.env
+    return /^(1|true|yes|on)$/i.test(env?.[flagName]?.trim() || '')
+}
+
+export function claimClientAlertCooldown(
+    storage: Pick<Storage, 'getItem' | 'setItem'>,
+    key: string,
+    cooldownMs: number,
+    now = Date.now()
+): boolean {
+    try {
+        const lastReportedAt = Number(storage.getItem(key) || 0)
+        if (Number.isFinite(lastReportedAt) && lastReportedAt > 0 && now - lastReportedAt < cooldownMs) {
+            return false
+        }
+        storage.setItem(key, String(now))
+        return true
+    } catch {
+        // If storage is unavailable, suppress optional activity alerts rather
+        // than risk flooding Slack on every render or navigation.
+        return false
+    }
+}
 
 function getSlackWebhookUrl(): string {
-    if (typeof window !== 'undefined') {
-        const env = (import.meta as unknown as { env?: Record<string, string> })?.env
-        return env?.VITE_SLACK_WEBHOOK_URL || env?.VITE_ACCESS_REQUEST_WEBHOOK_URL || DEFAULT_SLACK_WEBHOOK
-    }
-    return process.env.VITE_SLACK_WEBHOOK_URL || process.env.SLACK_WEBHOOK_URL || DEFAULT_SLACK_WEBHOOK
+    if (typeof window !== 'undefined') return ''
+    return process.env.SLACK_WEBHOOK_URL || ''
 }
 
 /**
  * Low-level dispatch helper that routes through backend proxy /api/diligence/slack-alert
- * for 100% reliable, zero-CORS delivery, with direct fallback for offline/isolated tests.
+ * so the Slack webhook remains server-only and is never embedded in the browser bundle.
  */
 async function postSlackWebhook(payload: Record<string, unknown>): Promise<boolean> {
     const payloadString = JSON.stringify(payload)
 
-    // 1. In browser environment: First try same-origin backend proxy route
+    // 1. Browser environment: use only the same-origin backend proxy route.
     if (typeof window !== 'undefined') {
         try {
             const proxyRes = await fetch('/api/diligence/slack-alert', {
@@ -25,35 +50,18 @@ async function postSlackWebhook(payload: Record<string, unknown>): Promise<boole
                 },
                 body: payloadString,
             })
-            if (proxyRes.ok) {
+            const proxyBody = await proxyRes.json().catch(() => null) as { success?: boolean } | null
+            if (proxyRes.ok && proxyBody?.success === true) {
                 console.info('[SlackAlertService] Successfully dispatched alert via serverless proxy')
                 return true
             }
         } catch {
-            // Backend proxy unreachable (e.g. standalone Vite dev server without backend)
-            // Proceed to direct browser fallback below
+            // Backend proxy unreachable (e.g. standalone Vite dev server without backend).
         }
-
-        // Direct browser fallback using no-cors
-        const webhookUrl = getSlackWebhookUrl()
-        if (!webhookUrl) return false
-        try {
-            await fetch(webhookUrl, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: {
-                    'Content-Type': 'text/plain',
-                },
-                body: payloadString,
-            })
-            return true
-        } catch (err) {
-            console.warn('[SlackAlertService] Browser direct dispatch failed:', err)
-            return false
-        }
+        return false
     }
 
-    // 2. Node / SSR / Test environment
+    // 2. Node / SSR / test environment.
     const webhookUrl = getSlackWebhookUrl()
     if (!webhookUrl) return false
 

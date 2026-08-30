@@ -23141,9 +23141,8 @@ async function updateSubmissionRow(req) {
 // backend/diligence/handleAccessRequest.ts
 import https from "node:https";
 import crypto2 from "node:crypto";
-var DEFAULT_SLACK_WEBHOOK = process.env.VITE_SLACK_WEBHOOK_URL || process.env.SLACK_WEBHOOK_URL || "";
 async function dispatchSlackNotification(params, requestId) {
-  const webhookUrl = process.env.VITE_SLACK_WEBHOOK_URL || process.env.SLACK_WEBHOOK_URL || DEFAULT_SLACK_WEBHOOK;
+  const webhookUrl = process.env.SLACK_WEBHOOK_URL || "";
   if (!webhookUrl) {
     console.warn("[SlackAlert] No SLACK_WEBHOOK_URL configured; skipping alert dispatch.");
     return;
@@ -23265,7 +23264,6 @@ async function handleAccessRequest(req) {
 
 // backend/diligence/handleSlackAlert.ts
 import https2 from "node:https";
-var DEFAULT_SLACK_WEBHOOK2 = process.env.SLACK_WEBHOOK_URL || process.env.VITE_SLACK_WEBHOOK_URL || "https://hooks.slack.com/services/REDACTED/REDACTED/REDACTED";
 function extractGeoLocationFromHeaders(headers = {}) {
   const getHeader = (key) => {
     const val = headers[key] || headers[key.toLowerCase()];
@@ -23290,7 +23288,7 @@ function extractGeoLocationFromHeaders(headers = {}) {
   return { location: location2, ip, country, city, userAgent };
 }
 async function dispatchServerSlackWebhook(slackMessage) {
-  const webhookUrl = process.env.SLACK_WEBHOOK_URL || process.env.VITE_SLACK_WEBHOOK_URL || DEFAULT_SLACK_WEBHOOK2;
+  const webhookUrl = process.env.SLACK_WEBHOOK_URL || "";
   if (!webhookUrl) {
     console.warn("[SlackAlertServer] No SLACK_WEBHOOK_URL configured; skipping dispatch.");
     return { success: false, error: "No webhook URL configured" };

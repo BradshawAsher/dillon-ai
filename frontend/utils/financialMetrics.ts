@@ -81,24 +81,26 @@ export function resolveFinancialMetricsForProject(
     })
 
     const activeSynth = synthesis || matchedGt
-    const finalJudgment = safeParseJson(activeSynth?.finalJudgementJson || activeSynth?.final_judgement_json)
+    const finalJudgment = safeParseJson(
+        activeSynth?.finalJudgmentJson || activeSynth?.finalJudgementJson || activeSynth?.final_judgement_json
+    )
 
     // Helper to extract dollar amounts specifically associated with a keyword
     const extractAmountNearKeyword = (text: string, keywordPattern: RegExp): string | null => {
         const match = text.match(keywordPattern)
-        return match ? match[1] : null
+        return match ? (match[1] || match[2] || null) : null
     }
 
     // 2. Resolve Valuation Range & Base Estimate
     let valuation = activeSynth?.valuationUsd || activeSynth?.financialOverview?.valuationUsd || activeSynth?.valuationRange || activeSynth?.suggestedValuationRange
 
-    const rawValLow = Number(activeSynth?.valuationLowerBound || activeSynth?.valuation_lower_bound || finalJudgment?.valuation?.lower_bound)
-    const rawValHigh = Number(activeSynth?.valuationUpperBound || activeSynth?.valuation_upper_bound || finalJudgment?.valuation?.upper_bound)
-    const rawValBase = Number(activeSynth?.valuationBaseEstimate || activeSynth?.valuation_base_estimate || finalJudgment?.valuation?.base_estimate)
+    const rawValLow = parseMagnitudeMoney(activeSynth?.valuationLowerBound || activeSynth?.valuation_lower_bound || finalJudgment?.valuation?.lower_bound)
+    const rawValHigh = parseMagnitudeMoney(activeSynth?.valuationUpperBound || activeSynth?.valuation_upper_bound || finalJudgment?.valuation?.upper_bound)
+    const rawValBase = parseMagnitudeMoney(activeSynth?.valuationBaseEstimate || activeSynth?.valuation_base_estimate || finalJudgment?.valuation?.base_estimate)
 
-    if (!valuation && !isNaN(rawValLow) && rawValLow > 0 && !isNaN(rawValHigh) && rawValHigh > 0) {
+    if (!valuation && rawValLow !== null && rawValLow > 0 && rawValHigh !== null && rawValHigh > 0) {
         valuation = `${formatMagnitude(rawValLow)} - ${formatMagnitude(rawValHigh)}`
-    } else if (!valuation && !isNaN(rawValBase) && rawValBase > 0) {
+    } else if (!valuation && rawValBase !== null && rawValBase > 0) {
         valuation = formatMagnitude(rawValBase)
     }
 
@@ -128,8 +130,9 @@ export function resolveFinancialMetricsForProject(
             : []),
     ]
 
-    const AMOUNT_PATTERN = /(?:revenue|income|sales)[^\$]*(\$\d{1,3}(?:,\d{3})*(?:\.\d+)?|\$\d+(?:\.\d+)?\s*(?:million|billion|M|B|K|mm)?)/i
-    const EBITDA_PATTERN = /EBITDA[^\$]*(\$\d{1,3}(?:,\d{3})*(?:\.\d+)?|\$\d+(?:\.\d+)?\s*(?:million|billion|M|B|K|mm)?)/i
+    const MONEY = '\\$\\d+(?:,\\d{3})*(?:\\.\\d+)?\\s*(?:million|billion|mm|M|B|K)?'
+    const AMOUNT_PATTERN = new RegExp(`(${MONEY})\\s*(?:TTM\\s+|FY\\d+\\s+)?(?:revenue|income|sales)|(?:revenue|income|sales)[^$]{0,40}(${MONEY})`, 'i')
+    const EBITDA_PATTERN = new RegExp(`(${MONEY})\\s*(?:adjusted|normalized|reported)?\\s*(?:EBITDA|SDE)|(?:EBITDA|SDE)[^$]{0,40}(${MONEY})`, 'i')
 
     if (!revenue && takeaways.length > 0) {
         for (const t of takeaways) {
@@ -160,8 +163,9 @@ export function resolveFinancialMetricsForProject(
             if (!askingPrice && (doc.askingPrice || doc.purchasePrice)) {
                 askingPrice = doc.askingPrice || doc.purchasePrice
             }
-            if ((!revenue || revenue === 'N/A') && (doc.revenueUsd || doc.revenue || doc.metrics?.revenue)) {
-                revenue = doc.revenueUsd || doc.revenue || doc.metrics?.revenue
+            if ((!revenue || revenue === 'N/A') && (doc.revenueUsd || doc.revenue || doc.revenueExtracted || doc.metrics?.revenue)) {
+                const extractedRevenue = doc.revenueExtracted ? parseMagnitudeMoney(doc.revenueExtracted) : null
+                revenue = doc.revenueUsd || doc.revenue || (extractedRevenue !== null ? formatMagnitude(extractedRevenue) : undefined) || doc.metrics?.revenue
             }
             if ((!ebitda || ebitda === 'N/A') && (doc.ebitdaUsd || doc.ebitda || doc.ebitdaExtracted || doc.metrics?.ebitda)) {
                 // Only use ebitdaExtracted when it actually parses to a number.
@@ -193,6 +197,11 @@ export function resolveFinancialMetricsForProject(
             // Parse extractedJson / extracted_json
             const extracted = safeParseJson(doc.extractedJson || doc.extracted_json)
             if (extracted && typeof extracted === 'object') {
+                const directAskingPrice = extracted.askingPrice ?? extracted.asking_price ?? extracted.purchasePrice
+                if (!askingPrice && directAskingPrice != null) {
+                    const parsedAskingPrice = parseMagnitudeMoney(directAskingPrice)
+                    if (parsedAskingPrice !== null) askingPrice = formatMagnitude(parsedAskingPrice)
+                }
                 const rawFinancialFacts = Array.isArray(extracted.financial_facts)
                     ? extracted.financial_facts
                     : Array.isArray(extracted.financialFacts)
@@ -233,7 +242,7 @@ export function resolveFinancialMetricsForProject(
     // If multiple not explicitly provided, calculate from price/valuation and ebitda if numeric
     if (!multiple || multiple === 'N/A') {
         const parseNum = (val: any) => parseMagnitudeMoney(val)
-        const numPrice = parseNum(askingPrice) || (!isNaN(rawValBase) && rawValBase > 0 ? rawValBase : null)
+        const numPrice = parseNum(askingPrice) || (rawValBase !== null && rawValBase > 0 ? rawValBase : null)
         const numEbitda = parseNum(ebitda)
         if (numPrice && numEbitda && numEbitda > 0) {
             multiple = `${(numPrice / numEbitda).toFixed(1)}x`

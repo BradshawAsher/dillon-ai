@@ -28,19 +28,11 @@ export interface AccessRequestResponse {
     error?: string
 }
 
-const DEFAULT_SLACK_WEBHOOK = ''
-
 /**
- * Sends a formatted Slack notification to #pod-1-agent-alerts via webhook.
- * Uses text/plain and no-cors mode to bypass browser CORS preflight blocks.
+ * Sends a formatted Slack notification through the same-origin server proxy.
+ * The browser must never receive or call the incoming Slack webhook directly.
  */
 async function sendSlackAlert(payload: AccessRequestPayload, requestId: string): Promise<void> {
-    const webhookUrl = (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_SLACK_WEBHOOK_URL
-        || (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_ACCESS_REQUEST_WEBHOOK_URL
-        || DEFAULT_SLACK_WEBHOOK
-
-    if (!webhookUrl) return
-
     const timestamp = new Date().toLocaleString('en-US', {
         timeZone: 'UTC',
         dateStyle: 'medium',
@@ -93,11 +85,10 @@ async function sendSlackAlert(payload: AccessRequestPayload, requestId: string):
     }
 
     try {
-        await fetch(webhookUrl, {
+        await fetch('/api/diligence/slack-alert', {
             method: 'POST',
-            mode: 'no-cors',
             headers: {
-                'Content-Type': 'text/plain'
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify(slackMessage)
         })
@@ -108,7 +99,7 @@ async function sendSlackAlert(payload: AccessRequestPayload, requestId: string):
 
 /**
  * Submits an access request. Tries backend API first (serverless/express),
- * and falls back to direct Supabase + client-side Slack webhook.
+ * and falls back to direct Supabase plus the server-side Slack proxy.
  */
 export async function submitAccessRequest(payload: AccessRequestPayload): Promise<AccessRequestResponse> {
     const fullPayload: AccessRequestPayload = {
@@ -141,7 +132,7 @@ export async function submitAccessRequest(payload: AccessRequestPayload): Promis
         // Fall through to client-side direct fallback
     }
 
-    // 2. Direct client fallback via Supabase SDK + no-cors Slack webhook
+    // 2. Direct client fallback via Supabase SDK + server-side Slack proxy.
     try {
         const requestId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `req_${Date.now()}`
 
@@ -167,7 +158,7 @@ export async function submitAccessRequest(payload: AccessRequestPayload): Promis
             }
         }
 
-        // Fire Slack webhook notification
+        // Notify through the server so no webhook credential reaches the browser.
         await sendSlackAlert(payload, requestId)
 
         return {
