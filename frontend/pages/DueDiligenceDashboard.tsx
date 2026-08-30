@@ -735,10 +735,44 @@ function deriveSynthesisProgress(status?: string, awaiting?: boolean) {
 const submissionRowKey = (row: SubmissionHistoryItem) => row.requestID || String(row.id || '')
 const synthesisRowKey = (row: ProjectSynthesisItem) => String(row.id || `${row.projectId}:${row.updatedAt || row.createdAt || ''}`)
 
+const submissionDetailKeys = [
+    'detectedDocumentTypesJson',
+    'tableStructureIssues',
+    'detectedHeaderRow',
+    'columnMapConfidence',
+    'validatedColumnMap',
+    'employeeCount',
+    'employeeType',
+    'employeeAsOfDate',
+    'employeeConfidence',
+    'employeeCitation',
+    'employeeEvidenceStatus',
+    'financialFactsJson',
+    'reconciliationJson',
+    'extractedJson',
+    'storageFileId',
+    'storageFileUrl',
+    'aiSummary',
+    'aiTargetValue',
+    'aiVariance',
+    'aiEscalationReason',
+    'aiIntent',
+    'aiCitations',
+    'aiRedFlags',
+    'aiYellowFlags',
+    'aiGreenFlags',
+    'valuationLowerBound',
+    'valuationBaseEstimate',
+    'valuationUpperBound',
+    'valuationCurrency',
+    'investmentIsFavorable',
+    'investmentBuyReasoning',
+] as const satisfies readonly (keyof SubmissionHistoryItem)[]
+
 const mergeScopedSubmissionRows = (current: SubmissionHistoryItem[] | null, incoming: SubmissionHistoryItem[]) =>
     mergeDiligenceRows(current, incoming, submissionRowKey)
-const mergePortfolioSubmissionRows = (current: SubmissionHistoryItem[] | null, incoming: SubmissionHistoryItem[]) =>
-    mergeDiligenceRows(current, incoming, submissionRowKey, false)
+const mergeCompactSubmissionRows = (current: SubmissionHistoryItem[] | null, incoming: SubmissionHistoryItem[]) =>
+    mergeDiligenceRows(current, incoming, submissionRowKey, true, submissionDetailKeys)
 const mergeScopedSynthesisRows = (current: ProjectSynthesisItem[] | null, incoming: ProjectSynthesisItem[]) =>
     sortSynthesisRowsNewestFirst(mergeDiligenceRows(current, incoming, synthesisRowKey))
 const mergePortfolioSynthesisRows = (current: ProjectSynthesisItem[] | null, incoming: ProjectSynthesisItem[]) =>
@@ -861,7 +895,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     useEffect(() => {
         void triggerSubmissionHistory(
             { environment: 'production' },
-            { mergeData: mergePortfolioSubmissionRows },
+            { mergeData: mergeCompactSubmissionRows },
         )
         void triggerProjectSynthesis(
             { environment: 'production' },
@@ -2093,7 +2127,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         if (!targetProjectId) return
         void triggerSubmissionHistory(
             { environment: 'production', projectId: targetProjectId, full, limit: 100, skipCache },
-            { mergeData: mergeScopedSubmissionRows },
+            { mergeData: full ? mergeScopedSubmissionRows : mergeCompactSubmissionRows },
         )
     }, [triggerSubmissionHistory])
 

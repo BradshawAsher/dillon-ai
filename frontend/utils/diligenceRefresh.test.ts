@@ -79,6 +79,18 @@ describe('mergeDiligenceRows', () => {
 
         expect(result).toEqual([{ id: 1, status: 'completed', detail: 'full analysis' }])
     })
+
+    it('updates compact status while preserving previously loaded detail', () => {
+        const result = mergeDiligenceRows<Row>(
+            [{ id: 1, status: 'processing', detail: 'full analysis' }],
+            [{ id: 1, status: 'completed', detail: '' }],
+            keyOf,
+            true,
+            ['detail'],
+        )
+
+        expect(result).toEqual([{ id: 1, status: 'completed', detail: 'full analysis' }])
+    })
 })
 
 describe('sortSynthesisRowsNewestFirst', () => {
