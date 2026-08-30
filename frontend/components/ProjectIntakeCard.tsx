@@ -210,7 +210,11 @@ export default function ProjectIntakeCard({
 
     const handleFileDropSelect = (files: File[]) => {
         setFileRequiredWarning(false)
-        if (!files || files.length === 0) return
+        if (!files || files.length === 0) {
+            setPendingFiles([])
+            onFileSelect([])
+            return
+        }
 
         // If an existing project is actively selected, confirm destination with the user
         if (selectedProjectKey !== 'new') {

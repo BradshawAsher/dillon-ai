@@ -119,16 +119,16 @@ export default function FileDropzone({ selectedFiles, onFileSelect, className }:
         void processFileList(Array.from(fileList ?? []))
     }
 
-    const handleDragOver = (event: DragEvent<HTMLLabelElement>) => {
+    const handleDragOver = (event: DragEvent<HTMLElement>) => {
         event.preventDefault()
         setIsDragging(true)
     }
 
-    const handleDragLeave = (_event: DragEvent<HTMLLabelElement>) => {
+    const handleDragLeave = (_event: DragEvent<HTMLElement>) => {
         setIsDragging(false)
     }
 
-    const handleDrop = async (event: DragEvent<HTMLLabelElement>) => {
+    const handleDrop = async (event: DragEvent<HTMLElement>) => {
         event.preventDefault()
         setIsDragging(false)
 
@@ -188,7 +188,9 @@ export default function FileDropzone({ selectedFiles, onFileSelect, className }:
 
     return (
         <div className={cn('flex flex-col gap-3 lg:flex-row lg:items-stretch', className)}>
-            <label
+            <div
+                role="region"
+                aria-label="File upload dropzone"
                 className={cn(
                     'flex min-h-[96px] flex-1 cursor-pointer flex-col items-stretch justify-between gap-4 rounded-lg border border-dashed border-border bg-background px-4 py-4 transition-colors sm:flex-row sm:items-center',
                     isDragging && 'border-primary bg-accent/40',
@@ -197,6 +199,11 @@ export default function FileDropzone({ selectedFiles, onFileSelect, className }:
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
+                onClick={(e) => {
+                    if (e.target === e.currentTarget || (e.target as HTMLElement).closest('.dropzone-body-click')) {
+                        inputRef.current?.click()
+                    }
+                }}
             >
                 {/* File input for individual files */}
                 <input
@@ -219,7 +226,7 @@ export default function FileDropzone({ selectedFiles, onFileSelect, className }:
                     directory=""
                 />
 
-                <div className="flex min-w-0 items-start gap-3 sm:items-center">
+                <div className="dropzone-body-click flex min-w-0 items-start gap-3 sm:items-center">
                     <div className="flex h-11 w-11 items-center justify-center rounded-full bg-secondary text-secondary-foreground">
                         {isExtractingZip ? (
                             <Loader2 className="h-5 w-5 animate-spin text-primary" />
@@ -250,7 +257,7 @@ export default function FileDropzone({ selectedFiles, onFileSelect, className }:
                     </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-center gap-2">
+                <div className="flex flex-col sm:flex-row items-center gap-2" onClick={(e) => e.stopPropagation()}>
                     {/* Unified Action: Browse Files or VDR Folder */}
                     <div className="inline-flex w-full sm:w-auto rounded-lg border border-border/80 bg-background/80 shadow-2xs overflow-hidden p-0.5">
                         <Button
@@ -262,6 +269,7 @@ export default function FileDropzone({ selectedFiles, onFileSelect, className }:
                             title="Select one or more files from your computer"
                             onClick={(event) => {
                                 event.preventDefault()
+                                event.stopPropagation()
                                 inputRef.current?.click()
                             }}
                         >
@@ -279,6 +287,7 @@ export default function FileDropzone({ selectedFiles, onFileSelect, className }:
                             title="Select an entire data room folder containing subdirectories"
                             onClick={(event) => {
                                 event.preventDefault()
+                                event.stopPropagation()
                                 folderInputRef.current?.click()
                             }}
                         >
@@ -289,6 +298,7 @@ export default function FileDropzone({ selectedFiles, onFileSelect, className }:
 
                     {selectedFiles.length > 0 && (
                         <Button
+                            id="clear-files-btn"
                             type="button"
                             variant="destructive"
                             size="sm"
@@ -296,6 +306,7 @@ export default function FileDropzone({ selectedFiles, onFileSelect, className }:
                             title="Clear all selected files"
                             onClick={(event) => {
                                 event.preventDefault()
+                                event.stopPropagation()
                                 if (inputRef.current) inputRef.current.value = ''
                                 if (folderInputRef.current) folderInputRef.current.value = ''
                                 setRejectedNames([])
@@ -310,7 +321,7 @@ export default function FileDropzone({ selectedFiles, onFileSelect, className }:
                         </Button>
                     )}
                 </div>
-            </label>
+            </div>
             {zipExtractionNotice ? (
                 <div className="flex items-center gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-700 dark:text-emerald-300">
                     <Archive className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />

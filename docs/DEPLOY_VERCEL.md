@@ -26,9 +26,10 @@ Deploy the frontend and API together. The committed build command runs
 `api/diligence/[...route].js` bundle. Commit `frontend/package-lock.json` with
 the `tus-js-client` dependency used for resumable uploads.
 
-- Large files upload directly to Supabase in 6 MiB chunks; small files prefer
-  R2. The browser must be able to reach the direct Supabase storage host, not
-  only the Cloudflare Worker.
+- All files upload primarily to **Cloudflare R2** (`dillon-deal-documents`,
+  $0 egress). Files larger than 6 MiB fall back to resumable Supabase uploads
+  in 6 MiB chunks only if R2 upload fails. The browser must be able to reach
+  the Cloudflare Worker CDN and, as a fallback, the direct Supabase storage host.
 - The API receives a storage URL and metadata, then downloads to temporary disk,
   verifies the byte count, and sends the multipart attachment n8n expects.
   Node `22.x` provides `fs.openAsBlob` for the disk-backed attachment.

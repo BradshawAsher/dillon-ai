@@ -7,6 +7,17 @@ import { join } from 'node:path'
 
 export type MultipartEntry = { key: string; value?: string; file?: string; fileUrl?: string; filename?: string; fileSize?: number; contentType?: string }
 
+const STORAGE_CDN_ORIGIN = (process.env.STORAGE_CDN_URL || process.env.VITE_STORAGE_CDN_URL || 'https://dillon-ai-worker.bradshin231.workers.dev').replace(/\/+$/, '')
+const SUPABASE_STORAGE_ORIGIN = 'https://sihpsqrunkwkxhhnwoqe.supabase.co'
+
+export function resolveCdnStorageFetchUrl(url: string): string {
+    const validated = validateDocumentStorageUrl(url)
+    if (validated.startsWith(SUPABASE_STORAGE_ORIGIN)) {
+        return validated.replace(SUPABASE_STORAGE_ORIGIN, STORAGE_CDN_ORIGIN)
+    }
+    return validated
+}
+
 export function validateDocumentStorageUrl(value: string): string {
     const allowed = [
         'https://sihpsqrunkwkxhhnwoqe.supabase.co',
@@ -53,7 +64,8 @@ export async function storedFileMultipart(entries: MultipartEntry[], signal: Abo
                 if (entry.fileSize !== undefined && (!Number.isSafeInteger(entry.fileSize) || entry.fileSize < 0 || entry.fileSize > MAX_HANDOFF_BYTES - totalBytes)) {
                     throw new Error('Stored document size is invalid or exceeds the 256 MiB handoff limit.')
                 }
-                const source = await fetch(validateDocumentStorageUrl(entry.fileUrl), { signal, redirect: 'error' })
+                const fetchUrl = resolveCdnStorageFetchUrl(entry.fileUrl)
+                const source = await fetch(fetchUrl, { signal, redirect: 'error' })
                 if (!source.ok || !source.body) {
                     await source.body?.cancel()
                     throw new Error(`Stored document download failed (HTTP ${source.status}).`)

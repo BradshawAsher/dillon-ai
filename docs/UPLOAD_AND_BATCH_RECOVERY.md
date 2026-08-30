@@ -9,18 +9,21 @@ Deploy frontend and API together; see [deployment requirements](DEPLOY_VERCEL.md
 
 ## Large documents
 
-Files larger than 6 MiB use signed, resumable Supabase Storage uploads in 6 MiB
-chunks on the direct `*.storage.supabase.co` host. Use the
-`/storage/v1/upload/resumable/sign` endpoint with `x-signature`, not the ordinary
-session-authenticated resumable endpoint. Interrupted transfers resume from the
-server's acknowledged byte offset within the current upload; upload URLs/tokens
-are not saved for cross-session resume. Browser reads materialize only one chunk
-at a time, so an unreadable local/cloud-placeholder file is reported explicitly.
+All file uploads route primarily to **Cloudflare R2** (`dillon-deal-documents`
+bucket, $0 egress) via the Worker CDN (`https://dillon-ai-worker.bradshin231.workers.dev`).
+Files larger than 6 MiB fall back to signed, resumable Supabase Storage uploads
+in 6 MiB chunks on the direct `*.storage.supabase.co` host only if R2 upload
+fails. Use the `/storage/v1/upload/resumable/sign` endpoint with `x-signature`,
+not the ordinary session-authenticated resumable endpoint. Interrupted transfers
+resume from the server's acknowledged byte offset within the current upload;
+upload URLs/tokens are not saved for cross-session resume. Browser reads
+materialize only one chunk at a time, so an unreadable local/cloud-placeholder
+file is reported explicitly.
 
-Smaller files use the Cloudflare storage Worker/R2, with a signed Supabase
-fallback. R2 also remains an alternative if the resumable endpoint is unavailable.
-Supabase upload and public URLs stay independent of the Cloudflare proxy, even
-when the backend Supabase client uses that proxy for API reads.
+R2 is the primary upload target for all file sizes. Supabase signed resumable
+upload remains available as a fallback. All backend document downloads route
+through the Cloudflare Worker CDN edge proxy (`resolveCdnStorageFetchUrl`) with
+1-year immutable caching to eliminate Supabase storage egress.
 After a successful storage upload,
 `/api/diligence/submit` receives metadata and the storage URL only, regardless
 of document size. It never receives an 18 MB document encoded in JSON.

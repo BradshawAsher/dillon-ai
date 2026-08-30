@@ -85,6 +85,13 @@ If the user asks to change project synthesis behavior, the agent should:
 - NEVER squish, minify, or collapse JSON schemas into a single unreadable line.
 - ALWAYS validate that the JSON schema parses cleanly with `json.loads()` and has zero escaped quote syntax errors (`\"` vs `\\"`) before saving or applying workflow updates.
 
+## Strict Cloudflare R2 Zero-Egress Storage Protocol
+- **Zero Supabase Storage Egress**: ALL document uploads, diagnostic test scripts, synthetic upload probes, and test file fixtures MUST route through **Cloudflare R2** (`https://dillon-ai-worker.bradshin231.workers.dev` and `https://pub-3b04d9f4c75546caae7c86bd7b6847de.r2.dev`) to prevent incurring Supabase Storage egress bandwidth costs.
+- **Testing & Diagnostics**: NEVER upload test files or mock PDF/XLSX attachments directly to Supabase Storage (`storage.objects` / `sihpsqrunkwkxhhnwoqe.supabase.co`) during automated testing, manual testing, or diagnostic probes. Always target Cloudflare R2 bucket `dillon-deal-documents`.
+- **Download Edge Caching**: All backend streaming utilities (`storedFileMultipart.ts`) MUST fetch storage assets through the Cloudflare Worker CDN edge proxy (`resolveCdnStorageFetchUrl`) so that downloads hit Cloudflare's free edge cache (`Cache-Control: public, max-age=31536000`).
+- **Heartbeat Query Efficiency**: Background heartbeats and status polling MUST explicitly specify `full=false` to fetch compact status columns, avoiding redundant transmission of heavy JSON fields (`extracted_json`, `reconciliation_json`, `financial_facts_json`).
+
+
 
 
 
