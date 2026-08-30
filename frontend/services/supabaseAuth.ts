@@ -83,10 +83,17 @@ export const AUTH_CHANGE_EVENT = 'mergeworks:auth-change'
 
 export function saveAppAuth(user: AppAuthUser | null) {
     if (typeof window === 'undefined') return
-    if (user) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(user))
-    } else {
-        localStorage.removeItem(STORAGE_KEY)
+    try {
+        if (user) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(user))
+        } else {
+            localStorage.removeItem(STORAGE_KEY)
+        }
+    } catch {
+        // Storage can be unavailable (private mode) or full. The in-memory event
+        // dispatch below still propagates the auth change for this session —
+        // matching how getLocalAppAuth already tolerates storage failures —
+        // rather than throwing out of the sign-in/sign-out flow.
     }
     window.dispatchEvent(new CustomEvent(AUTH_CHANGE_EVENT, { detail: { user } }))
 }
