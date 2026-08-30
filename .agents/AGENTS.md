@@ -43,8 +43,9 @@ If the user asks to change project synthesis behavior, the agent should:
 
 ## Root Cause First Protocol
 
-- ALWAYS trace data, UI, and workflow errors to their architectural root cause across n8n workflows, Supabase Data Tables, and frontend state management.
-- NEVER apply superficial string/if-statement patches or band-aids that mask underlying state corruption. If a company name or synthesis version is corrupted upstream, resolve the issue at the data source (n8n/Supabase/Extraction pipeline) first.
+- ALWAYS trace data, UI, and workflow errors to their architectural root cause across the full end-to-end pipeline: Supabase database records, n8n workflows, backend API handlers, client caching (sessionStorage/localStorage), and frontend React state management.
+- When investigating count flapping, infinite timers, or duplicate/ghost versions, inspect the actual database rows and API responses first before assuming the cause.
+- NEVER apply superficial string/if-statement patches or band-aids that mask underlying state corruption. If a company name, synthesis version, or document status is corrupted upstream, resolve the issue at the data source (n8n/Supabase/Extraction pipeline/backend API) first.
 
 ## Mandatory Implementation Plan Protocol
 
