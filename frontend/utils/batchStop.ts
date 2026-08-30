@@ -46,7 +46,11 @@ export function batchCompletionTime(batch: SubmissionBatch, rows: SubmissionHist
         const time = [row.processedAt, row.statusResolvedAt, row.updatedAt].map(value => Date.parse(value || '')).find(Number.isFinite)
         return time ?? observedAt ?? NaN
     }).filter(Number.isFinite)
-    return times.length === rows.length && times.every((time) => time >= batch.startedAt) ? Math.max(...times) : undefined
+    if (times.length !== rows.length || !times.every((time) => time >= batch.startedAt)) return undefined
+    const maxServerTime = Math.max(...times)
+    return observedAt !== undefined && Number.isFinite(observedAt) && observedAt >= batch.startedAt
+        ? Math.max(maxServerTime, observedAt)
+        : maxServerTime
 }
 
 export function createBatchQueue(id: string) {
