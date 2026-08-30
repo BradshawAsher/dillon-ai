@@ -1,15 +1,10 @@
-// Standalone server — runs the dashboard completely outside Retool.
+// Standalone server — runs the dashboard outside dev tooling.
 //
 //   npm run build      # build the frontend into dist/
 //   npm start          # build + serve app and API on http://localhost:3000
 //
-// It executes the REAL backend functions from /backend/diligence (tsx compiles
-// them on the fly), shimming the globals Retool injects via retoolRuntime.ts,
-// and serves the built frontend. Identity comes from the sign-in overlay's
-// headers; PORT overrides the default port.
-//
-// Auth: set APP_PASSWORD (env var or .env file) to gate the API behind a
-// shared team password. Unset (the localhost default), no login is required.
+// It executes backend functions from /backend/diligence in Node
+// and serves the built frontend.
 import crypto from 'node:crypto'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -35,7 +30,7 @@ import handleAccessRequestImport from '../backend/diligence/handleAccessRequest'
 import handleSlackAlertImport from '../backend/diligence/handleSlackAlert'
 import { cleanOrphanRecords } from '../backend/diligence/cleanOrphans'
 import getEvalRunsImport from '../backend/diligence/getEvalRuns'
-import { installRetoolGlobals, userFromHeaders } from './retoolRuntime'
+import { installBackendGlobals, userFromHeaders } from './nodeRuntime'
 
 try {
     process.loadEnvFile()
@@ -69,7 +64,7 @@ const handleAccessRequest = interopDefault(handleAccessRequestImport)
 const handleSlackAlert = interopDefault(handleSlackAlertImport)
 const getEvalRuns = interopDefault(getEvalRunsImport)
 
-installRetoolGlobals()
+installBackendGlobals()
 
 const frontendDir = path.dirname(fileURLToPath(import.meta.url))
 const distDir = path.resolve(frontendDir, 'dist')

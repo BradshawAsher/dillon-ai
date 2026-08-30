@@ -1,23 +1,25 @@
-// Ambient declarations for the globals Retool injects into backend functions.
-// Outside Retool they are provided by installRetoolGlobals() in retoolRuntime.ts.
-// Declaring them lets /backend/diligence typecheck under the strict local tsconfig.
+// Ambient declarations for backend execution runtime.
+// Provided by installBackendGlobals() in nodeRuntime.ts.
 
 declare type User = {
   fullName: string
   email: string
 }
 
-declare type RetoolFormDataEntry =
+declare type MultipartFormDataEntry =
   | { key: string; value: string }
   | { key: string; file: string; filename: string }
   | { key: string; fileUrl: string; filename: string; fileSize: number; contentType: string }
+
+// Backward compatibility alias during migration
+declare type RetoolFormDataEntry = MultipartFormDataEntry
 
 declare const n8nFinancialAgent: {
   rawRequest<T>(options: {
     path: string
     method?: string
     bodyType?: 'form-data' | 'json'
-    formData?: RetoolFormDataEntry[]
+    formData?: MultipartFormDataEntry[]
     json?: Record<string, unknown> | unknown
     body?: any
   }): Promise<{ data: T }>

@@ -54,9 +54,12 @@ module.exports = {
         sm: 'var(--radius-sm)',
       },
       boxShadow: {
-        'retool-sm': 'var(--shadow-retool-sm)',
-        'retool-md': 'var(--shadow-retool-md)',
-        'retool-lg': 'var(--shadow-retool-lg)',
+        'mw-sm': 'var(--shadow-mw-sm)',
+        'mw-md': 'var(--shadow-mw-md)',
+        'mw-lg': 'var(--shadow-mw-lg)',
+        'retool-sm': 'var(--shadow-mw-sm)',
+        'retool-md': 'var(--shadow-mw-md)',
+        'retool-lg': 'var(--shadow-mw-lg)',
       },
       fontFamily: {
         sans: 'var(--font-sans)',

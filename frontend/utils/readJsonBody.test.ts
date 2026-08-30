@@ -4,7 +4,7 @@ import { Readable } from 'node:stream'
 import { describe, expect, it } from 'vitest'
 
 import { HttpError } from '../../api/_lib/httpError'
-import { MAX_REQUEST_BODY_BYTES, readJsonBody } from '../../api/_lib/retoolRuntime'
+import { MAX_REQUEST_BODY_BYTES, readJsonBody } from '../../api/_lib/nodeRuntime'
 
 function mockReq(body: string): IncomingMessage {
     const parts = body.length > 0 ? [Buffer.from(body, 'utf8')] : []

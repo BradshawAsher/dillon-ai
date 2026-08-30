@@ -85,7 +85,6 @@ const KeyboardShortcutsWorkspaceView = lazyWithRetry(() => import('../components
 const ReportIssueWorkspaceView = lazyWithRetry(() => import('../components/views/ReportIssueWorkspaceView'))
 import LatestSubmissionSection from '../components/dashboard/LatestSubmissionSection'
 import { BatchProgressCard } from '../components/dashboard/BatchProgressCard'
-import LegacyDiligenceBackupCard from '../components/dashboard/LegacyDiligenceBackupCard'
 
 import {
     blankHistoryRow,
@@ -139,8 +138,6 @@ import { computeImpactMetrics } from '../utils/impactMetrics'
 import { getAiSubmissionViewModel } from '../utils/aiSubmissionData'
 import { base64ToFile, readFileAsBase64 } from '../utils/fileEncoding'
 import type { ManualDealFormData } from '../utils/manualDealIntake'
-
-const SHOW_LEGACY_DILIGENCE_BACKUP = false
 
 const DEMO_FALLBACK_DOCS: SubmissionHistoryItem[] = Object.freeze([
     {
@@ -3679,7 +3676,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             sourceLocation: finding.sourceCitation,
             excerpt: finding.sourceExcerpt,
             status: finding.findingType,
-            provenance: 'Retool Legacy',
+            provenance: 'Legacy Archive',
         })
     }
 
@@ -4553,16 +4550,6 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                         </section>
                     ) : null}
                 </Suspense>
-
-                {SHOW_LEGACY_DILIGENCE_BACKUP ? (
-                    <LegacyDiligenceBackupCard
-                        diligenceFindings={diligenceFindings}
-                        highPriorityCount={highPriorityCount}
-                        validatedCount={validatedCount}
-                        error={error}
-                        openFindingEvidence={openFindingEvidence}
-                    />
-                ) : null}
             </main>
         </div>
 

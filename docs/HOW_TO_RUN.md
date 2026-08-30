@@ -87,13 +87,10 @@ See [Vercel deployment](DEPLOY_VERCEL.md) for runtime requirements and smoke tes
 | Thing | Where |
 | --- | --- |
 | React UI | `frontend/pages`, `frontend/components` |
-| Backend functions (run in Node, originally Retool) | `backend/diligence/` |
+| Backend functions (run in Node / Serverless) | `backend/diligence/` |
 | Local/standalone server | `frontend/server.ts` (+ dev twin `frontend/localApi.ts`) |
 | n8n webhook contracts | [`docs/n8n-webhooks.md`](n8n-webhooks.md) |
 | Large uploads, failed documents, batch counts/timers | [Upload and Batch Recovery](UPLOAD_AND_BATCH_RECOVERY.md) |
-| n8n workflows | `merge-works.app.n8n.cloud`, project `2606-ai-fellows-mergeworks` |
-| Hosting | Vercel project `due-diligence-dashboard` |
-| Secrets | `N8N_WEBHOOK_SECRET` — Vercel Preview and Production vars + local `frontend/.env` |
 
 ## Troubleshooting
 

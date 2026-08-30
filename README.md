@@ -268,6 +268,31 @@ The configured deployment URL is:
 - **Deal Grade** — letter grade (A–F) across pricing, profitability, risk, data quality, payback.
 - **Quick Valuation & Bridge** — back-of-napkin valuation ranges with price markers, seller add-back adjustments, and escrow recommendations.
 - **Radar Chart** — 5-dimension SVG spider chart (no Recharts dependency).
+
+Use a Vercel preview deployment to validate live history, a test upload,
+batch progress, and project synthesis before promoting a change. See
+[docs/DEPLOY_VERCEL.md](docs/DEPLOY_VERCEL.md) for the full checklist.
+
+## Render backup (legacy)
+
+`render.yaml` defines the Render service. Create a Render Blueprint from the
+repository and set `APP_PASSWORD` and `N8N_WEBHOOK_SECRET` in Render.
+
+The configured deployment URL is:
+
+<https://due-diligence-dashboard.onrender.com/>
+
+## Key UI features
+
+- **Multi-Modal VDR Ingestion Dropzone** — Ingests 9 asset classes (PDF, XLSX, DOCX, EML, WEBP, PPTX, MP3, MP4, and client-side unpacked ZIP archives) with direct presigned cloud uploads.
+- **Interactive Evals & Harness Tab** — 1-Card per deal with real-time `Pre-LOI Discovery` ↔ `Post-LOI Negotiation` toggle, 58 golden benchmark documents, and per-document precision inspection.
+- **Guided Walkthrough & Simulated VDR Modal** — macOS-style interactive VDR file explorer, step-by-step feature tours, and mission quests.
+- **Overview tab** with Summary / Deep Analysis sub-tabs — Deal Memo shown first.
+- **AI Chatbot** (floating panel) — context-aware Q&A about the active project and all other projects in the portfolio.
+- **Deterministic math checks** — pure arithmetic cross-verification of extracted financials (see [DETERMINISTIC_MATH_CHECKS.md](DETERMINISTIC_MATH_CHECKS.md)).
+- **Deal Grade** — letter grade (A–F) across pricing, profitability, risk, data quality, payback.
+- **Quick Valuation & Bridge** — back-of-napkin valuation ranges with price markers, seller add-back adjustments, and escrow recommendations.
+- **Radar Chart** — 5-dimension SVG spider chart (no Recharts dependency).
 - **Risk Matrix** — 2×2 likelihood × impact grid with cross-document contradiction detection.
 - **Confidence Meter** — circular gauge across 4 dimensions.
 - **Seller Questions / DD Request List / Email Draft** — auto-generated from deal state.
@@ -280,12 +305,12 @@ The configured deployment URL is:
 | Path | Role |
 | --- | --- |
 | `ARCHITECTURE.md` | **System architecture, end-to-end data flow diagrams & interview prep guide** |
-| `frontend/pages/` and `frontend/components/` | React interface |
+| `frontend/pages/` and `frontend/components/` | React 19 interface |
 | `frontend/components/walkthrough/` | Interactive walkthrough tour engine & simulated VDR modal |
 | `frontend/hooks/backend/diligence.ts` | Live/mock query hooks used by the UI |
 | `frontend/server.ts` | Standalone Express API and production static server |
 | `frontend/localApi.ts` | Development API middleware |
-| `frontend/retoolRuntime.ts` | Node-side n8n client and Retool-global compatibility shim |
+| `frontend/nodeRuntime.ts` | Node-side n8n webhook dispatcher & API utilities |
 | `backend/diligence/` | Submit, history, and synthesis normalizers |
 | `docs/n8n-webhooks.md` | n8n webhook contracts and troubleshooting |
 | `docs/UPLOAD_AND_BATCH_RECOVERY.md` | Upload transport, batch state, recovery, and verification |
@@ -296,16 +321,10 @@ The configured deployment URL is:
 | `EVALS.md` | Evaluation harness guide, 7-dimension scoring & CI/CD benchmark tests |
 | `EVAL_FAQ_AND_EDGE_CASES.md` | Evaluation edge-case handling & buyer defense FAQ |
 
-## Retool provenance
+## Production Stack & Data Path
 
-The dashboard originated as a Retool export. Some compatibility names remain
-(`n8nFinancialAgent`, generated-hook-shaped APIs, and `retoolRuntime.ts`), but
-the standalone dashboard's active document and synthesis data path is n8n and
-Supabase PostgreSQL/Storage, not Retool DB.
+The standalone dashboard runs directly on **React 19, Vite, Tailwind CSS, Supabase PostgreSQL / Storage, and n8n Cloud Webhooks**. All document extractions, real-time polling, and synthesis results stream through Supabase and n8n Cloud.
 
 ## Team handoff
 
-For the operational handoff to MergeWorks and Trisha—including ownership, live
-n8n expectations, and the release smoke test—see
-[docs/PROJECT_HANDOFF.md](docs/PROJECT_HANDOFF.md). The older Retool-to-VS
-Code handoff is archived under `docs/archive/` for historical context only.
+For the operational handoff to MergeWorks—including ownership, live n8n expectations, and release verification—see [docs/PROJECT_HANDOFF.md](docs/PROJECT_HANDOFF.md).

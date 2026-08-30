@@ -164,7 +164,7 @@ export default async function submitDealPacket(req: { params: Params; user: User
     throw new Error(`Document could not be registered for processing: ${error instanceof Error ? error.message : 'database unavailable'}. The workflow was not started; retry the upload.`)
   }
 
-  const formData: RetoolFormDataEntry[] = [
+  const formData: MultipartFormDataEntry[] = [
     { key: 'fileName', value: req.params.fileName },
     { key: 'fileSize', value: String(req.params.fileSize) },
     { key: 'fileType', value: req.params.fileType },
