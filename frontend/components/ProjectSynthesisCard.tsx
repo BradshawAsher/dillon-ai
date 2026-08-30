@@ -402,9 +402,12 @@ export default function ProjectSynthesisCard({
     const hasCompletedDocs = projectDocuments.some((d) => ['completed', 'approved'].includes(d.status.trim().toLowerCase()))
     const hasRealSynthesis = rawVisibleSyntheses.length > 0 && Boolean(
         rawVisibleSyntheses[0]?.finalJudgmentSummary?.trim() ||
-        (rawVisibleSyntheses[0]?.finalRecommendation?.trim() && !rawVisibleSyntheses[0]?.finalRecommendation?.toUpperCase().includes('SYNTHESIS PENDING'))
+        (rawVisibleSyntheses[0]?.finalRecommendation?.trim() && !rawVisibleSyntheses[0]?.finalRecommendation?.toUpperCase().includes('SYNTHESIS PENDING')) ||
+        (rawVisibleSyntheses[0]?.finalJudgmentJson && rawVisibleSyntheses[0]?.finalJudgmentJson !== '{}') ||
+        (rawVisibleSyntheses[0]?.keyTakeaways && rawVisibleSyntheses[0]?.keyTakeaways.length > 0)
     )
-    const isSynthActive = Boolean(!isSynthStoppedOrFailed && (runningSynthesis || (synthesisPending && !isSynthStoppedOrFailed) || isActivelySynthesizingStatus))
+    const isSynthCompleted = ['synthesized', 'completed', 'success'].includes(activeSynthStatus) || (hasRealSynthesis && !['processing', 'running', 'queued'].includes(activeSynthStatus))
+    const isSynthActive = Boolean(!isSynthStoppedOrFailed && !isSynthCompleted && (runningSynthesis || (synthesisPending && !isSynthStoppedOrFailed) || isActivelySynthesizingStatus))
 
     useEffect(() => {
         if (propSynthesisElapsedSeconds !== undefined && propSynthesisElapsedSeconds !== null) return

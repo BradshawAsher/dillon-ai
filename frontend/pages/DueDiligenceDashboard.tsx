@@ -2016,8 +2016,12 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         const st = (activeProjectSynthesis.projectStatus || '').trim().toLowerCase()
         const hasRealRecommendation = (activeProjectSynthesis.finalRecommendation || '').trim().length > 0 && !(activeProjectSynthesis.finalRecommendation || '').toUpperCase().includes('SYNTHESIS PENDING')
         const hasRealSummary = (activeProjectSynthesis.finalJudgmentSummary || '').trim().length > 0
+        const fjJson = (activeProjectSynthesis.finalJudgmentJson || '').trim()
+        const hasRealJudgmentJson = fjJson.length > 0 && fjJson !== '{}'
+        const hasKeyTakeaways = (activeProjectSynthesis.keyTakeaways || []).length > 0
         const isCompletedStatus = ['synthesized', 'completed', 'success'].includes(st)
-        return isCompletedStatus && (hasRealRecommendation || hasRealSummary)
+        const hasSubstantiveContent = hasRealRecommendation || hasRealSummary || hasRealJudgmentJson || hasKeyTakeaways
+        return isCompletedStatus || (hasSubstantiveContent && !['processing', 'running', 'queued'].includes(st))
     }, [activeProjectSynthesis])
 
     const isCurrentProjectSynthesisRunning = useMemo(() => {
@@ -2038,8 +2042,11 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         }
 
         const synthStatus = (activeProjectSynthesis.projectStatus || '').trim().toLowerCase()
-        if (['processing', 'pending', 'queued', 'running', 'awaiting_synthesis', 'awaiting_documents', 'started', ''].includes(synthStatus)) {
+        if (['processing', 'pending', 'queued', 'running', 'awaiting_synthesis', 'started'].includes(synthStatus)) {
             return true
+        }
+        if (synthStatus === 'awaiting_documents' || synthStatus === '') {
+            return isCurrentProjectExtractingDocs
         }
 
         return false

@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { QueryClientProvider } from '@tanstack/react-query'
 
+import { SpeedInsights } from '@vercel/speed-insights/react'
 import App from './App'
 import DataSourceToggle from './lib/DataSourceToggle'
 import { initTheme } from './lib/darkMode'
@@ -24,6 +25,7 @@ createRoot(document.getElementById('root')!).render(
     <QueryClientProvider client={queryClient}>
       <App />
       <DataSourceToggle />
+      <SpeedInsights />
     </QueryClientProvider>
   </StrictMode>
 )
