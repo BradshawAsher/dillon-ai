@@ -385,7 +385,16 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
     if (!rows) return []
 
     return (rows as Array<Record<string, any>>)
-        .filter((row) => (row.project_id ?? '').trim().length > 0)
+        .filter((row) => {
+            const pid = (row.project_id ?? '').trim()
+            if (!pid) return false
+            const fj = (row.final_judgement_json ?? row.final_judgment_json ?? '').trim()
+            const rec = (row.final_recommendation ?? '').trim()
+            const isStub = (fj === '' || fj === '{}') && (rec === '' || rec.toUpperCase().includes('SYNTHESIS PENDING'))
+            const isAwaiting = ['awaiting_documents', 'pending', 'queued'].includes((row.project_status || '').trim().toLowerCase())
+            if (isStub && isAwaiting) return false
+            return true
+        })
         .map((row): ProjectSynthesisItem => {
             const judgment = getJudgmentValues(row.final_judgement_json ?? row.final_judgment_json)
 

@@ -236,7 +236,8 @@ function useLiveSubmissionHistory() {
                         const parsed = JSON.parse(cached)
                         if (parsed.timestamp && Date.now() - parsed.timestamp < CACHE_TTL_MS && Array.isArray(parsed.data)) {
                             const hasActive = parsed.data.some((r: any) => ['uploading', 'accepted', 'queued', 'processing', 'received', 'running', 'submitted'].includes((r.status || '').trim().toLowerCase()))
-                            if (!hasActive || Date.now() - parsed.timestamp < 3_000) {
+                            // If active documents are in flight, always fetch fresh from network rather than serving stale cache
+                            if (!hasActive) {
                                 return parsed.data as SubmissionHistoryItem[]
                             }
                         }
@@ -273,7 +274,8 @@ function useLiveProjectSynthesis() {
                         const parsed = JSON.parse(cached)
                         if (parsed.timestamp && Date.now() - parsed.timestamp < CACHE_TTL_MS && Array.isArray(parsed.data)) {
                             const hasActive = parsed.data.some((s: any) => ['processing', 'pending', 'queued', 'running', 'awaiting_synthesis', 'awaiting_documents', 'started'].includes((s.projectStatus || '').trim().toLowerCase()))
-                            if (!hasActive || Date.now() - parsed.timestamp < 3_000) {
+                            // If active syntheses are in flight, always fetch fresh from network rather than serving stale cache
+                            if (!hasActive) {
                                 return parsed.data as ProjectSynthesisItem[]
                             }
                         }
