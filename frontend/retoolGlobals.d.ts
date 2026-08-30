@@ -26,3 +26,8 @@ declare const n8nFinancialAgent: {
 declare const retoolDb: {
   query<T>(sql: string): Promise<{ data: T[] }>
 }
+
+declare const __APP_BUILD_INFO__: {
+  commit: string
+  builtAt: string
+}
