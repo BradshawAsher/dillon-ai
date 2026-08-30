@@ -2,10 +2,18 @@ export const VISITOR_ALERT_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000
 export const AUTH_ACTIVITY_ALERT_COOLDOWN_MS = 24 * 60 * 60 * 1000
 export const NEW_ACCOUNT_ALERT_COOLDOWN_MS = 365 * 24 * 60 * 60 * 1000
 
-export function isClientSlackAlertEnabled(flagName: string): boolean {
+export type ClientSlackAlertFlag =
+    | 'VITE_ENABLE_VISITOR_SLACK_ALERTS'
+    | 'VITE_ENABLE_AUTH_ACTIVITY_SLACK_ALERTS'
+
+export function isClientSlackAlertEnabled(flagName: ClientSlackAlertFlag): boolean {
     if (typeof window === 'undefined') return false
-    const env = (import.meta as unknown as { env?: Record<string, string> })?.env
-    return /^(1|true|yes|on)$/i.test(env?.[flagName]?.trim() || '')
+    // Keep these reads static so Vite only embeds the two public booleans. A
+    // dynamic import.meta.env lookup can serialize unrelated VITE_ secrets.
+    const value = flagName === 'VITE_ENABLE_VISITOR_SLACK_ALERTS'
+        ? import.meta.env.VITE_ENABLE_VISITOR_SLACK_ALERTS
+        : import.meta.env.VITE_ENABLE_AUTH_ACTIVITY_SLACK_ALERTS
+    return /^(1|true|yes|on)$/i.test(value?.trim() || '')
 }
 
 export function claimClientAlertCooldown(
