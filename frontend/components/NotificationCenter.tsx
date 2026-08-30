@@ -16,6 +16,8 @@ export type Notification = {
   description: string
   timestamp: Date
   read: boolean
+  projectId?: string
+  targetTab?: "diligence" | "synthesis"
 }
 
 type NotificationCenterProps = {
@@ -152,6 +154,7 @@ export default function NotificationCenter({
                     if (onSelectNotification) {
                       onSelectNotification(notification)
                     }
+                    setOpen(false)
                   }
                   return (
                   <li
