@@ -42,7 +42,7 @@ export function WalkthroughSpotlight({
                                 rx={rx}
                                 ry={rx}
                                 fill="black"
-                                className="transition-all duration-500 ease-out"
+                                className="transition-all duration-200 ease-out"
                             />
                         )}
                     </mask>
@@ -71,7 +71,7 @@ export function WalkthroughSpotlight({
                         stroke="hsl(var(--primary))"
                         strokeWidth="2.5"
                         strokeDasharray="6 4"
-                        className="transition-all duration-500 ease-out animate-pulse"
+                        className="transition-all duration-200 ease-out animate-pulse"
                     />
                 )}
             </svg>

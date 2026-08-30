@@ -1,10 +1,5 @@
 import https from 'node:https'
 
-const DEFAULT_SLACK_WEBHOOK =
-  process.env.SLACK_WEBHOOK_URL ||
-  process.env.VITE_SLACK_WEBHOOK_URL ||
-  'https://hooks.slack.com/services/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'
-
 export interface SlackAlertParams {
   payload?: Record<string, unknown>
   text?: string
@@ -61,9 +56,7 @@ export function extractGeoLocationFromHeaders(headers: Record<string, string | s
  */
 export async function dispatchServerSlackWebhook(slackMessage: Record<string, unknown>): Promise<{ success: boolean; error?: string }> {
   const webhookUrl =
-    process.env.SLACK_WEBHOOK_URL ||
-    process.env.VITE_SLACK_WEBHOOK_URL ||
-    DEFAULT_SLACK_WEBHOOK
+    process.env.SLACK_WEBHOOK_URL || ''
 
   if (!webhookUrl) {
     console.warn('[SlackAlertServer] No SLACK_WEBHOOK_URL configured; skipping dispatch.')

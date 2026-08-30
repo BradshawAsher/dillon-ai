@@ -5,7 +5,12 @@ import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
 import { parseUrlDeepLinkState } from './utils/deepLinking'
 import { initAuthListener, getLocalAppAuth, type AppAuthUser } from './services/supabaseAuth'
-import { sendVisitorTrafficSlackAlert } from './services/slackAlertService'
+import {
+  claimClientAlertCooldown,
+  isClientSlackAlertEnabled,
+  sendVisitorTrafficSlackAlert,
+  VISITOR_ALERT_COOLDOWN_MS,
+} from './services/slackAlertService'
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState<AppAuthUser | null>(getLocalAppAuth)
@@ -37,11 +42,11 @@ export default function App() {
       }
     })
 
-    // 2. Visitor / Guest traffic notification (debounced per browser session)
-    if (typeof window !== 'undefined') {
-      const visitorKey = 'mergeworks.visitorSessionReported'
-      if (!sessionStorage.getItem(visitorKey)) {
-        sessionStorage.setItem(visitorKey, 'true')
+    // 2. Anonymous traffic alerts are intentionally opt-in. When enabled,
+    // report a browser at most once per week instead of once per tab/session.
+    if (typeof window !== 'undefined' && isClientSlackAlertEnabled('VITE_ENABLE_VISITOR_SLACK_ALERTS')) {
+      const visitorKey = 'mergeworks.visitorTrafficAlertReportedAt'
+      if (claimClientAlertCooldown(localStorage, visitorKey, VISITOR_ALERT_COOLDOWN_MS)) {
         const urlParams = new URLSearchParams(window.location.search)
         sendVisitorTrafficSlackAlert({
           path: window.location.pathname + window.location.search,

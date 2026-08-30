@@ -1,5 +1,13 @@
 import { createClient, type User, type Session } from '@supabase/supabase-js'
-import { sendNewAccountSlackAlert, sendSignInSlackAlert, sendSignOutSlackAlert } from './slackAlertService'
+import {
+    AUTH_ACTIVITY_ALERT_COOLDOWN_MS,
+    claimClientAlertCooldown,
+    isClientSlackAlertEnabled,
+    NEW_ACCOUNT_ALERT_COOLDOWN_MS,
+    sendNewAccountSlackAlert,
+    sendSignInSlackAlert,
+    sendSignOutSlackAlert,
+} from './slackAlertService'
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder-project.supabase.co'
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder-anon-key'
@@ -22,6 +30,7 @@ export interface AppAuthUser {
 }
 
 const STORAGE_KEY = 'mergeworks.auth'
+const explicitSignupStartedAtByEmail = new Map<string, number>()
 
 const ADMIN_EMAILS = [
     'bradshaw@mergeworks.io',
@@ -125,6 +134,7 @@ export const getStoredUser = getLocalAppAuth
  */
 export async function signUpWithPassword(email: string, password: string, fullName: string, customTeam?: string) {
     const cleanEmail = email.trim().toLowerCase()
+    explicitSignupStartedAtByEmail.set(cleanEmail, Date.now())
     const defaultTeam = getDefaultTeamForEmail(cleanEmail)
     let team = (customTeam && customTeam.trim()) ? customTeam.trim() : defaultTeam
 
@@ -145,6 +155,7 @@ export async function signUpWithPassword(email: string, password: string, fullNa
     })
 
     if (error) {
+        explicitSignupStartedAtByEmail.delete(cleanEmail)
         return { success: false, error: error.message, user: null }
     }
 
@@ -157,13 +168,15 @@ export async function signUpWithPassword(email: string, password: string, fullNa
     }
 
     saveAppAuth(appUser)
-    // Dispatch Slack alert to #pod-1-agent-alerts
-    sendNewAccountSlackAlert({
-        fullName: appUser.name,
-        email: appUser.email,
-        team: appUser.team,
-        authMethod: 'Email & Password',
-    }).catch(() => {})
+    const newAccountAlertKey = `mergeworks.signupAlertSent.${data.user?.id || cleanEmail}`
+    if (typeof window === 'undefined' || claimClientAlertCooldown(localStorage, newAccountAlertKey, NEW_ACCOUNT_ALERT_COOLDOWN_MS)) {
+        sendNewAccountSlackAlert({
+            fullName: appUser.name,
+            email: appUser.email,
+            team: appUser.team,
+            authMethod: 'Email & Password',
+        }).catch(() => {})
+    }
 
     return { success: true, error: null, user: appUser, session: data.session }
 }
@@ -192,14 +205,6 @@ export async function signInWithPassword(email: string, password: string) {
     const appUser = mapSupabaseUserToAppUser(data.user)
     if (appUser) {
         saveAppAuth(appUser)
-        sendSignInSlackAlert({
-            fullName: appUser.name,
-            email: appUser.email,
-            role: appUser.role,
-            team: appUser.team,
-            authMethod: 'Email & Password',
-            status: 'Success',
-        }).catch(() => {})
     }
 
     return { success: true, error: null, user: appUser, session: data.session }
@@ -343,7 +348,7 @@ export async function signInWithMicrosoft() {
  */
 export async function signOutUser() {
     const currentUser = getLocalAppAuth()
-    if (currentUser) {
+    if (currentUser && isClientSlackAlertEnabled('VITE_ENABLE_AUTH_ACTIVITY_SLACK_ALERTS')) {
         console.info(`[Auth] Dispatching Sign-Out Slack notification for ${currentUser.email}`)
         sendSignOutSlackAlert({
             fullName: currentUser.name,
@@ -411,22 +416,25 @@ export function initAuthListener(onUserChange: (user: AppAuthUser | null) => voi
                     const userCreatedAt = session.user.created_at ? new Date(session.user.created_at).getTime() : 0
                     const isGenuineNewAccount = userCreatedAt > 0 && (Date.now() - userCreatedAt) < 600000 // within 10 minutes of signup
                     const alertKey = `mergeworks.signupAlertSent.${session.user.id}`
+                    const explicitSignupStartedAt = explicitSignupStartedAtByEmail.get(appUser.email.toLowerCase()) || 0
+                    const isExplicitSignupInFlight = explicitSignupStartedAt > 0 && Date.now() - explicitSignupStartedAt < 10 * 60 * 1000
 
-                    if (isGenuineNewAccount && !localStorage.getItem(alertKey)) {
-                        localStorage.setItem(alertKey, 'true')
-                        const provider = session.user.app_metadata?.provider || 'OAuth / SSO'
-                        console.info(`[Auth] Dispatching New Account Slack notification for ${appUser.email}`)
-                        sendNewAccountSlackAlert({
-                            fullName: appUser.name,
-                            email: appUser.email,
-                            team: appUser.team,
-                            authMethod: `${provider.toUpperCase()} Sign-In`,
-                        }).catch((err) => console.warn('[Auth] Failed to send new account alert:', err))
-                    } else {
-                        // Regular sign-in alert with 30-second burst debounce
-                        const sessionAlertKey = `mergeworks.signInAlertSent.${session.user.id}.${Math.floor(Date.now() / (1000 * 30))}`
-                        if (!sessionStorage.getItem(sessionAlertKey)) {
-                            sessionStorage.setItem(sessionAlertKey, 'true')
+                    if (isGenuineNewAccount) {
+                        if (!isExplicitSignupInFlight && claimClientAlertCooldown(localStorage, alertKey, NEW_ACCOUNT_ALERT_COOLDOWN_MS)) {
+                            const provider = session.user.app_metadata?.provider || 'OAuth / SSO'
+                            console.info(`[Auth] Dispatching New Account Slack notification for ${appUser.email}`)
+                            sendNewAccountSlackAlert({
+                                fullName: appUser.name,
+                                email: appUser.email,
+                                team: appUser.team,
+                                authMethod: `${provider.toUpperCase()} Sign-In`,
+                            }).catch((err) => console.warn('[Auth] Failed to send new account alert:', err))
+                        }
+                    } else if (isClientSlackAlertEnabled('VITE_ENABLE_AUTH_ACTIVITY_SLACK_ALERTS')) {
+                        // Routine successful sign-ins are optional and limited
+                        // to one alert per user/browser per day.
+                        const signInAlertKey = `mergeworks.signInAlertSentAt.${session.user.id}`
+                        if (claimClientAlertCooldown(localStorage, signInAlertKey, AUTH_ACTIVITY_ALERT_COOLDOWN_MS)) {
                             const rawProvider = session.user.app_metadata?.provider || 'Google OAuth'
                             const providerLabel = rawProvider.charAt(0).toUpperCase() + rawProvider.slice(1) + (rawProvider.includes('email') ? '' : ' OAuth')
                             console.info(`[Auth] Dispatching Sign-In Slack notification for ${appUser.email}`)

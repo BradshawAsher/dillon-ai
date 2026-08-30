@@ -24,7 +24,7 @@ describe('submitAccessRequest', () => {
         expect(global.fetch).toHaveBeenCalledWith('/api/diligence/access-request', expect.any(Object))
     })
 
-    it('falls back to Supabase and dispatches Slack alert when API fetch fails', async () => {
+    it('falls back to Supabase and dispatches Slack through the server proxy when the API fetch fails', async () => {
         vi.spyOn(supabase, 'from').mockReturnValue({
             insert: vi.fn().mockResolvedValue({ error: null })
         } as unknown as ReturnType<typeof supabase.from>)
@@ -42,6 +42,10 @@ describe('submitAccessRequest', () => {
 
         expect(res.success).toBe(true)
         expect(res.id).toBeDefined()
+        expect(global.fetch).toHaveBeenNthCalledWith(
+            2,
+            '/api/diligence/slack-alert',
+            expect.objectContaining({ method: 'POST' })
+        )
     })
 })
-

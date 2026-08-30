@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import type { WorkspaceTab } from '../DealWorkspaceNav'
 import type { TourPlaylistId, WalkthroughStep, WalkthroughResumeState, TourPlaylist } from './walkthroughTypes'
 import { TOUR_PLAYLISTS, getTabTourPlaylist } from './walkthroughStepsData'
@@ -17,6 +17,26 @@ function resolvePlaylist(tourId: TourPlaylistId): TourPlaylist {
         return getTabTourPlaylist(tabKey)
     }
     return TOUR_PLAYLISTS['core-fast']
+}
+
+function isUsableTarget(element: HTMLElement | null): element is HTMLElement {
+    if (!element || element.hidden || element.getClientRects().length === 0) return false
+    const rect = element.getBoundingClientRect()
+    return rect.width > 0 && rect.height > 0
+}
+
+function findStepTarget(step: WalkthroughStep): HTMLElement | null {
+    if (step.targetElementId) {
+        const byId = document.getElementById(step.targetElementId)
+        if (isUsableTarget(byId)) return byId
+    }
+    if (step.targetSelector) {
+        const matches = document.querySelectorAll<HTMLElement>(step.targetSelector)
+        for (const match of matches) {
+            if (isUsableTarget(match)) return match
+        }
+    }
+    return null
 }
 
 export function useNativeWalkthrough({ activeTab, onTabChange }: UseNativeWalkthroughProps) {
@@ -41,12 +61,30 @@ export function useNativeWalkthrough({ activeTab, onTabChange }: UseNativeWalkth
         }
     })
 
-    const timerRef = useRef<any>(null)
-    const progressTimerRef = useRef<any>(null)
+    const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const progressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+    const stepTimeoutsRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set())
+    const stepExecutionRef = useRef(0)
+    const summaryModalOpenRef = useRef(false)
     const isTransitioningRef = useRef(false)
 
-    const activePlaylist = resolvePlaylist(currentTourId)
+    const activePlaylist = useMemo(() => resolvePlaylist(currentTourId), [currentTourId])
     const currentStep: WalkthroughStep | undefined = activePlaylist.steps[currentStepIndex]
+
+    const clearStepTimeouts = useCallback(() => {
+        stepTimeoutsRef.current.forEach(clearTimeout)
+        stepTimeoutsRef.current.clear()
+        stepExecutionRef.current += 1
+    }, [])
+
+    const scheduleStepTask = useCallback((task: () => void, delayMs: number) => {
+        const timeout = setTimeout(() => {
+            stepTimeoutsRef.current.delete(timeout)
+            task()
+        }, delayMs)
+        stepTimeoutsRef.current.add(timeout)
+        return timeout
+    }, [])
 
     // Save resume state helper
     const persistResumeState = useCallback((tourId: TourPlaylistId, stepIdx: number) => {
@@ -75,26 +113,18 @@ export function useNativeWalkthrough({ activeTab, onTabChange }: UseNativeWalkth
     }, [])
 
     // Find and track target DOM element for current step
-    const updateTargetPosition = useCallback(() => {
-        if (!isActive || !currentStep) {
+    const positionStepTarget = useCallback((step: WalkthroughStep | undefined) => {
+        if (!step) {
             setTargetRect(null)
             setCursorPos(null)
             return
         }
 
-        let el: HTMLElement | null = null
-
-        if (currentStep.targetElementId) {
-            el = document.getElementById(currentStep.targetElementId)
-        }
-
-        if (!el && currentStep.targetSelector) {
-            el = document.querySelector(currentStep.targetSelector) as HTMLElement | null
-        }
-
-        // Fallback: If no exact element is found, target the workspace navigation or main card container
+        const el = findStepTarget(step)
         if (!el) {
-            el = document.getElementById('deal-workspace') || document.querySelector('main') || document.body
+            setTargetRect(null)
+            setCursorPos(null)
+            return
         }
 
         if (el) {
@@ -116,13 +146,13 @@ export function useNativeWalkthrough({ activeTab, onTabChange }: UseNativeWalkth
             let targetX = rect.left + rect.width / 2
             let targetY = rect.top + rect.height / 2
 
-            if (currentStep.cursorPlacement === 'top-left') {
+            if (step.cursorPlacement === 'top-left') {
                 targetX = rect.left + Math.min(rect.width * 0.2, 80)
                 targetY = rect.top + Math.min(rect.height * 0.2, 40)
-            } else if (currentStep.cursorPlacement === 'top-right') {
+            } else if (step.cursorPlacement === 'top-right') {
                 targetX = rect.right - Math.min(rect.width * 0.2, 80)
                 targetY = rect.top + Math.min(rect.height * 0.2, 40)
-            } else if (currentStep.cursorPlacement === 'bottom-right') {
+            } else if (step.cursorPlacement === 'bottom-right') {
                 targetX = rect.right - Math.min(rect.width * 0.2, 60)
                 targetY = rect.bottom - Math.min(rect.height * 0.2, 40)
             }
@@ -141,7 +171,15 @@ export function useNativeWalkthrough({ activeTab, onTabChange }: UseNativeWalkth
                 return { x: clampedX, y: clampedY }
             })
         }
-    }, [isActive, currentStep])
+    }, [])
+
+    const updateTargetPosition = useCallback(() => {
+        if (!isActive) {
+            positionStepTarget(undefined)
+            return
+        }
+        positionStepTarget(currentStep)
+    }, [currentStep, isActive, positionStepTarget])
 
     // Speech synthesis narration
     const speakNarrative = useCallback((text: string) => {
@@ -158,6 +196,8 @@ export function useNativeWalkthrough({ activeTab, onTabChange }: UseNativeWalkth
 
     // Execute step setup (tab transition, scrolling, voiceover, simulated clicks)
     const executeStep = useCallback((step: WalkthroughStep, tourId?: TourPlaylistId, stepIdx?: number) => {
+        clearStepTimeouts()
+        const executionId = stepExecutionRef.current
         isTransitioningRef.current = true
         setStepProgress(0)
         setQuestSuccess(false)
@@ -212,13 +252,13 @@ export function useNativeWalkthrough({ activeTab, onTabChange }: UseNativeWalkth
         }
 
         // 1.1c Trigger High-Level Summary Modal open/close
-        const isSummaryModalStep =
+        const isSummaryModalTarget =
             step.targetElementId?.includes('summary-modal') ||
-            step.targetSelector?.includes('summary-modal') ||
-            step.simulatedAction?.type === 'open_summary_modal'
+            step.targetSelector?.includes('summary-modal')
+        const summaryAction = step.simulatedAction?.type
 
         if (typeof window !== 'undefined') {
-            if (isSummaryModalStep) {
+            if (summaryAction === 'open_summary_modal') {
                 window.dispatchEvent(
                     new CustomEvent('mergeworks:walkthrough-action', {
                         detail: {
@@ -227,7 +267,8 @@ export function useNativeWalkthrough({ activeTab, onTabChange }: UseNativeWalkth
                         },
                     })
                 )
-            } else {
+                summaryModalOpenRef.current = true
+            } else if (summaryAction === 'close_summary_modal') {
                 window.dispatchEvent(
                     new CustomEvent('mergeworks:walkthrough-action', {
                         detail: {
@@ -236,6 +277,27 @@ export function useNativeWalkthrough({ activeTab, onTabChange }: UseNativeWalkth
                         },
                     })
                 )
+                summaryModalOpenRef.current = false
+            } else if (isSummaryModalTarget && !summaryModalOpenRef.current) {
+                window.dispatchEvent(
+                    new CustomEvent('mergeworks:walkthrough-action', {
+                        detail: {
+                            stepId: step.id,
+                            action: { type: 'open_summary_modal' },
+                        },
+                    })
+                )
+                summaryModalOpenRef.current = true
+            } else if (!isSummaryModalTarget && summaryModalOpenRef.current) {
+                window.dispatchEvent(
+                    new CustomEvent('mergeworks:walkthrough-action', {
+                        detail: {
+                            stepId: step.id,
+                            action: { type: 'close_summary_modal' },
+                        },
+                    })
+                )
+                summaryModalOpenRef.current = false
             }
         }
 
@@ -266,7 +328,7 @@ export function useNativeWalkthrough({ activeTab, onTabChange }: UseNativeWalkth
                     })
                 )
             }
-            if (step.simulatedAction) {
+            if (step.simulatedAction && !['open_summary_modal', 'close_summary_modal'].includes(step.simulatedAction.type)) {
                 window.dispatchEvent(
                     new CustomEvent('mergeworks:walkthrough-action', {
                         detail: {
@@ -278,53 +340,37 @@ export function useNativeWalkthrough({ activeTab, onTabChange }: UseNativeWalkth
             }
         }
 
-        // 2. Multi-frame polling to find element after tab/suspense render
+        // 2. Wait for the target to mount, then perform one coordinated scroll.
+        // Old step timers are cancelled above so a previous step cannot pull the
+        // viewport away after the user has advanced.
         const attemptScrollAndPosition = () => {
-            let el: HTMLElement | null = null
-            if (step.targetElementId) el = document.getElementById(step.targetElementId)
-            if (!el && step.targetSelector) el = document.querySelector(step.targetSelector) as HTMLElement | null
-
-            if (el) {
-                // If el is inside any scrollable parent container (e.g. drawer or overflow container), scroll that container
-                let curr = el.parentElement
-                while (curr && curr !== document.body && curr !== document.documentElement) {
-                    const style = window.getComputedStyle(curr)
-                    const overflowY = style.overflowY
-                    if ((overflowY === 'auto' || overflowY === 'scroll') && curr.scrollHeight > curr.clientHeight) {
-                        const parentRect = curr.getBoundingClientRect()
-                        const elRect = el.getBoundingClientRect()
-                        const relativeTop = elRect.top - parentRect.top + curr.scrollTop
-                        curr.scrollTo({ top: Math.max(0, relativeTop - 30), behavior: 'smooth' })
-                        break
-                    }
-                    curr = curr.parentElement
-                }
-
-                // Also scroll main window viewport so target element is clearly framed ~110px from top
-                const elRect = el.getBoundingClientRect()
-                const absoluteElementTop = elRect.top + window.pageYOffset
-                const targetScrollY = Math.max(0, absoluteElementTop - 110)
-                window.scrollTo({ top: targetScrollY, behavior: 'smooth' })
-            }
-            updateTargetPosition()
+            if (executionId !== stepExecutionRef.current) return false
+            const el = findStepTarget(step)
+            if (!el) return false
+            el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' })
+            positionStepTarget(step)
+            scheduleStepTask(() => positionStepTarget(step), 240)
+            return true
         }
 
-        setTimeout(attemptScrollAndPosition, 50)
-        setTimeout(attemptScrollAndPosition, 150)
-        setTimeout(attemptScrollAndPosition, 300)
-        setTimeout(attemptScrollAndPosition, 600)
-        setTimeout(attemptScrollAndPosition, 1000)
+        const targetAttempts = [60, 180, 420, 850, 1400]
+        let targetFound = false
+        targetAttempts.forEach((delay) => {
+            scheduleStepTask(() => {
+                if (!targetFound) targetFound = attemptScrollAndPosition()
+            }, delay)
+        })
 
         // Trigger simulated click ripple after cursor arrives
-        setTimeout(() => {
+        scheduleStepTask(() => {
             setIsClicking(true)
-            setTimeout(() => setIsClicking(false), 400)
+            scheduleStepTask(() => setIsClicking(false), 300)
             isTransitioningRef.current = false
-        }, 500)
+        }, 420)
 
         // Trigger voiceover
         speakNarrative(`${step.title}. ${step.narrative}`)
-    }, [activeTab, currentTourId, currentStepIndex, onTabChange, persistResumeState, speakNarrative, updateTargetPosition])
+    }, [activeTab, clearStepTimeouts, currentTourId, currentStepIndex, onTabChange, persistResumeState, positionStepTarget, scheduleStepTask, speakNarrative])
 
     // Handle upload from mock VDR File Explorer
     const handleUploadFromVDR = useCallback((files?: any[]) => {
@@ -371,12 +417,14 @@ export function useNativeWalkthrough({ activeTab, onTabChange }: UseNativeWalkth
 
     // Stop and exit tour (preserves resumeState so user can resume later!)
     const stopTour = useCallback(() => {
+        clearStepTimeouts()
         setIsActive(false)
         setIsPlaying(false)
         setStepProgress(0)
         setTargetRect(null)
         setCursorPos(null)
         setIsFileExplorerOpen(false)
+        summaryModalOpenRef.current = false
         if (timerRef.current) clearTimeout(timerRef.current)
         if (progressTimerRef.current) clearInterval(progressTimerRef.current)
         if (typeof window !== 'undefined' && window.speechSynthesis) {
@@ -393,7 +441,7 @@ export function useNativeWalkthrough({ activeTab, onTabChange }: UseNativeWalkth
                 })
             )
         }
-    }, [])
+    }, [clearStepTimeouts])
 
     // Advance to next step
     const nextStep = useCallback(() => {
@@ -402,12 +450,12 @@ export function useNativeWalkthrough({ activeTab, onTabChange }: UseNativeWalkth
         if (currentStepIndex < maxIndex) {
             const nextIdx = currentStepIndex + 1
             setCurrentStepIndex(nextIdx)
-            executeStep(activePlaylist.steps[nextIdx])
+            executeStep(activePlaylist.steps[nextIdx], currentTourId, nextIdx)
         } else {
             // Tour complete!
             stopTour()
         }
-    }, [isActive, activePlaylist, currentStepIndex, executeStep, stopTour])
+    }, [isActive, activePlaylist, currentStepIndex, currentTourId, executeStep, stopTour])
 
     // Go to previous step (wraps around to last step from step 0)
     const prevStep = useCallback(() => {
@@ -415,15 +463,15 @@ export function useNativeWalkthrough({ activeTab, onTabChange }: UseNativeWalkth
         const maxIndex = activePlaylist.steps.length - 1
         const prevIdx = currentStepIndex > 0 ? currentStepIndex - 1 : maxIndex
         setCurrentStepIndex(prevIdx)
-        executeStep(activePlaylist.steps[prevIdx])
-    }, [isActive, activePlaylist, currentStepIndex, executeStep])
+        executeStep(activePlaylist.steps[prevIdx], currentTourId, prevIdx)
+    }, [isActive, activePlaylist, currentStepIndex, currentTourId, executeStep])
 
     // Jump to specific step
     const goToStep = useCallback((index: number) => {
         if (!isActive || index < 0 || index >= activePlaylist.steps.length) return
         setCurrentStepIndex(index)
-        executeStep(activePlaylist.steps[index])
-    }, [isActive, activePlaylist, executeStep])
+        executeStep(activePlaylist.steps[index], currentTourId, index)
+    }, [isActive, activePlaylist, currentTourId, executeStep])
 
     // Toggle Play/Pause
     const togglePlay = useCallback(() => {
@@ -469,7 +517,9 @@ export function useNativeWalkthrough({ activeTab, onTabChange }: UseNativeWalkth
         }
 
         const totalDuration = (currentStep.durationMs || 6500) / playbackSpeed
-        const intervalMs = 50
+        // Keep progress responsive without forcing the entire dashboard to
+        // reconcile twenty times per second.
+        const intervalMs = 200
         const stepIncrement = (intervalMs / totalDuration) * 100
 
         let currentProgress = 0
@@ -501,21 +551,30 @@ export function useNativeWalkthrough({ activeTab, onTabChange }: UseNativeWalkth
     useEffect(() => {
         if (!isActive) return
 
+        let frameId: number | null = null
         const handleUpdate = () => {
-            requestAnimationFrame(updateTargetPosition)
+            if (frameId !== null) cancelAnimationFrame(frameId)
+            frameId = requestAnimationFrame(updateTargetPosition)
         }
 
         window.addEventListener('resize', handleUpdate, { passive: true })
-        window.addEventListener('scroll', handleUpdate, { passive: true })
+        window.addEventListener('scroll', handleUpdate, { passive: true, capture: true })
 
-        const interval = setInterval(updateTargetPosition, 400)
+        const interval = setInterval(updateTargetPosition, 250)
+        const target = currentStep ? findStepTarget(currentStep) : null
+        const resizeObserver = target && typeof ResizeObserver !== 'undefined'
+            ? new ResizeObserver(handleUpdate)
+            : null
+        if (target && resizeObserver) resizeObserver.observe(target)
 
         return () => {
             window.removeEventListener('resize', handleUpdate)
-            window.removeEventListener('scroll', handleUpdate)
+            window.removeEventListener('scroll', handleUpdate, true)
+            if (frameId !== null) cancelAnimationFrame(frameId)
+            resizeObserver?.disconnect()
             clearInterval(interval)
         }
-    }, [isActive, updateTargetPosition])
+    }, [currentStep, isActive, updateTargetPosition])
 
     // Keyboard navigation shortcuts
     useEffect(() => {
@@ -575,4 +634,3 @@ export function useNativeWalkthrough({ activeTab, onTabChange }: UseNativeWalkth
         notifyQuestAction,
     }
 }
-

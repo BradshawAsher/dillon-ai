@@ -504,7 +504,7 @@ export function WalkthroughHUD({
                     <div className="absolute left-0 top-0 h-1 w-full bg-muted/40">
                         <div
                             className="h-full bg-gradient-to-r from-primary to-emerald-400 transition-all duration-75 ease-linear"
-                            style={{ width: `${stepProgress}%` }}
+                            style={{ width: `${stepProgress}%`, transition: 'width 200ms linear' }}
                         />
                     </div>
                 )}

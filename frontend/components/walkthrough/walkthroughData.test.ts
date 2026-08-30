@@ -5,6 +5,7 @@ import {
     QUEST_MISSIONS,
     TOUR_PLAYLISTS,
     TAB_TOUR_STEPS,
+    getTabTourPlaylist,
 } from './walkthroughStepsData'
 import { TAB_METADATA } from './tabMetadata'
 import { VALID_WORKSPACE_TABS } from '../../utils/deepLinking'
@@ -68,7 +69,12 @@ describe('Walkthrough Playlists & Step Data Validation', () => {
     })
 
     it('ensures every step contains required non-empty fields', () => {
-        const allSteps = [...CORE_FAST_STEPS, ...DEEP_DIVE_STEPS, ...QUEST_MISSIONS]
+        const allSteps = [
+            ...CORE_FAST_STEPS,
+            ...DEEP_DIVE_STEPS,
+            ...QUEST_MISSIONS,
+            ...Object.values(TAB_TOUR_STEPS).flat(),
+        ]
 
         allSteps.forEach((step) => {
             expect(step.id).toBeTruthy()
@@ -77,6 +83,20 @@ describe('Walkthrough Playlists & Step Data Validation', () => {
             expect(step.targetSelector || step.targetElementId).toBeTruthy()
             expect(step.durationMs).toBeGreaterThan(0)
         })
+    })
+
+    it('returns a stable playlist object so progress renders do not restart autoplay', () => {
+        expect(getTabTourPlaylist('documents')).toBe(getTabTourPlaylist('documents'))
+        expect(getTabTourPlaylist('documents').title).toBe('Projects Tab Guided Tour')
+    })
+
+    it('keeps the Projects summary button and close button mounted while explaining them', () => {
+        const projectsSteps = TAB_TOUR_STEPS.documents
+        expect(projectsSteps[5].targetElementId).toBe('project-card-summary-btn')
+        expect(projectsSteps[5].simulatedAction).toBeUndefined()
+        expect(projectsSteps[6].targetElementId).toBe('summary-modal-financials')
+        expect(projectsSteps[7].targetElementId).toBe('summary-modal-close-btn')
+        expect(projectsSteps[7].simulatedAction).toBeUndefined()
     })
 })
 

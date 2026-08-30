@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 
 import { Archive, ArchiveRestore, Bot, BriefcaseBusiness, CheckCircle, Clock3, Cpu, DollarSign, Download, Eye, FileStack, FileText, Flag, FolderKanban, Layers, Plus, RefreshCw, Search, ShieldAlert, Sparkles, TriangleAlert, Link2, Check } from 'lucide-react'
 import ExpandableText from './ExpandableText'
@@ -186,30 +186,43 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
         setIsSummaryModalOpen(true)
     }
 
-    const workstreams = [...new Set(rows.map((row) => row.workstream.trim()).filter(Boolean))].sort()
-    const filteredRows = rows.filter((row) => {
-        const status = row.status.trim().toLowerCase()
-        const risk = `${row.trafficLight} ${row.riskLevel}`.trim().toLowerCase()
-        const workstreamMatches = workstreamFilter === 'all' || row.workstream.trim() === workstreamFilter
-        const statusMatches = statusFilter === 'all' || status === statusFilter
-        const riskMatches = riskFilter === 'all'
-            || (riskFilter === 'attention' && /red|high|yellow|medium/.test(risk))
-            || (riskFilter === 'high' && /red|high/.test(risk))
-        return workstreamMatches && statusMatches && riskMatches
-    })
-    const allProjects = createProjectSummaries(filteredRows, null, syntheses)
+    const workstreams = useMemo(
+        () => [...new Set(rows.map((row) => row.workstream.trim()).filter(Boolean))].sort(),
+        [rows]
+    )
+    const allProjects = useMemo(() => {
+        const filteredRows = rows.filter((row) => {
+            const status = row.status.trim().toLowerCase()
+            const risk = `${row.trafficLight} ${row.riskLevel}`.trim().toLowerCase()
+            const workstreamMatches = workstreamFilter === 'all' || row.workstream.trim() === workstreamFilter
+            const statusMatches = statusFilter === 'all' || status === statusFilter
+            const riskMatches = riskFilter === 'all'
+                || (riskFilter === 'attention' && /red|high|yellow|medium/.test(risk))
+                || (riskFilter === 'high' && /red|high/.test(risk))
+            return workstreamMatches && statusMatches && riskMatches
+        })
+        return createProjectSummaries(filteredRows, null, syntheses)
+    }, [riskFilter, rows, statusFilter, syntheses, workstreamFilter])
 
-    const activeProjects = allProjects.filter((project) => !project.isArchived)
-    const archivedProjects = allProjects.filter((project) => project.isArchived)
-    const targetProjects = portfolioTab === 'active' ? activeProjects : archivedProjects
-
-    const activeProjectCount = activeProjects.filter((project) => project.activeCount > 0).length
-    const reviewProjectCount = activeProjects.filter((project) => project.reviewCount > 0).length
-    const readyProjectCount = activeProjects.filter((project) => project.statusLabel === 'Ready for synthesis').length
-    const totalDocuments = activeProjects.reduce((sum, project) => sum + project.documentCount, 0)
+    const { activeProjects, archivedProjects, activeProjectCount, reviewProjectCount, readyProjectCount, totalDocuments } = useMemo(() => {
+        const active = allProjects.filter((project) => !project.isArchived)
+        const archived = allProjects.filter((project) => project.isArchived)
+        return {
+            activeProjects: active,
+            archivedProjects: archived,
+            activeProjectCount: active.filter((project) => project.activeCount > 0).length,
+            reviewProjectCount: active.filter((project) => project.reviewCount > 0).length,
+            readyProjectCount: active.filter((project) => project.statusLabel === 'Ready for synthesis').length,
+            totalDocuments: active.reduce((sum, project) => sum + project.documentCount, 0),
+        }
+    }, [allProjects])
+    const targetProjects = useMemo(
+        () => portfolioTab === 'active' ? activeProjects : archivedProjects,
+        [activeProjects, archivedProjects, portfolioTab]
+    )
     const normalizedProjectSearch = projectSearch.trim().toLowerCase()
 
-    const visibleProjects = normalizedProjectSearch.length === 0
+    const visibleProjects = useMemo(() => normalizedProjectSearch.length === 0
         ? targetProjects
         : targetProjects.filter((project) => {
             const searchableProjectText = [
@@ -221,7 +234,7 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
             ].join(' ').toLowerCase()
 
             return searchableProjectText.includes(normalizedProjectSearch)
-        })
+        }), [normalizedProjectSearch, targetProjects])
 
     useEffect(() => {
         const handleWalkthroughAction = (e: CustomEvent) => {
