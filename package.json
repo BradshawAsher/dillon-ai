@@ -5,37 +5,7 @@
     "eval": "node scripts/fast-run.js scripts/run-evals.ts",
     "eval:failures": "node scripts/fast-run.js scripts/failure-report.ts"
   },
-  "retool": {
-    "app": {
-      "uuid": "a54e2a16-7257-11f1-adf2-d3cdbdaf3f5c",
-      "name": null,
-      "resourceReferencesByFile": {
-        "/backend/diligence/getDiligenceData.ts": [
-          {
-            "name": "6d74aa46-3ccf-4e10-8827-856d9bf5dd35",
-            "displayName": "retool_db",
-            "type": "retoolDb"
-          }
-        ],
-        "/backend/diligence/submitDealPacket.ts": [
-          {
-            "name": "912b7b7b-0324-40d0-9907-a36c0145a48a",
-            "displayName": "n8n_financial_agent",
-            "type": "restapi"
-          }
-        ],
-        "/backend/user.d.ts": [],
-        "/backend/diligence/getSubmissionHistory.ts": [
-          {
-            "name": "912b7b7b-0324-40d0-9907-a36c0145a48a",
-            "displayName": "n8n_financial_agent",
-            "type": "restapi"
-          }
-        ],
-        "/backend/diligence/submissionPayload.ts": []
-      }
-    }
-  },
+
   "dependencies": {
     "@supabase/supabase-js": "^2.111.0"
   },

@@ -27,10 +27,12 @@
   --chart-2: 240 3.8% 46.1%;
   --chart-3: 240 5.2% 33.9%;
   --chart-4: 240 5.3% 26.1%;
-  --chart-5: 240 3.7% 15.9%;
-  --shadow-retool-sm: 0px 2px 4px rgba(55, 55, 55, 0.08), 0px 1px 1px rgba(0, 0, 0, 0.12);
-  --shadow-retool-md: 0px 6px 12px rgba(55, 55, 55, 0.08), 0px 2px 6px rgba(0, 0, 0, 0.12);
-  --shadow-retool-lg: 0px 10px 20px rgba(55, 55, 55, 0.08), 0px 4px 10px rgba(0, 0, 0, 0.12);
+  --shadow-mw-sm: 0px 2px 4px rgba(55, 55, 55, 0.08), 0px 1px 1px rgba(0, 0, 0, 0.12);
+  --shadow-mw-md: 0px 6px 12px rgba(55, 55, 55, 0.08), 0px 2px 6px rgba(0, 0, 0, 0.12);
+  --shadow-mw-lg: 0px 10px 20px rgba(55, 55, 55, 0.08), 0px 4px 10px rgba(0, 0, 0, 0.12);
+  --shadow-retool-sm: var(--shadow-mw-sm);
+  --shadow-retool-md: var(--shadow-mw-md);
+  --shadow-retool-lg: var(--shadow-mw-lg);
   --radius: 0.5rem;
   --radius-md: calc(0.5rem - 2px);
   --radius-sm: calc(0.5rem - 4px);
@@ -74,9 +76,12 @@
   --chart-3: 240 4.9% 83.9%;
   --chart-4: 240 5.9% 90.0%;
   --chart-5: 240 4.8% 95.9%;
-  --shadow-retool-sm: 0px 2px 4px rgba(0, 0, 0, 0.4), 0px 1px 1px rgba(0, 0, 0, 0.5);
-  --shadow-retool-md: 0px 6px 12px rgba(0, 0, 0, 0.4), 0px 2px 6px rgba(0, 0, 0, 0.5);
-  --shadow-retool-lg: 0px 10px 20px rgba(0, 0, 0, 0.4), 0px 4px 10px rgba(0, 0, 0, 0.5);
+  --shadow-mw-sm: 0px 2px 4px rgba(0, 0, 0, 0.4), 0px 1px 1px rgba(0, 0, 0, 0.5);
+  --shadow-mw-md: 0px 6px 12px rgba(0, 0, 0, 0.4), 0px 2px 6px rgba(0, 0, 0, 0.5);
+  --shadow-mw-lg: 0px 10px 20px rgba(0, 0, 0, 0.4), 0px 4px 10px rgba(0, 0, 0, 0.5);
+  --shadow-retool-sm: var(--shadow-mw-sm);
+  --shadow-retool-md: var(--shadow-mw-md);
+  --shadow-retool-lg: var(--shadow-mw-lg);
 }
 
 * {
@@ -109,7 +114,7 @@ body {
 
 .hover-lift:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-retool-md);
+  box-shadow: var(--shadow-mw-md);
 }
 
 /* Micro-animations */

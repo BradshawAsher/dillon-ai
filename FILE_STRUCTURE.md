@@ -12,8 +12,7 @@ Due-Diligence-Dashboard/
 │   ├── components/               # Atomic & Domain-specific UI Cards
 │   │   ├── dashboard/            # Extracted Sub-Dashboard Cards (<400 lines each)
 │   │   │   ├── BatchProgressCard.tsx         # Real-time batch progress & retry controls
-│   │   │   ├── LatestSubmissionSection.tsx   # Detailed analysis, flags & citations
-│   │   │   └── LegacyDiligenceBackupCard.tsx # Legacy Retool findings backup table
+│   │   │   └── LatestSubmissionSection.tsx   # Detailed analysis, flags & citations
 │   │   ├── views/                # Extracted Workspace Tab Views (<400 lines each)
 │   │   │   ├── OverviewWorkspaceView.tsx
 │   │   │   ├── DiligenceWorkspaceView.tsx

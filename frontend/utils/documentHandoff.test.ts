@@ -4,8 +4,8 @@ import { once } from 'node:events'
 import { mkdtemp, stat } from 'node:fs/promises'
 import { MAX_HANDOFF_BYTES, storedFileMultipart } from '../../backend/diligence/storedFileMultipart'
 import { fetchWithDocumentHandoff } from '../../backend/diligence/documentHandoff'
-import { installRetoolGlobals as installApiRuntime } from '../../api/_lib/retoolRuntime'
-import { installRetoolGlobals as installDevRuntime } from '../retoolRuntime'
+import { installBackendGlobals as installApiRuntime } from '../../api/_lib/nodeRuntime'
+import { installBackendGlobals as installDevRuntime } from '../nodeRuntime'
 
 vi.mock('node:fs/promises', async (original) => {
     const fs = await original<typeof import('node:fs/promises')>()

@@ -1,17 +1,15 @@
-// Vite dev-server plugin that stands in for Retool's backend runtime.
+// Vite dev-server plugin for local API runtime.
 //
-// It serves same-origin /api/diligence/* routes and executes the REAL backend
-// functions from /backend/diligence in Node, shimming the globals Retool
-// injects (see retoolRuntime.ts). The browser never fetches external hosts —
-// requests to n8n happen server-side, matching the production architecture
-// described in docs/PROJECT_HANDOFF.md.
+// It serves same-origin /api/diligence/* routes and executes backend
+// functions from /backend/diligence in Node. The browser never fetches external hosts —
+// requests to n8n happen server-side.
 //
 // Dev server only; the standalone equivalent is server.ts.
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { Connect, Plugin, ViteDevServer } from 'vite'
 
-import { installRetoolGlobals, readJsonBody, userFromHeaders } from './retoolRuntime'
+import { installBackendGlobals, readJsonBody, userFromHeaders } from './nodeRuntime'
 
 // Pick up N8N_WEBHOOK_SECRET etc. from frontend/.env in dev mode, matching
 // the standalone server's behavior.
@@ -197,7 +195,7 @@ export function localBackendApi(): Plugin {
         name: 'local-backend-api',
         apply: 'serve',
         configureServer(server) {
-            installRetoolGlobals()
+            installBackendGlobals()
             server.middlewares.use('/api/diligence', (req, res) => {
                 handleRequest(server, req, res).catch((error: unknown) => {
                     res.statusCode = 500

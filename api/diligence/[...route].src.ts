@@ -20,14 +20,14 @@ import updateSubmissionRow from '../../backend/diligence/updateSubmissionRow'
 import handleAccessRequest from '../../backend/diligence/handleAccessRequest'
 import handleSlackAlert from '../../backend/diligence/handleSlackAlert'
 import crypto from 'node:crypto'
-import { installRetoolGlobals, readJsonBody, userFromHeaders } from '../_lib/retoolRuntime'
+import { installBackendGlobals, readJsonBody, userFromHeaders } from '../_lib/nodeRuntime'
 import { getClientIp, rateLimit } from '../_lib/rateLimit'
 import { messageFromError, statusFromError } from '../_lib/httpError'
 
 type ApiRequest = IncomingMessage
 
-// n8n client still needed for submit + retry (workflow triggers).
-installRetoolGlobals()
+// Backend global execution environment
+installBackendGlobals()
 
 function sendJson(req: ApiRequest, res: ServerResponse, status: number, body: unknown, cacheControl?: string) {
     const jsonString = JSON.stringify(body)

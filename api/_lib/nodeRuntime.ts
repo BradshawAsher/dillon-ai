@@ -1,13 +1,19 @@
-// Shared Node-side runtime that stands in for Retool when the backend
-// functions from /backend/diligence run outside Retool. Used by both the Vite
-// dev plugin (localApi.ts) and the standalone server (server.ts).
+// Minimal Node runtime bundled with Vercel API functions.
+// Dispatches requests to n8n Cloud and provides serverless request parsing.
 import type { IncomingHttpHeaders, IncomingMessage } from 'node:http'
-import type { MultipartEntry } from '../backend/diligence/storedFileMultipart'
-import { fetchWithDocumentHandoff } from '../backend/diligence/documentHandoff'
+
+import { HttpError } from './httpError'
+import type { MultipartEntry } from '../../backend/diligence/storedFileMultipart'
+import { fetchWithDocumentHandoff } from '../../backend/diligence/documentHandoff'
 
 const N8N_BASE_URL = 'https://merge-works.app.n8n.cloud/'
 
-export const FALLBACK_USER: User = {
+export type ApiUser = {
+  fullName: string
+  email: string
+}
+
+const fallbackUser: ApiUser = {
   fullName: 'MergeWorks Dashboard',
   email: 'dashboard@mergeworks.local',
 }
@@ -41,17 +47,15 @@ function mimeFromFilename(filename?: string): string {
   return MIME_MAP[ext] ?? 'application/octet-stream'
 }
 
-export function installRetoolGlobals() {
+export function installBackendGlobals() {
   const globals = globalThis as Record<string, unknown>
 
   globals.n8nFinancialAgent = {
     async rawRequest(options: RawRequestOptions) {
       const url = new URL(options.path, N8N_BASE_URL).toString()
       const headers: Record<string, string> = {}
-
-      // When the n8n webhook nodes are configured with Header Auth, the shared
-      // secret travels server-side only — the browser never sees it.
       const webhookSecret = process.env.N8N_WEBHOOK_SECRET ?? ''
+
       if (webhookSecret.length > 0) {
         headers['x-webhook-secret'] = webhookSecret
       }
@@ -93,7 +97,7 @@ export function installRetoolGlobals() {
         if (isEmpty && response.status >= 500) {
           throw new Error('n8n is temporarily unavailable (returned empty response). This may indicate the execution limit has been reached. Try again later.')
         }
-        throw new Error(`n8n responded ${response.status}: ${text.slice(0, 300)}`)
+        throw new Error('n8n responded ' + response.status + ': ' + text.slice(0, 300))
       }
 
       // n8n sometimes returns 200 with an error payload when at execution limit
@@ -101,27 +105,19 @@ export function installRetoolGlobals() {
         throw new Error('n8n has reached its execution limit for this billing period. Document processing will resume automatically when the limit resets. Your data is safe — no action needed.')
       }
 
-      let data: unknown = null
       try {
-        data = text.length > 0 ? JSON.parse(text) : {}
+        return { data: text.length > 0 ? JSON.parse(text) : {} }
       } catch {
-        data = { raw: text }
+        return { data: { raw: text } }
       }
-
-      return { data }
-    },
-  }
-
-  globals.retoolDb = {
-    query() {
-      throw new Error('retoolDb is only available inside Retool; the local preview uses sample findings instead')
     },
   }
 }
 
-// Identity headers are optional convenience metadata for stamping submissions.
-// The open dashboard uses FALLBACK_USER without prompting visitors.
-export function userFromHeaders(headers: IncomingHttpHeaders): User {
+// Backward-compatible alias
+export const installRetoolGlobals = installBackendGlobals
+
+export function userFromHeaders(headers: IncomingHttpHeaders): ApiUser {
   const decode = (value: string | string[] | undefined) => {
     if (typeof value !== 'string' || value.length === 0) {
       return ''
@@ -136,25 +132,62 @@ export function userFromHeaders(headers: IncomingHttpHeaders): User {
   const fullName = decode(headers['x-analyst-name'])
   const email = decode(headers['x-analyst-email'])
 
-  if (fullName.length > 0 && email.length > 0) {
-    return { fullName, email }
-  }
-
-  return FALLBACK_USER
+  return fullName.length > 0 && email.length > 0 ? { fullName, email } : fallbackUser
 }
+
+// The /api/diligence/* routes are internet-reachable and unauthenticated, and
+// a request body only ever carries metadata + storage URLs (file bytes go
+// straight to storage via the upload-url flow, never through here). Cap how
+// much we buffer so an abusive client can't stream an unbounded body and
+// exhaust a serverless instance's memory. 5 MB is far above any legitimate
+// metadata payload.
+export const MAX_REQUEST_BODY_BYTES = 5 * 1024 * 1024
 
 export function readJsonBody(req: IncomingMessage): Promise<Record<string, unknown>> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = []
-    req.on('data', (chunk: Buffer) => chunks.push(chunk))
-    req.on('error', reject)
-    req.on('end', () => {
-      try {
-        const raw = Buffer.concat(chunks).toString('utf8')
-        resolve(raw.length > 0 ? (JSON.parse(raw) as Record<string, unknown>) : {})
-      } catch (error) {
-        reject(error)
+    let receivedBytes = 0
+    let settled = false
+    // First error/limit/end wins; a later event must not resolve or reject again.
+    const finish = (run: () => void) => {
+      if (settled) return
+      settled = true
+      run()
+    }
+    req.on('data', (chunk: Buffer) => {
+      if (settled) return
+      receivedBytes += chunk.length
+      if (receivedBytes > MAX_REQUEST_BODY_BYTES) {
+        finish(() => {
+          req.destroy?.()
+          reject(new HttpError(413, 'Request body too large.'))
+        })
+        return
       }
+      chunks.push(chunk)
     })
+    req.on('error', (error) => finish(() => reject(error)))
+    req.on('end', () => finish(() => {
+      const raw = Buffer.concat(chunks).toString('utf8')
+      if (raw.length === 0) {
+        resolve({})
+        return
+      }
+      let parsed: unknown
+      try {
+        parsed = JSON.parse(raw)
+      } catch {
+        reject(new HttpError(400, 'Request body is not valid JSON.'))
+        return
+      }
+      // Every caller destructures this as an object; a JSON array, number,
+      // string, or null would otherwise surface as an opaque 500 deeper in a
+      // handler. Reject it here as an explicit client error instead.
+      if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        reject(new HttpError(400, 'Request body must be a JSON object.'))
+        return
+      }
+      resolve(parsed as Record<string, unknown>)
+    }))
   })
 }
