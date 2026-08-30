@@ -35,6 +35,7 @@ export function mergeDiligenceRows<T extends Record<string, any>>(
     incoming: T[],
     keyOf: (row: T) => string,
     incomingWins = true,
+    preserveExistingKeys: readonly (keyof T)[] = [],
 ) {
     const merged = [...(current ?? [])]
     const indexByKey = new Map<string, number>()
@@ -67,6 +68,16 @@ export function mergeDiligenceRows<T extends Record<string, any>>(
             mergedRow = incomingWins
                 ? { ...existing, ...row }
                 : { ...row, ...existing }
+        }
+
+        // Compact responses intentionally omit large detail fields. Their
+        // frontend shape still contains empty defaults, so preserve fields
+        // that were already populated by a full project refresh while letting
+        // fresh compact status, cost, confidence, and timestamps win.
+        for (const field of preserveExistingKeys) {
+            if (Object.prototype.hasOwnProperty.call(existing, field)) {
+                mergedRow[field] = existing[field]
+            }
         }
 
         merged[index] = mergedRow
