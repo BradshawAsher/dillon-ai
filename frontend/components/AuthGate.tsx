@@ -35,12 +35,23 @@ export const DATA_ISOLATION_EVENT = 'mergeworks:data-isolation-change'
 
 export function isDataIsolationEnabled(): boolean {
     if (typeof window === 'undefined') return false
-    return localStorage.getItem(ISOLATION_KEY) === 'true'
+    // Runs during initial render; a disabled/unavailable localStorage (private
+    // mode, storage blocked) must not throw and white-screen the app. Matches the
+    // try/catch pattern the identity/dataSource/darkMode helpers already use.
+    try {
+        return localStorage.getItem(ISOLATION_KEY) === 'true'
+    } catch {
+        return false
+    }
 }
 
 export function setDataIsolation(enabled: boolean) {
     if (typeof window === 'undefined') return
-    localStorage.setItem(ISOLATION_KEY, String(enabled))
+    try {
+        localStorage.setItem(ISOLATION_KEY, String(enabled))
+    } catch {
+        // Best effort; the event below still applies the choice this session.
+    }
     window.dispatchEvent(new CustomEvent(DATA_ISOLATION_EVENT, { detail: { enabled } }))
 }
 
