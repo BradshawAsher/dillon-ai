@@ -23643,7 +23643,7 @@ async function handler(req, res) {
       const full = requestUrl.searchParams.get("full") === "true";
       const limitNum = requestUrl.searchParams.get("limit") ?? void 0;
       const data = await withMemCache(`eval-runs-${full}-${limitNum ?? "default"}`, () => getEvalRuns({ params: { full, limit: limitNum } }), 6e4);
-      sendJson(req, res, 200, data, "public, s-maxage=120, stale-while-revalidate=600");
+      sendJson(req, res, 200, data, "public, s-maxage=300, stale-while-revalidate=1800");
       return;
     }
     if (route === "history" && req.method === "GET") {
@@ -23657,7 +23657,7 @@ async function handler(req, res) {
     }
     if (route === "workflow-errors" && req.method === "GET") {
       const data = await withMemCache(`workflow-errors-${environment}`, () => getWorkflowErrors({ params: { environment }, user }), 15e3);
-      sendJson(req, res, 200, data, "public, s-maxage=15, stale-while-revalidate=60");
+      sendJson(req, res, 200, data, "public, s-maxage=30, stale-while-revalidate=120");
       return;
     }
     if (route === "synthesis" && req.method === "GET") {
@@ -23672,13 +23672,13 @@ async function handler(req, res) {
       const projectId = requestUrl.searchParams.get("projectId") ?? void 0;
       const cacheKey = `kpis-${environment}-${projectId ?? "all"}`;
       const data = await withMemCache(cacheKey, () => getDiligenceKpis({ params: { environment, projectId }, user }), 1e4);
-      sendJson(req, res, 200, data, "public, s-maxage=15, stale-while-revalidate=60");
+      sendJson(req, res, 200, data, "public, s-maxage=30, stale-while-revalidate=120");
       return;
     }
     if (route === "deal-models" && req.method === "GET") {
       const projectId = requestUrl.searchParams.get("projectId") ?? "";
       const data = await withMemCache(`deal-models-${projectId}`, () => getDealModels({ params: { projectId }, user }), 6e3);
-      sendJson(req, res, 200, data, "public, s-maxage=10, stale-while-revalidate=60");
+      sendJson(req, res, 200, data, "public, s-maxage=30, stale-while-revalidate=120");
       return;
     }
     if (route === "deal-models" && req.method === "POST") {
@@ -23690,7 +23690,7 @@ async function handler(req, res) {
     if (route === "project-action-tracker" && req.method === "GET") {
       const projectId = requestUrl.searchParams.get("projectId") ?? "";
       const data = await withMemCache(`action-tracker-${projectId}`, () => getProjectActionTracker({ params: { projectId }, user }), 6e3);
-      sendJson(req, res, 200, data, "public, s-maxage=10, stale-while-revalidate=60");
+      sendJson(req, res, 200, data, "public, s-maxage=30, stale-while-revalidate=120");
       return;
     }
     if (route === "project-action-tracker" && req.method === "POST") {

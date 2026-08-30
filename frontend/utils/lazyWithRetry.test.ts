@@ -14,7 +14,7 @@ describe('isDynamicImportError', () => {
     })
 
     it('is case-insensitive and tolerates non-Error inputs', () => {
-        expect(isDynamicImportError('FAILED TO FETCH')).toBe(true)
+        expect(isDynamicImportError('FAILED TO FETCH DYNAMICALLY IMPORTED MODULE')).toBe(true)
         expect(isDynamicImportError({ message: 'Loading Chunk 3 Failed' })).toBe(true)
     })
 
