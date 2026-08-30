@@ -1712,8 +1712,11 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             return []
         }
         const sorted = [...matching].sort((a, b) => {
-            const timeA = new Date(a.processedAt || a.createdAt || a.receivedAt || a.updatedAt || 0).getTime()
-            const timeB = new Date(b.processedAt || b.createdAt || b.receivedAt || b.updatedAt || 0).getTime()
+            const rankA = isTerminalSubmissionStatus(a.status) ? 3 : (isActiveSubmissionStatus(a.status) ? 2 : 1)
+            const rankB = isTerminalSubmissionStatus(b.status) ? 3 : (isActiveSubmissionStatus(b.status) ? 2 : 1)
+            if (rankA !== rankB) return rankB - rankA
+            const timeA = new Date(a.updatedAt || a.processedAt || a.statusResolvedAt || a.createdAt || a.receivedAt || 0).getTime()
+            const timeB = new Date(b.updatedAt || b.processedAt || b.statusResolvedAt || b.createdAt || b.receivedAt || 0).getTime()
             return timeB - timeA
         })
         const uniqueDocs = new Map<string, SubmissionHistoryItem>()
@@ -1869,8 +1872,11 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         if (projectRows.length === 0) return []
 
         const sorted = [...projectRows].sort((a, b) => {
-            const timeA = new Date(a.processedAt || a.createdAt || a.receivedAt || a.updatedAt || 0).getTime()
-            const timeB = new Date(b.processedAt || b.createdAt || b.receivedAt || b.updatedAt || 0).getTime()
+            const rankA = isTerminalSubmissionStatus(a.status) ? 3 : (isActiveSubmissionStatus(a.status) ? 2 : 1)
+            const rankB = isTerminalSubmissionStatus(b.status) ? 3 : (isActiveSubmissionStatus(b.status) ? 2 : 1)
+            if (rankA !== rankB) return rankB - rankA
+            const timeA = new Date(a.updatedAt || a.processedAt || a.statusResolvedAt || a.createdAt || a.receivedAt || 0).getTime()
+            const timeB = new Date(b.updatedAt || b.processedAt || b.statusResolvedAt || b.createdAt || b.receivedAt || 0).getTime()
             return timeB - timeA
         })
 
@@ -1888,23 +1894,20 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
     const activeBatchRows = useMemo(() => {
         if (activeSubmissionBatch?.id) {
-            let candidateRows: SubmissionHistoryItem[] = []
-            if (activeSubmissionBatch.requestIDs?.length) {
-                const requestIds = new Set(activeSubmissionBatch.requestIDs)
-                candidateRows = submissionHistory.filter((row) => requestIds.has(row.requestID))
-            } else {
-                candidateRows = submissionHistory.filter((row) => {
-                    if (isSystemTestProbeFile(row.fileName)) return false
-                    if (row.submissionBatchId === activeSubmissionBatch.id) return true
-                    if (row.projectId === activeSubmissionBatch.id || isRowMatchingProject(row, activeSubmissionBatch.id, projectSummaries)) {
-                        if (activeSubmissionBatch.startedAt) {
-                            const rowTime = new Date(row.createdAt || row.receivedAt || row.processedAt || 0).getTime()
-                            return rowTime >= (activeSubmissionBatch.startedAt - 5000)
-                        }
+            const requestIds = activeSubmissionBatch.requestIDs?.length ? new Set(activeSubmissionBatch.requestIDs) : null
+            const candidateRows = submissionHistory.filter((row) => {
+                if (isSystemTestProbeFile(row.fileName)) return false
+                if (row.submissionBatchId === activeSubmissionBatch.id) return true
+                if (requestIds && requestIds.has(row.requestID)) return true
+                if (row.projectId === activeSubmissionBatch.id || isRowMatchingProject(row, activeSubmissionBatch.id, projectSummaries)) {
+                    if (activeSubmissionBatch.startedAt) {
+                        const rowTime = new Date(row.createdAt || row.receivedAt || row.processedAt || 0).getTime()
+                        return rowTime >= (activeSubmissionBatch.startedAt - 5000)
                     }
-                    return false
-                })
-            }
+                    return true
+                }
+                return false
+            })
 
             if (candidateRows.length > 0) {
                 // Canonical deduplication by file name so retrying documents don't inflate batch counts

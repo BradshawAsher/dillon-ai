@@ -227,23 +227,6 @@ function useLiveSubmissionHistory() {
             const projectId = typeof params.projectId === 'string' && params.projectId.trim().length > 0 ? params.projectId.trim() : ''
             const full = params.full === true || params.full === 'true'
             const limit = params.limit ? String(params.limit) : ''
-            const CACHE_KEY = `mergeworks_history_cache_${environment}_${projectId}_${full}_${limit}`
-            const CACHE_TTL_MS = 6_000
-            if (!params.skipCache) {
-                try {
-                    const cached = sessionStorage.getItem(CACHE_KEY)
-                    if (cached) {
-                        const parsed = JSON.parse(cached)
-                        if (parsed.timestamp && Date.now() - parsed.timestamp < CACHE_TTL_MS && Array.isArray(parsed.data)) {
-                            const hasActive = parsed.data.some((r: any) => ['uploading', 'accepted', 'queued', 'processing', 'received', 'running', 'submitted'].includes((r.status || '').trim().toLowerCase()))
-                            // If active documents are in flight, always fetch fresh from network rather than serving stale cache
-                            if (!hasActive) {
-                                return parsed.data as SubmissionHistoryItem[]
-                            }
-                        }
-                    }
-                } catch {}
-            }
 
             const queryParams = new URLSearchParams({ environment })
             if (projectId) queryParams.set('projectId', projectId)
@@ -253,7 +236,6 @@ function useLiveSubmissionHistory() {
             const data = await fetchJson<SubmissionHistoryItem[]>(`/api/diligence/history?${queryParams.toString()}`, {
                 headers: identityHeaders(),
             })
-            try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ timestamp: Date.now(), data })) } catch {}
             return data
         }, [])
     )
@@ -265,23 +247,6 @@ function useLiveProjectSynthesis() {
             const environment = params.environment === 'test' ? 'test' : 'production'
             const projectId = typeof params.projectId === 'string' && params.projectId.trim().length > 0 ? params.projectId.trim() : ''
             const limit = params.limit ? String(params.limit) : ''
-            const CACHE_KEY = `mergeworks_synthesis_cache_${environment}_${projectId}_${limit}`
-            const CACHE_TTL_MS = 6_000
-            if (!params.skipCache) {
-                try {
-                    const cached = sessionStorage.getItem(CACHE_KEY)
-                    if (cached) {
-                        const parsed = JSON.parse(cached)
-                        if (parsed.timestamp && Date.now() - parsed.timestamp < CACHE_TTL_MS && Array.isArray(parsed.data)) {
-                            const hasActive = parsed.data.some((s: any) => ['processing', 'pending', 'queued', 'running', 'awaiting_synthesis', 'awaiting_documents', 'started'].includes((s.projectStatus || '').trim().toLowerCase()))
-                            // If active syntheses are in flight, always fetch fresh from network rather than serving stale cache
-                            if (!hasActive) {
-                                return parsed.data as ProjectSynthesisItem[]
-                            }
-                        }
-                    }
-                } catch {}
-            }
 
             const queryParams = new URLSearchParams({ environment })
             if (projectId) queryParams.set('projectId', projectId)
@@ -290,7 +255,6 @@ function useLiveProjectSynthesis() {
             const data = await fetchJson<ProjectSynthesisItem[]>(`/api/diligence/synthesis?${queryParams.toString()}`, {
                 headers: identityHeaders(),
             })
-            try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ timestamp: Date.now(), data })) } catch {}
             return data
         }, [])
     )

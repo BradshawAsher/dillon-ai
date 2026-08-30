@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { CheckCircle, ChevronLeft, ChevronRight, Clock, Compass, Download, FileQuestion, FileText, Filter, FolderPlus, Handshake, Landmark, Layers, Lightbulb, Loader2, MessageCircleQuestion, RefreshCw, RotateCw, Scale, Search, ShieldAlert, Sparkles, TriangleAlert } from 'lucide-react'
 
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
-import type { SubmissionHistoryItem } from '../utils/submissionHistory'
+import { isActiveSubmissionStatus, isTerminalSubmissionStatus, type SubmissionHistoryItem } from '../utils/submissionHistory'
 import ExpandableInsightGroup from './ExpandableInsightGroup'
 import ExpandableText from './ExpandableText'
 import MaterialImpactView from './MaterialImpactView'
@@ -390,8 +390,19 @@ export default function ProjectSynthesisCard({
         )
     })
     const effectiveProjectDocuments = rawProjectDocuments.length > 0 ? rawProjectDocuments : documents.filter((d) => (d.companyName || '').toLowerCase().includes('cascadia') || (d.fileName || '').toLowerCase().includes('cascadia') || (d.fileName || '').toLowerCase().includes('confidential_information_memorandum'))
+    
+    // Sort candidates by terminal status first, then by newest timestamp so completed documents are never masked by in-flight rows
+    const sortedEffectiveDocs = [...effectiveProjectDocuments].sort((a, b) => {
+        const rankA = isTerminalSubmissionStatus(a.status) ? 3 : (isActiveSubmissionStatus(a.status) ? 2 : 1)
+        const rankB = isTerminalSubmissionStatus(b.status) ? 3 : (isActiveSubmissionStatus(b.status) ? 2 : 1)
+        if (rankA !== rankB) return rankB - rankA
+        const timeA = new Date(a.updatedAt || a.processedAt || a.statusResolvedAt || a.createdAt || a.receivedAt || 0).getTime()
+        const timeB = new Date(b.updatedAt || b.processedAt || b.statusResolvedAt || b.createdAt || b.receivedAt || 0).getTime()
+        return timeB - timeA
+    })
+
     const latestDocsByFile = new Map<string, SubmissionHistoryItem>()
-    effectiveProjectDocuments.forEach((doc) => {
+    sortedEffectiveDocs.forEach((doc) => {
         const fileKey = (doc.fileName || doc.requestID || String(doc.id)).trim().toLowerCase()
         if (!latestDocsByFile.has(fileKey)) {
             latestDocsByFile.set(fileKey, doc)
@@ -452,11 +463,23 @@ export default function ProjectSynthesisCard({
     }, [activeSynthesisIndex, visibleSyntheses.length])
 
     const failedProjectDocuments = projectDocuments.filter((document) => ['failed', 'error', 'rejected'].includes(document.status.trim().toLowerCase()))
-    const completedProjectDocumentsWithAnalysis = projectDocuments.filter((document) => {
+    const rawCompletedCount = projectDocuments.filter((document) => {
         const s = document.status.trim().toLowerCase()
         return document.isConsidered
             && (s === 'completed' || s === 'approved' || (document.aiSummary && document.aiSummary.trim().length > 0) || document.extractedJson.trim().length > 0)
     }).length
+
+    const maxCompletedDocsRef = useRef<Record<string, number>>({})
+    if (normalizedProjectId) {
+        maxCompletedDocsRef.current[normalizedProjectId] = Math.max(
+            maxCompletedDocsRef.current[normalizedProjectId] || 0,
+            rawCompletedCount
+        )
+    }
+    const completedProjectDocumentsWithAnalysis = normalizedProjectId
+        ? Math.max(rawCompletedCount, maxCompletedDocsRef.current[normalizedProjectId] || 0)
+        : rawCompletedCount
+
     const localSynthesisBlocked = !error
         && visibleSyntheses.length === 0
         && !synthesisPending
