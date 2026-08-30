@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import ErrorBoundary from './components/ErrorBoundary'
+import DeploymentNotifierBanner from './components/DeploymentNotifierBanner'
 import DueDiligenceDashboard from './pages/DueDiligenceDashboard'
 import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
@@ -48,13 +49,16 @@ export default function App() {
       const visitorKey = 'mergeworks.visitorTrafficAlertReportedAt'
       if (claimClientAlertCooldown(localStorage, visitorKey, VISITOR_ALERT_COOLDOWN_MS)) {
         const urlParams = new URLSearchParams(window.location.search)
-        sendVisitorTrafficSlackAlert({
-          path: window.location.pathname + window.location.search,
-          referrer: document.referrer || 'Direct Visit / Bookmark',
-          userAgent: navigator.userAgent,
-          screenResolution: `${window.screen?.width || 0}x${window.screen?.height || 0}`,
-          utmSource: urlParams.get('utm_source') || urlParams.get('ref') || urlParams.get('source') || undefined,
-        }).catch(() => {})
+        const isInternalDev = window.location.hostname === 'localhost' ||
+                              window.location.hostname === '127.0.0.1' ||
+                              urlParams.has('dev') ||
+                              urlParams.has('e2e')
+        if (!isInternalDev) {
+          sendVisitorTrafficSlackAlert({
+            path: window.location.pathname + window.location.search,
+            referrer: document.referrer || undefined,
+          }).catch(() => {})
+        }
       }
     }
 
@@ -85,13 +89,10 @@ export default function App() {
   const handleLaunchDashboard = () => {
     setView('dashboard')
     if (typeof window !== 'undefined') {
-      window.history.pushState({}, '', '?view=dashboard#upload-section')
-      setTimeout(() => {
-        const el = document.querySelector('[data-project-intake]') || document.getElementById('upload-section')
-        if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-        }
-      }, 100)
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+      const url = new URL(window.location.href)
+      url.searchParams.set('view', 'dashboard')
+      window.history.pushState({}, '', url.toString())
     }
   }
 
@@ -99,21 +100,20 @@ export default function App() {
     setView('login')
     if (typeof window !== 'undefined') {
       window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
-      window.history.pushState({}, '', '?view=login')
+      const url = new URL(window.location.href)
+      url.searchParams.set('view', 'login')
+      window.history.pushState({}, '', url.toString())
     }
   }
 
-  const handleLoginSuccess = (user: AppAuthUser) => {
-    setCurrentUser(user)
+  const handleLoginSuccess = (user?: AppAuthUser) => {
+    if (user) setCurrentUser(user)
     setView('dashboard')
     if (typeof window !== 'undefined') {
-      window.history.pushState({}, '', '?view=dashboard#upload-section')
-      setTimeout(() => {
-        const el = document.querySelector('[data-project-intake]') || document.getElementById('upload-section')
-        if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-        }
-      }, 100)
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+      const url = new URL(window.location.href)
+      url.searchParams.set('view', 'dashboard')
+      window.history.pushState({}, '', url.toString())
     }
   }
 
@@ -127,6 +127,7 @@ export default function App() {
 
   return (
     <ErrorBoundary label="app">
+      <DeploymentNotifierBanner />
       {view === 'landing' && (
         <LandingPage
           onLaunchDashboard={handleLaunchDashboard}
