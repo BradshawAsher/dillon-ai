@@ -150,7 +150,7 @@ export default function RecurringVsOneTimeCard({ model, synthesis, documents = [
                         <p className="text-sm font-semibold text-foreground">Earnings quality signal</p>
                         <p className="mt-1 text-sm text-muted-foreground">
                             {oneTime.length} one-time item{oneTime.length > 1 ? 's' : ''} found.
-                            {revenue !== null && ebitda !== null ? ` Current EBITDA margin: ${((ebitda / revenue) * 100).toFixed(1)}%. Removing one-time add-backs may reduce the sustainable margin.` : ''}
+                            {revenue !== null && revenue > 0 && ebitda !== null ? ` Current EBITDA margin: ${((ebitda / revenue) * 100).toFixed(1)}%. Removing one-time add-backs may reduce the sustainable margin.` : ''}
                         </p>
                     </div>
                 )}
