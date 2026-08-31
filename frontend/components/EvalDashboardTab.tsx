@@ -1922,12 +1922,12 @@ export default function EvalDashboardTab({
 
                             return (
                                 <div key={`${groupIdx}_${cardPhase}`} className={`rounded-xl p-5 space-y-4 flex flex-col justify-between transition-all shadow-xs ${cardTheme}`}>
-                                    {/* Card Header: Title & Toggles on Left, Actions on Right */}
-                                    <div className="flex flex-col xl:flex-row xl:items-start justify-between gap-3 border-b border-border/60 pb-3.5">
-                                        <div className="space-y-2 flex-1 min-w-0">
-                                            <div className="flex items-center gap-2 flex-wrap">
-                                                <Building2 className={`h-5 w-5 shrink-0 ${isPreLoi ? 'text-blue-600 dark:text-blue-400' : 'text-emerald-600 dark:text-emerald-400'}`} />
-                                                <h4 className="font-bold text-base text-foreground leading-snug break-words">{businessName}</h4>
+                                    {/* Card Header: Title & Toggles on top, Actions below */}
+                                    <div className="flex flex-col gap-3 border-b border-border/60 pb-3.5">
+                                        <div className="space-y-2">
+                                            <div className="flex items-start gap-2 flex-wrap">
+                                                <Building2 className={`h-5 w-5 shrink-0 mt-0.5 ${isPreLoi ? 'text-blue-600 dark:text-blue-400' : 'text-emerald-600 dark:text-emerald-400'}`} />
+                                                <h4 className="font-bold text-base text-foreground leading-snug break-words min-w-0 flex-1">{businessName}</h4>
 
                                                 {/* Pre/Post-LOI Inline Switch Toggle */}
                                                 <div className="flex items-center rounded-lg border border-border/80 bg-background/80 p-0.5 shadow-2xs text-xs shrink-0">
@@ -1974,7 +1974,7 @@ export default function EvalDashboardTab({
                                             </div>
                                         </div>
 
-                                        <div className="flex items-center gap-2 flex-wrap shrink-0">
+                                        <div className="flex items-center gap-2 flex-wrap">
                                             {/* Toggle minicards for this card */}
                                             {phaseDocs.length > 0 && (
                                                 <Button
