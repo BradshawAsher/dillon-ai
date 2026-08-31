@@ -5,6 +5,7 @@ import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence
 import { Button } from '../lib/shadcn/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { parseDocumentedFacts } from '../utils/evidence'
+import { riskDotClass } from '../utils/riskDot'
 import CardInfoPopover from './common/CardInfoPopover'
 
 export type ProjectComparison = {
@@ -42,11 +43,7 @@ function parseValuationNumber(val: string | undefined): number {
 }
 
 function riskDot(level: string | undefined) {
-    const normalized = (level ?? '').trim().toLowerCase()
-    if (normalized === 'high' || normalized === 'critical') return <span className="inline-block h-2.5 w-2.5 rounded-full bg-destructive shrink-0" />
-    if (normalized === 'medium') return <span className="inline-block h-2.5 w-2.5 rounded-full bg-amber-500 shrink-0" />
-    if (normalized === 'low') return <span className="inline-block h-2.5 w-2.5 rounded-full bg-emerald-500 shrink-0" />
-    return <span className="inline-block h-2.5 w-2.5 rounded-full bg-muted-foreground/40 shrink-0" />
+    return <span className={`inline-block h-2.5 w-2.5 rounded-full shrink-0 ${riskDotClass(level)}`} />
 }
 
 function buildComparisonMarkdown(projects: ProjectComparison[]): string {
