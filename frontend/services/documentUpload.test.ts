@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { prepareDocumentUpload, MAX_INLINE_DOCUMENT_BYTES } from './documentUpload'
+import { prepareDocumentUpload, prepareDocumentUploadWithRetry, MAX_INLINE_DOCUMENT_BYTES } from './documentUpload'
 import { uploadDocumentToSupabaseStorage } from './supabaseStorage'
 
 vi.mock('./supabaseStorage', () => ({ uploadDocumentToSupabaseStorage: vi.fn() }))
@@ -28,5 +28,28 @@ describe('document upload payloads', () => {
         vi.mocked(uploadDocumentToSupabaseStorage).mockRejectedValue(new Error('offline'))
         const payload = await prepareDocumentUpload(file, 'p', vi.fn().mockResolvedValue('cGRm'))
         expect(payload).toEqual({ fileBase64: 'cGRm', storageFileUrl: '', storagePath: '' })
+    })
+    it('retries storage preparation without dispatching downstream work', async () => {
+        const file = new File([new Uint8Array(MAX_INLINE_DOCUMENT_BYTES + 1)], 'large.pdf')
+        vi.mocked(uploadDocumentToSupabaseStorage)
+            .mockRejectedValueOnce(new Error('temporary R2 failure'))
+            .mockResolvedValueOnce({ storageFileUrl: 'https://storage/large.pdf', storagePath: 'p/large.pdf', fileName: file.name, fileSize: file.size })
+        const sleep = vi.fn().mockResolvedValue(undefined)
+
+        const payload = await prepareDocumentUploadWithRetry(file, 'p', vi.fn(), { sleep })
+
+        expect(payload.storageFileUrl).toBe('https://storage/large.pdf')
+        expect(uploadDocumentToSupabaseStorage).toHaveBeenCalledTimes(2)
+        expect(sleep).toHaveBeenCalledWith(1500)
+    })
+    it('surfaces the last storage error after bounded preparation attempts', async () => {
+        const file = new File([new Uint8Array(MAX_INLINE_DOCUMENT_BYTES + 1)], 'large.pdf')
+        vi.mocked(uploadDocumentToSupabaseStorage)
+            .mockRejectedValueOnce(new Error('first failure'))
+            .mockRejectedValueOnce(new Error('second failure'))
+
+        await expect(prepareDocumentUploadWithRetry(file, 'p', vi.fn(), { sleep: vi.fn().mockResolvedValue(undefined) }))
+            .rejects.toThrow('second failure')
+        expect(uploadDocumentToSupabaseStorage).toHaveBeenCalledTimes(2)
     })
 })

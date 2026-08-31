@@ -231,3 +231,41 @@
   metadata against the new media ground truth.
 - Confirm the generator scripts compile and no packet directory remains staged
   as an accidental deletion.
+
+---
+
+# Atlantic media routing and submission idempotency implementation plan
+
+## Empirical root causes
+
+1. The dashboard retries the complete per-file operation after any exception. The retry repeats storage preparation and calls `/api/diligence/submit` again, which creates a new request ID. If n8n accepted the first call but its acknowledgment was lost, the second call becomes a duplicate submission.
+2. The active per-document workflow has dedicated Gemini video and OpenAI audio nodes, but both Switch expressions contain double-escaped regular expressions. MP4 and MP3 therefore fall through to LlamaParse.
+3. Custom provider retry loops return JSON error items through Wait nodes without restoring the original binary, so later media/parser attempts can fail with a missing-binary error.
+4. The Supabase failure row currently receives a generic message even when the n8n Data Table retains the provider's detailed error.
+5. Gemini returns video text under `content.parts[].text`, while the shared volume node only reads top-level `text` or `response`. The downstream financial analysis therefore receives an empty document even when Gemini succeeds.
+6. Completion persistence estimates tokens from the LlamaParse node on every route. Media runs fail when that branch-specific node was never executed, leaving the two status mirrors in `processing`.
+
+## Repository changes
+
+- Add a small tested upload-preparation retry helper under `frontend/services`.
+- Refactor `frontend/pages/DueDiligenceDashboard.tsx` so only storage preparation can retry. Dispatch to n8n once per selected file and tell the operator to check history after an ambiguous acknowledgment.
+- Extend existing upload/submission documentation to describe the split retry boundary.
+
+## Live n8n changes
+
+- Replace the broken video and audio regular expressions in `Route File by Media Type` with direct extension and MIME comparisons.
+- Restore the original downloaded binary in the existing validation node and route all provider retry waits back through validation and media routing before another attempt.
+- Classify unsupported-file and missing-binary parser errors as terminal so they are not retried.
+- Persist the detailed provider error to Supabase.
+- Normalize Gemini, audio, and LlamaParse extraction output into one shared `text` contract and base downstream prompts and token estimates on that contract.
+- Clear stale failure markers at processing start and route Supabase persistence errors through the terminal document-failure handler.
+- Let the manual retry workflow recover a `processing` row only when it still carries a known processing-failure marker; continue rejecting healthy in-flight work.
+- Validate the changed node configurations, update the live workflow atomically, publish it, and verify the published version is active.
+
+## Regression verification
+
+- Unit-test the storage preparation retry helper, including transient recovery and exhausted attempts.
+- Run the focused frontend tests, TypeScript checks, and production build.
+- Validate the n8n Switch and Code node configurations before mutation.
+- Re-read the saved workflow version after publishing and verify the corrected rules and connections.
+- Retry the stored Atlantic MP4 only after the user authorizes a live Gemini test. Verify that Gemini produces text, the shared normalization preserves it, OpenAI produces evidence-backed analysis, both status mirrors reach `completed`, and the counter creates one synthesis claim for the new evidence signature.

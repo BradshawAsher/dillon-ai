@@ -42,9 +42,11 @@ deadline. This requires Node's `fs.openAsBlob` (available in the supported Node
 
 Errors distinguish storage download, outbound send, and acknowledgment reading.
 A lost connection during send does not prove whether n8n accepted the request,
-so the server never automatically repeats it. Check history before retrying;
-the existing retry action can reuse the registered storage URL without asking
-for another browser upload.
+so the application never automatically repeats the n8n dispatch. Storage
+preparation may retry before dispatch, but after a file is handed to n8n there
+is exactly one submission attempt. Check history before retrying; the existing
+retry action can reuse the registered storage URL without asking for another
+browser upload.
 
 A small-file inline fallback is allowed only when direct storage is unavailable
 and the file is at most 3 MiB (leaving headroom for base64 and JSON). Large files
@@ -122,8 +124,12 @@ original failure solely to that header.
 References: [Supabase resumable uploads](https://supabase.com/docs/guides/storage/uploads/resumable-uploads)
 and [the official signed-upload example](https://github.com/supabase/supabase/blob/master/examples/storage/resumable-upload-signed-uppy/index.html).
 
-These code changes do not resubmit existing documents or modify n8n workflows.
-Deploy the app/API changes together. The latest verified batch already succeeded
-and needs no retry. For other failed attempts, inspect history and n8n executions
-before retrying from a stored copy. Files that never reached storage need
-re-uploading. Do not treat a partial batch as a complete analysis.
+Deploy the app/API changes together. The live per-document and retry workflow
+fixes were published on 2026-08-31. A controlled retry of the stored Atlantic MP4
+confirmed the complete path: Gemini video extraction, normalized text, OpenAI
+financial analysis, Data Table persistence, Supabase persistence, counter claim,
+and synthesis dispatch. The retry endpoint can also recover a row left in
+`processing` when it still carries a known processing-failure marker; healthy
+in-flight rows remain ineligible. For other failed attempts, inspect history and
+n8n executions before retrying from a stored copy. Files that never reached
+storage need re-uploading. Do not treat a partial batch as a complete analysis.
