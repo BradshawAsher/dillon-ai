@@ -7,6 +7,7 @@ import {
     computeAllCashReturns,
     debtToAssets,
     ebitdaMargin,
+    entryMultiple,
     priceGapPercent,
     ratio,
     revenuePerEmployee,
@@ -317,5 +318,22 @@ describe('ratio helpers', () => {
         expect(priceGapPercent(90_000_000, 100_000_000)).toBeCloseTo(-10, 6)
         expect(priceGapPercent(100_000_000, 100_000_000)).toBe(0)
         expect(priceGapPercent(100_000_000, 0)).toBeNull()
+    })
+})
+
+describe('entryMultiple', () => {
+    it('divides purchase price by earnings', () => {
+        expect(entryMultiple(8_500_000, 1_850_000)).toBeCloseTo(4.5946, 4)
+    })
+
+    it('returns null when earnings are zero or negative', () => {
+        expect(entryMultiple(8_500_000, 0)).toBeNull()
+        expect(entryMultiple(8_500_000, -100)).toBeNull()
+    })
+
+    it('returns null when an input is missing or non-finite', () => {
+        expect(entryMultiple(null, 1_000_000)).toBeNull()
+        expect(entryMultiple(8_500_000, null)).toBeNull()
+        expect(entryMultiple(Number.NaN, 1_000_000)).toBeNull()
     })
 })
