@@ -10,6 +10,8 @@ import {
     createUnusedProjectId,
     formatConfidencePercent,
     formatElapsedDuration,
+    getDocumentExtractionDurationSec,
+    getSynthesisDurationSec,
     getFindingVariant,
     getModelTokenRates,
     getSeverityVariant,
@@ -318,5 +320,57 @@ describe('calculateSynthesisCost', () => {
         const small = calculateSynthesisCost({ finalJudgmentJson: '{}' })
         const large = calculateSynthesisCost({ finalJudgmentJson: 'x'.repeat(40_000) })
         expect(large).toBeGreaterThan(small)
+    })
+})
+
+describe('getDocumentExtractionDurationSec', () => {
+    it('returns explicit durationSec or duration_sec if provided', () => {
+        expect(getDocumentExtractionDurationSec({ durationSec: 14 } as any)).toBe(14)
+        expect(getDocumentExtractionDurationSec({ duration_sec: 22 } as any)).toBe(22)
+    })
+
+    it('calculates duration in seconds from processedAt and processingStartedAt', () => {
+        const doc = {
+            processingStartedAt: '2026-08-31T12:00:00.000Z',
+            processedAt: '2026-08-31T12:00:18.000Z',
+        } as Partial<SubmissionHistoryItem>
+        expect(getDocumentExtractionDurationSec(doc)).toBe(18)
+    })
+
+    it('calculates duration from receivedAt fallback when processingStartedAt is missing', () => {
+        const doc = {
+            receivedAt: '2026-08-31T12:00:00.000Z',
+            processedAt: '2026-08-31T12:00:25.000Z',
+        } as Partial<SubmissionHistoryItem>
+        expect(getDocumentExtractionDurationSec(doc)).toBe(25)
+    })
+
+    it('returns null for missing, inverted, or out-of-range timestamps', () => {
+        expect(getDocumentExtractionDurationSec(null)).toBeNull()
+        expect(getDocumentExtractionDurationSec({})).toBeNull()
+        expect(getDocumentExtractionDurationSec({
+            processingStartedAt: '2026-08-31T12:05:00.000Z',
+            processedAt: '2026-08-31T12:00:00.000Z', // end before start
+        } as any)).toBeNull()
+    })
+})
+
+describe('getSynthesisDurationSec', () => {
+    it('returns explicit durationSec or synthesisDurationSec if provided', () => {
+        expect(getSynthesisDurationSec({ durationSec: 35 })).toBe(35)
+        expect(getSynthesisDurationSec({ synthesisDurationSec: 42 })).toBe(42)
+    })
+
+    it('calculates synthesis duration from projectProcessedAt and createdAt', () => {
+        const synthesis = {
+            createdAt: '2026-08-31T12:00:00.000Z',
+            projectProcessedAt: '2026-08-31T12:00:45.000Z',
+        }
+        expect(getSynthesisDurationSec(synthesis)).toBe(45)
+    })
+
+    it('returns null for missing or invalid timestamps', () => {
+        expect(getSynthesisDurationSec(null)).toBeNull()
+        expect(getSynthesisDurationSec({})).toBeNull()
     })
 })

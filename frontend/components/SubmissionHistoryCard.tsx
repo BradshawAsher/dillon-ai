@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { CheckCircle2, CircleAlert, Clock3, Download, Loader2, RefreshCw, Search, X } from 'lucide-react'
+import { CheckCircle2, CircleAlert, Clock, Clock3, Download, Loader2, RefreshCw, Search, X } from 'lucide-react'
 
 import ExpandableInsightGroup from './ExpandableInsightGroup'
 import ExpandableText from './ExpandableText'
@@ -28,6 +28,8 @@ import {
     calculateDocumentCost,
     formatConfidencePercent,
     formatDocumentCostDisplay,
+    formatElapsedDuration,
+    getDocumentExtractionDurationSec,
 } from '../utils/diligenceDashboardUtils'
 import { downloadTextFile, fileSafeName } from '../utils/downloadFile'
 import { computeImpactMetrics, formatHours, HUMAN_MINUTES_PER_DOCUMENT } from '../utils/impactMetrics'
@@ -602,6 +604,7 @@ export default function SubmissionHistoryCard({
                                         const isSelected = selectedRow ? getRowKey(selectedRow) === rowKey : false
                                         const duplicateCount = duplicateCountsByRequestId.get(row.requestID) ?? 0
                                         const showDuplicateBadge = duplicateCount > 1 && row.requestID.trim().length > 0
+                                        const rowDurationSec = getDocumentExtractionDurationSec(row)
 
                                         return (
                                             <TableRow
@@ -628,6 +631,12 @@ export default function SubmissionHistoryCard({
                                                                 <StatusIcon status={row.status} />
                                                                 {formatSubmissionStatus(row.status)}
                                                             </Badge>
+                                                            {rowDurationSec !== null ? (
+                                                                <Badge variant="outline" className="gap-1 text-[10px] font-mono text-muted-foreground border-border/80 bg-muted/30">
+                                                                    <Clock className="h-3 w-3 text-muted-foreground shrink-0" />
+                                                                    {formatElapsedDuration(rowDurationSec)}
+                                                                </Badge>
+                                                            ) : null}
                                                             {showDuplicateBadge ? <Badge variant="outline">Duplicate candidate</Badge> : null}
                                                             {row.needsHumanReview ? <Badge variant="warning">Human review</Badge> : null}
                                                             {row.tableStructureStatus === 'needs_review' ? <Badge variant="warning">Table structure review</Badge> : null}
@@ -718,6 +727,12 @@ export default function SubmissionHistoryCard({
                                                 <TableCell>
                                                     <div className="space-y-1 text-sm text-foreground">
                                                         <p>{formatEasternTime(getDisplayTimestamp(row))}</p>
+                                                        {rowDurationSec !== null ? (
+                                                            <p className="text-xs text-muted-foreground flex items-center gap-1 font-mono">
+                                                                <Clock className="h-3 w-3 text-primary/70 shrink-0" />
+                                                                Duration: {formatElapsedDuration(rowDurationSec)}
+                                                            </p>
+                                                        ) : null}
                                                         <p className="text-xs text-muted-foreground">n8n row ID: {row.id || 'Pending'}</p>
                                                         {row.environment ? (
                                                             <p className="text-xs text-muted-foreground">Environment: {row.environment}</p>
@@ -894,9 +909,17 @@ export default function SubmissionHistoryCard({
                                                     </div>
                                                     <div className="rounded-lg border border-border bg-background p-3">
                                                         <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                                                            EBITDA Extracted
+                                                            Processing Duration
                                                         </p>
-                                                        <p className="mt-1 text-sm text-foreground">{selectedRow.ebitdaExtracted ? Number(String(selectedRow.ebitdaExtracted).replace(/[$,]/g, '')).toLocaleString(undefined, { maximumFractionDigits: 2 }) : 'Pending'}</p>
+                                                        {(() => {
+                                                            const dur = getDocumentExtractionDurationSec(selectedRow)
+                                                            return (
+                                                                <p className="mt-1 text-sm font-bold text-primary font-mono flex items-center gap-1">
+                                                                    <Clock className="h-3.5 w-3.5 text-primary shrink-0" />
+                                                                    {dur !== null ? formatElapsedDuration(dur) : 'Pending'}
+                                                                </p>
+                                                            )
+                                                        })()}
                                                     </div>
                                                 </div>
 
@@ -1233,7 +1256,7 @@ export default function SubmissionHistoryCard({
                                                     </ExpandableInsightGroup>
                                                 ) : null}
 
-                                                <div className="grid gap-3 sm:grid-cols-3">
+                                                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                                                     <div className="rounded-lg border border-border bg-background p-3">
                                                         <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                                                             Received At
@@ -1251,6 +1274,20 @@ export default function SubmissionHistoryCard({
                                                             Processed At
                                                         </p>
                                                         <p className="mt-1 text-sm text-foreground">{formatEasternTime(selectedRow.processedAt)}</p>
+                                                    </div>
+                                                    <div className="rounded-lg border border-border bg-background p-3">
+                                                        <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                                                            Processing Duration
+                                                        </p>
+                                                        {(() => {
+                                                            const dur = getDocumentExtractionDurationSec(selectedRow)
+                                                            return (
+                                                                <p className="mt-1 text-sm font-bold text-foreground font-mono flex items-center gap-1">
+                                                                    <Clock className="h-3.5 w-3.5 text-primary shrink-0" />
+                                                                    {dur !== null ? formatElapsedDuration(dur) : 'Pending'}
+                                                                </p>
+                                                            )
+                                                        })()}
                                                     </div>
                                                 </div>
                                             </>
