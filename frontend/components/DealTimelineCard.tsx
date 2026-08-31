@@ -5,6 +5,7 @@ import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
 import CardInfoPopover from './common/CardInfoPopover'
+import { formatElapsedDuration, getDocumentExtractionDurationSec, getSynthesisDurationSec } from '../utils/diligenceDashboardUtils'
 
 type Props = {
     documents: SubmissionHistoryItem[]
@@ -56,11 +57,12 @@ export default function DealTimelineCard({ documents, synthesis, projectName }: 
             ['processing', 'running', 'queued', 'submitted', 'accepted'].includes(status) ? 'processing' :
             'pending'
 
+        const docDuration = getDocumentExtractionDurationSec(doc)
         events.push({
             id: `doc-${doc.requestID}`,
             timestamp: receivedAt,
             label: doc.fileName || 'Document uploaded',
-            detail: eventStatus === 'completed' ? `Completed · ${doc.detectedDocumentType || doc.documentType || 'Unknown type'}` :
+            detail: eventStatus === 'completed' ? `Completed${docDuration !== null ? ` in ${formatElapsedDuration(docDuration)}` : ''} · ${doc.detectedDocumentType || doc.documentType || 'Unknown type'}` :
                    eventStatus === 'failed' ? `Failed: ${doc.errorMessage || 'Unknown error'}` :
                    eventStatus === 'processing' ? 'Processing...' : 'Queued',
             status: eventStatus,
@@ -70,11 +72,12 @@ export default function DealTimelineCard({ documents, synthesis, projectName }: 
     if (synthesis) {
         const synthStatus = synthesis.projectStatus.trim().toLowerCase()
         const isSynthComplete = synthStatus === 'synthesized' && (synthesis.finalJudgmentSummary.trim().length > 0 || synthesis.finalRecommendation.trim().length > 0)
+        const synthDuration = getSynthesisDurationSec(synthesis)
         events.push({
             id: 'synthesis',
             timestamp: parseTimestamp(synthesis.projectProcessedAt || ''),
             label: 'Project synthesis',
-            detail: isSynthComplete ? `${synthesis.finalTrafficLight || synthesis.finalRiskLevel} · ${synthesis.finalRecommendation.slice(0, 60)}${synthesis.finalRecommendation.length > 60 ? '…' : ''}` :
+            detail: isSynthComplete ? `Synthesized${synthDuration !== null ? ` in ${formatElapsedDuration(synthDuration)}` : ''} · ${synthesis.finalTrafficLight || synthesis.finalRiskLevel} · ${synthesis.finalRecommendation.slice(0, 60)}${synthesis.finalRecommendation.length > 60 ? '…' : ''}` :
                    ['queued', 'pending', 'processing', 'running', 'synthesis_pending', 'synthesizing'].includes(synthStatus) ? 'Running...' : 'Pending',
             status: isSynthComplete ? 'completed' : ['queued', 'pending', 'processing', 'running', 'synthesis_pending', 'synthesizing'].includes(synthStatus) ? 'processing' : 'pending',
         })

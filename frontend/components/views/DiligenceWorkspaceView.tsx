@@ -18,7 +18,7 @@ import CostPerRunCard from '../CostPerRunCard'
 import ProjectChecklistCard from '../ProjectChecklistCard'
 import { sumMeasuredCost } from '../../utils/costModel'
 import { isRowMatchingProject } from '../../utils/projectWorkspace'
-import { formatElapsedDuration } from '../../utils/diligenceDashboardUtils'
+import { formatElapsedDuration, getDocumentExtractionDurationSec } from '../../utils/diligenceDashboardUtils'
 
 import { lazyWithRetry } from '../../utils/lazyWithRetry'
 const EbitdaReconstructionCard = lazyWithRetry(() => import('../EbitdaReconstructionCard'))
@@ -95,6 +95,18 @@ export function DiligenceWorkspaceView({
                         <Badge variant="secondary" className="font-mono text-[10px] font-normal tracking-wide">
                             {activeProjectDocuments?.length || 0} Docs
                         </Badge>
+                        {(() => {
+                            const totalSec = (activeProjectDocuments || []).reduce((sum, d) => sum + (getDocumentExtractionDurationSec(d) || 0), 0)
+                            if (totalSec > 0) {
+                                return (
+                                    <Badge variant="outline" className="font-mono text-[10px] font-normal tracking-wide gap-1 text-muted-foreground bg-muted/20 border-border/80">
+                                        <Clock className="h-3 w-3 text-primary/70" />
+                                        ~{formatElapsedDuration(totalSec)} extraction
+                                    </Badge>
+                                )
+                            }
+                            return null
+                        })()}
                     </h2>
                     <p className="text-xs text-muted-foreground mt-0.5">
                         Document-by-document forensic extraction, evidence cross-checking, and live risk flags.
