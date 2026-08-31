@@ -3,7 +3,7 @@
   "business": "TerraClean Industrial Waste Solutions (Hazardous Waste Treatment)",
   "fileType": "MP4",
   "groundTruth": {
-    "documentType": "Operating Metrics",
+    "documentType": "Other",
     "trafficLight": "RED",
     "riskLevel": "CRITICAL",
     "financialFacts": [],
@@ -11,6 +11,72 @@
       "Facility video confirms structural failure in secondary containment tank farm"
     ],
     "expectedYellowFlags": [],
-    "expectedRecommendation": "WALK AWAY"
-  }
+    "expectedRecommendation": "WALK AWAY",
+    "documentTypes": [
+      "Other",
+      "Operating Metrics"
+    ],
+    "evidenceLocators": [
+      {
+        "claim": "Tank Farm B secondary containment for tanks 4A-4D",
+        "timestampStart": "00:09",
+        "timestampEnd": "00:17",
+        "timestampStartSeconds": 9,
+        "timestampEndSeconds": 17
+      },
+      {
+        "claim": "RED FLAG: structural failure -- containment wall cracked through full section, joint sealant separated ~40 ft of north wall",
+        "timestampStart": "00:18",
+        "timestampEnd": "00:31",
+        "timestampStartSeconds": 18,
+        "timestampEndSeconds": 31
+      },
+      {
+        "claim": "staining past the containment line consistent with chlorinated solvent release",
+        "timestampStart": "00:32",
+        "timestampEnd": "00:45",
+        "timestampStartSeconds": 32,
+        "timestampEndSeconds": 45
+      },
+      {
+        "claim": "visible product at down-gradient perimeter monitoring well",
+        "timestampStart": "00:46",
+        "timestampEnd": "00:53",
+        "timestampStartSeconds": 46,
+        "timestampEndSeconds": 53
+      },
+      {
+        "claim": "drums stockpiled outside permitted storage area, labelled as waste streams billed as certified destruction",
+        "timestampStart": "00:54",
+        "timestampEnd": "01:04",
+        "timestampStartSeconds": 54,
+        "timestampEndSeconds": 64
+      },
+      {
+        "claim": "$4,200,000 federal Superfund cleanup lien and open 60-day notice of permit revocation",
+        "timestampStart": "01:05",
+        "timestampEnd": "01:23",
+        "timestampStartSeconds": 65,
+        "timestampEndSeconds": 83
+      }
+    ],
+    "modalityExclusiveFinding": "Structural failure of secondary containment at Tank Farm B -- observable only in this footage and its narration."
+  },
+  "mediaMetadata": {
+    "durationSeconds": 83.49,
+    "video": {
+      "codec": "h264",
+      "resolution": "1280x720"
+    },
+    "audio": {
+      "codec": "aac",
+      "sampleRate": "24000",
+      "channels": 1
+    },
+    "synthetic": true,
+    "generatedBy": "scripts/generate_deep_test_packets.py",
+    "note": "Speech is synthesised from a fixed script written to match this packet's ground truth. Video is a still-sequence walkthrough with camera motion over generated stills. No third-party recording is used."
+  },
+  "transcriptFile": "ground_truth/media_transcripts/TerraClean_Waste_Facility_Inspection_Site.mp4.transcript.json",
+  "transcriptIsEvaluatorOnly": true
 }

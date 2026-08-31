@@ -1,0 +1,49 @@
+{
+ "media_file": "Atlantic_Beverage_Bottling_Plant_Tour.mp4",
+ "evaluator_only": true,
+ "alignment_coverage": 0.888,
+ "lines": [
+  {
+   "speaker": "narrator",
+   "start": 0.0,
+   "end": 6.36,
+   "text": "This is the Atlantic Beverage and Bottling site walkthrough, recorded for the buyer's site visit file."
+  },
+  {
+   "speaker": "narrator",
+   "start": 7.2,
+   "end": 15.74,
+   "text": "We're entering through the main receiving dock on the east side of the building. Sixty-two thousand square feet under roof, all of it on one level."
+  },
+  {
+   "speaker": "narrator",
+   "start": 16.34,
+   "end": 25.02,
+   "text": "This is filling line one. Twelve ounce aluminium, rated at four hundred cans a minute, and it's running product for a customer we've had nine years."
+  },
+  {
+   "speaker": "narrator",
+   "start": 25.02,
+   "end": 37.56,
+   "text": "Line two. This is the rebuild we completed in twenty twenty-four. New filler, new capper, roughly eight hundred thousand dollars, and you'll find it on the fixed asset register at cost."
+  },
+  {
+   "speaker": "narrator",
+   "start": 39.06,
+   "end": 49.34,
+   "text": "Line three handles our bottle formats. Across all three lines we're running at about seventy-two percent of rated capacity, so there is real headroom here without new steel."
+  },
+  {
+   "speaker": "narrator",
+   "start": 50.28,
+   "end": 58.52,
+   "text": "Warehouse and finished goods. Racking is to current code, and we passed our last third party food safety audit with no major findings."
+  },
+  {
+   "speaker": "narrator",
+   "start": 59.5,
+   "end": 67.04,
+   "text": "That's the floor. Forty-one people, no recordable safety incidents in the last three years, and no deferred maintenance items outstanding."
+  }
+ ]
+}
