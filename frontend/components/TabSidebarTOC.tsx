@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { List, ChevronRight, ChevronLeft, Navigation, RotateCcw } from 'lucide-react'
+import { clampTocWidth } from '../utils/tocLayout'
 
 type TOCSection = {
     id: string
@@ -361,8 +362,7 @@ export default function TabSidebarTOC({
     const handleWidthPointerMove = (e: React.PointerEvent) => {
         if (!dragXRef.current) return
         const deltaX = e.clientX - dragXRef.current.startX
-        const nextWidth = Math.max(85, Math.min(220, dragXRef.current.startWidth + deltaX))
-        setTocWidth(Math.round(nextWidth))
+        setTocWidth(clampTocWidth(dragXRef.current.startWidth + deltaX))
     }
 
     const handleWidthPointerUp = (e: React.PointerEvent) => {
