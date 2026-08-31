@@ -317,3 +317,32 @@
 
 - Unit-test negative, positive, equal, abbreviated-money, zero-ask, and missing-data cases.
 - Run the focused financial-metrics test, complete TypeScript check, full frontend test suite, and production build.
+
+---
+
+# Historical batch timer reconstruction plan
+
+## Empirical root cause
+
+1. The latest Apex batch `batch-1788210938111-sbey1` has five completed server rows spanning approximately 85 seconds from the timestamp encoded in the batch ID to the last `processed_at` value.
+2. When `activeSubmissionBatch` is unavailable after a refresh or session change, the Diligence card currently creates a display-only batch with `startedAt: Date.now()` but calculates elapsed seconds from `activeSubmissionBatch`, which is null. The result is always `0 sec` even though the document rows contain valid timing evidence.
+3. The earlier infinite timer occurred because a reconstructed completed batch lacked a stable end time and continued falling back to the current browser time.
+4. The no-active-session fallback also mixes all project rows instead of first isolating the latest `submissionBatchId`, so projects with retries or multiple uploads can display the wrong batch.
+
+## Target changes
+
+- Add tested utilities that select the latest submission batch and reconstruct its batch ID, expected count, start time, end time, request IDs, and environment from document rows.
+- Prefer the timestamp encoded in a valid `batch-<milliseconds>-...` ID for total wall-clock start, falling back to the earliest server receipt/start timestamp.
+- Freeze completed historical batches at the latest terminal server timestamp; keep reconstructed in-flight batches ticking.
+- Use the reconstructed batch for the Diligence card and elapsed timer whenever no live session batch exists.
+
+## Regression verification
+
+- Reproduce the latest Apex timestamps in a unit test and require an 85-second completed duration instead of zero or an ever-increasing value.
+- Test multiple batches in one project, missing batch IDs, and an in-flight historical batch.
+- Run focused batch state/card tests, TypeScript checking, the full frontend suite, and a production build.
+
+## Verification completed
+
+- The exact latest Apex fixture reconstructs to 85 seconds and stays frozen after completion.
+- Focused batch timer/card tests, TypeScript checking, all 725 frontend tests, and the production build pass.

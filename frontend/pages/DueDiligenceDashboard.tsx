@@ -29,7 +29,7 @@ import RightSideQuickActions from '../components/RightSideQuickActions'
 import DealEmailDraftCard from '../components/DealEmailDraftCard'
 import { lazyWithRetry } from '../utils/lazyWithRetry'
 import { batchCompletionTime, createBatchQueue, getBatchStopTarget, requireConfirmedBatchStop, type BatchStopResponse } from '../utils/batchStop'
-import { batchDocumentKey, deriveBatchState, mergeBatchUploadAttempts, type BatchUploadAttempt } from '../utils/batchState'
+import { batchDocumentKey, deriveBatchState, mergeBatchUploadAttempts, reconstructSubmissionBatch, selectLatestSubmissionBatchRows, submissionBatchElapsedSeconds, type BatchUploadAttempt } from '../utils/batchState'
 import { mergeDocumentCarouselRows } from '../utils/documentCarousel'
 import { compactRowsNeedFullHydration, documentRefreshVersion, isSynthesisActivityFresh, mergeDiligenceRows, shouldPollDiligence, sortSynthesisRowsNewestFirst } from '../utils/diligenceRefresh'
 const CommandPalette = lazyWithRetry(() => import('../components/CommandPalette'))
@@ -1922,7 +1922,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         const projectRows = submissionHistory.filter((row) => !isSystemTestProbeFile(row.fileName) && isRowMatchingProject(row, activeProjectId, projectSummaries))
         if (projectRows.length === 0) return []
 
-        const sorted = [...projectRows].sort((a, b) => {
+        const latestProjectBatchRows = selectLatestSubmissionBatchRows(projectRows)
+        const sorted = [...latestProjectBatchRows].sort((a, b) => {
             const rankA = isTerminalSubmissionStatus(a.status) ? 3 : (isActiveSubmissionStatus(a.status) ? 2 : 1)
             const rankB = isTerminalSubmissionStatus(b.status) ? 3 : (isActiveSubmissionStatus(b.status) ? 2 : 1)
             if (rankA !== rankB) return rankB - rankA
@@ -1985,9 +1986,15 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         return latestBatchRows
     }, [activeSubmissionBatch, latestBatchRows, submissionHistory, projectSummaries, batchNowTimestamp])
 
+    const reconstructedSubmissionBatch = useMemo(
+        () => activeSubmissionBatch ? null : reconstructSubmissionBatch(activeBatchRows, activeProjectId),
+        [activeProjectId, activeSubmissionBatch, activeBatchRows]
+    )
+    const displayedSubmissionBatch = activeSubmissionBatch || reconstructedSubmissionBatch
+
     const maxObservedFinishedRef = useRef<Record<string, number>>({})
     const maxObservedCompletedRef = useRef<Record<string, number>>({})
-    const batchProgress = useMemo(() => deriveBatchState(activeSubmissionBatch, activeBatchRows, isSubmittingFile || isRerunningBatch), [activeSubmissionBatch, activeBatchRows, isSubmittingFile, isRerunningBatch])
+    const batchProgress = useMemo(() => deriveBatchState(displayedSubmissionBatch, activeBatchRows, isSubmittingFile || isRerunningBatch), [displayedSubmissionBatch, activeBatchRows, isSubmittingFile, isRerunningBatch])
     const batchKey = activeSubmissionBatch?.id ? `${activeSubmissionBatch.id}-${activeSubmissionBatch.startedAt || 0}` : ''
 
     if (batchKey) {
@@ -2274,18 +2281,16 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     }, [activeSubmissionBatch, activeBatchRows, batchProgress.isComplete, isInterruptedBatch, isSubmittingFile, isRerunningBatch, isStoppingBatch])
     useEffect(() => {
         if (
-            !activeSubmissionBatch?.startedAt
-            || activeSubmissionBatch.endedAt
-            || activeSubmissionBatch.interruptedAt
-            || activeSubmissionBatch.stoppedAt
+            !displayedSubmissionBatch?.startedAt
+            || displayedSubmissionBatch.endedAt
+            || displayedSubmissionBatch.interruptedAt
+            || displayedSubmissionBatch.stoppedAt
         ) return
         const timer = setInterval(() => setBatchNowTimestamp(Date.now()), 1000)
         return () => clearInterval(timer)
-    }, [activeBatchExpectedCount, activeBatchFinishedCount, activeSubmissionBatch?.endedAt, activeSubmissionBatch?.interruptedAt, activeSubmissionBatch?.startedAt, activeSubmissionBatch?.stoppedAt, activeSubmissionBatch?.stopError])
+    }, [activeBatchExpectedCount, activeBatchFinishedCount, displayedSubmissionBatch?.endedAt, displayedSubmissionBatch?.interruptedAt, displayedSubmissionBatch?.startedAt, displayedSubmissionBatch?.stoppedAt, displayedSubmissionBatch?.stopError])
 
-    const batchElapsedSeconds = activeSubmissionBatch?.startedAt
-        ? Math.max(0, Math.floor(((activeSubmissionBatch.endedAt || activeSubmissionBatch.interruptedAt || activeSubmissionBatch.stoppedAt || batchNowTimestamp) - activeSubmissionBatch.startedAt) / 1000))
-        : 0
+    const batchElapsedSeconds = submissionBatchElapsedSeconds(displayedSubmissionBatch, batchNowTimestamp)
     const activeBatchImpact = useMemo(() => computeImpactMetrics(activeBatchRows), [activeBatchRows])
 
     const [synthesisStartTimestamps, setSynthesisStartTimestamps] = useState<Record<string, number>>(() => {
@@ -4227,17 +4232,17 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                             {(activeSubmissionBatch || activeBatchProcessingCount > 0 || simulatedWalkthroughBatch || activeBatchExpectedCount > 0 || activeBatchRows.length > 0 || activeProjectDocuments.length > 0) ? (
                                 <div id="diligence-batch" className="scroll-mt-6">
                                     <BatchProgressCard
-                                        activeSubmissionBatch={activeSubmissionBatch ?? (simulatedWalkthroughBatch ? {
+                                        activeSubmissionBatch={simulatedWalkthroughBatch ? {
                                             id: simulatedWalkthroughBatch.id,
                                             expectedDocumentCount: simulatedWalkthroughBatch.expectedDocumentCount,
                                             environment: 'production',
                                             startedAt: Date.now() - (simulatedWalkthroughBatch.elapsedSeconds * 1000),
-                                        } : {
+                                        } : displayedSubmissionBatch ?? {
                                             id: activeProjectId,
                                             expectedDocumentCount: activeBatchExpectedCount,
                                             environment: 'production',
-                                            startedAt: Date.now(),
-                                        })}
+                                            startedAt: batchNowTimestamp,
+                                        }}
                                         activeBatchFinishedCount={simulatedWalkthroughBatch ? simulatedWalkthroughBatch.finishedCount : activeBatchFinishedCount}
                                         activeBatchExpectedCount={simulatedWalkthroughBatch ? simulatedWalkthroughBatch.expectedDocumentCount : activeBatchExpectedCount}
                                         activeBatchFailedCount={simulatedWalkthroughBatch ? 0 : activeBatchFailedCount}
