@@ -18,6 +18,92 @@ export function batchDocumentKey(row: { fileName: string; sourceRelativePath?: s
     return size > 0 ? `${name}::${size}` : name
 }
 
+function parseTimestamp(value: unknown): number | null {
+    if (typeof value !== 'string' || !value.trim()) return null
+    const parsed = Date.parse(value)
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : null
+}
+
+function rowStartTime(row: SubmissionHistoryItem): number | null {
+    for (const value of [row.receivedAt, row.createdAt, row.triggerTimestamp, row.processingStartedAt, row.updatedAt]) {
+        const parsed = parseTimestamp(value)
+        if (parsed !== null) return parsed
+    }
+    return null
+}
+
+function rowEndTime(row: SubmissionHistoryItem): number | null {
+    for (const value of [row.processedAt, row.statusResolvedAt, row.updatedAt]) {
+        const parsed = parseTimestamp(value)
+        if (parsed !== null) return parsed
+    }
+    return null
+}
+
+function batchIdStartTime(batchId: string): number | null {
+    const match = batchId.match(/^batch-(\d{13})(?:-|$)/i)
+    if (!match) return null
+    const parsed = Number(match[1])
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : null
+}
+
+export function selectLatestSubmissionBatchRows(rows: SubmissionHistoryItem[]): SubmissionHistoryItem[] {
+    if (rows.length === 0) return []
+    const newestBatchedRow = [...rows]
+        .filter((row) => Boolean(row.submissionBatchId))
+        .sort((a, b) => (rowStartTime(b) || 0) - (rowStartTime(a) || 0))[0]
+    if (!newestBatchedRow?.submissionBatchId) return rows
+    return rows.filter((row) => row.submissionBatchId === newestBatchedRow.submissionBatchId)
+}
+
+export function reconstructSubmissionBatch(
+    rows: SubmissionHistoryItem[],
+    projectId: string,
+): SubmissionBatch | null {
+    const scopedRows = selectLatestSubmissionBatchRows(rows)
+    if (scopedRows.length === 0) return null
+
+    const batchId = scopedRows.find((row) => row.submissionBatchId)?.submissionBatchId || projectId
+    const rowStarts = scopedRows.map(rowStartTime).filter((value): value is number => value !== null)
+    const encodedStart = batchIdStartTime(batchId)
+    const earliestRowStart = rowStarts.length > 0 ? Math.min(...rowStarts) : null
+    const encodedStartIsPlausible = encodedStart !== null && (
+        earliestRowStart === null || Math.abs(earliestRowStart - encodedStart) <= 24 * 60 * 60 * 1000
+    )
+    const startedAt = encodedStartIsPlausible ? encodedStart : earliestRowStart
+    if (startedAt === null) return null
+
+    const expectedFromRows = Math.max(0, ...scopedRows.map((row) => {
+        const value = Number(row.expectedBatchDocumentCount)
+        return Number.isFinite(value) && value > 0 ? value : 0
+    }))
+    const expectedDocumentCount = Math.max(scopedRows.length, expectedFromRows)
+    const observedRowsAreTerminal = scopedRows.every((row) => isTerminalSubmissionStatus(row.status))
+    const allTerminal = expectedDocumentCount > 0 && scopedRows.length >= expectedDocumentCount && observedRowsAreTerminal
+    const rowEnds = scopedRows.map(rowEndTime).filter((value): value is number => value !== null && value >= startedAt)
+    const endedAt = allTerminal && rowEnds.length > 0 ? Math.max(...rowEnds) : undefined
+    const interruptedAt = !allTerminal && observedRowsAreTerminal && rowEnds.length > 0 ? Math.max(...rowEnds) : undefined
+    const environment = scopedRows.find((row) => row.environment === 'test')?.environment === 'test' ? 'test' : 'production'
+
+    return {
+        id: batchId,
+        projectId,
+        expectedDocumentCount,
+        environment,
+        startedAt,
+        ...(endedAt !== undefined ? { endedAt } : {}),
+        ...(interruptedAt !== undefined ? { interruptedAt } : {}),
+        requestIDs: [...new Set(scopedRows.map((row) => row.requestID).filter(Boolean))],
+    }
+}
+
+export function submissionBatchElapsedSeconds(batch: SubmissionBatch | null, now = Date.now()): number {
+    if (!batch?.startedAt || !Number.isFinite(batch.startedAt)) return 0
+    const end = batch.endedAt || batch.interruptedAt || batch.stoppedAt || now
+    if (!Number.isFinite(end)) return 0
+    return Math.max(0, Math.floor((end - batch.startedAt) / 1000))
+}
+
 // A session-persisted manifest keeps pre-registration upload failures visible.
 // Actual server results always win once processing has started.
 export function mergeBatchUploadAttempts(batch: SubmissionBatch, rows: SubmissionHistoryItem[], now = Date.now()): SubmissionHistoryItem[] {

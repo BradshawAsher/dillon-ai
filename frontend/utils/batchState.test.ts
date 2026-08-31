@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { batchDocumentKey, deriveBatchState, mergeBatchUploadAttempts } from './batchState'
+import {
+    batchDocumentKey,
+    deriveBatchState,
+    mergeBatchUploadAttempts,
+    reconstructSubmissionBatch,
+    selectLatestSubmissionBatchRows,
+    submissionBatchElapsedSeconds,
+} from './batchState'
 import { batchCompletionTime } from './batchStop'
 import type { SubmissionHistoryItem } from './submissionHistory'
 import type { SubmissionBatch } from './diligenceDashboardUtils'
@@ -27,6 +34,7 @@ describe('batch display and timer contract', () => {
     it('uses observation time only for absent/invalid timestamps, not old pre-retry results', () => {
         const one = { ...batch, expectedDocumentCount: 1 }
         expect(batchCompletionTime(one, [{ ...row('a'), processedAt: 'bad', updatedAt: '' }], start + 100)).toBe(start + 100)
+        expect(batchCompletionTime(one, [row('a')], start + 100_000)).toBe(start + 60_000)
         expect(batchCompletionTime(one, [{ ...row('a'), processedAt: new Date(start - 100).toISOString() }], start + 100)).toBeUndefined()
         expect(batchCompletionTime({ ...one, endedAt: start + 100 }, [{ ...row('a'), processedAt: '', updatedAt: '' }], start + 200)).toBe(start + 100)
         expect(deriveBatchState({ ...one, requestIDs: ['a'] }, [{ ...row('a'), processedAt: new Date(start - 100).toISOString() }]).isComplete).toBe(false)
@@ -56,5 +64,68 @@ describe('batch display and timer contract', () => {
     it('times out a manifest-only upload after a page reload instead of spinning forever', () => {
         const saved: SubmissionBatch = { ...batch, uploadAttempts: [{ fileName: 'lost.pdf', fileSize: 100, fileType: '', status: 'uploading', updatedAt: new Date(start).toISOString() }] }
         expect(mergeBatchUploadAttempts(saved, [], start + 901_000)[0]).toMatchObject({ status: 'upload_failed', processedAt: '', statusResolvedAt: new Date(start + 900_000).toISOString() })
+    })
+})
+
+describe('historical batch reconstruction', () => {
+    const apexBatchId = 'batch-1788210938111-sbey1'
+    const apexRows = [
+        ['Apex_CIM.docx', '2026-08-31T21:15:41.529Z', '2026-08-31T21:16:40.825Z'],
+        ['Apex_Purchase_Agreement.docx', '2026-08-31T21:15:41.393Z', '2026-08-31T21:16:41.563Z'],
+        ['Apex_Customer_AR.xlsx', '2026-08-31T21:15:41.372Z', '2026-08-31T21:16:36.107Z'],
+        ['Apex_Tax_Bridge.xlsx', '2026-08-31T21:16:00.729Z', '2026-08-31T21:17:00.487Z'],
+        ['Apex_PnL.xlsx', '2026-08-31T21:16:00.721Z', '2026-08-31T21:17:03.292Z'],
+    ].map(([fileName, receivedAt, processedAt], index) => ({
+        requestID: `apex-${index}`,
+        projectId: 'project-apex',
+        submissionBatchId: apexBatchId,
+        expectedBatchDocumentCount: 5,
+        fileName,
+        status: 'completed',
+        environment: 'production',
+        receivedAt,
+        processedAt,
+    } as SubmissionHistoryItem))
+
+    it('reconstructs the completed Apex wall-clock duration instead of showing zero or ticking forever', () => {
+        const restored = reconstructSubmissionBatch(apexRows, 'project-apex')
+        expect(restored).toMatchObject({
+            id: apexBatchId,
+            projectId: 'project-apex',
+            expectedDocumentCount: 5,
+            startedAt: 1788210938111,
+            endedAt: Date.parse('2026-08-31T21:17:03.292Z'),
+        })
+        expect(submissionBatchElapsedSeconds(restored, Date.parse('2026-09-01T00:00:00Z'))).toBe(85)
+    })
+
+    it('selects only the latest batch when a project has older uploads', () => {
+        const older = { ...apexRows[0], submissionBatchId: 'batch-1788127753210-old', receivedAt: '2026-08-30T22:09:14.687Z' }
+        expect(selectLatestSubmissionBatchRows([older, ...apexRows])).toHaveLength(5)
+        expect(selectLatestSubmissionBatchRows([older, ...apexRows]).every((item) => item.submissionBatchId === apexBatchId)).toBe(true)
+    })
+
+    it('falls back to server timestamps when rows have no encoded batch ID', () => {
+        const rows = apexRows.slice(0, 2).map((item) => ({ ...item, submissionBatchId: '', expectedBatchDocumentCount: 2 }))
+        const restored = reconstructSubmissionBatch(rows, 'project-apex')
+        expect(restored?.id).toBe('project-apex')
+        expect(restored?.startedAt).toBe(Date.parse('2026-08-31T21:15:41.393Z'))
+        expect(restored?.endedAt).toBe(Date.parse('2026-08-31T21:16:41.563Z'))
+    })
+
+    it('keeps a reconstructed in-flight batch ticking without inventing an end time', () => {
+        const processing = [{ ...apexRows[0], status: 'processing', processedAt: '' }]
+        const restored = reconstructSubmissionBatch(processing, 'project-apex')
+        expect(restored?.endedAt).toBeUndefined()
+        expect(restored?.interruptedAt).toBeUndefined()
+        expect(submissionBatchElapsedSeconds(restored, restored!.startedAt + 12_000)).toBe(12)
+    })
+
+    it('freezes a historical batch whose missing documents never arrived', () => {
+        const incomplete = apexRows.slice(0, 3)
+        const restored = reconstructSubmissionBatch(incomplete, 'project-apex')
+        expect(restored?.endedAt).toBeUndefined()
+        expect(restored?.interruptedAt).toBe(Date.parse('2026-08-31T21:16:41.563Z'))
+        expect(submissionBatchElapsedSeconds(restored, Date.parse('2026-09-01T00:00:00Z'))).toBe(63)
     })
 })

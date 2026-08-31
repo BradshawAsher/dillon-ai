@@ -47,10 +47,7 @@ export function batchCompletionTime(batch: SubmissionBatch, rows: SubmissionHist
         return time ?? observedAt ?? NaN
     }).filter(Number.isFinite)
     if (times.length !== rows.length || !times.every((time) => time >= batch.startedAt)) return undefined
-    const maxServerTime = Math.max(...times)
-    return observedAt !== undefined && Number.isFinite(observedAt) && observedAt >= batch.startedAt
-        ? Math.max(maxServerTime, observedAt)
-        : maxServerTime
+    return Math.max(...times)
 }
 
 export function createBatchQueue(id: string) {
