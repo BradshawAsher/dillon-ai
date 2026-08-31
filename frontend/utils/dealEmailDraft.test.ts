@@ -132,4 +132,21 @@ describe('dealEmailDraft Generator Utility', () => {
         })
         expect(zeroPrice.multipleFormatted).toBeNull()
     })
+
+    it('falls back to a PENDING draft when no synthesis or model is available', () => {
+        const draft = buildDealEmailDraft({ projectName: 'Acme Holdings' })
+
+        expect(draft.posture).toBe('PENDING')
+        expect(draft.verdictTitle).toBe('PENDING SYNTHESIS')
+        expect(draft.subject).toBe('Deal Update: Acme Holdings — Under Review')
+        expect(draft.body).toContain('Pending document extraction and QoE reconciliation')
+        expect(draft.body).toContain('Complete remaining document uploads')
+        expect(draft.revenueFormatted).toBeNull()
+        expect(draft.multipleFormatted).toBeNull()
+    })
+
+    it('uses the "Target" placeholder name when nothing identifies the deal', () => {
+        const draft = buildDealEmailDraft({})
+        expect(draft.subject).toBe('Deal Update: Target — Under Review')
+    })
 })
