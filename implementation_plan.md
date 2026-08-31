@@ -296,3 +296,24 @@
 - Verify the latest report contains all 20 packet 4–6 documents with no placeholder project IDs.
 - Query the newest `public.eval_runs` row and confirm its report timestamp, totals, and packet 4–6 business names match the generated report.
 - Run TypeScript type checking and a production frontend build after registering the new synthesis records.
+
+---
+
+# Evals card seller ask and negotiation delta plan
+
+## Current behavior and data source
+
+1. Every Evals & Harness project card already resolves phase-specific bear, base, and bull valuations, but it does not show the seller's asking price or compare that ask with the model base estimate.
+2. Seller ask values can come from the live phase synthesis, registered benchmark synthesis, final-judgment JSON, document facts, or the existing benchmark financial fallback map. The shared `resolveFinancialMetricsForProject` helper already applies that precedence.
+3. Money strings appear as full dollar amounts and finance abbreviations such as `$14.2M`; the existing `parseMagnitudeMoney` helper is the canonical parser.
+
+## Target changes
+
+- Add a tested shared valuation-delta calculation that parses the seller ask and model base, returns the signed dollar difference, and measures the absolute difference as a percentage of seller ask.
+- Resolve the seller ask from the phase synthesis or matching benchmark for every project card after its phase-specific base valuation is finalized.
+- Render `Seller Ask` and `Model vs Ask` badges on every card. Show a negotiation target when the model is below ask, a model premium when it is above ask, an at-ask state when equal, and `Not available` when either input is missing.
+
+## Regression verification
+
+- Unit-test negative, positive, equal, abbreviated-money, zero-ask, and missing-data cases.
+- Run the focused financial-metrics test, complete TypeScript check, full frontend test suite, and production build.

@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
-import { formatMagnitude, resolveFinancialMetricsForProject } from './financialMetrics'
+import {
+    calculateValuationDelta,
+    formatMagnitude,
+    formatSignedMagnitude,
+    resolveFinancialMetricsForProject,
+} from './financialMetrics'
 
 describe('formatMagnitude', () => {
     it('compacts thousands, millions, and billions', () => {
@@ -137,5 +142,42 @@ describe('resolveFinancialMetricsForProject', () => {
             { fact_type: 'operating_income', numeric_value: 180_000 },
         ] }) }], 'Isolated Target 4471')
         expect(result.ebitda).toBe('N/A')
+    })
+})
+
+describe('calculateValuationDelta', () => {
+    it('calculates a negotiation target when model base is below seller ask', () => {
+        const result = calculateValuationDelta('$10.3M', '$14.2M')
+        expect(result).toMatchObject({
+            sellerAsk: 14_200_000,
+            modelBase: 10_300_000,
+            delta: -3_900_000,
+            direction: 'negotiation_target',
+        })
+        expect(Math.round(result!.percentOfAsk)).toBe(27)
+        expect(formatSignedMagnitude(result!.delta)).toBe('-$3.9M')
+    })
+
+    it('calculates a model premium when model base is above seller ask', () => {
+        const result = calculateValuationDelta(12_000_000, '$10M')
+        expect(result).toMatchObject({ delta: 2_000_000, direction: 'model_premium' })
+        expect(result!.percentOfAsk).toBe(20)
+        expect(formatSignedMagnitude(result!.delta)).toBe('+$2M')
+    })
+
+    it('returns an at-ask result when the values are equal', () => {
+        expect(calculateValuationDelta('$8.8M', '$8.8M')).toMatchObject({
+            delta: 0,
+            percentOfAsk: 0,
+            direction: 'at_ask',
+        })
+    })
+
+    it.each([
+        [undefined, '$10M'],
+        ['$8M', 'N/A'],
+        ['$8M', 0],
+    ])('returns null when a usable comparison is unavailable', (base, ask) => {
+        expect(calculateValuationDelta(base, ask)).toBeNull()
     })
 })

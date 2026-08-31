@@ -9,6 +9,14 @@ export type ResolvedFinancialMetrics = {
     multiple: string
 }
 
+export type ValuationDelta = {
+    sellerAsk: number
+    modelBase: number
+    delta: number
+    percentOfAsk: number
+    direction: 'negotiation_target' | 'model_premium' | 'at_ask'
+}
+
 function safeParseJson(value: any): any {
     if (!value) return null
     if (typeof value === 'object') return value
@@ -37,6 +45,32 @@ export function formatMagnitude(num: number): string {
     if (abs >= 999_950) return `$${trim(num / 1_000_000, 2)}M`
     if (abs >= 1_000) return `$${trim(num / 1_000, 1)}K`
     return `$${num.toLocaleString()}`
+}
+
+export function formatSignedMagnitude(num: number): string {
+    if (!Number.isFinite(num)) return 'N/A'
+    if (num === 0) return '$0'
+    const magnitude = formatMagnitude(Math.abs(num))
+    return `${num < 0 ? '-' : '+'}${magnitude}`
+}
+
+export function calculateValuationDelta(
+    modelBase: string | number | null | undefined,
+    sellerAsk: string | number | null | undefined,
+): ValuationDelta | null {
+    const parsedBase = parseMagnitudeMoney(modelBase)
+    const parsedAsk = parseMagnitudeMoney(sellerAsk)
+    if (parsedBase === null || parsedAsk === null || parsedAsk <= 0) return null
+
+    const rawDelta = parsedBase - parsedAsk
+    const delta = Math.abs(rawDelta) < 0.005 ? 0 : rawDelta
+    return {
+        sellerAsk: parsedAsk,
+        modelBase: parsedBase,
+        delta,
+        percentOfAsk: Math.abs(delta) / parsedAsk * 100,
+        direction: delta < 0 ? 'negotiation_target' : delta > 0 ? 'model_premium' : 'at_ask',
+    }
 }
 
 export function resolveFinancialMetricsForProject(
@@ -331,6 +365,20 @@ export function resolveFinancialMetricsForProject(
         'dd-013': { askingPrice: '$7.20M', revenue: '$5.90M', ebitda: '$1.35M', valuation: '$5.76M - $7.20M', multiple: '5.3x' },
         'dd-014': { askingPrice: '$8.70M', revenue: '$9.40M', ebitda: '$1.75M', valuation: '$6.96M - $8.70M', multiple: '5.0x' },
         'dd-015': { askingPrice: '$11.00M', revenue: '$13.60M', ebitda: '$2.30M', valuation: '$8.80M - $11.00M', multiple: '4.8x' },
+
+        // Packet Deals 1 to 6
+        'vanguard medical': { askingPrice: '$8.80M', revenue: '$8.45M', ebitda: '$2.10M', valuation: '$7.80M - $9.90M', multiple: '4.2x' },
+        'apex precision': { askingPrice: '$12.50M', revenue: '$11.20M', ebitda: '$2.31M', valuation: '$9.80M - $11.80M', multiple: '5.4x' },
+        'terranova': { askingPrice: '$14.80M', revenue: '$6.80M', ebitda: '$0.42M', valuation: '$0 - $2.50M', multiple: '35.2x' },
+        'atlantic beverage': { askingPrice: '$18.50M', revenue: '$18.50M', ebitda: '$3.65M', valuation: '$18.00M - $19.00M', multiple: '5.1x' },
+        'vanguard aerospace': { askingPrice: '$14.20M', revenue: '$14.20M', ebitda: '$2.15M', valuation: '$9.20M - $10.50M', multiple: '6.6x' },
+        'terraclean': { askingPrice: '$22.00M', revenue: '$11.20M', ebitda: '-$0.35M', valuation: '$0 - $500K', multiple: 'N/M' },
+        'packet 1': { askingPrice: '$8.80M', revenue: '$8.45M', ebitda: '$2.10M', valuation: '$7.80M - $9.90M', multiple: '4.2x' },
+        'packet 2': { askingPrice: '$12.50M', revenue: '$11.20M', ebitda: '$2.31M', valuation: '$9.80M - $11.80M', multiple: '5.4x' },
+        'packet 3': { askingPrice: '$14.80M', revenue: '$6.80M', ebitda: '$0.42M', valuation: '$0 - $2.50M', multiple: '35.2x' },
+        'packet 4': { askingPrice: '$18.50M', revenue: '$18.50M', ebitda: '$3.65M', valuation: '$18.00M - $19.00M', multiple: '5.1x' },
+        'packet 5': { askingPrice: '$14.20M', revenue: '$14.20M', ebitda: '$2.15M', valuation: '$9.20M - $10.50M', multiple: '6.6x' },
+        'packet 6': { askingPrice: '$22.00M', revenue: '$11.20M', ebitda: '-$0.35M', valuation: '$0 - $500K', multiple: 'N/M' },
     }
 
     const matchedKey = Object.keys(benchmarkFinancialMap).find(key => searchTerms.some(term => term.includes(key)))
