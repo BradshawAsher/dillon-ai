@@ -1,6 +1,7 @@
 import os
 import json
-import urllib.request
+import subprocess
+import tempfile
 from datetime import datetime, timezone
 from email.message import EmailMessage
 
@@ -412,22 +413,190 @@ def generate_branded_eml(filepath, from_email, to_email, subject, date_str, body
 
 
 # -------------------------------------------------------------------------
-# REAL MEDIA DOWNLOAD HELPER (MP3 & MP4)
+# SYNTHETIC MEDIA BUILDERS (MP3 & MP4)
 # -------------------------------------------------------------------------
-AUDIO_URL_1 = "https://github.com/rafaelreis-hotmart/Audio-Sample-files/raw/master/sample.mp3"
-AUDIO_URL_2 = "https://raw.githubusercontent.com/mdn/learning-area/master/html/multimedia-and-embedding/video-and-audio-content/viper.mp3"
-VIDEO_URL_1 = "https://raw.githubusercontent.com/mdn/learning-area/master/html/multimedia-and-embedding/video-and-audio-content/rabbit320.mp4"
-VIDEO_URL_2 = "https://github.com/bower-media-samples/big-buck-bunny-480p-30s/raw/master/video.mp4"
+# These four files used to be downloaded from public sample URLs -- two
+# Big Buck Bunny clips and an MDN heavy-metal track. That made the packets
+# actively misleading: the ground truth described a founder interview, a CFO
+# add-back call, a bottling plant tour and a Phase II site inspection, while
+# the bytes on disk were cartoon footage and a metal song. A model could only
+# "pass" those documents by hallucinating content that was not in the file, so
+# the eval was rewarding exactly the failure mode it exists to catch.
+#
+# Media is now assembled from assets committed under test_sets/media_source:
+#
+#   scripts/   the interview / call / narration scripts -- source of truth,
+#              written to satisfy each packet's existing ground truth
+#   audio/     raw TTS renders of those scripts (multi-speaker for the two
+#              dialogues, single narrator for the two walkthroughs)
+#   stills/    facility stills used as the video frames
+#
+# Assembly is deterministic and fully offline: it needs only ffmpeg. It applies
+# the acoustic character each file is supposed to have (conference-room tone for
+# the in-person interview, narrowband phone-line for the recorded call, plant
+# and site ambience under the walkthroughs) and builds the videos as moving-
+# camera passes over the stills, which is what real site-visit footage is.
+#
+# Re-rendering the speech and stills from scratch needs the generation CLIs and
+# is deliberately a separate opt-in step; see MEDIA_SOURCE_README.md.
 
-def download_media_file(url, destination_path):
-    try:
-        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-        with urllib.request.urlopen(req, timeout=15) as resp, open(destination_path, 'wb') as out_file:
-            data = resp.read()
-            out_file.write(data)
-            print(f"Downloaded genuine media to {os.path.basename(destination_path)} ({len(data)} bytes)")
-    except Exception as e:
-        print(f"Direct download fallback for {os.path.basename(destination_path)}: {e}")
+MEDIA_SOURCE_DIR = os.path.join(ROOT_DIR, "test_sets", "media_source")
+
+VIDEO_FPS = 25
+VIDEO_W, VIDEO_H = 1280, 720
+
+
+def _ffmpeg(args, label):
+    """Run ffmpeg, surfacing the tail of stderr on failure."""
+    proc = subprocess.run(["ffmpeg", "-y", "-v", "error"] + args,
+                          capture_output=True, text=True)
+    if proc.returncode != 0:
+        raise RuntimeError(f"ffmpeg failed building {label}:\n{proc.stderr[-2000:]}")
+
+
+def _media_duration(path):
+    out = subprocess.run(
+        ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+         "-of", "csv=p=0", path], capture_output=True, text=True).stdout
+    return float(out.strip())
+
+
+def _source_audio(name):
+    path = os.path.join(MEDIA_SOURCE_DIR, "audio", name)
+    if not os.path.exists(path):
+        raise FileNotFoundError(
+            f"Missing media source {path}. Speech assets ship with the repo; "
+            "see test_sets/media_source/MEDIA_SOURCE_README.md to re-render.")
+    return path
+
+
+def build_room_audio(source_name, destination_path):
+    """In-person recording: full band, slight room reverb, low HVAC floor."""
+    src = _source_audio(source_name)
+    _ffmpeg([
+        "-i", src,
+        "-f", "lavfi", "-i", "anoisesrc=color=brown:amplitude=0.004:r=44100",
+        "-filter_complex",
+        "[0:a]highpass=f=70,lowpass=f=13000,aecho=0.85:0.9:23:0.06,"
+        "acompressor=threshold=-18dB:ratio=2.5:attack=20:release=250[v];"
+        "[1:a]volume=0.4[n];"
+        "[v][n]amix=inputs=2:duration=first:dropout_transition=0,"
+        "alimiter=limit=0.95",
+        "-map_metadata", "-1",
+        "-ac", "1", "-ar", "44100", "-b:a", "128k", destination_path,
+    ], os.path.basename(destination_path))
+    print(f"Built {os.path.basename(destination_path)} "
+          f"({_media_duration(destination_path):.1f}s room audio)")
+
+
+def build_phone_call_audio(source_name, destination_path):
+    """Recorded call: 300-3400 Hz narrowband, hard limiting, line noise."""
+    src = _source_audio(source_name)
+    _ffmpeg([
+        "-i", src,
+        "-f", "lavfi", "-i", "anoisesrc=color=pink:amplitude=0.008:r=16000",
+        "-filter_complex",
+        "[0:a]highpass=f=300,lowpass=f=3400,"
+        "acompressor=threshold=-16dB:ratio=4:attack=5:release=120[v];"
+        "[1:a]volume=0.55[n];"
+        "[v][n]amix=inputs=2:duration=first:dropout_transition=0,"
+        "alimiter=limit=0.95",
+        "-map_metadata", "-1",
+        "-ac", "1", "-ar", "16000", "-b:a", "48k", destination_path,
+    ], os.path.basename(destination_path))
+    print(f"Built {os.path.basename(destination_path)} "
+          f"({_media_duration(destination_path):.1f}s narrowband call audio)")
+
+
+def build_walkthrough_video(still_names, narration_name, destination_path,
+                            ambience, handheld=False):
+    """Assemble a narrated walkthrough: moving camera over stills + ambience.
+
+    ambience: dict with noise `color`, `amp`, lowpass `lp` and mix `vol`.
+    handheld: adds jitter, mild desaturation and sensor grain, for footage that
+    is meant to read as a hand-carried inspection camera.
+    """
+    narration = _source_audio(narration_name)
+    stills = [os.path.join(MEDIA_SOURCE_DIR, "stills", n) for n in still_names]
+    missing = [s for s in stills if not os.path.exists(s)]
+    if missing:
+        raise FileNotFoundError(f"Missing stills: {missing}")
+
+    # let the last shot breathe past the final word instead of cutting on it
+    shot_seconds = (_media_duration(narration) + 1.6) / len(stills)
+    frames = int(round(shot_seconds * VIDEO_FPS))
+
+    with tempfile.TemporaryDirectory() as tmp:
+        clips = []
+        for i, still in enumerate(stills):
+            clip = os.path.join(tmp, f"clip{i:02d}.mp4")
+            # alternate a slow push-in and a slow pull-back
+            zoom = (f"min(1.02+0.00050*on,1.14)" if i % 2 == 0
+                    else f"max(1.14-0.00050*on,1.02)")
+            vf = (
+                "scale=1920:1080:force_original_aspect_ratio=increase,"
+                "crop=1920:1080,"
+                f"zoompan=z='{zoom}':d={frames}"
+                f":x='iw/2-(iw/zoom/2)+{(-1) ** i}*70*sin(on/{frames}*3.14159)'"
+                ":y='ih/2-(ih/zoom/2)'"
+                f":s={VIDEO_W}x{VIDEO_H}:fps={VIDEO_FPS}"
+            )
+            if handheld:
+                vf += (
+                    f",scale={VIDEO_W + 48}:{VIDEO_H + 48},"
+                    f"crop={VIDEO_W}:{VIDEO_H}"
+                    ":'24+6*sin(n/9)+3*sin(n/23)':'24+5*sin(n/13)+3*cos(n/31)',"
+                    "eq=saturation=0.92:contrast=1.03,noise=alls=5:allf=t"
+                )
+            # one input frame in, exactly `frames` frames out -- zoompan emits
+            # d frames per input frame, so never hand it a looped stream
+            _ffmpeg(["-i", still, "-vf", vf, "-frames:v", str(frames),
+                     "-c:v", "libx264", "-preset", "veryfast", "-crf", "23",
+                     "-pix_fmt", "yuv420p", "-r", str(VIDEO_FPS), clip],
+                    os.path.basename(still))
+            clips.append(clip)
+
+        listfile = os.path.join(tmp, "concat.txt")
+        with open(listfile, "w") as fh:
+            for clip in clips:
+                fh.write(f"file '{clip}'\n")
+        silent = os.path.join(tmp, "silent.mp4")
+        _ffmpeg(["-f", "concat", "-safe", "0", "-i", listfile, "-c", "copy",
+                 silent], "concat")
+
+        _ffmpeg([
+            "-i", silent,
+            "-i", narration,
+            "-f", "lavfi", "-i",
+            f"anoisesrc=color={ambience['color']}:"
+            f"amplitude={ambience['amp']}:r=44100",
+            "-filter_complex",
+            "[1:a]highpass=f=90,lowpass=f=11000,"
+            "acompressor=threshold=-18dB:ratio=2.5[v];"
+            f"[2:a]lowpass=f={ambience['lp']},volume={ambience['vol']}[n];"
+            "[v][n]amix=inputs=2:duration=first:dropout_transition=0,"
+            "alimiter=limit=0.95[a]",
+            "-map", "0:v", "-map", "[a]", "-map_metadata", "-1",
+            "-c:v", "copy", "-c:a", "aac", "-b:a", "128k", "-ac", "1",
+            "-movflags", "+faststart", "-shortest", destination_path,
+        ], os.path.basename(destination_path))
+
+    print(f"Built {os.path.basename(destination_path)} "
+          f"({_media_duration(destination_path):.1f}s, {len(stills)} shots)")
+
+
+PLANT_TOUR_STILLS = [
+    "p4_shot1_dock.jpg", "p4_shot2_line1.jpg", "p4_shot3_line2_rebuild.jpg",
+    "p4_shot4_line3.jpg", "p4_shot5_warehouse.jpg", "p4_shot6_wide_floor.jpg",
+]
+INSPECTION_STILLS = [
+    "p6_shot1_tankfarm.jpg", "p6_shot2_cracked_berm.jpg",
+    "p6_shot3_staining.jpg", "p6_shot4_monitoring_well.jpg",
+    "p6_shot5_drums.jpg", "p6_shot6_wide_site.jpg",
+]
+# machine rumble under the plant floor; wind and open ground on the waste site
+PLANT_AMBIENCE = {"color": "brown", "amp": "0.05", "lp": "900", "vol": "0.5"}
+SITE_AMBIENCE = {"color": "pink", "amp": "0.04", "lp": "1400", "vol": "0.45"}
 
 
 # =========================================================================
@@ -446,7 +615,7 @@ def build_packet_4():
     format_excel_tab(
         ws_kpi,
         title="Atlantic Beverage & Bottling Corp — Executive Summary & Operating KPIs",
-        subtitle="Audited 5-Year Financial Track Record | Grant Thornton LLP",
+        subtitle="Audited 5-Year Financial Track Record | Kentmere Ashford LLP",
         headers=["Performance Metric", "FY2021", "FY2022", "FY2023", "FY2024", "FY2025", "5-Yr CAGR", "Benchmark Target"],
         rows=[
             ["Net Case Delivery Volume (000s)", 1820, 1980, 2190, 2410, 2720, 0.105, ">2,500k Cases"],
@@ -587,7 +756,7 @@ def build_packet_4():
                 "paragraphs": [
                     "Atlantic Beverage & Bottling Corp is an established regional beverage bottler, contract packager, and Direct-Store-Delivery (DSD) distributor operating across the Mid-Atlantic corridor for over 15 years.",
                     "The business distributes high-velocity bottled beverages, craft functional sodas, and proprietary cold-brew teas to 142 premier retail grocery stores, regional convenience chains, and foodservice institutions.",
-                    "With audited FY2025 revenue of $18,500,000 and Normalized EBITDA of $3,650,000, the company demonstrates pristine financial records audited annually by Grant Thornton LLP."
+                    "With audited FY2025 revenue of $18,500,000 and Normalized EBITDA of $3,650,000, the company demonstrates pristine financial records audited annually by Kentmere Ashford LLP."
                 ],
                 "callout": {
                     "text": "<b>Investment Merits:</b><br/>• <b>Pristine Audit Quality:</b> 5 consecutive years of clean, unqualified GAAP audits.<br/>• <b>Low Customer Concentration:</b> No customer exceeds 11.5% of sales; top 5 accounts represent only 43.5%.<br/>• <b>Expansion Capacity:</b> Automated Krones high-speed bottling line operates at 65% capacity, enabling $10M+ in revenue growth without material CapEx.",
@@ -735,13 +904,14 @@ Best regards,
 M&A Diligence Lead | MergeWorks"""
     )
     
-    # 6. Real Human Voice / Speech MP3 Audio File
+    # 6. Founder / CFO management interview (.mp3, in-person room recording)
     audio_path = os.path.join(p4_dir, "Atlantic_Beverage_Founder_CFO_Interview.mp3")
-    download_media_file(AUDIO_URL_1, audio_path)
+    build_room_audio("p4_interview.mp3", audio_path)
     
-    # 7. Real Playable MP4 Video File
+    # 7. Bottling plant site walkthrough (.mp4, narrated)
     video_path = os.path.join(p4_dir, "Atlantic_Beverage_Bottling_Plant_Tour.mp4")
-    download_media_file(VIDEO_URL_1, video_path)
+    build_walkthrough_video(PLANT_TOUR_STILLS, "p4_plant_tour_narration.mp3",
+                            video_path, PLANT_AMBIENCE)
 
 
 # =========================================================================
@@ -862,11 +1032,11 @@ def build_packet_5():
         subtitle="FY2025 Revenue Breakdown Across Defense & Aerospace Programs",
         headers=["Customer Account", "Program Platform", "FY2025 Revenue", "% Share", "Contract Expiration", "Re-Compete Risk"],
         rows=[
-            ["Lockheed Martin Aeronautics", "F-35 Structural Brackets", 5467000, 0.385, "April 30, 2026", "CRITICAL: 15% Rate Cut RFP Notice Issued"],
-            ["Raytheon Missile Systems", "Actuator Guidance Housings", 2556000, 0.180, "Dec 31, 2027", "Moderate: Active delivery schedule"],
-            ["General Dynamics Land Systems", "Titanium Fairings", 1846000, 0.130, "Nov 30, 2026", "Low: Multi-year blanket PO"],
-            ["Northrop Grumman Tooling", "Precision Fixtures", 1420000, 0.100, "Annual Evergreen", "Low: Long-standing vendor status"],
-            ["Boeing Defense Subcontractor", "Rotor Hub Flanges", 1136000, 0.080, "Oct 31, 2026", "Moderate"],
+            ["Fabrikam Aerostructures", "AX-114 Structural Brackets", 5467000, 0.385, "April 30, 2026", "CRITICAL: 15% Rate Cut RFP Notice Issued"],
+            ["Adatum Guidance Systems", "Actuator Guidance Housings", 2556000, 0.180, "Dec 31, 2027", "Moderate: Active delivery schedule"],
+            ["Contoso Land Systems", "Titanium Fairings", 1846000, 0.130, "Nov 30, 2026", "Low: Multi-year blanket PO"],
+            ["Proseware Precision Tooling", "Precision Fixtures", 1420000, 0.100, "Annual Evergreen", "Low: Long-standing vendor status"],
+            ["Tailspin Defense Group", "Rotor Hub Flanges", 1136000, 0.080, "Oct 31, 2026", "Moderate"],
             ["Commercial Machine Accounts (12)", "Commercial Tooling", 1775000, 0.125, "Job Shop POs", "Diversified"],
             ["TOTAL CONSOLIDATED REVENUE", "Consolidated", 14200000, 1.000, "Top Customer = 38.5%", "HIGH CONCENTRATION VULNERABILITY"]
         ],
@@ -888,7 +1058,7 @@ def build_packet_5():
             "Seller Claimed EBITDA": "$3,100,000 (UNRELIABLE)",
             "Audited Normalized EBITDA": "$2,150,000 (-30.6% Deficit)",
             "Mandatory Target Valuation": "$9,800,000 (-$4.40M Cut)",
-            "Top Customer Concentration": "38.5% (Lockheed Martin)",
+            "Top Customer Concentration": "38.5% (Fabrikam Aerostructures)",
             "Deferred Machinery Backlog": "$800,000 Spindle Repairs"
         },
         sections=[
@@ -956,25 +1126,28 @@ def build_packet_5():
     eml_path = os.path.join(p5_dir, "Vanguard_Aerospace_Top_Customer_Contract_Notice.eml")
     generate_branded_eml(
         eml_path,
-        from_email="procurement.aero@lockheedmartin.com",
+        from_email="procurement.aero@fabrikam-aero.com",
         to_email="j.vanguard@vanguardaero.com",
         subject="URGENT: Long-Term Agreement Expiration Notice & Mandatory 15% RFP Re-Compete",
         date_str="Wed, 07 Jan 2026 11:15:40 -0500",
         body_text="""Dear Mr. Vanguard,
 
-This letter serves as formal notification that Long-Term Pricing Agreement #LMT-AERO-4491 for F-35 structural titanium mounting brackets expires on April 30, 2026.
+This letter serves as formal notification that Long-Term Pricing Agreement #FBK-AERO-4491 for AX-114 structural titanium mounting brackets expires on April 30, 2026.
 
-As part of Lockheed Martin's enterprise cost-reduction initiative, this component package is being released to competitive RFP bidding among four certified suppliers. To remain in consideration as primary supplier, Vanguard must submit a revised pricing schedule reflecting an across-the-board 15% unit cost reduction.
+As part of Fabrikam's enterprise cost-reduction initiative, this component package is being released to competitive RFP bidding among four certified suppliers. To remain in consideration as primary supplier, Vanguard must submit a revised pricing schedule reflecting an across-the-board 15% unit cost reduction.
 
 Failure to meet competitive bidding benchmarks may result in dual-sourcing or full reallocation of volume starting Q3 2026.
 
 Sincerely,
-Global Aerospace Procurement | Lockheed Martin Corporation"""
+Global Aerospace Procurement | Fabrikam Aerostructures Corporation"""
     )
     
-    # 6. Real Human Voice MP3 Audio File
+    # 6. CFO add-back clarification call (.mp3, recorded phone line).
+    #    Carries this packet's modality-exclusive yellow flag: the CFO
+    #    confirms personal luxury vehicle leases inside the seller add-backs.
+    #    That admission appears in no document in the packet.
     audio_path = os.path.join(p5_dir, "Vanguard_Aerospace_CFO_Clarification_Call.mp3")
-    download_media_file(AUDIO_URL_2, audio_path)
+    build_phone_call_audio("p5_call.mp3", audio_path)
 
 
 # =========================================================================
@@ -1157,9 +1330,12 @@ We cannot continue billing customers for certified destruction when the waste is
 Compliance Director | TerraClean Waste"""
     )
     
-    # 7. Real Playable MP4 Video File
+    # 7. Phase II site inspection footage (.mp4, handheld inspection camera).
+    #    Carries this packet's modality-exclusive red flag: structural
+    #    failure of secondary containment at Tank Farm B.
     video_path = os.path.join(p6_dir, "TerraClean_Waste_Facility_Inspection_Site.mp4")
-    download_media_file(VIDEO_URL_2, video_path)
+    build_walkthrough_video(INSPECTION_STILLS, "p6_inspection_narration.mp3",
+                            video_path, SITE_AMBIENCE, handheld=True)
 
 
 if __name__ == "__main__":
