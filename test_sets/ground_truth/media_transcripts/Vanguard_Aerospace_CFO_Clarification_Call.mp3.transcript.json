@@ -1,0 +1,152 @@
+{
+ "media_file": "Vanguard_Aerospace_CFO_Clarification_Call.mp3",
+ "evaluator_only": true,
+ "alignment_coverage": 0.798,
+ "lines": [
+  {
+   "speaker": "erinome",
+   "start": 0.0,
+   "end": 9.22,
+   "text": "Dale, thanks for jumping on. I have the monthly P and L and the add-back ledger in front of me, and I need to walk a few lines with you before this goes to committee. I'm recording for the file."
+  },
+  {
+   "speaker": "alnilam",
+   "start": 9.58,
+   "end": 10.66,
+   "text": "Understood. Go ahead."
+  },
+  {
+   "speaker": "erinome",
+   "start": 10.94,
+   "end": 13.22,
+   "text": "Start at the top. Trailing twelve month revenue."
+  },
+  {
+   "speaker": "alnilam",
+   "start": 13.22,
+   "end": 15.46,
+   "text": "Fourteen million, two hundred thousand.",
+   "approximate": true
+  },
+  {
+   "speaker": "erinome",
+   "start": 15.46,
+   "end": 25.74,
+   "text": "And EBITDA. Because I am looking at two different numbers. Your CIM and your teaser both say three million, one hundred thousand. The audited ledger you sent Friday says two million, one hundred and fifty thousand."
+  },
+  {
+   "speaker": "alnilam",
+   "start": 27.7,
+   "end": 34.4,
+   "text": "[hesitates] Right. The, ah, the three point one is the adjusted figure. The two million one fifty is what the audit supports."
+  },
+  {
+   "speaker": "erinome",
+   "start": 34.88,
+   "end": 36.16,
+   "text": "So the gap is nine hundred and fifty thousand."
+  },
+  {
+   "speaker": "alnilam",
+   "start": 37.96,
+   "end": 39.2,
+   "text": "That's the add-back stack, yes."
+  },
+  {
+   "speaker": "erinome",
+   "start": 39.4,
+   "end": 41.94,
+   "text": "Walk me through the stack. What is actually in it?"
+  },
+  {
+   "speaker": "alnilam",
+   "start": 42.38,
+   "end": 52.22,
+   "text": "[clears throat] There's owner compensation normalisation. Some one-time legal from the twenty twenty-four dispute. The ERP implementation. And there are some vehicle leases in there."
+  },
+  {
+   "speaker": "erinome",
+   "start": 52.44,
+   "end": 54.76,
+   "text": "Vehicle leases. Whose vehicles?"
+  },
+  {
+   "speaker": "alnilam",
+   "start": 56.36,
+   "end": 63.7,
+   "text": "[pause] They're leased through the company. Two of them are Mister Vanguard's. A Range Rover and a Porsche Cayenne. There's a third one for his son."
+  },
+  {
+   "speaker": "erinome",
+   "start": 63.9,
+   "end": 66.28,
+   "text": "Are any of those vehicles used in the business?"
+  },
+  {
+   "speaker": "alnilam",
+   "start": 66.64,
+   "end": 71.56,
+   "text": "Not operationally, no. The shop trucks are separate. Those sit on a different line."
+  },
+  {
+   "speaker": "erinome",
+   "start": 71.82,
+   "end": 78.34,
+   "text": "So we have personal luxury vehicle leases sitting inside the seller's add-backs, presented to us as EBITDA."
+  },
+  {
+   "speaker": "alnilam",
+   "start": 79.32,
+   "end": 94.1,
+   "text": "That is how the bridge was built, yes. And I'll be honest with you, I flagged it internally. Along with the family travel, and two family members on the payroll who I could not tell you what they do day to day. All in, that's about four hundred and fifty thousand of the nine fifty."
+  },
+  {
+   "speaker": "erinome",
+   "start": 94.74,
+   "end": 104.72,
+   "text": "I appreciate the straight answer. That four hundred and fifty thousand comes out. It's a personal expense the buyer would eliminate, but we don't credit it back into earnings the way your bridge does."
+  },
+  {
+   "speaker": "alnilam",
+   "start": 105.34,
+   "end": 106.24,
+   "text": "I understand the argument."
+  },
+  {
+   "speaker": "erinome",
+   "start": 106.64,
+   "end": 116.58,
+   "text": "Second item. The machinery inspection came back with deferred spindle work across the CNC fleet. The range they gave us is four hundred and eighty thousand to eight hundred thousand."
+  },
+  {
+   "speaker": "alnilam",
+   "start": 118.26,
+   "end": 122.66,
+   "text": "That's a fair range. We have pushed the spindle rebuilds two years running to protect cash."
+  },
+  {
+   "speaker": "erinome",
+   "start": 123.06,
+   "end": 139.2,
+   "text": "Third. Your top customer is thirty-eight and a half percent of revenue, five million, four hundred and seventy thousand. And I'm holding an email saying the long-term agreement expires April thirtieth and goes out to competitive bid with a fifteen percent price reduction demand."
+  },
+  {
+   "speaker": "alnilam",
+   "start": 139.76,
+   "end": 140.42,
+   "text": "That is accurate."
+  },
+  {
+   "speaker": "erinome",
+   "start": 140.42,
+   "end": 152.56,
+   "text": "Then we are not paying fourteen point two. On two million one fifty of supportable earnings we're in a nine point two to ten and a half million range. I'll send the revised bridge tonight."
+  },
+  {
+   "speaker": "alnilam",
+   "start": 153.14,
+   "end": 153.82,
+   "text": "I'll take it to him."
+  }
+ ]
+}
