@@ -946,49 +946,7 @@ export default function LatestSubmissionSection({
                                 </div>
                             </div>
                         ) : null}
-                        {liveSubmitInsight && (!isUnavailable || liveSubmitInsight.investmentBuyReasoning) ? (
-                            <div className="rounded-xl border border-border bg-card p-4 xl:col-span-4 space-y-3 shadow-2xs">
-                                <div className="flex flex-wrap items-center justify-between gap-2">
-                                    <div className="flex items-center gap-2">
-                                        <Sparkles className="h-3.5 w-3.5 text-primary" />
-                                        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Document-Level Investment Thesis</p>
-                                        <Badge variant="outline" className="text-[10px] border-border text-muted-foreground">Single-File Intake</Badge>
-                                    </div>
-                                    {liveSubmitInsight.investmentIsFavorable !== null ? (
-                                        <Badge variant={liveSubmitInsight.investmentIsFavorable ? 'success' : 'destructive'} className="text-xs font-semibold">
-                                            {liveSubmitInsight.investmentIsFavorable ? 'Favorable indicator' : 'Not favorable'}
-                                        </Badge>
-                                    ) : null}
-                                </div>
 
-                                {liveSubmitInsight.investmentBuyReasoning && liveSubmitInsight.investmentBuyReasoning.trim().length > 0 ? (
-                                    <>
-                                        <ExpandableText text={liveSubmitInsight.investmentBuyReasoning} maxHeight={120} className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90 font-normal mt-1" />
-                                        <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 dark:border-amber-500/20 dark:bg-amber-950/30 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2.5 mt-2">
-                                            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-                                            <div className="space-y-0.5">
-                                                <span className="font-semibold text-amber-900 dark:text-amber-200">Single-Doc Scope: </span>
-                                                <span className="text-amber-800/90 dark:text-amber-300/90 leading-relaxed">This preliminary thesis was derived purely from this individual document in isolation. Please await <strong>Project Synthesis</strong> for the final, cross-document acquisition verdict.</span>
-                                            </div>
-                                        </div>
-                                    </>
-                                ) : (
-                                    <div className="rounded-lg border border-border/60 bg-muted/40 p-3.5 text-xs flex items-start gap-3 text-muted-foreground mt-1 transition-all">
-                                        <div className="rounded-md bg-background/80 p-1.5 border border-border/40 shadow-2xs shrink-0 text-muted-foreground mt-0.5">
-                                            <Info className="h-4 w-4 text-primary/80" />
-                                        </div>
-                                        <div className="space-y-1">
-                                            <p className="font-semibold text-foreground text-xs flex items-center gap-1.5">
-                                                Insufficient Narrative Data
-                                            </p>
-                                            <p className="leading-relaxed text-xs text-muted-foreground">
-                                                There is not enough narrative data in this individual document to produce a standalone investment thesis. Please wait for <strong className="text-foreground font-semibold">Project Synthesis</strong> to consolidate all deal files into a definitive investment thesis.
-                                            </p>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        ) : null}
                         {displayedSubmissionRow?.reconciliationJson ? (
                             <div className="xl:col-span-4">
                                 <MathChecksSection documents={[displayedSubmissionRow]} onOpenEvidence={setActiveEvidence} compact title="Document math checks" description="Deterministic arithmetic verifications on this document's extracted numbers." />
