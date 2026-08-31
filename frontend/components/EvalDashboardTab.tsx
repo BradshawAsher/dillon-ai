@@ -40,12 +40,8 @@ import EvalDiagnosticsPanel from './EvalDiagnosticsPanel'
 import { benchmarkGroundTruthSyntheses } from '../evals/ground_truths'
 import { calculateBatchTotalCost, calculateSynthesisCost, calculateDocumentCost } from '../utils/diligenceDashboardUtils'
 import { HighLevelBusinessSummaryModal, HighLevelBusinessSummaryData } from './HighLevelBusinessSummaryModal'
-import {
-    calculateValuationDelta,
-    formatMagnitude,
-    formatSignedMagnitude,
-    resolveFinancialMetricsForProject,
-} from '../utils/financialMetrics'
+import { formatMagnitude, resolveFinancialMetricsForProject } from '../utils/financialMetrics'
+import { parseMagnitudeMoney } from '../utils/documentedFacts'
 import latestEvalReportData from '../../test_sets/eval_reports/latest_eval_report.json'
 
 type EvalDashboardTabProps = {
@@ -670,7 +666,7 @@ export default function EvalDashboardTab({
                             {totalDocsCount} Scored Docs
                         </div>
                         <p className="text-xs text-muted-foreground font-medium mt-1">
-                            357 raw files in 23 data rooms
+                            435+ raw files in 30 data rooms
                         </p>
                     </CardContent>
                 </Card>
@@ -686,8 +682,8 @@ export default function EvalDashboardTab({
                         <div className="text-2xl font-bold text-foreground">
                             {uniqueBusinessCount} Deal Packets
                         </div>
-                        <p className="text-xs text-muted-foreground font-medium mt-1 truncate" title={`${uniqueBusinessCount} M&A Deal Packets (357 raw files)`}>
-                            23 Data Rooms (357 files)
+                        <p className="text-xs text-muted-foreground font-medium mt-1 leading-snug" title={`${uniqueBusinessCount} M&A Deal Packets across 30 Data Rooms (435+ raw files)`}>
+                            30 Data Rooms (435+ files)
                         </p>
                     </CardContent>
                 </Card>
@@ -1902,20 +1898,10 @@ export default function EvalDashboardTab({
                             const sellerAsk = phaseFinancials?.askingPrice && phaseFinancials.askingPrice !== 'N/A'
                                 ? phaseFinancials.askingPrice
                                 : benchmarkFinancials.askingPrice
-                            const valuationDelta = calculateValuationDelta(phaseVal.base, sellerAsk)
-                            const sellerAskLabel = valuationDelta ? formatMagnitude(valuationDelta.sellerAsk) : (sellerAsk && sellerAsk !== 'N/A' ? sellerAsk : 'Not available')
-                            const valuationDeltaLabel = valuationDelta
-                                ? valuationDelta.direction === 'at_ask'
-                                    ? '$0 (at seller ask)'
-                                    : `${formatSignedMagnitude(valuationDelta.delta)} (${Math.round(valuationDelta.percentOfAsk)}% ${valuationDelta.direction === 'negotiation_target' ? 'negotiation target' : 'model premium'})`
-                                : 'Not available'
-                            const valuationDeltaClass = !valuationDelta
-                                ? 'bg-muted/50 text-muted-foreground border-border'
-                                : valuationDelta.direction === 'negotiation_target'
-                                    ? 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-400/70'
-                                    : valuationDelta.direction === 'model_premium'
-                                        ? 'bg-blue-500/15 text-blue-800 dark:text-blue-300 border-blue-400/70'
-                                        : 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-400/70'
+                            const parsedAskNum = parseMagnitudeMoney(sellerAsk)
+                            const sellerAskLabel = parsedAskNum !== null
+                                ? formatMagnitude(parsedAskNum)
+                                : (sellerAsk && sellerAsk !== 'N/A' ? String(sellerAsk) : 'Not available')
 
                             const docCountBadgeText = isPreLoi
                                 ? `${phaseDocs.length} Docs (Pre-LOI Data Room — Pre-Term Sheet)`
@@ -1935,15 +1921,16 @@ export default function EvalDashboardTab({
                                 : <Badge variant="outline" className="text-xs font-bold gap-1 px-2.5 py-0.5 bg-amber-500/15 text-amber-900 dark:text-amber-200 border-amber-400/80">⚠️ Post-LOI Synthesis Pending (Needs LOI File)</Badge>
 
                             return (
-                                <div key={`${groupIdx}_${cardPhase}`} className={`rounded-xl p-4.5 space-y-4 flex flex-col justify-between transition-all ${cardTheme}`}>
-                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/60 pb-3">
-                                        <div className="space-y-1.5">
+                                <div key={`${groupIdx}_${cardPhase}`} className={`rounded-xl p-5 space-y-4 flex flex-col justify-between transition-all shadow-xs ${cardTheme}`}>
+                                    {/* Card Header: Title & Toggles on Left, Actions on Right */}
+                                    <div className="flex flex-col xl:flex-row xl:items-start justify-between gap-3 border-b border-border/60 pb-3.5">
+                                        <div className="space-y-2 flex-1 min-w-0">
                                             <div className="flex items-center gap-2 flex-wrap">
-                                                <Building2 className={`h-4 w-4 shrink-0 ${isPreLoi ? 'text-blue-600 dark:text-blue-400' : 'text-emerald-600 dark:text-emerald-400'}`} />
-                                                <h4 className="font-bold text-base text-foreground">{businessName}</h4>
+                                                <Building2 className={`h-5 w-5 shrink-0 ${isPreLoi ? 'text-blue-600 dark:text-blue-400' : 'text-emerald-600 dark:text-emerald-400'}`} />
+                                                <h4 className="font-bold text-base text-foreground leading-snug break-words">{businessName}</h4>
 
                                                 {/* Pre/Post-LOI Inline Switch Toggle */}
-                                                <div className="flex items-center rounded-lg border border-border/80 bg-background/80 p-0.5 shadow-2xs text-xs">
+                                                <div className="flex items-center rounded-lg border border-border/80 bg-background/80 p-0.5 shadow-2xs text-xs shrink-0">
                                                     <button
                                                         type="button"
                                                         onClick={() => setCardPhases(prev => ({ ...prev, [businessName]: 'pre-loi' }))}
@@ -1967,29 +1954,27 @@ export default function EvalDashboardTab({
                                                         <span>Post-LOI Negotiation</span>
                                                     </button>
                                                 </div>
+                                            </div>
 
+                                            <div className="flex items-center gap-1.5 flex-wrap">
                                                 <Badge variant="outline" className={`text-xs font-bold gap-1 px-2.5 py-0.5 ${phaseBadgeColor}`}>
                                                     <Sparkles className="h-3.5 w-3.5" />
                                                     {phaseTitleSuffix} ({phaseScore}%)
                                                 </Badge>
                                                 {liveStatusBadge}
-                                                {(() => {
-                                                    if (isDDLive) {
-                                                        return (
-                                                            <Badge variant="success" className={`text-xs font-bold gap-1 px-2.5 py-0.5 ${isPreLoi ? 'bg-blue-500/15 text-blue-900 dark:text-blue-200 border-blue-400/80' : hasLivePostLoi ? 'bg-emerald-500/15 text-emerald-900 dark:text-emerald-200 border-emerald-400/80' : 'bg-amber-500/15 text-amber-900 dark:text-amber-200 border-amber-400/80'}`}>
-                                                                {docCountBadgeText} (${phaseTotalRunCost.toFixed(2)}/packet)
-                                                            </Badge>
-                                                        )
-                                                    }
-                                                    return (
-                                                        <Badge variant="outline" className="text-[10px] font-mono">
-                                                            {phaseDocs.length} Doc{phaseDocs.length > 1 ? 's' : ''} Included
-                                                        </Badge>
-                                                    )
-                                                })()}
+                                                {isDDLive ? (
+                                                    <Badge variant="success" className={`text-xs font-bold gap-1 px-2.5 py-0.5 ${isPreLoi ? 'bg-blue-500/15 text-blue-900 dark:text-blue-200 border-blue-400/80' : hasLivePostLoi ? 'bg-emerald-500/15 text-emerald-900 dark:text-emerald-200 border-emerald-400/80' : 'bg-amber-500/15 text-amber-900 dark:text-amber-200 border-amber-400/80'}`}>
+                                                        {docCountBadgeText} (${phaseTotalRunCost.toFixed(2)}/packet)
+                                                    </Badge>
+                                                ) : (
+                                                    <Badge variant="outline" className="text-[10px] font-mono">
+                                                        {phaseDocs.length} Doc{phaseDocs.length > 1 ? 's' : ''} Included
+                                                    </Badge>
+                                                )}
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-2 flex-wrap">
+
+                                        <div className="flex items-center gap-2 flex-wrap shrink-0">
                                             {/* Toggle minicards for this card */}
                                             {phaseDocs.length > 0 && (
                                                 <Button
@@ -2024,7 +2009,7 @@ export default function EvalDashboardTab({
                                                 type="button"
                                                 size="sm"
                                                 variant="outline"
-                                                className="gap-2 border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 font-extrabold text-xs px-3.5 py-2 shadow-xs hover:shadow-md transition-all cursor-pointer rounded-xl shrink-0"
+                                                className="gap-2 border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 font-extrabold text-xs px-3.5 py-1.5 shadow-xs hover:shadow-md transition-all cursor-pointer rounded-xl shrink-0"
                                                 onClick={() => handleOpenSummaryModal(businessName, phaseDocs, isPreLoi)}
                                                 title={`Open high-level business summary for ${businessName}`}
                                             >
@@ -2034,9 +2019,9 @@ export default function EvalDashboardTab({
 
                                             <Button
                                                 type="button"
-                                                size="default"
+                                                size="sm"
                                                 variant="default"
-                                                className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 font-black text-sm px-4 py-2 shadow-md hover:shadow-lg transition-all cursor-pointer rounded-xl ml-2 active:scale-95 ring-2 ring-primary/30 shrink-0"
+                                                className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 font-black text-xs px-3.5 py-1.5 shadow-md hover:shadow-lg transition-all cursor-pointer rounded-xl active:scale-95 ring-2 ring-primary/30 shrink-0"
                                                 onClick={() => {
                                                     const docProjectId = phaseDocs[0]?.projectId || phaseDocs[0]?.projectKey
                                                     const targetKey = docProjectId || mapBusinessToProjectKey(businessName, phaseDocs[0])
@@ -2052,9 +2037,9 @@ export default function EvalDashboardTab({
 
                                             <Button
                                                 type="button"
-                                                size="default"
+                                                size="sm"
                                                 variant="outline"
-                                                className="gap-2 border-emerald-600/70 bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-600 hover:text-white font-extrabold text-xs px-3.5 py-2 shadow-xs hover:shadow-md transition-all cursor-pointer rounded-xl shrink-0"
+                                                className="gap-2 border-emerald-600/70 bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-600 hover:text-white font-extrabold text-xs px-3.5 py-1.5 shadow-xs hover:shadow-md transition-all cursor-pointer rounded-xl shrink-0"
                                                 onClick={() => {
                                                     const docProjectId = phaseDocs[0]?.projectId || phaseDocs[0]?.projectKey
                                                     const targetKey = docProjectId || mapBusinessToProjectKey(businessName, phaseDocs[0])
@@ -2072,22 +2057,25 @@ export default function EvalDashboardTab({
                                                 <span>Add More Files</span>
                                             </Button>
                                         </div>
-                                        {!isPreLoi && !hasLivePostLoi ? (
-                                            <div className="flex items-center gap-2 rounded-lg border border-amber-500/50 bg-amber-500/15 px-3.5 py-2 text-xs font-semibold text-amber-900 dark:text-amber-100 mt-2 shadow-2xs">
-                                                <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
-                                                <span><strong>Post-LOI Re-Synthesis Pending:</strong> An Executed LOI / Term Sheet document has not been uploaded to this workspace yet. Upload <code>06_transaction/letter_of_intent.pdf</code> to run live Post-LOI purchase price bridge (&Delta;EV) and contract trap synthesis.</span>
-                                            </div>
-                                        ) : null}
-                                        {isDDPlaceholder ? (
-                                            <div className="flex items-center gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3.5 py-1.5 text-xs font-semibold text-amber-800 dark:text-amber-200 mt-1">
-                                                <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
-                                                <span>Placeholder benchmark dataset — 22 documents in packet. Not ran through the live n8n pipeline yet.</span>
-                                            </div>
-                                        ) : null}
-                                        <p className="text-xs text-muted-foreground">
-                                            Execution time: ~{totalDurationSec}s total across workflow passes
-                                        </p>
-                                        <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                                    </div>
+
+                                    {/* Warnings & Notices */}
+                                    {!isPreLoi && !hasLivePostLoi ? (
+                                        <div className="flex items-center gap-2 rounded-lg border border-amber-500/50 bg-amber-500/15 px-3.5 py-2 text-xs font-semibold text-amber-900 dark:text-amber-100 shadow-2xs">
+                                            <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                                            <span><strong>Post-LOI Re-Synthesis Pending:</strong> An Executed LOI / Term Sheet document has not been uploaded to this workspace yet. Upload <code>06_transaction/letter_of_intent.pdf</code> to run live Post-LOI purchase price bridge (&Delta;EV) and contract trap synthesis.</span>
+                                        </div>
+                                    ) : null}
+                                    {isDDPlaceholder ? (
+                                        <div className="flex items-center gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3.5 py-1.5 text-xs font-semibold text-amber-800 dark:text-amber-200">
+                                            <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                                            <span>Placeholder benchmark dataset — 22 documents in packet. Not ran through the live n8n pipeline yet.</span>
+                                        </div>
+                                    ) : null}
+
+                                    {/* Valuation, Seller Ask & Execution Bar */}
+                                    <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-xs">
+                                        <div className="flex flex-wrap items-center gap-1.5">
                                             <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide mr-1">Valuation:</span>
                                             <Badge variant="outline" className="text-[11px] font-mono bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-300">
                                                 Bear: {phaseVal.bear}
@@ -2098,15 +2086,13 @@ export default function EvalDashboardTab({
                                             <Badge variant="outline" className="text-[11px] font-mono bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-300">
                                                 Bull: {phaseVal.bull}
                                             </Badge>
-                                        </div>
-                                        <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                                            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide mr-1">Pricing:</span>
+                                            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide ml-2 mr-1">Seller Ask:</span>
                                             <Badge variant="outline" className="text-[11px] font-mono font-bold bg-slate-500/10 text-slate-800 dark:text-slate-200 border-slate-400/60">
-                                                Seller Ask: {sellerAskLabel}
+                                                {sellerAskLabel}
                                             </Badge>
-                                            <Badge variant="outline" className={`text-[11px] font-mono font-bold ${valuationDeltaClass}`}>
-                                                Model vs Ask: {valuationDeltaLabel}
-                                            </Badge>
+                                        </div>
+                                        <div className="text-xs text-muted-foreground font-medium">
+                                            Execution time: ~{totalDurationSec}s total across workflow passes
                                         </div>
                                     </div>
 
