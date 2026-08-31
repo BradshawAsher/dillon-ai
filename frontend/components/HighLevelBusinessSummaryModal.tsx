@@ -1,20 +1,14 @@
-import React, { useEffect } from 'react'
+import { useEffect } from 'react'
 import {
     AlertTriangle,
     Building2,
     CheckCircle2,
-    Clock,
     Cpu,
-    DollarSign,
     Download,
     ExternalLink,
     FileCheck,
-    FileText,
-    FolderKanban,
-    Layers,
     ShieldAlert,
     Sparkles,
-    TrendingUp,
     X,
 } from 'lucide-react'
 import { Badge } from '../lib/shadcn/badge'
