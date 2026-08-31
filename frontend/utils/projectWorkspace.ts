@@ -798,6 +798,20 @@ export function createProjectSummaries(
     })
 }
 
+/**
+ * Resolves the best human-facing name for a project summary: a non-empty
+ * company name wins, then the project name, then the raw project id, then the
+ * project key. Kept here (not in the card) so the precedence is testable and
+ * shared.
+ */
+export function formatProjectDisplayName(project: Pick<ProjectSummary, 'companyName' | 'projectName' | 'projectId' | 'projectKey'>): string {
+    const companyName = (project.companyName ?? '').trim()
+    if (companyName.length > 0) {
+        return companyName
+    }
+    return (project.projectName ?? '').trim() || project.projectId || project.projectKey
+}
+
 export function formatProjectStage(stage: string | null | undefined) {
     // A project's stage can be absent (null/undefined) on rows that never made
     // it past intake; coerce first so the placeholder path is taken instead of

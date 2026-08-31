@@ -8,6 +8,7 @@ import {
     isSystemTestProbeFile,
     isRowMatchingProject,
     detectCompanyName,
+    formatProjectDisplayName,
 } from './projectWorkspace'
 import type { SubmissionHistoryItem } from './submissionHistory'
 
@@ -163,5 +164,25 @@ describe('getProjectName / getCompanyName', () => {
     it('uses the safe default when nothing identifies the project', () => {
         expect(getProjectName(row({}))).toBe('Cascadia Climate Services, Inc.')
         expect(getCompanyName(row({}))).toBe('Cascadia Climate Services, Inc.')
+    })
+})
+
+describe('formatProjectDisplayName', () => {
+    const p = (o: Partial<{ companyName: string; projectName: string; projectId: string; projectKey: string }>) => ({
+        companyName: '', projectName: '', projectId: '', projectKey: '', ...o,
+    })
+
+    it('prefers the company name when present', () => {
+        expect(formatProjectDisplayName(p({ companyName: 'Acme Inc', projectName: 'Deal' }))).toBe('Acme Inc')
+    })
+
+    it('falls back to project name, then id, then key', () => {
+        expect(formatProjectDisplayName(p({ projectName: 'Project Falcon' }))).toBe('Project Falcon')
+        expect(formatProjectDisplayName(p({ projectId: 'dd-001' }))).toBe('dd-001')
+        expect(formatProjectDisplayName(p({ projectKey: 'acme::x' }))).toBe('acme::x')
+    })
+
+    it('ignores whitespace-only company and project names', () => {
+        expect(formatProjectDisplayName(p({ companyName: '   ', projectName: '  ', projectId: 'pid' }))).toBe('pid')
     })
 })
