@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
     Activity,
     AlertCircle,
@@ -45,7 +45,7 @@ import { type Notification } from '../components/NotificationCenter'
 import { BatchProcessingSidePanel } from '../components/BatchProcessingSidePanel'
 import EvidenceDrawer from '../components/EvidenceDrawer'
 import DashboardFaqSidebar from '../components/DashboardFaqSidebar'
-import SupademoModal, { type DemoVariantId } from '../components/SupademoModal'
+import { type DemoVariantId } from '../components/SupademoModal'
 import { WorkspaceDemoGalleryBar } from '../components/WorkspaceDemoGalleryBar'
 import { useNativeWalkthrough } from '../components/walkthrough/useNativeWalkthrough'
 import { WalkthroughLauncherModal } from '../components/walkthrough/WalkthroughLauncherModal'
@@ -69,7 +69,7 @@ import { useDealWorkspaceState, type WorkspaceTab } from '../hooks/useDealWorksp
 import { useSupabaseRealtimeDiligence } from '../hooks/backend/useSupabaseRealtimeDiligence'
 import { parseUrlDeepLinkState, matchProjectFromQuery, syncBrowserUrl } from '../utils/deepLinking'
 import DealWorkspaceNav from '../components/DealWorkspaceNav'
-import TabSidebarTOC, { TabTopNavTOC } from '../components/TabSidebarTOC'
+import TabSidebarTOC from '../components/TabSidebarTOC'
 import SectionHeader from '../components/SectionHeader'
 
 const ProjectIntakeCard = lazyWithRetry(() => import('../components/ProjectIntakeCard'))
@@ -817,7 +817,6 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         setIsTocCollapsed,
         tocWidth,
         setTocWidth,
-        askingPriceByProject,
         setAskingPriceByProject,
         projectChecklistById,
         setProjectChecklistById,
