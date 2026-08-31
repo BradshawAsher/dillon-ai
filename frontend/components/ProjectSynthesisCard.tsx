@@ -15,7 +15,7 @@ import { Progress } from '../lib/shadcn/progress'
 import { formatCurrencyValue, getSubmissionInsightTone } from '../utils/aiSubmissionData'
 import { downloadTextFile, fileSafeName } from '../utils/downloadFile'
 import { formatHours, type ImpactMetrics } from '../utils/impactMetrics'
-import { getProjectKey, isRowMatchingProject, type ProjectSummary } from '../utils/projectWorkspace'
+import { getProjectKey, isRowMatchingProject, formatProjectDisplayName, type ProjectSummary } from '../utils/projectWorkspace'
 import { buildDocumentLinkedEvidence, parseDocumentedFacts, type EvidenceItem } from '../utils/evidence'
 import { calculateBatchTotalCost, calculateSynthesisCost, formatElapsedDuration, getDocumentExtractionDurationSec, getSynthesisDurationSec } from '../utils/diligenceDashboardUtils'
 import { classifyError } from '../utils/errorClassifier'
@@ -177,16 +177,6 @@ function insightGroupLabel(groupType: InsightGroupType): string {
     }
 }
 
-function formatProjectDisplayName(project: ProjectSummary) {
-    const companyName = project.companyName.trim()
-    const projectName = project.projectName.trim()
-
-    if (companyName.length > 0) {
-        return companyName
-    }
-
-    return projectName || project.projectId || project.projectKey
-}
 
 type SeverityFilter = 'all' | 'critical' | 'medium' | 'low' | 'informational'
 type TypeFilter = 'all' | InsightGroupType
