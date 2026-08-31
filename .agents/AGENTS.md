@@ -72,9 +72,11 @@ If the user asks to change project synthesis behavior, the agent should:
 - **Gemini BYOK Default**: Doc Primary = `Gemini 3.7 Flash`, Doc Backup = `Gemini 3.5 Flash Lite`, Synth Primary = `Gemini 3.7 Flash`, Synth Backup = `Gemini 3.5 Flash Lite`
 - **DeepSeek BYOK Default**: Doc Primary = `DeepSeek V4 Flash`, Doc Backup = `DeepSeek V4 Pro`, Synth Primary = `DeepSeek V4 Pro`, Synth Backup = `DeepSeek V4 Flash`
 
-## Surgical Code Insertion Protocol
+## Surgical Code Insertion & Token-Preserving Edits Protocol
 - ALWAYS perform careful, targeted insertions and minimal replacements rather than rewriting entire files or large blocks of code.
-- Keep edit chunks scoped tightly to the exact lines being added or modified to preserve surrounding code structure and history.
+- Minimize token consumption and prevent context fragmentation by scoping edit target chunks tightly to the exact lines being modified.
+- NEVER rewrite or dump entire multi-line components for minor tweaks; target only the specific JSX tags, functions, or imports being updated.
+- Keep replacements strictly contiguous and small, preserving existing logic, comments, and structure.
 
 ## Manual Commit & Push Protocol
 - NEVER automatically run `git commit` or `git push` without an explicit, direct instruction from the user asking to commit and/or push.

@@ -69,7 +69,7 @@ export function BatchProgressCard({
     handleRunSynthesis,
     isAwaitingSynthesis = false,
 }: BatchProgressCardProps) {
-    const [isDocsExpanded, setIsDocsExpanded] = useState(true)
+    const [isDocsExpanded, setIsDocsExpanded] = useState(false)
     const isFinished = !isSubmitting && !isInterrupted && !activeSubmissionBatch.stopError && activeBatchExpectedCount > 0 && activeBatchFinishedCount >= activeBatchExpectedCount
     const isStopped = Boolean(activeSubmissionBatch.stoppedAt)
 
