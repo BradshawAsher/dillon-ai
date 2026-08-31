@@ -45,26 +45,6 @@ export type DerivedFact = {
     citations: Array<{ source_file?: string; row_or_cell?: string; excerpt?: string }>
 }
 
-// Metrics the quant cards understand. Extra metrics are still carried through
-// under their own key so future cards can use them without another change.
-const KNOWN_METRICS = new Set([
-    'revenue',
-    'ebitda_sde',
-    'debt',
-    'total_assets',
-    'total_liabilities',
-    'cash',
-    'gross_profit',
-    'net_income',
-    'cogs',
-    'purchase_price',
-    'asking_price',
-    'ebitda_multiple',
-    'revenue_multiple',
-    'target_working_capital',
-    'escrow_amount',
-])
-
 function periodRank(period: string | undefined): number {
     if (!period) return 0
     // A dated label (even a dated "TTM 2023") ranks by its explicit year.
