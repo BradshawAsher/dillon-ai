@@ -1,0 +1,16 @@
+{
+  "fileName": "TerraClean_Waste_Whistleblower_Internal_Email.eml",
+  "business": "TerraClean Industrial Waste Solutions (Hazardous Waste Treatment)",
+  "fileType": "EML",
+  "groundTruth": {
+    "documentType": "Due Diligence Data Room Packet",
+    "trafficLight": "RED",
+    "riskLevel": "CRITICAL",
+    "financialFacts": [],
+    "expectedRedFlags": [
+      "Internal whistleblower confirms falsified manifests and severe groundwater contamination"
+    ],
+    "expectedYellowFlags": [],
+    "expectedRecommendation": "WALK AWAY"
+  }
+}

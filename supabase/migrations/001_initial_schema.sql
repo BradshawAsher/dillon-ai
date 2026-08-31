@@ -35,6 +35,7 @@ create table if not exists documents (
     submission_batch_id text not null default '',
     expected_batch_document_count int not null default 0,
     file_name text not null default '',
+    source_relative_path text not null default '',
     file_size bigint not null default 0,
     file_type text not null default '',
     trigger_timestamp text not null default '',

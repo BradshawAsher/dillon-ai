@@ -1,0 +1,14 @@
+{
+  "fileName": "Atlantic_Beverage_Bottling_Plant_Tour.mp4",
+  "business": "Atlantic Beverage & Bottling Corp (Beverage Packaging & Logistics)",
+  "fileType": "MP4",
+  "groundTruth": {
+    "documentType": "Operating Metrics",
+    "trafficLight": "GREEN",
+    "riskLevel": "LOW",
+    "financialFacts": [],
+    "expectedRedFlags": [],
+    "expectedYellowFlags": [],
+    "expectedRecommendation": "PROCEED"
+  }
+}

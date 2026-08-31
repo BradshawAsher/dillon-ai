@@ -1,0 +1,14 @@
+{
+  "fileName": "Atlantic_Beverage_Management_Presentation.pptx",
+  "business": "Atlantic Beverage & Bottling Corp (Beverage Packaging & Logistics)",
+  "fileType": "PPTX",
+  "groundTruth": {
+    "documentType": "Operating Metrics",
+    "trafficLight": "GREEN",
+    "riskLevel": "LOW",
+    "financialFacts": [],
+    "expectedRedFlags": [],
+    "expectedYellowFlags": [],
+    "expectedRecommendation": "PROCEED"
+  }
+}

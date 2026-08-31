@@ -1,0 +1,46 @@
+{
+  "fileName": "Vanguard_Aerospace_Monthly_PnL_AddBack_Ledger.xlsx",
+  "business": "Vanguard Precision Aerospace Machining (Defense Tooling & CNC)",
+  "fileType": "XLSX",
+  "groundTruth": {
+    "documentType": "Profit and Loss Statement",
+    "trafficLight": "YELLOW",
+    "riskLevel": "ELEVATED",
+    "financialFacts": [
+      {
+        "metric": "revenue",
+        "normalizedValue": 14200000,
+        "period": "TTM",
+        "rawValue": "$14,200,000"
+      },
+      {
+        "metric": "ebitda",
+        "normalizedValue": 2150000,
+        "period": "TTM",
+        "rawValue": "$2,150,000"
+      },
+      {
+        "metric": "adjusted_ebitda",
+        "normalizedValue": 2150000,
+        "period": "TTM",
+        "rawValue": "$2,150,000"
+      }
+    ],
+    "expectedRedFlags": [],
+    "expectedYellowFlags": [
+      "Seller claimed EBITDA of $3.10M overstates true audited EBITDA of $2.15M by $950k (30.6% gap)",
+      "$450k in disallowed personal family expenses (luxury vehicles, personal travel, unearned wages)",
+      "$800k in deferred CNC machinery maintenance required"
+    ],
+    "valuation": {
+      "valuationLowerBound": 9200000,
+      "valuationBaseEstimate": 9800000,
+      "valuationUpperBound": 10500000,
+      "askingPrice": 14200000,
+      "currency": "USD"
+    },
+    "expectedMathCheckStatus": "passed",
+    "expectedRecommendation": "RENEGOTIATE",
+    "expectedPriceAdjustment": 4400000
+  }
+}

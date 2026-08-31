@@ -113,6 +113,31 @@ Skipped (unsupported format): TurnKey `.numbers` file, ConversionXL `.numbers` f
 | 25 | MergeWorks Testing | `MergeWorks Testing - 3 Financial Performance CSV.docx` | DOCX | P&L math checks & margin trend analysis | [x] Ground Truth Ready |
 | 26 | MergeWorks Testing | `MergeWorks Testing - 4 Seller Add-Back Notes.docx` | DOCX | Add-back intent & legitimacy classification | [x] Ground Truth Ready |
 
+### C. Deep Multi-Modal Due Diligence Suites (20 Documents — Packets 4, 5, & 6)
+
+| # | Business / Packet | File | Type | Focus Capability / Forensic Signal | Status |
+|---|---|---|---|---|---|
+| 27 | Atlantic Beverage (PROCEED) | `Atlantic_Beverage_3Yr_Audited_Financial_Model.xlsx` | XLSX | Multi-tab GAAP P&L, balance sheet, route economics | [x] Ground Truth & Run Ready |
+| 28 | Atlantic Beverage (PROCEED) | `Atlantic_Beverage_Executive_CIM.pdf` | PDF | 10-page branded CIM & customer diversification (<12%) | [x] Ground Truth & Run Ready |
+| 29 | Atlantic Beverage (PROCEED) | `Atlantic_Beverage_Executed_LOI_Agreement.docx` | DOCX | Binding LOI with $500k indemnity escrow terms | [x] Ground Truth & Run Ready |
+| 30 | Atlantic Beverage (PROCEED) | `Atlantic_Beverage_Management_Presentation.pptx` | PPTX | 16:9 presentation slide deck on route density & growth | [x] Ground Truth & Run Ready |
+| 31 | Atlantic Beverage (PROCEED) | `Atlantic_Beverage_Broker_Due_Diligence_Thread.eml` | EML | MIME deal correspondence email confirming CapEx & retention | [x] Ground Truth & Run Ready |
+| 32 | Atlantic Beverage (PROCEED) | `Atlantic_Beverage_Founder_CFO_Interview.mp3` | MP3 | Founder/CFO Q&A audio call on pricing power | [x] Ground Truth & Run Ready |
+| 33 | Atlantic Beverage (PROCEED) | `Atlantic_Beverage_Bottling_Plant_Tour.mp4` | MP4 | Video walkthrough of automated Krones bottling facility | [x] Ground Truth & Run Ready |
+| 34 | Vanguard Aerospace (RENEGOTIATE) | `Vanguard_Aerospace_Monthly_PnL_AddBack_Ledger.xlsx` | XLSX | Disallowed $450k personal add-backs & $800k CapEx reserve | [x] Ground Truth & Run Ready |
+| 35 | Vanguard Aerospace (RENEGOTIATE) | `Vanguard_Aerospace_Customer_Concentration_AR.xlsx` | XLSX | 38.5% customer concentration expiring in 4 months | [x] Ground Truth & Run Ready |
+| 36 | Vanguard Aerospace (RENEGOTIATE) | `Vanguard_Aerospace_CIM_Executive_Overview.pdf` | PDF | Valuation re-pricing waterfall (-$4.4M price cut target) | [x] Ground Truth & Run Ready |
+| 37 | Vanguard Aerospace (RENEGOTIATE) | `Vanguard_Aerospace_Machinery_Fleet_Inspection.docx` | DOCX | Independent engineering inspection of aging CNC spindles | [x] Ground Truth & Run Ready |
+| 38 | Vanguard Aerospace (RENEGOTIATE) | `Vanguard_Aerospace_Top_Customer_Contract_Notice.eml` | EML | Customer notice demanding 15% rate cut on RFP re-compete | [x] Ground Truth & Run Ready |
+| 39 | Vanguard Aerospace (RENEGOTIATE) | `Vanguard_Aerospace_CFO_Clarification_Call.mp3` | MP3 | CFO audio recording admitting personal vehicle lease add-backs | [x] Ground Truth & Run Ready |
+| 40 | TerraClean Waste (WALK AWAY) | `TerraClean_Waste_Seller_CIM_Overview.pdf` | PDF | Fabricated $22M revenue claim vs $11.2M actual cash | [x] Ground Truth & Run Ready |
+| 41 | TerraClean Waste (WALK AWAY) | `TerraClean_Waste_General_Ledger_Bank_Mismatch.xlsx` | XLSX | GL reconciliation proving $5.8M phantom round-trip deposits | [x] Ground Truth & Run Ready |
+| 42 | TerraClean Waste (WALK AWAY) | `TerraClean_Waste_Form_1120_Federal_Tax_Audit.xlsx` | XLSX | IRS Form 1120 tax return proving -$350k operational loss | [x] Ground Truth & Run Ready |
+| 43 | TerraClean Waste (WALK AWAY) | `TerraClean_Waste_AR_Aging_Bad_Debt_Ledger.xlsx` | XLSX | 74% delinquent AR (>180 days bad debt write-off) | [x] Ground Truth & Run Ready |
+| 44 | TerraClean Waste (WALK AWAY) | `TerraClean_Waste_EPA_Superfund_Consent_Decree.docx` | DOCX | $4.2M federal CERCLA Superfund cleanup lien | [x] Ground Truth & Run Ready |
+| 45 | TerraClean Waste (WALK AWAY) | `TerraClean_Waste_Whistleblower_Internal_Email.eml` | EML | Internal email chain warning of improper chemical discharge | [x] Ground Truth & Run Ready |
+| 46 | TerraClean Waste (WALK AWAY) | `TerraClean_Waste_Facility_Inspection_Site.mp4` | MP4 | Video inspection showing compromised secondary containment | [x] Ground Truth & Run Ready |
+
 ## Ground Truth Template
 
 For each document, create a JSON file like:

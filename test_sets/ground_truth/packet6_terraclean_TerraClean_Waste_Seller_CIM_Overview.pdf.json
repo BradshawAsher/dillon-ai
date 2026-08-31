@@ -1,0 +1,48 @@
+{
+  "fileName": "TerraClean_Waste_Seller_CIM_Overview.pdf",
+  "business": "TerraClean Industrial Waste Solutions (Hazardous Waste Treatment)",
+  "fileType": "PDF",
+  "groundTruth": {
+    "documentType": "Confidential Information Memorandum (CIM)",
+    "trafficLight": "RED",
+    "riskLevel": "CRITICAL",
+    "financialFacts": [
+      {
+        "metric": "revenue",
+        "normalizedValue": 11200000,
+        "period": "FY2025",
+        "rawValue": "$11,200,000"
+      },
+      {
+        "metric": "ebitda",
+        "normalizedValue": -350000,
+        "period": "FY2025",
+        "rawValue": "-$350,000"
+      }
+    ],
+    "expectedRedFlags": [
+      "Severe revenue inflation: Seller claims $22.0M vs verified $11.2M bank cash ($10.8M deficit)",
+      "True operational loss of -$350,000 (insolvency risk)",
+      "Undisclosed $4.2M EPA Superfund cleanup lien and consent decree",
+      "74% delinquent AR ($4.8M uncollectible bad debt write-off required)"
+    ],
+    "expectedYellowFlags": [],
+    "valuation": {
+      "valuationLowerBound": 0,
+      "valuationBaseEstimate": 0,
+      "valuationUpperBound": 500000,
+      "askingPrice": 22000000,
+      "currency": "USD"
+    },
+    "expectedMathCheckStatus": "failed",
+    "expectedRecommendation": "WALK AWAY",
+    "expectedCrossDocumentConflicts": [
+      {
+        "metric": "revenue",
+        "period": "FY2025",
+        "description": "Seller claimed revenue of $22,000,000 overstates bank and tax verified revenue of $11,200,000 by $10,800,000 (49.1%).",
+        "severity": "critical"
+      }
+    ]
+  }
+}

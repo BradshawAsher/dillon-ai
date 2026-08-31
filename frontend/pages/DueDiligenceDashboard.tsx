@@ -37,6 +37,7 @@ const SystemArchitectureCard = lazyWithRetry(() => import('../components/SystemA
 import LoginButton, { getStoredAuth, isDataIsolationEnabled, DATA_ISOLATION_EVENT, openAuthModal } from '../components/AuthGate'
 import { AUTH_CHANGE_EVENT, type AppAuthUser } from '../services/supabaseAuth'
 import { prepareDocumentUpload } from '../services/documentUpload'
+import { sourceRelativePathForFile } from '../../shared/sourceRelativePath'
 import { DataIsolationBanner } from '../components/dashboard/DataIsolationBanner'
 import { buildMarkdownReport, buildJsonExport, downloadFile } from '../components/ExportDealButton'
 import KeyboardShortcutsDialog from '../components/KeyboardShortcutsDialog'
@@ -3604,13 +3605,14 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         const duplicateFileNames: string[] = []
         const selectedMetadataKeys = new Set<string>()
         const filesToQueue = selectedFiles.filter((file) => {
-            const metadataKey = `${file.name.trim().toLowerCase()}::${file.size}`
+            const sourceRelativePath = sourceRelativePathForFile(file)
+            const metadataKey = batchDocumentKey({ fileName: file.name, sourceRelativePath, fileSize: file.size })
             const isDuplicate = selectedMetadataKeys.has(metadataKey)
                 || isDuplicateProjectDocument(file, resolvedProjectId, duplicateCheckRows)
 
             selectedMetadataKeys.add(metadataKey)
             if (isDuplicate) {
-                duplicateFileNames.push(file.name)
+                duplicateFileNames.push(sourceRelativePath)
                 return false
             }
 
@@ -3651,12 +3653,14 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             const submissionBatchId = `batch-${now}-${Math.random().toString(36).substring(2, 7)}`
             const expectedBatchDocumentCount = filesToQueue.length
             const failedFileNames: string[] = []
+            const failedFileKeys = new Set<string>()
             const failureMessages: string[] = []
             let newDuplicateCount = 0
             const queue = createBatchQueue(submissionBatchId)
             batchQueueRef.current = queue
             const updateAttempt = (file: File, update: Partial<BatchUploadAttempt>) => {
-                const key = batchDocumentKey({ fileName: file.name, fileSize: file.size })
+                const sourceRelativePath = sourceRelativePathForFile(file)
+                const key = batchDocumentKey({ fileName: file.name, sourceRelativePath, fileSize: file.size })
                 setActiveSubmissionBatch(current => current?.id === submissionBatchId ? {
                     ...current,
                     uploadAttempts: current.uploadAttempts?.map(attempt => batchDocumentKey(attempt) === key
@@ -3670,7 +3674,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 expectedDocumentCount: expectedBatchDocumentCount,
                 environment,
                 startedAt: now,
-                uploadAttempts: filesToQueue.map(file => ({ fileName: file.name, fileSize: file.size, fileType: file.type, status: 'uploading', updatedAt: new Date(now).toISOString() })),
+                uploadAttempts: filesToQueue.map(file => ({ fileName: file.name, sourceRelativePath: sourceRelativePathForFile(file), fileSize: file.size, fileType: file.type, status: 'uploading', updatedAt: new Date(now).toISOString() })),
             })
 
             const CONCURRENCY = 3
@@ -3694,6 +3698,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                             const result = await triggerSubmitDealPacket({
                                 environment,
                                 fileName: file.name,
+                                sourceRelativePath: sourceRelativePathForFile(file),
                                 fileSize: file.size,
                                 fileType: file.type || 'application/octet-stream',
                                 fileBase64,
@@ -3722,7 +3727,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                                 throw new Error('The server did not confirm this submission. Check history before retrying.')
                             }
                             if (result?.status === 'duplicate') {
-                                duplicateFileNames.push(file.name)
+                                duplicateFileNames.push(sourceRelativePathForFile(file))
                                 newDuplicateCount++
                                 updateAttempt(file, { status: 'duplicate' })
                                 setActiveSubmissionBatch(current => current?.id === submissionBatchId ? { ...current, expectedDocumentCount: Math.max(0, current.expectedDocumentCount - 1) } : current)
@@ -3740,7 +3745,9 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                     }
 
                     if (lastError) {
-                        failedFileNames.push(file.name)
+                        const sourceRelativePath = sourceRelativePathForFile(file)
+                        failedFileNames.push(sourceRelativePath)
+                        failedFileKeys.add(batchDocumentKey({ fileName: file.name, sourceRelativePath, fileSize: file.size }))
                         const message = lastError instanceof Error ? lastError.message : 'Upload failed before submission was confirmed.'
                         failureMessages.push(`${file.name}: ${message}`)
                         updateAttempt(file, { status: 'upload_failed', errorMessage: message })
@@ -3775,7 +3782,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             setDocumentType('auto-detect')
             const resolvedKey = projectId || suggestedProjectId
             setSelectedProjectKey(resolvedKey)
-            setSelectedFiles(filesToQueue.filter(file => failedFileNames.includes(file.name)))
+            setSelectedFiles(filesToQueue.filter(file => failedFileKeys.has(batchDocumentKey({ fileName: file.name, sourceRelativePath: sourceRelativePathForFile(file), fileSize: file.size }))))
             if (dealName.length === 0) setDealName(suggestedProjectName)
             if (projectId.length === 0) setProjectId(suggestedProjectId)
             const currentUser = getStoredAuth()

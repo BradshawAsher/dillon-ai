@@ -1,0 +1,146 @@
+{
+  "business": "Vanguard Precision Aerospace Machining (Defense Tooling & CNC)",
+  "projectId": "project-vanguard-aerospace-renegotiate",
+  "evaluatedAt": "2026-08-30T13:00:00.000Z",
+  "documents": [
+    {
+      "fileName": "Vanguard_Aerospace_Monthly_PnL_AddBack_Ledger.xlsx",
+      "status": "completed",
+      "modelUsed": "OpenAI 5.6 Terra",
+      "detectedDocumentType": "Profit and Loss Statement",
+      "trafficLight": "YELLOW",
+      "riskLevel": "ELEVATED",
+      "financialFacts": [
+        {
+          "metric": "revenue",
+          "normalizedValue": 14200000,
+          "period": "TTM",
+          "confidence": 1.0
+        },
+        {
+          "metric": "ebitda",
+          "normalizedValue": 2150000,
+          "period": "TTM",
+          "confidence": 1.0
+        },
+        {
+          "metric": "adjusted_ebitda",
+          "normalizedValue": 2150000,
+          "period": "TTM",
+          "confidence": 1.0
+        }
+      ],
+      "redFlags": [],
+      "yellowFlags": [
+        "Seller claimed EBITDA of $3.10M overstates true audited EBITDA of $2.15M by $950k (30.6% gap)",
+        "$450k in disallowed personal family expenses (luxury vehicles, personal travel, unearned wages)",
+        "$800k in deferred CNC machinery maintenance required"
+      ],
+      "valuation": {
+        "base_estimate": 9800000
+      },
+      "mathCheckStatus": "passed"
+    },
+    {
+      "fileName": "Vanguard_Aerospace_Customer_Concentration_AR.xlsx",
+      "status": "completed",
+      "modelUsed": "OpenAI 5.6 Terra",
+      "detectedDocumentType": "Customer Concentration",
+      "trafficLight": "YELLOW",
+      "riskLevel": "ELEVATED",
+      "financialFacts": [
+        {
+          "metric": "revenue",
+          "normalizedValue": 14200000,
+          "period": "FY2025",
+          "confidence": 1.0
+        }
+      ],
+      "redFlags": [],
+      "yellowFlags": [
+        "Extreme customer concentration: Top customer accounts for 38.5% of revenue ($5.47M)",
+        "Top customer contract expires in 4 months (April 2026) and is subject to 15% rate cut RFP"
+      ],
+      "mathCheckStatus": "passed"
+    },
+    {
+      "fileName": "Vanguard_Aerospace_CIM_Executive_Overview.pdf",
+      "status": "completed",
+      "modelUsed": "OpenAI 5.6 Terra",
+      "detectedDocumentType": "Confidential Information Memorandum (CIM)",
+      "trafficLight": "YELLOW",
+      "riskLevel": "ELEVATED",
+      "financialFacts": [
+        {
+          "metric": "revenue",
+          "normalizedValue": 14200000,
+          "period": "TTM",
+          "confidence": 1.0
+        }
+      ],
+      "redFlags": [],
+      "yellowFlags": [
+        "Seller asking price of $14.2M must be renegotiated to $9.8M target"
+      ],
+      "valuation": {
+        "base_estimate": 9800000
+      },
+      "mathCheckStatus": "passed"
+    },
+    {
+      "fileName": "Vanguard_Aerospace_Machinery_Fleet_Inspection.docx",
+      "status": "completed",
+      "modelUsed": "OpenAI 5.6 Terra",
+      "detectedDocumentType": "Operating Metrics",
+      "trafficLight": "YELLOW",
+      "riskLevel": "ELEVATED",
+      "financialFacts": [],
+      "redFlags": [],
+      "yellowFlags": [
+        "$480k-$800k in immediate deferred CNC spindle repair required"
+      ],
+      "mathCheckStatus": "passed"
+    },
+    {
+      "fileName": "Vanguard_Aerospace_Top_Customer_Contract_Notice.eml",
+      "status": "completed",
+      "modelUsed": "OpenAI 5.6 Terra",
+      "detectedDocumentType": "Due Diligence Data Room Packet",
+      "trafficLight": "YELLOW",
+      "riskLevel": "ELEVATED",
+      "financialFacts": [],
+      "redFlags": [],
+      "yellowFlags": [
+        "Top customer (38.5%) demands 15% price cut on RFP re-compete"
+      ],
+      "mathCheckStatus": "passed"
+    },
+    {
+      "fileName": "Vanguard_Aerospace_CFO_Clarification_Call.mp3",
+      "status": "completed",
+      "modelUsed": "OpenAI 5.6 Terra",
+      "detectedDocumentType": "Operating Metrics",
+      "trafficLight": "YELLOW",
+      "riskLevel": "ELEVATED",
+      "financialFacts": [
+        {
+          "metric": "revenue",
+          "normalizedValue": 14200000,
+          "period": "TTM",
+          "confidence": 1.0
+        },
+        {
+          "metric": "ebitda",
+          "normalizedValue": 2150000,
+          "period": "TTM",
+          "confidence": 1.0
+        }
+      ],
+      "redFlags": [],
+      "yellowFlags": [
+        "CFO confirms personal luxury vehicle leases were included in seller add-backs"
+      ],
+      "mathCheckStatus": "passed"
+    }
+  ]
+}

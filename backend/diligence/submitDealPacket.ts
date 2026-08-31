@@ -1,10 +1,12 @@
 import { getSubmitPath, normalizeWebhookResponse, type N8nSubmitResponse } from './submissionPayload'
 import { supabase } from '../supabaseClient'
 import { validateDocumentStorageUrl } from './storedFileMultipart'
+import { normalizeSourceRelativePath } from '../../shared/sourceRelativePath'
 
 type Params = {
   environment?: 'production' | 'test'
   fileName: string
+  sourceRelativePath?: string
   fileSize: number
   fileType: string
   fileBase64?: string
@@ -38,6 +40,8 @@ export default async function submitDealPacket(req: { params: Params; user: User
   const environment = req.params.environment === 'test' ? 'test' : 'production'
   const normalizedProjectId = req.params.projectId.trim().toLowerCase()
   const normalizedFileName = req.params.fileName.trim().toLowerCase()
+  const sourceRelativePath = normalizeSourceRelativePath(req.params.sourceRelativePath, req.params.fileName)
+  const normalizedSourceRelativePath = sourceRelativePath.toLowerCase()
 
   // Fast targeted duplicate check directly via Supabase rather than loading
   // full submission history and syncing data tables (which adds 2-4s latency).
@@ -45,15 +49,18 @@ export default async function submitDealPacket(req: { params: Params; user: User
     try {
       const { data: duplicateDocs } = await supabase
         .from('documents')
-        .select('id, request_id, created_at, updated_at, status')
+        .select('id, request_id, created_at, updated_at, status, source_relative_path')
         .ilike('project_id', normalizedProjectId)
         .ilike('file_name', normalizedFileName)
         .eq('file_size', req.params.fileSize)
         .eq('status', 'completed')
-        .limit(1)
+        .limit(100)
 
-      if (duplicateDocs && duplicateDocs.length > 0) {
-        const existingDocument = duplicateDocs[0]
+      const existingDocument = duplicateDocs?.find((document) => {
+        const existingPath = normalizeSourceRelativePath(document.source_relative_path, req.params.fileName).toLowerCase()
+        return existingPath === normalizedSourceRelativePath
+      })
+      if (existingDocument) {
         return {
           status: 'duplicate',
           environment,
@@ -63,6 +70,7 @@ export default async function submitDealPacket(req: { params: Params; user: User
           submittedBy: req.user.email,
           payload: {
             fileName: req.params.fileName,
+            sourceRelativePath,
             fileSize: req.params.fileSize,
             fileType: req.params.fileType,
             dealName: req.params.dealName,
@@ -99,6 +107,7 @@ export default async function submitDealPacket(req: { params: Params; user: User
   const path = getSubmitPath(environment)
   const payload = {
     fileName: req.params.fileName,
+    sourceRelativePath,
     fileSize: req.params.fileSize,
     fileType: req.params.fileType,
     dealName: req.params.dealName,
@@ -126,6 +135,7 @@ export default async function submitDealPacket(req: { params: Params; user: User
       .delete()
       .ilike('project_id', normalizedProjectId)
       .ilike('file_name', normalizedFileName)
+      .eq('source_relative_path', sourceRelativePath)
       .eq('status', 'upload_failed')
   } catch {
     // Non-fatal
@@ -147,6 +157,7 @@ export default async function submitDealPacket(req: { params: Params; user: User
         project_stage: req.params.projectStage,
         document_type: req.params.documentType,
         file_name: req.params.fileName,
+        source_relative_path: sourceRelativePath,
         file_size: req.params.fileSize,
         file_type: req.params.fileType,
         trigger_timestamp: triggerTimestamp,
@@ -166,6 +177,7 @@ export default async function submitDealPacket(req: { params: Params; user: User
 
   const formData: MultipartFormDataEntry[] = [
     { key: 'fileName', value: req.params.fileName },
+    { key: 'sourceRelativePath', value: sourceRelativePath },
     { key: 'fileSize', value: String(req.params.fileSize) },
     { key: 'fileType', value: req.params.fileType },
     { key: 'dealName', value: req.params.dealName },

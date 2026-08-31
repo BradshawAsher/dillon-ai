@@ -24,7 +24,7 @@ export default async function retryFailedDocument(req: { params: Params; user: U
   const { data: failedDocument, error: documentError } = await supabase
     .from('documents')
     .select(`
-      request_id, status, storage_file_url, file_name, file_size, file_type,
+      request_id, status, storage_file_url, file_name, source_relative_path, file_size, file_type,
       deal_name, company_name, workstream, submission_notes, project_id,
       project_stage, document_type, submission_batch_id, expected_batch_document_count
     `)
@@ -36,14 +36,20 @@ export default async function retryFailedDocument(req: { params: Params; user: U
 
   const failedStatus = String(failedDocument?.status || '').trim().toLowerCase()
   let storageFileUrl = String(failedDocument?.storage_file_url || '').trim()
+  const failedSourceRelativePath = String(failedDocument?.source_relative_path || '').trim()
 
-  // If storage_file_url is empty on this row, check sibling documents with matching file_name
+  // If storage_file_url is empty, only reuse the exact logical document from
+  // this project. Identically named files can legitimately exist in different
+  // folders (and in other deals).
   if (!storageFileUrl && failedDocument?.file_name) {
     try {
       const { data: siblingDocs } = await supabase
         .from('documents')
         .select('storage_file_url')
+        .eq('project_id', failedDocument.project_id)
         .eq('file_name', failedDocument.file_name)
+        // Legacy rows have an empty value; new rows carry their normalized path.
+        .eq('source_relative_path', failedSourceRelativePath)
         .neq('storage_file_url', '')
         .order('created_at', { ascending: false })
         .limit(1)
@@ -74,6 +80,7 @@ export default async function retryFailedDocument(req: { params: Params; user: U
       params: {
         environment,
         fileName: failedDocument.file_name || 'document',
+        sourceRelativePath: failedDocument.source_relative_path || failedDocument.file_name || 'document',
         fileSize: Number(failedDocument.file_size || 0),
         fileType: failedDocument.file_type || 'application/octet-stream',
         dealName: failedDocument.deal_name || '',

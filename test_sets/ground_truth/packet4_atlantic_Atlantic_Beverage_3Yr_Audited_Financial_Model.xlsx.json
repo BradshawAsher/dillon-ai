@@ -1,0 +1,47 @@
+{
+  "fileName": "Atlantic_Beverage_3Yr_Audited_Financial_Model.xlsx",
+  "business": "Atlantic Beverage & Bottling Corp (Beverage Packaging & Logistics)",
+  "fileType": "XLSX",
+  "groundTruth": {
+    "documentType": "Profit and Loss Statement",
+    "trafficLight": "GREEN",
+    "riskLevel": "LOW",
+    "financialFacts": [
+      {
+        "metric": "revenue",
+        "normalizedValue": 18500000,
+        "period": "FY2025",
+        "rawValue": "$18,500,000"
+      },
+      {
+        "metric": "gross_profit",
+        "normalizedValue": 8880000,
+        "period": "FY2025",
+        "rawValue": "$8,880,000"
+      },
+      {
+        "metric": "ebitda",
+        "normalizedValue": 3650000,
+        "period": "FY2025",
+        "rawValue": "$3,650,000"
+      },
+      {
+        "metric": "adjusted_ebitda",
+        "normalizedValue": 3650000,
+        "period": "FY2025",
+        "rawValue": "$3,650,000"
+      }
+    ],
+    "expectedRedFlags": [],
+    "expectedYellowFlags": [],
+    "valuation": {
+      "valuationLowerBound": 18000000,
+      "valuationBaseEstimate": 18500000,
+      "valuationUpperBound": 19000000,
+      "askingPrice": 18500000,
+      "currency": "USD"
+    },
+    "expectedMathCheckStatus": "passed",
+    "expectedRecommendation": "PROCEED"
+  }
+}

@@ -164,4 +164,24 @@ describe('verified document handoff', () => {
         expect(attachmentSize).toBe(3)
         expect(fetchMock).toHaveBeenCalledTimes(2)
     })
+
+    it.each([['deployed API', installApiRuntime], ['local server', installDevRuntime]])('adds Header Auth server-side in the %s runtime', async (_name, install) => {
+        const originalSecret = process.env.N8N_WEBHOOK_SECRET
+        process.env.N8N_WEBHOOK_SECRET = 'test-webhook-secret'
+        try {
+            vi.stubGlobal('n8nFinancialAgent', undefined)
+            const fetchMock = vi.fn().mockResolvedValue(new Response('{"answer":"secured"}'))
+            vi.stubGlobal('fetch', fetchMock)
+            install()
+
+            await expect(n8nFinancialAgent.rawRequest({ path: 'webhook/dd-chat', method: 'POST', bodyType: 'json', json: { question: 'test' } })).resolves.toEqual({ data: { answer: 'secured' } })
+            expect(fetchMock).toHaveBeenCalledWith(
+                'https://merge-works.app.n8n.cloud/webhook/dd-chat',
+                expect.objectContaining({ headers: expect.objectContaining({ 'x-webhook-secret': 'test-webhook-secret' }) }),
+            )
+        } finally {
+            if (originalSecret === undefined) delete process.env.N8N_WEBHOOK_SECRET
+            else process.env.N8N_WEBHOOK_SECRET = originalSecret
+        }
+    })
 })

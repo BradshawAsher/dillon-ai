@@ -33,6 +33,8 @@ export type SubmissionHistoryItem = {
     submissionBatchId: string
     expectedBatchDocumentCount: number
     fileName: string
+    /** Original browser/ZIP path relative to the selected upload root. */
+    sourceRelativePath?: string
     fileSize: number
     fileType: string
     triggerTimestamp: string

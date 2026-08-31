@@ -3,6 +3,7 @@ import { isActiveSubmissionStatus, isFailedSubmissionStatus, isTerminalSubmissio
 
 export type BatchUploadAttempt = {
     fileName: string
+    sourceRelativePath?: string
     fileSize: number
     fileType: string
     status: 'uploading' | 'queued' | 'upload_failed' | 'duplicate'
@@ -11,8 +12,8 @@ export type BatchUploadAttempt = {
     errorMessage?: string
 }
 
-export function batchDocumentKey(row: { fileName: string; fileSize?: number }) {
-    const name = (row.fileName || '').trim().toLowerCase()
+export function batchDocumentKey(row: { fileName: string; sourceRelativePath?: string; fileSize?: number }) {
+    const name = (row.sourceRelativePath || row.fileName || '').trim().replace(/\\/g, '/').toLowerCase()
     const size = typeof row.fileSize === 'number' && row.fileSize > 0 ? row.fileSize : 0
     return size > 0 ? `${name}::${size}` : name
 }
@@ -47,6 +48,7 @@ export function mergeBatchUploadAttempts(batch: SubmissionBatch, rows: Submissio
             expectedBatchDocumentCount: batch.expectedDocumentCount,
             environment: batch.environment,
             fileName: attempt.fileName,
+            sourceRelativePath: attempt.sourceRelativePath || attempt.fileName,
             fileSize: attempt.fileSize,
             fileType: attempt.fileType,
             status: attempt.status,

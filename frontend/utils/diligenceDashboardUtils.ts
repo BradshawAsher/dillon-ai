@@ -4,6 +4,7 @@ import type { SubmissionHistoryItem } from './submissionHistory'
 import { isFailedSubmissionStatus, normalizeSubmissionStatus } from './submissionHistory'
 import { deriveDocumentedFacts } from './documentedFacts'
 import { normalizeEquityFraction } from './dealMath'
+import { sourceRelativePathForFile } from '../../shared/sourceRelativePath'
 
 export function getFindingVariant(findingType: FindingType): 'destructive' | 'success' {
     return findingType === 'Red Flag' ? 'destructive' : 'success'
@@ -451,14 +452,20 @@ export function isDuplicateProjectDocument(file: File, projectId: string, rows: 
     const norm = (value: unknown) => (typeof value === 'string' ? value : '').trim().toLowerCase()
     const normalizedProjectId = norm(projectId)
     const normalizedFileName = norm(file?.name)
+    const normalizedSourceRelativePath = norm(sourceRelativePathForFile(file))
 
     return rows.some((row) => {
         // Failed/stopped attempts must not prevent re-uploading the original
         // file. Still block completed or potentially running duplicates.
         if (isFailedSubmissionStatus(row.status) || ['stopped', 'stopped_by_user'].includes(normalizeSubmissionStatus(row.status))) return false
+        const rowSourceRelativePath = norm(row.sourceRelativePath)
+        const sameSource = rowSourceRelativePath
+            ? rowSourceRelativePath === normalizedSourceRelativePath
+            : norm(row.fileName) === normalizedFileName
         return norm(row.projectId) === normalizedProjectId
             && norm(row.fileName) === normalizedFileName
             && row.fileSize === file.size
+            && sameSource
     })
 }
 

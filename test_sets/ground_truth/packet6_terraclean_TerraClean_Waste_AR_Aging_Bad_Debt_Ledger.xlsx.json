@@ -1,0 +1,23 @@
+{
+  "fileName": "TerraClean_Waste_AR_Aging_Bad_Debt_Ledger.xlsx",
+  "business": "TerraClean Industrial Waste Solutions (Hazardous Waste Treatment)",
+  "fileType": "XLSX",
+  "groundTruth": {
+    "documentType": "Operating Metrics",
+    "trafficLight": "RED",
+    "riskLevel": "CRITICAL",
+    "financialFacts": [
+      {
+        "metric": "revenue",
+        "normalizedValue": 11200000,
+        "period": "FY2025",
+        "rawValue": "$11,200,000"
+      }
+    ],
+    "expectedRedFlags": [
+      "$4.80M in uncollectible AR write-offs (71.9% delinquent)"
+    ],
+    "expectedYellowFlags": [],
+    "expectedRecommendation": "WALK AWAY"
+  }
+}

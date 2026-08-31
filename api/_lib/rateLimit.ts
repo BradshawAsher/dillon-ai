@@ -55,7 +55,7 @@ export function bucketFor(route: string, method: string): Bucket {
     // generous read budget rather than spending the tighter write allowance.
     const upper = method.toUpperCase()
     if (upper === 'GET' || upper === 'HEAD' || upper === 'OPTIONS') return 'read'
-    if (route === 'submit' || route === 'retry-failed-document') return 'trigger'
+    if (route === 'submit' || route === 'retry-failed-document' || route === 'chat') return 'trigger'
     return 'write'
 }
 

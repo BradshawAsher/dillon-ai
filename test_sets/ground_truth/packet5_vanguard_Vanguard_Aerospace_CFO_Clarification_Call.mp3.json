@@ -1,0 +1,28 @@
+{
+  "fileName": "Vanguard_Aerospace_CFO_Clarification_Call.mp3",
+  "business": "Vanguard Precision Aerospace Machining (Defense Tooling & CNC)",
+  "fileType": "MP3",
+  "groundTruth": {
+    "documentType": "Operating Metrics",
+    "trafficLight": "YELLOW",
+    "riskLevel": "ELEVATED",
+    "financialFacts": [
+      {
+        "metric": "revenue",
+        "normalizedValue": 14200000,
+        "period": "TTM",
+        "rawValue": "$14,200,000"
+      },
+      {
+        "metric": "ebitda",
+        "normalizedValue": 2150000,
+        "period": "TTM",
+        "rawValue": "$2,150,000"
+      }
+    ],
+    "expectedYellowFlags": [
+      "CFO confirms personal luxury vehicle leases were included in seller add-backs"
+    ],
+    "expectedRecommendation": "RENEGOTIATE"
+  }
+}

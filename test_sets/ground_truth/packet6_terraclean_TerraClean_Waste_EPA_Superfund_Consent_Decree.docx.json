@@ -1,0 +1,16 @@
+{
+  "fileName": "TerraClean_Waste_EPA_Superfund_Consent_Decree.docx",
+  "business": "TerraClean Industrial Waste Solutions (Hazardous Waste Treatment)",
+  "fileType": "DOCX",
+  "groundTruth": {
+    "documentType": "Due Diligence Data Room Packet",
+    "trafficLight": "RED",
+    "riskLevel": "CRITICAL",
+    "financialFacts": [],
+    "expectedRedFlags": [
+      "$4.2M active EPA Superfund cleanup lien and 60-day permit revocation notice"
+    ],
+    "expectedYellowFlags": [],
+    "expectedRecommendation": "WALK AWAY"
+  }
+}

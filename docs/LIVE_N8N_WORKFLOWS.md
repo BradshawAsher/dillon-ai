@@ -67,6 +67,24 @@ The dashboard backend reads exclusively from Supabase. Schema lives in
   synthesis work is non-terminal. Completed, interrupted, stopped, and errored
   batches must not keep polling.
 
+### Nested source-path contract
+
+Every new submission carries `sourceRelativePath`, a normalized path relative
+to the browser-selected folder or ZIP root (for example,
+`Target/2025 Financials/P&L.xlsx`). The backend persists it as
+`documents.source_relative_path`; the n8n Document Specific Fields mirror uses
+`sourceRelativePath`.
+
+- A path is used with the base filename and file size to identify a duplicate,
+  so equally named documents in different folders are separate submissions.
+- Retries keep the original path and may only reuse a stored file from the same
+  project and path.
+- Per-document prompts and project synthesis use the relative path as the
+  citation label, while preserving the original filename separately.
+- Paths are normalized to forward slashes and reject absolute or parent-
+  traversing values. Folder labels are organizational metadata, never evidence
+  that a document is audited, final, or otherwise substantively correct.
+
 ## Legacy n8n Data Table contract (Dual-Write Fallback Mirror)
 
 - **Document Specific Fields** (`rBFHVB1W7ldSiObM`): mirrors `documents`.
@@ -96,6 +114,23 @@ retaining it for audit.
    [n8n-webhooks.md](n8n-webhooks.md).
 5. Never replace the `synthesis_runs` claim with a Data Table read/check/write
    sequence. See [Synthesis Idempotency](SYNTHESIS_IDEMPOTENCY.md).
+
+### Webhook-auth contract
+
+The active Submit, Consolidator, Per-Document, Document Counter, Document
+Consideration, Deal Model Write, Facts Bridge, Watchdog, Error Audit, and Retry
+webhooks use the shared n8n Header Auth credential. Browser code must never
+receive the header value: server-side dispatch goes through
+`n8nFinancialAgent.rawRequest`, which attaches `x-webhook-secret` from the
+server-only `N8N_WEBHOOK_SECRET` variable.
+
+Internal Execute Workflow, Schedule, and Error Trigger invocations do not use
+HTTP and therefore do not send this header. Their public webhook triggers may
+remain available for authenticated diagnostics.
+
+Chat Assistant must use the same-origin `/api/diligence/chat` relay before its
+Header Auth draft is published; the browser must not call `dd-chat` directly or
+embed the shared credential.
 
 ## Reliability baseline
 

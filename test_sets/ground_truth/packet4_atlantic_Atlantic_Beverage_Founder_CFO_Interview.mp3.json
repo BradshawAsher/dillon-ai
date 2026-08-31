@@ -1,0 +1,27 @@
+{
+  "fileName": "Atlantic_Beverage_Founder_CFO_Interview.mp3",
+  "business": "Atlantic Beverage & Bottling Corp (Beverage Packaging & Logistics)",
+  "fileType": "MP3",
+  "groundTruth": {
+    "documentType": "Operating Metrics",
+    "trafficLight": "GREEN",
+    "riskLevel": "LOW",
+    "financialFacts": [
+      {
+        "metric": "revenue",
+        "normalizedValue": 18500000,
+        "period": "FY2025",
+        "rawValue": "$18,500,000"
+      },
+      {
+        "metric": "ebitda",
+        "normalizedValue": 3650000,
+        "period": "FY2025",
+        "rawValue": "$3,650,000"
+      }
+    ],
+    "expectedRedFlags": [],
+    "expectedYellowFlags": [],
+    "expectedRecommendation": "PROCEED"
+  }
+}

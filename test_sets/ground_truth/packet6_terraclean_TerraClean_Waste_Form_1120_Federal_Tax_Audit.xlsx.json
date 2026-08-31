@@ -1,0 +1,29 @@
+{
+  "fileName": "TerraClean_Waste_Form_1120_Federal_Tax_Audit.xlsx",
+  "business": "TerraClean Industrial Waste Solutions (Hazardous Waste Treatment)",
+  "fileType": "XLSX",
+  "groundTruth": {
+    "documentType": "Tax Return",
+    "trafficLight": "RED",
+    "riskLevel": "CRITICAL",
+    "financialFacts": [
+      {
+        "metric": "revenue",
+        "normalizedValue": 11200000,
+        "period": "FY2025",
+        "rawValue": "$11,200,000"
+      },
+      {
+        "metric": "net_income",
+        "normalizedValue": -350000,
+        "period": "FY2025",
+        "rawValue": "-$350,000"
+      }
+    ],
+    "expectedRedFlags": [
+      "IRS tax return proves -$350,000 operating loss on $11.2M revenue"
+    ],
+    "expectedYellowFlags": [],
+    "expectedRecommendation": "WALK AWAY"
+  }
+}

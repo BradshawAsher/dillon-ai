@@ -102,3 +102,92 @@
 - Open the Evals Tab and click **"Inspect 21 Docs"** or **"Inspect 22 Docs"** on Cascadia Climate Services (`DD-001`) and Northstar Industrial Supply (`DD-002`).
 - Verify that every document minicard shows distinct, realistic, file-type appropriate scores, duration, token usage, and costs.
 - Verify that live uploaded documents appear alongside or in place of benchmark fallbacks with real Supabase extraction data.
+
+---
+
+# Implementation Plan — Preserve Nested Upload Folder Paths (2026-08-30)
+
+## Empirical Root Cause Analysis
+
+- Folder and ZIP uploads already expose `File.webkitRelativePath`, but the
+  dashboard, batch state, and duplicate checks reduced identity to base filename
+  plus file size.
+- The backend persisted only `file_name`; direct n8n submissions, retries, the
+  Data Table mirror, and synthesis therefore lost the folder label before
+  evidence was reconciled.
+- A retry with an empty storage URL looked up any same-named row, which could
+  select a file from another project or nested folder.
+
+## Targeted Changes
+
+1. Add a shared normalizer that accepts only a relative path, canonicalizes
+   separators, and falls back to the filename for standalone/legacy uploads.
+2. Carry `sourceRelativePath` from browser/ZIP `File` instances through
+   frontend batch identity, submission payloads, history rows, retries, and
+   backend duplicate/cleanup logic.
+3. Add `documents.source_relative_path` with a non-null empty default for
+   existing rows; mirror it to the live n8n Document Specific Fields table.
+4. Update the live submit workflow, per-document prompt, and synthesis prompt
+   to preserve the path as a citation label while treating folder names as
+   untrusted organizational metadata.
+5. Scope retry fallback storage lookup to the failed row's project, filename,
+   and relative path.
+6. Document the confirmed cross-system contract in `LIVE_N8N_WORKFLOWS.md`.
+
+## Regression Verification
+
+- Unit-test path normalization, same-name files in different folders, batch
+  state identity, and backend multipart propagation.
+- Run frontend focused tests, TypeScript validation, and a production build.
+- Verify the remote column definition, migration record, Supabase advisors,
+  and that each updated n8n workflow is published with its active version
+  equal to its draft.
+- Do not submit a production document merely for verification; the tests and
+  static live-workflow inspection exercise this contract without consuming
+  customer processing or model budget.
+
+---
+
+# Implementation Plan — Secure Pod 1 Webhook Entrypoints (2026-08-31)
+
+## Empirical Root Cause Analysis
+
+- Header Auth was added to newer n8n drafts for the synthesis, per-document,
+  counter, consideration, facts bridge, watchdog, and error-audit webhooks,
+  but those drafts have not all been published. Production can still serve an
+  older unauthenticated version until each draft is published.
+- Server-side dashboard routes already use `n8nFinancialAgent.rawRequest`,
+  which sends `x-webhook-secret` only from `N8N_WEBHOOK_SECRET`; these callers
+  can use Header Auth without exposing a secret to the browser.
+- Chat Assistant is the exception: `DealChatPanel` fetches the n8n `dd-chat`
+  endpoint directly from the browser. Applying Header Auth directly would
+  either break chat or leak the shared secret into the client bundle.
+
+## Targeted Changes
+
+1. Add a small backend `chatAssistant` dispatcher that validates a bounded
+   JSON request and sends it through `n8nFinancialAgent.rawRequest` to
+   `webhook/dd-chat`.
+2. Expose a same-origin `/api/diligence/chat` route in both local development
+   and the generated Vercel API source; change the panel's n8n fallback calls
+   to use that route instead of the public n8n URL.
+3. Add focused tests proving the relay sends JSON through the server-side n8n
+   client and that the panel no longer contains a direct `dd-chat` request.
+4. Publish the exact Header Auth drafts already configured by the user.
+   Preserve all Execute Workflow, schedule, and Error Trigger nodes: Header
+   Auth applies only to their optional public webhook trigger.
+5. Re-read every active published version and verify each public webhook has
+   the expected Header Auth binding. Do not execute document or synthesis
+   workflows with test data; static configuration and caller tests avoid
+   customer-data mutation and model cost.
+
+## Regression Verification
+
+- Run focused relay and chat-component tests, typecheck, frontend build, and
+  generated API build.
+- Confirm the backend client only adds the secret server-side and does not
+  expose it in browser source.
+- Verify publish responses and active-version IDs. Disclose that credential
+  secret values cannot be read or compared through n8n MCP, so an actual
+  credential-value match still requires a normal authenticated production
+  action by the app.
