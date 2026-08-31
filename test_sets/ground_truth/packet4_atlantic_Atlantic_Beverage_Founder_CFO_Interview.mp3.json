@@ -3,7 +3,7 @@
   "business": "Atlantic Beverage & Bottling Corp (Beverage Packaging & Logistics)",
   "fileType": "MP3",
   "groundTruth": {
-    "documentType": "Operating Metrics",
+    "documentType": "Other",
     "trafficLight": "GREEN",
     "riskLevel": "LOW",
     "financialFacts": [
@@ -22,6 +22,82 @@
     ],
     "expectedRedFlags": [],
     "expectedYellowFlags": [],
-    "expectedRecommendation": "PROCEED"
-  }
+    "expectedRecommendation": "PROCEED",
+    "documentTypes": [
+      "Other",
+      "Quality of Earnings",
+      "Operating Metrics"
+    ],
+    "evidenceLocators": [
+      {
+        "claim": "revenue $18,500,000 FY2025",
+        "timestampStart": "00:17",
+        "timestampEnd": "00:21",
+        "timestampStartSeconds": 17,
+        "timestampEndSeconds": 21
+      },
+      {
+        "claim": "gross profit $8,880,000 / 48% gross margin",
+        "timestampStart": "00:25",
+        "timestampEnd": "00:31",
+        "timestampStartSeconds": 25,
+        "timestampEndSeconds": 31
+      },
+      {
+        "claim": "EBITDA $3,650,000",
+        "timestampStart": "00:31",
+        "timestampEnd": "00:35",
+        "timestampStartSeconds": 31,
+        "timestampEndSeconds": 35
+      },
+      {
+        "claim": "adjusted EBITDA equals reported EBITDA, no add-backs",
+        "timestampStart": "00:35",
+        "timestampEnd": "01:10",
+        "timestampStartSeconds": 35,
+        "timestampEndSeconds": 70
+      },
+      {
+        "claim": "asking price $18,500,000 at 5.07x EBITDA",
+        "timestampStart": "01:20",
+        "timestampEnd": "01:40",
+        "timestampStartSeconds": 80,
+        "timestampEndSeconds": 100
+      },
+      {
+        "claim": "largest customer ~14% of revenue, top five under 40%",
+        "timestampStart": "01:41",
+        "timestampEnd": "01:54",
+        "timestampStartSeconds": 101,
+        "timestampEndSeconds": 114
+      },
+      {
+        "claim": "line 2 rebuilt 2024, ~$800,000 paid in cash",
+        "timestampStart": "01:55",
+        "timestampEnd": "02:16",
+        "timestampStartSeconds": 115,
+        "timestampEndSeconds": 136
+      },
+      {
+        "claim": "no environmental or litigation matters pending",
+        "timestampStart": "02:17",
+        "timestampEnd": "02:29",
+        "timestampStartSeconds": 137,
+        "timestampEndSeconds": 149
+      }
+    ]
+  },
+  "mediaMetadata": {
+    "durationSeconds": 170.79,
+    "audio": {
+      "codec": "mp3",
+      "sampleRate": "44100",
+      "channels": 1
+    },
+    "synthetic": true,
+    "generatedBy": "scripts/generate_deep_test_packets.py",
+    "note": "Speech is synthesised from a fixed script written to match this packet's ground truth. Video is a still-sequence walkthrough with camera motion over generated stills. No third-party recording is used."
+  },
+  "transcriptFile": "ground_truth/media_transcripts/Atlantic_Beverage_Founder_CFO_Interview.mp3.transcript.json",
+  "transcriptIsEvaluatorOnly": true
 }

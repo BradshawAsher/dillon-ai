@@ -1,0 +1,176 @@
+{
+ "media_file": "Atlantic_Beverage_Founder_CFO_Interview.mp3",
+ "evaluator_only": true,
+ "alignment_coverage": 0.845,
+ "lines": [
+  {
+   "speaker": "kore",
+   "start": 0.0,
+   "end": 5.5,
+   "text": "Thanks for making time, Ray. Just so you know, I'm recording this for the buyer's diligence file. You're okay with that?"
+  },
+  {
+   "speaker": "charon",
+   "start": 6.04,
+   "end": 7.58,
+   "text": "That's fine. Ask me anything."
+  },
+  {
+   "speaker": "kore",
+   "start": 8.28,
+   "end": 13.62,
+   "text": "Let's start with the headline. Where did Atlantic Beverage close fiscal twenty twenty-five on revenue?"
+  },
+  {
+   "speaker": "charon",
+   "start": 17.66,
+   "end": 21.06,
+   "text": "Eighteen million, five hundred thousand. Eighteen point five, on the nose. We finished the year at ninety-nine percent of plan."
+  },
+  {
+   "speaker": "kore",
+   "start": 21.74,
+   "end": 22.68,
+   "text": "And gross profit?"
+  },
+  {
+   "speaker": "charon",
+   "start": 25.66,
+   "end": 31.32,
+   "text": "Eight million, eight hundred and eighty thousand. That's a forty-eight percent gross margin, and it has been between forty-seven and forty-nine for three years running."
+  },
+  {
+   "speaker": "kore",
+   "start": 31.76,
+   "end": 32.36,
+   "text": "EBITDA?"
+  },
+  {
+   "speaker": "charon",
+   "start": 32.36,
+   "end": 35.26,
+   "text": "Three million, six hundred and fifty thousand.",
+   "approximate": true
+  },
+  {
+   "speaker": "kore",
+   "start": 35.26,
+   "end": 38.76,
+   "text": "That's reported EBITDA. What's your adjusted number?"
+  },
+  {
+   "speaker": "charon",
+   "start": 39.56,
+   "end": 40.48,
+   "text": "[pause] It's the same number. Three million, six hundred and fifty thousand."
+  },
+  {
+   "speaker": "kore",
+   "start": 43.06,
+   "end": 49.02,
+   "text": "No add-backs at all? That's unusual. Most sellers hand me a bridge with a dozen lines on it."
+  },
+  {
+   "speaker": "charon",
+   "start": 49.46,
+   "end": 70.12,
+   "text": "I know. My banker told me I was leaving money on the table. But I have never run personal expenses through this company. No vehicles, no family on the payroll who don't actually work here, no boat. My wife's car is in her name. I take a salary of two hundred and forty thousand, and that is a market number for the job. If you replace me, you'll pay about the same."
+  },
+  {
+   "speaker": "kore",
+   "start": 70.7,
+   "end": 77.4,
+   "text": "So if I take your P and L, or I take your adjusted bridge, I land on the same three million six fifty either way."
+  },
+  {
+   "speaker": "charon",
+   "start": 77.82,
+   "end": 80.3,
+   "text": "You do. It's the cleanest thing about the business, honestly."
+  },
+  {
+   "speaker": "kore",
+   "start": 80.9,
+   "end": 84.88,
+   "text": "Let's talk about price. You're asking eighteen point five million."
+  },
+  {
+   "speaker": "charon",
+   "start": 86.82,
+   "end": 90.3,
+   "text": "Eighteen point five. Same as revenue, which I know is a coincidence people find odd."
+  },
+  {
+   "speaker": "kore",
+   "start": 90.86,
+   "end": 94.06,
+   "text": "That's roughly five point one times EBITDA."
+  },
+  {
+   "speaker": "charon",
+   "start": 95.78,
+   "end": 100.74,
+   "text": "Five point zero seven, if you want to be precise about it. That's where co-packing businesses our size have been trading."
+  },
+  {
+   "speaker": "kore",
+   "start": 101.54,
+   "end": 104.3,
+   "text": "Any customer that keeps you up at night? Concentration?"
+  },
+  {
+   "speaker": "charon",
+   "start": 105.22,
+   "end": 114.82,
+   "text": "Largest account is about fourteen percent of revenue and we've had them nine years. Top five is under forty percent. Nobody has given notice, nobody has put us out to bid."
+  },
+  {
+   "speaker": "kore",
+   "start": 115.3,
+   "end": 119.7,
+   "text": "Capital spending. Anything deferred that my engineer is going to find when he walks the plant?"
+  },
+  {
+   "speaker": "charon",
+   "start": 120.4,
+   "end": 136.18,
+   "text": "We rebuilt line two in twenty twenty-four. New filler, new capper, about eight hundred thousand, paid in cash, and it's on the fixed asset register. Lines one and three are on schedule. There's no deferred maintenance I'm hiding from you. Walk it, and bring whoever you like."
+  },
+  {
+   "speaker": "kore",
+   "start": 137.14,
+   "end": 139.26,
+   "text": "Environmental, litigation, anything pending?"
+  },
+  {
+   "speaker": "charon",
+   "start": 139.9,
+   "end": 149.64,
+   "text": "Nothing. No claims, no notices, no consent orders. We're a beverage packer. We run water, sugar and aluminium. It is a boring business."
+  },
+  {
+   "speaker": "kore",
+   "start": 150.88,
+   "end": 155.44,
+   "text": "[laughs] Boring is what my investment committee likes. Last one. Why sell?"
+  },
+  {
+   "speaker": "charon",
+   "start": 156.44,
+   "end": 164.46,
+   "text": "I'm sixty-three. My kids do other things. I'd rather hand it to somebody who will keep the forty-one people employed than run it until I can't."
+  },
+  {
+   "speaker": "kore",
+   "start": 165.16,
+   "end": 169.02,
+   "text": "Understood. I'll come back with follow-ups once we tie your numbers to the tax returns."
+  },
+  {
+   "speaker": "charon",
+   "start": 169.86,
+   "end": 170.44,
+   "text": "They'll tie."
+  }
+ ]
+}
