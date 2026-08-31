@@ -19,6 +19,7 @@ import { getProjectKey, isRowMatchingProject, type ProjectSummary } from '../uti
 import { buildDocumentLinkedEvidence, parseDocumentedFacts, type EvidenceItem } from '../utils/evidence'
 import { calculateBatchTotalCost, calculateSynthesisCost, formatElapsedDuration, getDocumentExtractionDurationSec, getSynthesisDurationSec } from '../utils/diligenceDashboardUtils'
 import { classifyError } from '../utils/errorClassifier'
+import { riskLevelVariant } from '../utils/riskVariant'
 
 type ProjectSynthesisCardProps = {
     syntheses: ProjectSynthesisItem[]
@@ -53,23 +54,7 @@ type ProjectSynthesisCardProps = {
 
 type StructuredFinding = NonNullable<NonNullable<ProjectSynthesisItem['structuredFindings']>['redFlags']>[number]
 
-function getRiskVariant(riskLevel: string): 'destructive' | 'warning' | 'secondary' | 'outline' {
-    const normalized = riskLevel.trim().toLowerCase()
-
-    if (normalized === 'critical' || normalized === 'high') {
-        return 'destructive'
-    }
-
-    if (normalized === 'medium') {
-        return 'warning'
-    }
-
-    if (normalized === 'low') {
-        return 'secondary'
-    }
-
-    return 'outline'
-}
+const getRiskVariant = riskLevelVariant
 
 function formatTimestamp(value: string) {
     if (value.trim().length === 0) {
