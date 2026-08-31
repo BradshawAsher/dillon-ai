@@ -279,14 +279,14 @@ export default function AcquisitionJudgmentCallout({
                             const synthDur = getSynthesisDurationSec(synthesis)
                             if (synthDur === null) return null
                             return (
-                                <Badge variant="outline" className="font-mono text-xs font-bold border-primary/40 bg-primary/10 px-2.5 py-1 text-primary gap-1">
-                                    <Clock className="h-3.5 w-3.5 text-primary shrink-0" />
-                                    Synthesis: ~{formatElapsedDuration(synthDur)}
-                                </Badge>
+                                <div className="inline-flex items-center gap-2 rounded-lg border-2 border-primary/50 bg-primary/10 px-3.5 py-1.5 text-xs sm:text-sm font-mono font-bold text-primary shadow-xs">
+                                    <Clock className="h-4 w-4 text-primary animate-pulse shrink-0" />
+                                    <span>Synthesis: ~{formatElapsedDuration(synthDur)}</span>
+                                </div>
                             )
                         })()}
                         {impact.completedDocuments > 0 ? (
-                            <Badge variant="success">~{formatHours(impact.timeSavedHours)} analyst time saved</Badge>
+                            <Badge variant="success" className="text-xs py-1.5 px-3">~{formatHours(impact.timeSavedHours)} analyst time saved</Badge>
                         ) : null}
                     </div>
                 </div>
@@ -294,7 +294,19 @@ export default function AcquisitionJudgmentCallout({
                 <div className="space-y-4 mt-5">
                     {parsedSummary.recommendation && !pending && (
                         <div className="rounded-xl border border-border bg-background p-5 shadow-sm">
-                            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">Actionable Recommendation</p>
+                            <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+                                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Actionable Recommendation</p>
+                                {(() => {
+                                    const synthDur = getSynthesisDurationSec(synthesis)
+                                    if (synthDur === null) return null
+                                    return (
+                                        <span className="font-mono text-xs font-bold text-primary flex items-center gap-1.5 bg-primary/10 px-2.5 py-1 rounded-md border border-primary/25">
+                                            <Clock className="h-3.5 w-3.5 text-primary shrink-0" />
+                                            AI Synthesis Latency: ~{formatElapsedDuration(synthDur)}
+                                        </span>
+                                    )
+                                })()}
+                            </div>
                             <div className="flex items-center gap-2.5 flex-wrap">
                                 <span className={`text-xl sm:text-2xl md:text-3xl font-black tracking-tight leading-tight ${getActionColor(parsedSummary.recommendation)}`}>
                                     {parsedSummary.recommendation}
