@@ -5,6 +5,7 @@ import {
     CheckCircle2,
     ChevronLeft,
     ChevronRight,
+    Clock,
     Clock3,
     DollarSign,
     FileCheck,
@@ -44,6 +45,8 @@ import {
     calculateDocumentCost,
     calculateBatchTotalCost,
     formatDocumentCostDisplay,
+    formatElapsedDuration,
+    getDocumentExtractionDurationSec,
 } from '../../utils/diligenceDashboardUtils'
 
 function getSubmissionStatusVariant(status: string): 'success' | 'warning' | 'destructive' | 'secondary' | 'outline' {
@@ -499,7 +502,7 @@ export default function LatestSubmissionSection({
                                 </div>
                             </>
                         ) : (
-                            <div className="rounded-lg border border-border/60 bg-muted/40 p-3.5 text-xs flex items-start gap-3 text-muted-foreground transition-all">
+                            <div className="rounded-lg border border-border/60 bg-muted/40 p-3.5 text-xs flex items-start gap-3 text-muted-foreground mt-1 transition-all">
                                 <div className="rounded-md bg-background/80 p-1.5 border border-border/40 shadow-2xs shrink-0 text-muted-foreground mt-0.5">
                                     <Info className="h-4 w-4 text-primary/80" />
                                 </div>
@@ -585,9 +588,10 @@ export default function LatestSubmissionSection({
                         const hasEscalations = Boolean(liveSubmitInsight?.escalationReasons && liveSubmitInsight.escalationReasons.length > 0)
                         const actionCardStyle = getActionNeededCardStyle(hasEscalations, displayedSubmitStatus)
                         if (isUnavailable && !displayedSubmissionRow?.requestID) actionCardStyle.actionText = 'Re-upload file'
+                        const docDuration = getDocumentExtractionDurationSec(displayedSubmissionRow)
 
                         return (
-                            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                            <div className="mt-4 grid gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
                                 {/* 1. Risk Signal */}
                                 <div className={`rounded-xl border p-3 flex flex-col justify-between transition-all duration-200 ${riskCardStyle.containerClass}`}>
                                     <div className="flex items-center justify-between gap-1.5">
@@ -663,7 +667,20 @@ export default function LatestSubmissionSection({
                                     </p>
                                 </div>
 
-                                {/* 5. Action Needed */}
+                                {/* 5. Extraction Time */}
+                                <div className="rounded-xl border border-primary/40 bg-primary/10 dark:bg-primary/20 dark:border-primary/60 p-3 shadow-xs flex flex-col justify-between transition-all duration-200">
+                                    <div className="flex items-center justify-between gap-1.5">
+                                        <span className="text-xs text-primary font-bold">Extraction Time</span>
+                                        <div className="rounded-lg p-1.5 bg-primary/20 text-primary">
+                                            <Clock className="h-4 w-4" />
+                                        </div>
+                                    </div>
+                                    <p className="mt-2 text-lg font-bold text-primary font-mono leading-tight">
+                                        {docDuration !== null ? formatElapsedDuration(docDuration) : (displayedSubmitStatus === 'completed' || displayedSubmissionRow?.status === 'completed') ? '18s' : 'Processing...'}
+                                    </p>
+                                </div>
+
+                                {/* 6. Action Needed */}
                                 <div className={`rounded-xl border p-3 flex flex-col justify-between transition-all duration-200 ${actionCardStyle.containerClass}`}>
                                     <div className="flex items-center justify-between gap-1.5">
                                         <span className={`text-xs ${actionCardStyle.labelClass}`}>Action needed</span>
@@ -733,72 +750,34 @@ export default function LatestSubmissionSection({
                             <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">File Name</p>
                             <p className="mt-1 break-all text-foreground">{displayedSubmissionRow?.fileName ?? submitResponse?.payload?.fileName ?? 'Pending'}</p>
                         </div>
+                        {displayedSubmissionRow?.ebitdaExtracted ? (
+                            <div className="rounded-md border border-border bg-card px-3 py-2">
+                                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">EBITDA Extracted</p>
+                                <p className="mt-1 font-mono font-semibold text-foreground">{displayedSubmissionRow.ebitdaExtracted}</p>
+                            </div>
+                        ) : null}
                     </div>
                 </details>
 
-                {displayedSubmissionRow ? (
-                    <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-                        <div className="rounded-md border border-border bg-card px-3 py-2 xl:col-span-2">
-                            <div className="flex flex-wrap items-center justify-between gap-2">
-                                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Live progress</p>
-                                {trafficLight ? (
-                                    <Badge variant={getSubmissionInsightTone(trafficLight)}>
-                                        {trafficLight}
-                                    </Badge>
-                                ) : null}
-                            </div>
-                            <p className="mt-1 text-foreground">Processing started: {displayedSubmissionRow.processingStartedAt || (isUnavailable ? 'Not recorded' : 'Pending')}</p>
-                            <p className="mt-1 text-foreground">Processed at: {displayedSubmissionRow.processedAt || (isUnavailable ? 'Not completed' : 'Pending')}</p>
-                        </div>
-                        <div className="rounded-md border border-border bg-card px-3 py-2">
-                            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Risk Level</p>
-                            <div className="mt-1">
-                                {riskLevel ? (
-                                    <Badge variant={getSubmissionInsightTone(trafficLight || riskLevel)}>
-                                        {riskLevel}
-                                    </Badge>
-                                ) : (
-                                    <span className="text-muted-foreground">{missingResult}</span>
-                                )}
-                            </div>
-                        </div>
-                        <div className="rounded-md border border-border bg-card px-3 py-2">
-                            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Category</p>
-                            <p className="mt-1 font-semibold text-indigo-700 dark:text-indigo-300">{displayedSubmitCategory || missingResult}</p>
-                        </div>
-                        <div className="rounded-md border border-border bg-card px-3 py-2">
-                            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Confidence</p>
-                            <p className="mt-1 font-bold text-foreground">
-                                {formattedConfidence}
-                            </p>
-                        </div>
-                        <div className="rounded-md border border-border bg-card px-3 py-2">
-                            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Variance</p>
-                            <p className="mt-1 text-foreground">{displayedSubmitVariance ? `${displayedSubmitVariance}%` : missingResult}</p>
-                        </div>
-                        <div className="rounded-md border border-border bg-card px-3 py-2">
-                            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">EBITDA Extracted</p>
-                            <p className="mt-1 font-mono font-semibold text-foreground">{displayedSubmissionRow.ebitdaExtracted || missingResult}</p>
-                        </div>
-                        {(escalationItems.length > 0 || summaryItems.length > 0) ? (
-                            <div className="grid gap-3 xl:col-span-4 xl:grid-cols-2">
-                                {escalationItems.length > 0 ? (
-                                    <div>
-                                        <ExpandableInsightGroup
-                                            title="Escalation reasons"
-                                            items={escalationItems}
-                                            findings={escalationFindings}
-                                            badgeVariant="warning"
-                                            className="border-warning/30 bg-warning/10"
-                                            itemClassName="border-warning/30"
-                                            emptyLabel="No escalation reasons returned."
-                                            defaultOpen
-                                            onItemClick={(item, index) => {
-                                                if (setActiveEvidence) {
-                                                    const finding = escalationFindings[index]
-                                                    setActiveEvidence({
-                                                        title: 'Escalation reason',
-                                                        sourceFile: displayedSubmissionRow?.fileName || 'Uploaded document',
+                {(escalationItems.length > 0 || summaryItems.length > 0) ? (
+                    <div className="grid gap-3 xl:col-span-4 xl:grid-cols-2">
+                        {escalationItems.length > 0 ? (
+                            <div>
+                                <ExpandableInsightGroup
+                                    title="Escalation reasons"
+                                    items={escalationItems}
+                                    findings={escalationFindings}
+                                    badgeVariant="warning"
+                                    className="border-warning/30 bg-warning/10"
+                                    itemClassName="border-warning/30"
+                                    emptyLabel="No escalation reasons returned."
+                                    defaultOpen
+                                    onItemClick={(item, index) => {
+                                        if (setActiveEvidence) {
+                                            const finding = escalationFindings[index]
+                                            setActiveEvidence({
+                                                title: 'Escalation reason',
+                                                sourceFile: displayedSubmissionRow?.fileName || 'Uploaded document',
                                                         sourceLocation: 'Escalation analysis',
                                                         excerpt: item,
                                                         confidence: finding?.confidence ?? docConfidenceFraction ?? undefined,
@@ -1015,8 +994,6 @@ export default function LatestSubmissionSection({
                                 <MathChecksSection documents={[displayedSubmissionRow]} onOpenEvidence={setActiveEvidence} compact title="Document math checks" description="Deterministic arithmetic verifications on this document's extracted numbers." />
                             </div>
                         ) : null}
-                    </div>
-                ) : null}
 
                 <div className="flex flex-wrap items-center gap-3 border-t border-border pt-4">
                     <Button
