@@ -128,6 +128,49 @@ const mapBusinessToProjectKey = (businessName: string, docItem?: any): string =>
     return norm.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'werkheiser-commercial-cleaning'
 }
 
+function normalizeBenchmarkIdentity(value: unknown): string {
+    return String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+}
+
+function findBenchmarkGroundTruth(businessName: string, projectId?: string) {
+    const targets = [projectId, businessName]
+        .map(normalizeBenchmarkIdentity)
+        .filter(Boolean)
+
+    let bestMatch: { item: (typeof benchmarkGroundTruthSyntheses)[number], score: number } | null = null
+    for (const item of benchmarkGroundTruthSyntheses) {
+        const candidates = [item.projectId, ...(item.aliases || []), item.projectName, item.companyName]
+            .map(normalizeBenchmarkIdentity)
+            .filter(Boolean)
+
+        for (const target of targets) {
+            for (const candidate of candidates) {
+                const exact = target === candidate
+                const contained = candidate.length >= 8 && (target.includes(candidate) || candidate.includes(target))
+                if (!exact && !contained) continue
+
+                // Exact live project IDs and complete company aliases win. For
+                // contained names, the longest identity is the most specific.
+                const score = (exact ? 10_000 : 0) + candidate.length
+                if (!bestMatch || score > bestMatch.score) bestMatch = { item, score }
+            }
+        }
+    }
+    if (bestMatch) return bestMatch.item
+
+    // Compatibility fallback for older result fixtures that only carry a
+    // generic "Business N" label and no project ID or alias.
+    const normName = normalizeBenchmarkIdentity(businessName)
+    return benchmarkGroundTruthSyntheses.find((item) => {
+        const synthesisId = normalizeBenchmarkIdentity(item.projectId)
+        return ((normName.includes('werkheiser') || normName.includes('business 1')) && (synthesisId.includes('werkheiser') || synthesisId.includes('business1'))) ||
+            ((normName.includes('irontree') || normName.includes('business 2')) && synthesisId.includes('irontree')) ||
+            ((normName.includes('turnkey') || normName.includes('business 3')) && synthesisId.includes('turnkey')) ||
+            ((normName.includes('conversion') || normName.includes('cxl') || normName.includes('business 4')) && synthesisId.includes('cxl')) ||
+            ((normName.includes('medspa') || normName.includes('business 5')) && synthesisId.includes('medspa'))
+    })
+}
+
 function getDocDurationSec(doc: any): number {
     if (typeof doc?.durationSec === 'number' && doc.durationSec > 0) {
         return doc.durationSec
@@ -329,22 +372,7 @@ export default function EvalDashboardTab({
             return sId.includes(tKey) || tKey.includes(sId)
         })
 
-        const groundTruth = benchmarkGroundTruthSyntheses.find((gt: any) => {
-            const gtId = String(gt.projectId || gt.id || '').toLowerCase()
-            const gtAliases: string[] = Array.isArray(gt.aliases) ? gt.aliases.map((a: string) => String(a).toLowerCase()) : []
-            const bNorm = businessName.toLowerCase()
-            const tKey = String(targetKey).toLowerCase()
-            return (
-                gtId.includes(tKey) ||
-                tKey.includes(gtId) ||
-                gtAliases.includes(tKey) ||
-                gtAliases.includes(bNorm) ||
-                gtAliases.some(a => bNorm.includes(a) || a.includes(bNorm)) ||
-                String(gt.finalJudgmentSummary || '').toLowerCase().includes(bNorm) ||
-                String(gt.projectName || '').toLowerCase().includes(bNorm) ||
-                String(gt.companyName || '').toLowerCase().includes(bNorm)
-            )
-        })
+        const groundTruth = findBenchmarkGroundTruth(businessName, targetKey)
 
         const activeSynth = liveSynth || groundTruth
         const fin = resolveFinancialMetricsForProject(activeSynth, phaseDocs, businessName, businessName, targetKey)
@@ -531,7 +559,7 @@ export default function EvalDashboardTab({
                         </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                        Comprehensive dual-mode benchmark scoring across all 17 ground-truth specs in <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">test_sets/ground_truth/</code>.
+                        Comprehensive dual-mode benchmark scoring across all {latestRun.groundTruthSpecs ?? 17} ground-truth specs in <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">test_sets/ground_truth/</code>.
                     </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
@@ -1626,10 +1654,14 @@ export default function EvalDashboardTab({
                             const isDD013 = normB.includes('tideline') || normB.includes('dd-013') || normB.includes('dd013')
                             const isDD014 = normB.includes('alpine') || normB.includes('dd-014') || normB.includes('dd014')
                             const isDD015 = normB.includes('quarry') || normB.includes('dd-015') || normB.includes('dd015')
-                            const isVanguard = normB.includes('vanguard') || normB.includes('packet 1') || normB.includes('packet_1')
+                            const isVanguardAerospace = (normB.includes('vanguard') && normB.includes('aerospace')) || normB.includes('packet 5') || normB.includes('packet_5')
+                            const isVanguardMedical = (normB.includes('vanguard') && !isVanguardAerospace) || normB.includes('packet 1') || normB.includes('packet_1')
+                            const isVanguard = isVanguardMedical || isVanguardAerospace
                             const isApex = normB.includes('apex') || normB.includes('packet 2') || normB.includes('packet_2')
                             const isTerraNova = normB.includes('terranova') || normB.includes('terra nova') || normB.includes('packet 3') || normB.includes('packet_3')
-                            const isDDLive = isDD001 || isDD002 || isDD003 || isDD004 || isDD005 || isDD006 || isDD007 || isDD008 || isDD009 || isDD010 || isDD011 || isDD012 || isDD013 || isDD014 || isDD015 || isVanguard || isApex || isTerraNova
+                            const isAtlantic = normB.includes('atlantic beverage') || normB.includes('packet 4') || normB.includes('packet_4')
+                            const isTerraClean = normB.includes('terraclean') || normB.includes('terra clean') || normB.includes('packet 6') || normB.includes('packet_6')
+                            const isDDLive = isDD001 || isDD002 || isDD003 || isDD004 || isDD005 || isDD006 || isDD007 || isDD008 || isDD009 || isDD010 || isDD011 || isDD012 || isDD013 || isDD014 || isDD015 || isVanguard || isApex || isTerraNova || isAtlantic || isTerraClean
                             const isDDPlaceholder = false
                             const isDDPacket = isDDLive || isDDPlaceholder
 
@@ -1694,7 +1726,8 @@ export default function EvalDashboardTab({
                                 ? 'border-2 border-blue-500/50 bg-blue-500/5 dark:bg-blue-950/20 shadow-md hover:border-blue-500/80 transition-all'
                                 : 'border-2 border-emerald-500/50 bg-emerald-500/5 dark:bg-emerald-950/20 shadow-md hover:border-emerald-500/80 transition-all'
 
-                            const hasLivePostLoi = isDD001 || isDD002 || isDD003 || isDD004 || isDD005 || isDD006 || isDD007 || isDD008 || isDD009 || isDD010 || isDD011 || isDD012 || isDD013 || isDD014 || isDD015 || isVanguard || isApex || isTerraNova || normB.includes('werkheiser')
+                            const hasLoiDocument = docs.some((doc: any) => /(^|[^a-z])(loi|letter.of.intent)([^a-z]|$)/i.test(String(doc.fileName || '')))
+                            const hasLivePostLoi = isDD001 || isDD002 || isDD003 || isDD004 || isDD005 || isDD006 || isDD007 || isDD008 || isDD009 || isDD010 || isDD011 || isDD012 || isDD013 || isDD014 || isDD015 || isVanguardMedical || isApex || isTerraNova || isAtlantic || hasLoiDocument || normB.includes('werkheiser')
 
                             // Phase-scoped documents
                             const phaseDocs = isPreLoi
@@ -2004,20 +2037,8 @@ export default function EvalDashboardTab({
                                             const weightedRecPts = (0.90 * synthVerdictPts) + (0.10 * perDocAvgPts)
                                             const recPct = Math.round((weightedRecPts / 10) * 100)
 
-                                            const normName = businessName.toLowerCase()
                                             const docPid = (docs[0]?.projectId || docs[0]?.projectKey || '').toLowerCase()
-                                            const matchingSynth = benchmarkGroundTruthSyntheses.find((s) => {
-                                                const sPid = (s.projectId || '').toLowerCase()
-                                                return sPid === docPid ||
-                                                       ((normName.includes('werkheiser') || normName.includes('business 1')) && (sPid.includes('werkheiser') || sPid.includes('business1'))) ||
-                                                       ((normName.includes('irontree') || normName.includes('business 2')) && sPid.includes('irontree')) ||
-                                                       ((normName.includes('turnkey') || normName.includes('business 3')) && sPid.includes('turnkey')) ||
-                                                       ((normName.includes('conversion') || normName.includes('cxl') || normName.includes('business 4')) && sPid.includes('cxl')) ||
-                                                       ((normName.includes('medspa') || normName.includes('business 5')) && sPid.includes('medspa')) ||
-                                                       (normName.includes('vanguard') && sPid.includes('vanguard')) ||
-                                                       (normName.includes('apex') && sPid.includes('apex')) ||
-                                                       (normName.includes('terranova') && sPid.includes('terranova'))
-                                            })
+                                            const matchingSynth = findBenchmarkGroundTruth(businessName, docPid)
 
                                             const verdictText = matchingSynth?.finalRecommendation || 'Proceed with Caution'
                                             let verdictStyle = 'bg-amber-500/20 text-amber-900 dark:text-amber-100 border-amber-600/80 font-black'

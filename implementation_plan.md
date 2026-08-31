@@ -269,3 +269,30 @@
 - Validate the n8n Switch and Code node configurations before mutation.
 - Re-read the saved workflow version after publishing and verify the corrected rules and connections.
 - Retry the stored Atlantic MP4 only after the user authorizes a live Gemini test. Verify that Gemini produces text, the shared normalization preserves it, OpenAI produces evidence-backed analysis, both status mirrors reach `completed`, and the counter creates one synthesis claim for the new evidence signature.
+
+---
+
+# Packet 4–6 live evaluation and Evals tab registration plan
+
+## Empirical root cause
+
+1. The repository already contains document ground truths for packets 4–6, but their `test_sets/results/packet*_actual_run.json` files are dated placeholder outputs rather than the three live projects submitted on 2026-08-31.
+2. `npm run eval` only scores JSON already present under `test_sets/results`; it does not fetch a newly submitted Supabase project automatically.
+3. The Evals & Harness document cards come from the latest published eval report, while the high-level benchmark synthesis registry currently exports only packet deals 1–3. Packets 4–6 therefore lack their expected summary, valuation, verdict, and alias records.
+4. One card-level lookup still matches packets using broad name fragments such as `vanguard`, which cannot distinguish Vanguard Medical from Vanguard Aerospace.
+
+## Target changes
+
+- Add a reusable packet-result exporter under `scripts/` that accepts packet/project mappings, reads the latest completed Supabase rows, and writes the existing ActualRunDoc JSON contract without logging credentials.
+- Replace the three packet 4–6 result fixtures with outputs from live projects `project-20260831-344a1ed2`, `project-20260831-a60a1a10`, and `project-20260831-36b4eea1`.
+- Add Atlantic Beverage, Vanguard Aerospace, and TerraClean expected synthesis records to `frontend/evals/ground_truths/packet_deal_benchmarks.ts` and register them through the ground-truth index.
+- Use exact project/alias/business matching in `EvalDashboardTab.tsx` before legacy fuzzy matching so similarly named packets cannot select another deal's ground truth.
+- Run the evaluation harness, refresh the generated JSON/Markdown/failure reports, and publish the real report to `public.eval_runs` for the Evals & Harness tab.
+
+## Regression verification
+
+- Confirm each exported result contains exactly the live packet's expected file count and current project ID: Atlantic 7, Vanguard Aerospace 6, TerraClean 7.
+- Run the focused eval scoring and Evals tab tests, then the complete eval harness.
+- Verify the latest report contains all 20 packet 4–6 documents with no placeholder project IDs.
+- Query the newest `public.eval_runs` row and confirm its report timestamp, totals, and packet 4–6 business names match the generated report.
+- Run TypeScript type checking and a production frontend build after registering the new synthesis records.

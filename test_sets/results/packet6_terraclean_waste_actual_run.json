@@ -1,151 +1,531 @@
 {
   "business": "TerraClean Industrial Waste Solutions (Hazardous Waste Treatment)",
-  "projectId": "project-terraclean-waste-walkaway",
-  "evaluatedAt": "2026-08-30T14:00:00.000Z",
+  "projectId": "project-20260831-36b4eea1",
+  "evaluatedAt": "2026-08-31T19:44:52.197Z",
   "documents": [
     {
-      "fileName": "TerraClean_Waste_Seller_CIM_Overview.pdf",
+      "fileName": "TerraClean_Waste_AR_Aging_Bad_Debt_Ledger.xlsx",
+      "fileType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       "status": "completed",
       "modelUsed": "OpenAI 5.6 Terra",
-      "detectedDocumentType": "Confidential Information Memorandum (CIM)",
+      "detectedDocumentType": "FINANCIAL_STATEMENT",
+      "detectedDocumentTypes": [
+        "FINANCIAL_STATEMENT"
+      ],
       "trafficLight": "RED",
-      "riskLevel": "CRITICAL",
+      "riskLevel": "HIGH",
       "financialFacts": [
         {
-          "metric": "revenue",
-          "normalizedValue": 22000000,
-          "period": "FY2025",
-          "confidence": 1.0
+          "metric": "Apex Chemical Remediation Corp current accounts receivable",
+          "normalizedValue": 0,
+          "period": "As of December 31, 2025",
+          "confidence": 0.99
         },
         {
-          "metric": "ebitda",
-          "normalizedValue": -350000,
-          "period": "FY2025",
-          "confidence": 1.0
+          "metric": "Apex Chemical Remediation Corp accounts receivable aged 61-120 days",
+          "normalizedValue": 0,
+          "period": "As of December 31, 2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Apex Chemical Remediation Corp accounts receivable aged over 180 days delinquent",
+          "normalizedValue": 1850000,
+          "period": "As of December 31, 2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Tri-State Environmental Contractors current accounts receivable",
+          "normalizedValue": 0,
+          "period": "As of December 31, 2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Tri-State Environmental Contractors accounts receivable aged 61-120 days",
+          "normalizedValue": 120000,
+          "period": "As of December 31, 2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Tri-State Environmental Contractors accounts receivable aged over 180 days delinquent",
+          "normalizedValue": 1420000,
+          "period": "As of December 31, 2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Midwest Soil Recovery LLC current accounts receivable",
+          "normalizedValue": 0,
+          "period": "As of December 31, 2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Midwest Soil Recovery LLC accounts receivable aged 61-120 days",
+          "normalizedValue": 80000,
+          "period": "As of December 31, 2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Midwest Soil Recovery LLC accounts receivable aged over 180 days delinquent",
+          "normalizedValue": 1530000,
+          "period": "As of December 31, 2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Active Municipal Treatment Accounts current accounts receivable",
+          "normalizedValue": 1420000,
+          "period": "As of December 31, 2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Active Municipal Treatment Accounts accounts receivable aged 61-120 days",
+          "normalizedValue": 260000,
+          "period": "As of December 31, 2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Active Municipal Treatment Accounts accounts receivable aged over 180 days delinquent",
+          "normalizedValue": 0,
+          "period": "As of December 31, 2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Total accounts receivable current balance",
+          "normalizedValue": 1420000,
+          "period": "As of December 31, 2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Total accounts receivable aged 61-120 days",
+          "normalizedValue": 460000,
+          "period": "As of December 31, 2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Total accounts receivable aged over 180 days delinquent",
+          "normalizedValue": 4800000,
+          "period": "As of December 31, 2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Total accounts receivable",
+          "normalizedValue": 6680000,
+          "period": "As of December 31, 2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Reported bad debt",
+          "normalizedValue": 4800000,
+          "period": "As of December 31, 2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Reported bad debt loss percentage",
+          "normalizedValue": 71.9,
+          "period": "As of December 31, 2025",
+          "confidence": 0.99
         }
       ],
       "redFlags": [
-        "Severe revenue inflation: Seller claims $22.0M vs verified $11.2M bank cash ($10.8M deficit)",
-        "True operational loss of -$350,000 (insolvency risk)",
-        "Undisclosed $4.2M EPA Superfund cleanup lien and consent decree",
-        "74% delinquent AR ($4.8M uncollectible bad debt write-off required)"
+        "The ledger explicitly reports $4.80 million of bad debt, equal to a stated 71.9% loss of total accounts receivable of $6.68 million. This is material collectibility exposure evident within the document.",
+        "Three named debtor balances totaling the reported $4.80 million over-180-day delinquent balance are each expressly classified as uncollectible, with cited reasons of Chapter 7 liquidation, license revocation with disputed billing, and no response to legal demand for more than 240 days."
+      ],
+      "yellowFlags": [
+        "The aging presentation includes Current (0-60), 61-120 Days, and >180 Days Delinquent columns, but does not display a separate 121-180-day aging bucket. The document does not state whether such balances exist or how they are classified."
+      ],
+      "valuation": {
+        "base_estimate": 0
+      },
+      "employeeEvidence": {
+        "count": null
+      },
+      "mathCheckStatus": "passed",
+      "inputTokens": 177,
+      "outputTokens": 3989,
+      "totalTokens": 4166,
+      "costUsd": 0.0482,
+      "requestId": "1049c609-fefc-49ce-9224-9f7292655825",
+      "processedAt": "2026-08-31T19:30:02.569Z"
+    },
+    {
+      "fileName": "TerraClean_Waste_EPA_Superfund_Consent_Decree.docx",
+      "fileType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "status": "completed",
+      "modelUsed": "OpenAI 5.6 Terra",
+      "detectedDocumentType": "LEGAL_CONTRACT",
+      "detectedDocumentTypes": [
+        "LEGAL_CONTRACT"
+      ],
+      "trafficLight": "RED",
+      "riskLevel": "HIGH",
+      "financialFacts": [
+        {
+          "metric": "Active joint and several remediation obligation",
+          "normalizedValue": 4200000,
+          "period": "October 14, 2025",
+          "confidence": 0.99
+        }
+      ],
+      "redFlags": [
+        "The document states that TerraClean is subject to an active $4,200,000 joint-and-several remediation obligation for soil and groundwater chlorinated-solvent contamination at the Newark Treatment Facility.",
+        "The document states that the State Department of Environmental Protection issued a 60-day notice of intent to revoke the Part B Hazardous Waste Storage and Treatment Permit due to repeated secondary-containment lining failures, and states that failure to cure will result in immediate facility closure and license revocation by March 31, 2026.",
+        "The document asserts that purchasers of company assets would assume strict, joint-and-several successor liability for environmental contamination under federal CERCLA statutes."
+      ],
+      "yellowFlags": [
+        "The document provides no quantified estimate of remediation costs beyond the stated $4,200,000 obligation and does not provide financial statements, insurance coverage, reserves, cure status, or operating-continuity information."
+      ],
+      "valuation": {
+        "base_estimate": 0
+      },
+      "employeeEvidence": {
+        "count": null
+      },
+      "mathCheckStatus": "passed",
+      "inputTokens": 355,
+      "outputTokens": 1338,
+      "totalTokens": 1693,
+      "costUsd": 0.0168,
+      "requestId": "1c963dde-e330-4a4d-8eae-01859a361b82",
+      "processedAt": "2026-08-31T19:29:13.108Z"
+    },
+    {
+      "fileName": "TerraClean_Waste_Facility_Inspection_Site.mp4",
+      "fileType": "video/mp4",
+      "status": "completed",
+      "modelUsed": "OpenAI 5.6 Terra",
+      "detectedDocumentType": "OPERATIONAL_REPORT",
+      "detectedDocumentTypes": [
+        "OPERATIONAL_REPORT"
+      ],
+      "trafficLight": "RED",
+      "riskLevel": "HIGH",
+      "financialFacts": [
+        {
+          "metric": "Active federal Superfund cleanup lien",
+          "normalizedValue": 4200000,
+          "confidence": 0.98
+        }
+      ],
+      "redFlags": [
+        "The recording states that the site carries an active federal Superfund cleanup lien of $4.2 million.",
+        "The recording states that Tank Farm B secondary containment has failed, including a full-section crack and separated joint sealant along roughly 40 feet of the north wall.",
+        "The inspection describes staining consistent with a chlorinated solvent release beyond the containment line and visible product at the immediately down-gradient perimeter monitoring well.",
+        "The recording states that drums were stockpiled outside the permitted storage area and identifies an open 60-day notice of permit revocation."
       ],
       "yellowFlags": [],
       "valuation": {
         "base_estimate": 0
       },
-      "mathCheckStatus": "failed"
-    },
-    {
-      "fileName": "TerraClean_Waste_General_Ledger_Bank_Mismatch.xlsx",
-      "status": "completed",
-      "modelUsed": "OpenAI 5.6 Terra",
-      "detectedDocumentType": "Balance Sheet",
-      "trafficLight": "RED",
-      "riskLevel": "CRITICAL",
-      "financialFacts": [
-        {
-          "metric": "revenue",
-          "normalizedValue": 11200000,
-          "period": "FY2025",
-          "confidence": 1.0
-        }
-      ],
-      "redFlags": [
-        "$10.8M cash deficit vs billed general ledger invoices with $5.8M phantom round-trip deposits"
-      ],
-      "yellowFlags": [],
-      "mathCheckStatus": "failed"
+      "employeeEvidence": {
+        "count": null
+      },
+      "mathCheckStatus": "passed",
+      "inputTokens": 626,
+      "outputTokens": 1084,
+      "totalTokens": 1710,
+      "costUsd": 0.0143,
+      "requestId": "7194c11a-2ed4-4bf7-9f3f-ebd3a1854f6e",
+      "processedAt": "2026-08-31T19:29:42.240Z"
     },
     {
       "fileName": "TerraClean_Waste_Form_1120_Federal_Tax_Audit.xlsx",
+      "fileType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       "status": "completed",
       "modelUsed": "OpenAI 5.6 Terra",
-      "detectedDocumentType": "Tax Return",
+      "detectedDocumentType": "TAX_RETURN",
+      "detectedDocumentTypes": [
+        "TAX_RETURN"
+      ],
       "trafficLight": "RED",
-      "riskLevel": "CRITICAL",
+      "riskLevel": "HIGH",
       "financialFacts": [
         {
-          "metric": "revenue",
+          "metric": "Gross Receipts or Sales — Filed Tax Amount",
           "normalizedValue": 11200000,
-          "period": "FY2025",
-          "confidence": 1.0
+          "period": "Fiscal Year Ending Dec 31, 2025",
+          "confidence": 0.95
         },
         {
-          "metric": "net_income",
+          "metric": "Gross Receipts or Sales — CIM Claimed Amount",
+          "normalizedValue": 22000000,
+          "period": "Fiscal Year Ending Dec 31, 2025",
+          "confidence": 0.95
+        },
+        {
+          "metric": "Cost of Goods Sold and Landfill Tipping — Filed Tax Amount",
+          "normalizedValue": 7840000,
+          "period": "Fiscal Year Ending Dec 31, 2025",
+          "confidence": 0.95
+        },
+        {
+          "metric": "Cost of Goods Sold and Landfill Tipping — CIM Claimed Amount",
+          "normalizedValue": 9900000,
+          "period": "Fiscal Year Ending Dec 31, 2025",
+          "confidence": 0.95
+        },
+        {
+          "metric": "Gross Profit — Filed Tax Amount",
+          "normalizedValue": 3360000,
+          "period": "Fiscal Year Ending Dec 31, 2025",
+          "confidence": 0.95
+        },
+        {
+          "metric": "Gross Profit — CIM Claimed Amount",
+          "normalizedValue": 12100000,
+          "period": "Fiscal Year Ending Dec 31, 2025",
+          "confidence": 0.95
+        },
+        {
+          "metric": "Compensation of Officers and Wages — Filed Tax Amount",
+          "normalizedValue": 2150000,
+          "period": "Fiscal Year Ending Dec 31, 2025",
+          "confidence": 0.95
+        },
+        {
+          "metric": "Compensation of Officers and Wages — CIM Claimed Amount",
+          "normalizedValue": 3200000,
+          "period": "Fiscal Year Ending Dec 31, 2025",
+          "confidence": 0.95
+        },
+        {
+          "metric": "Other Deductions and Legal Defense — Filed Tax Amount",
+          "normalizedValue": 1560000,
+          "period": "Fiscal Year Ending Dec 31, 2025",
+          "confidence": 0.95
+        },
+        {
+          "metric": "Other Deductions and Legal Defense — CIM Claimed Amount",
+          "normalizedValue": 4400000,
+          "period": "Fiscal Year Ending Dec 31, 2025",
+          "confidence": 0.95
+        },
+        {
+          "metric": "Total Deductions — Filed Tax Amount",
+          "normalizedValue": 3710000,
+          "period": "Fiscal Year Ending Dec 31, 2025",
+          "confidence": 0.95
+        },
+        {
+          "metric": "Total Deductions — CIM Claimed Amount",
+          "normalizedValue": 7600000,
+          "period": "Fiscal Year Ending Dec 31, 2025",
+          "confidence": 0.95
+        },
+        {
+          "metric": "Taxable Operating Income (Loss) — Filed Tax Amount",
           "normalizedValue": -350000,
-          "period": "FY2025",
-          "confidence": 1.0
+          "period": "Fiscal Year Ending Dec 31, 2025",
+          "confidence": 0.97
+        },
+        {
+          "metric": "Taxable Operating Income (Loss) — CIM Claimed Amount",
+          "normalizedValue": 4500000,
+          "period": "Fiscal Year Ending Dec 31, 2025",
+          "confidence": 0.97
         }
       ],
       "redFlags": [
-        "IRS tax return proves -$350,000 operating loss on $11.2M revenue"
+        "The audit reports filed gross receipts or sales of $11,200,000 versus CIM claimed gross receipts or sales of $22,000,000, with a stated variance of -$10,800,000 and audit finding “FATAL: 49.1% Revenue Inflation.”",
+        "The audit reports a filed taxable operating loss of -$350,000 compared with CIM claimed taxable operating income of $4,500,000, a stated variance of -$4,850,000. The audit finding characterizes the filed result as “TRUE OPERATING INSOLVENCY (-$350k).”",
+        "The audit identifies a gross-profit discrepancy: filed gross profit of $3,360,000 versus CIM claimed gross profit of $12,100,000, with a stated variance of -$8,740,000. It reports a “True Gross Margin: 30.0% vs 55.0%.”",
+        "The audit states that the other deductions and legal defense line “Excludes environmental fines.” The document does not quantify the fines."
       ],
-      "yellowFlags": [],
-      "mathCheckStatus": "failed"
+      "yellowFlags": [
+        "The document identifies “Severe disposal fee underreporting” for cost of goods sold and landfill tipping, reporting filed tax amount of $7,840,000 versus CIM claimed amount of $9,900,000. The document does not provide underlying landfill contracts, invoices, or a quantified breakdown of the stated underreporting.",
+        "The audit labels the compensation discrepancy “Hazardous technician payroll,” reporting filed compensation of $2,150,000 versus CIM claimed compensation of $3,200,000. No headcount, technician payroll detail, or employee classification data is included in this document."
+      ],
+      "valuation": {
+        "base_estimate": 0
+      },
+      "employeeEvidence": {
+        "count": null
+      },
+      "mathCheckStatus": "passed",
+      "inputTokens": 238,
+      "outputTokens": 3317,
+      "totalTokens": 3555,
+      "costUsd": 0.0403,
+      "requestId": "76d9d64d-cc1c-48ce-932f-2e8bb7511dad",
+      "processedAt": "2026-08-31T19:30:12.373Z"
     },
     {
-      "fileName": "TerraClean_Waste_AR_Aging_Bad_Debt_Ledger.xlsx",
+      "fileName": "TerraClean_Waste_General_Ledger_Bank_Mismatch.xlsx",
+      "fileType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       "status": "completed",
       "modelUsed": "OpenAI 5.6 Terra",
-      "detectedDocumentType": "Operating Metrics",
+      "detectedDocumentType": "OPERATIONAL_REPORT",
+      "detectedDocumentTypes": [
+        "OPERATIONAL_REPORT"
+      ],
       "trafficLight": "RED",
-      "riskLevel": "CRITICAL",
+      "riskLevel": "HIGH",
       "financialFacts": [
         {
-          "metric": "revenue",
+          "metric": "Reported general ledger invoicing",
+          "normalizedValue": 22000000,
+          "period": "FY2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Verified bank deposits",
           "normalizedValue": 11200000,
           "period": "FY2025",
-          "confidence": 1.0
+          "confidence": 0.99
+        },
+        {
+          "metric": "Phantom round-trip deposits",
+          "normalizedValue": -5800000,
+          "period": "FY2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Net real cash discrepancy",
+          "normalizedValue": -10800000,
+          "period": "FY2025",
+          "confidence": 0.99
         }
       ],
       "redFlags": [
-        "$4.80M in uncollectible AR write-offs (71.9% delinquent)"
+        "The report states a FY2025 net real cash discrepancy of -$10,800,000 between reported general ledger invoicing and verified bank deposits.",
+        "The report explicitly identifies FY2025 phantom round-trip deposits totaling -$5,800,000.",
+        "A negative net real cash discrepancy is shown in every reported month from January through December 2025, ranging from -$770,000 in March 2025 to -$1,050,000 in December 2025."
       ],
-      "yellowFlags": [],
-      "mathCheckStatus": "failed"
+      "yellowFlags": [
+        "This standalone reconciliation report provides reported invoicing, verified deposits, phantom round-trip deposits, and stated discrepancies, but does not provide underlying transaction-level support or an explanation for the discrepancies."
+      ],
+      "valuation": {
+        "base_estimate": 0
+      },
+      "employeeEvidence": {
+        "count": null
+      },
+      "mathCheckStatus": "passed",
+      "inputTokens": 239,
+      "outputTokens": 1476,
+      "totalTokens": 1715,
+      "costUsd": 0.0182,
+      "requestId": "ce712917-e682-4cf8-b91f-5c42c5b6af14",
+      "processedAt": "2026-08-31T19:29:53.744Z"
     },
     {
-      "fileName": "TerraClean_Waste_EPA_Superfund_Consent_Decree.docx",
+      "fileName": "TerraClean_Waste_Seller_CIM_Overview.pdf",
+      "fileType": "application/pdf",
       "status": "completed",
       "modelUsed": "OpenAI 5.6 Terra",
-      "detectedDocumentType": "Due Diligence Data Room Packet",
+      "detectedDocumentType": "DECK_OR_CIM",
+      "detectedDocumentTypes": [
+        "DECK_OR_CIM"
+      ],
       "trafficLight": "RED",
-      "riskLevel": "CRITICAL",
-      "financialFacts": [],
+      "riskLevel": "HIGH",
+      "financialFacts": [
+        {
+          "metric": "Seller asking price",
+          "normalizedValue": 22000000,
+          "confidence": 0.98
+        },
+        {
+          "metric": "Seller-claimed gross revenue",
+          "normalizedValue": 22000000,
+          "confidence": 0.98
+        },
+        {
+          "metric": "Verified tax/bank gross revenue",
+          "normalizedValue": 11200000,
+          "confidence": 0.96
+        },
+        {
+          "metric": "Gross revenue variance",
+          "normalizedValue": -10800000,
+          "confidence": 0.96
+        },
+        {
+          "metric": "Seller-claimed gross profit",
+          "normalizedValue": 12100000,
+          "confidence": 0.97
+        },
+        {
+          "metric": "Verified tax/bank gross profit",
+          "normalizedValue": 3360000,
+          "confidence": 0.96
+        },
+        {
+          "metric": "Seller-claimed operating EBITDA",
+          "normalizedValue": 4500000,
+          "confidence": 0.97
+        },
+        {
+          "metric": "Verified operating EBITDA",
+          "normalizedValue": -350000,
+          "confidence": 0.97
+        },
+        {
+          "metric": "Operating EBITDA variance",
+          "normalizedValue": -4850000,
+          "confidence": 0.96
+        },
+        {
+          "metric": "Accounts receivable more than 180 days delinquent",
+          "normalizedValue": 4800000,
+          "confidence": 0.96
+        },
+        {
+          "metric": "Environmental liabilities",
+          "normalizedValue": 4200000,
+          "confidence": 0.96
+        }
+      ],
       "redFlags": [
-        "$4.2M active EPA Superfund cleanup lien and 60-day permit revocation notice"
+        "The document states that seller-claimed gross revenue of $22,000,000 differs from verified tax/bank gross revenue of $11,200,000, a stated negative variance of $10,800,000. It characterizes this discrepancy as critical fraud.",
+        "The document reports claimed operating EBITDA of $4,500,000 but verified operating EBITDA of -$350,000, with a stated variance of -$4,850,000. It labels the verified result as operational insolvency.",
+        "The document reports $4,800,000 of accounts receivable more than 180 days delinquent and describes this amount as 71.9% bad debt loss; it also states that the delinquent receivables are associated with bankrupt contractors.",
+        "The document states that $4,200,000 of environmental liabilities were undisclosed and describes an active federal CERCLA cleanup lien and a 60-day operating-permit cure warning."
       ],
       "yellowFlags": [],
-      "mathCheckStatus": "failed"
+      "valuation": {
+        "base_estimate": 0
+      },
+      "employeeEvidence": {
+        "count": null
+      },
+      "mathCheckStatus": "passed",
+      "inputTokens": 627,
+      "outputTokens": 2441,
+      "totalTokens": 3068,
+      "costUsd": 0.0305,
+      "requestId": "3b31f0ba-cb1f-4964-b2cb-221f85233c9a",
+      "processedAt": "2026-08-31T19:30:09.971Z"
     },
     {
       "fileName": "TerraClean_Waste_Whistleblower_Internal_Email.eml",
+      "fileType": "message/rfc822",
       "status": "completed",
       "modelUsed": "OpenAI 5.6 Terra",
-      "detectedDocumentType": "Due Diligence Data Room Packet",
+      "detectedDocumentType": "OTHER",
+      "detectedDocumentTypes": [
+        "OTHER"
+      ],
       "trafficLight": "RED",
-      "riskLevel": "CRITICAL",
+      "riskLevel": "HIGH",
       "financialFacts": [],
       "redFlags": [
-        "Internal whistleblower confirms falsified manifests and severe groundwater contamination"
+        "The email alleges that chlorinated solvent manifest logs submitted to a state inspector did not reflect the true toxicity levels in holding Tank 4B, indicating a potential regulatory reporting and environmental-compliance issue.",
+        "The email alleges failure of secondary containment and seepage of solvent leachate into a perimeter monitoring well, indicating a potentially significant environmental release risk.",
+        "The email alleges chlorinated solvent contamination exceeding federal limits by 800x near the eastern retention basin, which could create material remediation, regulatory, operational, and transaction risks if substantiated.",
+        "The email alleges that customers are billed for certified destruction while waste is instead blended and stockpiled, indicating a potential mismatch between billed services and actual waste-handling practices."
       ],
       "yellowFlags": [],
-      "mathCheckStatus": "failed"
-    },
-    {
-      "fileName": "TerraClean_Waste_Facility_Inspection_Site.mp4",
-      "status": "completed",
-      "modelUsed": "OpenAI 5.6 Terra",
-      "detectedDocumentType": "Operating Metrics",
-      "trafficLight": "RED",
-      "riskLevel": "CRITICAL",
-      "financialFacts": [],
-      "redFlags": [
-        "Facility video confirms structural failure in secondary containment tank farm"
-      ],
-      "yellowFlags": [],
-      "mathCheckStatus": "failed"
+      "valuation": {
+        "base_estimate": 0
+      },
+      "employeeEvidence": {
+        "count": null
+      },
+      "mathCheckStatus": "passed",
+      "inputTokens": 189,
+      "outputTokens": 976,
+      "totalTokens": 1165,
+      "costUsd": 0.0121,
+      "requestId": "dfebcc4c-93be-4828-b656-befd23a303ba",
+      "processedAt": "2026-08-31T19:30:13.640Z"
     }
   ]
 }
