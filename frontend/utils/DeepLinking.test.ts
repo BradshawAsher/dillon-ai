@@ -1,8 +1,9 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, afterEach } from 'vitest'
 import {
     parseUrlDeepLinkState,
     matchProjectFromQuery,
     buildProjectPermalink,
+    syncBrowserUrl,
     VALID_WORKSPACE_TABS,
 } from './deepLinking'
 
@@ -162,6 +163,58 @@ describe('Deep Linking Utilities', () => {
                 tab: 'overview',
             })
             expect(link).toBe('https://app.mergeworks.com/?view=dashboard&project=scenario-communications')
+        })
+    })
+
+    describe('syncBrowserUrl', () => {
+        afterEach(() => {
+            // @ts-expect-error test cleanup of the stubbed global
+            delete globalThis.window
+        })
+
+        function stubWindow(href: string): () => string {
+            let captured = href
+            Object.defineProperty(globalThis, 'window', {
+                value: {
+                    location: { href },
+                    history: {
+                        replaceState: (_state: unknown, _title: string, url: string) => {
+                            captured = url
+                        },
+                    },
+                },
+                configurable: true,
+            })
+            return () => captured
+        }
+
+        it('sets view=dashboard, project and tab in place', () => {
+            const getUrl = stubWindow('https://app.test/app?stale=1')
+            syncBrowserUrl('scenario-communications', 'valuation')
+            const url = new URL(getUrl())
+            expect(url.searchParams.get('view')).toBe('dashboard')
+            expect(url.searchParams.get('project')).toBe('scenario-communications')
+            expect(url.searchParams.get('tab')).toBe('valuation')
+        })
+
+        it('removes the project param when no project is given', () => {
+            const getUrl = stubWindow('https://app.test/app?project=old&tab=growth')
+            syncBrowserUrl(undefined, 'growth')
+            const url = new URL(getUrl())
+            expect(url.searchParams.has('project')).toBe(false)
+            expect(url.searchParams.get('tab')).toBe('growth')
+        })
+
+        it('removes the tab param for the overview tab', () => {
+            const getUrl = stubWindow('https://app.test/app?project=p&tab=valuation')
+            syncBrowserUrl('p', 'overview')
+            const url = new URL(getUrl())
+            expect(url.searchParams.has('tab')).toBe(false)
+            expect(url.searchParams.get('project')).toBe('p')
+        })
+
+        it('does nothing when window is unavailable', () => {
+            expect(() => syncBrowserUrl('p', 'valuation')).not.toThrow()
         })
     })
 })
