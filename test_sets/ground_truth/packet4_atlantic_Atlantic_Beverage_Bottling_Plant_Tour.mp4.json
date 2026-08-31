@@ -9,6 +9,50 @@
     "financialFacts": [],
     "expectedRedFlags": [],
     "expectedYellowFlags": [],
-    "expectedRecommendation": "PROCEED"
-  }
+    "expectedRecommendation": "PROCEED",
+    "documentTypes": [
+      "Operating Metrics",
+      "Other"
+    ],
+    "evidenceLocators": [
+      {
+        "claim": "line 2 rebuild completed 2024, ~$800,000",
+        "timestampStart": "00:25",
+        "timestampEnd": "00:37",
+        "timestampStartSeconds": 25,
+        "timestampEndSeconds": 37
+      },
+      {
+        "claim": "running at ~72% of rated capacity",
+        "timestampStart": "00:39",
+        "timestampEnd": "00:49",
+        "timestampStartSeconds": 39,
+        "timestampEndSeconds": 49
+      },
+      {
+        "claim": "41 employees, no recordable incidents, no deferred maintenance",
+        "timestampStart": "00:59",
+        "timestampEnd": "01:07",
+        "timestampStartSeconds": 59,
+        "timestampEndSeconds": 67
+      }
+    ]
+  },
+  "mediaMetadata": {
+    "durationSeconds": 67.41,
+    "video": {
+      "codec": "h264",
+      "resolution": "1280x720"
+    },
+    "audio": {
+      "codec": "aac",
+      "sampleRate": "24000",
+      "channels": 1
+    },
+    "synthetic": true,
+    "generatedBy": "scripts/generate_deep_test_packets.py",
+    "note": "Speech is synthesised from a fixed script written to match this packet's ground truth. Video is a still-sequence walkthrough with camera motion over generated stills. No third-party recording is used."
+  },
+  "transcriptFile": "ground_truth/media_transcripts/Atlantic_Beverage_Bottling_Plant_Tour.mp4.transcript.json",
+  "transcriptIsEvaluatorOnly": true
 }

@@ -1,0 +1,49 @@
+{
+ "media_file": "TerraClean_Waste_Facility_Inspection_Site.mp4",
+ "evaluator_only": true,
+ "alignment_coverage": 0.941,
+ "lines": [
+  {
+   "speaker": "inspector",
+   "start": 0.0,
+   "end": 8.96,
+   "text": "Phase two environmental site assessment, TerraClean Industrial Waste Solutions. This recording is being made as part of the inspection record."
+  },
+  {
+   "speaker": "inspector",
+   "start": 9.8,
+   "end": 17.16,
+   "text": "We are at the perimeter of Tank Farm B. What you're looking at is the secondary containment structure for tanks four A through four D."
+  },
+  {
+   "speaker": "inspector",
+   "start": 18.94,
+   "end": 31.82,
+   "text": "Move in on the berm here. This is a structural failure, not surface weathering. The containment wall is cracked through its full section, and the joint sealant has separated along roughly forty feet of the north wall."
+  },
+  {
+   "speaker": "inspector",
+   "start": 32.72,
+   "end": 45.72,
+   "text": "The staining you can see running down the pad and out beyond the containment line is consistent with chlorinated solvent release. Containment at this tank farm is not intact and has not been for some time."
+  },
+  {
+   "speaker": "inspector",
+   "start": 46.62,
+   "end": 53.08,
+   "text": "This is the perimeter monitoring well, immediately down gradient. There is visible product at the wellhead."
+  },
+  {
+   "speaker": "inspector",
+   "start": 54.08,
+   "end": 64.4,
+   "text": "Panning right. These are drums stockpiled outside the permitted storage area, and the labels indicate waste streams the company has billed as certified destruction."
+  },
+  {
+   "speaker": "inspector",
+   "start": 65.52,
+   "end": 83.06,
+   "text": "For the record: the secondary containment at Tank Farm B has failed. This site carries an active federal Superfund cleanup lien of four point two million dollars, and an open sixty day notice of permit revocation. Nothing observed today is inconsistent with either action."
+  }
+ ]
+}
