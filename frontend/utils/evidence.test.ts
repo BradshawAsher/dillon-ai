@@ -37,6 +37,33 @@ describe('parseDocumentedFacts', () => {
             revenue: { value: 1000, status: 'confirmed', currency: 'USD' },
         })
     })
+
+    it('backfills a missing ebitda_sde from net_income with a labelled provenance', () => {
+        const json = JSON.stringify({
+            net_income: { value: 500, currency: 'USD' },
+        })
+        const facts = parseDocumentedFacts(json)
+        expect(facts.ebitda_sde).toEqual({
+            value: 500,
+            currency: 'USD',
+            provenance: 'Documented (Net Income)',
+        })
+    })
+
+    it('preserves an explicit net_income provenance when backfilling ebitda_sde', () => {
+        const json = JSON.stringify({
+            net_income: { value: 500, provenance: 'Audited FY23 net income' },
+        })
+        expect(parseDocumentedFacts(json).ebitda_sde?.provenance).toBe('Audited FY23 net income')
+    })
+
+    it('does not overwrite an existing ebitda_sde with the net_income fallback', () => {
+        const json = JSON.stringify({
+            ebitda_sde: { value: 800, status: 'confirmed' },
+            net_income: { value: 500 },
+        })
+        expect(parseDocumentedFacts(json).ebitda_sde).toEqual({ value: 800, status: 'confirmed' })
+    })
 })
 
 describe('getEvidenceStatusPresentation', () => {
