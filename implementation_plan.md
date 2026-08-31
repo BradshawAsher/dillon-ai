@@ -346,3 +346,35 @@
 
 - The exact latest Apex fixture reconstructs to 85 seconds and stays frozen after completion.
 - Focused batch timer/card tests, TypeScript checking, all 725 frontend tests, and the production build pass.
+
+---
+
+# Project and evaluation timing telemetry plan
+
+## Empirical root cause
+
+1. Document and synthesis timestamps already reach the frontend, and shared helpers can resolve their individual durations, but the Projects portfolio does not display them.
+2. The Evals tab displays per-document latency and a summed document duration. Summing parallel document workers is compute time rather than elapsed project time, and synthesis duration is not shown separately.
+3. The expanded Evals document cards sit inside a two-column project grid but use viewport breakpoints for their own three-column metrics and side-by-side actions. At desktop viewport widths the child remains narrow while its contents expand, and missing `min-w-0`, wrapping, and horizontal overflow containment allow labels and buttons to leave the parent card.
+
+## Target changes
+
+- Add a tested shared project timing summary to `frontend/utils/diligenceDashboardUtils.ts`: document compute time, parallel extraction wall-clock time, synthesis time, and total project processing time.
+- Keep measured timing separate from the existing legacy estimate fallbacks so cards show unavailable timing rather than presenting estimates as recorded time.
+- Derive wall-clock extraction from the earliest valid document start to the latest valid document end, falling back to the longest known document duration when eval fixtures only contain explicit duration fields.
+- Add Project Time, Extraction, and Synthesis telemetry to every Projects portfolio card, plus a duration beside every document row.
+- Add the same three timing values to every Evals project card and continue showing the individual duration on each expanded document card.
+- Show measured Total Project Time beside measured Synthesis Time in the Synthesis tab's acquisition-judgment header.
+- Contain expanded Evals content with `min-w-0`/`overflow-hidden`, allow long filenames and labels to wrap, use child-safe metric columns, and stack document actions so nested cards cannot overflow.
+
+## Regression verification
+
+- Unit-test parallel documents, explicit-duration-only eval fixtures, missing synthesis timing, and unavailable timing data.
+- Run focused timing and tab module tests, TypeScript checking, the complete frontend test suite, and a production build.
+- Render the Projects and Evals tabs in a browser at desktop and narrow viewport sizes and verify expanded document cards remain within their project card.
+
+## Verification completed
+
+- Shared timing tests cover overlapping parallel documents, duration-only eval fixtures, synthesis addition, missing synthesis timing, and fully unavailable timing.
+- Focused timing/tab tests, TypeScript checking, all 729 frontend tests, and the production build pass.
+- The local Vite server starts successfully. Automated screenshot verification is unavailable on this workstation because neither the documented `agent-browser` executable nor a callable browser controller is installed; compiled responsive/overflow classes and source containment were verified instead.

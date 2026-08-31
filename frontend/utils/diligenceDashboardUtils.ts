@@ -518,6 +518,22 @@ export function getDocumentExtractionDurationSec(doc?: Partial<SubmissionHistory
     return null
 }
 
+/** Recorded document duration only; unlike the display helper above, this never invents a completed-row fallback. */
+export function getMeasuredDocumentExtractionDurationSec(doc?: Partial<SubmissionHistoryItem> | null): number | null {
+    if (!doc) return null
+    for (const raw of [(doc as any).durationSec, (doc as any).duration_sec, (doc as any).processingTimeSec]) {
+        if (typeof raw === 'number' && Number.isFinite(raw) && raw > 0 && raw <= 3600) return raw
+    }
+    const endStr = doc.processedAt || doc.statusResolvedAt
+    const startStr = doc.processingStartedAt || doc.receivedAt || doc.triggerTimestamp
+    if (!endStr || !startStr) return null
+    const start = Date.parse(startStr)
+    const end = Date.parse(endStr)
+    if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return null
+    const seconds = Math.round((end - start) / 1000)
+    return seconds >= 1 && seconds <= 3600 ? seconds : null
+}
+
 /**
  * Calculates synthesis duration in seconds from timestamps or explicit duration fields.
  * Returns null if duration cannot be determined.
@@ -566,6 +582,86 @@ export function getSynthesisDurationSec(synthesis?: Partial<Record<string, unkno
         return Math.min(65, Math.max(32, docCount * 8))
     }
     return null
+}
+
+/** Recorded synthesis duration only; completed records without timing stay unavailable. */
+export function getMeasuredSynthesisDurationSec(synthesis?: Partial<Record<string, unknown>> | null): number | null {
+    if (!synthesis) return null
+    for (const raw of [synthesis.durationSec, synthesis.duration_sec, synthesis.synthesisDurationSec]) {
+        if (typeof raw === 'number' && Number.isFinite(raw) && raw > 0 && raw <= 3600) return raw
+    }
+    const endStr = synthesis.projectProcessedAt
+    const startStr = synthesis.synthesisStartedAt || synthesis.processingStartedAt || synthesis.claimedAt || synthesis.createdAt
+    if (typeof endStr !== 'string' || typeof startStr !== 'string') return null
+    const start = Date.parse(startStr)
+    const end = Date.parse(endStr)
+    if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return null
+    const seconds = Math.round((end - start) / 1000)
+    return seconds >= 1 && seconds <= 3600 ? seconds : null
+}
+
+export type ProjectTimingSummary = {
+    documentComputeSec: number | null
+    averageDocumentSec: number | null
+    extractionWallClockSec: number | null
+    synthesisSec: number | null
+    totalProjectSec: number | null
+}
+
+function firstValidTimestamp(source: Record<string, unknown>, keys: string[]): number | null {
+    for (const key of keys) {
+        const raw = source[key]
+        if (typeof raw !== 'string' || !raw.trim()) continue
+        const parsed = Date.parse(raw)
+        if (Number.isFinite(parsed) && parsed > 0) return parsed
+    }
+    return null
+}
+
+/**
+ * Summarizes actual project processing time without adding parallel document
+ * latencies together. Timestamped documents define extraction wall-clock time;
+ * eval fixtures with duration-only data fall back to the longest worker run.
+ */
+export function getProjectTimingSummary(
+    documents: Array<Partial<SubmissionHistoryItem> & Record<string, unknown>>,
+    synthesis?: Partial<Record<string, unknown>> | null,
+): ProjectTimingSummary {
+    const documentDurations = documents
+        .map((document) => getMeasuredDocumentExtractionDurationSec(document))
+        .filter((duration): duration is number => duration !== null)
+    const timestampWindows = documents.flatMap((document) => {
+        const start = firstValidTimestamp(document, ['processingStartedAt', 'receivedAt', 'triggerTimestamp', 'createdAt'])
+        const end = firstValidTimestamp(document, ['processedAt', 'statusResolvedAt', 'updatedAt'])
+        return start !== null && end !== null && end >= start ? [{ start, end }] : []
+    })
+
+    const extractionWallClockSec = timestampWindows.length > 0
+        ? Math.max(0, Math.round((
+            timestampWindows.reduce((latest, window) => Math.max(latest, window.end), timestampWindows[0].end)
+            - timestampWindows.reduce((earliest, window) => Math.min(earliest, window.start), timestampWindows[0].start)
+        ) / 1000))
+        : documentDurations.length > 0
+            ? documentDurations.reduce((longest, duration) => Math.max(longest, duration), documentDurations[0])
+            : null
+    const documentComputeSec = documentDurations.length > 0
+        ? documentDurations.reduce((total, duration) => total + duration, 0)
+        : null
+    const averageDocumentSec = documentComputeSec !== null
+        ? Math.round(documentComputeSec / documentDurations.length)
+        : null
+    const synthesisSec = getMeasuredSynthesisDurationSec(synthesis)
+    const totalProjectSec = extractionWallClockSec !== null || synthesisSec !== null
+        ? (extractionWallClockSec || 0) + (synthesisSec || 0)
+        : null
+
+    return {
+        documentComputeSec,
+        averageDocumentSec,
+        extractionWallClockSec,
+        synthesisSec,
+        totalProjectSec,
+    }
 }
 
 export type SubmitWebhookResponse = {
