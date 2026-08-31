@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { SubmissionHistoryItem } from './submissionHistory'
 import {
     buildDerivedEvidence,
+    buildDocumentLinkedEvidence,
     buildFactEvidence,
     driveEmbedUrl,
     findCitedDocument,
@@ -350,5 +351,53 @@ describe('buildDerivedEvidence', () => {
             statusLabel: 'Sensitivity case',
         })
         expect(evidence.status).toBe('Sensitivity case')
+    })
+})
+
+describe('buildDocumentLinkedEvidence', () => {
+    const matchedDoc = {
+        fileName: 'Cascadia Q4 Financials.pdf',
+        storageFileUrl: 'https://drive.google.com/file/d/doc-9/view',
+        storageFileId: 'doc-9',
+        aiConfidence: 88,
+    } as SubmissionHistoryItem
+
+    it('resolves the matched document url and id from the citation source file', () => {
+        const evidence = buildDocumentLinkedEvidence({
+            title: 'Revenue',
+            sourceFile: 'cascadia-q4-financials.pdf',
+            documents: [matchedDoc],
+        })
+        expect(evidence.documentUrl).toBe('https://drive.google.com/file/d/doc-9/view')
+        expect(evidence.documentId).toBe('doc-9')
+    })
+
+    it('falls back to the matched document confidence when none is supplied', () => {
+        const evidence = buildDocumentLinkedEvidence({
+            title: 'Revenue',
+            sourceFile: 'cascadia-q4-financials.pdf',
+            documents: [matchedDoc],
+        })
+        expect(evidence.confidence).toBe(88)
+    })
+
+    it('keeps an explicit confidence over the document fallback', () => {
+        const evidence = buildDocumentLinkedEvidence({
+            title: 'Revenue',
+            sourceFile: 'cascadia-q4-financials.pdf',
+            confidence: 95,
+            documents: [matchedDoc],
+        })
+        expect(evidence.confidence).toBe(95)
+    })
+
+    it('uses the fallback source file label when none is cited', () => {
+        const evidence = buildDocumentLinkedEvidence({
+            title: 'Revenue',
+            fallbackSourceFile: 'Source file was not returned',
+            documents: [],
+        })
+        expect(evidence.sourceFile).toBe('Source file was not returned')
+        expect(evidence.documentUrl).toBeUndefined()
     })
 })
