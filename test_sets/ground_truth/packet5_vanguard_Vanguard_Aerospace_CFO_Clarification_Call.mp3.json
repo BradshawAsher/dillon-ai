@@ -3,7 +3,7 @@
   "business": "Vanguard Precision Aerospace Machining (Defense Tooling & CNC)",
   "fileType": "MP3",
   "groundTruth": {
-    "documentType": "Operating Metrics",
+    "documentType": "Other",
     "trafficLight": "YELLOW",
     "riskLevel": "ELEVATED",
     "financialFacts": [
@@ -23,6 +23,90 @@
     "expectedYellowFlags": [
       "CFO confirms personal luxury vehicle leases were included in seller add-backs"
     ],
-    "expectedRecommendation": "RENEGOTIATE"
-  }
+    "expectedRecommendation": "RENEGOTIATE",
+    "documentTypes": [
+      "Other",
+      "Quality of Earnings",
+      "Operating Metrics"
+    ],
+    "evidenceLocators": [
+      {
+        "claim": "TTM revenue $14,200,000",
+        "timestampStart": "00:10",
+        "timestampEnd": "00:15",
+        "timestampStartSeconds": 10,
+        "timestampEndSeconds": 15
+      },
+      {
+        "claim": "seller-claimed EBITDA $3,100,000 vs audited $2,150,000",
+        "timestampStart": "00:15",
+        "timestampEnd": "00:34",
+        "timestampStartSeconds": 15,
+        "timestampEndSeconds": 34
+      },
+      {
+        "claim": "add-back gap $950,000",
+        "timestampStart": "00:34",
+        "timestampEnd": "00:39",
+        "timestampStartSeconds": 34,
+        "timestampEndSeconds": 39
+      },
+      {
+        "claim": "add-back stack includes vehicle leases",
+        "timestampStart": "00:42",
+        "timestampEnd": "00:52",
+        "timestampStartSeconds": 42,
+        "timestampEndSeconds": 52
+      },
+      {
+        "claim": "YELLOW FLAG: personal luxury vehicle leases (Range Rover, Porsche Cayenne, third vehicle for owner's son) inside seller add-backs, confirmed not used operationally",
+        "timestampStart": "00:52",
+        "timestampEnd": "01:18",
+        "timestampStartSeconds": 52,
+        "timestampEndSeconds": 78
+      },
+      {
+        "claim": "$450,000 of the $950,000 is personal expense: vehicles, family travel, two family members on payroll",
+        "timestampStart": "01:19",
+        "timestampEnd": "01:44",
+        "timestampStartSeconds": 79,
+        "timestampEndSeconds": 104
+      },
+      {
+        "claim": "deferred CNC spindle work $480,000-$800,000",
+        "timestampStart": "01:46",
+        "timestampEnd": "02:02",
+        "timestampStartSeconds": 106,
+        "timestampEndSeconds": 122
+      },
+      {
+        "claim": "top customer 38.5% of revenue / $5,470,000, LTA expiry and 15% price-cut RFP",
+        "timestampStart": "02:03",
+        "timestampEnd": "02:19",
+        "timestampStartSeconds": 123,
+        "timestampEndSeconds": 139
+      },
+      {
+        "claim": "buyer reprices off $2,150,000 supportable earnings",
+        "timestampStart": "02:20",
+        "timestampEnd": "02:32",
+        "timestampStartSeconds": 140,
+        "timestampEndSeconds": 152
+      }
+    ],
+    "modalityExclusiveFinding": "CFO confirms personal luxury vehicle leases were included in seller add-backs -- stated only in this recording, not in any document."
+  },
+  "mediaMetadata": {
+    "durationSeconds": 153.93,
+    "audio": {
+      "codec": "mp3",
+      "sampleRate": "16000",
+      "channels": 1
+    },
+    "synthetic": true,
+    "generatedBy": "scripts/generate_deep_test_packets.py",
+    "note": "Speech is synthesised from a fixed script written to match this packet's ground truth. Video is a still-sequence walkthrough with camera motion over generated stills. No third-party recording is used."
+  },
+  "transcriptFile": "ground_truth/media_transcripts/Vanguard_Aerospace_CFO_Clarification_Call.mp3.transcript.json",
+  "transcriptIsEvaluatorOnly": true
 }
