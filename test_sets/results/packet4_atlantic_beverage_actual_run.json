@@ -1,158 +1,762 @@
 {
   "business": "Atlantic Beverage & Bottling Corp (Beverage Packaging & Logistics)",
-  "projectId": "project-atlantic-beverage-proceed",
-  "evaluatedAt": "2026-08-30T12:00:00.000Z",
+  "projectId": "project-20260831-344a1ed2",
+  "evaluatedAt": "2026-08-31T19:44:52.026Z",
   "documents": [
     {
       "fileName": "Atlantic_Beverage_3Yr_Audited_Financial_Model.xlsx",
+      "fileType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       "status": "completed",
       "modelUsed": "OpenAI 5.6 Terra",
-      "detectedDocumentType": "Profit and Loss Statement",
-      "trafficLight": "GREEN",
+      "detectedDocumentType": "FINANCIAL_STATEMENT",
+      "detectedDocumentTypes": [
+        "FINANCIAL_STATEMENT",
+        "OPERATIONAL_REPORT"
+      ],
+      "trafficLight": "YELLOW",
       "riskLevel": "LOW",
       "financialFacts": [
         {
-          "metric": "revenue",
+          "metric": "Gross revenue",
           "normalizedValue": 18500000,
           "period": "FY2025",
-          "confidence": 1.0
+          "confidence": 0.99
         },
         {
-          "metric": "gross_profit",
+          "metric": "Direct-store-delivery bottled beverages revenue",
+          "normalizedValue": 14800000,
+          "period": "FY2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Fountain syrup and co-packing contract revenue",
+          "normalizedValue": 3700000,
+          "period": "FY2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Total cost of goods sold",
+          "normalizedValue": 9620000,
+          "period": "FY2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Gross profit",
           "normalizedValue": 8880000,
           "period": "FY2025",
-          "confidence": 1.0
+          "confidence": 0.99
         },
         {
-          "metric": "ebitda",
-          "normalizedValue": 3650000,
+          "metric": "Total operating expenses",
+          "normalizedValue": 5476000,
           "period": "FY2025",
-          "confidence": 1.0
+          "confidence": 0.99
         },
         {
-          "metric": "adjusted_ebitda",
+          "metric": "Operating income (EBIT)",
+          "normalizedValue": 3404000,
+          "period": "FY2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Bottling line and fleet depreciation",
+          "normalizedValue": 296000,
+          "period": "FY2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Reported EBITDA",
+          "normalizedValue": 3700000,
+          "period": "FY2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Normalized owner wage replacement delta",
+          "normalizedValue": -50000,
+          "period": "FY2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "True audited normalized EBITDA",
           "normalizedValue": 3650000,
           "period": "FY2025",
-          "confidence": 1.0
+          "confidence": 0.99
+        },
+        {
+          "metric": "Cash and cash equivalents",
+          "normalizedValue": 1450000,
+          "period": "As of December 31, 2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Accounts receivable current under 30 days",
+          "normalizedValue": 1620000,
+          "period": "As of December 31, 2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Inventory",
+          "normalizedValue": 890000,
+          "period": "As of December 31, 2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Total current assets",
+          "normalizedValue": 3960000,
+          "period": "As of December 31, 2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Total fixed assets (net PP&E)",
+          "normalizedValue": 3870000,
+          "period": "As of December 31, 2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Total assets",
+          "normalizedValue": 7830000,
+          "period": "As of December 31, 2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Equipment note",
+          "normalizedValue": 480000,
+          "period": "As of December 31, 2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Total liabilities",
+          "normalizedValue": 1600000,
+          "period": "As of December 31, 2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Retained earnings and member equity",
+          "normalizedValue": 6230000,
+          "period": "As of December 31, 2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Net case delivery volume",
+          "normalizedValue": 2720,
+          "period": "FY2025",
+          "confidence": 0.98
+        },
+        {
+          "metric": "Free cash flow conversion",
+          "normalizedValue": 2940000,
+          "period": "FY2025",
+          "confidence": 0.98
+        },
+        {
+          "metric": "Days sales outstanding",
+          "normalizedValue": 27.9,
+          "period": "FY2025",
+          "confidence": 0.98
+        },
+        {
+          "metric": "Bottling line capacity utilization",
+          "normalizedValue": 0.65,
+          "period": "FY2025",
+          "confidence": 0.98
+        },
+        {
+          "metric": "Total accounts receivable outstanding",
+          "normalizedValue": 1710000,
+          "period": "As of December 31, 2025",
+          "confidence": 0.99
         }
       ],
       "redFlags": [],
-      "yellowFlags": [],
+      "yellowFlags": [
+        "FY2025 customer concentration includes ShopRite Supermarkets Regional Co-Op at 11.5% of consolidated revenue. The customer roster itself states that no account is above 11.5%, but the largest-account exposure remains an identifiable concentration item for diligence.",
+        "The accounts-receivable aging ledger reports USD 90,000 outstanding more than 30 days past due, comprising USD 85,000 in the 31–60 day bucket, USD 4,000 in the 61–90 day bucket, and USD 1,000 more than 90 days past due. The document characterizes historical loss rate as 0.05%, but no allowance-for-credit-loss balance is shown in the supplied text.",
+        "The workbook text labels the P&L as audited and identifies Kentmere Ashford LLP in the executive-summary heading, but the supplied text does not include an audit report, audit opinion, or audit procedures. This is a documentation-completeness limitation rather than evidence that the financial statements are unaudited."
+      ],
       "valuation": {
-        "base_estimate": 18500000
+        "base_estimate": 0
       },
-      "mathCheckStatus": "passed"
-    },
-    {
-      "fileName": "Atlantic_Beverage_Executive_CIM.pdf",
-      "status": "completed",
-      "modelUsed": "OpenAI 5.6 Terra",
-      "detectedDocumentType": "Confidential Information Memorandum (CIM)",
-      "trafficLight": "GREEN",
-      "riskLevel": "LOW",
-      "financialFacts": [
-        {
-          "metric": "revenue",
-          "normalizedValue": 18500000,
-          "period": "FY2025",
-          "confidence": 1.0
-        },
-        {
-          "metric": "ebitda",
-          "normalizedValue": 3650000,
-          "period": "FY2025",
-          "confidence": 1.0
-        }
-      ],
-      "redFlags": [],
-      "yellowFlags": [],
-      "valuation": {
-        "base_estimate": 18500000
+      "employeeEvidence": {
+        "count": null
       },
-      "mathCheckStatus": "passed"
-    },
-    {
-      "fileName": "Atlantic_Beverage_Executed_LOI_Agreement.docx",
-      "status": "completed",
-      "modelUsed": "OpenAI 5.6 Terra",
-      "detectedDocumentType": "Letter of Intent (LOI)",
-      "trafficLight": "GREEN",
-      "riskLevel": "LOW",
-      "financialFacts": [
-        {
-          "metric": "ebitda",
-          "normalizedValue": 3650000,
-          "period": "TTM",
-          "confidence": 1.0
-        }
-      ],
-      "redFlags": [],
-      "yellowFlags": [],
-      "valuation": {
-        "base_estimate": 18500000
-      },
-      "mathCheckStatus": "passed"
-    },
-    {
-      "fileName": "Atlantic_Beverage_Management_Presentation.pptx",
-      "status": "completed",
-      "modelUsed": "OpenAI 5.6 Terra",
-      "detectedDocumentType": "Operating Metrics",
-      "trafficLight": "GREEN",
-      "riskLevel": "LOW",
-      "financialFacts": [],
-      "redFlags": [],
-      "yellowFlags": [],
-      "mathCheckStatus": "passed"
-    },
-    {
-      "fileName": "Atlantic_Beverage_Broker_Due_Diligence_Thread.eml",
-      "status": "completed",
-      "modelUsed": "OpenAI 5.6 Terra",
-      "detectedDocumentType": "Due Diligence Data Room Packet",
-      "trafficLight": "GREEN",
-      "riskLevel": "LOW",
-      "financialFacts": [],
-      "redFlags": [],
-      "yellowFlags": [],
-      "mathCheckStatus": "passed"
-    },
-    {
-      "fileName": "Atlantic_Beverage_Founder_CFO_Interview.mp3",
-      "status": "completed",
-      "modelUsed": "OpenAI 5.6 Terra",
-      "detectedDocumentType": "Operating Metrics",
-      "trafficLight": "GREEN",
-      "riskLevel": "LOW",
-      "financialFacts": [
-        {
-          "metric": "revenue",
-          "normalizedValue": 18500000,
-          "period": "FY2025",
-          "confidence": 1.0
-        },
-        {
-          "metric": "ebitda",
-          "normalizedValue": 3650000,
-          "period": "FY2025",
-          "confidence": 1.0
-        }
-      ],
-      "redFlags": [],
-      "yellowFlags": [],
-      "mathCheckStatus": "passed"
+      "mathCheckStatus": "passed",
+      "inputTokens": 1570,
+      "outputTokens": 4708,
+      "totalTokens": 6278,
+      "costUsd": 0.0596,
+      "requestId": "ded0e759-86a1-4ec4-a84b-c40610324db4",
+      "processedAt": "2026-08-31T19:33:01.817Z"
     },
     {
       "fileName": "Atlantic_Beverage_Bottling_Plant_Tour.mp4",
+      "fileType": "video/mp4",
       "status": "completed",
       "modelUsed": "OpenAI 5.6 Terra",
-      "detectedDocumentType": "Operating Metrics",
+      "detectedDocumentType": "OPERATIONAL_REPORT",
+      "detectedDocumentTypes": [
+        "OPERATIONAL_REPORT"
+      ],
+      "trafficLight": "YELLOW",
+      "riskLevel": "LOW",
+      "financialFacts": [
+        {
+          "metric": "Line 2 rebuild capital expenditure",
+          "normalizedValue": 800000,
+          "period": "2024",
+          "confidence": 0.93
+        }
+      ],
+      "redFlags": [],
+      "yellowFlags": [
+        "The source is an operational walkthrough and does not provide financial-performance information such as revenue, EBITDA/SDE, debt, working capital, or a valuation range. Its usefulness for financial due diligence is therefore limited to the explicitly stated Line 2 rebuild expenditure and operational observations."
+      ],
+      "valuation": {
+        "base_estimate": 0
+      },
+      "employeeEvidence": {
+        "count": null
+      },
+      "mathCheckStatus": "passed",
+      "inputTokens": 459,
+      "outputTokens": 1360,
+      "totalTokens": 1819,
+      "costUsd": 0.0172,
+      "requestId": "ac7dc0fa-3425-4bb5-9122-066fdf16fe2a",
+      "processedAt": "2026-08-31T19:32:44.537Z"
+    },
+    {
+      "fileName": "Atlantic_Beverage_Broker_Due_Diligence_Thread.eml",
+      "fileType": "message/rfc822",
+      "status": "completed",
+      "modelUsed": "OpenAI 5.6 Terra",
+      "detectedDocumentType": "OPERATIONAL_REPORT",
+      "detectedDocumentTypes": [
+        "OPERATIONAL_REPORT"
+      ],
       "trafficLight": "GREEN",
       "riskLevel": "LOW",
-      "financialFacts": [],
+      "financialFacts": [
+        {
+          "metric": "Annual D&A and maintenance reserves",
+          "normalizedValue": 296000,
+          "period": "annual",
+          "confidence": 0.82
+        },
+        {
+          "metric": "ShopRite customer concentration",
+          "normalizedValue": 11.5,
+          "period": "Not stated",
+          "confidence": 0.82
+        },
+        {
+          "metric": "Wawa customer concentration",
+          "normalizedValue": 10,
+          "period": "Not stated",
+          "confidence": 0.82
+        },
+        {
+          "metric": "Enterprise valuation under executed LOI terms",
+          "normalizedValue": 18500000,
+          "period": "Not stated",
+          "confidence": 0.82
+        }
+      ],
       "redFlags": [],
       "yellowFlags": [],
-      "mathCheckStatus": "passed"
+      "valuation": {
+        "base_estimate": 18500000
+      },
+      "employeeEvidence": {
+        "count": null
+      },
+      "mathCheckStatus": "passed",
+      "inputTokens": 183,
+      "outputTokens": 1755,
+      "totalTokens": 1938,
+      "costUsd": 0.0214,
+      "requestId": "15d783f5-b3c8-462e-8dad-84424033c890",
+      "processedAt": "2026-08-31T19:32:30.511Z"
+    },
+    {
+      "fileName": "Atlantic_Beverage_Executed_LOI_Agreement.docx",
+      "fileType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "status": "completed",
+      "modelUsed": "OpenAI 5.6 Terra",
+      "detectedDocumentType": "LEGAL_CONTRACT",
+      "detectedDocumentTypes": [
+        "LEGAL_CONTRACT"
+      ],
+      "trafficLight": "YELLOW",
+      "riskLevel": "MEDIUM",
+      "financialFacts": [
+        {
+          "metric": "Total enterprise purchase price",
+          "normalizedValue": 18500000,
+          "confidence": 0.99
+        },
+        {
+          "metric": "Normalized EBITDA",
+          "normalizedValue": 3650000,
+          "period": "Trailing twelve-month period ending December 31, 2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "EBITDA valuation multiple",
+          "normalizedValue": 5.07,
+          "period": "Trailing twelve-month period ending December 31, 2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Target net working capital peg",
+          "normalizedValue": 2840000,
+          "confidence": 0.99
+        },
+        {
+          "metric": "Immediate cash consideration at closing",
+          "normalizedValue": 17000000,
+          "confidence": 0.99
+        },
+        {
+          "metric": "Seller subordinated note principal",
+          "normalizedValue": 1000000,
+          "confidence": 0.99
+        },
+        {
+          "metric": "Seller subordinated note annual interest rate",
+          "normalizedValue": 6,
+          "confidence": 0.99
+        },
+        {
+          "metric": "Indemnity escrow deposit",
+          "normalizedValue": 500000,
+          "confidence": 0.99
+        },
+        {
+          "metric": "Founder and Chief Executive Officer transition services salary",
+          "normalizedValue": 180000,
+          "period": "Per annum during 12-month Transition Services Agreement",
+          "confidence": 0.99
+        }
+      ],
+      "redFlags": [],
+      "yellowFlags": [
+        "The stated purchase price is subject to a dollar-for-dollar closing net working capital adjustment relative to the $2,840,000 target net working capital peg; final consideration may therefore differ from the stated amount.",
+        "Of the stated transaction consideration, $1,000,000 is structured as a subordinated seller note and $500,000 is held in indemnity escrow rather than delivered as immediate cash at closing."
+      ],
+      "valuation": {
+        "base_estimate": 18500000
+      },
+      "employeeEvidence": {
+        "count": null
+      },
+      "mathCheckStatus": "passed",
+      "inputTokens": 625,
+      "outputTokens": 2556,
+      "totalTokens": 3181,
+      "costUsd": 0.0319,
+      "requestId": "bc6f11db-eaa2-44fd-9a8c-4807e3cae890",
+      "processedAt": "2026-08-31T19:33:01.098Z"
+    },
+    {
+      "fileName": "Atlantic_Beverage_Executive_CIM.pdf",
+      "fileType": "application/pdf",
+      "status": "completed",
+      "modelUsed": "OpenAI 5.6 Terra",
+      "detectedDocumentType": "DECK_OR_CIM",
+      "detectedDocumentTypes": [
+        "DECK_OR_CIM"
+      ],
+      "trafficLight": "YELLOW",
+      "riskLevel": "LOW",
+      "financialFacts": [
+        {
+          "metric": "Enterprise asking price",
+          "normalizedValue": 18500000,
+          "period": "FY2025",
+          "confidence": 0.95
+        },
+        {
+          "metric": "Normalized EBITDA",
+          "normalizedValue": 3650000,
+          "period": "FY2025",
+          "confidence": 0.95
+        },
+        {
+          "metric": "Normalized EBITDA margin",
+          "normalizedValue": 19.7,
+          "period": "FY2025",
+          "confidence": 0.95
+        },
+        {
+          "metric": "Five-year revenue CAGR",
+          "normalizedValue": 11.9,
+          "period": "FY2021-FY2025",
+          "confidence": 0.95
+        },
+        {
+          "metric": "Imputed transaction multiple",
+          "normalizedValue": 5.07,
+          "period": "FY2025",
+          "confidence": 0.95
+        },
+        {
+          "metric": "Gross revenue",
+          "normalizedValue": 11800000,
+          "period": "FY2021",
+          "confidence": 0.95
+        },
+        {
+          "metric": "Gross revenue",
+          "normalizedValue": 12900000,
+          "period": "FY2022",
+          "confidence": 0.95
+        },
+        {
+          "metric": "Gross revenue",
+          "normalizedValue": 14200000,
+          "period": "FY2023",
+          "confidence": 0.95
+        },
+        {
+          "metric": "Gross revenue",
+          "normalizedValue": 16100000,
+          "period": "FY2024",
+          "confidence": 0.95
+        },
+        {
+          "metric": "Gross revenue",
+          "normalizedValue": 18500000,
+          "period": "FY2025",
+          "confidence": 0.95
+        },
+        {
+          "metric": "Gross profit",
+          "normalizedValue": 5664000,
+          "period": "FY2021",
+          "confidence": 0.95
+        },
+        {
+          "metric": "Gross profit",
+          "normalizedValue": 6192000,
+          "period": "FY2022",
+          "confidence": 0.95
+        },
+        {
+          "metric": "Gross profit",
+          "normalizedValue": 6816000,
+          "period": "FY2023",
+          "confidence": 0.95
+        },
+        {
+          "metric": "Gross profit",
+          "normalizedValue": 7728000,
+          "period": "FY2024",
+          "confidence": 0.95
+        },
+        {
+          "metric": "Gross profit",
+          "normalizedValue": 8880000,
+          "period": "FY2025",
+          "confidence": 0.95
+        },
+        {
+          "metric": "Gross margin",
+          "normalizedValue": 48,
+          "period": "FY2021",
+          "confidence": 0.95
+        },
+        {
+          "metric": "Gross margin",
+          "normalizedValue": 48,
+          "period": "FY2022",
+          "confidence": 0.95
+        },
+        {
+          "metric": "Gross margin",
+          "normalizedValue": 48,
+          "period": "FY2023",
+          "confidence": 0.95
+        },
+        {
+          "metric": "Gross margin",
+          "normalizedValue": 48,
+          "period": "FY2024",
+          "confidence": 0.95
+        },
+        {
+          "metric": "Gross margin",
+          "normalizedValue": 48,
+          "period": "FY2025",
+          "confidence": 0.95
+        },
+        {
+          "metric": "Audited EBITDA",
+          "normalizedValue": 2242000,
+          "period": "FY2021",
+          "confidence": 0.95
+        },
+        {
+          "metric": "Audited EBITDA",
+          "normalizedValue": 2515000,
+          "period": "FY2022",
+          "confidence": 0.95
+        },
+        {
+          "metric": "Audited EBITDA",
+          "normalizedValue": 2803000,
+          "period": "FY2023",
+          "confidence": 0.95
+        },
+        {
+          "metric": "Audited EBITDA",
+          "normalizedValue": 3179000,
+          "period": "FY2024",
+          "confidence": 0.95
+        },
+        {
+          "metric": "Audited EBITDA",
+          "normalizedValue": 3650000,
+          "period": "FY2025",
+          "confidence": 0.95
+        },
+        {
+          "metric": "EBITDA margin",
+          "normalizedValue": 19,
+          "period": "FY2021",
+          "confidence": 0.95
+        },
+        {
+          "metric": "EBITDA margin",
+          "normalizedValue": 19.5,
+          "period": "FY2022",
+          "confidence": 0.95
+        },
+        {
+          "metric": "EBITDA margin",
+          "normalizedValue": 19.7,
+          "period": "FY2023",
+          "confidence": 0.95
+        },
+        {
+          "metric": "EBITDA margin",
+          "normalizedValue": 19.7,
+          "period": "FY2024",
+          "confidence": 0.95
+        },
+        {
+          "metric": "EBITDA margin",
+          "normalizedValue": 19.7,
+          "period": "FY2025",
+          "confidence": 0.95
+        }
+      ],
+      "redFlags": [],
+      "yellowFlags": [
+        "This source is a CIM and asserts that financial records are audited annually and that there have been five consecutive clean, unqualified GAAP audits, but the underlying audit reports and financial statements are not included in this document."
+      ],
+      "valuation": {
+        "base_estimate": 0
+      },
+      "employeeEvidence": {
+        "count": null
+      },
+      "mathCheckStatus": "passed",
+      "inputTokens": 749,
+      "outputTokens": 4456,
+      "totalTokens": 5205,
+      "costUsd": 0.055,
+      "requestId": "1a8664cf-4bd8-459f-84ac-e95a54cc29d3",
+      "processedAt": "2026-08-31T19:33:18.342Z"
+    },
+    {
+      "fileName": "Atlantic_Beverage_Founder_CFO_Interview.mp3",
+      "fileType": "audio/mpeg",
+      "status": "completed",
+      "modelUsed": "OpenAI 5.6 Terra",
+      "detectedDocumentType": "OTHER",
+      "detectedDocumentTypes": [
+        "OTHER"
+      ],
+      "trafficLight": "YELLOW",
+      "riskLevel": "LOW",
+      "financialFacts": [
+        {
+          "metric": "Revenue",
+          "normalizedValue": 18500000,
+          "period": "Fiscal 2025",
+          "confidence": 0.82
+        },
+        {
+          "metric": "Plan attainment",
+          "normalizedValue": 99,
+          "period": "Fiscal 2025",
+          "confidence": 0.78
+        },
+        {
+          "metric": "Gross profit",
+          "normalizedValue": 8880000,
+          "period": "Fiscal 2025",
+          "confidence": 0.82
+        },
+        {
+          "metric": "Gross margin",
+          "normalizedValue": 48,
+          "period": "Fiscal 2025",
+          "confidence": 0.8
+        },
+        {
+          "metric": "Reported EBITDA",
+          "normalizedValue": 3650000,
+          "period": "Fiscal 2025",
+          "confidence": 0.82
+        },
+        {
+          "metric": "Adjusted EBITDA",
+          "normalizedValue": 3650000,
+          "period": "Fiscal 2025",
+          "confidence": 0.82
+        },
+        {
+          "metric": "Founder/CFO salary",
+          "normalizedValue": 240000,
+          "confidence": 0.78
+        },
+        {
+          "metric": "Asking price",
+          "normalizedValue": 18500000,
+          "confidence": 0.86
+        },
+        {
+          "metric": "Stated asking-price-to-EBITDA multiple",
+          "normalizedValue": 5.07,
+          "confidence": 0.78
+        },
+        {
+          "metric": "Line two rebuild capital expenditure",
+          "normalizedValue": 800000,
+          "period": "2024",
+          "confidence": 0.76
+        },
+        {
+          "metric": "Largest customer revenue concentration",
+          "normalizedValue": 14,
+          "confidence": 0.8
+        },
+        {
+          "metric": "Top-five customer revenue concentration",
+          "normalizedValue": 40,
+          "confidence": 0.8
+        },
+        {
+          "metric": "Employee headcount",
+          "normalizedValue": 41,
+          "confidence": 0.76
+        }
+      ],
+      "redFlags": [],
+      "yellowFlags": [
+        "The reported financial results and adjusted EBITDA were provided verbally during a management interview and are not accompanied by underlying financial statements, tax returns, or an adjustment bridge in this document. The interviewer stated that follow-up would occur after tying the figures to tax returns.",
+        "Customer concentration is present: management stated the largest account represents about 14% of revenue and the top five customers are under 40% of revenue. No customer-level revenue schedule is included in this interview."
+      ],
+      "valuation": {
+        "base_estimate": 0
+      },
+      "employeeEvidence": {
+        "count": null
+      },
+      "mathCheckStatus": "passed",
+      "inputTokens": 602,
+      "outputTokens": 2714,
+      "totalTokens": 3316,
+      "costUsd": 0.0338,
+      "requestId": "a6b72d21-9d99-4cba-a86a-58b5205d7434",
+      "processedAt": "2026-08-31T19:33:17.798Z"
+    },
+    {
+      "fileName": "Atlantic_Beverage_Management_Presentation.pptx",
+      "fileType": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      "status": "completed",
+      "modelUsed": "OpenAI 5.6 Terra",
+      "detectedDocumentType": "DECK_OR_CIM",
+      "detectedDocumentTypes": [
+        "DECK_OR_CIM"
+      ],
+      "trafficLight": "YELLOW",
+      "riskLevel": "MEDIUM",
+      "financialFacts": [
+        {
+          "metric": "Revenue",
+          "normalizedValue": 11800000,
+          "period": "2021",
+          "confidence": 0.95
+        },
+        {
+          "metric": "Revenue",
+          "normalizedValue": 18500000,
+          "period": "2025",
+          "confidence": 0.95
+        },
+        {
+          "metric": "Audited EBITDA",
+          "normalizedValue": 3650000,
+          "period": "Not stated",
+          "confidence": 0.9
+        },
+        {
+          "metric": "Normalized EBITDA",
+          "normalizedValue": 3650000,
+          "period": "Not stated",
+          "confidence": 0.9
+        },
+        {
+          "metric": "Revenue CAGR",
+          "normalizedValue": 11.9,
+          "period": "5-year period",
+          "confidence": 0.88
+        },
+        {
+          "metric": "Gross margin",
+          "normalizedValue": 48,
+          "period": "5-year period",
+          "confidence": 0.88
+        },
+        {
+          "metric": "Normalized EBITDA margin",
+          "normalizedValue": 19.7,
+          "period": "Not stated",
+          "confidence": 0.9
+        },
+        {
+          "metric": "Cash",
+          "normalizedValue": 1450000,
+          "period": "Not stated",
+          "confidence": 0.9
+        },
+        {
+          "metric": "Days sales outstanding",
+          "normalizedValue": 27.9,
+          "period": "Not stated",
+          "confidence": 0.88
+        }
+      ],
+      "redFlags": [],
+      "yellowFlags": [
+        "The presentation contains management-stated financial metrics, including revenue, audited EBITDA, normalized EBITDA, cash, leverage, gross margin, and free-cash-flow conversion, but does not include underlying financial statements, EBITDA reconciliation, debt schedule, or cash-flow support within the supplied document.",
+        "The expansion roadmap contains forward-looking opportunity statements, including capacity to absorb $10M+ of additional volume and geographic expansion plans; these statements are not presented as realized financial results."
+      ],
+      "valuation": {
+        "base_estimate": 0
+      },
+      "employeeEvidence": {
+        "count": null
+      },
+      "mathCheckStatus": "passed",
+      "inputTokens": 461,
+      "outputTokens": 2307,
+      "totalTokens": 2768,
+      "costUsd": 0.0286,
+      "requestId": "3c495dbb-78a8-40b2-9846-127875ba478c",
+      "processedAt": "2026-08-31T19:33:15.802Z"
     }
   ]
 }

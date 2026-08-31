@@ -12,6 +12,9 @@ import {
     vanguardMedicalGroundTruth,
     apexPrecisionGroundTruth,
     terranovaEnvironmentalGroundTruth,
+    atlanticBeverageGroundTruth,
+    vanguardAerospaceGroundTruth,
+    terraCleanWasteGroundTruth,
 } from './packet_deal_benchmarks'
 
 export {
@@ -28,6 +31,9 @@ export {
     vanguardMedicalGroundTruth,
     apexPrecisionGroundTruth,
     terranovaEnvironmentalGroundTruth,
+    atlanticBeverageGroundTruth,
+    vanguardAerospaceGroundTruth,
+    terraCleanWasteGroundTruth,
 }
 
 export const benchmarkGroundTruthSyntheses: ProjectSynthesisItem[] = [
@@ -43,5 +49,8 @@ export const benchmarkGroundTruthSyntheses: ProjectSynthesisItem[] = [
     vanguardMedicalGroundTruth,
     apexPrecisionGroundTruth,
     terranovaEnvironmentalGroundTruth,
+    atlanticBeverageGroundTruth,
+    vanguardAerospaceGroundTruth,
+    terraCleanWasteGroundTruth,
     ...mmlMandaBenchmarkSyntheses,
 ]

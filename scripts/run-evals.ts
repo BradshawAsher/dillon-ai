@@ -1,5 +1,6 @@
 import * as fs from 'fs'
 import * as path from 'path'
+import { execFileSync } from 'child_process'
 import { fileURLToPath } from 'url'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -25,6 +26,15 @@ type ActualRunFile = {
 type DocEvalResult = DocScore & {
     fileName: string
     business: string
+    projectId: string
+    projectKey: string
+    modelUsed: string
+    inputTokens?: number
+    outputTokens?: number
+    totalTokens?: number
+    costUsd?: number
+    requestId?: string
+    processedAt?: string
 }
 
 export function runEvalSuite() {
@@ -86,7 +96,15 @@ export function runEvalSuite() {
             evalResults.push({
                 fileName: actualDoc.fileName,
                 business: gtData.business,
+                projectId: runData.projectId || projectKey,
+                projectKey: runData.projectId || projectKey,
                 modelUsed: (rawDoc as any).modelUsed || 'Gemini 3.1 Flash Lite',
+                ...((rawDoc as any).inputTokens !== undefined ? { inputTokens: Number((rawDoc as any).inputTokens) } : {}),
+                ...((rawDoc as any).outputTokens !== undefined ? { outputTokens: Number((rawDoc as any).outputTokens) } : {}),
+                ...((rawDoc as any).totalTokens !== undefined ? { totalTokens: Number((rawDoc as any).totalTokens) } : {}),
+                ...((rawDoc as any).costUsd !== undefined ? { costUsd: Number((rawDoc as any).costUsd) } : {}),
+                ...((rawDoc as any).requestId ? { requestId: String((rawDoc as any).requestId) } : {}),
+                ...((rawDoc as any).processedAt ? { processedAt: String((rawDoc as any).processedAt) } : {}),
                 ...score,
             })
         }
@@ -167,7 +185,7 @@ export function runEvalSuite() {
     try {
         const publishScript = path.join(rootDir, 'scripts', 'publish-eval-run-to-supabase.js')
         if (fs.existsSync(publishScript)) {
-            require('child_process').execSync(`node "${publishScript}"`, { stdio: 'inherit' })
+            execFileSync(process.execPath, [publishScript], { stdio: 'inherit' })
         }
     } catch (err: any) {
         console.warn('Notice: Could not auto-publish to Supabase public.eval_runs:', err.message)

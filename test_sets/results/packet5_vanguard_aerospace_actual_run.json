@@ -1,146 +1,504 @@
 {
   "business": "Vanguard Precision Aerospace Machining (Defense Tooling & CNC)",
-  "projectId": "project-vanguard-aerospace-renegotiate",
-  "evaluatedAt": "2026-08-30T13:00:00.000Z",
+  "projectId": "project-20260831-a60a1a10",
+  "evaluatedAt": "2026-08-31T19:44:52.118Z",
   "documents": [
     {
-      "fileName": "Vanguard_Aerospace_Monthly_PnL_AddBack_Ledger.xlsx",
+      "fileName": "Vanguard_Aerospace_CFO_Clarification_Call.mp3",
+      "fileType": "audio/mpeg",
       "status": "completed",
       "modelUsed": "OpenAI 5.6 Terra",
-      "detectedDocumentType": "Profit and Loss Statement",
-      "trafficLight": "YELLOW",
-      "riskLevel": "ELEVATED",
+      "detectedDocumentType": "OTHER",
+      "detectedDocumentTypes": [
+        "OTHER"
+      ],
+      "trafficLight": "RED",
+      "riskLevel": "HIGH",
       "financialFacts": [
         {
-          "metric": "revenue",
+          "metric": "Revenue",
           "normalizedValue": 14200000,
-          "period": "TTM",
-          "confidence": 1.0
+          "period": "Trailing 12-month",
+          "confidence": 0.99
         },
         {
-          "metric": "ebitda",
-          "normalizedValue": 2150000,
-          "period": "TTM",
-          "confidence": 1.0
+          "metric": "Adjusted EBITDA",
+          "normalizedValue": 3100000,
+          "confidence": 0.98
         },
         {
-          "metric": "adjusted_ebitda",
+          "metric": "EBITDA",
           "normalizedValue": 2150000,
-          "period": "TTM",
-          "confidence": 1.0
+          "confidence": 0.98
+        },
+        {
+          "metric": "EBITDA adjustment gap",
+          "normalizedValue": 950000,
+          "confidence": 0.98
+        },
+        {
+          "metric": "Personal and family-related add-backs",
+          "normalizedValue": 450000,
+          "confidence": 0.96
+        },
+        {
+          "metric": "Deferred CNC spindle work",
+          "normalizedValue": 480000,
+          "confidence": 0.96
+        },
+        {
+          "metric": "Deferred CNC spindle work",
+          "normalizedValue": 800000,
+          "confidence": 0.96
+        },
+        {
+          "metric": "Top customer revenue concentration",
+          "normalizedValue": 38.5,
+          "confidence": 0.98
+        },
+        {
+          "metric": "Top customer revenue",
+          "normalizedValue": 5470000,
+          "confidence": 0.98
+        },
+        {
+          "metric": "Top customer price reduction demand",
+          "normalizedValue": 15,
+          "confidence": 0.98
+        },
+        {
+          "metric": "Stated valuation range",
+          "normalizedValue": 9200000,
+          "confidence": 0.9
+        },
+        {
+          "metric": "Stated valuation range",
+          "normalizedValue": 10500000,
+          "confidence": 0.9
         }
       ],
-      "redFlags": [],
-      "yellowFlags": [
-        "Seller claimed EBITDA of $3.10M overstates true audited EBITDA of $2.15M by $950k (30.6% gap)",
-        "$450k in disallowed personal family expenses (luxury vehicles, personal travel, unearned wages)",
-        "$800k in deferred CNC machinery maintenance required"
+      "redFlags": [
+        "Reported adjusted EBITDA of $3,100,000 in the CIM and teaser exceeds the $2,150,000 EBITDA supported by the audited ledger by $950,000. The CFO confirmed that the difference is the add-back stack.",
+        "Approximately $450,000 of the $950,000 add-back stack was described as personal luxury vehicle leases, family travel, and payroll for two family members with unclear day-to-day duties. The CFO stated that the vehicles were not used operationally.",
+        "The top customer accounted for 38.5% of revenue, or $5,470,000. The CFO confirmed that its long-term agreement expires April 30, will go to competitive bid, and includes a stated 15% price-reduction demand.",
+        "Deferred spindle work across the CNC fleet was estimated at $480,000 to $800,000, and the CFO stated that spindle rebuilds had been deferred for two years to protect cash."
       ],
+      "yellowFlags": [],
       "valuation": {
-        "base_estimate": 9800000
+        "base_estimate": 0
       },
-      "mathCheckStatus": "passed"
-    },
-    {
-      "fileName": "Vanguard_Aerospace_Customer_Concentration_AR.xlsx",
-      "status": "completed",
-      "modelUsed": "OpenAI 5.6 Terra",
-      "detectedDocumentType": "Customer Concentration",
-      "trafficLight": "YELLOW",
-      "riskLevel": "ELEVATED",
-      "financialFacts": [
-        {
-          "metric": "revenue",
-          "normalizedValue": 14200000,
-          "period": "FY2025",
-          "confidence": 1.0
-        }
-      ],
-      "redFlags": [],
-      "yellowFlags": [
-        "Extreme customer concentration: Top customer accounts for 38.5% of revenue ($5.47M)",
-        "Top customer contract expires in 4 months (April 2026) and is subject to 15% rate cut RFP"
-      ],
-      "mathCheckStatus": "passed"
+      "employeeEvidence": {
+        "count": null
+      },
+      "mathCheckStatus": "passed",
+      "inputTokens": 568,
+      "outputTokens": 2677,
+      "totalTokens": 3245,
+      "costUsd": 0.0333,
+      "requestId": "b52d1f95-c6de-4382-a7a0-5541298877c6",
+      "processedAt": "2026-08-31T19:26:32.743Z"
     },
     {
       "fileName": "Vanguard_Aerospace_CIM_Executive_Overview.pdf",
+      "fileType": "application/pdf",
       "status": "completed",
       "modelUsed": "OpenAI 5.6 Terra",
-      "detectedDocumentType": "Confidential Information Memorandum (CIM)",
-      "trafficLight": "YELLOW",
-      "riskLevel": "ELEVATED",
+      "detectedDocumentType": "DECK_OR_CIM",
+      "detectedDocumentTypes": [
+        "DECK_OR_CIM"
+      ],
+      "trafficLight": "RED",
+      "riskLevel": "HIGH",
       "financialFacts": [
         {
-          "metric": "revenue",
+          "metric": "Seller asking price",
           "normalizedValue": 14200000,
-          "period": "TTM",
-          "confidence": 1.0
+          "confidence": 0.93
+        },
+        {
+          "metric": "Seller claimed EBITDA",
+          "normalizedValue": 3100000,
+          "confidence": 0.86
+        },
+        {
+          "metric": "Audited normalized EBITDA",
+          "normalizedValue": 2150000,
+          "confidence": 0.9
+        },
+        {
+          "metric": "Audited normalized EBITDA deficit percentage",
+          "normalizedValue": -30.6,
+          "confidence": 0.84
+        },
+        {
+          "metric": "Top customer concentration",
+          "normalizedValue": 38.5,
+          "confidence": 0.9
+        },
+        {
+          "metric": "Deferred machinery backlog",
+          "normalizedValue": 800000,
+          "confidence": 0.9
+        },
+        {
+          "metric": "Personal add-backs disallowed annually",
+          "normalizedValue": 450000,
+          "confidence": 0.9
+        },
+        {
+          "metric": "Valuation impact of personal add-back disallowances",
+          "normalizedValue": -2070000,
+          "confidence": 0.9
+        },
+        {
+          "metric": "Replacement GM and wage adjustments",
+          "normalizedValue": -920000,
+          "confidence": 0.88
+        },
+        {
+          "metric": "Deferred maintenance valuation deduction",
+          "normalizedValue": -800000,
+          "confidence": 0.9
+        },
+        {
+          "metric": "Customer concentration valuation discount",
+          "normalizedValue": -610000,
+          "confidence": 0.9
+        },
+        {
+          "metric": "Final target transaction price",
+          "normalizedValue": 9800000,
+          "confidence": 0.88
+        },
+        {
+          "metric": "Total valuation reduction from seller asking price",
+          "normalizedValue": -4400000,
+          "confidence": 0.88
         }
       ],
-      "redFlags": [],
-      "yellowFlags": [
-        "Seller asking price of $14.2M must be renegotiated to $9.8M target"
+      "redFlags": [
+        "The document states that $450,000 per year of personal luxury vehicles, family vacations, and unearned family salaries are disallowed add-backs. The valuation waterfall attributes a negative $2,070,000 valuation impact to these disallowances.",
+        "Customer concentration is stated at 38.5% for Fabrikam Aerostructures. The document states that this top-customer contract expires in four months and is subject to a mandatory 15% rate-cut RFP, with a stated $610,000 customer-concentration valuation discount.",
+        "The document identifies $800,000 of deferred machinery maintenance and states that eight Haas 5-axis mills require immediate spindle and guideway rebuilds.",
+        "The reported audited normalized EBITDA of $2.15 million is $950,000 below the seller-claimed EBITDA of $3.1 million; the document labels the seller-claimed EBITDA as unreliable and displays a -30.6% deficit for audited normalized EBITDA."
       ],
+      "yellowFlags": [],
       "valuation": {
         "base_estimate": 9800000
       },
-      "mathCheckStatus": "passed"
+      "employeeEvidence": {
+        "count": null
+      },
+      "mathCheckStatus": "passed",
+      "inputTokens": 557,
+      "outputTokens": 3250,
+      "totalTokens": 3807,
+      "costUsd": 0.0401,
+      "requestId": "9c29172c-a471-499f-b2a2-39ca31d89de7",
+      "processedAt": "2026-08-31T19:26:39.967Z"
+    },
+    {
+      "fileName": "Vanguard_Aerospace_Customer_Concentration_AR.xlsx",
+      "fileType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "status": "completed",
+      "modelUsed": "OpenAI 5.6 Terra",
+      "detectedDocumentType": "OPERATIONAL_REPORT",
+      "detectedDocumentTypes": [
+        "OPERATIONAL_REPORT"
+      ],
+      "trafficLight": "RED",
+      "riskLevel": "HIGH",
+      "financialFacts": [
+        {
+          "metric": "Fabrikam Aerostructures FY2025 revenue",
+          "normalizedValue": 5467000,
+          "period": "FY2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Fabrikam Aerostructures FY2025 revenue share",
+          "normalizedValue": 0.385,
+          "period": "FY2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Adatum Guidance Systems FY2025 revenue",
+          "normalizedValue": 2556000,
+          "period": "FY2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Adatum Guidance Systems FY2025 revenue share",
+          "normalizedValue": 0.18,
+          "period": "FY2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Contoso Land Systems FY2025 revenue",
+          "normalizedValue": 1846000,
+          "period": "FY2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Contoso Land Systems FY2025 revenue share",
+          "normalizedValue": 0.13,
+          "period": "FY2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Proseware Precision Tooling FY2025 revenue",
+          "normalizedValue": 1420000,
+          "period": "FY2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Proseware Precision Tooling FY2025 revenue share",
+          "normalizedValue": 0.1,
+          "period": "FY2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Tailspin Defense Group FY2025 revenue",
+          "normalizedValue": 1136000,
+          "period": "FY2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Tailspin Defense Group FY2025 revenue share",
+          "normalizedValue": 0.08,
+          "period": "FY2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Commercial Machine Accounts FY2025 revenue",
+          "normalizedValue": 1775000,
+          "period": "FY2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Commercial Machine Accounts FY2025 revenue share",
+          "normalizedValue": 0.125,
+          "period": "FY2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Total consolidated revenue",
+          "normalizedValue": 14200000,
+          "period": "FY2025",
+          "confidence": 0.99
+        },
+        {
+          "metric": "Total consolidated revenue share",
+          "normalizedValue": 1,
+          "period": "FY2025",
+          "confidence": 0.99
+        }
+      ],
+      "redFlags": [
+        "High customer concentration is explicitly identified: Fabrikam Aerostructures represents 38.5% of FY2025 revenue, and the total row states \"HIGH CONCENTRATION VULNERABILITY.\"",
+        "The largest customer, Fabrikam Aerostructures, has a stated critical re-compete risk: \"15% Rate Cut RFP Notice Issued,\" and its contract expiration is listed as April 30, 2026."
+      ],
+      "yellowFlags": [
+        "The second-largest listed customer, Adatum Guidance Systems, represents 18.0% of FY2025 revenue and is described as having \"Moderate: Active delivery schedule\" re-compete risk.",
+        "Tailspin Defense Group represents 8.0% of FY2025 revenue and is classified with \"Moderate\" re-compete risk; its contract expiration is listed as October 31, 2026."
+      ],
+      "valuation": {
+        "base_estimate": 0
+      },
+      "employeeEvidence": {
+        "count": null
+      },
+      "mathCheckStatus": "passed",
+      "inputTokens": 243,
+      "outputTokens": 2786,
+      "totalTokens": 3029,
+      "costUsd": 0.0339,
+      "requestId": "63881535-e9e5-4513-9685-914718f37d49",
+      "processedAt": "2026-08-31T19:26:25.097Z"
     },
     {
       "fileName": "Vanguard_Aerospace_Machinery_Fleet_Inspection.docx",
+      "fileType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       "status": "completed",
       "modelUsed": "OpenAI 5.6 Terra",
-      "detectedDocumentType": "Operating Metrics",
-      "trafficLight": "YELLOW",
-      "riskLevel": "ELEVATED",
-      "financialFacts": [],
-      "redFlags": [],
-      "yellowFlags": [
-        "$480k-$800k in immediate deferred CNC spindle repair required"
+      "detectedDocumentType": "OPERATIONAL_REPORT",
+      "detectedDocumentTypes": [
+        "OPERATIONAL_REPORT"
       ],
-      "mathCheckStatus": "passed"
+      "trafficLight": "RED",
+      "riskLevel": "HIGH",
+      "financialFacts": [
+        {
+          "metric": "Estimated fleet remediation cost — lower bound",
+          "normalizedValue": 600000,
+          "period": "January 14-16, 2026",
+          "confidence": 0.98
+        },
+        {
+          "metric": "Estimated fleet remediation cost — upper bound",
+          "normalizedValue": 800000,
+          "period": "January 14-16, 2026",
+          "confidence": 0.98
+        }
+      ],
+      "redFlags": [
+        "Eight Haas 5-axis vertical machining centers (CNC-01 through CNC-08; vintage 2012-2014) reportedly have severe spindle-bearing degradation, with total indicated runout of 0.0009-0.0011 inches versus the report's stated AS9100D maximum tolerance of 0.0002 inches.",
+        "The report estimates $600,000 to $800,000 in total fleet remediation cost for replacement spindles, ball screws, and optical-scale calibration.",
+        "Two Makino A61 horizontal machining centers reportedly require full hydraulic-power-unit rebuilds and way-cover replacements because of chronic high-pressure coolant ingress."
+      ],
+      "yellowFlags": [],
+      "valuation": {
+        "base_estimate": 0
+      },
+      "employeeEvidence": {
+        "count": null
+      },
+      "mathCheckStatus": "passed",
+      "inputTokens": 366,
+      "outputTokens": 1429,
+      "totalTokens": 1795,
+      "costUsd": 0.0179,
+      "requestId": "4f5fa5db-1a62-4954-88fc-4b4388913800",
+      "processedAt": "2026-08-31T19:26:38.343Z"
+    },
+    {
+      "fileName": "Vanguard_Aerospace_Monthly_PnL_AddBack_Ledger.xlsx",
+      "fileType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "status": "completed",
+      "modelUsed": "OpenAI 5.6 Terra",
+      "detectedDocumentType": "FINANCIAL_STATEMENT",
+      "detectedDocumentTypes": [
+        "FINANCIAL_STATEMENT",
+        "OPERATIONAL_REPORT"
+      ],
+      "trafficLight": "RED",
+      "riskLevel": "HIGH",
+      "financialFacts": [
+        {
+          "metric": "Precision Aerospace Machining Revenue",
+          "normalizedValue": 14200000,
+          "period": "FY2025",
+          "confidence": 0.96
+        },
+        {
+          "metric": "Seller Claimed Adjusted EBITDA",
+          "normalizedValue": 3100000,
+          "period": "FY2025",
+          "confidence": 0.96
+        },
+        {
+          "metric": "True Audited Normalized EBITDA",
+          "normalizedValue": 2150000,
+          "period": "FY2025",
+          "confidence": 0.96
+        },
+        {
+          "metric": "Seller Asking Price",
+          "normalizedValue": 14200000,
+          "period": "FY2025",
+          "confidence": 0.94
+        },
+        {
+          "metric": "Total Audit Price Reduction",
+          "normalizedValue": -4400000,
+          "period": "FY2025",
+          "confidence": 0.95
+        },
+        {
+          "metric": "Final Target Acquisition Price",
+          "normalizedValue": 9800000,
+          "period": "FY2025",
+          "confidence": 0.95
+        },
+        {
+          "metric": "Disallowed FY2025 Add-Back Amount",
+          "normalizedValue": 512000,
+          "period": "FY2025",
+          "confidence": 0.96
+        },
+        {
+          "metric": "Total FY2025 Add-Back Schedule",
+          "normalizedValue": 592000,
+          "period": "FY2025",
+          "confidence": 0.96
+        },
+        {
+          "metric": "Stated CNC CapEx Backlog Lower Bound",
+          "normalizedValue": 600000,
+          "period": "FY2025",
+          "confidence": 0.94
+        },
+        {
+          "metric": "Stated CNC CapEx Backlog Upper Bound",
+          "normalizedValue": 800000,
+          "period": "FY2025",
+          "confidence": 0.94
+        },
+        {
+          "metric": "Customer Concentration",
+          "normalizedValue": 38.5,
+          "period": "FY2025",
+          "confidence": 0.94
+        }
+      ],
+      "redFlags": [
+        "The document contains a material FY2025 inconsistency in seller add-back amounts: the five-year P&L reports $450,000 of seller-claimed discretionary add-backs for FY2025, while the itemized FY2025 add-back ledger reports a total add-back schedule of $592,000. The document does not explain the $142,000 difference.",
+        "The valuation waterfall identifies customer concentration risk: a single customer is stated to account for 38.5% and to be expiring in four months under RFP. The stated valuation impact is a $610,000 customer concentration risk discount.",
+        "The CNC machinery assessment states that 8 of 24 active CNC centers are out of specification and identifies a $600,000–$800,000 CapEx backlog. The valuation bridge separately includes an $800,000 CNC machinery deferred CapEx deduction.",
+        "The itemized FY2025 add-back audit ledger states that $512,000 of a $592,000 total add-back schedule was disallowed, including Porsche leases, family vacation flights, consulting salary to the owner's son, country-club memberships, and a personal home generator installation."
+      ],
+      "yellowFlags": [],
+      "valuation": {
+        "base_estimate": 9800000
+      },
+      "employeeEvidence": {
+        "count": null
+      },
+      "mathCheckStatus": "passed",
+      "inputTokens": 1221,
+      "outputTokens": 3209,
+      "totalTokens": 4430,
+      "costUsd": 0.041,
+      "requestId": "84651c92-03d7-463a-bc83-bfabc48af95d",
+      "processedAt": "2026-08-31T19:26:59.232Z"
     },
     {
       "fileName": "Vanguard_Aerospace_Top_Customer_Contract_Notice.eml",
+      "fileType": "message/rfc822",
       "status": "completed",
       "modelUsed": "OpenAI 5.6 Terra",
-      "detectedDocumentType": "Due Diligence Data Room Packet",
-      "trafficLight": "YELLOW",
-      "riskLevel": "ELEVATED",
-      "financialFacts": [],
-      "redFlags": [],
-      "yellowFlags": [
-        "Top customer (38.5%) demands 15% price cut on RFP re-compete"
+      "detectedDocumentType": "LEGAL_CONTRACT",
+      "detectedDocumentTypes": [
+        "LEGAL_CONTRACT"
       ],
-      "mathCheckStatus": "passed"
-    },
-    {
-      "fileName": "Vanguard_Aerospace_CFO_Clarification_Call.mp3",
-      "status": "completed",
-      "modelUsed": "OpenAI 5.6 Terra",
-      "detectedDocumentType": "Operating Metrics",
-      "trafficLight": "YELLOW",
-      "riskLevel": "ELEVATED",
+      "trafficLight": "RED",
+      "riskLevel": "HIGH",
       "financialFacts": [
         {
-          "metric": "revenue",
-          "normalizedValue": 14200000,
-          "period": "TTM",
-          "confidence": 1.0
-        },
-        {
-          "metric": "ebitda",
-          "normalizedValue": 2150000,
-          "period": "TTM",
-          "confidence": 1.0
+          "metric": "Required across-the-board unit cost reduction",
+          "normalizedValue": 15,
+          "confidence": 0.99
         }
       ],
-      "redFlags": [],
-      "yellowFlags": [
-        "CFO confirms personal luxury vehicle leases were included in seller add-backs"
+      "redFlags": [
+        "The customer states that failure to meet competitive bidding benchmarks may result in dual-sourcing or full reallocation of volume starting Q3 2026, creating a stated risk of material customer-volume loss.",
+        "Retention as primary supplier is conditioned on a revised pricing schedule with an across-the-board 15% unit cost reduction, which presents an explicit pricing and margin-pressure risk.",
+        "The existing long-term pricing agreement is stated to expire on April 30, 2026, and the related component package is being released to competitive RFP bidding among four certified suppliers."
       ],
-      "mathCheckStatus": "passed"
+      "yellowFlags": [],
+      "valuation": {
+        "base_estimate": 0
+      },
+      "employeeEvidence": {
+        "count": null
+      },
+      "mathCheckStatus": "passed",
+      "inputTokens": 180,
+      "outputTokens": 925,
+      "totalTokens": 1105,
+      "costUsd": 0.0115,
+      "requestId": "acf61776-2c5a-4061-b755-b769c73b3c4f",
+      "processedAt": "2026-08-31T19:26:36.833Z"
     }
   ]
 }

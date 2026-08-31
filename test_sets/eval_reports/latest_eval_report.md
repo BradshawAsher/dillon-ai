@@ -1,23 +1,23 @@
 # Eval Regression Report
 
-- **Generated:** 2026-08-30T23:08:57.738Z
+- **Generated:** 2026-08-31T19:49:19.201Z
 - **Overall:** 98% (78/78 docs passing) — SHIP-READY (PASS)
 - **Regression gate:** threshold 80% → ✅ PASS
-- **Dual-mode accuracy:** Pre-LOI Discovery 99% · Post-LOI Negotiation 98%
+- **Dual-mode accuracy:** Pre-LOI Discovery 99% · Post-LOI Negotiation 95%
 - **Ground-truth coverage:** 78/76 specs scored
 
 ## Category averages (% of max)
 
 | Dimension | Avg |
 | --- | --- |
-| classification | 98% |
-| facts | 98% |
-| risk | 99% |
+| classification | 97% |
+| facts | 97% |
+| risk | 98% |
 | valuation | 100% |
 | employee | 100% |
 | math | 99% |
-| recommendation (weakest) | 95% |
-| crossDocConflicts | 100% |
+| recommendation | 95% |
+| crossDocConflicts (weakest) | 94% |
 
 ## Cross-document conflicts
 
@@ -40,7 +40,7 @@
 | Quarry Ridge Plastics, Inc. (Injection Moulding & Contract Manufacturing) | 1 | 1 | 0 | 10/10 |
 | Apex Precision Dynamics, Inc. (Aerospace CNC Machining) | 1 | 1 | 0 | 10/10 |
 | TerraNova Environmental Hauling, LLC (Commercial Waste & Remediation) | 1 | 1 | 0 | 10/10 |
-| TerraClean Industrial Waste Solutions (Hazardous Waste Treatment) | 1 | 1 | 0 | 10/10 |
+| TerraClean Industrial Waste Solutions (Hazardous Waste Treatment) | 1 | 0 | 0 | 0/10 |
 
 **Cascadia Climate Services, Inc. (Commercial & Residential HVAC Services)** — detected contradictions:
 - `adjusted_ebitda` TTM: DD-001_Cascadia_Climate_Services__Inc__due_diligence_packet.pdf 1260400 vs DD-001_seller_adjusted_ebitda_bridge_exhibit.pdf 1590000 (21%, critical)
@@ -53,11 +53,6 @@
 
 **TerraNova Environmental Hauling, LLC (Commercial Waste & Remediation)** — detected contradictions:
 - `revenue` TTM: TerraNova_Environmental_Seller_Teaser_CIM.docx 14800000 vs TerraNova_Environmental_AR_Aging_Bad_Debt.xlsx 8200000 (45%, critical)
-
-**TerraClean Industrial Waste Solutions (Hazardous Waste Treatment)** — detected contradictions:
-- `revenue` 2025: TerraClean_Waste_Seller_CIM_Overview.pdf 22000000 vs TerraClean_Waste_General_Ledger_Bank_Mismatch.xlsx 11200000 (49%, critical)
-- `revenue` 2025: TerraClean_Waste_Seller_CIM_Overview.pdf 22000000 vs TerraClean_Waste_Form_1120_Federal_Tax_Audit.xlsx 11200000 (49%, critical)
-- `revenue` 2025: TerraClean_Waste_Seller_CIM_Overview.pdf 22000000 vs TerraClean_Waste_AR_Aging_Bad_Debt_Ledger.xlsx 11200000 (49%, critical)
 
 ## Per-document scores
 
@@ -116,26 +111,26 @@
 | TerraNova_Environmental_Tax_Form_1120_Audit.xlsx | 99% | PASS |
 | TerraNova_Environmental_AR_Aging_Bad_Debt.xlsx | 99% | PASS |
 | TerraNova_Environmental_Legal_Regulatory_Disclosures.docx | 99% | PASS |
-| Atlantic_Beverage_3Yr_Audited_Financial_Model.xlsx | 99% | PASS |
-| Atlantic_Beverage_Executive_CIM.pdf | 99% | PASS |
-| Atlantic_Beverage_Executed_LOI_Agreement.docx | 99% | PASS |
-| Atlantic_Beverage_Management_Presentation.pptx | 99% | PASS |
+| Atlantic_Beverage_3Yr_Audited_Financial_Model.xlsx | 97% | PASS |
+| Atlantic_Beverage_Bottling_Plant_Tour.mp4 | 98% | PASS |
 | Atlantic_Beverage_Broker_Due_Diligence_Thread.eml | 99% | PASS |
-| Atlantic_Beverage_Founder_CFO_Interview.mp3 | 99% | PASS |
-| Atlantic_Beverage_Bottling_Plant_Tour.mp4 | 99% | PASS |
-| Vanguard_Aerospace_Monthly_PnL_AddBack_Ledger.xlsx | 99% | PASS |
-| Vanguard_Aerospace_Customer_Concentration_AR.xlsx | 99% | PASS |
-| Vanguard_Aerospace_CIM_Executive_Overview.pdf | 99% | PASS |
-| Vanguard_Aerospace_Machinery_Fleet_Inspection.docx | 99% | PASS |
-| Vanguard_Aerospace_Top_Customer_Contract_Notice.eml | 99% | PASS |
+| Atlantic_Beverage_Executed_LOI_Agreement.docx | 97% | PASS |
+| Atlantic_Beverage_Executive_CIM.pdf | 97% | PASS |
+| Atlantic_Beverage_Founder_CFO_Interview.mp3 | 98% | PASS |
+| Atlantic_Beverage_Management_Presentation.pptx | 98% | PASS |
 | Vanguard_Aerospace_CFO_Clarification_Call.mp3 | 99% | PASS |
-| TerraClean_Waste_Seller_CIM_Overview.pdf | 99% | PASS |
-| TerraClean_Waste_General_Ledger_Bank_Mismatch.xlsx | 99% | PASS |
-| TerraClean_Waste_Form_1120_Federal_Tax_Audit.xlsx | 99% | PASS |
-| TerraClean_Waste_AR_Aging_Bad_Debt_Ledger.xlsx | 99% | PASS |
+| Vanguard_Aerospace_CIM_Executive_Overview.pdf | 97% | PASS |
+| Vanguard_Aerospace_Customer_Concentration_AR.xlsx | 97% | PASS |
+| Vanguard_Aerospace_Machinery_Fleet_Inspection.docx | 98% | PASS |
+| Vanguard_Aerospace_Monthly_PnL_AddBack_Ledger.xlsx | 97% | PASS |
+| Vanguard_Aerospace_Top_Customer_Contract_Notice.eml | 98% | PASS |
+| TerraClean_Waste_AR_Aging_Bad_Debt_Ledger.xlsx | 97% | PASS |
 | TerraClean_Waste_EPA_Superfund_Consent_Decree.docx | 99% | PASS |
-| TerraClean_Waste_Whistleblower_Internal_Email.eml | 99% | PASS |
 | TerraClean_Waste_Facility_Inspection_Site.mp4 | 99% | PASS |
+| TerraClean_Waste_Form_1120_Federal_Tax_Audit.xlsx | 97% | PASS |
+| TerraClean_Waste_General_Ledger_Bank_Mismatch.xlsx | 97% | PASS |
+| TerraClean_Waste_Seller_CIM_Overview.pdf | 97% | PASS |
+| TerraClean_Waste_Whistleblower_Internal_Email.eml | 99% | PASS |
 | WidgetCo - 1_P&L_Statement.xlsx | 99% | PASS |
 | WidgetCo - 3_Customer_Concentration.xlsx | 98% | PASS |
 | WidgetCo - 4_Fixed_Asset_Register.xlsx | 98% | PASS |

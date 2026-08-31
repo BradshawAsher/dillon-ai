@@ -1,11 +1,12 @@
 // Publishes the latest eval run to Supabase public.eval_runs so the dashboard
 // can chart pass-rate over time. Runs automatically at the end of npm run eval.
-const fs = require('fs')
-const path = require('path')
-const { execSync } = require('child_process')
+import fs from 'fs'
+import path from 'path'
+import { execFileSync } from 'child_process'
+import { fileURLToPath } from 'url'
 
-// Disable TLS rejection for local dev SSL proxy
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 /** Reads env from process.env first, falling back to frontend/.env if present.
  * Never throws when the .env file is missing (e.g. in CI). */
@@ -14,9 +15,15 @@ function loadEnv() {
   try {
     const envPath = path.join(__dirname, '..', 'frontend', '.env')
     if (fs.existsSync(envPath)) {
-      for (const line of fs.readFileSync(envPath, 'utf8').split('\n')) {
+      for (const line of fs.readFileSync(envPath, 'utf8').split(/\r?\n/)) {
         const match = line.match(/^\s*([\w_]+)\s*=\s*(.*)\s*$/)
-        if (match && !merged[match[1]]) merged[match[1]] = match[2].trim()
+        if (match && !merged[match[1]]) {
+          let value = match[2].trim()
+          if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+            value = value.slice(1, -1)
+          }
+          merged[match[1]] = value
+        }
       }
     }
   } catch {
@@ -28,7 +35,7 @@ function loadEnv() {
 /** Best-effort current commit SHA so each run is traceable to a deploy. */
 function currentCommitSha() {
   try {
-    return execSync('git rev-parse HEAD', { cwd: path.join(__dirname, '..') }).toString().trim()
+    return execFileSync('git', ['rev-parse', 'HEAD'], { cwd: path.join(__dirname, '..') }).toString().trim()
   } catch {
     return 'unknown'
   }
