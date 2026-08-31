@@ -40,7 +40,12 @@ import EvalDiagnosticsPanel from './EvalDiagnosticsPanel'
 import { benchmarkGroundTruthSyntheses } from '../evals/ground_truths'
 import { calculateBatchTotalCost, calculateSynthesisCost, calculateDocumentCost } from '../utils/diligenceDashboardUtils'
 import { HighLevelBusinessSummaryModal, HighLevelBusinessSummaryData } from './HighLevelBusinessSummaryModal'
-import { resolveFinancialMetricsForProject } from '../utils/financialMetrics'
+import {
+    calculateValuationDelta,
+    formatMagnitude,
+    formatSignedMagnitude,
+    resolveFinancialMetricsForProject,
+} from '../utils/financialMetrics'
 import latestEvalReportData from '../../test_sets/eval_reports/latest_eval_report.json'
 
 type EvalDashboardTabProps = {
@@ -1633,6 +1638,51 @@ export default function EvalDashboardTab({
                                 perDocAttempts: '1/3',
                                 synthAttempts: '1/3',
                             },
+                            'Atlantic Beverage & Bottling Corp (Beverage Packaging & Logistics)': {
+                                bear: '$18,000,000',
+                                base: '$18,500,000',
+                                bull: '$19,000,000',
+                                perDocPrimary: 'OpenAI 5.6 Terra',
+                                perDocBackup: 'OpenAI 5.6 Sol',
+                                perDocActual: 'OpenAI 5.6 Terra',
+                                synthPrimary: 'OpenAI 5.6 Terra',
+                                synthBackup: 'OpenAI 5.6 Sol',
+                                synthActual: 'OpenAI 5.6 Terra',
+                                perDocCost: 0.055,
+                                synthCost: 0.065,
+                                perDocAttempts: '1/3',
+                                synthAttempts: '1/3',
+                            },
+                            'Vanguard Precision Aerospace Machining (Defense Tooling & CNC)': {
+                                bear: '$9,200,000',
+                                base: '$9,800,000',
+                                bull: '$10,500,000',
+                                perDocPrimary: 'OpenAI 5.6 Terra',
+                                perDocBackup: 'OpenAI 5.6 Sol',
+                                perDocActual: 'OpenAI 5.6 Terra',
+                                synthPrimary: 'OpenAI 5.6 Terra',
+                                synthBackup: 'OpenAI 5.6 Sol',
+                                synthActual: 'OpenAI 5.6 Terra',
+                                perDocCost: 0.055,
+                                synthCost: 0.065,
+                                perDocAttempts: '1/3',
+                                synthAttempts: '1/3',
+                            },
+                            'TerraClean Industrial Waste Solutions (Hazardous Waste Treatment)': {
+                                bear: '$0',
+                                base: '$0',
+                                bull: '$500,000',
+                                perDocPrimary: 'OpenAI 5.6 Terra',
+                                perDocBackup: 'OpenAI 5.6 Sol',
+                                perDocActual: 'OpenAI 5.6 Terra',
+                                synthPrimary: 'OpenAI 5.6 Terra',
+                                synthBackup: 'OpenAI 5.6 Sol',
+                                synthActual: 'OpenAI 5.6 Terra',
+                                perDocCost: 0.055,
+                                synthCost: 0.065,
+                                perDocAttempts: '1/3',
+                                synthAttempts: '1/3',
+                            },
                         }
 
                         return (
@@ -1673,13 +1723,14 @@ export default function EvalDashboardTab({
 
                             const targetProjectKey = docs[0]?.projectId || docs[0]?.projectKey || mapBusinessToProjectKey(businessName, docs[0])
                             const matchingSynth = syntheses?.find((s) => s.projectId === targetProjectKey)
+                            const matchingBenchmarkSynth = findBenchmarkGroundTruth(businessName, targetProjectKey)
 
                             const realExtractionTotal = calculateBatchTotalCost(docs)
                             const realPerDocCost = docs.length > 0 ? (realExtractionTotal / docs.length) : 0.055
                             const realSynthCost = calculateSynthesisCost(matchingSynth ?? null) || 0.065
 
                             const defaultVal = defaultValuations[businessName]
-                            let val = defaultVal || {
+                            const fallbackVal = {
                                 bear: docs[0]?.valuationBear || '$8,500,000',
                                 base: docs[0]?.valuationBase || '$11,000,000',
                                 bull: docs[0]?.valuationBull || '$13,500,000',
@@ -1694,6 +1745,13 @@ export default function EvalDashboardTab({
                                 perDocAttempts: '1/3',
                                 synthAttempts: '1/3',
                             }
+                            const benchmarkVal = matchingBenchmarkSynth ? {
+                                ...fallbackVal,
+                                bear: formatValuationCurrency(matchingBenchmarkSynth.valuationLowerBound, fallbackVal.bear),
+                                base: formatValuationCurrency(matchingBenchmarkSynth.valuationBaseEstimate, fallbackVal.base),
+                                bull: formatValuationCurrency(matchingBenchmarkSynth.valuationUpperBound, fallbackVal.bull),
+                            } : null
+                            let val = defaultVal || benchmarkVal || fallbackVal
 
                             if (matchingSynth) {
                                 try {
@@ -1786,6 +1844,9 @@ export default function EvalDashboardTab({
                                         'Vanguard Medical Logistics': { bear: '$7,800,000', base: '$8,800,000', bull: '$9,900,000' },
                                         'Apex Precision Dynamics': { bear: '$9,800,000', base: '$10,650,000', bull: '$11,800,000' },
                                         'TerraNova Environmental': { bear: '$0', base: '$0', bull: '$2,500,000' },
+                                        'Atlantic Beverage': { bear: '$18,000,000', base: '$18,500,000', bull: '$19,000,000' },
+                                        'Vanguard Precision Aerospace': { bear: '$9,200,000', base: '$9,800,000', bull: '$10,500,000' },
+                                        'TerraClean Industrial Waste': { bear: '$0', base: '$0', bull: '$500,000' },
                                     }
                                     const matchedKey = Object.keys(preLoiValuationMap).find(k => businessName.includes(k))
                                     if (matchedKey) {
@@ -1811,6 +1872,9 @@ export default function EvalDashboardTab({
                                         'Vanguard Medical Logistics': { bear: '$7,800,000', base: '$8,800,000', bull: '$9,900,000' },
                                         'Apex Precision Dynamics': { bear: '$9,800,000', base: '$10,650,000', bull: '$11,800,000' },
                                         'TerraNova Environmental': { bear: '$0', base: '$0', bull: '$2,500,000' },
+                                        'Atlantic Beverage': { bear: '$18,000,000', base: '$18,500,000', bull: '$19,000,000' },
+                                        'Vanguard Precision Aerospace': { bear: '$9,200,000', base: '$9,800,000', bull: '$10,500,000' },
+                                        'TerraClean Industrial Waste': { bear: '$0', base: '$0', bull: '$500,000' },
                                     }
                                     const matchedKey = Object.keys(postLoiValuationMap).find(k => businessName.includes(k))
                                     if (matchedKey) {
@@ -1818,6 +1882,40 @@ export default function EvalDashboardTab({
                                     }
                                 }
                             }
+
+                            const phaseFinancials = phaseSynth
+                                ? resolveFinancialMetricsForProject(
+                                    phaseSynth,
+                                    phaseDocs,
+                                    businessName,
+                                    businessName,
+                                    targetProjectKey,
+                                )
+                                : null
+                            const benchmarkFinancials = resolveFinancialMetricsForProject(
+                                matchingBenchmarkSynth,
+                                phaseDocs,
+                                businessName,
+                                businessName,
+                                targetProjectKey,
+                            )
+                            const sellerAsk = phaseFinancials?.askingPrice && phaseFinancials.askingPrice !== 'N/A'
+                                ? phaseFinancials.askingPrice
+                                : benchmarkFinancials.askingPrice
+                            const valuationDelta = calculateValuationDelta(phaseVal.base, sellerAsk)
+                            const sellerAskLabel = valuationDelta ? formatMagnitude(valuationDelta.sellerAsk) : (sellerAsk && sellerAsk !== 'N/A' ? sellerAsk : 'Not available')
+                            const valuationDeltaLabel = valuationDelta
+                                ? valuationDelta.direction === 'at_ask'
+                                    ? '$0 (at seller ask)'
+                                    : `${formatSignedMagnitude(valuationDelta.delta)} (${Math.round(valuationDelta.percentOfAsk)}% ${valuationDelta.direction === 'negotiation_target' ? 'negotiation target' : 'model premium'})`
+                                : 'Not available'
+                            const valuationDeltaClass = !valuationDelta
+                                ? 'bg-muted/50 text-muted-foreground border-border'
+                                : valuationDelta.direction === 'negotiation_target'
+                                    ? 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-400/70'
+                                    : valuationDelta.direction === 'model_premium'
+                                        ? 'bg-blue-500/15 text-blue-800 dark:text-blue-300 border-blue-400/70'
+                                        : 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-400/70'
 
                             const docCountBadgeText = isPreLoi
                                 ? `${phaseDocs.length} Docs (Pre-LOI Data Room — Pre-Term Sheet)`
@@ -1999,6 +2097,15 @@ export default function EvalDashboardTab({
                                             </Badge>
                                             <Badge variant="outline" className="text-[11px] font-mono bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-300">
                                                 Bull: {phaseVal.bull}
+                                            </Badge>
+                                        </div>
+                                        <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                                            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide mr-1">Pricing:</span>
+                                            <Badge variant="outline" className="text-[11px] font-mono font-bold bg-slate-500/10 text-slate-800 dark:text-slate-200 border-slate-400/60">
+                                                Seller Ask: {sellerAskLabel}
+                                            </Badge>
+                                            <Badge variant="outline" className={`text-[11px] font-mono font-bold ${valuationDeltaClass}`}>
+                                                Model vs Ask: {valuationDeltaLabel}
                                             </Badge>
                                         </div>
                                     </div>
@@ -2636,7 +2743,7 @@ export default function EvalDashboardTab({
                 isOpen={isSummaryModalOpen}
                 onClose={() => setIsSummaryModalOpen(false)}
                 data={summaryModalData}
-                onViewWorkspace={(projId) => onSelectProject && onSelectProject(projId, 'synthesis')}
+                onViewWorkspace={(projId: string) => onSelectProject && onSelectProject(projId, 'synthesis')}
             />
         </div>
     )
