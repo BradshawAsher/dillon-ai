@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../li
 import CardInfoPopover from './common/CardInfoPopover'
 import { buildDocumentLinkedEvidence, type EvidenceItem } from '../utils/evidence'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
+import { severityForSourceGroup } from '../utils/materialImpactSeverity'
 
 type ImpactCategory = 'valuation' | 'cash_flow' | 'closing' | 'negotiation' | 'risk'
 
@@ -62,11 +63,7 @@ function classifyImpact(text: string, sourceGroup: string): ImpactCategory {
     return 'risk'
 }
 
-function getSeverity(sourceGroup: string): 'critical' | 'medium' | 'low' {
-    if (sourceGroup === 'red-flag' || sourceGroup === 'conflict') return 'critical'
-    if (sourceGroup === 'yellow-flag' || sourceGroup === 'missing-document' || sourceGroup === 'open-question') return 'medium'
-    return 'low'
-}
+const getSeverity = severityForSourceGroup
 
 export default function MaterialImpactView({ synthesis, onOpenEvidence, documents = [] }: { synthesis: ProjectSynthesisItem; onOpenEvidence?: (item: EvidenceItem) => void; documents?: SubmissionHistoryItem[] }) {
     const [selectedCategory, setSelectedCategory] = useState<ImpactCategory | 'all'>('all')
