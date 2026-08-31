@@ -6,6 +6,7 @@ import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
 import InPlaceEvidencePopover, { EvidenceDetails } from './InPlaceEvidencePopover'
+import { getEbitdaQualityGrade } from '../utils/ebitdaQualityGrade'
 
 type Props = {
     model: DealModel
@@ -21,14 +22,7 @@ type QualityDimension = {
     evidence: EvidenceDetails
 }
 
-function getGrade(totalScore: number, maxScore: number): { grade: string; color: string } {
-    if (maxScore <= 0) return { grade: 'N/A', color: 'text-muted-foreground' }
-    const pct = totalScore / maxScore
-    if (pct >= 0.8) return { grade: 'A', color: 'text-green-600' }
-    if (pct >= 0.6) return { grade: 'B', color: 'text-blue-600' }
-    if (pct >= 0.4) return { grade: 'C', color: 'text-amber-600' }
-    return { grade: 'D', color: 'text-red-600' }
-}
+const getGrade = getEbitdaQualityGrade
 
 function flagsContain(flags: string[], ...keywords: string[]): boolean {
     return flags.some((flag) => {
