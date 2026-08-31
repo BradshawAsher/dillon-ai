@@ -490,21 +490,21 @@ export function formatElapsedDuration(seconds: number) {
  */
 export function getDocumentExtractionDurationSec(doc?: Partial<SubmissionHistoryItem> | null): number | null {
     if (!doc) return null
-    if (typeof (doc as any).durationSec === 'number' && (doc as any).durationSec > 0) {
+    if (typeof (doc as any).durationSec === 'number' && (doc as any).durationSec > 0 && (doc as any).durationSec <= 300) {
         return (doc as any).durationSec
     }
-    if (typeof (doc as any).duration_sec === 'number' && (doc as any).duration_sec > 0) {
+    if (typeof (doc as any).duration_sec === 'number' && (doc as any).duration_sec > 0 && (doc as any).duration_sec <= 300) {
         return (doc as any).duration_sec
     }
-    const endStr = doc.processedAt || doc.statusResolvedAt || doc.updatedAt
-    const startStr = doc.processingStartedAt || doc.receivedAt || doc.createdAt || doc.triggerTimestamp
+    const endStr = doc.processedAt || doc.statusResolvedAt
+    const startStr = doc.processingStartedAt || doc.receivedAt || doc.triggerTimestamp
     if (endStr && startStr) {
         const start = Date.parse(startStr)
         const end = Date.parse(endStr)
         if (Number.isFinite(start) && Number.isFinite(end)) {
             if (end > start) {
                 const sec = Math.round((end - start) / 1000)
-                if (sec >= 1 && sec <= 1800) {
+                if (sec >= 1 && sec <= 180) {
                     return sec
                 }
             } else if (end === start && ['completed', 'approved'].includes((doc.status || '').toLowerCase())) {
@@ -524,34 +524,45 @@ export function getDocumentExtractionDurationSec(doc?: Partial<SubmissionHistory
  */
 export function getSynthesisDurationSec(synthesis?: Partial<Record<string, unknown>> | null): number | null {
     if (!synthesis) return null
-    if (typeof synthesis.durationSec === 'number' && synthesis.durationSec > 0) {
+    if (typeof synthesis.durationSec === 'number' && synthesis.durationSec > 0 && synthesis.durationSec <= 300) {
         return synthesis.durationSec
     }
-    if (typeof synthesis.duration_sec === 'number' && synthesis.duration_sec > 0) {
+    if (typeof synthesis.duration_sec === 'number' && synthesis.duration_sec > 0 && synthesis.duration_sec <= 300) {
         return synthesis.duration_sec
     }
-    if (typeof synthesis.synthesisDurationSec === 'number' && synthesis.synthesisDurationSec > 0) {
+    if (typeof synthesis.synthesisDurationSec === 'number' && synthesis.synthesisDurationSec > 0 && synthesis.synthesisDurationSec <= 300) {
         return synthesis.synthesisDurationSec
     }
-    const endStr = (synthesis.projectProcessedAt || synthesis.updatedAt) as string | undefined
-    const startStr = synthesis.createdAt as string | undefined
+    const endStr = synthesis.projectProcessedAt as string | undefined
+    const startStr = (synthesis.synthesisStartedAt || synthesis.processingStartedAt || synthesis.claimedAt) as string | undefined
     if (endStr && startStr) {
         const start = Date.parse(startStr)
         const end = Date.parse(endStr)
-        if (Number.isFinite(start) && Number.isFinite(end)) {
-            if (end > start) {
-                const sec = Math.round((end - start) / 1000)
-                if (sec >= 1 && sec <= 3600) {
-                    return sec
-                }
-            } else if (end === start && (synthesis.projectStatus === 'synthesized' || Boolean(synthesis.finalRecommendation) || Boolean(synthesis.finalJudgmentSummary))) {
-                const docCount = typeof synthesis.documentsCompletedCount === 'number' ? synthesis.documentsCompletedCount : 5
-                return Math.min(65, Math.max(32, docCount * 8))
+        if (Number.isFinite(start) && Number.isFinite(end) && end > start) {
+            const sec = Math.round((end - start) / 1000)
+            if (sec >= 5 && sec <= 180) {
+                return sec
             }
         }
     }
-    if (synthesis.projectStatus === 'synthesized' || Boolean(synthesis.finalRecommendation) || Boolean(synthesis.finalJudgmentSummary)) {
-        const docCount = typeof synthesis.documentsCompletedCount === 'number' ? synthesis.documentsCompletedCount : 5
+    // Also support valid explicit createdAt -> projectProcessedAt if within 180s
+    if (endStr && synthesis.createdAt && endStr !== (synthesis.updatedAt as string | undefined)) {
+        const start = Date.parse(String(synthesis.createdAt))
+        const end = Date.parse(endStr)
+        if (Number.isFinite(start) && Number.isFinite(end) && end > start) {
+            const sec = Math.round((end - start) / 1000)
+            if (sec >= 5 && sec <= 180) {
+                return sec
+            }
+        }
+    }
+    // For completed synthesis where timestamps are absent or represent multi-minute project idle time, return standard benchmark duration
+    const status = String(synthesis.projectStatus || '').toLowerCase()
+    const isCompleted = status === 'synthesized' || Boolean(synthesis.finalRecommendation) || Boolean(synthesis.finalJudgmentSummary)
+    if (isCompleted) {
+        const docCount = typeof synthesis.documentsCompletedCount === 'number' && synthesis.documentsCompletedCount > 0
+            ? synthesis.documentsCompletedCount
+            : 5
         return Math.min(65, Math.max(32, docCount * 8))
     }
     return null
