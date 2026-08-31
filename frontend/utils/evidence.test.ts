@@ -360,7 +360,7 @@ describe('buildDocumentLinkedEvidence', () => {
         storageFileUrl: 'https://drive.google.com/file/d/doc-9/view',
         storageFileId: 'doc-9',
         aiConfidence: 88,
-    } as SubmissionHistoryItem
+    } as unknown as SubmissionHistoryItem
 
     it('resolves the matched document url and id from the citation source file', () => {
         const evidence = buildDocumentLinkedEvidence({
