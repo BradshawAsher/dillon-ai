@@ -35,16 +35,17 @@ export function formatMagnitude(num: number): string {
     // zero upstream would otherwise fall through the tiers and render as
     // "$InfinityB".
     if (!Number.isFinite(num)) return 'N/A'
+    const sign = num < 0 ? '-' : ''
     const abs = Math.abs(num)
     // Strip a trailing ".0" so whole magnitudes read as "$5M" rather than "$5.0M".
     const trim = (val: number, dp: number) => (val % 1 === 0 ? val.toFixed(0) : Number(val.toFixed(dp)).toString())
     // Rounding-aware tier edges: a value at the top of a tier can round up into
     // the next one, so 999,999 promotes to "$1M" (not "$1000K") and billions get
     // their own suffix instead of an unbounded "$2500M".
-    if (abs >= 999_995_000) return `$${trim(num / 1_000_000_000, 2)}B`
-    if (abs >= 999_950) return `$${trim(num / 1_000_000, 2)}M`
-    if (abs >= 1_000) return `$${trim(num / 1_000, 1)}K`
-    return `$${num.toLocaleString()}`
+    if (abs >= 999_995_000) return `${sign}$${trim(abs / 1_000_000_000, 2)}B`
+    if (abs >= 999_950) return `${sign}$${trim(abs / 1_000_000, 2)}M`
+    if (abs >= 1_000) return `${sign}$${trim(abs / 1_000, 1)}K`
+    return `${sign}$${abs.toLocaleString()}`
 }
 
 export function formatSignedMagnitude(num: number): string {
