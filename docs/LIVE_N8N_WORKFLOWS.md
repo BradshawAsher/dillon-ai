@@ -136,10 +136,27 @@ embed the shared credential.
 
 The submit, counter, consolidator, document-consideration, history, and
 project-synthesis workflows retry their external/Data Table/subworkflow calls
-three times with a two-second delay. The per-document analysis workflow uses the
-same policy (`maxTries: 3`, `waitBetweenTries: 2000ms`), except the two
-model-adjacent nodes back off 5000ms; exhausted processing failures route to a
-terminal document status so the batch can continue.
+three times with a two-second delay. The per-document analysis workflow uses
+provider-specific backoff. Before each retry it restores the original downloaded
+binary and re-runs validation and media routing. Unsupported-input and missing-
+binary errors are terminal; exhausted processing failures retain the provider's
+detailed message and route to a terminal document status so the batch can
+continue.
+
+Media routing happens before LlamaParse. MP4, MOV, WebM, and M4V files use the
+Gemini video-analysis node. MP3, M4A, WAV, AAC, OGG, and FLAC files use the OpenAI
+audio-transcription node. Other document formats use LlamaParse, after which the
+configured per-document extraction model analyzes the resulting text. Extension
+and MIME checks use direct string comparisons rather than regular expressions so
+workflow serialization cannot change escaping behavior.
+
+The three extraction routes normalize into one shared `text` field before the
+financial-analysis model runs. This includes Gemini responses under
+`content.parts[].text`. Token and cost estimates use that normalized text rather
+than referencing a provider-specific node. Starting a retry clears stale failure
+markers in both mirrors. If either Supabase persistence step fails after its
+built-in retries, the error output marks the document failed in the n8n Data Table
+and Supabase instead of leaving an indefinitely running document.
 
 Automatic synthesis ownership lives in Supabase, not the n8n mirror. The claim
 function uses a unique `(project_id, evidence_signature)` key and a 15-minute

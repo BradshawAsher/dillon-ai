@@ -36,7 +36,7 @@ const CommandPalette = lazyWithRetry(() => import('../components/CommandPalette'
 const SystemArchitectureCard = lazyWithRetry(() => import('../components/SystemArchitectureCard'))
 import LoginButton, { getStoredAuth, isDataIsolationEnabled, DATA_ISOLATION_EVENT, openAuthModal } from '../components/AuthGate'
 import { AUTH_CHANGE_EVENT, type AppAuthUser } from '../services/supabaseAuth'
-import { prepareDocumentUpload } from '../services/documentUpload'
+import { prepareDocumentUploadWithRetry } from '../services/documentUpload'
 import { sourceRelativePathForFile } from '../../shared/sourceRelativePath'
 import { DataIsolationBanner } from '../components/dashboard/DataIsolationBanner'
 import { buildMarkdownReport, buildJsonExport, downloadFile } from '../components/ExportDealButton'
@@ -3682,28 +3682,30 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 if (queue.canceled) break
                 const chunk = filesToQueue.slice(i, i + CONCURRENCY)
                 await Promise.all(chunk.map((file) => queue.run(async () => {
-                    const MAX_RETRIES = 2
                     let lastError: unknown
-                    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+                    let preparedUpload: Awaited<ReturnType<typeof prepareDocumentUploadWithRetry>>
+                    try {
+                        preparedUpload = await prepareDocumentUploadWithRetry(file, targetProjectId, readFileAsBase64)
+                    } catch (error) {
+                        lastError = error
+                    }
+
+                    if (!lastError && !queue.canceled) {
+                        const userOpenAiApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_openai_key') || '') : ''
+                        const userAnthropicApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_anthropic_key') || '') : ''
+                        const userGeminiApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_gemini_key') || '') : ''
+                        const userDeepseekApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_deepseek_key') || '') : ''
+                        const modelPipeline = getEffectiveModelPipeline()
                         try {
-                            const { storageFileUrl, storagePath, fileBase64 } = await prepareDocumentUpload(file, targetProjectId, readFileAsBase64)
-
-                            const userOpenAiApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_openai_key') || '') : ''
-                            const userAnthropicApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_anthropic_key') || '') : ''
-                            const userGeminiApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_gemini_key') || '') : ''
-                            const userDeepseekApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_deepseek_key') || '') : ''
-                            const modelPipeline = getEffectiveModelPipeline()
-
-                            if (queue.canceled) return
                             const result = await triggerSubmitDealPacket({
                                 environment,
                                 fileName: file.name,
                                 sourceRelativePath: sourceRelativePathForFile(file),
                                 fileSize: file.size,
                                 fileType: file.type || 'application/octet-stream',
-                                fileBase64,
-                                storageFileUrl,
-                                storagePath,
+                                fileBase64: preparedUpload!.fileBase64,
+                                storageFileUrl: preparedUpload!.storageFileUrl,
+                                storagePath: preparedUpload!.storagePath,
                                 dealName: dealName || suggestedProjectName,
                                 companyName: dealName || suggestedProjectName,
                                 workstream: '',
@@ -3724,9 +3726,9 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                             }).result
 
                             if (!result || !['accepted', 'duplicate'].includes(result.status)) {
-                                throw new Error('The server did not confirm this submission. Check history before retrying.')
+                                throw new Error('The server did not confirm this submission.')
                             }
-                            if (result?.status === 'duplicate') {
+                            if (result.status === 'duplicate') {
                                 duplicateFileNames.push(sourceRelativePathForFile(file))
                                 newDuplicateCount++
                                 updateAttempt(file, { status: 'duplicate' })
@@ -3734,13 +3736,9 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                             } else {
                                 updateAttempt(file, { status: 'queued', requestID: result.response?.requestID || result.payload?.requestID })
                             }
-                            lastError = undefined
-                            break
                         } catch (error) {
-                            lastError = error
-                            if (attempt < MAX_RETRIES && !queue.canceled) {
-                                await new Promise((r) => setTimeout(r, 1500))
-                            }
+                            const reason = error instanceof Error ? error.message : 'Submission acknowledgment was not confirmed.'
+                            lastError = new Error(`${reason} The uploaded file was not automatically resubmitted because n8n may already be processing it. Check document history before retrying.`)
                         }
                     }
 

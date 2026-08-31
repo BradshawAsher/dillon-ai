@@ -3,6 +3,12 @@ import { uploadDocumentToSupabaseStorage } from './supabaseStorage'
 // Base64 adds a third to the size; leave headroom for JSON and metadata.
 export const MAX_INLINE_DOCUMENT_BYTES = 3 * 1024 * 1024
 
+type UploadRetryOptions = {
+    maxAttempts?: number
+    delayMs?: number
+    sleep?: (ms: number) => Promise<void>
+}
+
 export async function prepareDocumentUpload(
     file: File,
     projectId: string,
@@ -20,4 +26,27 @@ export async function prepareDocumentUpload(
         }
         return { storageFileUrl: '', storagePath: '', fileBase64: await readBase64(file) }
     }
+}
+
+export async function prepareDocumentUploadWithRetry(
+    file: File,
+    projectId: string,
+    readBase64: (file: File) => Promise<string>,
+    options: UploadRetryOptions = {},
+) {
+    const maxAttempts = Math.max(1, options.maxAttempts ?? 2)
+    const delayMs = Math.max(0, options.delayMs ?? 1500)
+    const sleep = options.sleep ?? ((ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)))
+    let lastError: unknown
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+            return await prepareDocumentUpload(file, projectId, readBase64)
+        } catch (error) {
+            lastError = error
+            if (attempt < maxAttempts) await sleep(delayMs)
+        }
+    }
+
+    throw lastError
 }
