@@ -200,5 +200,9 @@ export function estimateMonthlyCost(
     const nonNegative = (value: number) => (Number.isFinite(value) && value > 0 ? value : 0)
     const docs = nonNegative(documentsPerMonth)
     const syntheses = nonNegative(synthesesPerMonth)
-    return docs * MEASURED_COST_PER_DOCUMENT + syntheses * costPerSynthesis
+    // Guard the per-synthesis rate too: a non-finite or negative override would
+    // otherwise poison the total with NaN or subtract cost. Fall back to the
+    // default rate rather than trusting a nonsensical argument.
+    const perSynthesis = Number.isFinite(costPerSynthesis) && costPerSynthesis >= 0 ? costPerSynthesis : 0.12
+    return docs * MEASURED_COST_PER_DOCUMENT + syntheses * perSynthesis
 }
