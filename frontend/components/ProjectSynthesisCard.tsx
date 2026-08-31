@@ -17,7 +17,7 @@ import { downloadTextFile, fileSafeName } from '../utils/downloadFile'
 import { formatHours, type ImpactMetrics } from '../utils/impactMetrics'
 import { getProjectKey, isRowMatchingProject, type ProjectSummary } from '../utils/projectWorkspace'
 import { buildDocumentLinkedEvidence, parseDocumentedFacts, type EvidenceItem } from '../utils/evidence'
-import { calculateBatchTotalCost, calculateSynthesisCost, formatElapsedDuration, getDocumentExtractionDurationSec } from '../utils/diligenceDashboardUtils'
+import { calculateBatchTotalCost, calculateSynthesisCost, formatElapsedDuration, getDocumentExtractionDurationSec, getSynthesisDurationSec } from '../utils/diligenceDashboardUtils'
 import { classifyError } from '../utils/errorClassifier'
 
 type ProjectSynthesisCardProps = {
