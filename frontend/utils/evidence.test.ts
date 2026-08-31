@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { SubmissionHistoryItem } from './submissionHistory'
 import {
+    buildDerivedEvidence,
     buildFactEvidence,
     driveEmbedUrl,
     findCitedDocument,
@@ -291,3 +292,63 @@ describe('formatEvidenceConfidence', () => {
     })
 })
 
+
+describe('buildDerivedEvidence', () => {
+    it('tags each input with its provenance source', () => {
+        const evidence = buildDerivedEvidence({
+            title: 'Payback period',
+            formula: 'initial investment / annual cash flow',
+            documentedInputs: [{ label: 'EBITDA', value: '$1.85M' }],
+            modelAssumptions: [{ label: 'Tax rate', value: '25%' }],
+            analystInputs: [{ label: 'Override', value: 'yes' }],
+        })
+        expect(evidence.inputs).toEqual([
+            { label: 'EBITDA', value: '$1.85M', source: 'documented' },
+            { label: 'Tax rate', value: '25%', source: 'assumed' },
+            { label: 'Override', value: 'yes', source: 'analyst' },
+        ])
+        expect(evidence.provenance).toBe('Calculated')
+        expect(evidence.formula).toBe('initial investment / annual cash flow')
+    })
+
+    it('marks a fully-documented calculation as confirmed and carries the fact citation', () => {
+        const evidence = buildDerivedEvidence({
+            title: 'EBITDA margin',
+            formula: 'ebitda / revenue',
+            documentedInputs: [{ label: 'EBITDA', value: '$1.85M' }],
+            primaryFact: {
+                title: 'EBITDA',
+                sourceFile: 'pnl.pdf',
+                documentId: 'drive-123',
+                confidence: 92,
+            },
+        })
+        expect(evidence.status).toBe('Confirmed Math')
+        expect(evidence.confidence).toBe(92)
+        expect(evidence.sourceFile).toBe('pnl.pdf')
+        expect(evidence.documentId).toBe('drive-123')
+    })
+
+    it('does not attach a document citation to an illustrative (assumed) calculation', () => {
+        const evidence = buildDerivedEvidence({
+            title: 'Payback period',
+            formula: 'initial investment / annual cash flow',
+            modelAssumptions: [{ label: 'EBITDA', value: '$1.0M (assumed)' }],
+            primaryFact: { title: 'EBITDA', sourceFile: 'pnl.pdf', documentId: 'drive-123' },
+        })
+        expect(evidence.status).toBe('Illustrative EBITDA')
+        expect(evidence.confidence).toBe('Model Assumption')
+        expect(evidence.sourceFile).toBeUndefined()
+        expect(evidence.documentId).toBeUndefined()
+    })
+
+    it('honours an explicit statusLabel override', () => {
+        const evidence = buildDerivedEvidence({
+            title: 'MOIC',
+            formula: 'exit / equity',
+            documentedInputs: [{ label: 'Exit', value: '$10M' }],
+            statusLabel: 'Sensitivity case',
+        })
+        expect(evidence.status).toBe('Sensitivity case')
+    })
+})
