@@ -487,7 +487,7 @@ def build_packet_2():
         "• Original Letter of Intent Enterprise Value: $15,750,000 (based on seller-claimed $3.15M EBITDA at 5.0x)\n"
         "• Buyer-Supported Revised Enterprise Value: $12,100,000 (based on verified $2.42M EBITDA at 5.0x)\n"
         "• Recommended Purchase Price Reduction: -$3,650,000 (-23.2% downward adjustment)\n"
-        "• Special Escrow Holdback: $1,500,000 indemnity escrow tied to Boeing Tier-1 contract renewal in Q4 2026."
+        "• Special Escrow Holdback: $1,500,000 indemnity escrow tied to VanArsdel Aerostructures Tier-1 contract renewal in Q4 2026."
     )
     doc4.save(os.path.join(pkg_dir, "Apex_Precision_Dynamics_Draft_Purchase_Agreement.docx"))
     
