@@ -19,6 +19,7 @@ import CardInfoPopover from './common/CardInfoPopover'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { formatCompactMoney } from '../utils/diligenceDashboardUtils'
 import type { ImpactMetrics } from '../utils/impactMetrics'
+import { riskSignalVariant, entryMultipleVariant } from '../utils/dealHealthSignals'
 
 export type TodayPipelineStats = {
     projectsFinishedToday?: number
@@ -94,16 +95,8 @@ export default function DealHealthKPIs({
 
     // Deal risk signal
     if (synthesis) {
-        const riskLevel = synthesis.finalRiskLevel.trim().toLowerCase()
-        const trafficLight = (synthesis.finalTrafficLight || '').trim().toLowerCase()
-
         // Map 'red' / 'yellow' / 'green' signals directly so they are styled correctly
-        let variant: 'success' | 'warning' | 'destructive' | 'default' = 'success'
-        if (trafficLight === 'red' || riskLevel === 'red' || riskLevel === 'critical' || riskLevel === 'high') {
-            variant = 'destructive'
-        } else if (trafficLight === 'yellow' || riskLevel === 'yellow' || riskLevel === 'medium') {
-            variant = 'warning'
-        }
+        const variant = riskSignalVariant(synthesis.finalTrafficLight, synthesis.finalRiskLevel)
 
         kpis.push({
             label: 'Risk Signal',
@@ -122,7 +115,7 @@ export default function DealHealthKPIs({
             value: `${multiple.toFixed(1)}x`,
             subtext: 'Price / EBITDA',
             icon: <TrendingUp className="h-5 w-5" />,
-            variant: multiple > 12 ? 'destructive' : multiple > 7 ? 'warning' : 'success',
+            variant: entryMultipleVariant(multiple),
         })
     }
 
