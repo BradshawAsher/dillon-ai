@@ -5,6 +5,7 @@ import {
     getStoredActionItems,
     getStoredSellerQuestions,
     saveStoredActionItems,
+    saveStoredSellerQuestions,
     type CustomSellerQuestion,
 } from './projectActionTracker'
 
@@ -49,6 +50,15 @@ describe('action item storage', () => {
         const items = getStoredActionItems('p1')
         expect(items).toHaveLength(1)
         expect(items?.[0].text).toBe('Real')
+    })
+
+    it('round-trips seller questions per project and isolates other projects', () => {
+        const questions: CustomSellerQuestion[] = [
+            { id: 'q1', question: 'Renewal status?', answered: false, createdAt: 'now' },
+        ]
+        saveStoredSellerQuestions('p1', questions)
+        expect(getStoredSellerQuestions('p1')?.[0].question).toBe('Renewal status?')
+        expect(getStoredSellerQuestions('p2')).toBeNull()
     })
 })
 
