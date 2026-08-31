@@ -1,4 +1,4 @@
-import { Download, Mail, Pin, PinOff, Scale } from 'lucide-react'
+import { Clock, Download, Mail, Pin, PinOff, Scale } from 'lucide-react'
 
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
 import ExpandableText from './ExpandableText'
@@ -8,6 +8,7 @@ import { getSubmissionInsightTone } from '../utils/aiSubmissionData'
 import { formatHours, type ImpactMetrics } from '../utils/impactMetrics'
 import { downloadSynthesisReport } from './ProjectSynthesisCard'
 import DealEmailDraftModal from './DealEmailDraftModal'
+import { formatElapsedDuration, getSynthesisDurationSec } from '../utils/diligenceDashboardUtils'
 
 import { useMemo, useState } from 'react'
 import ActionableRecommendationInfoButton from './ActionableRecommendationInfoButton'
@@ -274,6 +275,16 @@ export default function AcquisitionJudgmentCallout({
                                 />
                             </div>
                         ) : null}
+                        {(() => {
+                            const synthDur = getSynthesisDurationSec(synthesis)
+                            if (synthDur === null) return null
+                            return (
+                                <Badge variant="outline" className="font-mono text-xs font-bold border-primary/40 bg-primary/10 px-2.5 py-1 text-primary gap-1">
+                                    <Clock className="h-3.5 w-3.5 text-primary shrink-0" />
+                                    Synthesis: ~{formatElapsedDuration(synthDur)}
+                                </Badge>
+                            )
+                        })()}
                         {impact.completedDocuments > 0 ? (
                             <Badge variant="success">~{formatHours(impact.timeSavedHours)} analyst time saved</Badge>
                         ) : null}

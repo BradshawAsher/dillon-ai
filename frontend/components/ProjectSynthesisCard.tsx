@@ -17,7 +17,7 @@ import { downloadTextFile, fileSafeName } from '../utils/downloadFile'
 import { formatHours, type ImpactMetrics } from '../utils/impactMetrics'
 import { getProjectKey, isRowMatchingProject, type ProjectSummary } from '../utils/projectWorkspace'
 import { buildDocumentLinkedEvidence, parseDocumentedFacts, type EvidenceItem } from '../utils/evidence'
-import { calculateBatchTotalCost, calculateSynthesisCost } from '../utils/diligenceDashboardUtils'
+import { calculateBatchTotalCost, calculateSynthesisCost, formatElapsedDuration, getDocumentExtractionDurationSec } from '../utils/diligenceDashboardUtils'
 import { classifyError } from '../utils/errorClassifier'
 
 type ProjectSynthesisCardProps = {
@@ -1251,7 +1251,25 @@ export default function ProjectSynthesisCard({
                                         <div key={document.requestID || document.id} className="flex flex-col gap-2 rounded-md border border-border bg-card p-3 sm:flex-row sm:items-center sm:justify-between shadow-2xs hover:border-primary/40 transition-all">
                                             <div className="min-w-0 flex-1">
                                                 <p className="truncate text-sm font-bold text-foreground" title={document.fileName}>{document.fileName}</p>
-                                                <p className="mt-0.5 text-xs text-muted-foreground">{document.documentType || 'Financial Document'} · {formatTimestamp(document.processedAt)}</p>
+                                                {(() => {
+                                                    const docDur = getDocumentExtractionDurationSec(document)
+                                                    return (
+                                                        <p className="mt-0.5 text-xs text-muted-foreground flex items-center gap-1.5 flex-wrap">
+                                                            <span>{document.documentType || 'Financial Document'}</span>
+                                                            {docDur !== null ? (
+                                                                <>
+                                                                    <span>·</span>
+                                                                    <span className="font-mono text-primary font-semibold flex items-center gap-0.5">
+                                                                        <Clock className="h-3 w-3 inline" />
+                                                                        ~{formatElapsedDuration(docDur)}
+                                                                    </span>
+                                                                </>
+                                                            ) : null}
+                                                            <span>·</span>
+                                                            <span>{formatTimestamp(document.processedAt)}</span>
+                                                        </p>
+                                                    )
+                                                })()}
                                             </div>
                                             <div className="flex shrink-0 flex-wrap gap-1.5 items-center">
                                                 <Badge variant={isFailed ? 'destructive' : 'outline'} className="text-[10px] font-mono">{document.status || 'Pending'}</Badge>

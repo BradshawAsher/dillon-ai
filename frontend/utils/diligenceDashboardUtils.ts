@@ -484,6 +484,63 @@ export function formatElapsedDuration(seconds: number) {
         : `${remainingSeconds}s`
 }
 
+/**
+ * Calculates document extraction processing duration in seconds from timestamps or explicit fields.
+ * Returns null if duration cannot be determined.
+ */
+export function getDocumentExtractionDurationSec(doc?: Partial<SubmissionHistoryItem> | null): number | null {
+    if (!doc) return null
+    if (typeof (doc as any).durationSec === 'number' && (doc as any).durationSec > 0) {
+        return (doc as any).durationSec
+    }
+    if (typeof (doc as any).duration_sec === 'number' && (doc as any).duration_sec > 0) {
+        return (doc as any).duration_sec
+    }
+    const endStr = doc.processedAt || doc.statusResolvedAt || doc.updatedAt
+    const startStr = doc.processingStartedAt || doc.receivedAt || doc.createdAt || doc.triggerTimestamp
+    if (endStr && startStr) {
+        const start = Date.parse(startStr)
+        const end = Date.parse(endStr)
+        if (Number.isFinite(start) && Number.isFinite(end) && end > start) {
+            const sec = Math.round((end - start) / 1000)
+            if (sec >= 1 && sec <= 1800) {
+                return sec
+            }
+        }
+    }
+    return null
+}
+
+/**
+ * Calculates synthesis duration in seconds from timestamps or explicit duration fields.
+ * Returns null if duration cannot be determined.
+ */
+export function getSynthesisDurationSec(synthesis?: Partial<Record<string, unknown>> | null): number | null {
+    if (!synthesis) return null
+    if (typeof synthesis.durationSec === 'number' && synthesis.durationSec > 0) {
+        return synthesis.durationSec
+    }
+    if (typeof synthesis.duration_sec === 'number' && synthesis.duration_sec > 0) {
+        return synthesis.duration_sec
+    }
+    if (typeof synthesis.synthesisDurationSec === 'number' && synthesis.synthesisDurationSec > 0) {
+        return synthesis.synthesisDurationSec
+    }
+    const endStr = (synthesis.projectProcessedAt || synthesis.updatedAt) as string | undefined
+    const startStr = synthesis.createdAt as string | undefined
+    if (endStr && startStr) {
+        const start = Date.parse(startStr)
+        const end = Date.parse(endStr)
+        if (Number.isFinite(start) && Number.isFinite(end) && end > start) {
+            const sec = Math.round((end - start) / 1000)
+            if (sec >= 1 && sec <= 3600) {
+                return sec
+            }
+        }
+    }
+    return null
+}
+
 export type SubmitWebhookResponse = {
     requestID?: string
     status?: string
