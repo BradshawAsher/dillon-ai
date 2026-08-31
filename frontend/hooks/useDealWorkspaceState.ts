@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { createUnusedProjectId } from '../utils/diligenceDashboardUtils'
 import type { WorkspaceTab } from '../components/DealWorkspaceNav'
 import { parseUrlDeepLinkState } from '../utils/deepLinking'
+import { TOC_DEFAULT_WIDTH, parseStoredTocWidth } from '../utils/tocLayout'
 
 export type { WorkspaceTab }
 
@@ -56,17 +57,12 @@ export function useDealWorkspaceState() {
         }
     })
     const [tocWidth, setTocWidth] = useState<number>(() => {
-        if (typeof window === 'undefined') return 140
+        if (typeof window === 'undefined') return TOC_DEFAULT_WIDTH
         try {
-            const stored = localStorage.getItem('mergeworks.tocWidth')
-            if (stored) {
-                const parsed = parseInt(stored, 10)
-                if (!Number.isNaN(parsed) && parsed >= 90 && parsed <= 240) {
-                    return parsed
-                }
-            }
-        } catch { }
-        return 140
+            return parseStoredTocWidth(localStorage.getItem('mergeworks.tocWidth')) ?? TOC_DEFAULT_WIDTH
+        } catch {
+            return TOC_DEFAULT_WIDTH
+        }
     })
     const [askingPriceByProject, setAskingPriceByProject] = useState<Record<string, string>>(() => {
         if (typeof window === 'undefined') return {}
