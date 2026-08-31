@@ -124,6 +124,16 @@ describe('estimateMonthlyCost', () => {
         expect(estimateMonthlyCost(Number.NaN, 10)).toBeCloseTo(10 * 0.12, 6)
         expect(estimateMonthlyCost(Number.POSITIVE_INFINITY, Number.NaN)).toBe(0)
     })
+
+    it('honours a valid per-synthesis override (including zero)', () => {
+        expect(estimateMonthlyCost(0, 10, 0.2)).toBeCloseTo(10 * 0.2, 6)
+        expect(estimateMonthlyCost(0, 10, 0)).toBe(0)
+    })
+
+    it('falls back to the default rate for a non-finite or negative override', () => {
+        expect(estimateMonthlyCost(0, 10, Number.NaN)).toBeCloseTo(10 * 0.12, 6)
+        expect(estimateMonthlyCost(0, 10, -5)).toBeCloseTo(10 * 0.12, 6)
+    })
 })
 
 describe('sumMeasuredCost', () => {
