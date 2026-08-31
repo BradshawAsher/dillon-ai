@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../li
 import CardInfoPopover from './common/CardInfoPopover'
 import { buildDocumentLinkedEvidence, parseDocumentedFacts, type EvidenceItem } from '../utils/evidence'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
+import { getOverallAddBackQuality } from '../utils/addBackQuality'
 
 type AddBackItem = {
     label: string
@@ -118,14 +119,7 @@ function parseAddBacksFromSynthesis(synthesis: ProjectSynthesisItem | undefined,
     return items
 }
 
-function getOverallQuality(items: AddBackItem[]): { label: string; variant: 'success' | 'warning' | 'destructive' } {
-    if (items.length === 0) return { label: 'No add-backs found', variant: 'success' }
-    const unsupported = items.filter((i) => i.quality === 'unsupported').length
-    const partial = items.filter((i) => i.quality === 'partial').length
-    if (unsupported > 0) return { label: 'Add-backs need verification', variant: 'destructive' }
-    if (partial > 0) return { label: 'Partially supported', variant: 'warning' }
-    return { label: 'Well-supported', variant: 'success' }
-}
+const getOverallQuality = getOverallAddBackQuality
 
 export default function AddBackQualityCard({ model, synthesis, documents = [], onOpenEvidence }: { model: DealModel; synthesis?: ProjectSynthesisItem; documents?: SubmissionHistoryItem[]; onOpenEvidence?: (item: EvidenceItem) => void }) {
     const facts = parseDocumentedFacts(model.documentedFactsJson)
