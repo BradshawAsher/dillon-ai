@@ -2,6 +2,9 @@ import { describe, it, expect } from 'vitest'
 import {
     getProjectKey,
     getTimestampValue,
+    getDisplayTimestamp,
+    getProjectName,
+    getCompanyName,
     isSystemTestProbeFile,
     isRowMatchingProject,
     detectCompanyName,
@@ -120,5 +123,45 @@ describe('detectCompanyName', () => {
 
     it('returns an empty string when nothing identifies the company', () => {
         expect(detectCompanyName(row({}))).toBe('')
+    })
+})
+
+describe('getDisplayTimestamp', () => {
+    it('prefers processedAt over earlier lifecycle timestamps', () => {
+        expect(getDisplayTimestamp(row({
+            processedAt: '2026-03-01',
+            processingStartedAt: '2026-02-01',
+            receivedAt: '2026-01-01',
+        }))).toBe('2026-03-01')
+    })
+
+    it('falls back through the lifecycle chain when later stamps are absent', () => {
+        expect(getDisplayTimestamp(row({ receivedAt: '2026-01-01' }))).toBe('2026-01-01')
+        expect(getDisplayTimestamp(row({ triggerTimestamp: '2026-01-05' }))).toBe('2026-01-05')
+    })
+
+    it('returns an empty string when no timestamp exists', () => {
+        expect(getDisplayTimestamp(row({}))).toBe('')
+    })
+})
+
+describe('getProjectName / getCompanyName', () => {
+    it('resolves a detected benchmark company from the row', () => {
+        expect(getProjectName(row({ fileName: 'northstar_cim.pdf' }))).toBe('Northstar Industrial Supply, LLC')
+        expect(getCompanyName(row({ projectId: 'dd-006' }))).toBe('Harborview Dental Partners, LLC')
+    })
+
+    it('prefers a detected company from any row in the project set', () => {
+        const rows = [row({ fileName: 'unrelated.pdf' }), row({ fileName: 'summit_pnl.xlsx' })]
+        expect(getProjectName(row({}), rows)).toBe('Summit Managed Services, Inc.')
+    })
+
+    it('falls back to the raw deal name when no benchmark matches', () => {
+        expect(getProjectName(row({ dealName: 'Acme Holdings' }))).toBe('Acme Holdings')
+    })
+
+    it('uses the safe default when nothing identifies the project', () => {
+        expect(getProjectName(row({}))).toBe('Cascadia Climate Services, Inc.')
+        expect(getCompanyName(row({}))).toBe('Cascadia Climate Services, Inc.')
     })
 })
