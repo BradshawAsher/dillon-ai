@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../li
 import CardInfoPopover from './common/CardInfoPopover'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import { buildDocumentLinkedEvidence, type EvidenceItem } from '../utils/evidence'
+import { getConcentrationRisk } from '../utils/concentrationRisk'
 
 type ConcentrationFinding = {
     customer: string
@@ -171,13 +172,7 @@ function parseTop5Breakdown(synthesis: ProjectSynthesisItem, findings: Concentra
     }
 }
 
-function getRiskLevel(findings: ConcentrationFinding[]): { label: string; variant: 'destructive' | 'warning' | 'success' } {
-    const maxShare = Math.max(...findings.map((f) => f.revenueShare ?? 0), 0)
-    const hasCritical = findings.some((f) => f.severity === 'critical')
-    if (maxShare > 0.4 || hasCritical) return { label: 'High concentration risk', variant: 'destructive' }
-    if (maxShare > 0.2 || findings.length > 0) return { label: 'Moderate concentration', variant: 'warning' }
-    return { label: 'Diversified', variant: 'success' }
-}
+const getRiskLevel = getConcentrationRisk
 
 export default function CustomerConcentrationCard({ synthesis, documents = [], onOpenEvidence }: { synthesis: ProjectSynthesisItem; documents?: SubmissionHistoryItem[]; onOpenEvidence?: (item: EvidenceItem) => void }) {
     const findings = useMemo(() => parseConcentrationFromSynthesis(synthesis), [synthesis])
