@@ -1,0 +1,26 @@
+{
+  "fileName": "Atlantic_Beverage_Executed_LOI_Agreement.docx",
+  "business": "Atlantic Beverage & Bottling Corp (Beverage Packaging & Logistics)",
+  "fileType": "DOCX",
+  "groundTruth": {
+    "documentType": "Letter of Intent (LOI)",
+    "trafficLight": "GREEN",
+    "riskLevel": "LOW",
+    "financialFacts": [
+      {
+        "metric": "ebitda",
+        "normalizedValue": 3650000,
+        "period": "TTM",
+        "rawValue": "$3,650,000"
+      }
+    ],
+    "expectedRedFlags": [],
+    "expectedYellowFlags": [],
+    "valuation": {
+      "valuationBaseEstimate": 18500000,
+      "askingPrice": 18500000,
+      "currency": "USD"
+    },
+    "expectedRecommendation": "PROCEED"
+  }
+}

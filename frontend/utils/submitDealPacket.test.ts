@@ -11,7 +11,7 @@ vi.mock('../../backend/supabaseClient', () => ({ supabase: { from: () => ({
     },
 }) } }))
 
-const params = { fileName: 'large.pdf', fileSize: 18 * 1024 * 1024, fileType: 'application/pdf', dealName: 'Test', companyName: 'Test', workstream: '', submissionNotes: '', projectId: 'p', projectStage: 'post-loi', documentType: 'auto-detect', submissionBatchId: 'batch', expectedBatchDocumentCount: 3, storageFileUrl: 'https://dillon-ai-worker.bradshin231.workers.dev/p/doc.pdf', skipDuplicateCheck: true }
+const params = { fileName: 'large.pdf', sourceRelativePath: 'Target/01 Financials/large.pdf', fileSize: 18 * 1024 * 1024, fileType: 'application/pdf', dealName: 'Test', companyName: 'Test', workstream: '', submissionNotes: '', projectId: 'p', projectStage: 'post-loi', documentType: 'auto-detect', submissionBatchId: 'batch', expectedBatchDocumentCount: 3, storageFileUrl: 'https://dillon-ai-worker.bradshin231.workers.dev/p/doc.pdf', skipDuplicateCheck: true }
 const user = { fullName: 'Test', email: 'test@example.com' }
 beforeEach(() => { db.updates = []; db.filters = []; db.registrationError = null })
 afterEach(() => vi.unstubAllGlobals())
@@ -37,6 +37,7 @@ describe('submission dispatch', () => {
         expect((await submitDealPacket({ params, user })).status).toBe('accepted')
         expect(fetchMock).not.toHaveBeenCalled()
         expect(request.mock.calls[0][0].formData).toContainEqual(expect.objectContaining({ key: 'file', fileUrl: params.storageFileUrl, fileSize: params.fileSize }))
+        expect(request.mock.calls[0][0].formData).toContainEqual({ key: 'sourceRelativePath', value: params.sourceRelativePath })
     })
     it('records the actual dispatch failure without overwriting an already-running workflow', async () => {
         vi.stubGlobal('n8nFinancialAgent', { rawRequest: vi.fn().mockRejectedValue(new Error('n8n HTTP 503')) })

@@ -1,0 +1,24 @@
+{
+  "fileName": "Vanguard_Aerospace_Customer_Concentration_AR.xlsx",
+  "business": "Vanguard Precision Aerospace Machining (Defense Tooling & CNC)",
+  "fileType": "XLSX",
+  "groundTruth": {
+    "documentType": "Customer Concentration",
+    "trafficLight": "YELLOW",
+    "riskLevel": "ELEVATED",
+    "financialFacts": [
+      {
+        "metric": "revenue",
+        "normalizedValue": 14200000,
+        "period": "FY2025",
+        "rawValue": "$14,200,000"
+      }
+    ],
+    "expectedRedFlags": [],
+    "expectedYellowFlags": [
+      "Extreme customer concentration: Top customer accounts for 38.5% of revenue ($5.47M)",
+      "Top customer contract expires in 4 months (April 2026) and is subject to 15% rate cut RFP"
+    ],
+    "expectedRecommendation": "RENEGOTIATE"
+  }
+}

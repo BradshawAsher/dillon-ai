@@ -128,6 +128,7 @@ function useQuery<T>(fetcher: (params?: Record<string, unknown>) => Promise<T>, 
 
 type SubmitPayload = {
     fileName: string
+    sourceRelativePath: string
     fileSize: number
     fileType: string
     dealName: string
@@ -646,6 +647,7 @@ function useMockSubmitDealPacket() {
             // Mirrors the payload echoed back by backend/diligence/submitDealPacket.ts.
             const payload: SubmitPayload = {
                 fileName: String(params.fileName ?? ''),
+                sourceRelativePath: String(params.sourceRelativePath ?? params.fileName ?? ''),
                 fileSize: Number(params.fileSize ?? 0),
                 fileType: String(params.fileType ?? ''),
                 dealName: String(params.dealName ?? ''),
@@ -675,6 +677,7 @@ function useMockSubmitDealPacket() {
                 projectStage: payload.projectStage,
                 documentType: payload.documentType,
                 fileName: payload.fileName,
+                sourceRelativePath: payload.sourceRelativePath,
                 fileSize: payload.fileSize,
                 fileType: payload.fileType,
                 triggerTimestamp,

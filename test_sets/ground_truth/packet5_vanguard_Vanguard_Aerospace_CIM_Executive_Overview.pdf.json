@@ -1,0 +1,27 @@
+{
+  "fileName": "Vanguard_Aerospace_CIM_Executive_Overview.pdf",
+  "business": "Vanguard Precision Aerospace Machining (Defense Tooling & CNC)",
+  "fileType": "PDF",
+  "groundTruth": {
+    "documentType": "Confidential Information Memorandum (CIM)",
+    "trafficLight": "YELLOW",
+    "riskLevel": "ELEVATED",
+    "financialFacts": [
+      {
+        "metric": "revenue",
+        "normalizedValue": 14200000,
+        "period": "TTM",
+        "rawValue": "$14,200,000"
+      }
+    ],
+    "expectedYellowFlags": [
+      "Seller asking price of $14.2M must be renegotiated to $9.8M target"
+    ],
+    "valuation": {
+      "valuationBaseEstimate": 9800000,
+      "askingPrice": 14200000,
+      "currency": "USD"
+    },
+    "expectedRecommendation": "RENEGOTIATE"
+  }
+}

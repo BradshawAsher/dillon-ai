@@ -1,0 +1,151 @@
+{
+  "business": "TerraClean Industrial Waste Solutions (Hazardous Waste Treatment)",
+  "projectId": "project-terraclean-waste-walkaway",
+  "evaluatedAt": "2026-08-30T14:00:00.000Z",
+  "documents": [
+    {
+      "fileName": "TerraClean_Waste_Seller_CIM_Overview.pdf",
+      "status": "completed",
+      "modelUsed": "OpenAI 5.6 Terra",
+      "detectedDocumentType": "Confidential Information Memorandum (CIM)",
+      "trafficLight": "RED",
+      "riskLevel": "CRITICAL",
+      "financialFacts": [
+        {
+          "metric": "revenue",
+          "normalizedValue": 22000000,
+          "period": "FY2025",
+          "confidence": 1.0
+        },
+        {
+          "metric": "ebitda",
+          "normalizedValue": -350000,
+          "period": "FY2025",
+          "confidence": 1.0
+        }
+      ],
+      "redFlags": [
+        "Severe revenue inflation: Seller claims $22.0M vs verified $11.2M bank cash ($10.8M deficit)",
+        "True operational loss of -$350,000 (insolvency risk)",
+        "Undisclosed $4.2M EPA Superfund cleanup lien and consent decree",
+        "74% delinquent AR ($4.8M uncollectible bad debt write-off required)"
+      ],
+      "yellowFlags": [],
+      "valuation": {
+        "base_estimate": 0
+      },
+      "mathCheckStatus": "failed"
+    },
+    {
+      "fileName": "TerraClean_Waste_General_Ledger_Bank_Mismatch.xlsx",
+      "status": "completed",
+      "modelUsed": "OpenAI 5.6 Terra",
+      "detectedDocumentType": "Balance Sheet",
+      "trafficLight": "RED",
+      "riskLevel": "CRITICAL",
+      "financialFacts": [
+        {
+          "metric": "revenue",
+          "normalizedValue": 11200000,
+          "period": "FY2025",
+          "confidence": 1.0
+        }
+      ],
+      "redFlags": [
+        "$10.8M cash deficit vs billed general ledger invoices with $5.8M phantom round-trip deposits"
+      ],
+      "yellowFlags": [],
+      "mathCheckStatus": "failed"
+    },
+    {
+      "fileName": "TerraClean_Waste_Form_1120_Federal_Tax_Audit.xlsx",
+      "status": "completed",
+      "modelUsed": "OpenAI 5.6 Terra",
+      "detectedDocumentType": "Tax Return",
+      "trafficLight": "RED",
+      "riskLevel": "CRITICAL",
+      "financialFacts": [
+        {
+          "metric": "revenue",
+          "normalizedValue": 11200000,
+          "period": "FY2025",
+          "confidence": 1.0
+        },
+        {
+          "metric": "net_income",
+          "normalizedValue": -350000,
+          "period": "FY2025",
+          "confidence": 1.0
+        }
+      ],
+      "redFlags": [
+        "IRS tax return proves -$350,000 operating loss on $11.2M revenue"
+      ],
+      "yellowFlags": [],
+      "mathCheckStatus": "failed"
+    },
+    {
+      "fileName": "TerraClean_Waste_AR_Aging_Bad_Debt_Ledger.xlsx",
+      "status": "completed",
+      "modelUsed": "OpenAI 5.6 Terra",
+      "detectedDocumentType": "Operating Metrics",
+      "trafficLight": "RED",
+      "riskLevel": "CRITICAL",
+      "financialFacts": [
+        {
+          "metric": "revenue",
+          "normalizedValue": 11200000,
+          "period": "FY2025",
+          "confidence": 1.0
+        }
+      ],
+      "redFlags": [
+        "$4.80M in uncollectible AR write-offs (71.9% delinquent)"
+      ],
+      "yellowFlags": [],
+      "mathCheckStatus": "failed"
+    },
+    {
+      "fileName": "TerraClean_Waste_EPA_Superfund_Consent_Decree.docx",
+      "status": "completed",
+      "modelUsed": "OpenAI 5.6 Terra",
+      "detectedDocumentType": "Due Diligence Data Room Packet",
+      "trafficLight": "RED",
+      "riskLevel": "CRITICAL",
+      "financialFacts": [],
+      "redFlags": [
+        "$4.2M active EPA Superfund cleanup lien and 60-day permit revocation notice"
+      ],
+      "yellowFlags": [],
+      "mathCheckStatus": "failed"
+    },
+    {
+      "fileName": "TerraClean_Waste_Whistleblower_Internal_Email.eml",
+      "status": "completed",
+      "modelUsed": "OpenAI 5.6 Terra",
+      "detectedDocumentType": "Due Diligence Data Room Packet",
+      "trafficLight": "RED",
+      "riskLevel": "CRITICAL",
+      "financialFacts": [],
+      "redFlags": [
+        "Internal whistleblower confirms falsified manifests and severe groundwater contamination"
+      ],
+      "yellowFlags": [],
+      "mathCheckStatus": "failed"
+    },
+    {
+      "fileName": "TerraClean_Waste_Facility_Inspection_Site.mp4",
+      "status": "completed",
+      "modelUsed": "OpenAI 5.6 Terra",
+      "detectedDocumentType": "Operating Metrics",
+      "trafficLight": "RED",
+      "riskLevel": "CRITICAL",
+      "financialFacts": [],
+      "redFlags": [
+        "Facility video confirms structural failure in secondary containment tank farm"
+      ],
+      "yellowFlags": [],
+      "mathCheckStatus": "failed"
+    }
+  ]
+}

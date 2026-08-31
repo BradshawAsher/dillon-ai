@@ -114,6 +114,12 @@ describe('isDuplicateProjectDocument', () => {
         expect(isDuplicateProjectDocument(file, 'p1', [row({})])).toBe(true)
     })
 
+    it('keeps same-named files in different nested folders distinct', () => {
+        const nestedFile = { name: 'A.pdf', size: 100, webkitRelativePath: 'Target/2025/A.pdf' } as File
+        expect(isDuplicateProjectDocument(nestedFile, 'p1', [row({ sourceRelativePath: 'Target/2024/A.pdf' })])).toBe(false)
+        expect(isDuplicateProjectDocument(nestedFile, 'p1', [row({ sourceRelativePath: 'target/2025/a.pdf' })])).toBe(true)
+    })
+
     it('is not a duplicate when size differs', () => {
         expect(isDuplicateProjectDocument(file, 'p1', [row({ fileSize: 200 })])).toBe(false)
     })

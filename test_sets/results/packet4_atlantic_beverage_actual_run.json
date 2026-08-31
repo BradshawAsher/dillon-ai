@@ -1,0 +1,158 @@
+{
+  "business": "Atlantic Beverage & Bottling Corp (Beverage Packaging & Logistics)",
+  "projectId": "project-atlantic-beverage-proceed",
+  "evaluatedAt": "2026-08-30T12:00:00.000Z",
+  "documents": [
+    {
+      "fileName": "Atlantic_Beverage_3Yr_Audited_Financial_Model.xlsx",
+      "status": "completed",
+      "modelUsed": "OpenAI 5.6 Terra",
+      "detectedDocumentType": "Profit and Loss Statement",
+      "trafficLight": "GREEN",
+      "riskLevel": "LOW",
+      "financialFacts": [
+        {
+          "metric": "revenue",
+          "normalizedValue": 18500000,
+          "period": "FY2025",
+          "confidence": 1.0
+        },
+        {
+          "metric": "gross_profit",
+          "normalizedValue": 8880000,
+          "period": "FY2025",
+          "confidence": 1.0
+        },
+        {
+          "metric": "ebitda",
+          "normalizedValue": 3650000,
+          "period": "FY2025",
+          "confidence": 1.0
+        },
+        {
+          "metric": "adjusted_ebitda",
+          "normalizedValue": 3650000,
+          "period": "FY2025",
+          "confidence": 1.0
+        }
+      ],
+      "redFlags": [],
+      "yellowFlags": [],
+      "valuation": {
+        "base_estimate": 18500000
+      },
+      "mathCheckStatus": "passed"
+    },
+    {
+      "fileName": "Atlantic_Beverage_Executive_CIM.pdf",
+      "status": "completed",
+      "modelUsed": "OpenAI 5.6 Terra",
+      "detectedDocumentType": "Confidential Information Memorandum (CIM)",
+      "trafficLight": "GREEN",
+      "riskLevel": "LOW",
+      "financialFacts": [
+        {
+          "metric": "revenue",
+          "normalizedValue": 18500000,
+          "period": "FY2025",
+          "confidence": 1.0
+        },
+        {
+          "metric": "ebitda",
+          "normalizedValue": 3650000,
+          "period": "FY2025",
+          "confidence": 1.0
+        }
+      ],
+      "redFlags": [],
+      "yellowFlags": [],
+      "valuation": {
+        "base_estimate": 18500000
+      },
+      "mathCheckStatus": "passed"
+    },
+    {
+      "fileName": "Atlantic_Beverage_Executed_LOI_Agreement.docx",
+      "status": "completed",
+      "modelUsed": "OpenAI 5.6 Terra",
+      "detectedDocumentType": "Letter of Intent (LOI)",
+      "trafficLight": "GREEN",
+      "riskLevel": "LOW",
+      "financialFacts": [
+        {
+          "metric": "ebitda",
+          "normalizedValue": 3650000,
+          "period": "TTM",
+          "confidence": 1.0
+        }
+      ],
+      "redFlags": [],
+      "yellowFlags": [],
+      "valuation": {
+        "base_estimate": 18500000
+      },
+      "mathCheckStatus": "passed"
+    },
+    {
+      "fileName": "Atlantic_Beverage_Management_Presentation.pptx",
+      "status": "completed",
+      "modelUsed": "OpenAI 5.6 Terra",
+      "detectedDocumentType": "Operating Metrics",
+      "trafficLight": "GREEN",
+      "riskLevel": "LOW",
+      "financialFacts": [],
+      "redFlags": [],
+      "yellowFlags": [],
+      "mathCheckStatus": "passed"
+    },
+    {
+      "fileName": "Atlantic_Beverage_Broker_Due_Diligence_Thread.eml",
+      "status": "completed",
+      "modelUsed": "OpenAI 5.6 Terra",
+      "detectedDocumentType": "Due Diligence Data Room Packet",
+      "trafficLight": "GREEN",
+      "riskLevel": "LOW",
+      "financialFacts": [],
+      "redFlags": [],
+      "yellowFlags": [],
+      "mathCheckStatus": "passed"
+    },
+    {
+      "fileName": "Atlantic_Beverage_Founder_CFO_Interview.mp3",
+      "status": "completed",
+      "modelUsed": "OpenAI 5.6 Terra",
+      "detectedDocumentType": "Operating Metrics",
+      "trafficLight": "GREEN",
+      "riskLevel": "LOW",
+      "financialFacts": [
+        {
+          "metric": "revenue",
+          "normalizedValue": 18500000,
+          "period": "FY2025",
+          "confidence": 1.0
+        },
+        {
+          "metric": "ebitda",
+          "normalizedValue": 3650000,
+          "period": "FY2025",
+          "confidence": 1.0
+        }
+      ],
+      "redFlags": [],
+      "yellowFlags": [],
+      "mathCheckStatus": "passed"
+    },
+    {
+      "fileName": "Atlantic_Beverage_Bottling_Plant_Tour.mp4",
+      "status": "completed",
+      "modelUsed": "OpenAI 5.6 Terra",
+      "detectedDocumentType": "Operating Metrics",
+      "trafficLight": "GREEN",
+      "riskLevel": "LOW",
+      "financialFacts": [],
+      "redFlags": [],
+      "yellowFlags": [],
+      "mathCheckStatus": "passed"
+    }
+  ]
+}

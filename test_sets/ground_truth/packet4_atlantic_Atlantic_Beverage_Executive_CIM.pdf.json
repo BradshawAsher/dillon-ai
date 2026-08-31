@@ -1,0 +1,33 @@
+{
+  "fileName": "Atlantic_Beverage_Executive_CIM.pdf",
+  "business": "Atlantic Beverage & Bottling Corp (Beverage Packaging & Logistics)",
+  "fileType": "PDF",
+  "groundTruth": {
+    "documentType": "Confidential Information Memorandum (CIM)",
+    "trafficLight": "GREEN",
+    "riskLevel": "LOW",
+    "financialFacts": [
+      {
+        "metric": "revenue",
+        "normalizedValue": 18500000,
+        "period": "FY2025",
+        "rawValue": "$18,500,000"
+      },
+      {
+        "metric": "ebitda",
+        "normalizedValue": 3650000,
+        "period": "FY2025",
+        "rawValue": "$3,650,000"
+      }
+    ],
+    "expectedRedFlags": [],
+    "expectedYellowFlags": [],
+    "valuation": {
+      "valuationBaseEstimate": 18500000,
+      "askingPrice": 18500000,
+      "currency": "USD"
+    },
+    "expectedMathCheckStatus": "passed",
+    "expectedRecommendation": "PROCEED"
+  }
+}

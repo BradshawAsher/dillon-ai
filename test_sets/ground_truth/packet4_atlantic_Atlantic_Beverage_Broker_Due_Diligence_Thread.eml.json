@@ -1,0 +1,14 @@
+{
+  "fileName": "Atlantic_Beverage_Broker_Due_Diligence_Thread.eml",
+  "business": "Atlantic Beverage & Bottling Corp (Beverage Packaging & Logistics)",
+  "fileType": "EML",
+  "groundTruth": {
+    "documentType": "Due Diligence Data Room Packet",
+    "trafficLight": "GREEN",
+    "riskLevel": "LOW",
+    "financialFacts": [],
+    "expectedRedFlags": [],
+    "expectedYellowFlags": [],
+    "expectedRecommendation": "PROCEED"
+  }
+}

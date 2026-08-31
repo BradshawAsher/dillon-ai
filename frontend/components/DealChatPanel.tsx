@@ -3030,7 +3030,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
             // 2. If direct LLMs not active or returned empty, dispatch to live n8n cloud webhook
             if (!answer) {
                 try {
-                    const res = await fetch('https://merge-works.app.n8n.cloud/webhook/dd-chat', {
+                    const res = await fetch('/api/diligence/chat', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -3199,7 +3199,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
 
             if (!answer) {
                 try {
-                    const res = await fetch('https://merge-works.app.n8n.cloud/webhook/dd-chat', {
+                    const res = await fetch('/api/diligence/chat', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({

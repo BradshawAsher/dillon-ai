@@ -1,0 +1,16 @@
+{
+  "fileName": "TerraClean_Waste_Facility_Inspection_Site.mp4",
+  "business": "TerraClean Industrial Waste Solutions (Hazardous Waste Treatment)",
+  "fileType": "MP4",
+  "groundTruth": {
+    "documentType": "Operating Metrics",
+    "trafficLight": "RED",
+    "riskLevel": "CRITICAL",
+    "financialFacts": [],
+    "expectedRedFlags": [
+      "Facility video confirms structural failure in secondary containment tank farm"
+    ],
+    "expectedYellowFlags": [],
+    "expectedRecommendation": "WALK AWAY"
+  }
+}

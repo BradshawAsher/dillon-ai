@@ -1,0 +1,15 @@
+{
+  "fileName": "Vanguard_Aerospace_Machinery_Fleet_Inspection.docx",
+  "business": "Vanguard Precision Aerospace Machining (Defense Tooling & CNC)",
+  "fileType": "DOCX",
+  "groundTruth": {
+    "documentType": "Operating Metrics",
+    "trafficLight": "YELLOW",
+    "riskLevel": "ELEVATED",
+    "financialFacts": [],
+    "expectedYellowFlags": [
+      "$480k-$800k in immediate deferred CNC spindle repair required"
+    ],
+    "expectedRecommendation": "RENEGOTIATE"
+  }
+}

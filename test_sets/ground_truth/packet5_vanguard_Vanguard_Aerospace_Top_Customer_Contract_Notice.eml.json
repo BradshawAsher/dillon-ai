@@ -1,0 +1,15 @@
+{
+  "fileName": "Vanguard_Aerospace_Top_Customer_Contract_Notice.eml",
+  "business": "Vanguard Precision Aerospace Machining (Defense Tooling & CNC)",
+  "fileType": "EML",
+  "groundTruth": {
+    "documentType": "Due Diligence Data Room Packet",
+    "trafficLight": "YELLOW",
+    "riskLevel": "ELEVATED",
+    "financialFacts": [],
+    "expectedYellowFlags": [
+      "Top customer (38.5%) demands 15% price cut on RFP re-compete"
+    ],
+    "expectedRecommendation": "RENEGOTIATE"
+  }
+}

@@ -25,6 +25,7 @@ import stopBatchSubmissionImport from '../backend/diligence/stopBatchSubmission'
 import stopProjectSynthesisImport from '../backend/diligence/stopProjectSynthesis'
 import triggerProjectSynthesisImport from '../backend/diligence/triggerProjectSynthesis'
 import submitDealPacketImport from '../backend/diligence/submitDealPacket'
+import chatAssistantImport from '../backend/diligence/chatAssistant'
 import updateSubmissionRowImport from '../backend/diligence/updateSubmissionRow'
 import handleAccessRequestImport from '../backend/diligence/handleAccessRequest'
 import handleSlackAlertImport from '../backend/diligence/handleSlackAlert'
@@ -59,6 +60,7 @@ const stopBatchSubmission = interopDefault(stopBatchSubmissionImport)
 const stopProjectSynthesis = interopDefault(stopProjectSynthesisImport)
 const triggerProjectSynthesis = interopDefault(triggerProjectSynthesisImport)
 const submitDealPacket = interopDefault(submitDealPacketImport)
+const chatAssistant = interopDefault(chatAssistantImport)
 const updateSubmissionRow = interopDefault(updateSubmissionRowImport)
 const handleAccessRequest = interopDefault(handleAccessRequestImport)
 const handleSlackAlert = interopDefault(handleSlackAlertImport)
@@ -245,6 +247,14 @@ app.post('/api/diligence/submit', express.json({ limit: '50mb' }), async (req, r
             user: userFromHeaders(req.headers),
         })
         res.json(ack)
+    } catch (error) {
+        res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
+    }
+})
+
+app.post('/api/diligence/chat', express.json({ limit: '128kb' }), async (req, res) => {
+    try {
+        res.json(await chatAssistant({ params: req.body, user: userFromHeaders(req.headers) }))
     } catch (error) {
         res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
     }

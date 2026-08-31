@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { deriveBatchState, mergeBatchUploadAttempts } from './batchState'
+import { batchDocumentKey, deriveBatchState, mergeBatchUploadAttempts } from './batchState'
 import { batchCompletionTime } from './batchStop'
 import type { SubmissionHistoryItem } from './submissionHistory'
 import type { SubmissionBatch } from './diligenceDashboardUtils'
@@ -46,6 +46,12 @@ describe('batch display and timer contract', () => {
     it('does not merge distinct same-name files of different sizes', () => {
         const saved: SubmissionBatch = { ...batch, uploadAttempts: [{ fileName: 'pnl', fileSize: 200, fileType: '', status: 'upload_failed', updatedAt: new Date(start).toISOString() }] }
         expect(mergeBatchUploadAttempts(saved, [row('pnl', 'completed', 100)])).toHaveLength(2)
+    })
+    it('does not merge same-name and same-size files from different folders', () => {
+        const saved: SubmissionBatch = { ...batch, uploadAttempts: [{ fileName: 'pnl.xlsx', sourceRelativePath: 'Target/2025/pnl.xlsx', fileSize: 100, fileType: '', status: 'upload_failed', updatedAt: new Date(start).toISOString() }] }
+        const live = { ...row('pnl.xlsx', 'completed', 100), sourceRelativePath: 'Target/2024/pnl.xlsx' }
+        expect(batchDocumentKey(saved.uploadAttempts![0])).not.toBe(batchDocumentKey(live))
+        expect(mergeBatchUploadAttempts(saved, [live])).toHaveLength(2)
     })
     it('times out a manifest-only upload after a page reload instead of spinning forever', () => {
         const saved: SubmissionBatch = { ...batch, uploadAttempts: [{ fileName: 'lost.pdf', fileSize: 100, fileType: '', status: 'uploading', updatedAt: new Date(start).toISOString() }] }

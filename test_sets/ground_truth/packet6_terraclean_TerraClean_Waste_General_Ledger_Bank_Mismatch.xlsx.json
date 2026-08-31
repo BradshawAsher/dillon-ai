@@ -1,0 +1,23 @@
+{
+  "fileName": "TerraClean_Waste_General_Ledger_Bank_Mismatch.xlsx",
+  "business": "TerraClean Industrial Waste Solutions (Hazardous Waste Treatment)",
+  "fileType": "XLSX",
+  "groundTruth": {
+    "documentType": "Balance Sheet",
+    "trafficLight": "RED",
+    "riskLevel": "CRITICAL",
+    "financialFacts": [
+      {
+        "metric": "revenue",
+        "normalizedValue": 11200000,
+        "period": "FY2025",
+        "rawValue": "$11,200,000"
+      }
+    ],
+    "expectedRedFlags": [
+      "$10.8M cash deficit vs billed general ledger invoices with $5.8M phantom round-trip deposits"
+    ],
+    "expectedYellowFlags": [],
+    "expectedRecommendation": "WALK AWAY"
+  }
+}
