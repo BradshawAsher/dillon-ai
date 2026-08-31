@@ -1,7 +1,7 @@
 import React from 'react'
 import { Globe } from 'lucide-react'
 import { cn } from './shadcn/utils'
-import { getDataSource, setDataSource, type DataSource } from './dataSource'
+import { getDataSource, type DataSource } from './dataSource'
 
 export default function DataSourceToggle() {
     const current = getDataSource()
