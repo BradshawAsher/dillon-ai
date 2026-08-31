@@ -6,6 +6,7 @@ import { parseDocumentedFacts } from '../utils/evidence'
 import { normalizeEquityFraction } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
+import { gradeAgainstBenchmark } from '../utils/benchmarkGrade'
 
 type Props = {
     model: DealModel
@@ -111,23 +112,7 @@ export default function BenchmarkComparisonCard({ model }: Props) {
         return Math.max(0, Math.min(100, ((value - bench.low) / range) * 100))
     }
 
-    const getGrade = (row: BenchmarkRow): { label: string; color: string } => {
-        if (row.value === null) return { label: '—', color: 'text-muted-foreground' }
-        const v = row.value
-        const b = row.benchmark
-
-        if (row.higherIsBetter) {
-            if (v >= b.high) return { label: 'Excellent', color: 'text-green-600' }
-            if (v >= b.median) return { label: 'Good', color: 'text-green-600' }
-            if (v >= b.low) return { label: 'Below avg', color: 'text-amber-600' }
-            return { label: 'Poor', color: 'text-red-600' }
-        } else {
-            if (v <= b.low) return { label: 'Excellent', color: 'text-green-600' }
-            if (v <= b.median) return { label: 'Good', color: 'text-green-600' }
-            if (v <= b.high) return { label: 'Below avg', color: 'text-amber-600' }
-            return { label: 'Poor', color: 'text-red-600' }
-        }
-    }
+    const getGrade = gradeAgainstBenchmark
 
     return (
         <Card className="overflow-hidden">
