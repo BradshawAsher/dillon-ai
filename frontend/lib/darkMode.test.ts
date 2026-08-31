@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { getStoredTheme, setStoredTheme, applyTheme } from './darkMode'
+import { getStoredTheme, setStoredTheme, applyTheme, initTheme } from './darkMode'
 
 class MemoryStorage {
     private store = new Map<string, string>()
@@ -11,14 +11,16 @@ class MemoryStorage {
 
 let darkClass = false
 let prefersDark = false
+let mediaListenerCount = 0
 
 beforeEach(() => {
     darkClass = false
     prefersDark = false
+    mediaListenerCount = 0
     Object.defineProperty(globalThis, 'window', {
         value: {
             localStorage: new MemoryStorage(),
-            matchMedia: () => ({ matches: prefersDark, addEventListener() {} }),
+            matchMedia: () => ({ matches: prefersDark, addEventListener() { mediaListenerCount += 1 } }),
         },
         configurable: true,
     })
@@ -82,5 +84,14 @@ describe('applyTheme', () => {
         prefersDark = false
         applyTheme('system')
         expect(darkClass).toBe(false)
+    })
+})
+
+describe('initTheme', () => {
+    it('attaches the OS-preference listener only once across repeated calls', () => {
+        initTheme()
+        initTheme()
+        initTheme()
+        expect(mediaListenerCount).toBe(1)
     })
 })

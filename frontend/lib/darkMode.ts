@@ -20,8 +20,16 @@ export function applyTheme(theme: Theme) {
     document.documentElement.classList.toggle('dark', isDark)
 }
 
+// Ensures the OS-preference listener is only ever attached once. initTheme can
+// run more than once (React StrictMode double-invoke, HMR, remounts); without
+// this guard each call stacks another anonymous listener that can never be
+// removed, leaking handlers that all do the same work.
+let mediaListenerAttached = false
+
 export function initTheme() {
     applyTheme(getStoredTheme())
+    if (mediaListenerAttached || typeof window === 'undefined' || !window.matchMedia) return
+    mediaListenerAttached = true
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
         if (getStoredTheme() === 'system') applyTheme('system')
     })
