@@ -8,6 +8,7 @@ import {
     getProjectStatusVariant,
     isProjectArchivedKey,
     isRowMatchingProject,
+    unarchiveProjectKey,
 } from './projectWorkspace'
 
 describe('getProjectStatusVariant', () => {
@@ -93,6 +94,20 @@ describe('archived project key storage', () => {
     it('drops non-string entries from a corrupted array', () => {
         localStorage.setItem(CUSTOM_ARCHIVED_PROJECTS_STORAGE, JSON.stringify(['ok', 42, null, 'fine']))
         expect(getArchivedProjectKeys()).toEqual(['ok', 'fine'])
+    })
+
+    it('unarchives a key without disturbing the others', () => {
+        archiveProjectKey('proj-a')
+        archiveProjectKey('proj-b')
+        unarchiveProjectKey('proj-a')
+        expect(isProjectArchivedKey('proj-a')).toBe(false)
+        expect(isProjectArchivedKey('proj-b')).toBe(true)
+    })
+
+    it('is a no-op when unarchiving a key that was never archived', () => {
+        archiveProjectKey('proj-a')
+        unarchiveProjectKey('missing')
+        expect(getArchivedProjectKeys()).toEqual(['proj-a'])
     })
 })
 
