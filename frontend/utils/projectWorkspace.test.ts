@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import {
+    ACTIVE_PROJECT_KEY_STORAGE,
     CUSTOM_ARCHIVED_PROJECTS_STORAGE,
     archiveProjectKey,
     formatProjectStage,
@@ -8,6 +9,7 @@ import {
     getProjectStatusVariant,
     isProjectArchivedKey,
     isRowMatchingProject,
+    persistActiveProjectKey,
     unarchiveProjectKey,
 } from './projectWorkspace'
 
@@ -108,6 +110,24 @@ describe('archived project key storage', () => {
         archiveProjectKey('proj-a')
         unarchiveProjectKey('missing')
         expect(getArchivedProjectKeys()).toEqual(['proj-a'])
+    })
+
+    it('persistActiveProjectKey writes the key and reports success', () => {
+        expect(persistActiveProjectKey('proj-x')).toBe(true)
+        expect(localStorage.getItem(ACTIVE_PROJECT_KEY_STORAGE)).toBe('proj-x')
+    })
+
+    it('persistActiveProjectKey ignores an empty key', () => {
+        expect(persistActiveProjectKey('')).toBe(false)
+        expect(persistActiveProjectKey(null)).toBe(false)
+    })
+
+    it('persistActiveProjectKey returns false instead of throwing when storage is blocked', () => {
+        Object.defineProperty(globalThis, 'localStorage', {
+            value: { setItem() { throw new DOMException('QuotaExceededError') } },
+            configurable: true,
+        })
+        expect(persistActiveProjectKey('proj-y')).toBe(false)
     })
 })
 

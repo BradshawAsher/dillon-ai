@@ -6,6 +6,23 @@ import {
 } from './submissionHistory'
 
 export const CUSTOM_ARCHIVED_PROJECTS_STORAGE = 'mergeworks_archived_projects'
+export const ACTIVE_PROJECT_KEY_STORAGE = 'mergeworks.activeProjectKey'
+
+/**
+ * Persists the active project key, tolerating an unavailable/full localStorage.
+ * Several navigation paths wrote this key inline without a guard, so a disabled
+ * storage (private mode) could throw out of a tab/project switch. Returns true
+ * when the write actually landed.
+ */
+export function persistActiveProjectKey(projectKey: string | null | undefined): boolean {
+    if (typeof window === 'undefined' || !projectKey) return false
+    try {
+        window.localStorage.setItem(ACTIVE_PROJECT_KEY_STORAGE, projectKey)
+        return true
+    } catch {
+        return false
+    }
+}
 
 export function getDisplayTimestamp(row: SubmissionHistoryItem): string {
     return row.processedAt || row.processingStartedAt || row.receivedAt || row.updatedAt || row.createdAt || row.triggerTimestamp || ''

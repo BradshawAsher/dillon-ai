@@ -126,6 +126,7 @@ import {
     getProjectKey,
     isRowMatchingProject,
     isSystemTestProbeFile,
+    persistActiveProjectKey,
 } from '../utils/projectWorkspace'
 import { sumMeasuredCost } from '../utils/costModel'
 import { isActiveSubmissionStatus, isFailedSubmissionStatus, isTerminalSubmissionStatus, type SubmissionHistoryItem } from '../utils/submissionHistory'
@@ -1475,7 +1476,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 setActiveViewProjectId(targetKey)
             }
             if (typeof window !== 'undefined') {
-                window.localStorage.setItem('mergeworks.activeProjectKey', targetKey)
+                persistActiveProjectKey(targetKey)
             }
         }
         setHasRestoredLatestProject(true)
@@ -2785,7 +2786,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         setActiveWorkspaceTab('overview')
 
         if (typeof window !== 'undefined') {
-            window.localStorage.setItem('mergeworks.activeProjectKey', effectiveProjectId)
+            persistActiveProjectKey(effectiveProjectId)
             window.localStorage.setItem('mergeworks.selectedProjectKey', effectiveProjectId)
             syncBrowserUrl(effectiveProjectId, 'overview')
             window.location.hash = '#overview'
@@ -2803,7 +2804,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         setUserHasNavigatedBatchDocs(false)
 
         if (typeof window !== 'undefined') {
-            window.localStorage.setItem('mergeworks.activeProjectKey', projectKey)
+            persistActiveProjectKey(projectKey)
         }
 
         window.setTimeout(() => {
@@ -2901,7 +2902,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         const targetKey = project?.projectKey || targetProjectId
         setActiveViewProjectId(targetKey)
         if (typeof window !== 'undefined') {
-            window.localStorage.setItem('mergeworks.activeProjectKey', targetKey)
+            persistActiveProjectKey(targetKey)
         }
         setActiveWorkspaceTab('documents')
         window.setTimeout(() => {
@@ -2914,7 +2915,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         const targetKey = project?.projectKey || targetProjectId
         setActiveViewProjectId(targetKey)
         if (typeof window !== 'undefined') {
-            window.localStorage.setItem('mergeworks.activeProjectKey', targetKey)
+            persistActiveProjectKey(targetKey)
         }
         setActiveWorkspaceTab('synthesis')
         window.setTimeout(() => {
@@ -3782,7 +3783,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             setProjectId(targetProjectId)
             setActiveViewProjectId(targetProjectId)
             if (typeof window !== 'undefined') {
-                window.localStorage.setItem('mergeworks.activeProjectKey', targetProjectId)
+                persistActiveProjectKey(targetProjectId)
                 window.localStorage.setItem('mergeworks.selectedProjectKey', targetProjectId)
             }
 
