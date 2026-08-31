@@ -94,9 +94,11 @@ export default function InvestmentThesisCard({ model, synthesis, projectName }: 
                     <div className="flex items-center gap-2">
                         <Badge variant="secondary">Auto-generated</Badge>
                         <button
+                            type="button"
                             onClick={handleCopy}
                             className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                             title="Copy thesis"
+                            aria-label={copied ? 'Investment thesis copied' : 'Copy investment thesis'}
                         >
                             {copied ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
                         </button>
