@@ -1485,7 +1485,9 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             ) || projectSummaries[0]
 
             if (matchingProject) {
-                console.log(`[ProjectSync] Auto-resolving orphaned project key "${selectedProjectKey}" -> "${matchingProject.projectKey}"`)
+                if (import.meta.env.DEV) {
+                    console.log(`[ProjectSync] Auto-resolving orphaned project key "${selectedProjectKey}" -> "${matchingProject.projectKey}"`)
+                }
                 setSelectedProjectKey(matchingProject.projectKey)
             }
         }
