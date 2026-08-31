@@ -1,20 +1,11 @@
-import React, { useState, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import {
-    BarChart3,
     Building2,
-    Calendar,
-    Clock,
-    Cpu,
     CreditCard,
     Download,
-    FileText,
-    Filter,
     Layers,
-    RefreshCw,
     Search,
-    Sparkles,
     TrendingUp,
-    Zap,
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
