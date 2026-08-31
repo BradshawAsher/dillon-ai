@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { isDynamicImportError } from './lazyWithRetry'
+import { isChunkLoadError, isDynamicImportError } from './lazyWithRetry'
 
 describe('isDynamicImportError', () => {
     it('recognizes the Chromium/Vite and Firefox chunk failures', () => {
@@ -11,6 +11,10 @@ describe('isDynamicImportError', () => {
 
     it('recognizes the Safari phrasing that was previously missed', () => {
         expect(isDynamicImportError(new Error('Importing a module script failed.'))).toBe(true)
+    })
+
+    it('recognizes a bare fetch failure thrown from the dynamic import', () => {
+        expect(isChunkLoadError(new Error('Failed to fetch'))).toBe(true)
     })
 
     it('is case-insensitive and tolerates non-Error inputs', () => {

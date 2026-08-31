@@ -14,6 +14,7 @@ export function isDynamicImportError(error: unknown): boolean {
     : String(error ?? '')
   ).toLowerCase()
   return (
+    message === 'failed to fetch' ||
     message.includes('dynamically imported module') ||
     message.includes('loading chunk') ||
     message.includes('failed to fetch dynamically imported module') ||
@@ -23,6 +24,9 @@ export function isDynamicImportError(error: unknown): boolean {
     message.includes('failed to load module script')
   )
 }
+
+/** Backward-compatible name used by utility callers and focused tests. */
+export const isChunkLoadError = isDynamicImportError
 
 /**
  * Wraps React.lazy with automatic single reload when a dynamic import fails
