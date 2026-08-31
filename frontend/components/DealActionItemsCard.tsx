@@ -153,16 +153,21 @@ export default function DealActionItemsCard({ model, synthesis, documents }: Pro
                     <div className="flex items-center gap-2">
                         <Badge variant="secondary">{doneCount}/{totalCount}</Badge>
                         <button
+                            type="button"
                             onClick={() => setIsAdding(!isAdding)}
                             className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                             title="Add custom action item"
+                            aria-label="Add custom action item"
+                            aria-expanded={isAdding}
                         >
                             <Plus className="h-4 w-4" />
                         </button>
                         <button
+                            type="button"
                             onClick={handleResetToDefaults}
                             className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                             title="Reset to default suggestions"
+                            aria-label="Reset to default suggestions"
                         >
                             <RotateCcw className="h-3.5 w-3.5" />
                         </button>
@@ -225,9 +230,12 @@ export default function DealActionItemsCard({ model, synthesis, documents }: Pro
                     {items.map(action => (
                         <div key={action.id} className={`group flex items-start gap-3 px-4 py-2.5 transition-colors hover:bg-muted/20 ${action.done ? 'opacity-60' : ''}`}>
                             <button
+                                type="button"
                                 onClick={() => toggleDone(action.id)}
                                 className="mt-0.5 shrink-0 focus:outline-none"
                                 title={action.done ? 'Mark incomplete' : 'Mark complete'}
+                                aria-label={action.done ? 'Mark action item incomplete' : 'Mark action item complete'}
+                                aria-pressed={action.done}
                             >
                                 {action.done ? (
                                     <CheckCircle2 className="h-4 w-4 text-green-600" />
@@ -246,9 +254,11 @@ export default function DealActionItemsCard({ model, synthesis, documents }: Pro
                                     <Badge variant="destructive" className="text-[9px]">Priority</Badge>
                                 )}
                                 <button
+                                    type="button"
                                     onClick={() => deleteItem(action.id)}
                                     className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-destructive transition-opacity"
                                     title="Delete item"
+                                    aria-label="Delete action item"
                                 >
                                     <Trash2 className="h-3.5 w-3.5" />
                                 </button>
