@@ -127,6 +127,7 @@ import {
     isRowMatchingProject,
     isSystemTestProbeFile,
     persistActiveProjectKey,
+    persistSelectedProjectKey,
 } from '../utils/projectWorkspace'
 import { sumMeasuredCost } from '../utils/costModel'
 import { isActiveSubmissionStatus, isFailedSubmissionStatus, isTerminalSubmissionStatus, type SubmissionHistoryItem } from '../utils/submissionHistory'
@@ -1659,8 +1660,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         setEditingQuestionnaireProjectId(projectKey)
         setActiveViewProjectId(projectKey)
         if (typeof window !== 'undefined') {
-            window.localStorage.setItem('mergeworks.activeProjectKey', projectKey)
-            window.localStorage.setItem('mergeworks.selectedProjectKey', projectKey)
+            persistActiveProjectKey(projectKey)
+            persistSelectedProjectKey(projectKey)
             syncBrowserUrl(projectKey, activeWorkspaceTab)
             window.setTimeout(() => {
                 const el = document.getElementById('quick-deal-questionnaire') || document.querySelector('[data-quick-deal-questionnaire]')
@@ -2787,7 +2788,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
         if (typeof window !== 'undefined') {
             persistActiveProjectKey(effectiveProjectId)
-            window.localStorage.setItem('mergeworks.selectedProjectKey', effectiveProjectId)
+            persistSelectedProjectKey(effectiveProjectId)
             syncBrowserUrl(effectiveProjectId, 'overview')
             window.location.hash = '#overview'
             window.setTimeout(() => {
@@ -2821,7 +2822,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
         if (notification.projectId) {
             setActiveViewProjectId(notification.projectId)
-            try { window.localStorage.setItem('mergeworks.activeProjectKey', notification.projectId) } catch {}
+            persistActiveProjectKey(notification.projectId)
         }
         setActiveWorkspaceTab(targetTab)
 
@@ -3784,7 +3785,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             setActiveViewProjectId(targetProjectId)
             if (typeof window !== 'undefined') {
                 persistActiveProjectKey(targetProjectId)
-                window.localStorage.setItem('mergeworks.selectedProjectKey', targetProjectId)
+                persistSelectedProjectKey(targetProjectId)
             }
 
             const submissionBatchId = `batch-${now}-${Math.random().toString(36).substring(2, 7)}`

@@ -10,6 +10,8 @@ import {
     isProjectArchivedKey,
     isRowMatchingProject,
     persistActiveProjectKey,
+    persistSelectedProjectKey,
+    SELECTED_PROJECT_KEY_STORAGE,
     unarchiveProjectKey,
 } from './projectWorkspace'
 
@@ -128,6 +130,17 @@ describe('archived project key storage', () => {
             configurable: true,
         })
         expect(persistActiveProjectKey('proj-y')).toBe(false)
+    })
+
+    it('persistSelectedProjectKey writes under its own key and guards failures', () => {
+        expect(persistSelectedProjectKey('sel-1')).toBe(true)
+        expect(localStorage.getItem(SELECTED_PROJECT_KEY_STORAGE)).toBe('sel-1')
+        expect(persistSelectedProjectKey('')).toBe(false)
+        Object.defineProperty(globalThis, 'localStorage', {
+            value: { setItem() { throw new DOMException('QuotaExceededError') } },
+            configurable: true,
+        })
+        expect(persistSelectedProjectKey('sel-2')).toBe(false)
     })
 })
 

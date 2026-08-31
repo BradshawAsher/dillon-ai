@@ -7,6 +7,17 @@ import {
 
 export const CUSTOM_ARCHIVED_PROJECTS_STORAGE = 'mergeworks_archived_projects'
 export const ACTIVE_PROJECT_KEY_STORAGE = 'mergeworks.activeProjectKey'
+export const SELECTED_PROJECT_KEY_STORAGE = 'mergeworks.selectedProjectKey'
+
+function persistProjectKey(storageKey: string, projectKey: string | null | undefined): boolean {
+    if (typeof window === 'undefined' || !projectKey) return false
+    try {
+        window.localStorage.setItem(storageKey, projectKey)
+        return true
+    } catch {
+        return false
+    }
+}
 
 /**
  * Persists the active project key, tolerating an unavailable/full localStorage.
@@ -15,13 +26,12 @@ export const ACTIVE_PROJECT_KEY_STORAGE = 'mergeworks.activeProjectKey'
  * when the write actually landed.
  */
 export function persistActiveProjectKey(projectKey: string | null | undefined): boolean {
-    if (typeof window === 'undefined' || !projectKey) return false
-    try {
-        window.localStorage.setItem(ACTIVE_PROJECT_KEY_STORAGE, projectKey)
-        return true
-    } catch {
-        return false
-    }
+    return persistProjectKey(ACTIVE_PROJECT_KEY_STORAGE, projectKey)
+}
+
+/** Same guarantees as persistActiveProjectKey, for the selected-project key. */
+export function persistSelectedProjectKey(projectKey: string | null | undefined): boolean {
+    return persistProjectKey(SELECTED_PROJECT_KEY_STORAGE, projectKey)
 }
 
 export function getDisplayTimestamp(row: SubmissionHistoryItem): string {
