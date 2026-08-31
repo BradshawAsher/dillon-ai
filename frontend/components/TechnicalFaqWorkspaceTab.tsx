@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { filterFaqs } from '../utils/faq'
 import {
     HelpCircle,
@@ -6,21 +6,15 @@ import {
     X,
     FileText,
     Zap,
-    SlidersHorizontal,
     Database,
-    ShieldAlert,
-    Terminal,
     ChevronDown,
     ChevronUp,
-    CheckCircle2,
     Layers,
-    Command,
     ExternalLink,
-    Play,
     BookOpen,
 } from 'lucide-react'
 import { Button } from '../lib/shadcn/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
+import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
 import { Badge } from '../lib/shadcn/badge'
 
