@@ -5,7 +5,7 @@ import { Button } from '../../lib/shadcn/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../lib/shadcn/card'
 import type { SubmissionBatch } from '../../utils/diligenceDashboardUtils'
 import { isFailedSubmissionStatus } from '../../utils/submissionHistory'
-import { formatElapsedDuration } from '../../utils/diligenceDashboardUtils'
+import { formatElapsedDuration, getDocumentExtractionDurationSec } from '../../utils/diligenceDashboardUtils'
 import { formatHours } from '../../utils/impactMetrics'
 
 type BatchProgressCardProps = {
@@ -69,9 +69,13 @@ export function BatchProgressCard({
     handleRunSynthesis,
     isAwaitingSynthesis = false,
 }: BatchProgressCardProps) {
-    const [isDocsExpanded, setIsDocsExpanded] = useState(false)
+    const [isDocsExpanded, setIsDocsExpanded] = useState(true)
     const isFinished = !isSubmitting && !isInterrupted && !activeSubmissionBatch.stopError && activeBatchExpectedCount > 0 && activeBatchFinishedCount >= activeBatchExpectedCount
     const isStopped = Boolean(activeSubmissionBatch.stoppedAt)
+
+    const totalBatchDocSec = (batchDocuments || []).reduce((sum, doc) => sum + (getDocumentExtractionDurationSec(doc) || 0), 0)
+    const completedBatchDocs = (batchDocuments || []).filter(d => ['completed', 'approved'].includes((d?.status || '').toLowerCase()) || getDocumentExtractionDurationSec(d) !== null)
+    const avgBatchDocSec = completedBatchDocs.length > 0 ? Math.round(totalBatchDocSec / completedBatchDocs.length) : 18
 
     return (
         <Card className="border border-border shadow-sm">
@@ -197,7 +201,12 @@ export function BatchProgressCard({
                         >
                             <span className="flex items-center gap-2">
                                 <FileText className="h-4 w-4 text-primary" />
-                                Documents in this batch ({batchDocuments.length})
+                                <span>Documents in this batch ({batchDocuments.length})</span>
+                                {totalBatchDocSec > 0 ? (
+                                    <span className="font-mono text-[11px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20">
+                                        ~{formatElapsedDuration(totalBatchDocSec)} total extraction · ~{avgBatchDocSec}s/doc
+                                    </span>
+                                ) : null}
                             </span>
                             {isDocsExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
                         </button>
@@ -206,6 +215,7 @@ export function BatchProgressCard({
                                 {batchDocuments.map((doc: any) => {
                                     const reqId = doc.requestID || String(doc.id || '')
                                     const st = (doc.status || 'unknown').trim().toLowerCase()
+                                    const docDur = getDocumentExtractionDurationSec(doc)
                                     return (
                                         <div key={reqId || doc.fileName} className="pt-2 flex flex-wrap items-center justify-between gap-2 text-xs">
                                             <div className="min-w-0 max-w-sm">
@@ -213,6 +223,17 @@ export function BatchProgressCard({
                                                 <p className="text-muted-foreground text-[11px]">{doc.documentType || 'Document'} · {doc.status || 'pending'}</p>
                                             </div>
                                             <div className="flex items-center gap-2">
+                                                {docDur !== null ? (
+                                                    <Badge variant="outline" className="font-mono text-[10px] font-bold border-primary/40 bg-primary/10 text-primary gap-1">
+                                                        <Clock className="h-3 w-3 text-primary shrink-0" />
+                                                        {formatElapsedDuration(docDur)}
+                                                    </Badge>
+                                                ) : ['processing', 'running'].includes(st) ? (
+                                                    <Badge variant="outline" className="font-mono text-[10px] text-primary border-primary/30 bg-primary/5 gap-1">
+                                                        <Loader2 className="h-3 w-3 animate-spin text-primary shrink-0" />
+                                                        Processing...
+                                                    </Badge>
+                                                ) : null}
                                                 <Badge variant={st === 'completed' ? 'success' : isFailedSubmissionStatus(st) ? 'destructive' : 'outline'} className="text-[10px]">
                                                     {doc.status || 'pending'}
                                                 </Badge>
