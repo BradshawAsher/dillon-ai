@@ -16,6 +16,7 @@ import { formatCurrencyValue, getSubmissionInsightTone } from '../utils/aiSubmis
 import { downloadTextFile, fileSafeName } from '../utils/downloadFile'
 import { formatHours, type ImpactMetrics } from '../utils/impactMetrics'
 import { getProjectKey, isRowMatchingProject, formatProjectDisplayName, type ProjectSummary } from '../utils/projectWorkspace'
+import { getSeverityForGroup, type InsightGroupType } from '../utils/insightGroups'
 import { buildDocumentLinkedEvidence, parseDocumentedFacts, type EvidenceItem } from '../utils/evidence'
 import { calculateBatchTotalCost, calculateSynthesisCost, formatElapsedDuration, getDocumentExtractionDurationSec, getSynthesisDurationSec } from '../utils/diligenceDashboardUtils'
 import { classifyError } from '../utils/errorClassifier'
@@ -149,7 +150,6 @@ export function downloadSynthesisReport(synthesis: ProjectSynthesisItem, project
     downloadTextFile(fileSafeName(projectName) + '-project-synthesis.md', report, 'text/markdown;charset=utf-8')
 }
 
-type InsightGroupType = 'red-flag' | 'yellow-flag' | 'green-flag' | 'takeaway' | 'conflict' | 'negotiation-lever' | 'missing-document' | 'open-question'
 
 function insightGroupStatus(groupType: InsightGroupType): string {
     switch (groupType) {
@@ -181,22 +181,6 @@ function insightGroupLabel(groupType: InsightGroupType): string {
 type SeverityFilter = 'all' | 'critical' | 'medium' | 'low' | 'informational'
 type TypeFilter = 'all' | InsightGroupType
 
-function getSeverityForGroup(groupType: InsightGroupType): SeverityFilter {
-    switch (groupType) {
-        case 'red-flag':
-        case 'conflict':
-            return 'critical'
-        case 'yellow-flag':
-        case 'missing-document':
-        case 'open-question':
-            return 'medium'
-        case 'green-flag':
-            return 'low'
-        case 'takeaway':
-        case 'negotiation-lever':
-            return 'informational'
-    }
-}
 
 
 
