@@ -191,3 +191,43 @@
   secret values cannot be read or compared through n8n MCP, so an actual
   credential-value match still requires a normal authenticated production
   action by the app.
+
+---
+
+# Implementation Plan — Reconcile Fictional-Entity and Media Test Packets (2026-08-31)
+
+## Empirical Root Cause Analysis
+
+- The correction bundle contains cleaned packet 2, 4, and 5 documents plus
+  reproducible media sources for packets 4, 5, and 6.
+- A partial manual merge moved the tracked packet 4, 5, and 6 directories into
+  `test_sets/deals/Old`, leaving Git to report twenty deletions. The generated
+  replacement audio files also lost the canonical underscore-based filenames.
+- The bundle's scripts were copied into `test_sets/scripts`, but their path
+  calculations require them to live in the repository-level `scripts` folder.
+- Most raw ground-truth hash differences are line endings. Only the four media
+  ground-truth files change semantically, and four timestamped evaluator-only
+  transcripts are new.
+
+## Targeted Changes
+
+1. Restore packet 4, 5, and 6 directories from `Old`, preserving the newly
+   generated media bytes while restoring their canonical filenames.
+2. Overlay the entity-clean packet 2, 4, and 5 documents supplied in the
+   correction bundle; leave unrelated packet documents unchanged.
+3. Merge the four substantive media ground-truth updates, evaluator-only
+   transcripts, deterministic media source assets, and media provenance README.
+4. Install the corrected generators and real-entity checker under root
+   `scripts/`; remove the accidental `test_sets/scripts` copy.
+5. Keep the original correction bundle as an ignored local backup until the
+   merged tree has passed all verification.
+
+## Regression Verification
+
+- Validate every Office/PDF/JSON file can be parsed and every expected packet
+  file has a matching ground-truth record.
+- Run the format-aware real-entity checker over all merged deal packets.
+- Verify media duration, bitrate, dimensions, canonical names, and transcript
+  metadata against the new media ground truth.
+- Confirm the generator scripts compile and no packet directory remains staged
+  as an accidental deletion.
