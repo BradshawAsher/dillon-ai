@@ -1118,6 +1118,7 @@ export default function ProjectSynthesisCard({
                         model={model}
                         projectName={currentProject ? formatProjectDisplayName(currentProject) : (activeSynthesis?.projectName || activeSynthesis?.companyName || normalizedProjectId)}
                         projectId={normalizedProjectId}
+                        documents={projectDocuments}
                     />
                 ) : null}
                 {error ? (

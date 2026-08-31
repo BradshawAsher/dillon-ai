@@ -1,6 +1,7 @@
 import { Clock, Download, Mail, Pin, PinOff, Scale } from 'lucide-react'
 
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
+import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import ExpandableText from './ExpandableText'
 import { Badge } from '../lib/shadcn/badge'
 import { Card, CardContent } from '../lib/shadcn/card'
@@ -8,7 +9,7 @@ import { getSubmissionInsightTone } from '../utils/aiSubmissionData'
 import { formatHours, type ImpactMetrics } from '../utils/impactMetrics'
 import { downloadSynthesisReport } from './ProjectSynthesisCard'
 import DealEmailDraftModal from './DealEmailDraftModal'
-import { formatElapsedDuration, getSynthesisDurationSec } from '../utils/diligenceDashboardUtils'
+import { formatElapsedDuration, getProjectTimingSummary } from '../utils/diligenceDashboardUtils'
 
 import { useMemo, useState } from 'react'
 import ActionableRecommendationInfoButton from './ActionableRecommendationInfoButton'
@@ -47,6 +48,7 @@ export interface AcquisitionJudgmentCalloutProps {
     model?: DealModel
     projectName?: string
     projectId?: string
+    documents?: SubmissionHistoryItem[]
 }
 
 export default function AcquisitionJudgmentCallout({
@@ -56,9 +58,11 @@ export default function AcquisitionJudgmentCallout({
     model,
     projectName,
     projectId,
+    documents = [],
 }: AcquisitionJudgmentCalloutProps) {
     const [isPinned, setIsPinned] = useState(false)
     const [isEmailModalOpen, setIsEmailModalOpen] = useState(false)
+    const projectTiming = useMemo(() => getProjectTimingSummary(documents, synthesis), [documents, synthesis])
 
     const pending = !synthesis || !synthesis.finalJudgmentSummary
     const message = pending
@@ -276,12 +280,21 @@ export default function AcquisitionJudgmentCallout({
                             </div>
                         ) : null}
                         {(() => {
-                            const synthDur = getSynthesisDurationSec(synthesis)
-                            if (synthDur === null) return null
+                            if (projectTiming.synthesisSec === null && projectTiming.totalProjectSec === null) return null
                             return (
-                                <div className="inline-flex items-center gap-2 rounded-lg border-2 border-primary/50 bg-primary/10 px-3.5 py-1.5 text-xs sm:text-sm font-mono font-bold text-primary shadow-xs">
-                                    <Clock className="h-4 w-4 text-primary animate-pulse shrink-0" />
-                                    <span>Synthesis: ~{formatElapsedDuration(synthDur)}</span>
+                                <div className="flex flex-wrap items-center gap-2">
+                                    {projectTiming.synthesisSec !== null ? (
+                                        <div className="inline-flex items-center gap-2 rounded-lg border-2 border-primary/50 bg-primary/10 px-3.5 py-1.5 text-xs sm:text-sm font-mono font-bold text-primary shadow-xs">
+                                            <Clock className="h-4 w-4 text-primary shrink-0" />
+                                            <span>Synthesis: {formatElapsedDuration(projectTiming.synthesisSec)}</span>
+                                        </div>
+                                    ) : null}
+                                    {projectTiming.totalProjectSec !== null ? (
+                                        <div className="inline-flex items-center gap-2 rounded-lg border-2 border-indigo-500/50 bg-indigo-500/10 px-3.5 py-1.5 text-xs sm:text-sm font-mono font-bold text-indigo-700 dark:text-indigo-300 shadow-xs">
+                                            <Clock className="h-4 w-4 shrink-0" />
+                                            <span>Total Project: {formatElapsedDuration(projectTiming.totalProjectSec)}</span>
+                                        </div>
+                                    ) : null}
                                 </div>
                             )
                         })()}
@@ -297,12 +310,11 @@ export default function AcquisitionJudgmentCallout({
                             <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
                                 <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Actionable Recommendation</p>
                                 {(() => {
-                                    const synthDur = getSynthesisDurationSec(synthesis)
-                                    if (synthDur === null) return null
+                                    if (projectTiming.synthesisSec === null) return null
                                     return (
                                         <span className="font-mono text-xs font-bold text-primary flex items-center gap-1.5 bg-primary/10 px-2.5 py-1 rounded-md border border-primary/25">
                                             <Clock className="h-3.5 w-3.5 text-primary shrink-0" />
-                                            AI Synthesis Latency: ~{formatElapsedDuration(synthDur)}
+                                            AI Synthesis Latency: {formatElapsedDuration(projectTiming.synthesisSec)}
                                         </span>
                                     )
                                 })()}

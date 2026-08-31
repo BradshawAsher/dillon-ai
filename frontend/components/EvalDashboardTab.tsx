@@ -38,7 +38,7 @@ import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
 import EvalDiagnosticsPanel from './EvalDiagnosticsPanel'
 import { benchmarkGroundTruthSyntheses } from '../evals/ground_truths'
-import { calculateBatchTotalCost, calculateSynthesisCost, calculateDocumentCost } from '../utils/diligenceDashboardUtils'
+import { calculateBatchTotalCost, calculateSynthesisCost, calculateDocumentCost, formatElapsedDuration, getMeasuredDocumentExtractionDurationSec, getProjectTimingSummary } from '../utils/diligenceDashboardUtils'
 import { HighLevelBusinessSummaryModal, HighLevelBusinessSummaryData } from './HighLevelBusinessSummaryModal'
 import { formatMagnitude, resolveFinancialMetricsForProject } from '../utils/financialMetrics'
 import { parseMagnitudeMoney } from '../utils/documentedFacts'
@@ -172,29 +172,8 @@ function findBenchmarkGroundTruth(businessName: string, projectId?: string) {
     })
 }
 
-function getDocDurationSec(doc: any): number {
-    if (typeof doc?.durationSec === 'number' && doc.durationSec > 0) {
-        return doc.durationSec
-    }
-    if (typeof doc?.duration_sec === 'number' && doc.duration_sec > 0) {
-        return doc.duration_sec
-    }
-    if (typeof doc?.processingTimeSec === 'number' && doc.processingTimeSec > 0) {
-        return doc.processingTimeSec
-    }
-    const startStr = doc?.processingStartedAt || doc?.receivedAt || doc?.triggerTimestamp || doc?.createdAt
-    const endStr = doc?.processedAt || doc?.updatedAt
-    if (startStr && endStr) {
-        const startMs = Date.parse(startStr)
-        const endMs = Date.parse(endStr)
-        if (!Number.isNaN(startMs) && !Number.isNaN(endMs) && endMs > startMs) {
-            const diffSec = Math.round((endMs - startMs) / 1000)
-            if (diffSec > 0 && diffSec < 3600) {
-                return diffSec
-            }
-        }
-    }
-    return 18
+function getDocDurationSec(doc: any): number | null {
+    return getMeasuredDocumentExtractionDurationSec(doc)
 }
 
 function downloadTextFile(filename: string, content: string, mimeType = 'text/markdown;charset=utf-8') {
@@ -1312,7 +1291,7 @@ export default function EvalDashboardTab({
                         const sorted = [...filtered].sort((a: any, b: any) => {
                             if (sortBy === 'score_desc') return (b.percentage || 0) - (a.percentage || 0)
                             if (sortBy === 'score_asc') return (a.percentage || 0) - (b.percentage || 0)
-                            if (sortBy === 'duration_desc') return getDocDurationSec(b) - getDocDurationSec(a)
+                            if (sortBy === 'duration_desc') return (getDocDurationSec(b) || 0) - (getDocDurationSec(a) || 0)
                             if (sortBy === 'name_asc') return (a.fileName || '').localeCompare(b.fileName || '')
                             return 0
                         })
@@ -1715,8 +1694,6 @@ export default function EvalDashboardTab({
                             const isDocPassed = (d: any) => (d.percentage ?? 0) >= 80
                             const passCount = docs.filter(isDocPassed).length
                             const projectPass = avgScore >= 80
-                            const totalDurationSec = docs.reduce((sum: number, d: any) => sum + getDocDurationSec(d), 0)
-
                             const targetProjectKey = docs[0]?.projectId || docs[0]?.projectKey || mapBusinessToProjectKey(businessName, docs[0])
                             const matchingSynth = syntheses?.find((s) => s.projectId === targetProjectKey)
                             const matchingBenchmarkSynth = findBenchmarkGroundTruth(businessName, targetProjectKey)
@@ -1794,6 +1771,7 @@ export default function EvalDashboardTab({
                                 const loiBool = typeof s.letterOfIntentPresent === 'string' ? s.letterOfIntentPresent === 'true' : Boolean(s.letterOfIntentPresent)
                                 return keyMatch && (isPreLoi ? !loiBool : loiBool)
                             }) || matchingSynth
+                            const phaseTiming = getProjectTimingSummary(phaseDocs, phaseSynth ?? matchingBenchmarkSynth)
 
                             // Phase-scoped cost calculation
                             const phaseExtractionTotal = calculateBatchTotalCost(phaseDocs)
@@ -1921,7 +1899,7 @@ export default function EvalDashboardTab({
                                 : <Badge variant="outline" className="text-xs font-bold gap-1 px-2.5 py-0.5 bg-amber-500/15 text-amber-900 dark:text-amber-200 border-amber-400/80">⚠️ Post-LOI Synthesis Pending (Needs LOI File)</Badge>
 
                             return (
-                                <div key={`${groupIdx}_${cardPhase}`} className={`rounded-xl p-5 space-y-4 flex flex-col justify-between transition-all shadow-xs ${cardTheme}`}>
+                                <div key={`${groupIdx}_${cardPhase}`} className={`min-w-0 overflow-hidden rounded-xl p-5 space-y-4 flex flex-col justify-between transition-all shadow-xs ${cardTheme}`}>
                                     {/* Card Header: Title & Toggles on top, Actions below */}
                                     <div className="flex flex-col gap-3 border-b border-border/60 pb-3.5">
                                         <div className="space-y-2">
@@ -2074,8 +2052,8 @@ export default function EvalDashboardTab({
                                     ) : null}
 
                                     {/* Valuation, Seller Ask & Execution Bar */}
-                                    <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-xs">
-                                        <div className="flex flex-wrap items-center gap-1.5">
+                                    <div className="flex min-w-0 flex-wrap items-center justify-between gap-2.5 rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-xs">
+                                        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
                                             <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide mr-1">Valuation:</span>
                                             <Badge variant="outline" className="text-[11px] font-mono bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-300">
                                                 Bear: {phaseVal.bear}
@@ -2091,8 +2069,30 @@ export default function EvalDashboardTab({
                                                 {sellerAskLabel}
                                             </Badge>
                                         </div>
-                                        <div className="text-xs text-muted-foreground font-medium">
-                                            Execution time: ~{totalDurationSec}s total across workflow passes
+                                        <div className="shrink-0 text-xs font-semibold text-foreground">
+                                            Project time: {phaseTiming.totalProjectSec !== null ? formatElapsedDuration(phaseTiming.totalProjectSec) : '—'}
+                                        </div>
+                                    </div>
+
+                                    <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-3">
+                                        <div className="min-w-0 rounded-lg border border-indigo-300/60 bg-indigo-500/10 px-3 py-2">
+                                            <p className="text-[10px] font-bold uppercase tracking-wide text-indigo-700 dark:text-indigo-300">Project time</p>
+                                            <p className="mt-0.5 flex items-center gap-1 text-sm font-bold text-foreground">
+                                                <Clock className="h-3.5 w-3.5 shrink-0 text-indigo-600" />
+                                                {phaseTiming.totalProjectSec !== null ? formatElapsedDuration(phaseTiming.totalProjectSec) : '—'}
+                                            </p>
+                                        </div>
+                                        <div className="min-w-0 rounded-lg border border-blue-300/60 bg-blue-500/10 px-3 py-2">
+                                            <p className="text-[10px] font-bold uppercase tracking-wide text-blue-700 dark:text-blue-300">Parallel extraction</p>
+                                            <p className="mt-0.5 text-sm font-bold text-foreground">
+                                                {phaseTiming.extractionWallClockSec !== null ? formatElapsedDuration(phaseTiming.extractionWallClockSec) : '—'}
+                                            </p>
+                                        </div>
+                                        <div className="min-w-0 rounded-lg border border-purple-300/60 bg-purple-500/10 px-3 py-2">
+                                            <p className="text-[10px] font-bold uppercase tracking-wide text-purple-700 dark:text-purple-300">Synthesis</p>
+                                            <p className="mt-0.5 text-sm font-bold text-foreground">
+                                                {phaseTiming.synthesisSec !== null ? formatElapsedDuration(phaseTiming.synthesisSec) : '—'}
+                                            </p>
                                         </div>
                                     </div>
 
@@ -2201,12 +2201,13 @@ export default function EvalDashboardTab({
                                             )
                                         }
                                         return (
-                                            <div className="space-y-3">
-                                                <div className="max-h-[380px] overflow-y-auto pr-1.5 scrollbar-thin rounded-lg">
-                                                    <div className={`grid gap-2.5 ${evalLayoutMode === 'grid' ? 'grid-cols-1 sm:grid-cols-2' : (docs.length > 10 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid-cols-1 md:grid-cols-2')}`}>
-                                                    {docs.map((doc: any, docIdx: number) => {
+                                            <div className="min-w-0 space-y-3 overflow-hidden">
+                                                <div className="max-h-[380px] min-w-0 overflow-x-hidden overflow-y-auto pr-1.5 scrollbar-thin rounded-lg">
+                                                    <div className={`grid min-w-0 gap-2.5 ${evalLayoutMode === 'grid' ? 'grid-cols-1' : (phaseDocs.length > 10 ? 'grid-cols-1 2xl:grid-cols-2' : 'grid-cols-1')}`}>
+                                                    {phaseDocs.map((doc: any, docIdx: number) => {
                                                         const isPass = isDocPassed(doc)
                                                         const docCost = doc.costUsd || val.perDocCost
+                                                        const docDurationSec = getDocDurationSec(doc)
                                                         const targetKey = doc.projectId || doc.projectKey || docs[0]?.projectId || docs[0]?.projectKey || mapBusinessToProjectKey(businessName, doc)
                                                         const targetDocName = doc.fileName || doc.originalFilename || ''
                                                         
@@ -2230,21 +2231,21 @@ export default function EvalDashboardTab({
                                                                         handleOpenDocOrFolder()
                                                                     }
                                                                 }}
-                                                                className={`rounded-lg border transition-all cursor-pointer hover:border-primary/60 hover:shadow-md hover:bg-accent/5 dark:hover:bg-accent/15 active:scale-[0.995] group focus:outline-none focus:ring-2 focus:ring-primary/40 ${docs.length > 10 ? 'p-2.5 space-y-1.5' : 'p-3.5 space-y-2.5'} ${
+                                                                className={`min-w-0 overflow-hidden rounded-lg border transition-all cursor-pointer hover:border-primary/60 hover:shadow-md hover:bg-accent/5 dark:hover:bg-accent/15 active:scale-[0.995] group focus:outline-none focus:ring-2 focus:ring-primary/40 ${phaseDocs.length > 10 ? 'p-2.5 space-y-1.5' : 'p-3.5 space-y-2.5'} ${
                                                                     isPass
                                                                         ? 'border-emerald-500/30 bg-emerald-50/30 dark:bg-emerald-950/10'
                                                                         : 'border-red-500/30 bg-red-50/30 dark:bg-red-950/10'
                                                                 }`}
-                                                                title={`Click to open ${isDDPacket || (doc.fileName || '').toLowerCase().includes('due_diligence_packet') || (doc.fileName || '').toLowerCase().includes('folder') || docs.length > 10 ? 'folder' : 'document'} workspace for ${doc.fileName || businessName}`}
+                                                                title={`Click to open ${isDDPacket || (doc.fileName || '').toLowerCase().includes('due_diligence_packet') || (doc.fileName || '').toLowerCase().includes('folder') || phaseDocs.length > 10 ? 'folder' : 'document'} workspace for ${doc.fileName || businessName}`}
                                                             >
-                                                                <div className="flex items-start justify-between gap-2">
-                                                                    <div className="space-y-0.5">
-                                                                        <p className="text-sm font-bold text-foreground flex items-center gap-1.5 truncate max-w-[240px] group-hover:text-primary transition-colors" title={doc.fileName}>
+                                                                <div className="flex min-w-0 items-start justify-between gap-2">
+                                                                    <div className="min-w-0 flex-1 space-y-0.5">
+                                                                        <p className="flex min-w-0 items-start gap-1.5 break-words text-sm font-bold text-foreground [overflow-wrap:anywhere] group-hover:text-primary transition-colors" title={doc.fileName}>
                                                                             <FileText className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary shrink-0 transition-colors" />
-                                                                            {doc.fileName}
+                                                                            <span className="min-w-0">{doc.fileName}</span>
                                                                         </p>
                                                                         <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                                                                            <Clock className="h-3 w-3" /> ~{getDocDurationSec(doc)}s processing
+                                                                            <Clock className="h-3 w-3" /> {docDurationSec !== null ? `${formatElapsedDuration(docDurationSec)} processing` : 'time unavailable'}
                                                                         </span>
                                                                     </div>
                                                                     <Badge variant={isPass ? 'success' : 'destructive'} className="text-[10px] shrink-0 font-extrabold">
@@ -2252,35 +2253,35 @@ export default function EvalDashboardTab({
                                                                     </Badge>
                                                                 </div>
 
-                                                                <div className="grid grid-cols-3 gap-1.5 text-center text-xs">
-                                                                    <div className="bg-muted/40 p-1.5 rounded border border-border/40">
-                                                                        <span className="text-muted-foreground block text-[9px] uppercase font-semibold">Classification</span>
+                                                                <div className="grid min-w-0 grid-cols-2 gap-1.5 text-center text-xs sm:grid-cols-3">
+                                                                    <div className="min-w-0 bg-muted/40 p-1.5 rounded border border-border/40">
+                                                                        <span className="block break-words text-[9px] font-semibold uppercase leading-tight text-muted-foreground [overflow-wrap:anywhere]">Classification</span>
                                                                         <span className="font-bold text-foreground">{doc.classificationScore}/10</span>
                                                                     </div>
-                                                                    <div className="bg-muted/40 p-1.5 rounded border border-border/40">
-                                                                        <span className="text-muted-foreground block text-[9px] uppercase font-semibold">Facts Extraction</span>
+                                                                    <div className="min-w-0 bg-muted/40 p-1.5 rounded border border-border/40">
+                                                                        <span className="block break-words text-[9px] font-semibold uppercase leading-tight text-muted-foreground [overflow-wrap:anywhere]">Facts Extraction</span>
                                                                         <span className="font-bold text-foreground">{doc.factsScore}/10</span>
                                                                     </div>
-                                                                    <div className="bg-muted/40 p-1.5 rounded border border-border/40">
-                                                                        <span className="text-muted-foreground block text-[9px] uppercase font-semibold">Risk &amp; Flags</span>
+                                                                    <div className="min-w-0 bg-muted/40 p-1.5 rounded border border-border/40">
+                                                                        <span className="block break-words text-[9px] font-semibold uppercase leading-tight text-muted-foreground [overflow-wrap:anywhere]">Risk &amp; Flags</span>
                                                                         <span className="font-bold text-foreground">{doc.riskScore}/20</span>
                                                                     </div>
-                                                                    <div className="bg-muted/40 p-1.5 rounded border border-border/40">
-                                                                        <span className="text-muted-foreground block text-[9px] uppercase font-semibold">Valuation</span>
+                                                                    <div className="min-w-0 bg-muted/40 p-1.5 rounded border border-border/40">
+                                                                        <span className="block break-words text-[9px] font-semibold uppercase leading-tight text-muted-foreground [overflow-wrap:anywhere]">Valuation</span>
                                                                         <span className="font-bold text-foreground">{doc.valuationScore}/15</span>
                                                                     </div>
-                                                                    <div className="bg-muted/40 p-1.5 rounded border border-border/40">
-                                                                        <span className="text-muted-foreground block text-[9px] uppercase font-semibold">Employees</span>
+                                                                    <div className="min-w-0 bg-muted/40 p-1.5 rounded border border-border/40">
+                                                                        <span className="block break-words text-[9px] font-semibold uppercase leading-tight text-muted-foreground [overflow-wrap:anywhere]">Employees</span>
                                                                         <span className="font-bold text-foreground">{doc.employeeScore}/5</span>
                                                                     </div>
-                                                                    <div className="bg-muted/40 p-1.5 rounded border border-border/40">
-                                                                        <span className="text-muted-foreground block text-[9px] uppercase font-semibold">Math Checks</span>
+                                                                    <div className="min-w-0 bg-muted/40 p-1.5 rounded border border-border/40">
+                                                                        <span className="block break-words text-[9px] font-semibold uppercase leading-tight text-muted-foreground [overflow-wrap:anywhere]">Math Checks</span>
                                                                         <span className="font-bold text-emerald-600">{doc.mathScore}/10</span>
                                                                     </div>
                                                                 </div>
 
-                                                                <div className="flex flex-wrap items-center justify-between text-[10px] text-muted-foreground pt-1.5 border-t border-border/40 font-mono">
-                                                                    <span>
+                                                                <div className="grid min-w-0 grid-cols-1 gap-1 text-[10px] text-muted-foreground pt-1.5 border-t border-border/40 font-mono sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                                                                    <span className="min-w-0 break-words [overflow-wrap:anywhere]">
                                                                         Tokens: {(doc.inputTokens || 12400).toLocaleString()} in / {(doc.outputTokens || 1850).toLocaleString()} out
                                                                     </span>
                                                                     <div className="flex items-center gap-2">
@@ -2291,12 +2292,12 @@ export default function EvalDashboardTab({
                                                                     </div>
                                                                 </div>
 
-                                                                <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/40">
+                                                                <div className="grid min-w-0 grid-cols-1 gap-2 pt-2 border-t border-border/40">
                                                                     <Button
                                                                         type="button"
                                                                         size="sm"
                                                                         variant="ghost"
-                                                                        className="h-7 text-[11px] font-semibold text-primary hover:bg-primary/10 hover:text-primary gap-1 px-2 cursor-pointer"
+                                                                        className="h-7 min-w-0 justify-start text-[11px] font-semibold text-primary hover:bg-primary/10 hover:text-primary gap-1 px-2 cursor-pointer"
                                                                         onClick={(e) => {
                                                                             e.stopPropagation()
                                                                             handleOpenDocOrFolder()
@@ -2304,13 +2305,13 @@ export default function EvalDashboardTab({
                                                                         title={`Switch active workspace to ${doc.fileName || businessName}`}
                                                                     >
                                                                         <FolderKanban className="h-3 w-3 shrink-0 text-primary" />
-                                                                        <span>{isDDPacket || (doc.fileName || '').toLowerCase().includes('due_diligence_packet') || (doc.fileName || '').toLowerCase().includes('folder') || docs.length > 10 ? 'View this folder' : 'View this doc'}</span>
+                                                                        <span>{isDDPacket || (doc.fileName || '').toLowerCase().includes('due_diligence_packet') || (doc.fileName || '').toLowerCase().includes('folder') || phaseDocs.length > 10 ? 'View this folder' : 'View this doc'}</span>
                                                                     </Button>
                                                                     <Button
                                                                         type="button"
                                                                         size="sm"
                                                                         variant="outline"
-                                                                        className="h-7 text-[11px] font-bold border-primary/30 text-primary hover:bg-primary/10 gap-1 px-2 cursor-pointer"
+                                                                        className="h-7 min-w-0 justify-start text-[11px] font-bold border-primary/30 text-primary hover:bg-primary/10 gap-1 px-2 cursor-pointer"
                                                                         onClick={(e) => {
                                                                             e.stopPropagation()
                                                                             downloadDocumentEvalReport(doc, businessName, phaseVal)
@@ -2328,10 +2329,10 @@ export default function EvalDashboardTab({
                                                 </div>
 
                                                 {/* Bottom Collapse Control */}
-                                                <div className="flex items-center justify-between p-2.5 rounded-xl border border-amber-500/30 bg-amber-500/5 text-xs text-foreground font-semibold">
-                                                    <span className="flex items-center gap-1.5 text-muted-foreground">
+                                                <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl border border-amber-500/30 bg-amber-500/5 text-xs text-foreground font-semibold">
+                                                    <span className="flex min-w-0 items-center gap-1.5 text-muted-foreground">
                                                         <FileText className="h-3.5 w-3.5 text-amber-600 shrink-0" />
-                                                        <span>Viewing all {docs.length} document score cards for {businessName}</span>
+                                                        <span className="min-w-0 break-words [overflow-wrap:anywhere]">Viewing all {phaseDocs.length} document score cards for {businessName}</span>
                                                     </span>
                                                     <Button
                                                         type="button"
@@ -2626,8 +2627,9 @@ export default function EvalDashboardTab({
 
                                 return (
                                     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                                        {filteredModalDocs.map((doc: any, idx: number) => {
-                                            const isPass = (doc.percentage ?? 0) >= 70
+                                         {filteredModalDocs.map((doc: any, idx: number) => {
+                                             const isPass = (doc.percentage ?? 0) >= 70
+                                             const docDurationSec = getDocDurationSec(doc)
                                             const targetKey = doc.projectId || doc.projectKey || mapBusinessToProjectKey(selectedDocViewerBusiness || '', doc)
                                             const targetDocName = doc.fileName || doc.originalFilename || ''
 
@@ -2697,7 +2699,7 @@ export default function EvalDashboardTab({
                                                     </div>
 
                                                     <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-1 border-t border-border/40 font-mono">
-                                                        <span>~{getDocDurationSec(doc)}s latency</span>
+                                                        <span>{docDurationSec !== null ? `${formatElapsedDuration(docDurationSec)} latency` : 'time unavailable'}</span>
                                                         <span className="font-bold text-emerald-600 dark:text-emerald-400">
                                                             ${(doc.costUsd || 0.0495).toFixed(4)}
                                                         </span>

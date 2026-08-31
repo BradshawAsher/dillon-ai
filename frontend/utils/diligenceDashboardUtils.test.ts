@@ -11,6 +11,9 @@ import {
     formatConfidencePercent,
     formatElapsedDuration,
     getDocumentExtractionDurationSec,
+    getMeasuredDocumentExtractionDurationSec,
+    getMeasuredSynthesisDurationSec,
+    getProjectTimingSummary,
     getSynthesisDurationSec,
     getFindingVariant,
     getModelTokenRates,
@@ -372,5 +375,59 @@ describe('getSynthesisDurationSec', () => {
     it('returns null for missing or invalid timestamps', () => {
         expect(getSynthesisDurationSec(null)).toBeNull()
         expect(getSynthesisDurationSec({})).toBeNull()
+    })
+})
+
+describe('getProjectTimingSummary', () => {
+    it('uses wall-clock time for parallel documents and adds synthesis time once', () => {
+        const documents = [
+            { processingStartedAt: '2026-08-31T12:00:00.000Z', processedAt: '2026-08-31T12:00:20.000Z' },
+            { processingStartedAt: '2026-08-31T12:00:05.000Z', processedAt: '2026-08-31T12:00:30.000Z' },
+        ] as Array<Partial<SubmissionHistoryItem> & Record<string, unknown>>
+        const timing = getProjectTimingSummary(documents, { durationSec: 40 })
+
+        expect(timing).toEqual({
+            documentComputeSec: 45,
+            averageDocumentSec: 23,
+            extractionWallClockSec: 30,
+            synthesisSec: 40,
+            totalProjectSec: 70,
+        })
+    })
+
+    it('uses the longest document duration when eval fixtures have no timestamps', () => {
+        expect(getProjectTimingSummary([
+            { durationSec: 14 },
+            { duration_sec: 22 },
+        ] as any[], { synthesisDurationSec: 35 })).toEqual({
+            documentComputeSec: 36,
+            averageDocumentSec: 18,
+            extractionWallClockSec: 22,
+            synthesisSec: 35,
+            totalProjectSec: 57,
+        })
+    })
+
+    it('reports document-only projects and keeps unavailable timing explicit', () => {
+        expect(getProjectTimingSummary([{ durationSec: 12 }] as any[], null).totalProjectSec).toBe(12)
+        expect(getProjectTimingSummary([], null)).toEqual({
+            documentComputeSec: null,
+            averageDocumentSec: null,
+            extractionWallClockSec: null,
+            synthesisSec: null,
+            totalProjectSec: null,
+        })
+    })
+
+    it('does not report legacy completed-row estimates as measured timing', () => {
+        const completedWithoutTimes = { status: 'completed' } as Partial<SubmissionHistoryItem>
+        expect(getDocumentExtractionDurationSec(completedWithoutTimes)).toBe(18)
+        expect(getMeasuredDocumentExtractionDurationSec(completedWithoutTimes)).toBeNull()
+        expect(getMeasuredSynthesisDurationSec({ projectStatus: 'synthesized', finalRecommendation: 'Proceed' })).toBeNull()
+        expect(getProjectTimingSummary([completedWithoutTimes as any], { projectStatus: 'synthesized' })).toMatchObject({
+            extractionWallClockSec: null,
+            synthesisSec: null,
+            totalProjectSec: null,
+        })
     })
 })

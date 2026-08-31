@@ -26,6 +26,9 @@ import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import {
     calculateBatchTotalCost,
     calculateSynthesisCost,
+    formatElapsedDuration,
+    getMeasuredDocumentExtractionDurationSec,
+    getProjectTimingSummary,
 } from '../utils/diligenceDashboardUtils'
 import { resolveFinancialMetricsForProject } from '../utils/financialMetrics'
 import { benchmarkGroundTruthSyntheses } from '../evals/ground_truths'
@@ -375,6 +378,7 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                                     : project.documents
                                 const hiddenDuplicateCount = project.documents.length - visibleDocuments.length
                                 const synthesis = syntheses.find((candidate) => candidate.projectId === (project.projectId || project.projectKey))
+                                const projectTiming = getProjectTimingSummary(visibleDocuments, synthesis)
                                 const hasFailedOrIncompleteDocs = project.documents.some((d) => ['failed', 'error', 'rejected'].includes(d.status.trim().toLowerCase())) || project.documents.some((d) => ['processing', 'queued', 'pending'].includes(d.status.trim().toLowerCase()))
                                 const allDocsCompleted = project.documents.length > 0 && project.documents.every((d) => d.status.trim().toLowerCase() === 'completed')
                                 const hasLiveSynthesis = synthesis !== undefined && (synthesis.projectStatus === 'synthesized' || synthesis.finalJudgmentSummary.trim().length > 0)
@@ -459,6 +463,27 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
 
                                                     return (
                                                         <div id={isPrimaryActiveCard ? 'project-card-telemetry' : undefined} className="space-y-1.5 pt-1 scroll-mt-6">
+                                                            <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-3">
+                                                                <div className="min-w-0 rounded-md border border-indigo-300/60 bg-indigo-500/10 px-2.5 py-2">
+                                                                    <p className="text-[10px] font-bold uppercase tracking-wide text-indigo-700 dark:text-indigo-300">Project time</p>
+                                                                    <p className="mt-0.5 flex items-center gap-1 text-sm font-bold text-foreground">
+                                                                        <Clock3 className="h-3.5 w-3.5 shrink-0 text-indigo-600" />
+                                                                        {projectTiming.totalProjectSec !== null ? formatElapsedDuration(projectTiming.totalProjectSec) : '—'}
+                                                                    </p>
+                                                                </div>
+                                                                <div className="min-w-0 rounded-md border border-blue-300/60 bg-blue-500/10 px-2.5 py-2">
+                                                                    <p className="text-[10px] font-bold uppercase tracking-wide text-blue-700 dark:text-blue-300">Parallel extraction</p>
+                                                                    <p className="mt-0.5 text-sm font-bold text-foreground">
+                                                                        {projectTiming.extractionWallClockSec !== null ? formatElapsedDuration(projectTiming.extractionWallClockSec) : '—'}
+                                                                    </p>
+                                                                </div>
+                                                                <div className="min-w-0 rounded-md border border-purple-300/60 bg-purple-500/10 px-2.5 py-2">
+                                                                    <p className="text-[10px] font-bold uppercase tracking-wide text-purple-700 dark:text-purple-300">Synthesis</p>
+                                                                    <p className="mt-0.5 text-sm font-bold text-foreground">
+                                                                        {projectTiming.synthesisSec !== null ? formatElapsedDuration(projectTiming.synthesisSec) : '—'}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
                                                             <div className="flex flex-wrap items-center gap-2">
                                                                 <Badge variant="outline" className="gap-1 font-mono text-xs font-bold bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-300/60 py-0.5 px-2">
                                                                     <FileText className="h-3.5 w-3.5 text-blue-600 shrink-0" />
@@ -677,13 +702,16 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                                                 {visibleDocuments.map((document) => {
                                                     const status = document.status.trim().toLowerCase()
                                                     const isFailed = ['failed', 'error', 'rejected', 'needs_review', 'needs review', 'stopped'].includes(status)
+                                                    const documentDuration = getMeasuredDocumentExtractionDurationSec(document)
                                                     return (
-                                                        <div key={`${document.requestID}-${document.fileName}`} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-background/70 px-3 py-2 text-sm">
-                                                            <div>
-                                                                <p className="font-medium text-foreground">{document.fileName}</p>
-                                                                <p className="text-xs text-muted-foreground">{document.documentType} · {document.status}</p>
+                                                        <div key={`${document.requestID}-${document.fileName}`} className="flex min-w-0 flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-background/70 px-3 py-2 text-sm">
+                                                            <div className="min-w-0 flex-1">
+                                                                <p className="break-words font-medium text-foreground [overflow-wrap:anywhere]">{document.fileName}</p>
+                                                                <p className="text-xs text-muted-foreground">
+                                                                    {document.documentType} · {document.status} · {documentDuration !== null ? `${formatElapsedDuration(documentDuration)} extraction` : 'time unavailable'}
+                                                                </p>
                                                             </div>
-                                                            <div className="flex items-center gap-2">
+                                                            <div className="flex flex-wrap items-center gap-2">
                                                                 <Badge variant={document.isConsidered ? 'outline' : 'secondary'}>{document.isConsidered ? (document.processedAt || 'Pending') : 'Excluded'}</Badge>
                                                                 {document.requestID ? (
                                                                     <Button
