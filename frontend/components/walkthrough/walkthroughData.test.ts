@@ -11,6 +11,7 @@ import {
 import { TAB_METADATA } from './tabMetadata'
 import { VALID_WORKSPACE_TABS } from '../../utils/deepLinking'
 import type { WorkspaceTab } from '../DealWorkspaceNav'
+import { WORKSPACE_DEMOS } from '../WorkspaceDemoGalleryBar'
 
 describe('Walkthrough Playlists & Step Data Validation', () => {
     it('has all core step collections defined', () => {
@@ -110,6 +111,18 @@ describe('Walkthrough Playlists & Step Data Validation', () => {
         expect(QUICK_DEAL_QUESTIONNAIRE_STEPS.slice(2, 7).map((step) => step.simulatedAction?.type)).toEqual(
             Array(5).fill('show_manual_deal_section')
         )
+    })
+
+    it('exposes the Quick Deal Questionnaire tutorial in the shared walkthrough carousel', () => {
+        const questionnaireDemo = WORKSPACE_DEMOS.filter((demo) => demo.id === 'native-questionnaire')
+
+        expect(questionnaireDemo).toHaveLength(1)
+        expect(questionnaireDemo[0]).toMatchObject({
+            title: 'Quick Deal Questionnaire Tutorial',
+            category: 'Native Tour',
+            status: 'active',
+        })
+        expect(TOUR_PLAYLISTS['quick-deal-questionnaire'].stepCount).toBe(8)
     })
 })
 

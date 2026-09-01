@@ -17,7 +17,9 @@ test.describe('Quick Deal Questionnaire tutorial (0 tokens)', () => {
 
     test('opens the file-free questionnaire with live deterministic metrics', async ({ page }) => {
         await openQuestionnaire(page)
-        await expect(page.getByRole('heading', { name: /Quick Deal Questionnaire/i })).toBeVisible()
+        await expect(
+            page.locator('#quick-deal-questionnaire').getByRole('heading', { name: /Quick Deal Questionnaire/i })
+        ).toBeVisible()
         await expect(page.locator('#quick-deal-questionnaire-metrics')).toContainText('Normalized EBITDA')
         await expect(page.locator('#quick-deal-section-basics')).toBeVisible()
         await expect(page.locator('#quick-deal-generate-btn')).toBeEnabled()
@@ -58,6 +60,21 @@ test.describe('Quick Deal Questionnaire tutorial (0 tokens)', () => {
         const questionnaireTour = page.locator('[data-tour-playlist="quick-deal-questionnaire"]')
         await questionnaireTour.getByRole('button', { name: /Launch Tour/ }).click()
 
+        await expect(page.locator('#quick-deal-questionnaire')).toBeVisible()
+        await expect(page.getByLabel('Interactive Walkthrough Controller')).toContainText(
+            'Start with a Preset or Your Own Deal Assumptions'
+        )
+    })
+
+    test('launches from the landing-page walkthrough carousel', async ({ page }) => {
+        await page.goto('/?e2e=1')
+
+        const questionnaireDemo = page.locator('[data-demo-id="native-questionnaire"]')
+        await expect(questionnaireDemo).toContainText('Quick Deal Questionnaire Tutorial')
+        await questionnaireDemo.click()
+
+        await expect(page).toHaveURL(/view=dashboard/)
+        expect(new URL(page.url()).searchParams.get('tour')).toBe('questionnaire')
         await expect(page.locator('#quick-deal-questionnaire')).toBeVisible()
         await expect(page.getByLabel('Interactive Walkthrough Controller')).toContainText(
             'Start with a Preset or Your Own Deal Assumptions'

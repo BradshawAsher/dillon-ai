@@ -438,3 +438,40 @@
 - All 870 Vitest tests, TypeScript typechecking, and the production build pass.
 - All 14 Chromium E2E tests pass, including direct questionnaire launch, cross-section tutorial navigation, and launch from the global walkthrough gallery.
 - The questionnaire browser tests observed zero upload, webhook, or model requests.
+
+## Quick Deal Questionnaire carousel entry (2026-09-01)
+
+### Empirical root cause
+
+The Quick Deal Questionnaire tutorial exists in `TOUR_PLAYLISTS` and can be launched from the questionnaire form or the in-dashboard All Tours modal, but `WorkspaceDemoGalleryBar` still defines only the original six demos. Because both the landing page and dashboard carousel render that six-item catalog, neither surface exposes the new tutorial.
+
+### Target files and exact changes
+
+- `frontend/components/WorkspaceDemoGalleryBar.tsx`
+  - Add a `native-questionnaire` demo variant and active carousel card.
+  - Derive the displayed demo count from `WORKSPACE_DEMOS.length`.
+  - Give the card stable identifying metadata and questionnaire-specific violet styling.
+- `frontend/pages/LandingPage.tsx`
+  - Map the new card to a `walkthrough=questionnaire` dashboard deep link.
+- `frontend/pages/DueDiligenceDashboard.tsx`
+  - Recognize the questionnaire deep link and launch `quick-deal-questionnaire`.
+  - Launch the same tutorial when its dashboard carousel card is selected.
+- `frontend/components/walkthrough/walkthroughData.test.ts`
+  - Assert the shared carousel includes one active questionnaire tutorial mapped to the existing eight-step playlist.
+- `frontend/e2e/quick-deal-questionnaire-tutorial.spec.ts`
+  - Verify the landing carousel card opens the dashboard, mounts the questionnaire, and starts the correct tutorial without an upload.
+
+### Regression verification
+
+1. Run the focused walkthrough data unit test.
+2. Run the questionnaire Playwright spec.
+3. Run TypeScript typechecking and the production build.
+4. Inspect the rendered landing carousel and confirm its count and launch behavior.
+
+### Verification result
+
+- The carousel renders seven active demos and identifies the questionnaire card with `data-demo-id="native-questionnaire"`.
+- Browser inspection confirmed that the dashboard's tab hash would overwrite a hash-based tour request. Carousel launches now use an exact `tour` query parameter while legacy hash links remain supported.
+- Exact route matching prevents `questionnaire` from being misclassified as `quest` by substring matching.
+- The focused walkthrough data suite passes (9 tests), the full Playwright suite passes (15 tests), TypeScript typechecking passes, and the production build succeeds.
+- The React review found no new request waterfalls, unnecessary state, unstable list keys, accessibility regressions, or render-heavy derived work.
