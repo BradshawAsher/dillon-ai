@@ -2,7 +2,7 @@ import { execSync } from 'child_process'
 import fs from 'fs'
 import path from 'path'
 import react from '@vitejs/plugin-react'
-import { defineConfig, type Plugin } from 'vite'
+import { defineConfig, type Plugin } from 'vitest/config'
 
 import { localBackendApi } from './localApi'
 
@@ -66,6 +66,9 @@ export default defineConfig({
         },
       },
     },
+  },
+  test: {
+    exclude: ['**/node_modules/**', '**/e2e/**', '**/dist/**'],
   },
 })
 
