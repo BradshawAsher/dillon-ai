@@ -32,6 +32,12 @@ describe('formatMagnitude', () => {
         expect(formatMagnitude(Number.POSITIVE_INFINITY)).toBe('N/A')
         expect(formatMagnitude(Number.NEGATIVE_INFINITY)).toBe('N/A')
     })
+
+    it('places the sign before the dollar sign for negative magnitudes', () => {
+        expect(formatMagnitude(-500_000)).toBe('-$500K')
+        expect(formatMagnitude(-2_000_000)).toBe('-$2M')
+        expect(formatMagnitude(-1_500_000_000)).toBe('-$1.5B')
+    })
 })
 
 describe('resolveFinancialMetricsForProject', () => {

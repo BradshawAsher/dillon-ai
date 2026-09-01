@@ -15,10 +15,12 @@ import { Progress } from '../lib/shadcn/progress'
 import { formatCurrencyValue, getSubmissionInsightTone } from '../utils/aiSubmissionData'
 import { downloadTextFile, fileSafeName } from '../utils/downloadFile'
 import { formatHours, type ImpactMetrics } from '../utils/impactMetrics'
-import { getProjectKey, isRowMatchingProject, type ProjectSummary } from '../utils/projectWorkspace'
+import { getProjectKey, isRowMatchingProject, formatProjectDisplayName, type ProjectSummary } from '../utils/projectWorkspace'
+import { getSeverityForGroup, type InsightGroupType } from '../utils/insightGroups'
 import { buildDocumentLinkedEvidence, parseDocumentedFacts, type EvidenceItem } from '../utils/evidence'
 import { calculateBatchTotalCost, calculateSynthesisCost, formatElapsedDuration, getDocumentExtractionDurationSec, getSynthesisDurationSec } from '../utils/diligenceDashboardUtils'
 import { classifyError } from '../utils/errorClassifier'
+import { riskLevelVariant } from '../utils/riskVariant'
 
 type ProjectSynthesisCardProps = {
     syntheses: ProjectSynthesisItem[]
@@ -53,23 +55,7 @@ type ProjectSynthesisCardProps = {
 
 type StructuredFinding = NonNullable<NonNullable<ProjectSynthesisItem['structuredFindings']>['redFlags']>[number]
 
-function getRiskVariant(riskLevel: string): 'destructive' | 'warning' | 'secondary' | 'outline' {
-    const normalized = riskLevel.trim().toLowerCase()
-
-    if (normalized === 'critical' || normalized === 'high') {
-        return 'destructive'
-    }
-
-    if (normalized === 'medium') {
-        return 'warning'
-    }
-
-    if (normalized === 'low') {
-        return 'secondary'
-    }
-
-    return 'outline'
-}
+const getRiskVariant = riskLevelVariant
 
 function formatTimestamp(value: string) {
     if (value.trim().length === 0) {
@@ -164,7 +150,6 @@ export function downloadSynthesisReport(synthesis: ProjectSynthesisItem, project
     downloadTextFile(fileSafeName(projectName) + '-project-synthesis.md', report, 'text/markdown;charset=utf-8')
 }
 
-type InsightGroupType = 'red-flag' | 'yellow-flag' | 'green-flag' | 'takeaway' | 'conflict' | 'negotiation-lever' | 'missing-document' | 'open-question'
 
 function insightGroupStatus(groupType: InsightGroupType): string {
     switch (groupType) {
@@ -192,36 +177,10 @@ function insightGroupLabel(groupType: InsightGroupType): string {
     }
 }
 
-function formatProjectDisplayName(project: ProjectSummary) {
-    const companyName = project.companyName.trim()
-    const projectName = project.projectName.trim()
-
-    if (companyName.length > 0) {
-        return companyName
-    }
-
-    return projectName || project.projectId || project.projectKey
-}
 
 type SeverityFilter = 'all' | 'critical' | 'medium' | 'low' | 'informational'
 type TypeFilter = 'all' | InsightGroupType
 
-function getSeverityForGroup(groupType: InsightGroupType): SeverityFilter {
-    switch (groupType) {
-        case 'red-flag':
-        case 'conflict':
-            return 'critical'
-        case 'yellow-flag':
-        case 'missing-document':
-        case 'open-question':
-            return 'medium'
-        case 'green-flag':
-            return 'low'
-        case 'takeaway':
-        case 'negotiation-lever':
-            return 'informational'
-    }
-}
 
 
 

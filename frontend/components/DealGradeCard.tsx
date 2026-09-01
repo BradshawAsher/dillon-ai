@@ -6,6 +6,7 @@ import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import CardInfoPopover from './common/CardInfoPopover'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
+import { computeDealGrade } from '../utils/dealGrade'
 
 type Props = {
     model: DealModel
@@ -19,14 +20,7 @@ type Dimension = {
     detail: string
 }
 
-function computeGrade(totalScore: number, maxScore: number): { letter: string; color: string; bg: string } {
-    const pct = maxScore > 0 ? totalScore / maxScore : 0
-    if (pct >= 0.85) return { letter: 'A', color: 'text-green-700 dark:text-green-300', bg: 'bg-green-100 dark:bg-green-900/40' }
-    if (pct >= 0.70) return { letter: 'B', color: 'text-emerald-700 dark:text-emerald-300', bg: 'bg-emerald-100 dark:bg-emerald-900/40' }
-    if (pct >= 0.55) return { letter: 'C', color: 'text-amber-700 dark:text-amber-300', bg: 'bg-amber-100 dark:bg-amber-900/40' }
-    if (pct >= 0.40) return { letter: 'D', color: 'text-orange-700 dark:text-orange-300', bg: 'bg-orange-100 dark:bg-orange-900/40' }
-    return { letter: 'F', color: 'text-red-700 dark:text-red-300', bg: 'bg-red-100 dark:bg-red-900/40' }
-}
+const computeGrade = computeDealGrade
 
 const IMPROVEMENT_TIPS: Record<string, string> = {
     Pricing: 'Negotiate a lower purchase price, or identify add-backs that increase true EBITDA (lowering the effective multiple).',

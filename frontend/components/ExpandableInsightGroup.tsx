@@ -3,6 +3,7 @@ import { ChevronDown, ChevronUp } from 'lucide-react'
 
 import { Badge, type BadgeProps } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
+import { severityBadgeClass } from '../utils/severityBadge'
 
 type StructuredFinding = {
   text: string
@@ -59,13 +60,7 @@ function confidenceBadge(confidence: number | null) {
 
 function severityBadge(severity: string) {
   if (!severity) return null
-  const lower = severity.toLowerCase()
-  const color = lower === 'critical' || lower === 'high'
-    ? 'border-destructive/30 bg-destructive/10 text-destructive'
-    : lower === 'medium'
-      ? 'border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400'
-      : 'border-border bg-muted/40 text-muted-foreground'
-  return <span className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-medium leading-none ${color}`}>{severity}</span>
+  return <span className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-medium leading-none ${severityBadgeClass(severity)}`}>{severity}</span>
 }
 
 function resolveTheme(colorTheme?: InsightColorTheme, badgeVariant?: BadgeProps['variant']): InsightColorTheme {

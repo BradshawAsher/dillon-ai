@@ -51,6 +51,31 @@ describe('computeImpactMetrics', () => {
         expect(metrics.agentMinutes).toBe(0)
         expect(metrics.fasterMultiple).toBeNull()
     })
+
+    it('caps an unrealistic (offline-gap) processing window at one minute', () => {
+        // A record that sat idle for days before reprocessing spans ~2 days;
+        // the cap keeps it from wiping out all measured analyst time saved.
+        const metrics = computeImpactMetrics([
+            row({
+                status: 'completed',
+                processingStartedAt: '2024-01-01T00:00:00Z',
+                processedAt: '2024-01-03T00:00:00Z',
+            }),
+        ])
+        expect(metrics.agentMinutes).toBeCloseTo(1, 6)
+        expect(metrics.timeSavedHours).toBeCloseTo((HUMAN_MINUTES_PER_DOCUMENT - 1) / 60, 6)
+    })
+
+    it('ignores a processing window whose end precedes its start', () => {
+        const metrics = computeImpactMetrics([
+            row({
+                status: 'completed',
+                processingStartedAt: '2024-01-01T01:00:00Z',
+                processedAt: '2024-01-01T00:00:00Z',
+            }),
+        ])
+        expect(metrics.agentMinutes).toBe(0)
+    })
 })
 
 describe('formatHours', () => {

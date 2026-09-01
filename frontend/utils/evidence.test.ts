@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 
 import type { SubmissionHistoryItem } from './submissionHistory'
 import {
+    buildDerivedEvidence,
+    buildDocumentLinkedEvidence,
     buildFactEvidence,
     driveEmbedUrl,
     findCitedDocument,
@@ -36,6 +38,33 @@ describe('parseDocumentedFacts', () => {
         expect(parseDocumentedFacts(json)).toEqual({
             revenue: { value: 1000, status: 'confirmed', currency: 'USD' },
         })
+    })
+
+    it('backfills a missing ebitda_sde from net_income with a labelled provenance', () => {
+        const json = JSON.stringify({
+            net_income: { value: 500, currency: 'USD' },
+        })
+        const facts = parseDocumentedFacts(json)
+        expect(facts.ebitda_sde).toEqual({
+            value: 500,
+            currency: 'USD',
+            provenance: 'Documented (Net Income)',
+        })
+    })
+
+    it('preserves an explicit net_income provenance when backfilling ebitda_sde', () => {
+        const json = JSON.stringify({
+            net_income: { value: 500, provenance: 'Audited FY23 net income' },
+        })
+        expect(parseDocumentedFacts(json).ebitda_sde?.provenance).toBe('Audited FY23 net income')
+    })
+
+    it('does not overwrite an existing ebitda_sde with the net_income fallback', () => {
+        const json = JSON.stringify({
+            ebitda_sde: { value: 800, status: 'confirmed' },
+            net_income: { value: 500 },
+        })
+        expect(parseDocumentedFacts(json).ebitda_sde).toEqual({ value: 800, status: 'confirmed' })
     })
 })
 
@@ -264,3 +293,111 @@ describe('formatEvidenceConfidence', () => {
     })
 })
 
+
+describe('buildDerivedEvidence', () => {
+    it('tags each input with its provenance source', () => {
+        const evidence = buildDerivedEvidence({
+            title: 'Payback period',
+            formula: 'initial investment / annual cash flow',
+            documentedInputs: [{ label: 'EBITDA', value: '$1.85M' }],
+            modelAssumptions: [{ label: 'Tax rate', value: '25%' }],
+            analystInputs: [{ label: 'Override', value: 'yes' }],
+        })
+        expect(evidence.inputs).toEqual([
+            { label: 'EBITDA', value: '$1.85M', source: 'documented' },
+            { label: 'Tax rate', value: '25%', source: 'assumed' },
+            { label: 'Override', value: 'yes', source: 'analyst' },
+        ])
+        expect(evidence.provenance).toBe('Calculated')
+        expect(evidence.formula).toBe('initial investment / annual cash flow')
+    })
+
+    it('marks a fully-documented calculation as confirmed and carries the fact citation', () => {
+        const evidence = buildDerivedEvidence({
+            title: 'EBITDA margin',
+            formula: 'ebitda / revenue',
+            documentedInputs: [{ label: 'EBITDA', value: '$1.85M' }],
+            primaryFact: {
+                title: 'EBITDA',
+                sourceFile: 'pnl.pdf',
+                documentId: 'drive-123',
+                confidence: 92,
+            },
+        })
+        expect(evidence.status).toBe('Confirmed Math')
+        expect(evidence.confidence).toBe(92)
+        expect(evidence.sourceFile).toBe('pnl.pdf')
+        expect(evidence.documentId).toBe('drive-123')
+    })
+
+    it('does not attach a document citation to an illustrative (assumed) calculation', () => {
+        const evidence = buildDerivedEvidence({
+            title: 'Payback period',
+            formula: 'initial investment / annual cash flow',
+            modelAssumptions: [{ label: 'EBITDA', value: '$1.0M (assumed)' }],
+            primaryFact: { title: 'EBITDA', sourceFile: 'pnl.pdf', documentId: 'drive-123' },
+        })
+        expect(evidence.status).toBe('Illustrative EBITDA')
+        expect(evidence.confidence).toBe('Model Assumption')
+        expect(evidence.sourceFile).toBeUndefined()
+        expect(evidence.documentId).toBeUndefined()
+    })
+
+    it('honours an explicit statusLabel override', () => {
+        const evidence = buildDerivedEvidence({
+            title: 'MOIC',
+            formula: 'exit / equity',
+            documentedInputs: [{ label: 'Exit', value: '$10M' }],
+            statusLabel: 'Sensitivity case',
+        })
+        expect(evidence.status).toBe('Sensitivity case')
+    })
+})
+
+describe('buildDocumentLinkedEvidence', () => {
+    const matchedDoc = {
+        fileName: 'Cascadia Q4 Financials.pdf',
+        storageFileUrl: 'https://drive.google.com/file/d/doc-9/view',
+        storageFileId: 'doc-9',
+        aiConfidence: 88,
+    } as unknown as SubmissionHistoryItem
+
+    it('resolves the matched document url and id from the citation source file', () => {
+        const evidence = buildDocumentLinkedEvidence({
+            title: 'Revenue',
+            sourceFile: 'cascadia-q4-financials.pdf',
+            documents: [matchedDoc],
+        })
+        expect(evidence.documentUrl).toBe('https://drive.google.com/file/d/doc-9/view')
+        expect(evidence.documentId).toBe('doc-9')
+    })
+
+    it('falls back to the matched document confidence when none is supplied', () => {
+        const evidence = buildDocumentLinkedEvidence({
+            title: 'Revenue',
+            sourceFile: 'cascadia-q4-financials.pdf',
+            documents: [matchedDoc],
+        })
+        expect(evidence.confidence).toBe(88)
+    })
+
+    it('keeps an explicit confidence over the document fallback', () => {
+        const evidence = buildDocumentLinkedEvidence({
+            title: 'Revenue',
+            sourceFile: 'cascadia-q4-financials.pdf',
+            confidence: 95,
+            documents: [matchedDoc],
+        })
+        expect(evidence.confidence).toBe(95)
+    })
+
+    it('uses the fallback source file label when none is cited', () => {
+        const evidence = buildDocumentLinkedEvidence({
+            title: 'Revenue',
+            fallbackSourceFile: 'Source file was not returned',
+            documents: [],
+        })
+        expect(evidence.sourceFile).toBe('Source file was not returned')
+        expect(evidence.documentUrl).toBeUndefined()
+    })
+})

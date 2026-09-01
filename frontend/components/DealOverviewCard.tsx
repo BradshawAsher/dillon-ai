@@ -22,6 +22,7 @@ import type { EvidenceItem } from './EvidenceDrawer'
 import ExpandableText from './ExpandableText'
 import ActionableRecommendationInfoButton from './ActionableRecommendationInfoButton'
 import { formatElapsedDuration, getDocumentExtractionDurationSec, getSynthesisDurationSec } from '../utils/diligenceDashboardUtils'
+import { riskLevelVariant } from '../utils/riskVariant'
 
 type DealOverviewCardProps = {
     syntheses: ProjectSynthesisItem[]
@@ -37,15 +38,7 @@ type DealOverviewCardProps = {
     onSwitchTab?: (tab: any) => void
 }
 
-function riskVariant(riskLevel: string): 'destructive' | 'warning' | 'secondary' | 'outline' {
-    const normalized = riskLevel.trim().toLowerCase()
-
-    if (normalized === 'critical' || normalized === 'high') return 'destructive'
-    if (normalized === 'medium') return 'warning'
-    if (normalized === 'low') return 'secondary'
-
-    return 'outline'
-}
+const riskVariant = riskLevelVariant
 
 function InsightList({ items, emptyLabel }: { items: string[]; emptyLabel: string }) {
     const [expanded, setExpanded] = useState(false)
