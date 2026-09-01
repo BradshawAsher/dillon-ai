@@ -14,6 +14,8 @@ import { normalizeEquityFraction } from '../utils/dealMath'
 import { sendIssueReportSlackAlert, type IssueCategory } from '../services/slackAlertService'
 import { getStoredUser } from '../services/supabaseAuth'
 import { getUserModelConfig, mapModelNameToApiIdentifier } from './ApiKeyModal'
+import { recalculateAdjustedEbitdaWithDisallowances, classifyAddBackCategory, DEFAULT_CLASSIFIED_ADD_BACKS } from '../utils/addBackTaxonomy'
+import { getCohortsForProject, computeCohortSummary } from '../utils/cohortRetention'
 
 export type ResponseTier = 'cloud_ai' | 'direct_llm' | 'local_heuristics'
 
@@ -267,22 +269,31 @@ function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealMo
 - For Project Intake (top card on dashboard): ALWAYS use [Project Intake](#project-intake).
 - For Projects Portfolio tab: ALWAYS use [Projects](tab:documents).
 - Available Tabs & Primary Anchors:
-  - tab:structure (anchors: #structure-sources-uses, #structure-debt-schedule, #structure-covenants)
-  - tab:valuation (anchors: #valuation-summary, #valuation-multiples, #valuation-dcf, #valuation-precedent)
-  - tab:returns (anchors: #returns-summary, #returns-waterfall, #returns-sensitivity, #returns-cashflow)
-  - tab:growth (anchors: #growth-projections, #growth-scenarios, #growth-drivers)
-  - tab:negotiation (anchors: #negotiation-levers, #negotiation-impact, #negotiation-playbook)
-  - tab:analysis (anchors: #analysis-deal-on-a-page, #analysis-scorecard, #analysis-ebitda-quality, #analysis-breakeven, #analysis-market-comps, #analysis-financing-scenarios, #analysis-asset-comp, #analysis-monte-carlo, #analysis-risk-matrix, #analysis-key-person, #analysis-seller-qa, #analysis-mgmt-questions, #analysis-closing-checklist, #analysis-term-sheet, #analysis-dd-requests)
-  - tab:diligence (anchors: #diligence-documents, #diligence-quality, #diligence-project-synth)
+  - tab:overview (anchors: #deal-overview, #overview-snapshot, #overview-health, #overview-actions, #overview-timeline)
+  - tab:analysis (anchors: #analysis-deal-on-a-page, #analysis-scorecard, #analysis-ebitda-quality, #analysis-revenue-bridge, #analysis-cohort-retention, #analysis-breakeven, #analysis-market-comps, #analysis-financing-scenarios, #analysis-asset-comp, #analysis-monte-carlo, #analysis-risk-matrix, #analysis-key-person, #analysis-seller-qa, #analysis-mgmt-questions, #analysis-closing-checklist, #analysis-term-sheet, #analysis-dd-requests)
+  - tab:diagnostics (anchors: #deal-diagnostics, #diag-thesis, #diag-decision, #diag-quick-wins, #diag-strengths, #diag-risk-summary, #diag-risk-matrix, #diag-key-person, #diag-owner-dep, #diag-diligence-comp, #diag-closing-checklist, #diag-seller-qa, #diag-mgmt-questions, #diag-playbook, #diag-negotiation-impact, #diag-timeline, #diag-investor-readiness, #diag-term-sheet, #diag-dd-requests)
+  - tab:diligence (anchors: #diligence-documents, #diligence-quality, #add-back-quality-card, #customer-concentration-card, #cohort-retention-card, #diligence-project-synth)
   - tab:synthesis (anchors: #synthesis-judgment, #synthesis-valuation, #synthesis-red-flags)
-  - tab:compare (anchors: #compare-kpis, #compare-filters, #compare-matrix)
-  - tab:documents (anchors: #projects-summary-metrics, #project-card-active, #project-card-documents)
+  - tab:structure (anchors: #structure-sources-uses, #structure-debt-schedule, #structure-covenants, #structure-stack, #structure-leverage, #structure-dscr, #structure-financing)
+  - tab:valuation (anchors: #valuation-summary, #valuation-multiples, #valuation-dcf, #valuation-precedent, #valuation-gap, #valuation-comps, #valuation-sensitivity, #valuation-risk-adjusted)
+  - tab:returns (anchors: #returns-summary, #returns-waterfall, #returns-sensitivity, #returns-cashflow, #returns-all-cash, #returns-financed, #returns-scenario, #returns-base, #returns-cash-on-cash, #returns-payback, #returns-hold-period)
+  - tab:growth (anchors: #growth-projections, #growth-scenarios, #growth-drivers, #growth-revenue-bridge, #growth-sensitivity, #growth-value-creation, #growth-levers, #growth-leverage)
+  - tab:negotiation (anchors: #negotiation-levers, #negotiation-impact, #negotiation-playbook, #negotiation-seller, #negotiation-mgmt, #negotiation-timeline, #negotiation-terms)
+  - tab:documents (anchors: #projects-summary-metrics, #project-card-active, #project-card-documents, #project-portfolio, #documents-grid)
   - tab:spending (anchors: #spending-model, #spending-api-calls)
-  - tab:evals
-  - tab:faqs
-  - tab:shortcuts
-  - tab:account
-  - tab:report_issue`)
+  - tab:compare (anchors: #compare-kpis, #compare-filters, #compare-matrix)
+  - tab:shortcuts (anchors: #shortcuts-tester, #shortcuts-hotkeys)
+  - tab:evals (anchors: #evals-benchmark-harness)
+  - tab:faqs (anchors: #faqs-knowledge-base)
+  - tab:history (anchors: #history-audit-table)
+  - tab:email (anchors: #email-drafts-panel)
+  - tab:errors (anchors: #error-log-card)
+  - tab:report_issue (anchors: #report-issue-form)
+  - tab:account (anchors: #account-api-keys, #account-profile)
+
+## Deep Diligence Feature Highlights:
+- Customer Cohort Retention & Churn Engine: Direct users to [Cohort Matrix](tab:analysis#analysis-cohort-retention) or [Cohort Retention](tab:diligence#cohort-retention-card). Explain Logo Count Retention (%) vs Net Revenue Retention (NRR %) and highlight when annual price increases mask customer logo attrition.
+- Institutional Banking Add-Back Engine: Direct users to [Add-Back Banking Rules](tab:diligence#add-back-quality-card). Explain SBA 7(a) disallowances for non-essential perks (luxury autos, family salaries, discretionary travel), defensible 1-time items, and calculate how disallowed add-backs reduce normalized EBITDA and lower the justified purchase price.`)
 
     return parts.join('\n')
 }
@@ -1496,18 +1507,18 @@ interface ClientSideToolContext {
     allSyntheses?: ProjectSynthesisItem[]
 }
 
-const CHAT_AGENT_OPENAI_TOOLS = [
+export const CHAT_AGENT_OPENAI_TOOLS = [
     {
         type: 'function',
         function: {
             name: 'calculate_deal_financials',
-            description: 'Calculate crucial M&A financial metrics such as Debt Service Coverage Ratio (DSCR), Seller Discretionary Earnings (SDE) bridge, implied EBITDA multiples, and SBA 7(a) loan amortizations.',
+            description: 'Calculate crucial M&A financial metrics such as Debt Service Coverage Ratio (DSCR), Seller Discretionary Earnings (SDE) bridge, implied EBITDA multiples, SBA 7(a) loan amortizations, and SBA banking add-back disallowance re-pricing.',
             parameters: {
                 type: 'object',
                 properties: {
                     operation: {
                         type: 'string',
-                        enum: ['dscr', 'sde_bridge', 'ebitda_multiple', 'loan_amortization'],
+                        enum: ['dscr', 'sde_bridge', 'ebitda_multiple', 'loan_amortization', 'add_back_disallowance'],
                         description: 'The financial calculation to perform'
                     },
                     operatingCashFlow: { type: 'number', description: 'Annual operating cash flow or EBITDA for DSCR' },
@@ -1517,6 +1528,8 @@ const CHAT_AGENT_OPENAI_TOOLS = [
                     netIncome: { type: 'number', description: 'Net income before adjustments' },
                     ownerSalary: { type: 'number', description: 'Owner compensation/salary add-back' },
                     discretionaryAddBacks: { type: 'number', description: 'One-off or discretionary add-backs' },
+                    disallowedAddBacks: { type: 'number', description: 'Amount of personal perks or unverified add-backs disallowed by SBA lenders' },
+                    targetMultiple: { type: 'number', description: 'Valuation multiple (e.g. 4.5 for 4.5x EBITDA)' },
                     adjustedEbitda: { type: 'number', description: 'Confirmed adjusted EBITDA' },
                     purchasePrice: { type: 'number', description: 'Total transaction enterprise value or purchase price' }
                 },
@@ -1545,13 +1558,13 @@ const CHAT_AGENT_OPENAI_TOOLS = [
         type: 'function',
         function: {
             name: 'query_deal_data',
-            description: 'Inspect live deal facts, balance sheet line items, flags, or document inventory for the active deal project.',
+            description: 'Inspect live deal facts, balance sheet line items, flags, document inventory, customer cohort retention matrices, or add-back banking quality for the active deal project.',
             parameters: {
                 type: 'object',
                 properties: {
                     queryType: {
                         type: 'string',
-                        enum: ['summary', 'documented_facts', 'flags', 'valuation', 'documents'],
+                        enum: ['summary', 'documented_facts', 'flags', 'valuation', 'documents', 'cohorts', 'add_backs'],
                         description: 'Aspect of the deal to query'
                     }
                 },
@@ -1561,16 +1574,16 @@ const CHAT_AGENT_OPENAI_TOOLS = [
     }
 ]
 
-const CHAT_AGENT_ANTHROPIC_TOOLS = [
+export const CHAT_AGENT_ANTHROPIC_TOOLS = [
     {
         name: 'calculate_deal_financials',
-        description: 'Calculate crucial M&A financial metrics such as Debt Service Coverage Ratio (DSCR), Seller Discretionary Earnings (SDE) bridge, implied EBITDA multiples, and SBA 7(a) loan amortizations.',
+        description: 'Calculate crucial M&A financial metrics such as Debt Service Coverage Ratio (DSCR), Seller Discretionary Earnings (SDE) bridge, implied EBITDA multiples, SBA 7(a) loan amortizations, and SBA banking add-back disallowance re-pricing.',
         input_schema: {
             type: 'object',
             properties: {
                 operation: {
                     type: 'string',
-                    enum: ['dscr', 'sde_bridge', 'ebitda_multiple', 'loan_amortization'],
+                    enum: ['dscr', 'sde_bridge', 'ebitda_multiple', 'loan_amortization', 'add_back_disallowance'],
                     description: 'The financial calculation to perform'
                 },
                 operatingCashFlow: { type: 'number', description: 'Annual operating cash flow or EBITDA for DSCR' },
@@ -1580,6 +1593,8 @@ const CHAT_AGENT_ANTHROPIC_TOOLS = [
                 netIncome: { type: 'number', description: 'Net income before adjustments' },
                 ownerSalary: { type: 'number', description: 'Owner compensation/salary add-back' },
                 discretionaryAddBacks: { type: 'number', description: 'One-off or discretionary add-backs' },
+                disallowedAddBacks: { type: 'number', description: 'Amount of personal perks or unverified add-backs disallowed by SBA lenders' },
+                targetMultiple: { type: 'number', description: 'Valuation multiple (e.g. 4.5 for 4.5x EBITDA)' },
                 adjustedEbitda: { type: 'number', description: 'Confirmed adjusted EBITDA' },
                 purchasePrice: { type: 'number', description: 'Total transaction enterprise value or purchase price' }
             },
@@ -1602,13 +1617,13 @@ const CHAT_AGENT_ANTHROPIC_TOOLS = [
     },
     {
         name: 'query_deal_data',
-        description: 'Inspect live deal facts, balance sheet line items, flags, or document inventory for the active deal project.',
+        description: 'Inspect live deal facts, balance sheet line items, flags, document inventory, customer cohort retention matrices, or add-back banking quality for the active deal project.',
         input_schema: {
             type: 'object',
             properties: {
                 queryType: {
                     type: 'string',
-                    enum: ['summary', 'documented_facts', 'flags', 'valuation', 'documents'],
+                    enum: ['summary', 'documented_facts', 'flags', 'valuation', 'documents', 'cohorts', 'add_backs'],
                     description: 'Aspect of the deal to query'
                 }
             },
@@ -1617,7 +1632,7 @@ const CHAT_AGENT_ANTHROPIC_TOOLS = [
     }
 ]
 
-function executeClientSideTool(name: string, args: any, context: ClientSideToolContext): any {
+export function executeClientSideTool(name: string, args: any, context: ClientSideToolContext): any {
     if (name === 'calculate_deal_financials') {
         const op = String(args.operation || 'dscr').toLowerCase()
         if (op === 'dscr' || op === 'debt_service_coverage') {
@@ -1678,6 +1693,26 @@ function executeClientSideTool(name: string, args: any, context: ClientSideToolC
                 purchasePrice: price,
                 impliedEvEbitdaMultiple: Number(multiple.toFixed(2)) + 'x',
                 benchmarkComparison: multiple < 3.5 ? 'ATTRACTIVE (Below average market multiple)' : multiple <= 5.5 ? 'FAIR MARKET (Within normal 3.5x - 5.5x range)' : 'PREMIUM (Above 5.5x standard SMB range - requires strong recurring revenue)'
+            }
+        }
+        if (op === 'add_back_disallowance' || op === 'add_backs_repricing') {
+            const reported = Number(args.reportedEbitda || args.adjustedEbitda || args.ebitda || 1250000)
+            const disallowed = Number(args.disallowedAddBacks || args.discretionaryAddBacks || 140000)
+            const mult = Number(args.targetMultiple || 4.5)
+            const normalized = Math.max(0, reported - disallowed)
+            const baseValuation = Math.round(reported * mult)
+            const revisedValuation = Math.round(normalized * mult)
+            const purchasePriceHaircut = Math.max(0, baseValuation - revisedValuation)
+            return {
+                operation: 'add_back_disallowance',
+                reportedEbitda: reported,
+                disallowedAddBacksAmount: disallowed,
+                normalizedTrueEbitda: normalized,
+                multipleApplied: mult + 'x',
+                baseValuation: `$${baseValuation.toLocaleString()}`,
+                revisedNormalizedValuation: `$${revisedValuation.toLocaleString()}`,
+                justifiedPurchasePriceReduction: `$${purchasePriceHaircut.toLocaleString()}`,
+                lenderRuleSummary: 'SBA 7(a) and commercial underwriting standard disallows discretionary owner perks (personal vehicles, travel, non-working family salaries) from qualifying cash flow.'
             }
         }
         if (op === 'loan_amortization') {
@@ -1801,6 +1836,53 @@ function executeClientSideTool(name: string, args: any, context: ClientSideToolC
             return {
                 documentsCount: context.documents?.length || 0,
                 documents: context.documents?.map(d => ({ name: d.fileName, status: d.status, type: d.documentType })) || []
+            }
+        }
+        if (type === 'cohorts' || type === 'retention') {
+            const cohorts = getCohortsForProject(context.synthesis, context.model)
+            const summary = computeCohortSummary(cohorts)
+            return {
+                cohortsCount: cohorts.length,
+                cohorts: cohorts.map(c => ({
+                    cohort: c.cohortName,
+                    startingCustomers: c.startingCustomers,
+                    startingRevenue: c.startingRevenue,
+                    m12LogoRetention: c.logoRetention.M12 !== null ? `${c.logoRetention.M12}%` : 'N/A',
+                    m12Nrr: c.revenueRetention.M12 !== null ? `${c.revenueRetention.M12}%` : 'N/A',
+                })),
+                averageM12LogoRetention: `${summary.averageM12LogoRetention}%`,
+                averageM12Nrr: `${summary.averageM12Nrr}%`,
+                churnFloorPercent: `${summary.churnFloorPercent}%`,
+                isPriceHikeMaskingChurn: summary.isPriceHikeMaskingChurn,
+                alertTitle: summary.alertTitle,
+                alertDescription: summary.alertDescription,
+                guidance: 'Inspect the full triangular cohort matrix at [Cohort Matrix](tab:analysis#analysis-cohort-retention).'
+            }
+        }
+        if (type === 'add_backs' || type === 'addback_taxonomy') {
+            const items = DEFAULT_CLASSIFIED_ADD_BACKS
+            const reportedEbitda = typeof facts.ebitda_sde?.value === 'number' ? facts.ebitda_sde.value : 1250000
+            const repricing = recalculateAdjustedEbitdaWithDisallowances(
+                reportedEbitda,
+                items.map(it => ({ amount: it.amount, isDisallowed: it.isDisallowedByDefault })),
+                4.5
+            )
+            return {
+                totalAddBacksCount: items.length,
+                totalAddBacksAmount: `$${repricing.totalAddBacksAmount.toLocaleString()}`,
+                disallowedAmount: `$${repricing.disallowedAmount.toLocaleString()}`,
+                approvedAmount: `$${repricing.approvedAddBacksAmount.toLocaleString()}`,
+                reportedEbitda: `$${repricing.reportedEbitda.toLocaleString()}`,
+                normalizedEbitda: `$${repricing.adjustedEbitda.toLocaleString()}`,
+                purchasePriceReduction: `$${repricing.purchasePriceReduction.toLocaleString()}`,
+                categorizedItems: items.map(it => ({
+                    label: it.label,
+                    amount: `$${it.amount.toLocaleString()}`,
+                    category: it.category,
+                    isDisallowedByDefault: it.isDisallowedByDefault,
+                    detail: it.detail
+                })),
+                guidance: 'Inspect the interactive Banking Add-Back Engine at [Add-Back Banking Rules](tab:diligence#add-back-quality-card).'
             }
         }
         return {

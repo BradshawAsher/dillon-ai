@@ -159,4 +159,91 @@ describe('DealChatPanel multi-session chat helpers', () => {
     })
 })
 
+describe('DealChatPanel Client-Side AI Tools', () => {
+    const mockContext: any = {
+        model: {
+            askingPrice: 5000000,
+            purchasePrice: 4800000,
+            documentedFactsJson: JSON.stringify({
+                ebitda_sde: { value: 1250000, documentSource: 'Tax Return 2024' },
+                revenue: { value: 8500000, documentSource: 'P&L 2024' },
+            })
+        },
+        synthesis: {
+            redFlags: ['Unverified $140,000 owner perk add-backs'],
+            greenFlags: ['Solid 82% Month-12 cohort retention'],
+            finalTrafficLight: 'YELLOW',
+            finalRecommendation: 'RENEGOTIATE',
+            finalJudgmentSummary: 'Strong cash flows with aggressive seller add-backs requiring price haircut.'
+        },
+        projectName: 'Apex Industrial Services'
+    }
+
+    it('calculates banking add-back disallowance and purchase price reduction at given multiple', async () => {
+        const { executeClientSideTool } = await import('./DealChatPanel')
+        const result = executeClientSideTool('calculate_deal_financials', {
+            operation: 'add_back_disallowance',
+            reportedEbitda: 1250000,
+            disallowedAddBacks: 140000,
+            targetMultiple: 4.5
+        }, mockContext)
+
+        expect(result.operation).toBe('add_back_disallowance')
+        expect(result.reportedEbitda).toBe(1250000)
+        expect(result.disallowedAddBacksAmount).toBe(140000)
+        expect(result.normalizedTrueEbitda).toBe(1110000)
+        expect(result.multipleApplied).toBe('4.5x')
+        expect(result.baseValuation).toBe('$5,625,000')
+        expect(result.revisedNormalizedValuation).toBe('$4,995,000')
+        expect(result.justifiedPurchasePriceReduction).toBe('$630,000')
+        expect(result.lenderRuleSummary).toContain('SBA 7(a)')
+    })
+
+    it('queries customer cohort retention matrix and churn health status', async () => {
+        const { executeClientSideTool } = await import('./DealChatPanel')
+        const result = executeClientSideTool('query_deal_data', {
+            queryType: 'cohorts'
+        }, mockContext)
+
+        expect(result.cohortsCount).toBeGreaterThan(0)
+        expect(result.cohorts).toBeDefined()
+        expect(result.averageM12LogoRetention).toBeDefined()
+        expect(result.averageM12Nrr).toBeDefined()
+        expect(result.guidance).toContain('tab:analysis#analysis-cohort-retention')
+    })
+
+    it('queries categorized banking add-back items and recalculations', async () => {
+        const { executeClientSideTool } = await import('./DealChatPanel')
+        const result = executeClientSideTool('query_deal_data', {
+            queryType: 'add_backs'
+        }, mockContext)
+
+        expect(result.totalAddBacksCount).toBeGreaterThan(0)
+        expect(result.categorizedItems.length).toBeGreaterThan(0)
+        expect(result.reportedEbitda).toBeDefined()
+        expect(result.normalizedEbitda).toBeDefined()
+        expect(result.purchasePriceReduction).toBeDefined()
+        expect(result.guidance).toContain('tab:diligence#add-back-quality-card')
+    })
+
+    it('includes add_back_disallowance and cohort options in tool schemas', async () => {
+        const { CHAT_AGENT_OPENAI_TOOLS, CHAT_AGENT_ANTHROPIC_TOOLS } = await import('./DealChatPanel')
+        
+        const openAiCalcTool = CHAT_AGENT_OPENAI_TOOLS.find(t => t.function.name === 'calculate_deal_financials')
+        expect(openAiCalcTool?.function.parameters.properties.operation.enum).toContain('add_back_disallowance')
+
+        const openAiQueryTool = CHAT_AGENT_OPENAI_TOOLS.find(t => t.function.name === 'query_deal_data')
+        expect(openAiQueryTool?.function.parameters.properties.queryType.enum).toContain('cohorts')
+        expect(openAiQueryTool?.function.parameters.properties.queryType.enum).toContain('add_backs')
+
+        const anthropicCalcTool = CHAT_AGENT_ANTHROPIC_TOOLS.find(t => t.name === 'calculate_deal_financials')
+        expect(anthropicCalcTool?.input_schema.properties.operation.enum).toContain('add_back_disallowance')
+
+        const anthropicQueryTool = CHAT_AGENT_ANTHROPIC_TOOLS.find(t => t.name === 'query_deal_data')
+        expect(anthropicQueryTool?.input_schema.properties.queryType.enum).toContain('cohorts')
+        expect(anthropicQueryTool?.input_schema.properties.queryType.enum).toContain('add_backs')
+    })
+})
+
+
 

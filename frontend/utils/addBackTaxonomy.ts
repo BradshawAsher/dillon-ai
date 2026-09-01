@@ -175,3 +175,67 @@ export function recalculateAdjustedEbitdaWithDisallowances(
         purchasePriceReduction,
     }
 }
+
+export const DEFAULT_CLASSIFIED_ADD_BACKS: ClassifiedAddBackItem[] = [
+    {
+        id: 'ab-1',
+        label: 'Owner Personal Vehicle & Fuel Expense',
+        amount: 36000,
+        category: 'disallowed',
+        quality: 'unsupported',
+        isDisallowedByDefault: true,
+        detail: 'Luxury automobile lease and non-business travel fuel billed directly through operating account.',
+        sourceFile: 'P&L_2024.xlsx',
+        sourceLocation: 'Line 42',
+        excerpt: 'Auto lease: $36,000 / yr'
+    },
+    {
+        id: 'ab-2',
+        label: 'Non-Working Family Member Salary & Health Plan',
+        amount: 68000,
+        category: 'disallowed',
+        quality: 'unsupported',
+        isDisallowedByDefault: true,
+        detail: 'Spouse W2 compensation and full medical coverage with zero operational job responsibilities.',
+        sourceFile: 'Tax_Return_1120S.pdf',
+        sourceLocation: 'Schedule K-1 Line 14',
+        excerpt: 'Officer comp non-exec: $68,000'
+    },
+    {
+        id: 'ab-3',
+        label: 'Discretionary Executive Travel & Resort Lodging',
+        amount: 36000,
+        category: 'disallowed',
+        quality: 'partial',
+        isDisallowedByDefault: true,
+        detail: 'Annual ski retreat and overseas conference passes categorized under business development.',
+        sourceFile: 'General_Ledger.csv',
+        sourceLocation: 'Account 6020',
+        excerpt: 'Travel & entertainment: $36,000'
+    },
+    {
+        id: 'ab-4',
+        label: 'One-Time Facility Relocation & Severance',
+        amount: 85000,
+        category: 'defensible',
+        quality: 'supported',
+        isDisallowedByDefault: false,
+        detail: 'Non-recurring physical warehouse consolidation and one-time severance packages.',
+        sourceFile: 'Relocation_Invoices.pdf',
+        sourceLocation: 'Page 3',
+        excerpt: 'Mover contracts & terminal severance: $85,000'
+    },
+    {
+        id: 'ab-5',
+        label: 'Market Wage Deficit for Replacement GM',
+        amount: 45000,
+        category: 'management_deficit',
+        quality: 'supported',
+        isDisallowedByDefault: false,
+        detail: 'Owner currently taking below-market $80,000 salary; market replacement GM requires $125,000.',
+        sourceFile: 'Compensation_Benchmarking.pdf',
+        sourceLocation: 'Section 4',
+        excerpt: 'GM benchmark deficit: $45,000'
+    }
+]
+
