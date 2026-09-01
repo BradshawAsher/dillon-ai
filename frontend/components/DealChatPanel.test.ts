@@ -230,18 +230,22 @@ describe('DealChatPanel Client-Side AI Tools', () => {
         const { CHAT_AGENT_OPENAI_TOOLS, CHAT_AGENT_ANTHROPIC_TOOLS } = await import('./DealChatPanel')
         
         const openAiCalcTool = CHAT_AGENT_OPENAI_TOOLS.find(t => t.function.name === 'calculate_deal_financials')
-        expect(openAiCalcTool?.function.parameters.properties.operation.enum).toContain('add_back_disallowance')
+        const openAiCalcProps = openAiCalcTool?.function.parameters?.properties as Record<string, any> | undefined
+        expect(openAiCalcProps?.operation?.enum).toContain('add_back_disallowance')
 
         const openAiQueryTool = CHAT_AGENT_OPENAI_TOOLS.find(t => t.function.name === 'query_deal_data')
-        expect(openAiQueryTool?.function.parameters.properties.queryType.enum).toContain('cohorts')
-        expect(openAiQueryTool?.function.parameters.properties.queryType.enum).toContain('add_backs')
+        const openAiQueryProps = openAiQueryTool?.function.parameters?.properties as Record<string, any> | undefined
+        expect(openAiQueryProps?.queryType?.enum).toContain('cohorts')
+        expect(openAiQueryProps?.queryType?.enum).toContain('add_backs')
 
         const anthropicCalcTool = CHAT_AGENT_ANTHROPIC_TOOLS.find(t => t.name === 'calculate_deal_financials')
-        expect(anthropicCalcTool?.input_schema.properties.operation.enum).toContain('add_back_disallowance')
+        const anthropicCalcProps = anthropicCalcTool?.input_schema?.properties as Record<string, any> | undefined
+        expect(anthropicCalcProps?.operation?.enum).toContain('add_back_disallowance')
 
         const anthropicQueryTool = CHAT_AGENT_ANTHROPIC_TOOLS.find(t => t.name === 'query_deal_data')
-        expect(anthropicQueryTool?.input_schema.properties.queryType.enum).toContain('cohorts')
-        expect(anthropicQueryTool?.input_schema.properties.queryType.enum).toContain('add_backs')
+        const anthropicQueryProps = anthropicQueryTool?.input_schema?.properties as Record<string, any> | undefined
+        expect(anthropicQueryProps?.queryType?.enum).toContain('cohorts')
+        expect(anthropicQueryProps?.queryType?.enum).toContain('add_backs')
     })
 })
 
