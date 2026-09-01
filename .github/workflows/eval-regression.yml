@@ -33,6 +33,9 @@ jobs:
           VITE_SUPABASE_ANON_KEY: "placeholder-anon-key"
         run: npm --prefix frontend test
 
+      - name: Run API Integration Tests
+        run: npm --prefix frontend run test:api
+
       - name: Build Frontend Production Bundle
         env:
           VITE_SUPABASE_URL: "https://placeholder-project.supabase.co"
