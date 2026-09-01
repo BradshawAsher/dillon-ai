@@ -166,14 +166,6 @@ VITE_ENABLE_AUTH_ACTIVITY_SLACK_ALERTS=false
   sign-ins limited to one per user and browser per day. New-account, failed
   sign-in, access-request, and issue-report alerts remain enabled.
 - `VITE_USE_MOCKS=true` changes the initial local source to Example mode.
-- Access gates are currently disabled. To restore the shared-password gate for
-  the local/Render server, set `ENABLE_ACCESS_GATES=true` and `APP_PASSWORD`.
-
-## Live n8n and Example mode
-
-The bottom-right **Data: Example / Live n8n** control persists its selection in
-browser local storage.
-
 - **Live n8n** is the default. Uploads trigger the real Cloud workflow and
   refreshes read real n8n rows.
 - **Example** is pre-loaded sample data. It does not send data to n8n and
@@ -247,40 +239,6 @@ handoff deadline. This is not the background AI processing timeout.
 Use a Vercel preview deployment to validate live history, a test upload,
 batch progress, and project synthesis before promoting a change. See
 [docs/DEPLOY_VERCEL.md](docs/DEPLOY_VERCEL.md) for the full checklist.
-
-## Render backup (legacy)
-
-`render.yaml` defines the Render service. Create a Render Blueprint from the
-repository and set `APP_PASSWORD` and `N8N_WEBHOOK_SECRET` in Render.
-
-The configured deployment URL is:
-
-<https://due-diligence-dashboard.onrender.com/>
-
-## Key UI features
-
-- **Multi-Modal VDR Ingestion Dropzone** — Ingests 9 asset classes (PDF, XLSX, DOCX, EML, WEBP, PPTX, MP3, MP4, and client-side unpacked ZIP archives) with direct presigned cloud uploads.
-- **Interactive Evals & Harness Tab** — 1-Card per deal with real-time `Pre-LOI Discovery` ↔ `Post-LOI Negotiation` toggle, 58 golden benchmark documents, and per-document precision inspection.
-- **Guided Walkthrough & Simulated VDR Modal** — macOS-style interactive VDR file explorer, step-by-step feature tours, and mission quests.
-- **Overview tab** with Summary / Deep Analysis sub-tabs — Deal Memo shown first.
-- **AI Chatbot** (floating panel) — context-aware Q&A about the active project and all other projects in the portfolio.
-- **Deterministic math checks** — pure arithmetic cross-verification of extracted financials (see [DETERMINISTIC_MATH_CHECKS.md](DETERMINISTIC_MATH_CHECKS.md)).
-- **Deal Grade** — letter grade (A–F) across pricing, profitability, risk, data quality, payback.
-- **Quick Valuation & Bridge** — back-of-napkin valuation ranges with price markers, seller add-back adjustments, and escrow recommendations.
-- **Radar Chart** — 5-dimension SVG spider chart (no Recharts dependency).
-
-Use a Vercel preview deployment to validate live history, a test upload,
-batch progress, and project synthesis before promoting a change. See
-[docs/DEPLOY_VERCEL.md](docs/DEPLOY_VERCEL.md) for the full checklist.
-
-## Render backup (legacy)
-
-`render.yaml` defines the Render service. Create a Render Blueprint from the
-repository and set `APP_PASSWORD` and `N8N_WEBHOOK_SECRET` in Render.
-
-The configured deployment URL is:
-
-<https://due-diligence-dashboard.onrender.com/>
 
 ## Key UI features
 
