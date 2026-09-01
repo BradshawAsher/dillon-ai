@@ -13,9 +13,11 @@ type Props = {
 }
 
 function money(val: number): string {
-    if (Math.abs(val) >= 1_000_000) return `$${(val / 1_000_000).toFixed(2)}M`
-    if (Math.abs(val) >= 1_000) return `$${(val / 1_000).toFixed(0)}K`
-    return `$${val.toFixed(0)}`
+    const sign = val < 0 ? '-' : ''
+    const abs = Math.abs(val)
+    if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(2)}M`
+    if (abs >= 1_000) return `${sign}$${(abs / 1_000).toFixed(0)}K`
+    return `${sign}$${abs.toFixed(0)}`
 }
 
 function computeIRR(cashFlows: number[]): number | null {

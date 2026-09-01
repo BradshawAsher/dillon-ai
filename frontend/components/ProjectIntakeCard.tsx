@@ -248,7 +248,7 @@ export default function ProjectIntakeCard({
     const detectedExistingMatch = useMemo(() => {
         if (selectedFiles.length === 0 || selectedProjectKey !== 'new') return null
 
-        // 1. Extract candidate strings from selected files
+        // 1. Extract candidate strings strictly from selected files and explicit dealName input
         const candidateNames: string[] = []
 
         // Root directory from folder upload (e.g. "business 5 medical spa/file.pdf" -> "business 5 medical spa")
@@ -262,12 +262,11 @@ export default function ProjectIntakeCard({
         const baseFileName = selectedFiles[0]?.name?.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ').trim().toLowerCase()
         if (baseFileName) candidateNames.push(baseFileName)
 
-        // Deal name if typed or suggested
+        // Deal name if explicitly typed by user
         if (dealName && dealName.trim()) candidateNames.push(dealName.trim().toLowerCase())
-        if (suggestedProjectName && suggestedProjectName.trim()) candidateNames.push(suggestedProjectName.trim().toLowerCase())
 
         // Stopwords to ignore
-        const genericWords = new Set(['financials', 'financial', 'p&l', 'balance', 'sheet', 'income', 'statement', 'tax', 'return', 'model', 'pdf', 'xlsx', 'csv', 'new', 'project', 'deal', 'untitled', 'fy23', 'fy22', 'fy24', 'fy21', 'fy20', 'doc', 'docx'])
+        const genericWords = new Set(['financials', 'financial', 'p&l', 'balance', 'sheet', 'income', 'statement', 'tax', 'return', 'model', 'pdf', 'xlsx', 'csv', 'new', 'project', 'deal', 'untitled', 'fy23', 'fy22', 'fy24', 'fy21', 'fy20', 'doc', 'docx', 'packet', 'test', 'set', 'sample'])
 
         for (const candidate of candidateNames) {
             const tokens = candidate.split(/[\s_\-./\\]+/).map(t => t.trim().toLowerCase()).filter(t => t.length >= 3 && !genericWords.has(t))
@@ -295,7 +294,7 @@ export default function ProjectIntakeCard({
         }
 
         return null
-    }, [selectedFiles, selectedProjectKey, dealName, suggestedProjectName, availableProjects])
+    }, [selectedFiles, selectedProjectKey, dealName, availableProjects])
 
     return (
         <Card id="project-intake" className="overflow-hidden scroll-mt-6" data-project-intake>

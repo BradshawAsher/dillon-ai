@@ -11,6 +11,7 @@ import {
     routingSavingsFraction,
     SAMPLE_DOCUMENT_LEGS,
     topSpendDrivers,
+    estimateChatQueryCost,
 } from './costModel'
 
 describe('estimateCallCost', () => {
@@ -180,3 +181,22 @@ describe('sumMeasuredCost', () => {
         expect(s.hasMeasured).toBe(true)
     })
 })
+
+describe('estimateChatQueryCost', () => {
+    it('prices chat query turns for Claude Sonnet 5 ($2 / $10)', () => {
+        // 1000 in ($0.002) + 500 out ($0.005) = $0.007
+        expect(estimateChatQueryCost(1000, 500, 'Claude Sonnet 5')).toBeCloseTo(0.007, 6)
+        expect(estimateChatQueryCost(1000, 500, 'claude-sonnet-5')).toBeCloseTo(0.007, 6)
+    })
+
+    it('prices chat query turns for OpenAI 5.6 Terra ($2 / $12)', () => {
+        // 1000 in ($0.002) + 500 out ($0.006) = $0.008
+        expect(estimateChatQueryCost(1000, 500, 'OpenAI 5.6 Terra')).toBeCloseTo(0.008, 6)
+    })
+
+    it('prices chat query turns for DeepSeek V4 ($0.14 / $0.28)', () => {
+        // 1000 in ($0.00014) + 1000 out ($0.00028) = $0.00042
+        expect(estimateChatQueryCost(1000, 1000, 'DeepSeek V4 Flash')).toBeCloseTo(0.00042, 6)
+    })
+})
+

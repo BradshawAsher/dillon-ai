@@ -4910,6 +4910,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                             }, 120)
                         }
                     }}
+                    onOpenVersionSwitcher={() => setIsVersionSwitcherOpen(true)}
                 />
             </Suspense>
 
@@ -4958,6 +4959,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                     onStartTour={(tourId) => handleStartTour(tourId)}
                     onOpenWalkthrough={() => setIsWalkthroughModalOpen(true)}
                     onOpenReportIssue={() => setIsReportIssueOpen(true)}
+                    onOpenVersionSwitcher={() => setIsVersionSwitcherOpen(true)}
                 />
             </Suspense>
 

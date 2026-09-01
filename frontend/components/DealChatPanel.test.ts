@@ -241,28 +241,71 @@ describe('DealChatPanel Client-Side AI Tools', () => {
         expect(result.guidance).toContain('tab:structure#structure-working-capital-peg')
     })
 
-    it('includes add_back_disallowance, nwc_peg, and cohort options in tool schemas', async () => {
+    it('executes navigate_to_card tool cleanly and invokes onNavigateTab', async () => {
+        const { executeClientSideTool } = await import('./DealChatPanel')
+        let navigatedTab = ''
+        let navigatedAnchor = ''
+        const testCtx = {
+            ...mockContext,
+            onNavigateTab: (tab: string, anchor?: string) => {
+                navigatedTab = tab
+                navigatedAnchor = anchor || ''
+            }
+        }
+        const result = executeClientSideTool('navigate_to_card', {
+            tab: 'structure',
+            cardAnchor: 'structure-working-capital-peg'
+        }, testCtx)
+
+        expect(result.success).toBe(true)
+        expect(result.action).toBe('navigate')
+        expect(result.tab).toBe('structure')
+        expect(navigatedTab).toBe('structure')
+        expect(navigatedAnchor).toBe('structure-working-capital-peg')
+    })
+
+    it('executes trigger_export tool and generates export action', async () => {
+        const { executeClientSideTool } = await import('./DealChatPanel')
+        const result = executeClientSideTool('trigger_export', {
+            exportType: 'excel'
+        }, mockContext)
+
+        expect(result.success).toBe(true)
+        expect(result.action).toBe('export')
+        expect(result.exportType).toBe('excel')
+    })
+
+    it('executes open_version_control and invokes onOpenVersionSwitcher', async () => {
+        const { executeClientSideTool } = await import('./DealChatPanel')
+        let opened = false
+        const testCtx = {
+            ...mockContext,
+            onOpenVersionSwitcher: () => {
+                opened = true
+            }
+        }
+        const result = executeClientSideTool('open_version_control', {
+            action: 'open_modal'
+        }, testCtx)
+
+        expect(result.success).toBe(true)
+        expect(result.action).toBe('open_version_control')
+        expect(result.fallbackStableUrl).toBeDefined()
+        expect(opened).toBe(true)
+    })
+
+    it('includes navigate_to_card, trigger_export, open_version_control in tool schemas', async () => {
         const { CHAT_AGENT_OPENAI_TOOLS, CHAT_AGENT_ANTHROPIC_TOOLS } = await import('./DealChatPanel')
         
-        const openAiCalcTool = CHAT_AGENT_OPENAI_TOOLS.find(t => t.function.name === 'calculate_deal_financials')
-        const openAiCalcProps = openAiCalcTool?.function.parameters?.properties as Record<string, any> | undefined
-        expect(openAiCalcProps?.operation?.enum).toContain('add_back_disallowance')
-        expect(openAiCalcProps?.operation?.enum).toContain('nwc_peg')
+        expect(CHAT_AGENT_OPENAI_TOOLS.some(t => t.function.name === 'navigate_to_card')).toBe(true)
+        expect(CHAT_AGENT_OPENAI_TOOLS.some(t => t.function.name === 'trigger_export')).toBe(true)
+        expect(CHAT_AGENT_OPENAI_TOOLS.some(t => t.function.name === 'open_version_control')).toBe(true)
+        expect(CHAT_AGENT_OPENAI_TOOLS.some(t => t.function.name === 'open_workspace_modal')).toBe(true)
 
-        const openAiQueryTool = CHAT_AGENT_OPENAI_TOOLS.find(t => t.function.name === 'query_deal_data')
-        const openAiQueryProps = openAiQueryTool?.function.parameters?.properties as Record<string, any> | undefined
-        expect(openAiQueryProps?.queryType?.enum).toContain('cohorts')
-        expect(openAiQueryProps?.queryType?.enum).toContain('add_backs')
-
-        const anthropicCalcTool = CHAT_AGENT_ANTHROPIC_TOOLS.find(t => t.name === 'calculate_deal_financials')
-        const anthropicCalcProps = anthropicCalcTool?.input_schema?.properties as Record<string, any> | undefined
-        expect(anthropicCalcProps?.operation?.enum).toContain('add_back_disallowance')
-        expect(anthropicCalcProps?.operation?.enum).toContain('nwc_peg')
-
-        const anthropicQueryTool = CHAT_AGENT_ANTHROPIC_TOOLS.find(t => t.name === 'query_deal_data')
-        const anthropicQueryProps = anthropicQueryTool?.input_schema?.properties as Record<string, any> | undefined
-        expect(anthropicQueryProps?.queryType?.enum).toContain('cohorts')
-        expect(anthropicQueryProps?.queryType?.enum).toContain('add_backs')
+        expect(CHAT_AGENT_ANTHROPIC_TOOLS.some(t => t.name === 'navigate_to_card')).toBe(true)
+        expect(CHAT_AGENT_ANTHROPIC_TOOLS.some(t => t.name === 'trigger_export')).toBe(true)
+        expect(CHAT_AGENT_ANTHROPIC_TOOLS.some(t => t.name === 'open_version_control')).toBe(true)
+        expect(CHAT_AGENT_ANTHROPIC_TOOLS.some(t => t.name === 'open_workspace_modal')).toBe(true)
     })
 })
 

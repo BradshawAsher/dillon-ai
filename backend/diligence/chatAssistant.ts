@@ -20,12 +20,28 @@ function boundedText(value: unknown, field: string, maxLength: number, required 
  * Server-side relay for the n8n chat webhook. It keeps Header Auth out of the
  * browser while preserving the existing n8n payload contract.
  */
+export type ChatAssistantResult = {
+  answer?: string
+  output?: string
+  text?: string
+  modelUsed?: string
+  model_used?: string
+  inputTokens?: number
+  input_tokens?: number
+  outputTokens?: number
+  output_tokens?: number
+  totalTokens?: number
+  total_tokens?: number
+  costUsd?: number
+  cost_usd?: number
+}
+
 export default async function chatAssistant(req: { params: Params; user: User }) {
   const question = boundedText(req.params.question, 'question', 8_000, true)
   const context = boundedText(req.params.context, 'context', 100_000)
   const sessionId = boundedText(req.params.sessionId, 'sessionId', 200)
 
-  const response = await n8nFinancialAgent.rawRequest<{ answer?: string; output?: string; text?: string }>({
+  const response = await n8nFinancialAgent.rawRequest<ChatAssistantResult>({
     path: 'webhook/dd-chat',
     method: 'POST',
     bodyType: 'json',

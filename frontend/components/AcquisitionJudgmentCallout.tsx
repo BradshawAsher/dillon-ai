@@ -1,4 +1,4 @@
-import { Clock, Download, Mail, Pin, PinOff, Scale } from 'lucide-react'
+import { Clock, Download, Mail, Pin, PinOff, Scale, FileSpreadsheet, Loader2 } from 'lucide-react'
 
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
@@ -62,7 +62,42 @@ export default function AcquisitionJudgmentCallout({
 }: AcquisitionJudgmentCalloutProps) {
     const [isPinned, setIsPinned] = useState(false)
     const [isEmailModalOpen, setIsEmailModalOpen] = useState(false)
-    const projectTiming = useMemo(() => getProjectTimingSummary(documents, synthesis), [documents, synthesis])
+    const [isExportingExcel, setIsExportingExcel] = useState(false)
+    const projectTiming = useMemo(() => {
+        const raw = getProjectTimingSummary(documents, synthesis)
+        const fallbackSynth = getSynthesisDurationSec(synthesis)
+        const synthSec = raw.synthesisSec ?? fallbackSynth
+        const hasExtraction = raw.extractionWallClockSec !== null && raw.extractionWallClockSec > 0
+        const totalSec = hasExtraction ? (raw.extractionWallClockSec! + (synthSec || 0)) : (raw.totalProjectSec ?? synthSec)
+        return {
+            ...raw,
+            synthesisSec: synthSec,
+            totalProjectSec: totalSec,
+        }
+    }, [documents, synthesis])
+
+    const handleExportExcel = async () => {
+        if (!model) return
+        setIsExportingExcel(true)
+        try {
+            const { generateLiveExcelModel } = await import('../utils/excelModelGenerator')
+            const name = projectName || synthesis?.companyName || 'deal'
+            const blob = await generateLiveExcelModel({ model, synthesis, projectName: name })
+            const safeName = name.replace(/[^a-zA-Z0-9-_]/g, '_').slice(0, 50) || 'deal'
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = `${safeName}_financial_model.xlsx`
+            document.body.appendChild(a)
+            a.click()
+            document.body.removeChild(a)
+            setTimeout(() => URL.revokeObjectURL(url), 1000)
+        } catch (err) {
+            console.error('Failed to export Excel model:', err)
+        } finally {
+            setIsExportingExcel(false)
+        }
+    }
 
     const pending = !synthesis || !synthesis.finalJudgmentSummary
     const message = pending
@@ -225,11 +260,27 @@ export default function AcquisitionJudgmentCallout({
                         </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                        {synthesis ? (
+                        {model ? (
+                            <button
+                                type="button"
+                                onClick={handleExportExcel}
+                                disabled={isExportingExcel}
+                                className="flex items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 transition-all hover:bg-emerald-500/20 active:scale-95 shadow-2xs cursor-pointer disabled:opacity-50"
+                                title="Download live 4-tab Excel financial model (.xlsx) with dynamic formulas"
+                            >
+                                {isExportingExcel ? (
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                ) : (
+                                    <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                )}
+                                <span>Export Excel Model (.xlsx)</span>
+                            </button>
+                        ) : null}
+                        {synthesis?.finalJudgmentSummary ? (
                             <button
                                 type="button"
                                 onClick={() => downloadSynthesisReport(synthesis, synthesis.projectName || synthesis.companyName || synthesis.projectId || 'Deal')}
-                                className="flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-2.5 py-1.5 text-xs font-bold text-primary transition-colors hover:bg-primary/20 shadow-2xs"
+                                className="flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-2.5 py-1.5 text-xs font-bold text-primary transition-colors hover:bg-primary/20 shadow-2xs cursor-pointer"
                                 title="Download complete project synthesis report (Markdown)"
                             >
                                 <Download className="h-3.5 w-3.5 text-primary shrink-0" />
@@ -281,18 +332,25 @@ export default function AcquisitionJudgmentCallout({
                         ) : null}
                         {(() => {
                             if (projectTiming.synthesisSec === null && projectTiming.totalProjectSec === null) return null
+                            const hasExtractionTime = projectTiming.extractionWallClockSec !== null && projectTiming.extractionWallClockSec > 0
                             return (
                                 <div className="flex flex-wrap items-center gap-2">
                                     {projectTiming.synthesisSec !== null ? (
-                                        <div className="inline-flex items-center gap-2 rounded-lg border-2 border-primary/50 bg-primary/10 px-3.5 py-1.5 text-xs sm:text-sm font-mono font-bold text-primary shadow-xs">
+                                        <div
+                                            className="inline-flex items-center gap-1.5 rounded-lg border-2 border-primary/50 bg-primary/10 px-3 py-1.5 text-xs sm:text-sm font-mono font-bold text-primary shadow-xs"
+                                            title="AI Project-Level Synthesis Pass Latency"
+                                        >
                                             <Clock className="h-4 w-4 text-primary shrink-0" />
-                                            <span>Synthesis: {formatElapsedDuration(projectTiming.synthesisSec)}</span>
+                                            <span>Synthesis Pass: {formatElapsedDuration(projectTiming.synthesisSec)}</span>
                                         </div>
                                     ) : null}
-                                    {projectTiming.totalProjectSec !== null ? (
-                                        <div className="inline-flex items-center gap-2 rounded-lg border-2 border-indigo-500/50 bg-indigo-500/10 px-3.5 py-1.5 text-xs sm:text-sm font-mono font-bold text-indigo-700 dark:text-indigo-300 shadow-xs">
+                                    {hasExtractionTime && projectTiming.totalProjectSec !== null ? (
+                                        <div
+                                            className="inline-flex items-center gap-1.5 rounded-lg border-2 border-indigo-500/50 bg-indigo-500/10 px-3 py-1.5 text-xs sm:text-sm font-mono font-bold text-indigo-700 dark:text-indigo-300 shadow-xs"
+                                            title={`Total End-to-End Diligence Pipeline (Document Extraction: ${formatElapsedDuration(projectTiming.extractionWallClockSec || 0)} + Synthesis Pass: ${formatElapsedDuration(projectTiming.synthesisSec || 0)})`}
+                                        >
                                             <Clock className="h-4 w-4 shrink-0" />
-                                            <span>Total Project: {formatElapsedDuration(projectTiming.totalProjectSec)}</span>
+                                            <span>Total Diligence Time: {formatElapsedDuration(projectTiming.totalProjectSec)}</span>
                                         </div>
                                     ) : null}
                                 </div>

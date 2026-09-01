@@ -203,8 +203,11 @@ export function BatchProgressCard({
                                 <FileText className="h-4 w-4 text-primary" />
                                 <span>Documents in this batch ({batchDocuments.length})</span>
                                 {totalBatchDocSec > 0 ? (
-                                    <span className="font-mono text-[11px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20">
-                                        ~{formatElapsedDuration(totalBatchDocSec)} total extraction · ~{avgBatchDocSec}s/doc
+                                    <span
+                                        className="font-mono text-[11px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20"
+                                        title={`Aggregate compute time across ${batchDocuments.length} parallel extraction workers: ${formatElapsedDuration(totalBatchDocSec)}. Average per document: ${avgBatchDocSec}s`}
+                                    >
+                                        ~{formatElapsedDuration(totalBatchDocSec)} aggregate compute · ~{avgBatchDocSec}s/doc (parallel)
                                     </span>
                                 ) : null}
                             </span>

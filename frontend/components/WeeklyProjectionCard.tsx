@@ -82,13 +82,13 @@ export default function WeeklyProjectionCard({ model }: Props) {
                     <div className="rounded-lg bg-muted/50 p-2 min-w-0">
                         <p className="text-[10px] text-muted-foreground truncate">Year 1 net cash</p>
                         <p className={`text-sm font-bold tabular-nums ${data.year1NetCash >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            ${Math.abs(data.year1NetCash).toLocaleString()}
+                            {data.year1NetCash < 0 ? '-' : ''}${Math.abs(data.year1NetCash).toLocaleString()}
                         </p>
                     </div>
                     <div className="rounded-lg bg-muted/50 p-2 min-w-0">
                         <p className="text-[10px] text-muted-foreground truncate">Monthly avg</p>
                         <p className={`text-sm font-bold tabular-nums ${data.monthlyAvg >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            ${Math.abs(Math.round(data.monthlyAvg)).toLocaleString()}
+                            {data.monthlyAvg < 0 ? '-' : ''}${Math.abs(Math.round(data.monthlyAvg)).toLocaleString()}
                         </p>
                     </div>
                     <div className="rounded-lg bg-muted/50 p-2 min-w-0">

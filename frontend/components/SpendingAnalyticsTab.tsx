@@ -1,9 +1,10 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import {
     Building2,
     CreditCard,
     Download,
     Layers,
+    MessageSquare,
     Search,
     TrendingUp,
 } from 'lucide-react'
@@ -12,6 +13,8 @@ import CardInfoPopover from './common/CardInfoPopover'
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
 import { calculateDocumentCost, calculateSynthesisCost } from '../utils/diligenceDashboardUtils'
+import { getStoredChatBillingRecords } from './DealChatPanel'
+import { estimateChatQueryCost } from '../utils/costModel'
 
 type SpendingAnalyticsTabProps = {
     documents?: any[]
@@ -20,7 +23,7 @@ type SpendingAnalyticsTabProps = {
 }
 
 type TimeframeOption = 'hour' | 'day' | 'week' | 'month' | 'all'
-type RunTypeOption = 'all' | 'extraction' | 'synthesis'
+type RunTypeOption = 'all' | 'extraction' | 'synthesis' | 'chat'
 
 type LedgerRecord = {
     id: string
@@ -28,7 +31,7 @@ type LedgerRecord = {
     dateObj: Date
     businessName: string
     projectId: string
-    runType: 'Document Extraction' | 'Pre-LOI Synthesis' | 'Post-LOI Synthesis'
+    runType: 'Document Extraction' | 'Pre-LOI Synthesis' | 'Post-LOI Synthesis' | 'Chat Assistant'
     fileName?: string
     model: string
     inputTokens: number
@@ -48,7 +51,11 @@ function formatModelDisplayName(modelStr?: string, runType?: string): string {
         if (lower.includes('opus')) return 'Claude Opus 5'
         if (lower.includes('3.5') && (lower.includes('flash') || lower.includes('gemini'))) return 'Gemini 3.5 Flash Lite'
         if (lower.includes('flash') || lower.includes('gemini')) return 'Gemini 3.1 Flash Lite'
+        if (lower.includes('deepseek')) return 'DeepSeek V4 Flash'
         return modelStr
+    }
+    if (runType && runType.includes('Chat')) {
+        return 'Claude Sonnet 5'
     }
     if (runType && runType.includes('Synthesis')) {
         return 'OpenAI 5.6 Terra'
@@ -84,8 +91,20 @@ export default function SpendingAnalyticsTab({
     const [runTypeFilter, setRunTypeOption] = useState<RunTypeOption>('all')
     const [searchTerm, setSearchTerm] = useState('')
     const [selectedBusiness, setSelectedBusiness] = useState<string>('all')
+    const [chatRefreshTick, setChatRefreshTick] = useState(0)
 
-    // Construct unified billing ledger records from live documents and syntheses + baseline DD runs
+    // Listen to live chat billing updates dispatched by DealChatPanel
+    useEffect(() => {
+        const handleChatUpdate = () => setChatRefreshTick(t => t + 1)
+        window.addEventListener('mergeworks:chat-billing-updated', handleChatUpdate)
+        window.addEventListener('storage', handleChatUpdate)
+        return () => {
+            window.removeEventListener('mergeworks:chat-billing-updated', handleChatUpdate)
+            window.removeEventListener('storage', handleChatUpdate)
+        }
+    }, [])
+
+    // Construct unified billing ledger records from live documents, syntheses, chat assistant + baseline DD runs
     const billingLedger = useMemo<LedgerRecord[]>(() => {
         const records: LedgerRecord[] = []
         const now = new Date()
@@ -144,12 +163,39 @@ export default function SpendingAnalyticsTab({
             })
         }
 
-        // 3. Populate standard 15 DD baseline deal records anchored relative to TODAY
+        // 3. Process Live Chat Assistant Telemetry
+        const liveChats = getStoredChatBillingRecords()
+        if (liveChats && liveChats.length > 0) {
+            liveChats.forEach((chat) => {
+                const createdDate = chat.timestamp ? new Date(chat.timestamp) : new Date()
+                const inTok = chat.inputTokens || 1800
+                const outTok = chat.outputTokens || 350
+                const cost = chat.costUsd || estimateChatQueryCost(inTok, outTok, chat.model)
+
+                records.push({
+                    id: chat.id,
+                    timestamp: createdDate.toISOString(),
+                    dateObj: createdDate,
+                    businessName: chat.businessName || 'Active Diligence Deal',
+                    projectId: chat.projectId || 'live-project',
+                    runType: 'Chat Assistant',
+                    fileName: chat.questionSnippet ? `Q: "${chat.questionSnippet}"` : 'Deal Analysis Query',
+                    model: formatModelDisplayName(chat.model, 'Chat Assistant'),
+                    inputTokens: inTok,
+                    outputTokens: outTok,
+                    totalTokens: chat.totalTokens || (inTok + outTok),
+                    costUsd: cost,
+                    status: chat.status || 'Live Webhook',
+                })
+            })
+        }
+
+        // 4. Populate standard 15 DD baseline deal records anchored relative to TODAY
         DD_COMPANIES.forEach((comp, compIdx) => {
             const hasLiveForComp = records.some(r => r.projectId.toLowerCase().includes(comp.id) || r.businessName.toLowerCase().includes(comp.name.toLowerCase()))
 
             if (!hasLiveForComp) {
-                // Spread runs cleanly back from today (Aug 13, 2026) across recent days
+                // Spread runs cleanly back from today across recent days
                 const daysOffset = compIdx * 0.75
                 const docBaseDate = new Date(now.getTime() - (daysOffset * 86400000))
                 const extractionTotalCost = 1.155 // 21 docs @ $0.055
@@ -179,11 +225,29 @@ export default function SpendingAnalyticsTab({
                     businessName: comp.name,
                     projectId: comp.id,
                     runType: 'Pre-LOI Synthesis',
-                    model: 'GPT 5.6 Terra',
+                    model: 'OpenAI 5.6 Terra',
                     inputTokens: 21000,
                     outputTokens: 2200,
                     totalTokens: 23200,
                     costUsd: 0.0620,
+                    status: 'Audited Telemetry',
+                })
+
+                // Chat Assistant Query (Claude Sonnet 5 primary)
+                const chatDate = new Date(preLoiDate.getTime() + 900000)
+                records.push({
+                    id: `base-chat-${comp.id}`,
+                    timestamp: chatDate.toISOString(),
+                    dateObj: chatDate,
+                    businessName: comp.name,
+                    projectId: comp.id,
+                    runType: 'Chat Assistant',
+                    fileName: `Q: "Audit EBITDA add-back disallowances & DSCR headroom"`,
+                    model: 'Claude Sonnet 5',
+                    inputTokens: 3200,
+                    outputTokens: 420,
+                    totalTokens: 3620,
+                    costUsd: 0.0106,
                     status: 'Audited Telemetry',
                 })
 
@@ -196,7 +260,7 @@ export default function SpendingAnalyticsTab({
                     businessName: comp.name,
                     projectId: comp.id,
                     runType: 'Post-LOI Synthesis',
-                    model: 'GPT 5.6 Terra',
+                    model: 'OpenAI 5.6 Terra',
                     inputTokens: 24500,
                     outputTokens: 2800,
                     totalTokens: 27300,
@@ -208,7 +272,7 @@ export default function SpendingAnalyticsTab({
 
         // Sort descending by timestamp
         return records.sort((a, b) => b.dateObj.getTime() - a.dateObj.getTime())
-    }, [documents, syntheses])
+    }, [documents, syntheses, chatRefreshTick])
 
     // Filter records by search term, business, run type, and timeframe
     const filteredLedger = useMemo(() => {
@@ -233,6 +297,7 @@ export default function SpendingAnalyticsTab({
             // Run type filter
             if (runTypeFilter === 'extraction' && rec.runType !== 'Document Extraction') return false
             if (runTypeFilter === 'synthesis' && !rec.runType.includes('Synthesis')) return false
+            if (runTypeFilter === 'chat' && rec.runType !== 'Chat Assistant') return false
 
             // Timeframe filter
             const diffMs = now.getTime() - rec.dateObj.getTime()
@@ -250,6 +315,7 @@ export default function SpendingAnalyticsTab({
         const totalSpend = filteredLedger.reduce((sum, r) => sum + r.costUsd, 0)
         const extractionSpend = filteredLedger.filter(r => r.runType === 'Document Extraction').reduce((sum, r) => sum + r.costUsd, 0)
         const synthSpend = filteredLedger.filter(r => r.runType.includes('Synthesis')).reduce((sum, r) => sum + r.costUsd, 0)
+        const chatSpend = filteredLedger.filter(r => r.runType === 'Chat Assistant').reduce((sum, r) => sum + r.costUsd, 0)
         const totalInputTokens = filteredLedger.reduce((sum, r) => sum + r.inputTokens, 0)
         const totalOutputTokens = filteredLedger.reduce((sum, r) => sum + r.outputTokens, 0)
         const totalTokens = totalInputTokens + totalOutputTokens
@@ -262,6 +328,7 @@ export default function SpendingAnalyticsTab({
             totalSpend,
             extractionSpend,
             synthSpend,
+            chatSpend,
             totalInputTokens,
             totalOutputTokens,
             totalTokens,
@@ -398,8 +465,12 @@ export default function SpendingAnalyticsTab({
                             <span className="font-semibold text-foreground">${totals.extractionSpend.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between">
-                            <span>Synthesis (GPT 5.6 Terra):</span>
+                            <span>Synthesis (OpenAI 5.6 Terra):</span>
                             <span className="font-semibold text-foreground">${totals.synthSpend.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>Chatbot (Claude Sonnet 5):</span>
+                            <span className="font-semibold text-foreground">${totals.chatSpend.toFixed(3)}</span>
                         </div>
                     </CardContent>
                 </Card>
@@ -451,7 +522,7 @@ export default function SpendingAnalyticsTab({
                     </CardHeader>
                     <CardContent className="pt-0 text-xs text-muted-foreground space-y-1">
                         <p className="line-clamp-2">
-                            Includes 21+ doc extraction runs + Pre &amp; Post-LOI multi-model synthesis passes.
+                            Includes 21+ doc extraction runs, multi-model synthesis passes &amp; Dillon AI chat queries.
                         </p>
                     </CardContent>
                 </Card>
@@ -552,7 +623,7 @@ export default function SpendingAnalyticsTab({
                                 </Badge>
                             </div>
                             <CardDescription className="text-xs">
-                                AWS / GCP style audit record of every document extraction and AI synthesis run.
+                                AWS / GCP style audit record of every document extraction, AI synthesis, and chatbot analysis query.
                             </CardDescription>
                         </div>
 
@@ -562,7 +633,7 @@ export default function SpendingAnalyticsTab({
                                 <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
                                 <input
                                     type="text"
-                                    placeholder="Search project, model, file..."
+                                    placeholder="Search project, model, query..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     className="w-full rounded-md border border-input bg-background pl-8 pr-3 py-1 text-xs focus:outline-hidden focus:ring-1 focus:ring-primary"
@@ -588,6 +659,7 @@ export default function SpendingAnalyticsTab({
                                 <option value="all">All Run Types</option>
                                 <option value="extraction">Doc Extraction</option>
                                 <option value="synthesis">Synthesis Pass</option>
+                                <option value="chat">Chatbot (Dillon AI)</option>
                             </select>
                         </div>
                     </div>
@@ -639,6 +711,8 @@ export default function SpendingAnalyticsTab({
                                                     className={`text-[10px] px-1.5 py-0.5 ${
                                                         record.runType === 'Document Extraction'
                                                             ? 'bg-blue-500/10 text-blue-800 dark:text-blue-200 border-blue-400/50'
+                                                            : record.runType === 'Chat Assistant'
+                                                            ? 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-200 border-emerald-400/50'
                                                             : 'bg-purple-500/10 text-purple-800 dark:text-purple-200 border-purple-400/50'
                                                     }`}
                                                 >

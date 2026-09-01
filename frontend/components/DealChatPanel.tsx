@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowUpRight, Bot, Compass, Edit2, ExternalLink, FolderKanban, Maximize2, MessageSquare, Minimize2, Move, PanelLeft, Plus, RotateCcw, Search, Send, Sparkles, ThumbsDown, ThumbsUp, Trash2, X, AlertTriangle, Bug, Brain, Terminal, Cpu, ChevronDown, ChevronRight, CheckCircle2, Loader2 } from 'lucide-react'
+import { ArrowUpRight, Bot, Compass, Edit2, ExternalLink, FolderKanban, Maximize2, MessageSquare, Minimize2, Move, PanelLeft, Plus, RotateCcw, Search, Send, Sparkles, ThumbsDown, ThumbsUp, Trash2, X, AlertTriangle, Bug, Brain, Terminal, Cpu, ChevronDown, ChevronRight, CheckCircle2, Loader2, FileSpreadsheet } from 'lucide-react'
 
 import { Button } from '../lib/shadcn/button'
 import { Card } from '../lib/shadcn/card'
@@ -17,6 +17,8 @@ import { getUserModelConfig, mapModelNameToApiIdentifier } from './ApiKeyModal'
 import { recalculateAdjustedEbitdaWithDisallowances, classifyAddBackCategory, DEFAULT_CLASSIFIED_ADD_BACKS } from '../utils/addBackTaxonomy'
 import { getCohortsForProject, computeCohortSummary } from '../utils/cohortRetention'
 import { calculateWorkingCapitalPeg } from '../utils/workingCapitalPeg'
+import { getFallbackStableUrl } from '../utils/deploymentVersions'
+import { estimateChatQueryCost } from '../utils/costModel'
 
 export type ResponseTier = 'cloud_ai' | 'direct_llm' | 'local_heuristics'
 
@@ -62,6 +64,7 @@ type Props = {
     onOpenProjectsPanel?: () => void
     projectsCount?: number
     onNavigateTab?: (tab: WorkspaceTab, anchorId?: string) => void
+    onOpenVersionSwitcher?: () => void
 }
 
 function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealModel, projectName: string, documents?: SubmissionHistoryItem[], allSyntheses?: ProjectSynthesisItem[]): string {
@@ -292,17 +295,44 @@ function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealMo
   - tab:report_issue (anchors: #report-issue-form)
   - tab:account (anchors: #account-api-keys, #account-profile, #workspace-version-control)
 
-## Deep Diligence Feature Highlights:
-- Live Formula Multi-Tab Excel (.xlsx) Model Generator: Inform users that MergeWorks HAS a live-formula 4-tab Excel workbook generator located at **Top Header Navigation Bar > Export > Live Excel Model (.xlsx)** or via Command Palette ('Ctrl+K' -> search 'Live Excel Model'). The export dynamically generates active formulas (=SUM(), =IRR(), =DSCR(), =PPMT/IPMT), 5-year projections, LBO sensitivity matrices, and evidence audit trails.
-- Customer Cohort Retention & Churn Engine: Direct users to [Cohort Matrix](tab:analysis#analysis-cohort-retention) or [Cohort Retention](tab:diligence#cohort-retention-card). Explain Logo Count Retention (%) vs Net Revenue Retention (NRR %) and highlight when annual price increases mask customer logo attrition.
-- Institutional Banking Add-Back Engine: Direct users to [Add-Back Banking Rules](tab:diligence#add-back-quality-card). Explain SBA 7(a) disallowances for non-essential perks (luxury autos, family salaries, discretionary travel), defensible 1-time items, and calculate how disallowed add-backs reduce normalized EBITDA and lower the justified purchase price.
-- Target Working Capital (NWC) Peg Calculator & APA Contract Clause: Direct users to [Target Working Capital Peg](tab:structure#structure-working-capital-peg). Explain trailing 6/12/24-month rolling average benchmarks, seasonal swing volatility (±%), zero-adjustment collar bandwidths, and definitive purchase agreement (Section 2.4) closing cash adjustments.
-- SBA 7(a) & Senior Debt Service Sensitivity: Direct users to [Debt Service Sensitivity](tab:structure#structure-dscr). Explain the 2D matrix modeling variable interest rate shocks (+100 to +300 bps) against EBITDA drops with strict SBA 1.15x covenant breach warnings.
-- Version Control & Immutable Rollback: Direct users to [Version Control](tab:account#workspace-version-control) or Command Palette ('Ctrl+K' -> search 'Version' / 'Rollback'). Users can view recent release snapshots, 1-click fallback to the previous verified stable build, and access permanent Vercel deployment URLs with zero downtime.
-- Command Palette Search: Inform users they can press 'Ctrl+K' (or 'Cmd+K') or click the search bar at any time to jump directly to any card, model, or export action.
+## Deep Diligence Feature Highlights & Exact Physical UI Locations:
+- Live Formula Multi-Tab Excel (.xlsx) Model Generator:
+  - Locations:
+    1. **Top Header Navigation Bar > Export > Live Excel Model (.xlsx)**
+    2. **Synthesis Tab > Start Here: Acquisition Judgment Card > Export Excel Model (.xlsx)** button
+    3. **Command Palette**: Press 'Ctrl+K' -> search 'Live Excel Model'
+    4. **Direct Action Chip**: Output [📥 Export Live Excel Model](action:export_excel) so users can download with 1 click!
+  - Features: Dynamically generates active formulas (=SUM(), =IRR(), =DSCR(), =PPMT/IPMT), 5-year projections, LBO sensitivity matrices, and evidence audit trails.
+- Version Control & Immutable Rollback:
+  - Locations:
+    1. **Command Palette**: Press 'Ctrl+K' -> search 'Version' or 'Rollback'
+    2. **Account & Settings Tab > Version Control & Rollback card** (#workspace-version-control)
+    3. **Direct Action Chip**: Output [🔄 Open Version Control](action:open_version_control) or [🔄 Rollback to Stable](action:rollback_stable)
+  - Capabilities: Dillon can execute client-side tool 'open_version_control' or 'rollback_version' to switch versions or launch the modal for the user.
+- Customer Cohort Retention & Churn Engine:
+  - Locations: **Diligence Tab > Customer Cohort Retention & Churn card** (#cohort-retention-card) or **Financial Analysis Tab > Cohort Retention Matrix** (#analysis-cohort-retention).
+  - Deep-link: [Cohort Retention Engine](tab:diligence#cohort-retention-card)
+  - Capabilities: Logo count retention (%) vs Net Revenue Retention (NRR %) with automatic detection of annual price increases masking customer logo attrition.
+- Institutional Banking Add-Back Engine:
+  - Locations: **Diligence Tab > Banking Add-Back Rules & SBA 7(a) Disallowances card** (#add-back-quality-card) or **Financial Analysis Tab > EBITDA Quality & QoE Score** (#analysis-ebitda-quality).
+  - Deep-link: [Add-Back Banking Rules](tab:diligence#add-back-quality-card)
+  - Capabilities: Recalculates normalized EBITDA and purchase price reductions when non-essential perks (luxury autos, family salaries, travel) are disallowed.
+- Target Working Capital (NWC) Peg Calculator & APA Contract Clause:
+  - Location: **Structure & Debt Tab > Target Working Capital Peg card** (#structure-working-capital-peg).
+  - Deep-link: [Target Working Capital Peg](tab:structure#structure-working-capital-peg)
+  - Capabilities: 6/12/24-month rolling average benchmarks, seasonal swing volatility (±%), zero-adjustment collar bandwidths, and definitive purchase agreement (Section 2.4) closing cash adjustments.
+- SBA 7(a) & Senior Debt Service Sensitivity:
+  - Location: **Structure & Debt Tab > SBA 7(a) 2D Rate Shock Matrix card** (#structure-dscr).
+  - Deep-link: [Debt Service Sensitivity](tab:structure#structure-dscr)
+  - Capabilities: 2D matrix modeling variable interest rate shocks (+100 to +300 bps) against EBITDA drops with strict SBA 1.15x covenant breach warnings.
+- Command Palette Search: Press 'Ctrl+K' (or 'Cmd+K') at any time to jump directly to any card, model, or export action.
 
-## Mandatory Navigation Rule:
-- When answering questions about where to find a feature, model, or calculation, ALWAYS provide the exact UI navigation breadcrumb (e.g. "Top Navigation Bar > Export > Live Excel Model" or clickable markdown links like [Working Capital Peg](tab:structure#structure-working-capital-peg)). NEVER claim a feature does not exist if it is in the active tabs or export menu.`)
+## Mandatory Navigation & Action Rules for Dillon AI:
+1. **Always Provide Exact Physical UI Breadcrumbs**: When answering questions about where to find a feature, model, or calculation, ALWAYS provide the exact physical location breadcrumb (e.g. "Top Navigation Bar > Export > Live Excel Model (.xlsx)" or "Synthesis Tab > Acquisition Judgment Card > Export Excel Model (.xlsx)"). NEVER claim a feature does not exist if it is in the active tabs or export menu.
+2. **Always Provide Clickable Action Buttons & Anchors**: Output clickable markdown links and action chips so the user can jump or trigger actions immediately:
+   - Tab & Card Deep-links: e.g. [Working Capital Peg](tab:structure#structure-working-capital-peg), [Banking Add-Back Rules](tab:diligence#add-back-quality-card), [Cohort Matrix](tab:analysis#analysis-cohort-retention)
+   - Interactive Action Chips: e.g. [📥 Export Live Excel Model](action:export_excel), [🔄 Open Version Control](action:open_version_control), [🔄 Rollback to Stable](action:rollback_stable), [📂 Open Project Intake](action:open_intake)
+3. **Autonomous Execution Permissions**: When the user asks you to navigate somewhere, export a model, or rollback/switch versions, you HAVE the tools to perform these actions on their behalf using 'navigate_to_card', 'trigger_export', 'open_version_control', and 'open_workspace_modal'!`)
 
     return parts.join('\n')
 }
@@ -711,6 +741,69 @@ Our deal pod engineering team has received your report. If you'd like to include
         }
     }
 
+    // 0.06 Version Control & Immutable Rollback Intent
+    if (
+        q.includes('rollback') ||
+        q.includes('switch version') ||
+        q.includes('revert version') ||
+        q.includes('previous version') ||
+        q.includes('old version') ||
+        q.includes('version control') ||
+        q.includes('deployment version') ||
+        q.includes('roll back') ||
+        q.includes('stable version') ||
+        q.includes('restore version')
+    ) {
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('mergeworks:open-version-control'))
+        }
+        return {
+            matched: true,
+            content: `### 🔄 Version Control & Immutable Rollback
+
+I've opened the **Version Control & Rollback** window for you!
+
+**Active Version Options & Capabilities:**
+- **Verified Production Release**: \`v1.4.2-verified-stable\` (Active production build)
+- **Previous Clean Build**: \`v1.4.1-clean-export\` (Pre-SSO fallback)
+- **Permanent Immutable Previews**: Launch isolated immutable Vercel previews with 1 click to test changes with zero downtime.
+
+👉 [Open Version Control Dialog](action:open_version_control)
+👉 [Rollback to Verified Stable Build](action:rollback_stable)
+
+*(Tip: You can also press **\`Ctrl+K\`** / **\`Cmd+K\`** at any time and search **"Version"** or **"Rollback"**!)*`,
+        }
+    }
+
+    // 0.07 Live Formula Excel Model Export Intent
+    if (
+        q.includes('export excel') ||
+        q.includes('download excel') ||
+        q.includes('excel model') ||
+        q.includes('export model') ||
+        q.includes('download spreadsheet') ||
+        q.includes('export spreadsheet') ||
+        q.includes('generate excel') ||
+        q.includes('xlsx')
+    ) {
+        return {
+            matched: true,
+            content: `### 📥 Live Excel Financial Model (.xlsx)
+
+I can generate and export the complete 4-tab live-formula financial model for **${projectName || 'this deal'}**!
+
+**What's Included in the Model:**
+1. **Executive Deal Summary & KPI Dashboard**: Asking price, EBITDA multiple, QoE score, DSCR, and traffic light verdict.
+2. **5-Year Projections & Returns Model**: Base, Bull, and Bear case revenue growth, EBITDA margins, and debt paydown schedule with active dynamic formulas (\`=SUM()\`, \`=IRR()\`, \`=DSCR()\`, \`=PPMT()\`).
+3. **LBO Returns & Sensitivity Waterfall**: 5x5 IRR & MOIC sensitivity grid across exit multiples (3.0x – 7.0x) and EBITDA margins.
+4. **VDR Document Evidence & Audit Trail**: Full source reconciliation and documented fact timestamps.
+
+👉 [Download Live Excel Model (.xlsx)](action:export_excel)
+
+*(You can also download this model directly from **Top Navigation Bar > Export > Live Excel Model (.xlsx)** or on the **Synthesis Tab > Start Here: Acquisition Judgment Card**!)*`,
+        }
+    }
+
     // 0.08 Chatbot Self-Knowledge & How to Use Dillon AI
     if (
         q.includes('who are you') ||
@@ -732,34 +825,31 @@ Our deal pod engineering team has received your report. If you'd like to include
             matched: true,
             content: `### 🤖 I am Dillon — Your AI Due Diligence & Platform Specialist
 
-I am your institutional co-pilot for acquisition diligence and platform navigation across MergeWorks.
+I am your institutional co-pilot for acquisition diligence, automated actions, and platform navigation across MergeWorks.
 
 ---
 
 ### 💼 What I Can Do for You:
 
 1. **📊 M&A Financial & Forensic Diligence:**
-   - **QoE & Add-Back Audit**: Scrutinize seller add-backs, EBITDA normalization, and owner compensation.
-   - **Debt & DSCR Covenants**: Calculate SBA 7(a) loan debt service, fixed-charge coverage ratios, and equity requirements.
-   - **Risk & Red Flag Detection**: Highlight customer concentration, tax lien risks, declining gross margins, and unverified financials.
+   - **QoE & Add-Back Audit**: Scrutinize seller add-backs, EBITDA normalization, and owner compensation with [Add-Back Banking Rules](tab:diligence#add-back-quality-card).
+   - **Debt & DSCR Covenants**: Calculate SBA 7(a) loan debt service, fixed-charge coverage ratios, and equity requirements with [Debt Sensitivity](tab:structure#structure-dscr).
+   - **Customer Cohort Churn**: Inspect triangular logo retention vs NRR with [Cohort Retention Engine](tab:diligence#cohort-retention-card).
    - **Multi-Agent IC Debate**: Run an interactive Investment Committee simulation with **Bull Agent 🐂**, **Bear Agent 🐻**, and **Arbiter ⚖️**.
 
-2. **🧭 Platform & IT Navigation:**
-   - **Instant Deep-Linking**: I output clickable navigation buttons (e.g. [Project Intake](#project-intake), [Diligence](tab:diligence), [Synthesis](tab:synthesis)) that instantly scroll to any section or switch to any of our 21 workspace tabs.
-   - **Multi-Deal Portfolio Switching**: I maintain live context on all projects in your portfolio and can compare deals or help you switch projects.
+2. **⚡ Autonomous Actions & 1-Click Operations:**
+   - **Live Excel Export**: I can generate and trigger download of the live 4-tab model: [📥 Export Live Excel Model](action:export_excel).
+   - **Version Control & Rollback**: I can launch version control or roll you back to previous verified stable builds: [🔄 Open Version Control](action:open_version_control).
+   - **Smooth Browser Navigation**: I can scroll you directly to any card on any of our 21 tabs and highlight it with a glowing focus ring.
    - **Direct Bug & Feedback Dispatch**: Mention any issue and I will dispatch an alert directly to our engineering team on Slack (\`#pod-1-agent-alerts\`).
 
 ---
 
-### 💡 How to Interact with Me:
-
-- **Quick Action Prompts**:
-  - *"How do I get started?"* → Step-by-step onboarding walkthrough.
-  - *"What is the adjusted EBITDA?"* → Verified financial summary.
-  - *"Run an IC debate"* → 3-agent Bull/Bear/Arbiter debate.
-  - *"Tell me the tabs on the website"* → Full 21-tab directory.
-- **Model Switching & BYOK**: You can switch my underlying AI model (OpenAI 5.6 Terra, Claude Sonnet 5, Gemini 3.7 Flash, DeepSeek V4 Flash) or configure your own API keys in [Account & Settings](tab:account).
-- **Keyboard Shortcut**: Press \`C\` anywhere on the dashboard to toggle this chat panel!`,
+### 💡 Quick Commands to Try:
+- *"Export the Excel model"* → Generates & downloads live 4-tab workbook.
+- *"Rollback to stable version"* → Opens version switcher modal.
+- *"Take me to the working capital peg"* → Navigates & scrolls to NWC calculator.
+- *"Run Bull vs Bear debate"* → 3-agent IC deliberation.`,
         }
     }
 
@@ -1261,7 +1351,101 @@ function renderSimpleMarkdown(
                 elements.push(line.slice(lastIndex, matchIndex))
             }
 
-            if (url.startsWith('tab:') || url.startsWith('#')) {
+            if (url.startsWith('action:')) {
+                const actionType = url.slice(7)
+                if (actionType === 'export_excel') {
+                    elements.push(
+                        <button
+                            key={`${i}-${matchIndex}`}
+                            type="button"
+                            onClick={async () => {
+                                try {
+                                    const { generateLiveExcelModel } = await import('../utils/excelModelGenerator')
+                                    const name = (window as any).__mergeworks_active_project_name || 'deal'
+                                    const model = (window as any).__mergeworks_active_deal_model
+                                    const synthesis = (window as any).__mergeworks_active_synthesis
+                                    if (!model) return
+                                    const blob = await generateLiveExcelModel({ model, synthesis, projectName: name })
+                                    const safeName = name.replace(/[^a-zA-Z0-9-_]/g, '_').slice(0, 50) || 'deal'
+                                    const u = URL.createObjectURL(blob)
+                                    const a = document.createElement('a')
+                                    a.href = u
+                                    a.download = `${safeName}_financial_model.xlsx`
+                                    document.body.appendChild(a)
+                                    a.click()
+                                    document.body.removeChild(a)
+                                    setTimeout(() => URL.revokeObjectURL(u), 1000)
+                                } catch (err) {
+                                    console.error('Failed to export Excel model:', err)
+                                }
+                            }}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/15 px-2 py-0.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/25 hover:border-emerald-500/60 transition-all cursor-pointer shadow-2xs mx-1 align-baseline my-0.5 active:scale-95"
+                            title="Download Live 4-Tab Excel Model (.xlsx)"
+                        >
+                            <FileSpreadsheet className="h-3 w-3 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                            <span>{label}</span>
+                            <ArrowUpRight className="h-2.5 w-2.5 opacity-70 shrink-0" />
+                        </button>
+                    )
+                } else if (actionType === 'open_version_control') {
+                    elements.push(
+                        <button
+                            key={`${i}-${matchIndex}`}
+                            type="button"
+                            onClick={() => {
+                                if (typeof window !== 'undefined') {
+                                    window.dispatchEvent(new CustomEvent('mergeworks:open-version-control'))
+                                }
+                            }}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-500/40 bg-indigo-500/15 px-2 py-0.5 text-[11px] font-bold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/25 hover:border-indigo-500/60 transition-all cursor-pointer shadow-2xs mx-1 align-baseline my-0.5 active:scale-95"
+                            title="Open Version Control & Rollback Modal"
+                        >
+                            <RotateCcw className="h-3 w-3 shrink-0 text-indigo-600 dark:text-indigo-400" />
+                            <span>{label}</span>
+                            <ArrowUpRight className="h-2.5 w-2.5 opacity-70 shrink-0" />
+                        </button>
+                    )
+                } else if (actionType === 'rollback_stable') {
+                    elements.push(
+                        <button
+                            key={`${i}-${matchIndex}`}
+                            type="button"
+                            onClick={() => {
+                                if (typeof window !== 'undefined') {
+                                    window.location.href = getFallbackStableUrl()
+                                }
+                            }}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/15 px-2 py-0.5 text-[11px] font-bold text-amber-700 dark:text-amber-300 hover:bg-amber-500/25 hover:border-amber-500/60 transition-all cursor-pointer shadow-2xs mx-1 align-baseline my-0.5 active:scale-95"
+                            title="Navigate to Verified Stable Deployment"
+                        >
+                            <RotateCcw className="h-3 w-3 shrink-0 text-amber-600 dark:text-amber-400" />
+                            <span>{label}</span>
+                            <ArrowUpRight className="h-2.5 w-2.5 opacity-70 shrink-0" />
+                        </button>
+                    )
+                } else if (actionType === 'open_intake') {
+                    elements.push(
+                        <button
+                            key={`${i}-${matchIndex}`}
+                            type="button"
+                            onClick={() => {
+                                const el = document.getElementById('project-intake') || document.getElementById('upload-section')
+                                if (el) {
+                                    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                                    const input = el.querySelector('input')
+                                    if (input) (input as HTMLElement).focus()
+                                }
+                            }}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/15 px-2 py-0.5 text-[11px] font-bold text-primary hover:bg-primary/25 hover:border-primary/60 transition-all cursor-pointer shadow-2xs mx-1 align-baseline my-0.5 active:scale-95"
+                            title="Scroll to Project Intake"
+                        >
+                            <Compass className="h-3 w-3 shrink-0 text-primary" />
+                            <span>{label}</span>
+                            <ArrowUpRight className="h-2.5 w-2.5 opacity-70 shrink-0" />
+                        </button>
+                    )
+                }
+            } else if (url.startsWith('tab:') || url.startsWith('#')) {
                 let targetTab: WorkspaceTab | null = null
                 let anchorId: string | undefined = undefined
 
@@ -1305,7 +1489,21 @@ function renderSimpleMarkdown(
                                 onNavigateTab(targetTab, anchorId)
                             } else if (anchorId) {
                                 const el = document.getElementById(anchorId)
-                                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                                if (el) {
+                                    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                                    el.classList.add('ring-4', 'ring-primary', 'transition-all', 'duration-500')
+                                    setTimeout(() => el.classList.remove('ring-4', 'ring-primary'), 2500)
+                                }
+                            }
+                            if (anchorId) {
+                                setTimeout(() => {
+                                    const el = document.getElementById(anchorId)
+                                    if (el) {
+                                        el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                                        el.classList.add('ring-4', 'ring-primary', 'transition-all', 'duration-500')
+                                        setTimeout(() => el.classList.remove('ring-4', 'ring-primary'), 2500)
+                                    }
+                                }, 150)
                             }
                         }}
                         className="inline-flex items-center gap-1 rounded border border-primary/35 bg-primary/15 px-1.5 py-0.5 text-[11px] font-bold text-primary hover:bg-primary/25 hover:border-primary/60 transition-all cursor-pointer shadow-2xs mx-1 align-baseline my-0.5"
@@ -1433,9 +1631,51 @@ export type ChatSession = {
     isDebateMode?: boolean
 }
 
+export type ChatBillingRecord = {
+    id: string
+    timestamp: string
+    projectId: string
+    businessName: string
+    questionSnippet: string
+    model: string
+    inputTokens: number
+    outputTokens: number
+    totalTokens: number
+    costUsd: number
+    status?: string
+}
+
 export const CHAT_STORAGE_KEY = 'mergeworks.chatHistory'
 export const CHAT_SESSIONS_STORAGE_KEY = 'mergeworks.chatSessions.v1'
 export const CHAT_ACTIVE_SESSION_KEY = 'mergeworks.chatActiveSessionId.v1'
+export const CHAT_BILLING_STORAGE_KEY = 'mergeworks.chatBillingLedger.v1'
+
+export function appendChatBillingRecord(record: ChatBillingRecord): void {
+    try {
+        const storage = typeof window !== 'undefined' ? window.localStorage : (typeof localStorage !== 'undefined' ? localStorage : null)
+        if (!storage) return
+        const raw = storage.getItem(CHAT_BILLING_STORAGE_KEY)
+        const current: ChatBillingRecord[] = raw ? JSON.parse(raw) : []
+        const next = [record, ...current].slice(0, 1000)
+        storage.setItem(CHAT_BILLING_STORAGE_KEY, JSON.stringify(next))
+        if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+            window.dispatchEvent(new CustomEvent('mergeworks:chat-billing-updated', { detail: record }))
+        }
+    } catch (e) {
+        console.warn('Failed to record chat billing telemetry:', e)
+    }
+}
+
+export function getStoredChatBillingRecords(): ChatBillingRecord[] {
+    try {
+        const storage = typeof window !== 'undefined' ? window.localStorage : (typeof localStorage !== 'undefined' ? localStorage : null)
+        if (!storage) return []
+        const raw = storage.getItem(CHAT_BILLING_STORAGE_KEY)
+        return raw ? JSON.parse(raw) : []
+    } catch {
+        return []
+    }
+}
 const CHAT_PANEL_SIZE_KEY = 'mergeworks.chatPanelSize'
 const CHAT_PANEL_POS_KEY = 'mergeworks.chatPanelPos'
 const DEFAULT_CHAT_PANEL_SIZE = { width: 440, height: 520 }
@@ -1514,6 +1754,9 @@ interface ClientSideToolContext {
     projectName: string
     documents?: SubmissionHistoryItem[]
     allSyntheses?: ProjectSynthesisItem[]
+    onNavigateTab?: (tab: WorkspaceTab, anchorId?: string) => void
+    onOpenProjectsPanel?: () => void
+    onOpenVersionSwitcher?: () => void
 }
 
 export const CHAT_AGENT_OPENAI_TOOLS = [
@@ -1582,6 +1825,80 @@ export const CHAT_AGENT_OPENAI_TOOLS = [
                 required: ['queryType']
             }
         }
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'navigate_to_card',
+            description: 'Autonomously switch the user\'s workspace tab and smoothly scroll their browser to any analytical card with a glowing focus ring pulse.',
+            parameters: {
+                type: 'object',
+                properties: {
+                    tab: {
+                        type: 'string',
+                        description: 'Target workspace tab name (e.g. "synthesis", "structure", "analysis", "diligence", "valuation", "returns", "growth", "negotiation", "email", "spending", "evals")'
+                    },
+                    cardAnchor: {
+                        type: 'string',
+                        description: 'Target HTML anchor ID (e.g. "structure-working-capital-peg", "structure-dscr", "add-back-quality-card", "cohort-retention-card", "synthesis-judgment", "analysis-deal-on-a-page")'
+                    }
+                },
+                required: ['tab']
+            }
+        }
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'trigger_export',
+            description: 'Trigger instant download of live diligence exports, including the 4-tab live-formula Excel financial model (.xlsx), Markdown summary, or JSON dataset.',
+            parameters: {
+                type: 'object',
+                properties: {
+                    exportType: {
+                        type: 'string',
+                        enum: ['excel', 'markdown', 'json'],
+                        description: 'Type of export to generate'
+                    }
+                },
+                required: ['exportType']
+            }
+        }
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'open_version_control',
+            description: 'Open the Version Control & Immutable Rollback modal or trigger rollback to a verified stable snapshot.',
+            parameters: {
+                type: 'object',
+                properties: {
+                    action: {
+                        type: 'string',
+                        enum: ['open_modal', 'rollback_to_stable'],
+                        description: 'Whether to open the modal or immediately navigate to the fallback stable deployment'
+                    }
+                }
+            }
+        }
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'open_workspace_modal',
+            description: 'Open specific workspace modals such as Project Intake / Uploads (\'intake\'), Projects Portfolio Drawer (\'projects\'), Keyboard Shortcuts (\'shortcuts\'), or Report Issue Form (\'report_issue\').',
+            parameters: {
+                type: 'object',
+                properties: {
+                    modalName: {
+                        type: 'string',
+                        enum: ['intake', 'projects', 'shortcuts', 'version_control', 'report_issue'],
+                        description: 'The modal window to open'
+                    }
+                },
+                required: ['modalName']
+            }
+        }
     }
 ]
 
@@ -1641,6 +1958,68 @@ export const CHAT_AGENT_ANTHROPIC_TOOLS = [
                 }
             },
             required: ['queryType']
+        }
+    },
+    {
+        name: 'navigate_to_card',
+        description: 'Autonomously switch the user\'s workspace tab and smoothly scroll their browser to any analytical card with a glowing focus ring pulse.',
+        input_schema: {
+            type: 'object',
+            properties: {
+                tab: {
+                    type: 'string',
+                    description: 'Target workspace tab name (e.g. "synthesis", "structure", "analysis", "diligence", "valuation", "returns", "growth", "negotiation", "email", "spending", "evals")'
+                },
+                cardAnchor: {
+                    type: 'string',
+                    description: 'Target HTML anchor ID (e.g. "structure-working-capital-peg", "structure-dscr", "add-back-quality-card", "cohort-retention-card", "synthesis-judgment", "analysis-deal-on-a-page")'
+                }
+            },
+            required: ['tab']
+        }
+    },
+    {
+        name: 'trigger_export',
+        description: 'Trigger instant download of live diligence exports, including the 4-tab live-formula Excel financial model (.xlsx), Markdown summary, or JSON dataset.',
+        input_schema: {
+            type: 'object',
+            properties: {
+                exportType: {
+                    type: 'string',
+                    enum: ['excel', 'markdown', 'json'],
+                    description: 'Type of export to generate'
+                }
+            },
+            required: ['exportType']
+        }
+    },
+    {
+        name: 'open_version_control',
+        description: 'Open the Version Control & Immutable Rollback modal or trigger rollback to a verified stable snapshot.',
+        input_schema: {
+            type: 'object',
+            properties: {
+                action: {
+                    type: 'string',
+                    enum: ['open_modal', 'rollback_to_stable'],
+                    description: 'Whether to open the modal or immediately navigate to the fallback stable deployment'
+                }
+            }
+        }
+    },
+    {
+        name: 'open_workspace_modal',
+        description: 'Open specific workspace modals such as Project Intake / Uploads (\'intake\'), Projects Portfolio Drawer (\'projects\'), Keyboard Shortcuts (\'shortcuts\'), or Report Issue Form (\'report_issue\').',
+        input_schema: {
+            type: 'object',
+            properties: {
+                modalName: {
+                    type: 'string',
+                    enum: ['intake', 'projects', 'shortcuts', 'version_control', 'report_issue'],
+                    description: 'The modal window to open'
+                }
+            },
+            required: ['modalName']
         }
     }
 ]
@@ -1919,6 +2298,105 @@ export function executeClientSideTool(name: string, args: any, context: ClientSi
             riskLevel: context.synthesis?.finalRiskLevel,
             recommendation: context.synthesis?.finalRecommendation,
             summary: context.synthesis?.finalJudgmentSummary
+        }
+    }
+
+    if (name === 'navigate_to_card') {
+        const tab = String(args.tab || 'synthesis')
+        const cardAnchor = args.cardAnchor ? String(args.cardAnchor) : undefined
+        if (context.onNavigateTab) {
+            context.onNavigateTab(tab as any, cardAnchor)
+        }
+        if (typeof document !== 'undefined' && cardAnchor) {
+            setTimeout(() => {
+                const el = document.getElementById(cardAnchor.replace(/^#/, ''))
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                    el.classList.add('ring-4', 'ring-primary', 'transition-all', 'duration-500')
+                    setTimeout(() => el.classList.remove('ring-4', 'ring-primary'), 2500)
+                }
+            }, 150)
+        }
+        return {
+            success: true,
+            action: 'navigate',
+            tab,
+            cardAnchor,
+            message: `Navigated browser to tab: "${tab}"${cardAnchor ? ` card: "${cardAnchor}"` : ''}`
+        }
+    }
+
+    if (name === 'trigger_export') {
+        const type = String(args.exportType || 'excel').toLowerCase()
+        if (typeof window !== 'undefined') {
+            if (type.includes('excel') || type.includes('xlsx')) {
+                import('../utils/excelModelGenerator').then(({ generateLiveExcelModel }) => {
+                    const name = context.projectName || 'deal'
+                    generateLiveExcelModel({ model: context.model, synthesis: context.synthesis, projectName: name }).then(blob => {
+                        const safeName = name.replace(/[^a-zA-Z0-9-_]/g, '_').slice(0, 50) || 'deal'
+                        const url = URL.createObjectURL(blob)
+                        const a = document.createElement('a')
+                        a.href = url
+                        a.download = `${safeName}_financial_model.xlsx`
+                        document.body.appendChild(a)
+                        a.click()
+                        document.body.removeChild(a)
+                        setTimeout(() => URL.revokeObjectURL(url), 1000)
+                    })
+                }).catch(console.error)
+            }
+        }
+        return {
+            success: true,
+            action: 'export',
+            exportType: type,
+            message: `Initiated ${type} export download.`
+        }
+    }
+
+    if (name === 'open_version_control' || name === 'rollback_version') {
+        if (context.onOpenVersionSwitcher) {
+            context.onOpenVersionSwitcher()
+        } else if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('mergeworks:open-version-control'))
+        }
+        if (args.action === 'rollback_to_stable' && typeof window !== 'undefined') {
+            window.location.href = getFallbackStableUrl()
+        }
+        return {
+            success: true,
+            action: 'open_version_control',
+            message: 'Version Control & Rollback modal opened. You can view all release versions and rollback to verified stable snapshots.',
+            currentBuild: 'v1.4.2-verified-stable',
+            fallbackStableUrl: getFallbackStableUrl()
+        }
+    }
+
+    if (name === 'open_workspace_modal') {
+        const modal = String(args.modalName || 'projects').toLowerCase()
+        if (modal === 'projects' || modal === 'portfolio') {
+            context.onOpenProjectsPanel?.()
+        } else if (modal === 'version_control' || modal === 'rollback') {
+            if (context.onOpenVersionSwitcher) {
+                context.onOpenVersionSwitcher()
+            } else if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('mergeworks:open-version-control'))
+            }
+        } else if (modal === 'intake' || modal === 'upload') {
+            if (typeof document !== 'undefined') {
+                const el = document.getElementById('project-intake') || document.getElementById('upload-section')
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                    const input = el.querySelector('input')
+                    if (input) (input as HTMLElement).focus()
+                }
+            }
+        }
+        return {
+            success: true,
+            action: 'open_modal',
+            modalName: modal,
+            message: `Opened ${modal} workspace modal.`
         }
     }
 
@@ -2430,9 +2908,17 @@ ${context}
     return null
 }
 
-export default function DealChatPanel({ synthesis, model, projectName, documents, allSyntheses, onSuggestProjectSwitch, onOpenProjectsPanel, projectsCount, onNavigateTab }: Props) {
+export default function DealChatPanel({ synthesis, model, projectName, documents, allSyntheses, onSuggestProjectSwitch, onOpenProjectsPanel, projectsCount, onNavigateTab, onOpenVersionSwitcher }: Props) {
     const [isOpen, setIsOpen] = useState(false)
     const [unreadCount, setUnreadCount] = useState<number>(0)
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            (window as any).__mergeworks_active_deal_model = model;
+            (window as any).__mergeworks_active_synthesis = synthesis;
+            (window as any).__mergeworks_active_project_name = projectName;
+        }
+    }, [model, synthesis, projectName])
 
     const [sessions, setSessions] = useState<ChatSession[]>(() => {
         if (typeof window === 'undefined') return [createInitialSession(projectName)]
@@ -3104,6 +3590,12 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
             }
         }
 
+        if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
+            try {
+                void Notification.requestPermission()
+            } catch { }
+        }
+
         try {
             const userAnthropicApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_anthropic_key') || '') : ''
             const userOpenAiApiKey = typeof window !== 'undefined' ? (localStorage.getItem('mergeworks_user_openai_key') || '') : ''
@@ -3113,6 +3605,17 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
             let answer = ''
             let tier: ResponseTier = 'cloud_ai'
             let providerName = 'Cloud AI'
+
+            const toolCtx: ClientSideToolContext = {
+                synthesis,
+                model,
+                projectName,
+                documents,
+                allSyntheses,
+                onNavigateTab,
+                onOpenProjectsPanel,
+                onOpenVersionSwitcher,
+            }
 
             // 1. Check if user provided direct API keys for direct ChatGPT/Claude/Gemini/DeepSeek generation & streaming
             if (userOpenAiApiKey || userAnthropicApiKey || userGeminiApiKey || userDeepseekApiKey) {
@@ -3126,7 +3629,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                         deepseek: userDeepseekApiKey,
                     },
                     messages,
-                    { synthesis, model, projectName, documents, allSyntheses },
+                    toolCtx,
                     isDebateModeActive,
                     streamCallbacks
                 )
@@ -3134,6 +3637,22 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                     answer = directRes.text
                     tier = 'direct_llm'
                     providerName = directRes.provider
+                    const inTok = Math.round((context.length + trimmed.length) / 3.8)
+                    const outTok = Math.round(answer.length / 3.8)
+                    const cost = estimateChatQueryCost(inTok, outTok, providerName)
+                    appendChatBillingRecord({
+                        id: `chat-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                        timestamp: new Date().toISOString(),
+                        projectId: synthesis?.projectId || 'live-project',
+                        businessName: projectName || synthesis?.companyName || 'Active Deal',
+                        questionSnippet: trimmed.slice(0, 80),
+                        model: providerName,
+                        inputTokens: inTok,
+                        outputTokens: outTok,
+                        totalTokens: inTok + outTok,
+                        costUsd: cost,
+                        status: 'BYOK Direct'
+                    })
                 }
             }
 
@@ -3159,8 +3678,26 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                         answer = data.answer || data.output || data.text || ''
                         if (answer) {
                             tier = 'cloud_ai'
-                            providerName = 'Cloud LLM'
+                            providerName = data.modelUsed || data.model_used || 'Claude Sonnet 5'
                             await streamTypewriterText(answer, chunk => streamCallbacks.onTextDelta?.(chunk))
+
+                            const inTok = data.inputTokens || data.input_tokens || Math.round((context.length + trimmed.length) / 3.8)
+                            const outTok = data.outputTokens || data.output_tokens || Math.round(answer.length / 3.8)
+                            const cost = data.costUsd || data.cost_usd || estimateChatQueryCost(inTok, outTok, providerName)
+
+                            appendChatBillingRecord({
+                                id: `chat-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                                timestamp: new Date().toISOString(),
+                                projectId: synthesis?.projectId || 'live-project',
+                                businessName: projectName || synthesis?.companyName || 'Active Deal',
+                                questionSnippet: trimmed.slice(0, 80),
+                                model: providerName,
+                                inputTokens: inTok,
+                                outputTokens: outTok,
+                                totalTokens: inTok + outTok,
+                                costUsd: cost,
+                                status: 'Live Webhook'
+                            })
                         }
                     }
                 } catch { }
@@ -3189,6 +3726,21 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                 isDebateModeActive
             )
             await streamTypewriterText(fallback.content, chunk => streamCallbacks.onTextDelta?.(chunk))
+            const inTok = Math.round((context.length + trimmed.length) / 3.8)
+            const outTok = Math.round(fallback.content.length / 3.8)
+            appendChatBillingRecord({
+                id: `chat-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                timestamp: new Date().toISOString(),
+                projectId: synthesis?.projectId || 'live-project',
+                businessName: projectName || synthesis?.companyName || 'Active Deal',
+                questionSnippet: trimmed.slice(0, 80),
+                model: 'Local M&A Engine',
+                inputTokens: inTok,
+                outputTokens: outTok,
+                totalTokens: inTok + outTok,
+                costUsd: 0,
+                status: 'Local Engine'
+            })
             setMessages(prev => prev.map(m => m.id === assistantMsgId ? {
                 ...m,
                 content: fallback.content,
@@ -3200,8 +3752,26 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
         } finally {
             setIsTyping(false)
             if (typingTimerRef.current) { clearInterval(typingTimerRef.current); typingTimerRef.current = null }
+            if (!isOpen) {
+                if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new CustomEvent('mergeworks:chat-response', {
+                        detail: {
+                            projectName,
+                            summary: trimmed.slice(0, 80)
+                        }
+                    }))
+                    if ('Notification' in window && Notification.permission === 'granted') {
+                        try {
+                            new Notification('Dillon AI Response Ready', {
+                                body: `Dillon finished analysis for "${trimmed.slice(0, 60)}"`,
+                                icon: '/favicon.ico',
+                            })
+                        } catch { }
+                    }
+                }
+            }
         }
-    }, [allSyntheses, documents, isDebateModeActive, messages, model, projectName, sessionId, synthesis])
+    }, [allSyntheses, documents, isDebateModeActive, isOpen, messages, model, onNavigateTab, onOpenProjectsPanel, onOpenVersionSwitcher, projectName, sessionId, synthesis])
 
     const handleRerunWithLiveLlm = useCallback(async (messageId: string, promptOverride?: string) => {
         const targetMsg = messages.find(m => m.id === messageId)
@@ -3296,7 +3866,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                         deepseek: userDeepseekApiKey,
                     },
                     messages.filter(m => m.id !== messageId),
-                    { synthesis, model, projectName, documents, allSyntheses },
+                    { synthesis, model, projectName, documents, allSyntheses, onNavigateTab, onOpenProjectsPanel, onOpenVersionSwitcher },
                     isDebateModeActive,
                     rerunCallbacks
                 )
@@ -3304,6 +3874,22 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                     answer = directRes.text
                     tier = 'direct_llm'
                     providerName = directRes.provider
+                    const inTok = Math.round((context.length + prompt.length) / 3.8)
+                    const outTok = Math.round(answer.length / 3.8)
+                    const cost = estimateChatQueryCost(inTok, outTok, providerName)
+                    appendChatBillingRecord({
+                        id: `chat-rerun-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                        timestamp: new Date().toISOString(),
+                        projectId: synthesis?.projectId || 'live-project',
+                        businessName: projectName || synthesis?.companyName || 'Active Deal',
+                        questionSnippet: prompt.slice(0, 80),
+                        model: providerName,
+                        inputTokens: inTok,
+                        outputTokens: outTok,
+                        totalTokens: inTok + outTok,
+                        costUsd: cost,
+                        status: 'BYOK Rerun'
+                    })
                 }
             }
 
@@ -3328,8 +3914,26 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                         answer = data.answer || data.output || data.text || ''
                         if (answer) {
                             tier = 'cloud_ai'
-                            providerName = 'Cloud LLM'
+                            providerName = data.modelUsed || data.model_used || 'Claude Sonnet 5'
                             await streamTypewriterText(answer, chunk => rerunCallbacks.onTextDelta?.(chunk))
+
+                            const inTok = data.inputTokens || data.input_tokens || Math.round((context.length + prompt.length) / 3.8)
+                            const outTok = data.outputTokens || data.output_tokens || Math.round(answer.length / 3.8)
+                            const cost = data.costUsd || data.cost_usd || estimateChatQueryCost(inTok, outTok, providerName)
+
+                            appendChatBillingRecord({
+                                id: `chat-rerun-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                                timestamp: new Date().toISOString(),
+                                projectId: synthesis?.projectId || 'live-project',
+                                businessName: projectName || synthesis?.companyName || 'Active Deal',
+                                questionSnippet: prompt.slice(0, 80),
+                                model: providerName,
+                                inputTokens: inTok,
+                                outputTokens: outTok,
+                                totalTokens: inTok + outTok,
+                                costUsd: cost,
+                                status: 'Live Webhook Rerun'
+                            })
                         }
                     }
                 } catch { }

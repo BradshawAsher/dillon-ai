@@ -206,3 +206,43 @@ export function estimateMonthlyCost(
     const perSynthesis = Number.isFinite(costPerSynthesis) && costPerSynthesis >= 0 ? costPerSynthesis : 0.12
     return docs * MEASURED_COST_PER_DOCUMENT + syntheses * perSynthesis
 }
+
+/**
+ * Calculates USD cost for a chat query turn based on active or returned model.
+ */
+export function estimateChatQueryCost(
+    inputTokens: number,
+    outputTokens: number,
+    modelStr?: string
+): number {
+    const safeIn = Number.isFinite(inputTokens) && inputTokens > 0 ? inputTokens : 0
+    const safeOut = Number.isFinite(outputTokens) && outputTokens > 0 ? outputTokens : 0
+
+    const model = (modelStr || 'claude-sonnet-5').toLowerCase()
+
+    let inputRate = 2.0
+    let outputRate = 10.0
+
+    if (model.includes('opus')) {
+        inputRate = 5.0
+        outputRate = 25.0
+    } else if (model.includes('sol')) {
+        inputRate = 5.0
+        outputRate = 30.0
+    } else if (model.includes('terra') || model.includes('gpt-4o') || model.includes('openai-5-6')) {
+        inputRate = 2.0
+        outputRate = 12.0
+    } else if (model.includes('deepseek')) {
+        inputRate = 0.14
+        outputRate = 0.28
+    } else if (model.includes('gemini') || model.includes('flash')) {
+        inputRate = 0.25
+        outputRate = 1.50
+    } else if (model.includes('sonnet')) {
+        inputRate = 2.0
+        outputRate = 10.0
+    }
+
+    return (safeIn / 1_000_000) * inputRate + (safeOut / 1_000_000) * outputRate
+}
+
