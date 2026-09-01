@@ -126,7 +126,8 @@ PORT=3000
 cd frontend
 npm run typecheck   # Type-checks all React components & API normalizers
 npm run build       # Production bundle build
-npm run check       # Runs typecheck + tests + build in a single gate
+npm run test:api    # Runs the zero-token loopback API integration suite
+npm run check       # Runs typecheck + unit/API tests + build in a single gate
 ```
 
 ---

@@ -75,7 +75,7 @@ Before pushing, run the checks locally from the repository root:
 ```sh
 node scripts/build-api.mjs
 cd frontend
-npm run check       # typecheck + tests + frontend production build
+npm run check       # typecheck + unit tests + API integration tests + frontend production build
 ```
 
 Deploy frontend and API together. Large uploads need the new resumable client
