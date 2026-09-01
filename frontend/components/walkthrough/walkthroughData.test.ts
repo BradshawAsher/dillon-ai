@@ -3,6 +3,7 @@ import {
     CORE_FAST_STEPS,
     DEEP_DIVE_STEPS,
     QUEST_MISSIONS,
+    QUICK_DEAL_QUESTIONNAIRE_STEPS,
     TOUR_PLAYLISTS,
     TAB_TOUR_STEPS,
     getTabTourPlaylist,
@@ -16,6 +17,7 @@ describe('Walkthrough Playlists & Step Data Validation', () => {
         expect(CORE_FAST_STEPS.length).toBeGreaterThan(0)
         expect(DEEP_DIVE_STEPS.length).toBeGreaterThan(0)
         expect(QUEST_MISSIONS.length).toBeGreaterThan(0)
+        expect(QUICK_DEAL_QUESTIONNAIRE_STEPS).toHaveLength(8)
         expect(Object.keys(TOUR_PLAYLISTS).length).toBeGreaterThan(0)
     })
 
@@ -27,6 +29,7 @@ describe('Walkthrough Playlists & Step Data Validation', () => {
             { name: 'CORE_FAST_STEPS', steps: CORE_FAST_STEPS },
             { name: 'DEEP_DIVE_STEPS', steps: DEEP_DIVE_STEPS },
             { name: 'QUEST_MISSIONS', steps: QUEST_MISSIONS },
+            { name: 'QUICK_DEAL_QUESTIONNAIRE_STEPS', steps: QUICK_DEAL_QUESTIONNAIRE_STEPS },
         ]
 
         allStepLists.forEach(({ name, steps }) => {
@@ -44,7 +47,7 @@ describe('Walkthrough Playlists & Step Data Validation', () => {
     it('ensures every step references a valid WorkspaceTab', () => {
         const validTabSet = new Set<WorkspaceTab>(VALID_WORKSPACE_TABS)
 
-        const allSteps = [...CORE_FAST_STEPS, ...DEEP_DIVE_STEPS, ...QUEST_MISSIONS]
+        const allSteps = [...CORE_FAST_STEPS, ...DEEP_DIVE_STEPS, ...QUEST_MISSIONS, ...QUICK_DEAL_QUESTIONNAIRE_STEPS]
 
         allSteps.forEach((step) => {
             expect(
@@ -73,6 +76,7 @@ describe('Walkthrough Playlists & Step Data Validation', () => {
             ...CORE_FAST_STEPS,
             ...DEEP_DIVE_STEPS,
             ...QUEST_MISSIONS,
+            ...QUICK_DEAL_QUESTIONNAIRE_STEPS,
             ...Object.values(TAB_TOUR_STEPS).flat(),
         ]
 
@@ -97,6 +101,15 @@ describe('Walkthrough Playlists & Step Data Validation', () => {
         expect(projectsSteps[6].targetElementId).toBe('summary-modal-financials')
         expect(projectsSteps[7].targetElementId).toBe('summary-modal-close-btn')
         expect(projectsSteps[7].simulatedAction).toBeUndefined()
+    })
+
+    it('keeps the Quick Deal Questionnaire tutorial sequential and on stable targets', () => {
+        expect(TOUR_PLAYLISTS['quick-deal-questionnaire'].steps).toBe(QUICK_DEAL_QUESTIONNAIRE_STEPS)
+        expect(QUICK_DEAL_QUESTIONNAIRE_STEPS.map((step) => step.num)).toEqual([1, 2, 3, 4, 5, 6, 7, 8])
+        expect(QUICK_DEAL_QUESTIONNAIRE_STEPS.every((step) => step.targetElementId?.startsWith('quick-deal-'))).toBe(true)
+        expect(QUICK_DEAL_QUESTIONNAIRE_STEPS.slice(2, 7).map((step) => step.simulatedAction?.type)).toEqual(
+            Array(5).fill('show_manual_deal_section')
+        )
     })
 })
 

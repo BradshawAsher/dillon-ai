@@ -402,3 +402,39 @@
 - The required check must have a successful run before activation so the repository is not accidentally locked behind an unknown check context.
 - Vercel remains an informational preview/deployment integration rather than a required ruleset check, avoiding a vendor outage blocking emergency merges.
 - Administrator bypass remains available for recovery while normal changes use pull requests.
+
+---
+
+# Quick Deal Questionnaire tutorial and Playwright E2E foundation
+
+## Empirical current state
+
+1. The Quick Deal Questionnaire is a five-section manual intake flow inside `ProjectIntakeCard`, but it is not represented by a dedicated native walkthrough playlist.
+2. The questionnaire header, live metric summary, section navigation, section panels, and generate action do not expose stable walkthrough/E2E targets, so a tour would otherwise depend on fragile text or styling selectors.
+3. The questionnaire owns its active-section state locally. The walkthrough engine can dispatch simulated actions, but the form does not currently consume an action that changes the visible questionnaire section.
+4. While this task was in progress, `main` advanced to include a Playwright configuration, 11 browser tests, and an E2E step inside the existing required `run-evals` job. That suite did not cover the questionnaire tutorial or upload its HTML report on CI failures.
+
+## Target changes
+
+- Add stable semantic IDs/data attributes to the questionnaire mode switch, questionnaire shell, presets, live metrics, five section buttons/panels, and the final generate action.
+- Add a dedicated eight-step Quick Deal Questionnaire playlist covering orientation/presets, live calculations, Business Basics, Financials, Assets, Financing, Risk, and dashboard generation.
+- Let the questionnaire consume a narrowly scoped walkthrough action that changes its local section without editing fields or generating a deal.
+- Add a visible `Start Tutorial` action inside the questionnaire and pass the existing walkthrough launcher callback through `DueDiligenceDashboard` and `ProjectIntakeCard`.
+- Register the playlist in the existing walkthrough gallery with a calculator-specific visual treatment.
+- Refine the existing Playwright configuration to start a self-contained Vite server in mock/example mode, and add stable browser tests for opening the questionnaire and advancing its tutorial through real mounted targets.
+- Keep Playwright inside the existing required `run-evals` job so the branch ruleset status remains stable, and upload its HTML report on CI failures.
+
+## Regression verification
+
+- Extend walkthrough data tests to require the questionnaire playlist, sequential numbering, unique IDs, and target selectors.
+- Run the focused walkthrough/unit tests, complete frontend typecheck, full Vitest suite, and production build.
+- Run the Playwright Chromium suite locally and confirm it makes no submit/upload/API request.
+- Confirm the tutorial can be launched from the questionnaire, advances to a later section, highlights a visible target, and closes cleanly.
+- Verify the final Git diff contains no credentials, generated browser binaries, test reports, screenshots, or traces.
+
+## Verification completed
+
+- The questionnaire walkthrough unit tests pass, including playlist integrity and section-action coverage.
+- All 870 Vitest tests, TypeScript typechecking, and the production build pass.
+- All 14 Chromium E2E tests pass, including direct questionnaire launch, cross-section tutorial navigation, and launch from the global walkthrough gallery.
+- The questionnaire browser tests observed zero upload, webhook, or model requests.

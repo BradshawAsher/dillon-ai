@@ -12,7 +12,7 @@ export default defineConfig({
     workers: process.env.CI ? 1 : 2,
     reporter: [['list'], ['html', { open: 'never' }]],
     use: {
-        baseURL: 'http://localhost:4173',
+        baseURL: 'http://127.0.0.1:4173',
         trace: 'on-first-retry',
         screenshot: 'only-on-failure',
     },
@@ -23,9 +23,16 @@ export default defineConfig({
         },
     ],
     webServer: {
-        command: 'npm run preview -- --port 4173',
-        url: 'http://localhost:4173',
+        command: 'npx vite --host 127.0.0.1 --port 4173',
+        url: 'http://127.0.0.1:4173',
         reuseExistingServer: !process.env.CI,
         timeout: 60_000,
+        env: {
+            ...process.env,
+            VITE_USE_MOCKS: 'true',
+            VITE_SUPABASE_URL: 'https://placeholder-project.supabase.co',
+            VITE_SUPABASE_ANON_KEY: 'placeholder-anon-key',
+            VITE_ENABLE_VISITOR_SLACK_ALERTS: 'false',
+        },
     },
 })

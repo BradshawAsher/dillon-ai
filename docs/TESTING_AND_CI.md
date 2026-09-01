@@ -9,7 +9,7 @@ This document provides a comprehensive technical reference for the 3-layer autom
 ```mermaid
 graph TD
     A["Layer 3: AI Eval Benchmark Harness (58 Gold Docs, 7 Dimensions)"] --> B["Layer 2: Playwright End-to-End Tests (Real Chromium, 0 Tokens)"]
-    B --> C["Layer 1: Vitest Unit & Domain Test Suite (86 Suites / 869 Tests)"]
+    B --> C["Layer 1: Vitest Unit & Domain Test Suite (86 Suites / 870 Tests)"]
     style A fill:#2563eb,stroke:#1d4ed8,stroke-width:2px,color:#fff
     style B fill:#059669,stroke:#047857,stroke-width:2px,color:#fff
     style C fill:#7c3aed,stroke:#6d28d9,stroke-width:2px,color:#fff
@@ -17,8 +17,8 @@ graph TD
 
 | Layer | Framework / Tool | Scope & Purpose | Execution Latency | Cost / Tokens |
 | :--- | :--- | :--- | :--- | :--- |
-| **Layer 1: Unit & Domain Tests** | **Vitest** (v4.x) | Core business logic, mathematical reconciliations, duration bounds ($\le 180\text{s}$), latency formatters, and security guards. | ~5.5s (869 tests) | $0.00 / 0 tokens |
-| **Layer 2: End-to-End (E2E) Tests** | **Playwright** (Chromium) | Full browser DOM rendering, tab switching, responsive KPI cards, accordion collapse, carousel pagination, and Command Palette shortcuts. | ~15.4s (11 tests) | $0.00 / 0 tokens |
+| **Layer 1: Unit & Domain Tests** | **Vitest** (v4.x) | Core business logic, mathematical reconciliations, duration bounds ($\le 180\text{s}$), latency formatters, and security guards. | ~5.5s (870 tests) | $0.00 / 0 tokens |
+| **Layer 2: End-to-End (E2E) Tests** | **Playwright** (Chromium) | Full browser DOM rendering, tab switching, responsive KPI cards, questionnaire tutorial navigation, accordion collapse, carousel pagination, and Command Palette shortcuts. | ~1 min (14 tests) | $0.00 / 0 tokens |
 | **Layer 3: AI Eval Benchmark Harness** | **TypeScript + CLI** (`run-evals.ts`) | Golden benchmark validation against 58 M&A data room documents across 7 accuracy dimensions (`EVAL_MIN_SCORE >= 80%`). | ~1.5s (automated) | $0.00 / 0 tokens |
 
 ---
@@ -57,6 +57,12 @@ The Playwright test suite lives in [`frontend/e2e/`](../frontend/e2e/) and is co
    - Tests BYOK API Key modal opening and closing.
    - Tests toggling between Dark and Light color themes.
 
+5. **[`quick-deal-questionnaire-tutorial.spec.ts`](../frontend/e2e/quick-deal-questionnaire-tutorial.spec.ts)**
+   - Opens the file-free questionnaire in Example Mode and verifies its deterministic metrics.
+   - Launches the native eight-step tutorial and confirms that Financials and Risk steps mount their intended targets.
+   - Launches the tutorial from the global walkthrough gallery and verifies that the questionnaire opens automatically.
+   - Records unsafe non-GET requests and requires that the tutorial make no upload, webhook, or model request.
+
 ---
 
 ## 3. How to Run & Visually Debug E2E Tests
@@ -79,7 +85,7 @@ npm --prefix frontend run test:e2e:report
 
 ---
 
-## 4. Vitest Unit Test Suite (86 Suites / 869 Tests)
+## 4. Vitest Unit Test Suite (86 Suites / 870 Tests)
 
 Run all unit tests:
 ```bash
@@ -114,8 +120,8 @@ The CI workflow is defined in [`.github/workflows/eval-regression.yml`](../.gith
 1. **Environment Setup**: Provisions Ubuntu container with Node `22.x`.
 2. **Dependency Installation**: Runs `npm ci` (root) and `npm ci --prefix frontend`.
 3. **TypeScript Typecheck Gate**: Runs `npm --prefix frontend run typecheck` (`tsc --noEmit`).
-4. **Vitest Unit Test Gate**: Runs `npm --prefix frontend test` (869 tests).
+4. **Vitest Unit Test Gate**: Runs `npm --prefix frontend test` (870 tests).
 5. **Production Build Gate**: Runs `npm --prefix frontend run build` (Vite bundle verification).
-6. **Playwright Chromium Install & E2E Gate**: Installs Chromium binaries and runs `npm --prefix frontend run test:e2e` (11 browser tests).
+6. **Playwright Chromium Install & E2E Gate**: Installs Chromium binaries and runs `npm --prefix frontend run test:e2e` (14 browser tests), then uploads the HTML report even after a failure.
 7. **AI Eval Regression Gate**: Runs `npx tsx scripts/run-evals.ts` with `EVAL_MIN_SCORE=80`.
 8. **Summary & Artifact Upload**: Generates GitHub Step Summary and uploads eval report artifacts.

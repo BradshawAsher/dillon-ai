@@ -146,3 +146,20 @@ The questionnaire logic is covered by unit tests in [`frontend/utils/manualDealI
 - Tests NaN resistance against blank strings and malformed user inputs.
 - Validates Net Asset Value, Tangible Book Value, and Asset Coverage formulas.
 - Asserts Senior Debt and Equity sizing.
+
+### Native interactive tutorial
+
+After switching Deal Intake to **Quick Deal Questionnaire**, select **Start Tutorial** beside the preset controls. The eight-step tutorial explains:
+
+1. Presets and file-free intake.
+2. Live calculated metrics.
+3. Business Basics.
+4. Financials and earnings normalization.
+5. Balance sheet assets and liabilities.
+6. Financing and SBA debt assumptions.
+7. Risk and diligence gaps.
+8. Generation of the initial deal workspace.
+
+The tutorial changes visible questionnaire sections for demonstration, but it does not edit values, press the generate action, upload a file, or invoke an AI model.
+
+Browser coverage lives in [`frontend/e2e/quick-deal-questionnaire-tutorial.spec.ts`](../frontend/e2e/quick-deal-questionnaire-tutorial.spec.ts). It verifies that the tutorial targets are mounted and that the walkthrough produces no upload, webhook, or model request.

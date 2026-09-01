@@ -45,8 +45,7 @@ import { type Notification } from '../components/NotificationCenter'
 import { BatchProcessingSidePanel } from '../components/BatchProcessingSidePanel'
 import EvidenceDrawer from '../components/EvidenceDrawer'
 import DashboardFaqSidebar from '../components/DashboardFaqSidebar'
-import { type DemoVariantId } from '../components/SupademoModal'
-import { WorkspaceDemoGalleryBar } from '../components/WorkspaceDemoGalleryBar'
+import { WorkspaceDemoGalleryBar, type DemoVariantId } from '../components/WorkspaceDemoGalleryBar'
 import { useNativeWalkthrough } from '../components/walkthrough/useNativeWalkthrough'
 import { WalkthroughLauncherModal } from '../components/walkthrough/WalkthroughLauncherModal'
 import { NativeWalkthroughOverlay } from '../components/walkthrough/NativeWalkthroughOverlay'
@@ -4007,6 +4006,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                     onFileSelect={setSelectedFiles}
                     onSubmit={(environment) => { void handleSubmit(environment) }}
                     onManualDealComplete={handleManualDealComplete}
+                    onStartManualDealTutorial={() => walkthrough.startTour('quick-deal-questionnaire')}
                 />
 
                 {submitError ? (
@@ -4113,7 +4113,10 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 <WorkspaceTabTutorialBanner
                     activeTab={activeWorkspaceTab}
                     onStartTabTour={walkthrough.startTabTour}
-                    onOpenFullWalkthrough={() => setIsWalkthroughModalOpen(true)}
+                    onOpenFullWalkthrough={() => {
+                        setSelectedWalkthroughDemoId('native-core')
+                        setIsWalkthroughModalOpen(true)
+                    }}
                 />
 
                 <TabSidebarTOC

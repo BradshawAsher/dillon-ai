@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect } from 'react'
 import { AlertTriangle, Calculator, CheckCircle2, Eye, FolderKanban, FolderPlus, Info, Key, Loader2, Plus, Upload, X, XCircle } from 'lucide-react'
 
 import FileDropzone from './FileDropzone'
-import ManualDealIntakeForm from './ManualDealIntakeForm'
+import ManualDealIntakeForm, { type ManualDealSection } from './ManualDealIntakeForm'
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../lib/shadcn/card'
@@ -60,6 +60,7 @@ type ProjectIntakeCardProps = {
     onFileSelect: (files: File[]) => void
     onSubmit: (environment: SubmitEnvironment) => void
     onManualDealComplete?: (dealModel: DealModel, synthesis: ProjectSynthesisItem, formData: ManualDealFormData) => void
+    onStartManualDealTutorial?: () => void
 }
 
 const projectStages = [
@@ -88,6 +89,8 @@ const documentTypes = [
     'Tax return',
     'Other',
 ]
+
+const MANUAL_DEAL_SECTIONS = new Set<ManualDealSection>(['basics', 'financials', 'assets', 'financing', 'risk'])
 
 export default function ProjectIntakeCard({
     dealName,
@@ -119,13 +122,29 @@ export default function ProjectIntakeCard({
     onFileSelect,
     onSubmit,
     onManualDealComplete,
+    onStartManualDealTutorial,
 }: ProjectIntakeCardProps) {
     const [intakeMode, setIntakeMode] = useState<'upload' | 'manual'>('upload')
+    const [tutorialSection, setTutorialSection] = useState<ManualDealSection>()
     const [showNoKeyPrompt, setShowNoKeyPrompt] = useState(false)
     const [showDestinationModal, setShowDestinationModal] = useState(false)
     const [pendingQueueEnv, setPendingQueueEnv] = useState<SubmitEnvironment | null>(null)
     const [pendingFiles, setPendingFiles] = useState<File[]>([])
     const [fileRequiredWarning, setFileRequiredWarning] = useState(false)
+
+    useEffect(() => {
+        const handleWalkthroughAction = (event: Event) => {
+            const action = (event as CustomEvent<{ action?: { type?: string; payload?: unknown } }>).detail?.action
+            if (action?.type !== 'show_manual_deal_section' || typeof action.payload !== 'string') return
+            if (!MANUAL_DEAL_SECTIONS.has(action.payload as ManualDealSection)) return
+
+            setIntakeMode('manual')
+            setTutorialSection(action.payload as ManualDealSection)
+        }
+
+        window.addEventListener('mergeworks:walkthrough-action', handleWalkthroughAction)
+        return () => window.removeEventListener('mergeworks:walkthrough-action', handleWalkthroughAction)
+    }, [])
 
     useEffect(() => {
         if (!showNoKeyPrompt && !showDestinationModal && !pendingQueueEnv) return
@@ -333,6 +352,8 @@ export default function ProjectIntakeCard({
                             📁 Upload Documents (VDR / ZIP / PDFs)
                         </button>
                         <button
+                            id="quick-deal-questionnaire-mode"
+                            data-quick-deal-mode
                             type="button"
                             onClick={() => setIntakeMode('manual')}
                             className={`flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
@@ -357,6 +378,8 @@ export default function ProjectIntakeCard({
 
                 {intakeMode === 'manual' ? (
                     <ManualDealIntakeForm
+                        onStartTutorial={onStartManualDealTutorial}
+                        tutorialSection={tutorialSection}
                         onComplete={(dm, syn, fd) => {
                             if (onManualDealComplete) {
                                 onManualDealComplete(dm, syn, fd)
