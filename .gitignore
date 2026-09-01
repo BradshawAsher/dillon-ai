@@ -28,3 +28,5 @@ SUPADEMO_RECORDING_PLAN.md
 .freebuff/
 .vscode/
 /Fictional entity fix + media source (packets 2 4 5)/
+playwright-report/
+test-results/
