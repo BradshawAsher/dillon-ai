@@ -378,3 +378,27 @@
 - Shared timing tests cover overlapping parallel documents, duration-only eval fixtures, synthesis addition, missing synthesis timing, and fully unavailable timing.
 - Focused timing/tab tests, TypeScript checking, all 729 frontend tests, and the production build pass.
 - The local Vite server starts successfully. Automated screenshot verification is unavailable on this workstation because neither the documented `agent-browser` executable nor a callable browser controller is installed; compiled responsive/overflow classes and source containment were verified instead.
+# Lightweight main-branch protection and CI gate plan
+
+## Empirical current state
+
+- `main` has no GitHub ruleset or classic branch protection.
+- `.github/workflows/eval-regression.yml` runs frontend unit tests and the eval harness on pull requests and pushes to `main`, but it does not run TypeScript typechecking or the production build.
+- Typechecking imports root-level backend modules, so CI must install both the root and frontend lockfiles before running the frontend checks.
+- Vercel separately builds pull-request previews and deploys production after changes reach `main`.
+
+## Target changes
+
+1. Update `.github/workflows/eval-regression.yml` to use reproducible `npm ci` installs at both repository levels.
+2. Add frontend typecheck and production-build steps to the existing `run-evals` job, preserving the stable status-check context that GitHub already reports.
+3. Verify the workflow locally with the same typecheck, tests, eval harness, and build commands.
+4. Commit and push the CI change to `main`, then wait for the updated `run-evals` workflow to pass.
+5. Create an active ruleset targeting only the default branch that requires pull requests with zero approvals, requires the successful `run-evals` check without strict update/rebase enforcement, blocks deletion and force pushes, and gives repository administrators an emergency bypass.
+6. Read back the live ruleset and confirm that `main` and `origin/main` remain synchronized.
+
+## Regression and operational checks
+
+- Existing direct feature-branch pushes remain available.
+- The required check must have a successful run before activation so the repository is not accidentally locked behind an unknown check context.
+- Vercel remains an informational preview/deployment integration rather than a required ruleset check, avoiding a vendor outage blocking emergency merges.
+- Administrator bypass remains available for recovery while normal changes use pull requests.
