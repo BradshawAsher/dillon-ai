@@ -3428,14 +3428,36 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                     id="deal-chat-dock"
                     data-chat-trigger="true"
                     onClick={() => setIsOpen(true)}
-                    className="pointer-events-auto relative flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-primary-foreground shadow-lg transition-transform hover:scale-105"
-                    aria-label="Open AI Deal Assistant"
+                    className={`pointer-events-auto relative flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-primary-foreground shadow-lg transition-all hover:scale-105 cursor-pointer ${
+                        isTyping
+                            ? 'ring-2 ring-primary/80 ring-offset-2 ring-offset-background shadow-xl shadow-primary/30'
+                            : ''
+                    }`}
+                    aria-label={isTyping ? 'Dillon AI is generating an answer...' : 'Open AI Deal Assistant'}
                 >
-                    <Bot className="h-5 w-5" />
-                    <span className="text-sm font-medium">Ask Dillon AI</span>
-                    <span className="rounded-full bg-primary-foreground/20 px-1.5 py-0.5 text-[10px] font-semibold">C</span>
-                    {unreadCount > 0 && (
-                        <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white shadow-sm ring-2 ring-background">
+                    <Bot className={`h-5 w-5 shrink-0 ${isTyping ? 'animate-pulse text-amber-300' : ''}`} />
+                    {isTyping ? (
+                        <div className="flex items-center gap-1.5">
+                            <span className="text-sm font-semibold">Dillon is thinking</span>
+                            <span className="inline-flex items-center gap-0.5 ml-0.5">
+                                <span className="h-1.5 w-1.5 rounded-full bg-current animate-bounce [animation-delay:-0.3s]" />
+                                <span className="h-1.5 w-1.5 rounded-full bg-current animate-bounce [animation-delay:-0.15s]" />
+                                <span className="h-1.5 w-1.5 rounded-full bg-current animate-bounce" />
+                            </span>
+                            {typingElapsed > 0 && (
+                                <span className="text-[11px] font-mono opacity-85 ml-0.5">
+                                    {typingElapsed}s
+                                </span>
+                            )}
+                        </div>
+                    ) : (
+                        <>
+                            <span className="text-sm font-medium">Ask Dillon AI</span>
+                            <span className="rounded-full bg-primary-foreground/20 px-1.5 py-0.5 text-[10px] font-semibold">C</span>
+                        </>
+                    )}
+                    {unreadCount > 0 && !isTyping && (
+                        <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white shadow-sm ring-2 ring-background animate-pulse">
                             {unreadCount > 9 ? '9+' : unreadCount}
                         </span>
                     )}

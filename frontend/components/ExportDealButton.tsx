@@ -277,8 +277,8 @@ export default function ExportDealButton({ model, synthesis, projectName }: Prop
             </Button>
             {showMenu && (
                 <>
-                    <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
-                    <div className="absolute right-0 top-full z-50 mt-1.5 w-72 rounded-lg border border-border bg-popover p-1.5 shadow-xl">
+                    <div className="fixed inset-0 z-[90]" onClick={() => setShowMenu(false)} />
+                    <div className="absolute right-0 top-full z-[100] mt-1.5 w-72 rounded-lg border border-border bg-popover p-1.5 shadow-2xl animate-in fade-in-0 zoom-in-95 duration-150">
                         <div className="px-2 py-1 mb-1 border-b border-border/50">
                             <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Export Deal Package</p>
                         </div>
