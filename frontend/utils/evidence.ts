@@ -299,7 +299,9 @@ export function buildDocumentLinkedEvidence(args: {
         confidence: args.confidence ?? document?.aiConfidence,
         status: args.status,
         provenance: args.provenance,
-        documentUrl: resolveStorageCdnUrl(document?.storageFileUrl),
+        documentUrl: document?.storageFileUrl
+            ? resolveStorageCdnUrl(document.storageFileUrl)
+            : undefined,
         documentId: document?.storageFileId,
     }
 }
