@@ -107,7 +107,7 @@ npm --prefix frontend run test:e2e:report
 
 ---
 
-## 5. Vitest Unit Test Suite (86 Suites / 871 Tests)
+## 5. Vitest Unit Test Suite (88 Suites / 888 Tests)
 
 Run all unit tests:
 ```bash
@@ -116,6 +116,7 @@ npm --prefix frontend test
 
 ### Key Domain Modules Tested:
 - **Mathematical Checks & EBITDA Reconciliation**: [`dealMath.test.ts`](../frontend/utils/dealMath.test.ts), [`financialMetrics.test.ts`](../frontend/utils/financialMetrics.test.ts), [`ebitdaQualityGrade.test.ts`](../frontend/utils/ebitdaQualityGrade.test.ts).
+- **Cohort Retention & Add-Back Banking Rules**: [`cohortRetention.test.ts`](../frontend/utils/cohortRetention.test.ts), [`addBackTaxonomy.test.ts`](../frontend/utils/addBackTaxonomy.test.ts).
 - **Latency & Duration Bounding**: [`diligenceDashboardUtils.test.ts`](../frontend/utils/diligenceDashboardUtils.test.ts), [`processingTime.test.ts`](../frontend/utils/processingTime.test.ts).
 - **Multipart Upload & Egress Guards**: [`storedFileMultipart.test.ts`](../frontend/utils/storedFileMultipart.test.ts), [`supabaseStorage.test.ts`](../frontend/services/supabaseStorage.test.ts).
 - **State Recovery & Batch Stop**: [`stopBatchSubmission.test.ts`](../frontend/utils/stopBatchSubmission.test.ts), [`batchState.test.ts`](../frontend/utils/batchState.test.ts).
@@ -144,9 +145,9 @@ The CI workflow is defined in [`.github/workflows/eval-regression.yml`](../.gith
 3. **Global npm Dependency Cache**: Uses `setup-node@v4` with `cache: 'npm'` targeting both `package-lock.json` and `frontend/package-lock.json` for fast dependency hydration.
 4. **Playwright Chromium Cache**: Uses `actions/cache@v4` on `~/.cache/ms-playwright` to restore browser binaries in ~1s and skip redundant downloads.
 5. **TypeScript Typecheck Gate**: Runs `npm --prefix frontend run typecheck` (`tsc --noEmit`).
-6. **Vitest Unit Test Gate**: Runs `npm --prefix frontend test` (871 tests).
+6. **Vitest Unit Test Gate**: Runs `npm --prefix frontend test` (888 tests).
 7. **API Integration Gate**: Runs `npm --prefix frontend run test:api` (26 loopback HTTP tests, zero external network or secrets).
 8. **Production Build Gate**: Runs `npm --prefix frontend run build` (Vite bundle verification).
-9. **Playwright Chromium E2E Gate**: Runs `npm --prefix frontend run test:e2e` (15 browser tests), uploading HTML report artifacts on failure.
+9. **Playwright Chromium E2E Gate**: Runs `npm --prefix frontend run test:e2e` (16 browser tests), uploading HTML report artifacts on failure.
 10. **AI Eval Regression Gate**: Runs `npx tsx scripts/run-evals.ts` with `EVAL_MIN_SCORE=80`.
 11. **Summary & Artifact Upload**: Generates GitHub Step Summary and uploads eval report artifacts.

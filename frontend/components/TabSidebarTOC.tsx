@@ -46,6 +46,7 @@ const TAB_SECTIONS: Partial<Record<WorkspaceTab, TOCSection[]>> = {
         { id: 'analysis-cash-on-cash', label: 'Cash-on-Cash Calc' },
         { id: 'analysis-val-evolution', label: 'Value Evolution' },
         { id: 'analysis-revenue-bridge', label: 'Revenue Bridge' },
+        { id: 'analysis-cohort-retention', label: 'Cohort Retention' },
         { id: 'analysis-base-returns', label: 'Base Returns' },
         { id: 'analysis-growth-sensitivity', label: 'Growth Sensitivity' },
         { id: 'analysis-monte-carlo', label: 'Monte Carlo Sim' },

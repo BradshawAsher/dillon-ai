@@ -12,6 +12,7 @@ import DataQualityChecksCard from '../DataQualityChecksCard'
 import AddBackQualityCard from '../AddBackQualityCard'
 import RecurringVsOneTimeCard from '../RecurringVsOneTimeCard'
 import CustomerConcentrationCard from '../CustomerConcentrationCard'
+import CohortRetentionCard from '../CohortRetentionCard'
 import BuyerProfileCard from '../BuyerProfileCard'
 import IndustryBenchmarksCard from '../IndustryBenchmarksCard'
 import CostPerRunCard from '../CostPerRunCard'
@@ -272,6 +273,7 @@ export function DiligenceWorkspaceView({
                 {activeProjectSynthesis && (
                     <CustomerConcentrationCard synthesis={activeProjectSynthesis} documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} />
                 )}
+                <CohortRetentionCard synthesis={activeProjectSynthesis} dealModel={hydratedDealModel} />
             </div>
 
             <div id="diligence-context" className="space-y-6 scroll-mt-6 border-t border-border pt-4">

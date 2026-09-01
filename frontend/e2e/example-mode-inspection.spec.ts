@@ -44,11 +44,38 @@ test.describe('Example Mode & KPI Card Inspection', () => {
         }
     })
 
-    test('navigates document carousel smoothly', async ({ page }) => {
-        const nextButton = page.locator('button[aria-label*="next" i], button:has-text("Next")').first()
-        if (await nextButton.isVisible() && await nextButton.isEnabled()) {
-            await nextButton.click()
-            await page.waitForTimeout(300)
+    test('renders Customer Cohort Retention matrix and allows toggling between Logo and NRR modes', async ({ page }) => {
+        const cohortCard = page.locator('#cohort-retention-card').first()
+        await expect(cohortCard).toBeVisible({ timeout: 10_000 })
+
+        // Check header title
+        await expect(cohortCard.getByText(/Customer Cohort Retention/i).first()).toBeVisible()
+
+        // Toggle to NRR mode
+        const nrrButton = cohortCard.getByRole('button', { name: /Net Revenue Retention/i }).first()
+        await nrrButton.click()
+        await page.waitForTimeout(200)
+
+        // Toggle back to Logo Retention mode
+        const logoButton = cohortCard.getByRole('button', { name: /Logo Retention/i }).first()
+        await logoButton.click()
+        await page.waitForTimeout(200)
+    })
+
+    test('renders Add-Back Banking Disallowance engine with interactive checkboxes', async ({ page }) => {
+        const addBackCard = page.locator('#add-back-quality-card').first()
+        await expect(addBackCard).toBeVisible({ timeout: 10_000 })
+
+        // Check banking taxonomy title
+        await expect(addBackCard.getByText(/Banking Disallowance Engine/i).first()).toBeVisible()
+
+        // Find and toggle first disallowance checkbox
+        const firstCheckbox = addBackCard.locator('button[title*="disallow" i], button[title*="approve" i]').first()
+        if (await firstCheckbox.isVisible()) {
+            await firstCheckbox.click()
+            await page.waitForTimeout(200)
+            await firstCheckbox.click()
+            await page.waitForTimeout(200)
         }
     })
 })
