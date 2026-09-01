@@ -13,7 +13,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../li
 import CardInfoPopover from './common/CardInfoPopover'
 import { Progress } from '../lib/shadcn/progress'
 import { formatCurrencyValue, getSubmissionInsightTone } from '../utils/aiSubmissionData'
-import { downloadTextFile, fileSafeName } from '../utils/downloadFile'
+import { downloadTextFile, fileSafeName, downloadSynthesisReport } from '../utils/downloadFile'
+export { downloadSynthesisReport }
 import { formatHours, type ImpactMetrics } from '../utils/impactMetrics'
 import { getProjectKey, isRowMatchingProject, formatProjectDisplayName, type ProjectSummary } from '../utils/projectWorkspace'
 import { getSeverityForGroup, type InsightGroupType } from '../utils/insightGroups'
@@ -106,48 +107,6 @@ function getDocumentThesisTakeaway(document: SubmissionHistoryItem): DocumentThe
         const conf = parseFloat(document.aiConfidence || '')
         return { fileName: document.fileName || 'Unnamed document', takeaway: document.aiSummary.trim(), stance: 'Document insight', documentId: document.storageFileId, documentUrl: document.storageFileUrl, status: document.status, confidence: Number.isFinite(conf) ? conf : null }
     }
-}
-
-export function downloadSynthesisReport(synthesis: ProjectSynthesisItem, projectName: string) {
-    const section = (title: string, items: string[]) => [
-        '## ' + title,
-        ...(items.length > 0 ? items.map((item) => '- ' + item) : ['- None recorded.']),
-        '',
-    ]
-
-    const report = [
-        '# ' + projectName + ' — Project Synthesis',
-        '',
-        'Generated: ' + new Date().toLocaleString(),
-        'Recommendation: ' + (synthesis.finalRecommendation || 'Pending'),
-        'Risk level: ' + (synthesis.finalRiskLevel || 'Pending'),
-        'Documents processed: ' + synthesis.documentsCompletedCount + '/' + synthesis.documentsReceivedCount,
-        '',
-        '## AI Pipeline Model Architecture',
-        '- **Per-Document Extraction Primary Model**: OpenAI 5.6 Terra',
-        '- **Per-Document Extraction Backup Model**: OpenAI 5.6 Sol',
-        '- **Project Synthesis Pass Primary Model**: OpenAI 5.6 Terra',
-        '- **Project Synthesis Pass Backup Model**: OpenAI 5.6 Sol',
-        '',
-        '## Acquisition judgment',
-        synthesis.finalJudgmentSummary || 'No final judgment recorded.',
-        '',
-        '## Valuation range',
-        'Lower: ' + (synthesis.valuationLowerBound && synthesis.valuationLowerBound !== '0' ? formatCurrencyValue(synthesis.valuationLowerBound, synthesis.valuationCurrency || 'USD') : 'Pending'),
-        'Base: ' + (synthesis.valuationBaseEstimate && synthesis.valuationBaseEstimate !== '0' ? formatCurrencyValue(synthesis.valuationBaseEstimate, synthesis.valuationCurrency || 'USD') : 'Pending'),
-        'Upper: ' + (synthesis.valuationUpperBound && synthesis.valuationUpperBound !== '0' ? formatCurrencyValue(synthesis.valuationUpperBound, synthesis.valuationCurrency || 'USD') : 'Pending'),
-        '',
-        ...section('Cross-document conflicts', synthesis.crossDocumentConflicts),
-        ...section('Negotiation levers', synthesis.negotiationLevers),
-        ...section('Missing diligence materials', synthesis.missingDocuments),
-        ...section('Open questions for management', synthesis.openQuestions),
-        ...section('Citations', synthesis.citations ?? []),
-        '## Full structured synthesis record',
-        synthesis.finalJudgmentJson ? '```json\n' + synthesis.finalJudgmentJson + '\n```' : 'The workflow did not return a separate structured synthesis record for this project.',
-        '',
-    ].join('\n')
-
-    downloadTextFile(fileSafeName(projectName) + '-project-synthesis.md', report, 'text/markdown;charset=utf-8')
 }
 
 

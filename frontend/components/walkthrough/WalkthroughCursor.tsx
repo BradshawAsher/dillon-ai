@@ -17,11 +17,12 @@ export function WalkthroughCursor({
 
     return (
         <div
-            className="fixed pointer-events-none z-50 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
+            className="fixed pointer-events-none z-50 transition-all duration-300"
             style={{
                 left: `${cursorPos.x}px`,
                 top: `${cursorPos.y}px`,
                 transform: 'translate(-4px, -4px)',
+                transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)',
             }}
         >
             {/* Click Ripple Indicator */}

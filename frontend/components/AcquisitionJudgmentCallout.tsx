@@ -7,7 +7,7 @@ import { Badge } from '../lib/shadcn/badge'
 import { Card, CardContent } from '../lib/shadcn/card'
 import { getSubmissionInsightTone } from '../utils/aiSubmissionData'
 import { formatHours, type ImpactMetrics } from '../utils/impactMetrics'
-import { downloadSynthesisReport } from './ProjectSynthesisCard'
+import { downloadSynthesisReport } from '../utils/downloadFile'
 import DealEmailDraftModal from './DealEmailDraftModal'
 import { formatElapsedDuration, getProjectTimingSummary, getSynthesisDurationSec } from '../utils/diligenceDashboardUtils'
 

@@ -12,7 +12,7 @@ import { Input } from '../lib/shadcn/input'
 import { Switch } from '../lib/shadcn/switch'
 import { cn } from '../lib/shadcn/utils'
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
-import { downloadSynthesisReport } from './ProjectSynthesisCard'
+import { downloadSynthesisReport } from '../utils/downloadFile'
 import {
     archiveProjectKey,
     createProjectSummaries,
