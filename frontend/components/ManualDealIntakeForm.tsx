@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import {
     Building2,
     DollarSign,
@@ -7,6 +7,7 @@ import {
     Calculator,
     Zap,
     ShieldAlert,
+    Play,
 } from 'lucide-react'
 
 import { Button } from '../lib/shadcn/button'
@@ -44,12 +45,20 @@ const INDUSTRY_OPTIONS = [
 
 type ManualDealIntakeFormProps = {
     onComplete: (dealModel: DealModel, synthesis: ProjectSynthesisItem, formData: ManualDealFormData) => void
+    onStartTutorial?: () => void
+    tutorialSection?: ManualDealSection
     disabled?: boolean
 }
 
-export default function ManualDealIntakeForm({ onComplete, disabled = false }: ManualDealIntakeFormProps) {
+export type ManualDealSection = 'basics' | 'financials' | 'assets' | 'financing' | 'risk'
+
+export default function ManualDealIntakeForm({ onComplete, onStartTutorial, tutorialSection, disabled = false }: ManualDealIntakeFormProps) {
     const [formData, setFormData] = useState<ManualDealFormData>(MANUAL_DEAL_PRESETS.manufacturing.data)
-    const [activeSection, setActiveSection] = useState<'basics' | 'financials' | 'assets' | 'financing' | 'risk'>('basics')
+    const [activeSection, setActiveSection] = useState<ManualDealSection>('basics')
+
+    useEffect(() => {
+        if (tutorialSection) setActiveSection(tutorialSection)
+    }, [tutorialSection])
 
     const updateField = <K extends keyof ManualDealFormData>(field: K, value: ManualDealFormData[K]) => {
         setFormData((prev) => ({ ...prev, [field]: value }))
@@ -92,9 +101,9 @@ export default function ManualDealIntakeForm({ onComplete, disabled = false }: M
     }
 
     return (
-        <div className="space-y-6">
+        <div id="quick-deal-questionnaire" data-quick-deal-questionnaire className="space-y-6">
             {/* Header & Quick Presets Bar */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 rounded-xl border border-primary/20 bg-primary/5">
+            <div id="quick-deal-questionnaire-intro" className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 rounded-xl border border-primary/20 bg-primary/5">
                 <div className="flex items-center gap-2.5">
                     <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-xs shrink-0">
                         <Calculator className="h-5 w-5" />
@@ -112,7 +121,19 @@ export default function ManualDealIntakeForm({ onComplete, disabled = false }: M
                     </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
+                <div id="quick-deal-questionnaire-presets" className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
+                    {onStartTutorial ? (
+                        <Button
+                            type="button"
+                            variant="default"
+                            size="sm"
+                            className="h-7 gap-1.5 px-2.5 text-xs font-semibold cursor-pointer"
+                            onClick={onStartTutorial}
+                        >
+                            <Play className="h-3 w-3 fill-current" />
+                            Start Tutorial
+                        </Button>
+                    ) : null}
                     <span className="text-[11px] font-medium text-muted-foreground mr-1">Load Preset:</span>
                     <Button
                         type="button"
@@ -145,7 +166,7 @@ export default function ManualDealIntakeForm({ onComplete, disabled = false }: M
             </div>
 
             {/* Live Metrics Summary Pill */}
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 p-3 rounded-lg border border-border bg-card/60">
+            <div id="quick-deal-questionnaire-metrics" className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 p-3 rounded-lg border border-border bg-card/60">
                 <div className="space-y-0.5">
                     <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Asking Price</span>
                     <p className="text-sm font-bold text-foreground">
@@ -182,8 +203,10 @@ export default function ManualDealIntakeForm({ onComplete, disabled = false }: M
             </div>
 
             {/* Section Navigation Tabs */}
-            <div className="flex flex-wrap items-center gap-1.5 border-b border-border pb-2">
+            <div id="quick-deal-questionnaire-sections" className="flex flex-wrap items-center gap-1.5 border-b border-border pb-2">
                 <button
+                    id="quick-deal-section-tab-basics"
+                    data-questionnaire-section="basics"
                     type="button"
                     onClick={() => setActiveSection('basics')}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
@@ -196,6 +219,8 @@ export default function ManualDealIntakeForm({ onComplete, disabled = false }: M
                     1. Business Basics
                 </button>
                 <button
+                    id="quick-deal-section-tab-financials"
+                    data-questionnaire-section="financials"
                     type="button"
                     onClick={() => setActiveSection('financials')}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
@@ -208,6 +233,8 @@ export default function ManualDealIntakeForm({ onComplete, disabled = false }: M
                     2. Financials & Margins
                 </button>
                 <button
+                    id="quick-deal-section-tab-assets"
+                    data-questionnaire-section="assets"
                     type="button"
                     onClick={() => setActiveSection('assets')}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
@@ -220,6 +247,8 @@ export default function ManualDealIntakeForm({ onComplete, disabled = false }: M
                     3. Balance Sheet / Assets
                 </button>
                 <button
+                    id="quick-deal-section-tab-financing"
+                    data-questionnaire-section="financing"
                     type="button"
                     onClick={() => setActiveSection('financing')}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
@@ -232,6 +261,8 @@ export default function ManualDealIntakeForm({ onComplete, disabled = false }: M
                     4. Financing & SBA Debt
                 </button>
                 <button
+                    id="quick-deal-section-tab-risk"
+                    data-questionnaire-section="risk"
                     type="button"
                     onClick={() => setActiveSection('risk')}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
@@ -247,7 +278,7 @@ export default function ManualDealIntakeForm({ onComplete, disabled = false }: M
 
             {/* Section 1: Business Basics */}
             {activeSection === 'basics' && (
-                <div className="space-y-4 animate-in fade-in duration-200">
+                <div id="quick-deal-section-basics" className="space-y-4 animate-in fade-in duration-200">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-1.5">
                             <Label className="text-xs font-semibold text-foreground">
@@ -334,7 +365,7 @@ export default function ManualDealIntakeForm({ onComplete, disabled = false }: M
 
             {/* Section 2: Financials & Margins */}
             {activeSection === 'financials' && (
-                <div className="space-y-4 animate-in fade-in duration-200">
+                <div id="quick-deal-section-financials" className="space-y-4 animate-in fade-in duration-200">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-1.5">
                             <Label className="text-xs font-semibold text-foreground">
@@ -457,7 +488,7 @@ export default function ManualDealIntakeForm({ onComplete, disabled = false }: M
 
             {/* Section 3: Balance Sheet & Assets */}
             {activeSection === 'assets' && (
-                <div className="space-y-4 animate-in fade-in duration-200">
+                <div id="quick-deal-section-assets" className="space-y-4 animate-in fade-in duration-200">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         {/* Assets Column */}
                         <div className="space-y-3 p-3.5 rounded-lg border border-emerald-500/20 bg-emerald-500/5">
@@ -576,7 +607,7 @@ export default function ManualDealIntakeForm({ onComplete, disabled = false }: M
 
             {/* Section 4: Financing & SBA Debt */}
             {activeSection === 'financing' && (
-                <div className="space-y-4 animate-in fade-in duration-200">
+                <div id="quick-deal-section-financing" className="space-y-4 animate-in fade-in duration-200">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-1.5">
                             <Label className="text-xs font-semibold text-foreground">
@@ -654,7 +685,7 @@ export default function ManualDealIntakeForm({ onComplete, disabled = false }: M
 
             {/* Section 5: Risk & Diligence Flags */}
             {activeSection === 'risk' && (
-                <div className="space-y-4 animate-in fade-in duration-200">
+                <div id="quick-deal-section-risk" className="space-y-4 animate-in fade-in duration-200">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-1.5">
                             <Label className="text-xs font-semibold text-foreground">
@@ -763,6 +794,8 @@ export default function ManualDealIntakeForm({ onComplete, disabled = false }: M
                 </div>
 
                 <Button
+                    id="quick-deal-generate-btn"
+                    data-quick-deal-generate
                     type="button"
                     size="sm"
                     disabled={disabled || !formData.dealName || !formData.askingPrice}

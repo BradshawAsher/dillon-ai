@@ -12,6 +12,7 @@ import {
     Compass,
     ShieldCheck,
     CheckCircle2,
+    Calculator,
 } from 'lucide-react'
 import { Badge } from '../../lib/shadcn/badge'
 import { Button } from '../../lib/shadcn/button'
@@ -81,7 +82,7 @@ export function WalkthroughLauncherModal({
             onClick={onClose}
         >
             <div
-                className="relative w-full max-w-4xl overflow-hidden rounded-2xl border border-border bg-card p-6 shadow-2xl sm:p-8 animate-in zoom-in-95 duration-200"
+                className="relative max-h-[calc(100vh-2rem)] w-full max-w-4xl overflow-x-hidden overflow-y-auto rounded-2xl border border-border bg-card p-6 shadow-2xl sm:p-8 animate-in zoom-in-95 duration-200"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Close Button */}
@@ -171,21 +172,25 @@ export function WalkthroughLauncherModal({
 
                 {/* Tab 1: Interactive Guided Tours */}
                 {activeTab === 'interactive' && (
-                    <div className="mt-6 grid gap-4 sm:grid-cols-3">
+                    <div className="mt-6 grid gap-4 sm:grid-cols-2">
                         {playlists.map((playlist) => {
                             const isCore = playlist.id === 'core-fast'
                             const isDeep = playlist.id === 'deep-dive'
                             const isQuest = playlist.id === 'interactive-quest'
+                            const isQuestionnaire = playlist.id === 'quick-deal-questionnaire'
 
                             return (
                                 <div
                                     key={playlist.id}
+                                    data-tour-playlist={playlist.id}
                                     className={`group relative flex flex-col justify-between rounded-xl border p-5 transition-all duration-200 hover:shadow-lg ${
                                         isCore
                                             ? 'border-primary/50 bg-primary/[0.04] hover:border-primary'
                                             : isDeep
                                                 ? 'border-emerald-500/40 bg-emerald-500/[0.03] hover:border-emerald-500'
-                                                : 'border-amber-500/40 bg-amber-500/[0.03] hover:border-amber-500'
+                                            : isQuest
+                                                ? 'border-amber-500/40 bg-amber-500/[0.03] hover:border-amber-500'
+                                                : 'border-violet-500/40 bg-violet-500/[0.03] hover:border-violet-500'
                                     }`}
                                 >
                                     <div className="space-y-3">
@@ -196,11 +201,17 @@ export function WalkthroughLauncherModal({
                                                 {isCore && <Zap className="h-5 w-5" />}
                                                 {isDeep && <Layers className="h-5 w-5" />}
                                                 {isQuest && <Target className="h-5 w-5" />}
+                                                {isQuestionnaire && <Calculator className="h-5 w-5" />}
                                             </div>
                                             <div className="flex items-center gap-1.5">
                                                 {isCore && (
                                                     <Badge className="bg-primary text-primary-foreground text-[10px] font-semibold">
                                                         Recommended
+                                                    </Badge>
+                                                )}
+                                                {isQuestionnaire && (
+                                                    <Badge className="bg-violet-600 text-white text-[10px] font-semibold">
+                                                        No Uploads
                                                     </Badge>
                                                 )}
                                                 <Badge variant="outline" className="text-[11px] font-mono">
