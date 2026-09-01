@@ -1666,10 +1666,110 @@ export function appendChatBillingRecord(record: ChatBillingRecord): void {
     }
 }
 
+export function backfillChatBillingRecordsFromSessions(): ChatBillingRecord[] {
+    try {
+        const storage = typeof window !== 'undefined' ? window.localStorage : (typeof localStorage !== 'undefined' ? localStorage : null)
+        if (!storage) return []
+
+        const rawBilling = storage.getItem(CHAT_BILLING_STORAGE_KEY)
+        const existingRecords: ChatBillingRecord[] = rawBilling ? JSON.parse(rawBilling) : []
+        const existingIdSet = new Set(existingRecords.map(r => r.id))
+
+        const newRecords: ChatBillingRecord[] = []
+
+        const processMessages = (messages: Message[], projectName?: string, sessionId?: string) => {
+            if (!Array.isArray(messages)) return
+            for (let i = 0; i < messages.length; i++) {
+                const msg = messages[i]
+                if (msg && msg.role === 'assistant' && msg.content && msg.content.trim().length > 0) {
+                    const recordId = `chat-backfill-${sessionId || 'session'}-${msg.id || msg.timestamp || i}`
+                    if (existingIdSet.has(recordId) || existingIdSet.has(`chat-${msg.id}`)) {
+                        continue
+                    }
+
+                    const userPrompt = msg.userPrompt || (i > 0 && messages[i - 1]?.role === 'user' ? messages[i - 1]?.content : 'Deal Analysis Query')
+                    const estimatedInTok = Math.max(1200, Math.round((userPrompt.length / 3.8) + 1600))
+                    const estimatedOutTok = Math.max(250, Math.round(msg.content.length / 3.8))
+                    const modelName = msg.providerName || 'Claude Sonnet 5'
+                    const cost = estimateChatQueryCost(estimatedInTok, estimatedOutTok, modelName)
+                    const timestampStr = msg.timestamp ? new Date(msg.timestamp).toISOString() : new Date().toISOString()
+                    const cleanSnippet = userPrompt.slice(0, 60).replace(/\n+/g, ' ').trim()
+
+                    const newRec: ChatBillingRecord = {
+                        id: recordId,
+                        timestamp: timestampStr,
+                        projectId: projectName || 'live-project',
+                        businessName: projectName || 'Active Diligence Deal',
+                        questionSnippet: cleanSnippet || 'Deal Analysis Query',
+                        model: modelName,
+                        inputTokens: estimatedInTok,
+                        outputTokens: estimatedOutTok,
+                        totalTokens: estimatedInTok + estimatedOutTok,
+                        costUsd: cost,
+                        status: 'Audited Telemetry',
+                    }
+
+                    newRecords.push(newRec)
+                    existingIdSet.add(recordId)
+                }
+            }
+        }
+
+        const rawSessions = storage.getItem(CHAT_SESSIONS_STORAGE_KEY)
+        if (rawSessions) {
+            try {
+                const sessions: ChatSession[] = JSON.parse(rawSessions)
+                if (Array.isArray(sessions)) {
+                    sessions.forEach(sess => processMessages(sess.messages, sess.projectName, sess.id))
+                }
+            } catch {}
+        }
+
+        const rawLegacy = storage.getItem(CHAT_STORAGE_KEY)
+        if (rawLegacy) {
+            try {
+                const legacyMsgs: Message[] = JSON.parse(rawLegacy)
+                if (Array.isArray(legacyMsgs)) {
+                    processMessages(legacyMsgs, undefined, 'legacy')
+                }
+            } catch {}
+        }
+
+        if (typeof storage.length === 'number') {
+            for (let k = 0; k < storage.length; k++) {
+                const key = storage.key(k)
+                if (key && key.startsWith('mergeworks_deal_chat_')) {
+                    try {
+                        const msgs = JSON.parse(storage.getItem(key) || '[]')
+                        const proj = key.replace('mergeworks_deal_chat_', '')
+                        processMessages(msgs, proj, proj)
+                    } catch {}
+                }
+            }
+        }
+
+        if (newRecords.length > 0) {
+            const combined = [...newRecords, ...existingRecords].slice(0, 1000)
+            storage.setItem(CHAT_BILLING_STORAGE_KEY, JSON.stringify(combined))
+            if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+                window.dispatchEvent(new CustomEvent('mergeworks:chat-billing-updated', { detail: newRecords[0] }))
+            }
+            return combined
+        }
+
+        return existingRecords
+    } catch (e) {
+        console.warn('Failed to backfill chat billing records:', e)
+        return []
+    }
+}
+
 export function getStoredChatBillingRecords(): ChatBillingRecord[] {
     try {
         const storage = typeof window !== 'undefined' ? window.localStorage : (typeof localStorage !== 'undefined' ? localStorage : null)
         if (!storage) return []
+        const backfilled = backfillChatBillingRecordsFromSessions()
+        if (backfilled && backfilled.length > 0) return backfilled
         const raw = storage.getItem(CHAT_BILLING_STORAGE_KEY)
         return raw ? JSON.parse(raw) : []
     } catch {

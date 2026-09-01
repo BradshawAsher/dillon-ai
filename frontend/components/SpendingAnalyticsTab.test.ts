@@ -1,5 +1,11 @@
 import { describe, expect, it, beforeEach } from 'vitest'
-import { appendChatBillingRecord, getStoredChatBillingRecords, CHAT_BILLING_STORAGE_KEY } from './DealChatPanel'
+import {
+    appendChatBillingRecord,
+    getStoredChatBillingRecords,
+    backfillChatBillingRecordsFromSessions,
+    CHAT_BILLING_STORAGE_KEY,
+    CHAT_SESSIONS_STORAGE_KEY,
+} from './DealChatPanel'
 import { estimateChatQueryCost } from '../utils/costModel'
 import SpendingAnalyticsTab from './SpendingAnalyticsTab'
 
@@ -49,6 +55,47 @@ describe('Chat Billing Telemetry & Spending Analytics', () => {
             inputTokens: 2500,
             outputTokens: 400,
         })
+    })
+
+    it('backfills past chat messages from chatSessions into chat billing ledger with cost estimates', () => {
+        // Set up pre-existing sessions without existing billing records
+        const pastSessions = [
+            {
+                id: 'sess-alpha',
+                title: 'EBITDA Quality of Earnings',
+                createdAt: Date.now() - 3600000,
+                updatedAt: Date.now() - 3600000,
+                projectName: 'Summit Health Services',
+                messages: [
+                    {
+                        id: 'msg-user-1',
+                        role: 'user',
+                        content: 'What is the total owner compensation add-back?',
+                        timestamp: Date.now() - 3600000,
+                    },
+                    {
+                        id: 'msg-asst-1',
+                        role: 'assistant',
+                        content: 'The total owner compensation add-back is $185,000 for FY2024 as verified from Schedule 1.',
+                        providerName: 'Claude Sonnet 5',
+                        timestamp: Date.now() - 3590000,
+                    },
+                ],
+            },
+        ]
+
+        mockStorage.setItem(CHAT_SESSIONS_STORAGE_KEY, JSON.stringify(pastSessions))
+
+        const backfilled = backfillChatBillingRecordsFromSessions()
+        expect(backfilled.length).toBeGreaterThanOrEqual(1)
+
+        const target = backfilled.find(b => b.businessName === 'Summit Health Services')
+        expect(target).toBeDefined()
+        expect(target?.model).toBe('Claude Sonnet 5')
+        expect(target?.costUsd).toBeGreaterThan(0)
+        expect(target?.inputTokens).toBeGreaterThan(1000)
+        expect(target?.outputTokens).toBeGreaterThan(0)
+        expect(target?.status).toBe('Audited Telemetry')
     })
 
     it('calculates exact chat query costs for Claude Sonnet 5, Terra, and DeepSeek', () => {

@@ -9,7 +9,7 @@ import { getSubmissionInsightTone } from '../utils/aiSubmissionData'
 import { formatHours, type ImpactMetrics } from '../utils/impactMetrics'
 import { downloadSynthesisReport } from './ProjectSynthesisCard'
 import DealEmailDraftModal from './DealEmailDraftModal'
-import { formatElapsedDuration, getProjectTimingSummary } from '../utils/diligenceDashboardUtils'
+import { formatElapsedDuration, getProjectTimingSummary, getSynthesisDurationSec } from '../utils/diligenceDashboardUtils'
 
 import { useMemo, useState } from 'react'
 import ActionableRecommendationInfoButton from './ActionableRecommendationInfoButton'
