@@ -27,7 +27,7 @@ export const IMMUTABLE_RELEASES: ImmutableRelease[] = [
         title: 'Release PR #12: Live Excel .xlsx & NWC Peg Engine',
         commit: 'e77992e',
         date: '2026-09-01',
-        url: 'https://due-diligence-dashboard-4s3QricmwtJsPxZC95mGnAZkMm2K.vercel.app/?view=dashboard',
+        url: 'https://due-diligence-dashboard-gys3h84i8-bradasher.vercel.app/?view=dashboard',
         description: 'Live formula Excel generator, SBA 2D rate shock matrix, and NWC peg calculator.',
         isPreviousStable: true,
     },
@@ -37,7 +37,7 @@ export const IMMUTABLE_RELEASES: ImmutableRelease[] = [
         title: 'Release PR #11: 21-Tab Card Deeplinks & AI Tools',
         commit: 'a4906fb',
         date: '2026-09-01',
-        url: 'https://due-diligence-dashboard-6c5jAMmYsaefepsDZXnUTHU5Pgt6.vercel.app/?view=dashboard',
+        url: 'https://due-diligence-dashboard-n3a5pso7o-bradasher.vercel.app/?view=dashboard',
         description: 'Cohort retention tools, banking add-back rules, and card anchors across all 21 dashboard tabs.',
     },
     {
@@ -46,7 +46,7 @@ export const IMMUTABLE_RELEASES: ImmutableRelease[] = [
         title: 'Release PR #10: Customer Cohort Retention & Banking Taxonomy',
         commit: '7dab0fc',
         date: '2026-08-31',
-        url: 'https://due-diligence-dashboard-4xzacH74TjWcrBuJD6vmkeX6Eqdp.vercel.app/?view=dashboard',
+        url: 'https://due-diligence-dashboard-8sk84v6m9-bradasher.vercel.app/?view=dashboard',
         description: 'Customer cohort retention heatmap, institutional add-back taxonomy, and disallowance calculator.',
     },
     {
@@ -55,7 +55,7 @@ export const IMMUTABLE_RELEASES: ImmutableRelease[] = [
         title: 'Release PR #7: Quick Deal Questionnaire & Baseline Cockpit',
         commit: '998cd73',
         date: '2026-08-31',
-        url: 'https://due-diligence-dashboard-EPRr7Afpr1mYazr1jqPjR9Kgu2rC.vercel.app/?view=dashboard',
+        url: 'https://due-diligence-dashboard-10ib5zxu2-bradasher.vercel.app/?view=dashboard',
         description: 'Quick Deal Questionnaire engine, baseline M&A diligence workspace, and financial models.',
     },
 ]
@@ -66,7 +66,7 @@ export function getImmutableReleases(): ImmutableRelease[] {
 
 export function getFallbackStableUrl(): string {
     const previous = IMMUTABLE_RELEASES.find(r => r.isPreviousStable)
-    return previous ? previous.url : 'https://due-diligence-dashboard-4s3QricmwtJsPxZC95mGnAZkMm2K.vercel.app/?view=dashboard'
+    return previous ? previous.url : 'https://due-diligence-dashboard-gys3h84i8-bradasher.vercel.app/?view=dashboard'
 }
 
 export function getCurrentBuildInfo(): { commit: string; builtAt: string } {
