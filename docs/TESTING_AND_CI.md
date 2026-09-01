@@ -138,13 +138,15 @@ npx tsx scripts/run-evals.ts
 
 The CI workflow is defined in [`.github/workflows/eval-regression.yml`](../.github/workflows/eval-regression.yml) and executes on every `push` and `pull_request` targeting `main`.
 
-### Workflow Step Breakdown:
-1. **Environment Setup**: Provisions Ubuntu container with Node `22.x`.
-2. **Dependency Installation**: Runs `npm ci` (root) and `npm ci --prefix frontend`.
-3. **TypeScript Typecheck Gate**: Runs `npm --prefix frontend run typecheck` (`tsc --noEmit`).
-4. **Vitest Unit Test Gate**: Runs `npm --prefix frontend test` (871 tests).
-5. **API Integration Gate**: Runs `npm --prefix frontend run test:api` (26 loopback HTTP tests, no external network or secrets).
-6. **Production Build Gate**: Runs `npm --prefix frontend run build` (Vite bundle verification).
-7. **Playwright Chromium Install & E2E Gate**: Installs Chromium binaries and runs `npm --prefix frontend run test:e2e` (15 browser tests), then uploads the HTML report even after a failure.
-8. **AI Eval Regression Gate**: Runs `npx tsx scripts/run-evals.ts` with `EVAL_MIN_SCORE=80`.
-9. **Summary & Artifact Upload**: Generates GitHub Step Summary and uploads eval report artifacts.
+### Workflow Step Breakdown & Performance Optimizations:
+1. **Concurrency Controls**: Uses `concurrency: cancel-in-progress` to automatically abort redundant in-flight runs on the same branch when new commits are pushed.
+2. **15-Minute Timeout Guard**: Sets `timeout-minutes: 15` to protect CI runner quotas from hanging processes.
+3. **Global npm Dependency Cache**: Uses `setup-node@v4` with `cache: 'npm'` targeting both `package-lock.json` and `frontend/package-lock.json` for fast dependency hydration.
+4. **Playwright Chromium Cache**: Uses `actions/cache@v4` on `~/.cache/ms-playwright` to restore browser binaries in ~1s and skip redundant downloads.
+5. **TypeScript Typecheck Gate**: Runs `npm --prefix frontend run typecheck` (`tsc --noEmit`).
+6. **Vitest Unit Test Gate**: Runs `npm --prefix frontend test` (871 tests).
+7. **API Integration Gate**: Runs `npm --prefix frontend run test:api` (26 loopback HTTP tests, zero external network or secrets).
+8. **Production Build Gate**: Runs `npm --prefix frontend run build` (Vite bundle verification).
+9. **Playwright Chromium E2E Gate**: Runs `npm --prefix frontend run test:e2e` (15 browser tests), uploading HTML report artifacts on failure.
+10. **AI Eval Regression Gate**: Runs `npx tsx scripts/run-evals.ts` with `EVAL_MIN_SCORE=80`.
+11. **Summary & Artifact Upload**: Generates GitHub Step Summary and uploads eval report artifacts.
