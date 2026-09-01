@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { Download, FileJson, FileText, Newspaper } from 'lucide-react'
+import { Download, FileJson, FileText, Newspaper, FileSpreadsheet, Loader2 } from 'lucide-react'
 
 import { Button } from '../lib/shadcn/button'
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
@@ -234,6 +234,30 @@ export default function ExportDealButton({ model, synthesis, projectName }: Prop
         setShowMenu(false)
     }, [model, synthesis, projectName])
 
+    const [isExportingExcel, setIsExportingExcel] = useState(false)
+
+    const handleExcel = useCallback(async () => {
+        setIsExportingExcel(true)
+        try {
+            const { generateLiveExcelModel } = await import('../utils/excelModelGenerator')
+            const blob = await generateLiveExcelModel({ model, synthesis, projectName })
+            const safeName = projectName.replace(/[^a-zA-Z0-9-_]/g, '_').slice(0, 50) || 'deal'
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = `${safeName}_financial_model.xlsx`
+            document.body.appendChild(a)
+            a.click()
+            document.body.removeChild(a)
+            setTimeout(() => URL.revokeObjectURL(url), 1000)
+        } catch (err) {
+            console.error('Failed to export Excel model:', err)
+        } finally {
+            setIsExportingExcel(false)
+            setShowMenu(false)
+        }
+    }, [model, synthesis, projectName])
+
     return (
         <div className="relative">
             <Button
@@ -244,13 +268,28 @@ export default function ExportDealButton({ model, synthesis, projectName }: Prop
                 className="gap-2 px-4 py-2 text-sm"
                 onClick={() => setShowMenu(!showMenu)}
             >
-                <Download className="h-4 w-4" />
+                {isExportingExcel ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                ) : (
+                    <Download className="h-4 w-4" />
+                )}
                 Export
             </Button>
             {showMenu && (
                 <>
                     <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
-                    <div className="absolute right-0 top-full z-50 mt-1 w-56 rounded-md border border-border bg-popover p-1 shadow-lg">
+                    <div className="absolute right-0 top-full z-50 mt-1 w-64 rounded-md border border-border bg-popover p-1 shadow-lg">
+                        <button
+                            onClick={handleExcel}
+                            disabled={isExportingExcel}
+                            className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm font-medium text-foreground hover:bg-muted"
+                        >
+                            <FileSpreadsheet className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                            <div className="text-left">
+                                <p>Live Excel Model (.xlsx)</p>
+                                <p className="text-[10px] text-muted-foreground">3-Statement with active formulas</p>
+                            </div>
+                        </button>
                         <button
                             onClick={handleSnapshot}
                             className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-foreground hover:bg-muted"

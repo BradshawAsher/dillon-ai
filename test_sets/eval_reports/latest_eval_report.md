@@ -1,6 +1,6 @@
 # Eval Regression Report
 
-- **Generated:** 2026-09-01T19:32:36.984Z
+- **Generated:** 2026-09-01T20:04:01.130Z
 - **Overall:** 98% (78/78 docs passing) — SHIP-READY (PASS)
 - **Regression gate:** threshold 80% → ✅ PASS
 - **Dual-mode accuracy:** Pre-LOI Discovery 99% · Post-LOI Negotiation 95%

@@ -16,6 +16,7 @@ import { getStoredUser } from '../services/supabaseAuth'
 import { getUserModelConfig, mapModelNameToApiIdentifier } from './ApiKeyModal'
 import { recalculateAdjustedEbitdaWithDisallowances, classifyAddBackCategory, DEFAULT_CLASSIFIED_ADD_BACKS } from '../utils/addBackTaxonomy'
 import { getCohortsForProject, computeCohortSummary } from '../utils/cohortRetention'
+import { calculateWorkingCapitalPeg } from '../utils/workingCapitalPeg'
 
 export type ResponseTier = 'cloud_ai' | 'direct_llm' | 'local_heuristics'
 
@@ -274,7 +275,7 @@ function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealMo
   - tab:diagnostics (anchors: #deal-diagnostics, #diag-thesis, #diag-decision, #diag-quick-wins, #diag-strengths, #diag-risk-summary, #diag-risk-matrix, #diag-key-person, #diag-owner-dep, #diag-diligence-comp, #diag-closing-checklist, #diag-seller-qa, #diag-mgmt-questions, #diag-playbook, #diag-negotiation-impact, #diag-timeline, #diag-investor-readiness, #diag-term-sheet, #diag-dd-requests)
   - tab:diligence (anchors: #diligence-documents, #diligence-quality, #add-back-quality-card, #customer-concentration-card, #cohort-retention-card, #diligence-project-synth)
   - tab:synthesis (anchors: #synthesis-judgment, #synthesis-valuation, #synthesis-red-flags)
-  - tab:structure (anchors: #structure-sources-uses, #structure-debt-schedule, #structure-covenants, #structure-stack, #structure-leverage, #structure-dscr, #structure-financing)
+  - tab:structure (anchors: #structure-sources-uses, #structure-debt-schedule, #structure-covenants, #structure-stack, #structure-leverage, #structure-dscr, #structure-financing, #structure-working-capital-peg)
   - tab:valuation (anchors: #valuation-summary, #valuation-multiples, #valuation-dcf, #valuation-precedent, #valuation-gap, #valuation-comps, #valuation-sensitivity, #valuation-risk-adjusted)
   - tab:returns (anchors: #returns-summary, #returns-waterfall, #returns-sensitivity, #returns-cashflow, #returns-all-cash, #returns-financed, #returns-scenario, #returns-base, #returns-cash-on-cash, #returns-payback, #returns-hold-period)
   - tab:growth (anchors: #growth-projections, #growth-scenarios, #growth-drivers, #growth-revenue-bridge, #growth-sensitivity, #growth-value-creation, #growth-levers, #growth-leverage)
@@ -293,7 +294,9 @@ function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealMo
 
 ## Deep Diligence Feature Highlights:
 - Customer Cohort Retention & Churn Engine: Direct users to [Cohort Matrix](tab:analysis#analysis-cohort-retention) or [Cohort Retention](tab:diligence#cohort-retention-card). Explain Logo Count Retention (%) vs Net Revenue Retention (NRR %) and highlight when annual price increases mask customer logo attrition.
-- Institutional Banking Add-Back Engine: Direct users to [Add-Back Banking Rules](tab:diligence#add-back-quality-card). Explain SBA 7(a) disallowances for non-essential perks (luxury autos, family salaries, discretionary travel), defensible 1-time items, and calculate how disallowed add-backs reduce normalized EBITDA and lower the justified purchase price.`)
+- Institutional Banking Add-Back Engine: Direct users to [Add-Back Banking Rules](tab:diligence#add-back-quality-card). Explain SBA 7(a) disallowances for non-essential perks (luxury autos, family salaries, discretionary travel), defensible 1-time items, and calculate how disallowed add-backs reduce normalized EBITDA and lower the justified purchase price.
+- Target Working Capital (NWC) Peg Calculator & APA Contract Clause: Direct users to [Target Working Capital Peg](tab:structure#structure-working-capital-peg). Explain trailing 6/12/24-month rolling average benchmarks, seasonal swing volatility (±%), zero-adjustment collar bandwidths, and definitive purchase agreement (Section 2.4) closing cash adjustments.
+- SBA 7(a) & Senior Debt Service Sensitivity: Direct users to [Debt Service Sensitivity](tab:structure#structure-dscr). Explain the 2D matrix modeling variable interest rate shocks (+100 to +300 bps) against EBITDA drops with strict SBA 1.15x covenant breach warnings.`)
 
     return parts.join('\n')
 }
@@ -1512,13 +1515,13 @@ export const CHAT_AGENT_OPENAI_TOOLS = [
         type: 'function',
         function: {
             name: 'calculate_deal_financials',
-            description: 'Calculate crucial M&A financial metrics such as Debt Service Coverage Ratio (DSCR), Seller Discretionary Earnings (SDE) bridge, implied EBITDA multiples, SBA 7(a) loan amortizations, and SBA banking add-back disallowance re-pricing.',
+            description: 'Calculate crucial M&A financial metrics such as Debt Service Coverage Ratio (DSCR), Seller Discretionary Earnings (SDE) bridge, implied EBITDA multiples, SBA 7(a) loan amortizations, SBA banking add-back disallowance re-pricing, and Target Working Capital (NWC) Pegs with APA legal clauses.',
             parameters: {
                 type: 'object',
                 properties: {
                     operation: {
                         type: 'string',
-                        enum: ['dscr', 'sde_bridge', 'ebitda_multiple', 'loan_amortization', 'add_back_disallowance'],
+                        enum: ['dscr', 'sde_bridge', 'ebitda_multiple', 'loan_amortization', 'add_back_disallowance', 'nwc_peg'],
                         description: 'The financial calculation to perform'
                     },
                     operatingCashFlow: { type: 'number', description: 'Annual operating cash flow or EBITDA for DSCR' },
@@ -1531,7 +1534,9 @@ export const CHAT_AGENT_OPENAI_TOOLS = [
                     disallowedAddBacks: { type: 'number', description: 'Amount of personal perks or unverified add-backs disallowed by SBA lenders' },
                     targetMultiple: { type: 'number', description: 'Valuation multiple (e.g. 4.5 for 4.5x EBITDA)' },
                     adjustedEbitda: { type: 'number', description: 'Confirmed adjusted EBITDA' },
-                    purchasePrice: { type: 'number', description: 'Total transaction enterprise value or purchase price' }
+                    purchasePrice: { type: 'number', description: 'Total transaction enterprise value or purchase price' },
+                    timeframe: { type: 'string', enum: ['6m', '12m', '24m'], description: 'Rolling timeframe for NWC peg (6m, 12m, 24m)' },
+                    collarPercent: { type: 'number', description: 'Zero-adjustment collar bandwidth percentage (e.g. 5 for ±5%)' }
                 },
                 required: ['operation']
             }
@@ -1577,13 +1582,13 @@ export const CHAT_AGENT_OPENAI_TOOLS = [
 export const CHAT_AGENT_ANTHROPIC_TOOLS = [
     {
         name: 'calculate_deal_financials',
-        description: 'Calculate crucial M&A financial metrics such as Debt Service Coverage Ratio (DSCR), Seller Discretionary Earnings (SDE) bridge, implied EBITDA multiples, SBA 7(a) loan amortizations, and SBA banking add-back disallowance re-pricing.',
+        description: 'Calculate crucial M&A financial metrics such as Debt Service Coverage Ratio (DSCR), Seller Discretionary Earnings (SDE) bridge, implied EBITDA multiples, SBA 7(a) loan amortizations, SBA banking add-back disallowance re-pricing, and Target Working Capital (NWC) Pegs with APA legal clauses.',
         input_schema: {
             type: 'object',
             properties: {
                 operation: {
                     type: 'string',
-                    enum: ['dscr', 'sde_bridge', 'ebitda_multiple', 'loan_amortization', 'add_back_disallowance'],
+                    enum: ['dscr', 'sde_bridge', 'ebitda_multiple', 'loan_amortization', 'add_back_disallowance', 'nwc_peg'],
                     description: 'The financial calculation to perform'
                 },
                 operatingCashFlow: { type: 'number', description: 'Annual operating cash flow or EBITDA for DSCR' },
@@ -1596,7 +1601,9 @@ export const CHAT_AGENT_ANTHROPIC_TOOLS = [
                 disallowedAddBacks: { type: 'number', description: 'Amount of personal perks or unverified add-backs disallowed by SBA lenders' },
                 targetMultiple: { type: 'number', description: 'Valuation multiple (e.g. 4.5 for 4.5x EBITDA)' },
                 adjustedEbitda: { type: 'number', description: 'Confirmed adjusted EBITDA' },
-                purchasePrice: { type: 'number', description: 'Total transaction enterprise value or purchase price' }
+                purchasePrice: { type: 'number', description: 'Total transaction enterprise value or purchase price' },
+                timeframe: { type: 'string', enum: ['6m', '12m', '24m'], description: 'Rolling timeframe for NWC peg (6m, 12m, 24m)' },
+                collarPercent: { type: 'number', description: 'Zero-adjustment collar bandwidth percentage (e.g. 5 for ±5%)' }
             },
             required: ['operation']
         }
@@ -1734,6 +1741,21 @@ export function executeClientSideTool(name: string, args: any, context: ClientSi
                 monthlyPayment: Math.round(monthlyPayment),
                 totalInterestPaid: Math.round(totalInterest),
                 totalCostOfDebt: Math.round(totalPaid)
+            }
+        }
+        if (op === 'nwc_peg' || op === 'working_capital_peg') {
+            const tf = (args.timeframe || '12m') as '6m' | '12m' | '24m'
+            const collar = Number(args.collarPercent || 5)
+            const result = calculateWorkingCapitalPeg(context.model, tf, collar)
+            return {
+                operation: 'nwc_peg',
+                timeframe: result.selectedTimeframe,
+                targetPeg: `$${result.targetPeg.toLocaleString()}`,
+                collarBandwidth: `±${result.collarBandPercent}% ($${result.collarLowerLimit.toLocaleString()} – $${result.collarUpperLimit.toLocaleString()})`,
+                seasonalSwing: `$${result.nwcSwing.toLocaleString()} (±${result.volatilityPercent}% volatility)`,
+                closingAdjustmentRule: 'Dollar-for-dollar cash adjustment outside collar limits.',
+                definitiveClauseSummary: 'Section 2.4 GAAP normalized average closing adjustment',
+                guidance: 'Direct user to [Target Working Capital Peg](tab:structure#structure-working-capital-peg) on the Deal Structure tab.'
             }
         }
     }

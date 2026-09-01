@@ -226,12 +226,28 @@ describe('DealChatPanel Client-Side AI Tools', () => {
         expect(result.guidance).toContain('tab:diligence#add-back-quality-card')
     })
 
-    it('includes add_back_disallowance and cohort options in tool schemas', async () => {
+    it('calculates Target Working Capital (NWC) Peg and APA contract clause', async () => {
+        const { executeClientSideTool } = await import('./DealChatPanel')
+        const result = executeClientSideTool('calculate_deal_financials', {
+            operation: 'nwc_peg',
+            timeframe: '12m',
+            collarPercent: 5
+        }, mockContext)
+
+        expect(result.operation).toBe('nwc_peg')
+        expect(result.timeframe).toBe('12m')
+        expect(result.targetPeg).toBeDefined()
+        expect(result.collarBandwidth).toContain('±5%')
+        expect(result.guidance).toContain('tab:structure#structure-working-capital-peg')
+    })
+
+    it('includes add_back_disallowance, nwc_peg, and cohort options in tool schemas', async () => {
         const { CHAT_AGENT_OPENAI_TOOLS, CHAT_AGENT_ANTHROPIC_TOOLS } = await import('./DealChatPanel')
         
         const openAiCalcTool = CHAT_AGENT_OPENAI_TOOLS.find(t => t.function.name === 'calculate_deal_financials')
         const openAiCalcProps = openAiCalcTool?.function.parameters?.properties as Record<string, any> | undefined
         expect(openAiCalcProps?.operation?.enum).toContain('add_back_disallowance')
+        expect(openAiCalcProps?.operation?.enum).toContain('nwc_peg')
 
         const openAiQueryTool = CHAT_AGENT_OPENAI_TOOLS.find(t => t.function.name === 'query_deal_data')
         const openAiQueryProps = openAiQueryTool?.function.parameters?.properties as Record<string, any> | undefined
@@ -241,6 +257,7 @@ describe('DealChatPanel Client-Side AI Tools', () => {
         const anthropicCalcTool = CHAT_AGENT_ANTHROPIC_TOOLS.find(t => t.name === 'calculate_deal_financials')
         const anthropicCalcProps = anthropicCalcTool?.input_schema?.properties as Record<string, any> | undefined
         expect(anthropicCalcProps?.operation?.enum).toContain('add_back_disallowance')
+        expect(anthropicCalcProps?.operation?.enum).toContain('nwc_peg')
 
         const anthropicQueryTool = CHAT_AGENT_ANTHROPIC_TOOLS.find(t => t.name === 'query_deal_data')
         const anthropicQueryProps = anthropicQueryTool?.input_schema?.properties as Record<string, any> | undefined
