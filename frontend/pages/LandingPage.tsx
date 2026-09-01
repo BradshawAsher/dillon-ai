@@ -51,13 +51,17 @@ export default function LandingPage({ onLaunchDashboard, onGoToLogin, currentUse
 
     const handleStartTourFromLanding = (tourId: TourPlaylistId) => {
         setShowWalkthroughModal(false)
+        const url = new URL(window.location.href)
         if (tourId === 'core-fast') {
-            window.location.hash = 'walkthrough=core'
+            url.searchParams.set('tour', 'core')
         } else if (tourId === 'deep-dive') {
-            window.location.hash = 'walkthrough=deep'
+            url.searchParams.set('tour', 'deep')
         } else if (tourId === 'interactive-quest') {
-            window.location.hash = 'walkthrough=quest'
+            url.searchParams.set('tour', 'quest')
+        } else if (tourId === 'quick-deal-questionnaire') {
+            url.searchParams.set('tour', 'questionnaire')
         }
+        window.history.replaceState({}, '', url.toString())
         onLaunchDashboard()
     }
     const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0)
@@ -446,6 +450,8 @@ export default function LandingPage({ onLaunchDashboard, onGoToLogin, currentUse
                                         handleStartTourFromLanding('deep-dive')
                                     } else if (demoId === 'native-quest') {
                                         handleStartTourFromLanding('interactive-quest')
+                                    } else if (demoId === 'native-questionnaire') {
+                                        handleStartTourFromLanding('quick-deal-questionnaire')
                                     } else {
                                         setSelectedWalkthroughDemoId(demoId)
                                         setShowWalkthroughModal(true)

@@ -852,15 +852,18 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     // Auto-launch walkthrough if requested via URL hash or search params
     useEffect(() => {
         if (typeof window === 'undefined') return
-        const hash = window.location.hash || ''
-        const search = window.location.search || ''
-        const fullQuery = `${hash}&${search}`
-        if (fullQuery.includes('walkthrough=core') || fullQuery.includes('tour=core')) {
+        const searchParams = new URLSearchParams(window.location.search)
+        const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''))
+        const requestedTour = searchParams.get('tour') ?? hashParams.get('walkthrough') ?? hashParams.get('tour')
+        if (requestedTour === 'core') {
             walkthrough.startTour('core-fast')
-        } else if (fullQuery.includes('walkthrough=deep') || fullQuery.includes('tour=deep')) {
+        } else if (requestedTour === 'deep') {
             walkthrough.startTour('deep-dive')
-        } else if (fullQuery.includes('walkthrough=quest') || fullQuery.includes('tour=quest')) {
+        } else if (requestedTour === 'quest') {
             walkthrough.startTour('interactive-quest')
+        } else if (requestedTour === 'questionnaire') {
+            const timer = window.setTimeout(() => walkthrough.startTour('quick-deal-questionnaire'), 100)
+            return () => window.clearTimeout(timer)
         }
     }, [])
 
@@ -4041,6 +4044,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                             handleStartTour('deep-dive')
                         } else if (demoId === 'native-quest') {
                             handleStartTour('interactive-quest')
+                        } else if (demoId === 'native-questionnaire') {
+                            handleStartTour('quick-deal-questionnaire')
                         } else {
                             setSelectedWalkthroughDemoId(demoId)
                             setIsWalkthroughModalOpen(true)

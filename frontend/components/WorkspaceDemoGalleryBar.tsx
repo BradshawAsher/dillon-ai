@@ -10,12 +10,13 @@ import {
     Compass,
     Target,
     Zap,
+    Calculator,
 } from 'lucide-react'
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
 import type { WalkthroughResumeState } from './walkthrough/walkthroughTypes'
 
-export type DemoVariantId = 'native-core' | 'native-deep' | 'native-quest' | 'short-yt' | 'short-supademo' | 'deep-supademo'
+export type DemoVariantId = 'native-core' | 'native-deep' | 'native-quest' | 'native-questionnaire' | 'short-yt' | 'short-supademo' | 'deep-supademo'
 
 export interface DemoItem {
     id: DemoVariantId
@@ -65,6 +66,18 @@ export const WORKSPACE_DEMOS: DemoItem[] = [
         status: 'active',
         icon: Target,
         badgeText: 'Try It Yourself',
+        badgeVariant: 'secondary',
+    },
+    {
+        id: 'native-questionnaire',
+        title: 'Quick Deal Questionnaire Tutorial',
+        shortTitle: 'Quick Deal Questionnaire',
+        category: 'Native Tour',
+        duration: '~1 min',
+        description: 'Build an initial valuation and diligence workspace from structured deal assumptions without uploading files.',
+        status: 'active',
+        icon: Calculator,
+        badgeText: 'No Uploads',
         badgeVariant: 'secondary',
     },
     {
@@ -188,7 +201,7 @@ export function WorkspaceDemoGalleryBar({ onSelectDemo, resumeState, onResumeTou
                         Interactive Walkthroughs &amp; Masterclasses
                     </h3>
                     <Badge variant="outline" className="text-[10px] font-mono text-primary border-primary/30">
-                        6 DEMOS AVAILABLE
+                        {WORKSPACE_DEMOS.length} DEMOS AVAILABLE
                     </Badge>
                 </div>
 
@@ -234,6 +247,7 @@ export function WorkspaceDemoGalleryBar({ onSelectDemo, resumeState, onResumeTou
                     const isCore = demo.id === 'native-core'
                     const isDeep = demo.id === 'native-deep'
                     const isQuest = demo.id === 'native-quest'
+                    const isQuestionnaire = demo.id === 'native-questionnaire'
                     const isYt = demo.id === 'short-yt'
                     const isSupademoShort = demo.id === 'short-supademo'
                     const isSupademoDeep = demo.id === 'deep-supademo'
@@ -258,6 +272,11 @@ export function WorkspaceDemoGalleryBar({ onSelectDemo, resumeState, onResumeTou
                         iconBgClass = 'bg-amber-500 text-white shadow-xs'
                         badgeClass = 'bg-amber-500/20 text-amber-500 border-amber-500/40'
                         actionText = 'text-amber-500'
+                    } else if (isQuestionnaire) {
+                        borderClass = 'border-violet-500/40 bg-gradient-to-br from-violet-500/10 via-card to-card hover:border-violet-500 hover:shadow-md hover:shadow-violet-500/10'
+                        iconBgClass = 'bg-violet-600 text-white shadow-xs'
+                        badgeClass = 'bg-violet-500/20 text-violet-600 dark:text-violet-400 border-violet-500/40'
+                        actionText = 'text-violet-600 dark:text-violet-400'
                     } else if (isYt) {
                         borderClass = 'border-red-500/30 bg-gradient-to-br from-red-500/5 via-card to-card hover:border-red-500/70 hover:shadow-md hover:shadow-red-500/10'
                         iconBgClass = 'bg-red-500 text-white shadow-xs'
@@ -278,6 +297,7 @@ export function WorkspaceDemoGalleryBar({ onSelectDemo, resumeState, onResumeTou
                     return (
                         <div
                             key={demo.id}
+                            data-demo-id={demo.id}
                             onClick={() => onSelectDemo(demo.id)}
                             role="button"
                             tabIndex={0}
