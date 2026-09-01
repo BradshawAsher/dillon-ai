@@ -72,7 +72,7 @@ const frontendDir = path.dirname(fileURLToPath(import.meta.url))
 const distDir = path.resolve(frontendDir, 'dist')
 const port = Number(process.env.PORT ?? 3000)
 // Temporary open-access mode. Set ENABLE_ACCESS_GATES=true to restore the
-// shared-password flow, even when APP_PASSWORD remains configured on Render.
+// shared-password flow, even when APP_PASSWORD remains configured.
 const accessGatesEnabled = process.env.ENABLE_ACCESS_GATES === 'true'
 const appPassword = accessGatesEnabled ? (process.env.APP_PASSWORD ?? '') : ''
 

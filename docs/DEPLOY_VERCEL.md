@@ -1,7 +1,7 @@
 # Deploying on Vercel
 
-This is an additive deployment path. The existing Render service, its
-render.yaml, and frontend/server.ts remain unchanged as a rollback option.
+This guide details the Vercel production deployment configuration.
+The standalone Express server (`frontend/server.ts`) also supports local operation.
 
 ## Create the Vercel project
 
@@ -13,7 +13,7 @@ render.yaml, and frontend/server.ts remain unchanged as a rollback option.
    Vite app, and exposes the serverless API routes under `/api/diligence`.
 5. Add these server-only Production and Preview environment variables:
 
-   N8N_WEBHOOK_SECRET=<the existing Render secret>
+   N8N_WEBHOOK_SECRET=<the configured n8n webhook secret>
    SUPABASE_SERVICE_ROLE_KEY=<the key for the configured Supabase project>
 
 Never expose either secret with a `VITE_` prefix or commit its value. The API
@@ -78,8 +78,6 @@ For recovery and opt-in storage diagnostics, see
 does not authorize an automatic retry: inspect history and executions first.
 
 ## Rollback
-
-Keep the Render service deployed while testing Vercel. If Vercel does not
-validate cleanly, continue using the existing Render URL; no code or workflow
-rollback is necessary. If a production Vercel deployment needs to be undone,
-promote the previous Vercel deployment or direct users back to Render.
+ 
+If a production Vercel deployment needs to be rolled back, use the Vercel Dashboard
+or CLI (`vercel rollback`) to instantly promote the previous successful deployment.
