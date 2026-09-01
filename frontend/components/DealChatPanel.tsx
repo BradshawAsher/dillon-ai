@@ -293,10 +293,15 @@ function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealMo
   - tab:account (anchors: #account-api-keys, #account-profile)
 
 ## Deep Diligence Feature Highlights:
+- Live Formula Multi-Tab Excel (.xlsx) Model Generator: Inform users that MergeWorks HAS a live-formula 4-tab Excel workbook generator located at **Top Header Navigation Bar > Export > Live Excel Model (.xlsx)** or via Command Palette ('Ctrl+K' -> search 'Live Excel Model'). The export dynamically generates active formulas (=SUM(), =IRR(), =DSCR(), =PPMT/IPMT), 5-year projections, LBO sensitivity matrices, and evidence audit trails.
 - Customer Cohort Retention & Churn Engine: Direct users to [Cohort Matrix](tab:analysis#analysis-cohort-retention) or [Cohort Retention](tab:diligence#cohort-retention-card). Explain Logo Count Retention (%) vs Net Revenue Retention (NRR %) and highlight when annual price increases mask customer logo attrition.
 - Institutional Banking Add-Back Engine: Direct users to [Add-Back Banking Rules](tab:diligence#add-back-quality-card). Explain SBA 7(a) disallowances for non-essential perks (luxury autos, family salaries, discretionary travel), defensible 1-time items, and calculate how disallowed add-backs reduce normalized EBITDA and lower the justified purchase price.
 - Target Working Capital (NWC) Peg Calculator & APA Contract Clause: Direct users to [Target Working Capital Peg](tab:structure#structure-working-capital-peg). Explain trailing 6/12/24-month rolling average benchmarks, seasonal swing volatility (±%), zero-adjustment collar bandwidths, and definitive purchase agreement (Section 2.4) closing cash adjustments.
-- SBA 7(a) & Senior Debt Service Sensitivity: Direct users to [Debt Service Sensitivity](tab:structure#structure-dscr). Explain the 2D matrix modeling variable interest rate shocks (+100 to +300 bps) against EBITDA drops with strict SBA 1.15x covenant breach warnings.`)
+- SBA 7(a) & Senior Debt Service Sensitivity: Direct users to [Debt Service Sensitivity](tab:structure#structure-dscr). Explain the 2D matrix modeling variable interest rate shocks (+100 to +300 bps) against EBITDA drops with strict SBA 1.15x covenant breach warnings.
+- Command Palette Search: Inform users they can press 'Ctrl+K' (or 'Cmd+K') or click the search bar at any time to jump directly to any card, model, or export action.
+
+## Mandatory Navigation Rule:
+- When answering questions about where to find a feature, model, or calculation, ALWAYS provide the exact UI navigation breadcrumb (e.g. "Top Navigation Bar > Export > Live Excel Model" or clickable markdown links like [Working Capital Peg](tab:structure#structure-working-capital-peg)). NEVER claim a feature does not exist if it is in the active tabs or export menu.`)
 
     return parts.join('\n')
 }

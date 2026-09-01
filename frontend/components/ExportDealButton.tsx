@@ -278,38 +278,58 @@ export default function ExportDealButton({ model, synthesis, projectName }: Prop
             {showMenu && (
                 <>
                     <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
-                    <div className="absolute right-0 top-full z-50 mt-1 w-64 rounded-md border border-border bg-popover p-1 shadow-lg">
+                    <div className="absolute right-0 top-full z-50 mt-1.5 w-72 rounded-lg border border-border bg-popover p-1.5 shadow-xl">
+                        <div className="px-2 py-1 mb-1 border-b border-border/50">
+                            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Export Deal Package</p>
+                        </div>
                         <button
                             onClick={handleExcel}
                             disabled={isExportingExcel}
-                            className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm font-medium text-foreground hover:bg-muted"
+                            className="flex w-full items-start gap-3 rounded-md p-2 text-sm font-medium text-foreground hover:bg-muted/80 transition-colors"
                         >
-                            <FileSpreadsheet className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                            <div className="text-left">
-                                <p>Live Excel Model (.xlsx)</p>
-                                <p className="text-[10px] text-muted-foreground">3-Statement with active formulas</p>
+                            <div className="mt-0.5 rounded p-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                                <FileSpreadsheet className="h-4 w-4" />
+                            </div>
+                            <div className="text-left flex-1">
+                                <p className="font-semibold text-xs">Live Excel Model (.xlsx)</p>
+                                <p className="text-[11px] text-muted-foreground">3-Statement, Debt Amortization & IRR formulas</p>
                             </div>
                         </button>
                         <button
                             onClick={handleSnapshot}
-                            className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-foreground hover:bg-muted"
+                            className="flex w-full items-start gap-3 rounded-md p-2 text-sm text-foreground hover:bg-muted/80 transition-colors"
                         >
-                            <Newspaper className="h-4 w-4 text-muted-foreground" />
-                            One-page snapshot
+                            <div className="mt-0.5 rounded p-1 bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                                <Newspaper className="h-4 w-4" />
+                            </div>
+                            <div className="text-left flex-1">
+                                <p className="font-semibold text-xs">One-Page Snapshot (.md)</p>
+                                <p className="text-[11px] text-muted-foreground">Clean executive deal brief for quick review</p>
+                            </div>
                         </button>
                         <button
                             onClick={handleMarkdown}
-                            className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-foreground hover:bg-muted"
+                            className="flex w-full items-start gap-3 rounded-md p-2 text-sm text-foreground hover:bg-muted/80 transition-colors"
                         >
-                            <FileText className="h-4 w-4 text-muted-foreground" />
-                            Summary (Markdown)
+                            <div className="mt-0.5 rounded p-1 bg-purple-500/10 text-purple-600 dark:text-purple-400">
+                                <FileText className="h-4 w-4" />
+                            </div>
+                            <div className="text-left flex-1">
+                                <p className="font-semibold text-xs">Full Diligence Memo (.md)</p>
+                                <p className="text-[11px] text-muted-foreground">Complete findings, red flags & valuation</p>
+                            </div>
                         </button>
                         <button
                             onClick={handleJson}
-                            className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-foreground hover:bg-muted"
+                            className="flex w-full items-start gap-3 rounded-md p-2 text-sm text-foreground hover:bg-muted/80 transition-colors"
                         >
-                            <FileJson className="h-4 w-4 text-muted-foreground" />
-                            Raw data (JSON)
+                            <div className="mt-0.5 rounded p-1 bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                                <FileJson className="h-4 w-4" />
+                            </div>
+                            <div className="text-left flex-1">
+                                <p className="font-semibold text-xs">Raw Deal Data (.json)</p>
+                                <p className="text-[11px] text-muted-foreground">Machine-readable model facts & synthesis</p>
+                            </div>
                         </button>
                     </div>
                 </>

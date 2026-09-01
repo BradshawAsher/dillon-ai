@@ -17,15 +17,33 @@ import {
     AlertTriangle,
     Sparkles,
     Upload,
+    FileSpreadsheet,
+    Calculator,
+    ShieldAlert,
+    Layers,
+    Scale,
+    Percent,
+    CheckSquare,
+    ListTodo,
+    HelpCircle,
+    Activity,
+    FileCheck,
+    CreditCard,
+    BarChart3,
+    PieChart,
+    Building2,
+    Users,
+    Target,
 } from 'lucide-react'
 
 type CommandPaletteProps = {
     open: boolean
     onClose: () => void
-    onSelectTab: (tab: string) => void
+    onSelectTab: (tab: string, anchor?: string) => void
     onToggleTheme: () => void
     onExportMarkdown: () => void
     onExportJson: () => void
+    onExportExcel?: () => void
     onShowShortcuts: () => void
     onOpenChat: () => void
     onCopySummary?: () => void
@@ -41,6 +59,8 @@ type Command = {
     icon: React.ReactNode
     action: () => void
     group: string
+    keywords?: string[]
+    badge?: string
 }
 
 export default function CommandPalette({
@@ -50,6 +70,7 @@ export default function CommandPalette({
     onToggleTheme,
     onExportMarkdown,
     onExportJson,
+    onExportExcel,
     onShowShortcuts,
     onOpenChat,
     onCopySummary,
@@ -64,10 +85,20 @@ export default function CommandPalette({
     const listRef = useRef<HTMLDivElement>(null)
 
     const commands: Command[] = [
+        // --- Core Actions & Quick Exports ---
+        ...(onExportExcel ? [{
+            id: 'export-excel-live',
+            label: 'Export Live Excel Model (.xlsx) — 3-Statement & Formulas',
+            icon: <FileSpreadsheet className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />,
+            action: onExportExcel,
+            group: 'Actions & Exports',
+            keywords: ['excel', 'xlsx', 'spreadsheet', 'google sheets', 'download', 'export', '3-statement', 'irr', 'dscr', 'lbo model', 'financial model'],
+            badge: 'Export'
+        }] : []),
         {
             id: 'scroll-to-intake',
             label: 'Project Intake / Upload Diligence Documents',
-            icon: <Upload className="h-4 w-4" />,
+            icon: <Upload className="h-4 w-4 text-primary" />,
             action: () => {
                 if (onScrollToUpload) {
                     onScrollToUpload()
@@ -77,118 +108,434 @@ export default function CommandPalette({
                 }
             },
             group: 'Navigation',
-        },
-        {
-            id: 'tab-overview',
-            label: 'Switch to Overview tab',
-            icon: <LayoutDashboard className="h-4 w-4" />,
-            action: () => onSelectTab('overview'),
-            group: 'Navigation',
-        },
-        {
-            id: 'tab-analysis',
-            label: 'Switch to Analysis tab',
-            icon: <FlaskConical className="h-4 w-4" />,
-            action: () => onSelectTab('analysis'),
-            group: 'Navigation',
-        },
-        {
-            id: 'tab-synthesis',
-            label: 'Switch to Synthesis tab',
-            icon: <Sparkles className="h-4 w-4" />,
-            action: () => onSelectTab('synthesis'),
-            group: 'Navigation',
-        },
-        {
-            id: 'tab-returns',
-            label: 'Switch to Returns tab',
-            icon: <TrendingUp className="h-4 w-4" />,
-            action: () => onSelectTab('returns'),
-            group: 'Navigation',
-        },
-        {
-            id: 'tab-growth',
-            label: 'Switch to Growth tab',
-            icon: <FlaskConical className="h-4 w-4" />,
-            action: () => onSelectTab('growth'),
-            group: 'Navigation',
-        },
-        {
-            id: 'tab-valuation',
-            label: 'Switch to Valuation tab',
-            icon: <DollarSign className="h-4 w-4" />,
-            action: () => onSelectTab('valuation'),
-            group: 'Navigation',
-        },
-        {
-            id: 'tab-deal-structure',
-            label: 'Switch to Deal Structure tab',
-            icon: <Handshake className="h-4 w-4" />,
-            action: () => onSelectTab('structure'),
-            group: 'Navigation',
-        },
-        {
-            id: 'tab-diligence',
-            label: 'Switch to Diligence tab',
-            icon: <FileSearch className="h-4 w-4" />,
-            action: () => onSelectTab('diligence'),
-            group: 'Navigation',
-        },
-        {
-            id: 'tab-documents',
-            label: 'Switch to Documents tab',
-            icon: <FileText className="h-4 w-4" />,
-            action: () => onSelectTab('documents'),
-            group: 'Navigation',
-        },
-        {
-            id: 'tab-history',
-            label: 'Switch to History tab',
-            icon: <Clock3 className="h-4 w-4" />,
-            action: () => onSelectTab('history'),
-            group: 'Navigation',
-        },
-        {
-            id: 'tab-errors',
-            label: 'Switch to Errors/Workflow tab',
-            icon: <AlertTriangle className="h-4 w-4" />,
-            action: () => onSelectTab('errors'),
-            group: 'Navigation',
-        },
-        {
-            id: 'toggle-dark-mode',
-            label: 'Toggle dark mode',
-            icon: <Moon className="h-4 w-4" />,
-            action: onToggleTheme,
-            group: 'Preferences',
-        },
-        {
-            id: 'export-markdown',
-            label: 'Export deal as Markdown',
-            icon: <FileDown className="h-4 w-4" />,
-            action: onExportMarkdown,
-            group: 'Actions',
-        },
-        {
-            id: 'export-json',
-            label: 'Export deal as JSON',
-            icon: <FileJson className="h-4 w-4" />,
-            action: onExportJson,
-            group: 'Actions',
-        },
-        {
-            id: 'show-shortcuts',
-            label: 'Show keyboard shortcuts',
-            icon: <Keyboard className="h-4 w-4" />,
-            action: onShowShortcuts,
-            group: 'Actions',
+            keywords: ['intake', 'upload', 'files', 'pdf', 'xlsx', 'documents', 'data room', 'vdr'],
+            badge: 'Top'
         },
         {
             id: 'open-chat',
-            label: 'Open AI chat assistant',
-            icon: <Bot className="h-4 w-4" />,
+            label: 'Open Dillon AI Diligence Chat Assistant',
+            icon: <Bot className="h-4 w-4 text-primary" />,
             action: onOpenChat,
-            group: 'Actions',
+            group: 'Actions & Exports',
+            keywords: ['chat', 'ai', 'dillon', 'assistant', 'ask', 'prompt', 'help'],
+            badge: 'AI'
+        },
+        {
+            id: 'export-markdown',
+            label: 'Export Deal Summary (.md Markdown)',
+            icon: <FileDown className="h-4 w-4" />,
+            action: onExportMarkdown,
+            group: 'Actions & Exports',
+            keywords: ['markdown', 'export', 'summary', 'memo', 'download'],
+            badge: 'Export'
+        },
+        {
+            id: 'export-json',
+            label: 'Export Raw Deal Data (.json)',
+            icon: <FileJson className="h-4 w-4" />,
+            action: onExportJson,
+            group: 'Actions & Exports',
+            keywords: ['json', 'raw data', 'facts', 'export', 'download', 'api'],
+            badge: 'Export'
+        },
+
+        // --- Deep-Link Financial Modeling & Structure Cards ---
+        {
+            id: 'card-nwc-peg',
+            label: 'Target Working Capital (NWC) Peg & APA Section 2.4 Clause',
+            icon: <Calculator className="h-4 w-4 text-emerald-500" />,
+            action: () => onSelectTab('structure', 'structure-working-capital-peg'),
+            group: 'Financial Modeling & Structure',
+            keywords: ['nwc', 'working capital', 'peg', 'collar', 'apa', 'clause', 'closing adjustment', 'inventory', 'ar', 'ap', 'section 2.4', 'seasonality'],
+            badge: 'Structure'
+        },
+        {
+            id: 'card-rate-shock',
+            label: 'SBA 7(a) & Senior Debt Service 2D Rate Shock Matrix',
+            icon: <Percent className="h-4 w-4 text-amber-500" />,
+            action: () => onSelectTab('structure', 'structure-dscr'),
+            group: 'Financial Modeling & Structure',
+            keywords: ['sba', '7a', 'rate shock', 'dscr', 'covenant', 'interest rate', 'stress test', 'breach', 'leverage', 'debt service'],
+            badge: 'Structure'
+        },
+        {
+            id: 'card-sources-uses',
+            label: 'Sources & Uses / Capital Structure Stack',
+            icon: <Layers className="h-4 w-4 text-blue-500" />,
+            action: () => onSelectTab('structure', 'structure-sources-uses'),
+            group: 'Financial Modeling & Structure',
+            keywords: ['sources', 'uses', 'capital structure', 'equity', 'senior debt', 'seller note', 'financing', 'stack'],
+            badge: 'Structure'
+        },
+        {
+            id: 'card-debt-schedule',
+            label: 'Debt Schedule & Loan Amortization',
+            icon: <CreditCard className="h-4 w-4 text-indigo-500" />,
+            action: () => onSelectTab('structure', 'structure-debt-schedule'),
+            group: 'Financial Modeling & Structure',
+            keywords: ['debt schedule', 'amortization', 'principal', 'interest', 'payments', 'balloon', 'term', 'loan'],
+            badge: 'Structure'
+        },
+        {
+            id: 'card-covenants',
+            label: 'Lender Covenants & Compliance Testing',
+            icon: <ShieldAlert className="h-4 w-4 text-rose-500" />,
+            action: () => onSelectTab('structure', 'structure-covenants'),
+            group: 'Financial Modeling & Structure',
+            keywords: ['covenants', 'leverage ratio', 'fixed charge', 'fccr', 'bank covenants', 'compliance'],
+            badge: 'Structure'
+        },
+        {
+            id: 'card-financing-comparison',
+            label: 'Financing Scenarios & Term Sheet Comparison',
+            icon: <Scale className="h-4 w-4 text-cyan-500" />,
+            action: () => onSelectTab('structure', 'structure-financing'),
+            group: 'Financial Modeling & Structure',
+            keywords: ['financing', 'comparison', 'sba vs conventional', 'mezzanine', 'lender term sheet'],
+            badge: 'Structure'
+        },
+
+        // --- Deep-Link Valuation & Returns Cards ---
+        {
+            id: 'card-dcf-valuation',
+            label: 'DCF Intrinsic Valuation Model',
+            icon: <BarChart3 className="h-4 w-4 text-emerald-500" />,
+            action: () => onSelectTab('valuation', 'valuation-dcf'),
+            group: 'Valuation & Returns',
+            keywords: ['dcf', 'discounted cash flow', 'wacc', 'terminal value', 'intrinsic value', 'unlevered cash flow'],
+            badge: 'Valuation'
+        },
+        {
+            id: 'card-trading-comps',
+            label: 'Trading Multiples & Precedent Transaction Comps',
+            icon: <Building2 className="h-4 w-4 text-blue-500" />,
+            action: () => onSelectTab('valuation', 'valuation-comps'),
+            group: 'Valuation & Returns',
+            keywords: ['comps', 'multiples', 'ev/ebitda', 'precedent transactions', 'market benchmark', 'peer valuation'],
+            badge: 'Valuation'
+        },
+        {
+            id: 'card-valuation-multiples',
+            label: 'Valuation Summary & Implied Multiples',
+            icon: <DollarSign className="h-4 w-4 text-emerald-600" />,
+            action: () => onSelectTab('valuation', 'valuation-multiples'),
+            group: 'Valuation & Returns',
+            keywords: ['valuation', 'multiples', 'ev', 'enterprise value', 'asking price', 'implied multiple'],
+            badge: 'Valuation'
+        },
+        {
+            id: 'card-lbo-returns',
+            label: 'LBO Returns Waterfall & Cash Flow Schedule',
+            icon: <TrendingUp className="h-4 w-4 text-emerald-500" />,
+            action: () => onSelectTab('returns', 'returns-waterfall'),
+            group: 'Valuation & Returns',
+            keywords: ['returns', 'lbo', 'waterfall', 'irr', 'moic', 'cash on cash', 'equity payout', 'hold period'],
+            badge: 'Returns'
+        },
+        {
+            id: 'card-irr-sensitivity',
+            label: 'IRR & MoIC Exit Multiple Sensitivity Matrix',
+            icon: <Activity className="h-4 w-4 text-teal-500" />,
+            action: () => onSelectTab('returns', 'returns-sensitivity'),
+            group: 'Valuation & Returns',
+            keywords: ['irr', 'moic', 'sensitivity', 'exit multiple', 'hold period', 'returns heatmap'],
+            badge: 'Returns'
+        },
+
+        // --- Deep-Link Diligence & Forensic Accounting Cards ---
+        {
+            id: 'card-cohort-retention',
+            label: 'Customer Cohort Retention & Churn Engine (NRR vs Logo)',
+            icon: <Users className="h-4 w-4 text-purple-500" />,
+            action: () => onSelectTab('analysis', 'analysis-cohort-retention'),
+            group: 'Diligence & Forensic Accounting',
+            keywords: ['cohort', 'retention', 'churn', 'nrr', 'net revenue retention', 'logo retention', 'attrition', 'customer lifetime'],
+            badge: 'Analysis'
+        },
+        {
+            id: 'card-add-back-rules',
+            label: 'Institutional Add-Back Banking Rules & SBA Disallowances',
+            icon: <FileCheck className="h-4 w-4 text-emerald-500" />,
+            action: () => onSelectTab('diligence', 'add-back-quality-card'),
+            group: 'Diligence & Forensic Accounting',
+            keywords: ['add-backs', 'addbacks', 'sba disallowance', 'owner perks', 'normalized ebitda', 'haircut', 'personal expenses'],
+            badge: 'Diligence'
+        },
+        {
+            id: 'card-ebitda-quality',
+            label: 'EBITDA Quality & SDE Normalization Bridge',
+            icon: <FlaskConical className="h-4 w-4 text-blue-500" />,
+            action: () => onSelectTab('analysis', 'analysis-ebitda-quality'),
+            group: 'Diligence & Forensic Accounting',
+            keywords: ['ebitda quality', 'reconstruction', 'bridge', 'sde', 'operating cash flow', 'adjustments'],
+            badge: 'Analysis'
+        },
+        {
+            id: 'card-customer-concentration',
+            label: 'Customer Concentration & Top Account Risk',
+            icon: <PieChart className="h-4 w-4 text-amber-500" />,
+            action: () => onSelectTab('diligence', 'customer-concentration-card'),
+            group: 'Diligence & Forensic Accounting',
+            keywords: ['concentration', 'top customer', '80/20', 'pareto', 'customer dependency', 'revenue concentration'],
+            badge: 'Diligence'
+        },
+        {
+            id: 'card-revenue-bridge',
+            label: 'Revenue Bridge & Value Creation Growth Levers',
+            icon: <TrendingUp className="h-4 w-4 text-emerald-500" />,
+            action: () => onSelectTab('growth', 'growth-revenue-bridge'),
+            group: 'Diligence & Forensic Accounting',
+            keywords: ['growth', 'revenue bridge', 'organic growth', 'pricing levers', 'cross-sell', 'cagr', 'volume'],
+            badge: 'Growth'
+        },
+        {
+            id: 'card-breakeven',
+            label: 'Breakeven & Operating Margin Sensitivity',
+            icon: <Activity className="h-4 w-4 text-indigo-500" />,
+            action: () => onSelectTab('analysis', 'analysis-breakeven'),
+            group: 'Diligence & Forensic Accounting',
+            keywords: ['breakeven', 'fixed cost', 'variable cost', 'operating leverage', 'margin safety'],
+            badge: 'Analysis'
+        },
+
+        // --- Deep-Link Deal Strategy & Execution Cards ---
+        {
+            id: 'card-negotiation-levers',
+            label: 'Negotiation Levers & Value Repricing Gap',
+            icon: <Handshake className="h-4 w-4 text-amber-500" />,
+            action: () => onSelectTab('negotiation', 'negotiation-levers'),
+            group: 'Deal Strategy & Negotiation',
+            keywords: ['negotiation', 'levers', 'repricing gap', 'seller concession', 'earnouts', 'holdback', 'discount'],
+            badge: 'Negotiation'
+        },
+        {
+            id: 'card-mgmt-questions',
+            label: 'Seller Q&A Strategy & Management Interview Questions',
+            icon: <ListTodo className="h-4 w-4 text-blue-500" />,
+            action: () => onSelectTab('analysis', 'analysis-mgmt-questions'),
+            group: 'Deal Strategy & Negotiation',
+            keywords: ['seller qa', 'management questions', 'interview', 'diligence questions', 'script'],
+            badge: 'Analysis'
+        },
+        {
+            id: 'card-closing-checklist',
+            label: 'Closing Checklist & Legal Conditions Precedent',
+            icon: <CheckSquare className="h-4 w-4 text-emerald-500" />,
+            action: () => onSelectTab('analysis', 'analysis-closing-checklist'),
+            group: 'Deal Strategy & Negotiation',
+            keywords: ['closing checklist', 'legal conditions', 'escrow', 'rep and warranty', 'closing terms', 'covenants'],
+            badge: 'Analysis'
+        },
+        {
+            id: 'card-dd-requests',
+            label: 'Diligence Request List & Missing VDR Items',
+            icon: <FileSearch className="h-4 w-4 text-purple-500" />,
+            action: () => onSelectTab('analysis', 'analysis-dd-requests'),
+            group: 'Deal Strategy & Negotiation',
+            keywords: ['dd requests', 'request list', 'vdr', 'data room', 'missing documents', 'checklist'],
+            badge: 'Analysis'
+        },
+        {
+            id: 'card-synthesis-judgment',
+            label: 'Acquisition Judgment Callout & Deal Verdict',
+            icon: <Target className="h-4 w-4 text-primary" />,
+            action: () => onSelectTab('synthesis', 'synthesis-judgment'),
+            group: 'Deal Strategy & Negotiation',
+            keywords: ['verdict', 'recommendation', 'pursue', 'pass', 'reprice', 'thesis', 'judgment'],
+            badge: 'Synthesis'
+        },
+        {
+            id: 'card-red-flags',
+            label: 'Red Flags & Deal Breaker Matrix',
+            icon: <AlertTriangle className="h-4 w-4 text-rose-500" />,
+            action: () => onSelectTab('synthesis', 'synthesis-red-flags'),
+            group: 'Deal Strategy & Negotiation',
+            keywords: ['red flags', 'deal breakers', 'fatal flaws', 'risks', 'critical findings', 'yellow flags'],
+            badge: 'Synthesis'
+        },
+        {
+            id: 'card-key-person',
+            label: 'Key Person & Founder Owner Dependency',
+            icon: <Users className="h-4 w-4 text-amber-500" />,
+            action: () => onSelectTab('analysis', 'analysis-key-person'),
+            group: 'Deal Strategy & Negotiation',
+            keywords: ['key person', 'owner dependency', 'management gap', 'transition risk', 'founder dependence'],
+            badge: 'Analysis'
+        },
+        {
+            id: 'card-email-drafts',
+            label: 'Investment Committee Memo & Broker Email Drafts',
+            icon: <FileText className="h-4 w-4 text-indigo-500" />,
+            action: () => onSelectTab('email', 'email-drafts-panel'),
+            group: 'Deal Strategy & Negotiation',
+            keywords: ['email drafts', 'investment memo', 'broker email', 'seller outreach', 'loi follow up', 'ic memo'],
+            badge: 'Email'
+        },
+
+        // --- Workspace Tabs ---
+        {
+            id: 'tab-overview',
+            label: 'Overview Workspace Tab',
+            icon: <LayoutDashboard className="h-4 w-4" />,
+            action: () => onSelectTab('overview'),
+            group: 'Workspace Tabs',
+            keywords: ['overview', 'dashboard', 'summary', 'health'],
+            badge: 'Tab'
+        },
+        {
+            id: 'tab-analysis',
+            label: 'Analysis Workspace Tab',
+            icon: <FlaskConical className="h-4 w-4" />,
+            action: () => onSelectTab('analysis'),
+            group: 'Workspace Tabs',
+            keywords: ['analysis', 'financials', 'ebitda', 'breakeven'],
+            badge: 'Tab'
+        },
+        {
+            id: 'tab-diagnostics',
+            label: 'Diagnostics & Risk Workspace Tab',
+            icon: <ShieldAlert className="h-4 w-4" />,
+            action: () => onSelectTab('diagnostics'),
+            group: 'Workspace Tabs',
+            keywords: ['diagnostics', 'risk', 'playbook', 'strengths', 'decision'],
+            badge: 'Tab'
+        },
+        {
+            id: 'tab-diligence',
+            label: 'Diligence Workspace Tab',
+            icon: <FileSearch className="h-4 w-4" />,
+            action: () => onSelectTab('diligence'),
+            group: 'Workspace Tabs',
+            keywords: ['diligence', 'documents', 'add-backs', 'concentration', 'audit'],
+            badge: 'Tab'
+        },
+        {
+            id: 'tab-synthesis',
+            label: 'Synthesis Workspace Tab',
+            icon: <Sparkles className="h-4 w-4" />,
+            action: () => onSelectTab('synthesis'),
+            group: 'Workspace Tabs',
+            keywords: ['synthesis', 'judgment', 'verdict', 'red flags'],
+            badge: 'Tab'
+        },
+        {
+            id: 'tab-structure',
+            label: 'Deal Structure Workspace Tab',
+            icon: <Handshake className="h-4 w-4" />,
+            action: () => onSelectTab('structure'),
+            group: 'Workspace Tabs',
+            keywords: ['structure', 'debt', 'sources', 'uses', 'dscr', 'nwc'],
+            badge: 'Tab'
+        },
+        {
+            id: 'tab-valuation',
+            label: 'Valuation Workspace Tab',
+            icon: <DollarSign className="h-4 w-4" />,
+            action: () => onSelectTab('valuation'),
+            group: 'Workspace Tabs',
+            keywords: ['valuation', 'multiples', 'dcf', 'comps'],
+            badge: 'Tab'
+        },
+        {
+            id: 'tab-returns',
+            label: 'Returns Workspace Tab',
+            icon: <TrendingUp className="h-4 w-4" />,
+            action: () => onSelectTab('returns'),
+            group: 'Workspace Tabs',
+            keywords: ['returns', 'irr', 'moic', 'lbo', 'waterfall'],
+            badge: 'Tab'
+        },
+        {
+            id: 'tab-growth',
+            label: 'Growth Workspace Tab',
+            icon: <TrendingUp className="h-4 w-4" />,
+            action: () => onSelectTab('growth'),
+            group: 'Workspace Tabs',
+            keywords: ['growth', 'revenue', 'projections', 'levers'],
+            badge: 'Tab'
+        },
+        {
+            id: 'tab-negotiation',
+            label: 'Negotiation Workspace Tab',
+            icon: <Handshake className="h-4 w-4" />,
+            action: () => onSelectTab('negotiation'),
+            group: 'Workspace Tabs',
+            keywords: ['negotiation', 'levers', 'terms', 'seller'],
+            badge: 'Tab'
+        },
+        {
+            id: 'tab-spending',
+            label: 'API Spending & LLM Cost Analytics Tab',
+            icon: <DollarSign className="h-4 w-4" />,
+            action: () => onSelectTab('spending'),
+            group: 'Workspace Tabs',
+            keywords: ['spending', 'token costs', 'llm billing', 'api cost', 'gpt spending'],
+            badge: 'Tab'
+        },
+        {
+            id: 'tab-compare',
+            label: 'Deal Portfolio Comparison Matrix Tab',
+            icon: <Layers className="h-4 w-4" />,
+            action: () => onSelectTab('compare'),
+            group: 'Workspace Tabs',
+            keywords: ['compare', 'portfolio', 'cross-deal', 'matrix', 'benchmarks'],
+            badge: 'Tab'
+        },
+        {
+            id: 'tab-evals',
+            label: 'AI Model Benchmark & Accuracy Evals Tab',
+            icon: <Activity className="h-4 w-4" />,
+            action: () => onSelectTab('evals'),
+            group: 'Workspace Tabs',
+            keywords: ['evals', 'benchmarks', 'accuracy', 'ground truth', 'test harness', 'model comparison'],
+            badge: 'Tab'
+        },
+        {
+            id: 'tab-history',
+            label: 'Audit History & Event Trail Tab',
+            icon: <Clock3 className="h-4 w-4" />,
+            action: () => onSelectTab('history'),
+            group: 'Workspace Tabs',
+            keywords: ['history', 'audit', 'events', 'submissions', 'timeline'],
+            badge: 'Tab'
+        },
+        {
+            id: 'tab-faqs',
+            label: 'Technical FAQs & Architecture Knowledge Tab',
+            icon: <HelpCircle className="h-4 w-4" />,
+            action: () => onSelectTab('faqs'),
+            group: 'Workspace Tabs',
+            keywords: ['faqs', 'knowledge', 'help', 'docs', 'questions'],
+            badge: 'Tab'
+        },
+        {
+            id: 'tab-errors',
+            label: 'Error Log & Diagnostic Traces Tab',
+            icon: <AlertTriangle className="h-4 w-4" />,
+            action: () => onSelectTab('errors'),
+            group: 'Workspace Tabs',
+            keywords: ['errors', 'logs', 'workflow', 'failed', 'diagnostics'],
+            badge: 'Tab'
+        },
+
+        // --- Preferences & Tours ---
+        {
+            id: 'toggle-dark-mode',
+            label: 'Toggle Dark / Light Mode',
+            icon: <Moon className="h-4 w-4" />,
+            action: onToggleTheme,
+            group: 'Preferences',
+            keywords: ['theme', 'dark mode', 'light mode', 'appearance'],
+            badge: 'Theme'
+        },
+        {
+            id: 'show-shortcuts',
+            label: 'Show Keyboard Shortcuts Dialog',
+            icon: <Keyboard className="h-4 w-4" />,
+            action: onShowShortcuts,
+            group: 'Preferences',
+            keywords: ['shortcuts', 'hotkeys', 'keyboard', 'help'],
+            badge: 'Keys'
         },
         ...(onStartTour ? [
             {
@@ -197,6 +544,8 @@ export default function CommandPalette({
                 icon: <Sparkles className="h-4 w-4 text-primary" />,
                 action: () => onStartTour('core-fast'),
                 group: 'Guided Tours',
+                keywords: ['tour', 'walkthrough', 'demo', 'tutorial', 'quickstart'],
+                badge: 'Tour'
             },
             {
                 id: 'tour-deep',
@@ -204,6 +553,8 @@ export default function CommandPalette({
                 icon: <FlaskConical className="h-4 w-4 text-emerald-500" />,
                 action: () => onStartTour('deep-dive'),
                 group: 'Guided Tours',
+                keywords: ['tour', 'deep dive', 'financial walkthrough', 'tutorial'],
+                badge: 'Tour'
             },
             {
                 id: 'tour-quest',
@@ -211,6 +562,8 @@ export default function CommandPalette({
                 icon: <TrendingUp className="h-4 w-4 text-amber-500" />,
                 action: () => onStartTour('interactive-quest'),
                 group: 'Guided Tours',
+                keywords: ['quest', 'gamified', 'hands on', 'interactive tour'],
+                badge: 'Quest'
             },
         ] : []),
         ...(onOpenWalkthrough ? [
@@ -220,21 +573,18 @@ export default function CommandPalette({
                 icon: <Sparkles className="h-4 w-4 text-primary" />,
                 action: onOpenWalkthrough,
                 group: 'Guided Tours',
+                keywords: ['video demo', 'walkthrough launcher', 'tours'],
+                badge: 'Videos'
             },
         ] : []),
         ...(onCopySummary ? [{
             id: 'copy-summary',
-            label: 'Copy deal summary to clipboard',
+            label: 'Copy Deal Summary to Clipboard',
             icon: <FileDown className="h-4 w-4" />,
             action: onCopySummary,
-            group: 'Actions',
-        }] : []),
-        ...(onScrollToUpload ? [{
-            id: 'upload-docs',
-            label: 'Upload documents',
-            icon: <FileText className="h-4 w-4" />,
-            action: onScrollToUpload,
-            group: 'Actions',
+            group: 'Actions & Exports',
+            keywords: ['copy', 'clipboard', 'share', 'summary'],
+            badge: 'Copy'
         }] : []),
         ...(onOpenReportIssue ? [{
             id: 'report-issue',
@@ -242,12 +592,19 @@ export default function CommandPalette({
             icon: <AlertTriangle className="h-4 w-4 text-amber-500" />,
             action: onOpenReportIssue,
             group: 'Support & Feedback',
+            keywords: ['bug', 'report', 'issue', 'feedback', 'support', 'slack'],
+            badge: 'Support'
         }] : []),
     ]
 
-    const filtered = commands.filter((cmd) =>
-        cmd.label.toLowerCase().includes(query.toLowerCase())
-    )
+    const filtered = commands.filter((cmd) => {
+        const q = query.toLowerCase().trim()
+        if (!q) return true
+        if (cmd.label.toLowerCase().includes(q)) return true
+        if (cmd.group.toLowerCase().includes(q)) return true
+        if (cmd.keywords?.some((k) => k.toLowerCase().includes(q))) return true
+        return false
+    })
 
     const groupedCommands = filtered.reduce<Record<string, Command[]>>((acc, cmd) => {
         if (!acc[cmd.group]) acc[cmd.group] = []
@@ -386,16 +743,23 @@ export default function CommandPalette({
                                         data-selected={isSelected}
                                         onClick={() => executeCommand(cmd)}
                                         onMouseEnter={() => setSelectedIndex(currentIndex)}
-                                        className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+                                        className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
                                             isSelected
                                                 ? 'bg-accent text-accent-foreground'
                                                 : 'text-foreground hover:bg-accent/50'
                                         }`}
                                     >
-                                        <span className="shrink-0 text-muted-foreground">
-                                            {cmd.icon}
-                                        </span>
-                                        <span className="flex-1">{cmd.label}</span>
+                                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                                            <span className="shrink-0 text-muted-foreground">
+                                                {cmd.icon}
+                                            </span>
+                                            <span className="truncate">{cmd.label}</span>
+                                        </div>
+                                        {cmd.badge && (
+                                            <span className="shrink-0 rounded border border-border/60 bg-muted/60 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                                                {cmd.badge}
+                                            </span>
+                                        )}
                                     </button>
                                 )
                             })}

@@ -4913,12 +4913,42 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 <CommandPalette
                     open={commandPaletteOpen}
                     onClose={() => setCommandPaletteOpen(false)}
-                    onSelectTab={(tab) => setActiveWorkspaceTab(tab as WorkspaceTab)}
+                    onSelectTab={(tab, anchor) => {
+                        setActiveWorkspaceTab(tab as WorkspaceTab)
+                        if (anchor) {
+                            setTimeout(() => {
+                                const rawId = anchor.startsWith('#') ? anchor.slice(1) : anchor
+                                const el = document.getElementById(rawId)
+                                el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                            }, 150)
+                        }
+                    }}
                     onToggleTheme={() => { const next = currentTheme === 'dark' ? 'light' : currentTheme === 'light' ? 'system' : 'dark'; setCurrentTheme(next); setStoredTheme(next) }}
+                    onExportExcel={async () => {
+                        try {
+                            const { generateLiveExcelModel } = await import('../utils/excelModelGenerator')
+                            const name = effectiveDealName || suggestedProjectName
+                            const blob = await generateLiveExcelModel({ model: hydratedDealModel, synthesis: activeProjectSynthesis ?? undefined, projectName: name })
+                            const safeName = name.replace(/[^a-zA-Z0-9-_]/g, '_').slice(0, 50) || 'deal'
+                            const url = URL.createObjectURL(blob)
+                            const a = document.createElement('a')
+                            a.href = url
+                            a.download = `${safeName}_financial_model.xlsx`
+                            document.body.appendChild(a)
+                            a.click()
+                            document.body.removeChild(a)
+                            setTimeout(() => URL.revokeObjectURL(url), 1000)
+                        } catch (err) {
+                            console.error('Failed to export Excel model:', err)
+                        }
+                    }}
                     onExportMarkdown={() => { const name = effectiveDealName || suggestedProjectName; const safeName = name.replace(/[^a-zA-Z0-9-_]/g, '_').slice(0, 50) || 'deal'; downloadFile(buildMarkdownReport(hydratedDealModel, activeProjectSynthesis ?? undefined, name), `${safeName}_summary.md`, 'text/markdown') }}
                     onExportJson={() => { const name = effectiveDealName || suggestedProjectName; const safeName = name.replace(/[^a-zA-Z0-9-_]/g, '_').slice(0, 50) || 'deal'; downloadFile(JSON.stringify(buildJsonExport(hydratedDealModel, activeProjectSynthesis ?? undefined, name), null, 2), `${safeName}_export.json`, 'application/json') }}
                     onShowShortcuts={() => { setIsShortcutsOpen(true) }}
-                    onOpenChat={() => { }}
+                    onOpenChat={() => {
+                        const input = (document.querySelector('textarea[placeholder*="Ask Dillon"]') || document.querySelector('[data-chat-input]')) as HTMLElement
+                        input?.focus()
+                    }}
                     onCopySummary={() => { const name = effectiveDealName || suggestedProjectName; navigator.clipboard.writeText(buildMarkdownReport(hydratedDealModel, activeProjectSynthesis ?? undefined, name)) }}
                     onScrollToUpload={() => { document.querySelector('[data-project-intake]')?.scrollIntoView({ behavior: 'smooth' }) }}
                     onStartTour={(tourId) => handleStartTour(tourId)}
