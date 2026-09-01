@@ -39,6 +39,12 @@ jobs:
           VITE_SUPABASE_ANON_KEY: "placeholder-anon-key"
         run: npm --prefix frontend run build
 
+      - name: Install Playwright Chromium
+        run: npx --prefix frontend playwright install --with-deps chromium
+
+      - name: Run Playwright E2E Tests
+        run: npm --prefix frontend run test:e2e
+
       # Fails the job (blocking the deploy check) when the suite drops below
       # EVAL_MIN_SCORE — run-evals.ts exits non-zero on regression.
       - name: Execute Automated Eval Harness
