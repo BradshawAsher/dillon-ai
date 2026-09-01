@@ -128,6 +128,7 @@ Useful checks:
 ```sh
 npm run typecheck
 npm run test
+npm run test:api
 npm run build
 npm run preview
 ```
@@ -270,7 +271,7 @@ batch progress, and project synthesis before promoting a change. See
 | `frontend/localApi.ts` | Development API middleware |
 | `frontend/nodeRuntime.ts` | Node-side n8n webhook dispatcher & API utilities |
 | `backend/diligence/` | Submit, history, and synthesis normalizers |
-| `docs/TESTING_AND_CI.md` | **3-layer testing architecture (Vitest, Playwright E2E, Eval Harness & CI/CD)** |
+| `docs/TESTING_AND_CI.md` | **4-layer testing architecture (Vitest, API integration, Playwright E2E, Eval Harness & CI/CD)** |
 | `docs/QUICK_DEAL_QUESTIONNAIRE.md` | **Quick deal questionnaire engine (0-latency intake, formulas & flag rules)** |
 | `docs/n8n-webhooks.md` | n8n webhook contracts and troubleshooting |
 | `docs/UPLOAD_AND_BATCH_RECOVERY.md` | Upload transport, batch state, recovery, and verification |

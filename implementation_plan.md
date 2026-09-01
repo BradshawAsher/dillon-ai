@@ -475,3 +475,58 @@ The Quick Deal Questionnaire tutorial exists in `TOUR_PLAYLISTS` and can be laun
 - Exact route matching prevents `questionnaire` from being misclassified as `quest` by substring matching.
 - The focused walkthrough data suite passes (9 tests), the full Playwright suite passes (15 tests), TypeScript typechecking passes, and the production build succeeds.
 - The React review found no new request waterfalls, unnecessary state, unstable list keys, accessibility regressions, or render-heavy derived work.
+
+## Zero-token API integration suite (2026-09-01)
+
+### Empirical baseline
+
+The repository has strong Vitest unit/domain coverage, a real loopback multipart handoff integration test, 15 Playwright browser tests, and the eval harness. It does not have a separately configured suite that sends HTTP requests through the production `/api/diligence/*` router. Existing browser API coverage fulfills mocked responses before they reach the server handler, while live n8n/Supabase/R2 scripts are manual diagnostics and are unsuitable for required pull-request CI.
+
+### Architecture
+
+- Start a temporary `127.0.0.1` Node HTTP server in Vitest and pass every request to the real Vercel handler in `api/diligence/[...route].src.ts`.
+- Mock the handler's imported backend operations at the module boundary. This preserves the production router, body parser, user-header parser, response serialization, ETag handling, memory cache, cache invalidation, rate limiter, error mapping, methods, query parsing, and status codes while preventing external side effects.
+- Install a fail-closed fetch guard that permits only the loopback test server and throws on any n8n, Supabase, R2, Slack, or model-provider request.
+- Keep integration files outside the default unit include and run them through a Node-only Vitest configuration.
+
+### Target files
+
+- `frontend/integration/diligenceApi.integration.test.ts`
+  - Add the loopback server, deterministic backend mocks, route contract matrix, cache/ETag tests, malformed input and error mapping tests, user/environment forwarding tests, and rate-limit tests.
+- `frontend/vitest.api.config.ts`
+  - Configure the isolated Node integration suite with bounded timeouts and sequential file execution.
+- `frontend/vite.config.ts`
+  - Exclude `integration/**` from the ordinary unit suite to avoid duplicate execution.
+- `frontend/package.json`
+  - Add `test:api` and include it in `check`.
+- `.github/workflows/eval-regression.yml`
+  - Add `Run API Integration Tests` inside the existing required `run-evals` job after unit tests and before the production build.
+- `docs/TESTING_AND_CI.md`
+  - Document the four-layer test architecture, commands, zero-network guarantee, and CI step.
+
+### Initial contract coverage
+
+1. All GET and POST router combinations forward the expected query/body/user values and return their intended status codes.
+2. Unknown routes and unsupported methods return JSON `404` responses.
+3. Malformed and non-object JSON return `400` responses.
+4. Typed backend errors preserve their intended `4xx` status; unexpected errors return `500`.
+5. Read responses expose Cache-Control and ETag headers, matching ETags return `304`, and mutations invalidate the memory cache.
+6. Trigger routes enforce the `12/minute` limit and return `429`, `Retry-After`, and rate-limit headers without invoking the backend again.
+7. Any attempted non-loopback network request fails the suite immediately.
+
+### Verification plan
+
+1. Run `npm --prefix frontend run test:api` and confirm no external request or secret is used.
+2. Run the ordinary Vitest suite and confirm integration files are not duplicated.
+3. Run TypeScript typechecking and the production build.
+4. Run the complete Playwright suite.
+5. Run `git diff --check` and inspect the final CI workflow and documentation diff.
+
+### Verification result
+
+- `npm run typecheck`: passed.
+- `npm test`: 86 files and 871 unit/domain tests passed; the integration file was not duplicated.
+- `npm run test:api`: 26 loopback API contract tests passed after relevant Supabase, n8n, OpenAI, and Gemini environment variables were removed from the test process.
+- `npm run build`: passed. Existing stylesheet and bundle-size warnings remain non-blocking.
+- `npm run test:e2e`: all 15 Chromium tests passed.
+- The build-generated `frontend/public/version.json` change was restored so the final diff contains only intentional source, CI, test, and documentation changes.
