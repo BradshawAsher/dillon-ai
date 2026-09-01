@@ -68,7 +68,7 @@ export default defineConfig({
     },
   },
   test: {
-    exclude: ['**/node_modules/**', '**/e2e/**', '**/dist/**'],
+    exclude: ['**/node_modules/**', '**/e2e/**', '**/integration/**', '**/dist/**'],
   },
 })
 
