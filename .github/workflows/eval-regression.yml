@@ -6,9 +6,18 @@ on:
   pull_request:
     branches: [ main, master ]
 
+# Cancel in-flight duplicate runs on the same branch when a new commit is pushed (saving CI runner minutes)
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+
 jobs:
   run-evals:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -17,6 +26,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
 
       - name: Install root dependencies
         run: npm ci
@@ -42,8 +55,22 @@ jobs:
           VITE_SUPABASE_ANON_KEY: "placeholder-anon-key"
         run: npm --prefix frontend run build
 
-      - name: Install Playwright Chromium
+      - name: Cache Playwright Chromium
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
+      - name: Install Playwright Chromium with System Dependencies
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx --prefix frontend playwright install --with-deps chromium
+
+      - name: Install Playwright OS Dependencies
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx --prefix frontend playwright install-deps chromium
 
       - name: Run Playwright E2E Tests
         run: npm --prefix frontend run test:e2e
