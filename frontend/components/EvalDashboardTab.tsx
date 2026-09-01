@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import {
     Activity,
     AlertTriangle,
@@ -25,7 +25,6 @@ import {
     RotateCcw,
     Search,
     ShieldAlert,
-    SlidersHorizontal,
     Sparkles,
     Target,
     TrendingUp,
@@ -36,7 +35,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../li
 import CardInfoPopover from './common/CardInfoPopover'
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
-import EvalDiagnosticsPanel from './EvalDiagnosticsPanel'
 import { benchmarkGroundTruthSyntheses } from '../evals/ground_truths'
 import { calculateBatchTotalCost, calculateSynthesisCost, calculateDocumentCost, formatElapsedDuration, getMeasuredDocumentExtractionDurationSec, getProjectTimingSummary } from '../utils/diligenceDashboardUtils'
 import { HighLevelBusinessSummaryModal, HighLevelBusinessSummaryData } from './HighLevelBusinessSummaryModal'

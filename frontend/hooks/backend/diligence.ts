@@ -572,9 +572,7 @@ function completeRowLater(requestID: string) {
     }, 8000)
 }
 
-import { benchmarkGroundTruthSyntheses, werkheiserGroundTruthPass2 } from '../../evals/ground_truths'
-
-const mockSynthesisRow: ProjectSynthesisItem = werkheiserGroundTruthPass2
+import { benchmarkGroundTruthSyntheses } from '../../evals/ground_truths'
 
 function useLiveWorkflowErrors() {
     return useQuery(useCallback(async (params: Record<string, unknown> = {}) => {
@@ -591,8 +589,7 @@ function useLiveWatchdogEvents() {
 }
 
 function useLiveUpdateSubmissionConsideration() {
-    return useQuery(useCallback(async (params: Record<string, unknown> = {}) => {
-        const environment = params.environment === 'test' ? 'test' : 'production'
+    return useQuery(useCallback(async (_params: Record<string, unknown> = {}) => {
         return fetchJson<{ ok: boolean }>('/api/diligence/submission-consideration', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', ...identityHeaders() },

@@ -1,21 +1,13 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
     HelpCircle,
     Search,
     X,
     ChevronDown,
     ChevronUp,
-    ExternalLink,
     BookOpen,
     Sparkles,
-    CheckCircle2,
-    Layers,
-    SlidersHorizontal,
-    FileText,
-    Zap,
-    ShieldCheck,
     ArrowRight,
-    MessageSquare,
     Bot,
     Play,
 } from 'lucide-react'

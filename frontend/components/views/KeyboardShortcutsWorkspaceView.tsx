@@ -1,19 +1,10 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import {
     Keyboard,
     Search,
     Sparkles,
-    Command,
-    Compass,
-    FileText,
-    Zap,
-    HelpCircle,
     Copy,
     Check,
-    Volume2,
-    Sliders,
-    Layers,
-    Bot,
 } from 'lucide-react'
 import CardInfoPopover from '../common/CardInfoPopover'
 import type { WorkspaceTab } from '../DealWorkspaceNav'

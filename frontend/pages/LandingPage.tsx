@@ -1,22 +1,16 @@
 import React, { useState, useEffect } from 'react'
 import {
-    Activity,
     AlertTriangle,
     ArrowRight,
     BarChart3,
     CheckCircle2,
     ChevronDown,
-    ChevronRight,
     ChevronUp,
-    Clock,
     Cpu,
     DollarSign,
     ExternalLink,
     FileCheck,
     FileSearch,
-    FileText,
-    Filter,
-    Globe,
     HelpCircle,
     Layers,
     Loader2,
@@ -25,8 +19,6 @@ import {
     Play,
     ShieldCheck,
     Sparkles,
-    TrendingUp,
-    Users,
     X,
     Zap,
 } from 'lucide-react'
@@ -34,7 +26,7 @@ import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Input } from '../lib/shadcn/input'
-import SupademoModal, { DemoVariantId } from '../components/SupademoModal'
+import { DemoVariantId } from '../components/SupademoModal'
 import { WorkspaceDemoGalleryBar } from '../components/WorkspaceDemoGalleryBar'
 import { WalkthroughLauncherModal } from '../components/walkthrough/WalkthroughLauncherModal'
 import type { TourPlaylistId } from '../components/walkthrough/walkthroughTypes'

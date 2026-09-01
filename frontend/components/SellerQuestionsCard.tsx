@@ -201,9 +201,11 @@ export default function SellerQuestionsCard({ synthesis, model }: Props) {
                             <Download className="h-3.5 w-3.5" />
                         </button>
                         <button
+                            type="button"
                             onClick={handleResetDefaults}
                             className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                             title="Reset to default suggestions"
+                            aria-label="Reset to default suggestions"
                         >
                             <RotateCcw className="h-3.5 w-3.5" />
                         </button>
@@ -235,9 +237,11 @@ export default function SellerQuestionsCard({ synthesis, model }: Props) {
                         <div key={q.id} className="rounded-lg border border-border/40 p-2.5 transition-colors hover:bg-muted/10">
                             <div className={`group flex items-start gap-2.5 ${q.answered ? 'opacity-60' : ''}`}>
                                 <button
+                                    type="button"
                                     onClick={() => toggleAnswered(q.id)}
                                     className="mt-0.5 shrink-0 text-muted-foreground hover:text-primary focus:outline-none"
                                     title={q.answered ? 'Mark open' : 'Mark answered'}
+                                    aria-label={q.answered ? 'Mark question open' : 'Mark question answered'}
                                 >
                                     {q.answered ? (
                                         <CheckSquare className="h-4 w-4 text-green-600" />
@@ -277,9 +281,11 @@ export default function SellerQuestionsCard({ synthesis, model }: Props) {
                                 </div>
                                 <div className="ml-auto flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button
+                                        type="button"
                                         onClick={() => deleteQuestion(q.id)}
                                         className="p-1 text-muted-foreground hover:text-destructive transition-colors"
                                         title="Delete question"
+                                        aria-label="Delete question"
                                     >
                                         <Trash2 className="h-3.5 w-3.5" />
                                     </button>
