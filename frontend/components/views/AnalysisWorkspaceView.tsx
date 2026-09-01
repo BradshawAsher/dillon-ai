@@ -29,6 +29,7 @@ import ValuationGapCard from '../ValuationGapCard'
 import CashOnCashCalculatorCard from '../CashOnCashCalculatorCard'
 import BusinessValueEvolutionCard from '../BusinessValueEvolutionCard'
 import RevenueBridgeCard from '../RevenueBridgeCard'
+import CohortRetentionCard from '../CohortRetentionCard'
 import BaseReturnMetricsCard from '../BaseReturnMetricsCard'
 import GrowthSensitivityCard from '../GrowthSensitivityCard'
 import MonteCarloCard from '../MonteCarloCard'
@@ -241,6 +242,9 @@ export function AnalysisWorkspaceView({
                         </div>
                         <div id="analysis-revenue-bridge" className="scroll-mt-6">
                             <RevenueBridgeCard model={hydratedDealModel} />
+                        </div>
+                        <div id="analysis-cohort-retention" className="scroll-mt-6">
+                            <CohortRetentionCard synthesis={activeProjectSynthesis} dealModel={hydratedDealModel} />
                         </div>
                         <div id="analysis-base-returns" className="scroll-mt-6">
                             <BaseReturnMetricsCard model={hydratedDealModel} />
