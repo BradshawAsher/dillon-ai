@@ -32,12 +32,12 @@
       "headers": [
         {
           "key": "Cache-Control",
-          "value": "public, max-age=0, must-revalidate"
+          "value": "no-cache, no-store, must-revalidate"
         }
       ]
     }
   ],
   "rewrites": [
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
+    { "source": "/((?!api/|assets/|.*\\.(?:js|css|json|ico|png|jpg|jpeg|svg|webp|woff|woff2|ttf)).*)", "destination": "/index.html" }
   ]
 }

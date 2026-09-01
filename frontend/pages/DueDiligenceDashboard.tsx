@@ -41,6 +41,7 @@ import { sourceRelativePathForFile } from '../../shared/sourceRelativePath'
 import { DataIsolationBanner } from '../components/dashboard/DataIsolationBanner'
 import { buildMarkdownReport, buildJsonExport, downloadFile } from '../components/ExportDealButton'
 import KeyboardShortcutsDialog from '../components/KeyboardShortcutsDialog'
+import { VersionSwitcherModal } from '../components/VersionSwitcherModal'
 import { type Notification } from '../components/NotificationCenter'
 import { BatchProcessingSidePanel } from '../components/BatchProcessingSidePanel'
 import EvidenceDrawer from '../components/EvidenceDrawer'
@@ -802,6 +803,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         setIsProjectsPanelOpen,
         isShortcutsOpen,
         setIsShortcutsOpen,
+        isVersionSwitcherOpen,
+        setIsVersionSwitcherOpen,
         commandPaletteOpen,
         setCommandPaletteOpen,
         submissionNotes,
@@ -3910,6 +3913,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                     activeWorkspaceTab={activeWorkspaceTab}
                     onOpenSearch={() => setCommandPaletteOpen(true)}
                     onOpenReportIssue={() => setIsReportIssueOpen(true)}
+                    onOpenVersionSwitcher={() => setIsVersionSwitcherOpen(true)}
                 />
 
                 <div className="mx-auto max-w-[1440px] px-4 pb-2 sm:px-6 lg:px-8">
@@ -4957,6 +4961,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 />
             </Suspense>
 
+            <VersionSwitcherModal open={isVersionSwitcherOpen} onClose={() => setIsVersionSwitcherOpen(false)} />
             <ApiKeyModal open={isApiKeyModalOpen} onOpenChange={setIsApiKeyModalOpen} />
             <RetryScopeModal
                 isOpen={retryScopeModalState.isOpen}

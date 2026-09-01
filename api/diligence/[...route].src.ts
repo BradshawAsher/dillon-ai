@@ -187,12 +187,12 @@ export default async function handler(req: ApiRequest, res: ServerResponse) {
             return
         }
         if (route === 'access-request' && req.method === 'POST') {
-            const params = await readJsonBody(req) as Parameters<typeof handleAccessRequest>[0]['params']
+            const params = (await readJsonBody(req)) as unknown as Parameters<typeof handleAccessRequest>[0]['params']
             sendJson(req, res, 200, await handleAccessRequest({ params, user }))
             return
         }
         if (route === 'slack-alert' && req.method === 'POST') {
-            const params = await readJsonBody(req) as Parameters<typeof handleSlackAlert>[0]['params']
+            const params = (await readJsonBody(req)) as unknown as Parameters<typeof handleSlackAlert>[0]['params']
             sendJson(req, res, 200, await handleSlackAlert({ params, headers: req.headers, user }))
             return
         }

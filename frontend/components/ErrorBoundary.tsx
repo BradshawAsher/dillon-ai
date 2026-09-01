@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
+import { getFallbackStableUrl } from '../utils/deploymentVersions'
 
 type ErrorBoundaryProps = {
   children: ReactNode
@@ -43,6 +44,12 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
     this.setState({ error: null })
   }
 
+  handleRollbackToStable = () => {
+    if (typeof window !== 'undefined') {
+      window.location.href = getFallbackStableUrl()
+    }
+  }
+
   render() {
     const { error } = this.state
 
@@ -60,20 +67,29 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
         >
           <p className="font-medium">Something went wrong loading this {label}.</p>
           <p className="mt-1 text-muted-foreground">
-            The rest of the workspace is still usable. You can retry this section below.
+            The rest of the workspace is still usable. You can retry this section below, or switch to the previous verified stable deployment.
           </p>
           {error.message ? (
             <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-words text-xs text-muted-foreground">
               {error.message}
             </pre>
           ) : null}
-          <button
-            type="button"
-            onClick={this.reset}
-            className="mt-3 rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground transition-colors hover:opacity-90"
-          >
-            Try again
-          </button>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={this.reset}
+              className="rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground transition-colors hover:opacity-90 cursor-pointer"
+            >
+              Try again
+            </button>
+            <button
+              type="button"
+              onClick={this.handleRollbackToStable}
+              className="rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-600 dark:text-amber-400 transition-colors hover:bg-amber-500/20 cursor-pointer"
+            >
+              Switch to Previous Stable Version
+            </button>
+          </div>
         </div>
       )
     }

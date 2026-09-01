@@ -42,6 +42,7 @@ export function useDealWorkspaceState() {
     const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false)
     const [isProjectsPanelOpen, setIsProjectsPanelOpen] = useState(false)
     const [isShortcutsOpen, setIsShortcutsOpen] = useState(false)
+    const [isVersionSwitcherOpen, setIsVersionSwitcherOpen] = useState(false)
     const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
     const [submissionNotes, setSubmissionNotes] = useState('')
     const [dealName, setDealName] = useState('')
@@ -175,6 +176,8 @@ export function useDealWorkspaceState() {
         setIsProjectsPanelOpen,
         isShortcutsOpen,
         setIsShortcutsOpen,
+        isVersionSwitcherOpen,
+        setIsVersionSwitcherOpen,
         commandPaletteOpen,
         setCommandPaletteOpen,
         submissionNotes,

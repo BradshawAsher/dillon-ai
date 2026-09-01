@@ -43,6 +43,7 @@ type WorkspaceHeaderProps = {
     activeWorkspaceTab?: string
     onOpenSearch?: () => void
     onOpenReportIssue?: () => void
+    onOpenVersionSwitcher?: () => void
 }
 
 export function WorkspaceHeader({
@@ -74,6 +75,7 @@ export function WorkspaceHeader({
     activeWorkspaceTab,
     onOpenSearch,
     onOpenReportIssue,
+    onOpenVersionSwitcher,
 }: WorkspaceHeaderProps) {
     const [copiedLink, setCopiedLink] = useState(false)
 

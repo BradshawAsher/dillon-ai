@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2022"],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleResolution": "bundler",
     "strict": true,
@@ -12,6 +12,6 @@
     "forceConsistentCasingInFileNames": true,
     "types": ["node"]
   },
-  "include": ["api/**/*.ts", "backend/**/*.ts"],
+  "include": ["api/**/*.ts", "backend/**/*.ts", "backendGlobals.d.ts"],
   "exclude": ["frontend", "node_modules"]
 }

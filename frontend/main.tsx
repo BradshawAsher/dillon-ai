@@ -14,12 +14,45 @@ initTheme()
 
 // Automatically reload page if Vite fails to fetch a stale dynamic chunk after a new deployment (debounced)
 if (typeof window !== 'undefined') {
-  window.addEventListener('vite:preloadError', (event) => {
+  const triggerDebouncedDeploymentReload = (reason: string) => {
     const lastReload = Number(sessionStorage.getItem('mcp_last_preload_reload') || 0)
-    if (Date.now() - lastReload > 20_000) {
+    if (Date.now() - lastReload > 15_000) {
       sessionStorage.setItem('mcp_last_preload_reload', String(Date.now()))
-      console.warn('Vite preload error detected, reloading page for latest deployment...', event)
+      console.warn(`Stale deployment chunk/module error (${reason}), reloading page for latest build...`)
       window.location.reload()
+    }
+  }
+
+  window.addEventListener('vite:preloadError', () => {
+    triggerDebouncedDeploymentReload('vite:preloadError')
+  })
+
+  // Catch script loading failures & MIME type mismatch errors on dynamic imports
+  window.addEventListener(
+    'error',
+    (event) => {
+      const errorMsg = String(event?.message || (event as any)?.error?.message || '')
+      const target = event?.target as HTMLElement | null
+      if (
+        errorMsg.includes('Failed to load module script') ||
+        errorMsg.includes('MIME type') ||
+        errorMsg.includes('text/html') ||
+        target?.tagName === 'SCRIPT'
+      ) {
+        triggerDebouncedDeploymentReload('script:moduleError')
+      }
+    },
+    true
+  )
+
+  window.addEventListener('unhandledrejection', (event) => {
+    const reason = String(event?.reason?.message || event?.reason || '')
+    if (
+      reason.includes('Failed to fetch dynamically imported module') ||
+      reason.includes('Importing a module script failed') ||
+      reason.includes('error loading dynamically imported module')
+    ) {
+      triggerDebouncedDeploymentReload('unhandledrejection:dynamicImport')
     }
   })
 }
@@ -33,4 +66,3 @@ createRoot(document.getElementById('root')!).render(
     </QueryClientProvider>
   </StrictMode>
 )
-

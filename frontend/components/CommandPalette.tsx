@@ -34,6 +34,7 @@ import {
     Building2,
     Users,
     Target,
+    History,
 } from 'lucide-react'
 
 type CommandPaletteProps = {
@@ -51,6 +52,7 @@ type CommandPaletteProps = {
     onStartTour?: (tourId: 'core-fast' | 'deep-dive' | 'interactive-quest') => void
     onOpenWalkthrough?: () => void
     onOpenReportIssue?: () => void
+    onOpenVersionSwitcher?: () => void
 }
 
 type Command = {
@@ -78,6 +80,7 @@ export default function CommandPalette({
     onStartTour,
     onOpenWalkthrough,
     onOpenReportIssue,
+    onOpenVersionSwitcher,
 }: CommandPaletteProps) {
     const [query, setQuery] = useState('')
     const [selectedIndex, setSelectedIndex] = useState(0)
@@ -537,6 +540,15 @@ export default function CommandPalette({
             keywords: ['shortcuts', 'hotkeys', 'keyboard', 'help'],
             badge: 'Keys'
         },
+        ...(onOpenVersionSwitcher ? [{
+            id: 'version-control-rollback',
+            label: 'Version Control: Switch Release / Rollback to Previous Stable',
+            icon: <History className="h-4 w-4 text-primary" />,
+            action: onOpenVersionSwitcher,
+            group: 'Preferences',
+            keywords: ['version', 'rollback', 'release', 'deploy', 'history', 'previous', 'stable', 'fallback', 'safe mode', 'immutable', 'build'],
+            badge: 'Versions'
+        }] : []),
         ...(onStartTour ? [
             {
                 id: 'tour-core',
