@@ -59,3 +59,23 @@ describe('markdown report confidence', () => {
         expect(md).toContain('Confidence:** 1% (Low)')
     })
 })
+
+describe('buildJsonExport and Excel export integration', () => {
+    it('builds a structured JSON export matching DealModel facts and synthesis flags', async () => {
+        const { buildJsonExport } = await import('./ExportDealButton')
+        const m = model({ purchasePrice: 4800000, askingPrice: 5000000 })
+        const s: any = {
+            finalRiskLevel: 'LOW',
+            finalTrafficLight: 'GREEN',
+            redFlags: ['Minor lease renegotiation in Year 4'],
+            greenFlags: ['92% customer retention rate'],
+            openQuestions: ['Confirm Q4 inventory count']
+        }
+        const exported = buildJsonExport(m, s, 'Acme Logistics')
+        expect(exported.projectName).toBe('Acme Logistics')
+        expect(exported.dealModel.purchasePrice).toBe(4800000)
+        expect(exported.synthesis?.riskLevel).toBe('LOW')
+        expect(exported.synthesis?.redFlags).toContain('Minor lease renegotiation in Year 4')
+    })
+})
+
