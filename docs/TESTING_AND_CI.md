@@ -10,7 +10,7 @@ This document provides a comprehensive technical reference for the 4-layer autom
 graph TD
     A["Layer 4: AI Eval Benchmark Harness (58 Gold Docs, 7 Dimensions)"] --> B["Layer 3: Playwright End-to-End Tests (Real Chromium, 0 Tokens)"]
     B --> C["Layer 2: API Integration Tests (Real HTTP Router, 0 Tokens)"]
-    C --> D["Layer 1: Vitest Unit & Domain Test Suite (86 Suites / 871 Tests)"]
+    C --> D["Layer 1: Vitest Unit & Domain Test Suite (95 Suites / 935 Tests)"]
     style A fill:#2563eb,stroke:#1d4ed8,stroke-width:2px,color:#fff
     style B fill:#059669,stroke:#047857,stroke-width:2px,color:#fff
     style C fill:#d97706,stroke:#b45309,stroke-width:2px,color:#fff
@@ -19,9 +19,9 @@ graph TD
 
 | Layer | Framework / Tool | Scope & Purpose | Execution Latency | Cost / Tokens |
 | :--- | :--- | :--- | :--- | :--- |
-| **Layer 1: Unit & Domain Tests** | **Vitest** (v4.x) | Core business logic, mathematical reconciliations, duration bounds ($\le 180\text{s}$), latency formatters, and security guards. | ~6s (871 tests) | $0.00 / 0 tokens |
+| **Layer 1: Unit & Domain Tests** | **Vitest** (v4.x) | Core business logic, mathematical reconciliations, duration bounds ($\le 180\text{s}$), latency formatters, and security guards. | ~40s (935 tests) | $0.00 / 0 tokens |
 | **Layer 2: API Integration Tests** | **Vitest + Node HTTP** | Sends real loopback HTTP requests through the production `/api/diligence/*` router while mocking external service boundaries. | ~2s (26 tests) | $0.00 / 0 tokens |
-| **Layer 3: End-to-End (E2E) Tests** | **Playwright** (Chromium) | Full browser DOM rendering, tab switching, responsive KPI cards, questionnaire tutorial navigation, accordion collapse, carousel pagination, and Command Palette shortcuts. | ~1 min (15 tests) | $0.00 / 0 tokens |
+| **Layer 3: End-to-End (E2E) Tests** | **Playwright** (Chromium) | Full browser DOM rendering, tab switching, responsive KPI cards, questionnaire generation and local prefill, accordion collapse, and Command Palette navigation. | ~2 min (19 tests) | $0.00 / 0 tokens |
 | **Layer 4: AI Eval Benchmark Harness** | **TypeScript + CLI** (`run-evals.ts`) | Golden benchmark validation against 58 M&A data room documents across 7 accuracy dimensions (`EVAL_MIN_SCORE >= 80%`). | ~1.5s (automated) | $0.00 / 0 tokens |
 
 ---
@@ -79,7 +79,8 @@ The Playwright test suite lives in [`frontend/e2e/`](../frontend/e2e/) and is co
    - Tests toggling between Dark and Light color themes.
 
 5. **[`quick-deal-questionnaire-tutorial.spec.ts`](../frontend/e2e/quick-deal-questionnaire-tutorial.spec.ts)**
-   - Opens the file-free questionnaire in Example Mode and verifies its deterministic metrics.
+   - Verifies blank defaults, formatted four-field generation, and local review-before-apply prefill without external requests.
+   - Opens the prefill directly through Command Palette multi-word search.
    - Launches the native eight-step tutorial and confirms that Financials and Risk steps mount their intended targets.
    - Launches the tutorial from the global walkthrough gallery and verifies that the questionnaire opens automatically.
    - Launches the tutorial from the landing-page walkthrough carousel and verifies the exact cross-page tour route.
@@ -107,7 +108,7 @@ npm --prefix frontend run test:e2e:report
 
 ---
 
-## 5. Vitest Unit Test Suite (88 Suites / 888 Tests)
+## 5. Vitest Unit Test Suite (95 Suites / 935 Tests)
 
 Run all unit tests:
 ```bash
@@ -145,9 +146,9 @@ The CI workflow is defined in [`.github/workflows/eval-regression.yml`](../.gith
 3. **Global npm Dependency Cache**: Uses `setup-node@v4` with `cache: 'npm'` targeting both `package-lock.json` and `frontend/package-lock.json` for fast dependency hydration.
 4. **Playwright Chromium Cache**: Uses `actions/cache@v4` on `~/.cache/ms-playwright` to restore browser binaries in ~1s and skip redundant downloads.
 5. **TypeScript Typecheck Gate**: Runs `npm --prefix frontend run typecheck` (`tsc --noEmit`).
-6. **Vitest Unit Test Gate**: Runs `npm --prefix frontend test` (888 tests).
+6. **Vitest Unit Test Gate**: Runs `npm --prefix frontend test` (935 tests).
 7. **API Integration Gate**: Runs `npm --prefix frontend run test:api` (26 loopback HTTP tests, zero external network or secrets).
 8. **Production Build Gate**: Runs `npm --prefix frontend run build` (Vite bundle verification).
-9. **Playwright Chromium E2E Gate**: Runs `npm --prefix frontend run test:e2e` (16 browser tests), uploading HTML report artifacts on failure.
+9. **Playwright Chromium E2E Gate**: Runs `npm --prefix frontend run test:e2e` (19 browser tests), uploading HTML report artifacts on failure.
 10. **AI Eval Regression Gate**: Runs `npx tsx scripts/run-evals.ts` with `EVAL_MIN_SCORE=80`.
 11. **Summary & Artifact Upload**: Generates GitHub Step Summary and uploads eval report artifacts.

@@ -57,6 +57,89 @@ export type ManualDealFormData = {
     generalNotes?: string
 }
 
+export function createBlankManualDealForm(): ManualDealFormData {
+    return {
+        dealName: '',
+        companyName: '',
+        industry: '',
+        city: '',
+        state: '',
+        employeeCount: 0,
+        businessDescription: '',
+        askingPrice: 0,
+        annualRevenue: 0,
+        ebitdaOrSdeType: 'EBITDA',
+        reportedEbitda: 0,
+        grossMarginPercent: 0,
+        ownerCompensation: 0,
+        disallowedAddBacks: 0,
+        cashIncluded: 0,
+        accountsReceivable: 0,
+        inventory: 0,
+        equipmentAndVehicles: 0,
+        realEstate: 0,
+        intellectualProperty: 0,
+        otherAssets: 0,
+        accountsPayable: 0,
+        shortTermDebt: 0,
+        longTermDebt: 0,
+        otherLiabilities: 0,
+        equityContributionPercent: 20,
+        interestRate: 9.5,
+        amortizationYears: 10,
+        sellerNoteAmount: 0,
+        sellerNoteInterestRate: 6,
+        bearRevenueGrowth: 0,
+        baseRevenueGrowth: 3,
+        bullRevenueGrowth: 7,
+        bearEbitdaMargin: 0,
+        baseEbitdaMargin: 0,
+        bullEbitdaMargin: 0,
+        exitMultiple: 4.5,
+        topCustomerConcentrationPercent: 0,
+        keyPersonRisk: 'moderate',
+        leaseExpiryYears: 0,
+        customerConcentrationNotes: '',
+        generalNotes: '',
+    }
+}
+
+const FINANCIAL_MULTIPLIERS: Record<string, number> = {
+    k: 1_000,
+    thousand: 1_000,
+    thousands: 1_000,
+    m: 1_000_000,
+    mm: 1_000_000,
+    million: 1_000_000,
+    millions: 1_000_000,
+    b: 1_000_000_000,
+    bn: 1_000_000_000,
+    billion: 1_000_000_000,
+    billions: 1_000_000_000,
+}
+
+export function parseFlexibleFinancialValue(input: string | number): number | null {
+    if (typeof input === 'number') return Number.isFinite(input) ? input : null
+
+    const trimmed = input.trim().toLowerCase()
+    if (!trimmed) return null
+
+    const negative = /^\(.*\)$/.test(trimmed)
+    const normalized = trimmed
+        .replace(/^\((.*)\)$/, '$1')
+        .replace(/(?:usd|us\s*dollars?|dollars?)/g, '')
+        .replace(/[$,]/g, '')
+        .trim()
+    const match = normalized.match(/^(-?\d+(?:\.\d+)?)\s*(k|m{1,2}|b|bn|thousands?|millions?|billions?)?$/)
+    if (!match) return null
+
+    const amount = Number(match[1])
+    if (!Number.isFinite(amount)) return null
+    const multiplier = match[2] ? FINANCIAL_MULTIPLIERS[match[2]] : 1
+    const value = amount * multiplier
+    return negative ? -Math.abs(value) : value
+}
+
 export const MANUAL_DEAL_PRESETS: Record<string, { label: string; description: string; data: ManualDealFormData }> = {
     manufacturing: {
         label: 'Precision Manufacturing ($4.8M Asking)',

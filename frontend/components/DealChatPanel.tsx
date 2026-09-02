@@ -271,6 +271,7 @@ function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealMo
 
 ## Navigation Button Link Rules:
 - For Project Intake (top card on dashboard): ALWAYS use [Project Intake](#project-intake).
+- For the zero-token deal questionnaire and local Word/pasted-stat prefill: use [Quick Deal Questionnaire](#quick-deal-questionnaire) or [Word / Pasted Stats Prefill](#quick-deal-document-prefill).
 - For Projects Portfolio tab: ALWAYS use [Projects](tab:documents).
 - Available Tabs & Primary Anchors:
   - tab:overview (anchors: #deal-overview, #overview-snapshot, #overview-health, #overview-actions, #overview-timeline)
@@ -296,6 +297,10 @@ function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealMo
   - tab:account (anchors: #account-api-keys, #account-profile, #workspace-version-control)
 
 ## Deep Diligence Feature Highlights & Exact Physical UI Locations:
+- Quick Deal Questionnaire & Local Prefill:
+  - Location: **Top Project Intake card > Quick Deal Questionnaire > Prefill from Word or pasted stats**.
+  - Use it to build a preliminary deal screen from four essentials or extract supported labeled values from a local .docx/.txt/.csv file. The file stays in the browser, uses no AI tokens, and shows a review step before applying values.
+  - Link: [Open Questionnaire Prefill](#quick-deal-document-prefill)
 - Live Formula Multi-Tab Excel (.xlsx) Model Generator:
   - Locations:
     1. **Top Header Navigation Bar > Export > Live Excel Model (.xlsx)**

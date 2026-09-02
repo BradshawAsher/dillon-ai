@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
     MANUAL_DEAL_PRESETS,
+    createBlankManualDealForm,
+    parseFlexibleFinancialValue,
     calculateNormalizedEbitda,
     calculateBalanceSheetTotals,
     buildManualDealModel,
@@ -8,6 +10,36 @@ import {
 } from './manualDealIntake'
 
 describe('manualDealIntake utilities', () => {
+    describe('quick-screen input defaults and parsing', () => {
+        it('starts with a blank deal instead of silently loading sample company data', () => {
+            const blank = createBlankManualDealForm()
+
+            expect(blank.dealName).toBe('')
+            expect(blank.companyName).toBe('')
+            expect(blank.askingPrice).toBe(0)
+            expect(blank.annualRevenue).toBe(0)
+            expect(blank.reportedEbitda).toBe(0)
+            expect(blank.equityContributionPercent).toBe(20)
+        })
+
+        it.each([
+            ['$5.2M', 5_200_000],
+            ['5,200,000', 5_200_000],
+            ['5.2 million', 5_200_000],
+            ['850k', 850_000],
+            ['USD 1.25bn', 1_250_000_000],
+            ['($125k)', -125_000],
+        ])('parses formatted financial value %s', (input, expected) => {
+            expect(parseFlexibleFinancialValue(input)).toBe(expected)
+        })
+
+        it('rejects incomplete or ambiguous financial text', () => {
+            expect(parseFlexibleFinancialValue('about five million')).toBeNull()
+            expect(parseFlexibleFinancialValue('$')).toBeNull()
+            expect(parseFlexibleFinancialValue('')).toBeNull()
+        })
+    })
+
     describe('calculateNormalizedEbitda', () => {
         it('calculates adjusted EBITDA, margin, and multiple correctly', () => {
             const result = calculateNormalizedEbitda({

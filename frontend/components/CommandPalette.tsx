@@ -115,6 +115,19 @@ export default function CommandPalette({
             badge: 'Top'
         },
         {
+            id: 'quick-questionnaire-prefill',
+            label: 'Quick Deal Questionnaire: Prefill from Word or Pasted Stats',
+            icon: <FileText className="h-4 w-4 text-primary" />,
+            action: () => {
+                const intake = document.querySelector('[data-project-intake]') || document.getElementById('project-intake')
+                intake?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                window.dispatchEvent(new CustomEvent('mergeworks:open-questionnaire-prefill'))
+            },
+            group: 'Actions & Exports',
+            keywords: ['questionnaire', 'word', 'docx', 'broker teaser', 'paste', 'stats', 'prefill', 'zero token'],
+            badge: '0 tokens'
+        },
+        {
             id: 'open-chat',
             label: 'Open Dillon AI Diligence Chat Assistant',
             icon: <Bot className="h-4 w-4 text-primary" />,
@@ -612,10 +625,8 @@ export default function CommandPalette({
     const filtered = commands.filter((cmd) => {
         const q = query.toLowerCase().trim()
         if (!q) return true
-        if (cmd.label.toLowerCase().includes(q)) return true
-        if (cmd.group.toLowerCase().includes(q)) return true
-        if (cmd.keywords?.some((k) => k.toLowerCase().includes(q))) return true
-        return false
+        const searchable = [cmd.label, cmd.group, ...(cmd.keywords ?? [])].join(' ').toLowerCase()
+        return q.split(/\s+/).every((token) => searchable.includes(token))
     })
 
     const groupedCommands = filtered.reduce<Record<string, Command[]>>((acc, cmd) => {

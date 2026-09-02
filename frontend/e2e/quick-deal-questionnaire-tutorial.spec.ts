@@ -21,8 +21,74 @@ test.describe('Quick Deal Questionnaire tutorial (0 tokens)', () => {
             page.locator('#quick-deal-questionnaire').getByRole('heading', { name: /Quick Deal Questionnaire/i })
         ).toBeVisible()
         await expect(page.locator('#quick-deal-questionnaire-metrics')).toContainText('Normalized EBITDA')
-        await expect(page.locator('#quick-deal-section-basics')).toBeVisible()
+        await expect(page.locator('#quick-deal-essential-fields')).toBeVisible()
+        await expect(page.locator('#quick-deal-section-basics')).not.toBeVisible()
+        await expect(page.locator('#quick-deal-generate-btn')).toBeDisabled()
+        await expect(page.locator('#quick-deal-questionnaire')).not.toContainText('Apex Precision Dynamics')
+    })
+
+    test('generates a preliminary screen from four formatted inputs without a model request', async ({ page }) => {
+        await openQuestionnaire(page)
+        const unsafeRequests: string[] = []
+        page.on('request', (request) => {
+            if (request.method() === 'GET') return
+            if (/webhook|openai|gemini|anthropic|submit|upload/i.test(request.url())) {
+                unsafeRequests.push(`${request.method()} ${request.url()}`)
+            }
+        })
+
+        await page.locator('#quick-deal-name').fill('Local Screen Test Co')
+        await page.locator('#quick-deal-asking-price').fill('$4.8M')
+        await page.locator('#quick-deal-revenue').fill('$5.2 million')
+        await page.locator('#quick-deal-earnings').fill('$1.1M')
         await expect(page.locator('#quick-deal-generate-btn')).toBeEnabled()
+        await page.locator('#quick-deal-generate-btn').click()
+
+        await expect(page).toHaveURL(/#overview/)
+        const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('mergeworks_manual_submissions') || '[]'))
+        expect(saved[0]).toMatchObject({
+            companyName: 'Local Screen Test Co',
+            dealName: 'Local Screen Test Co',
+            status: 'completed',
+        })
+        expect(unsafeRequests).toEqual([])
+    })
+
+    test('reviews pasted statistics before applying them and remains zero-token', async ({ page }) => {
+        await openQuestionnaire(page)
+        const unsafeRequests: string[] = []
+        page.on('request', (request) => {
+            if (request.method() === 'GET') return
+            if (/webhook|openai|gemini|anthropic|submit|upload/i.test(request.url())) {
+                unsafeRequests.push(`${request.method()} ${request.url()}`)
+            }
+        })
+
+        await page.getByRole('button', { name: /Prefill from Word or pasted stats/i }).click()
+        await page.getByLabel('Paste labeled deal statistics').fill(
+            'Company Name: Pasted Teaser Co\nAsking Price: $3.5M\nRevenue: $4.4M\nEBITDA: $900K'
+        )
+        await page.getByRole('button', { name: 'Review pasted statistics' }).click()
+        const review = page.locator('[data-questionnaire-import-review]')
+        await expect(review).toContainText('Review 5 recognized fields')
+        await expect(page.locator('#quick-deal-name')).toHaveValue('')
+
+        await review.getByRole('button', { name: 'Apply recognized fields' }).click()
+        await expect(page.locator('#quick-deal-name')).toHaveValue('Pasted Teaser Co')
+        await expect(page.locator('#quick-deal-asking-price')).toHaveValue('3500000')
+        await expect(page.locator('#quick-deal-generate-btn')).toBeEnabled()
+        expect(unsafeRequests).toEqual([])
+    })
+
+    test('opens the local prefill directly from the command palette', async ({ page }) => {
+        await page.getByRole('banner').getByRole('button', { name: /Search deals, tabs, metrics/i }).click()
+        const paletteInput = page.locator('input[placeholder="Type a command..."]')
+        await expect(paletteInput).toBeVisible()
+        await paletteInput.fill('word prefill')
+        await page.getByRole('button', { name: /Quick Deal Questionnaire: Prefill from Word or Pasted Stats/i }).click()
+
+        await expect(page.locator('#quick-deal-questionnaire')).toBeVisible()
+        await expect(page.locator('#quick-deal-document-prefill')).toContainText('Prefill questionnaire locally')
     })
 
     test('launches the tutorial and advances across mounted questionnaire sections without submitting', async ({ page }) => {

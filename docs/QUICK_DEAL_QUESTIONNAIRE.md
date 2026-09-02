@@ -23,11 +23,25 @@ graph TD
 | Ingestion Mode | Input Medium | Best For | Processing Time | Cost / Token Spend |
 | :--- | :--- | :--- | :--- | :--- |
 | **Document VDR Upload** | PDF CIMs, Excel P&Ls, Tax Returns, LOIs | Complete data rooms, cross-document contradiction checks, forensic audit trails. | ~42s (batch pipeline) | Live LLM tokens |
-| **Quick Deal Questionnaire** | Structured numeric form & qualitative parameters | Initial broker phone calls, 1-page teasers, confidential screening, scenario modeling. | **< 0.05s** (instant) | **$0.00 / 0 tokens** |
+| **Quick Deal Questionnaire** | Four-field screen, structured form, local Word/text prefill | Initial broker phone calls, 1-page teasers, confidential screening, scenario modeling. | **< 0.05s** (instant) | **$0.00 / 0 tokens** |
 
 ---
 
-## 2. The 6 Structured Input Categories
+## 2. Quick Screen, Detailed Mode, and Local Prefill
+
+The questionnaire now opens blank so example-company assumptions cannot be mistaken for user data. Users can choose one of three paths:
+
+1. **Quick screen:** Enter deal name, asking price, annual/TTM revenue, and reported EBITDA or SDE. Financial fields accept plain numbers and common formats such as `$5.2M`, `5,200,000`, `850k`, and `5.2 million`.
+2. **Add more detail:** Open the full six-section form for balance-sheet assets, financing, growth, and risk inputs. The preliminary screen can be generated first and refined later.
+3. **Prefill from Word or pasted stats:** Read a labeled `.docx`, `.txt`, or `.csv` file in the browser, or paste label/value lines from a broker teaser. The deterministic parser recognizes supported fields, flags conflicting values, and displays a review screen before anything is applied.
+
+The local prefill has a 5 MB limit, rejects legacy `.doc` and macro-enabled `.docm` files, and makes no upload, webhook, Supabase, or model request. It works best with explicit labels such as `Asking Price: $4.8M` and `TTM Revenue: $5.2M`. It does not infer unlabeled narrative prose; those values should be entered manually and verified against the source document.
+
+The feature is also discoverable from the Command Palette by searching for `word prefill`, `questionnaire`, `docx`, or `broker teaser`.
+
+---
+
+## 3. The 6 Structured Input Categories
 
 The questionnaire is implemented in [`frontend/components/ManualDealIntakeForm.tsx`](../frontend/components/ManualDealIntakeForm.tsx) and accepts structured parameters across 6 financial categories:
 
@@ -69,7 +83,7 @@ The questionnaire is implemented in [`frontend/components/ManualDealIntakeForm.t
 
 ---
 
-## 3. Deterministic Mathematical Engine
+## 4. Deterministic Mathematical Engine
 
 All calculations are executed deterministically by [`frontend/utils/manualDealIntake.ts`](../frontend/utils/manualDealIntake.ts) with strict bounds checking and zero-division guards.
 
@@ -91,7 +105,7 @@ $$\text{Senior Debt} = \max(0, \text{Asking Price} - \text{Equity Check} - \text
 
 ---
 
-## 4. Automated Deal Verdict & Flag Generation Rules
+## 5. Automated Deal Verdict & Flag Generation Rules
 
 The engine evaluates qualitative and financial thresholds to generate institutional deal findings:
 
@@ -113,20 +127,20 @@ The engine evaluates qualitative and financial thresholds to generate institutio
 
 ---
 
-## 5. Pre-Loaded 1-Click Industry Presets
+## 6. Optional 1-Click Example Presets
 
 Users can instantly test realistic industry profiles with one click:
 
 1. **🏭 Precision Manufacturing ($4.8M Asking)**
    - $5.2M Revenue, $1.25M Reported EBITDA, $140K Disallowed Add-Backs, $1.85M Equipment/Vehicles, 28% Customer Concentration.
 2. **❄️ HVAC & Commercial Services ($3.2M Asking)**
-   - $3.6M Revenue, $820K Reported EBITDA, $95K Disallowed Add-Backs, 14 Fleet Vehicles, 12% Customer Concentration (Green Flag).
+   - $4.1M Revenue, $890K Reported SDE, $65K Disallowed Add-Backs, and recurring maintenance agreement revenue.
 3. **💻 Enterprise B2B SaaS ($8.5M Asking)**
    - $4.2M ARR, 84% Gross Margin, $850K IP Book Value, 18% Customer Concentration, High Capital Efficiency.
 
 ---
 
-## 6. Workspace Hydration & State Persistence
+## 7. Workspace Hydration & State Persistence
 
 Submitting the questionnaire hydrates the entire user interface in real time:
 
@@ -139,13 +153,16 @@ State is persisted locally in `mergeworks_manual_submissions` and `mergeworks_ma
 
 ---
 
-## 7. Testing & Verification
+## 8. Testing & Verification
 
 The questionnaire logic is covered by unit tests in [`frontend/utils/manualDealIntake.test.ts`](../frontend/utils/manualDealIntake.test.ts):
 - Verifies exact arithmetic for adjusted EBITDA, gross margins, and multiples.
+- Verifies that production intake starts blank and that formatted financial values parse correctly.
 - Tests NaN resistance against blank strings and malformed user inputs.
 - Validates Net Asset Value, Tangible Book Value, and Asset Coverage formulas.
 - Asserts Senior Debt and Equity sizing.
+
+Local import behavior is covered by [`frontend/utils/questionnaireImport.test.ts`](../frontend/utils/questionnaireImport.test.ts). It exercises inline and Word-style next-line labels, a real local `.docx` fixture, conflicting values, range validation, unsupported files, and a fail-closed network assertion.
 
 ### Native interactive tutorial
 
@@ -162,4 +179,4 @@ After switching Deal Intake to **Quick Deal Questionnaire**, select **Start Tuto
 
 The tutorial changes visible questionnaire sections for demonstration, but it does not edit values, press the generate action, upload a file, or invoke an AI model.
 
-Browser coverage lives in [`frontend/e2e/quick-deal-questionnaire-tutorial.spec.ts`](../frontend/e2e/quick-deal-questionnaire-tutorial.spec.ts). It verifies that the tutorial targets are mounted and that the walkthrough produces no upload, webhook, or model request.
+Browser coverage lives in [`frontend/e2e/quick-deal-questionnaire-tutorial.spec.ts`](../frontend/e2e/quick-deal-questionnaire-tutorial.spec.ts). It verifies blank defaults, formatted four-field generation, review-before-apply behavior, Command Palette discovery, tutorial targets, and that those flows produce no upload, webhook, or model request.

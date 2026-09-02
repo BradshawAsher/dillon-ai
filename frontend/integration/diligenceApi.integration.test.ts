@@ -17,6 +17,7 @@ const backendMocks = vi.hoisted(() => ({
     stopProjectSynthesis: vi.fn(),
     submitDealPacket: vi.fn(),
     chatAssistant: vi.fn(),
+    questionnaireDraftAssistant: vi.fn(),
     createUploadUrl: vi.fn(),
     updateSubmissionRow: vi.fn(),
     handleAccessRequest: vi.fn(),
@@ -37,6 +38,7 @@ vi.mock('../../backend/diligence/stopBatchSubmission', () => ({ default: backend
 vi.mock('../../backend/diligence/stopProjectSynthesis', () => ({ default: backendMocks.stopProjectSynthesis }))
 vi.mock('../../backend/diligence/submitDealPacket', () => ({ default: backendMocks.submitDealPacket }))
 vi.mock('../../backend/diligence/chatAssistant', () => ({ default: backendMocks.chatAssistant }))
+vi.mock('../../backend/diligence/questionnaireDraftAssistant', () => ({ default: backendMocks.questionnaireDraftAssistant }))
 vi.mock('../../backend/diligence/createUploadUrl', () => ({ default: backendMocks.createUploadUrl }))
 vi.mock('../../backend/diligence/updateSubmissionRow', () => ({ default: backendMocks.updateSubmissionRow }))
 vi.mock('../../backend/diligence/handleAccessRequest', () => ({ default: backendMocks.handleAccessRequest }))
@@ -226,6 +228,7 @@ describe('diligence API route contracts', () => {
         { name: 'upload URL', route: 'upload-url', mock: 'createUploadUrl', status: 200 },
         { name: 'deal submission', route: 'submit', mock: 'submitDealPacket', status: 200 },
         { name: 'chat', route: 'chat', mock: 'chatAssistant', status: 200 },
+        { name: 'questionnaire AI draft', route: 'questionnaire-draft', mock: 'questionnaireDraftAssistant', status: 200 },
         { name: 'failed-document retry', route: 'retry-failed-document', mock: 'retryFailedDocument', status: 202 },
         { name: 'batch stop', route: 'stop-batch', mock: 'stopBatchSubmission', status: 200 },
         { name: 'synthesis stop', route: 'stop-synthesis', mock: 'stopProjectSynthesis', status: 200 },
