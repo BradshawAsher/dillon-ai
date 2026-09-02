@@ -55,6 +55,8 @@ export type ManualDealFormData = {
     leaseExpiryYears?: number
     customerConcentrationNotes?: string
     generalNotes?: string
+    intakeTier?: 'quick_screen' | 'detailed' | 'ai_draft'
+    intakeSource?: string
 }
 
 export function createBlankManualDealForm(): ManualDealFormData {
@@ -366,8 +368,20 @@ export function buildManualDealModel(formData: ManualDealFormData, projectId: st
         industry: formData.industry,
         location: `${formData.city}, ${formData.state}`.trim().replace(/^,\s*|,\s*$/g, ''),
         employeeCount: formData.employeeCount,
+        asking_price: { value: formData.askingPrice, status: 'confirmed', raw_value: `$${formData.askingPrice.toLocaleString()}`, confidence: 1 },
+        purchase_price: { value: formData.askingPrice, status: 'confirmed', raw_value: `$${formData.askingPrice.toLocaleString()}`, confidence: 1 },
+        revenue: { value: formData.annualRevenue, status: 'confirmed', raw_value: `$${formData.annualRevenue.toLocaleString()}`, confidence: 1 },
+        ebitda_sde: { value: adjustedEbitda, status: 'confirmed', raw_value: `$${adjustedEbitda.toLocaleString()}`, confidence: 1 },
+        reported_ebitda: { value: formData.reportedEbitda, status: 'confirmed', raw_value: `$${formData.reportedEbitda.toLocaleString()}`, confidence: 1 },
+        adjusted_ebitda: { value: adjustedEbitda, status: 'confirmed', raw_value: `$${adjustedEbitda.toLocaleString()}`, confidence: 1 },
+        disallowed_add_backs: { value: formData.disallowedAddBacks, status: 'confirmed', raw_value: `$${formData.disallowedAddBacks.toLocaleString()}`, confidence: 1 },
+        gross_margin: { value: formData.grossMarginPercent, status: 'confirmed', raw_value: `${formData.grossMarginPercent}%`, confidence: 1 },
+        total_assets: { value: totalAssets, status: 'confirmed', raw_value: `$${totalAssets.toLocaleString()}`, confidence: 1 },
+        total_liabilities: { value: totalLiabilities, status: 'confirmed', raw_value: `$${totalLiabilities.toLocaleString()}`, confidence: 1 },
+        net_asset_value: { value: netAssetValue, status: 'confirmed', raw_value: `$${netAssetValue.toLocaleString()}`, confidence: 1 },
+        top_customer_concentration_pct: { value: formData.topCustomerConcentrationPercent, status: 'confirmed', raw_value: `${formData.topCustomerConcentrationPercent}%`, confidence: 1 },
+        key_person_risk: { value: formData.keyPersonRisk, status: 'confirmed', confidence: 1 },
         askingPrice: formData.askingPrice,
-        revenue: formData.annualRevenue,
         reportedEbitda: formData.reportedEbitda,
         adjustedEbitda,
         disallowedAddBacks: formData.disallowedAddBacks,

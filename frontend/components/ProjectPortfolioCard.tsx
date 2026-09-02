@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 
-import { Archive, ArchiveRestore, Bot, BriefcaseBusiness, CheckCircle, Clock3, Cpu, DollarSign, Download, Eye, FileStack, FileText, Flag, FolderKanban, Layers, Plus, RefreshCw, Search, ShieldAlert, Sparkles, TriangleAlert, Link2, Check } from 'lucide-react'
+import { Archive, ArchiveRestore, Bot, BriefcaseBusiness, CheckCircle, Clock3, Cpu, DollarSign, Download, Eye, FileStack, FileText, Flag, FolderKanban, Layers, Plus, RefreshCw, Rocket, Search, ShieldAlert, Sparkles, TriangleAlert, Link2, Check, Zap } from 'lucide-react'
 import ExpandableText from './ExpandableText'
 import { HighLevelBusinessSummaryModal, HighLevelBusinessSummaryData } from './HighLevelBusinessSummaryModal'
 
@@ -20,9 +20,54 @@ import {
     getProjectKey,
     getProjectStatusVariant,
     unarchiveProjectKey,
+    type ProjectSummary,
 } from '../utils/projectWorkspace'
 import { computeImpactMetrics, formatHours } from '../utils/impactMetrics'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
+
+export type ProjectIntakeTier = 'all' | 'multi_doc' | 'ai_draft' | 'detailed' | 'quick_screen'
+
+export function resolveProjectIntakeTier(project: ProjectSummary, allRows: SubmissionHistoryItem[]): 'multi_doc' | 'ai_draft' | 'detailed' | 'quick_screen' {
+    const rawProjectDocs = allRows.filter((r) => (r.projectId || getProjectKey(r)) === project.projectKey || r.workstream === project.projectName)
+
+    // Check if project has actual uploaded files (PDF, spreadsheet, docx, etc.)
+    const hasUploadedFiles = rawProjectDocs.some((d) => {
+        const docType = (d.documentType || '').toLowerCase()
+        const fileName = (d.fileName || '').toLowerCase()
+        const isManual = docType.includes('questionnaire') || docType.includes('manual intake') || fileName.endsWith('_quick_intake.json')
+        return !isManual
+    })
+
+    if (hasUploadedFiles) {
+        return 'multi_doc'
+    }
+
+    // Check manual intake document for tier / source metadata
+    const manualDoc = rawProjectDocs.find((d) => {
+        const docType = (d.documentType || '').toLowerCase()
+        const fileName = (d.fileName || '').toLowerCase()
+        return docType.includes('questionnaire') || docType.includes('manual intake') || fileName.endsWith('_quick_intake.json')
+    })
+
+    if (manualDoc?.extractedJson) {
+        try {
+            const parsed = typeof manualDoc.extractedJson === 'string' ? JSON.parse(manualDoc.extractedJson) : manualDoc.extractedJson
+            if (parsed.intakeTier === 'ai_draft' || parsed.intakeSource === 'ai_assisted_questionnaire') {
+                return 'ai_draft'
+            }
+            if (parsed.intakeTier === 'quick_screen' || parsed.intakeSource === 'quick_screen') {
+                return 'quick_screen'
+            }
+            if (parsed.intakeTier === 'detailed' || parsed.intakeSource === 'manual_questionnaire') {
+                return 'detailed'
+            }
+        } catch {
+            // ignore JSON error
+        }
+    }
+
+    return 'multi_doc'
+}
 import {
     calculateBatchTotalCost,
     calculateSynthesisCost,
@@ -105,6 +150,7 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
     const [workstreamFilter, setWorkstreamFilter] = useState('all')
     const [statusFilter, setStatusFilter] = useState('all')
     const [riskFilter, setRiskFilter] = useState('all')
+    const [intakeFilter, setIntakeFilter] = useState<ProjectIntakeTier>('all')
     const [portfolioTab, setPortfolioTab] = useState<'active' | 'archived'>('active')
     const [, setArchiveUpdateTick] = useState(0)
 
@@ -223,11 +269,26 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
         () => portfolioTab === 'active' ? activeProjects : archivedProjects,
         [activeProjects, archivedProjects, portfolioTab]
     )
+
+    const intakeCounts = useMemo(() => {
+        const counts: Record<ProjectIntakeTier, number> = { all: targetProjects.length, multi_doc: 0, ai_draft: 0, detailed: 0, quick_screen: 0 }
+        for (const p of targetProjects) {
+            const tier = resolveProjectIntakeTier(p, rows)
+            counts[tier] = (counts[tier] || 0) + 1
+        }
+        return counts
+    }, [targetProjects, rows])
+
+    const intakeFilteredProjects = useMemo(() => {
+        if (intakeFilter === 'all') return targetProjects
+        return targetProjects.filter((project) => resolveProjectIntakeTier(project, rows) === intakeFilter)
+    }, [targetProjects, intakeFilter, rows])
+
     const normalizedProjectSearch = projectSearch.trim().toLowerCase()
 
     const visibleProjects = useMemo(() => normalizedProjectSearch.length === 0
-        ? targetProjects
-        : targetProjects.filter((project) => {
+        ? intakeFilteredProjects
+        : intakeFilteredProjects.filter((project) => {
             const searchableProjectText = [
                 project.projectName,
                 project.projectId,
@@ -237,7 +298,7 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
             ].join(' ').toLowerCase()
 
             return searchableProjectText.includes(normalizedProjectSearch)
-        }), [normalizedProjectSearch, targetProjects])
+        }), [normalizedProjectSearch, intakeFilteredProjects])
 
     useEffect(() => {
         const handleWalkthroughAction = (e: CustomEvent) => {
@@ -330,6 +391,59 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                 </div>
 
                 <div id="projects-filter-bar" className="space-y-3 scroll-mt-6">
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                        <span className="text-xs font-semibold text-muted-foreground mr-1">Intake Source:</span>
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant={intakeFilter === 'all' ? 'default' : 'outline'}
+                            className="h-7 text-xs font-medium cursor-pointer"
+                            onClick={() => setIntakeFilter('all')}
+                        >
+                            All Deals ({intakeCounts.all})
+                        </Button>
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant={intakeFilter === 'multi_doc' ? 'default' : 'outline'}
+                            className="h-7 text-xs font-medium gap-1 cursor-pointer"
+                            onClick={() => setIntakeFilter('multi_doc')}
+                        >
+                            <Rocket className="h-3 w-3 text-blue-500" />
+                            Multi-Doc Pipeline ({intakeCounts.multi_doc || 0})
+                        </Button>
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant={intakeFilter === 'ai_draft' ? 'default' : 'outline'}
+                            className="h-7 text-xs font-medium gap-1 cursor-pointer"
+                            onClick={() => setIntakeFilter('ai_draft')}
+                        >
+                            <Sparkles className="h-3 w-3 text-purple-500" />
+                            AI Questionnaire ({intakeCounts.ai_draft || 0})
+                        </Button>
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant={intakeFilter === 'detailed' ? 'default' : 'outline'}
+                            className="h-7 text-xs font-medium gap-1 cursor-pointer"
+                            onClick={() => setIntakeFilter('detailed')}
+                        >
+                            <FileText className="h-3 w-3 text-emerald-500" />
+                            Detailed Questionnaire ({intakeCounts.detailed || 0})
+                        </Button>
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant={intakeFilter === 'quick_screen' ? 'default' : 'outline'}
+                            className="h-7 text-xs font-medium gap-1 cursor-pointer"
+                            onClick={() => setIntakeFilter('quick_screen')}
+                        >
+                            <Zap className="h-3 w-3 text-amber-500" />
+                            Quick Screen ({intakeCounts.quick_screen || 0})
+                        </Button>
+                    </div>
+
                     {targetProjects.length > 0 ? (
                         <div className="relative">
                             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -360,7 +474,9 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                     </div>
                 ) : visibleProjects.length === 0 ? (
                     <div className="rounded-lg border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
-                        No projects match “{projectSearch}”.
+                        {projectSearch.trim().length > 0
+                            ? `No projects match “${projectSearch}”.`
+                            : 'No projects match the selected intake filter.'}
                     </div>
                 ) : (
                     <div className="space-y-4 pb-10">
@@ -431,6 +547,38 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                                             <div className="space-y-1">
                                                 <div className="flex flex-wrap items-center gap-2">
                                                     <h3 className="text-lg font-semibold text-foreground">{project.projectName}</h3>
+                                                    {(() => {
+                                                        const tier = resolveProjectIntakeTier(project, rows)
+                                                        if (tier === 'multi_doc') {
+                                                            return (
+                                                                <Badge variant="outline" className="border-blue-500/40 bg-blue-500/10 text-blue-700 dark:text-blue-300 gap-1 text-[11px] font-medium">
+                                                                    <Rocket className="h-3 w-3 shrink-0" /> Multi-Doc AI Pipeline
+                                                                </Badge>
+                                                            )
+                                                        }
+                                                        if (tier === 'ai_draft') {
+                                                            return (
+                                                                <Badge variant="outline" className="border-purple-500/40 bg-purple-500/10 text-purple-700 dark:text-purple-300 gap-1 text-[11px] font-medium">
+                                                                    <Sparkles className="h-3 w-3 shrink-0" /> AI Questionnaire
+                                                                </Badge>
+                                                            )
+                                                        }
+                                                        if (tier === 'detailed') {
+                                                            return (
+                                                                <Badge variant="outline" className="border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 gap-1 text-[11px] font-medium">
+                                                                    <FileText className="h-3 w-3 shrink-0" /> Detailed Questionnaire
+                                                                </Badge>
+                                                            )
+                                                        }
+                                                        if (tier === 'quick_screen') {
+                                                            return (
+                                                                <Badge variant="outline" className="border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300 gap-1 text-[11px] font-medium">
+                                                                    <Zap className="h-3 w-3 shrink-0" /> Quick Screen (4 Fields)
+                                                                </Badge>
+                                                            )
+                                                        }
+                                                        return null
+                                                    })()}
                                                     {healthBadge}
                                                     {synthesis?.finalRecommendation ? (
                                                         <Badge variant={getVerdictVariant(synthesis.finalRecommendation, synthesis.finalTrafficLight)}>

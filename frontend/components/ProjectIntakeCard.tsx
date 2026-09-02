@@ -390,7 +390,7 @@ export default function ProjectIntakeCard({
                     </div>
                 </div>
 
-                {intakeMode === 'manual' ? (
+                <div className={intakeMode === 'manual' ? 'block' : 'hidden'}>
                     <ManualDealIntakeForm
                         onStartTutorial={onStartManualDealTutorial}
                         tutorialSection={tutorialSection}
@@ -402,8 +402,9 @@ export default function ProjectIntakeCard({
                         }}
                         disabled={disabled}
                     />
-                ) : (
-                    <>
+                </div>
+
+                <div className={intakeMode === 'upload' ? 'block space-y-4' : 'hidden'}>
                         {selectedProjectKey !== 'new' && (
                             <div className="rounded-lg border border-emerald-500/40 bg-emerald-50/60 dark:bg-emerald-950/20 p-3 text-xs text-emerald-900 dark:text-emerald-300 flex items-center justify-between gap-3 shadow-2xs">
                                 <div className="flex items-start gap-2">
@@ -757,8 +758,7 @@ export default function ProjectIntakeCard({
                                 ) : null}
                             </div>
                         </div>
-                    </>
-                )}
+                    </div>
 
                 {showNoKeyPrompt && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in-0 duration-200">

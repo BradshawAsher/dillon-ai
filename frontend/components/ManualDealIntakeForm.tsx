@@ -70,11 +70,54 @@ function quickFinancialDraft(data: ManualDealFormData): Record<QuickFinancialFie
     }
 }
 
+const SESSION_STORAGE_KEY = 'mergeworks.questionnaire_draft_state'
+
+function loadSavedQuestionnaireState(): {
+    formData: ManualDealFormData
+    quickFinancialInputs: Record<QuickFinancialField, string>
+    intakeDepth: IntakeDepth
+    activeSection: ManualDealSection
+    intakeTier?: 'quick_screen' | 'detailed' | 'ai_draft'
+} | null {
+    if (typeof window === 'undefined') return null
+    try {
+        const raw = sessionStorage.getItem(SESSION_STORAGE_KEY)
+        if (!raw) return null
+        const parsed = JSON.parse(raw)
+        if (parsed && typeof parsed === 'object' && parsed.formData) {
+            return parsed
+        }
+    } catch {
+        // ignore parse error
+    }
+    return null
+}
+
 export default function ManualDealIntakeForm({ onComplete, onStartTutorial, tutorialSection, prefillRequest = 0, disabled = false }: ManualDealIntakeFormProps) {
-    const [formData, setFormData] = useState<ManualDealFormData>(() => createBlankManualDealForm())
-    const [quickFinancialInputs, setQuickFinancialInputs] = useState<Record<QuickFinancialField, string>>(() => quickFinancialDraft(createBlankManualDealForm()))
-    const [intakeDepth, setIntakeDepth] = useState<IntakeDepth>('quick')
-    const [activeSection, setActiveSection] = useState<ManualDealSection>('basics')
+    const [savedState] = useState(() => loadSavedQuestionnaireState())
+    const [formData, setFormData] = useState<ManualDealFormData>(() => savedState?.formData || createBlankManualDealForm())
+    const [quickFinancialInputs, setQuickFinancialInputs] = useState<Record<QuickFinancialField, string>>(() => savedState?.quickFinancialInputs || quickFinancialDraft(savedState?.formData || createBlankManualDealForm()))
+    const [intakeDepth, setIntakeDepth] = useState<IntakeDepth>(() => savedState?.intakeDepth || 'quick')
+    const [activeSection, setActiveSection] = useState<ManualDealSection>(() => savedState?.activeSection || 'basics')
+    const [intakeTier, setIntakeTier] = useState<'quick_screen' | 'detailed' | 'ai_draft'>(() => savedState?.intakeTier || 'quick_screen')
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        try {
+            sessionStorage.setItem(
+                SESSION_STORAGE_KEY,
+                JSON.stringify({
+                    formData,
+                    quickFinancialInputs,
+                    intakeDepth,
+                    activeSection,
+                    intakeTier,
+                })
+            )
+        } catch {
+            // ignore
+        }
+    }, [formData, quickFinancialInputs, intakeDepth, activeSection, intakeTier])
 
     useEffect(() => {
         if (tutorialSection) {
@@ -110,6 +153,7 @@ export default function ManualDealIntakeForm({ onComplete, onStartTutorial, tuto
         if (preset) {
             setFormData({ ...preset.data })
             setQuickFinancialInputs(quickFinancialDraft(preset.data))
+            setIntakeTier('detailed')
         }
     }
 
@@ -119,6 +163,12 @@ export default function ManualDealIntakeForm({ onComplete, onStartTutorial, tuto
         setQuickFinancialInputs(quickFinancialDraft(blank))
         setIntakeDepth('quick')
         setActiveSection('basics')
+        setIntakeTier('quick_screen')
+        try {
+            sessionStorage.removeItem(SESSION_STORAGE_KEY)
+        } catch {
+            // ignore
+        }
     }
 
     const handleQuickFinancialChange = (field: QuickFinancialField, rawValue: string) => {
@@ -136,6 +186,7 @@ export default function ManualDealIntakeForm({ onComplete, onStartTutorial, tuto
         if (values.dealName && !values.companyName) next.companyName = values.dealName
         setFormData(next)
         setQuickFinancialInputs(quickFinancialDraft(next))
+        setIntakeTier('ai_draft')
     }
 
     const completedCoreFields = [
@@ -151,10 +202,27 @@ export default function ManualDealIntakeForm({ onComplete, onStartTutorial, tuto
         const randomHash = Math.random().toString(36).substring(2, 8)
         const projectId = `project-${timestamp}-${randomHash}`
 
-        const dealModel = buildManualDealModel(formData, projectId)
-        const synthesis = buildManualProjectSynthesis(formData, dealModel, projectId)
+        const effectiveTier: 'quick_screen' | 'detailed' | 'ai_draft' =
+            intakeTier === 'ai_draft'
+                ? 'ai_draft'
+                : intakeDepth === 'quick'
+                    ? 'quick_screen'
+                    : 'detailed'
 
-        onComplete(dealModel, synthesis, formData)
+        const submittedFormData: ManualDealFormData = {
+            ...formData,
+            intakeTier: effectiveTier,
+            intakeSource: effectiveTier === 'ai_draft'
+                ? 'ai_assisted_questionnaire'
+                : effectiveTier === 'quick_screen'
+                    ? 'quick_screen'
+                    : 'manual_questionnaire',
+        }
+
+        const dealModel = buildManualDealModel(submittedFormData, projectId)
+        const synthesis = buildManualProjectSynthesis(submittedFormData, dealModel, projectId)
+
+        onComplete(dealModel, synthesis, submittedFormData)
     }
 
     return (

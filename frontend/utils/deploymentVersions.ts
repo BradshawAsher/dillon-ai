@@ -23,13 +23,23 @@ export const PRODUCTION_APP_HOSTNAME = new URL(PRODUCTION_APP_ORIGIN).hostname
 export const IMMUTABLE_RELEASES: ImmutableRelease[] = [
     {
         id: 'rel-main-latest',
-        versionTag: 'v1.4.0',
+        versionTag: 'v1.4.1',
         title: 'Current Production Release (Latest)',
         commit: 'main',
-        date: '2026-09-01',
+        date: '2026-09-02',
         url: 'https://due-diligence-dashboard.vercel.app/?view=dashboard',
-        description: 'Command Palette deep links, export menu upgrades, and complete typecheck/zero-warning build.',
+        description: 'Multi-doc intake badges, intake filter tabs, and autosaved deal questionnaire state.',
         isLatest: true,
+    },
+    {
+        id: 'rel-pwz-egress-poll',
+        versionTag: 'v1.4.0',
+        title: 'Release: 2-Stage Compact Heartbeat & Storage Egress Guard',
+        commit: 'd08cabe',
+        date: '2026-09-02',
+        url: 'https://due-diligence-dashboard-pwzphcew7-bradasher.vercel.app/?view=dashboard',
+        description: '2-stage heartbeat polling, zero-egress R2 routing, and questionnaire prefill enhancements.',
+        isPreviousStable: true,
     },
     {
         id: 'rel-pr12-excel-nwc',
@@ -39,7 +49,6 @@ export const IMMUTABLE_RELEASES: ImmutableRelease[] = [
         date: '2026-09-01',
         url: 'https://due-diligence-dashboard-gys3h84i8-bradasher.vercel.app/?view=dashboard',
         description: 'Live formula Excel generator, SBA 2D rate shock matrix, and NWC peg calculator.',
-        isPreviousStable: true,
     },
     {
         id: 'rel-pr11-chat-deeplinks',

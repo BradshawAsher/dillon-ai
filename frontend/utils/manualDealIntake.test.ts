@@ -192,5 +192,22 @@ describe('manualDealIntake utilities', () => {
             expect(synthesis.finalRecommendation).toBe('RENEGOTIATE')
             expect(synthesis.redFlags.length).toBeGreaterThanOrEqual(2)
         })
+
+        it('provides canonical documented facts so dashboard hydration confirms revenue and EBITDA', () => {
+            const formData = {
+                ...createBlankManualDealForm(),
+                dealName: 'Precision Air',
+                annualRevenue: 5_000_000,
+                reportedEbitda: 1_200_000,
+                disallowedAddBacks: 100_000,
+                askingPrice: 4_500_000,
+            }
+            const model = buildManualDealModel(formData, 'proj-123')
+            const facts = JSON.parse(model.documentedFactsJson)
+
+            expect(facts.revenue).toEqual(expect.objectContaining({ value: 5_000_000, status: 'confirmed' }))
+            expect(facts.ebitda_sde).toEqual(expect.objectContaining({ value: 1_100_000, status: 'confirmed' }))
+            expect(facts.asking_price).toEqual(expect.objectContaining({ value: 4_500_000, status: 'confirmed' }))
+        })
     })
 })

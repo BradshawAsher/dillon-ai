@@ -2628,6 +2628,20 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             triggerTimestamp: completedAt,
             createdAt: completedAt,
             updatedAt: completedAt,
+            valuationBaseEstimate: formData.askingPrice ? `$${formData.askingPrice.toLocaleString()}` : '',
+            ebitdaExtracted: (newDealModel.ebitda ?? formData.reportedEbitda) ? `$${(newDealModel.ebitda ?? formData.reportedEbitda).toLocaleString()}` : '',
+            revenueExtracted: formData.annualRevenue ? `$${formData.annualRevenue.toLocaleString()}` : '',
+            aiConfidence: '0.95',
+            needsHumanReview: false,
+            trafficLight: newSynthesis.finalTrafficLight || 'green',
+            riskLevel: newSynthesis.finalRiskLevel || 'Low',
+            aiSummary: `${formData.companyName || formData.dealName} questionnaire intake ($${formData.annualRevenue.toLocaleString()} Revenue, $${(newDealModel.ebitda ?? formData.reportedEbitda).toLocaleString()} EBITDA)`,
+            financialFactsJson: JSON.stringify([
+                { metric: 'revenue', normalized_value: formData.annualRevenue, raw_value: `$${formData.annualRevenue.toLocaleString()}`, period: 'TTM', currency: 'USD', confidence: 1, status: 'confirmed', provenance: 'Questionnaire Intake' },
+                { metric: 'ebitda_sde', normalized_value: newDealModel.ebitda ?? formData.reportedEbitda, raw_value: `$${(newDealModel.ebitda ?? formData.reportedEbitda).toLocaleString()}`, period: 'TTM', currency: 'USD', confidence: 1, status: 'confirmed', provenance: 'Questionnaire Intake' },
+                { metric: 'asking_price', normalized_value: formData.askingPrice, raw_value: `$${formData.askingPrice.toLocaleString()}`, period: 'Asking', currency: 'USD', confidence: 1, status: 'confirmed', provenance: 'Questionnaire Intake' },
+                { metric: 'purchase_price', normalized_value: formData.askingPrice, raw_value: `$${formData.askingPrice.toLocaleString()}`, period: 'Purchase', currency: 'USD', confidence: 1, status: 'confirmed', provenance: 'Questionnaire Intake' },
+            ]),
             extractedJson: JSON.stringify({
                 companyName: formData.companyName,
                 industry: formData.industry,
@@ -2636,7 +2650,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 ebitda: newDealModel.ebitda,
                 disallowedAddBacks: formData.disallowedAddBacks,
                 notes: formData.generalNotes,
-                intakeSource: 'manual_questionnaire',
+                intakeSource: formData.intakeSource || (formData.intakeTier === 'ai_draft' ? 'ai_assisted_questionnaire' : formData.intakeTier === 'quick_screen' ? 'quick_screen' : 'manual_questionnaire'),
+                intakeTier: formData.intakeTier || 'detailed',
             }),
         }
 
@@ -2652,8 +2667,12 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             return next
         })
 
-        // Save deal model to state/store
+        // Save deal model to state/store immediately so dashboard views hydrate with 0 latency
         void triggerSaveDealModel(newDealModel)
+        setDealModelDraftByProject((current) => ({
+            ...current,
+            [newDealModel.projectId]: newDealModel,
+        }))
 
         // Claim project ownership so data isolation does not filter it
         const currentUser = authUser || getStoredAuth()
@@ -2676,13 +2695,14 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         if (typeof window !== 'undefined') {
             window.localStorage.setItem('mergeworks.activeProjectKey', newDealModel.projectId)
             window.localStorage.setItem('mergeworks.selectedProjectKey', newDealModel.projectId)
+            syncBrowserUrl(newDealModel.projectId, 'overview')
             window.location.hash = '#overview'
             window.setTimeout(() => {
                 const el = document.getElementById('deal-overview') || document.querySelector('[data-deal-overview]')
                 el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
             }, 50)
         }
-    }, [activeHistoryEnvironment, authUser, triggerSaveDealModel, setDealName, setAskingPrice, setProjectId, setSelectedProjectKey, setActiveViewProjectId, setActiveWorkspaceTab, setActiveSubmissionBatch, setUserHasNavigatedBatchDocs])
+    }, [activeHistoryEnvironment, authUser, triggerSaveDealModel, setDealModelDraftByProject, setDealName, setAskingPrice, setProjectId, setSelectedProjectKey, setActiveViewProjectId, setActiveWorkspaceTab, setActiveSubmissionBatch, setUserHasNavigatedBatchDocs])
 
     const handlePortfolioProjectSelect = (projectKey: string, targetTab: WorkspaceTab = 'synthesis') => {
         setActiveViewProjectId(projectKey)
@@ -4086,7 +4106,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                             size="sm"
                             variant="outline"
                             className="border-amber-600/40 bg-background/90 hover:bg-background text-amber-950 dark:text-amber-200 font-semibold text-xs gap-1.5 shadow-2xs cursor-pointer"
-                            onClick={() => handlePortfolioProjectSelect(mostRecentProject.projectKey || mostRecentProject.projectId)}
+                            onClick={() => handlePortfolioProjectSelect(mostRecentProject.projectKey || mostRecentProject.projectId, activeWorkspaceTab || 'overview')}
                         >
                             <RotateCcw className="h-3.5 w-3.5" />
                             Switch back to most recent project ({mostRecentProject.projectName || mostRecentProject.companyName || mostRecentProject.projectKey} • {mostRecentProject.documentCount} {mostRecentProject.documentCount === 1 ? 'doc' : 'docs'})

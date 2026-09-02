@@ -125,7 +125,13 @@ export function useDealWorkspaceState() {
     }, [tocWidth])
 
     useEffect(() => {
-        const handleLocationChange = () => {
+        const handleHashChange = () => {
+            const parsed = parseUrlDeepLinkState(window.location.search, window.location.hash)
+            if (parsed.tab) {
+                setActiveWorkspaceTab(parsed.tab as WorkspaceTab)
+            }
+        }
+        const handlePopState = () => {
             const parsed = parseUrlDeepLinkState(window.location.search, window.location.hash)
             if (parsed.tab) {
                 setActiveWorkspaceTab(parsed.tab as WorkspaceTab)
@@ -134,11 +140,11 @@ export function useDealWorkspaceState() {
                 setActiveViewProjectId(parsed.projectQuery)
             }
         }
-        window.addEventListener('hashchange', handleLocationChange)
-        window.addEventListener('popstate', handleLocationChange)
+        window.addEventListener('hashchange', handleHashChange)
+        window.addEventListener('popstate', handlePopState)
         return () => {
-            window.removeEventListener('hashchange', handleLocationChange)
-            window.removeEventListener('popstate', handleLocationChange)
+            window.removeEventListener('hashchange', handleHashChange)
+            window.removeEventListener('popstate', handlePopState)
         }
     }, [])
 
