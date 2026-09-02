@@ -750,3 +750,23 @@ The repository has strong Vitest unit/domain coverage, a real loopback multipart
 3. Replace Code Tool JSON examples with explicit manual schemas that constrain required fields, operations, numeric ranges, and accepted query shapes.
 4. Replace the credential-bearing database Code Tool with three read-only Supabase Tool nodes using the existing n8n Supabase credential, and update the agent's tool instructions accordingly.
 5. Publish both workflows, re-read their active versions, and verify the frontend with focused tests, TypeScript, and the production build. Do not execute paid AI or mutate production deal data for verification.
+
+---
+
+# n8n Code Node Modernization and Red Underline Audit (2026-09-02)
+
+## Verified Findings
+- In n8n's Monaco editor, Code nodes running in `mode: "runOnceForAllItems"` flag `$json` with red squiggly underlines (`Cannot find name '$json'`) because `$json` is only typed for `mode: "runOnceForEachItem"`.
+- Additionally, `runOnceForAllItems` nodes returning bare objects (`return { json: ... }`) trigger return-type warnings because n8n's typed API expects an array of items (`return [{ json: ... }]`).
+- In Consolidator Workflow `IoSad3rTYJMk4Mon`:
+  - `Route Synthesis Provider` (`runOnceForAllItems`) used `$json` 12 times and returned `{ json: ... }`.
+  - `Normalize Synthesis Response` (`runOnceForAllItems`) used `$json` 15+ times and returned `{ json: ... }`.
+  - `Validate Repaired Synthesis Schema` (`runOnceForAllItems`) used `$json` and returned `{ json: ... }`.
+  - `Code in JavaScript` (`runOnceForAllItems`) returned `{ json: ... }` instead of `[{ json: ... }]`.
+- Although n8n v1 Cloud currently shims `$json` at runtime via backwards compatibility, it is deprecated, causes visual linter alarms, and risks silent failure in stricter future n8n releases.
+
+## Targeted Changes
+1. Modernize all 4 `runOnceForAllItems` nodes in Consolidator Workflow `IoSad3rTYJMk4Mon` to access input via `$input.first()?.json || {}` and return items wrapped in an array `[{ json: { ... } }]`.
+2. Strictly preserve all existing Prettier 2-space formatting, comments, variable names, failover logic, and model node parameters.
+3. Apply the update via `update_workflow` MCP tool, immediately publish via `publish_workflow`, and verify that `active: true`.
+4. Run syntax validation and test suites to verify zero regressions.

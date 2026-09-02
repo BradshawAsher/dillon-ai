@@ -208,3 +208,11 @@ The live workflows invoke 4 primary and backup model endpoints:
 - **Project Synthesis Pass Primary Model**: `OpenAI 5.6 Terra` ($0.065/synthesis) — Handles project-wide cross-document reconciliation, valuation range calibration, and deal memo generation.
 - **Project Synthesis Pass Backup Model**: `OpenAI 5.6 Sol` — Secondary fallback model for project synthesis if primary endpoints experience elevated latency or API errors.
 
+## Code Node Modernization & Active Published Versions (September 2, 2026)
+
+All Code nodes across Pod 1 are standardized to **n8n v1 syntax** to eliminate Monaco editor red underlines and prevent legacy deprecation failures:
+- **Consolidator / Synthesizer (`IoSad3rTYJMk4Mon`)**: Modernized 4 Code nodes to `$input.first()?.json || {}` and array return signatures `[{ json: ... }]`. Published active version: `1e7dfdb6-e4b8-4038-b161-13ac42033eaa`.
+- **Per-Document Analysis (`W5Jp7CJIQbNy0qlY`)**: Modernized `Normalize Extraction Response` and `Validate Repaired Schema`. Published active version: `be261108-8c23-4eec-8f9d-5b858db50351`.
+- **Document Counter Utility (`0OVTAMMp2iMx53Aw`)**: Modernized `Code in JavaScript` to use `$input.first()?.json || {}` and array return. Published active version: `f71410a6-13c9-452b-ba47-6de389ce30fb`.
+- **Audit Tooling**: Diagnostic auditor available at [`scripts/n8n/audit_workflows.py`](file:///scripts/n8n/audit_workflows.py) and [`scripts/n8n/verify_all_pod1.py`](file:///scripts/n8n/verify_all_pod1.py).
+
