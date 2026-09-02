@@ -788,3 +788,22 @@ The repository has strong Vitest unit/domain coverage, a real loopback multipart
 2. Strictly preserve all existing Prettier 2-space formatting, comments, variable names, failover logic, and model node parameters.
 3. Apply the update via `update_workflow` MCP tool, immediately publish via `publish_workflow`, and verify that `active: true`.
 4. Run syntax validation and test suites to verify zero regressions.
+
+---
+
+# Questionnaire walkthrough downstream project tour (2026-09-02)
+
+## Verified root cause
+
+- The questionnaire playlist ends at the generate button, so it never explains where the generated model appears afterward.
+- Dashboard walkthrough mode currently substitutes one global four-document Apex Industrial fixture for every playlist. Appending Overview, Diligence, Synthesis, and Projects steps without changing that selector would show the wrong company and a batch size of four.
+- Calling the real questionnaire submit handler is inappropriate for a tutorial because it persists local project state and can invoke the deal-model backend.
+
+## Targeted changes
+
+1. Add a dedicated, derived-only Apex Precision Dynamics walkthrough project using the existing manual questionnaire model and synthesis builders.
+2. Expose that project only after the tutorial reaches its generated-result steps, with one completed questionnaire record, expected batch size one, and one synthesis result.
+3. Keep the fixture entirely in React render state: no localStorage, Supabase, n8n, model-provider, or deal-model POST requests.
+4. Append guided steps for Overview, Diligence batch/result, Synthesis, and the Projects portfolio, using stable existing card anchors.
+5. Restore the pre-tour tab when the walkthrough exits and remove the derived project automatically.
+6. Update unit, Playwright, gallery, and documentation expectations; verify TypeScript, tests, production build, and the rendered browser flow.

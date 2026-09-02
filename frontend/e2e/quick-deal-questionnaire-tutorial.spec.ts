@@ -91,7 +91,7 @@ test.describe('Quick Deal Questionnaire tutorial (0 tokens)', () => {
         await expect(page.locator('#quick-deal-document-prefill')).toContainText('Prefill questionnaire locally')
     })
 
-    test('launches the tutorial and advances across mounted questionnaire sections without submitting', async ({ page }) => {
+    test('follows the questionnaire into its generated project workspace without submitting', async ({ page }) => {
         await openQuestionnaire(page)
         const unsafeRequests: string[] = []
         page.on('request', (request) => {
@@ -136,12 +136,46 @@ test.describe('Quick Deal Questionnaire tutorial (0 tokens)', () => {
         await expect(page.locator('#quick-deal-section-risk')).toBeVisible()
         await expect(walkthrough).toContainText('Now Select Section 5')
 
+        await walkthrough.getByLabel(/Jump to Step 19:/).click()
+        await expect(page).toHaveURL(/#overview/)
+        await expect(page.locator('#overview-snapshot')).toBeVisible()
+        await expect(page.locator('#overview-snapshot')).toContainText('Apex Precision Dynamics')
+        await expect(walkthrough).toContainText('Generation Creates a Standalone Project')
+
+        await walkthrough.getByLabel(/Jump to Step 21:/).click()
+        await expect(page).toHaveURL(/#diligence/)
+        await expect(page.locator('#diligence-batch')).toBeVisible()
+        await expect(page.locator('#diligence-batch')).toContainText(/1\s*(?:of|\/)\s*1/i)
+        await expect(walkthrough).toContainText('Batch Size of One')
+
+        await walkthrough.getByLabel(/Jump to Step 22:/).click()
+        await expect(page.locator('#latest-submission-section')).toBeVisible()
+        await expect(page.locator('#latest-submission-section')).toContainText('Apex Precision Dynamics')
+
+        await walkthrough.getByLabel(/Jump to Step 23:/).click()
+        await expect(page).toHaveURL(/#synthesis/)
+        await expect(page.locator('#project-synthesis')).toBeVisible()
+        await expect(page.locator('#project-synthesis')).toContainText('Apex Precision Dynamics')
+        await expect(page.locator('#synthesis-judgment')).toBeVisible()
+
+        await walkthrough.getByLabel(/Jump to Step 25:/).click()
+        await expect(page).toHaveURL(/#documents/)
+        await expect(page.locator('#project-card-active')).toBeVisible()
+        await expect(page.locator('#project-card-active')).toContainText('Apex Precision Dynamics')
+        await expect(page.locator('#project-card-active')).toContainText(/Documents?\s*1/i)
+        await expect(page.locator('#project-card-active')).toContainText('Detailed Questionnaire')
+
+        await walkthrough.getByLabel(/Jump to Step 26:/).click()
+        await expect(page.locator('#project-card-documents')).toBeVisible()
+
         await walkthrough.getByTitle('Exit Walkthrough (Esc)').click()
         await expect(walkthrough).not.toBeVisible()
+        await expect(page).toHaveURL(/#diligence/)
         await expect(page.locator('#quick-deal-name')).toHaveValue('')
         await expect(page.locator('#quick-deal-asking-price')).toHaveValue('')
         await expect(page.locator('#quick-deal-section-basics')).not.toBeVisible()
         await expect(page.locator('#quick-deal-ai-review')).not.toBeVisible()
+        await expect(page.locator('#project-card-active')).not.toBeVisible()
         expect(unsafeRequests).toEqual([])
     })
 

@@ -169,14 +169,18 @@ Local import behavior is covered by [`frontend/utils/questionnaireImport.test.ts
 
 ### Native interactive tutorial
 
-After switching Deal Intake to **Quick Deal Questionnaire**, select **Start Tutorial** beside the preset controls. The 18-step tutorial temporarily loads the realistic Apex Precision Dynamics example and demonstrates:
+After switching Deal Intake to **Quick Deal Questionnaire**, select **Start Tutorial** beside the preset controls. The 26-step tutorial temporarily loads the realistic Apex Precision Dynamics example and demonstrates:
 
 1. The populated four-field quick screen and live deterministic underwriting metrics.
 2. Local teaser parsing, source-aware review, and an explicitly labeled mocked AI interpretation that makes no workflow or provider request.
 3. Switching into detailed mode and selecting each of the five section tabs in order.
 4. Business context, earnings normalization, assets and liabilities, financing assumptions, and risk hypotheses.
 5. The final workspace-generation action without actually submitting or persisting the tutorial deal.
+6. The generated project in **Overview**, including the initial underwriting snapshot and health view.
+7. The **Diligence** representation as one completed structured questionnaire record, so its intentional batch size is `1 of 1`.
+8. The assumption-based initial synthesis card in **Synthesis**, including the preliminary judgment and missing-document requests.
+9. The persistent project card in **Projects**, where a real deal can be reopened, edited, shared, or enriched with uploaded evidence later.
 
-Exiting the walkthrough restores the questionnaire and prefill state that existed before the demo started.
+The downstream screens use a derived tutorial-only project fixture. They do not write to `localStorage`, call the questionnaire submission handler, create a backend project, or trigger n8n/Supabase/model traffic. Exiting the walkthrough removes the temporary project and restores both the workspace tab and questionnaire/prefill state that existed before the demo started.
 
-Browser coverage lives in [`frontend/e2e/quick-deal-questionnaire-tutorial.spec.ts`](../frontend/e2e/quick-deal-questionnaire-tutorial.spec.ts). It verifies blank defaults, formatted four-field generation, review-before-apply behavior, Command Palette discovery, tutorial targets, and that those flows produce no upload, webhook, or model request.
+Browser coverage lives in [`frontend/e2e/quick-deal-questionnaire-tutorial.spec.ts`](../frontend/e2e/quick-deal-questionnaire-tutorial.spec.ts). It verifies blank defaults, formatted four-field generation, review-before-apply behavior, Command Palette discovery, all questionnaire and downstream project targets, cleanup/tab restoration, and that those flows produce no upload, webhook, or model request.

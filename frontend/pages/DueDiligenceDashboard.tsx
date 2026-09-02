@@ -140,7 +140,12 @@ import {
 import { computeImpactMetrics } from '../utils/impactMetrics'
 import { getAiSubmissionViewModel } from '../utils/aiSubmissionData'
 import { base64ToFile, readFileAsBase64 } from '../utils/fileEncoding'
-import type { ManualDealFormData } from '../utils/manualDealIntake'
+import {
+    MANUAL_DEAL_PRESETS,
+    buildManualDealModel,
+    buildManualProjectSynthesis,
+    type ManualDealFormData,
+} from '../utils/manualDealIntake'
 import {
     reconstructQuestionnaireFormData,
     hasQuestionnaireData,
@@ -717,6 +722,78 @@ const DEMO_FALLBACK_DEAL_MODEL: DealModel = Object.freeze({
     }),
 })
 
+const QUESTIONNAIRE_TOUR_PROJECT_ID = 'tutorial-apex-precision-questionnaire'
+const QUESTIONNAIRE_TOUR_BATCH_ID = 'tutorial-apex-precision-batch'
+const QUESTIONNAIRE_TOUR_COMPLETED_AT = '2026-09-02T19:00:08.000Z'
+const QUESTIONNAIRE_TOUR_FORM_DATA: ManualDealFormData = Object.freeze({
+    ...MANUAL_DEAL_PRESETS.manufacturing.data,
+    intakeTier: 'detailed',
+    intakeSource: 'manual_questionnaire',
+})
+const QUESTIONNAIRE_TOUR_DEAL_MODEL: DealModel = Object.freeze(
+    buildManualDealModel(QUESTIONNAIRE_TOUR_FORM_DATA, QUESTIONNAIRE_TOUR_PROJECT_ID)
+)
+const QUESTIONNAIRE_TOUR_SYNTHESIS: ProjectSynthesisItem = Object.freeze({
+    ...buildManualProjectSynthesis(
+        QUESTIONNAIRE_TOUR_FORM_DATA,
+        QUESTIONNAIRE_TOUR_DEAL_MODEL,
+        QUESTIONNAIRE_TOUR_PROJECT_ID
+    ),
+    id: 918001,
+    createdAt: QUESTIONNAIRE_TOUR_COMPLETED_AT,
+    updatedAt: QUESTIONNAIRE_TOUR_COMPLETED_AT,
+    projectProcessedAt: QUESTIONNAIRE_TOUR_COMPLETED_AT,
+})
+const QUESTIONNAIRE_TOUR_SUBMISSION: SubmissionHistoryItem = Object.freeze({
+    ...blankHistoryRow(),
+    id: 918000,
+    projectId: QUESTIONNAIRE_TOUR_PROJECT_ID,
+    companyName: QUESTIONNAIRE_TOUR_FORM_DATA.companyName,
+    dealName: QUESTIONNAIRE_TOUR_FORM_DATA.dealName,
+    projectStage: 'Pre-LOI',
+    fileName: 'Apex_Precision_Dynamics_Quick_Intake.json',
+    fileType: 'application/json',
+    fileSize: 2048,
+    documentType: 'Deal Questionnaire / Manual Intake',
+    detectedDocumentType: 'Structured deal questionnaire',
+    status: 'completed',
+    environment: 'production',
+    requestID: 'tutorial-apex-precision-questionnaire-record',
+    submissionBatchId: QUESTIONNAIRE_TOUR_BATCH_ID,
+    expectedBatchDocumentCount: 1,
+    triggerTimestamp: '2026-09-02T19:00:00.000Z',
+    receivedAt: '2026-09-02T19:00:00.000Z',
+    processingStartedAt: '2026-09-02T19:00:01.000Z',
+    processedAt: QUESTIONNAIRE_TOUR_COMPLETED_AT,
+    createdAt: '2026-09-02T19:00:00.000Z',
+    updatedAt: QUESTIONNAIRE_TOUR_COMPLETED_AT,
+    valuationBaseEstimate: QUESTIONNAIRE_TOUR_SYNTHESIS.valuationBaseEstimate,
+    valuationLowerBound: QUESTIONNAIRE_TOUR_SYNTHESIS.valuationLowerBound,
+    valuationUpperBound: QUESTIONNAIRE_TOUR_SYNTHESIS.valuationUpperBound,
+    valuationCurrency: 'USD',
+    ebitdaExtracted: String(QUESTIONNAIRE_TOUR_DEAL_MODEL.ebitda ?? QUESTIONNAIRE_TOUR_FORM_DATA.reportedEbitda),
+    revenueExtracted: String(QUESTIONNAIRE_TOUR_FORM_DATA.annualRevenue),
+    aiConfidence: '0.94',
+    needsHumanReview: false,
+    trafficLight: QUESTIONNAIRE_TOUR_SYNTHESIS.finalTrafficLight,
+    riskLevel: QUESTIONNAIRE_TOUR_SYNTHESIS.finalRiskLevel,
+    aiSummary: `${QUESTIONNAIRE_TOUR_FORM_DATA.companyName} questionnaire converted into an initial deal workspace with one structured intake record.`,
+    aiRedFlags: JSON.stringify(QUESTIONNAIRE_TOUR_SYNTHESIS.redFlags),
+    aiYellowFlags: JSON.stringify(QUESTIONNAIRE_TOUR_SYNTHESIS.yellowFlags),
+    aiGreenFlags: JSON.stringify(QUESTIONNAIRE_TOUR_SYNTHESIS.greenFlags),
+    financialFactsJson: JSON.stringify([
+        { metric: 'revenue', normalized_value: QUESTIONNAIRE_TOUR_FORM_DATA.annualRevenue, period: 'TTM', currency: 'USD', confidence: 1, status: 'questionnaire_input' },
+        { metric: 'ebitda_sde', normalized_value: QUESTIONNAIRE_TOUR_DEAL_MODEL.ebitda, period: 'TTM', currency: 'USD', confidence: 1, status: 'questionnaire_input' },
+        { metric: 'asking_price', normalized_value: QUESTIONNAIRE_TOUR_FORM_DATA.askingPrice, period: 'Asking', currency: 'USD', confidence: 1, status: 'questionnaire_input' },
+    ]),
+    extractedJson: JSON.stringify({
+        companyName: QUESTIONNAIRE_TOUR_FORM_DATA.companyName,
+        intakeSource: QUESTIONNAIRE_TOUR_FORM_DATA.intakeSource,
+        intakeTier: QUESTIONNAIRE_TOUR_FORM_DATA.intakeTier,
+        questionnaireFormData: QUESTIONNAIRE_TOUR_FORM_DATA,
+    }),
+})
+
 function findLastIndex<T>(arr: T[], predicate: (item: T) => boolean): number {
     for (let i = arr.length - 1; i >= 0; i--) {
         if (predicate(arr[i])) return i
@@ -840,6 +917,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         activeTab: activeWorkspaceTab,
         onTabChange: setActiveWorkspaceTab,
     })
+    const isQuestionnaireTour = walkthrough.isActive && walkthrough.currentTourId === 'quick-deal-questionnaire'
+    const isQuestionnaireProjectPreview = isQuestionnaireTour && walkthrough.currentStepIndex >= 18
 
     const {
         shouldShowNudge,
@@ -1086,11 +1165,14 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             }
         })
 
+        if (isQuestionnaireProjectPreview) {
+            return [QUESTIONNAIRE_TOUR_SUBMISSION]
+        }
         if (walkthrough.isActive || simulatedWalkthroughBatch) {
             return [...DEMO_FALLBACK_DOCS]
         }
         return withOverrides
-    }, [rawSubmissionHistory, isolationModeEnabled, walkthrough.isActive, simulatedWalkthroughBatch, authUser, optimisticOverrides])
+    }, [rawSubmissionHistory, isolationModeEnabled, walkthrough.isActive, simulatedWalkthroughBatch, authUser, optimisticOverrides, isQuestionnaireProjectPreview])
 
     const visibleProjectSyntheses = useMemo(() => {
         const user = authUser || getStoredAuth()
@@ -1103,11 +1185,14 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 return owner === 'guest' || owner === 'localdev@mergeworks.io'
             })
 
+        if (isQuestionnaireProjectPreview) {
+            return [QUESTIONNAIRE_TOUR_SYNTHESIS]
+        }
         if (walkthrough.isActive || simulatedWalkthroughBatch) {
             return [DEMO_FALLBACK_SYNTHESIS, DEMO_FALLBACK_SYNTHESIS_CASCADIA]
         }
         return sortSynthesisRowsNewestFirst(base)
-    }, [rawProjectSyntheses, isolationModeEnabled, walkthrough.isActive, simulatedWalkthroughBatch, authUser])
+    }, [rawProjectSyntheses, isolationModeEnabled, walkthrough.isActive, simulatedWalkthroughBatch, authUser, isQuestionnaireProjectPreview])
 
     const [selectedFiles, setSelectedFiles] = useState<File[]>([])
     const [isSubmittingFile, setIsSubmittingFile] = useState(false)
@@ -1585,7 +1670,9 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     }, [isExampleMode, setAskingPrice, setDealName, setDocumentType, setProjectId, setProjectStage, setSelectedProjectKey, setSubmissionNotes])
 
     const isTourActive = walkthrough.isActive || Boolean(simulatedWalkthroughBatch)
-    const activeProjectId = isTourActive
+    const activeProjectId = isQuestionnaireTour
+        ? QUESTIONNAIRE_TOUR_PROJECT_ID
+        : isTourActive
         ? 'apex-industrial-tech'
         : (activeViewProjectId || (selectedProjectKey !== 'new' ? projectId : '') || (isExampleMode ? 'atlas-001' : '') || projectSummaries[0]?.projectId || projectSummaries[0]?.projectKey || '')
 
@@ -1616,6 +1703,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
     // Determine the effective questionnaire project ID to load
     const effectiveQuestionnaireProjectId = useMemo(() => {
+        if (isQuestionnaireTour) return null
         if (editingQuestionnaireProjectId) return editingQuestionnaireProjectId
         if (!isQuestionnaireCleared && activeProjectId) {
             const hasData = hasQuestionnaireData(
@@ -1626,7 +1714,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             if (hasData) return activeProjectId
         }
         return null
-    }, [editingQuestionnaireProjectId, isQuestionnaireCleared, activeProjectId, submissionHistory, dealModelDraftByProject])
+    }, [editingQuestionnaireProjectId, isQuestionnaireCleared, activeProjectId, submissionHistory, dealModelDraftByProject, isQuestionnaireTour])
 
     // Reconstruct the form data from localStorage, submission row, or dealModel/synthesis
     const questionnaireInitialData = useMemo(() => {
@@ -1674,7 +1762,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     // separately and merge it into the portfolio snapshot without dropping
     // other projects or losing detail when requests finish out of order.
     useEffect(() => {
-        if (isExampleMode || !activeDatabaseProjectId) return
+        if (isTourActive || isExampleMode || !activeDatabaseProjectId) return
         const historyRequest = triggerSubmissionHistory(
             { environment: 'production', projectId: activeDatabaseProjectId, full: true, limit: 100 },
             { mergeData: mergeScopedSubmissionRows },
@@ -1686,7 +1774,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             { environment: 'production', projectId: activeDatabaseProjectId, limit: 10 },
             { mergeData: mergeScopedSynthesisRows },
         )
-    }, [activeDatabaseProjectId, isExampleMode, recordHydratedDocumentVersions, triggerProjectSynthesis, triggerSubmissionHistory])
+    }, [activeDatabaseProjectId, isExampleMode, isTourActive, recordHydratedDocumentVersions, triggerProjectSynthesis, triggerSubmissionHistory])
 
     // Keep browser address bar in sync with active project and active tab for 1-click URL sharing
     useEffect(() => {
@@ -1807,6 +1895,9 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     }, [submissionHistory, activeProjectId])
 
     const activeDealModel = useMemo<DealModel>(() => {
+        if (isQuestionnaireTour) {
+            return QUESTIONNAIRE_TOUR_DEAL_MODEL
+        }
         if (isTourActive || isExampleMode) {
             return DEMO_FALLBACK_DEAL_MODEL
         }
@@ -1823,9 +1914,12 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             revenueMultiple: null, ebitdaMultiple: null, assetHaircutPercent: null, modelUpdatedAt: '',
             modelUpdatedBy: '', documentedFactsJson: '', documentedFactsStatus: '',
         }
-    }, [activeProjectId, askingPrice, dealModelDraftByProject, dealModelsData, isExampleMode, isTourActive])
+    }, [activeProjectId, askingPrice, dealModelDraftByProject, dealModelsData, isExampleMode, isQuestionnaireTour, isTourActive])
 
     const activeProjectDocuments = useMemo(() => {
+        if (isQuestionnaireTour) {
+            return isQuestionnaireProjectPreview ? [QUESTIONNAIRE_TOUR_SUBMISSION] : []
+        }
         if (isTourActive) {
             return DEMO_FALLBACK_DOCS.filter((document) => document.projectId === 'apex-industrial-tech')
         }
@@ -1863,7 +1957,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             const timeB = new Date(b.createdAt || b.receivedAt || b.updatedAt || 0).getTime()
             return timeA - timeB
         })
-    }, [activeProjectId, submissionHistory, projectSummaries, isTourActive, isExampleMode])
+    }, [activeProjectId, submissionHistory, projectSummaries, isQuestionnaireProjectPreview, isQuestionnaireTour, isTourActive, isExampleMode])
 
     const handleStartTour = useCallback((tourId: string) => {
         if (!isExampleMode && activeProjectDocuments.length === 0) {
@@ -1910,6 +2004,9 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     }, [hydratedDealModel, isExampleMode])
 
     const activeProjectSynthesis = useMemo(() => {
+        if (isQuestionnaireTour) {
+            return isQuestionnaireProjectPreview ? QUESTIONNAIRE_TOUR_SYNTHESIS : null
+        }
         if (isTourActive) {
             return DEMO_FALLBACK_SYNTHESIS
         }
@@ -1933,13 +2030,18 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             return hasSummary || hasJson || hasRec || hasTakeaways
         })
         return completedMatch || matches[0]
-    }, [activeProjectId, visibleProjectSyntheses, projectSummaries, isTourActive, isExampleMode])
+    }, [activeProjectId, visibleProjectSyntheses, projectSummaries, isQuestionnaireProjectPreview, isQuestionnaireTour, isTourActive, isExampleMode])
 
-    const effectiveDealName = isTourActive
+    const effectiveDealName = isQuestionnaireTour
+        ? QUESTIONNAIRE_TOUR_FORM_DATA.companyName
+        : isTourActive
         ? 'Apex Industrial Technologies LLC'
         : (activeViewProject?.name || dealName || (isExampleMode ? 'Apex Industrial Technologies (Atlas Demo)' : ''))
 
     const suggestedProjectName = useMemo(() => {
+        if (isQuestionnaireTour) {
+            return QUESTIONNAIRE_TOUR_FORM_DATA.companyName
+        }
         if (isTourActive) {
             return 'Apex Industrial Technologies LLC'
         }
@@ -1947,7 +2049,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             return selectedFiles[0].name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ')
         }
         return dealName || activeViewProject?.name || 'New Project'
-    }, [dealName, activeViewProject, selectedFiles, isTourActive])
+    }, [dealName, activeViewProject, selectedFiles, isQuestionnaireTour, isTourActive])
 
     const suggestedProjectId = useMemo(() => {
         const used = projectSummaries.map((p: any) => p.projectId || p.projectKey)
@@ -1985,6 +2087,9 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     }, [submissionHistory])
 
     const latestBatchRows = useMemo(() => {
+        if (isQuestionnaireTour) {
+            return isQuestionnaireProjectPreview ? [QUESTIONNAIRE_TOUR_SUBMISSION] : []
+        }
         if (isTourActive || isExampleMode) {
             return DEMO_FALLBACK_DOCS
         }
@@ -2025,7 +2130,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
         const result = [...uniqueDocs.values()]
         return result.sort((a, b) => new Date(a.createdAt || a.receivedAt || a.updatedAt || 0).getTime() - new Date(b.createdAt || b.receivedAt || b.updatedAt || 0).getTime())
-    }, [activeProjectId, activeSubmissionBatch?.id, submissionHistory, projectSummaries, isTourActive, isExampleMode])
+    }, [activeProjectId, activeSubmissionBatch?.id, submissionHistory, projectSummaries, isQuestionnaireProjectPreview, isQuestionnaireTour, isTourActive, isExampleMode])
 
     const activeBatchRows = useMemo(() => {
         if (activeSubmissionBatch?.id) {

@@ -67,6 +67,7 @@ export function useNativeWalkthrough({ activeTab, onTabChange }: UseNativeWalkth
     const stepExecutionRef = useRef(0)
     const summaryModalOpenRef = useRef(false)
     const isTransitioningRef = useRef(false)
+    const startingTabRef = useRef<WorkspaceTab | null>(null)
 
     const activePlaylist = useMemo(() => resolvePlaylist(currentTourId), [currentTourId])
     const currentStep: WalkthroughStep | undefined = activePlaylist.steps[currentStepIndex]
@@ -388,6 +389,7 @@ export function useNativeWalkthrough({ activeTab, onTabChange }: UseNativeWalkth
 
     // Start a tour playlist
     const startTour = useCallback((playlistId: TourPlaylistId = 'core-fast', startStep = 0) => {
+        if (!isActive) startingTabRef.current = activeTab
         setCurrentTourId(playlistId)
         setCurrentStepIndex(startStep)
         setIsActive(true)
@@ -399,7 +401,7 @@ export function useNativeWalkthrough({ activeTab, onTabChange }: UseNativeWalkth
         if (step) {
             executeStep(step, playlistId, startStep)
         }
-    }, [executeStep])
+    }, [activeTab, executeStep, isActive])
 
     // Start a dedicated tab tour
     const startTabTour = useCallback((tabId: WorkspaceTab) => {
@@ -441,7 +443,11 @@ export function useNativeWalkthrough({ activeTab, onTabChange }: UseNativeWalkth
                 })
             )
         }
-    }, [clearStepTimeouts])
+        if (currentTourId === 'quick-deal-questionnaire' && startingTabRef.current) {
+            onTabChange(startingTabRef.current)
+        }
+        startingTabRef.current = null
+    }, [clearStepTimeouts, currentTourId, onTabChange])
 
     // Advance to next step
     const nextStep = useCallback(() => {
