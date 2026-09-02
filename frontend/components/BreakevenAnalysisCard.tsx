@@ -5,6 +5,7 @@ import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { normalizeEquityFraction } from '../utils/dealMath'
 import { formatBreakevenValue } from '../utils/breakevenFormat'
+import { percentMargin } from '../utils/percentMargin'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
 
@@ -16,7 +17,7 @@ type BreakevenMetric = {
     label: string
     currentValue: number
     breakevenValue: number
-    margin: number
+    margin: number | null
     unit: string
     isAbove: boolean
 }
@@ -59,7 +60,7 @@ export default function BreakevenAnalysisCard({ model }: Props) {
             label: 'EBITDA to cover debt service',
             currentValue: ebitda,
             breakevenValue: breakEbitda,
-            margin: ((ebitda - breakEbitda) / breakEbitda) * 100,
+            margin: percentMargin(ebitda, breakEbitda),
             unit: '$',
             isAbove: ebitda >= breakEbitda,
         })
@@ -69,7 +70,7 @@ export default function BreakevenAnalysisCard({ model }: Props) {
                 label: 'Revenue to cover debt service',
                 currentValue: revenue,
                 breakevenValue: breakRevenue,
-                margin: ((revenue - breakRevenue) / breakRevenue) * 100,
+                margin: percentMargin(revenue, breakRevenue),
                 unit: '$',
                 isAbove: revenue >= breakRevenue,
             })
@@ -79,7 +80,7 @@ export default function BreakevenAnalysisCard({ model }: Props) {
             label: 'Exit EBITDA for 1x MOIC',
             currentValue: ebitda,
             breakevenValue: breakExitEbitda,
-            margin: ((ebitda - breakExitEbitda) / breakExitEbitda) * 100,
+            margin: percentMargin(ebitda, breakExitEbitda),
             unit: '$',
             isAbove: ebitda >= breakExitEbitda,
         })
@@ -89,7 +90,7 @@ export default function BreakevenAnalysisCard({ model }: Props) {
             label: 'Debt service coverage (DSCR)',
             currentValue: dscr,
             breakevenValue: 1.0,
-            margin: ((dscr - 1.0) / 1.0) * 100,
+            margin: percentMargin(dscr, 1.0),
             unit: 'x',
             isAbove: dscr >= 1.0,
         })
@@ -129,7 +130,9 @@ export default function BreakevenAnalysisCard({ model }: Props) {
                             <div className="flex items-center justify-between">
                                 <span className="text-xs font-medium text-foreground">{metric.label}</span>
                                 <span className={`text-[10px] font-bold ${metric.isAbove ? 'text-green-600' : 'text-red-600'}`}>
-                                    {metric.margin > 0 ? '+' : ''}{metric.margin.toFixed(0)}% margin
+                                    {metric.margin === null
+                                        ? '— margin'
+                                        : `${metric.margin > 0 ? '+' : ''}${metric.margin.toFixed(0)}% margin`}
                                 </span>
                             </div>
                             <div className="relative h-5 rounded-full bg-muted overflow-hidden">
