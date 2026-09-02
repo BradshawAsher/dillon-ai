@@ -26,6 +26,7 @@ import stopProjectSynthesisImport from '../backend/diligence/stopProjectSynthesi
 import triggerProjectSynthesisImport from '../backend/diligence/triggerProjectSynthesis'
 import submitDealPacketImport from '../backend/diligence/submitDealPacket'
 import chatAssistantImport from '../backend/diligence/chatAssistant'
+import questionnaireDraftAssistantImport from '../backend/diligence/questionnaireDraftAssistant'
 import updateSubmissionRowImport from '../backend/diligence/updateSubmissionRow'
 import handleAccessRequestImport from '../backend/diligence/handleAccessRequest'
 import handleSlackAlertImport from '../backend/diligence/handleSlackAlert'
@@ -61,6 +62,7 @@ const stopProjectSynthesis = interopDefault(stopProjectSynthesisImport)
 const triggerProjectSynthesis = interopDefault(triggerProjectSynthesisImport)
 const submitDealPacket = interopDefault(submitDealPacketImport)
 const chatAssistant = interopDefault(chatAssistantImport)
+const questionnaireDraftAssistant = interopDefault(questionnaireDraftAssistantImport)
 const updateSubmissionRow = interopDefault(updateSubmissionRowImport)
 const handleAccessRequest = interopDefault(handleAccessRequestImport)
 const handleSlackAlert = interopDefault(handleSlackAlertImport)
@@ -257,6 +259,14 @@ app.post('/api/diligence/chat', express.json({ limit: '128kb' }), async (req, re
         res.json(await chatAssistant({ params: req.body, user: userFromHeaders(req.headers) }))
     } catch (error) {
         res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
+    }
+})
+
+app.post('/api/diligence/questionnaire-draft', express.json({ limit: '3mb' }), async (req, res) => {
+    try {
+        res.json(await questionnaireDraftAssistant({ params: req.body, user: userFromHeaders(req.headers) }))
+    } catch (error) {
+        res.status(400).json({ error: error instanceof Error ? error.message : String(error) })
     }
 })
 

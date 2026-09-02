@@ -8,6 +8,7 @@ import {
     Zap,
     ShieldAlert,
     Play,
+    RotateCcw,
 } from 'lucide-react'
 
 import { Button } from '../lib/shadcn/button'
@@ -15,9 +16,12 @@ import { Input } from '../lib/shadcn/input'
 import { Label } from '../lib/shadcn/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../lib/shadcn/select'
 import { Textarea } from '../lib/shadcn/textarea'
+import QuestionnaireQuickImport from './QuestionnaireQuickImport'
 import {
     MANUAL_DEAL_PRESETS,
     ManualDealFormData,
+    createBlankManualDealForm,
+    parseFlexibleFinancialValue,
     calculateNormalizedEbitda,
     calculateBalanceSheetTotals,
     buildManualDealModel,
@@ -47,17 +51,33 @@ type ManualDealIntakeFormProps = {
     onComplete: (dealModel: DealModel, synthesis: ProjectSynthesisItem, formData: ManualDealFormData) => void
     onStartTutorial?: () => void
     tutorialSection?: ManualDealSection
+    prefillRequest?: number
     disabled?: boolean
 }
 
 export type ManualDealSection = 'basics' | 'financials' | 'assets' | 'financing' | 'risk'
+type IntakeDepth = 'quick' | 'detailed'
+type QuickFinancialField = 'askingPrice' | 'annualRevenue' | 'reportedEbitda'
 
-export default function ManualDealIntakeForm({ onComplete, onStartTutorial, tutorialSection, disabled = false }: ManualDealIntakeFormProps) {
-    const [formData, setFormData] = useState<ManualDealFormData>(MANUAL_DEAL_PRESETS.manufacturing.data)
+function quickFinancialDraft(data: ManualDealFormData): Record<QuickFinancialField, string> {
+    return {
+        askingPrice: data.askingPrice > 0 ? String(data.askingPrice) : '',
+        annualRevenue: data.annualRevenue > 0 ? String(data.annualRevenue) : '',
+        reportedEbitda: data.reportedEbitda > 0 ? String(data.reportedEbitda) : '',
+    }
+}
+
+export default function ManualDealIntakeForm({ onComplete, onStartTutorial, tutorialSection, prefillRequest = 0, disabled = false }: ManualDealIntakeFormProps) {
+    const [formData, setFormData] = useState<ManualDealFormData>(() => createBlankManualDealForm())
+    const [quickFinancialInputs, setQuickFinancialInputs] = useState<Record<QuickFinancialField, string>>(() => quickFinancialDraft(createBlankManualDealForm()))
+    const [intakeDepth, setIntakeDepth] = useState<IntakeDepth>('quick')
     const [activeSection, setActiveSection] = useState<ManualDealSection>('basics')
 
     useEffect(() => {
-        if (tutorialSection) setActiveSection(tutorialSection)
+        if (tutorialSection) {
+            setIntakeDepth('detailed')
+            setActiveSection(tutorialSection)
+        }
     }, [tutorialSection])
 
     const updateField = <K extends keyof ManualDealFormData>(field: K, value: ManualDealFormData[K]) => {
@@ -85,9 +105,43 @@ export default function ManualDealIntakeForm({ onComplete, onStartTutorial, tuto
     const handleLoadPreset = (key: keyof typeof MANUAL_DEAL_PRESETS) => {
         const preset = MANUAL_DEAL_PRESETS[key]
         if (preset) {
-            setFormData(preset.data)
+            setFormData({ ...preset.data })
+            setQuickFinancialInputs(quickFinancialDraft(preset.data))
         }
     }
+
+    const handleClear = () => {
+        const blank = createBlankManualDealForm()
+        setFormData(blank)
+        setQuickFinancialInputs(quickFinancialDraft(blank))
+        setIntakeDepth('quick')
+        setActiveSection('basics')
+    }
+
+    const handleQuickFinancialChange = (field: QuickFinancialField, rawValue: string) => {
+        setQuickFinancialInputs((current) => ({ ...current, [field]: rawValue }))
+        if (!rawValue.trim()) {
+            updateField(field, 0)
+            return
+        }
+        const parsed = parseFlexibleFinancialValue(rawValue)
+        if (parsed !== null && parsed >= 0) updateField(field, parsed)
+    }
+
+    const handleApplyImportedValues = (values: Partial<ManualDealFormData>) => {
+        const next = { ...formData, ...values }
+        if (values.dealName && !values.companyName) next.companyName = values.dealName
+        setFormData(next)
+        setQuickFinancialInputs(quickFinancialDraft(next))
+    }
+
+    const completedCoreFields = [
+        Boolean(formData.dealName.trim()),
+        formData.askingPrice > 0,
+        formData.annualRevenue > 0,
+        formData.reportedEbitda > 0,
+    ].filter(Boolean).length
+    const hasMinimumInputs = completedCoreFields === 4
 
     const handleSubmit = () => {
         const timestamp = new Date().toISOString().replace(/\D/g, '').slice(0, 14)
@@ -134,7 +188,7 @@ export default function ManualDealIntakeForm({ onComplete, onStartTutorial, tuto
                             Start Tutorial
                         </Button>
                     ) : null}
-                    <span className="text-[11px] font-medium text-muted-foreground mr-1">Load Preset:</span>
+                    <span className="text-[11px] font-medium text-muted-foreground mr-1">Try example:</span>
                     <Button
                         type="button"
                         variant="outline"
@@ -162,8 +216,129 @@ export default function ManualDealIntakeForm({ onComplete, onStartTutorial, tuto
                     >
                         💻 SaaS
                     </Button>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 gap-1 px-2 text-xs text-muted-foreground"
+                        onClick={handleClear}
+                    >
+                        <RotateCcw className="h-3 w-3" />
+                        Clear
+                    </Button>
                 </div>
             </div>
+
+            <div className="flex flex-col gap-3 rounded-xl border border-border bg-card/50 p-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-1 rounded-lg border border-border bg-muted/50 p-1">
+                    <Button
+                        type="button"
+                        size="sm"
+                        variant={intakeDepth === 'quick' ? 'default' : 'ghost'}
+                        onClick={() => {
+                            setQuickFinancialInputs(quickFinancialDraft(formData))
+                            setIntakeDepth('quick')
+                        }}
+                        className="h-7 text-xs"
+                    >
+                        Quick screen · 4 fields
+                    </Button>
+                    <Button
+                        type="button"
+                        size="sm"
+                        variant={intakeDepth === 'detailed' ? 'default' : 'ghost'}
+                        onClick={() => setIntakeDepth('detailed')}
+                        className="h-7 text-xs"
+                    >
+                        Add more detail
+                    </Button>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-[11px] font-semibold text-muted-foreground">Essentials {completedCoreFields}/4</span>
+                    <QuestionnaireQuickImport
+                        disabled={disabled}
+                        openRequest={prefillRequest}
+                        currentValues={formData}
+                        onApply={handleApplyImportedValues}
+                    />
+                </div>
+            </div>
+
+            {intakeDepth === 'quick' ? (
+                <div id="quick-deal-essential-fields" className="space-y-4 rounded-xl border border-primary/20 bg-primary/5 p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div>
+                            <h5 className="text-sm font-bold text-foreground">Screen a deal with the four numbers you usually have first</h5>
+                            <p className="text-xs text-muted-foreground">Generate now, then refine assets, financing, and risks later.</p>
+                        </div>
+                        <span className="rounded-full bg-background px-2.5 py-1 text-[10px] font-bold text-primary">$0 · zero tokens</span>
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-1.5">
+                            <Label htmlFor="quick-deal-name" className="text-xs font-semibold">Company / Deal Name *</Label>
+                            <Input
+                                id="quick-deal-name"
+                                value={formData.dealName}
+                                onChange={(event) => {
+                                    updateField('dealName', event.target.value)
+                                    updateField('companyName', event.target.value)
+                                }}
+                                placeholder="Apex Precision Dynamics"
+                                className="h-10 bg-background text-sm"
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label htmlFor="quick-deal-asking-price" className="text-xs font-semibold">Asking Price *</Label>
+                            <Input
+                                id="quick-deal-asking-price"
+                                inputMode="decimal"
+                                value={quickFinancialInputs.askingPrice}
+                                onChange={(event) => handleQuickFinancialChange('askingPrice', event.target.value)}
+                                placeholder="$4.8M"
+                                className="h-10 bg-background font-mono text-sm"
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label htmlFor="quick-deal-revenue" className="text-xs font-semibold">Annual / TTM Revenue *</Label>
+                            <Input
+                                id="quick-deal-revenue"
+                                inputMode="decimal"
+                                value={quickFinancialInputs.annualRevenue}
+                                onChange={(event) => handleQuickFinancialChange('annualRevenue', event.target.value)}
+                                placeholder="$5.2 million"
+                                className="h-10 bg-background font-mono text-sm"
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <div className="flex items-center justify-between gap-2">
+                                <Label htmlFor="quick-deal-earnings" className="text-xs font-semibold">Reported {formData.ebitdaOrSdeType} *</Label>
+                                <div className="flex rounded-md border border-border bg-background p-0.5 text-[10px]">
+                                    {(['EBITDA', 'SDE'] as const).map((type) => (
+                                        <button
+                                            key={type}
+                                            type="button"
+                                            onClick={() => updateField('ebitdaOrSdeType', type)}
+                                            aria-pressed={formData.ebitdaOrSdeType === type}
+                                            className={`rounded px-2 py-0.5 font-bold ${formData.ebitdaOrSdeType === type ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}
+                                        >
+                                            {type}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            <Input
+                                id="quick-deal-earnings"
+                                inputMode="decimal"
+                                value={quickFinancialInputs.reportedEbitda}
+                                onChange={(event) => handleQuickFinancialChange('reportedEbitda', event.target.value)}
+                                placeholder="$1.1M"
+                                className="h-10 bg-background font-mono text-sm"
+                            />
+                        </div>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">Accepted formats include $5.2M, 5,200,000, and 5.2 million.</p>
+                </div>
+            ) : null}
 
             {/* Live Metrics Summary Pill */}
             <div id="quick-deal-questionnaire-metrics" className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 p-3 rounded-lg border border-border bg-card/60">
@@ -203,7 +378,7 @@ export default function ManualDealIntakeForm({ onComplete, onStartTutorial, tuto
             </div>
 
             {/* Section Navigation Tabs */}
-            <div id="quick-deal-questionnaire-sections" className="flex flex-wrap items-center gap-1.5 border-b border-border pb-2">
+            <div id="quick-deal-questionnaire-sections" className={`${intakeDepth === 'detailed' ? 'flex' : 'hidden'} flex-wrap items-center gap-1.5 border-b border-border pb-2`}>
                 <button
                     id="quick-deal-section-tab-basics"
                     data-questionnaire-section="basics"
@@ -277,7 +452,7 @@ export default function ManualDealIntakeForm({ onComplete, onStartTutorial, tuto
             </div>
 
             {/* Section 1: Business Basics */}
-            {activeSection === 'basics' && (
+            {intakeDepth === 'detailed' && activeSection === 'basics' && (
                 <div id="quick-deal-section-basics" className="space-y-4 animate-in fade-in duration-200">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-1.5">
@@ -364,7 +539,7 @@ export default function ManualDealIntakeForm({ onComplete, onStartTutorial, tuto
             )}
 
             {/* Section 2: Financials & Margins */}
-            {activeSection === 'financials' && (
+            {intakeDepth === 'detailed' && activeSection === 'financials' && (
                 <div id="quick-deal-section-financials" className="space-y-4 animate-in fade-in duration-200">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-1.5">
@@ -487,7 +662,7 @@ export default function ManualDealIntakeForm({ onComplete, onStartTutorial, tuto
             )}
 
             {/* Section 3: Balance Sheet & Assets */}
-            {activeSection === 'assets' && (
+            {intakeDepth === 'detailed' && activeSection === 'assets' && (
                 <div id="quick-deal-section-assets" className="space-y-4 animate-in fade-in duration-200">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         {/* Assets Column */}
@@ -606,7 +781,7 @@ export default function ManualDealIntakeForm({ onComplete, onStartTutorial, tuto
             )}
 
             {/* Section 4: Financing & SBA Debt */}
-            {activeSection === 'financing' && (
+            {intakeDepth === 'detailed' && activeSection === 'financing' && (
                 <div id="quick-deal-section-financing" className="space-y-4 animate-in fade-in duration-200">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-1.5">
@@ -684,7 +859,7 @@ export default function ManualDealIntakeForm({ onComplete, onStartTutorial, tuto
             )}
 
             {/* Section 5: Risk & Diligence Flags */}
-            {activeSection === 'risk' && (
+            {intakeDepth === 'detailed' && activeSection === 'risk' && (
                 <div id="quick-deal-section-risk" className="space-y-4 animate-in fade-in duration-200">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-1.5">
@@ -759,7 +934,7 @@ export default function ManualDealIntakeForm({ onComplete, onStartTutorial, tuto
             {/* Navigation & Submit Action */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-border">
                 <div className="flex items-center gap-2">
-                    {activeSection !== 'basics' && (
+                    {intakeDepth === 'detailed' && activeSection !== 'basics' && (
                         <Button
                             type="button"
                             variant="ghost"
@@ -775,7 +950,7 @@ export default function ManualDealIntakeForm({ onComplete, onStartTutorial, tuto
                             &larr; Back
                         </Button>
                     )}
-                    {activeSection !== 'risk' && (
+                    {intakeDepth === 'detailed' && activeSection !== 'risk' && (
                         <Button
                             type="button"
                             variant="outline"
@@ -798,14 +973,19 @@ export default function ManualDealIntakeForm({ onComplete, onStartTutorial, tuto
                     data-quick-deal-generate
                     type="button"
                     size="sm"
-                    disabled={disabled || !formData.dealName || !formData.askingPrice}
+                    disabled={disabled || !hasMinimumInputs}
                     onClick={handleSubmit}
                     className="h-9 px-5 text-xs font-bold gap-2 shadow-sm bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer w-full sm:w-auto"
                 >
                     <Zap className="h-4 w-4 text-amber-300" />
-                    <span>⚡ Generate Instant Deal Model & Full Dashboard</span>
+                    <span>{intakeDepth === 'quick' ? '⚡ Generate Preliminary Deal Screen' : '⚡ Generate Detailed Deal Model & Dashboard'}</span>
                 </Button>
             </div>
+            {!hasMinimumInputs ? (
+                <p className="text-right text-[11px] text-muted-foreground">
+                    Add the deal name, asking price, revenue, and EBITDA/SDE to generate the screen.
+                </p>
+            ) : null}
         </div>
     )
 }

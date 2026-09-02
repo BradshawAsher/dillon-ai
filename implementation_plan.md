@@ -578,3 +578,91 @@ The repository has strong Vitest unit/domain coverage, a real loopback multipart
 - Production build: passed without the prior CSS or chunk-size warnings.
 - Playwright Chromium suite: all 16 tests passed.
 - Generated `frontend/public/version.json` metadata was restored after verification.
+
+## Quick Deal Questionnaire friction reduction and local document prefill (2026-09-01)
+
+### Empirical baseline and root causes
+
+- `ManualDealIntakeForm` initializes with the manufacturing preset, so the generate action is enabled before a user enters any data and sample assumptions can be mistaken for the user's deal.
+- More than 30 core and optional assumptions are presented across five peer sections. Only deal name and asking price currently gate submission even though revenue and EBITDA/SDE are needed for a meaningful preliminary screen.
+- Currency inputs use raw HTML number fields, requiring values such as `5200000` rather than common broker notation such as `$5.2M`.
+- Three example presets and deterministic unit coverage already exist, but Playwright only verifies that the questionnaire and tutorial open. It never enters values, generates a deal, or confirms that the resulting project appears in the workspace.
+- The repository has no local DOCX extraction dependency or review-before-apply import contract. Sending a one-page teaser through the full document pipeline would add latency and model cost that are unnecessary for labeled summary statistics.
+
+### Architecture and target files
+
+- `frontend/utils/manualDealIntake.ts`
+  - Add a blank/default form factory with financing defaults but no example company data.
+  - Add a tested flexible numeric parser for `$5.2M`, `5,200,000`, and `5.2 million`.
+- `frontend/utils/questionnaireImport.ts`
+  - Add pure label/value extraction for common teaser statistics, ambiguity detection, source snippets, safe value bounds, and field display metadata.
+  - Extract `.docx` text locally through a dynamically loaded DOCX parser; support pasted text and `.txt`, reject legacy `.doc`, macro-enabled, oversized, malformed, and unsupported files.
+- `frontend/components/QuestionnaireQuickImport.tsx`
+  - Add a local Word/paste intake panel, recognized-field review, warnings, and explicit Apply/Cancel actions. Never upload or auto-submit.
+- `frontend/components/ManualDealIntakeForm.tsx`
+  - Default to a blank four-field quick screen, retain the existing detailed workflow behind `Add more detail`, synchronize presets/imports, require the four screening fields, expose progress, and add a clear/reset action.
+- `frontend/components/CommandPalette.tsx` and `frontend/components/DealChatPanel.tsx`
+  - Register the new questionnaire prefill anchor and discovery guidance required by the repository navigation contract.
+- Tests and documentation
+  - Extend deterministic tests for blank defaults, human-formatted values, scenario verdicts, document mapping, ambiguity/malformed-file behavior, no-network import, and an end-to-end form submission that creates a visible project.
+  - Update questionnaire/testing documentation with the zero-token import workflow and its limits.
+
+### UX and safety contract
+
+1. Quick mode requests company name, asking price, revenue, and EBITDA/SDE only; all other assumptions are optional.
+2. Example presets are explicitly labeled and never load by default.
+3. Imported values remain pending until the user reviews and applies them.
+4. Local parsing never calls n8n, Supabase, R2, Slack, or an AI provider.
+5. Ambiguous values are omitted rather than guessed. Imported values are bounded and source-labeled.
+6. `.docx` and plain text are accepted; legacy `.doc`/`.docm` and files above 5 MB are rejected with conversion guidance.
+
+### Verification plan
+
+1. Run focused manual-intake and questionnaire-import unit tests.
+2. Run the new Playwright quick-screen submission test and existing questionnaire tutorial tests.
+3. Run TypeScript typechecking, all unit tests, the API integration suite, and the production build.
+4. Run the complete Playwright suite.
+5. Restore generated build metadata, run `git diff --check`, and leave changes uncommitted until explicitly requested.
+
+### Verification result
+
+- Focused manual-intake, questionnaire-import, and Deal Chat navigation tests: 47 tests passed.
+- Real local `.docx` extraction passed against the repository's WidgetCo fixture; the parser makes no network call and is emitted as an on-demand production chunk.
+- `npm run check`: TypeScript passed, 95 unit/domain files with 935 tests passed, 26 loopback API integration tests passed, and the production Vite build completed.
+- `npm run test:e2e`: all 19 Chromium tests passed, including blank intake, formatted four-field generation, review-before-apply, and Command Palette discovery.
+- `git diff --check`: passed. Build-generated `frontend/public/version.json` was restored.
+
+## Questionnaire AI draft assistance and intake routing boundary (2026-09-01)
+
+### Product boundary
+
+- **Quick Fill** creates a preliminary, user-reviewed screening draft. It may parse small structured files locally or ask an AI extraction workflow for proposed fields, but it never creates evidence records, starts synthesis, or claims that a value is verified.
+- **Project Intake** remains the evidence-grade pipeline for data rooms, long/complex documents, scans used as diligence evidence, presentations, email, audio, and video. It persists the original source, creates per-document audit records and citations, and participates in cross-document synthesis.
+- A small image such as a broker-teaser screenshot may enter through Quick Fill only when the user explicitly chooses AI Assist. The result is still an unverified draft. Multi-page scans and all audio/video stay in Project Intake; the chatbot reads their saved extraction or transcript rather than reprocessing the raw media.
+
+### Routing policy
+
+1. `.docx`, `.txt`, `.csv`, `.tsv`, `.json`, `.xlsx`, and `.xlsm` under the quick-file limit use deterministic local extraction first.
+2. Ambiguous local text/table results may be sent to the opt-in AI draft workflow with current form values and source metadata.
+3. `.png`, `.jpg`, `.jpeg`, and `.webp` may use the same opt-in AI draft workflow with strict image count/size limits.
+4. PDFs, legacy Office files, presentations, email, multi-file batches, audio, and video route to Project Intake. A later text-only PDF adapter may be added if it can preserve page citations without duplicating OCR.
+5. AI and chatbot responses can only propose typed questionnaire patches. The user must review and apply them; existing non-empty values are never overwritten silently.
+
+### Architecture and target files
+
+- Refactor `questionnaireImport.ts` around source-aware candidate lines so spreadsheet proposals retain worksheet/cell provenance.
+- Add lazy local spreadsheet parsing and safe JSON/TSV handling without increasing normal dashboard startup cost.
+- Add a shared draft schema containing field, value, confidence, source, period, units, extraction kind, warnings, and missing essentials.
+- Add an intake classifier that returns `local`, `ai_draft`, or `project_intake` with a user-facing reason.
+- Add a same-origin backend relay for a dedicated n8n questionnaire-draft webhook. The relay accepts bounded normalized content or one bounded image, never browser-exposed Header Auth.
+- Create the n8n workflow unpublished first, validate its strict JSON contract, then connect the opt-in UI.
+- Extend Dillon Chat with tools that read, validate, and propose questionnaire patches. Attachments use the same classifier and draft service rather than a parallel ingestion path.
+
+### Safety and verification
+
+- Deterministic calculations remain in TypeScript; the model interprets labels and prose but does not become the arithmetic source of truth.
+- Hash/idempotency keys prevent duplicate paid extraction.
+- AI output is allowlisted, range-validated, source-labeled, and rejected on malformed schemas.
+- Tests cover routing decisions, spreadsheet provenance, conflicting periods, AI schema validation, no-network local parsing, image limits, patch review, and chat attachment handoff.
+- The n8n workflow remains unpublished until local/API tests and an explicit synthetic workflow test pass.
+

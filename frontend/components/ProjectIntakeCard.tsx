@@ -126,6 +126,7 @@ export default function ProjectIntakeCard({
 }: ProjectIntakeCardProps) {
     const [intakeMode, setIntakeMode] = useState<'upload' | 'manual'>('upload')
     const [tutorialSection, setTutorialSection] = useState<ManualDealSection>()
+    const [questionnairePrefillRequest, setQuestionnairePrefillRequest] = useState(0)
     const [showNoKeyPrompt, setShowNoKeyPrompt] = useState(false)
     const [showDestinationModal, setShowDestinationModal] = useState(false)
     const [pendingQueueEnv, setPendingQueueEnv] = useState<SubmitEnvironment | null>(null)
@@ -144,6 +145,20 @@ export default function ProjectIntakeCard({
 
         window.addEventListener('mergeworks:walkthrough-action', handleWalkthroughAction)
         return () => window.removeEventListener('mergeworks:walkthrough-action', handleWalkthroughAction)
+    }, [])
+
+    useEffect(() => {
+        const handleOpenQuestionnairePrefill = () => {
+            setIntakeMode('manual')
+            setQuestionnairePrefillRequest((current) => current + 1)
+        }
+        window.addEventListener('mergeworks:open-questionnaire-prefill', handleOpenQuestionnairePrefill)
+        const handleOpenProjectUpload = () => setIntakeMode('upload')
+        window.addEventListener('mergeworks:open-project-intake-upload', handleOpenProjectUpload)
+        return () => {
+            window.removeEventListener('mergeworks:open-questionnaire-prefill', handleOpenQuestionnairePrefill)
+            window.removeEventListener('mergeworks:open-project-intake-upload', handleOpenProjectUpload)
+        }
     }, [])
 
     useEffect(() => {
@@ -379,6 +394,7 @@ export default function ProjectIntakeCard({
                     <ManualDealIntakeForm
                         onStartTutorial={onStartManualDealTutorial}
                         tutorialSection={tutorialSection}
+                        prefillRequest={questionnairePrefillRequest}
                         onComplete={(dm, syn, fd) => {
                             if (onManualDealComplete) {
                                 onManualDealComplete(dm, syn, fd)
