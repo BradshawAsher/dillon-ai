@@ -38,6 +38,43 @@ function readFileAsDataUrl(file: File): Promise<string> {
     })
 }
 
+const QUESTIONNAIRE_TUTORIAL_SOURCE = `Company Name: Apex Precision Dynamics
+Seller Ask: $4.8M
+TTM Revenue: $5.2M
+Adjusted EBITDA: $1.25M
+Top Customer Concentration: 28%
+Seller indicates approximately $140K of owner-related add-backs; verification is pending.`
+
+const QUESTIONNAIRE_TUTORIAL_AI_DRAFT: QuestionnaireDraft = {
+    requestId: 'tutorial-questionnaire-ai-review',
+    draftId: 'tutorial-demo-draft',
+    fields: [
+        { field: 'dealName', value: 'Apex Precision Dynamics', confidence: 0.99, source: 'Apex broker teaser', sourceLocation: 'Company Name', kind: 'extracted', origin: 'ai' },
+        { field: 'companyName', value: 'Apex Precision Dynamics', confidence: 0.99, source: 'Apex broker teaser', sourceLocation: 'Company Name', kind: 'extracted', origin: 'ai' },
+        { field: 'askingPrice', value: 4_800_000, confidence: 0.99, source: 'Apex broker teaser', sourceLocation: 'Seller Ask', units: 'USD', kind: 'extracted', origin: 'ai' },
+        { field: 'annualRevenue', value: 5_200_000, confidence: 0.98, source: 'Apex broker teaser', sourceLocation: 'TTM Revenue', period: 'TTM', units: 'USD', kind: 'extracted', origin: 'ai' },
+        { field: 'reportedEbitda', value: 1_250_000, confidence: 0.96, source: 'Apex broker teaser', sourceLocation: 'Adjusted EBITDA', period: 'TTM', units: 'USD', kind: 'extracted', origin: 'ai' },
+        { field: 'disallowedAddBacks', value: 140_000, confidence: 0.72, source: 'Apex broker teaser', sourceLocation: 'Seller add-back statement', units: 'USD', kind: 'assumption', origin: 'ai' },
+        { field: 'topCustomerConcentrationPercent', value: 28, confidence: 0.94, source: 'Apex broker teaser', sourceLocation: 'Top Customer Concentration', units: '%', kind: 'extracted', origin: 'ai' },
+    ],
+    warnings: ['The $140K seller add-back is unverified and should remain disallowed until supporting documents are reviewed.'],
+    missingRequiredFields: [],
+}
+
+function importResultFromDraft(draft: QuestionnaireDraft, sourceText: string): QuestionnaireImportResult {
+    return {
+        values: questionnaireDraftValues(draft),
+        recognized: draft.fields.map((field) => ({
+            field: field.field,
+            label: readableFieldLabel(field.field),
+            value: field.value,
+            source: `${field.sourceLocation || field.source} · ${Math.round(field.confidence * 100)}% AI confidence`,
+        })),
+        warnings: draft.warnings,
+        sourceText,
+    }
+}
+
 export default function QuestionnaireQuickImport({ disabled = false, openRequest = 0, currentValues, onApply }: QuestionnaireQuickImportProps) {
     const fileInputRef = useRef<HTMLInputElement>(null)
     const [open, setOpen] = useState(false)
@@ -51,6 +88,20 @@ export default function QuestionnaireQuickImport({ disabled = false, openRequest
     const [selectedFile, setSelectedFile] = useState<File | null>(null)
     const [aiDraft, setAiDraft] = useState<QuestionnaireDraft | null>(null)
     const [hasApplied, setHasApplied] = useState(false)
+    const [isTutorialMockAi, setIsTutorialMockAi] = useState(false)
+    const tutorialSnapshotRef = useRef<{
+        open: boolean
+        pastedText: string
+        result: QuestionnaireImportResult | null
+        error: string
+        routeDecision: QuestionnaireRouteDecision | null
+        selectedFile: File | null
+        aiDraft: QuestionnaireDraft | null
+        hasApplied: boolean
+        isTutorialMockAi: boolean
+    } | null>(null)
+    const tutorialStateRef = useRef({ open, pastedText, result, error, routeDecision, selectedFile, aiDraft, hasApplied, isTutorialMockAi })
+    tutorialStateRef.current = { open, pastedText, result, error, routeDecision, selectedFile, aiDraft, hasApplied, isTutorialMockAi }
     const draft = useMemo(() => aiDraft ?? (result ? questionnaireDraftFromImport(result, 'local-preview') : null), [aiDraft, result])
 
     useEffect(() => {
@@ -76,6 +127,68 @@ export default function QuestionnaireQuickImport({ disabled = false, openRequest
     }, [openRequest])
 
     useEffect(() => {
+        const handleWalkthroughAction = (event: Event) => {
+            const detail = (event as CustomEvent<{
+                stepId?: string
+                action?: { type?: string; payload?: unknown }
+            }>).detail
+            const action = detail?.action
+
+            if (action?.type === 'reset_simulation') {
+                const snapshot = tutorialSnapshotRef.current
+                if (!snapshot) return
+                setOpen(snapshot.open)
+                setPastedText(snapshot.pastedText)
+                setResult(snapshot.result)
+                setError(snapshot.error)
+                setRouteDecision(snapshot.routeDecision)
+                setSelectedFile(snapshot.selectedFile)
+                setAiDraft(snapshot.aiDraft)
+                setHasApplied(snapshot.hasApplied)
+                setIsTutorialMockAi(snapshot.isTutorialMockAi)
+                setIsAiReading(false)
+                tutorialSnapshotRef.current = null
+                return
+            }
+
+            if (action?.type === 'show_questionnaire_depth' && action.payload === 'detailed' && tutorialSnapshotRef.current) {
+                setOpen(false)
+                return
+            }
+
+            if (action?.type !== 'show_questionnaire_prefill_demo' || !detail?.stepId?.startsWith('quick-deal-step-')) return
+            if (!tutorialSnapshotRef.current) {
+                tutorialSnapshotRef.current = tutorialStateRef.current
+            }
+
+            setOpen(true)
+            setPastedText(QUESTIONNAIRE_TUTORIAL_SOURCE)
+            setError('')
+            setRouteDecision(null)
+            setSelectedFile(null)
+            setHasApplied(false)
+            setIsAiReading(false)
+
+            if (action.payload === 'entry') {
+                setResult(null)
+                setAiDraft(null)
+                setIsTutorialMockAi(false)
+            } else if (action.payload === 'local') {
+                setResult(parseQuestionnaireText(QUESTIONNAIRE_TUTORIAL_SOURCE))
+                setAiDraft(null)
+                setIsTutorialMockAi(false)
+            } else if (action.payload === 'ai') {
+                setResult(importResultFromDraft(QUESTIONNAIRE_TUTORIAL_AI_DRAFT, QUESTIONNAIRE_TUTORIAL_SOURCE))
+                setAiDraft(QUESTIONNAIRE_TUTORIAL_AI_DRAFT)
+                setIsTutorialMockAi(true)
+            }
+        }
+
+        window.addEventListener('mergeworks:walkthrough-action', handleWalkthroughAction)
+        return () => window.removeEventListener('mergeworks:walkthrough-action', handleWalkthroughAction)
+    }, [])
+
+    useEffect(() => {
         if (!open) return
         document.getElementById('quick-deal-document-prefill')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }, [open])
@@ -88,6 +201,7 @@ export default function QuestionnaireQuickImport({ disabled = false, openRequest
         setSelectedFile(null)
         setAiDraft(null)
         setHasApplied(false)
+        setIsTutorialMockAi(false)
         if (fileInputRef.current) fileInputRef.current.value = ''
     }
 
@@ -129,6 +243,7 @@ export default function QuestionnaireQuickImport({ disabled = false, openRequest
 
     const requestAiDraft = async (sourceType: 'text' | 'image') => {
         setIsAiReading(true)
+        setIsTutorialMockAi(false)
         setError('')
         try {
             const imageDataUrl = sourceType === 'image' && selectedFile ? await readFileAsDataUrl(selectedFile) : ''
@@ -189,17 +304,7 @@ export default function QuestionnaireQuickImport({ disabled = false, openRequest
             }
 
             setAiDraft(finalDraft)
-            setResult({
-                values: questionnaireDraftValues(finalDraft),
-                recognized: finalDraft.fields.map((field) => ({
-                    field: field.field,
-                    label: readableFieldLabel(field.field),
-                    value: field.value,
-                    source: `${field.sourceLocation || field.source} · ${Math.round(field.confidence * 100)}% AI confidence`,
-                })),
-                warnings: finalDraft.warnings,
-                sourceText,
-            })
+            setResult(importResultFromDraft(finalDraft, sourceText))
         } catch (caught) {
             setError(caught instanceof Error ? caught.message : 'AI Assist could not create a draft.')
         } finally {
@@ -410,9 +515,9 @@ export default function QuestionnaireQuickImport({ disabled = false, openRequest
             ) : null}
 
             {result ? (
-                <div className="space-y-3 rounded-lg border border-border bg-background/80 p-3" data-questionnaire-import-review>
-                    {draft ? (
-                        <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 space-y-2 animate-in fade-in-0 duration-300">
+                <div id="quick-deal-prefill-review" className="space-y-3 rounded-lg border border-border bg-background/80 p-3" data-questionnaire-import-review>
+                    {aiDraft ? (
+                        <div id="quick-deal-ai-review" data-tutorial-mock-ai={isTutorialMockAi || undefined} className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 space-y-2 animate-in fade-in-0 duration-300">
                             <div className="flex flex-wrap items-center justify-between gap-2">
                                 <div className="flex items-center gap-2">
                                     <div className="rounded-full bg-emerald-500/20 p-1 text-emerald-600 dark:text-emerald-400">
@@ -420,28 +525,28 @@ export default function QuestionnaireQuickImport({ disabled = false, openRequest
                                     </div>
                                     <div>
                                         <h4 className="text-xs font-bold text-emerald-950 dark:text-emerald-100">
-                                            Deep AI Extraction Complete
+                                            {isTutorialMockAi ? 'Tutorial AI Review Preview' : 'Deep AI Extraction Complete'}
                                         </h4>
                                         <p className="text-[11px] text-emerald-800 dark:text-emerald-300">
-                                            Extracted {draft.fields.length} deal fields with {draft.fields.length > 0 ? Math.round((draft.fields.reduce((acc, f) => acc + f.confidence, 0) / draft.fields.length) * 100) : 95}% average confidence using OpenAI 5.6 Terra.
+                                            {isTutorialMockAi ? 'Mocked without an API call: ' : ''}Extracted {aiDraft.fields.length} deal fields with {aiDraft.fields.length > 0 ? Math.round((aiDraft.fields.reduce((acc, f) => acc + f.confidence, 0) / aiDraft.fields.length) * 100) : 95}% average confidence using OpenAI 5.6 Terra.
                                         </p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-1.5">
                                     <span className="rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-mono font-semibold text-emerald-700 dark:text-emerald-300">
-                                        {draft.fields.length} Fields Verified
+                                        {aiDraft.fields.length} Fields Verified
                                     </span>
-                                    {draft.draftId ? (
+                                    {aiDraft.draftId ? (
                                         <span className="rounded bg-primary/15 border border-primary/30 px-1.5 py-0.5 text-[9px] font-mono font-semibold text-primary">
-                                            ID: {draft.draftId.slice(0, 8)}
+                                            ID: {aiDraft.draftId.slice(0, 8)}
                                         </span>
                                     ) : null}
                                 </div>
                             </div>
-                            {draft.warnings.length > 0 ? (
+                            {aiDraft.warnings.length > 0 ? (
                                 <div className="rounded-md bg-emerald-950/5 dark:bg-emerald-950/40 p-2 text-[10px] text-muted-foreground border border-emerald-500/20">
                                     <span className="font-semibold text-amber-600 dark:text-amber-400">AI Notes & Observations: </span>
-                                    {draft.warnings.join(' · ')}
+                                    {aiDraft.warnings.join(' · ')}
                                 </div>
                             ) : null}
                         </div>
@@ -463,7 +568,7 @@ export default function QuestionnaireQuickImport({ disabled = false, openRequest
                             <p className="text-[10px] text-muted-foreground">
                                 {hasApplied
                                     ? 'These values have been imported into your questionnaire form.'
-                                    : draft
+                                    : aiDraft
                                         ? 'AI extraction reviewed your text and populated the recognized fields below. Click "Apply recognized fields" to insert them into your form.'
                                         : 'Basic fields recognized by local parser. Click "Extract with AI" to have OpenAI 5.6 Terra extract complex debt terms, customer concentration, and margins.'}
                             </p>
@@ -478,14 +583,14 @@ export default function QuestionnaireQuickImport({ disabled = false, openRequest
                                 <Button
                                     type="button"
                                     size="sm"
-                                    variant={draft ? "outline" : "default"}
+                                    variant={aiDraft ? "outline" : "default"}
                                     disabled={disabled || isAiReading}
                                     onClick={() => void requestAiDraft('text')}
                                     className="h-8 gap-1.5 text-xs font-semibold cursor-pointer"
                                     title="Uses OpenAI 5.6 Terra to read your text, extract complex financial metrics, calculate confidence scores, and flag red-flag warnings."
                                 >
                                     {isAiReading ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5 text-amber-500" />}
-                                    {draft ? 'Re-extract with AI' : 'Extract with AI (OpenAI 5.6 Terra)'}
+                                    {aiDraft ? 'Re-extract with AI' : 'Extract with AI (OpenAI 5.6 Terra)'}
                                 </Button>
                             ) : null}
                             <Button

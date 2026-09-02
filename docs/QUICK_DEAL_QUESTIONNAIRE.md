@@ -169,17 +169,14 @@ Local import behavior is covered by [`frontend/utils/questionnaireImport.test.ts
 
 ### Native interactive tutorial
 
-After switching Deal Intake to **Quick Deal Questionnaire**, select **Start Tutorial** beside the preset controls. The eight-step tutorial explains:
+After switching Deal Intake to **Quick Deal Questionnaire**, select **Start Tutorial** beside the preset controls. The 18-step tutorial temporarily loads the realistic Apex Precision Dynamics example and demonstrates:
 
-1. Presets and file-free intake.
-2. Live calculated metrics.
-3. Business Basics.
-4. Financials and earnings normalization.
-5. Balance sheet assets and liabilities.
-6. Financing and SBA debt assumptions.
-7. Risk and diligence gaps.
-8. Generation of the initial deal workspace.
+1. The populated four-field quick screen and live deterministic underwriting metrics.
+2. Local teaser parsing, source-aware review, and an explicitly labeled mocked AI interpretation that makes no workflow or provider request.
+3. Switching into detailed mode and selecting each of the five section tabs in order.
+4. Business context, earnings normalization, assets and liabilities, financing assumptions, and risk hypotheses.
+5. The final workspace-generation action without actually submitting or persisting the tutorial deal.
 
-The tutorial changes visible questionnaire sections for demonstration, but it does not edit values, press the generate action, upload a file, or invoke an AI model.
+Exiting the walkthrough restores the questionnaire and prefill state that existed before the demo started.
 
 Browser coverage lives in [`frontend/e2e/quick-deal-questionnaire-tutorial.spec.ts`](../frontend/e2e/quick-deal-questionnaire-tutorial.spec.ts). It verifies blank defaults, formatted four-field generation, review-before-apply behavior, Command Palette discovery, tutorial targets, and that those flows produce no upload, webhook, or model request.

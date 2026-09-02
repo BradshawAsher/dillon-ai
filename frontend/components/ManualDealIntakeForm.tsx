@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useRef } from 'react'
 import {
     Building2,
     DollarSign,
@@ -11,9 +11,11 @@ import {
     RotateCcw,
     Plus,
     Trash2,
+    Edit3,
 } from 'lucide-react'
 
 import { Button } from '../lib/shadcn/button'
+import { Badge } from '../lib/shadcn/badge'
 import { Input } from '../lib/shadcn/input'
 import { Label } from '../lib/shadcn/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../lib/shadcn/select'
@@ -51,11 +53,15 @@ const INDUSTRY_OPTIONS = [
 ]
 
 type ManualDealIntakeFormProps = {
-    onComplete: (dealModel: DealModel, synthesis: ProjectSynthesisItem, formData: ManualDealFormData) => void
+    onComplete: (dealModel: DealModel, synthesis: ProjectSynthesisItem, formData: ManualDealFormData, targetProjectId?: string) => void
     onStartTutorial?: () => void
     tutorialSection?: ManualDealSection
     prefillRequest?: number
     disabled?: boolean
+    initialData?: ManualDealFormData | null
+    editingProjectId?: string | null
+    editingDealName?: string | null
+    onClearToNewProject?: () => void
 }
 
 export type ManualDealSection = 'basics' | 'financials' | 'assets' | 'financing' | 'risk'
@@ -93,16 +99,69 @@ function loadSavedQuestionnaireState(): {
     return null
 }
 
-export default function ManualDealIntakeForm({ onComplete, onStartTutorial, tutorialSection, prefillRequest = 0, disabled = false }: ManualDealIntakeFormProps) {
+export default function ManualDealIntakeForm({
+    onComplete,
+    onStartTutorial,
+    tutorialSection,
+    prefillRequest = 0,
+    disabled = false,
+    initialData = null,
+    editingProjectId = null,
+    editingDealName = null,
+    onClearToNewProject,
+}: ManualDealIntakeFormProps) {
     const [savedState] = useState(() => loadSavedQuestionnaireState())
-    const [formData, setFormData] = useState<ManualDealFormData>(() => savedState?.formData || createBlankManualDealForm())
-    const [quickFinancialInputs, setQuickFinancialInputs] = useState<Record<QuickFinancialField, string>>(() => savedState?.quickFinancialInputs || quickFinancialDraft(savedState?.formData || createBlankManualDealForm()))
-    const [intakeDepth, setIntakeDepth] = useState<IntakeDepth>(() => savedState?.intakeDepth || 'quick')
+    const [formData, setFormData] = useState<ManualDealFormData>(() => {
+        if (editingProjectId && initialData) return initialData
+        return savedState?.formData || createBlankManualDealForm()
+    })
+    const [quickFinancialInputs, setQuickFinancialInputs] = useState<Record<QuickFinancialField, string>>(() => {
+        if (editingProjectId && initialData) return quickFinancialDraft(initialData)
+        return savedState?.quickFinancialInputs || quickFinancialDraft(savedState?.formData || createBlankManualDealForm())
+    })
+    const [intakeDepth, setIntakeDepth] = useState<IntakeDepth>(() => {
+        if (editingProjectId && initialData?.intakeTier) {
+            return initialData.intakeTier === 'quick_screen' ? 'quick' : 'detailed'
+        }
+        return savedState?.intakeDepth || 'quick'
+    })
     const [activeSection, setActiveSection] = useState<ManualDealSection>(() => savedState?.activeSection || 'basics')
-    const [intakeTier, setIntakeTier] = useState<'quick_screen' | 'detailed' | 'ai_draft'>(() => savedState?.intakeTier || 'quick_screen')
+    const [intakeTier, setIntakeTier] = useState<'quick_screen' | 'detailed' | 'ai_draft'>(() => {
+        if (editingProjectId && initialData?.intakeTier) {
+            return initialData.intakeTier
+        }
+        return savedState?.intakeTier || 'quick_screen'
+    })
+    const [isTutorialDemoActive, setIsTutorialDemoActive] = useState(false)
+
+    const lastLoadedProjectId = useRef<string | null>(editingProjectId)
+    const tutorialSnapshotRef = useRef<{
+        formData: ManualDealFormData
+        quickFinancialInputs: Record<QuickFinancialField, string>
+        intakeDepth: IntakeDepth
+        activeSection: ManualDealSection
+        intakeTier: 'quick_screen' | 'detailed' | 'ai_draft'
+    } | null>(null)
+    const tutorialStateRef = useRef({ formData, quickFinancialInputs, intakeDepth, activeSection, intakeTier })
+    tutorialStateRef.current = { formData, quickFinancialInputs, intakeDepth, activeSection, intakeTier }
+
+    useEffect(() => {
+        if (editingProjectId && editingProjectId !== lastLoadedProjectId.current && initialData) {
+            lastLoadedProjectId.current = editingProjectId
+            setFormData(initialData)
+            setQuickFinancialInputs(quickFinancialDraft(initialData))
+            if (initialData.intakeTier) {
+                setIntakeTier(initialData.intakeTier)
+                setIntakeDepth(initialData.intakeTier === 'quick_screen' ? 'quick' : 'detailed')
+            }
+        } else if (!editingProjectId && lastLoadedProjectId.current) {
+            lastLoadedProjectId.current = null
+        }
+    }, [editingProjectId, initialData])
 
     useEffect(() => {
         if (typeof window === 'undefined') return
+        if (isTutorialDemoActive) return
         try {
             sessionStorage.setItem(
                 SESSION_STORAGE_KEY,
@@ -117,7 +176,7 @@ export default function ManualDealIntakeForm({ onComplete, onStartTutorial, tuto
         } catch {
             // ignore
         }
-    }, [formData, quickFinancialInputs, intakeDepth, activeSection, intakeTier])
+    }, [formData, quickFinancialInputs, intakeDepth, activeSection, intakeTier, isTutorialDemoActive])
 
     useEffect(() => {
         if (tutorialSection) {
@@ -125,6 +184,49 @@ export default function ManualDealIntakeForm({ onComplete, onStartTutorial, tuto
             setActiveSection(tutorialSection)
         }
     }, [tutorialSection])
+
+    useEffect(() => {
+        const handleWalkthroughAction = (event: Event) => {
+            const detail = (event as CustomEvent<{
+                stepId?: string
+                action?: { type?: string; payload?: unknown }
+            }>).detail
+            const action = detail?.action
+
+            if (action?.type === 'reset_simulation') {
+                const snapshot = tutorialSnapshotRef.current
+                if (!snapshot) return
+                setFormData(snapshot.formData)
+                setQuickFinancialInputs(snapshot.quickFinancialInputs)
+                setIntakeDepth(snapshot.intakeDepth)
+                setActiveSection(snapshot.activeSection)
+                setIntakeTier(snapshot.intakeTier)
+                tutorialSnapshotRef.current = null
+                setIsTutorialDemoActive(false)
+                return
+            }
+
+            if (!detail?.stepId?.startsWith('quick-deal-step-')) return
+            if (!tutorialSnapshotRef.current) {
+                tutorialSnapshotRef.current = tutorialStateRef.current
+                setIsTutorialDemoActive(true)
+                const demo = MANUAL_DEAL_PRESETS.manufacturing.data
+                setFormData({ ...demo })
+                setQuickFinancialInputs(quickFinancialDraft(demo))
+                setIntakeDepth('quick')
+                setActiveSection('basics')
+                setIntakeTier('quick_screen')
+            }
+
+            if (action?.type === 'show_questionnaire_depth') {
+                setIntakeDepth(action.payload === 'detailed' ? 'detailed' : 'quick')
+                if (action.payload === 'detailed') setActiveSection('basics')
+            }
+        }
+
+        window.addEventListener('mergeworks:walkthrough-action', handleWalkthroughAction)
+        return () => window.removeEventListener('mergeworks:walkthrough-action', handleWalkthroughAction)
+    }, [])
 
     const updateField = <K extends keyof ManualDealFormData>(field: K, value: ManualDealFormData[K]) => {
         setFormData((prev) => ({ ...prev, [field]: value }))
@@ -169,6 +271,9 @@ export default function ManualDealIntakeForm({ onComplete, onStartTutorial, tuto
         } catch {
             // ignore
         }
+        if (onClearToNewProject) {
+            onClearToNewProject()
+        }
     }
 
     const handleQuickFinancialChange = (field: QuickFinancialField, rawValue: string) => {
@@ -200,7 +305,7 @@ export default function ManualDealIntakeForm({ onComplete, onStartTutorial, tuto
     const handleSubmit = () => {
         const timestamp = new Date().toISOString().replace(/\D/g, '').slice(0, 14)
         const randomHash = Math.random().toString(36).substring(2, 8)
-        const projectId = `project-${timestamp}-${randomHash}`
+        const projectId = editingProjectId || `project-${timestamp}-${randomHash}`
 
         const effectiveTier: 'quick_screen' | 'detailed' | 'ai_draft' =
             intakeTier === 'ai_draft'
@@ -222,11 +327,45 @@ export default function ManualDealIntakeForm({ onComplete, onStartTutorial, tuto
         const dealModel = buildManualDealModel(submittedFormData, projectId)
         const synthesis = buildManualProjectSynthesis(submittedFormData, dealModel, projectId)
 
-        onComplete(dealModel, synthesis, submittedFormData)
+        onComplete(dealModel, synthesis, submittedFormData, editingProjectId || undefined)
     }
 
     return (
         <div id="quick-deal-questionnaire" data-quick-deal-questionnaire className="space-y-6">
+            {/* Editing Deal Banner */}
+            {editingProjectId && (
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 rounded-xl border border-purple-500/40 bg-purple-50/70 dark:bg-purple-950/20 text-purple-950 dark:text-purple-200 shadow-2xs">
+                    <div className="flex items-center gap-2.5">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-600 text-white shadow-xs shrink-0">
+                            <Edit3 className="h-4 w-4" />
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-bold text-xs uppercase tracking-wider text-purple-700 dark:text-purple-300">Editing Saved Deal:</span>
+                                <span className="font-bold text-sm text-foreground underline decoration-purple-500/50">{editingDealName || formData.dealName || formData.companyName || editingProjectId}</span>
+                                <Badge variant="outline" className="text-[10px] font-bold bg-background/80 border-purple-400/50 text-purple-700 dark:text-purple-300">
+                                    {intakeTier === 'ai_draft' ? '✨ AI Teaser Draft' : intakeTier === 'quick_screen' ? '⚡ Quick Screen (4 fields)' : '📋 Detailed Model'}
+                                </Badge>
+                            </div>
+                            <p className="text-2xs text-muted-foreground mt-0.5">
+                                Submitting will update this project's models, valuation, and synthesis in-place.
+                            </p>
+                        </div>
+                    </div>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="shrink-0 bg-background/80 hover:bg-background border-purple-400/50 text-foreground text-xs font-semibold shadow-2xs gap-1.5 cursor-pointer"
+                        onClick={handleClear}
+                        title="Start a new project. Current deal remains safely saved in your portfolio."
+                    >
+                        <Plus className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
+                        Start New Project / Clear Form
+                    </Button>
+                </div>
+            )}
+
             {/* Header & Quick Presets Bar */}
             <div id="quick-deal-questionnaire-intro" className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 rounded-xl border border-primary/20 bg-primary/5">
                 <div className="flex items-center gap-2.5">
@@ -324,6 +463,7 @@ export default function ManualDealIntakeForm({ onComplete, onStartTutorial, tuto
             <div className="flex flex-col gap-3 rounded-xl border border-border bg-card/50 p-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-1 rounded-lg border border-border bg-muted/50 p-1">
                     <Button
+                        id="quick-deal-mode-quick"
                         type="button"
                         size="sm"
                         variant={intakeDepth === 'quick' ? 'default' : 'ghost'}
@@ -336,6 +476,7 @@ export default function ManualDealIntakeForm({ onComplete, onStartTutorial, tuto
                         Quick screen · 4 fields
                     </Button>
                     <Button
+                        id="quick-deal-mode-detailed"
                         type="button"
                         size="sm"
                         variant={intakeDepth === 'detailed' ? 'default' : 'ghost'}
@@ -1045,10 +1186,10 @@ export default function ManualDealIntakeForm({ onComplete, onStartTutorial, tuto
                         size="sm"
                         className="h-8 text-xs gap-1.5 text-muted-foreground hover:text-destructive cursor-pointer"
                         onClick={handleClear}
-                        title="Clear all fields and reset form"
+                        title={editingProjectId ? "Clear form to start a new project. Saved deal remains in portfolio." : "Clear all fields and reset form"}
                     >
                         <Trash2 className="h-3.5 w-3.5" />
-                        Clear All
+                        {editingProjectId ? 'Clear / Start New Deal' : 'Clear All'}
                     </Button>
                     {intakeDepth === 'detailed' && activeSection !== 'basics' && (
                         <Button
@@ -1094,7 +1235,13 @@ export default function ManualDealIntakeForm({ onComplete, onStartTutorial, tuto
                     className="h-9 px-5 text-xs font-bold gap-2 shadow-sm bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer w-full sm:w-auto"
                 >
                     <Zap className="h-4 w-4 text-amber-300" />
-                    <span>{intakeDepth === 'quick' ? '⚡ Generate Preliminary Deal Screen' : '⚡ Generate Detailed Deal Model & Dashboard'}</span>
+                    <span>
+                        {editingProjectId
+                            ? `⚡ Save & Update ${editingDealName || formData.dealName || 'Deal'}`
+                            : intakeDepth === 'quick'
+                                ? '⚡ Generate Preliminary Deal Screen'
+                                : '⚡ Generate Detailed Deal Model & Dashboard'}
+                    </span>
                 </Button>
             </div>
             {!hasMinimumInputs ? (

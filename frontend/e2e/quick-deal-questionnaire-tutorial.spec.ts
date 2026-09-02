@@ -105,19 +105,43 @@ test.describe('Quick Deal Questionnaire tutorial (0 tokens)', () => {
 
         const walkthrough = page.getByLabel('Interactive Walkthrough Controller')
         await expect(walkthrough).toBeVisible()
-        await expect(walkthrough).toContainText('Start with a Preset or Your Own Deal Assumptions')
+        await expect(walkthrough).toContainText('Meet the Quick Deal Questionnaire')
+        await expect(page.locator('#quick-deal-name')).toHaveValue('Apex Precision Dynamics')
+        await expect(page.locator('#quick-deal-asking-price')).toHaveValue('4800000')
 
         await walkthrough.getByTitle('Pause Auto-Play (Space)').click()
-        await walkthrough.getByLabel(/Jump to Step 4:/).click()
-        await expect(page.locator('#quick-deal-section-financials')).toBeVisible()
-        await expect(walkthrough).toContainText('Enter Revenue, Earnings, and Add-Backs')
+        await walkthrough.getByLabel(/Jump to Step 5:/).click()
+        await expect(page.locator('#quick-deal-prefill-review')).toBeVisible()
+        await expect(page.locator('#quick-deal-prefill-review')).toContainText('Review 6 recognized fields')
+
+        await walkthrough.getByLabel(/Jump to Step 6:/).click()
+        await expect(page.locator('#quick-deal-ai-review')).toBeVisible()
+        await expect(page.locator('#quick-deal-ai-review')).toContainText('Tutorial AI Review Preview')
+        await expect(page.locator('#quick-deal-ai-review')).toContainText('Mocked without an API call')
 
         await walkthrough.getByLabel(/Jump to Step 7:/).click()
+        await expect(page.locator('#quick-deal-mode-detailed')).toHaveText('Add more detail')
+        await expect(page.locator('#quick-deal-section-basics')).toBeVisible()
+
+        await walkthrough.getByLabel(/Jump to Step 10:/).click()
+        await expect(page.locator('#quick-deal-section-financials')).toBeVisible()
+        await expect(page.locator('#quick-deal-section-tab-financials')).toHaveAttribute('data-questionnaire-section', 'financials')
+        await expect(walkthrough).toContainText('Now Select Section 2')
+
+        await walkthrough.getByLabel(/Jump to Step 12:/).click()
+        await expect(page.locator('#quick-deal-section-assets')).toBeVisible()
+        await expect(walkthrough).toContainText('Now Select Section 3')
+
+        await walkthrough.getByLabel(/Jump to Step 16:/).click()
         await expect(page.locator('#quick-deal-section-risk')).toBeVisible()
-        await expect(walkthrough).toContainText('Record Known Risks and Diligence Gaps')
+        await expect(walkthrough).toContainText('Now Select Section 5')
 
         await walkthrough.getByTitle('Exit Walkthrough (Esc)').click()
         await expect(walkthrough).not.toBeVisible()
+        await expect(page.locator('#quick-deal-name')).toHaveValue('')
+        await expect(page.locator('#quick-deal-asking-price')).toHaveValue('')
+        await expect(page.locator('#quick-deal-section-basics')).not.toBeVisible()
+        await expect(page.locator('#quick-deal-ai-review')).not.toBeVisible()
         expect(unsafeRequests).toEqual([])
     })
 
@@ -128,7 +152,7 @@ test.describe('Quick Deal Questionnaire tutorial (0 tokens)', () => {
 
         await expect(page.locator('#quick-deal-questionnaire')).toBeVisible()
         await expect(page.getByLabel('Interactive Walkthrough Controller')).toContainText(
-            'Start with a Preset or Your Own Deal Assumptions'
+            'Meet the Quick Deal Questionnaire'
         )
     })
 
@@ -143,7 +167,7 @@ test.describe('Quick Deal Questionnaire tutorial (0 tokens)', () => {
         expect(new URL(page.url()).searchParams.get('tour')).toBe('questionnaire')
         await expect(page.locator('#quick-deal-questionnaire')).toBeVisible()
         await expect(page.getByLabel('Interactive Walkthrough Controller')).toContainText(
-            'Start with a Preset or Your Own Deal Assumptions'
+            'Meet the Quick Deal Questionnaire'
         )
     })
 })

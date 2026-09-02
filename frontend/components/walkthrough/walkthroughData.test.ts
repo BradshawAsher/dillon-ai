@@ -18,7 +18,7 @@ describe('Walkthrough Playlists & Step Data Validation', () => {
         expect(CORE_FAST_STEPS.length).toBeGreaterThan(0)
         expect(DEEP_DIVE_STEPS.length).toBeGreaterThan(0)
         expect(QUEST_MISSIONS.length).toBeGreaterThan(0)
-        expect(QUICK_DEAL_QUESTIONNAIRE_STEPS).toHaveLength(8)
+        expect(QUICK_DEAL_QUESTIONNAIRE_STEPS).toHaveLength(18)
         expect(Object.keys(TOUR_PLAYLISTS).length).toBeGreaterThan(0)
     })
 
@@ -106,11 +106,16 @@ describe('Walkthrough Playlists & Step Data Validation', () => {
 
     it('keeps the Quick Deal Questionnaire tutorial sequential and on stable targets', () => {
         expect(TOUR_PLAYLISTS['quick-deal-questionnaire'].steps).toBe(QUICK_DEAL_QUESTIONNAIRE_STEPS)
-        expect(QUICK_DEAL_QUESTIONNAIRE_STEPS.map((step) => step.num)).toEqual([1, 2, 3, 4, 5, 6, 7, 8])
-        expect(QUICK_DEAL_QUESTIONNAIRE_STEPS.every((step) => step.targetElementId?.startsWith('quick-deal-'))).toBe(true)
-        expect(QUICK_DEAL_QUESTIONNAIRE_STEPS.slice(2, 7).map((step) => step.simulatedAction?.type)).toEqual(
-            Array(5).fill('show_manual_deal_section')
+        expect(QUICK_DEAL_QUESTIONNAIRE_STEPS.map((step) => step.num)).toEqual(
+            Array.from({ length: 18 }, (_, index) => index + 1)
         )
+        expect(QUICK_DEAL_QUESTIONNAIRE_STEPS.every((step) => step.targetElementId?.startsWith('quick-deal-'))).toBe(true)
+        expect(QUICK_DEAL_QUESTIONNAIRE_STEPS[0].simulatedAction?.type).toBe('seed_questionnaire_demo')
+        expect(QUICK_DEAL_QUESTIONNAIRE_STEPS.slice(3, 6).map((step) => step.simulatedAction?.type)).toEqual(
+            Array(3).fill('show_questionnaire_prefill_demo')
+        )
+        expect(QUICK_DEAL_QUESTIONNAIRE_STEPS.slice(7, 17).every((step) => step.simulatedAction?.type === 'show_manual_deal_section')).toBe(true)
+        expect(QUICK_DEAL_QUESTIONNAIRE_STEPS.filter((step) => step.targetElementId?.startsWith('quick-deal-section-tab-'))).toHaveLength(5)
     })
 
     it('exposes the Quick Deal Questionnaire tutorial in the shared walkthrough carousel', () => {
@@ -122,7 +127,7 @@ describe('Walkthrough Playlists & Step Data Validation', () => {
             category: 'Native Tour',
             status: 'active',
         })
-        expect(TOUR_PLAYLISTS['quick-deal-questionnaire'].stepCount).toBe(8)
+        expect(TOUR_PLAYLISTS['quick-deal-questionnaire'].stepCount).toBe(18)
     })
 })
 

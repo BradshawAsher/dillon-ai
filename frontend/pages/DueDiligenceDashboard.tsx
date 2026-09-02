@@ -139,6 +139,11 @@ import { computeImpactMetrics } from '../utils/impactMetrics'
 import { getAiSubmissionViewModel } from '../utils/aiSubmissionData'
 import { base64ToFile, readFileAsBase64 } from '../utils/fileEncoding'
 import type { ManualDealFormData } from '../utils/manualDealIntake'
+import {
+    reconstructQuestionnaireFormData,
+    hasQuestionnaireData,
+    storeQuestionnaireFormData,
+} from '../utils/questionnaireDealSync'
 
 const DEMO_FALLBACK_DOCS: SubmissionHistoryItem[] = Object.freeze([
     {
@@ -1595,6 +1600,74 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
     const activeDatabaseProjectId = activeViewProject?.id || activeProjectId
 
+    const [editingQuestionnaireProjectId, setEditingQuestionnaireProjectId] = useState<string | null>(null)
+    const [isQuestionnaireCleared, setIsQuestionnaireCleared] = useState(false)
+    const prevActiveProjectRef = useRef<string>(activeProjectId)
+
+    // When the user switches to a different project, reset isQuestionnaireCleared so questionnaire projects auto-load
+    useEffect(() => {
+        if (prevActiveProjectRef.current !== activeProjectId) {
+            prevActiveProjectRef.current = activeProjectId
+            setIsQuestionnaireCleared(false)
+        }
+    }, [activeProjectId])
+
+    // Determine the effective questionnaire project ID to load
+    const effectiveQuestionnaireProjectId = useMemo(() => {
+        if (editingQuestionnaireProjectId) return editingQuestionnaireProjectId
+        if (!isQuestionnaireCleared && activeProjectId) {
+            const hasData = hasQuestionnaireData(
+                activeProjectId,
+                submissionHistory,
+                dealModelDraftByProject[activeProjectId]
+            )
+            if (hasData) return activeProjectId
+        }
+        return null
+    }, [editingQuestionnaireProjectId, isQuestionnaireCleared, activeProjectId, submissionHistory, dealModelDraftByProject])
+
+    // Reconstruct the form data from localStorage, submission row, or dealModel/synthesis
+    const questionnaireInitialData = useMemo(() => {
+        if (!effectiveQuestionnaireProjectId) return null
+        const matchingSynthesis = visibleProjectSyntheses.find(
+            (s: any) => s.projectId === effectiveQuestionnaireProjectId || s.projectKey === effectiveQuestionnaireProjectId
+        )
+        return reconstructQuestionnaireFormData(
+            effectiveQuestionnaireProjectId,
+            submissionHistory,
+            dealModelDraftByProject[effectiveQuestionnaireProjectId],
+            matchingSynthesis
+        )
+    }, [effectiveQuestionnaireProjectId, submissionHistory, dealModelDraftByProject, visibleProjectSyntheses])
+
+    const editingQuestionnaireDealName = useMemo(() => {
+        if (!effectiveQuestionnaireProjectId) return null
+        const summary = projectSummaries.find(
+            (p: any) => p.projectKey === effectiveQuestionnaireProjectId || p.projectId === effectiveQuestionnaireProjectId
+        )
+        return summary?.projectName || summary?.companyName || questionnaireInitialData?.dealName || questionnaireInitialData?.companyName || effectiveQuestionnaireProjectId
+    }, [effectiveQuestionnaireProjectId, projectSummaries, questionnaireInitialData])
+
+    const handleClearQuestionnaireToNewProject = useCallback(() => {
+        setEditingQuestionnaireProjectId(null)
+        setIsQuestionnaireCleared(true)
+    }, [])
+
+    const handleEditInQuestionnaire = useCallback((projectKey: string) => {
+        setIsQuestionnaireCleared(false)
+        setEditingQuestionnaireProjectId(projectKey)
+        setActiveViewProjectId(projectKey)
+        if (typeof window !== 'undefined') {
+            window.localStorage.setItem('mergeworks.activeProjectKey', projectKey)
+            window.localStorage.setItem('mergeworks.selectedProjectKey', projectKey)
+            syncBrowserUrl(projectKey, activeWorkspaceTab)
+            window.setTimeout(() => {
+                const el = document.getElementById('quick-deal-questionnaire') || document.querySelector('[data-quick-deal-questionnaire]')
+                el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            }, 50)
+        }
+    }, [setActiveViewProjectId, activeWorkspaceTab])
+
     // Portfolio reads stay compact. Load the selected project's full evidence
     // separately and merge it into the portfolio snapshot without dropping
     // other projects or losing detail when requests finish out of order.
@@ -2607,13 +2680,27 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     const handleManualDealComplete = useCallback((
         newDealModel: DealModel,
         newSynthesis: ProjectSynthesisItem,
-        formData: ManualDealFormData
+        formData: ManualDealFormData,
+        targetProjectId?: string
     ) => {
+        const effectiveProjectId = targetProjectId || newDealModel.projectId
         const completedAt = new Date().toISOString()
+        const finalDealModel: DealModel = {
+            ...newDealModel,
+            projectId: effectiveProjectId,
+        }
+        const finalSynthesis: ProjectSynthesisItem = {
+            ...newSynthesis,
+            projectId: effectiveProjectId,
+        }
+
+        // Persist the exact questionnaire form fields for future auto-fill and editing
+        storeQuestionnaireFormData(effectiveProjectId, formData)
+
         const submissionRow: SubmissionHistoryItem = {
             ...blankHistoryRow(),
             id: Math.floor(Math.random() * 900000) + 100000,
-            projectId: newDealModel.projectId,
+            projectId: effectiveProjectId,
             companyName: formData.companyName || formData.dealName,
             dealName: formData.dealName,
             fileName: `${formData.dealName.replace(/[^a-zA-Z0-9_-]/g, '_')}_Quick_Intake.json`,
@@ -2622,23 +2709,23 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             documentType: 'Deal Questionnaire / Manual Intake',
             status: 'completed',
             environment: activeHistoryEnvironment,
-            requestID: `manual-${newDealModel.projectId}`,
+            requestID: `manual-${effectiveProjectId}`,
             receivedAt: completedAt,
             processedAt: completedAt,
             triggerTimestamp: completedAt,
             createdAt: completedAt,
             updatedAt: completedAt,
             valuationBaseEstimate: formData.askingPrice ? `$${formData.askingPrice.toLocaleString()}` : '',
-            ebitdaExtracted: (newDealModel.ebitda ?? formData.reportedEbitda) ? `$${(newDealModel.ebitda ?? formData.reportedEbitda).toLocaleString()}` : '',
+            ebitdaExtracted: (finalDealModel.ebitda ?? formData.reportedEbitda) ? `$${(finalDealModel.ebitda ?? formData.reportedEbitda).toLocaleString()}` : '',
             revenueExtracted: formData.annualRevenue ? `$${formData.annualRevenue.toLocaleString()}` : '',
             aiConfidence: '0.95',
             needsHumanReview: false,
-            trafficLight: newSynthesis.finalTrafficLight || 'green',
-            riskLevel: newSynthesis.finalRiskLevel || 'Low',
-            aiSummary: `${formData.companyName || formData.dealName} questionnaire intake ($${formData.annualRevenue.toLocaleString()} Revenue, $${(newDealModel.ebitda ?? formData.reportedEbitda).toLocaleString()} EBITDA)`,
+            trafficLight: finalSynthesis.finalTrafficLight || 'green',
+            riskLevel: finalSynthesis.finalRiskLevel || 'Low',
+            aiSummary: `${formData.companyName || formData.dealName} questionnaire intake ($${formData.annualRevenue.toLocaleString()} Revenue, $${(finalDealModel.ebitda ?? formData.reportedEbitda).toLocaleString()} EBITDA)`,
             financialFactsJson: JSON.stringify([
                 { metric: 'revenue', normalized_value: formData.annualRevenue, raw_value: `$${formData.annualRevenue.toLocaleString()}`, period: 'TTM', currency: 'USD', confidence: 1, status: 'confirmed', provenance: 'Questionnaire Intake' },
-                { metric: 'ebitda_sde', normalized_value: newDealModel.ebitda ?? formData.reportedEbitda, raw_value: `$${(newDealModel.ebitda ?? formData.reportedEbitda).toLocaleString()}`, period: 'TTM', currency: 'USD', confidence: 1, status: 'confirmed', provenance: 'Questionnaire Intake' },
+                { metric: 'ebitda_sde', normalized_value: finalDealModel.ebitda ?? formData.reportedEbitda, raw_value: `$${(finalDealModel.ebitda ?? formData.reportedEbitda).toLocaleString()}`, period: 'TTM', currency: 'USD', confidence: 1, status: 'confirmed', provenance: 'Questionnaire Intake' },
                 { metric: 'asking_price', normalized_value: formData.askingPrice, raw_value: `$${formData.askingPrice.toLocaleString()}`, period: 'Asking', currency: 'USD', confidence: 1, status: 'confirmed', provenance: 'Questionnaire Intake' },
                 { metric: 'purchase_price', normalized_value: formData.askingPrice, raw_value: `$${formData.askingPrice.toLocaleString()}`, period: 'Purchase', currency: 'USD', confidence: 1, status: 'confirmed', provenance: 'Questionnaire Intake' },
             ]),
@@ -2647,37 +2734,42 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 industry: formData.industry,
                 askingPrice: formData.askingPrice,
                 revenue: formData.annualRevenue,
-                ebitda: newDealModel.ebitda,
+                ebitda: finalDealModel.ebitda,
                 disallowedAddBacks: formData.disallowedAddBacks,
                 notes: formData.generalNotes,
                 intakeSource: formData.intakeSource || (formData.intakeTier === 'ai_draft' ? 'ai_assisted_questionnaire' : formData.intakeTier === 'quick_screen' ? 'quick_screen' : 'manual_questionnaire'),
                 intakeTier: formData.intakeTier || 'detailed',
+                questionnaireFormData: formData,
             }),
         }
 
         setManualSubmissions((prev) => {
-            const next = [submissionRow, ...prev.filter(r => r.projectId !== newDealModel.projectId)]
+            const next = [submissionRow, ...prev.filter(r => r.projectId !== effectiveProjectId && r.requestID !== `manual-${effectiveProjectId}`)]
             try { localStorage.setItem('mergeworks_manual_submissions', JSON.stringify(next)) } catch {}
             return next
         })
 
         setManualSyntheses((prev) => {
-            const next = [newSynthesis, ...prev.filter(s => s.projectId !== newDealModel.projectId)]
+            const next = [finalSynthesis, ...prev.filter(s => s.projectId !== effectiveProjectId)]
             try { localStorage.setItem('mergeworks_manual_syntheses', JSON.stringify(next)) } catch {}
             return next
         })
 
         // Save deal model to state/store immediately so dashboard views hydrate with 0 latency
-        void triggerSaveDealModel(newDealModel)
+        void triggerSaveDealModel(finalDealModel)
         setDealModelDraftByProject((current) => ({
             ...current,
-            [newDealModel.projectId]: newDealModel,
+            [effectiveProjectId]: finalDealModel,
         }))
+
+        // Reset editing state so questionnaire tracks this project
+        setEditingQuestionnaireProjectId(effectiveProjectId)
+        setIsQuestionnaireCleared(false)
 
         // Claim project ownership so data isolation does not filter it
         const currentUser = authUser || getStoredAuth()
         if (currentUser?.email) {
-            claimProject(newDealModel.projectId, currentUser.email)
+            claimProject(effectiveProjectId, currentUser.email)
         }
 
         // Reset any in-flight batch state from previous project
@@ -2687,22 +2779,22 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         // Switch workspace and project view
         setDealName(formData.dealName)
         setAskingPrice(String(formData.askingPrice))
-        setProjectId(newDealModel.projectId)
-        setSelectedProjectKey(newDealModel.projectId)
-        setActiveViewProjectId(newDealModel.projectId)
+        setProjectId(effectiveProjectId)
+        setSelectedProjectKey(effectiveProjectId)
+        setActiveViewProjectId(effectiveProjectId)
         setActiveWorkspaceTab('overview')
 
         if (typeof window !== 'undefined') {
-            window.localStorage.setItem('mergeworks.activeProjectKey', newDealModel.projectId)
-            window.localStorage.setItem('mergeworks.selectedProjectKey', newDealModel.projectId)
-            syncBrowserUrl(newDealModel.projectId, 'overview')
+            window.localStorage.setItem('mergeworks.activeProjectKey', effectiveProjectId)
+            window.localStorage.setItem('mergeworks.selectedProjectKey', effectiveProjectId)
+            syncBrowserUrl(effectiveProjectId, 'overview')
             window.location.hash = '#overview'
             window.setTimeout(() => {
                 const el = document.getElementById('deal-overview') || document.querySelector('[data-deal-overview]')
                 el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
             }, 50)
         }
-    }, [activeHistoryEnvironment, authUser, triggerSaveDealModel, setDealModelDraftByProject, setDealName, setAskingPrice, setProjectId, setSelectedProjectKey, setActiveViewProjectId, setActiveWorkspaceTab, setActiveSubmissionBatch, setUserHasNavigatedBatchDocs])
+    }, [activeHistoryEnvironment, authUser, triggerSaveDealModel, setDealModelDraftByProject, setDealName, setAskingPrice, setProjectId, setSelectedProjectKey, setActiveViewProjectId, setActiveWorkspaceTab, setActiveSubmissionBatch, setUserHasNavigatedBatchDocs, setEditingQuestionnaireProjectId, setIsQuestionnaireCleared])
 
     const handlePortfolioProjectSelect = (projectKey: string, targetTab: WorkspaceTab = 'synthesis') => {
         setActiveViewProjectId(projectKey)
@@ -4047,6 +4139,10 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                     onSubmit={(environment) => { void handleSubmit(environment) }}
                     onManualDealComplete={handleManualDealComplete}
                     onStartManualDealTutorial={() => walkthrough.startTour('quick-deal-questionnaire')}
+                    editingQuestionnaireProjectId={effectiveQuestionnaireProjectId}
+                    editingQuestionnaireDealName={editingQuestionnaireDealName}
+                    questionnaireInitialData={questionnaireInitialData}
+                    onClearQuestionnaireToNewProject={handleClearQuestionnaireToNewProject}
                 />
 
                 {submitError ? (
@@ -4487,6 +4583,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                             isCurrentProjectAwaitingSynthesis={isCurrentProjectAwaitingSynthesis}
                             setSelectedProjectKey={setSelectedProjectKey}
                             handleRerunAllProjectDocs={handleRerunAllProjectDocuments}
+                            onEditQuestionnaire={handleEditInQuestionnaire}
                         />
                     ) : null}
 

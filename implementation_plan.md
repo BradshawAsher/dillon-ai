@@ -753,6 +753,24 @@ The repository has strong Vitest unit/domain coverage, a real loopback multipart
 
 ---
 
+# Full Quick Deal Questionnaire walkthrough (2026-09-02)
+
+## Verified gaps
+
+- The current eight-step tour describes the questionnaire but does not populate a deal, demonstrate local prefill, or show AI-assisted review.
+- Detailed section steps switch content programmatically, but the sequence does not separately spotlight the five section tabs and their resulting panels.
+- The prefill review banner treats the deterministic local draft as though it were an AI extraction because both states share one derived `draft` object.
+
+## Targeted changes
+
+1. Expand the playlist to an 18-step Apex Precision Dynamics case study spanning the quick screen, live math, local prefill, mocked AI review, all five detailed section tabs, and the final generation action.
+2. Add walkthrough-only simulation actions that populate temporary form values and mock prefill results without invoking n8n, creating a project, or overwriting the user's pre-tour state.
+3. Restore the exact questionnaire and prefill state on exit or completion, and suppress session persistence while tutorial values are active.
+4. Distinguish local parser results from real or mocked AI drafts in the prefill UI.
+5. Update unit, Playwright, gallery, and documentation expectations; run TypeScript, focused tests, the production build, and browser verification.
+
+---
+
 # n8n Code Node Modernization and Red Underline Audit (2026-09-02)
 
 ## Verified Findings

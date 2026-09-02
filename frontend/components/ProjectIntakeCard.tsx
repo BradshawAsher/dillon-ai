@@ -59,8 +59,12 @@ type ProjectIntakeCardProps = {
     onSwitchActiveViewProject?: (projectKey: string) => void
     onFileSelect: (files: File[]) => void
     onSubmit: (environment: SubmitEnvironment) => void
-    onManualDealComplete?: (dealModel: DealModel, synthesis: ProjectSynthesisItem, formData: ManualDealFormData) => void
+    onManualDealComplete?: (dealModel: DealModel, synthesis: ProjectSynthesisItem, formData: ManualDealFormData, targetProjectId?: string) => void
     onStartManualDealTutorial?: () => void
+    editingQuestionnaireProjectId?: string | null
+    editingQuestionnaireDealName?: string | null
+    questionnaireInitialData?: ManualDealFormData | null
+    onClearQuestionnaireToNewProject?: () => void
 }
 
 const projectStages = [
@@ -123,6 +127,10 @@ export default function ProjectIntakeCard({
     onSubmit,
     onManualDealComplete,
     onStartManualDealTutorial,
+    editingQuestionnaireProjectId = null,
+    editingQuestionnaireDealName = null,
+    questionnaireInitialData = null,
+    onClearQuestionnaireToNewProject,
 }: ProjectIntakeCardProps) {
     const [intakeMode, setIntakeMode] = useState<'upload' | 'manual'>('upload')
     const [tutorialSection, setTutorialSection] = useState<ManualDealSection>()
@@ -134,8 +142,29 @@ export default function ProjectIntakeCard({
     const [fileRequiredWarning, setFileRequiredWarning] = useState(false)
 
     useEffect(() => {
+        if (editingQuestionnaireProjectId) {
+            setIntakeMode('manual')
+        }
+    }, [editingQuestionnaireProjectId])
+
+    useEffect(() => {
         const handleWalkthroughAction = (event: Event) => {
-            const action = (event as CustomEvent<{ action?: { type?: string; payload?: unknown } }>).detail?.action
+            const detail = (event as CustomEvent<{
+                stepId?: string
+                action?: { type?: string; payload?: unknown }
+            }>).detail
+            const action = detail?.action
+
+            if (action?.type === 'reset_simulation') {
+                setTutorialSection(undefined)
+                return
+            }
+            if (!detail?.stepId?.startsWith('quick-deal-step-')) return
+
+            if (action?.type === 'seed_questionnaire_demo' || action?.type === 'show_questionnaire_depth' || action?.type === 'show_questionnaire_prefill_demo') {
+                setIntakeMode('manual')
+                return
+            }
             if (action?.type !== 'show_manual_deal_section' || typeof action.payload !== 'string') return
             if (!MANUAL_DEAL_SECTIONS.has(action.payload as ManualDealSection)) return
 
@@ -395,9 +424,13 @@ export default function ProjectIntakeCard({
                         onStartTutorial={onStartManualDealTutorial}
                         tutorialSection={tutorialSection}
                         prefillRequest={questionnairePrefillRequest}
-                        onComplete={(dm, syn, fd) => {
+                        initialData={questionnaireInitialData}
+                        editingProjectId={editingQuestionnaireProjectId}
+                        editingDealName={editingQuestionnaireDealName}
+                        onClearToNewProject={onClearQuestionnaireToNewProject}
+                        onComplete={(dm, syn, fd, targetProjectId) => {
                             if (onManualDealComplete) {
-                                onManualDealComplete(dm, syn, fd)
+                                onManualDealComplete(dm, syn, fd, targetProjectId)
                             }
                         }}
                         disabled={disabled}

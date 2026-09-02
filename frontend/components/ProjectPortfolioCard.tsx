@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 
-import { Archive, ArchiveRestore, Bot, BriefcaseBusiness, CheckCircle, Clock3, Cpu, DollarSign, Download, Eye, FileStack, FileText, Flag, FolderKanban, Layers, Plus, RefreshCw, Rocket, Search, ShieldAlert, Sparkles, TriangleAlert, Link2, Check, Zap } from 'lucide-react'
+import { Archive, ArchiveRestore, Bot, BriefcaseBusiness, CheckCircle, Clock3, Cpu, DollarSign, Download, Eye, FileStack, FileText, Flag, FolderKanban, Layers, Plus, RefreshCw, Rocket, Search, ShieldAlert, Sparkles, TriangleAlert, Link2, Check, Zap, Edit3 } from 'lucide-react'
 import ExpandableText from './ExpandableText'
 import { HighLevelBusinessSummaryModal, HighLevelBusinessSummaryData } from './HighLevelBusinessSummaryModal'
 
@@ -94,6 +94,7 @@ type ProjectPortfolioCardProps = {
     runningSynthesis: boolean
     onAddDocuments?: (projectKey: string) => void
     onRerunAllProjectDocs?: (projectKey: string) => void
+    onEditQuestionnaire?: (projectKey: string) => void
 }
 
 function SummaryMetric({
@@ -109,9 +110,9 @@ function SummaryMetric({
         <div className="rounded-lg border border-border bg-background p-4">
             <div className="flex items-center gap-2 text-muted-foreground">
                 <Icon className="h-4 w-4" />
-                <p className="text-xs font-medium uppercase tracking-wide">{label}</p>
+                <span className="text-xs font-medium uppercase tracking-wide">{label}</span>
             </div>
-            <p className="mt-2 text-2xl font-semibold text-foreground">{value}</p>
+            <p className="mt-2 text-2xl font-bold tracking-tight text-foreground">{value}</p>
         </div>
     )
 }
@@ -144,7 +145,7 @@ function resolveProjectAiModels(projectDocs: SubmissionHistoryItem[], synthesis:
     }
 }
 
-export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey, onProjectSelect, onExcludeDocument, onIncludeDocument, onRetryDocument, onRequeueNewProject, retryingRequestId, onRunSynthesis, runningSynthesis, onAddDocuments, onRerunAllProjectDocs }: ProjectPortfolioCardProps) {
+export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey, onProjectSelect, onExcludeDocument, onIncludeDocument, onRetryDocument, onRequeueNewProject, retryingRequestId, onRunSynthesis, runningSynthesis, onAddDocuments, onRerunAllProjectDocs, onEditQuestionnaire }: ProjectPortfolioCardProps) {
     const [hideDuplicateDocs, setHideDuplicateDocs] = useState(true)
     const [projectSearch, setProjectSearch] = useState('')
     const [workstreamFilter, setWorkstreamFilter] = useState('all')
@@ -768,6 +769,19 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                                                         </>
                                                     )}
                                                 </Button>
+                                                {onEditQuestionnaire && (
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        size="lg"
+                                                        className="shadow-sm gap-1.5 border-purple-500/40 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/30 font-semibold cursor-pointer"
+                                                        title="Edit assumptions, financials, or qualitative metrics in Quick Deal Questionnaire"
+                                                        onClick={() => onEditQuestionnaire(project.projectKey)}
+                                                    >
+                                                        <Edit3 className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                                                        Edit in Questionnaire
+                                                    </Button>
+                                                )}
                                                 {project.projectKey === activeProjectKey ? (
                                                     <Button
                                                         type="button"

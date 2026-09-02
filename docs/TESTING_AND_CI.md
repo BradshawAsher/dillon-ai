@@ -81,7 +81,7 @@ The Playwright test suite lives in [`frontend/e2e/`](../frontend/e2e/) and is co
 5. **[`quick-deal-questionnaire-tutorial.spec.ts`](../frontend/e2e/quick-deal-questionnaire-tutorial.spec.ts)**
    - Verifies blank defaults, formatted four-field generation, and local review-before-apply prefill without external requests.
    - Opens the prefill directly through Command Palette multi-word search.
-   - Launches the native eight-step tutorial and confirms that Financials and Risk steps mount their intended targets.
+   - Launches the native 18-step tutorial, verifies the temporary Apex quick-screen values, exercises local and mocked-AI prefill review, and confirms that the detailed section tabs mount their intended targets.
    - Launches the tutorial from the global walkthrough gallery and verifies that the questionnaire opens automatically.
    - Launches the tutorial from the landing-page walkthrough carousel and verifies the exact cross-page tour route.
    - Records unsafe non-GET requests and requires that the tutorial make no upload, webhook, or model request.
