@@ -5,6 +5,7 @@ import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
 import { formatRelativeTime } from '../utils/relativeTime'
+import { classifyTimelineEventStatus, type TimelineEventStatus } from '../utils/timelineEventStatus'
 import CardInfoPopover from './common/CardInfoPopover'
 import { formatElapsedDuration, getDocumentExtractionDurationSec, getSynthesisDurationSec } from '../utils/diligenceDashboardUtils'
 
@@ -19,7 +20,7 @@ type TimelineEvent = {
     timestamp: number
     label: string
     detail: string
-    status: 'completed' | 'processing' | 'failed' | 'pending'
+    status: TimelineEventStatus
 }
 
 function parseTimestamp(value: string): number {
@@ -40,12 +41,7 @@ export default function DealTimelineCard({ documents, synthesis, projectName }: 
 
     for (const doc of sortedDocs) {
         const receivedAt = parseTimestamp(doc.receivedAt || doc.createdAt || doc.triggerTimestamp)
-        const status = doc.status.trim().toLowerCase()
-        const eventStatus: TimelineEvent['status'] =
-            status === 'completed' ? 'completed' :
-            ['failed', 'error', 'rejected'].includes(status) ? 'failed' :
-            ['processing', 'running', 'queued', 'submitted', 'accepted'].includes(status) ? 'processing' :
-            'pending'
+        const eventStatus = classifyTimelineEventStatus(doc.status)
 
         const docDuration = getDocumentExtractionDurationSec(doc)
         events.push({
