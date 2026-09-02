@@ -64,6 +64,7 @@ describe('questionnaire AI draft relay', () => {
       user: { fullName: 'Test', email: 'test@example.com' },
     })
 
+    if (!('fields' in result)) throw new Error('Expected draft result with fields')
     expect(result.fields).toEqual([expect.objectContaining({ field: 'askingPrice', value: 4_800_000, confidence: 1, origin: 'ai' })])
     expect(result.missingRequiredFields).toEqual(['dealName', 'annualRevenue', 'reportedEbitda'])
     expect(rawRequest).toHaveBeenCalledWith(expect.objectContaining({
@@ -151,7 +152,7 @@ describe('questionnaire AI draft relay', () => {
     })
 
     expect(status.status).toBe('completed')
-    if (status.status === 'completed') {
+    if (status.status === 'completed' && 'fields' in status) {
       expect(status.fields).toHaveLength(2)
       expect(status.warnings).toEqual(['Verify add-backs'])
     }

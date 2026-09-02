@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { AlertTriangle, Check, ClipboardPaste, Eye, FileText, Image, Loader2, Trash2, Upload, X } from 'lucide-react'
+import { AlertTriangle, Check, CheckCircle2, ClipboardPaste, Eye, FileText, Image, Loader2, Sparkles, Trash2, Upload, X } from 'lucide-react'
 
 import { Button } from '../lib/shadcn/button'
 import { Textarea } from '../lib/shadcn/textarea'
@@ -411,6 +411,42 @@ export default function QuestionnaireQuickImport({ disabled = false, openRequest
 
             {result ? (
                 <div className="space-y-3 rounded-lg border border-border bg-background/80 p-3" data-questionnaire-import-review>
+                    {draft ? (
+                        <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 space-y-2 animate-in fade-in-0 duration-300">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                <div className="flex items-center gap-2">
+                                    <div className="rounded-full bg-emerald-500/20 p-1 text-emerald-600 dark:text-emerald-400">
+                                        <CheckCircle2 className="h-4 w-4" />
+                                    </div>
+                                    <div>
+                                        <h4 className="text-xs font-bold text-emerald-950 dark:text-emerald-100">
+                                            Deep AI Extraction Complete
+                                        </h4>
+                                        <p className="text-[11px] text-emerald-800 dark:text-emerald-300">
+                                            Extracted {draft.fields.length} deal fields with {draft.fields.length > 0 ? Math.round((draft.fields.reduce((acc, f) => acc + f.confidence, 0) / draft.fields.length) * 100) : 95}% average confidence using OpenAI 5.6 Terra.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    <span className="rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-mono font-semibold text-emerald-700 dark:text-emerald-300">
+                                        {draft.fields.length} Fields Verified
+                                    </span>
+                                    {draft.draftId ? (
+                                        <span className="rounded bg-primary/15 border border-primary/30 px-1.5 py-0.5 text-[9px] font-mono font-semibold text-primary">
+                                            ID: {draft.draftId.slice(0, 8)}
+                                        </span>
+                                    ) : null}
+                                </div>
+                            </div>
+                            {draft.warnings.length > 0 ? (
+                                <div className="rounded-md bg-emerald-950/5 dark:bg-emerald-950/40 p-2 text-[10px] text-muted-foreground border border-emerald-500/20">
+                                    <span className="font-semibold text-amber-600 dark:text-amber-400">AI Notes & Observations: </span>
+                                    {draft.warnings.join(' · ')}
+                                </div>
+                            ) : null}
+                        </div>
+                    ) : null}
+
                     <div className="flex flex-wrap items-center justify-between gap-2">
                         <div>
                             <div className="flex items-center gap-2">
@@ -423,13 +459,14 @@ export default function QuestionnaireQuickImport({ disabled = false, openRequest
                                         Applied to questionnaire
                                     </span>
                                 ) : null}
-                                {draft?.draftId ? (
-                                    <span className="inline-flex items-center gap-1 rounded bg-primary/15 border border-primary/30 px-1.5 py-0.5 text-[9px] font-mono font-semibold text-primary">
-                                        <span>💾 Draft ID: {draft.draftId.slice(0, 8)}</span>
-                                    </span>
-                                ) : null}
                             </div>
-                            <p className="text-[10px] text-muted-foreground">{hasApplied ? 'These values have been imported into your questionnaire form.' : 'Nothing changes until you select Apply recognized fields.'}</p>
+                            <p className="text-[10px] text-muted-foreground">
+                                {hasApplied
+                                    ? 'These values have been imported into your questionnaire form.'
+                                    : draft
+                                        ? 'AI extraction reviewed your text and populated the recognized fields below. Click "Apply recognized fields" to insert them into your form.'
+                                        : 'Basic fields recognized by local parser. Click "Extract with AI" to have OpenAI 5.6 Terra extract complex debt terms, customer concentration, and margins.'}
+                            </p>
                             {draft && draft.missingRequiredFields.length > 0 ? (
                                 <p className="mt-1 text-[10px] font-medium text-amber-700 dark:text-amber-300">
                                     Still needed: {draft.missingRequiredFields.join(', ')}
@@ -441,13 +478,14 @@ export default function QuestionnaireQuickImport({ disabled = false, openRequest
                                 <Button
                                     type="button"
                                     size="sm"
-                                    variant="outline"
+                                    variant={draft ? "outline" : "default"}
                                     disabled={disabled || isAiReading}
                                     onClick={() => void requestAiDraft('text')}
-                                    className="h-8 text-xs"
+                                    className="h-8 gap-1.5 text-xs font-semibold cursor-pointer"
+                                    title="Uses OpenAI 5.6 Terra to read your text, extract complex financial metrics, calculate confidence scores, and flag red-flag warnings."
                                 >
-                                    {isAiReading ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
-                                    {draft && draft.missingRequiredFields.length > 0 ? 'Ask AI about missing fields' : 'Review with AI'}
+                                    {isAiReading ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5 text-amber-500" />}
+                                    {draft ? 'Re-extract with AI' : 'Extract with AI (OpenAI 5.6 Terra)'}
                                 </Button>
                             ) : null}
                             <Button

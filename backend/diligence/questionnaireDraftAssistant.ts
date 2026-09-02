@@ -209,7 +209,7 @@ export default async function questionnaireDraftAssistant(req: { params: Params;
       }).eq('id', requestId)
     })
 
-    return { status: 'queued', requestId }
+    return { status: 'queued' as const, requestId }
   }
 
   const response = await n8nFinancialAgent.rawRequest<unknown>({
@@ -241,32 +241,41 @@ export async function getQuestionnaireDraft(req: { params: { requestId?: unknown
 
     if (error) {
       console.warn('[getQuestionnaireDraft] Supabase query warning:', error.message)
-      return { status: 'processing', requestId }
+      return { status: 'processing' as const, requestId }
     }
 
     if (!data) {
-      return { status: 'processing', requestId }
+      return { status: 'processing' as const, requestId }
     }
 
-    if (data.status === 'completed' || (Array.isArray(data.extracted_fields_json) && data.extracted_fields_json.length > 0)) {
+    let fields = data.extracted_fields_json
+    if (typeof fields === 'string') {
+      try { fields = JSON.parse(fields) } catch { fields = [] }
+    }
+    let warnings = data.warnings_json
+    if (typeof warnings === 'string') {
+      try { warnings = JSON.parse(warnings) } catch { warnings = [] }
+    }
+
+    if (data.status === 'completed' || data.status === 'draft' || (Array.isArray(fields) && fields.length > 0)) {
       const sanitized = sanitizeQuestionnaireDraftResponse({
-        fields: data.extracted_fields_json,
-        warnings: data.warnings_json,
+        fields,
+        warnings,
         draftId: data.id,
       }, requestId)
-      return { status: 'completed', ...sanitized }
+      return { status: 'completed' as const, ...sanitized }
     }
 
     if (data.status === 'failed') {
       const errMsg = Array.isArray(data.warnings_json) && data.warnings_json.length > 0
         ? String(data.warnings_json[0])
         : 'Draft extraction failed'
-      return { status: 'failed', requestId, error: errMsg }
+      return { status: 'failed' as const, requestId, error: errMsg }
     }
 
-    return { status: 'processing', requestId }
+    return { status: 'processing' as const, requestId }
   } catch (err) {
     console.warn('[getQuestionnaireDraft] Error checking draft status:', err)
-    return { status: 'processing', requestId }
+    return { status: 'processing' as const, requestId }
   }
 }
