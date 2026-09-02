@@ -5,6 +5,7 @@ import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence
 import { parseDocumentedFacts } from '../utils/evidence'
 import { copyToClipboard } from '../utils/clipboard'
 import { formatCompactUsd } from '../utils/formatCompactUsd'
+import { formatUpdatedDate } from '../utils/formatUpdatedDate'
 import { Badge } from '../lib/shadcn/badge'
 import ActionableRecommendationInfoButton from './ActionableRecommendationInfoButton'
 
@@ -35,12 +36,7 @@ function formatConfidence(raw: string | undefined): string | null {
     return `${Math.round(pct)}%`
 }
 
-function formatUpdated(value: string | undefined): string | null {
-    if (!value) return null
-    const date = new Date(value)
-    if (Number.isNaN(date.getTime())) return null
-    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
-}
+const formatUpdated = formatUpdatedDate
 
 function truncate(text: string, max = 70): string {
     const clean = text.replace(/\s+/g, ' ').trim()

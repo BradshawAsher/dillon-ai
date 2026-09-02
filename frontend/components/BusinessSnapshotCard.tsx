@@ -16,6 +16,7 @@ import {
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { classifyVerdictTone, type VerdictTone } from '../utils/verdictTone'
+import { formatUpdatedDate } from '../utils/formatUpdatedDate'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
 import CardInfoPopover from './common/CardInfoPopover'
@@ -29,12 +30,7 @@ type Props = {
 }
 
 /** Formats an ISO timestamp as a short, human-readable "last updated" label. */
-function formatUpdated(value: string | undefined): string | null {
-    if (!value) return null
-    const date = new Date(value)
-    if (Number.isNaN(date.getTime())) return null
-    return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
-}
+const formatUpdated = formatUpdatedDate
 
 const VERDICT_TONE_STYLES: Record<VerdictTone, {
     badgeClass: string
