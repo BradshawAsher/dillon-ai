@@ -9,6 +9,8 @@ import {
     ShieldAlert,
     Play,
     RotateCcw,
+    Plus,
+    Trash2,
 } from 'lucide-react'
 
 import { Button } from '../lib/shadcn/button'
@@ -17,6 +19,7 @@ import { Label } from '../lib/shadcn/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../lib/shadcn/select'
 import { Textarea } from '../lib/shadcn/textarea'
 import QuestionnaireQuickImport from './QuestionnaireQuickImport'
+import CardInfoPopover from './common/CardInfoPopover'
 import {
     MANUAL_DEAL_PRESETS,
     ManualDealFormData,
@@ -168,6 +171,15 @@ export default function ManualDealIntakeForm({ onComplete, onStartTutorial, tuto
                             <span className="text-[10px] font-bold uppercase tracking-wider bg-primary/20 text-primary px-1.5 py-0.5 rounded-sm">
                                 Instant Math Engine
                             </span>
+                            <CardInfoPopover
+                                cardId="quick-deal-3-tiers"
+                                title="The 3 Tiers of Diligence: Which to Use?"
+                                description="• Tier 1: Quick Screen (4 fields · 0 tokens): Instant sanity check for teasers (asking multiple, debt capacity, equity check).
+• Tier 2: Detailed Questionnaire (Assets, Debt, Add-backs): Full institutional LBO model, SBA 7(a) debt schedule, tangible net worth, and returns from a CIM or Word prefill.
+• Tier 3: Multi-Document AI Pipeline: Post-LOI multi-file extraction (Tax Returns Form 1120, P&Ls, bank recs) with cross-document reconciliation and IC synthesis pass."
+                                calculation="Tier 1 = EV/EBITDA & 3.5x Senior Debt Peg | Tier 2 = Full LBO & Normalized EBITDA | Tier 3 = Forensic Tax vs P&L Proof of Cash"
+                                diligenceImpact="Choose Quick Screen to triage 50 broker teasers in 10 minutes. Choose Detailed Questionnaire when reviewing an active CIM. Choose Document Upload post-LOI for audit-grade verification."
+                            />
                         </h4>
                         <p className="text-xs text-muted-foreground">
                             Enter numbers and parameters to generate complete valuation, returns, and diligence dashboards in 0.05s without PDFs.
@@ -188,6 +200,17 @@ export default function ManualDealIntakeForm({ onComplete, onStartTutorial, tuto
                             Start Tutorial
                         </Button>
                     ) : null}
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs px-2.5 font-semibold border-primary/40 bg-background hover:bg-primary/10 text-primary cursor-pointer gap-1 shadow-2xs"
+                        onClick={handleClear}
+                        title="Start a fresh blank deal questionnaire"
+                    >
+                        <Plus className="h-3.5 w-3.5" />
+                        New Blank Deal
+                    </Button>
                     <span className="text-[11px] font-medium text-muted-foreground mr-1">Try example:</span>
                     <Button
                         type="button"
@@ -220,11 +243,12 @@ export default function ManualDealIntakeForm({ onComplete, onStartTutorial, tuto
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="h-7 gap-1 px-2 text-xs text-muted-foreground"
+                        className="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-destructive cursor-pointer"
                         onClick={handleClear}
+                        title="Clear all fields and reset"
                     >
-                        <RotateCcw className="h-3 w-3" />
-                        Clear
+                        <Trash2 className="h-3 w-3" />
+                        Clear All
                     </Button>
                 </div>
             </div>
@@ -271,7 +295,20 @@ export default function ManualDealIntakeForm({ onComplete, onStartTutorial, tuto
                             <h5 className="text-sm font-bold text-foreground">Screen a deal with the four numbers you usually have first</h5>
                             <p className="text-xs text-muted-foreground">Generate now, then refine assets, financing, and risks later.</p>
                         </div>
-                        <span className="rounded-full bg-background px-2.5 py-1 text-[10px] font-bold text-primary">$0 · zero tokens</span>
+                        <div className="flex items-center gap-2">
+                            <span className="rounded-full bg-background px-2.5 py-1 text-[10px] font-bold text-primary shadow-2xs">$0 · zero tokens</span>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={handleClear}
+                                className="h-6 px-2 text-[11px] font-medium gap-1 text-muted-foreground hover:text-destructive hover:border-destructive/40 bg-background/80 cursor-pointer shadow-2xs"
+                                title="Clear all 4 essential fields"
+                            >
+                                <Trash2 className="h-3 w-3" />
+                                Clear Fields
+                            </Button>
+                        </div>
                     </div>
                     <div className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-1.5">
@@ -934,6 +971,17 @@ export default function ManualDealIntakeForm({ onComplete, onStartTutorial, tuto
             {/* Navigation & Submit Action */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-border">
                 <div className="flex items-center gap-2">
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 text-xs gap-1.5 text-muted-foreground hover:text-destructive cursor-pointer"
+                        onClick={handleClear}
+                        title="Clear all fields and reset form"
+                    >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Clear All
+                    </Button>
                     {intakeDepth === 'detailed' && activeSection !== 'basics' && (
                         <Button
                             type="button"

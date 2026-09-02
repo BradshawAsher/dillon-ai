@@ -16,6 +16,16 @@ The Financial Due Diligence Agent automates two core M&A workflow stages (see [`
    - Cross-checks bank statement cash, inventory subledgers, and tax filings to detect cross-document accounting discrepancies.
    - Auto-generates dollar-for-dollar purchase price reduction levers, working capital peg adjustments, closing escrows, and Deal Memos.
 
+## The 3 Tiers of Diligence
+
+MergeWorks supports three complementary diligence depth levels depending on transaction stage and available data:
+
+| Diligence Tier | Inputs Required | Processing Time & Cost | When to Use | Core Outputs |
+| :--- | :--- | :--- | :--- | :--- |
+| **Tier 1: Quick Deal Screen** | 4 essential fields: Company Name, Asking Price, Annual Revenue, Reported EBITDA | Instant (0.05s) · $0 · 0 LLM tokens | Initial 1-page broker teasers, NDA emails, inbound screening | EV/EBITDA & EV/Rev multiples, senior debt capacity (3.0x–3.5x leverage), equity check needed, basic DSCR viability |
+| **Tier 2: Detailed Questionnaire & CIM Prefill** | Balance sheet items (AR/AP, inventory, equipment, debt), owner add-backs, customer concentration %, growth assumptions | ~15s optional AI assist or local Word/text parsing · 1-click model generation | Confidential Information Memorandums (CIMs), 5–10 page financial packets | Full institutional LBO model, normalized EBITDA with add-back disallowance haircuts, tangible net worth, SBA 7(a) amortization schedule, 3-scenario IRR (Bear/Base/Bull), Deal Memo |
+| **Tier 3: Multi-Document AI Diligence Pipeline** | Raw accounting source files: 3–5 years Tax Returns (Form 1120/1065), P&Ls, Balance Sheets, Bank Statements, AR/AP aging | 1–3 minutes · Multi-model OCR (`OpenAI 5.6 Terra` / `Sol`) | Post-LOI confirmatory diligence, formal binding offer preparation | Proof-of-cash revenue verification, cross-document reconciliation (Tax Return vs QuickBooks P&L), phantom revenue detection, customer churn risk, automated Investment Committee Buy/Pass synthesis |
+
 ## Key Documentation Links
 
 - **[System Architecture & Technical Specification (`ARCHITECTURE.md`)](ARCHITECTURE.md)** — Comprehensive architecture diagrams, data flow sequence charts, component deep-dives, and interview masterclass talking points.

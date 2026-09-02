@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { AlertTriangle, Check, ClipboardPaste, FileText, Image, Loader2, Upload, X } from 'lucide-react'
+import { AlertTriangle, Check, ClipboardPaste, Eye, FileText, Image, Loader2, Trash2, Upload, X } from 'lucide-react'
 
 import { Button } from '../lib/shadcn/button'
 import { Textarea } from '../lib/shadcn/textarea'
@@ -46,10 +46,30 @@ export default function QuestionnaireQuickImport({ disabled = false, openRequest
     const [error, setError] = useState('')
     const [isReading, setIsReading] = useState(false)
     const [isAiReading, setIsAiReading] = useState(false)
+    const [aiElapsedSeconds, setAiElapsedSeconds] = useState(0)
     const [routeDecision, setRouteDecision] = useState<QuestionnaireRouteDecision | null>(null)
     const [selectedFile, setSelectedFile] = useState<File | null>(null)
     const [aiDraft, setAiDraft] = useState<QuestionnaireDraft | null>(null)
+    const [hasApplied, setHasApplied] = useState(false)
     const draft = useMemo(() => aiDraft ?? (result ? questionnaireDraftFromImport(result, 'local-preview') : null), [aiDraft, result])
+
+    useEffect(() => {
+        if (!isAiReading) {
+            setAiElapsedSeconds(0)
+            return
+        }
+        const interval = setInterval(() => {
+            setAiElapsedSeconds((prev) => prev + 1)
+        }, 1000)
+        return () => clearInterval(interval)
+    }, [isAiReading])
+
+    const getAiStatusStep = (seconds: number) => {
+        if (seconds < 12) return 'Reading document structure & parsing tables...'
+        if (seconds < 35) return 'Extracting financial parameters, multiples & add-backs...'
+        if (seconds < 75) return 'Validating balance sheet keys and building review draft...'
+        return 'Finalizing response from AI cloud engine (this may take up to 90s)...'
+    }
 
     useEffect(() => {
         if (openRequest > 0) setOpen(true)
@@ -67,11 +87,11 @@ export default function QuestionnaireQuickImport({ disabled = false, openRequest
         setRouteDecision(null)
         setSelectedFile(null)
         setAiDraft(null)
+        setHasApplied(false)
         if (fileInputRef.current) fileInputRef.current.value = ''
     }
 
     const handleClose = () => {
-        reset()
         setOpen(false)
     }
 
@@ -124,20 +144,60 @@ export default function QuestionnaireQuickImport({ disabled = false, openRequest
                     sourceText,
                     imageDataUrl,
                     currentValues,
+                    dispatchAsync: true,
                 }),
             })
-            const payload = await response.json() as QuestionnaireDraft & { error?: string }
-            if (!response.ok) throw new Error(payload.error || 'AI Assist could not create a draft.')
-            setAiDraft(payload)
+
+            const dispatchData = await response.json().catch(() => null)
+            if (!response.ok || dispatchData?.error) {
+                throw new Error(dispatchData?.error || `AI service returned an invalid response (${response.status}).`)
+            }
+
+            // If the server answered synchronously (e.g. test mock or direct response), use it immediately
+            let finalDraft: (QuestionnaireDraft & { error?: string; status?: string }) | null =
+                dispatchData && Array.isArray(dispatchData.fields) ? dispatchData : null
+
+            // Otherwise, poll the GET endpoint asynchronously
+            if (!finalDraft) {
+                const startTime = Date.now()
+                const maxWaitMs = 90_000
+
+                while (Date.now() - startTime < maxWaitMs) {
+                    await new Promise((resolve) => setTimeout(resolve, 2000))
+                    try {
+                        const pollRes = await fetch(`/api/diligence/questionnaire-draft?requestId=${encodeURIComponent(requestId)}`)
+                        if (!pollRes.ok) continue
+                        const data = await pollRes.json()
+                        if (data.status === 'completed' && Array.isArray(data.fields)) {
+                            finalDraft = data
+                            break
+                        }
+                        if (data.status === 'failed') {
+                            throw new Error(data.error || 'AI Assist could not create a draft.')
+                        }
+                    } catch (pollErr) {
+                        if (pollErr instanceof Error && pollErr.message.includes('could not create a draft')) {
+                            throw pollErr
+                        }
+                        // Continue polling on transient network hitches
+                    }
+                }
+            }
+
+            if (!finalDraft || !Array.isArray(finalDraft.fields)) {
+                throw new Error('AI extraction took longer than expected. You can apply the recognized local fields below, or try again.')
+            }
+
+            setAiDraft(finalDraft)
             setResult({
-                values: questionnaireDraftValues(payload),
-                recognized: payload.fields.map((field) => ({
+                values: questionnaireDraftValues(finalDraft),
+                recognized: finalDraft.fields.map((field) => ({
                     field: field.field,
                     label: readableFieldLabel(field.field),
                     value: field.value,
                     source: `${field.sourceLocation || field.source} · ${Math.round(field.confidence * 100)}% AI confidence`,
                 })),
-                warnings: payload.warnings,
+                warnings: finalDraft.warnings,
                 sourceText,
             })
         } catch (caught) {
@@ -150,10 +210,47 @@ export default function QuestionnaireQuickImport({ disabled = false, openRequest
     const handleApply = () => {
         if (!result || result.recognized.length === 0) return
         onApply(result.values)
-        handleClose()
+        setHasApplied(true)
+        setOpen(false)
     }
 
     if (!open) {
+        if (hasApplied && result && result.recognized.length > 0) {
+            return (
+                <div className="flex items-center gap-1.5">
+                    <Button
+                        id="quick-deal-review-imported-btn"
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={disabled}
+                        onClick={() => setOpen(true)}
+                        className="h-8 gap-1.5 text-xs font-semibold border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 shadow-2xs cursor-pointer"
+                        title="Review recognized data, AI confidence, and warnings from the imported document"
+                    >
+                        <Eye className="h-3.5 w-3.5" />
+                        Review Pasted / Doc Data ({result.recognized.length} fields)
+                    </Button>
+                    <Button
+                        id="quick-deal-new-doc-btn"
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        disabled={disabled}
+                        onClick={() => {
+                            reset()
+                            setOpen(true)
+                        }}
+                        className="h-8 gap-1 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
+                        title="Import a different document or paste new statistics"
+                    >
+                        <Upload className="h-3.5 w-3.5" />
+                        New Doc
+                    </Button>
+                </div>
+            )
+        }
+
         return (
             <Button
                 id="quick-deal-document-prefill"
@@ -162,7 +259,7 @@ export default function QuestionnaireQuickImport({ disabled = false, openRequest
                 size="sm"
                 disabled={disabled}
                 onClick={() => setOpen(true)}
-                className="h-8 gap-1.5 text-xs font-semibold"
+                className="h-8 gap-1.5 text-xs font-semibold cursor-pointer"
             >
                 <FileText className="h-3.5 w-3.5" />
                 Prefill from Word or pasted stats
@@ -242,6 +339,29 @@ export default function QuestionnaireQuickImport({ disabled = false, openRequest
                 </div>
             </div>
 
+            {isAiReading ? (
+                <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-3 animate-in fade-in-0 duration-200">
+                    <div className="flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2 font-semibold text-primary">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <span>{getAiStatusStep(aiElapsedSeconds)}</span>
+                        </div>
+                        <span className="font-mono text-[11px] text-muted-foreground">{aiElapsedSeconds}s elapsed</span>
+                    </div>
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-primary/15">
+                        <div
+                            className="h-full bg-primary transition-all duration-500 rounded-full"
+                            style={{ width: `${Math.min(95, Math.max(15, aiElapsedSeconds * 2.5))}%` }}
+                        />
+                    </div>
+                    <div className="flex justify-between text-[10px] text-muted-foreground">
+                        <span className={aiElapsedSeconds < 12 ? 'font-bold text-primary' : 'opacity-70'}>1. Parsing structure</span>
+                        <span className={aiElapsedSeconds >= 12 && aiElapsedSeconds < 35 ? 'font-bold text-primary' : 'opacity-70'}>2. Extracting metrics</span>
+                        <span className={aiElapsedSeconds >= 35 ? 'font-bold text-primary' : 'opacity-70'}>3. Validating draft</span>
+                    </div>
+                </div>
+            ) : null}
+
             {error ? (
                 <div role="alert" className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
                     <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -297,13 +417,19 @@ export default function QuestionnaireQuickImport({ disabled = false, openRequest
                                 <p className="text-xs font-bold text-foreground">
                                     Review {result.recognized.length} recognized field{result.recognized.length === 1 ? '' : 's'}
                                 </p>
+                                {hasApplied ? (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                        <Check className="h-3 w-3" />
+                                        Applied to questionnaire
+                                    </span>
+                                ) : null}
                                 {draft?.draftId ? (
                                     <span className="inline-flex items-center gap-1 rounded bg-primary/15 border border-primary/30 px-1.5 py-0.5 text-[9px] font-mono font-semibold text-primary">
                                         <span>💾 Draft ID: {draft.draftId.slice(0, 8)}</span>
                                     </span>
                                 ) : null}
                             </div>
-                            <p className="text-[10px] text-muted-foreground">Nothing changes until you select Apply recognized fields.</p>
+                            <p className="text-[10px] text-muted-foreground">{hasApplied ? 'These values have been imported into your questionnaire form.' : 'Nothing changes until you select Apply recognized fields.'}</p>
                             {draft && draft.missingRequiredFields.length > 0 ? (
                                 <p className="mt-1 text-[10px] font-medium text-amber-700 dark:text-amber-300">
                                     Still needed: {draft.missingRequiredFields.join(', ')}
@@ -324,18 +450,26 @@ export default function QuestionnaireQuickImport({ disabled = false, openRequest
                                     {draft && draft.missingRequiredFields.length > 0 ? 'Ask AI about missing fields' : 'Review with AI'}
                                 </Button>
                             ) : null}
-                            <Button type="button" size="sm" variant="ghost" onClick={reset} className="h-8 text-xs">
-                                Clear
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                onClick={reset}
+                                className="h-8 gap-1 text-xs text-muted-foreground hover:text-destructive cursor-pointer"
+                                title="Clear imported document data and reset"
+                            >
+                                <Trash2 className="h-3.5 w-3.5" />
+                                Clear Data
                             </Button>
                             <Button
                                 type="button"
                                 size="sm"
                                 disabled={result.recognized.length === 0}
                                 onClick={handleApply}
-                                className="h-8 gap-1.5 text-xs"
+                                className="h-8 gap-1.5 text-xs font-semibold cursor-pointer"
                             >
                                 <Check className="h-3.5 w-3.5" />
-                                Apply recognized fields
+                                {hasApplied ? 'Re-apply to form' : 'Apply recognized fields'}
                             </Button>
                         </div>
                     </div>

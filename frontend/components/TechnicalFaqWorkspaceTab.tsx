@@ -65,6 +65,14 @@ export default function TechnicalFaqWorkspaceTab({ onSwitchTab }: TechnicalFaqWo
         {
             category: 'getting-started',
             categoryLabel: 'Getting Started',
+            question: 'What are the 3 Tiers of Diligence in MergeWorks, and when should I use each one?',
+            answer: '• Tier 1: Quick Deal Screen (4 fields · 0 tokens · 1-second triage): Ideal when you only have a 1-page broker teaser or email summary. Calculates asking multiple, senior debt capacity, equity required, and basic DSCR viability instantaneously with zero LLM costs.\n• Tier 2: Detailed Questionnaire & Document Prefill (Assets, Debt, Add-backs, Customer Concentration): Ideal when you have a Confidential Information Memorandum (CIM) or 5–10 page financial packet. Generates an institutional LBO model, add-back quality haircuts, tangible book value, SBA 7(a) amortization schedule, and 3-scenario IRR returns.\n• Tier 3: Multi-Document AI Diligence Pipeline (Full File Upload · Raw PDFs & Excel): Ideal post-LOI with raw accounting files (Tax Returns Form 1120/1065, P&Ls, Balance Sheets, Bank Statements, AR/AP aging). Runs multi-model OCR extraction, proof-of-cash reconciliation, phantom revenue detection, and full Investment Committee Buy/Pass synthesis.',
+            actionLabel: 'Open Questionnaire in Overview',
+            targetTab: 'overview',
+        },
+        {
+            category: 'getting-started',
+            categoryLabel: 'Getting Started',
             question: 'What are the 2 main operational workflows of the agent? (Pre-LOI vs Post-LOI)',
             answer: '1. Phase 1: Pre-LOI Valuation Discovery — Upload raw accounting materials (P&Ls, balance sheets, tax returns) to extract true normalized EBITDA, audit unaudited seller add-backs, and compute fair valuation bounds (Base, Bear, Bull) before issuing an LOI.\n2. Phase 2: Post-LOI Deal Negotiation — Upload an LOI or Term Sheet along with bank recs to reconcile proposed purchase prices against audited valuation bounds, quantify overpayment exposure, detect cross-document accounting discrepancies, and generate dollar-for-dollar price adjustment levers.',
             actionLabel: 'Go to Intake in Overview',

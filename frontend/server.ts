@@ -26,7 +26,7 @@ import stopProjectSynthesisImport from '../backend/diligence/stopProjectSynthesi
 import triggerProjectSynthesisImport from '../backend/diligence/triggerProjectSynthesis'
 import submitDealPacketImport from '../backend/diligence/submitDealPacket'
 import chatAssistantImport from '../backend/diligence/chatAssistant'
-import questionnaireDraftAssistantImport from '../backend/diligence/questionnaireDraftAssistant'
+import questionnaireDraftAssistantImport, { getQuestionnaireDraft } from '../backend/diligence/questionnaireDraftAssistant'
 import updateSubmissionRowImport from '../backend/diligence/updateSubmissionRow'
 import handleAccessRequestImport from '../backend/diligence/handleAccessRequest'
 import handleSlackAlertImport from '../backend/diligence/handleSlackAlert'
@@ -257,6 +257,15 @@ app.post('/api/diligence/submit', express.json({ limit: '50mb' }), async (req, r
 app.post('/api/diligence/chat', express.json({ limit: '128kb' }), async (req, res) => {
     try {
         res.json(await chatAssistant({ params: req.body, user: userFromHeaders(req.headers) }))
+    } catch (error) {
+        res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
+    }
+})
+
+app.get('/api/diligence/questionnaire-draft', async (req, res) => {
+    try {
+        const requestId = String(req.query.requestId || '')
+        res.json(await getQuestionnaireDraft({ params: { requestId }, user: userFromHeaders(req.headers) }))
     } catch (error) {
         res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
     }

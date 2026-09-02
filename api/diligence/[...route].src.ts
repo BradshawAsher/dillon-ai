@@ -16,7 +16,7 @@ import stopBatchSubmission from '../../backend/diligence/stopBatchSubmission'
 import stopProjectSynthesis from '../../backend/diligence/stopProjectSynthesis'
 import submitDealPacket from '../../backend/diligence/submitDealPacket'
 import chatAssistant from '../../backend/diligence/chatAssistant'
-import questionnaireDraftAssistant from '../../backend/diligence/questionnaireDraftAssistant'
+import questionnaireDraftAssistant, { getQuestionnaireDraft } from '../../backend/diligence/questionnaireDraftAssistant'
 import createUploadUrl from '../../backend/diligence/createUploadUrl'
 import updateSubmissionRow from '../../backend/diligence/updateSubmissionRow'
 import handleAccessRequest from '../../backend/diligence/handleAccessRequest'
@@ -167,6 +167,11 @@ export default async function handler(req: ApiRequest, res: ServerResponse) {
         if (route === 'chat' && req.method === 'POST') {
             const params = await readJsonBody(req) as Parameters<typeof chatAssistant>[0]['params']
             sendJson(req, res, 200, await chatAssistant({ params, user }))
+            return
+        }
+        if (route === 'questionnaire-draft' && req.method === 'GET') {
+            const requestId = requestUrl.searchParams.get('requestId') ?? ''
+            sendJson(req, res, 200, await getQuestionnaireDraft({ params: { requestId }, user }))
             return
         }
         if (route === 'questionnaire-draft' && req.method === 'POST') {

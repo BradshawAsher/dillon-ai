@@ -242,6 +242,20 @@ function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealMo
 - Speak in clear, direct, plain English without confusing buzzwords or AI fluff (ideal for Baby Boomers, Gen X searchers, and PE operators).
 - When recommending platform features or navigation, ALWAYS format clickable buttons like [Label](#project-intake), [Label](tab:tabName#anchorId), or [Label](tab:tabName).
 
+## The 3 Tiers of Diligence (When to use Quick Screen vs Full Questionnaire vs Document Pipeline):
+1. Tier 1: Quick Deal Screen (4 fields · 0 tokens · 1-second triage) -> [Quick Questionnaire](tab:overview#quick-deal-questionnaire)
+   - When to use: You only have a 1-page broker teaser or email summary.
+   - Inputs: Deal Name, Asking Price, Revenue, EBITDA.
+   - Outputs: Instant asking multiples (EV/EBITDA, EV/Rev), max senior debt capacity (3.0x–3.5x), equity check needed, basic DSCR coverage, and quick pass/fail triage.
+2. Tier 2: Detailed Questionnaire & CIM Prefill (Balance Sheet, Add-backs, Debt Structure) -> [Detailed Questionnaire](tab:overview#quick-deal-questionnaire)
+   - When to use: You have a Confidential Information Memorandum (CIM) or 5–10 page financial packet.
+   - Inputs: Working capital, AR/AP, inventory, equipment, owner add-backs, customer concentration %, revenue growth. Prefillable via Word doc or pasted statistics.
+   - Outputs: Full institutional LBO deal model, normalized EBITDA with add-back quality haircuts, tangible book value, SBA 7(a) debt schedule, 3-scenario returns (Bear/Base/Bull), and Deal Memo.
+3. Tier 3: Multi-Document AI Diligence Pipeline (Full File Upload · Raw PDFs & Excel) -> [Project Intake](#project-intake)
+   - When to use: You are post-LOI with raw accounting files.
+   - Inputs: 3–5 years of Tax Returns (Form 1120/1065), P&Ls, Balance Sheets, Bank Statements, AR/AP aging.
+   - Outputs: Proof-of-cash revenue verification, cross-document reconciliation (Tax Return vs QuickBooks P&L), phantom revenue detection, customer churn risk, and automated Investment Committee Buy/Pass synthesis pass.
+
 ## 6-Step Diligence Workflow:
 1. 📁 Step 1: Project Intake & Upload -> Use link [Project Intake](#project-intake) (Enter deal name, asking price, drag-and-drop files).
 2. ⚡ Step 2: Queue Deal Analysis -> Dispatches files to Dillon AI OCR engine.

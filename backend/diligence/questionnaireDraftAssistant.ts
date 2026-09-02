@@ -1,3 +1,5 @@
+import { supabase } from '../supabaseClient'
+
 type Params = {
   requestId?: unknown
   sourceType?: unknown
@@ -6,6 +8,7 @@ type Params = {
   imageDataUrl?: unknown
   currentValues?: unknown
   userOpenAiApiKey?: unknown
+  dispatchAsync?: unknown
 }
 
 const TEXT_FIELDS = new Set([
@@ -169,6 +172,46 @@ export default async function questionnaireDraftAssistant(req: { params: Params;
     if (approximateBytes > 2 * 1024 * 1024) throw new Error('Quick Fill images must be 2 MB or smaller')
   }
 
+  if (req.params.dispatchAsync) {
+    // Record initial placeholder row in Supabase so status is known
+    try {
+      await supabase.from('questionnaire_drafts').upsert({
+        id: requestId,
+        session_id: `draft_${requestId}`,
+        source_name: fileName || 'Broker Teaser',
+        source_type: sourceType,
+        extracted_fields_json: [],
+        warnings_json: [],
+        status: 'processing',
+      })
+    } catch (err) {
+      console.warn('[questionnaireDraftAssistant] Failed to insert initial processing row:', err)
+    }
+
+    // Dispatch webhook to n8n asynchronously (fire-and-forget)
+    void n8nFinancialAgent.rawRequest<unknown>({
+      path: 'webhook/dd-questionnaire-prefill',
+      method: 'POST',
+      bodyType: 'json',
+      json: {
+        requestId,
+        sourceType,
+        fileName,
+        sourceText,
+        imageDataUrl,
+        currentValues: sanitizeCurrentValues(req.params.currentValues),
+      },
+    }).catch((err) => {
+      console.error('[questionnaireDraftAssistant] Async webhook dispatch error:', err)
+      void supabase.from('questionnaire_drafts').update({
+        status: 'failed',
+        warnings_json: [err instanceof Error ? err.message : String(err)],
+      }).eq('id', requestId)
+    })
+
+    return { status: 'queued', requestId }
+  }
+
   const response = await n8nFinancialAgent.rawRequest<unknown>({
     path: 'webhook/dd-questionnaire-prefill',
     method: 'POST',
@@ -184,4 +227,46 @@ export default async function questionnaireDraftAssistant(req: { params: Params;
   })
 
   return sanitizeQuestionnaireDraftResponse(response.data, requestId)
+}
+
+export async function getQuestionnaireDraft(req: { params: { requestId?: unknown }; user: User }) {
+  const requestId = boundedText(req.params.requestId, 'requestId', 200, true)
+
+  try {
+    const { data, error } = await supabase
+      .from('questionnaire_drafts')
+      .select('id, session_id, source_name, source_type, extracted_fields_json, warnings_json, status')
+      .eq('id', requestId)
+      .maybeSingle()
+
+    if (error) {
+      console.warn('[getQuestionnaireDraft] Supabase query warning:', error.message)
+      return { status: 'processing', requestId }
+    }
+
+    if (!data) {
+      return { status: 'processing', requestId }
+    }
+
+    if (data.status === 'completed' || (Array.isArray(data.extracted_fields_json) && data.extracted_fields_json.length > 0)) {
+      const sanitized = sanitizeQuestionnaireDraftResponse({
+        fields: data.extracted_fields_json,
+        warnings: data.warnings_json,
+        draftId: data.id,
+      }, requestId)
+      return { status: 'completed', ...sanitized }
+    }
+
+    if (data.status === 'failed') {
+      const errMsg = Array.isArray(data.warnings_json) && data.warnings_json.length > 0
+        ? String(data.warnings_json[0])
+        : 'Draft extraction failed'
+      return { status: 'failed', requestId, error: errMsg }
+    }
+
+    return { status: 'processing', requestId }
+  } catch (err) {
+    console.warn('[getQuestionnaireDraft] Error checking draft status:', err)
+    return { status: 'processing', requestId }
+  }
 }

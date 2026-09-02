@@ -1580,7 +1580,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     const isTourActive = walkthrough.isActive || Boolean(simulatedWalkthroughBatch)
     const activeProjectId = isTourActive
         ? 'apex-industrial-tech'
-        : (isExampleMode ? 'atlas-001' : (activeViewProjectId || (selectedProjectKey !== 'new' ? projectId : '') || projectSummaries[0]?.projectId || projectSummaries[0]?.projectKey || ''))
+        : (activeViewProjectId || (selectedProjectKey !== 'new' ? projectId : '') || (isExampleMode ? 'atlas-001' : '') || projectSummaries[0]?.projectId || projectSummaries[0]?.projectKey || '')
 
     const activeViewProject = useMemo(() => {
         if (!activeProjectId || projectSummaries.length === 0) return null
@@ -1835,7 +1835,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     }, [hydratedDealModel, isExampleMode])
 
     const activeProjectSynthesis = useMemo(() => {
-        if (isTourActive || isExampleMode) {
+        if (isTourActive) {
             return DEMO_FALLBACK_SYNTHESIS
         }
         const isProjectSpecific = Boolean(activeProjectId && (activeProjectId.startsWith('project-') || activeProjectId.startsWith('batch-') || activeProjectId.startsWith('sub-')))
@@ -1845,7 +1845,9 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             }
             return s.projectId === activeProjectId || isRowMatchingProject({ projectId: s.projectId } as any, activeProjectId, projectSummaries)
         })
-        if (matches.length === 0) return null
+        if (matches.length === 0) {
+            return isExampleMode ? DEMO_FALLBACK_SYNTHESIS : null
+        }
 
         // Prioritize completed syntheses with real findings/recommendations, then newest
         const completedMatch = matches.find((s: any) => {
@@ -1860,7 +1862,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
     const effectiveDealName = isTourActive
         ? 'Apex Industrial Technologies LLC'
-        : (isExampleMode ? 'Apex Industrial Technologies (Atlas Demo)' : (activeViewProject?.name || dealName || ''))
+        : (activeViewProject?.name || dealName || (isExampleMode ? 'Apex Industrial Technologies (Atlas Demo)' : ''))
 
     const suggestedProjectName = useMemo(() => {
         if (isTourActive) {
@@ -2653,6 +2655,16 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         // Save deal model to state/store
         void triggerSaveDealModel(newDealModel)
 
+        // Claim project ownership so data isolation does not filter it
+        const currentUser = authUser || getStoredAuth()
+        if (currentUser?.email) {
+            claimProject(newDealModel.projectId, currentUser.email)
+        }
+
+        // Reset any in-flight batch state from previous project
+        setActiveSubmissionBatch(null)
+        setUserHasNavigatedBatchDocs(false)
+
         // Switch workspace and project view
         setDealName(formData.dealName)
         setAskingPrice(String(formData.askingPrice))
@@ -2663,13 +2675,14 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
         if (typeof window !== 'undefined') {
             window.localStorage.setItem('mergeworks.activeProjectKey', newDealModel.projectId)
+            window.localStorage.setItem('mergeworks.selectedProjectKey', newDealModel.projectId)
             window.location.hash = '#overview'
             window.setTimeout(() => {
                 const el = document.getElementById('deal-overview') || document.querySelector('[data-deal-overview]')
                 el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
             }, 50)
         }
-    }, [activeHistoryEnvironment, triggerSaveDealModel, setDealName, setAskingPrice, setProjectId, setSelectedProjectKey, setActiveViewProjectId, setActiveWorkspaceTab])
+    }, [activeHistoryEnvironment, authUser, triggerSaveDealModel, setDealName, setAskingPrice, setProjectId, setSelectedProjectKey, setActiveViewProjectId, setActiveWorkspaceTab, setActiveSubmissionBatch, setUserHasNavigatedBatchDocs])
 
     const handlePortfolioProjectSelect = (projectKey: string, targetTab: WorkspaceTab = 'synthesis') => {
         setActiveViewProjectId(projectKey)
