@@ -35,4 +35,11 @@ describe('getConcentrationRisk', () => {
             { revenueShare: 0.05 },
         ]).variant).toBe('destructive')
     })
+
+    it('handles a very large fragmented customer base without overflowing the stack', () => {
+        const many = Array.from({ length: 200_000 }, () => ({ revenueShare: 0.001 }))
+        many.push({ revenueShare: 0.5 })
+        expect(() => getConcentrationRisk(many)).not.toThrow()
+        expect(getConcentrationRisk(many).variant).toBe('destructive')
+    })
 })

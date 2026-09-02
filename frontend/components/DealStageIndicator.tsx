@@ -26,7 +26,13 @@ export default function DealStageIndicator() {
     const [open, setOpen] = useState(false)
 
     useEffect(() => {
-        localStorage.setItem(STORAGE_KEY, stage)
+        // The initial read is guarded; the write must be too, so a
+        // disabled/unavailable localStorage can't throw out of this effect.
+        try {
+            localStorage.setItem(STORAGE_KEY, stage)
+        } catch {
+            // best effort; the selected stage still lives in component state
+        }
     }, [stage])
 
     const currentIndex = STAGES.findIndex(s => s.id === stage)

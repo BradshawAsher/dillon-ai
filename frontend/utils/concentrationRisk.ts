@@ -23,7 +23,13 @@ export type ConcentrationRisk = {
  * otherwise the base is considered diversified.
  */
 export function getConcentrationRisk(findings: ConcentrationRiskInput[]): ConcentrationRisk {
-    const maxShare = Math.max(...findings.map((f) => f.revenueShare ?? 0), 0)
+    // reduce, not Math.max(...spread): a fragmented customer base can carry
+    // hundreds of per-customer findings, and spreading that many arguments can
+    // overflow the call stack — the same guard latencyMetrics uses.
+    const maxShare = findings.reduce((max, f) => {
+        const share = f.revenueShare ?? 0
+        return share > max ? share : max
+    }, 0)
     const hasCritical = findings.some((f) => f.severity === 'critical')
     if (maxShare > 0.4 || hasCritical) return { label: 'High concentration risk', variant: 'destructive' }
     if (maxShare > 0.2 || findings.length > 0) return { label: 'Moderate concentration', variant: 'warning' }

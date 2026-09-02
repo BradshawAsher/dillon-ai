@@ -63,7 +63,13 @@ function loadRules(): AlertRule[] {
 }
 
 function saveRules(rules: AlertRule[]) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(rules))
+    // loadRules already tolerates storage failures; the write must too, or a
+    // disabled/full localStorage throws out of the rule-editing handlers.
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(rules))
+    } catch {
+        // best effort; rules stay in component state for this session
+    }
 }
 
 const DEFAULT_RULES: AlertRule[] = [
