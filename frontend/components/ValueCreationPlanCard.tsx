@@ -4,6 +4,7 @@ import { TrendingUp } from 'lucide-react'
 import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { normalizeEquityFraction } from '../utils/dealMath'
+import { formatCompactUsd } from '../utils/formatCompactUsd'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
 
@@ -110,15 +111,8 @@ export default function ValueCreationPlanCard({ model }: Props) {
         High: 'bg-red-100 text-red-700',
     }
 
-    const formatDollars = (value: number) => {
-        if (Math.abs(value) >= 1_000_000) {
-            return `$${(value / 1_000_000).toFixed(1)}M`
-        }
-        if (Math.abs(value) >= 1_000) {
-            return `$${(value / 1_000).toFixed(0)}K`
-        }
-        return `$${Math.round(value).toLocaleString()}`
-    }
+    // Shared, sign-safe compact formatter (losses render as "-$2.5M").
+    const formatDollars = formatCompactUsd
 
     return (
         <Card className="overflow-hidden">
