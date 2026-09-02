@@ -6,6 +6,7 @@ import { parseDocumentedFacts } from '../utils/evidence'
 import { copyToClipboard } from '../utils/clipboard'
 import { formatCompactUsd } from '../utils/formatCompactUsd'
 import { formatUpdatedDate } from '../utils/formatUpdatedDate'
+import { formatConfidencePercent } from '../utils/confidencePercent'
 import { Badge } from '../lib/shadcn/badge'
 import ActionableRecommendationInfoButton from './ActionableRecommendationInfoButton'
 
@@ -28,13 +29,7 @@ function exact(value: number) {
 }
 
 /** Normalizes the AI confidence string ('87' or '0.82') to a percentage label. */
-function formatConfidence(raw: string | undefined): string | null {
-    if (!raw) return null
-    const num = Number(raw)
-    if (!Number.isFinite(num)) return null
-    const pct = num <= 1 ? num * 100 : num
-    return `${Math.round(pct)}%`
-}
+const formatConfidence = formatConfidencePercent
 
 const formatUpdated = formatUpdatedDate
 
