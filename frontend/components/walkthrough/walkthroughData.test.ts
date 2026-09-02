@@ -131,7 +131,7 @@ describe('Walkthrough Playlists & Step Data Validation', () => {
             'overview-health',
             'diligence-batch',
             'latest-submission-section',
-            'project-synthesis',
+            'synthesis-card-header',
             'synthesis-judgment',
             'project-card-active',
             'project-card-documents',

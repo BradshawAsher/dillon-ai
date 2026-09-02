@@ -483,7 +483,7 @@ export default function ProjectSynthesisCard({
 
     return (
         <Card className="overflow-hidden">
-            <CardHeader className="border-b border-border bg-card/80">
+            <CardHeader id="synthesis-card-header" className="scroll-mt-28 border-b border-border bg-card/80">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="space-y-1">
                         <div className="flex items-center gap-2">

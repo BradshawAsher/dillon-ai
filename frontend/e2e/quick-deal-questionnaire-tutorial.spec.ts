@@ -92,6 +92,7 @@ test.describe('Quick Deal Questionnaire tutorial (0 tokens)', () => {
     })
 
     test('follows the questionnaire into its generated project workspace without submitting', async ({ page }) => {
+        test.setTimeout(90_000)
         await openQuestionnaire(page)
         const unsafeRequests: string[] = []
         page.on('request', (request) => {
@@ -156,6 +157,12 @@ test.describe('Quick Deal Questionnaire tutorial (0 tokens)', () => {
         await expect(page).toHaveURL(/#synthesis/)
         await expect(page.locator('#project-synthesis')).toBeVisible()
         await expect(page.locator('#project-synthesis')).toContainText('Apex Precision Dynamics')
+        await expect(page.locator('#synthesis-card-header')).toBeVisible()
+        await expect(page.locator('#synthesis-card-header')).toContainText('Project synthesis — final acquisition judgment')
+        await expect.poll(async () => page.locator('#synthesis-card-header').evaluate((element) => {
+            const rect = element.getBoundingClientRect()
+            return rect.top >= 0 && rect.bottom <= window.innerHeight
+        })).toBe(true)
         await expect(page.locator('#synthesis-judgment')).toBeVisible()
 
         await walkthrough.getByLabel(/Jump to Step 25:/).click()
