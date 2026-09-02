@@ -118,6 +118,7 @@ export type QuestionnaireDraftField = {
 
 export type QuestionnaireDraftResult = {
   requestId: string
+  draftId?: string
   fields: QuestionnaireDraftField[]
   warnings: string[]
   missingRequiredFields: string[]
@@ -126,6 +127,7 @@ export type QuestionnaireDraftResult = {
 export function sanitizeQuestionnaireDraftResponse(value: unknown, requestId: string): QuestionnaireDraftResult {
   const candidate = unwrapResponse(value)
   const seen = new Set<string>()
+  const draftId = typeof candidate.draftId === 'string' ? candidate.draftId : undefined
   const fields = (Array.isArray(candidate.fields) ? candidate.fields : [])
     .map(sanitizeField)
     .filter((field): field is QuestionnaireDraftField => Boolean(field))
@@ -139,7 +141,7 @@ export function sanitizeQuestionnaireDraftResponse(value: unknown, requestId: st
     .slice(0, 20)
     .map((warning) => warning.trim().slice(0, 500))
   const missingRequiredFields = REQUIRED_FIELDS.filter((field) => !seen.has(field))
-  return { requestId, fields, warnings, missingRequiredFields }
+  return { requestId, draftId, fields, warnings, missingRequiredFields }
 }
 
 /**

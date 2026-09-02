@@ -299,9 +299,16 @@ export default function QuestionnaireQuickImport({ disabled = false, openRequest
                 <div className="space-y-3 rounded-lg border border-border bg-background/80 p-3" data-questionnaire-import-review>
                     <div className="flex flex-wrap items-center justify-between gap-2">
                         <div>
-                            <p className="text-xs font-bold text-foreground">
-                                Review {result.recognized.length} recognized field{result.recognized.length === 1 ? '' : 's'}
-                            </p>
+                            <div className="flex items-center gap-2">
+                                <p className="text-xs font-bold text-foreground">
+                                    Review {result.recognized.length} recognized field{result.recognized.length === 1 ? '' : 's'}
+                                </p>
+                                {draft?.draftId ? (
+                                    <span className="inline-flex items-center gap-1 rounded bg-primary/15 border border-primary/30 px-1.5 py-0.5 text-[9px] font-mono font-semibold text-primary">
+                                        <span>💾 Draft ID: {draft.draftId.slice(0, 8)}</span>
+                                    </span>
+                                ) : null}
+                            </div>
                             <p className="text-[10px] text-muted-foreground">Nothing changes until you select Apply recognized fields.</p>
                             {draft && draft.missingRequiredFields.length > 0 ? (
                                 <p className="mt-1 text-[10px] font-medium text-amber-700 dark:text-amber-300">

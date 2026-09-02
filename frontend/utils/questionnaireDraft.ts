@@ -23,6 +23,7 @@ export interface QuestionnaireDraftField {
 
 export interface QuestionnaireDraft {
     requestId: string
+    draftId?: string
     fields: QuestionnaireDraftField[]
     warnings: string[]
     missingRequiredFields: QuestionnaireRequiredField[]
