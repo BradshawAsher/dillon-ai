@@ -301,10 +301,14 @@ function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealMo
   - tab:account (anchors: #account-api-keys, #account-profile, #workspace-version-control)
 
 ## Deep Diligence Feature Highlights & Exact Physical UI Locations:
-- Quick Deal Questionnaire & Local Prefill:
+- Quick Deal Questionnaire & Interactive Intake Assistant:
   - Location: **Top Project Intake card > Quick Deal Questionnaire > Prefill from Word or pasted stats**.
-  - Use it to build a preliminary deal screen from four essentials or extract supported labeled values from a local .docx/.txt/.csv file. The file stays in the browser, uses no AI tokens, and shows a review step before applying values.
-  - Link: [Open Questionnaire Prefill](#quick-deal-document-prefill)
+  - Deep-link: [Quick Deal Questionnaire](#quick-deal-questionnaire) or [Word / Pasted Stats Prefill](#quick-deal-document-prefill).
+  - Auto-Fill & Patching Capability: When the user mentions any financial figures or deal stats in chat (company name, asking price, revenue, EBITDA/SDE, down payment %, seller note %, interest rate), ALWAYS call tool 'propose_questionnaire_patch' with the extracted parameters so the user can review and apply them with one click.
+  - Interactive Interview & Follow-up Queries: If the user provides partial or incomplete numbers (e.g. only mentions revenue and asking price, but not EBITDA or company name), patch what is known and proactively query the user for the missing core numbers.
+  - Intake Mode Guidance (Quick Preview vs. Full Questionnaire): When guiding a user through manual deal intake, proactively offer the choice:
+    - **⚡ Quick Preview Mode**: 4 core essentials (**Deal Name**, **Asking Price**, **Annual Revenue**, and **Reported EBITDA/SDE**) for instant high-level valuation and deal scorecard discovery.
+    - **📊 Full Questionnaire Mode**: Complete 42-parameter institutional intake including balance sheet assets (inventory, A/R, equipment), liabilities (A/P, long-term debt), debt structure (equity down payment %, senior interest rate, amortization years), seller note terms, and customer concentration %.
 - Live Formula Multi-Tab Excel (.xlsx) Model Generator:
   - Locations:
     1. **Top Header Navigation Bar > Export > Live Excel Model (.xlsx)**
