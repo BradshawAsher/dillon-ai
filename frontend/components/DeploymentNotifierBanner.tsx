@@ -1,5 +1,5 @@
 import React from 'react'
-import { CheckCircle2, Hammer, Loader2, RefreshCw, Sparkles, X } from 'lucide-react'
+import { ArrowUpRight, CheckCircle2, Hammer, History, Loader2, RefreshCw, Sparkles, X } from 'lucide-react'
 
 import { useDeploymentNotifier } from '../hooks/useDeploymentNotifier'
 import { Button } from '../lib/shadcn/button'
@@ -7,14 +7,56 @@ import { Button } from '../lib/shadcn/button'
 export default function DeploymentNotifierBanner() {
     const {
         status,
+        currentCommit,
         latestCommit,
         isDismissed,
         reloadApp,
+        returnToLatest,
         dismiss,
     } = useDeploymentNotifier()
 
     if (status === 'idle' || isDismissed) {
         return null
+    }
+
+    if (status === 'historical') {
+        return (
+            <div
+                id="historical-deployment-banner"
+                role="alert"
+                aria-live="polite"
+                className="fixed left-1/2 top-4 z-[60] flex w-[calc(100vw-2rem)] max-w-xl -translate-x-1/2 flex-col items-start gap-3 rounded-xl border-2 border-amber-500/60 bg-amber-950/95 p-4 text-amber-100 shadow-2xl backdrop-blur-md animate-in slide-in-from-top-5 duration-300 sm:top-5 sm:flex-row sm:items-center"
+            >
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-amber-500/40 bg-amber-500/20 text-amber-400">
+                    <History className="h-5 w-5" />
+                </div>
+                <div className="space-y-0.5 text-xs pr-2">
+                    <p className="font-bold text-sm text-amber-200">Historical version</p>
+                    <p className="text-amber-300/90 leading-tight">
+                        You are viewing immutable build <span className="font-mono font-semibold">{currentCommit}</span>. The UI does not update, but project actions may still affect live data.
+                    </p>
+                </div>
+                <div className="ml-auto mt-2 flex w-full items-center justify-end gap-2 sm:mt-0 sm:w-auto">
+                    <Button
+                        type="button"
+                        size="sm"
+                        onClick={returnToLatest}
+                        className="h-8 gap-1.5 bg-amber-400 px-3.5 font-bold text-amber-950 hover:bg-amber-300"
+                    >
+                        Return to latest
+                        <ArrowUpRight className="h-3.5 w-3.5" />
+                    </Button>
+                    <button
+                        type="button"
+                        onClick={dismiss}
+                        className="rounded-lg p-1.5 text-amber-400/60 transition-colors hover:bg-amber-500/20 hover:text-amber-200"
+                        aria-label="Dismiss historical version notice"
+                    >
+                        <X className="h-4 w-4" />
+                    </button>
+                </div>
+            </div>
+        )
     }
 
     if (status === 'building') {

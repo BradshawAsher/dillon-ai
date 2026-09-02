@@ -2,14 +2,12 @@ import React, { useEffect } from 'react'
 import {
     History,
     CheckCircle2,
-    ExternalLink,
     ShieldAlert,
     RotateCcw,
     X,
     GitCommit,
     Calendar,
     ArrowRight,
-    Sparkles,
 } from 'lucide-react'
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
@@ -17,7 +15,9 @@ import {
     getImmutableReleases,
     getFallbackStableUrl,
     getCurrentBuildInfo,
-    type ImmutableRelease,
+    getLatestProductionUrl,
+    isHistoricalDeploymentHost,
+    isReleaseActive,
 } from '../utils/deploymentVersions'
 
 interface VersionSwitcherModalProps {
@@ -29,6 +29,11 @@ export function VersionSwitcherModal({ open, onClose }: VersionSwitcherModalProp
     const releases = getImmutableReleases()
     const fallbackUrl = getFallbackStableUrl()
     const buildInfo = getCurrentBuildInfo()
+    const currentHostname = typeof window !== 'undefined' ? window.location.hostname : ''
+    const historicalDeployment = isHistoricalDeploymentHost(currentHostname)
+    const latestProductionUrl = typeof window !== 'undefined'
+        ? getLatestProductionUrl(window.location)
+        : getLatestProductionUrl()
 
     const handleSwitchToVersion = (url: string) => {
         if (typeof window !== 'undefined') {
@@ -79,7 +84,9 @@ export function VersionSwitcherModal({ open, onClose }: VersionSwitcherModalProp
                                 </h2>
                             </div>
                             <p className="text-xs text-muted-foreground">
-                                Switch to any verified historical release snapshot. All immutable URLs are permanent, isolated, and zero-downtime.
+                                {historicalDeployment
+                                    ? 'You are viewing immutable historical UI code. Return to production for the newest features. Project data and API actions are still live.'
+                                    : 'Switch to a verified historical UI snapshot. Deployment URLs are immutable and zero-downtime; they do not roll back project data.'}
                             </p>
                         </div>
                         <Button
@@ -102,16 +109,28 @@ export function VersionSwitcherModal({ open, onClose }: VersionSwitcherModalProp
                             <span className="font-mono font-bold text-foreground">{buildInfo.commit}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleSwitchToVersion(fallbackUrl)}
-                                className="h-7 text-xs font-semibold gap-1.5 border-amber-500/40 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 cursor-pointer"
-                            >
-                                <RotateCcw className="h-3 w-3" />
-                                1-Click Rollback to Previous Stable
-                            </Button>
+                            {historicalDeployment ? (
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    onClick={() => handleSwitchToVersion(latestProductionUrl)}
+                                    className="h-7 gap-1.5 bg-emerald-600 text-xs font-semibold text-white hover:bg-emerald-500 cursor-pointer"
+                                >
+                                    Return to Latest Production
+                                    <ArrowRight className="h-3 w-3" />
+                                </Button>
+                            ) : (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleSwitchToVersion(fallbackUrl)}
+                                    className="h-7 text-xs font-semibold gap-1.5 border-amber-500/40 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 cursor-pointer"
+                                >
+                                    <RotateCcw className="h-3 w-3" />
+                                    1-Click Rollback to Previous Stable
+                                </Button>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -123,7 +142,7 @@ export function VersionSwitcherModal({ open, onClose }: VersionSwitcherModalProp
                     </div>
 
                     {releases.map((release) => {
-                        const isCurrent = release.isLatest
+                        const isCurrent = isReleaseActive(release, buildInfo.commit, currentHostname)
 
                         return (
                             <div
@@ -184,10 +203,10 @@ export function VersionSwitcherModal({ open, onClose }: VersionSwitcherModalProp
                                         <Button
                                             type="button"
                                             size="sm"
-                                            onClick={() => handleSwitchToVersion(release.url)}
+                                            onClick={() => handleSwitchToVersion(release.isLatest ? latestProductionUrl : release.url)}
                                             className="h-8 gap-1.5 text-xs font-semibold shadow-xs cursor-pointer"
                                         >
-                                            <span>Launch Version</span>
+                                            <span>{release.isLatest ? 'Return to Latest' : 'Launch Version'}</span>
                                             <ArrowRight className="h-3.5 w-3.5" />
                                         </Button>
                                     )}

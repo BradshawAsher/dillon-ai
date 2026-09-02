@@ -10,6 +10,16 @@ export interface ImmutableRelease {
     isPreviousStable?: boolean
 }
 
+export interface DeploymentLocation {
+    hostname: string
+    pathname: string
+    search: string
+    hash: string
+}
+
+export const PRODUCTION_APP_ORIGIN = 'https://due-diligence-dashboard.vercel.app'
+export const PRODUCTION_APP_HOSTNAME = new URL(PRODUCTION_APP_ORIGIN).hostname
+
 export const IMMUTABLE_RELEASES: ImmutableRelease[] = [
     {
         id: 'rel-main-latest',
@@ -67,6 +77,44 @@ export function getImmutableReleases(): ImmutableRelease[] {
 export function getFallbackStableUrl(): string {
     const previous = IMMUTABLE_RELEASES.find(r => r.isPreviousStable)
     return previous ? previous.url : 'https://due-diligence-dashboard-gys3h84i8-bradasher.vercel.app/?view=dashboard'
+}
+
+export function isHistoricalDeploymentHost(hostname: string): boolean {
+    const normalizedHostname = hostname.trim().toLowerCase()
+    return normalizedHostname.endsWith('.vercel.app') && normalizedHostname !== PRODUCTION_APP_HOSTNAME
+}
+
+export function getLatestProductionUrl(location?: DeploymentLocation): string {
+    const latestUrl = new URL(PRODUCTION_APP_ORIGIN)
+    if (location) {
+        latestUrl.pathname = location.pathname || '/'
+        latestUrl.search = location.search || ''
+        latestUrl.hash = location.hash || ''
+    }
+    return latestUrl.toString()
+}
+
+export function isReleaseActive(
+    release: ImmutableRelease,
+    currentCommit: string,
+    currentHostname: string,
+): boolean {
+    const normalizedCommit = currentCommit.trim().toLowerCase()
+    const releaseCommit = release.commit.trim().toLowerCase()
+
+    if (releaseCommit !== 'main' && normalizedCommit !== 'local') {
+        if (normalizedCommit.startsWith(releaseCommit) || releaseCommit.startsWith(normalizedCommit)) {
+            return true
+        }
+    }
+
+    const normalizedHostname = currentHostname.trim().toLowerCase()
+    if (normalizedHostname) {
+        const releaseHostname = new URL(release.url).hostname.toLowerCase()
+        if (releaseHostname === normalizedHostname) return true
+    }
+
+    return Boolean(release.isLatest && !isHistoricalDeploymentHost(normalizedHostname))
 }
 
 export function getCurrentBuildInfo(): { commit: string; builtAt: string } {

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { getLatestProductionUrl, isHistoricalDeploymentHost } from '../utils/deploymentVersions'
 
-export type DeploymentStatus = 'idle' | 'building' | 'update_ready'
+export type DeploymentStatus = 'idle' | 'building' | 'update_ready' | 'historical'
 
 export interface DeploymentState {
     status: DeploymentStatus
@@ -9,6 +10,7 @@ export interface DeploymentState {
     latestBuiltAt: string | null
     isDismissed: boolean
     reloadApp: () => void
+    returnToLatest: () => void
     dismiss: () => void
 }
 
@@ -21,12 +23,21 @@ export function evaluateDeploymentStatus(
     currentCommit: string,
     currentBuiltAt: string,
     versionData: VersionInfo | null,
-    ghData: { sha?: string } | null
+    ghData: { sha?: string } | null,
+    historicalDeployment = false,
 ): {
     status: DeploymentStatus
     latestCommit: string | null
     latestBuiltAt: string | null
 } {
+    if (historicalDeployment) {
+        return {
+            status: 'historical',
+            latestCommit: null,
+            latestBuiltAt: null,
+        }
+    }
+
     const currentBuiltTime = Date.parse(currentBuiltAt) || Date.now()
 
     if (versionData) {
@@ -72,8 +83,13 @@ export function useDeploymentNotifier(): DeploymentState {
 
     const currentCommit = localInfo.commit
     const currentBuiltAt = localInfo.builtAt
+    const historicalDeployment = typeof window !== 'undefined'
+        && isHistoricalDeploymentHost(window.location.hostname)
+    const latestProductionUrl = typeof window !== 'undefined'
+        ? getLatestProductionUrl(window.location)
+        : getLatestProductionUrl()
 
-    const [status, setStatus] = useState<DeploymentStatus>('idle')
+    const [status, setStatus] = useState<DeploymentStatus>(historicalDeployment ? 'historical' : 'idle')
     const [latestCommit, setLatestCommit] = useState<string | null>(null)
     const [latestBuiltAt, setLatestBuiltAt] = useState<string | null>(null)
     const [dismissedCommit, setDismissedCommit] = useState<string | null>(null)
@@ -82,6 +98,10 @@ export function useDeploymentNotifier(): DeploymentState {
 
     const checkForUpdates = useCallback(async () => {
         if (isCheckingRef.current) return
+        if (historicalDeployment) {
+            setStatus('historical')
+            return
+        }
         isCheckingRef.current = true
 
         try {
@@ -120,9 +140,14 @@ export function useDeploymentNotifier(): DeploymentState {
         } finally {
             isCheckingRef.current = false
         }
-    }, [currentCommit, currentBuiltAt])
+    }, [currentCommit, currentBuiltAt, historicalDeployment])
 
     useEffect(() => {
+        if (historicalDeployment) {
+            setStatus('historical')
+            return
+        }
+
         const initialTimer = setTimeout(() => {
             void checkForUpdates()
         }, 3_000)
@@ -145,7 +170,7 @@ export function useDeploymentNotifier(): DeploymentState {
             window.removeEventListener('visibilitychange', handleVisibilityChange)
             window.removeEventListener('focus', handleVisibilityChange)
         }
-    }, [checkForUpdates])
+    }, [checkForUpdates, historicalDeployment])
 
     const reloadApp = useCallback(() => {
         if (typeof window !== 'undefined') {
@@ -153,13 +178,21 @@ export function useDeploymentNotifier(): DeploymentState {
         }
     }, [])
 
-    const dismiss = useCallback(() => {
-        if (latestCommit) {
-            setDismissedCommit(latestCommit)
+    const returnToLatest = useCallback(() => {
+        if (typeof window !== 'undefined') {
+            window.location.assign(latestProductionUrl)
         }
-    }, [latestCommit])
+    }, [latestProductionUrl])
 
-    const isDismissed = Boolean(dismissedCommit && dismissedCommit === latestCommit)
+    const dismiss = useCallback(() => {
+        const dismissKey = latestCommit ?? (status === 'historical' ? `historical:${currentCommit}` : null)
+        if (dismissKey) {
+            setDismissedCommit(dismissKey)
+        }
+    }, [currentCommit, latestCommit, status])
+
+    const activeDismissKey = latestCommit ?? (status === 'historical' ? `historical:${currentCommit}` : null)
+    const isDismissed = Boolean(dismissedCommit && dismissedCommit === activeDismissKey)
 
     return {
         status,
@@ -168,6 +201,7 @@ export function useDeploymentNotifier(): DeploymentState {
         latestBuiltAt,
         isDismissed,
         reloadApp,
+        returnToLatest,
         dismiss,
     }
 }

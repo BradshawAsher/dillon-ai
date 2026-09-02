@@ -530,3 +530,51 @@ The repository has strong Vitest unit/domain coverage, a real loopback multipart
 - `npm run build`: passed. Existing stylesheet and bundle-size warnings remain non-blocking.
 - `npm run test:e2e`: all 15 Chromium tests passed.
 - The build-generated `frontend/public/version.json` change was restored so the final diff contains only intentional source, CI, test, and documentation changes.
+
+## Historical deployment detection and return-to-latest flow (2026-09-01)
+
+### Empirical root cause
+
+- Each immutable Vercel deployment serves the JavaScript bundle and `/version.json` generated when that deployment was built. The deployment notifier currently requests a relative `/version.json`, so a rollback URL compares its embedded build information with its own historical manifest and cannot tell that production has advanced.
+- The notifier then compares the old build against GitHub `main` and reports `building` indefinitely, even when the newer production deployment already exists.
+- The version switcher decides which release is active from the static `release.isLatest` flag. Consequently, every historical deployment incorrectly labels the canonical production row as `Active`.
+- Release UI is compiled into each immutable bundle. Deployments from before version control was implemented cannot receive that React feature retroactively. The durable fix must therefore be carried by the current release and all future rollback snapshots.
+
+### Architecture and target files
+
+- `frontend/utils/deploymentVersions.ts`
+  - Centralize the canonical production origin.
+  - Add pure helpers to identify historical Vercel hostnames, preserve the current route when returning to production, and determine the active release from the real hostname/build commit.
+- `frontend/hooks/useDeploymentNotifier.ts`
+  - Add an explicit `historical` state, initialize it synchronously from the hostname, skip misleading GitHub/build polling on immutable historical hosts, and expose a `returnToLatest` action.
+- `frontend/components/DeploymentNotifierBanner.tsx`
+  - Render a clear historical-version disclaimer and one-click return-to-latest button.
+- `frontend/components/VersionSwitcherModal.tsx`
+  - Stop treating `isLatest` as synonymous with the active build. Show the actual historical build and replace rollback wording with a return-to-latest action while viewing a snapshot.
+- `frontend/utils/deploymentVersions.test.ts` and `frontend/hooks/useDeploymentNotifier.test.ts`
+  - Cover canonical, preview/historical, localhost, route preservation, release matching, and the historical status behavior.
+
+### Compatibility and limits
+
+- Canonical production and local development keep the existing new-deployment polling behavior.
+- Historical/preview deployments are identified as immutable code snapshots with an explicit path back to production; no project or query deep link is discarded. They are not described as data rollbacks because their configured APIs may still mutate live project data.
+- The immutable release list remains curated because Vercel deployment discovery requires authenticated deployment metadata. The `Latest production` destination itself stays automatically synchronized through the stable production alias.
+- Already-created immutable bundles without this code cannot be modified in place. Once this change ships, every later snapshot includes the detection and recovery UI.
+
+### Verification plan
+
+1. Run focused deployment-version and notifier unit tests.
+2. Run TypeScript typechecking and the complete unit suite.
+3. Run the production build and restore generated `frontend/public/version.json` metadata.
+4. Run the Playwright suite to catch fixed-banner or navigation regressions.
+5. Run `git diff --check` and inspect the final branch diff without committing or pushing until explicitly requested.
+
+### Verification result
+
+- Focused deployment-version and notifier tests: 13 passed.
+- TypeScript typechecking: passed.
+- Full unit/domain suite: 94 files and 923 tests passed.
+- Zero-token API integration suite: 26 tests passed.
+- Production build: passed without the prior CSS or chunk-size warnings.
+- Playwright Chromium suite: all 16 tests passed.
+- Generated `frontend/public/version.json` metadata was restored after verification.

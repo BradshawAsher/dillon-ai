@@ -81,3 +81,19 @@ does not authorize an automatic retry: inspect history and executions first.
  
 If a production Vercel deployment needs to be rolled back, use the Vercel Dashboard
 or CLI (`vercel rollback`) to instantly promote the previous successful deployment.
+
+When someone opens an immutable deployment-specific `*.vercel.app` URL, the app
+labels it as a historical version and offers **Return to latest**. That action uses
+the stable `https://due-diligence-dashboard.vercel.app` production alias and
+preserves the current path, query parameters, and tab hash. The alias always points
+to the newest promoted production deployment, so the recovery destination does not
+need to be updated for each release.
+
+A deployment snapshot rolls back frontend code only. It does not restore an older
+Supabase/n8n dataset, and actions taken from a historical frontend may still affect
+the configured live project data.
+
+The named snapshot catalog in Version Control is curated because enumerating Vercel
+deployments requires authenticated deployment metadata. Immutable deployments made
+before the historical-version banner existed cannot receive that UI retroactively;
+this behavior is included in this and future snapshots.

@@ -61,4 +61,18 @@ describe('evaluateDeploymentStatus', () => {
         expect(result.status).toBe('idle')
         expect(result.latestCommit).toBe(null)
     })
+
+    it('identifies historical deployments without reporting an endless build', () => {
+        const result = evaluateDeploymentStatus(
+            currentCommit,
+            currentBuiltAt,
+            { commit: currentCommit, builtAt: currentBuiltAt },
+            { sha: 'newmainabcdef123' },
+            true,
+        )
+
+        expect(result.status).toBe('historical')
+        expect(result.latestCommit).toBe(null)
+        expect(result.latestBuiltAt).toBe(null)
+    })
 })
