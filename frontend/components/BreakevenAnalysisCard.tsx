@@ -4,6 +4,7 @@ import { Target } from 'lucide-react'
 import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { normalizeEquityFraction } from '../utils/dealMath'
+import { formatBreakevenValue } from '../utils/breakevenFormat'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
 
@@ -98,10 +99,7 @@ export default function BreakevenAnalysisCard({ model }: Props) {
 
     if (!metrics) return null
 
-    const formatValue = (value: number, unit: string) => {
-        if (unit === 'x') return `${value.toFixed(2)}x`
-        return `$${Math.round(value).toLocaleString()}`
-    }
+    const formatValue = formatBreakevenValue
 
     return (
         <Card className="overflow-hidden">
