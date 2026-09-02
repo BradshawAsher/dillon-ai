@@ -15,6 +15,7 @@ import {
 
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
+import { classifyVerdictTone, type VerdictTone } from '../utils/verdictTone'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
 import CardInfoPopover from './common/CardInfoPopover'
@@ -35,67 +36,46 @@ function formatUpdated(value: string | undefined): string | null {
     return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
-/** Determines classification theme, icon, and poppy badge styling based on verdict text. */
-function getVerdictConfig(rec?: string, trafficLight?: string) {
-    const normRec = (rec || '').trim().toLowerCase()
-    const normLight = (trafficLight || '').trim().toUpperCase()
-
-    if (
-        normRec.includes('renegotiat') ||
-        normRec.includes('caution') ||
-        normRec.includes('warn') ||
-        normRec.includes('hold') ||
-        normLight === 'YELLOW'
-    ) {
-        return {
-            badgeClass: 'border-2 border-amber-500/60 bg-amber-500/15 text-amber-700 dark:text-amber-300 font-black text-base uppercase tracking-wider shadow-sm px-4 py-1.5 rounded-xl inline-flex items-center gap-2',
-            containerBg: 'bg-amber-50/70 dark:bg-amber-950/30 border-amber-300/80 dark:border-amber-700/50',
-            labelColor: 'text-amber-800 dark:text-amber-200',
-            Icon: AlertTriangle,
-            variant: 'warning' as const,
-        }
-    }
-
-    if (
-        normRec.includes('abort') ||
-        normRec.includes('pass') ||
-        normRec.includes('reject') ||
-        normRec.includes('escalat') ||
-        normRec.includes('risk') ||
-        normLight === 'RED'
-    ) {
-        return {
-            badgeClass: 'border-2 border-red-500/60 bg-red-500/15 text-red-700 dark:text-red-300 font-black text-base uppercase tracking-wider shadow-sm px-4 py-1.5 rounded-xl inline-flex items-center gap-2',
-            containerBg: 'bg-red-50/70 dark:bg-red-950/30 border-red-300/80 dark:border-red-700/50',
-            labelColor: 'text-red-800 dark:text-red-200',
-            Icon: AlertOctagon,
-            variant: 'destructive' as const,
-        }
-    }
-
-    if (
-        normRec.includes('proceed') ||
-        normRec.includes('buy') ||
-        normRec.includes('acquire') ||
-        normRec.includes('green') ||
-        normLight === 'GREEN'
-    ) {
-        return {
-            badgeClass: 'border-2 border-emerald-500/60 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-black text-base uppercase tracking-wider shadow-sm px-4 py-1.5 rounded-xl inline-flex items-center gap-2',
-            containerBg: 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-300/80 dark:border-emerald-700/50',
-            labelColor: 'text-emerald-800 dark:text-emerald-200',
-            Icon: CheckCircle2,
-            variant: 'success' as const,
-        }
-    }
-
-    return {
+const VERDICT_TONE_STYLES: Record<VerdictTone, {
+    badgeClass: string
+    containerBg: string
+    labelColor: string
+    Icon: typeof Info
+    variant: 'warning' | 'destructive' | 'success' | 'outline'
+}> = {
+    warning: {
+        badgeClass: 'border-2 border-amber-500/60 bg-amber-500/15 text-amber-700 dark:text-amber-300 font-black text-base uppercase tracking-wider shadow-sm px-4 py-1.5 rounded-xl inline-flex items-center gap-2',
+        containerBg: 'bg-amber-50/70 dark:bg-amber-950/30 border-amber-300/80 dark:border-amber-700/50',
+        labelColor: 'text-amber-800 dark:text-amber-200',
+        Icon: AlertTriangle,
+        variant: 'warning',
+    },
+    destructive: {
+        badgeClass: 'border-2 border-red-500/60 bg-red-500/15 text-red-700 dark:text-red-300 font-black text-base uppercase tracking-wider shadow-sm px-4 py-1.5 rounded-xl inline-flex items-center gap-2',
+        containerBg: 'bg-red-50/70 dark:bg-red-950/30 border-red-300/80 dark:border-red-700/50',
+        labelColor: 'text-red-800 dark:text-red-200',
+        Icon: AlertOctagon,
+        variant: 'destructive',
+    },
+    success: {
+        badgeClass: 'border-2 border-emerald-500/60 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-black text-base uppercase tracking-wider shadow-sm px-4 py-1.5 rounded-xl inline-flex items-center gap-2',
+        containerBg: 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-300/80 dark:border-emerald-700/50',
+        labelColor: 'text-emerald-800 dark:text-emerald-200',
+        Icon: CheckCircle2,
+        variant: 'success',
+    },
+    neutral: {
         badgeClass: 'border-2 border-primary/50 bg-primary/10 text-primary font-black text-base uppercase tracking-wider shadow-sm px-4 py-1.5 rounded-xl inline-flex items-center gap-2',
         containerBg: 'bg-muted/40 border-border',
         labelColor: 'text-foreground',
         Icon: Info,
-        variant: 'outline' as const,
-    }
+        variant: 'outline',
+    },
+}
+
+/** Determines classification theme, icon, and poppy badge styling based on verdict text. */
+function getVerdictConfig(rec?: string, trafficLight?: string) {
+    return VERDICT_TONE_STYLES[classifyVerdictTone(rec, trafficLight)]
 }
 
 export default function BusinessSnapshotCard({ model, synthesis, projectName, onSwitchTab }: Props) {
