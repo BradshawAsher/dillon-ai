@@ -4,6 +4,7 @@ import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
+import { formatRelativeTime } from '../utils/relativeTime'
 import CardInfoPopover from './common/CardInfoPopover'
 import { formatElapsedDuration, getDocumentExtractionDurationSec, getSynthesisDurationSec } from '../utils/diligenceDashboardUtils'
 
@@ -26,18 +27,7 @@ function parseTimestamp(value: string): number {
     return Number.isNaN(parsed) ? 0 : parsed
 }
 
-function formatRelative(timestamp: number): string {
-    if (timestamp === 0) return 'Pending'
-    const now = Date.now()
-    const diffMs = now - timestamp
-    const diffMin = Math.floor(diffMs / 60_000)
-    if (diffMin < 1) return 'Just now'
-    if (diffMin < 60) return `${diffMin}m ago`
-    const diffHours = Math.floor(diffMin / 60)
-    if (diffHours < 24) return `${diffHours}h ago`
-    const diffDays = Math.floor(diffHours / 24)
-    return `${diffDays}d ago`
-}
+const formatRelative = formatRelativeTime
 
 export default function DealTimelineCard({ documents, synthesis, projectName }: Props) {
     const events: TimelineEvent[] = []
