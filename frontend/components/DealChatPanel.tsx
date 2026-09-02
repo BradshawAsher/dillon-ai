@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowUpRight, Bot, Compass, Edit2, ExternalLink, FolderKanban, Maximize2, MessageSquare, Minimize2, Move, PanelLeft, Plus, RotateCcw, Search, Send, Sparkles, ThumbsDown, ThumbsUp, Trash2, X, AlertTriangle, Bug, Brain, Terminal, Cpu, ChevronDown, ChevronRight, CheckCircle2, Loader2, FileSpreadsheet } from 'lucide-react'
+import { ArrowUpRight, Bot, Compass, Edit2, ExternalLink, FolderKanban, Maximize2, MessageSquare, Minimize2, Move, PanelLeft, Plus, RotateCcw, Search, Send, Sparkles, ThumbsDown, ThumbsUp, Trash2, X, AlertTriangle, Bug, Brain, Terminal, Cpu, ChevronDown, ChevronRight, CheckCircle2, Loader2, FileSpreadsheet, Paperclip } from 'lucide-react'
 
 import { Button } from '../lib/shadcn/button'
 import { Card } from '../lib/shadcn/card'
@@ -19,6 +19,9 @@ import { getCohortsForProject, computeCohortSummary } from '../utils/cohortReten
 import { calculateWorkingCapitalPeg } from '../utils/workingCapitalPeg'
 import { getFallbackStableUrl } from '../utils/deploymentVersions'
 import { estimateChatQueryCost } from '../utils/costModel'
+import type { ManualDealFormData } from '../utils/manualDealIntake'
+import { classifyQuestionnaireFile, questionnaireDraftFromImport, questionnaireDraftValues, type QuestionnaireDraft } from '../utils/questionnaireDraft'
+import { parseQuestionnaireFile } from '../utils/questionnaireImport'
 
 export type ResponseTier = 'cloud_ai' | 'direct_llm' | 'local_heuristics'
 
@@ -52,6 +55,7 @@ export type Message = {
     isThinking?: boolean
     thinkingDurationSeconds?: number
     toolCalls?: ToolCallTrace[]
+    questionnaireProposal?: Partial<ManualDealFormData>
 }
 
 type Props = {
@@ -606,6 +610,9 @@ function resolveSpecializedLinks(rawQuery: string): string[] {
         links.push('[Portfolio Comparison Matrix](tab:compare)')
     } else if (q.includes('cost') || q.includes('spend') || q.includes('token') || q.includes('api cost') || q.includes('budget')) {
         links.push('[AI Cost & Token Usage](tab:spending)')
+    } else if (q.includes('questionnaire') || q.includes('intake form') || q.includes('prefill') || q.includes('manual intake') || q.includes('teaser prefill')) {
+        links.push('[Quick Deal Questionnaire](tab:structure#manual-deal-intake-card)')
+        links.push('[Teaser File Import](tab:structure#questionnaire-quick-import)')
     }
 
     // Default fallback (strictly 2 high-value links)
@@ -2004,6 +2011,38 @@ export const CHAT_AGENT_OPENAI_TOOLS = [
                 required: ['modalName']
             }
         }
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'read_questionnaire_draft',
+            description: 'Inspect the active Quick Deal Questionnaire prefill values or currently saved draft in the user\'s workspace.',
+            parameters: {
+                type: 'object',
+                properties: {}
+            }
+        }
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'propose_questionnaire_patch',
+            description: 'Propose prefill updates or additions to the Quick Deal Questionnaire (company name, asking price, revenue, EBITDA/SDE, down payment, seller note, etc.) when the user mentions financial statistics or teaser details in chat. Users can review and apply these values directly.',
+            parameters: {
+                type: 'object',
+                properties: {
+                    dealName: { type: 'string', description: 'Company or business target name' },
+                    askingPrice: { type: 'number', description: 'Asking price or enterprise value in USD' },
+                    annualRevenue: { type: 'number', description: 'Annual gross revenue in USD' },
+                    reportedEbitda: { type: 'number', description: 'Reported EBITDA or Seller Discretionary Earnings (SDE) in USD' },
+                    industry: { type: 'string', description: 'Industry or business sector' },
+                    downPaymentPercent: { type: 'number', description: 'Buyer equity injection / down payment percentage (e.g. 10 for 10%)' },
+                    sellerNotePercent: { type: 'number', description: 'Seller financing note percentage (e.g. 10 for 10%)' },
+                    interestRate: { type: 'number', description: 'Annual interest rate percentage for senior debt' },
+                    reason: { type: 'string', description: 'Explanation or source citation for the proposed values' }
+                }
+            }
+        }
     }
 ]
 
@@ -2125,6 +2164,32 @@ export const CHAT_AGENT_ANTHROPIC_TOOLS = [
                 }
             },
             required: ['modalName']
+        }
+    },
+    {
+        name: 'read_questionnaire_draft',
+        description: 'Inspect the active Quick Deal Questionnaire prefill values or currently saved draft in the user\'s workspace.',
+        input_schema: {
+            type: 'object',
+            properties: {}
+        }
+    },
+    {
+        name: 'propose_questionnaire_patch',
+        description: 'Propose prefill updates or additions to the Quick Deal Questionnaire (company name, asking price, revenue, EBITDA/SDE, down payment, seller note, etc.) when the user mentions financial statistics or teaser details in chat. Users can review and apply these values directly.',
+        input_schema: {
+            type: 'object',
+            properties: {
+                dealName: { type: 'string', description: 'Company or business target name' },
+                askingPrice: { type: 'number', description: 'Asking price or enterprise value in USD' },
+                annualRevenue: { type: 'number', description: 'Annual gross revenue in USD' },
+                reportedEbitda: { type: 'number', description: 'Reported EBITDA or Seller Discretionary Earnings (SDE) in USD' },
+                industry: { type: 'string', description: 'Industry or business sector' },
+                downPaymentPercent: { type: 'number', description: 'Buyer equity injection / down payment percentage (e.g. 10 for 10%)' },
+                sellerNotePercent: { type: 'number', description: 'Seller financing note percentage (e.g. 10 for 10%)' },
+                interestRate: { type: 'number', description: 'Annual interest rate percentage for senior debt' },
+                reason: { type: 'string', description: 'Explanation or source citation for the proposed values' }
+            }
         }
     }
 ]
@@ -2502,6 +2567,52 @@ export function executeClientSideTool(name: string, args: any, context: ClientSi
             action: 'open_modal',
             modalName: modal,
             message: `Opened ${modal} workspace modal.`
+        }
+    }
+
+    if (name === 'read_questionnaire_draft') {
+        let savedDraft = null
+        if (typeof window !== 'undefined') {
+            try {
+                const stored = sessionStorage.getItem('mergeworks.questionnaire_prefill')
+                if (stored) savedDraft = JSON.parse(stored)
+            } catch { }
+        }
+        return {
+            hasActiveDraft: Boolean(savedDraft),
+            draftValues: savedDraft || {},
+            requiredFields: ['dealName', 'askingPrice', 'annualRevenue', 'reportedEbitda'],
+            guidance: 'To navigate to the questionnaire, direct user to [Quick Deal Questionnaire](tab:structure#manual-deal-intake-card).'
+        }
+    }
+
+    if (name === 'propose_questionnaire_patch') {
+        const patch: Record<string, any> = {}
+        if (args.dealName) patch.dealName = String(args.dealName)
+        if (typeof args.askingPrice === 'number' && !isNaN(args.askingPrice)) patch.askingPrice = args.askingPrice
+        if (typeof args.annualRevenue === 'number' && !isNaN(args.annualRevenue)) patch.annualRevenue = args.annualRevenue
+        if (typeof args.reportedEbitda === 'number' && !isNaN(args.reportedEbitda)) patch.reportedEbitda = args.reportedEbitda
+        if (args.industry) patch.industry = String(args.industry)
+        if (typeof args.downPaymentPercent === 'number' && !isNaN(args.downPaymentPercent)) patch.downPaymentPercent = args.downPaymentPercent
+        if (typeof args.sellerNotePercent === 'number' && !isNaN(args.sellerNotePercent)) patch.sellerNotePercent = args.sellerNotePercent
+        if (typeof args.interestRate === 'number' && !isNaN(args.interestRate)) patch.interestRate = args.interestRate
+
+        if (typeof window !== 'undefined' && Object.keys(patch).length > 0) {
+            try {
+                const existing = sessionStorage.getItem('mergeworks.questionnaire_prefill')
+                const parsedExisting = existing ? JSON.parse(existing) : {}
+                const updated = { ...parsedExisting, ...patch }
+                sessionStorage.setItem('mergeworks.questionnaire_prefill', JSON.stringify(updated))
+                window.dispatchEvent(new CustomEvent('mergeworks:questionnaire-patch', { detail: patch }))
+            } catch { }
+        }
+
+        return {
+            success: true,
+            proposedFields: patch,
+            reason: args.reason || 'Extracted from user conversation',
+            actionPrompt: 'User can apply these values to the Quick Deal Questionnaire with one click.',
+            guidance: 'Direct user to [Quick Deal Questionnaire](tab:structure#manual-deal-intake-card).'
         }
     }
 
@@ -3128,6 +3239,138 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
     const [isDebateModeActive, setIsDebateModeActive] = useState(false)
     const [expandedThoughts, setExpandedThoughts] = useState<Record<string, boolean>>({})
     const [expandedTools, setExpandedTools] = useState<Record<string, boolean>>({})
+    const [isProcessingAttachment, setIsProcessingAttachment] = useState(false)
+    const [isDraggingFile, setIsDraggingFile] = useState(false)
+    const fileInputRef = useRef<HTMLInputElement>(null)
+
+    const handleIncomingFile = useCallback(async (file: File) => {
+        const decision = classifyQuestionnaireFile(file)
+        if (decision.route === 'local') {
+            setIsProcessingAttachment(true)
+            try {
+                const result = await parseQuestionnaireFile(file)
+                const draft = questionnaireDraftFromImport(result, `draft-${Date.now()}`)
+                const recognizedCount = result.recognized.length
+                const values = questionnaireDraftValues(draft)
+
+                if (typeof window !== 'undefined' && Object.keys(values).length > 0) {
+                    sessionStorage.setItem('mergeworks.questionnaire_prefill', JSON.stringify(values))
+                    window.dispatchEvent(new CustomEvent('mergeworks:questionnaire-patch', { detail: values }))
+                }
+
+                const summaryLines = result.recognized.map(r => `- **${r.label}**: \`${typeof r.value === 'number' ? '$' + r.value.toLocaleString() : r.value}\` *(from ${r.source})*`).join('\n')
+
+                const msgContent = `### 📄 Local Teaser Parsed: **${file.name}**\n\n` +
+                    `I've extracted **${recognizedCount} fields** locally in your browser with **0 model tokens**:\n\n` +
+                    `${summaryLines || 'No structured values identified with high confidence.'}\n\n` +
+                    (result.warnings.length > 0 ? `⚠️ **Notes**: ${result.warnings.join(', ')}\n\n` : '') +
+                    `Click below to review and apply these values to the **[Quick Deal Questionnaire](tab:structure#manual-deal-intake-card)**.`
+
+                setMessages(prev => [...prev, {
+                    id: `assistant-${Date.now()}`,
+                    role: 'assistant',
+                    content: msgContent,
+                    timestamp: Date.now(),
+                    tier: 'local_heuristics',
+                    providerName: 'Local M&A Parser',
+                    userPrompt: `Uploaded teaser: ${file.name}`,
+                    questionnaireProposal: values,
+                }])
+            } catch (err: any) {
+                setMessages(prev => [...prev, {
+                    id: `assistant-${Date.now()}`,
+                    role: 'assistant',
+                    content: `⚠️ **Could not parse local file**: ${err.message || 'Unknown error'}. You can paste the statistics into chat or upload documents via [Project Intake](#project-intake).`,
+                    timestamp: Date.now(),
+                    tier: 'local_heuristics',
+                    providerName: 'Local M&A Engine'
+                }])
+            } finally {
+                setIsProcessingAttachment(false)
+            }
+        } else if (decision.route === 'ai_draft') {
+            setIsProcessingAttachment(true)
+            try {
+                const reader = new FileReader()
+                const base64Promise = new Promise<string>((resolve, reject) => {
+                    reader.onload = () => resolve(reader.result as string)
+                    reader.onerror = reject
+                    reader.readAsDataURL(file)
+                })
+                const base64Data = await base64Promise
+                const cleanBase64 = base64Data.split(',')[1] || base64Data
+
+                const res = await fetch('/api/diligence/questionnaire-draft', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        sourceName: file.name,
+                        mediaType: file.type || 'image/png',
+                        imageBase64: cleanBase64,
+                    })
+                })
+
+                if (!res.ok) throw new Error(`AI Draft request failed with status ${res.status}`)
+                const data = await res.json()
+                const draft: QuestionnaireDraft = data.draft
+                const values = questionnaireDraftValues(draft)
+
+                if (typeof window !== 'undefined' && Object.keys(values).length > 0) {
+                    sessionStorage.setItem('mergeworks.questionnaire_prefill', JSON.stringify(values))
+                    window.dispatchEvent(new CustomEvent('mergeworks:questionnaire-patch', { detail: values }))
+                }
+
+                const fieldsList = draft.fields.map(f => `- **${f.field}**: \`${typeof f.value === 'number' ? '$' + f.value.toLocaleString() : f.value}\` *(Confidence: ${Math.round(f.confidence * 100)}%)*`).join('\n')
+
+                const msgContent = `### 🖼️ AI Teaser Extraction: **${file.name}**\n\n` +
+                    `Dillon AI analyzed the screenshot via the Quick Deal AI Draft assistant:\n\n` +
+                    `${fieldsList || 'No structured values identified with high confidence.'}\n\n` +
+                    (draft.warnings?.length > 0 ? `⚠️ **Notes**: ${draft.warnings.join(', ')}\n\n` : '') +
+                    `Click below to review and apply these values to the **[Quick Deal Questionnaire](tab:structure#manual-deal-intake-card)**.`
+
+                setMessages(prev => [...prev, {
+                    id: `assistant-${Date.now()}`,
+                    role: 'assistant',
+                    content: msgContent,
+                    timestamp: Date.now(),
+                    tier: 'cloud_ai',
+                    providerName: 'Quick Deal AI Draft Assistant',
+                    userPrompt: `Uploaded screenshot: ${file.name}`,
+                    questionnaireProposal: values,
+                }])
+            } catch (err: any) {
+                setMessages(prev => [...prev, {
+                    id: `assistant-${Date.now()}`,
+                    role: 'assistant',
+                    content: `⚠️ **AI Draft Assistant could not extract fields from image**: ${err.message || 'Service unreachable'}. You can type the numbers into chat or upload documents in [Project Intake](#project-intake).`,
+                    timestamp: Date.now(),
+                    tier: 'local_heuristics',
+                    providerName: 'Local M&A Engine'
+                }])
+            } finally {
+                setIsProcessingAttachment(false)
+            }
+        } else {
+            const sizeMb = (file.size / (1024 * 1024)).toFixed(1)
+            const botReply = `### 📁 Diligence Evidence Document: **${file.name}** (${sizeMb} MB)\n\n` +
+                `This file is an evidence-grade diligence document (**${decision.reason}**).\n\n` +
+                `**Why Project Intake?**\n` +
+                `- **Persistent Citations & Audit Trails**: Every fact, table, and balance sheet item is mapped to its exact source and page.\n` +
+                `- **Cross-Document Synthesis**: Merges with tax returns, P&Ls, and CIMs for comprehensive verdict modeling.\n` +
+                `- **Zero Re-Processing**: Dillon queries all extracted facts, transcripts, and signals without uploading files again in chat.\n\n` +
+                `👉 **[Open Project Intake to Process This Document](tab:intake)**`
+
+            setMessages(prev => [...prev, {
+                id: `assistant-${Date.now()}`,
+                role: 'assistant',
+                content: botReply,
+                timestamp: Date.now(),
+                tier: 'local_heuristics',
+                providerName: 'MergeWorks Router',
+                userPrompt: `Attached evidence file: ${file.name}`,
+            }])
+        }
+    }, [])
 
     const [panelSize, setPanelSize] = useState<ChatPanelSize>(() => {
         if (typeof window === 'undefined') return DEFAULT_CHAT_PANEL_SIZE
@@ -4453,7 +4696,30 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                 )}
 
                 {/* Right / Main Chat Canvas */}
-                <div className="flex flex-1 flex-col min-w-0 overflow-hidden relative">
+                <div
+                    onDragOver={(e) => {
+                        e.preventDefault()
+                        setIsDraggingFile(true)
+                    }}
+                    onDragLeave={(e) => {
+                        e.preventDefault()
+                        setIsDraggingFile(false)
+                    }}
+                    onDrop={(e) => {
+                        e.preventDefault()
+                        setIsDraggingFile(false)
+                        const file = e.dataTransfer.files?.[0]
+                        if (file) handleIncomingFile(file)
+                    }}
+                    className="flex flex-1 flex-col min-w-0 overflow-hidden relative"
+                >
+                    {isDraggingFile && (
+                        <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-background/90 backdrop-blur-xs border-2 border-dashed border-primary rounded-xl p-4 text-center animate-in fade-in">
+                            <Paperclip className="h-8 w-8 text-primary animate-bounce mb-2" />
+                            <p className="font-semibold text-sm text-foreground">Drop teaser file or document here</p>
+                            <p className="text-xs text-muted-foreground mt-1 max-w-xs">Structured teasers (.docx, .xlsx, .csv, .txt) are parsed instantly with 0 tokens. Heavy evidence files route to Project Intake.</p>
+                        </div>
+                    )}
                     <div
                         ref={messagesContainerRef}
                         className="flex-1 overflow-y-auto overscroll-contain p-3 space-y-3"
@@ -4639,6 +4905,61 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                                                     {msg.isStreaming && msg.content && (
                                                         <span className="inline-block w-1.5 h-3 ml-0.5 bg-primary animate-pulse align-middle" />
                                                     )}
+
+                                                    {/* Interactive Questionnaire Proposal Card */}
+                                                    {(() => {
+                                                        const proposal = msg.questionnaireProposal || msg.toolCalls?.find(tc => tc.toolName === 'propose_questionnaire_patch')?.result?.proposedFields
+                                                        if (!proposal || Object.keys(proposal).length === 0) return null
+
+                                                        return (
+                                                            <div className="mt-2.5 rounded-lg border border-primary/30 bg-primary/10 p-2.5 text-xs text-foreground space-y-2">
+                                                                <div className="flex items-center justify-between">
+                                                                    <div className="flex items-center gap-1.5 font-semibold text-primary">
+                                                                        <Sparkles className="h-3.5 w-3.5 text-primary" />
+                                                                        <span>Proposed Questionnaire Values</span>
+                                                                    </div>
+                                                                    <span className="text-[10px] text-muted-foreground">Draft Prefill</span>
+                                                                </div>
+                                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[11px] font-mono bg-background/60 p-2 rounded border border-border/50">
+                                                                    {proposal.dealName ? <div><span className="text-muted-foreground">Target:</span> <span className="font-semibold text-foreground">{proposal.dealName}</span></div> : null}
+                                                                    {proposal.askingPrice ? <div><span className="text-muted-foreground">Asking:</span> <span className="font-semibold text-foreground">${proposal.askingPrice.toLocaleString()}</span></div> : null}
+                                                                    {proposal.annualRevenue ? <div><span className="text-muted-foreground">Revenue:</span> <span className="font-semibold text-foreground">${proposal.annualRevenue.toLocaleString()}</span></div> : null}
+                                                                    {proposal.reportedEbitda ? <div><span className="text-muted-foreground">EBITDA:</span> <span className="font-semibold text-foreground">${proposal.reportedEbitda.toLocaleString()}</span></div> : null}
+                                                                    {proposal.industry ? <div><span className="text-muted-foreground">Industry:</span> <span className="font-semibold text-foreground">{proposal.industry}</span></div> : null}
+                                                                </div>
+                                                                <div className="flex items-center gap-2 pt-1">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            if (typeof window !== 'undefined') {
+                                                                                sessionStorage.setItem('mergeworks.questionnaire_prefill', JSON.stringify(proposal))
+                                                                                window.dispatchEvent(new CustomEvent('mergeworks:questionnaire-patch', { detail: proposal }))
+                                                                            }
+                                                                            if (onNavigateTab) {
+                                                                                onNavigateTab('structure', 'manual-deal-intake-card')
+                                                                            }
+                                                                        }}
+                                                                        className="inline-flex items-center gap-1.5 rounded-md bg-primary px-2.5 py-1 text-[11px] font-semibold text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer shadow-xs"
+                                                                    >
+                                                                        <CheckCircle2 className="h-3.5 w-3.5" />
+                                                                        <span>Apply to Questionnaire</span>
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            if (onNavigateTab) {
+                                                                                onNavigateTab('structure', 'manual-deal-intake-card')
+                                                                            }
+                                                                        }}
+                                                                        className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+                                                                    >
+                                                                        <span>View Form</span>
+                                                                        <ArrowUpRight className="h-3 w-3" />
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        )
+                                                    })()}
                                                 </div>
                                             ) : (
                                                 msg.content
@@ -4796,21 +5117,48 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                                 </button>
                             </div>
                         )}
-                        <div className="flex items-end gap-2">
+                        <div className="flex items-end gap-1.5">
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                className="hidden"
+                                accept=".docx,.xlsx,.xlsm,.csv,.tsv,.txt,.json,.png,.jpg,.jpeg,.webp,.pdf,.mp3,.mp4,.mov,.wav,.m4a"
+                                onChange={(e) => {
+                                    const file = e.target.files?.[0]
+                                    if (file) handleIncomingFile(file)
+                                    e.target.value = ''
+                                }}
+                            />
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={isProcessingAttachment || isTyping}
+                                className="h-[38px] w-[38px] shrink-0 text-muted-foreground hover:text-foreground cursor-pointer"
+                                title="Attach broker teaser (.docx/.xlsx/.txt/screenshot) or diligence file"
+                                aria-label="Attach file to chat"
+                            >
+                                {isProcessingAttachment ? (
+                                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                                ) : (
+                                    <Paperclip className="h-4 w-4" />
+                                )}
+                            </Button>
                             <Textarea
                                 ref={textareaRef}
                                 value={input}
                                 onChange={e => setInput(e.target.value)}
                                 onKeyDown={handleKeyDown}
-                                placeholder={isDebateModeActive ? "Prompt the IC Council (e.g. 'Should we acquire this business at asking price?')..." : "Ask about this deal, M&A terms, or where a feature is..."}
+                                placeholder={isDebateModeActive ? "Prompt the IC Council (e.g. 'Should we acquire this business at asking price?')..." : "Ask about this deal, M&A terms, or drop a teaser file..."}
                                 aria-label="Ask about this deal"
-                                className="min-h-[38px] max-h-[100px] resize-none text-xs"
+                                className="min-h-[38px] max-h-[100px] resize-none text-xs flex-1"
                                 rows={1}
                             />
                             <Button
                                 size="icon"
                                 onClick={handleSend}
-                                disabled={!input.trim()}
+                                disabled={!input.trim() || isProcessingAttachment}
                                 className="h-[38px] w-[38px] shrink-0 cursor-pointer"
                                 aria-label="Send message"
                             >

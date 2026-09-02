@@ -301,11 +301,45 @@ describe('DealChatPanel Client-Side AI Tools', () => {
         expect(CHAT_AGENT_OPENAI_TOOLS.some(t => t.function.name === 'trigger_export')).toBe(true)
         expect(CHAT_AGENT_OPENAI_TOOLS.some(t => t.function.name === 'open_version_control')).toBe(true)
         expect(CHAT_AGENT_OPENAI_TOOLS.some(t => t.function.name === 'open_workspace_modal')).toBe(true)
+        expect(CHAT_AGENT_OPENAI_TOOLS.some(t => t.function.name === 'read_questionnaire_draft')).toBe(true)
+        expect(CHAT_AGENT_OPENAI_TOOLS.some(t => t.function.name === 'propose_questionnaire_patch')).toBe(true)
 
         expect(CHAT_AGENT_ANTHROPIC_TOOLS.some(t => t.name === 'navigate_to_card')).toBe(true)
         expect(CHAT_AGENT_ANTHROPIC_TOOLS.some(t => t.name === 'trigger_export')).toBe(true)
         expect(CHAT_AGENT_ANTHROPIC_TOOLS.some(t => t.name === 'open_version_control')).toBe(true)
         expect(CHAT_AGENT_ANTHROPIC_TOOLS.some(t => t.name === 'open_workspace_modal')).toBe(true)
+        expect(CHAT_AGENT_ANTHROPIC_TOOLS.some(t => t.name === 'read_questionnaire_draft')).toBe(true)
+        expect(CHAT_AGENT_ANTHROPIC_TOOLS.some(t => t.name === 'propose_questionnaire_patch')).toBe(true)
+    })
+
+    it('executes read_questionnaire_draft and returns active draft or fallback status', async () => {
+        const { executeClientSideTool } = await import('./DealChatPanel')
+        const result = executeClientSideTool('read_questionnaire_draft', {}, mockContext)
+
+        expect(result.requiredFields).toEqual(['dealName', 'askingPrice', 'annualRevenue', 'reportedEbitda'])
+        expect(result.guidance).toContain('tab:structure#manual-deal-intake-card')
+        expect(typeof result.hasActiveDraft).toBe('boolean')
+    })
+
+    it('executes propose_questionnaire_patch and stores proposed fields', async () => {
+        const { executeClientSideTool } = await import('./DealChatPanel')
+        const patchArgs = {
+            dealName: 'Acme Precision Machining',
+            askingPrice: 4200000,
+            annualRevenue: 6500000,
+            reportedEbitda: 950000,
+            industry: 'Manufacturing',
+            reason: 'From broker teaser sheet'
+        }
+        const result = executeClientSideTool('propose_questionnaire_patch', patchArgs, mockContext)
+
+        expect(result.success).toBe(true)
+        expect(result.proposedFields.dealName).toBe('Acme Precision Machining')
+        expect(result.proposedFields.askingPrice).toBe(4200000)
+        expect(result.proposedFields.annualRevenue).toBe(6500000)
+        expect(result.proposedFields.reportedEbitda).toBe(950000)
+        expect(result.reason).toBe('From broker teaser sheet')
+        expect(result.guidance).toContain('tab:structure#manual-deal-intake-card')
     })
 })
 
