@@ -4,6 +4,7 @@ import { Check, Clock3, Copy } from 'lucide-react'
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { copyToClipboard } from '../utils/clipboard'
+import { formatCompactUsd } from '../utils/formatCompactUsd'
 import { Badge } from '../lib/shadcn/badge'
 import ActionableRecommendationInfoButton from './ActionableRecommendationInfoButton'
 
@@ -16,11 +17,9 @@ type Props = {
     onSwitchTab?: (tab: any) => void
 }
 
-function compact(value: number) {
-    if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`
-    if (value >= 1_000) return `$${(value / 1_000).toFixed(0)}K`
-    return `$${value.toFixed(0)}`
-}
+// Compact chip value uses the shared, sign-safe formatter so a negative
+// EBITDA renders as "-$2.5M" rather than the old "$-2500000".
+const compact = formatCompactUsd
 
 /** Full-precision, comma-separated value for the chip hover tooltip. */
 function exact(value: number) {
