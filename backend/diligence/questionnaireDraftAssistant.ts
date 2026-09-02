@@ -233,18 +233,47 @@ export async function getQuestionnaireDraft(req: { params: { requestId?: unknown
   const requestId = boundedText(req.params.requestId, 'requestId', 200, true)
 
   try {
+    // Stage 1: Ultra-compact heartbeat check (only fetch status column during polling to minimize egress)
+    const { data: statusRow, error: statusErr } = await supabase
+      .from('questionnaire_drafts')
+      .select('id, status')
+      .eq('id', requestId)
+      .maybeSingle()
+
+    if (statusErr) {
+      console.warn('[getQuestionnaireDraft] Supabase heartbeat query warning:', statusErr.message)
+      return { status: 'processing' as const, requestId }
+    }
+
+    if (!statusRow || (statusRow.status !== 'completed' && statusRow.status !== 'draft' && statusRow.status !== 'failed')) {
+      return { status: 'processing' as const, requestId }
+    }
+
+    if (statusRow.status === 'failed') {
+      const { data: failedRow } = await supabase
+        .from('questionnaire_drafts')
+        .select('warnings_json')
+        .eq('id', requestId)
+        .maybeSingle()
+
+      let warnings = failedRow?.warnings_json
+      if (typeof warnings === 'string') {
+        try { warnings = JSON.parse(warnings) } catch { warnings = [] }
+      }
+      const errMsg = Array.isArray(warnings) && warnings.length > 0
+        ? String(warnings[0])
+        : 'Draft extraction failed'
+      return { status: 'failed' as const, requestId, error: errMsg }
+    }
+
+    // Stage 2: Only fetch full extracted payload once draft status is ready
     const { data, error } = await supabase
       .from('questionnaire_drafts')
       .select('id, session_id, source_name, source_type, extracted_fields_json, warnings_json, status')
       .eq('id', requestId)
       .maybeSingle()
 
-    if (error) {
-      console.warn('[getQuestionnaireDraft] Supabase query warning:', error.message)
-      return { status: 'processing' as const, requestId }
-    }
-
-    if (!data) {
+    if (error || !data) {
       return { status: 'processing' as const, requestId }
     }
 
@@ -264,13 +293,6 @@ export async function getQuestionnaireDraft(req: { params: { requestId?: unknown
         draftId: data.id,
       }, requestId)
       return { status: 'completed' as const, ...sanitized }
-    }
-
-    if (data.status === 'failed') {
-      const errMsg = Array.isArray(data.warnings_json) && data.warnings_json.length > 0
-        ? String(data.warnings_json[0])
-        : 'Draft extraction failed'
-      return { status: 'failed' as const, requestId, error: errMsg }
     }
 
     return { status: 'processing' as const, requestId }
