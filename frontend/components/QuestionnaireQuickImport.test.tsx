@@ -2,12 +2,11 @@ import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, it, expect, vi } from 'vitest'
 import QuestionnaireQuickImport from './QuestionnaireQuickImport'
-import type { ManualDealFormData } from '../utils/manualDealIntake'
-import { DEFAULT_MANUAL_DEAL_FORM_VALUES } from '../utils/manualDealIntake'
+import { createBlankManualDealForm } from '../utils/manualDealIntake'
 
 describe('QuestionnaireQuickImport Component', () => {
     it('renders initial closed state cleanly with prefill button', () => {
-        const currentValues: ManualDealFormData = { ...DEFAULT_MANUAL_DEAL_FORM_VALUES }
+        const currentValues = createBlankManualDealForm()
         const onApply = vi.fn()
 
         const html = renderToStaticMarkup(
@@ -24,7 +23,7 @@ describe('QuestionnaireQuickImport Component', () => {
     })
 
     it('renders disabled state when disabled prop is true', () => {
-        const currentValues: ManualDealFormData = { ...DEFAULT_MANUAL_DEAL_FORM_VALUES }
+        const currentValues = createBlankManualDealForm()
         const onApply = vi.fn()
 
         const html = renderToStaticMarkup(

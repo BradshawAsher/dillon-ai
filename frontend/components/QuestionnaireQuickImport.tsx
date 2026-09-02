@@ -108,11 +108,6 @@ export default function QuestionnaireQuickImport({ disabled = false, openRequest
     }
 
     const requestAiDraft = async (sourceType: 'text' | 'image') => {
-        const userOpenAiApiKey = localStorage.getItem('mergeworks_user_openai_key') || ''
-        if (!userOpenAiApiKey) {
-            setError('Add your OpenAI API key in Settings before using AI Assist. Local parsing remains token-free.')
-            return
-        }
         setIsAiReading(true)
         setError('')
         try {
@@ -129,7 +124,6 @@ export default function QuestionnaireQuickImport({ disabled = false, openRequest
                     sourceText,
                     imageDataUrl,
                     currentValues,
-                    userOpenAiApiKey,
                 }),
             })
             const payload = await response.json() as QuestionnaireDraft & { error?: string }
@@ -317,7 +311,7 @@ export default function QuestionnaireQuickImport({ disabled = false, openRequest
                             ) : null}
                         </div>
                         <div className="flex items-center gap-2">
-                            {draft && draft.missingRequiredFields.length > 0 && result.sourceText ? (
+                            {result.sourceText ? (
                                 <Button
                                     type="button"
                                     size="sm"
@@ -327,7 +321,7 @@ export default function QuestionnaireQuickImport({ disabled = false, openRequest
                                     className="h-8 text-xs"
                                 >
                                     {isAiReading ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
-                                    Ask AI about missing fields
+                                    {draft && draft.missingRequiredFields.length > 0 ? 'Ask AI about missing fields' : 'Review with AI'}
                                 </Button>
                             ) : null}
                             <Button type="button" size="sm" variant="ghost" onClick={reset} className="h-8 text-xs">

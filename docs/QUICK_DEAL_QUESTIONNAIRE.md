@@ -1,6 +1,6 @@
 # Quick Deal Questionnaire: Zero-Latency Manual Intake Engine
 
-This document provides a technical and operational overview of the **Quick Deal Questionnaire**, Dillon AI's zero-latency, file-free financial modeling and deal screening engine.
+This document provides a technical and operational overview of the **Quick Deal Questionnaire**, Dillon AI's local-first financial modeling and deal screening engine. Manual entry and structured-file parsing remain token-free; optional AI assistance is used only when the user explicitly requests it.
 
 ---
 
@@ -23,7 +23,7 @@ graph TD
 | Ingestion Mode | Input Medium | Best For | Processing Time | Cost / Token Spend |
 | :--- | :--- | :--- | :--- | :--- |
 | **Document VDR Upload** | PDF CIMs, Excel P&Ls, Tax Returns, LOIs | Complete data rooms, cross-document contradiction checks, forensic audit trails. | ~42s (batch pipeline) | Live LLM tokens |
-| **Quick Deal Questionnaire** | Four-field screen, structured form, local Word/text prefill | Initial broker phone calls, 1-page teasers, confidential screening, scenario modeling. | **< 0.05s** (instant) | **$0.00 / 0 tokens** |
+| **Quick Deal Questionnaire** | Four-field screen, structured form, local structured-file prefill, optional small-image OCR | Initial broker phone calls, 1-page teasers, confidential screening, scenario modeling. | Instant locally; provider latency for optional AI | $0 locally; provider usage for optional AI |
 
 ---
 
@@ -33,9 +33,12 @@ The questionnaire now opens blank so example-company assumptions cannot be mista
 
 1. **Quick screen:** Enter deal name, asking price, annual/TTM revenue, and reported EBITDA or SDE. Financial fields accept plain numbers and common formats such as `$5.2M`, `5,200,000`, `850k`, and `5.2 million`.
 2. **Add more detail:** Open the full six-section form for balance-sheet assets, financing, growth, and risk inputs. The preliminary screen can be generated first and refined later.
-3. **Prefill from Word or pasted stats:** Read a labeled `.docx`, `.txt`, or `.csv` file in the browser, or paste label/value lines from a broker teaser. The deterministic parser recognizes supported fields, flags conflicting values, and displays a review screen before anything is applied.
+3. **Prefill from a structured summary or pasted stats:** Read a labeled `.docx`, `.xlsx`, `.xlsm`, `.txt`, `.csv`, `.tsv`, or `.json` file in the browser, or paste label/value lines from a broker teaser. The deterministic parser recognizes supported fields, flags conflicting values, and displays a review screen before anything is applied.
+4. **Optional image draft:** Send one `.png`, `.jpg`, `.jpeg`, or `.webp` image of at most 2 MB through the authenticated questionnaire relay. The live n8n workflow converts the image to text with LlamaParse, then sends that text through the existing Terra primary, Sol fallback, and structured-output recovery chain. The result remains a reviewable questionnaire draft.
 
-The local prefill has a 5 MB limit, rejects legacy `.doc` and macro-enabled `.docm` files, and makes no upload, webhook, Supabase, or model request. It works best with explicit labels such as `Asking Price: $4.8M` and `TTM Revenue: $5.2M`. It does not infer unlabeled narrative prose; those values should be entered manually and verified against the source document.
+The local prefill has a 5 MB limit, rejects legacy `.doc` and macro-enabled `.docm` files, and makes no upload, webhook, Supabase, or model request. It works best with explicit labels such as `Asking Price: $4.8M` and `TTM Revenue: $5.2M`. Every non-empty local result offers an optional **Review with AI** pass over the extracted text for ambiguous wording or unresolved fields; the user still reviews the resulting draft before applying it.
+
+PDFs, audio, video, files above the local limits, multi-file packets, and sources intended to become durable evidence belong in **Deal Intake > Project Intake > Upload Files or Folder**. That pipeline retains the original source, performs media-specific parsing, produces citations, writes document status, and participates in project synthesis. Quick Fill must not duplicate those evidence-grade responsibilities.
 
 The feature is also discoverable from the Command Palette by searching for `word prefill`, `questionnaire`, `docx`, or `broker teaser`.
 

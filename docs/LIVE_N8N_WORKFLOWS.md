@@ -4,7 +4,7 @@ This is a compact operating map of the live workflows backing the dashboard.
 It is intentionally not a workflow export: the live Pod 1 n8n Cloud project is
 the source of truth. Inspect it through n8n MCP before changing behavior.
 
-Last verified: August 2026 via n8n MCP.
+Last verified: September 2, 2026 via n8n MCP.
 
 ## Active write workflows
 
@@ -23,7 +23,8 @@ parallel. The Supabase credential used is ID `2bjegcUtAn2gvy8A`.
 | Document Consideration Webhook | `lXz9fVKY4RaTlDFM` | Marks a document `isConsidered=false` without deleting it, then refreshes batch readiness. | Supabase `documents` | Supabase `documents` & n8n `rBFHVB1W7ldSiObM` |
 | Stuck Document Watchdog | `BaQO1dHCAm0Tf6kk` | 3-tier self-healing cron: Auto-reconciles stalled batches, resets stuck docs (>180s), and logs deduplicated Slack alerts with a 30-min cooldown. | Supabase `documents` + `workflow_errors` + `reliability_alert_state` | Supabase `reliability_alert_state` & n8n `FSvRhLe3YI4EZcJk` |
 | Workflow Error Audit | `4dqKa3CyLjjaFn8C` | Records uncaught production errors after local recovery has been exhausted. | Error Trigger Payload | Supabase `workflow_errors` & n8n `aSPSRYm0ScfGsV0b` |
-| Chat Assistant | `LBZVN8zeFT03Wn12` | Answers analyst questions with rich deal context and cross-project portfolio analysis. | Inbound Context Payload | Stateless Agent Response |
+| Chat Assistant | `LBZVN8zeFT03Wn12` | Answers analyst questions with constrained Code Tool schemas and credential-backed, read-only portfolio lookups. | Inbound Context Payload | Stateless Agent Response |
+| Quick Deal Questionnaire | `U6hocPOecg7AQS0I` | Creates reviewable form drafts from bounded text or one small image; image input is OCR'd by LlamaParse before the existing Terra/Sol extraction and recovery chain. | Inbound authenticated payload | Supabase `questionnaire_drafts` + n8n questionnaire draft table |
 
 ## Archived read-only webhooks (no longer needed)
 
@@ -128,9 +129,12 @@ Internal Execute Workflow, Schedule, and Error Trigger invocations do not use
 HTTP and therefore do not send this header. Their public webhook triggers may
 remain available for authenticated diagnostics.
 
-Chat Assistant must use the same-origin `/api/diligence/chat` relay before its
-Header Auth draft is published; the browser must not call `dd-chat` directly or
-embed the shared credential.
+Chat Assistant uses the same-origin `/api/diligence/chat` relay and its published
+webhook requires Header Auth; the browser must not call `dd-chat` directly or
+embed the shared credential. Its Code Tools use manually defined JSON Schemas.
+Project, synthesis, and financial-fact lookups use dedicated read-only Supabase
+Tool nodes with the stored n8n Supabase credential rather than credentials in
+workflow source.
 
 ## Reliability baseline
 
@@ -157,6 +161,23 @@ than referencing a provider-specific node. Starting a retry clears stale failure
 markers in both mirrors. If either Supabase persistence step fails after its
 built-in retries, the error output marks the document failed in the n8n Data Table
 and Supabase instead of leaving an indefinitely running document.
+
+Per-document BYOK routing is a second-stage choice after media parsing. The
+Submit and Retry workflows pass provider keys and selected document models only
+as transient subworkflow fields; the document tables do not persist them. The
+per-document router recognizes `userProvider`, provider-specific key fields, and
+`docPrimaryModel` / `docBackupModel`, maps UI labels to API identifiers, and sends
+provider-native JSON bodies to OpenAI, Anthropic, Gemini, or DeepSeek. Later retry
+attempts select the configured backup model. With no usable user key, processing
+continues through the managed Terra/Sol LLM chain.
+
+Questionnaire structured files (`.docx`, `.xlsx`, `.xlsm`, `.txt`, `.csv`,
+`.tsv`, and `.json`) are parsed locally in the browser first. Bounded text goes
+directly to the questionnaire LLM chain only when AI assistance is requested. A
+single PNG/JPEG/WebP image of at most 2 MB is converted to binary and parsed by
+LlamaParse, then its OCR text enters the same chain. LLM retries reuse that OCR
+text instead of paying to parse the image again. PDFs, audio, video, large files,
+and evidence-grade analysis remain exclusive to Project Intake.
 
 Automatic synthesis ownership lives in Supabase, not the n8n mirror. The claim
 function uses a unique `(project_id, evidence_signature)` key and a 15-minute

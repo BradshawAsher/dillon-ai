@@ -666,3 +666,87 @@ The repository has strong Vitest unit/domain coverage, a real loopback multipart
 - Tests cover routing decisions, spreadsheet provenance, conflicting periods, AI schema validation, no-network local parsing, image limits, patch review, and chat attachment handoff.
 - The n8n workflow remains unpublished until local/API tests and an explicit synthetic workflow test pass.
 
+---
+
+# Questionnaire image routing and per-document BYOK repair
+
+## Empirical findings
+
+- The live per-document workflow (`W5Jp7CJIQbNy0qlY`) correctly normalizes files before model analysis: video uses Gemini, audio uses OpenAI transcription, and other documents use LlamaParse.
+- Its provider router sends requests with a user-supplied key to provider-specific HTTP Request nodes and sends managed requests to the existing Terra/Sol LLM chain.
+- The latest saved versions of the four BYOK HTTP nodes enable JSON request bodies but do not expose a configured JSON body. The active-version graph cannot currently be read through MCP because `get_workflow_details` reports the existing header-auth credential as missing, so history and controlled workflow validation must be used before publication.
+- The questionnaire workflow (`U6hocPOecg7AQS0I`) receives a small image as a data URL but currently replaces it with placeholder text. The existing LLM prompt therefore does not receive the image contents.
+- Small `.docx`, `.xlsx`, `.xlsm`, `.txt`, `.csv`, `.tsv`, and `.json` questionnaire sources are already parsed locally. Sending those raw files through LlamaParse would add avoidable latency, network transfer, and provider usage.
+
+## Intended boundary
+
+- Keep local structured questionnaire prefill local and token-free.
+- Use the questionnaire workflow only for bounded text enrichment and a single small image converted to text for a reviewable form draft.
+- Continue routing PDFs, audio, video, large files, full data rooms, and evidence-grade analysis through Project Intake and the per-document workflow.
+- Preserve every existing LLM model node, Terra/Sol fallback, Structured Output Parser, auto-fix model, salvage chain, and retry loop.
+
+## Live n8n changes
+
+### Per-document workflow
+
+1. Preserve BYOK keys and model selections when the submit workflow invokes the per-document workflow; do not persist those secrets in document tables.
+2. Preserve the same transient BYOK fields when the retry workflow reloads a failed document.
+3. Correct provider detection to read `userProvider`, `docPrimaryModel`, and the provider-specific key fields already sent by the application.
+4. Map UI model labels to provider API identifiers and use the configured backup model on later provider-retry attempts.
+5. Add complete provider-native JSON bodies to the OpenAI, Anthropic, Gemini, and DeepSeek HTTP Request nodes.
+6. Keep API keys in headers/query parameters as the current router expects; do not modify stored model credentials.
+7. Ensure every provider receives the normalized document text, exact source-relative path, requested model, and structured-output instructions.
+8. Keep all four provider outputs feeding the existing response normalizer and retry classifier.
+
+### Questionnaire workflow
+
+1. Convert a validated image data URL into an n8n binary item.
+2. Route image requests through a LlamaParse node using the existing Pod 1 LlamaParse credential.
+3. Normalize the OCR result into `sourceText` and feed it into the existing questionnaire LLM chain.
+4. Route text requests directly into that same chain.
+5. Add bounded parser failure handling without changing the existing LLM retry/fallback graph.
+6. Correct the workflow description so its persistence behavior matches the actual graph, unless persistence is intentionally removed in a later change.
+
+## Repository changes
+
+- Align both Quick Fill and chatbot image requests with the existing questionnaire relay contract (`requestId`, `sourceType`, `fileName`, `imageDataUrl`, and direct draft response).
+- Stop requiring or forwarding a browser-stored OpenAI key for the questionnaire workflow because its LLM chain intentionally uses the managed Pod 1 credential.
+- Keep the backend request compatible with old callers by tolerating, but not forwarding, an optional legacy `userOpenAiApiKey` field.
+- Update `docs/QUICK_DEAL_QUESTIONNAIRE.md` and `docs/LIVE_N8N_WORKFLOWS.md` to describe local-first parsing, image OCR, and the Project Intake boundary.
+- Do not add audio, video, PDF, multi-file, or evidence persistence behavior to Quick Fill.
+
+## Verification
+
+1. Validate every changed n8n node configuration before applying operations.
+2. Validate each resulting workflow graph and inspect the saved version.
+3. Test BYOK request construction without using real diligence files or Supabase Storage uploads.
+4. Test questionnaire text and image paths with bounded synthetic fixtures; confirm the image OCR text reaches the existing chain.
+5. Verify error outputs terminate with an actionable response rather than leaving a request running.
+6. Publish only after validation, then verify `active: true` and active-version parity when MCP permits it.
+7. Run TypeScript, unit tests, API integration tests, and the production build for any repository changes.
+
+## Explicit non-goals
+
+- No changes to existing Chat Model nodes or their credentials/model selections.
+- No audio/video processing in the questionnaire workflow.
+- No full-document diligence or synthesis from Quick Fill.
+- No test uploads to Supabase Storage.
+
+---
+
+# Questionnaire escalation UX and chat-tool hardening (2026-09-02)
+
+## Verified findings
+
+- Small structured questionnaire files are decoded locally with Mammoth, ExcelJS, delimiter-aware CSV/TSV parsing, JSON flattening, or `File.text()`. The deterministic field matcher deliberately withholds conflicting values and reports warnings.
+- The extracted text already supports an explicit questionnaire-AI pass, but the UI only exposes that option when a required field is missing. Ambiguous optional fields can therefore be stranded in the local review state.
+- The newly added questionnaire image lane is functionally separate but visually overlaps the existing retry/salvage lanes on the n8n canvas.
+- The chat agent's six Code Tools use JSON examples rather than explicit schemas. The database query tool also embeds a privileged credential in workflow source.
+
+## Targeted changes
+
+1. Keep deterministic parsing as the zero-token first pass, but expose the optional AI interpretation action for every non-empty local extraction so ambiguous wording can be escalated without starting full diligence.
+2. Reposition questionnaire nodes into separate main, image, provider-retry, and salvage lanes. Change positions only; preserve all graph connections and model/parser fallback behavior.
+3. Replace Code Tool JSON examples with explicit manual schemas that constrain required fields, operations, numeric ranges, and accepted query shapes.
+4. Replace the credential-bearing database Code Tool with three read-only Supabase Tool nodes using the existing n8n Supabase credential, and update the agent's tool instructions accordingly.
+5. Publish both workflows, re-read their active versions, and verify the frontend with focused tests, TypeScript, and the production build. Do not execute paid AI or mutate production deal data for verification.

@@ -146,7 +146,7 @@ export function sanitizeQuestionnaireDraftResponse(value: unknown, requestId: st
 
 /**
  * Bounded relay for optional questionnaire AI assistance. The workflow only
- * proposes a draft; this function never writes a deal, document, or synthesis.
+ * proposes a draft and never writes a deal, document, or synthesis record.
  */
 export default async function questionnaireDraftAssistant(req: { params: Params; user: User }) {
   const requestId = boundedText(req.params.requestId, 'requestId', 200, true)
@@ -155,7 +155,9 @@ export default async function questionnaireDraftAssistant(req: { params: Params;
   const fileName = boundedText(req.params.fileName, 'fileName', 255)
   const sourceText = boundedText(req.params.sourceText, 'sourceText', 50_000)
   const imageDataUrl = boundedText(req.params.imageDataUrl, 'imageDataUrl', MAX_IMAGE_DATA_URL_LENGTH)
-  const userOpenAiApiKey = boundedText(req.params.userOpenAiApiKey, 'userOpenAiApiKey', 1_000, true)
+  // Accepted for backward compatibility, but never forwarded: the questionnaire
+  // workflow intentionally uses the managed Pod 1 OpenAI credential.
+  boundedText(req.params.userOpenAiApiKey, 'userOpenAiApiKey', 1_000)
 
   if (sourceType === 'text' && !sourceText) throw new Error('sourceText is required for text assistance')
   if (sourceType === 'image') {
@@ -178,7 +180,6 @@ export default async function questionnaireDraftAssistant(req: { params: Params;
       sourceText,
       imageDataUrl,
       currentValues: sanitizeCurrentValues(req.params.currentValues),
-      userOpenAiApiKey,
     },
   })
 

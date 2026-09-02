@@ -3302,21 +3302,21 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                     reader.readAsDataURL(file)
                 })
                 const base64Data = await base64Promise
-                const cleanBase64 = base64Data.split(',')[1] || base64Data
 
                 const res = await fetch('/api/diligence/questionnaire-draft', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        sourceName: file.name,
-                        mediaType: file.type || 'image/png',
-                        imageBase64: cleanBase64,
+                        requestId: crypto.randomUUID(),
+                        sourceType: 'image',
+                        fileName: file.name,
+                        imageDataUrl: base64Data,
+                        currentValues: {},
                     })
                 })
 
                 if (!res.ok) throw new Error(`AI Draft request failed with status ${res.status}`)
-                const data = await res.json()
-                const draft: QuestionnaireDraft = data.draft
+                const draft = await res.json() as QuestionnaireDraft
                 const values = questionnaireDraftValues(draft)
 
                 if (typeof window !== 'undefined' && Object.keys(values).length > 0) {

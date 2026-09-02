@@ -23,7 +23,6 @@ describe('questionnaire AI draft relay', () => {
         sourceType: 'image',
         fileName: 'broker-summary.png',
         imageDataUrl: 'data:image/png;base64,aGVsbG8=',
-        userOpenAiApiKey: 'sk-test',
         currentValues: { dealName: 'Apex', ignored: 'nope' },
       },
       user: { fullName: 'Test', email: 'test@example.com' },
@@ -33,8 +32,9 @@ describe('questionnaire AI draft relay', () => {
     expect(result.missingRequiredFields).toEqual(['dealName', 'annualRevenue', 'reportedEbitda'])
     expect(rawRequest).toHaveBeenCalledWith(expect.objectContaining({
       path: 'webhook/dd-questionnaire-prefill',
-      json: expect.objectContaining({ currentValues: { dealName: 'Apex' }, userOpenAiApiKey: 'sk-test' }),
+      json: expect.objectContaining({ currentValues: { dealName: 'Apex' } }),
     }))
+    expect(rawRequest.mock.calls[0][0].json).not.toHaveProperty('userOpenAiApiKey')
   })
 
   it('rejects an invalid image before contacting n8n', async () => {
@@ -46,7 +46,6 @@ describe('questionnaire AI draft relay', () => {
         requestId: 'draft-2',
         sourceType: 'image',
         imageDataUrl: 'https://example.com/image.png',
-        userOpenAiApiKey: 'sk-test',
       },
       user: { fullName: 'Test', email: 'test@example.com' },
     })).rejects.toThrow('imageDataUrl must be')
