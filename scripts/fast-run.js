@@ -15,5 +15,6 @@ esbuild.buildSync({
     packages: 'external',
 });
 
-const res = spawnSync('node', [out], { stdio: 'inherit' });
+const extraArgs = process.argv.slice(3);
+const res = spawnSync('node', [out, ...extraArgs], { stdio: 'inherit' });
 process.exit(res.status || 0);
