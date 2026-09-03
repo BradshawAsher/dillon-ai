@@ -7,7 +7,14 @@ type Params = {
   sourceText?: unknown
   imageDataUrl?: unknown
   currentValues?: unknown
+  userProvider?: unknown
+  userApiKey?: unknown
   userOpenAiApiKey?: unknown
+  userAnthropicApiKey?: unknown
+  userGeminiApiKey?: unknown
+  userDeepseekApiKey?: unknown
+  docPrimaryModel?: unknown
+  docBackupModel?: unknown
   dispatchAsync?: unknown
 }
 
@@ -158,9 +165,22 @@ export default async function questionnaireDraftAssistant(req: { params: Params;
   const fileName = boundedText(req.params.fileName, 'fileName', 255)
   const sourceText = boundedText(req.params.sourceText, 'sourceText', 50_000)
   const imageDataUrl = boundedText(req.params.imageDataUrl, 'imageDataUrl', MAX_IMAGE_DATA_URL_LENGTH)
-  // Accepted for backward compatibility, but never forwarded: the questionnaire
-  // workflow intentionally uses the managed Pod 1 OpenAI credential.
-  boundedText(req.params.userOpenAiApiKey, 'userOpenAiApiKey', 1_000)
+  const requestedProvider = boundedText(req.params.userProvider, 'userProvider', 20).toLowerCase()
+  const userProvider = ['openai', 'anthropic', 'gemini', 'deepseek'].includes(requestedProvider)
+    ? requestedProvider
+    : ''
+  const genericUserApiKey = boundedText(req.params.userApiKey, 'userApiKey', 1_000)
+  const providerKeys = {
+    openai: boundedText(req.params.userOpenAiApiKey, 'userOpenAiApiKey', 1_000),
+    anthropic: boundedText(req.params.userAnthropicApiKey, 'userAnthropicApiKey', 1_000),
+    gemini: boundedText(req.params.userGeminiApiKey, 'userGeminiApiKey', 1_000),
+    deepseek: boundedText(req.params.userDeepseekApiKey, 'userDeepseekApiKey', 1_000),
+  }
+  const userApiKey = userProvider
+    ? genericUserApiKey || providerKeys[userProvider as keyof typeof providerKeys]
+    : ''
+  const docPrimaryModel = boundedText(req.params.docPrimaryModel, 'docPrimaryModel', 100)
+  const docBackupModel = boundedText(req.params.docBackupModel, 'docBackupModel', 100)
 
   if (sourceType === 'text' && !sourceText) throw new Error('sourceText is required for text assistance')
   if (sourceType === 'image') {
@@ -200,6 +220,10 @@ export default async function questionnaireDraftAssistant(req: { params: Params;
         sourceText,
         imageDataUrl,
         currentValues: sanitizeCurrentValues(req.params.currentValues),
+        userProvider,
+        userApiKey,
+        docPrimaryModel,
+        docBackupModel,
       },
     }).catch((err) => {
       console.error('[questionnaireDraftAssistant] Async webhook dispatch error:', err)
@@ -223,6 +247,10 @@ export default async function questionnaireDraftAssistant(req: { params: Params;
       sourceText,
       imageDataUrl,
       currentValues: sanitizeCurrentValues(req.params.currentValues),
+      userProvider,
+      userApiKey,
+      docPrimaryModel,
+      docBackupModel,
     },
   })
 

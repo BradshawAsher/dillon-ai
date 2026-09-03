@@ -24,7 +24,7 @@ parallel. The Supabase credential used is ID `2bjegcUtAn2gvy8A`.
 | Stuck Document Watchdog | `BaQO1dHCAm0Tf6kk` | 3-tier self-healing cron: Auto-reconciles stalled batches, resets stuck docs (>180s), and logs deduplicated Slack alerts with a 30-min cooldown. | Supabase `documents` + `workflow_errors` + `reliability_alert_state` | Supabase `reliability_alert_state` & n8n `FSvRhLe3YI4EZcJk` |
 | Workflow Error Audit | `4dqKa3CyLjjaFn8C` | Records uncaught production errors after local recovery has been exhausted. | Error Trigger Payload | Supabase `workflow_errors` & n8n `aSPSRYm0ScfGsV0b` |
 | Chat Assistant | `LBZVN8zeFT03Wn12` | Answers analyst questions with constrained Code Tool schemas and credential-backed, read-only portfolio lookups. | Inbound Context Payload | Stateless Agent Response |
-| Quick Deal Questionnaire | `U6hocPOecg7AQS0I` | Creates reviewable form drafts from bounded text or one small image; image input is OCR'd by LlamaParse before the existing Terra/Sol extraction and recovery chain. | Inbound authenticated payload | Supabase `questionnaire_drafts` + n8n questionnaire draft table |
+| Quick Deal Questionnaire | `U6hocPOecg7AQS0I` | Creates reviewable form drafts from bounded text or one small image; AI Assist supports provider-selectable BYOK plus the managed Terra/Sol recovery path. | Inbound authenticated payload | Supabase `questionnaire_drafts` + n8n questionnaire draft table |
 
 ## Archived read-only webhooks (no longer needed)
 
@@ -173,11 +173,22 @@ continues through the managed Terra/Sol LLM chain.
 
 Questionnaire structured files (`.docx`, `.xlsx`, `.xlsm`, `.txt`, `.csv`,
 `.tsv`, and `.json`) are parsed locally in the browser first. Bounded text goes
-directly to the questionnaire LLM chain only when AI assistance is requested. A
+to a provider router only when AI assistance is requested. The app sends only
+the active provider's key and selected document primary/backup models. OpenAI,
+Anthropic, Gemini, and DeepSeek use provider-native HTTP bodies; no usable key
+selects the managed Terra/Sol chain. Primary extraction keeps the existing three
+retry schedule, changes to the configured backup model on later attempts, and
+then enters the separate managed structured-output salvage loop. A warning is
+added when that managed recovery path completes a failed BYOK request. A
 single PNG/JPEG/WebP image of at most 2 MB is converted to binary and parsed by
 LlamaParse, then its OCR text enters the same chain. LLM retries reuse that OCR
 text instead of paying to parse the image again. PDFs, audio, video, large files,
 and evidence-grade analysis remain exclusive to Project Intake.
+
+Provider keys are transient workflow inputs and are never written to Supabase or
+n8n questionnaire draft tables. Because n8n execution-data retention can still
+capture trigger input, production retention settings must remain part of the
+broader BYOK security audit shared with the per-document and synthesizer flows.
 
 Automatic synthesis ownership lives in Supabase, not the n8n mirror. The claim
 function uses a unique `(project_id, evidence_signature)` key and a 15-minute

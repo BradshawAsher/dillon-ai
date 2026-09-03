@@ -15,11 +15,38 @@ The dashboard talks to n8n for **writes only** through webhooks on
 | Exclude a document from synthesis | POST | `webhook/dd-document-consideration` | ✅ live |
 | Retry a failed document | POST | `webhook/dd-retry-failed-document` | ✅ live |
 | Save deal model | POST | `webhook/dd-deal-models` | ✅ live |
+| Create questionnaire AI draft | POST | `webhook/dd-questionnaire-prefill` | ✅ live |
 | ~~Poll submission history~~ | ~~GET~~ | ~~`webhook/1d02344c-...`~~ | 🗄️ archived — reads from Supabase |
 | ~~Get project syntheses~~ | ~~GET~~ | ~~`webhook/d19d24da-...`~~ | 🗄️ archived — reads from Supabase |
 | ~~Deal model read~~ | ~~GET~~ | ~~`webhook/dd-deal-models`~~ | 🗄️ archived — reads from Supabase |
 | ~~Error log~~ | ~~GET~~ | ~~`webhook/dd-workflow-errors`~~ | 🗄️ archived — reads from Supabase |
 | ~~Action tracker~~ | ~~GET~~ | ~~`webhook/dd-project-action-tracker`~~ | 🗄️ archived — reads from Supabase |
+
+### Questionnaire AI draft payload
+
+The browser calls `POST /api/diligence/questionnaire-draft`; only the backend
+calls `webhook/dd-questionnaire-prefill` with the shared Header Auth secret. The
+bounded webhook body is:
+
+```json
+{
+  "requestId": "uuid",
+  "sourceType": "text | image",
+  "fileName": "broker-summary.txt",
+  "sourceText": "bounded extracted text",
+  "imageDataUrl": "optional bounded PNG/JPEG/WebP data URL",
+  "currentValues": {},
+  "userProvider": "openai | anthropic | gemini | deepseek | empty",
+  "userApiKey": "selected transient key or empty",
+  "docPrimaryModel": "selected model label",
+  "docBackupModel": "selected backup model label"
+}
+```
+
+Only the active provider's key is relayed. It must not be written to either
+draft store. The workflow normalizes text/image input before its five-way model
+switch: four BYOK HTTP routes and one managed MergeWorks route. Its existing
+three-retry and managed salvage loops remain downstream of the switch.
 
 ## Document submission and storage handoff (2026-08-28)
 

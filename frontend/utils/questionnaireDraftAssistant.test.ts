@@ -60,6 +60,10 @@ describe('questionnaire AI draft relay', () => {
         fileName: 'broker-summary.png',
         imageDataUrl: 'data:image/png;base64,aGVsbG8=',
         currentValues: { dealName: 'Apex', ignored: 'nope' },
+        userProvider: 'anthropic',
+        userApiKey: 'sk-ant-questionnaire-test',
+        docPrimaryModel: 'Claude Sonnet 5',
+        docBackupModel: 'Claude Opus 5',
       },
       user: { fullName: 'Test', email: 'test@example.com' },
     })
@@ -69,9 +73,35 @@ describe('questionnaire AI draft relay', () => {
     expect(result.missingRequiredFields).toEqual(['dealName', 'annualRevenue', 'reportedEbitda'])
     expect(rawRequest).toHaveBeenCalledWith(expect.objectContaining({
       path: 'webhook/dd-questionnaire-prefill',
-      json: expect.objectContaining({ currentValues: { dealName: 'Apex' } }),
+      json: expect.objectContaining({
+        currentValues: { dealName: 'Apex' },
+        userProvider: 'anthropic',
+        userApiKey: 'sk-ant-questionnaire-test',
+        docPrimaryModel: 'Claude Sonnet 5',
+        docBackupModel: 'Claude Opus 5',
+      }),
     }))
-    expect(rawRequest.mock.calls[0][0].json).not.toHaveProperty('userOpenAiApiKey')
+  })
+
+  it('does not forward a key when no supported provider is selected', async () => {
+    const rawRequest = vi.fn().mockResolvedValue({ data: { fields: [], warnings: [] } })
+    vi.stubGlobal('n8nFinancialAgent', { rawRequest })
+
+    await questionnaireDraftAssistant({
+      params: {
+        requestId: 'draft-managed',
+        sourceType: 'text',
+        sourceText: 'Revenue: $4,000,000',
+        userProvider: 'unsupported',
+        userApiKey: 'must-not-be-forwarded',
+      },
+      user: { fullName: 'Test', email: 'test@example.com' },
+    })
+
+    expect(rawRequest.mock.calls[0][0].json).toEqual(expect.objectContaining({
+      userProvider: '',
+      userApiKey: '',
+    }))
   })
 
   it('rejects an invalid image before contacting n8n', async () => {
