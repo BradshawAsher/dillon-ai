@@ -46,6 +46,8 @@ type AnalysisWorkspaceViewProps = {
     activeProjectImpact: any
     activeProjectId: string
     setActiveWorkspaceTab: (tab: any) => void
+    onOverrideFact?: (field: string, value: number, category: any, notes: string) => void
+    onRevertFact?: (field: string) => void
 }
 
 export function AnalysisWorkspaceView({
@@ -56,6 +58,8 @@ export function AnalysisWorkspaceView({
     activeProjectDocuments,
     activeProjectImpact,
     setActiveWorkspaceTab,
+    onOverrideFact,
+    onRevertFact,
 }: AnalysisWorkspaceViewProps) {
     const [subView, setSubView] = useState<AnalysisSubView>('all')
 
@@ -115,7 +119,13 @@ export function AnalysisWorkspaceView({
                     </div>
                     <Suspense fallback={null}>
                         <div id="analysis-deal-on-a-page" className="scroll-mt-6">
-                            <DealOnAPageCard model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
+                            <DealOnAPageCard
+                                model={hydratedDealModel}
+                                synthesis={activeProjectSynthesis}
+                                projectName={dealName || suggestedProjectName}
+                                onOverrideFact={onOverrideFact}
+                                onRevertFact={onRevertFact}
+                            />
                         </div>
                         <div id="analysis-scorecard" className="scroll-mt-6">
                             <DealScorecardExportCard model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />

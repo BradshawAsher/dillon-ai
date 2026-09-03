@@ -81,7 +81,10 @@ function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealMo
     for (const [key, fact] of Object.entries(facts)) {
         if (fact && fact.value != null) {
             const val = typeof fact.value === 'number' ? `$${fact.value.toLocaleString()}` : fact.value
-            parts.push(`- ${key}: ${val} (${fact.status}${fact.provenance ? `, source: ${fact.provenance}` : ''})`)
+            const overrideNote = fact.isOverridden
+                ? ` [ANALYST OVERRIDE: calibrated from initial AI extraction of $${fact.originalAiValue?.toLocaleString() ?? 'N/A'}${fact.overrideReason ? ` — Rationale: ${fact.overrideReason}` : ''}]`
+                : ''
+            parts.push(`- ${key}: ${val} (${fact.status}${fact.provenance ? `, source: ${fact.provenance}` : ''})${overrideNote}`)
         }
     }
 

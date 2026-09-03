@@ -35,6 +35,7 @@ import {
     Users,
     Target,
     History,
+    Edit3,
 } from 'lucide-react'
 
 type CommandPaletteProps = {
@@ -153,6 +154,15 @@ export default function CommandPalette({
             group: 'Actions & Exports',
             keywords: ['json', 'raw data', 'facts', 'export', 'download', 'api'],
             badge: 'Export'
+        },
+        {
+            id: 'action-analyst-overrides',
+            label: 'Calibrate & Override Financial Metrics (Bi-Temporal Audit)',
+            icon: <Edit3 className="h-4 w-4 text-purple-500" />,
+            action: () => onSelectTab('analysis', 'analysis-deal-on-a-page'),
+            group: 'Actions & Exports',
+            keywords: ['override', 'analyst override', 'calibrate', 'ebitda adjustment', 'revenue override', 'disallow addback', 'audit ledger', 'bi-temporal'],
+            badge: 'Audit'
         },
 
         // --- Deep-Link Financial Modeling & Structure Cards ---

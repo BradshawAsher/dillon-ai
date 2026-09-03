@@ -27,6 +27,12 @@ export type DocumentedFact = {
     source_page?: string | number
     page_number?: string | number
     quote_snippet?: string
+    isOverridden?: boolean
+    originalAiValue?: number
+    overrideReason?: string
+    overrideCategory?: string
+    overriddenBy?: string
+    overriddenAt?: string
 }
 
 export type MetricInput = {

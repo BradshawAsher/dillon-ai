@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest'
 
-import { deriveDocumentedFacts, deriveDocumentedFactsJson, deriveDocumentedFactsWithConflicts, parseMagnitudeMoney } from './documentedFacts'
+import {
+    deriveDocumentedFacts,
+    deriveDocumentedFactsJson,
+    deriveDocumentedFactsWithConflicts,
+    parseMagnitudeMoney,
+    applyFactOverride,
+    revertFactOverride,
+    getOverriddenFacts,
+} from './documentedFacts'
 import type { SubmissionHistoryItem } from './submissionHistory'
 
 function doc(financialFactsJson: string, fileName = 'doc.pdf'): SubmissionHistoryItem {
@@ -252,5 +260,120 @@ describe('parseMagnitudeMoney', () => {
         expect(parseMagnitudeMoney('-$1.5M')).toBeNull()
         expect(parseMagnitudeMoney('N/A')).toBeNull()
         expect(parseMagnitudeMoney('5x')).toBeNull()
+    })
+})
+
+describe('Analyst Override & Bi-Temporal Provenance', () => {
+    const initialFactsJson = JSON.stringify({
+        revenue: {
+            value: 5000000,
+            confidence: 90,
+            status: 'confirmed',
+            period: 'FY2023',
+            citations: [{ source_file: 'tax_return.pdf', row_or_cell: 'Line 1a', excerpt: 'Gross receipts: $5,000,000' }],
+        },
+        ebitda_sde: {
+            value: 1450000,
+            confidence: 85,
+            status: 'confirmed',
+            period: 'TTM',
+            citations: [{ source_file: 'qoe_report.pdf', row_or_cell: 'Table 2', excerpt: 'Adjusted EBITDA: $1,450,000' }],
+        },
+    })
+
+    it('successfully applies an override to an existing fact while preserving original AI baseline', () => {
+        const updatedJson = applyFactOverride(initialFactsJson, {
+            field: 'ebitda_sde',
+            value: 1280000,
+            category: 'disallowed_addback',
+            reason: 'Disallowed $170k personal travel and non-arm-length vehicle expenses',
+            analystEmail: 'lead.partner@mergeworks.io',
+        })
+
+        const parsed = JSON.parse(updatedJson)
+        expect(parsed.ebitda_sde.value).toBe(1280000)
+        expect(parsed.ebitda_sde.isOverridden).toBe(true)
+        expect(parsed.ebitda_sde.originalAiValue).toBe(1450000)
+        expect(parsed.ebitda_sde.overrideCategory).toBe('disallowed_addback')
+        expect(parsed.ebitda_sde.overrideReason).toBe('Disallowed $170k personal travel and non-arm-length vehicle expenses')
+        expect(parsed.ebitda_sde.overriddenBy).toBe('lead.partner@mergeworks.io')
+        expect(parsed.ebitda_sde.confidence).toBe(100)
+        expect(parsed.ebitda_sde.status).toBe('confirmed')
+        // Preserves original citations
+        expect(parsed.ebitda_sde.citations[0].source_file).toBe('qoe_report.pdf')
+    })
+
+    it('preserves the original AI baseline across subsequent secondary overrides', () => {
+        const step1 = applyFactOverride(initialFactsJson, {
+            field: 'ebitda_sde',
+            value: 1300000,
+            category: 'disallowed_addback',
+            reason: 'Preliminary haircut',
+        })
+        const step2 = applyFactOverride(step1, {
+            field: 'ebitda_sde',
+            value: 1250000,
+            category: 'timing_difference',
+            reason: 'Further adjustment for deferred revenue timing',
+        })
+
+        const parsed = JSON.parse(step2)
+        expect(parsed.ebitda_sde.value).toBe(1250000)
+        // Original AI value remains 1450000, NOT 1300000
+        expect(parsed.ebitda_sde.originalAiValue).toBe(1450000)
+        expect(parsed.ebitda_sde.overrideCategory).toBe('timing_difference')
+    })
+
+    it('creates a new fact entry if the overridden field did not exist previously', () => {
+        const updatedJson = applyFactOverride(initialFactsJson, {
+            field: 'purchase_price',
+            value: 4500000,
+            category: 'other',
+            reason: 'LOI negotiated purchase price',
+        })
+
+        const parsed = JSON.parse(updatedJson)
+        expect(parsed.purchase_price.value).toBe(4500000)
+        expect(parsed.purchase_price.isOverridden).toBe(true)
+        expect(parsed.purchase_price.originalAiValue).toBeUndefined()
+        expect(parsed.purchase_price.status).toBe('confirmed')
+    })
+
+    it('reverts an override and restores the original AI baseline extraction', () => {
+        const overriddenJson = applyFactOverride(initialFactsJson, {
+            field: 'ebitda_sde',
+            value: 1280000,
+            category: 'disallowed_addback',
+            reason: 'Disallowed add-back',
+        })
+
+        const revertedJson = revertFactOverride(overriddenJson, 'ebitda_sde')
+        const parsed = JSON.parse(revertedJson)
+
+        expect(parsed.ebitda_sde.value).toBe(1450000)
+        expect(parsed.ebitda_sde.isOverridden).toBe(false)
+        expect(parsed.ebitda_sde.originalAiValue).toBeUndefined()
+        expect(parsed.ebitda_sde.overrideReason).toBeUndefined()
+        expect(parsed.ebitda_sde.overrideCategory).toBeUndefined()
+    })
+
+    it('correctly retrieves all overridden facts via getOverriddenFacts', () => {
+        const step1 = applyFactOverride(initialFactsJson, {
+            field: 'ebitda_sde',
+            value: 1280000,
+            category: 'disallowed_addback',
+            reason: 'Test ebitda override',
+        })
+        const step2 = applyFactOverride(step1, {
+            field: 'revenue',
+            value: 4800000,
+            category: 'false_positive',
+            reason: 'Intercompany double-count removal',
+        })
+
+        const overridden = getOverriddenFacts(step2)
+        expect(overridden.length).toBe(2)
+        expect(overridden.map((f) => f.metric)).toContain('ebitda_sde')
+        expect(overridden.map((f) => f.metric)).toContain('revenue')
     })
 })

@@ -35,6 +35,15 @@ type RawFact = {
     }
 }
 
+export type OverrideCategory =
+    | 'disallowed_addback'
+    | 'timing_difference'
+    | 'intercompany'
+    | 'false_positive'
+    | 'ocr_error'
+    | 'accounting_policy'
+    | 'other'
+
 export type DerivedFact = {
     value: number
     status: string
@@ -43,6 +52,13 @@ export type DerivedFact = {
     provenance: string
     confidence: number
     citations: Array<{ source_file?: string; row_or_cell?: string; excerpt?: string }>
+    // Bi-temporal audit override fields:
+    isOverridden?: boolean
+    originalAiValue?: number
+    overrideReason?: string
+    overriddenBy?: string
+    overriddenAt?: string
+    overrideCategory?: OverrideCategory
 }
 
 function periodRank(period: string | undefined): number {
@@ -621,5 +637,113 @@ export function deriveDocumentedFactsWithConflicts(
     return {
         facts: deriveDocumentedFacts(documents),
         conflicts: detectContradictions(observationsFromDocuments(documents), options),
+    }
+}
+
+export type ApplyFactOverrideParams = {
+    field: string
+    value: number
+    reason: string
+    category?: OverrideCategory
+    analystEmail?: string
+}
+
+/**
+ * Applies an analyst override to a specific metric in documentedFactsJson.
+ * Preserves the original AI value if not already overridden.
+ */
+export function applyFactOverride(
+    factsJson: string | null | undefined,
+    params: ApplyFactOverrideParams
+): string {
+    let facts: Record<string, DerivedFact> = {}
+    try {
+        if (factsJson && factsJson.trim()) {
+            const parsed = JSON.parse(factsJson)
+            if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+                facts = parsed as Record<string, DerivedFact>
+            }
+        }
+    } catch { }
+
+    const existing = facts[params.field]
+    const originalAiValue = existing?.isOverridden
+        ? existing.originalAiValue
+        : (typeof existing?.value === 'number' ? existing.value : undefined)
+
+    facts[params.field] = {
+        value: params.value,
+        status: 'confirmed',
+        currency: existing?.currency || 'USD',
+        period: existing?.period || 'Analyst Override',
+        provenance: existing?.provenance ? `${existing.provenance} (Analyst Override)` : 'Analyst Override',
+        confidence: 100,
+        citations: existing?.citations || [],
+        isOverridden: true,
+        originalAiValue,
+        overrideReason: params.reason.trim(),
+        overrideCategory: params.category || 'other',
+        overriddenBy: params.analystEmail || 'Analyst',
+        overriddenAt: new Date().toISOString(),
+    }
+
+    return JSON.stringify(facts, null, 2)
+}
+
+/**
+ * Reverts an analyst override for a specific metric in documentedFactsJson,
+ * restoring the original AI extracted value.
+ */
+export function revertFactOverride(
+    factsJson: string | null | undefined,
+    field: string
+): string {
+    if (!factsJson || !factsJson.trim()) return '{}'
+    try {
+        const facts = JSON.parse(factsJson) as Record<string, DerivedFact>
+        if (!facts || typeof facts !== 'object' || Array.isArray(facts)) return factsJson
+
+        const existing = facts[field]
+        if (!existing || !existing.isOverridden) return factsJson
+
+        if (typeof existing.originalAiValue === 'number') {
+            facts[field] = {
+                ...existing,
+                value: existing.originalAiValue,
+                isOverridden: false,
+                originalAiValue: undefined,
+                overrideReason: undefined,
+                overrideCategory: undefined,
+                overriddenBy: undefined,
+                overriddenAt: undefined,
+                provenance: existing.provenance ? existing.provenance.replace(/\s*\(Analyst Override\)/g, '') : existing.provenance,
+            }
+        } else {
+            delete facts[field]
+        }
+
+        return JSON.stringify(facts, null, 2)
+    } catch {
+        return factsJson
+    }
+}
+
+/**
+ * Returns a list of all metrics that have been overridden by a human analyst.
+ */
+export function getOverriddenFacts(factsJson: string | null | undefined): Array<DerivedFact & { metric: string }> {
+    if (!factsJson || !factsJson.trim()) return []
+    try {
+        const facts = JSON.parse(factsJson) as Record<string, DerivedFact>
+        if (!facts || typeof facts !== 'object' || Array.isArray(facts)) return []
+        const overridden: Array<DerivedFact & { metric: string }> = []
+        for (const [key, fact] of Object.entries(facts)) {
+            if (fact?.isOverridden) {
+                overridden.push({ ...fact, metric: key })
+            }
+        }
+        return overridden
+    } catch {
+        return []
     }
 }

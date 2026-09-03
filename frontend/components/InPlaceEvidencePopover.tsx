@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, ReactNode } from 'react'
-import { FileText, AlertTriangle, X, ShieldCheck, Bot, Pin } from 'lucide-react'
+import { FileText, AlertTriangle, X, ShieldCheck, Bot, Pin, Edit3, RotateCcw } from 'lucide-react'
 
 export interface EvidenceDetails {
     metricName: string
@@ -10,6 +10,13 @@ export interface EvidenceDetails {
     confidence?: 'high' | 'medium' | 'low' | string
     status?: 'confirmed' | 'disputed' | 'estimated' | 'unverified'
     notes?: string
+    // Bi-temporal audit override fields:
+    isOverridden?: boolean
+    originalAiValueFormatted?: string
+    overrideReason?: string
+    overriddenBy?: string
+    overriddenAt?: string
+    deltaFormatted?: string
 }
 
 export interface InPlaceEvidencePopoverProps {
@@ -17,6 +24,8 @@ export interface InPlaceEvidencePopoverProps {
     children: ReactNode
     className?: string
     align?: 'left' | 'right' | 'auto'
+    onOpenOverride?: () => void
+    onRevertOverride?: () => void
 }
 
 export default function InPlaceEvidencePopover({
@@ -24,6 +33,8 @@ export default function InPlaceEvidencePopover({
     children,
     className = '',
     align = 'auto',
+    onOpenOverride,
+    onRevertOverride,
 }: InPlaceEvidencePopoverProps) {
     const [isPinned, setIsPinned] = useState(false)
     const [isHovered, setIsHovered] = useState(false)
@@ -103,7 +114,7 @@ export default function InPlaceEvidencePopover({
 
         const rect = buttonRef.current.getBoundingClientRect()
         const popoverWidth = 320
-        const popoverHeight = 280
+        const popoverHeight = 320
 
         // Horizontal alignment check
         if (align === 'left') {
@@ -142,6 +153,14 @@ export default function InPlaceEvidencePopover({
     }
 
     const statusBadge = () => {
+        if (evidence.isOverridden) {
+            return (
+                <span className="inline-flex items-center gap-1 rounded bg-purple-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-purple-600 dark:text-purple-400 border border-purple-500/30">
+                    <Edit3 className="h-3 w-3" />
+                    Analyst Override
+                </span>
+            )
+        }
         const s = evidence.status || 'confirmed'
         if (s === 'confirmed') {
             return (
@@ -180,6 +199,14 @@ export default function InPlaceEvidencePopover({
                 className="group inline-flex items-center gap-1 text-inherit hover:underline decoration-primary/40 underline-offset-2 cursor-pointer focus:outline-none"
             >
                 {children}
+                {evidence.isOverridden ? (
+                    <span
+                        className="inline-flex items-center px-1 py-0.5 rounded text-[9px] font-bold bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30 ml-0.5"
+                        title="Analyst calibrated value (active in calculations)"
+                    >
+                        ✏️ Override
+                    </span>
+                ) : null}
             </button>
 
             {isOpen && (
@@ -227,6 +254,46 @@ export default function InPlaceEvidencePopover({
                     </div>
 
                     <div className="space-y-2.5 pt-2.5 text-xs">
+                        {/* Bi-Temporal Override Provenance Card */}
+                        {evidence.isOverridden && (
+                            <div className="rounded-lg border border-purple-500/30 bg-purple-500/5 p-2.5 space-y-1.5">
+                                <div className="flex items-center justify-between text-[10px]">
+                                    <span className="text-muted-foreground font-semibold">AI Baseline Extraction:</span>
+                                    <span className="font-mono font-bold text-foreground">{evidence.originalAiValueFormatted || '—'}</span>
+                                </div>
+                                {evidence.deltaFormatted && (
+                                    <div className="flex items-center justify-between text-[10px]">
+                                        <span className="text-muted-foreground font-semibold">Variance Delta:</span>
+                                        <span className="font-mono font-bold text-purple-600 dark:text-purple-400">{evidence.deltaFormatted}</span>
+                                    </div>
+                                )}
+                                {evidence.overrideReason && (
+                                    <div className="text-[11px] text-foreground border-t border-purple-500/20 pt-1 leading-relaxed">
+                                        <span className="font-semibold text-purple-700 dark:text-purple-300">Rationale: </span>
+                                        <span>{evidence.overrideReason}</span>
+                                    </div>
+                                )}
+                                {evidence.overriddenBy && (
+                                    <div className="text-[9px] text-muted-foreground">
+                                        Calibrated by {evidence.overriddenBy} {evidence.overriddenAt ? `• ${new Date(evidence.overriddenAt).toLocaleDateString()}` : ''}
+                                    </div>
+                                )}
+                                {onRevertOverride && (
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            onRevertOverride()
+                                        }}
+                                        className="flex items-center justify-center gap-1 w-full mt-1.5 rounded-md bg-muted/80 hover:bg-muted py-1 text-[10px] font-semibold text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+                                    >
+                                        <RotateCcw className="h-3 w-3" />
+                                        Revert to AI Extraction
+                                    </button>
+                                )}
+                            </div>
+                        )}
+
                         {evidence.quoteSnippet && (
                             <div className="rounded-md bg-muted/60 p-2 border-l-2 border-primary">
                                 <p className="text-[11px] italic text-foreground leading-relaxed">
@@ -256,7 +323,21 @@ export default function InPlaceEvidencePopover({
                             </p>
                         )}
 
-                        <div className="pt-1.5 border-t border-border/50">
+                        <div className="pt-1.5 border-t border-border/50 flex flex-col gap-1.5">
+                            {onOpenOverride && (
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        handleClose()
+                                        onOpenOverride()
+                                    }}
+                                    className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 px-2.5 py-1.5 text-[11px] font-bold text-purple-700 dark:text-purple-300 transition-all cursor-pointer shadow-2xs"
+                                >
+                                    <Edit3 className="h-3.5 w-3.5 shrink-0" />
+                                    <span>{evidence.isOverridden ? 'Edit Analyst Override' : 'Calibrate / Override Value'}</span>
+                                </button>
+                            )}
                             <button
                                 type="button"
                                 onClick={handleAskAi}

@@ -327,10 +327,17 @@ export function hydrateModelFactsFromDocuments(model: DealModel, documents: Subm
 
     for (const [field, fact] of Object.entries(derived)) {
         const current = merged[field]
-        const currentConfirmed = current?.status === 'confirmed' && typeof current.value === 'number'
+        const currentConfirmed = (current?.status === 'confirmed' || current?.isOverridden === true) && typeof current.value === 'number'
         if (currentConfirmed) continue
         merged[field] = { ...fact }
     }
+
+    const overriddenPrice = merged.purchase_price?.isOverridden === true && typeof merged.purchase_price.value === 'number'
+        ? (merged.purchase_price.value as number)
+        : null
+    const overriddenAsking = merged.asking_price?.isOverridden === true && typeof merged.asking_price.value === 'number'
+        ? (merged.asking_price.value as number)
+        : null
 
     const priceFact = typeof merged.purchase_price?.value === 'number' ? (merged.purchase_price.value as number) : null
     const askingFact = typeof merged.asking_price?.value === 'number' ? (merged.asking_price.value as number) : null
@@ -345,8 +352,8 @@ export function hydrateModelFactsFromDocuments(model: DealModel, documents: Subm
 
     return {
         ...model,
-        purchasePrice: model.purchasePrice ?? priceFact ?? askingFact,
-        askingPrice: model.askingPrice ?? askingFact ?? priceFact,
+        purchasePrice: overriddenPrice ?? model.purchasePrice ?? priceFact ?? askingFact,
+        askingPrice: overriddenAsking ?? model.askingPrice ?? askingFact ?? priceFact,
         ebitdaMultiple: model.ebitdaMultiple ?? multFact,
         revenueMultiple: model.revenueMultiple ?? revMultFact,
         debtAssumed: model.debtAssumed ?? debtFact,

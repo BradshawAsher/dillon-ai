@@ -120,6 +120,9 @@ import {
     type SubmissionBatch,
     type SubmitEnvironment,
 } from '../utils/diligenceDashboardUtils'
+import { applyFactOverride, revertFactOverride, type OverrideCategory } from '../utils/documentedFacts'
+import { recordAnalystOverride } from '../services/analystFeedbackService'
+import { parseDocumentedFacts } from '../utils/evidence'
 import { fallbackDiligenceFindings } from '../utils/diligence'
 import {
     createProjectSummaries,
@@ -2077,6 +2080,60 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
     const handleDealModelDefaults = () => {
         handleDealModelChange(returnsDisplayModel)
+    }
+
+    const handleFactOverride = (field: string, value: number, category: OverrideCategory, notes: string) => {
+        const currentFactsJson = hydratedDealModel.documentedFactsJson || activeDealModel.documentedFactsJson || ''
+        const updatedFactsJson = applyFactOverride(currentFactsJson, {
+            field,
+            value,
+            category,
+            reason: notes,
+            analystEmail: authUser?.email || 'analyst@mergeworks.io',
+        })
+
+        const modelUpdates: Partial<DealModel> = {
+            documentedFactsJson: updatedFactsJson,
+        }
+        if (field === 'purchase_price') {
+            modelUpdates.purchasePrice = value
+        } else if (field === 'asking_price') {
+            modelUpdates.askingPrice = value
+        }
+
+        handleDealModelChange(modelUpdates)
+
+        const parsed = parseDocumentedFacts(currentFactsJson)
+        const origVal = parsed[field]?.isOverridden
+            ? (parsed[field]?.originalAiValue ?? null)
+            : (typeof parsed[field]?.value === 'number' ? (parsed[field]?.value as number) : null)
+
+        void recordAnalystOverride({
+            projectId: activeProjectId,
+            targetField: field,
+            originalAiValue: origVal,
+            overrideValue: value,
+            reasonCategory: category,
+            reasonNotes: notes,
+            analystEmail: authUser?.email,
+        })
+    }
+
+    const handleFactRevert = (field: string) => {
+        const currentFactsJson = hydratedDealModel.documentedFactsJson || activeDealModel.documentedFactsJson || ''
+        const updatedFactsJson = revertFactOverride(currentFactsJson, field)
+
+        const modelUpdates: Partial<DealModel> = {
+            documentedFactsJson: updatedFactsJson,
+        }
+        const restoredFacts = parseDocumentedFacts(updatedFactsJson)
+        if (field === 'purchase_price') {
+            modelUpdates.purchasePrice = typeof restoredFacts.purchase_price?.value === 'number' ? restoredFacts.purchase_price.value : undefined
+        } else if (field === 'asking_price') {
+            modelUpdates.askingPrice = typeof restoredFacts.asking_price?.value === 'number' ? restoredFacts.asking_price.value : undefined
+        }
+
+        handleDealModelChange(modelUpdates)
     }
 
     const impact = useMemo(() => computeImpactMetrics(submissionHistory), [submissionHistory])
@@ -4399,6 +4456,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                         activeProjectImpact={activeProjectImpact}
                         activeProjectId={activeProjectId}
                         setActiveWorkspaceTab={setActiveWorkspaceTab}
+                        onOverrideFact={handleFactOverride}
+                        onRevertFact={handleFactRevert}
                     />
                 ) : null}
 

@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { FileImage } from 'lucide-react'
 
 import type { DealModel } from '../hooks/backend/diligence'
@@ -7,14 +7,39 @@ import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import InPlaceEvidencePopover from './InPlaceEvidencePopover'
 import CardInfoPopover from './common/CardInfoPopover'
+import AnalystOverrideModal from './AnalystOverrideModal'
+import type { OverrideCategory } from '../utils/documentedFacts'
 
 type Props = {
     model: DealModel
     synthesis?: ProjectSynthesisItem | null
     projectName: string
+    onOverrideFact?: (field: string, value: number, category: OverrideCategory, notes: string) => void
+    onRevertFact?: (field: string) => void
 }
 
-export default function DealOnAPageCard({ model, synthesis, projectName }: Props) {
+function formatDelta(current: number, original?: number): string | undefined {
+    if (typeof original !== 'number') return undefined
+    const delta = current - original
+    const pct = original !== 0 ? (delta / Math.abs(original)) * 100 : 0
+    return `${delta >= 0 ? '+' : ''}$${Math.round(delta).toLocaleString()} (${pct.toFixed(1)}%)`
+}
+
+export default function DealOnAPageCard({ model, synthesis, projectName, onOverrideFact, onRevertFact }: Props) {
+    const [overrideModal, setOverrideModal] = useState<{
+        open: boolean
+        metricKey: string
+        metricLabel: string
+        currentValue: number | null
+        currentFormatted: string
+    }>({
+        open: false,
+        metricKey: '',
+        metricLabel: '',
+        currentValue: null,
+        currentFormatted: '',
+    })
+
     const facts = useMemo(() => parseDocumentedFacts(model.documentedFactsJson), [model.documentedFactsJson])
     
     const summary = useMemo(() => {
@@ -51,7 +76,8 @@ export default function DealOnAPageCard({ model, synthesis, projectName }: Props
 
     if (!summary) return null
 
-    const fmt = (n: number) => {
+    const fmt = (n?: number | null) => {
+        if (n == null) return '—'
         if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`
         if (n >= 1_000) return `$${(n / 1_000).toFixed(0)}K`
         return `$${n.toLocaleString()}`
@@ -94,19 +120,44 @@ export default function DealOnAPageCard({ model, synthesis, projectName }: Props
                     <div className="grid grid-cols-4 gap-2 text-center">
                         <div>
                             <p className="text-[9px] uppercase text-muted-foreground">Price</p>
-                            <InPlaceEvidencePopover
-                                evidence={{
-                                    metricName: 'Purchase / Asking Price',
-                                    valueFormatted: fmt(summary.price),
-                                    sourceDoc: facts.asking_price?.citations?.[0]?.source_file || facts.purchase_price?.citations?.[0]?.source_file || 'CIM / VDR Deal File',
-                                    pageNumber: facts.asking_price?.citations?.[0]?.row_or_cell || facts.purchase_price?.citations?.[0]?.row_or_cell,
-                                    quoteSnippet: facts.asking_price?.citations?.[0]?.excerpt || facts.purchase_price?.citations?.[0]?.excerpt || 'Documented purchase or asking price from deal intake materials.',
-                                    status: facts.asking_price?.status === 'confirmed' || facts.purchase_price?.status === 'confirmed' ? 'confirmed' : 'estimated',
-                                    notes: 'Base valuation used across leverage and returns modeling.',
-                                }}
-                            >
-                                <p className="text-sm font-bold text-foreground hover:text-primary transition-colors cursor-pointer underline decoration-dotted decoration-primary/40 underline-offset-4">{fmt(summary.price)}</p>
-                            </InPlaceEvidencePopover>
+                            {(() => {
+                                const isPriceOverridden = Boolean(facts.purchase_price?.isOverridden || facts.asking_price?.isOverridden)
+                                const activePriceFact = facts.purchase_price?.isOverridden ? facts.purchase_price : facts.asking_price
+                                const targetFieldKey = facts.purchase_price?.isOverridden ? 'purchase_price' : (model.purchasePrice != null ? 'purchase_price' : 'asking_price')
+                                return (
+                                    <InPlaceEvidencePopover
+                                        evidence={{
+                                            metricName: 'Purchase / Asking Price',
+                                            valueFormatted: fmt(summary.price),
+                                            sourceDoc: facts.asking_price?.citations?.[0]?.source_file || facts.purchase_price?.citations?.[0]?.source_file || 'CIM / VDR Deal File',
+                                            pageNumber: facts.asking_price?.citations?.[0]?.row_or_cell || facts.purchase_price?.citations?.[0]?.row_or_cell,
+                                            quoteSnippet: facts.asking_price?.citations?.[0]?.excerpt || facts.purchase_price?.citations?.[0]?.excerpt || 'Documented purchase or asking price from deal intake materials.',
+                                            status: facts.asking_price?.status === 'confirmed' || facts.purchase_price?.status === 'confirmed' ? 'confirmed' : 'estimated',
+                                            notes: 'Base valuation used across leverage and returns modeling.',
+                                            isOverridden: isPriceOverridden,
+                                            originalAiValueFormatted: activePriceFact?.originalAiValue ? fmt(activePriceFact.originalAiValue) : undefined,
+                                            deltaFormatted: summary.price && activePriceFact?.originalAiValue ? formatDelta(summary.price, activePriceFact.originalAiValue) : undefined,
+                                            overrideReason: activePriceFact?.overrideReason,
+                                            overriddenBy: activePriceFact?.overriddenBy,
+                                            overriddenAt: activePriceFact?.overriddenAt,
+                                        }}
+                                        onOpenOverride={onOverrideFact ? () => {
+                                            setOverrideModal({
+                                                open: true,
+                                                metricKey: targetFieldKey,
+                                                metricLabel: 'Purchase / Asking Price',
+                                                currentValue: summary.price,
+                                                currentFormatted: fmt(summary.price),
+                                            })
+                                        } : undefined}
+                                        onRevertOverride={onRevertFact && isPriceOverridden ? () => {
+                                            onRevertFact(targetFieldKey)
+                                        } : undefined}
+                                    >
+                                        <p className="text-sm font-bold text-foreground hover:text-primary transition-colors cursor-pointer underline decoration-dotted decoration-primary/40 underline-offset-4">{fmt(summary.price)}</p>
+                                    </InPlaceEvidencePopover>
+                                )
+                            })()}
                         </div>
                         <div>
                             <p className="text-[9px] uppercase text-muted-foreground">Revenue</p>
@@ -120,7 +171,25 @@ export default function DealOnAPageCard({ model, synthesis, projectName }: Props
                                         quoteSnippet: facts.revenue?.citations?.[0]?.excerpt || 'Historical annual top-line revenue extracted from VDR financial files.',
                                         status: (facts.revenue?.status as any) || 'confirmed',
                                         notes: 'Annual revenue base extracted from target financials.',
+                                        isOverridden: facts.revenue?.isOverridden,
+                                        originalAiValueFormatted: facts.revenue?.originalAiValue ? fmt(facts.revenue.originalAiValue) : undefined,
+                                        deltaFormatted: summary.revenue && facts.revenue?.originalAiValue ? formatDelta(summary.revenue, facts.revenue.originalAiValue) : undefined,
+                                        overrideReason: facts.revenue?.overrideReason,
+                                        overriddenBy: facts.revenue?.overriddenBy,
+                                        overriddenAt: facts.revenue?.overriddenAt,
                                     }}
+                                    onOpenOverride={onOverrideFact ? () => {
+                                        setOverrideModal({
+                                            open: true,
+                                            metricKey: 'revenue',
+                                            metricLabel: 'Historical Revenue',
+                                            currentValue: summary.revenue,
+                                            currentFormatted: fmt(summary.revenue),
+                                        })
+                                    } : undefined}
+                                    onRevertOverride={onRevertFact && facts.revenue?.isOverridden ? () => {
+                                        onRevertFact('revenue')
+                                    } : undefined}
                                 >
                                     <p className="text-sm font-bold text-foreground hover:text-primary transition-colors cursor-pointer underline decoration-dotted decoration-primary/40 underline-offset-4">{fmt(summary.revenue)}</p>
                                 </InPlaceEvidencePopover>
@@ -140,7 +209,25 @@ export default function DealOnAPageCard({ model, synthesis, projectName }: Props
                                         quoteSnippet: facts.ebitda_sde?.citations?.[0]?.excerpt || 'Documented adjusted EBITDA / SDE extracted from VDR filings.',
                                         status: (facts.ebitda_sde?.status as any) || 'confirmed',
                                         notes: 'Underwriting cash flow basis.',
+                                        isOverridden: facts.ebitda_sde?.isOverridden,
+                                        originalAiValueFormatted: facts.ebitda_sde?.originalAiValue ? fmt(facts.ebitda_sde.originalAiValue) : undefined,
+                                        deltaFormatted: summary.ebitda && facts.ebitda_sde?.originalAiValue ? formatDelta(summary.ebitda, facts.ebitda_sde.originalAiValue) : undefined,
+                                        overrideReason: facts.ebitda_sde?.overrideReason,
+                                        overriddenBy: facts.ebitda_sde?.overriddenBy,
+                                        overriddenAt: facts.ebitda_sde?.overriddenAt,
                                     }}
+                                    onOpenOverride={onOverrideFact ? () => {
+                                        setOverrideModal({
+                                            open: true,
+                                            metricKey: 'ebitda_sde',
+                                            metricLabel: 'EBITDA / SDE',
+                                            currentValue: summary.ebitda,
+                                            currentFormatted: fmt(summary.ebitda),
+                                        })
+                                    } : undefined}
+                                    onRevertOverride={onRevertFact && facts.ebitda_sde?.isOverridden ? () => {
+                                        onRevertFact('ebitda_sde')
+                                    } : undefined}
                                 >
                                     <p className="text-sm font-bold text-foreground hover:text-primary transition-colors cursor-pointer underline decoration-dotted decoration-primary/40 underline-offset-4">{fmt(summary.ebitda)}</p>
                                 </InPlaceEvidencePopover>
@@ -228,6 +315,21 @@ export default function DealOnAPageCard({ model, synthesis, projectName }: Props
                         </div>
                     </div>
                 </div>
+
+                {overrideModal.open && onOverrideFact && (
+                    <AnalystOverrideModal
+                        open={overrideModal.open}
+                        metricKey={overrideModal.metricKey}
+                        metricLabel={overrideModal.metricLabel}
+                        currentValue={overrideModal.currentValue}
+                        currentFormatted={overrideModal.currentFormatted}
+                        onSave={(val, cat, notes) => {
+                            onOverrideFact(overrideModal.metricKey, val, cat, notes)
+                            setOverrideModal((prev) => ({ ...prev, open: false }))
+                        }}
+                        onClose={() => setOverrideModal((prev) => ({ ...prev, open: false }))}
+                    />
+                )}
             </CardContent>
         </Card>
     )
