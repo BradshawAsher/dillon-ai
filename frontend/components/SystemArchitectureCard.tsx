@@ -146,7 +146,7 @@ const architecture: ArchitectureItem[] = [
             'frontend/utils/dealMath.ts — financial sanity check helpers',
         ],
         edgeCases: [
-            'Tier 1 (Cloud AI): Webhook call to n8n backed by GPT-4o / Claude / Gemini with complete deal context and cross-project portfolio state',
+            'Tier 1 (Cloud AI): Webhook call to n8n backed by OpenAI 5.6 Terra / Claude Sonnet 5 / Gemini 3.7 Flash with complete deal context and cross-project portfolio state',
             'Tier 2 (Direct LLM): User-configured OpenAI/Anthropic/Gemini keys execute client-side API requests directly with zero intermediate server hops',
             'Tier 3 (In-Browser Deterministic): 0ms latency offline heuristic engine executing 20+ specialized M&A rule matchers',
             'Deterministic Disclaimer: Shows amber top banner when Tier 3 is triggered, with one-click "Run with Live LLM" action to force live AI execution',

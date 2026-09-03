@@ -176,7 +176,7 @@ sequenceDiagram
     Browser->>Browser: Save expected count and upload-attempt manifest
     Browser->>API: POST /api/diligence/upload-url
     API-->>Browser: Scoped storage ticket and object path
-    Browser->>Storage: Upload directly; large files use resumable 6 MiB chunks
+    Browser->>Storage: Direct upload (large files use resumable 6 MiB chunks)
     Storage-->>Browser: Upload confirmed
     Browser->>API: POST /api/diligence/submit (metadata and storage URL)
     API->>DB: Register queued document before dispatch

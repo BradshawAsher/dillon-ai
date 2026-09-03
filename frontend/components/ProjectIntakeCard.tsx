@@ -17,7 +17,8 @@ import {
     SelectValue,
 } from '../lib/shadcn/select'
 import { Textarea } from '../lib/shadcn/textarea'
-import { getActiveProviders, hasAnySavedApiKey } from './ApiKeyModal'
+import { getActiveProviders, getEffectiveModelPipeline, getSavedApiKey, getSavedDeepSeekKey, getSavedGeminiKey, getSavedOpenAIKey, hasAnySavedApiKey } from './ApiKeyModal'
+import ByokConfirmDialog, { maskApiKey, shouldSkipByokConfirm } from './common/ByokConfirmDialog'
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
 import type { ManualDealFormData } from '../utils/manualDealIntake'
 
@@ -141,6 +142,7 @@ export default function ProjectIntakeCard({
     const [pendingQueueEnv, setPendingQueueEnv] = useState<SubmitEnvironment | null>(null)
     const [pendingFiles, setPendingFiles] = useState<File[]>([])
     const [fileRequiredWarning, setFileRequiredWarning] = useState(false)
+    const [showByokConfirm, setShowByokConfirm] = useState(false)
 
     useEffect(() => {
         if (editingQuestionnaireProjectId) {
@@ -192,18 +194,19 @@ export default function ProjectIntakeCard({
     }, [])
 
     useEffect(() => {
-        if (!showNoKeyPrompt && !showDestinationModal && !pendingQueueEnv) return
+        if (!showNoKeyPrompt && !showDestinationModal && !pendingQueueEnv && !showByokConfirm) return
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
                 setShowNoKeyPrompt(false)
                 setShowDestinationModal(false)
                 setPendingFiles([])
                 setPendingQueueEnv(null)
+                setShowByokConfirm(false)
             }
         }
         window.addEventListener('keydown', handleKeyDown)
         return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [showNoKeyPrompt, showDestinationModal, pendingQueueEnv])
+    }, [showNoKeyPrompt, showDestinationModal, pendingQueueEnv, showByokConfirm])
 
     useEffect(() => {
         if (typeof window === 'undefined') return
@@ -246,10 +249,28 @@ export default function ProjectIntakeCard({
         const hasKey = hasAnySavedApiKey()
         if (!hasKey) {
             setShowNoKeyPrompt(true)
-        } else {
+        } else if (shouldSkipByokConfirm()) {
             setPendingQueueEnv('production')
+        } else {
+            setShowByokConfirm(true)
         }
     }
+
+    const byokPipeline = useMemo(() => {
+        const pipeline = getEffectiveModelPipeline()
+        if (pipeline.activeProvider === 'default') return null
+        const providerLabel = pipeline.activeProvider === 'openai' ? 'OpenAI'
+            : pipeline.activeProvider === 'anthropic' ? 'Anthropic'
+            : pipeline.activeProvider === 'gemini' ? 'Gemini'
+            : pipeline.activeProvider === 'deepseek' ? 'DeepSeek'
+            : pipeline.activeProvider
+        const rawKey = pipeline.activeProvider === 'openai' ? getSavedOpenAIKey()
+            : pipeline.activeProvider === 'anthropic' ? getSavedApiKey()
+            : pipeline.activeProvider === 'gemini' ? getSavedGeminiKey()
+            : pipeline.activeProvider === 'deepseek' ? getSavedDeepSeekKey()
+            : ''
+        return { providerLabel, maskedKey: maskApiKey(rawKey) }
+    }, [showByokConfirm, showNoKeyPrompt])
 
     const handleProductionSubmit = () => {
         if (selectedFiles.length === 0) {
@@ -1126,6 +1147,19 @@ export default function ProjectIntakeCard({
                             </CardFooter>
                         </Card>
                     </div>
+                )}
+                {byokPipeline && (
+                    <ByokConfirmDialog
+                        open={showByokConfirm}
+                        providerLabel={byokPipeline.providerLabel}
+                        maskedKey={byokPipeline.maskedKey}
+                        actionLabel="Continue & Queue"
+                        onConfirm={() => {
+                            setShowByokConfirm(false)
+                            setPendingQueueEnv('production')
+                        }}
+                        onCancel={() => setShowByokConfirm(false)}
+                    />
                 )}
             </CardContent>
         </Card>

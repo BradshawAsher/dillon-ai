@@ -571,7 +571,7 @@ export const CARD_DESCRIPTIONS: Record<string, CardDescription> = {
         title: 'Itemized Billing & Execution Run Ledger',
         category: 'Platform Spending & Operations',
         whatItIs: 'Detailed audit trail recording every individual LLM API invocation, model name, input/output token counts, timestamps, and exact USD cost.',
-        calculation: 'Calculated directly from provider token rates (GPT-4o, Claude 3.5 Sonnet) per invocation.',
+        calculation: 'Calculated directly from provider token rates (OpenAI 5.6 Terra/Sol, Claude Sonnet 5, Gemini 3.7 Flash) per invocation.',
         diligenceImpact: 'Provides total transparency for LP reporting, client expense reimbursement, and internal cost attribution.',
         benchmarkOrTarget: '100% of LLM calls logged with token and cost attribution',
     },
@@ -1424,7 +1424,7 @@ export const CARD_DESCRIPTIONS: Record<string, CardDescription> = {
     'benchmark-models': {
         title: 'LLM Model Benchmarking & Comparison',
         category: 'Platform Evals',
-        whatItIs: 'Comparative benchmark suite testing Claude 3.5 Sonnet, Claude 3.7 Sonnet, GPT-4o, and Gemini 2.0 Flash on complex financial tables.',
+        whatItIs: 'Comparative benchmark suite testing OpenAI 5.6 Terra, Claude Sonnet 5, Gemini 3.7 Flash, and DeepSeek V4 Flash on complex financial tables.',
         calculation: 'Scored against 500+ verified financial ground-truth extraction fields.',
         diligenceImpact: 'Ensures the platform continuously utilizes the highest-accuracy model available for M&A diligence.',
         benchmarkOrTarget: 'Primary extraction accuracy ≥ 98.5%',

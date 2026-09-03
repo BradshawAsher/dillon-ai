@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { AlertTriangle, Check, CheckCircle2, ClipboardPaste, Eye, FileText, Image, Loader2, Sparkles, Trash2, Upload, X } from 'lucide-react'
+import { AlertTriangle, Check, CheckCircle2, ClipboardPaste, Eye, FileText, Image, Key, Loader2, Sparkles, Trash2, Upload, X } from 'lucide-react'
 
 import { Button } from '../lib/shadcn/button'
 import { Textarea } from '../lib/shadcn/textarea'
@@ -23,7 +23,10 @@ import {
     getSavedDeepSeekKey,
     getSavedGeminiKey,
     getSavedOpenAIKey,
+    hasAnySavedApiKey,
+    getActiveProviders,
 } from './ApiKeyModal'
+import ByokConfirmDialog, { maskApiKey, shouldSkipByokConfirm } from './common/ByokConfirmDialog'
 
 type QuestionnaireQuickImportProps = {
     disabled?: boolean
@@ -109,7 +112,25 @@ export default function QuestionnaireQuickImport({ disabled = false, openRequest
     } | null>(null)
     const tutorialStateRef = useRef({ open, pastedText, result, error, routeDecision, selectedFile, aiDraft, hasApplied, isTutorialMockAi })
     tutorialStateRef.current = { open, pastedText, result, error, routeDecision, selectedFile, aiDraft, hasApplied, isTutorialMockAi }
+    const [showByokConfirm, setShowByokConfirm] = useState(false)
+    const [pendingByokSourceType, setPendingByokSourceType] = useState<'text' | 'image'>('text')
     const draft = useMemo(() => aiDraft ?? (result ? questionnaireDraftFromImport(result, 'local-preview') : null), [aiDraft, result])
+    const hasByokKey = useMemo(() => hasAnySavedApiKey(), [showByokConfirm])
+    const byokInfo = useMemo(() => {
+        const pipeline = getEffectiveModelPipeline()
+        if (pipeline.activeProvider === 'default') return null
+        const providerLabel = pipeline.activeProvider === 'openai' ? 'OpenAI'
+            : pipeline.activeProvider === 'anthropic' ? 'Anthropic'
+            : pipeline.activeProvider === 'gemini' ? 'Gemini'
+            : pipeline.activeProvider === 'deepseek' ? 'DeepSeek'
+            : pipeline.activeProvider
+        const rawKey = pipeline.activeProvider === 'openai' ? getSavedOpenAIKey()
+            : pipeline.activeProvider === 'anthropic' ? getSavedApiKey()
+            : pipeline.activeProvider === 'gemini' ? getSavedGeminiKey()
+            : pipeline.activeProvider === 'deepseek' ? getSavedDeepSeekKey()
+            : ''
+        return { providerLabel, maskedKey: maskApiKey(rawKey), providers: getActiveProviders() }
+    }, [showByokConfirm])
 
     useEffect(() => {
         if (!isAiReading) {
@@ -248,7 +269,7 @@ export default function QuestionnaireQuickImport({ disabled = false, openRequest
         }
     }
 
-    const requestAiDraft = async (sourceType: 'text' | 'image') => {
+    const requestAiDraft = async (sourceType: 'text' | 'image', useDefaultKey = false) => {
         setIsAiReading(true)
         setIsTutorialMockAi(false)
         setError('')
@@ -257,8 +278,8 @@ export default function QuestionnaireQuickImport({ disabled = false, openRequest
             const sourceText = sourceType === 'text' ? (result?.sourceText || pastedText).slice(0, 50_000) : ''
             const requestId = crypto.randomUUID()
             const modelPipeline = getEffectiveModelPipeline()
-            const userProvider = modelPipeline.activeProvider === 'default' ? '' : modelPipeline.activeProvider
-            const userApiKey = userProvider === 'openai'
+            const userProvider = useDefaultKey ? '' : (modelPipeline.activeProvider === 'default' ? '' : modelPipeline.activeProvider)
+            const userApiKey = useDefaultKey ? '' : (userProvider === 'openai'
                 ? getSavedOpenAIKey()
                 : userProvider === 'anthropic'
                     ? getSavedApiKey()
@@ -266,7 +287,7 @@ export default function QuestionnaireQuickImport({ disabled = false, openRequest
                         ? getSavedGeminiKey()
                         : userProvider === 'deepseek'
                             ? getSavedDeepSeekKey()
-                            : ''
+                            : '')
             const response = await fetch('/api/diligence/questionnaire-draft', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -505,16 +526,39 @@ export default function QuestionnaireQuickImport({ disabled = false, openRequest
                             <p className="text-muted-foreground">{routeDecision.reason} It will return a reviewable draft and will not start diligence or synthesis.</p>
                         </div>
                     </div>
-                    <Button
-                        type="button"
-                        size="sm"
-                        disabled={disabled || isAiReading || !selectedFile}
-                        className="shrink-0 text-xs"
-                        onClick={() => void requestAiDraft('image')}
-                    >
-                        {isAiReading ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
-                        {isAiReading ? 'Creating draft…' : 'Create AI draft'}
-                    </Button>
+                    <div className="flex items-center gap-2 shrink-0">
+                        <Button
+                            type="button"
+                            size="sm"
+                            disabled={disabled || isAiReading || !selectedFile}
+                            className="text-xs"
+                            onClick={() => void requestAiDraft('image', true)}
+                        >
+                            {isAiReading ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
+                            {isAiReading ? 'Creating draft…' : 'Create AI draft'}
+                        </Button>
+                        {hasByokKey && byokInfo ? (
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                disabled={disabled || isAiReading || !selectedFile}
+                                className="text-xs gap-1.5 border-amber-500/30 bg-amber-500/5 text-amber-700 dark:text-amber-300 hover:bg-amber-500/15"
+                                onClick={() => {
+                                    if (shouldSkipByokConfirm()) {
+                                        void requestAiDraft('image')
+                                    } else {
+                                        setPendingByokSourceType('image')
+                                        setShowByokConfirm(true)
+                                    }
+                                }}
+                                title={`Draft using your ${byokInfo.providerLabel} key (${byokInfo.maskedKey})`}
+                            >
+                                <Key className="h-3.5 w-3.5 text-amber-500" />
+                                Draft with {byokInfo.providerLabel}
+                            </Button>
+                        ) : null}
+                    </div>
                 </div>
             ) : null}
 
@@ -592,7 +636,7 @@ export default function QuestionnaireQuickImport({ disabled = false, openRequest
                                     ? 'These values have been imported into your questionnaire form.'
                                     : aiDraft
                                         ? 'AI extraction reviewed your text and populated the recognized fields below. Click "Apply recognized fields" to insert them into your form.'
-                                        : 'Basic fields recognized by the local parser. Click "Extract with AI" to use your active custom provider when configured, or MergeWorks AI otherwise, for complex debt terms, customer concentration, and margins.'}
+                                        : 'Basic fields recognized by the local parser. Click "Extract with AI" to use the managed MergeWorks engine, or use the custom key button to extract with your own provider for complex debt terms, customer concentration, and margins.'}
                             </p>
                             {draft && draft.missingRequiredFields.length > 0 ? (
                                 <p className="mt-1 text-[10px] font-medium text-amber-700 dark:text-amber-300">
@@ -602,18 +646,41 @@ export default function QuestionnaireQuickImport({ disabled = false, openRequest
                         </div>
                         <div className="flex items-center gap-2">
                             {result.sourceText ? (
-                                <Button
-                                    type="button"
-                                    size="sm"
-                                    variant={aiDraft ? "outline" : "default"}
-                                    disabled={disabled || isAiReading}
-                                    onClick={() => void requestAiDraft('text')}
-                                    className="h-8 gap-1.5 text-xs font-semibold cursor-pointer"
-                                    title="Uses your active custom AI provider when configured, or the managed MergeWorks Terra/Sol route otherwise, to extract complex financial metrics and warnings."
-                                >
-                                    {isAiReading ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5 text-amber-500" />}
-                                    {aiDraft ? 'Re-extract with AI' : 'Extract with AI'}
-                                </Button>
+                                <>
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        variant={aiDraft ? "outline" : "default"}
+                                        disabled={disabled || isAiReading}
+                                        onClick={() => void requestAiDraft('text', true)}
+                                        className="h-8 gap-1.5 text-xs font-semibold cursor-pointer"
+                                        title="Extract complex financial metrics using the managed MergeWorks AI engine (no personal key consumed)."
+                                    >
+                                        {isAiReading ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5 text-amber-500" />}
+                                        {aiDraft ? 'Re-extract with AI' : 'Extract with AI'}
+                                    </Button>
+                                    {hasByokKey && byokInfo ? (
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            variant="outline"
+                                            disabled={disabled || isAiReading}
+                                            onClick={() => {
+                                                if (shouldSkipByokConfirm()) {
+                                                    void requestAiDraft('text')
+                                                } else {
+                                                    setPendingByokSourceType('text')
+                                                    setShowByokConfirm(true)
+                                                }
+                                            }}
+                                            className="h-8 gap-1.5 text-xs font-semibold cursor-pointer border-amber-500/30 bg-amber-500/5 text-amber-700 dark:text-amber-300 hover:bg-amber-500/15"
+                                            title={`Extract using your ${byokInfo.providerLabel} key (${byokInfo.maskedKey})`}
+                                        >
+                                            <Key className="h-3.5 w-3.5 text-amber-500" />
+                                            {aiDraft ? 'Re-extract' : 'Extract'} with {byokInfo.providerLabel}
+                                        </Button>
+                                    ) : null}
+                                </>
                             ) : null}
                             <Button
                                 type="button"
@@ -663,6 +730,19 @@ export default function QuestionnaireQuickImport({ disabled = false, openRequest
                     ) : null}
                 </div>
             ) : null}
+            {byokInfo && (
+                <ByokConfirmDialog
+                    open={showByokConfirm}
+                    providerLabel={byokInfo.providerLabel}
+                    maskedKey={byokInfo.maskedKey}
+                    actionLabel={`Extract with ${byokInfo.providerLabel}`}
+                    onConfirm={() => {
+                        setShowByokConfirm(false)
+                        void requestAiDraft(pendingByokSourceType)
+                    }}
+                    onCancel={() => setShowByokConfirm(false)}
+                />
+            )}
         </section>
     )
 }

@@ -7,7 +7,7 @@
 // front, and a formatter for rendering it.
 //
 // The per-document constants are grounded in observed n8n wall-clock latency
-// (extraction + reconciliation, plus the Haiku validation pass). They are
+// (extraction + reconciliation, plus the OpenAI 5.6 Terra extraction pass). They are
 // deliberately conservative — an estimate that reads a little long is far less
 // alarming than one that promises a speed the pipeline cannot hit.
 
@@ -15,7 +15,7 @@
 export const SECONDS_PER_DOCUMENT_BASE = 45
 /** Additional seconds per 1,000 characters of parsed document text. */
 export const SECONDS_PER_1K_CHARS = 3
-/** Typical wall-clock seconds for the project synthesis (one Sonnet pass). */
+/** Typical wall-clock seconds for the project synthesis (one OpenAI 5.6 Terra synthesis pass). */
 export const SECONDS_PER_SYNTHESIS = 90
 
 export type ProcessingEstimateInput = {

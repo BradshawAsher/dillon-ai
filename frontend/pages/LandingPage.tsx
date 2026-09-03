@@ -928,7 +928,7 @@ export default function LandingPage({ onLaunchDashboard, onGoToLogin, currentUse
                             <CardHeader>
                                 <Badge variant="success" className="w-fit text-[10px] font-bold">DILLON AI HYBRID (OPTIMIZED)</Badge>
                                 <CardTitle className="text-3xl font-black text-primary">$0.0210 <span className="text-xs font-normal text-muted-foreground">/ run</span></CardTitle>
-                                <CardDescription className="text-xs">Sonnet 5 (Per-Doc OCR) + OpenAI 5.6 (Synthesizer)</CardDescription>
+                                <CardDescription className="text-xs">OpenAI 5.6 Terra (Per-Doc OCR) + OpenAI 5.6 Sol (Synthesizer)</CardDescription>
                             </CardHeader>
                             <CardContent className="text-xs text-foreground space-y-2 font-medium">
                                 <p className="text-emerald-600 font-bold">✓ 88%+ Savings vs Unoptimized Runs</p>

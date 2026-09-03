@@ -4999,7 +4999,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                                                                     }`}
                                                                 title={
                                                                     msg.tier === 'cloud_ai'
-                                                                        ? 'Tier 1: Powered by live n8n Cloud LLM Webhook (OpenAI GPT-4o / Claude / Gemini)'
+                                                                        ? 'Tier 1: Powered by live n8n Cloud LLM Webhook (OpenAI 5.6 Terra / Claude Sonnet 5 / Gemini 3.7 Flash)'
                                                                         : msg.tier === 'direct_llm'
                                                                             ? `Tier 2: Powered directly via user API key (${msg.providerName})`
                                                                             : 'Tier 3: Powered by MergeWorks local deterministic M&A rules (offline fallback)'

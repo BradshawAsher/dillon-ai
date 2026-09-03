@@ -199,7 +199,7 @@ after its lease expires.
 
 Measured from live executions (2026-08): per-document analysis runs at ~p50 71 s
 / p95 125 s wall-clock, and the robust output-recovery path (schema validation →
-Haiku repair pass) has been observed correcting an invalid first-pass result in
+OpenAI 5.6 Sol auto-fix repair pass) has been observed correcting an invalid first-pass result in
 production. Note the shared execution pool: at month-end the account can hit the
 n8n Cloud execution limit — read traffic was moved to direct Supabase queries and
 the legacy read webhooks archived specifically to reduce that execution burn.

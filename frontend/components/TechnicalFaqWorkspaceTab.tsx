@@ -156,7 +156,7 @@ export default function TechnicalFaqWorkspaceTab({ onSwitchTab }: TechnicalFaqWo
             category: 'chatbot',
             categoryLabel: 'Dillon AI Copilot',
             question: 'How does the Dillon AI Copilot 3-Tier Architecture work?',
-            answer: '• Tier 1 (Cloud AI / n8n Webhook): Queries our production n8n workflow backed by OpenAI GPT-4o, Claude 3.5 Sonnet, and Gemini 1.5 Pro. It receives full context of the project\'s synthesis, documented financial facts, OCR summaries, and cross-project portfolio state.\n• Tier 2 (Direct Provider API): If you configure your own OpenAI, Anthropic, or Gemini API keys in the chat settings, queries run directly from your browser to provider endpoints with zero intermediate hops.\n• Tier 3 (In-Browser Deterministic Engine): If cloud endpoints are unreachable or you are offline, Dillon instantly runs an in-browser deterministic M&A rules engine with 0ms latency and 100% uptime.',
+            answer: '• Tier 1 (Cloud AI / n8n Webhook): Queries our production n8n workflow backed by OpenAI 5.6 Terra / Sol, Claude Sonnet 5, and Gemini 3.7 Flash. It receives full context of the project\'s synthesis, documented financial facts, OCR summaries, and cross-project portfolio state.\n• Tier 2 (Direct Provider API): If you configure your own OpenAI, Anthropic, or Gemini API keys in the chat settings, queries run directly from your browser to provider endpoints with zero intermediate hops.\n• Tier 3 (In-Browser Deterministic Engine): If cloud endpoints are unreachable or you are offline, Dillon instantly runs an in-browser deterministic M&A rules engine with 0ms latency and 100% uptime.',
             actionLabel: 'Open Architecture Card',
             targetTab: 'errors',
         },
