@@ -17,6 +17,13 @@ import {
     type QuestionnaireDraft,
     type QuestionnaireRouteDecision,
 } from '../utils/questionnaireDraft'
+import {
+    getEffectiveModelPipeline,
+    getSavedApiKey,
+    getSavedDeepSeekKey,
+    getSavedGeminiKey,
+    getSavedOpenAIKey,
+} from './ApiKeyModal'
 
 type QuestionnaireQuickImportProps = {
     disabled?: boolean
@@ -249,6 +256,17 @@ export default function QuestionnaireQuickImport({ disabled = false, openRequest
             const imageDataUrl = sourceType === 'image' && selectedFile ? await readFileAsDataUrl(selectedFile) : ''
             const sourceText = sourceType === 'text' ? (result?.sourceText || pastedText).slice(0, 50_000) : ''
             const requestId = crypto.randomUUID()
+            const modelPipeline = getEffectiveModelPipeline()
+            const userProvider = modelPipeline.activeProvider === 'default' ? '' : modelPipeline.activeProvider
+            const userApiKey = userProvider === 'openai'
+                ? getSavedOpenAIKey()
+                : userProvider === 'anthropic'
+                    ? getSavedApiKey()
+                    : userProvider === 'gemini'
+                        ? getSavedGeminiKey()
+                        : userProvider === 'deepseek'
+                            ? getSavedDeepSeekKey()
+                            : ''
             const response = await fetch('/api/diligence/questionnaire-draft', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -259,6 +277,10 @@ export default function QuestionnaireQuickImport({ disabled = false, openRequest
                     sourceText,
                     imageDataUrl,
                     currentValues,
+                    userProvider,
+                    userApiKey,
+                    docPrimaryModel: modelPipeline.docPrimary,
+                    docBackupModel: modelPipeline.docBackup,
                     dispatchAsync: true,
                 }),
             })
@@ -528,7 +550,7 @@ export default function QuestionnaireQuickImport({ disabled = false, openRequest
                                             {isTutorialMockAi ? 'Tutorial AI Review Preview' : 'Deep AI Extraction Complete'}
                                         </h4>
                                         <p className="text-[11px] text-emerald-800 dark:text-emerald-300">
-                                            {isTutorialMockAi ? 'Mocked without an API call: ' : ''}Extracted {aiDraft.fields.length} deal fields with {aiDraft.fields.length > 0 ? Math.round((aiDraft.fields.reduce((acc, f) => acc + f.confidence, 0) / aiDraft.fields.length) * 100) : 95}% average confidence using OpenAI 5.6 Terra.
+                                            {isTutorialMockAi ? 'Mocked without an API call: ' : ''}Extracted {aiDraft.fields.length} deal fields with {aiDraft.fields.length > 0 ? Math.round((aiDraft.fields.reduce((acc, f) => acc + f.confidence, 0) / aiDraft.fields.length) * 100) : 95}% average confidence using AI Assist.
                                         </p>
                                     </div>
                                 </div>
@@ -570,7 +592,7 @@ export default function QuestionnaireQuickImport({ disabled = false, openRequest
                                     ? 'These values have been imported into your questionnaire form.'
                                     : aiDraft
                                         ? 'AI extraction reviewed your text and populated the recognized fields below. Click "Apply recognized fields" to insert them into your form.'
-                                        : 'Basic fields recognized by local parser. Click "Extract with AI" to have OpenAI 5.6 Terra extract complex debt terms, customer concentration, and margins.'}
+                                        : 'Basic fields recognized by the local parser. Click "Extract with AI" to use your active custom provider when configured, or MergeWorks AI otherwise, for complex debt terms, customer concentration, and margins.'}
                             </p>
                             {draft && draft.missingRequiredFields.length > 0 ? (
                                 <p className="mt-1 text-[10px] font-medium text-amber-700 dark:text-amber-300">
@@ -587,10 +609,10 @@ export default function QuestionnaireQuickImport({ disabled = false, openRequest
                                     disabled={disabled || isAiReading}
                                     onClick={() => void requestAiDraft('text')}
                                     className="h-8 gap-1.5 text-xs font-semibold cursor-pointer"
-                                    title="Uses OpenAI 5.6 Terra to read your text, extract complex financial metrics, calculate confidence scores, and flag red-flag warnings."
+                                    title="Uses your active custom AI provider when configured, or the managed MergeWorks Terra/Sol route otherwise, to extract complex financial metrics and warnings."
                                 >
                                     {isAiReading ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5 text-amber-500" />}
-                                    {aiDraft ? 'Re-extract with AI' : 'Extract with AI (OpenAI 5.6 Terra)'}
+                                    {aiDraft ? 'Re-extract with AI' : 'Extract with AI'}
                                 </Button>
                             ) : null}
                             <Button
