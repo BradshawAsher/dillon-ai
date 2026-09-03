@@ -240,8 +240,12 @@ function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealMo
     parts.push(`\n## Persona & Guidance:
 - You are Dillon, an institutional M&A due diligence advisor and IT/Platform Specialist for MergeWorks.
 - Dual Capabilities:
-  1. M&A Diligence: Forensic QoE, EBITDA adjustments, debt service & DSCR covenants, customer concentration, red flags, and 3-agent IC debate simulations (Bull vs. Bear vs. Arbiter).
+  1. M&A Diligence: Forensic QoE, EBITDA adjustments, debt service & DSCR covenants, customer concentration, red flags, and interactive analysis modes.
   2. Platform & IT Specialist: Navigating all 21 workspace tabs, guiding project intake & batch uploads, explaining OCR & synthesis pipelines, keyboard shortcuts, and BYOK AI models.
+- Interactive Analysis Modes (suggest these when the user hints at wanting to practice negotiation, debate a deal, or stress-test their thesis):
+  1. ⚔️ IC Debate Mode: 3-agent Investment Committee simulation (Bull 🐂 vs Bear 🐻 vs Arbiter ⚖️) using the active deal's real data. User toggles via the ⚔️ header button or by saying "run a debate."
+  2. 🎭 Shadow CFO Sparring Mode: AI role-plays as the seller's CFO defending the asking price, then breaks character with tactical coaching. User toggles via the 🎭 header button or by saying "spar with me" or "shadow CFO."
+  Both modes have full access to the deal's financial data, synthesis, and flags. They are mutually exclusive.
 - Speak in clear, direct, plain English without confusing buzzwords or AI fluff (ideal for Baby Boomers, Gen X searchers, and PE operators).
 - When recommending platform features or navigation, ALWAYS format clickable buttons like [Label](#project-intake), [Label](tab:tabName#anchorId), or [Label](tab:tabName).
 
@@ -454,19 +458,48 @@ export function detectSparringIntent(input: string): boolean {
     return sparringKeywords.some((kw) => lower.includes(kw))
 }
 
-function buildShadowCfoSparringResponse(_question: string, _context: string): string {
-    return `### 🎭 Shadow CFO Response
+function buildShadowCfoSparringResponse(details: {
+    synthesis?: ProjectSynthesisItem
+    model: DealModel
+    projectName: string
+}): string {
+    const { synthesis, model, projectName } = details
+    const facts = parseDocumentedFacts(model.documentedFactsJson)
+    const companyName = synthesis?.companyName || projectName || 'Target Company'
+    const askingPrice = model.askingPrice ? formatMoney(model.askingPrice) : null
+    const ebitda = typeof facts.ebitda_sde?.value === 'number' ? formatMoney(facts.ebitda_sde.value) : (model.ebitda ? formatMoney(model.ebitda) : null)
+    const revenue = typeof facts.revenue?.value === 'number' ? formatMoney(facts.revenue.value) : (model.revenue ? formatMoney(model.revenue) : null)
+    const greenFlags = synthesis?.greenFlags ?? []
+    const negotiationLevers = synthesis?.negotiationLevers ?? []
 
-> Look — I've reviewed the numbers, and frankly, your proposed haircuts don't hold up. The EBITDA adjustments we've presented are standard owner-operator normalizations that any QoE firm would validate. You're cherry-picking line items to manufacture a discount.
+    const priceArg = askingPrice ? `The asking price of **${askingPrice}** reflects` : 'The asking price reflects'
+    const ebitdaArg = ebitda ? `Our normalized EBITDA of **${ebitda}** is backed by` : 'Our EBITDA is backed by'
+    const revenueArg = revenue ? `with **${revenue}** in top-line revenue` : 'with consistent top-line revenue'
+
+    const strengths = greenFlags.slice(0, 2)
+    const strengthLine = strengths.length > 0
+        ? strengths.map(s => `> - ${s}`).join('\n')
+        : '> - Stable recurring revenue base with low customer concentration'
+
+    const leverWarning = negotiationLevers.length > 0
+        ? `**Watch out for**: The buyer will likely target *"${negotiationLevers[0]}"* — prepare your rebuttal on this specific lever.`
+        : `**Watch out for**: The buyer will target your add-backs and working capital peg — prepare empirical rebuttals.`
+
+    return `### 🎭 Shadow CFO & Broker Response — ${companyName}
+
+> Let me be direct — your proposed haircuts are aggressive and, frankly, not supported by the data. ${ebitdaArg} standard owner-operator normalizations that any reputable QoE firm would validate. You're cherry-picking line items to manufacture a discount.
 >
-> The asking price reflects three consecutive years of revenue growth, a diversified customer base, and gross margins well above industry medians. If you want to talk about "risk," let's talk about the risk of losing this deal to a more decisive buyer.
+> ${priceArg} three years of demonstrated performance ${revenueArg}, a defensible customer base, and margins above industry medians. Our key strengths speak for themselves:
+${strengthLine}
+>
+> If you want to talk about "risk," let's talk about the risk of losing this deal to a more decisive buyer who recognizes the value here.
 
 ---
 
 #### 🎯 Tactical Coach Assessment
-- **Argument Strength**: Moderate — your initial position needs more empirical backing
-- **Missing Leverage**: Reference the specific red-flag dollar amounts from the [Valuation Bridge](tab:negotiation#negotiation-valuation-bridge) to make deductions defensible
-- **Recommended Counter-Move**: Lead with the EBITDA disallowance multiple haircut (Section 2.3) — it's the single highest-impact lever
+- **Argument Strength**: Moderate — your initial position needs more empirical backing from the diligence findings
+- **${leverWarning}**
+- **Recommended Counter-Move**: Lead with the EBITDA disallowance multiple haircut (Section 2.3 of the APA) — it's the single highest-impact lever. Use the [Valuation Bridge](tab:negotiation#negotiation-valuation-bridge) to make deductions defensible with dollar amounts.
 
 👉 [Open Valuation Bridge](tab:negotiation#negotiation-valuation-bridge) · [Negotiation Levers](tab:negotiation)
 
@@ -808,7 +841,7 @@ Our deal pod engineering team has received your report. If you'd like to include
     if (isSparringMode || detectSparringIntent(question)) {
         return {
             matched: true,
-            content: buildShadowCfoSparringResponse(question, buildContext(synthesis, model, projectName, documents, allSyntheses)),
+            content: buildShadowCfoSparringResponse(details),
         }
     }
 
@@ -906,7 +939,8 @@ I am your institutional co-pilot for acquisition diligence, automated actions, a
    - **QoE & Add-Back Audit**: Scrutinize seller add-backs, EBITDA normalization, and owner compensation with [Add-Back Banking Rules](tab:diligence#add-back-quality-card).
    - **Debt & DSCR Covenants**: Calculate SBA 7(a) loan debt service, fixed-charge coverage ratios, and equity requirements with [Debt Sensitivity](tab:structure#structure-dscr).
    - **Customer Cohort Churn**: Inspect triangular logo retention vs NRR with [Cohort Retention Engine](tab:diligence#cohort-retention-card).
-   - **Multi-Agent IC Debate**: Run an interactive Investment Committee simulation with **Bull Agent 🐂**, **Bear Agent 🐻**, and **Arbiter ⚖️**.
+   - **Multi-Agent IC Debate**: Run an interactive Investment Committee simulation with **Bull Agent 🐂**, **Bear Agent 🐻**, and **Arbiter ⚖️**. Toggle with the ⚔️ button in the header.
+   - **Shadow CFO Sparring Mode**: Practice negotiation by sparring with an AI role-playing as the seller's CFO and lead M&A broker. They'll defend the asking price and push back on your proposed haircuts — then break character with tactical coaching. Toggle with the 🎭 button in the header.
 
 2. **⚡ Autonomous Actions & 1-Click Operations:**
    - **Live Excel Export**: I can generate and trigger download of the live 4-tab model: [📥 Export Live Excel Model](action:export_excel).
@@ -920,7 +954,55 @@ I am your institutional co-pilot for acquisition diligence, automated actions, a
 - *"Export the Excel model"* → Generates & downloads live 4-tab workbook.
 - *"Rollback to stable version"* → Opens version switcher modal.
 - *"Take me to the working capital peg"* → Navigates & scrolls to NWC calculator.
-- *"Run Bull vs Bear debate"* → 3-agent IC deliberation.`,
+- *"Run Bull vs Bear debate"* → 3-agent IC deliberation.
+- *"Spar with me"* or *"Shadow CFO"* → Seller's CFO role-play for negotiation practice.
+- *"What modes are available?"* → Lists all interactive analysis modes.`,
+        }
+    }
+
+    // 0.09 Interactive Modes Explainer
+    if (
+        q.includes('what modes') ||
+        q.includes('available modes') ||
+        q.includes('list modes') ||
+        q.includes('what is debate mode') ||
+        q.includes('what is sparring mode') ||
+        q.includes('explain debate') ||
+        q.includes('explain sparring') ||
+        q.includes('how does debate work') ||
+        q.includes('how does sparring work') ||
+        q.includes('tell me about debate') ||
+        q.includes('tell me about sparring') ||
+        q.includes('shadow cfo mode')
+    ) {
+        return {
+            matched: true,
+            content: `### 🎮 Interactive Analysis Modes
+
+Dillon AI has two special interactive modes you can toggle from the chat header. Both modes use your **real deal data** (EBITDA, flags, synthesis, documents) — they're not generic simulations.
+
+---
+
+#### ⚔️ Multi-Agent IC Debate Mode
+Simulates an Investment Committee deliberation with three agents arguing over your active deal:
+- **🐂 Bull Agent** — makes the case for acquisition, highlights strengths and upside
+- **🐻 Bear Agent** — flags risks, challenges add-backs, stress-tests assumptions
+- **⚖️ Arbiter** — synthesizes both sides into a weighted Buy/Pass verdict with confidence %
+
+**How to activate**: Click the ⚔️ button in the chat header, or say *"run a debate"*.
+
+---
+
+#### 🎭 Shadow CFO Sparring Mode
+Role-plays as the **seller's CFO and lead M&A broker** defending the asking price. They'll push back hard on your proposed haircuts, add-back disallowances, and escrow demands — then break character with a tactical coaching assessment.
+
+Great for: practicing negotiation arguments before a real call, stress-testing your counter-offer logic, and identifying weak points in your position.
+
+**How to activate**: Click the 🎭 button in the chat header, or say *"spar with me"* or *"shadow CFO"*.
+
+---
+
+💡 Both modes are mutually exclusive — activating one turns off the other. Toggle off to return to normal chat.`,
         }
     }
 
@@ -4520,7 +4602,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                 title="Click and drag anywhere to move window"
             >
                 {/* Left: Sidebar Toggle + New Chat + Bot Identity */}
-                <div className="flex items-center gap-1 min-w-0 shrink-0">
+                <div className="flex items-center gap-1 min-w-0">
                     <button
                         type="button"
                         onClick={() => setIsHistorySidebarOpen(prev => !prev)}
