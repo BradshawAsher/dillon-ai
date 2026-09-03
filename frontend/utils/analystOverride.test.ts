@@ -13,6 +13,10 @@ import {
 import type { DealModel } from '../hooks/backend/diligence'
 import type { SubmissionHistoryItem } from './submissionHistory'
 
+vi.mock('../services/slackAlertService', () => ({
+    sendIssueReportSlackAlert: vi.fn().mockResolvedValue(undefined),
+}))
+
 describe('Analyst Override Full Lifecycle & Model Hydration', () => {
     const mockStorage: Record<string, string> = {}
 
