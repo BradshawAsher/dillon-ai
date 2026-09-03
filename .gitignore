@@ -32,3 +32,6 @@ playwright-report/
 test-results/
 .playwright-mcp/
 scripts/.tmp-bundle.mjs
+FUTURE_WORK.md
+docs/FUTURE_WORK.md
+*FUTURE_WORK*.md
