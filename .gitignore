@@ -31,3 +31,4 @@ SUPADEMO_RECORDING_PLAN.md
 playwright-report/
 test-results/
 .playwright-mcp/
+scripts/.tmp-bundle.mjs

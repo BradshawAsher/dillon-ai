@@ -1,0 +1,88 @@
+name: Scheduled Stress & Concurrency Benchmark
+
+on:
+  # Automated daily run at 03:00 UTC (8:00 PM PT)
+  schedule:
+    - cron: '0 3 * * *'
+
+  # Manual on-demand trigger with customizable parameters
+  workflow_dispatch:
+    inputs:
+      concurrency:
+        description: 'Concurrency Pool Size'
+        required: false
+        default: '5'
+        type: choice
+        options:
+          - '2'
+          - '5'
+          - '10'
+          - '20'
+      count:
+        description: 'Number of Requests per Subsystem'
+        required: false
+        default: '25'
+        type: choice
+        options:
+          - '10'
+          - '25'
+          - '50'
+          - '100'
+
+permissions:
+  contents: read
+
+jobs:
+  run-stress-benchmark:
+    name: Concurrency & Storage Stress Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install frontend dependencies
+        run: npm ci --prefix frontend
+
+      - name: Execute 3-Layer Stress Test Suite
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          STORAGE_CDN_URL: ${{ secrets.STORAGE_CDN_URL || 'https://dillon-ai-worker.bradshin231.workers.dev' }}
+          R2_PUBLIC_URL: ${{ secrets.R2_PUBLIC_URL || 'https://pub-3b04d9f4c75546caae7c86bd7b6847de.r2.dev' }}
+        run: |
+          CONCURRENCY="${{ github.event.inputs.concurrency || '5' }}"
+          COUNT="${{ github.event.inputs.count || '25' }}"
+          echo "Running stress benchmark with Concurrency=$CONCURRENCY, Count=$COUNT..."
+          node scripts/fast-run.js scripts/stress-test-all.ts --concurrency "$CONCURRENCY" --count "$COUNT"
+
+      - name: Publish Stress Report to GitHub Actions Summary
+        if: always()
+        run: |
+          if [ -f test_sets/stress_reports/latest_stress_report.md ]; then
+            cat test_sets/stress_reports/latest_stress_report.md >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ⚠️ Stress report file not generated" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload Stress Report Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stress-concurrency-report
+          path: test_sets/stress_reports/latest_stress_report.md
+          if-no-files-found: ignore
+          retention-days: 30

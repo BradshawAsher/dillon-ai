@@ -3,14 +3,21 @@
   "type": "module",
   "scripts": {
     "eval": "node scripts/fast-run.js scripts/run-evals.ts",
-    "eval:failures": "node scripts/fast-run.js scripts/failure-report.ts"
+    "eval:failures": "node scripts/fast-run.js scripts/failure-report.ts",
+    "stress:api": "node scripts/fast-run.js scripts/stress-test-api.ts",
+    "stress:storage": "node scripts/fast-run.js scripts/stress-test-storage-db.ts",
+    "stress:pipeline": "node scripts/fast-run.js scripts/stress-test-pipeline.ts",
+    "stress:all": "node scripts/fast-run.js scripts/stress-test-all.ts",
+    "stress:breakpoint": "node scripts/fast-run.js scripts/find-breaking-point.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.111.0"
   },
   "devDependencies": {
     "@types/node": "^26.4.1",
+    "autocannon": "^8.0.0",
     "esbuild": "^0.25.0",
+    "p-limit": "^7.3.2",
     "typescript": "^5.9.3"
   }
 }
