@@ -1,5 +1,6 @@
 import React from 'react'
 import SectionHeader from '../SectionHeader'
+import NegotiationValuationBridgeCard from '../NegotiationValuationBridgeCard'
 import SellerQuestionsCard from '../SellerQuestionsCard'
 import ManagementQuestionTracker from '../ManagementQuestionTracker'
 import NegotiationPlaybook from '../NegotiationPlaybook'
@@ -34,6 +35,13 @@ export function NegotiationWorkspaceView({
                     step={1}
                     title="Negotiation playbook"
                     description="Seller questions, management follow-up, leverage, timing, and request-list workflow in one place."
+                />
+            </div>
+            <div id="negotiation-valuation-bridge" className="scroll-mt-6">
+                <NegotiationValuationBridgeCard
+                    model={hydratedDealModel}
+                    synthesis={activeProjectSynthesis}
+                    projectName={dealName || suggestedProjectName}
                 />
             </div>
             <div id="negotiation-seller" className="scroll-mt-6">

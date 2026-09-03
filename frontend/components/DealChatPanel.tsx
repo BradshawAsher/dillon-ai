@@ -444,6 +444,35 @@ export function detectDebateIntent(query: string): boolean {
     )
 }
 
+export function detectSparringIntent(input: string): boolean {
+    const lower = input.toLowerCase()
+    const sparringKeywords = [
+        'spar', 'shadow cfo', 'defend the price', 'seller pushback',
+        'practice negotiat', 'role play', 'roleplay', 'broker pushback',
+        'seller perspective', 'play devil', 'counter argument', 'push back on',
+    ]
+    return sparringKeywords.some((kw) => lower.includes(kw))
+}
+
+function buildShadowCfoSparringResponse(_question: string, _context: string): string {
+    return `### 🎭 Shadow CFO Response
+
+> Look — I've reviewed the numbers, and frankly, your proposed haircuts don't hold up. The EBITDA adjustments we've presented are standard owner-operator normalizations that any QoE firm would validate. You're cherry-picking line items to manufacture a discount.
+>
+> The asking price reflects three consecutive years of revenue growth, a diversified customer base, and gross margins well above industry medians. If you want to talk about "risk," let's talk about the risk of losing this deal to a more decisive buyer.
+
+---
+
+#### 🎯 Tactical Coach Assessment
+- **Argument Strength**: Moderate — your initial position needs more empirical backing
+- **Missing Leverage**: Reference the specific red-flag dollar amounts from the [Valuation Bridge](tab:negotiation#negotiation-valuation-bridge) to make deductions defensible
+- **Recommended Counter-Move**: Lead with the EBITDA disallowance multiple haircut (Section 2.3) — it's the single highest-impact lever
+
+👉 [Open Valuation Bridge](tab:negotiation#negotiation-valuation-bridge) · [Negotiation Levers](tab:negotiation)
+
+*Sparring mode active — I'm role-playing as the seller's CFO. Push back harder with specific data points!*`
+}
+
 export function buildMultiAgentDebateResponse(details: {
     synthesis?: ProjectSynthesisItem
     model: DealModel
@@ -729,7 +758,8 @@ function getLocalResponse(
         documents?: SubmissionHistoryItem[]
         allSyntheses?: ProjectSynthesisItem[]
     },
-    isDebateMode?: boolean
+    isDebateMode?: boolean,
+    isSparringMode?: boolean
 ): LocalResponse {
     const q = question.toLowerCase().trim()
     const { synthesis, model, projectName, documents, allSyntheses } = details
@@ -771,6 +801,14 @@ Our deal pod engineering team has received your report. If you'd like to include
         return {
             matched: true,
             content: buildMultiAgentDebateResponse(details, question),
+        }
+    }
+
+    // 0.055 Shadow CFO Sparring Mode
+    if (isSparringMode || detectSparringIntent(question)) {
+        return {
+            matched: true,
+            content: buildShadowCfoSparringResponse(question, buildContext(synthesis, model, projectName, documents, allSyntheses)),
         }
     }
 
@@ -2892,7 +2930,8 @@ export async function callDirectUserLlm(
     recentMessages: Message[] = [],
     toolContext?: ClientSideToolContext,
     isDebateModeActive = false,
-    callbacks?: StreamCallbacks
+    callbacks?: StreamCallbacks,
+    isSparringModeActive = false
 ): Promise<{ text: string; provider: string; reasoning?: string } | null> {
     const debateInstruction = isDebateModeActive ? `
 CRITICAL MULTI-AGENT IC DEBATE COUNCIL PROTOCOL:
@@ -2919,10 +2958,16 @@ Format your output with clean Markdown headings:
 - **Mandatory Closing Conditions**: [Escrow & True-up terms]
 ` : ''
 
+    const sparringInstruction = isSparringModeActive ? `
+
+SHADOW CFO SPARRING MODE ACTIVE: You are role-playing as the Seller's CFO and Lead M&A Broker. Push back HARD on the buyer's proposed haircuts using the deal data. After 2-4 paragraphs in character, break with "---" and provide a Tactical Coach Assessment rating argument strength (Weak/Moderate/Strong/Compelling), identifying missing leverage from the Valuation Bridge, and suggesting counter-moves with APA clause refs.` : ''
+
+    const modeInstruction = debateInstruction || sparringInstruction
+
     const systemPrompt = `You are MergeWorks AI, an expert M&A due diligence advisor and IT/Platform Specialist for the MergeWorks platform.
 You have access to live financial tools (calculate_deal_financials, smb_valuation_benchmarks, query_deal_data) and memory of the active conversation.
 You can calculate DSCR, SDE bridges, loan amortizations, and analyze deal metrics with institutional rigor.
-You can also answer user questions about getting started, navigating the 21 workspace tabs, uploading deal documents, and troubleshooting.${debateInstruction}
+You can also answer user questions about getting started, navigating the 21 workspace tabs, uploading deal documents, and troubleshooting.${modeInstruction}
 
 --- CURRENT DEAL CONTEXT & PLATFORM GUIDE ---
 ${context}
@@ -3258,6 +3303,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
     const [ratings, setRatings] = useState<Record<string, 'up' | 'down'>>({})
     const [suggestedProject, setSuggestedProject] = useState<ProjectSynthesisItem | null>(null)
     const [isDebateModeActive, setIsDebateModeActive] = useState(false)
+    const [isSparringModeActive, setIsSparringModeActive] = useState(false)
     const [expandedThoughts, setExpandedThoughts] = useState<Record<string, boolean>>({})
     const [expandedTools, setExpandedTools] = useState<Record<string, boolean>>({})
     const [isProcessingAttachment, setIsProcessingAttachment] = useState(false)
@@ -4000,7 +4046,8 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                     messages,
                     toolCtx,
                     isDebateModeActive,
-                    streamCallbacks
+                    streamCallbacks,
+                    isSparringModeActive
                 )
                 if (directRes) {
                     answer = directRes.text
@@ -4036,6 +4083,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                             context,
                             sessionId,
                             isDebateMode: isDebateModeActive || detectDebateIntent(trimmed),
+                            isSparringMode: isSparringModeActive || detectSparringIntent(trimmed),
                             userAnthropicApiKey,
                             userOpenAiApiKey,
                             userGeminiApiKey,
@@ -4092,7 +4140,8 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                     documents,
                     allSyntheses,
                 },
-                isDebateModeActive
+                isDebateModeActive,
+                isSparringModeActive
             )
             await streamTypewriterText(fallback.content, chunk => streamCallbacks.onTextDelta?.(chunk))
             const inTok = Math.round((context.length + trimmed.length) / 3.8)
@@ -4140,7 +4189,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                 }
             }
         }
-    }, [allSyntheses, documents, isDebateModeActive, isOpen, messages, model, onNavigateTab, onOpenProjectsPanel, onOpenVersionSwitcher, projectName, sessionId, synthesis])
+    }, [allSyntheses, documents, isDebateModeActive, isSparringModeActive, isOpen, messages, model, onNavigateTab, onOpenProjectsPanel, onOpenVersionSwitcher, projectName, sessionId, synthesis])
 
     const handleRerunWithLiveLlm = useCallback(async (messageId: string, promptOverride?: string) => {
         const targetMsg = messages.find(m => m.id === messageId)
@@ -4237,7 +4286,8 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                     messages.filter(m => m.id !== messageId),
                     { synthesis, model, projectName, documents, allSyntheses, onNavigateTab, onOpenProjectsPanel, onOpenVersionSwitcher },
                     isDebateModeActive,
-                    rerunCallbacks
+                    rerunCallbacks,
+                    isSparringModeActive
                 )
                 if (directRes) {
                     answer = directRes.text
@@ -4272,6 +4322,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                             context,
                             sessionId,
                             isDebateMode: isDebateModeActive || detectDebateIntent(prompt),
+                            isSparringMode: isSparringModeActive || detectSparringIntent(prompt),
                             userAnthropicApiKey,
                             userOpenAiApiKey,
                             userGeminiApiKey,
@@ -4517,7 +4568,10 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                         ) : null}
                         <button
                             type="button"
-                            onClick={() => setIsDebateModeActive(prev => !prev)}
+                            onClick={() => {
+                                setIsDebateModeActive(prev => !prev)
+                                if (isSparringModeActive) setIsSparringModeActive(false)
+                            }}
                             className={`flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold transition-all cursor-pointer ${
                                 isDebateModeActive
                                     ? 'bg-purple-600 text-white shadow-xs font-bold'
@@ -4527,6 +4581,22 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                         >
                             <span>⚔️</span>
                             <span>{panelSize.width < 480 ? (isDebateModeActive ? 'Debate' : 'Debate') : `Debate ${isDebateModeActive ? 'ON' : 'Mode'}`}</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setIsSparringModeActive(prev => !prev)
+                                if (isDebateModeActive) setIsDebateModeActive(false)
+                            }}
+                            className={`flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold transition-all cursor-pointer ${
+                                isSparringModeActive
+                                    ? 'bg-amber-600 text-white shadow-xs font-bold'
+                                    : 'border border-amber-500/40 text-amber-700 dark:text-amber-300 hover:bg-amber-500/10'
+                            }`}
+                            title={isSparringModeActive ? 'Shadow CFO Sparring Mode is ACTIVE' : 'Enable Shadow CFO Sparring Mode'}
+                        >
+                            <span>🎭</span>
+                            <span>{panelSize.width < 480 ? 'Spar' : `Spar ${isSparringModeActive ? 'ON' : 'Mode'}`}</span>
                         </button>
                     </div>
 
@@ -5138,6 +5208,21 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                                 </button>
                             </div>
                         )}
+                        {isSparringModeActive && (
+                            <div className="mb-2 flex items-center justify-between rounded-md bg-amber-500/15 px-2.5 py-1 text-[11px] font-medium text-amber-900 dark:text-amber-200 border border-amber-500/30 shadow-2xs">
+                                <span className="flex items-center gap-1.5">
+                                    <span>🎭</span>
+                                    <span><strong>Shadow CFO Sparring Mode</strong> — I'll push back as the seller's CFO</span>
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsSparringModeActive(false)}
+                                    className="text-[10px] font-bold text-amber-700 dark:text-amber-300 hover:underline cursor-pointer"
+                                >
+                                    Turn Off
+                                </button>
+                            </div>
+                        )}
                         <div className="flex items-end gap-1.5">
                             <input
                                 ref={fileInputRef}
@@ -5171,7 +5256,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                                 value={input}
                                 onChange={e => setInput(e.target.value)}
                                 onKeyDown={handleKeyDown}
-                                placeholder={isDebateModeActive ? "Prompt the IC Council (e.g. 'Should we acquire this business at asking price?')..." : "Ask about this deal, M&A terms, or drop a teaser file..."}
+                                placeholder={isDebateModeActive ? "Prompt the IC Council (e.g. 'Should we acquire this business at asking price?')..." : isSparringModeActive ? "Challenge the seller's CFO on specific deal points..." : "Ask about this deal, M&A terms, or drop a teaser file..."}
                                 aria-label="Ask about this deal"
                                 className="min-h-[38px] max-h-[100px] resize-none text-xs flex-1"
                                 rows={1}

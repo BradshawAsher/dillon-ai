@@ -326,6 +326,15 @@ export default function CommandPalette({
 
         // --- Deep-Link Deal Strategy & Execution Cards ---
         {
+            id: 'card-valuation-bridge',
+            label: 'Purchase Price Valuation Bridge & APA Clause Drafter',
+            icon: <Scale className="h-4 w-4 text-emerald-500" />,
+            action: () => onSelectTab('negotiation', 'negotiation-valuation-bridge'),
+            group: 'Deal Strategy & Negotiation',
+            keywords: ['valuation bridge', 'purchase price', 'apa', 'clause', 'escrow', 'earnout', 'deduction', 'haircut', 'counter offer', 'ev reduction'],
+            badge: 'Negotiation'
+        },
+        {
             id: 'card-negotiation-levers',
             label: 'Negotiation Levers & Value Repricing Gap',
             icon: <Handshake className="h-4 w-4 text-amber-500" />,

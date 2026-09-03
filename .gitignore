@@ -14,10 +14,8 @@ settings-bedrock.json
 settings-vertex.json
 GEMINI.md
 /Pod 1 - Financial Due diligence Agent Sample Deals
-.ai
-.ai/mcp/mcp.json
-.kiro
-.kiro/settings/mcp.json
+.ai/
+.kiro/
 /NEW mml-manda-dd-benchmark (2)
 /NEWEST mml-manda-dd-benchmark (3)
 .env*
@@ -25,6 +23,7 @@ scratch/
 CLAUDE.md
 SUPADEMO_RECORDING_PLAN.md
 .cursor/
+.freebuf/
 .freebuff/
 .vscode/
 /Fictional entity fix + media source (packets 2 4 5)/

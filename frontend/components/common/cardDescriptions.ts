@@ -435,6 +435,14 @@ export const CARD_DESCRIPTIONS: Record<string, CardDescription> = {
     },
 
     // === NEGOTIATION & PLAYBOOK CARDS ===
+    'valuation-bridge': {
+        title: 'Purchase Price Valuation Bridge & APA Clause Drafter',
+        category: 'Negotiation & Valuation',
+        whatItIs: 'Deterministic client-side valuation bridge computing defensible counter-offer price from EBITDA disallowances, red-flag liabilities, and deferred capex with interactive 3-way deduction handling (EV Cut / Special Escrow / Earnout) and auto-generated APA clause language.',
+        calculation: 'Entry Multiple = Purchase Price / Normalized EBITDA. Disallowed Add-Back Haircut = (Original AI EBITDA - Analyst Override EBITDA) × Entry Multiple. Red-flag dollar amounts extracted via regex and multiplied by handling-specific coefficients.',
+        diligenceImpact: 'Translates every disallowed add-back and quantified red flag into exact dollar deductions with legally-formatted APA clauses (Section 2.3 Valuation Bridge, Section 8.2(c) Special Escrow, Section 3.14 Specific Reps) ready for counsel review.',
+        benchmarkOrTarget: 'Every EV deduction backed by verified document evidence; zero token cost (100% deterministic math)',
+    },
     'negotiation-levers': {
         title: 'Strategic Negotiation Levers',
         category: 'Negotiation',
