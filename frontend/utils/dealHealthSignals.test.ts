@@ -42,4 +42,9 @@ describe('entryMultipleVariant', () => {
         expect(entryMultipleVariant(7)).toBe('success')
         expect(entryMultipleVariant(4.5)).toBe('success')
     })
+
+    it('shows a neutral variant for a non-finite multiple rather than green', () => {
+        expect(entryMultipleVariant(NaN)).toBe('default')
+        expect(entryMultipleVariant(Infinity)).toBe('default')
+    })
 })
