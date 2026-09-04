@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { generateLoiMarkdown, type LoiParams } from './loiGenerator'
+import { deriveLoiTerms, generateLoiHtml, generateLoiMarkdown, type LoiParams } from './loiGenerator'
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
 
 describe('LOI Generator (generateLoiMarkdown)', () => {
@@ -115,7 +115,7 @@ describe('LOI Generator (generateLoiMarkdown)', () => {
 
         expect(markdown).toContain('AMENDED & RESTATED NON-BINDING LETTER OF INTENT (REVISED COUNTER-OFFER)')
         expect(markdown).toContain('amends, restates, and supersedes in its entirety')
-        expect(markdown).toContain('Preliminary agreed LOI purchase price was $6,800,000')
+        expect(markdown).toContain('Preliminary agreed LOI purchase price was $6,000,000')
         expect(markdown).toContain('Preliminary LOI vs. Revised Counter-Offer Reconciliation')
     })
 
@@ -135,5 +135,36 @@ describe('LOI Generator (generateLoiMarkdown)', () => {
         expect(markdown).not.toContain('AMENDED & RESTATED')
         expect(markdown).toContain('pleased to submit this Letter of Intent')
         expect(markdown).toContain('Asking Price Reconciliation')
+    })
+
+    it('uses the asking price when a zero purchase price represents an unset value', () => {
+        const model = {
+            ...mockModel,
+            askingPrice: 6_800_000,
+            purchasePrice: 0,
+            sellerNoteAmount: 0,
+        } as unknown as DealModel
+        const terms = deriveLoiTerms({ model, projectName: 'Fallback Price Deal' })
+        const markdown = generateLoiMarkdown({ model, projectName: 'Fallback Price Deal' })
+
+        expect(terms.offerPrice).toBeGreaterThan(0)
+        expect(terms.sellerNote).toBe(0)
+        expect(markdown).toContain('Enterprise Value / Purchase Price**: **$6,800,000**')
+    })
+
+    it('generates safe printable LOI HTML instead of an IC memo document', () => {
+        const html = generateLoiHtml({
+            model: mockModel,
+            projectName: '<script>window.opener.stolen=true</script>',
+        })
+
+        expect(html).toContain('<title>Letter of Intent - ')
+        expect(html).toContain('NON-BINDING LETTER OF INTENT')
+        expect(html).toContain('<table>')
+        expect(html).toContain('<strong>STRICTLY CONFIDENTIAL</strong>')
+        expect(html).not.toContain('# NON-BINDING')
+        expect(html).not.toContain('Investment Committee Memo')
+        expect(html).not.toContain('<script>window.opener.stolen=true</script>')
+        expect(html).toContain('&lt;script&gt;window.opener.stolen=true&lt;/script&gt;')
     })
 })

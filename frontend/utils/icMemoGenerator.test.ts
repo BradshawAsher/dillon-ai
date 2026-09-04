@@ -211,4 +211,38 @@ describe('icMemoGenerator Utility', () => {
         expect(html).not.toContain('NaN')
         expect(html).toContain('Investment Committee Memo')
     })
+
+    it('handles qualitative confidence and zero-valued unset purchase prices', () => {
+        const md = generateIcMemoMarkdown({
+            model: { ...mockModel, purchasePrice: 0, askingPrice: 6_500_000 } as DealModel,
+            synthesis: { ...mockSynthesis, valuationConfidence: 'HIGH' } as ProjectSynthesisItem,
+            projectName: 'Confidence Test',
+        })
+
+        expect(md).toContain('Confidence Level**: HIGH')
+        expect(md).toContain('Enterprise Value (Target)** | $6,500,000')
+        expect(md).not.toContain('NaN')
+    })
+
+    it('escapes document-derived HTML and preserves the real source-document status', () => {
+        const html = generateIcMemoHtml({
+            model: mockModel,
+            synthesis: {
+                ...mockSynthesis,
+                finalTrafficLight: 'red',
+                finalJudgmentSummary: '<img src=x onerror="window.opener.stolen=true">',
+                redFlags: ['<script>window.opener.stolen=true</script>'],
+            } as ProjectSynthesisItem,
+            projectName: '<script>malicious target</script>',
+            documents: [{ fileName: '<img src=x onerror=alert(1)>', documentType: 'Tax Return', status: 'failed' }],
+        })
+
+        expect(html).not.toContain('<script>malicious target</script>')
+        expect(html).not.toContain('<script>window.opener.stolen=true</script>')
+        expect(html).not.toContain('<img src=x onerror=')
+        expect(html).toContain('&lt;script&gt;malicious target&lt;/script&gt;')
+        expect(html).toContain('&lt;img src=x onerror=')
+        expect(html).toContain('>failed</td>')
+        expect(html).toContain('class="badge badge-red">RED SIGNAL')
+    })
 })

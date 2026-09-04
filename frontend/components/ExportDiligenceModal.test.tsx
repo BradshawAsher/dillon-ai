@@ -73,7 +73,7 @@ describe('ExportDiligenceModal', () => {
         expect(html).toContain('Download Markdown')
         expect(html).toContain('Copy Markdown')
         expect(html).toContain('Executive IC Preview')
-        expect(html).toContain('Raw Markdown Dossier')
+        expect(html).toContain('Exact IC Memo Markdown')
     })
 
     it('renders Non-Binding Letter of Intent (LOI) when initialDocumentType is loi', () => {
@@ -97,5 +97,6 @@ describe('ExportDiligenceModal', () => {
         expect(html).toContain('Working Capital Target (NWC Peg)')
         expect(html).toContain('Indemnity Escrows &amp; Holdbacks')
         expect(html).toContain('Legally Binding Exclusivity (&quot;No-Shop&quot;) &amp; Confidentiality')
+        expect(html).toContain('Exact LOI Markdown')
     })
 })

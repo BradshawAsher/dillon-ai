@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { Suspense, lazy, useState } from 'react'
 import {
     Printer,
     Scale,
@@ -14,7 +14,8 @@ import {
     ArrowUpRight,
     CheckCircle2,
     Clock,
-    Briefcase
+    Briefcase,
+    Eye
 } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../../lib/shadcn/card'
 import { Button } from '../../lib/shadcn/button'
@@ -22,6 +23,12 @@ import { Badge } from '../../lib/shadcn/badge'
 import type { DealModel, ProjectSynthesisItem } from '../../hooks/backend/diligence'
 import type { SubmissionHistoryItem } from '../../utils/submissionHistory'
 import type { WorkspaceTab } from '../DealWorkspaceNav'
+import { DossierPreviewModal } from './DossierPreviewModal'
+import { JsonAuditPreviewModal } from './JsonAuditPreviewModal'
+
+const ExcelModelPreviewModal = lazy(() =>
+    import('./ExcelModelPreviewModal').then((module) => ({ default: module.ExcelModelPreviewModal }))
+)
 
 export interface ExportsWorkspaceViewProps {
     dealModel: DealModel
@@ -59,6 +66,7 @@ export function ExportsWorkspaceView({
 }: ExportsWorkspaceViewProps) {
     const [copiedSummary, setCopiedSummary] = useState(false)
     const [isDownloadingExcel, setIsDownloadingExcel] = useState(false)
+    const [previewModal, setPreviewModal] = useState<'excel' | 'dossier' | 'json' | null>(null)
 
     const askingPrice = dealModel?.askingPrice || (synthesis as any)?.financialFacts?.askingPrice
     const reportedRevenue = dealModel?.revenue || (synthesis as any)?.financialFacts?.revenue
@@ -123,6 +131,10 @@ export function ExportsWorkspaceView({
                         <Badge variant="outline" className="gap-1.5 border-primary/30 bg-primary/10 text-primary py-1 px-2.5 text-xs font-semibold">
                             <ShieldCheck className="h-3.5 w-3.5" />
                             <span>5 Active Deliverables</span>
+                        </Badge>
+                        <Badge variant="outline" className="gap-1.5 border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 py-1 px-2.5 text-xs font-semibold">
+                            <Eye className="h-3.5 w-3.5" />
+                            <span>In-App Previews Active</span>
                         </Badge>
                         <Badge
                             variant="outline"
@@ -279,7 +291,7 @@ export function ExportsWorkspaceView({
                     </CardFooter>
                 </Card>
 
-                {/* 3. Live 4-Tab Financial Model (.xlsx) */}
+                {/* 3. Live 5-Sheet Financial Model (.xlsx) */}
                 <Card id="export-excel" className="relative flex flex-col justify-between border-border/80 bg-card hover:border-emerald-500/50 transition-all duration-200 shadow-2xs hover:shadow-md">
                     <CardHeader className="pb-3">
                         <div className="flex items-start justify-between gap-2">
@@ -296,10 +308,10 @@ export function ExportsWorkspaceView({
                             </div>
                         </div>
                         <CardTitle className="mt-3 text-base font-bold text-foreground">
-                            Live 4-Tab Financial Model (.xlsx)
+                            Live 5-Sheet Financial Model (.xlsx)
                         </CardTitle>
                         <CardDescription className="text-xs text-muted-foreground leading-relaxed">
-                            Complete institutional 3-statement model generated 100% in-browser with live dynamic Excel formulas (=SUM, =IRR, =DSCR, =PPMT). Includes Executive Summary, 5-Year Forecast, LBO Debt Schedule, and Working Capital Analysis.
+                            Five-sheet underwriting workbook generated 100% in-browser with live Excel formulas. Includes deal assumptions, 5-year projections, LBO returns, documented-fact provenance, and the valuation and escrow bridge.
                         </CardDescription>
                     </CardHeader>
 
@@ -316,15 +328,24 @@ export function ExportsWorkspaceView({
                         </div>
                     </CardContent>
 
-                    <CardFooter className="pt-2">
+                    <CardFooter className="pt-2 flex flex-col sm:flex-row gap-2">
+                        <Button
+                            variant="outline"
+                            onClick={() => setPreviewModal('excel')}
+                            className="w-full sm:w-auto flex-1 gap-1.5 text-xs font-semibold border-emerald-500/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/10 cursor-pointer shadow-2xs"
+                            title="Preview all 5 worksheets and dynamic formulas in-browser"
+                        >
+                            <Eye className="h-3.5 w-3.5" />
+                            <span>Preview Model</span>
+                        </Button>
                         <Button
                             onClick={handleDownloadExcel}
                             disabled={isDownloadingExcel}
-                            className="w-full gap-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-xs disabled:opacity-50"
-                            title="Download Live 4-Tab Excel Model (.xlsx)"
+                            className="w-full sm:w-auto flex-1 gap-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-xs disabled:opacity-50"
+                            title="Download Live 5-Sheet Excel Model (.xlsx)"
                         >
                             <FileSpreadsheet className="h-3.5 w-3.5" />
-                            <span>{isDownloadingExcel ? 'Compiling Formulas...' : 'Download Live Model (.xlsx)'}</span>
+                            <span>{isDownloadingExcel ? 'Compiling...' : 'Download .xlsx'}</span>
                             <Download className="h-3 w-3 opacity-70" />
                         </Button>
                     </CardFooter>
@@ -370,12 +391,21 @@ export function ExportsWorkspaceView({
                     <CardFooter className="pt-2 flex flex-col sm:flex-row gap-2">
                         <Button
                             variant="outline"
+                            onClick={() => setPreviewModal('dossier')}
+                            className="w-full sm:w-auto flex-1 gap-1.5 text-xs font-semibold border-sky-500/30 text-sky-700 dark:text-sky-300 hover:bg-sky-500/10 cursor-pointer shadow-2xs"
+                            title="Preview formatted executive dossier in-browser"
+                        >
+                            <Eye className="h-3.5 w-3.5" />
+                            <span>Preview Dossier</span>
+                        </Button>
+                        <Button
+                            variant="outline"
                             onClick={onExportMarkdown}
-                            className="w-full flex-1 gap-1.5 text-xs font-semibold cursor-pointer shadow-2xs"
+                            className="w-full sm:w-auto gap-1 text-xs cursor-pointer"
                             title="Download Executive Dossier Markdown"
                         >
-                            <Download className="h-3.5 w-3.5" />
-                            <span>Download .md</span>
+                            <Download className="h-3 w-3" />
+                            <span>.md</span>
                         </Button>
                         <Button
                             variant="outline"
@@ -426,15 +456,24 @@ export function ExportsWorkspaceView({
                         </div>
                     </CardContent>
 
-                    <CardFooter className="pt-2">
+                    <CardFooter className="pt-2 flex flex-col sm:flex-row gap-2">
+                        <Button
+                            variant="outline"
+                            onClick={() => setPreviewModal('json')}
+                            className="w-full sm:w-auto flex-1 gap-1.5 text-xs font-semibold border-amber-500/30 text-amber-700 dark:text-amber-300 hover:bg-amber-500/10 cursor-pointer shadow-2xs"
+                            title="Inspect JSON audit tree and facts in-browser"
+                        >
+                            <Eye className="h-3.5 w-3.5" />
+                            <span>Inspect Payload</span>
+                        </Button>
                         <Button
                             variant="outline"
                             onClick={onExportJson}
-                            className="w-full gap-1.5 text-xs font-semibold cursor-pointer shadow-2xs hover:border-amber-500/50 hover:text-amber-700 dark:hover:text-amber-300"
+                            className="w-full sm:w-auto flex-1 gap-1.5 text-xs font-semibold cursor-pointer shadow-2xs hover:border-amber-500/50 hover:text-amber-700 dark:hover:text-amber-300"
                             title="Download Structured Audit JSON"
                         >
                             <Download className="h-3.5 w-3.5" />
-                            <span>Download Audit JSON (.json)</span>
+                            <span>Download .json</span>
                         </Button>
                     </CardFooter>
                 </Card>
@@ -489,6 +528,39 @@ export function ExportsWorkspaceView({
                     </CardFooter>
                 </Card>
             </div>
+
+            {/* In-App Deliverable Preview Modals */}
+            {previewModal === 'excel' ? (
+                <Suspense fallback={null}>
+                    <ExcelModelPreviewModal
+                        open
+                        onOpenChange={(open) => setPreviewModal(open ? 'excel' : null)}
+                        model={dealModel}
+                        synthesis={synthesis}
+                        projectName={projectName}
+                        onDownloadExcel={handleDownloadExcel}
+                    />
+                </Suspense>
+            ) : null}
+
+            <DossierPreviewModal
+                open={previewModal === 'dossier'}
+                onOpenChange={(open) => setPreviewModal(open ? 'dossier' : null)}
+                model={dealModel}
+                synthesis={synthesis}
+                projectName={projectName}
+                onDownloadMarkdown={onExportMarkdown}
+                onCopyMarkdown={onCopySummary}
+            />
+
+            <JsonAuditPreviewModal
+                open={previewModal === 'json'}
+                onOpenChange={(open) => setPreviewModal(open ? 'json' : null)}
+                model={dealModel}
+                synthesis={synthesis}
+                projectName={projectName}
+                onDownloadJson={onExportJson}
+            />
         </div>
     )
 }

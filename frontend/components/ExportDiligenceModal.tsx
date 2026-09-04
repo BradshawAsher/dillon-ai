@@ -6,8 +6,9 @@ import { Check, Copy, Download, FileText, Printer, Sparkles, X, ShieldAlert, Sca
 import type { ProjectSynthesisItem, DealModel } from '../hooks/backend/diligence'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import { generateIcMemoMarkdown, generateIcMemoHtml } from '../utils/icMemoGenerator'
-import { generateLoiMarkdown } from '../utils/loiGenerator'
+import { deriveLoiTerms, generateLoiHtml, generateLoiMarkdown } from '../utils/loiGenerator'
 import { computeValuationBridge } from '../utils/valuationBridge'
+import { downloadTextFile } from '../utils/downloadFile'
 
 export interface ExportDiligenceModalProps {
     open: boolean
@@ -82,6 +83,7 @@ export function ExportDiligenceModal({
     const markdownContent = exportDocType === 'loi' ? loiMarkdownContent : icMarkdownContent
 
     const bridge = computeValuationBridge(dealModel, synthesis)
+    const loiTerms = deriveLoiTerms({ model: dealModel, synthesis, projectName: dealName, projectId })
 
     const handleCopy = async () => {
         try {
@@ -96,25 +98,19 @@ export function ExportDiligenceModal({
     const handleDownloadMarkdown = () => {
         const safeName = (dealName || 'Diligence').replace(/[^a-zA-Z0-9_-]/g, '_')
         const fileName = exportDocType === 'loi' ? `${safeName}_Letter_of_Intent_LOI.md` : `${safeName}_IC_Diligence_Memorandum.md`
-        const blob = new Blob([markdownContent], { type: 'text/markdown;charset=utf-8;' })
-        const url = URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.setAttribute('href', url)
-        link.setAttribute('download', fileName)
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-        URL.revokeObjectURL(url)
+        downloadTextFile(fileName, markdownContent, 'text/markdown;charset=utf-8;')
     }
 
     const handlePrint = () => {
-        const html = generateIcMemoHtml({
+        const exportParams = {
             model: dealModel,
             synthesis,
             projectName: dealName,
             projectId,
-            documents: docItems
-        })
+        }
+        const html = exportDocType === 'loi'
+            ? generateLoiHtml(exportParams)
+            : generateIcMemoHtml({ ...exportParams, documents: docItems })
 
         const printWindow = window.open('', '_blank', 'width=900,height=800')
         if (!printWindow) return
@@ -137,14 +133,14 @@ export function ExportDiligenceModal({
     const isReject = verdict.toLowerCase().includes('pass') || verdict.toLowerCase().includes('reject')
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in-0 duration-200">
-            <Card id="export-diligence-modal" className="relative w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl border-primary/20 bg-card text-card-foreground">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in-0 duration-200">
+            <Card id="export-diligence-modal" role="dialog" aria-modal="true" aria-labelledby="export-diligence-title" className="relative w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl border-primary/20 bg-card text-card-foreground">
                 <CardHeader className="border-b border-border/60 pb-4">
                     <div className="flex items-start justify-between">
                         <div>
                             <div className="flex items-center gap-2">
                                 <Sparkles className="h-4 w-4 text-primary" />
-                                <CardTitle className="text-lg font-bold">
+                                <CardTitle id="export-diligence-title" className="text-lg font-bold">
                                     {exportDocType === 'loi' ? 'Non-Binding Letter of Intent (LOI)' : 'Investment Committee Deal Memorandum'}
                                 </CardTitle>
                                 <Badge variant="outline" className="text-[11px] font-semibold text-primary border-primary/40 bg-primary/10">
@@ -262,13 +258,13 @@ export function ExportDiligenceModal({
                                         : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                                 }`}
                             >
-                                Raw Markdown Dossier
+                                {exportDocType === 'loi' ? 'Exact LOI Markdown' : 'Exact IC Memo Markdown'}
                             </button>
                         </div>
                         <div className="text-[11px] text-muted-foreground flex items-center gap-2">
                             <span>Project: <strong className="text-foreground">{projectId}</strong></span>
                             <span>&middot;</span>
-                            <span>{docItems.length} verified docs</span>
+                            <span>{docItems.length} source docs included</span>
                         </div>
                     </div>
 
@@ -280,13 +276,13 @@ export function ExportDiligenceModal({
                                 <div className="p-3 rounded-md border border-primary/30 bg-primary/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                                     <div className="flex items-center gap-2 font-bold text-sm text-primary">
                                         <Scale className="h-4 w-4" />
-                                        <span>PROPOSED ACQUISITION OFFER: {formatMoney(bridge.defensibleCounterOffer > 0 ? bridge.defensibleCounterOffer : dealModel.purchasePrice)}</span>
+                                        <span>PROPOSED ACQUISITION OFFER: {formatMoney(loiTerms.offerPrice)}</span>
                                     </div>
                                     <div className="flex items-center gap-1.5 flex-wrap">
                                         <Badge variant="outline" className="font-semibold text-xs border-primary/40 text-primary">
                                             Asset Purchase • Cash-Free, Debt-Free
                                         </Badge>
-                                        {Boolean(synthesis?.letterOfIntentPresent) ? (
+                                        {loiTerms.isPostLoiDeal ? (
                                             <Badge variant="outline" className="font-semibold text-xs border-amber-500/50 bg-amber-500/10 text-amber-800 dark:text-amber-300">
                                                 Amended &amp; Restated (Post-LOI Re-Trade)
                                             </Badge>
@@ -305,23 +301,23 @@ export function ExportDiligenceModal({
                                             <DollarSign className="h-3.5 w-3.5 text-primary" />
                                             Proposed Financing &amp; Capital Stack
                                         </span>
-                                        <span className="text-muted-foreground">Multiple: {bridge.entryMultiple.toFixed(2)}x EBITDA</span>
+                                        <span className="text-muted-foreground">Multiple: {loiTerms.multiple !== null ? `${loiTerms.multiple.toFixed(2)}x EBITDA` : 'Not available'}</span>
                                     </div>
                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
                                         <div className="bg-background rounded p-2 border border-border/40">
                                             <p className="text-[10px] text-muted-foreground">Senior SBA 7(a) / Bank Debt</p>
-                                            <p className="font-mono font-bold text-xs">{formatMoney(dealModel.seniorDebtAmount ?? Math.round((dealModel.purchasePrice || 6_000_000) * 0.60))}</p>
+                                            <p className="font-mono font-bold text-xs">{formatMoney(loiTerms.seniorDebt)}</p>
                                             <p className="text-[10px] text-muted-foreground mt-0.5">10-yr fully amortizing term loan</p>
                                         </div>
                                         <div className="bg-background rounded p-2 border border-border/40">
                                             <p className="text-[10px] text-muted-foreground">Seller Subordinated Note</p>
-                                            <p className="font-mono font-bold text-xs">{formatMoney(dealModel.sellerNoteAmount ?? Math.round((dealModel.purchasePrice || 6_000_000) * 0.15))}</p>
+                                            <p className="font-mono font-bold text-xs">{formatMoney(loiTerms.sellerNote)}</p>
                                             <p className="text-[10px] text-muted-foreground mt-0.5">5-yr term @ 6.0%–8.0% interest</p>
                                         </div>
                                         <div className="bg-background rounded p-2 border border-emerald-500/40 bg-emerald-500/5">
                                             <p className="text-[10px] text-emerald-700 dark:text-emerald-300 font-semibold">Buyer Cash Equity Check</p>
                                             <p className="font-mono font-bold text-xs text-emerald-700 dark:text-emerald-300">
-                                                {formatMoney(dealModel.equityAmount ?? Math.round((dealModel.purchasePrice || 6_000_000) * (dealModel.equityContributionPercent ?? 0.25)))}
+                                                {formatMoney(loiTerms.equityCheck)}
                                             </p>
                                             <p className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5">100% committed sponsor equity</p>
                                         </div>
@@ -336,7 +332,7 @@ export function ExportDiligenceModal({
                                             Working Capital Target (NWC Peg)
                                         </p>
                                         <p className="font-mono font-bold text-sm text-foreground">
-                                            {formatMoney(dealModel.workingCapitalRequirement ?? 415_000)}
+                                            {formatMoney(loiTerms.nwcTarget)}
                                         </p>
                                         <p className="text-[11px] text-muted-foreground">
                                             Subject to 12-month trailing monthly balance sheet average. Includes a 90-day post-closing dollar-for-dollar cash true-up adjustment.
@@ -350,7 +346,7 @@ export function ExportDiligenceModal({
                                         </p>
                                         <div className="flex items-baseline gap-2">
                                             <span className="font-mono font-bold text-sm text-foreground">
-                                                {formatMoney(Math.round((dealModel.purchasePrice || 6_000_000) * 0.10))}
+                                                {formatMoney(loiTerms.generalEscrow)}
                                             </span>
                                             <span className="text-[10px] text-muted-foreground">(10% General Escrow)</span>
                                         </div>
@@ -412,11 +408,11 @@ export function ExportDiligenceModal({
                                     </div>
                                     <div className="bg-background rounded p-2 border border-border/40">
                                         <p className="text-[10px] text-rose-600 dark:text-rose-400">2. Disallowances</p>
-                                        <p className="font-mono font-bold text-xs text-rose-600 dark:text-rose-400">-{formatMoney(bridge.totalEvDeduction)}</p>
+                                        <p className="font-mono font-bold text-xs text-rose-600 dark:text-rose-400">{bridge.totalEvDeduction > 0 ? `-${formatMoney(bridge.totalEvDeduction)}` : '$0'}</p>
                                     </div>
                                     <div className="bg-background rounded p-2 border border-border/40">
                                         <p className="text-[10px] text-amber-600 dark:text-amber-400">3. Escrow Holdback</p>
-                                        <p className="font-mono font-bold text-xs text-amber-600 dark:text-amber-400">-{formatMoney(bridge.totalSpecialEscrow)}</p>
+                                        <p className="font-mono font-bold text-xs text-amber-600 dark:text-amber-400">{bridge.totalSpecialEscrow > 0 ? `-${formatMoney(bridge.totalSpecialEscrow)}` : '$0'}</p>
                                     </div>
                                     <div className="bg-background rounded p-2 border border-emerald-500/40 bg-emerald-500/5">
                                         <p className="text-[10px] text-emerald-700 dark:text-emerald-300 font-semibold">4. Net Counter-Offer</p>
@@ -460,7 +456,7 @@ export function ExportDiligenceModal({
                             <div className="flex items-center justify-between text-xs font-semibold text-foreground border-b border-border/50 pb-1.5">
                                 <span className="flex items-center gap-1.5">
                                     <FileText className="h-3.5 w-3.5 text-primary" />
-                                    Investment Committee Memo Markdown
+                                    {exportDocType === 'loi' ? 'Letter of Intent Markdown' : 'Investment Committee Memo Markdown'}
                                 </span>
                                 <span className="text-[11px] text-muted-foreground font-normal">
                                     7 Sections &middot; 5-Tier Lineage
@@ -475,7 +471,7 @@ export function ExportDiligenceModal({
 
                 <CardFooter className="flex justify-between border-t border-border/60 pt-3 pb-3">
                     <span className="text-[11px] text-muted-foreground">
-                        Dillon AI &middot; mergeworks.io &middot; Investment Committee Standard
+                        Dillon AI &middot; mergeworks.io &middot; {exportDocType === 'loi' ? 'External LOI Draft' : 'Investment Committee Standard'}
                     </span>
                     <Button type="button" variant="outline" size="sm" onClick={() => onOpenChange(false)}>
                         Close

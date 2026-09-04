@@ -20,9 +20,64 @@ export interface LoiParams {
     isPostLoi?: boolean
 }
 
+export interface LoiTerms {
+    isPostLoiDeal: boolean
+    askingPrice: number
+    preliminaryLoiPrice: number
+    offerPrice: number
+    revenue: number | null
+    ebitda: number | null
+    multiple: number | null
+    seniorDebt: number
+    sellerNote: number
+    equityCheck: number
+    nwcTarget: number
+    generalEscrow: number
+    specialEscrow: number
+    bridge: ValuationBridgeResult
+}
+
 function formatMoney(val?: number | null): string {
     if (val == null || !Number.isFinite(val)) return '—'
     return val < 0 ? `-$${Math.abs(Math.round(val)).toLocaleString()}` : `$${Math.round(val).toLocaleString()}`
+}
+
+function firstPositive(...values: Array<number | null | undefined>): number {
+    return values.find((value): value is number => typeof value === 'number' && Number.isFinite(value) && value > 0) ?? 0
+}
+
+function nonNegativeOrFallback(value: number | null | undefined, fallback: number): number {
+    return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : fallback
+}
+
+export function deriveLoiTerms(params: LoiParams): LoiTerms {
+    const { model, synthesis } = params
+    const facts = parseDocumentedFacts(model.documentedFactsJson)
+    const bridge = computeValuationBridge(model, synthesis)
+    const askingPrice = firstPositive(model.askingPrice, model.purchasePrice)
+    const preliminaryLoiPrice = firstPositive(model.purchasePrice, askingPrice)
+    const offerPrice = firstPositive(bridge.defensibleCounterOffer, model.purchasePrice, askingPrice)
+    const revenue = typeof facts.revenue?.value === 'number' ? facts.revenue.value : null
+    const ebitda = typeof facts.ebitda_sde?.value === 'number' ? facts.ebitda_sde.value : null
+    const seniorDebt = nonNegativeOrFallback(model.seniorDebtAmount, Math.round(offerPrice * 0.60))
+    const sellerNote = nonNegativeOrFallback(model.sellerNoteAmount, Math.round(offerPrice * 0.15))
+
+    return {
+        isPostLoiDeal: params.isPostLoi ?? Boolean(synthesis?.letterOfIntentPresent),
+        askingPrice,
+        preliminaryLoiPrice,
+        offerPrice,
+        revenue,
+        ebitda,
+        multiple: entryMultiple(offerPrice, ebitda),
+        seniorDebt,
+        sellerNote,
+        equityCheck: Math.max(0, offerPrice - seniorDebt - sellerNote),
+        nwcTarget: nonNegativeOrFallback(model.workingCapitalRequirement, Math.round((revenue || 2_000_000) * 0.10)),
+        generalEscrow: Math.round(offerPrice * 0.10),
+        specialEscrow: bridge.totalSpecialEscrow ?? 0,
+        bridge,
+    }
 }
 
 /**
@@ -34,7 +89,6 @@ function formatMoney(val?: number | null): string {
  */
 export function generateLoiMarkdown(params: LoiParams): string {
     const {
-        model,
         synthesis,
         projectName,
         projectId = 'PROJ-MAIN',
@@ -45,29 +99,29 @@ export function generateLoiMarkdown(params: LoiParams): string {
         exclusivityDays = 60,
     } = params
 
-    const isPostLoiDeal = params.isPostLoi ?? Boolean(synthesis?.letterOfIntentPresent)
-    const facts = parseDocumentedFacts(model.documentedFactsJson)
-    const bridge: ValuationBridgeResult = computeValuationBridge(model, synthesis)
+    const terms = deriveLoiTerms(params)
+    const {
+        isPostLoiDeal,
+        askingPrice,
+        preliminaryLoiPrice,
+        offerPrice,
+        revenue: rev,
+        ebitda,
+        multiple,
+        seniorDebt,
+        sellerNote,
+        equityCheck,
+        nwcTarget,
+        generalEscrow,
+        specialEscrow,
+        bridge,
+    } = terms
     const sectorKey = detectSector((synthesis as any)?.industry || projectName)
     const sector = getSectorProfile(sectorKey)
     const sectorName = sector.shortCategory || sector.displayName || 'General Commercial'
 
     const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
     const expirationDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
-
-    const askingPrice = model.askingPrice ?? model.purchasePrice ?? 0
-    const offerPrice = bridge.defensibleCounterOffer > 0 ? bridge.defensibleCounterOffer : (model.purchasePrice ?? askingPrice)
-    const rev = typeof facts.revenue?.value === 'number' ? facts.revenue.value : null
-    const ebitda = typeof facts.ebitda_sde?.value === 'number' ? facts.ebitda_sde.value : null
-    const multiple = entryMultiple(offerPrice, ebitda)
-
-    // Capital stack components
-    const seniorDebt = model.seniorDebtAmount ?? Math.round(offerPrice * 0.60)
-    const sellerNote = model.sellerNoteAmount ?? Math.round(offerPrice * 0.15)
-    const equityCheck = Math.max(0, offerPrice - seniorDebt - sellerNote)
-    const nwcTarget = model.workingCapitalRequirement ?? Math.round((rev || 2_000_000) * 0.10)
-    const generalEscrow = Math.round(offerPrice * 0.10)
-    const specialEscrow = bridge.totalSpecialEscrow ?? 0
 
     const lines: string[] = []
 
@@ -103,12 +157,10 @@ export function generateLoiMarkdown(params: LoiParams): string {
     lines.push(`## 1. Transaction Structure & Purchase Price (Non-Binding)`)
     lines.push(`- **Transaction Structure**: Asset Purchase of substantially all operating assets, customer relationships, contracts, intellectual property, and goodwill, free and clear of all liens and encumbrances. Buyer shall assume only designated operating liabilities.`)
     lines.push(`- **Enterprise Value / Purchase Price**: **${formatMoney(offerPrice)}** (${offerPrice > 0 && ebitda && multiple !== null ? `${multiple.toFixed(2)}x Adjusted EBITDA` : 'Cash-free, debt-free basis'}).`)
-    if (askingPrice > 0 && offerPrice !== askingPrice) {
-        if (isPostLoiDeal) {
-            lines.push(`- **Preliminary LOI vs. Revised Counter-Offer Reconciliation**: Preliminary agreed LOI purchase price was ${formatMoney(askingPrice)}. Buyer's revised post-diligence counter-offer of ${formatMoney(offerPrice)} reflects empirical Quality of Earnings (QoE) add-back disallowances totaling ${formatMoney(bridge.totalDisallowedAddbacks)}, special indemnity holdbacks of ${formatMoney(specialEscrow)}, and industry margin parity adjustments.`)
-        } else {
-            lines.push(`- **Asking Price Reconciliation**: Original broker asking price was ${formatMoney(askingPrice)}. Buyer's formal counter-offer of ${formatMoney(offerPrice)} reflects empirical forensic QoE add-back disallowances totaling ${formatMoney(bridge.totalDisallowedAddbacks)} and industry margin parity adjustments.`)
-        }
+    if (isPostLoiDeal) {
+        lines.push(`- **Preliminary LOI vs. Revised Counter-Offer Reconciliation**: Preliminary agreed LOI purchase price was ${formatMoney(preliminaryLoiPrice)}. Buyer's revised post-diligence counter-offer of ${formatMoney(offerPrice)} reflects empirical Quality of Earnings (QoE) add-back disallowances totaling ${formatMoney(bridge.totalDisallowedAddbacks)}, special indemnity holdbacks of ${formatMoney(specialEscrow)}, and industry margin parity adjustments.`)
+    } else if (askingPrice > 0 && offerPrice !== askingPrice) {
+        lines.push(`- **Asking Price Reconciliation**: Original broker asking price was ${formatMoney(askingPrice)}. Buyer's formal counter-offer of ${formatMoney(offerPrice)} reflects empirical forensic QoE add-back disallowances totaling ${formatMoney(bridge.totalDisallowedAddbacks)} and industry margin parity adjustments.`)
     }
     lines.push(`- **Cash-Free, Debt-Free**: The transaction is structured on a cash-free, debt-free basis. All existing funded indebtedness, shareholder loans, and transaction expenses shall be extinguished by Seller at closing.`)
     lines.push('')
@@ -200,4 +252,112 @@ export function generateLoiMarkdown(params: LoiParams): string {
     lines.push(`*Generated by Dillon AI M&A Diligence Engine — MergeWorks Institutional Advisory*`)
 
     return lines.join('\n')
+}
+
+function escapeHtml(value: string): string {
+    return value
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;')
+}
+
+function renderInlineMarkdown(value: string): string {
+    return escapeHtml(value).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+}
+
+function renderMarkdownForPrint(markdown: string): string {
+    const lines = markdown.split('\n')
+    const html: string[] = []
+
+    for (let index = 0; index < lines.length;) {
+        const line = lines[index]
+        if (!line.trim()) {
+            index += 1
+            continue
+        }
+
+        if (line.startsWith('|') && index + 1 < lines.length && /^\|[\s:|-]+\|$/.test(lines[index + 1])) {
+            const parseCells = (row: string) => row.slice(1, -1).split('|').map((cell) => cell.trim())
+            const headers = parseCells(line)
+            index += 2
+            const rows: string[][] = []
+            while (index < lines.length && lines[index].startsWith('|')) {
+                rows.push(parseCells(lines[index]))
+                index += 1
+            }
+            html.push('<table><thead><tr>')
+            headers.forEach((header) => html.push(`<th>${renderInlineMarkdown(header)}</th>`))
+            html.push('</tr></thead><tbody>')
+            rows.forEach((row) => {
+                html.push('<tr>')
+                row.forEach((cell) => html.push(`<td>${renderInlineMarkdown(cell)}</td>`))
+                html.push('</tr>')
+            })
+            html.push('</tbody></table>')
+            continue
+        }
+
+        if (line.startsWith('- ')) {
+            html.push('<ul>')
+            while (index < lines.length && lines[index].startsWith('- ')) {
+                html.push(`<li>${renderInlineMarkdown(lines[index].slice(2))}</li>`)
+                index += 1
+            }
+            html.push('</ul>')
+            continue
+        }
+
+        if (/^\d+\. /.test(line)) {
+            html.push('<ol>')
+            while (index < lines.length && /^\d+\. /.test(lines[index])) {
+                html.push(`<li>${renderInlineMarkdown(lines[index].replace(/^\d+\. /, ''))}</li>`)
+                index += 1
+            }
+            html.push('</ol>')
+            continue
+        }
+
+        if (line === '---') html.push('<hr>')
+        else if (line.startsWith('### ')) html.push(`<h3>${renderInlineMarkdown(line.slice(4))}</h3>`)
+        else if (line.startsWith('## ')) html.push(`<h2>${renderInlineMarkdown(line.slice(3))}</h2>`)
+        else if (line.startsWith('# ')) html.push(`<h1>${renderInlineMarkdown(line.slice(2))}</h1>`)
+        else html.push(`<p>${renderInlineMarkdown(line)}</p>`)
+        index += 1
+    }
+
+    return html.join('\n')
+}
+
+/** Builds a safe, print-ready representation of the exact generated LOI. */
+export function generateLoiHtml(params: LoiParams): string {
+    const documentHtml = renderMarkdownForPrint(generateLoiMarkdown(params))
+    const title = escapeHtml(params.projectName || 'Target Company')
+
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Letter of Intent - ${title}</title>
+    <style>
+        @page { size: letter; margin: 0.6in; }
+        body { margin: 0; color: #0f172a; background: #fff; font: 10.5pt/1.5 Georgia, "Times New Roman", serif; }
+        .document { max-width: 8in; margin: 0 auto; }
+        h1 { margin: 0 0 8px; text-align: center; font: 700 16pt/1.25 Arial, sans-serif; letter-spacing: 0.02em; }
+        h2 { margin: 18px 0 6px; padding-bottom: 3px; border-bottom: 1px solid #94a3b8; font: 700 11.5pt/1.3 Arial, sans-serif; }
+        h3 { margin: 12px 0 4px; font: 700 10.5pt/1.3 Arial, sans-serif; }
+        p { margin: 5px 0; overflow-wrap: anywhere; }
+        ul, ol { margin: 5px 0 8px; padding-left: 24px; }
+        li { margin: 3px 0; }
+        hr { margin: 14px 0; border: 0; border-top: 1px solid #cbd5e1; }
+        table { width: 100%; margin: 8px 0 14px; border-collapse: collapse; font-size: 8.8pt; }
+        th, td { padding: 5px 6px; border: 1px solid #cbd5e1; vertical-align: top; text-align: left; }
+        th { background: #f1f5f9; font-family: Arial, sans-serif; }
+        @media print { body { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
+    </style>
+</head>
+<body><main class="document">${documentHtml}</main></body>
+</html>`
 }

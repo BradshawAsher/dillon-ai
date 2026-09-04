@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { generateLiveExcelModel } from './excelModelGenerator'
+import {
+    buildLiveExcelModelPreview,
+    buildLiveExcelWorkbook,
+    generateLiveExcelModel,
+} from './excelModelGenerator'
 
 describe('excelModelGenerator', () => {
     const mockModel: any = {
@@ -62,6 +66,9 @@ describe('excelModelGenerator', () => {
         expect(wsProjections?.getCell('B2').value).toBe(9200000)
         expect((wsProjections?.getCell('C2').value as any)?.formula).toContain('Assumptions & Structure')
         expect((wsProjections?.getCell('B4').value as any)?.formula).toBe('B2-B3')
+        expect((wsProjections?.getCell('B10').value as any)?.formula).not.toMatch(/^-/)
+        expect((wsProjections?.getCell('B10').value as any)?.result).toBeGreaterThan(0)
+        expect((wsProjections?.getCell('B12').value as any)?.result).toBeLessThan((wsProjections?.getCell('B7').value as any)?.result)
 
         const wsReturns = wb.getWorksheet('LBO Returns & Valuation')
         expect(wsReturns).toBeDefined()
@@ -88,5 +95,55 @@ describe('excelModelGenerator', () => {
         expect(cellValues).toContain('Defensible Adjusted Counter-Offer')
         expect(cellValues).toContain('Section 2.3: Purchase Price Adjustment')
         expect(cellValues).toContain('Section 8.2(c): Special Indemnity Escrow Fund')
+    })
+
+    it('derives preview cells and formulas from the same workbook as the download', () => {
+        const options = {
+            model: mockModel,
+            synthesis: {
+                redFlags: ['Discovered $180,000 undocumented contractor payroll tax liability'],
+            } as any,
+            projectName: 'Apex Industrial Services',
+        }
+        const workbook = buildLiveExcelWorkbook(options)
+        const preview = buildLiveExcelModelPreview(options)
+
+        expect(preview.map((sheet) => sheet.name)).toEqual(workbook.worksheets.map((sheet) => sheet.name))
+
+        for (const previewSheet of preview) {
+            const worksheet = workbook.getWorksheet(previewSheet.name)
+            expect(worksheet).toBeDefined()
+            expect(previewSheet.headers).toEqual(
+                Array.from({ length: worksheet!.columnCount }, (_, index) => String(worksheet!.getRow(1).getCell(index + 1).value ?? ''))
+            )
+
+            for (const row of previewSheet.rows) {
+                for (const previewCell of row) {
+                    const workbookValue = worksheet!.getCell(previewCell.coord).value as any
+                    const workbookFormula = workbookValue && typeof workbookValue === 'object' && 'formula' in workbookValue
+                        ? `=${workbookValue.formula}`
+                        : undefined
+                    expect(previewCell.formula).toBe(workbookFormula)
+                }
+            }
+        }
+
+        const bridge = preview.find((sheet) => sheet.id === 'bridge')
+        const bridgeLabels = bridge?.rows.map((row) => row[0]?.value)
+        expect(bridgeLabels).toContain('Section 2.3: Purchase Price Adjustment')
+        expect(bridgeLabels).toContain('Section 8.2(c): Special Indemnity Escrow Fund')
+
+        const projections = preview.find((sheet) => sheet.id === 'projections')
+        expect(projections?.rows[0]?.[2]?.formula).toBe("=B2*(1+'Assumptions & Structure'!$B$13)")
+    })
+
+    it('does not invent audit rows when no documented facts exist', () => {
+        const preview = buildLiveExcelModelPreview({
+            model: { ...mockModel, documentedFactsJson: undefined },
+            projectName: 'No Facts Deal',
+        })
+        const audit = preview.find((sheet) => sheet.id === 'audit')
+
+        expect(audit?.rows).toEqual([])
     })
 })

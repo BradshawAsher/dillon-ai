@@ -1,8 +1,7 @@
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
 import type { SubmissionHistoryItem } from './submissionHistory'
 import { parseDocumentedFacts } from './evidence'
-import { parseMagnitudeMoney } from './documentedFacts'
-import { entryMultiple, resolveLoanTermYears } from './dealMath'
+import { entryMultiple } from './dealMath'
 import {
     computeValuationBridge,
     generateValuationBridgeClause,
@@ -32,9 +31,29 @@ function formatMoney(val?: number | null): string {
     return val < 0 ? `-$${Math.abs(Math.round(val)).toLocaleString()}` : `$${Math.round(val).toLocaleString()}`
 }
 
-function formatPercent(val?: number | null, decimals = 1): string {
-    if (val == null || !Number.isFinite(val)) return '—'
-    return `${(val * (Math.abs(val) <= 1 ? 100 : 1)).toFixed(decimals)}%`
+function formatDeduction(val?: number | null): string {
+    if (val == null || !Number.isFinite(val) || val === 0) return '$0'
+    return formatMoney(-Math.abs(val))
+}
+
+function firstPositive(...values: Array<number | null | undefined>): number {
+    return values.find((value): value is number => typeof value === 'number' && Number.isFinite(value) && value > 0) ?? 0
+}
+
+function formatConfidence(value: string | number | null | undefined): string {
+    if (value == null || value === '') return 'Not available'
+    const parsed = typeof value === 'number' ? value : Number.parseFloat(value)
+    if (!Number.isFinite(parsed)) return String(value).trim() || 'Not available'
+    return parsed <= 1 ? `${Math.round(parsed * 100)}%` : `${parsed}%`
+}
+
+function escapeHtml(value: unknown): string {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;')
 }
 
 /**
@@ -50,7 +69,7 @@ export function generateIcMemoMarkdown(params: IcMemoParams): string {
     const sectorMedian = sector.metrics?.entryMultiple?.median ?? 4.5
 
     const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
-    const price = model.purchasePrice ?? model.askingPrice ?? 0
+    const price = firstPositive(model.purchasePrice, model.askingPrice)
     const rev = typeof facts.revenue?.value === 'number' ? facts.revenue.value : null
     const ebitda = typeof facts.ebitda_sde?.value === 'number' ? facts.ebitda_sde.value : null
     const multiple = entryMultiple(price, ebitda)
@@ -67,12 +86,7 @@ export function generateIcMemoMarkdown(params: IcMemoParams): string {
     lines.push('---')
     lines.push('')
 
-    const confidenceVal = synthesis?.valuationConfidence
-        ? parseFloat(synthesis.valuationConfidence)
-        : typeof (synthesis as any)?.confidenceScore === 'number'
-        ? (synthesis as any).confidenceScore
-        : null
-    const confidenceStr = confidenceVal !== null ? (confidenceVal <= 1 ? `${Math.round(confidenceVal * 100)}%` : `${confidenceVal}%`) : 'Verified'
+    const confidenceStr = formatConfidence(synthesis?.valuationConfidence || (synthesis as any)?.confidenceScore)
 
     // 1. Executive Summary & Verdict
     lines.push('## 1. EXECUTIVE SUMMARY & IC RECOMMENDATION')
@@ -129,8 +143,8 @@ export function generateIcMemoMarkdown(params: IcMemoParams): string {
     lines.push('| Bridge Step | Amount | Impact | Contract Mechanism |')
     lines.push('| :--- | :--- | :--- | :--- |')
     lines.push(`| Initial LOI Valuation | ${formatMoney(bridge.baselinePurchasePrice)} | Baseline | Starting Baseline |`)
-    lines.push(`| Less: EV Deductions | -${formatMoney(bridge.totalEvDeduction)} | Price Cut | APA Section 2.3 Closing Reduction |`)
-    lines.push(`| Less: Special Escrow Holdback | -${formatMoney(bridge.totalSpecialEscrow)} | Escrow | APA Section 8.2(c) Indemnity Holdback |`)
+    lines.push(`| Less: EV Deductions | ${formatDeduction(bridge.totalEvDeduction)} | Price Cut | APA Section 2.3 Closing Reduction |`)
+    lines.push(`| Less: Special Escrow Holdback | ${formatDeduction(bridge.totalSpecialEscrow)} | Escrow | APA Section 8.2(c) Indemnity Holdback |`)
     lines.push(`| **Defensible Net Counter-Offer** | **${formatMoney(bridge.defensibleCounterOffer)}** | **Net Cost** | **Recommended Purchase Consideration** |`)
     lines.push('')
 
@@ -199,7 +213,7 @@ export function generateIcMemoHtml(params: IcMemoParams): string {
     const sectorMedian = sector.metrics?.entryMultiple?.median ?? 4.5
 
     const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
-    const price = model.purchasePrice ?? model.askingPrice ?? 0
+    const price = firstPositive(model.purchasePrice, model.askingPrice)
     const rev = typeof facts.revenue?.value === 'number' ? facts.revenue.value : null
     const ebitda = typeof facts.ebitda_sde?.value === 'number' ? facts.ebitda_sde.value : null
     const multiple = entryMultiple(price, ebitda)
@@ -218,33 +232,48 @@ export function generateIcMemoHtml(params: IcMemoParams): string {
         : verdict.toLowerCase().includes('pass') || verdict.toLowerCase().includes('reject')
         ? '#dc2626'
         : '#d97706'
+    const trafficLight = synthesis?.finalTrafficLight?.toLowerCase() || 'evaluation'
+    const trafficBadgeClass = trafficLight === 'green'
+        ? 'badge-green'
+        : trafficLight === 'red'
+            ? 'badge-red'
+            : 'badge-amber'
+    const priceProvenance = model.purchasePrice && model.purchasePrice > 0 ? 'User-Entered Purchase Price' : 'Seller Asking Price'
 
-    const bridgeClause = generateValuationBridgeClause(bridge, projectName)
-    const escrowClause = generateSpecialEscrowClause(bridge, projectName)
-    const repsClause = generateSpecificRepsClause(projectName)
+    const safeProjectName = escapeHtml(projectName)
+    const safeSectorName = escapeHtml(sectorName)
+    const safeAuthorName = escapeHtml(authorName)
+    const safeVerdict = escapeHtml(verdict)
+    const safeTrafficLight = escapeHtml(trafficLight.toUpperCase())
+    const safeJudgment = escapeHtml(synthesis?.finalJudgmentSummary || 'Comprehensive quantitative and qualitative underwriting completed across historical financials, tax returns, and operating assets.')
+    const bridgeClause = escapeHtml(generateValuationBridgeClause(bridge, projectName)).replace(/\n/g, '<br>')
+    const escrowClause = escapeHtml(generateSpecialEscrowClause(bridge, projectName)).replace(/\n/g, '<br>')
+    const repsClause = escapeHtml(generateSpecificRepsClause(projectName)).replace(/\n/g, '<br>')
 
     const redFlagsHtml = (synthesis?.redFlags || [])
         .slice(0, 4)
-        .map((f) => `<li style="margin-bottom: 6px;"><strong>${f}</strong></li>`)
+        .map((f) => `<li style="margin-bottom: 6px;"><strong>${escapeHtml(f)}</strong></li>`)
         .join('')
 
     const takeawaysHtml = (synthesis?.keyTakeaways || [])
         .slice(0, 4)
-        .map((t) => `<li style="margin-bottom: 6px;">${t}</li>`)
+        .map((t) => `<li style="margin-bottom: 6px;">${escapeHtml(t)}</li>`)
         .join('')
 
     const docsHtml = documents
-        .map(
-            (d) =>
-                `<tr><td style="padding: 5px 8px; border: 1px solid #e2e8f0;">${d.fileName}</td><td style="padding: 5px 8px; border: 1px solid #e2e8f0;">${d.documentType || 'Financial Statement'}</td><td style="padding: 5px 8px; border: 1px solid #e2e8f0; color: #059669; font-weight: 600;">Verified</td></tr>`
-        )
+        .map((d) => {
+            const status = d.status || 'Unknown'
+            const isVerified = /^(processed|completed|verified|success)$/i.test(status)
+            const statusColor = isVerified ? '#059669' : '#b45309'
+            return `<tr><td style="padding: 5px 8px; border: 1px solid #e2e8f0;">${escapeHtml(d.fileName)}</td><td style="padding: 5px 8px; border: 1px solid #e2e8f0;">${escapeHtml(d.documentType || 'Financial Statement')}</td><td style="padding: 5px 8px; border: 1px solid #e2e8f0; color: ${statusColor}; font-weight: 600;">${escapeHtml(status)}</td></tr>`
+        })
         .join('')
 
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Investment Committee Memo - ${projectName}</title>
+    <title>Investment Committee Memo - ${safeProjectName}</title>
     <style>
         @page {
             size: letter;
@@ -353,6 +382,7 @@ export function generateIcMemoHtml(params: IcMemoParams): string {
             text-transform: uppercase;
         }
         .badge-green { background: #dcfce7; color: #15803d; }
+        .badge-red { background: #fee2e2; color: #b91c1c; }
         .badge-blue { background: #dbeafe; color: #1e40af; }
         .badge-purple { background: #f3e8ff; color: #7e22ce; }
         .badge-amber { background: #fef3c7; color: #b45309; }
@@ -444,11 +474,11 @@ export function generateIcMemoHtml(params: IcMemoParams): string {
         <div class="meta-grid">
             <div>
                 <div class="meta-label">Target Company</div>
-                <div class="meta-value">${projectName}</div>
+                <div class="meta-value">${safeProjectName}</div>
             </div>
             <div>
                 <div class="meta-label">Sector & Peer Benchmark</div>
-                <div class="meta-value">${sectorName} (${sectorMedian.toFixed(1)}x)</div>
+                <div class="meta-value">${safeSectorName} (${sectorMedian.toFixed(1)}x)</div>
             </div>
             <div>
                 <div class="meta-label">Date Generated</div>
@@ -456,18 +486,18 @@ export function generateIcMemoHtml(params: IcMemoParams): string {
             </div>
             <div>
                 <div class="meta-label">Lead Diligence Lead</div>
-                <div class="meta-value">${authorName}</div>
+                <div class="meta-value">${safeAuthorName}</div>
             </div>
         </div>
 
         <!-- VERDICT BANNER -->
         <div class="verdict-banner">
             <div class="verdict-header">
-                <span class="verdict-title">IC RECOMMENDATION: ${verdict}</span>
-                <span class="badge badge-green">${synthesis?.finalTrafficLight?.toUpperCase() || 'EVALUATION'} SIGNAL</span>
+                <span class="verdict-title">IC RECOMMENDATION: ${safeVerdict}</span>
+                <span class="badge ${trafficBadgeClass}">${safeTrafficLight} SIGNAL</span>
             </div>
             <p style="margin: 0; font-size: 10pt; color: #334155; line-height: 1.45;">
-                ${synthesis?.finalJudgmentSummary || 'Comprehensive quantitative and qualitative underwriting completed across historical financials, tax returns, and operating assets.'}
+                ${safeJudgment}
             </p>
         </div>
 
@@ -504,7 +534,7 @@ export function generateIcMemoHtml(params: IcMemoParams): string {
                     <td><strong>Target Purchase Price (EV)</strong></td>
                     <td class="text-right font-mono"><strong>${formatMoney(price)}</strong></td>
                     <td><span class="badge badge-blue">User-Entered</span></td>
-                    <td>Seller Baseline Ask</td>
+                    <td>${priceProvenance}</td>
                 </tr>
                 <tr>
                     <td>Reported LTM Revenue</td>
@@ -581,13 +611,13 @@ export function generateIcMemoHtml(params: IcMemoParams): string {
                 </tr>
                 <tr>
                     <td>2. Diligence EBITDA Disallowances (${formatMoney(bridge.totalDisallowedAddbacks)})</td>
-                    <td class="text-right font-mono" style="color: #b91c1c;">-${formatMoney(bridge.totalEvDeduction)}</td>
+                    <td class="text-right font-mono" style="color: #b91c1c;">${formatDeduction(bridge.totalEvDeduction)}</td>
                     <td class="font-mono">${bridge.entryMultiple.toFixed(2)}x impact</td>
                     <td>Dollar-for-Dollar EV Deduction</td>
                 </tr>
                 <tr>
                     <td>3. Special Indemnity Escrow Holdback</td>
-                    <td class="text-right font-mono" style="color: #b45309;">-${formatMoney(bridge.totalSpecialEscrow)}</td>
+                    <td class="text-right font-mono" style="color: #b45309;">${formatDeduction(bridge.totalSpecialEscrow)}</td>
                     <td>Escrow Holdback</td>
                     <td>APA Section 8.2(c) Segregated Fund</td>
                 </tr>

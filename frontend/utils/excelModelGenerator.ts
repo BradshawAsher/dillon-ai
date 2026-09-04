@@ -11,19 +11,36 @@ export type ExcelExportOptions = {
     projectName: string
 }
 
+export type ExcelPreviewCell = {
+    coord: string
+    value: string
+    formula?: string
+    isSubHeader?: boolean
+    isAccent?: boolean
+    align: 'left' | 'right' | 'center'
+}
+
+export type ExcelPreviewSheet = {
+    id: string
+    name: string
+    headers: string[]
+    rows: ExcelPreviewCell[][]
+}
+
 /**
  * Builds a dynamic multi-tab financial model workbook with live formulas.
  */
-export async function generateLiveExcelModel({
+export function buildLiveExcelWorkbook({
     model,
     synthesis,
     projectName,
-}: ExcelExportOptions): Promise<Blob> {
+}: ExcelExportOptions): ExcelJS.Workbook {
     const workbook = new ExcelJS.Workbook()
     workbook.creator = 'Dillon AI by MergeWorks'
     workbook.lastModifiedBy = 'Dillon AI Financial Engine'
     workbook.created = new Date()
     workbook.modified = new Date()
+    workbook.calcProperties.fullCalcOnLoad = true
 
     const facts = parseDocumentedFacts(model.documentedFactsJson)
     const rawRevenue = typeof facts.revenue?.value === 'number' ? facts.revenue.value : 12_400_000
@@ -39,6 +56,7 @@ export async function generateLiveExcelModel({
     const taxRate = model.taxRate ?? 0.25
     const growthRate = model.baseRevenueGrowth ?? 0.05
     const holdPeriod = model.holdPeriodYears ?? 5
+    const buyerEquity = purchasePrice - seniorDebtAmount - sellerNoteAmount
 
     const nwcResult = calculateWorkingCapitalPeg(model, '12m', 5)
 
@@ -78,7 +96,7 @@ export async function generateLiveExcelModel({
         ['Senior Debt Amortization (Years)', seniorDebtTerm, 'Amortization Period'],
         ['Seller Note Financing ($)', sellerNoteAmount, 'Subordinated Seller Note'],
         ['Seller Note Interest Rate', 0.05, 'Subordinated Note Coupon'],
-        ['Buyer Equity Injected ($)', { formula: 'B4-B6-B9', result: purchasePrice - seniorDebtAmount - sellerNoteAmount }, 'Sponsor Equity'],
+        ['Buyer Equity Injected ($)', { formula: 'B4-B6-B9', result: buyerEquity }, 'Sponsor Equity'],
         ['Corporate Tax Rate', taxRate, 'Federal + State Combined'],
         ['Annual Revenue Growth %', growthRate, 'Base Case CAGR'],
         ['Investment Hold Period (Years)', holdPeriod, 'Underwriting Horizon'],
@@ -118,24 +136,59 @@ export async function generateLiveExcelModel({
     headerRow2.font = headerFont
     headerRow2.height = 24
 
-    // P&L Rows
-    const rRevenue = wsModel.addRow(['Revenue', rawRevenue, { formula: 'B2*(1+\'Assumptions & Structure\'!$B$13)' }, { formula: 'C2*(1+\'Assumptions & Structure\'!$B$13)' }, { formula: 'D2*(1+\'Assumptions & Structure\'!$B$13)' }, { formula: 'E2*(1+\'Assumptions & Structure\'!$B$13)' }])
-    const rCogs = wsModel.addRow(['Cost of Goods Sold (COGS)', rawRevenue - rawGrossProfit, { formula: 'C2*(B3/B2)' }, { formula: 'D2*(B3/B2)' }, { formula: 'E2*(B3/B2)' }, { formula: 'F2*(B3/B2)' }])
-    const rGrossProfit = wsModel.addRow(['Gross Profit', { formula: 'B2-B3' }, { formula: 'C2-C3' }, { formula: 'D2-D3' }, { formula: 'E2-E3' }, { formula: 'F2-F3' }])
-    const rGrossMargin = wsModel.addRow(['Gross Margin %', { formula: 'B4/B2' }, { formula: 'C4/C2' }, { formula: 'D4/D2' }, { formula: 'E4/E2' }, { formula: 'F4/F2' }])
-
     const rawOpex = rawGrossProfit - rawEbitda
-    const rOpex = wsModel.addRow(['Operating Expenses (SG&A)', rawOpex, { formula: 'C2*(B6/B2)' }, { formula: 'D2*(B6/B2)' }, { formula: 'E2*(B6/B2)' }, { formula: 'F2*(B6/B2)' }])
-    const rEbitda = wsModel.addRow(['Adjusted EBITDA', { formula: 'B4-B6' }, { formula: 'C4-C6' }, { formula: 'D4-D6' }, { formula: 'E4-E6' }, { formula: 'F4-F6' }])
-    const rEbitdaMargin = wsModel.addRow(['EBITDA Margin %', { formula: 'B7/B2' }, { formula: 'C7/C2' }, { formula: 'D7/D2' }, { formula: 'E7/E2' }, { formula: 'F7/F2' }])
+    const cogsRatio = rawRevenue > 0 ? (rawRevenue - rawGrossProfit) / rawRevenue : 0
+    const opexRatio = rawRevenue > 0 ? rawOpex / rawRevenue : 0
+    const projectedRevenue = Array.from({ length: 5 }, (_, index) => rawRevenue * Math.pow(1 + growthRate, index))
+    const projectedCogs = projectedRevenue.map((revenue) => revenue * cogsRatio)
+    const projectedGrossProfit = projectedRevenue.map((revenue, index) => revenue - projectedCogs[index])
+    const projectedOpex = projectedRevenue.map((revenue) => revenue * opexRatio)
+    const projectedEbitda = projectedGrossProfit.map((grossProfit, index) => grossProfit - projectedOpex[index])
+    const projectedCapex = projectedRevenue.map((revenue) => revenue * 0.03)
+    const monthlyDebtRate = seniorDebtRate / 12
+    const debtPayments = Math.max(1, seniorDebtTerm * 12)
+    const annualDebtService = monthlyDebtRate > 0
+        ? seniorDebtAmount * monthlyDebtRate / (1 - Math.pow(1 + monthlyDebtRate, -debtPayments)) * 12
+        : seniorDebtAmount / Math.max(1, seniorDebtTerm)
+    const projectedTaxes = projectedEbitda.map((ebitda, index) => Math.max(0, (ebitda - projectedCapex[index]) * taxRate))
+    const projectedFcf = projectedEbitda.map((ebitda, index) => ebitda - projectedCapex[index] - annualDebtService - projectedTaxes[index])
+    const projectedDscr = projectedEbitda.map((ebitda) => annualDebtService > 0 ? (ebitda * (1 - taxRate)) / annualDebtService : 0)
+    const yearColumns = ['B', 'C', 'D', 'E', 'F']
 
-    const rCapex = wsModel.addRow(['Capital Expenditures (Capex)', Math.round(rawRevenue * 0.03), { formula: 'C2*0.03' }, { formula: 'D2*0.03' }, { formula: 'E2*0.03' }, { formula: 'F2*0.03' }])
-    const rDebtService = wsModel.addRow(['Annual Senior Debt Service', { formula: '-\'Assumptions & Structure\'!$B$6*(\'Assumptions & Structure\'!$B$7/12)/(1-(1+\'Assumptions & Structure\'!$B$7/12)^(-\'Assumptions & Structure\'!$B$8*12))*12' }, { formula: 'B10' }, { formula: 'B10' }, { formula: 'B10' }, { formula: 'B10' }])
-    const rTaxes = wsModel.addRow(['Income Taxes', { formula: 'MAX(0, (B7-B9)*\'Assumptions & Structure\'!$B$12)' }, { formula: 'MAX(0, (C7-C9)*\'Assumptions & Structure\'!$B$12)' }, { formula: 'MAX(0, (D7-D9)*\'Assumptions & Structure\'!$B$12)' }, { formula: 'MAX(0, (E7-E9)*\'Assumptions & Structure\'!$B$12)' }, { formula: 'MAX(0, (F7-F9)*\'Assumptions & Structure\'!$B$12)' }])
-    const rFcf = wsModel.addRow(['Free Cash Flow (FCF)', { formula: 'B7-B9-B10-B11' }, { formula: 'C7-C9-C10-C11' }, { formula: 'D7-D9-D10-D11' }, { formula: 'E7-E9-E10-E11' }, { formula: 'F7-F9-F10-F11' }])
-
-    // Debt Service Coverage Ratio (DSCR)
-    const rDscr = wsModel.addRow(['Debt Service Coverage (DSCR)', { formula: '(B7*(1-\'Assumptions & Structure\'!$B$12))/B10' }, { formula: '(C7*(1-\'Assumptions & Structure\'!$B$12))/C10' }, { formula: '(D7*(1-\'Assumptions & Structure\'!$B$12))/D10' }, { formula: '(E7*(1-\'Assumptions & Structure\'!$B$12))/E10' }, { formula: '(F7*(1-\'Assumptions & Structure\'!$B$12))/F10' }])
+    // P&L Rows. Cached results power the exact browser preview; Excel recalculates the formulas on open.
+    wsModel.addRow(['Revenue', rawRevenue, ...yearColumns.slice(1).map((_column, index) => ({
+        formula: `${yearColumns[index]}2*(1+'Assumptions & Structure'!$B$13)`,
+        result: projectedRevenue[index + 1],
+    }))])
+    wsModel.addRow(['Cost of Goods Sold (COGS)', rawRevenue - rawGrossProfit, ...yearColumns.slice(1).map((column, index) => ({
+        formula: `${column}2*(B3/B2)`,
+        result: projectedCogs[index + 1],
+    }))])
+    wsModel.addRow(['Gross Profit', ...yearColumns.map((column, index) => ({ formula: `${column}2-${column}3`, result: projectedGrossProfit[index] }))])
+    wsModel.addRow(['Gross Margin %', ...yearColumns.map((column, index) => ({ formula: `${column}4/${column}2`, result: projectedGrossProfit[index] / projectedRevenue[index] }))])
+    wsModel.addRow(['Operating Expenses (SG&A)', rawOpex, ...yearColumns.slice(1).map((column, index) => ({
+        formula: `${column}2*(B6/B2)`,
+        result: projectedOpex[index + 1],
+    }))])
+    wsModel.addRow(['Adjusted EBITDA', ...yearColumns.map((column, index) => ({ formula: `${column}4-${column}6`, result: projectedEbitda[index] }))])
+    wsModel.addRow(['EBITDA Margin %', ...yearColumns.map((column, index) => ({ formula: `${column}7/${column}2`, result: projectedEbitda[index] / projectedRevenue[index] }))])
+    wsModel.addRow(['Capital Expenditures (Capex)', ...yearColumns.map((column, index) => ({ formula: `${column}2*0.03`, result: projectedCapex[index] }))])
+    wsModel.addRow(['Annual Senior Debt Service', {
+        formula: "IF('Assumptions & Structure'!$B$7=0,'Assumptions & Structure'!$B$6/'Assumptions & Structure'!$B$8,'Assumptions & Structure'!$B$6*('Assumptions & Structure'!$B$7/12)/(1-(1+'Assumptions & Structure'!$B$7/12)^(-'Assumptions & Structure'!$B$8*12))*12)",
+        result: annualDebtService,
+    }, ...yearColumns.slice(1).map(() => ({ formula: 'B10', result: annualDebtService }))])
+    wsModel.addRow(['Income Taxes', ...yearColumns.map((column, index) => ({
+        formula: `MAX(0, (${column}7-${column}9)*'Assumptions & Structure'!$B$12)`,
+        result: projectedTaxes[index],
+    }))])
+    wsModel.addRow(['Free Cash Flow (FCF)', ...yearColumns.map((column, index) => ({
+        formula: `${column}7-${column}9-${column}10-${column}11`,
+        result: projectedFcf[index],
+    }))])
+    wsModel.addRow(['Debt Service Coverage (DSCR)', ...yearColumns.map((column, index) => ({
+        formula: `(${column}7*(1-'Assumptions & Structure'!$B$12))/${column}10`,
+        result: projectedDscr[index],
+    }))])
 
     // Apply cell formatting to Sheet 2
     for (let r = 2; r <= 13; r++) {
@@ -177,12 +230,16 @@ export async function generateLiveExcelModel({
     const multiples = [3.5, 4.0, 4.5, 5.0, 5.5, 6.0]
     multiples.forEach((m, idx) => {
         const rowIdx = idx + 2
+        const enterpriseValue = m * projectedEbitda[4]
+        const endingEquity = enterpriseValue - seniorDebtAmount * 0.5
+        const moic = buyerEquity > 0 ? endingEquity / buyerEquity : 0
+        const irr = moic > 0 ? Math.pow(moic, 1 / holdPeriod) - 1 : 0
         wsReturns.addRow([
             `${m.toFixed(1)}x EBITDA`,
-            { formula: `${m}*'5-Yr Projections & Cash Flow'!$F$7` },
-            { formula: `B${rowIdx}-('Assumptions & Structure'!$B$6*0.5)` },
-            { formula: `C${rowIdx}/'Assumptions & Structure'!$B$11` },
-            { formula: `(D${rowIdx}^(1/'Assumptions & Structure'!$B$14))-1` },
+            { formula: `${m}*'5-Yr Projections & Cash Flow'!$F$7`, result: enterpriseValue },
+            { formula: `B${rowIdx}-('Assumptions & Structure'!$B$6*0.5)`, result: endingEquity },
+            { formula: `C${rowIdx}/'Assumptions & Structure'!$B$11`, result: moic },
+            { formula: `(D${rowIdx}^(1/'Assumptions & Structure'!$B$14))-1`, result: irr },
         ])
         const row = wsReturns.getRow(rowIdx)
         row.getCell(2).numFmt = currencyFmt
@@ -373,7 +430,103 @@ export async function generateLiveExcelModel({
         row.getCell(5).alignment = { wrapText: true }
     })
 
-    // Export to ArrayBuffer Blob
+    return workbook
+}
+
+function isFormulaValue(value: ExcelJS.CellValue): value is ExcelJS.CellFormulaValue {
+    return typeof value === 'object' && value !== null && 'formula' in value
+}
+
+function formatPreviewValue(value: ExcelJS.CellValue, numFmt?: string): string {
+    const rawValue = isFormulaValue(value) ? value.result : value
+    const format = numFmt ?? ''
+
+    if (rawValue === null || rawValue === undefined || rawValue === '') {
+        return isFormulaValue(value) ? `=${value.formula}` : ''
+    }
+
+    if (typeof rawValue === 'number') {
+        if (format.includes('%')) return `${(rawValue * 100).toFixed(1)}%`
+        if (format.toLowerCase().includes('x')) return `${rawValue.toFixed(2)}x`
+        if (format.includes('$')) return `$${Math.round(rawValue).toLocaleString()}`
+        return rawValue.toLocaleString()
+    }
+
+    if (rawValue instanceof Date) return rawValue.toLocaleDateString()
+    if (typeof rawValue === 'object') {
+        if ('richText' in rawValue) return rawValue.richText.map((part) => part.text).join('')
+        if ('text' in rawValue) return String(rawValue.text)
+        if ('error' in rawValue) return String(rawValue.error)
+    }
+
+    return String(rawValue)
+}
+
+function getPreviewSheetId(name: string): string {
+    const ids: Record<string, string> = {
+        'Assumptions & Structure': 'assumptions',
+        '5-Yr Projections & Cash Flow': 'projections',
+        'LBO Returns & Valuation': 'returns',
+        'Documented Facts Audit Trail': 'audit',
+        'Valuation Bridge & Escrow': 'bridge',
+    }
+    return ids[name] ?? name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+}
+
+/**
+ * Produces the in-app grid from the exact workbook used by the .xlsx download.
+ * Formula cells expose their real Excel formula; cells without a cached result
+ * display the formula until Excel recalculates the workbook on open.
+ */
+export function buildLiveExcelModelPreview(options: ExcelExportOptions): ExcelPreviewSheet[] {
+    const workbook = buildLiveExcelWorkbook(options)
+
+    return workbook.worksheets.map((worksheet) => {
+        const columnCount = worksheet.columnCount
+        const headers = Array.from({ length: columnCount }, (_, index) =>
+            formatPreviewValue(worksheet.getRow(1).getCell(index + 1).value, worksheet.getRow(1).getCell(index + 1).numFmt)
+        )
+        const rows: ExcelPreviewCell[][] = []
+
+        for (let rowNumber = 2; rowNumber <= worksheet.rowCount; rowNumber += 1) {
+            const row = worksheet.getRow(rowNumber)
+            const cells = Array.from({ length: columnCount }, (_, index) => {
+                const cell = row.getCell(index + 1)
+                const formula = isFormulaValue(cell.value) ? `=${cell.value.formula}` : undefined
+                const horizontal = cell.alignment?.horizontal
+                const align: ExcelPreviewCell['align'] = horizontal === 'center'
+                    ? 'center'
+                    : horizontal === 'right' || typeof (isFormulaValue(cell.value) ? cell.value.result : cell.value) === 'number'
+                        ? 'right'
+                        : 'left'
+
+                return {
+                    coord: cell.address,
+                    value: formatPreviewValue(cell.value, cell.numFmt),
+                    formula,
+                    isSubHeader: Boolean(cell.font?.bold),
+                    isAccent: Boolean(formula),
+                    align,
+                }
+            })
+            rows.push(cells)
+        }
+
+        return {
+            id: getPreviewSheetId(worksheet.name),
+            name: worksheet.name,
+            headers,
+            rows,
+        }
+    })
+}
+
+/**
+ * Builds a dynamic multi-tab financial model workbook with live formulas and
+ * serializes it entirely in browser memory.
+ */
+export async function generateLiveExcelModel(options: ExcelExportOptions): Promise<Blob> {
+    const workbook = buildLiveExcelWorkbook(options)
     const buffer = await workbook.xlsx.writeBuffer()
     return new Blob([buffer], {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

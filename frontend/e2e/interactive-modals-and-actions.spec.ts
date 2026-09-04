@@ -69,11 +69,85 @@ test.describe('Interactive Modals & Utilities', () => {
         await expect(loiModalHeading).toBeVisible()
     })
 
+    test('prints the LOI document when the LOI modal is active', async ({ page }) => {
+        await page.goto('/?export=loi')
+        const modal = page.locator('#export-diligence-modal')
+        await expect(modal).toBeVisible()
+
+        const popupPromise = page.waitForEvent('popup')
+        await modal.getByRole('button', { name: /Print \/ Save as PDF/i }).click()
+        const printPage = await popupPromise
+        await printPage.waitForLoadState('domcontentloaded')
+
+        await expect(printPage).toHaveTitle(/Letter of Intent/i)
+        await expect(printPage.locator('body')).toContainText('NON-BINDING LETTER OF INTENT')
+        await expect(printPage.locator('body')).not.toContainText('Investment Committee Memo')
+        await printPage.close()
+    })
+
     test('opens IC Memo modal directly via URL deep link ?export=ic_memo', async ({ page }) => {
         await page.goto('/?export=ic_memo')
         await page.waitForTimeout(800)
 
         const icModalHeading = page.locator('text=Investment Committee Deal Memorandum').first()
         await expect(icModalHeading).toBeVisible()
+    })
+
+    test('opens and navigates Excel model preview from exports tab', async ({ page }) => {
+        await page.goto('/?tab=exports')
+        await page.waitForTimeout(800)
+
+        const previewModelBtn = page.locator('#export-excel button', { hasText: /Preview Model/i }).first()
+        if (await previewModelBtn.isVisible()) {
+            await previewModelBtn.click()
+            await page.waitForTimeout(400)
+
+            const excelModal = page.locator('#excel-preview-modal').first()
+            await expect(excelModal).toBeVisible()
+
+            // Verify live formula workbook badge & sheet tabs
+            await expect(page.locator('text=Live Formula Workbook').first()).toBeVisible()
+            await expect(page.locator('text=Assumptions & Structure').first()).toBeVisible()
+
+            // Switch to Projections tab
+            const projectionsTab = page.locator('button', { hasText: /5-Yr Projections/i }).first()
+            if (await projectionsTab.isVisible()) {
+                await projectionsTab.click()
+                await page.waitForTimeout(300)
+                await expect(page.locator('text=Line Item ($ USD)').first()).toBeVisible()
+            }
+
+            // Close preview
+            const closeBtn = page.locator('#excel-preview-modal button', { hasText: /Close Preview/i }).first()
+            await closeBtn.click()
+            await page.waitForTimeout(300)
+            await expect(excelModal).not.toBeVisible()
+        }
+    })
+
+    test('previews the exact Markdown and JSON export payloads', async ({ page }) => {
+        await page.goto('/?tab=exports')
+
+        const dossierButton = page.locator('#export-summary button', { hasText: /Preview Dossier/i })
+        await expect(dossierButton).toBeVisible()
+        await dossierButton.click()
+
+        const dossierDialog = page.locator('#dossier-preview-modal')
+        await expect(dossierDialog).toBeVisible()
+        await dossierDialog.getByRole('button', { name: /Exact \.md Content/i }).click()
+        await expect(dossierDialog.getByText(/Due Diligence Summary:/i).first()).toBeVisible()
+        await dossierDialog.locator('button', { hasText: 'Close Preview' }).last().click()
+        await expect(dossierDialog).not.toBeVisible()
+
+        const jsonButton = page.locator('#export-json button', { hasText: /Inspect Payload/i })
+        await expect(jsonButton).toBeVisible()
+        await jsonButton.click()
+
+        const jsonDialog = page.locator('#json-audit-preview-modal')
+        await expect(jsonDialog).toBeVisible()
+        await expect(jsonDialog.getByText(/Exact machine-readable payload/i)).toBeVisible()
+        await expect(jsonDialog.getByText(/"projectName"/i).first()).toBeVisible()
+        await jsonDialog.locator('button', { hasText: 'Close Preview' }).last().click()
+        await expect(jsonDialog).not.toBeVisible()
     })
 })

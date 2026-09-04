@@ -1655,6 +1655,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         type?: 'info' | 'success' | 'warning' | 'error'
         projectId?: string
         targetTab?: 'diligence' | 'synthesis'
+        duration?: number
     }
     const [activeToasts, setActiveToasts] = useState<ToastItem[]>([])
 
@@ -1663,7 +1664,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         setActiveToasts(prev => [...prev, { ...toast, id }])
         setTimeout(() => {
             setActiveToasts(prev => prev.filter(t => t.id !== id))
-        }, 7000)
+        }, toast.duration ?? 7000)
     }
 
     useEffect(() => {
@@ -3600,7 +3601,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         batchQueueRef.current = queue
         
         const uniqueBatchMap = new Map<string, SubmissionHistoryItem>()
-        batchDocs.forEach(r => {
+        allCandidateDocs.forEach((r) => {
             const key = (r.fileName || r.requestID || String(r.id)).trim().toLowerCase()
             if (!uniqueBatchMap.has(key)) uniqueBatchMap.set(key, r)
         })
