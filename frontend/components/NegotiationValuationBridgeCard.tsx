@@ -17,6 +17,7 @@ import {
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
+import DataOriginBadge from './common/DataOriginBadge'
 import { copyToClipboard } from '../utils/clipboard'
 import {
     computeValuationBridge,
@@ -87,10 +88,17 @@ export default function NegotiationValuationBridgeCard({ model, synthesis, proje
                         </CardTitle>
                         <CardInfoPopover cardId="valuation-bridge" />
                     </div>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-semibold text-primary border border-primary/20">
-                        <TrendingDown className="h-3 w-3" />
-                        Retrading &amp; Escrow Sizing
-                    </span>
+                    <div className="flex items-center gap-2">
+                        <DataOriginBadge
+                            origin="calculated"
+                            label="Contract Bridge Model"
+                            formula="Purchase Price − Diligence Deductions"
+                        />
+                        <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-semibold text-primary border border-primary/20">
+                            <TrendingDown className="h-3 w-3" />
+                            Retrading &amp; Escrow Sizing
+                        </span>
+                    </div>
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">
                     Itemized valuation deductions from diligence findings, special indemnity escrow recommendations, and APA contract language.
@@ -101,14 +109,20 @@ export default function NegotiationValuationBridgeCard({ model, synthesis, proje
                 {/* Executive Bridge KPI Summary Banner */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div className="rounded-xl border border-border bg-muted/30 p-3">
-                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Initial LOI Valuation</p>
+                        <div className="flex items-center justify-between mb-0.5">
+                            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Initial LOI Valuation</p>
+                            <DataOriginBadge origin={model.purchasePrice ? "user_entered" : "assumption"} label={model.purchasePrice ? "Saved LOI" : "Model Anchor"} compact />
+                        </div>
                         <p className="text-lg font-bold text-foreground mt-0.5">{formatMoney(bridge.baselinePurchasePrice)}</p>
                         <p className="text-[10px] text-muted-foreground mt-0.5 font-mono">
                             {bridge.entryMultiple > 0 ? `${bridge.entryMultiple.toFixed(2)}x EBITDA` : '—'}
                         </p>
                     </div>
                     <div className="rounded-xl border border-rose-500/25 bg-rose-500/5 p-3">
-                        <p className="text-[10px] font-semibold uppercase tracking-wider text-rose-700 dark:text-rose-400">Total EV Deductions</p>
+                        <div className="flex items-center justify-between mb-0.5">
+                            <p className="text-[10px] font-semibold uppercase tracking-wider text-rose-700 dark:text-rose-400">Total EV Deductions</p>
+                            <DataOriginBadge origin="calculated" label="Haircut" formula="Σ EV Deductions" compact />
+                        </div>
                         <p className="text-lg font-bold text-rose-700 dark:text-rose-400 mt-0.5">
                             -{formatMoney(bridge.totalEvDeduction)}
                         </p>
@@ -117,12 +131,18 @@ export default function NegotiationValuationBridgeCard({ model, synthesis, proje
                         </p>
                     </div>
                     <div className="rounded-xl border border-blue-500/25 bg-blue-500/5 p-3">
-                        <p className="text-[10px] font-semibold uppercase tracking-wider text-blue-700 dark:text-blue-400">Special Escrow Fund</p>
+                        <div className="flex items-center justify-between mb-0.5">
+                            <p className="text-[10px] font-semibold uppercase tracking-wider text-blue-700 dark:text-blue-400">Special Escrow Fund</p>
+                            <DataOriginBadge origin="calculated" label="Sized Escrow" formula="Σ Indemnity Escrows" compact />
+                        </div>
                         <p className="text-lg font-bold text-blue-700 dark:text-blue-400 mt-0.5">{formatMoney(bridge.totalSpecialEscrow)}</p>
                         <p className="text-[10px] text-muted-foreground mt-0.5">R&amp;W / tax holdback</p>
                     </div>
                     <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3">
-                        <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Defensible Counter-Offer</p>
+                        <div className="flex items-center justify-between mb-0.5">
+                            <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Defensible Counter-Offer</p>
+                            <DataOriginBadge origin="calculated" label="Counter-Offer" formula="Initial LOI − EV Deductions" compact />
+                        </div>
                         <p className="text-lg font-bold text-emerald-700 dark:text-emerald-400 mt-0.5">{formatMoney(bridge.defensibleCounterOffer)}</p>
                         <p className="text-[10px] font-semibold text-emerald-700/80 dark:text-emerald-400/80 mt-0.5">
                             Total buyer relief: {formatMoney(bridge.totalSavingsDollars)} ({bridge.totalSavingsPercent.toFixed(1)}%)
@@ -146,6 +166,7 @@ export default function NegotiationValuationBridgeCard({ model, synthesis, proje
                                 <div className="space-y-1 max-w-xl">
                                     <div className="flex items-center gap-2 flex-wrap">
                                         <span className="text-xs font-bold text-foreground">{item.title}</span>
+                                        <DataOriginBadge origin="extracted" label="AI Diligence Finding" compact />
                                         <span className={`px-1.5 py-0.2 rounded text-[9px] font-semibold uppercase ${
                                             item.category === 'ebitda_haircut'
                                                 ? 'bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30'

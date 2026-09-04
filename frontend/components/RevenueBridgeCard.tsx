@@ -5,6 +5,7 @@ import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
+import DataOriginBadge, { type DataOrigin } from './common/DataOriginBadge'
 
 type Props = {
     model: DealModel
@@ -15,6 +16,9 @@ type BridgeItem = {
     value: number
     color: string
     isTotal?: boolean
+    origin: DataOrigin
+    originLabel?: string
+    formula?: string
 }
 
 export default function RevenueBridgeCard({ model }: Props) {
@@ -32,11 +36,11 @@ export default function RevenueBridgeCard({ model }: Props) {
         const futureRevenue = revenue + volumeGrowth + priceIncreases + newProducts
 
         const result: BridgeItem[] = [
-            { label: 'Current Revenue', value: revenue, color: 'bg-blue-500', isTotal: true },
-            { label: 'Volume Growth', value: volumeGrowth, color: 'bg-emerald-500' },
-            { label: 'Price Increases', value: priceIncreases, color: 'bg-amber-500' },
-            { label: 'New Products/Services', value: newProducts, color: 'bg-violet-500' },
-            { label: `${holdYears}-Year Revenue`, value: futureRevenue, color: 'bg-blue-600', isTotal: true },
+            { label: 'Current Revenue', value: revenue, color: 'bg-blue-500', isTotal: true, origin: 'extracted', originLabel: 'Reported LTM' },
+            { label: 'Volume Growth', value: volumeGrowth, color: 'bg-emerald-500', origin: 'assumption', originLabel: '60% Volume Proxy', formula: 'Revenue × Growth × Years × 60%' },
+            { label: 'Price Increases', value: priceIncreases, color: 'bg-amber-500', origin: 'assumption', originLabel: '30% Price Proxy', formula: 'Revenue × Growth × Years × 30%' },
+            { label: 'New Products/Services', value: newProducts, color: 'bg-violet-500', origin: 'assumption', originLabel: '10% New Stream', formula: 'Revenue × Growth × Years × 10%' },
+            { label: `${holdYears}-Year Revenue`, value: futureRevenue, color: 'bg-blue-600', isTotal: true, origin: 'calculated', formula: 'Base + Volume + Price + New Products' },
         ]
 
         return result
@@ -49,19 +53,34 @@ export default function RevenueBridgeCard({ model }: Props) {
     return (
         <Card className="overflow-hidden">
             <CardHeader className="border-b border-border bg-card/80 pb-3">
-                <div className="flex items-center gap-2">
-                    <BarChart3 className="h-4 w-4 text-primary" />
-                    <CardTitle className="text-lg">Revenue bridge</CardTitle>
-                    <CardInfoPopover cardId="revenue-bridge" />
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                        <BarChart3 className="h-4 w-4 text-primary" />
+                        <CardTitle className="text-lg">Revenue bridge</CardTitle>
+                        <CardInfoPopover cardId="revenue-bridge" />
+                    </div>
+                    <DataOriginBadge
+                        origin="assumption"
+                        label="Growth Attribution Model"
+                        description="Illustrative underwriting attribution decomposing revenue growth into volume, pricing, and new product assumptions."
+                    />
                 </div>
             </CardHeader>
             <CardContent className="p-4 space-y-3">
                 {items.map((item, i) => (
                     <div key={i}>
                         <div className="flex items-center justify-between mb-1">
-                            <span className={`text-xs ${item.isTotal ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
-                                {item.label}
-                            </span>
+                            <div className="flex items-center gap-1.5">
+                                <span className={`text-xs ${item.isTotal ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
+                                    {item.label}
+                                </span>
+                                <DataOriginBadge
+                                    origin={item.origin}
+                                    label={item.originLabel}
+                                    formula={item.formula}
+                                    compact
+                                />
+                            </div>
                             <span className={`text-xs ${item.isTotal ? 'font-bold text-foreground' : 'font-medium text-foreground'}`}>
                                 {item.isTotal ? '' : '+'}{item.isTotal ? '$' : '$'}{Math.round(item.value).toLocaleString()}
                             </span>

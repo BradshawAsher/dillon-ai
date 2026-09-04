@@ -1,4 +1,5 @@
 import React, { Suspense } from 'react'
+import DataLineageLegend from '../common/DataLineageLegend'
 import ModelAssumptionsSummary from '../ModelAssumptionsSummary'
 import GrowthDecisionSummary from '../GrowthDecisionSummary'
 import ScenarioComparisonCard from '../ScenarioComparisonCard'
@@ -47,7 +48,8 @@ export function GrowthWorkspaceView({
 }: GrowthWorkspaceViewProps) {
     return (
         <section className="space-y-6">
-            <div id="growth-header" className="scroll-mt-6">
+            <div id="growth-header" className="scroll-mt-6 space-y-3">
+                <DataLineageLegend />
                 <ModelAssumptionsSummary model={activeDealModel} area="growth" />
             </div>
             {isGrowthIllustrativePreview ? <IllustrativeModelPreviewNotice /> : null}

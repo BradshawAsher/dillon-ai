@@ -6,6 +6,7 @@ import { parseDocumentedFacts } from '../utils/evidence'
 import { parseMagnitudeMoney } from '../utils/documentedFacts'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
+import DataOriginBadge from './common/DataOriginBadge'
 
 type Props = {
     model: DealModel
@@ -66,7 +67,10 @@ export default function ValuationGapCard({ model, synthesis }: Props) {
                 <div className="space-y-3">
                     <div>
                         <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs font-medium text-foreground">Asking Price</span>
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-xs font-medium text-foreground">Asking Price</span>
+                                <DataOriginBadge origin="user_entered" compact />
+                            </div>
                             <span className="text-xs font-semibold text-foreground">${data.askingPrice.toLocaleString()}</span>
                         </div>
                         <div className="h-5 w-full rounded-full bg-muted overflow-hidden">
@@ -75,7 +79,10 @@ export default function ValuationGapCard({ model, synthesis }: Props) {
                     </div>
                     <div>
                         <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs font-medium text-foreground">Fair Value Estimate</span>
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-xs font-medium text-foreground">Fair Value Estimate</span>
+                                <DataOriginBadge origin="calculated" formula="EBITDA × 4.0x or AI Synthesis Valuation" compact />
+                            </div>
                             <span className="text-xs font-semibold text-foreground">${data.fairValue.toLocaleString()}</span>
                         </div>
                         <div className="h-5 w-full rounded-full bg-muted overflow-hidden">
@@ -84,7 +91,10 @@ export default function ValuationGapCard({ model, synthesis }: Props) {
                     </div>
                     <div>
                         <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs font-medium text-foreground">Total Potential Value</span>
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-xs font-medium text-foreground">Total Potential Value</span>
+                                <DataOriginBadge origin="calculated" formula="Fair Value + Productivity Gain + Margin Improvement" compact />
+                            </div>
                             <span className="text-xs font-semibold text-foreground">${data.totalPotentialValue.toLocaleString()}</span>
                         </div>
                         <div className="h-5 w-full rounded-full bg-muted overflow-hidden">
@@ -101,11 +111,17 @@ export default function ValuationGapCard({ model, synthesis }: Props) {
                         </span>
                     </div>
                     <div className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground">Productivity Gains (est.)</span>
+                        <div className="flex items-center gap-1.5">
+                            <span className="text-xs text-muted-foreground">Productivity Gains (est.)</span>
+                            <DataOriginBadge origin="assumption" label="+15% EBITDA" compact />
+                        </div>
                         <span className="text-xs font-medium text-foreground">+${data.productivityGain.toLocaleString()}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground">Margin Improvement (est.)</span>
+                        <div className="flex items-center gap-1.5">
+                            <span className="text-xs text-muted-foreground">Margin Improvement (est.)</span>
+                            <DataOriginBadge origin="assumption" label="+300 bps" compact />
+                        </div>
                         <span className="text-xs font-medium text-foreground">+${data.marginImprovement.toLocaleString()}</span>
                     </div>
                 </div>

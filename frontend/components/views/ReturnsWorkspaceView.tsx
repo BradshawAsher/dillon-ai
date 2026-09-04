@@ -1,4 +1,5 @@
 import React, { Suspense } from 'react'
+import DataLineageLegend from '../common/DataLineageLegend'
 import ReturnsDecisionSummary from '../ReturnsDecisionSummary'
 import AllCashReturnsCard from '../AllCashReturnsCard'
 import FinancedReturnsCard from '../FinancedReturnsCard'
@@ -51,7 +52,8 @@ export function ReturnsWorkspaceView({
 }: ReturnsWorkspaceViewProps) {
     return (
         <section className="space-y-6">
-            <div id="returns-header" className="scroll-mt-6">
+            <div id="returns-header" className="scroll-mt-6 space-y-3">
+                <DataLineageLegend />
                 <ModelAssumptionsSummary model={activeDealModel} area="returns" />
                 <ReturnsDecisionSummary model={returnsDisplayModel} />
             </div>

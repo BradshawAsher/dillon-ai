@@ -5,6 +5,7 @@ import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
+import DataOriginBadge from './common/DataOriginBadge'
 
 type Props = {
     model: DealModel
@@ -90,20 +91,30 @@ export default function ComparableTransactionsCard({ model }: Props) {
     return (
         <Card className="overflow-hidden">
             <CardHeader className="border-b border-border bg-card/80 pb-3">
-                <div className="flex items-center gap-2">
-                    <Scale className="h-4 w-4 text-primary" />
-                    <CardTitle className="text-lg">Comparable transactions</CardTitle>
-                    <CardInfoPopover cardId="comparable-transactions" />
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                        <Scale className="h-4 w-4 text-primary" />
+                        <CardTitle className="text-lg">Comparable transactions</CardTitle>
+                        <CardInfoPopover cardId="comparable-transactions" />
+                    </div>
+                    <DataOriginBadge
+                        origin="benchmark"
+                        label="Sector Multiples Benchmark"
+                        description="Synthetic peer multiple bands derived from lower-middle-market transaction benchmarks and revenue tier heuristics — not closed M&A transaction comps."
+                    />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                    What do similar deals look like?
+                    What do similar deals look like across standard lower-middle-market valuation tiers?
                 </p>
             </CardHeader>
             <CardContent className="p-4 space-y-4">
                 {/* Current deal position */}
                 <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
                     <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium text-foreground">This deal</span>
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs font-medium text-foreground">This deal</span>
+                            <DataOriginBadge origin="calculated" label="Calculated Multiple" compact />
+                        </div>
                         <span className="text-xs font-medium text-primary">
                             {analysis.currentMultiple.toFixed(1)}x EBITDA
                         </span>
@@ -123,8 +134,11 @@ export default function ComparableTransactionsCard({ model }: Props) {
                                 className="flex items-center justify-between rounded-lg bg-muted/50 p-3"
                             >
                                 <div>
-                                    <div className="text-xs font-medium text-foreground">
-                                        {comp.name}
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="text-xs font-medium text-foreground">
+                                            {comp.name}
+                                        </span>
+                                        <DataOriginBadge origin="benchmark" compact />
                                     </div>
                                     <div className="text-[10px] text-muted-foreground">
                                         {comp.multiple.toFixed(1)}x = {money(comp.impliedPrice)}

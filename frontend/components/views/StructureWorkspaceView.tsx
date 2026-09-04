@@ -1,4 +1,5 @@
 import React, { Suspense } from 'react'
+import DataLineageLegend from '../common/DataLineageLegend'
 import ModelAssumptionsSummary from '../ModelAssumptionsSummary'
 import DealStructureVisualCard from '../DealStructureVisualCard'
 import DealStackCard from '../DealStackCard'
@@ -26,7 +27,8 @@ export function StructureWorkspaceView({
 }: StructureWorkspaceViewProps) {
     return (
         <section className="space-y-6">
-            <div id="structure-header" className="scroll-mt-6">
+            <div id="structure-header" className="scroll-mt-6 space-y-3">
+                <DataLineageLegend />
                 <ModelAssumptionsSummary model={hydratedDealModel} area="structure" />
             </div>
             <div id="structure-visual" className="scroll-mt-6">

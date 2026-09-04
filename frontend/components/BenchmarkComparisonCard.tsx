@@ -196,7 +196,7 @@ export default function BenchmarkComparisonCard({ model, synthesis }: Props) {
                         {sectorProfile.description}
                     </p>
                     <Badge variant="outline" className="text-[10px] font-medium border-primary/30 text-primary bg-primary/5">
-                        Peer Median: {sectorProfile.metrics.entryMultiple.median}x EV • {(sectorProfile.metrics.grossMargin.median * 100).toFixed(0)}% Gross • {(sectorProfile.metrics.ebitdaMargin.median * 100).toFixed(0)}% EBITDA
+                        Peer Median: {sectorProfile.metrics.entryMultiple.median.toFixed(1)}x EV • {(sectorProfile.metrics.grossMargin.median * 100).toFixed(0)}% Gross • {(sectorProfile.metrics.ebitdaMargin.median * 100).toFixed(0)}% EBITDA
                     </Badge>
                 </div>
             </CardHeader>

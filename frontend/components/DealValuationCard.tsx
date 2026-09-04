@@ -12,6 +12,7 @@ import { Input } from '../lib/shadcn/input'
 import { MoneyBarChart } from './DealCharts'
 import ValuationImpactBridge from './ValuationImpactBridge'
 import CardInfoPopover from './common/CardInfoPopover'
+import DataOriginBadge from './common/DataOriginBadge'
 
 type DealValuationCardProps = {
     synthesis?: ProjectSynthesisItem
@@ -162,9 +163,9 @@ export default function DealValuationCard({ synthesis, askingPrice, model, onMod
                             <div className="flex items-center justify-between gap-1">
                                 <p className="text-xs text-muted-foreground">Supported base value</p>
                                 {baseValue !== null ? (
-                                    <Badge variant="success" className="text-[9px] px-1.5 py-0">✓ Verified</Badge>
+                                    <DataOriginBadge origin="calculated" label="Synthesized Value" formula="Multi-method reconciliation" compact />
                                 ) : (
-                                    <Badge variant="warning" className="text-[9px] px-1.5 py-0">⚠ Illustrative</Badge>
+                                    <DataOriginBadge origin="assumption" label="Method Blend" compact />
                                 )}
                             </div>
                             <p className="mt-1 text-lg font-bold">{baseValue === null ? (blended === null ? 'Still calculating' : formatCurrencyValue(String(blended), 'USD')) : formatCurrencyValue(String(baseValue), synthesis?.valuationCurrency || 'USD')}</p>
@@ -176,9 +177,9 @@ export default function DealValuationCard({ synthesis, askingPrice, model, onMod
                             <div className="flex items-center justify-between gap-1">
                                 <p className="text-xs text-muted-foreground">Price position</p>
                                 {effectiveAskingPrice !== null ? (
-                                    <Badge variant="success" className="text-[9px] px-1.5 py-0">✓ Verified</Badge>
+                                    <DataOriginBadge origin="user_entered" label="Asking Price" compact />
                                 ) : (
-                                    <Badge variant="secondary" className="text-[9px] px-1.5 py-0">Not Set</Badge>
+                                    <DataOriginBadge origin="assumption" label="Not Set" compact />
                                 )}
                             </div>
                             <p className="mt-1 text-lg font-bold">{premiumPercent === null ? 'Set asking price' : `${Math.abs(premiumPercent).toFixed(1)}% ${premiumPercent > 0 ? 'premium' : premiumPercent < 0 ? 'discount' : 'at base'}`}</p>
@@ -190,9 +191,9 @@ export default function DealValuationCard({ synthesis, askingPrice, model, onMod
                             <div className="flex items-center justify-between gap-1">
                                 <p className="text-xs text-muted-foreground">Decision signal</p>
                                 {premiumPercent !== null ? (
-                                    <Badge variant="success" className="text-[9px] px-1.5 py-0">✓ Verified Signal</Badge>
+                                    <DataOriginBadge origin="calculated" label="Risk Signal" formula="(Asking Price − Base Value) / Base Value" compact />
                                 ) : (
-                                    <Badge variant="secondary" className="text-[9px] px-1.5 py-0">Pending</Badge>
+                                    <DataOriginBadge origin="assumption" label="Pending" compact />
                                 )}
                             </div>
                             <p className="mt-1 text-lg font-bold">{premiumPercent === null ? 'Compare price' : premiumPercent > 10 ? 'Price needs support' : premiumPercent < -10 ? 'Potential cushion' : 'Near supported value'}</p>
@@ -259,7 +260,11 @@ export default function DealValuationCard({ synthesis, askingPrice, model, onMod
                         >
                             <div className="flex items-center justify-between gap-2">
                                 <p className="text-xs font-medium text-muted-foreground group-hover:text-foreground">{method.label}</p>
-                                {method.illustrative ? <Badge variant="warning" className="text-[10px]">Illustrative</Badge> : <Badge variant="success" className="text-[10px]">Documented + saved</Badge>}
+                                {method.illustrative ? (
+                                    <DataOriginBadge origin="assumption" label="Assumed Method" compact />
+                                ) : (
+                                    <DataOriginBadge origin="calculated" label="Fact-Backed Formula" compact />
+                                )}
                             </div>
                             <p className="mt-1.5 font-bold text-base text-foreground">{formatCurrencyValue(String(method.value), 'USD')}</p>
                             <p className={`mt-1 text-[10px] font-semibold ${method.illustrative ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}`}>

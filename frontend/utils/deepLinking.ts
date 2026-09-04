@@ -70,6 +70,7 @@ const SECTION_ANCHOR_MAP: Record<string, WorkspaceTab> = {
     // overview
     'overview-snapshot': 'overview',
     'overview-health': 'overview',
+    'overview-war-room': 'overview',
     'overview-actions': 'overview',
     'overview-timeline': 'overview',
     // analysis
@@ -78,6 +79,7 @@ const SECTION_ANCHOR_MAP: Record<string, WorkspaceTab> = {
     'analysis-snapshot': 'analysis',
     'analysis-opportunity': 'analysis',
     'analysis-risk-valuation': 'analysis',
+    'analysis-benchmark': 'analysis',
     // diagnostics
     'diag-quick-insights': 'diagnostics',
     'diag-thesis': 'diagnostics',

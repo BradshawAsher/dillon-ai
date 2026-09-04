@@ -79,6 +79,30 @@ export function saveWarRoomConfig(config: WarRoomConfig): void {
     }
 }
 
+const AUTO_ALERT_KEY_PREFIX = 'mergeworks_war_room_auto_alert_'
+
+export function getAutoAlertKey(projectId: string, versionId: string): string {
+    return `${AUTO_ALERT_KEY_PREFIX}${projectId.trim().toLowerCase()}_${(versionId || 'latest').trim().toLowerCase()}`
+}
+
+export function hasAutoAlertedSynthesis(projectId: string, versionId: string): boolean {
+    try {
+        if (typeof localStorage === 'undefined') return false
+        return localStorage.getItem(getAutoAlertKey(projectId, versionId)) === 'true'
+    } catch {
+        return false
+    }
+}
+
+export function markAutoAlertedSynthesis(projectId: string, versionId: string): void {
+    try {
+        if (typeof localStorage === 'undefined') return
+        localStorage.setItem(getAutoAlertKey(projectId, versionId), 'true')
+    } catch {
+        // Safe fallback if localStorage is disabled
+    }
+}
+
 export function detectPlatformFromUrl(url: string): 'slack' | 'teams' {
     const lower = (url || '').toLowerCase()
     if (lower.includes('office.com') || lower.includes('microsoft.com') || lower.includes('webhook.office')) {

@@ -11,6 +11,7 @@ import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import AssumptionNotice from './AssumptionNotice'
 import { CashFlowChart, CumulativeCashFlowChart } from './DealCharts'
 import InfoTip, { FINANCIAL_TERMS } from './InfoTip'
+import DataOriginBadge from './common/DataOriginBadge'
 
 import { safeFormatCurrency } from '../utils/diligenceDashboardUtils'
 
@@ -175,7 +176,7 @@ export default function AllCashReturnsCard({ model, documents = [], onOpenEviden
                                 detail="purchase price + fees + working capital"
                                 infoTerm="Initial investment"
                                 alignTip="left"
-                                statusBadge={priceIsConfirmed ? <Badge variant="success" className="text-[10px] px-1.5 py-0">✓ Confirmed Price</Badge> : <Badge variant="warning" className="text-[10px] px-1.5 py-0">⚠ Illustrative Price</Badge>}
+                                statusBadge={<DataOriginBadge origin="calculated" label={priceIsConfirmed ? "Calculated (Saved Price)" : "Calculated (Preview Price)"} formula="price + fees + working capital" compact />}
                                 {...evidenceProps('initialInvestment')}
                             />
                             <Metric
@@ -184,7 +185,7 @@ export default function AllCashReturnsCard({ model, documents = [], onOpenEviden
                                 detail="EBITDA/SDE × (1 − tax rate) − capex"
                                 infoTerm="Operating cash flow"
                                 alignTip="left"
-                                statusBadge={ebitdaIsConfirmed ? <Badge variant="success" className="text-[10px] px-1.5 py-0">✓ Verified EBITDA</Badge> : <Badge variant="warning" className="text-[10px] px-1.5 py-0">⚠ Illustrative EBITDA</Badge>}
+                                statusBadge={<DataOriginBadge origin="calculated" label={ebitdaIsConfirmed ? "Calculated (Verified EBITDA)" : "Calculated (Illustrative)"} formula="EBITDA × (1 − tax) − capex" compact />}
                                 {...evidenceProps('annualCashFlow')}
                             />
                             <Metric
@@ -193,7 +194,7 @@ export default function AllCashReturnsCard({ model, documents = [], onOpenEviden
                                 detail="annual cash flow ÷ initial investment"
                                 infoTerm="Simple annual ROI"
                                 alignTip="center"
-                                statusBadge={ebitdaIsConfirmed && priceIsConfirmed ? <Badge variant="success" className="text-[10px] px-1.5 py-0">✓ Verified ROI</Badge> : <Badge variant="warning" className="text-[10px] px-1.5 py-0">⚠ Illustrative Model</Badge>}
+                                statusBadge={<DataOriginBadge origin="calculated" label="Derived ROI" formula="annual cash flow ÷ initial investment" compact />}
                                 {...evidenceProps('annualRoi')}
                             />
                             <Metric
@@ -202,7 +203,7 @@ export default function AllCashReturnsCard({ model, documents = [], onOpenEviden
                                 detail="initial investment ÷ annual cash flow"
                                 infoTerm="Payback period"
                                 alignTip="right"
-                                statusBadge={ebitdaIsConfirmed && priceIsConfirmed ? <Badge variant="success" className="text-[10px] px-1.5 py-0">✓ Verified Payback</Badge> : <Badge variant="warning" className="text-[10px] px-1.5 py-0">⚠ Illustrative Model</Badge>}
+                                statusBadge={<DataOriginBadge origin="calculated" label="Payback Timeline" formula="initial investment ÷ annual cash flow" compact />}
                                 {...evidenceProps('paybackYears')}
                             />
                         </div>
@@ -214,7 +215,7 @@ export default function AllCashReturnsCard({ model, documents = [], onOpenEviden
                                 detail="annual cash flow × hold period"
                                 infoTerm="Cumulative cash flow"
                                 alignTip="left"
-                                statusBadge={ebitdaIsConfirmed ? <Badge variant="success" className="text-[10px] px-1.5 py-0">✓ Verified Cash Flow</Badge> : <Badge variant="warning" className="text-[10px] px-1.5 py-0">⚠ Illustrative Model</Badge>}
+                                statusBadge={<DataOriginBadge origin="calculated" label="Cumulative Cash Flow" formula="annual cash flow × hold period" compact />}
                             />
                             <Metric
                                 label="Operating cash-flow MOIC"
@@ -222,7 +223,7 @@ export default function AllCashReturnsCard({ model, documents = [], onOpenEviden
                                 detail="operating cash flow ÷ initial investment"
                                 infoTerm="MOIC"
                                 alignTip="left"
-                                statusBadge={ebitdaIsConfirmed && priceIsConfirmed ? <Badge variant="success" className="text-[10px] px-1.5 py-0">✓ Verified MOIC</Badge> : <Badge variant="warning" className="text-[10px] px-1.5 py-0">⚠ Illustrative Model</Badge>}
+                                statusBadge={<DataOriginBadge origin="calculated" label="Operating MOIC" formula="cumulative cash flow ÷ initial investment" compact />}
                             />
                             <Metric
                                 label="Net exit proceeds"
@@ -230,7 +231,7 @@ export default function AllCashReturnsCard({ model, documents = [], onOpenEviden
                                 detail="EBITDA/SDE × exit multiple − exit costs"
                                 infoTerm="Net exit proceeds"
                                 alignTip="center"
-                                statusBadge={ebitdaIsConfirmed ? <Badge variant="success" className="text-[10px] px-1.5 py-0">✓ Verified EBITDA</Badge> : <Badge variant="warning" className="text-[10px] px-1.5 py-0">⚠ Illustrative EBITDA</Badge>}
+                                statusBadge={<DataOriginBadge origin="calculated" label="Exit Proceeds" formula="EBITDA × exit multiple − exit costs" compact />}
                                 {...evidenceProps('netExitProceeds')}
                             />
                             <Metric
@@ -239,7 +240,7 @@ export default function AllCashReturnsCard({ model, documents = [], onOpenEviden
                                 detail="operating cash flow + exit proceeds"
                                 infoTerm="IRR"
                                 alignTip="right"
-                                statusBadge={ebitdaIsConfirmed && priceIsConfirmed ? <Badge variant="success" className="text-[10px] px-1.5 py-0">✓ Verified Exit</Badge> : <Badge variant="warning" className="text-[10px] px-1.5 py-0">⚠ Illustrative Preview</Badge>}
+                                statusBadge={<DataOriginBadge origin="calculated" label="All-Cash Return" formula="IRR & MOIC over total all-cash inflows" compact />}
                                 {...evidenceProps('totalMoic')}
                             />
                         </div>

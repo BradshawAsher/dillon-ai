@@ -71,6 +71,13 @@ import { parseUrlDeepLinkState, matchProjectFromQuery, syncBrowserUrl } from '..
 import DealWorkspaceNav from '../components/DealWorkspaceNav'
 import TabSidebarTOC from '../components/TabSidebarTOC'
 import SectionHeader from '../components/SectionHeader'
+import {
+    getWarRoomConfig,
+    hasAutoAlertedSynthesis,
+    markAutoAlertedSynthesis,
+    dispatchWarRoomAlert,
+    type WarRoomDealSummary,
+} from '../services/dealWarRoomService'
 
 const ProjectIntakeCard = lazyWithRetry(() => import('../components/ProjectIntakeCard'))
 const ProjectSynthesisCard = lazyWithRetry(() => import('../components/ProjectSynthesisCard'))
@@ -2619,6 +2626,52 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         if (!start) return 0
         return Math.max(0, Math.floor((synthesisNowTimestamp - start) / 1000))
     }, [isAnySynthesisRunning, synthesisStartTimestamps, activeProjectId, synthesisNowTimestamp])
+
+    // Automated War Room alert when project synthesis completes with a verdict
+    useEffect(() => {
+        if (!activeProjectSynthesis || !activeProjectSynthesisSucceeded) return
+        if (isTourActive || isQuestionnaireTour || isExampleMode) return
+        const pid = activeProjectId || activeProjectSynthesis.projectId
+        if (!pid) return
+
+        const config = getWarRoomConfig(pid)
+        if (!config.enabled || !config.notifyOnSynthesisVerdict || !config.webhookUrl) return
+
+        const versionId = String(activeProjectSynthesis.id || activeProjectSynthesis.updatedAt || activeProjectSynthesis.createdAt || 'v1')
+        if (hasAutoAlertedSynthesis(pid, versionId)) return
+
+        // Mark alerted immediately to prevent duplicate requests across re-renders
+        markAutoAlertedSynthesis(pid, versionId)
+
+        const dealSummary: WarRoomDealSummary = {
+            projectName: effectiveDealName || pid,
+            dealName: effectiveDealName || pid,
+            askingPrice: typeof hydratedDealModel.askingPrice === 'number' ? hydratedDealModel.askingPrice : undefined,
+            purchasePrice: typeof hydratedDealModel.askingPrice === 'number' ? hydratedDealModel.askingPrice : undefined,
+            ebitda: typeof hydratedDealModel.ebitda === 'number' ? hydratedDealModel.ebitda : undefined,
+            normalizedEbitda: typeof hydratedDealModel.ebitda === 'number' ? hydratedDealModel.ebitda : undefined,
+            revenue: typeof hydratedDealModel.revenue === 'number' ? hydratedDealModel.revenue : undefined,
+            entryMultiple: typeof hydratedDealModel.askingPrice === 'number' && typeof hydratedDealModel.ebitda === 'number' && hydratedDealModel.ebitda > 0
+                ? Number((hydratedDealModel.askingPrice / hydratedDealModel.ebitda).toFixed(1))
+                : undefined,
+            riskLevel: activeProjectSynthesis.finalRiskLevel || (activeProjectSynthesis as any).riskLevel || 'Low',
+            trafficLight: activeProjectSynthesis.finalTrafficLight || 'YELLOW',
+            recommendation: activeProjectSynthesis.finalRecommendation || activeProjectSynthesis.finalJudgmentSummary || 'Synthesis Complete',
+            topFlags: (activeProjectSynthesis.redFlags || []).slice(0, 3),
+            dashboardUrl: typeof window !== 'undefined' ? `${window.location.origin}${window.location.pathname}#tab:overview` : undefined,
+        }
+
+        void dispatchWarRoomAlert(pid, dealSummary, config, '🤖 [Auto Alert] Synthesis Buy/Pass Verdict Reached')
+    }, [
+        activeProjectSynthesis,
+        activeProjectSynthesisSucceeded,
+        activeProjectId,
+        effectiveDealName,
+        hydratedDealModel,
+        isTourActive,
+        isQuestionnaireTour,
+        isExampleMode,
+    ])
 
     const [selectedBatchDocIndex, setSelectedBatchDocIndex] = useState<number>(0)
     const [userHasNavigatedBatchDocs, setUserHasNavigatedBatchDocs] = useState(false)

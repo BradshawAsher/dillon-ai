@@ -57,6 +57,17 @@ export default function DealWarRoomModal({
         }
     }, [open, projectId])
 
+    useEffect(() => {
+        if (!open) return
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                onOpenChange(false)
+            }
+        }
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [open, onOpenChange])
+
     if (!open) return null
 
     const detectedPlatform = detectPlatformFromUrl(config.webhookUrl)
@@ -115,6 +126,8 @@ export default function DealWarRoomModal({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
             <Card className="w-full max-w-2xl bg-card border-border shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
                 <button
+                    type="button"
+                    aria-label="Close dialog"
                     onClick={() => onOpenChange(false)}
                     className="absolute top-4 right-4 p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
                 >

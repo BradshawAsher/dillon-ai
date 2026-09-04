@@ -10,6 +10,7 @@ import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import { CashFlowChart } from './DealCharts'
 import InfoTip, { FINANCIAL_TERMS } from './InfoTip'
 import CardInfoPopover from './common/CardInfoPopover'
+import DataOriginBadge from './common/DataOriginBadge'
 
 function money(value: number) {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value)
@@ -175,7 +176,7 @@ export default function FinancedReturnsCard({ model, documents = [], onOpenEvide
                             onOpenEvidence={onOpenEvidence}
                             infoTerm="Equity contribution"
                             alignTip="left"
-                            statusBadge={priceIsConfirmed ? <Badge variant="success" className="text-[10px] px-1.5 py-0">✓ Confirmed Price</Badge> : <Badge variant="warning" className="text-[10px] px-1.5 py-0">⚠ Illustrative Price</Badge>}
+                            statusBadge={<DataOriginBadge origin="calculated" label={priceIsConfirmed ? "Calculated (Saved Price)" : "Calculated (Preview Price)"} formula="total uses − senior debt − seller note" compact />}
                         />
                         <Metric
                             label="Annual debt service"
@@ -185,7 +186,7 @@ export default function FinancedReturnsCard({ model, documents = [], onOpenEvide
                             onOpenEvidence={onOpenEvidence}
                             infoTerm="Amortization"
                             alignTip="left"
-                            statusBadge={priceIsConfirmed ? <Badge variant="success" className="text-[10px] px-1.5 py-0">✓ Confirmed Debt</Badge> : <Badge variant="warning" className="text-[10px] px-1.5 py-0">⚠ Model Assumption</Badge>}
+                            statusBadge={<DataOriginBadge origin="calculated" label={priceIsConfirmed ? "Calculated (Level Debt)" : "Calculated (Model Debt)"} formula="PMT(rate, term, senior debt)" compact />}
                         />
                         <Metric
                             label="Cash after debt service"
@@ -195,7 +196,7 @@ export default function FinancedReturnsCard({ model, documents = [], onOpenEvide
                             onOpenEvidence={onOpenEvidence}
                             infoTerm="Levered cash flow"
                             alignTip="center"
-                            statusBadge={ebitdaIsConfirmed ? <Badge variant="success" className="text-[10px] px-1.5 py-0">✓ Verified EBITDA</Badge> : <Badge variant="warning" className="text-[10px] px-1.5 py-0">⚠ Illustrative EBITDA</Badge>}
+                            statusBadge={<DataOriginBadge origin="calculated" label={ebitdaIsConfirmed ? "Calculated (Verified EBITDA)" : "Calculated (Illustrative)"} formula="EBITDA × (1 − tax) − debt service" compact />}
                         />
                         <Metric
                             label="Cash-on-cash return"
@@ -205,7 +206,7 @@ export default function FinancedReturnsCard({ model, documents = [], onOpenEvide
                             onOpenEvidence={onOpenEvidence}
                             infoTerm="Cash-on-cash"
                             alignTip="right"
-                            statusBadge={ebitdaIsConfirmed && priceIsConfirmed ? <Badge variant="success" className="text-[10px] px-1.5 py-0">✓ Verified CoC</Badge> : <Badge variant="warning" className="text-[10px] px-1.5 py-0">⚠ Illustrative Model</Badge>}
+                            statusBadge={<DataOriginBadge origin="calculated" label="Derived Return" formula="cash after debt ÷ equity" compact />}
                         />
                         <Metric
                             label="Debt-service coverage (DSCR)"
@@ -215,7 +216,7 @@ export default function FinancedReturnsCard({ model, documents = [], onOpenEvide
                             onOpenEvidence={onOpenEvidence}
                             infoTerm="DSCR"
                             alignTip="left"
-                            statusBadge={ebitdaIsConfirmed ? <Badge variant="success" className="text-[10px] px-1.5 py-0">✓ Verified DSCR</Badge> : <Badge variant="warning" className="text-[10px] px-1.5 py-0">⚠ Illustrative EBITDA</Badge>}
+                            statusBadge={<DataOriginBadge origin="calculated" label="Coverage Ratio" formula="operating cash flow ÷ annual debt service" compact />}
                         />
                         <Metric
                             label="Debt balance at exit"
@@ -225,7 +226,7 @@ export default function FinancedReturnsCard({ model, documents = [], onOpenEvide
                             onOpenEvidence={onOpenEvidence}
                             infoTerm="Debt balance"
                             alignTip="left"
-                            statusBadge={priceIsConfirmed ? <Badge variant="success" className="text-[10px] px-1.5 py-0">✓ Confirmed Debt</Badge> : <Badge variant="warning" className="text-[10px] px-1.5 py-0">⚠ Model Assumption</Badge>}
+                            statusBadge={<DataOriginBadge origin="calculated" label="Calculated Balance" formula="Amortization schedule at year N" compact />}
                         />
                         <Metric
                             label="Net equity proceeds at exit"
@@ -235,7 +236,7 @@ export default function FinancedReturnsCard({ model, documents = [], onOpenEvide
                             onOpenEvidence={onOpenEvidence}
                             infoTerm="Net exit proceeds"
                             alignTip="center"
-                            statusBadge={ebitdaIsConfirmed ? <Badge variant="success" className="text-[10px] px-1.5 py-0">✓ Verified EBITDA</Badge> : <Badge variant="warning" className="text-[10px] px-1.5 py-0">⚠ Illustrative EBITDA</Badge>}
+                            statusBadge={<DataOriginBadge origin="calculated" label="Terminal Equity" formula="Exit EV − exit costs − remaining debt" compact />}
                         />
                         <Metric
                             label="Total MOIC / IRR"
@@ -245,7 +246,7 @@ export default function FinancedReturnsCard({ model, documents = [], onOpenEvide
                             onOpenEvidence={onOpenEvidence}
                             infoTerm="MOIC"
                             alignTip="right"
-                            statusBadge={ebitdaIsConfirmed && priceIsConfirmed ? <Badge variant="success" className="text-[10px] px-1.5 py-0">✓ Verified Exit</Badge> : <Badge variant="warning" className="text-[10px] px-1.5 py-0">⚠ Illustrative Preview</Badge>}
+                            statusBadge={<DataOriginBadge origin="calculated" label="Levered Returns" formula="IRR(cash flows), MOIC(total inflows / equity)" compact />}
                         />
                     </div>
                 )}

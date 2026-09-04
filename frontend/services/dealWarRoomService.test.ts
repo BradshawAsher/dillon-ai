@@ -7,6 +7,8 @@ import {
     saveWarRoomConfig,
     dispatchWarRoomAlert,
     testWarRoomWebhook,
+    hasAutoAlertedSynthesis,
+    markAutoAlertedSynthesis,
     type WarRoomDealSummary,
     type WarRoomConfig,
 } from './dealWarRoomService'
@@ -218,6 +220,20 @@ describe('dealWarRoomService', () => {
 
             const res = await testWarRoomWebhook('https://hooks.slack.com/test', 'Test Deal')
             expect(res.success).toBe(true)
+        })
+    })
+
+    describe('auto alert deduplication', () => {
+        it('reports false when synthesis version has not been alerted yet', () => {
+            expect(hasAutoAlertedSynthesis('proj-123', 'v1')).toBe(false)
+        })
+
+        it('marks and identifies alerted synthesis versions', () => {
+            markAutoAlertedSynthesis('proj-123', 'v1')
+            expect(hasAutoAlertedSynthesis('proj-123', 'v1')).toBe(true)
+            // Different version or different project still false
+            expect(hasAutoAlertedSynthesis('proj-123', 'v2')).toBe(false)
+            expect(hasAutoAlertedSynthesis('proj-456', 'v1')).toBe(false)
         })
     })
 })

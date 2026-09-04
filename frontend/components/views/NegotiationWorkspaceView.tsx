@@ -1,4 +1,5 @@
 import React from 'react'
+import DataLineageLegend from '../common/DataLineageLegend'
 import SectionHeader from '../SectionHeader'
 import NegotiationValuationBridgeCard from '../NegotiationValuationBridgeCard'
 import SellerQuestionsCard from '../SellerQuestionsCard'
@@ -30,7 +31,8 @@ export function NegotiationWorkspaceView({
 }: NegotiationWorkspaceViewProps) {
     return (
         <section className="space-y-6">
-            <div id="negotiation-header" className="scroll-mt-6">
+            <div id="negotiation-header" className="scroll-mt-6 space-y-3">
+                <DataLineageLegend />
                 <SectionHeader
                     step={1}
                     title="Negotiation playbook"

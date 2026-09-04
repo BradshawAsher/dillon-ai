@@ -3,6 +3,7 @@ import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence
 import { parseDocumentedFacts } from './evidence'
 import { resolveLoanTermYears } from './dealMath'
 import { calculateWorkingCapitalPeg } from './workingCapitalPeg'
+import { computeValuationBridge } from './valuationBridge'
 
 export type ExcelExportOptions = {
     model: DealModel
@@ -221,6 +222,155 @@ export async function generateLiveExcelModel({
                 excerptText,
             ])
         }
+    })
+
+    // -------------------------------------------------------------
+    // SHEET 5: Valuation Bridge, Escrow Sizing & APA Legal Clauses
+    // -------------------------------------------------------------
+    const wsBridge = workbook.addWorksheet('Valuation Bridge & Escrow', {
+        views: [{ showGridLines: true }],
+    })
+    wsBridge.columns = [
+        { header: 'Line Item / Valuation Adjustment', key: 'item', width: 40 },
+        { header: 'Amount ($ USD)', key: 'amount', width: 22 },
+        { header: 'Basis / Multiple', key: 'basis', width: 22 },
+        { header: 'APA Contract Section', key: 'apa', width: 26 },
+        { header: 'Diligence Rationale & Legal Treatment', key: 'rationale', width: 55 },
+    ]
+    const headerRow5 = wsBridge.getRow(1)
+    headerRow5.fill = brandBlueFill
+    headerRow5.font = headerFont
+    headerRow5.height = 24
+
+    const bridgeResult = computeValuationBridge(model, synthesis)
+
+    // Row 2: Initial Asking / LOI Valuation Baseline
+    wsBridge.addRow([
+        'Initial Asking / LOI Valuation',
+        bridgeResult.baselinePurchasePrice,
+        `${bridgeResult.entryMultiple.toFixed(1)}x EBITDA`,
+        'Section 2.1 (Purchase Price)',
+        'Baseline enterprise value proposed in seller teaser / CIM',
+    ])
+    wsBridge.getCell('B2').numFmt = currencyFmt
+    wsBridge.getRow(2).font = boldFont
+
+    let currentBridgeRow = 3
+    const evDeductionRowIndices: number[] = []
+    const escrowRowIndices: number[] = []
+
+    // Add Bridge Items
+    bridgeResult.items.forEach((item) => {
+        const row = wsBridge.addRow([
+            item.title,
+            item.totalDeduction,
+            item.multipleImpact ? `${item.multipleImpact.toFixed(1)}x Multiple` : 'Dollar-for-Dollar',
+            item.apaSectionRef,
+            `[${item.handling.toUpperCase()}] ${item.rationale}`,
+        ])
+        row.getCell(2).numFmt = currencyFmt
+        if (item.handling === 'ev_reduction') {
+            evDeductionRowIndices.push(currentBridgeRow)
+        } else if (item.handling === 'special_escrow') {
+            escrowRowIndices.push(currentBridgeRow)
+        }
+        currentBridgeRow++
+    })
+
+    // Total EV Deductions Subtotal
+    const totalEvDeductionFormula = evDeductionRowIndices.length > 0
+        ? `SUM(${evDeductionRowIndices.map((r) => `B${r}`).join(',')})`
+        : '0'
+    const evDeductionRow = wsBridge.addRow([
+        'Total Enterprise Value Deductions',
+        { formula: totalEvDeductionFormula, result: bridgeResult.totalEvDeduction },
+        '',
+        'Section 2.3',
+        'Direct dollar-for-dollar reduction applied to Closing Purchase Price',
+    ])
+    const totalEvRowIndex = currentBridgeRow
+    evDeductionRow.fill = subHeaderFill
+    evDeductionRow.font = boldFont
+    evDeductionRow.getCell(2).numFmt = currencyFmt
+    currentBridgeRow++
+
+    // Special Indemnity Escrow Fund Subtotal
+    const totalEscrowFormula = escrowRowIndices.length > 0
+        ? `SUM(${escrowRowIndices.map((r) => `B${r}`).join(',')})`
+        : '0'
+    const escrowRow = wsBridge.addRow([
+        'Special Indemnity Escrow Fund (Holdback)',
+        { formula: totalEscrowFormula, result: bridgeResult.totalSpecialEscrow },
+        '',
+        'Section 8.2(c)',
+        'Escrowed with third-party agent; released post-audit/indemnity window',
+    ])
+    escrowRow.fill = subHeaderFill
+    escrowRow.font = boldFont
+    escrowRow.getCell(2).numFmt = currencyFmt
+    currentBridgeRow++
+
+    // Defensible Adjusted Counter-Offer
+    const counterOfferRow = wsBridge.addRow([
+        'Defensible Adjusted Counter-Offer',
+        { formula: `B2-B${totalEvRowIndex}`, result: bridgeResult.defensibleCounterOffer },
+        `${bridgeResult.totalSavingsPercent.toFixed(1)}% Haircut`,
+        'Section 2.1 (Net Purchase Price)',
+        'Defensible purchase price supported by forensic Quality of Earnings findings',
+    ])
+    counterOfferRow.fill = accentFill
+    counterOfferRow.font = boldFont
+    counterOfferRow.getCell(2).numFmt = currencyFmt
+    currentBridgeRow += 2
+
+    // Blank row spacer
+    wsBridge.addRow([])
+
+    // Legal Contract Clauses section
+    const legalHeaderRow = wsBridge.addRow([
+        'STANDARD M&A ASSET PURCHASE AGREEMENT (APA) CLAUSES',
+        '',
+        '',
+        '',
+        '',
+    ])
+    legalHeaderRow.fill = brandBlueFill
+    legalHeaderRow.font = headerFont
+    legalHeaderRow.height = 22
+
+    const apaClauses = [
+        [
+            'Section 2.3: Purchase Price Adjustment',
+            '',
+            '',
+            'APA Sec 2.3',
+            '"The Purchase Price shall be reduced dollar-for-dollar at Closing by the aggregate Disallowed Add-back Haircut of ' +
+            `$${bridgeResult.totalDisallowedAddbacks.toLocaleString()} (reflecting capitalization at the Entry Multiple of ${bridgeResult.entryMultiple.toFixed(1)}x), ` +
+            'plus any unaccrued contractor liabilities and uncapitalized capex identified during Buyer’s Quality of Earnings examination."',
+        ],
+        [
+            'Section 8.2(c): Special Indemnity Escrow Fund',
+            '',
+            '',
+            'APA Sec 8.2(c)',
+            '"At Closing, Buyer shall deposit $' + bridgeResult.totalSpecialEscrow.toLocaleString() + ' with the Escrow Agent into the Special Indemnity Escrow Fund. ' +
+            'Such funds shall be held separate and apart from the General Indemnity Escrow, shall not be subject to any deductible or basket, ' +
+            'and shall be available solely to indemnify Buyer against specific contingent liabilities identified on Schedule 8.2(c)."',
+        ],
+        [
+            'Section 3.14: Specific Reps & Warranties Carve-out',
+            '',
+            '',
+            'APA Sec 3.14',
+            '"Seller and Member jointly and severally represent and warrant that all employee and independent contractor classifications comply in all material respects with the Fair Labor Standards Act and applicable state law. ' +
+            'Seller’s indemnification obligations under this Section 3.14 shall survive for thirty-six (36) months following the Closing Date and shall be capped at the Purchase Price."',
+        ],
+    ]
+
+    apaClauses.forEach((clause) => {
+        const row = wsBridge.addRow(clause)
+        row.getCell(1).font = boldFont
+        row.getCell(5).alignment = { wrapText: true }
     })
 
     // Export to ArrayBuffer Blob

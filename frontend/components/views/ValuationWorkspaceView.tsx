@@ -1,4 +1,5 @@
 import React from 'react'
+import DataLineageLegend from '../common/DataLineageLegend'
 import ModelAssumptionsSummary from '../ModelAssumptionsSummary'
 import DealValuationCard from '../DealValuationCard'
 import ValuationGapCard from '../ValuationGapCard'
@@ -29,7 +30,8 @@ export function ValuationWorkspaceView({
 }: ValuationWorkspaceViewProps) {
     return (
         <section className="space-y-6">
-            <div id="valuation-header" className="scroll-mt-6">
+            <div id="valuation-header" className="scroll-mt-6 space-y-3">
+                <DataLineageLegend />
                 <ModelAssumptionsSummary model={hydratedDealModel} area="valuation" />
             </div>
             <div id="valuation-quick" className="scroll-mt-6">

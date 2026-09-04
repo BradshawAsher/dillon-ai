@@ -31,18 +31,24 @@ describe('excelModelGenerator', () => {
         expect(blob.type).toBe('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     })
 
-    it('contains all 4 expected worksheets with live formulas and styling', async () => {
+    it('contains all 5 expected worksheets with live formulas, valuation bridge, and styling', async () => {
         const ExcelJS = (await import('exceljs')).default
         const blob = await generateLiveExcelModel({
             model: mockModel,
-            projectName: 'Apex Industrial Services'
+            synthesis: {
+                redFlags: [
+                    'Discovered $180,000 undocumented contractor payroll tax liability',
+                    'Key customer accounts for 32% of total volume',
+                ],
+            } as any,
+            projectName: 'Apex Industrial Services',
         })
 
         const arrayBuffer = await blob.arrayBuffer()
         const wb = new ExcelJS.Workbook()
         await wb.xlsx.load(arrayBuffer)
 
-        expect(wb.worksheets.length).toBe(4)
+        expect(wb.worksheets.length).toBe(5)
         
         const wsAssumptions = wb.getWorksheet('Assumptions & Structure')
         expect(wsAssumptions).toBeDefined()
@@ -65,5 +71,22 @@ describe('excelModelGenerator', () => {
         const wsAudit = wb.getWorksheet('Documented Facts Audit Trail')
         expect(wsAudit).toBeDefined()
         expect(wsAudit?.rowCount).toBeGreaterThanOrEqual(3)
+
+        const wsBridge = wb.getWorksheet('Valuation Bridge & Escrow')
+        expect(wsBridge).toBeDefined()
+        expect(wsBridge?.getCell('A2').value).toBe('Initial Asking / LOI Valuation')
+        expect(wsBridge?.getCell('B2').value).toBe(5500000)
+
+        // Find counter offer row and verify formula
+        const cellValues: string[] = []
+        wsBridge?.eachRow((row) => {
+            const val = row.getCell(1).value
+            if (typeof val === 'string') cellValues.push(val)
+        })
+        expect(cellValues).toContain('Total Enterprise Value Deductions')
+        expect(cellValues).toContain('Special Indemnity Escrow Fund (Holdback)')
+        expect(cellValues).toContain('Defensible Adjusted Counter-Offer')
+        expect(cellValues).toContain('Section 2.3: Purchase Price Adjustment')
+        expect(cellValues).toContain('Section 8.2(c): Special Indemnity Escrow Fund')
     })
 })

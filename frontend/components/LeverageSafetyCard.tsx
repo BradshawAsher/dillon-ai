@@ -6,6 +6,7 @@ import { parseDocumentedFacts } from '../utils/evidence'
 import { resolveLoanTermYears } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
+import DataOriginBadge from './common/DataOriginBadge'
 
 type Props = {
     model: DealModel
@@ -110,33 +111,36 @@ export default function LeverageSafetyCard({ model }: Props) {
     return (
         <Card id="structure-dscr" className="overflow-hidden">
             <CardHeader className="border-b border-border bg-card/80 pb-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                         <ShieldAlert className="h-4 w-4 text-primary" />
-                        <CardTitle className="text-lg">SBA 7(a) & Bank Debt Service Sensitivity</CardTitle>
+                        <CardTitle className="text-lg">SBA 7(a) &amp; Bank Debt Service Sensitivity</CardTitle>
                         <CardInfoPopover cardId="leverage-safety" />
                     </div>
-                    <div className="flex items-center gap-1 rounded-md border border-border p-0.5 bg-muted/40 text-xs">
-                        <button
-                            type="button"
-                            onClick={() => setViewMode('matrix')}
-                            className={`flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-semibold transition-colors ${
-                                viewMode === 'matrix' ? 'bg-background shadow-xs text-foreground' : 'text-muted-foreground hover:text-foreground'
-                            }`}
-                        >
-                            <Layers className="h-3 w-3" />
-                            2D Rate Shock
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setViewMode('linear')}
-                            className={`flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-semibold transition-colors ${
-                                viewMode === 'linear' ? 'bg-background shadow-xs text-foreground' : 'text-muted-foreground hover:text-foreground'
-                            }`}
-                        >
-                            <TrendingDown className="h-3 w-3" />
-                            EBITDA Curve
-                        </button>
+                    <div className="flex items-center gap-2">
+                        <DataOriginBadge origin="benchmark" label="Institutional Covenant Benchmark" compact />
+                        <div className="flex items-center gap-1 rounded-md border border-border p-0.5 bg-muted/40 text-xs">
+                            <button
+                                type="button"
+                                onClick={() => setViewMode('matrix')}
+                                className={`flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-semibold transition-colors ${
+                                    viewMode === 'matrix' ? 'bg-background shadow-xs text-foreground' : 'text-muted-foreground hover:text-foreground'
+                                }`}
+                            >
+                                <Layers className="h-3 w-3" />
+                                2D Rate Shock
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setViewMode('linear')}
+                                className={`flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-semibold transition-colors ${
+                                    viewMode === 'linear' ? 'bg-background shadow-xs text-foreground' : 'text-muted-foreground hover:text-foreground'
+                                }`}
+                            >
+                                <TrendingDown className="h-3 w-3" />
+                                EBITDA Curve
+                            </button>
+                        </div>
                     </div>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
@@ -146,19 +150,28 @@ export default function LeverageSafetyCard({ model }: Props) {
             <CardContent className="p-4 space-y-4">
                 <div className="grid grid-cols-3 gap-2 text-center">
                     <div className="rounded-lg bg-muted/50 p-2">
-                        <p className="text-[10px] text-muted-foreground">Current DSCR</p>
+                        <div className="flex items-center justify-center gap-1 mb-0.5">
+                            <p className="text-[10px] text-muted-foreground">Current DSCR</p>
+                            <DataOriginBadge origin="calculated" compact />
+                        </div>
                         <p className={`text-sm font-bold ${dscrColor(data.currentDscr)}`}>
                             {data.currentDscr.toFixed(2)}x
                         </p>
                     </div>
                     <div className="rounded-lg bg-muted/50 p-2">
-                        <p className="text-[10px] text-muted-foreground">Debt/EBITDA</p>
+                        <div className="flex items-center justify-center gap-1 mb-0.5">
+                            <p className="text-[10px] text-muted-foreground">Debt/EBITDA</p>
+                            <DataOriginBadge origin="calculated" compact />
+                        </div>
                         <p className={`text-sm font-bold ${data.currentLeverage <= 3 ? 'text-green-600' : data.currentLeverage <= 4.5 ? 'text-amber-600' : 'text-red-600'}`}>
                             {data.currentLeverage.toFixed(1)}x
                         </p>
                     </div>
                     <div className="rounded-lg bg-muted/50 p-2">
-                        <p className="text-[10px] text-muted-foreground">SBA Default Cushion</p>
+                        <div className="flex items-center justify-center gap-1 mb-0.5">
+                            <p className="text-[10px] text-muted-foreground">SBA Default Cushion</p>
+                            <DataOriginBadge origin="calculated" compact />
+                        </div>
                         <p className={`text-sm font-bold ${data.breakpointPct >= 30 ? 'text-green-600' : data.breakpointPct >= 15 ? 'text-amber-600' : 'text-red-600'}`}>
                             {data.breakpointPct}%
                         </p>
