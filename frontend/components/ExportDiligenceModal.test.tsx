@@ -64,7 +64,7 @@ describe('ExportDiligenceModal', () => {
             />
         )
 
-        expect(html).toContain('Investment Committee Diligence Memorandum')
+        expect(html).toContain('Investment Committee Deal Memorandum')
         expect(html).toContain('Apex Mechanical')
         expect(html).toContain('IC RECOMMENDATION: BUY / PROCEED')
         expect(html).toContain('GREEN')

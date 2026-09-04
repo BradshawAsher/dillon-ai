@@ -222,6 +222,23 @@ export const TAB_METADATA: Record<WorkspaceTab, TabMetadata> = {
         tourStepCount: 8,
         suggestedFocus: 'Organizing, auditing, and summarizing active pipeline projects',
     },
+    exports: {
+        id: 'exports',
+        label: 'Exports',
+        category: 'Deliverables & Reports',
+        badge: 'Export Hub',
+        whatItIsFor: 'Institutional command center cataloging all deal deliverables, formal memos, legal term sheets, and live financial models with one-click export and print actions.',
+        keyDeliverables: [
+            'Investment Committee (IC) Deal Memorandum (.pdf / Print)',
+            'Formal Letter of Intent (LOI) & Term Sheet (.md / Print)',
+            'Live 4-Tab Financial Model (.xlsx) with dynamic formulas',
+            'Executive Deal Summary Dossier (.md)',
+            'Structured Audit Packet (.json) with fact citations',
+        ],
+        recommendedRole: 'Investment Committees, Deal Leads & Transaction Counsel',
+        tourStepCount: 5,
+        suggestedFocus: 'Generating publication-ready diligence packages and closing deliverables',
+    },
     shortcuts: {
         id: 'shortcuts',
         label: 'Shortcuts',

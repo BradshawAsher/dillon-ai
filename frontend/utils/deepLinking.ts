@@ -14,6 +14,7 @@ export const VALID_WORKSPACE_TABS: WorkspaceTab[] = [
     'structure',
     'negotiation',
     'documents',
+    'exports',
     'shortcuts',
     'evals',
     'faqs',
@@ -28,6 +29,12 @@ const TAB_ALIASES: Record<string, WorkspaceTab> = {
     projects: 'documents',
     project: 'documents',
     docs: 'documents',
+    export: 'exports',
+    exports: 'exports',
+    deliverables: 'exports',
+    deliverable: 'exports',
+    download: 'exports',
+    downloads: 'exports',
     risk: 'diagnostics',
     playbook: 'diagnostics',
     benchmark: 'evals',
@@ -110,6 +117,13 @@ const SECTION_ANCHOR_MAP: Record<string, WorkspaceTab> = {
     'account-profile': 'account',
     'account-security': 'account',
     'account-preferences': 'account',
+    // exports
+    'exports-hub': 'exports',
+    'export-ic-memo': 'exports',
+    'export-loi': 'exports',
+    'export-excel': 'exports',
+    'export-summary': 'exports',
+    'export-json': 'exports',
 }
 
 export interface ParsedDeepLink {

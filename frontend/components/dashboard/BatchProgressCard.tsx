@@ -5,7 +5,7 @@ import { Button } from '../../lib/shadcn/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../lib/shadcn/card'
 import type { SubmissionBatch } from '../../utils/diligenceDashboardUtils'
 import { isFailedSubmissionStatus } from '../../utils/submissionHistory'
-import { formatElapsedDuration, getDocumentExtractionDurationSec, estimateBatchRemainingSec } from '../../utils/diligenceDashboardUtils'
+import { formatElapsedDuration, getDocumentExtractionDurationSec, estimateBatchRemainingSec, estimateDocumentDurationSec } from '../../utils/diligenceDashboardUtils'
 import { formatHours } from '../../utils/impactMetrics'
 
 type BatchProgressCardProps = {
@@ -150,9 +150,9 @@ export function BatchProgressCard({
                         </p>
                     </div>
                     <div>
-                        <p className="text-xs text-muted-foreground font-medium">{isFinished ? 'Average Pace' : 'Est. Remaining'}</p>
+                        <p className="text-xs text-muted-foreground font-medium">{isFinished ? 'Average Pace' : 'Batch Est. Remaining'}</p>
                         <p className="text-base font-bold mt-0.5 flex items-center gap-1 font-mono text-emerald-600 dark:text-emerald-400">
-                            {isFinished ? `~${avgBatchDocSec}s / doc` : `~${estimatedBatchRemainingSec}s (pace ~${avgBatchDocSec}s)`}
+                            {isFinished ? `~${avgBatchDocSec}s / doc` : `~${formatElapsedDuration(estimatedBatchRemainingSec)} (pace ~${avgBatchDocSec}s/doc)`}
                         </p>
                     </div>
                 </div>
@@ -239,6 +239,7 @@ export function BatchProgressCard({
                                     const reqId = doc.requestID || String(doc.id || '')
                                     const st = (doc.status || 'unknown').trim().toLowerCase()
                                     const docDur = getDocumentExtractionDurationSec(doc)
+                                    const estDur = estimateDocumentDurationSec(doc.fileName, doc.fileSize)
                                     return (
                                         <div key={reqId || doc.fileName} className="pt-2 flex flex-wrap items-center justify-between gap-2 text-xs">
                                             <div className="min-w-0 max-w-sm">
@@ -247,16 +248,21 @@ export function BatchProgressCard({
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 {docDur !== null ? (
-                                                    <Badge variant="outline" className="font-mono text-[10px] font-bold border-primary/40 bg-primary/10 text-primary gap-1">
-                                                        <Clock className="h-3 w-3 text-primary shrink-0" />
+                                                    <Badge variant="outline" className="font-mono text-[10px] font-bold border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 gap-1" title={`Actual extraction duration: ${formatElapsedDuration(docDur)}`}>
+                                                        <CheckCircle2 className="h-3 w-3 text-emerald-500 shrink-0" />
                                                         {formatElapsedDuration(docDur)}
                                                     </Badge>
-                                                ) : ['processing', 'running'].includes(st) ? (
-                                                    <Badge variant="outline" className="font-mono text-[10px] text-primary border-primary/30 bg-primary/5 gap-1">
+                                                ) : ['processing', 'running', 'uploading'].includes(st) ? (
+                                                    <Badge variant="outline" className="font-mono text-[10px] text-primary border-primary/30 bg-primary/5 gap-1" title={`Estimated extraction duration: ~${estDur}s`}>
                                                         <Loader2 className="h-3 w-3 animate-spin text-primary shrink-0" />
-                                                        Processing...
+                                                        Processing (~{estDur}s est)
                                                     </Badge>
-                                                ) : null}
+                                                ) : (
+                                                    <Badge variant="outline" className="font-mono text-[10px] text-muted-foreground border-border/70 bg-muted/20 gap-1" title={`Estimated extraction duration based on document type and size: ~${estDur}s`}>
+                                                        <Clock className="h-3 w-3 text-muted-foreground shrink-0" />
+                                                        ~{estDur}s est
+                                                    </Badge>
+                                                )}
                                                 <Badge variant={st === 'completed' ? 'success' : isFailedSubmissionStatus(st) ? 'destructive' : 'outline'} className="text-[10px]">
                                                     {doc.status || 'pending'}
                                                 </Badge>

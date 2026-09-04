@@ -63,6 +63,7 @@ import { NegotiationWorkspaceView } from '../components/views/NegotiationWorkspa
 import { AnalysisWorkspaceView } from '../components/views/AnalysisWorkspaceView'
 import { DiagnosticsWorkspaceView } from '../components/views/DiagnosticsWorkspaceView'
 import { DocumentsWorkspaceView } from '../components/views/DocumentsWorkspaceView'
+import { ExportsWorkspaceView } from '../components/views/ExportsWorkspaceView'
 import { WorkspaceHeader } from '../components/views/WorkspaceHeader'
 import { AccountWorkspaceView } from '../components/views/AccountWorkspaceView'
 import { useDealWorkspaceState, type WorkspaceTab } from '../hooks/useDealWorkspaceState'
@@ -2269,6 +2270,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
     const maxObservedFinishedRef = useRef<Record<string, number>>({})
     const maxObservedCompletedRef = useRef<Record<string, number>>({})
+    const maxObservedElapsedRef = useRef<Record<string, number>>({})
     const batchProgress = useMemo(() => deriveBatchState(displayedSubmissionBatch, activeBatchRows, isSubmittingFile || isRerunningBatch), [displayedSubmissionBatch, activeBatchRows, isSubmittingFile, isRerunningBatch])
     const batchKey = activeSubmissionBatch?.id ? `${activeSubmissionBatch.id}-${activeSubmissionBatch.startedAt || 0}` : ''
 
@@ -2565,7 +2567,15 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         return () => clearInterval(timer)
     }, [activeBatchExpectedCount, activeBatchFinishedCount, displayedSubmissionBatch?.endedAt, displayedSubmissionBatch?.interruptedAt, displayedSubmissionBatch?.startedAt, displayedSubmissionBatch?.stoppedAt, displayedSubmissionBatch?.stopError])
 
-    const batchElapsedSeconds = submissionBatchElapsedSeconds(displayedSubmissionBatch, batchNowTimestamp)
+    const rawBatchElapsedSeconds = submissionBatchElapsedSeconds(displayedSubmissionBatch, batchNowTimestamp)
+    const elapsedBatchKey = displayedSubmissionBatch?.id ? `${displayedSubmissionBatch.id}-${displayedSubmissionBatch.startedAt || 0}` : ''
+    if (elapsedBatchKey) {
+        maxObservedElapsedRef.current[elapsedBatchKey] = Math.max(
+            maxObservedElapsedRef.current[elapsedBatchKey] || 0,
+            rawBatchElapsedSeconds
+        )
+    }
+    const batchElapsedSeconds = elapsedBatchKey ? (maxObservedElapsedRef.current[elapsedBatchKey] || rawBatchElapsedSeconds) : rawBatchElapsedSeconds
     const activeBatchImpact = useMemo(() => computeImpactMetrics(activeBatchRows), [activeBatchRows])
 
     const [synthesisStartTimestamps, setSynthesisStartTimestamps] = useState<Record<string, number>>(() => {
@@ -3498,10 +3508,28 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     const handleRetryFailedBatchDocuments = async (targetBatchId?: string) => {
         if (stopInFlightRef.current || isRerunningBatch || isSubmittingFile) return
         const batchId = targetBatchId || activeSubmissionBatch?.id || activeBatchRows[0]?.submissionBatchId || activeProjectId
-        const batchDocs = submissionHistory.filter(r => (r.submissionBatchId === batchId || (activeSubmissionBatch && activeSubmissionBatch.requestIDs?.includes(r.requestID))) && r.isConsidered !== false)
-        const failedDocs = batchDocs.filter(d => Boolean(d.requestID) && (isFailedSubmissionStatus(d.status) || Boolean(d.errorMessage)))
-        if (failedDocs.length === 0) {
+
+        // Aggregate all batch candidate documents across activeBatchRows, activeProjectDocuments, and submissionHistory
+        const uniqueCandidateMap = new Map<string, SubmissionHistoryItem>()
+        const registerCandidate = (r: SubmissionHistoryItem) => {
+            const key = (r.fileName || r.requestID || String(r.id)).trim().toLowerCase()
+            if (!uniqueCandidateMap.has(key)) uniqueCandidateMap.set(key, r)
+        }
+        activeBatchRows.forEach(registerCandidate)
+        activeProjectDocuments.forEach(registerCandidate)
+        submissionHistory.forEach(r => {
+            if (r.submissionBatchId === batchId || r.projectId === activeProjectId || (activeSubmissionBatch && activeSubmissionBatch.requestIDs?.includes(r.requestID))) {
+                registerCandidate(r)
+            }
+        })
+        const allCandidateDocs = [...uniqueCandidateMap.values()].filter(r => r.isConsidered !== false)
+
+        const failedDocsWithServerId = allCandidateDocs.filter(d => Boolean(d.requestID) && (isFailedSubmissionStatus(d.status) || Boolean(d.errorMessage)))
+        const failedUploadDocs = allCandidateDocs.filter(d => !d.requestID && (isFailedSubmissionStatus(d.status) || Boolean(d.errorMessage)))
+
+        if (failedDocsWithServerId.length === 0 && failedUploadDocs.length === 0) {
             setBatchSubmissionMessage('No failed documents found in this batch to retry.')
+            addToast({ title: 'No Failed Documents', description: 'All documents in this batch succeeded or have completed processing.', type: 'info' })
             return
         }
 
@@ -3511,6 +3539,38 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             const el = document.getElementById('diligence-batch') || document.getElementById('deal-workspace')
             if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
         }, 50)
+
+        // Handle pre-registration / network upload failures that never reached the backend server
+        if (failedUploadDocs.length > 0) {
+            const matchingSelectedFiles = selectedFiles.filter(f =>
+                failedUploadDocs.some(d => (d.fileName || '').trim().toLowerCase() === f.name.trim().toLowerCase())
+            )
+            if (matchingSelectedFiles.length > 0) {
+                addToast({
+                    title: 'Retrying Upload',
+                    description: `Re-uploading ${matchingSelectedFiles.map(f => f.name).join(', ')}…`,
+                    type: 'info',
+                })
+                void handleSubmit(activeHistoryEnvironment)
+                if (failedDocsWithServerId.length === 0) return
+            } else {
+                const names = failedUploadDocs.map(d => d.fileName || 'file').join(', ')
+                addToast({
+                    title: 'Re-upload Required for Pre-Registration Failure',
+                    description: `The file '${names}' failed during initial network upload before registration. Please drop the file into Project Intake to complete processing.`,
+                    type: 'warning',
+                    duration: 8000,
+                })
+                setBatchSubmissionMessage(`Upload retry needed: '${names}' failed before reaching the server. Please drop the file into the upload zone above.`)
+                const uploadElem = document.getElementById('upload-section') || document.getElementById('project-intake')
+                if (uploadElem) {
+                    uploadElem.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                }
+                if (failedDocsWithServerId.length === 0) return
+            }
+        }
+
+        const failedDocs = failedDocsWithServerId
 
         // Optimistically set failed documents to processing
         const now = Date.now()
@@ -4826,6 +4886,56 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                             setSelectedProjectKey={setSelectedProjectKey}
                             handleRerunAllProjectDocs={handleRerunAllProjectDocuments}
                             onEditQuestionnaire={handleEditInQuestionnaire}
+                        />
+                    ) : null}
+
+                    {activeWorkspaceTab === 'exports' ? (
+                        <ExportsWorkspaceView
+                            dealModel={hydratedDealModel}
+                            synthesis={activeProjectSynthesis}
+                            projectName={effectiveDealName || suggestedProjectName || 'Active Target'}
+                            documents={activeProjectDocuments}
+                            onExportIcMemo={() => {
+                                setExportModalDocType('ic_memo')
+                                setIsExportModalOpen(true)
+                            }}
+                            onExportLoi={() => {
+                                setExportModalDocType('loi')
+                                setIsExportModalOpen(true)
+                            }}
+                            onExportExcel={async () => {
+                                try {
+                                    const { generateLiveExcelModel } = await import('../utils/excelModelGenerator')
+                                    const name = effectiveDealName || suggestedProjectName || 'deal'
+                                    const blob = await generateLiveExcelModel({ model: hydratedDealModel, synthesis: activeProjectSynthesis ?? undefined, projectName: name })
+                                    const safeName = name.replace(/[^a-zA-Z0-9-_]/g, '_').slice(0, 50) || 'deal'
+                                    const url = URL.createObjectURL(blob)
+                                    const a = document.createElement('a')
+                                    a.href = url
+                                    a.download = `${safeName}_financial_model.xlsx`
+                                    document.body.appendChild(a)
+                                    a.click()
+                                    document.body.removeChild(a)
+                                    setTimeout(() => URL.revokeObjectURL(url), 1000)
+                                } catch (err) {
+                                    console.error('Failed to export Excel model:', err)
+                                }
+                            }}
+                            onExportMarkdown={() => {
+                                const name = effectiveDealName || suggestedProjectName || 'deal'
+                                const safeName = name.replace(/[^a-zA-Z0-9-_]/g, '_').slice(0, 50) || 'deal'
+                                downloadFile(buildMarkdownReport(hydratedDealModel, activeProjectSynthesis ?? undefined, name), `${safeName}_summary.md`, 'text/markdown')
+                            }}
+                            onExportJson={() => {
+                                const name = effectiveDealName || suggestedProjectName || 'deal'
+                                const safeName = name.replace(/[^a-zA-Z0-9-_]/g, '_').slice(0, 50) || 'deal'
+                                downloadFile(JSON.stringify(buildJsonExport(hydratedDealModel, activeProjectSynthesis ?? undefined, name), null, 2), `${safeName}_export.json`, 'application/json')
+                            }}
+                            onCopySummary={() => {
+                                const name = effectiveDealName || suggestedProjectName || 'deal'
+                                navigator.clipboard.writeText(buildMarkdownReport(hydratedDealModel, activeProjectSynthesis ?? undefined, name))
+                            }}
+                            onSwitchTab={setActiveWorkspaceTab}
                         />
                     ) : null}
 

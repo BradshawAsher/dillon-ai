@@ -38,6 +38,7 @@ import {
     Edit3,
     Radio,
     Printer,
+    Briefcase,
 } from 'lucide-react'
 
 type CommandPaletteProps = {
@@ -104,6 +105,7 @@ export default function CommandPalette({
                 if (onExportLoi) {
                     onExportLoi()
                 } else {
+                    window.dispatchEvent(new CustomEvent('mergeworks:open-export-modal', { detail: { docType: 'loi' } }))
                     window.dispatchEvent(new CustomEvent('mergeworks:walkthrough-action', { detail: { type: 'open_loi_modal' } }))
                 }
             },
@@ -119,6 +121,7 @@ export default function CommandPalette({
                 if (onExportIcMemo) {
                     onExportIcMemo()
                 } else {
+                    window.dispatchEvent(new CustomEvent('mergeworks:open-export-modal', { detail: { docType: 'ic_memo' } }))
                     window.dispatchEvent(new CustomEvent('mergeworks:walkthrough-action', { detail: { type: 'open_export_modal' } }))
                 }
             },
@@ -151,6 +154,15 @@ export default function CommandPalette({
             keywords: ['excel', 'xlsx', 'spreadsheet', 'google sheets', 'download', 'export', '3-statement', 'irr', 'dscr', 'lbo model', 'financial model'],
             badge: 'Export'
         }] : []),
+        {
+            id: 'nav-exports-hub',
+            label: 'Deal Deliverables & Export Hub — IC Memo, LOI, Live Excel Model & Dossier',
+            icon: <Briefcase className="h-4 w-4 text-primary" />,
+            action: () => onSelectTab('exports', 'exports-hub'),
+            group: 'Navigation',
+            keywords: ['exports', 'export', 'deliverables', 'hub', 'download', 'memos', 'loi', 'excel', 'json', 'dossier'],
+            badge: 'Tab'
+        },
         {
             id: 'scroll-to-intake',
             label: 'Project Intake / Upload Diligence Documents',

@@ -264,6 +264,29 @@ describe('DealChatPanel Client-Side AI Tools', () => {
         expect(navigatedAnchor).toBe('structure-working-capital-peg')
     })
 
+    it('executes navigate_to_card to exports hub and card anchor', async () => {
+        const { executeClientSideTool } = await import('./DealChatPanel')
+        let navigatedTab = ''
+        let navigatedAnchor = ''
+        const testCtx = {
+            ...mockContext,
+            onNavigateTab: (tab: any, anchor?: string) => {
+                navigatedTab = tab
+                navigatedAnchor = anchor || ''
+            }
+        }
+
+        const result = executeClientSideTool('navigate_to_card', {
+            tab: 'exports',
+            cardAnchor: 'export-loi'
+        }, testCtx)
+
+        expect(result.success).toBe(true)
+        expect(result.action).toBe('navigate')
+        expect(navigatedTab).toBe('exports')
+        expect(navigatedAnchor).toBe('export-loi')
+    })
+
     it('executes trigger_export tool and generates export action', async () => {
         const { executeClientSideTool } = await import('./DealChatPanel')
         const result = executeClientSideTool('trigger_export', {

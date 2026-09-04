@@ -5,6 +5,7 @@ import {
     buildProjectPermalink,
     syncBrowserUrl,
     VALID_WORKSPACE_TABS,
+    resolveWorkspaceTab,
 } from './deepLinking'
 
 describe('Deep Linking Utilities', () => {
@@ -243,6 +244,24 @@ describe('Deep Linking Utilities', () => {
 
         it('does nothing when window is unavailable', () => {
             expect(() => syncBrowserUrl('p', 'valuation')).not.toThrow()
+        })
+    })
+
+    describe('exports tab and alias resolution', () => {
+        it('resolves exports tab and aliases correctly', () => {
+            expect(resolveWorkspaceTab('exports')).toBe('exports')
+            expect(resolveWorkspaceTab('export')).toBe('exports')
+            expect(resolveWorkspaceTab('deliverables')).toBe('exports')
+            expect(resolveWorkspaceTab('downloads')).toBe('exports')
+        })
+
+        it('resolves exports section anchors to exports tab', () => {
+            expect(resolveWorkspaceTab('exports-hub')).toBe('exports')
+            expect(resolveWorkspaceTab('export-ic-memo')).toBe('exports')
+            expect(resolveWorkspaceTab('export-loi')).toBe('exports')
+            expect(resolveWorkspaceTab('export-excel')).toBe('exports')
+            expect(resolveWorkspaceTab('export-summary')).toBe('exports')
+            expect(resolveWorkspaceTab('export-json')).toBe('exports')
         })
     })
 })

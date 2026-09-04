@@ -145,7 +145,7 @@ export function ExportDiligenceModal({
                             <div className="flex items-center gap-2">
                                 <Sparkles className="h-4 w-4 text-primary" />
                                 <CardTitle className="text-lg font-bold">
-                                    {exportDocType === 'loi' ? 'Non-Binding Letter of Intent (LOI)' : 'Investment Committee Diligence Memorandum'}
+                                    {exportDocType === 'loi' ? 'Non-Binding Letter of Intent (LOI)' : 'Investment Committee Deal Memorandum'}
                                 </CardTitle>
                                 <Badge variant="outline" className="text-[11px] font-semibold text-primary border-primary/40 bg-primary/10">
                                     {exportDocType === 'loi' ? 'Legal Deal Offer' : 'Institutional PDF & Markdown'}

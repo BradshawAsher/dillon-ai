@@ -269,9 +269,9 @@ function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealMo
 3. 🔍 Step 3: Diligence Tab -> Use link [Diligence](tab:diligence) (Live batch carousel, per-document confidence, extracted facts).
 4. 🧠 Step 4: Synthesis Tab -> Use link [Synthesis](tab:synthesis) (Multi-document Buy/Pass verdict 🟢/🟡/🔴, EBITDA reconstruction, red flags).
 5. 📊 Step 5: Valuation & Deal Structure Tabs -> Use links [Valuation](tab:valuation) and [Deal Structure](tab:structure) (LBO model, SBA 7(a) debt, DSCR covenant check).
-6. 📄 Step 6: Export & Email -> Use link [Email Drafts](tab:email) (Download Investment Committee memo, draft broker inquiries).
+6. 📄 Step 6: Exports & Deliverables -> Use link [Export Hub](tab:exports) (Download IC memo, formal LOI, live Excel model, or draft broker emails).
 
-## Full Platform Tab Directory (21 Tabs):
+## Full Platform Tab Directory (22 Tabs):
 - overview: Executive 1-pager, investment summary, key metrics, top flags -> [Overview](tab:overview)
 - analysis: Quality of Earnings (QoE), seller add-backs, customer concentration, management interview tracker -> [Analysis](tab:analysis)
 - diagnostics: Risk & Playbook — financial/operational/legal/market risk + 100-day execution plan -> [Risk & Playbook](tab:diagnostics)
@@ -285,6 +285,7 @@ function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealMo
 - structure: SBA 7(a) debt, seller notes, equity check, DSCR covenant testing -> [Deal Structure](tab:structure)
 - negotiation: Price levers, seller concessions, indemnity holdbacks, R&W terms -> [Negotiation](tab:negotiation)
 - documents: Projects & Portfolio Repository — browse, switch, or create deals across portfolio (Navbar tab: "Projects") -> [Projects](tab:documents)
+- exports: Deal Deliverables & Export Hub — IC Deal Memo (.pdf), Letter of Intent (LOI), Live Excel Model (.xlsx), Executive Summary (.md), and Audit JSON (.json) -> [Export Hub](tab:exports)
 - shortcuts: Hotkey reference (C = Chat, D = Diligence, S = Synthesis, M = Model, / = search, ? = shortcuts) -> [Shortcuts](tab:shortcuts)
 - evals: Live AI model benchmark harness (OpenAI 5.6 Terra, Claude Sonnet 5, Gemini 3.7 Flash, DeepSeek V4 Flash) -> [Evals & Harness](tab:evals)
 - faqs: Architecture documentation, BYOK setup, Data Isolation FAQs -> [FAQs & Guide](tab:faqs)
@@ -310,6 +311,7 @@ function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealMo
   - tab:growth (anchors: #growth-projections, #growth-scenarios, #growth-drivers, #growth-revenue-bridge, #growth-sensitivity, #growth-value-creation, #growth-levers, #growth-leverage)
   - tab:negotiation (anchors: #negotiation-valuation-bridge, #negotiation-levers, #negotiation-impact, #negotiation-playbook, #negotiation-seller, #negotiation-mgmt, #negotiation-timeline, #negotiation-terms)
   - tab:documents (anchors: #projects-summary-metrics, #project-card-active, #project-card-documents, #project-portfolio, #documents-grid)
+  - tab:exports (anchors: #exports-hub, #export-ic-memo, #export-loi, #export-excel, #export-summary, #export-json)
   - tab:spending (anchors: #spending-model, #spending-api-calls)
   - tab:compare (anchors: #compare-kpis, #compare-filters, #compare-matrix)
   - tab:shortcuts (anchors: #shortcuts-tester, #shortcuts-hotkeys)
@@ -347,10 +349,10 @@ function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealMo
   - Features: Dynamically generates active formulas (=SUM(), =IRR(), =DSCR(), =PPMT/IPMT), 5-year projections, LBO sensitivity matrices, and evidence audit trails.
 - Formal Letter of Intent (LOI) & Investment Committee (IC) Memo Generator:
   - Locations:
-    1. **Top Header Navigation Bar > Export > Letter of Intent (LOI)** or **IC Deal Memo (.pdf / Print)**
-    2. **Email & Export Tab > Export Deal Package** (#email-drafts-panel)
-    3. **Command Palette**: Press 'Ctrl+K' -> search 'Letter of Intent' or 'IC Memo'
-    4. **Direct Action Chip**: Output [📝 Generate Letter of Intent (LOI)](action:export_loi) or [📄 Export IC Memo](action:export_ic_memo) so users can launch the modal with 1 click!
+    1. **Exports & Deliverables Tab**: [Export Hub](tab:exports) (with dedicated cards: [IC Deal Memo](tab:exports#export-ic-memo), [Letter of Intent (LOI)](tab:exports#export-loi), and [Live Excel Model](tab:exports#export-excel))
+    2. **Top Header Navigation Bar > Export > Letter of Intent (LOI)** or **IC Deal Memo (.pdf / Print)**
+    3. **Command Palette**: Press 'Ctrl+K' -> search 'Letter of Intent', 'IC Memo', or 'Export Hub'
+    4. **Direct Action Chip**: Output [📝 Generate Letter of Intent (LOI)](action:open_loi) or [📄 Export IC Memo](action:export_ic_memo) or [📥 Export Live Excel Model](action:export_excel) so users can launch the modal or download with 1 click!
   - Features:
     - LOI: 8 institutional sections including binding 60-day exclusivity ("no-shop"), capital stack table (SBA 7a senior debt, seller note, committed buyer equity check), $415k NWC peg with 90-day true-up, 10% general escrow + identified special indemnity holdbacks, and Delaware governing law.
     - IC Memo: Publication-grade memo with 5-tier data provenance badges, 7-part investment committee dossier, and APA definitive covenants.
@@ -1584,8 +1586,15 @@ function renderSimpleMarkdown(
             }
 
             if (url.startsWith('action:')) {
-                const actionType = url.slice(7)
-                if (actionType === 'export_excel') {
+                const actionType = url.slice(7).toLowerCase().trim()
+                const isExcelAction = actionType === 'export_excel' || actionType === 'open_excel' || actionType === 'excel' || actionType === 'excel_model'
+                const isIcMemoAction = actionType === 'export_ic_memo' || actionType === 'open_ic_memo' || actionType === 'ic_memo' || actionType === 'open_export_modal' || actionType === 'memo' || actionType === 'export_memo' || actionType === 'ic-memo'
+                const isLoiAction = actionType === 'export_loi' || actionType === 'open_loi' || actionType === 'loi' || actionType === 'generate_loi' || actionType === 'open_loi_modal' || actionType === 'loi_modal' || actionType === 'export-loi'
+                const isVersionAction = actionType === 'open_version_control' || actionType === 'version_control' || actionType === 'rollback'
+                const isRollbackStableAction = actionType === 'rollback_stable' || actionType === 'stable_rollback'
+                const isIntakeAction = actionType === 'open_intake' || actionType === 'intake' || actionType === 'upload'
+
+                if (isExcelAction) {
                     elements.push(
                         <button
                             key={`${i}-${matchIndex}`}
@@ -1619,13 +1628,14 @@ function renderSimpleMarkdown(
                             <ArrowUpRight className="h-2.5 w-2.5 opacity-70 shrink-0" />
                         </button>
                     )
-                } else if (actionType === 'export_ic_memo') {
+                } else if (isIcMemoAction) {
                     elements.push(
                         <button
                             key={`${i}-${matchIndex}`}
                             type="button"
                             onClick={() => {
                                 if (typeof window !== 'undefined') {
+                                    window.dispatchEvent(new CustomEvent('mergeworks:open-export-modal', { detail: { docType: 'ic_memo' } }))
                                     window.dispatchEvent(new CustomEvent('mergeworks:walkthrough-action', { detail: { type: 'open_export_modal' } }))
                                 }
                             }}
@@ -1637,13 +1647,14 @@ function renderSimpleMarkdown(
                             <ArrowUpRight className="h-2.5 w-2.5 opacity-70 shrink-0" />
                         </button>
                     )
-                } else if (actionType === 'export_loi' || actionType === 'open_loi') {
+                } else if (isLoiAction) {
                     elements.push(
                         <button
                             key={`${i}-${matchIndex}`}
                             type="button"
                             onClick={() => {
                                 if (typeof window !== 'undefined') {
+                                    window.dispatchEvent(new CustomEvent('mergeworks:open-export-modal', { detail: { docType: 'loi' } }))
                                     window.dispatchEvent(new CustomEvent('mergeworks:walkthrough-action', { detail: { type: 'open_loi_modal' } }))
                                 }
                             }}
@@ -1655,7 +1666,7 @@ function renderSimpleMarkdown(
                             <ArrowUpRight className="h-2.5 w-2.5 opacity-70 shrink-0" />
                         </button>
                     )
-                } else if (actionType === 'open_version_control') {
+                } else if (isVersionAction) {
                     elements.push(
                         <button
                             key={`${i}-${matchIndex}`}
@@ -1673,7 +1684,7 @@ function renderSimpleMarkdown(
                             <ArrowUpRight className="h-2.5 w-2.5 opacity-70 shrink-0" />
                         </button>
                     )
-                } else if (actionType === 'rollback_stable') {
+                } else if (isRollbackStableAction) {
                     elements.push(
                         <button
                             key={`${i}-${matchIndex}`}
@@ -1691,7 +1702,7 @@ function renderSimpleMarkdown(
                             <ArrowUpRight className="h-2.5 w-2.5 opacity-70 shrink-0" />
                         </button>
                     )
-                } else if (actionType === 'open_intake') {
+                } else if (isIntakeAction) {
                     elements.push(
                         <button
                             key={`${i}-${matchIndex}`}
@@ -1712,23 +1723,48 @@ function renderSimpleMarkdown(
                             <ArrowUpRight className="h-2.5 w-2.5 opacity-70 shrink-0" />
                         </button>
                     )
+                } else {
+                    elements.push(
+                        <button
+                            key={`${i}-${matchIndex}`}
+                            type="button"
+                            onClick={() => {
+                                if (typeof window !== 'undefined') {
+                                    window.dispatchEvent(new CustomEvent('mergeworks:walkthrough-action', { detail: { type: actionType } }))
+                                }
+                            }}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/15 px-2 py-0.5 text-[11px] font-bold text-primary hover:bg-primary/25 hover:border-primary/60 transition-all cursor-pointer shadow-2xs mx-1 align-baseline my-0.5 active:scale-95"
+                        >
+                            <span>{label}</span>
+                            <ArrowUpRight className="h-2.5 w-2.5 opacity-70 shrink-0" />
+                        </button>
+                    )
                 }
             } else if (url.startsWith('tab:') || url.startsWith('#')) {
                 let targetTab: WorkspaceTab | null = null
                 let anchorId: string | undefined = undefined
 
                 if (url.startsWith('tab:')) {
-                    const withoutPrefix = url.slice(4)
+                    const withoutPrefix = url.slice(4).trim()
                     if (withoutPrefix.includes('#')) {
                         const [t, a] = withoutPrefix.split('#')
-                        targetTab = (t === 'projects' || t === 'project') ? 'documents' : (t as WorkspaceTab)
+                        const normT = t.toLowerCase().trim()
+                        if (normT === 'projects' || normT === 'project' || normT === 'docs') {
+                            targetTab = 'documents'
+                        } else if (normT === 'export' || normT === 'exports' || normT === 'deliverables' || normT === 'downloads') {
+                            targetTab = 'exports'
+                        } else {
+                            targetTab = normT as WorkspaceTab
+                        }
                         anchorId = a
                     } else if (withoutPrefix === 'intake' || withoutPrefix === 'upload') {
                         anchorId = 'project-intake'
-                    } else if (withoutPrefix === 'projects' || withoutPrefix === 'portfolio') {
+                    } else if (withoutPrefix === 'projects' || withoutPrefix === 'portfolio' || withoutPrefix === 'docs') {
                         targetTab = 'documents'
+                    } else if (withoutPrefix === 'export' || withoutPrefix === 'exports' || withoutPrefix === 'deliverables' || withoutPrefix === 'downloads') {
+                        targetTab = 'exports'
                     } else {
-                        targetTab = withoutPrefix as WorkspaceTab
+                        targetTab = withoutPrefix.toLowerCase() as WorkspaceTab
                     }
                 } else if (url.startsWith('#')) {
                     anchorId = url.slice(1)
@@ -1736,6 +1772,7 @@ function renderSimpleMarkdown(
                     else if (anchorId.startsWith('diligence-')) targetTab = 'diligence'
                     else if (anchorId.startsWith('synthesis-')) targetTab = 'synthesis'
                     else if (anchorId.startsWith('overview-')) targetTab = 'overview'
+                    else if (anchorId.startsWith('export-') || anchorId === 'exports-hub') targetTab = 'exports'
                     else if (anchorId === 'project-intake' || anchorId === 'upload-section') {
                         targetTab = null
                     }

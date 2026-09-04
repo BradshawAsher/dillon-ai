@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { List, ChevronRight, ChevronLeft, Navigation, RotateCcw } from 'lucide-react'
 import { clampTocWidth } from '../utils/tocLayout'
+import type { WorkspaceTab } from './DealWorkspaceNav'
 
 type TOCSection = {
     id: string
@@ -8,9 +9,17 @@ type TOCSection = {
     indent?: boolean
 }
 
-export type WorkspaceTab = 'overview' | 'analysis' | 'diagnostics' | 'diligence' | 'synthesis' | 'spending' | 'compare' | 'valuation' | 'returns' | 'growth' | 'structure' | 'negotiation' | 'documents' | 'shortcuts' | 'history' | 'errors' | 'email' | 'evals' | 'faqs' | 'report_issue' | 'account'
+export type { WorkspaceTab }
 
 const TAB_SECTIONS: Partial<Record<WorkspaceTab, TOCSection[]>> = {
+    exports: [
+        { id: 'exports-hub', label: 'Deliverables Hub' },
+        { id: 'export-ic-memo', label: 'IC Deal Memo (.pdf)' },
+        { id: 'export-loi', label: 'Letter of Intent (LOI)' },
+        { id: 'export-excel', label: 'Live Excel Model (.xlsx)' },
+        { id: 'export-summary', label: 'Executive Dossier (.md)' },
+        { id: 'export-json', label: 'Audit JSON (.json)' },
+    ],
     overview: [
         { id: 'overview-snapshot', label: 'Deal Snapshot' },
         { id: 'overview-health', label: 'Health KPIs' },

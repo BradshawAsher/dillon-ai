@@ -13,6 +13,7 @@ import WorkflowErrorLogCard from '../WorkflowErrorLogCard'
 import SubmissionHistoryCard from '../SubmissionHistoryCard'
 import { AccountWorkspaceView } from './AccountWorkspaceView'
 import ReportIssueWorkspaceView from './ReportIssueWorkspaceView'
+import { ExportsWorkspaceView } from './ExportsWorkspaceView'
 
 describe('Workspace Tab Components Validation', () => {
     it('successfully loads and initializes ProjectPortfolioCard without TDZ errors', () => {
@@ -23,6 +24,11 @@ describe('Workspace Tab Components Validation', () => {
     it('successfully loads and initializes DocumentsWorkspaceView', () => {
         expect(DocumentsWorkspaceView).toBeDefined()
         expect(typeof DocumentsWorkspaceView).toBe('function')
+    })
+
+    it('successfully loads and initializes ExportsWorkspaceView', () => {
+        expect(ExportsWorkspaceView).toBeDefined()
+        expect(typeof ExportsWorkspaceView).toBe('function')
     })
 
     it('successfully loads and initializes DealMemoView', () => {
