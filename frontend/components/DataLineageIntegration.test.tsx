@@ -1,7 +1,7 @@
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, it, expect } from 'vitest'
-import type { DealModel } from '../hooks/backend/diligence'
+import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
 import ValuationGapCard from './ValuationGapCard'
 import DealValuationCard from './DealValuationCard'
 import FinancedReturnsCard from './FinancedReturnsCard'
@@ -36,8 +36,6 @@ const baseModel: DealModel = {
     interestRate: 0.08,
     amortizationYears: 10,
     sellerNoteAmount: 500000,
-    sellerNoteInterestRate: 0.06,
-    sellerNoteAmortizationYears: 5,
     bearRevenueGrowth: -0.02,
     baseRevenueGrowth: 0.08,
     bullRevenueGrowth: 0.15,
@@ -64,31 +62,51 @@ const baseModel: DealModel = {
     documentedFactsStatus: 'confirmed',
 }
 
-const baseSynthesis = {
-    company_name: 'Test Corp',
-    industry: 'Commercial HVAC & Mechanical Contracting',
-    summary: 'Test summary',
-    key_findings: ['High recurring service contracts'],
-    red_flags: ['Key-person customer risk'],
+const emptyFindingGroups = {
+    keyTakeaways: [],
+    redFlags: [],
+    yellowFlags: [],
+    greenFlags: [],
+    crossDocumentConflicts: [],
+    openQuestions: [],
+    negotiationLevers: [],
+    missingDocuments: [],
+}
+
+const baseSynthesis: ProjectSynthesisItem = {
+    projectId: 'test-proj',
+    companyName: 'Test Corp',
+    projectStatus: 'complete',
+    documentsReceivedCount: 3,
+    documentsCompletedCount: 3,
+    missingDocuments: [],
+    crossDocumentConflicts: [],
+    openQuestions: [],
+    negotiationLevers: ['Renegotiate master agreement'],
+    keyTakeaways: ['High recurring service contracts'],
     redFlags: ['Key-person customer risk'],
     yellowFlags: [],
-    strategic_recommendations: ['Renegotiate master agreement'],
-    valuationBaseEstimate: '$4,800,000',
+    greenFlags: [],
+    red_flags: ['Key-person customer risk'],
+    citations: [],
+    citationDetails: [],
+    structuredFindings: emptyFindingGroups,
+    finalRiskLevel: 'Medium',
+    finalTrafficLight: 'yellow',
+    finalRecommendation: 'Proceed with conditions',
+    finalJudgmentSummary: 'Test summary',
+    finalJudgmentJson: '{}',
+    aiErrorMessage: '',
+    aiConfidence: '0.8',
+    valuationConfidence: '0.75',
     valuationLowerBound: '$4,200,000',
+    valuationBaseEstimate: '$4,800,000',
     valuationUpperBound: '$5,400,000',
-    crossDocumentConflicts: [],
-    valuation_multiples: {
-        ev_to_revenue_low: 0.9,
-        ev_to_revenue_high: 1.4,
-        ev_to_ebitda_low: 3.8,
-        ev_to_ebitda_high: 5.2,
-    },
-    risk_factors: [{ category: 'Operational', risk: 'Customer concentration', severity: 'High' }],
-    financial_analysis: {
-        revenue_trajectory: 'Growing',
-        margin_trend: 'Stable',
-        working_capital_health: 'Healthy',
-    },
+    valuationCurrency: 'USD',
+    projectProcessedAt: '2026-01-01T00:00:00Z',
+    id: 1,
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
 }
 
 describe('Data Lineage & Origin Badges Integration', () => {
@@ -102,14 +120,14 @@ describe('Data Lineage & Origin Badges Integration', () => {
     })
 
     it('DealValuationCard labels supported base value and user-entered price position', () => {
-        const html = renderToStaticMarkup(<DealValuationCard model={baseModel} synthesis={baseSynthesis} askingPrice={5000000} />)
+        const html = renderToStaticMarkup(<DealValuationCard model={baseModel} synthesis={baseSynthesis} askingPrice="5000000" />)
         expect(html).toContain('data-origin-badge="calculated"')
         expect(html).toContain('Supported base value')
         expect(html).toContain('data-origin-badge="user_entered"')
     })
 
     it('ComparableTransactionsCard distinguishes Sector Multiples Benchmark from deal multiple', () => {
-        const html = renderToStaticMarkup(<ComparableTransactionsCard model={baseModel} synthesis={baseSynthesis} />)
+        const html = renderToStaticMarkup(<ComparableTransactionsCard model={baseModel} />)
         expect(html).toContain('Sector Multiples Benchmark')
         expect(html).toContain('Calculated Multiple')
         expect(html).toContain('data-origin-badge="benchmark"')
@@ -181,7 +199,7 @@ describe('Data Lineage & Origin Badges Integration', () => {
                 <ValuationWorkspaceView
                     hydratedDealModel={baseModel}
                     activeProjectSynthesis={baseSynthesis}
-                    askingPrice={5000000}
+                    askingPrice="5000000"
                     handleDealModelChange={() => {}}
                     submissionHistory={[]}
                     setActiveEvidence={() => {}}
