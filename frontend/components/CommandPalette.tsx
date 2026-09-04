@@ -37,6 +37,7 @@ import {
     History,
     Edit3,
     Radio,
+    Printer,
 } from 'lucide-react'
 
 type CommandPaletteProps = {
@@ -47,6 +48,8 @@ type CommandPaletteProps = {
     onExportMarkdown: () => void
     onExportJson: () => void
     onExportExcel?: () => void
+    onExportIcMemo?: () => void
+    onExportLoi?: () => void
     onShowShortcuts: () => void
     onOpenChat: () => void
     onCopySummary?: () => void
@@ -75,6 +78,8 @@ export default function CommandPalette({
     onExportMarkdown,
     onExportJson,
     onExportExcel,
+    onExportIcMemo,
+    onExportLoi,
     onShowShortcuts,
     onOpenChat,
     onCopySummary,
@@ -91,6 +96,52 @@ export default function CommandPalette({
 
     const commands: Command[] = [
         // --- Core Actions & Quick Exports ---
+        {
+            id: 'export-loi',
+            label: 'Export Letter of Intent (LOI) (.pdf / Print / Markdown) — Capital Stack & NWC Peg',
+            icon: <Scale className="h-4 w-4 text-violet-600 dark:text-violet-400" />,
+            action: () => {
+                if (onExportLoi) {
+                    onExportLoi()
+                } else {
+                    window.dispatchEvent(new CustomEvent('mergeworks:walkthrough-action', { detail: { type: 'open_loi_modal' } }))
+                }
+            },
+            group: 'Actions & Exports',
+            keywords: ['loi', 'letter of intent', 'offer', 'acquisition proposal', 'capital stack', 'nwc peg', 'working capital', 'escrow', 'covenants', 'exclusivity', 'no-shop', 'export'],
+            badge: 'LOI'
+        },
+        {
+            id: 'export-ic-memo',
+            label: 'Export Investment Committee Memo (.pdf / Print) — QoE Bridge & APA Covenants',
+            icon: <Printer className="h-4 w-4 text-primary" />,
+            action: () => {
+                if (onExportIcMemo) {
+                    onExportIcMemo()
+                } else {
+                    window.dispatchEvent(new CustomEvent('mergeworks:walkthrough-action', { detail: { type: 'open_export_modal' } }))
+                }
+            },
+            group: 'Actions & Exports',
+            keywords: ['ic memo', 'investment committee', 'pdf', 'print', 'diligence memo', 'memo', 'qoe bridge', 'apa', 'covenants', 'export'],
+            badge: 'IC Memo'
+        },
+        {
+            id: 'retry-failed-docs',
+            label: 'Retry Failed Documents — Re-run failed uploads & extractions in batch',
+            icon: <AlertTriangle className="h-4 w-4 text-amber-500" />,
+            action: () => {
+                const retryBtn = (document.getElementById('batch-retry-failed-btn') || document.getElementById('project-retry-failed-btn')) as HTMLButtonElement | null
+                if (retryBtn) {
+                    retryBtn.click()
+                } else {
+                    onSelectTab('diligence', 'batch-progress-card')
+                }
+            },
+            group: 'Actions & Exports',
+            keywords: ['retry', 'retry failed', 'rerun failed', 're-run', 'reprocess', 'failed documents', 'upload error', 'mp4'],
+            badge: 'Retry'
+        },
         ...(onExportExcel ? [{
             id: 'export-excel-live',
             label: 'Export Live Excel Model (.xlsx) — 3-Statement & Formulas',

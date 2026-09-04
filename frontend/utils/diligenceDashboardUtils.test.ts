@@ -15,6 +15,9 @@ import {
     getMeasuredSynthesisDurationSec,
     getProjectTimingSummary,
     getSynthesisDurationSec,
+    estimateDocumentDurationSec,
+    estimateBatchRemainingSec,
+    estimateSynthesisDurationSec,
     getFindingVariant,
     getModelTokenRates,
     getSeverityVariant,
@@ -428,6 +431,34 @@ describe('getProjectTimingSummary', () => {
             extractionWallClockSec: null,
             synthesisSec: null,
             totalProjectSec: null,
+        })
+    })
+
+    describe('Duration Estimation Helpers', () => {
+        it('estimates document duration based on file extension and size', () => {
+            expect(estimateDocumentDurationSec('financials.xlsx', 500000)).toBe(52)
+            expect(estimateDocumentDurationSec('large_model.xlsx', 12 * 1024 * 1024)).toBe(68)
+            expect(estimateDocumentDurationSec('Executive_CIM.pdf', 2000000)).toBe(58)
+            expect(estimateDocumentDurationSec('Heavy_Contract.pdf', 20 * 1024 * 1024)).toBe(75)
+            expect(estimateDocumentDurationSec('Plant_Tour.mp4', 8000000)).toBe(65)
+            expect(estimateDocumentDurationSec('Interview.mp3', 3000000)).toBe(65)
+            expect(estimateDocumentDurationSec('notes.txt')).toBe(48)
+            expect(estimateDocumentDurationSec()).toBe(52)
+        })
+
+        it('estimates batch remaining seconds based on pending count, pace, and concurrency', () => {
+            expect(estimateBatchRemainingSec(0)).toBe(0)
+            // 7 docs with concurrency 3: ceil(7/3) = 3 waves * 52s = 156s + 4s overhead = 160s
+            expect(estimateBatchRemainingSec(7, 52, 3)).toBe(160)
+            // 3 docs with concurrency 3: 1 wave * 50s + 4s = 54s
+            expect(estimateBatchRemainingSec(3, 50, 3)).toBe(54)
+        })
+
+        it('estimates synthesis duration scaled with document count (1m to 3m)', () => {
+            expect(estimateSynthesisDurationSec(1)).toBe(68)
+            expect(estimateSynthesisDurationSec(7)).toBe(83)
+            expect(estimateSynthesisDurationSec(22)).toBe(120)
+            expect(estimateSynthesisDurationSec(50)).toBe(180)
         })
     })
 })

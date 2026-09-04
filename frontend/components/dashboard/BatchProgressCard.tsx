@@ -5,7 +5,7 @@ import { Button } from '../../lib/shadcn/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../lib/shadcn/card'
 import type { SubmissionBatch } from '../../utils/diligenceDashboardUtils'
 import { isFailedSubmissionStatus } from '../../utils/submissionHistory'
-import { formatElapsedDuration, getDocumentExtractionDurationSec } from '../../utils/diligenceDashboardUtils'
+import { formatElapsedDuration, getDocumentExtractionDurationSec, estimateBatchRemainingSec } from '../../utils/diligenceDashboardUtils'
 import { formatHours } from '../../utils/impactMetrics'
 
 type BatchProgressCardProps = {
@@ -75,7 +75,9 @@ export function BatchProgressCard({
 
     const totalBatchDocSec = (batchDocuments || []).reduce((sum, doc) => sum + (getDocumentExtractionDurationSec(doc) || 0), 0)
     const completedBatchDocs = (batchDocuments || []).filter(d => ['completed', 'approved'].includes((d?.status || '').toLowerCase()) || getDocumentExtractionDurationSec(d) !== null)
-    const avgBatchDocSec = completedBatchDocs.length > 0 ? Math.round(totalBatchDocSec / completedBatchDocs.length) : 18
+    const avgBatchDocSec = completedBatchDocs.length > 0 ? Math.round(totalBatchDocSec / completedBatchDocs.length) : 52
+    const remainingBatchDocs = Math.max(0, activeBatchExpectedCount - activeBatchFinishedCount)
+    const estimatedBatchRemainingSec = estimateBatchRemainingSec(remainingBatchDocs, avgBatchDocSec, 3)
 
     return (
         <Card className="border border-border shadow-sm">
@@ -93,6 +95,18 @@ export function BatchProgressCard({
                         </CardDescription>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
+                        {handleRetryFailedBatchDocs && activeBatchFailedCount > 0 ? (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleRetryFailedBatchDocs}
+                                disabled={isRerunningBatch}
+                                className="gap-1.5 text-xs font-semibold border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400"
+                            >
+                                <RotateCw className="h-3.5 w-3.5" />
+                                Retry Failed Docs ({activeBatchFailedCount})
+                            </Button>
+                        ) : null}
                         {handleRerunLatestBatch ? (
                             <Button
                                 variant="outline"
@@ -115,7 +129,7 @@ export function BatchProgressCard({
                 </div>
             </CardHeader>
             <CardContent className="p-4 sm:p-6 pt-2 space-y-4">
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm bg-muted/20 p-3 rounded-lg border border-border/50">
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-sm bg-muted/20 p-3 rounded-lg border border-border/50">
                     <div>
                         <p className="text-xs text-muted-foreground font-medium">Batch Progress</p>
                         <p className="text-base font-bold mt-0.5">{activeBatchFinishedCount} / {activeBatchExpectedCount} finished</p>
@@ -133,6 +147,12 @@ export function BatchProgressCard({
                         <p className="text-base font-bold mt-0.5 flex items-center gap-1 font-mono">
                             <Clock className="h-3.5 w-3.5 text-muted-foreground" />
                             {formatElapsedDuration(batchElapsedSeconds)}
+                        </p>
+                    </div>
+                    <div>
+                        <p className="text-xs text-muted-foreground font-medium">{isFinished ? 'Average Pace' : 'Est. Remaining'}</p>
+                        <p className="text-base font-bold mt-0.5 flex items-center gap-1 font-mono text-emerald-600 dark:text-emerald-400">
+                            {isFinished ? `~${avgBatchDocSec}s / doc` : `~${estimatedBatchRemainingSec}s (pace ~${avgBatchDocSec}s)`}
                         </p>
                     </div>
                 </div>
@@ -302,7 +322,7 @@ export function BatchProgressCard({
                         ) : null}
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                        {handleRetryFailedBatchDocs && activeBatchFailedCount > 0 && batchDocuments.some(doc => doc.requestID && isFailedSubmissionStatus(doc.status)) ? (
+                        {handleRetryFailedBatchDocs && activeBatchFailedCount > 0 ? (
                             <Button
                                 size="sm"
                                 variant="outline"
@@ -311,7 +331,7 @@ export function BatchProgressCard({
                                 disabled={isRerunningBatch}
                             >
                                 <RotateCw className="h-3.5 w-3.5" />
-                                Retry registered failures ({batchDocuments.filter(doc => doc.requestID && isFailedSubmissionStatus(doc.status)).length})
+                                Retry Failed Batch Docs ({activeBatchFailedCount})
                             </Button>
                         ) : null}
                         {handleRerunAllProjectDocs && activeProjectId ? (

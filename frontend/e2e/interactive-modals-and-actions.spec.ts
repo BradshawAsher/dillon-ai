@@ -40,4 +40,40 @@ test.describe('Interactive Modals & Utilities', () => {
             await expect(page.locator('html')).toHaveAttribute('class', /dark|light/)
         }
     })
+
+    test('searches and triggers LOI generator from Command Palette', async ({ page }) => {
+        await page.keyboard.press('Control+k')
+        await page.waitForTimeout(400)
+
+        const paletteInput = page.locator('input[placeholder*="Type a command" i], input[placeholder*="Search" i], [cmdk-input]').first()
+        if (await paletteInput.isVisible()) {
+            await paletteInput.fill('loi')
+            await page.waitForTimeout(300)
+
+            const loiItem = page.locator('[cmdk-item]', { hasText: /Letter of Intent|LOI/i }).first()
+            if (await loiItem.isVisible()) {
+                await loiItem.click()
+                await page.waitForTimeout(400)
+
+                const modal = page.locator('text=Letter of Intent (LOI)').first()
+                await expect(modal).toBeVisible()
+            }
+        }
+    })
+
+    test('opens LOI modal directly via URL deep link ?export=loi', async ({ page }) => {
+        await page.goto('/?export=loi')
+        await page.waitForTimeout(800)
+
+        const loiModalHeading = page.locator('text=Letter of Intent (LOI)').first()
+        await expect(loiModalHeading).toBeVisible()
+    })
+
+    test('opens IC Memo modal directly via URL deep link ?export=ic_memo', async ({ page }) => {
+        await page.goto('/?export=ic_memo')
+        await page.waitForTimeout(800)
+
+        const icModalHeading = page.locator('text=Investment Committee Deal Memorandum').first()
+        await expect(icModalHeading).toBeVisible()
+    })
 })

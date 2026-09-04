@@ -341,6 +341,61 @@ describe('DealChatPanel Client-Side AI Tools', () => {
         expect(result.reason).toBe('From broker teaser sheet')
         expect(result.guidance).toContain('tab:structure#manual-deal-intake-card')
     })
+
+    it('executes trigger_export with exportType loi and dispatches open_loi_modal event', async () => {
+        const { executeClientSideTool } = await import('./DealChatPanel')
+        const originalWindow = globalThis.window
+        const dispatched: any[] = []
+        globalThis.window = {
+            dispatchEvent: (e: any) => { dispatched.push(e.detail); return true }
+        } as any
+
+        try {
+            const result = executeClientSideTool('trigger_export', { exportType: 'loi' }, mockContext)
+            expect(result.success).toBe(true)
+            expect(result.action).toBe('export')
+            expect(result.exportType).toBe('loi')
+            expect(dispatched).toEqual([{ type: 'open_loi_modal' }])
+        } finally {
+            globalThis.window = originalWindow
+        }
+    })
+
+    it('executes open_workspace_modal with loi and ic_memo modal names', async () => {
+        const { executeClientSideTool } = await import('./DealChatPanel')
+        const originalWindow = globalThis.window
+        const dispatched: any[] = []
+        globalThis.window = {
+            dispatchEvent: (e: any) => { dispatched.push(e.detail); return true }
+        } as any
+
+        try {
+            const resLoi = executeClientSideTool('open_workspace_modal', { modalName: 'loi' }, mockContext)
+            expect(resLoi.success).toBe(true)
+            expect(resLoi.modalName).toBe('loi')
+
+            const resIc = executeClientSideTool('open_workspace_modal', { modalName: 'ic_memo' }, mockContext)
+            expect(resIc.success).toBe(true)
+            expect(resIc.modalName).toBe('ic_memo')
+
+            expect(dispatched).toEqual([{ type: 'open_loi_modal' }, { type: 'open_export_modal' }])
+        } finally {
+            globalThis.window = originalWindow
+        }
+    })
+
+    it('verifies loi and ic_memo are registered in tool schemas', async () => {
+        const { CHAT_AGENT_OPENAI_TOOLS, CHAT_AGENT_ANTHROPIC_TOOLS } = await import('./DealChatPanel')
+        const openAiExport = CHAT_AGENT_OPENAI_TOOLS.find(t => t.function.name === 'trigger_export')
+        const openAiParams = openAiExport?.function.parameters as any
+        expect(openAiParams?.properties?.exportType?.enum).toContain('loi')
+        expect(openAiParams?.properties?.exportType?.enum).toContain('ic_memo')
+
+        const anthropicExport = CHAT_AGENT_ANTHROPIC_TOOLS.find(t => t.name === 'trigger_export')
+        const anthropicSchema = anthropicExport?.input_schema as any
+        expect(anthropicSchema?.properties?.exportType?.enum).toContain('loi')
+        expect(anthropicSchema?.properties?.exportType?.enum).toContain('ic_memo')
+    })
 })
 
 

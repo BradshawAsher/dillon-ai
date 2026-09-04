@@ -225,6 +225,22 @@ export function WorkspaceHeader({
                             {projectSummaries.length}
                         </Badge>
                     </Button>
+                    {onOpenSearch && (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            className="gap-2 border-border/60 bg-muted/20 hover:bg-muted/40 font-medium text-xs sm:text-sm px-3 py-2"
+                            onClick={onOpenSearch}
+                            title="Quick Search & Command Palette (Ctrl+K / ⌘K)"
+                            aria-label="Open command palette and search"
+                        >
+                            <Search className="h-4 w-4 text-muted-foreground" />
+                            <span className="hidden md:inline text-muted-foreground">Search...</span>
+                            <kbd className="hidden sm:inline-flex items-center gap-0.5 rounded border border-border/60 bg-muted px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
+                                ⌘K
+                            </kbd>
+                        </Button>
+                    )}
                     <Button
                         type="button"
                         variant="outline"
@@ -239,7 +255,13 @@ export function WorkspaceHeader({
                         {currentTheme === 'dark' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
                         <span className="hidden sm:inline">{currentTheme === 'system' ? 'Auto theme' : currentTheme === 'dark' ? 'Dark mode' : 'Light mode'}</span>
                     </Button>
-                    <ExportDealButton model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
+                    <ExportDealButton
+                        model={hydratedDealModel}
+                        synthesis={activeProjectSynthesis}
+                        projectName={dealName || suggestedProjectName}
+                        projectId={activeProjectId}
+                        documents={activeProjectDocuments}
+                    />
                     <Button
                         type="button"
                         variant="outline"

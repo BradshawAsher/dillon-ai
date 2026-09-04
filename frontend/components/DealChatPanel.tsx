@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowUpRight, Bot, Compass, Edit2, ExternalLink, FolderKanban, Maximize2, MessageSquare, Minimize2, Move, PanelLeft, Plus, RotateCcw, Search, Send, Sparkles, ThumbsDown, ThumbsUp, Trash2, X, AlertTriangle, Bug, Brain, Terminal, Cpu, ChevronDown, ChevronRight, CheckCircle2, Loader2, FileSpreadsheet, Paperclip } from 'lucide-react'
+import { ArrowUpRight, Bot, Compass, Edit2, ExternalLink, FolderKanban, Maximize2, MessageSquare, Minimize2, Move, PanelLeft, Plus, RotateCcw, Search, Send, Sparkles, ThumbsDown, ThumbsUp, Trash2, X, AlertTriangle, Bug, Brain, Terminal, Cpu, ChevronDown, ChevronRight, CheckCircle2, Loader2, FileSpreadsheet, Paperclip, Printer, Scale } from 'lucide-react'
 
 import { Button } from '../lib/shadcn/button'
 import { Card } from '../lib/shadcn/card'
@@ -345,6 +345,15 @@ function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealMo
     3. **Command Palette**: Press 'Ctrl+K' -> search 'Live Excel Model'
     4. **Direct Action Chip**: Output [📥 Export Live Excel Model](action:export_excel) so users can download with 1 click!
   - Features: Dynamically generates active formulas (=SUM(), =IRR(), =DSCR(), =PPMT/IPMT), 5-year projections, LBO sensitivity matrices, and evidence audit trails.
+- Formal Letter of Intent (LOI) & Investment Committee (IC) Memo Generator:
+  - Locations:
+    1. **Top Header Navigation Bar > Export > Letter of Intent (LOI)** or **IC Deal Memo (.pdf / Print)**
+    2. **Email & Export Tab > Export Deal Package** (#email-drafts-panel)
+    3. **Command Palette**: Press 'Ctrl+K' -> search 'Letter of Intent' or 'IC Memo'
+    4. **Direct Action Chip**: Output [📝 Generate Letter of Intent (LOI)](action:export_loi) or [📄 Export IC Memo](action:export_ic_memo) so users can launch the modal with 1 click!
+  - Features:
+    - LOI: 8 institutional sections including binding 60-day exclusivity ("no-shop"), capital stack table (SBA 7a senior debt, seller note, committed buyer equity check), $415k NWC peg with 90-day true-up, 10% general escrow + identified special indemnity holdbacks, and Delaware governing law.
+    - IC Memo: Publication-grade memo with 5-tier data provenance badges, 7-part investment committee dossier, and APA definitive covenants.
 - Version Control & Immutable Rollback:
   - Locations:
     1. **Command Palette**: Press 'Ctrl+K' -> search 'Version' or 'Rollback'
@@ -913,6 +922,68 @@ I can generate and export the complete 4-tab live-formula financial model for **
 👉 [Download Live Excel Model (.xlsx)](action:export_excel)
 
 *(You can also download this model directly from **Top Navigation Bar > Export > Live Excel Model (.xlsx)** or on the **Synthesis Tab > Start Here: Acquisition Judgment Card**!)*`,
+        }
+    }
+
+    // 0.075 Investment Committee Memo Export Intent
+    if (
+        q.includes('export memo') ||
+        q.includes('download memo') ||
+        q.includes('ic memo') ||
+        q.includes('investment committee memo') ||
+        q.includes('print memo') ||
+        q.includes('pdf memo') ||
+        q.includes('export pdf') ||
+        q.includes('download pdf') ||
+        q.includes('diligence memo')
+    ) {
+        return {
+            matched: true,
+            content: `### 📄 Investment Committee Diligence Memorandum (.pdf / Print)
+
+I can generate and export the complete 7-section publication-grade Investment Committee memorandum for **${projectName || 'this deal'}**!
+
+**What's Included in the IC Memo:**
+1. **Executive Summary & IC Recommendation**: Traffic light posture, defensible acquisition thesis, and critical red flags.
+2. **Transaction Economics & Capital Stack**: 5-tier verified baseline EV, debt/equity sources and uses, and entry multiple vs peer benchmark.
+3. **Quality of Earnings (QoE) & Valuation Bridge**: Forensic EBITDA haircuts and dollar-for-dollar valuation bridges.
+4. **M&A Asset Purchase Agreement (APA) Legal Covenants**: Ready-to-insert Sections 2.3 (Valuation Bridge Adjustment), 8.2(c) (Special Indemnity Escrow Fund), and 3.14 (Contractor Reps).
+5. **5-Tier Data Provenance Audit Log**: Extracted facts vs industry assumptions vs manual entries.
+6. **Partner Sign-Off Block**: Investment Committee signatures and closing condition determinations.
+
+👉 [Export IC Memo (.pdf / Print)](action:export_ic_memo)
+
+*(You can also access this anytime from **Top Navigation Bar > Export > IC Deal Memo (.pdf / Print)** or via Command Palette \`Ctrl+K\` > "Export IC Memo")*`,
+        }
+    }
+
+    // 0.07b Letter of Intent (LOI) Generation & Proposal Terms
+    if (
+        q.includes('loi') ||
+        q.includes('letter of intent') ||
+        q.includes('draft loi') ||
+        q.includes('generate loi') ||
+        q.includes('acquisition proposal') ||
+        q.includes('term sheet')
+    ) {
+        return {
+            matched: true,
+            content: `### 📝 Non-Binding Letter of Intent (LOI) Generator (.pdf / Print / Markdown)
+
+I can generate and export a formal, institutional 8-section Letter of Intent (LOI) for **${projectName || 'this deal'}**!
+
+**What's Included in the Generated LOI:**
+1. **Transaction Structure**: Asset purchase on a cash-free, debt-free basis at defensible counter-offer valuation.
+2. **Definitive Capital Stack**: Senior SBA 7(a) / bank financing, seller subordinated note terms, and buyer committed equity check.
+3. **Target Net Working Capital (NWC) Peg**: Peg benchmarked to 12-month trailing averages with a mandatory 90-day post-closing cash true-up.
+4. **Indemnity Escrows & Holdbacks**: 10% general escrow for 12 months plus identified special escrow funds for specific diligence contingencies.
+5. **APA Definitive Covenants**: Customary representations, warranties, and closing conditions.
+6. **Legally Binding Exclusivity ("No-Shop") & Confidentiality**: 60-day strict exclusivity period governed by Delaware law.
+7. **Signatures**: Buyer & Seller signature blocks ready for execution.
+
+👉 [Generate Letter of Intent (LOI)](action:export_loi) · [Export IC Memo](action:export_ic_memo)
+
+*(You can also access this anytime from **Top Navigation Bar > Export > Letter of Intent (LOI)** or via Command Palette \`Ctrl+K\` > "Export Letter of Intent")*`,
         }
     }
 
@@ -1548,6 +1619,42 @@ function renderSimpleMarkdown(
                             <ArrowUpRight className="h-2.5 w-2.5 opacity-70 shrink-0" />
                         </button>
                     )
+                } else if (actionType === 'export_ic_memo') {
+                    elements.push(
+                        <button
+                            key={`${i}-${matchIndex}`}
+                            type="button"
+                            onClick={() => {
+                                if (typeof window !== 'undefined') {
+                                    window.dispatchEvent(new CustomEvent('mergeworks:walkthrough-action', { detail: { type: 'open_export_modal' } }))
+                                }
+                            }}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/15 px-2 py-0.5 text-[11px] font-bold text-primary hover:bg-primary/25 hover:border-primary/60 transition-all cursor-pointer shadow-2xs mx-1 align-baseline my-0.5 active:scale-95"
+                            title="Export Investment Committee Diligence Memo (.pdf / Print)"
+                        >
+                            <Printer className="h-3 w-3 shrink-0 text-primary" />
+                            <span>{label}</span>
+                            <ArrowUpRight className="h-2.5 w-2.5 opacity-70 shrink-0" />
+                        </button>
+                    )
+                } else if (actionType === 'export_loi' || actionType === 'open_loi') {
+                    elements.push(
+                        <button
+                            key={`${i}-${matchIndex}`}
+                            type="button"
+                            onClick={() => {
+                                if (typeof window !== 'undefined') {
+                                    window.dispatchEvent(new CustomEvent('mergeworks:walkthrough-action', { detail: { type: 'open_loi_modal' } }))
+                                }
+                            }}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-violet-500/40 bg-violet-500/15 px-2 py-0.5 text-[11px] font-bold text-violet-700 dark:text-violet-300 hover:bg-violet-500/25 hover:border-violet-500/60 transition-all cursor-pointer shadow-2xs mx-1 align-baseline my-0.5 active:scale-95"
+                            title="Generate Letter of Intent (LOI) (.pdf / Print / Markdown)"
+                        >
+                            <Scale className="h-3 w-3 shrink-0 text-violet-600 dark:text-violet-400" />
+                            <span>{label}</span>
+                            <ArrowUpRight className="h-2.5 w-2.5 opacity-70 shrink-0" />
+                        </button>
+                    )
                 } else if (actionType === 'open_version_control') {
                     elements.push(
                         <button
@@ -2112,13 +2219,13 @@ export const CHAT_AGENT_OPENAI_TOOLS = [
         type: 'function',
         function: {
             name: 'trigger_export',
-            description: 'Trigger instant download of live diligence exports, including the 4-tab live-formula Excel financial model (.xlsx), Markdown summary, or JSON dataset.',
+            description: 'Trigger instant download or modal preview of live diligence exports, including the Letter of Intent (LOI), Investment Committee (IC) Memo (.pdf/print), the 4-tab live-formula Excel financial model (.xlsx), Markdown summary, or JSON dataset.',
             parameters: {
                 type: 'object',
                 properties: {
                     exportType: {
                         type: 'string',
-                        enum: ['excel', 'markdown', 'json'],
+                        enum: ['excel', 'markdown', 'json', 'ic_memo', 'loi', 'pdf'],
                         description: 'Type of export to generate'
                     }
                 },
@@ -2147,13 +2254,13 @@ export const CHAT_AGENT_OPENAI_TOOLS = [
         type: 'function',
         function: {
             name: 'open_workspace_modal',
-            description: 'Open specific workspace modals such as Project Intake / Uploads (\'intake\'), Projects Portfolio Drawer (\'projects\'), Keyboard Shortcuts (\'shortcuts\'), or Report Issue Form (\'report_issue\').',
+            description: 'Open specific workspace modals such as Project Intake / Uploads (\'intake\'), Projects Portfolio Drawer (\'projects\'), Keyboard Shortcuts (\'shortcuts\'), Letter of Intent LOI Modal (\'loi\'), IC Memo Modal (\'ic_memo\'), or Report Issue Form (\'report_issue\').',
             parameters: {
                 type: 'object',
                 properties: {
                     modalName: {
                         type: 'string',
-                        enum: ['intake', 'projects', 'shortcuts', 'version_control', 'report_issue'],
+                        enum: ['intake', 'projects', 'shortcuts', 'version_control', 'report_issue', 'export', 'loi', 'ic_memo'],
                         description: 'The modal window to open'
                     }
                 },
@@ -2273,13 +2380,13 @@ export const CHAT_AGENT_ANTHROPIC_TOOLS = [
     },
     {
         name: 'trigger_export',
-        description: 'Trigger instant download of live diligence exports, including the 4-tab live-formula Excel financial model (.xlsx), Markdown summary, or JSON dataset.',
+        description: 'Trigger instant download or modal preview of live diligence exports, including the Letter of Intent (LOI), Investment Committee (IC) Memo (.pdf/print), the 4-tab live-formula Excel financial model (.xlsx), Markdown summary, or JSON dataset.',
         input_schema: {
             type: 'object',
             properties: {
                 exportType: {
                     type: 'string',
-                    enum: ['excel', 'markdown', 'json'],
+                    enum: ['excel', 'markdown', 'json', 'ic_memo', 'loi', 'pdf'],
                     description: 'Type of export to generate'
                 }
             },
@@ -2302,13 +2409,13 @@ export const CHAT_AGENT_ANTHROPIC_TOOLS = [
     },
     {
         name: 'open_workspace_modal',
-        description: 'Open specific workspace modals such as Project Intake / Uploads (\'intake\'), Projects Portfolio Drawer (\'projects\'), Keyboard Shortcuts (\'shortcuts\'), or Report Issue Form (\'report_issue\').',
+        description: 'Open specific workspace modals such as Project Intake / Uploads (\'intake\'), Projects Portfolio Drawer (\'projects\'), Keyboard Shortcuts (\'shortcuts\'), Letter of Intent LOI Modal (\'loi\'), IC Memo Modal (\'ic_memo\'), or Report Issue Form (\'report_issue\').',
         input_schema: {
             type: 'object',
             properties: {
                 modalName: {
                     type: 'string',
-                    enum: ['intake', 'projects', 'shortcuts', 'version_control', 'report_issue'],
+                    enum: ['intake', 'projects', 'shortcuts', 'version_control', 'report_issue', 'export', 'loi', 'ic_memo'],
                     description: 'The modal window to open'
                 }
             },
@@ -2648,7 +2755,11 @@ export function executeClientSideTool(name: string, args: any, context: ClientSi
     if (name === 'trigger_export') {
         const type = String(args.exportType || 'excel').toLowerCase()
         if (typeof window !== 'undefined') {
-            if (type.includes('excel') || type.includes('xlsx')) {
+            if (type.includes('loi') || type.includes('letter of intent') || type.includes('offer')) {
+                window.dispatchEvent(new CustomEvent('mergeworks:walkthrough-action', { detail: { type: 'open_loi_modal' } }))
+            } else if (type.includes('ic') || type.includes('memo') || type.includes('pdf')) {
+                window.dispatchEvent(new CustomEvent('mergeworks:walkthrough-action', { detail: { type: 'open_export_modal' } }))
+            } else if (type.includes('excel') || type.includes('xlsx')) {
                 import('../utils/excelModelGenerator').then(({ generateLiveExcelModel }) => {
                     const name = context.projectName || 'deal'
                     generateLiveExcelModel({ model: context.model, synthesis: context.synthesis, projectName: name }).then(blob => {
@@ -2700,6 +2811,14 @@ export function executeClientSideTool(name: string, args: any, context: ClientSi
                 context.onOpenVersionSwitcher()
             } else if (typeof window !== 'undefined') {
                 window.dispatchEvent(new CustomEvent('mergeworks:open-version-control'))
+            }
+        } else if (modal === 'loi' || modal === 'letter_of_intent') {
+            if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('mergeworks:walkthrough-action', { detail: { type: 'open_loi_modal' } }))
+            }
+        } else if (modal === 'ic_memo' || modal === 'export') {
+            if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('mergeworks:walkthrough-action', { detail: { type: 'open_export_modal' } }))
             }
         } else if (modal === 'intake' || modal === 'upload') {
             if (typeof document !== 'undefined') {

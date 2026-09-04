@@ -1,7 +1,7 @@
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, it, expect } from 'vitest'
-import type { DealModel } from '../hooks/backend/diligence'
+import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
 import ValuationGapCard from './ValuationGapCard'
 import DealValuationCard from './DealValuationCard'
 import FinancedReturnsCard from './FinancedReturnsCard'
@@ -18,7 +18,7 @@ import { GrowthWorkspaceView } from './views/GrowthWorkspaceView'
 import { StructureWorkspaceView } from './views/StructureWorkspaceView'
 import { NegotiationWorkspaceView } from './views/NegotiationWorkspaceView'
 
-const baseModel: DealModel = {
+const baseModel = {
     projectId: 'test-proj',
     askingPrice: 5000000,
     purchasePrice: 4800000,
@@ -36,8 +36,6 @@ const baseModel: DealModel = {
     interestRate: 0.08,
     amortizationYears: 10,
     sellerNoteAmount: 500000,
-    sellerNoteInterestRate: 0.06,
-    sellerNoteAmortizationYears: 5,
     bearRevenueGrowth: -0.02,
     baseRevenueGrowth: 0.08,
     bullRevenueGrowth: 0.15,
@@ -62,7 +60,7 @@ const baseModel: DealModel = {
         fixed_assets: { value: 800000, status: 'confirmed' },
     }),
     documentedFactsStatus: 'confirmed',
-}
+} as unknown as DealModel
 
 const baseSynthesis = {
     company_name: 'Test Corp',
@@ -89,7 +87,7 @@ const baseSynthesis = {
         margin_trend: 'Stable',
         working_capital_health: 'Healthy',
     },
-}
+} as unknown as ProjectSynthesisItem
 
 describe('Data Lineage & Origin Badges Integration', () => {
     it('ValuationGapCard labels user-entered asking price, calculated fair value, and growth assumptions', () => {
@@ -102,14 +100,14 @@ describe('Data Lineage & Origin Badges Integration', () => {
     })
 
     it('DealValuationCard labels supported base value and user-entered price position', () => {
-        const html = renderToStaticMarkup(<DealValuationCard model={baseModel} synthesis={baseSynthesis} askingPrice={5000000} />)
+        const html = renderToStaticMarkup(<DealValuationCard model={baseModel} synthesis={baseSynthesis} askingPrice="5000000" />)
         expect(html).toContain('data-origin-badge="calculated"')
         expect(html).toContain('Supported base value')
         expect(html).toContain('data-origin-badge="user_entered"')
     })
 
     it('ComparableTransactionsCard distinguishes Sector Multiples Benchmark from deal multiple', () => {
-        const html = renderToStaticMarkup(<ComparableTransactionsCard model={baseModel} synthesis={baseSynthesis} />)
+        const html = renderToStaticMarkup(<ComparableTransactionsCard model={baseModel} />)
         expect(html).toContain('Sector Multiples Benchmark')
         expect(html).toContain('Calculated Multiple')
         expect(html).toContain('data-origin-badge="benchmark"')
@@ -181,7 +179,7 @@ describe('Data Lineage & Origin Badges Integration', () => {
                 <ValuationWorkspaceView
                     hydratedDealModel={baseModel}
                     activeProjectSynthesis={baseSynthesis}
-                    askingPrice={5000000}
+                    askingPrice="5000000"
                     handleDealModelChange={() => {}}
                     submissionHistory={[]}
                     setActiveEvidence={() => {}}

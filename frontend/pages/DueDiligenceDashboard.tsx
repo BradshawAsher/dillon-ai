@@ -964,6 +964,16 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             const timer = window.setTimeout(() => walkthrough.startTour('quick-deal-questionnaire'), 100)
             return () => window.clearTimeout(timer)
         }
+
+        // Deep linking for export modals: ?export=loi, ?export=ic_memo, #loi, #ic_memo
+        const parsed = parseUrlDeepLinkState(window.location.search, window.location.hash)
+        if (parsed.exportDoc === 'loi') {
+            setExportModalDocType('loi')
+            setIsExportModalOpen(true)
+        } else if (parsed.exportDoc === 'ic_memo') {
+            setExportModalDocType('ic_memo')
+            setIsExportModalOpen(true)
+        }
     }, [])
 
     const { data: diligenceData, error } = useGetDiligenceData()
@@ -1209,6 +1219,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     const [batchNowTimestamp, setBatchNowTimestamp] = useState(() => Date.now())
     const [isRerunningBatch, setIsRerunningBatch] = useState(false)
     const [isExportModalOpen, setIsExportModalOpen] = useState(false)
+    const [exportModalDocType, setExportModalDocType] = useState<'ic_memo' | 'loi'>('ic_memo')
     const [batchSubmissionMessage, setBatchSubmissionMessage] = useState('')
     const lastUploadAttemptAtRef = useRef(0)
     const [retryingRequestId, setRetryingRequestId] = useState<string | null>(null)
@@ -1363,9 +1374,13 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 })
             } else if (action.type === 'close_evidence') {
                 setActiveEvidence(null)
-            } else if (action.type === 'open_export_modal') {
+            } else if (action.type === 'open_loi_modal') {
+                setExportModalDocType('loi')
                 setIsExportModalOpen(true)
-            } else if (action.type === 'close_export_modal') {
+            } else if (action.type === 'open_export_modal') {
+                setExportModalDocType('ic_memo')
+                setIsExportModalOpen(true)
+            } else if (action.type === 'close_export_modal' || action.type === 'close_loi_modal') {
                 setIsExportModalOpen(false)
             } else if (action.type === 'reset_simulation') {
                 clearSimulatedBatchTimer()
@@ -1375,7 +1390,15 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             }
         }
 
-        const handleDirectOpenExport = () => setIsExportModalOpen(true)
+        const handleDirectOpenExport = (e?: Event) => {
+            const detail = (e as CustomEvent)?.detail
+            if (detail?.docType === 'loi' || detail?.type === 'loi') {
+                setExportModalDocType('loi')
+            } else {
+                setExportModalDocType('ic_memo')
+            }
+            setIsExportModalOpen(true)
+        }
         const handleDirectCloseExport = () => setIsExportModalOpen(false)
 
         window.addEventListener('mergeworks:walkthrough-action', handleWalkthroughAction)
@@ -5298,6 +5321,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                     }}
                     onExportMarkdown={() => { const name = effectiveDealName || suggestedProjectName; const safeName = name.replace(/[^a-zA-Z0-9-_]/g, '_').slice(0, 50) || 'deal'; downloadFile(buildMarkdownReport(hydratedDealModel, activeProjectSynthesis ?? undefined, name), `${safeName}_summary.md`, 'text/markdown') }}
                     onExportJson={() => { const name = effectiveDealName || suggestedProjectName; const safeName = name.replace(/[^a-zA-Z0-9-_]/g, '_').slice(0, 50) || 'deal'; downloadFile(JSON.stringify(buildJsonExport(hydratedDealModel, activeProjectSynthesis ?? undefined, name), null, 2), `${safeName}_export.json`, 'application/json') }}
+                    onExportIcMemo={() => { setExportModalDocType('ic_memo'); setIsExportModalOpen(true) }}
+                    onExportLoi={() => { setExportModalDocType('loi'); setIsExportModalOpen(true) }}
                     onShowShortcuts={() => { setIsShortcutsOpen(true) }}
                     onOpenChat={() => {
                         const input = (document.querySelector('textarea[placeholder*="Ask Dillon"]') || document.querySelector('[data-chat-input]')) as HTMLElement
@@ -5346,6 +5371,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 synthesis={activeProjectSynthesis}
                 dealModel={hydratedDealModel}
                 documents={activeProjectDocuments}
+                initialDocumentType={exportModalDocType}
             />
             <KeyboardShortcutsDialog open={isShortcutsOpen} onOpenChange={setIsShortcutsOpen} showTrigger={false} />
             <DashboardFaqSidebar

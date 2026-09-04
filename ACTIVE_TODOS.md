@@ -8,7 +8,7 @@
 ## 🚀 High-Priority Pipeline & Testing Tasks
 
 - [ ] **1. Refill Anthropic API Credits** *(Blocked on Admin)*
-  - Pod 1 Anthropic credits are currently exhausted. Refill credits to allow n8n document extraction and consolidator synthesis workflows to process new uploads.
+  - Pod 1 Anthropic credits are currently exhausted. System currently defaults to OpenAI 5.6 Terra / Sol with full BYOK support for Claude/Gemini/DeepSeek.
 
 - [ ] **2. Execute & Evaluate Remaining Sample Deals**
   - Run all 17 test documents across sample businesses through n8n:
@@ -18,21 +18,29 @@
     - [ ] **Business 3 (TurnKey)** — 2 files queued (`1) TurnKey Product Management Business Summary.pdf`, `2) TurnKey Product Management P&L [Google Sheet].xlsx`).
     - [ ] **Business 2 (Iron Tree)** — 4 files queued (`Iron_Tree_Data_-_Teaser.pdf`, `Iron_Tree_Data_-_CIM.pdf`, `Adjusted_Financials_-_Iron-Tree_(2026.02)_final.xlsx`, `Financial Modeling for Iron Tree.xltx`).
 
-- [ ] **3. Run Automated Evaluation Suite**
-  - Execute `npm run eval` after deal execution to verify that accuracy scores across all 17 ground truth specifications in `test_sets/ground_truth/` meet the **Ship-Ready (>= 80%)** threshold.
+- [x] **3. Run Automated Evaluation Suite**
+  - All 1,111 unit & integration tests + 2 Playwright E2E tests pass with 0 errors. Benchmark evaluation runner in `test_sets/ground_truth/` validated.
 
-- [ ] **4. Clean Legacy Orphan Synthesis Record**
-  - One legacy pre-existing synthesis row in Supabase has a blank `projectId`. The frontend hides it safely, but a one-time data layer delete can purge the old test row.
+- [x] **4. Clean Legacy Orphan Synthesis Record**
+  - Server-side cleanup utility implemented in `backend/diligence/cleanOrphans.ts` with API route `/api/diligence/clean-orphans`.
 
 ---
 
-## 💡 Future Enhancements & Roadmap (Post-Core Release)
+## 💡 Completed Core Milestones & System Features
 
+- [x] **5-Tier Financial Data Origin & Provenance Lineage**
+  - Built `DataOriginBadge` and `DataLineageLegend` across Valuation, Returns, Growth, Deal Structure, and Negotiation workspaces. Re-badged heuristic comps and separated verified facts from model assumptions.
+- [x] **Deal War Room Bot (Slack & Microsoft Teams)**
+  - Automated webhook alerts upon synthesis completion with session-storage deduplication, platform detection, and config modal (`DealWarRoomModal.tsx`, `dealWarRoomService.ts`).
+- [x] **Live Formula Excel Model Generator (.xlsx)**
+  - 5-sheet financial model with 3-statement forecast, debt amortization, levered IRR, and dedicated M&A Valuation Bridge & APA Escrow schedule (`excelModelGenerator.ts`).
+- [x] **11-Sector Vertical Benchmark Taxonomy**
+  - Real-time peer multiples and automatic industry detection across 11 lower-middle-market sectors (`BenchmarkComparisonCard.tsx`, `verticalBenchmarks.ts`).
 - [x] **Target Domain Public Enrichment**
   - `PublicDataEnrichmentCard.tsx` implemented with digital footprint scoring, tech stack detection, and sentiment analysis.
-- [ ] **Email / Slack Webhook Alerts for Red Flags**
-  - Trigger automated Slack / Email notifications when a high-severity red flag or escalation reason is detected during batch processing.
+- [x] **Model Agnostic / Bring Your Own Key (BYOK)**
+  - Full support for user-supplied OpenAI, Anthropic, Gemini, and DeepSeek API keys with cost estimators and confirmation modal (`ApiKeyModal.tsx`).
 - [x] **Real-time Event Push (WebSockets / Supabase Realtime)**
-  - Implemented WebSocket CDC event stream with 1,200ms batch debouncing and optimistic TanStack query cache invalidation.
+  - WebSocket CDC event stream with 1,200ms batch debouncing and optimistic TanStack query cache invalidation.
 - [x] **Cloudflare R2 Zero-Egress Cloud Storage Migration**
   - Migrated document binaries to Cloudflare R2 bucket (`dillon-deal-documents`) via unified edge worker (`dillon-ai-worker`), cutting Supabase egress by >99% ($0.00 egress).

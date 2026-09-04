@@ -82,6 +82,24 @@ describe('Deep Linking Utilities', () => {
             const parsedOAuthError = parseUrlDeepLinkState('', '#error=unauthorized_client&error_description=Access+denied')
             expect(parsedOAuthError.view).toBe('login')
         })
+
+        it('parses export modal deep links (?export=loi, ?export=ic_memo, #loi, #ic-memo)', () => {
+            const parsedLoi = parseUrlDeepLinkState('?export=loi')
+            expect(parsedLoi.exportDoc).toBe('loi')
+            expect(parsedLoi.view).toBe('dashboard')
+
+            const parsedLoiHash = parseUrlDeepLinkState('', '#loi')
+            expect(parsedLoiHash.exportDoc).toBe('loi')
+            expect(parsedLoiHash.view).toBe('dashboard')
+
+            const parsedIcMemo = parseUrlDeepLinkState('?export=ic_memo')
+            expect(parsedIcMemo.exportDoc).toBe('ic_memo')
+            expect(parsedIcMemo.view).toBe('dashboard')
+
+            const parsedIcMemoHash = parseUrlDeepLinkState('', '#ic-memo')
+            expect(parsedIcMemoHash.exportDoc).toBe('ic_memo')
+            expect(parsedIcMemoHash.view).toBe('dashboard')
+        })
     })
 
     describe('matchProjectFromQuery', () => {
@@ -163,6 +181,16 @@ describe('Deep Linking Utilities', () => {
                 tab: 'overview',
             })
             expect(link).toBe('https://app.mergeworks.com/?view=dashboard&project=scenario-communications')
+        })
+
+        it('includes export doc query parameter when specified', () => {
+            const link = buildProjectPermalink({
+                origin: 'https://app.mergeworks.com',
+                pathname: '/',
+                projectKey: 'atlantic-beverage',
+                exportDoc: 'loi',
+            })
+            expect(link).toBe('https://app.mergeworks.com/?view=dashboard&project=atlantic-beverage&export=loi')
         })
     })
 

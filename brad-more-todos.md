@@ -11,20 +11,25 @@
   - Ideas for automated self-improvement (e.g., chat thumbs up/down feedback logging to Supabase, offline prompt tuning against `npm run eval` benchmarks).
 - [ ] **Split into 2 Specialized Sub-Chains**:
   - *Option B*: Chain 1 for Financials & Math (P&L, Balance Sheet, EBITDA) and Chain 2 for Qualitative & Thesis (Red Flags, LOI warranties, customer concentration).
-- [ ] **Model Agnostic / Bring Your Own API Key (BYOK)**:
-  - Option to let users supply their own Anthropic / OpenAI / Gemini API key.
+- [x] **Model Agnostic / Bring Your Own API Key (BYOK)**:
+  - Full BYOK support for OpenAI, Anthropic, Gemini, and DeepSeek API keys with cost estimation and confirmation modal (`ApiKeyModal.tsx`).
 - [ ] **Granular Confidence Schema Enhancements**:
   - *Per-document flag confidence*: Update n8n structured output schema so per-document red/yellow/green flags are returned as objects with `confidence_score` and `severity` instead of plain strings.
   - *Per-valuation-bound confidence*: Update n8n schema to return separate confidence scores for lower, base, and upper valuation bounds.
-  - *Inline quant card confidence badges*: Render confidence badges directly on overview metric cards (revenue, EBITDA) in addition to the Evidence Drawer.
+- [x] **Inline Quant Card Lineage & Provenance Badges**:
+  - Built 5-Tier Data Origin Lineage taxonomy (`extracted`, `user_entered`, `benchmark`, `assumption`, `calculated`) deployed across Valuation, Returns, Growth, Structure, and Negotiation with interactive formula tooltips.
 - [ ] **Company Intake Yap & AI Interview Flow**:
   - Place for users to describe/yap about their company, with an AI interviewing them to capture starting context before or after uploading documents.
-- [ ] **Batch & Synthesis Stop / Cancel Controls**:
-  - Add explicit "Cancel batch" / "Cancel synthesis" button to reset UI polling state if n8n stalls or enters a loop.
-- [ ] **Google Drive to Cloud Bucket Migration**:
-  - Migrate document storage from Google Drive to permanent AWS S3 / Supabase Storage buckets OR MERGEWORKS OWNED Shared Google Drive
-- [ ] **Model Upgrades**:
-  - Evaluate Claude Opus / Sonnet 3.7 / Gemini 1.5 Pro performance tradeoffs when available in n8n.
+- [x] **Batch & Synthesis Stop / Cancel Controls**:
+  - Added explicit cancel batch and reset controls in UI polling state.
+- [x] **Google Drive to Cloud Bucket Migration**:
+  - Migrated document storage to Cloudflare R2 zero-egress cloud storage bucket (`dillon-deal-documents`) via Worker CDN edge proxy (`dillon-ai-worker`).
+- [x] **Model Architecture Upgrades**:
+  - Updated production architecture to OpenAI 5.6 Terra (`gpt-5.6-terra`) + Fallback Sol (`gpt-5.6-sol`) with BYOK presets for Claude Sonnet 5, Gemini 3.7 Flash, and DeepSeek V4.
+- [x] **Deal War Room Bot (Slack & Microsoft Teams)**:
+  - Automated webhook alerts dispatched upon synthesis completion with session-storage deduplication and platform detection (`dealWarRoomService.ts`).
+- [x] **Live Formula Excel Model Generator (.xlsx)**:
+  - 5-sheet financial model with 3-statement forecast, debt amortization, levered IRR, and dedicated M&A Valuation Bridge & APA Escrow schedule (`excelModelGenerator.ts`).
 
 ---
 

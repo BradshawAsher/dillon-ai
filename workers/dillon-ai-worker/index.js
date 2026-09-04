@@ -17,21 +17,33 @@ export default {
 
     // 2. Direct PUT Upload into R2 Bucket
     if (request.method === 'PUT' && path && !path.startsWith('rest/v1') && !path.startsWith('storage/v1')) {
-      const contentType = request.headers.get('content-type') || 'application/octet-stream';
-      await env.DEAL_DOCUMENTS.put(path, request.body, {
-        httpMetadata: { contentType },
-      });
+      try {
+        const contentType = request.headers.get('content-type') || 'application/octet-stream';
+        await env.DEAL_DOCUMENTS.put(path, request.body, {
+          httpMetadata: { contentType },
+        });
 
-      return new Response(JSON.stringify({
-        success: true,
-        path,
-        publicUrl: 'https://pub-3b04d9f4c75546caae7c86bd7b6847de.r2.dev/' + path,
-      }), {
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-        },
-      });
+        return new Response(JSON.stringify({
+          success: true,
+          path,
+          publicUrl: 'https://pub-3b04d9f4c75546caae7c86bd7b6847de.r2.dev/' + path,
+        }), {
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+          },
+        });
+      } catch (putErr) {
+        return new Response(JSON.stringify({
+          error: 'R2 bucket put failed: ' + (putErr?.message || String(putErr)),
+        }), {
+          status: 500,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+          },
+        });
+      }
     }
 
     // 3. Try Serving from R2 Bucket First (for document binaries)

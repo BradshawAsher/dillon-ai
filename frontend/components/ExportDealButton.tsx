@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { Download, FileJson, FileText, Newspaper, FileSpreadsheet, Loader2 } from 'lucide-react'
+import { Download, FileJson, FileText, Newspaper, FileSpreadsheet, Loader2, Printer, Scale } from 'lucide-react'
 
 import { Button } from '../lib/shadcn/button'
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
@@ -8,11 +8,16 @@ import { formatCurrencyValue } from '../utils/aiSubmissionData'
 import { entryMultiple } from '../utils/dealMath'
 import { downloadTextFile } from '../utils/downloadFile'
 import { confidenceToPercent } from '../utils/diligenceDashboardUtils'
+import { ExportDiligenceModal } from './ExportDiligenceModal'
+import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 
 type Props = {
     model: DealModel
     synthesis?: ProjectSynthesisItem
     projectName: string
+    projectId?: string
+    documents?: SubmissionHistoryItem[]
+    onOpenIcMemoModal?: (initialDocType?: 'ic_memo' | 'loi') => void
 }
 
 function formatFactValue(value: unknown): string {
@@ -210,8 +215,17 @@ export function downloadFile(content: string, filename: string, mimeType: string
     downloadTextFile(filename, content, mimeType)
 }
 
-export default function ExportDealButton({ model, synthesis, projectName }: Props) {
+export default function ExportDealButton({
+    model,
+    synthesis,
+    projectName,
+    projectId,
+    documents,
+    onOpenIcMemoModal,
+}: Props) {
     const [showMenu, setShowMenu] = useState(false)
+    const [isIcModalOpen, setIsIcModalOpen] = useState(false)
+    const [selectedDocType, setSelectedDocType] = useState<'ic_memo' | 'loi'>('ic_memo')
 
     const handleSnapshot = useCallback(() => {
         const snapshot = buildOnePageSnapshot(model, synthesis, projectName)
@@ -278,10 +292,58 @@ export default function ExportDealButton({ model, synthesis, projectName }: Prop
             {showMenu && (
                 <>
                     <div className="fixed inset-0 z-[90]" onClick={() => setShowMenu(false)} />
-                    <div className="absolute right-0 top-full z-[100] mt-1.5 w-72 rounded-lg border border-border bg-popover p-1.5 shadow-2xl animate-in fade-in-0 zoom-in-95 duration-150">
+                    <div className="absolute right-0 top-full z-[100] mt-1.5 w-80 rounded-lg border border-border bg-popover p-1.5 shadow-2xl animate-in fade-in-0 zoom-in-95 duration-150">
                         <div className="px-2 py-1 mb-1 border-b border-border/50">
                             <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Export Deal Package</p>
                         </div>
+                        <button
+                            id="export-ic-memo-btn"
+                            onClick={() => {
+                                setShowMenu(false)
+                                setSelectedDocType('ic_memo')
+                                if (onOpenIcMemoModal) {
+                                    onOpenIcMemoModal('ic_memo')
+                                } else {
+                                    setIsIcModalOpen(true)
+                                }
+                            }}
+                            className="flex w-full items-start gap-3 rounded-md p-2 text-sm font-medium text-foreground hover:bg-muted/80 transition-colors"
+                        >
+                            <div className="mt-0.5 rounded p-1 bg-primary/10 text-primary">
+                                <Printer className="h-4 w-4" />
+                            </div>
+                            <div className="text-left flex-1">
+                                <p className="font-semibold text-xs flex items-center gap-1.5">
+                                    IC Deal Memo (.pdf / Print)
+                                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-primary/15 text-primary font-bold">New</span>
+                                </p>
+                                <p className="text-[11px] text-muted-foreground">Publication-grade letter memo with QoE bridge &amp; APA covenants</p>
+                            </div>
+                        </button>
+                        <button
+                            id="export-loi-btn"
+                            onClick={() => {
+                                setShowMenu(false)
+                                setSelectedDocType('loi')
+                                if (onOpenIcMemoModal) {
+                                    onOpenIcMemoModal('loi')
+                                } else {
+                                    setIsIcModalOpen(true)
+                                }
+                            }}
+                            className="flex w-full items-start gap-3 rounded-md p-2 text-sm font-medium text-foreground hover:bg-muted/80 transition-colors"
+                        >
+                            <div className="mt-0.5 rounded p-1 bg-violet-500/10 text-violet-600 dark:text-violet-400">
+                                <Scale className="h-4 w-4" />
+                            </div>
+                            <div className="text-left flex-1">
+                                <p className="font-semibold text-xs flex items-center gap-1.5">
+                                    Letter of Intent (LOI)
+                                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-violet-500/15 text-violet-600 dark:text-violet-400 font-bold">New</span>
+                                </p>
+                                <p className="text-[11px] text-muted-foreground">Formal acquisition proposal with capital stack, peg &amp; escrow</p>
+                            </div>
+                        </button>
                         <button
                             onClick={handleExcel}
                             disabled={isExportingExcel}
@@ -334,6 +396,16 @@ export default function ExportDealButton({ model, synthesis, projectName }: Prop
                     </div>
                 </>
             )}
+            <ExportDiligenceModal
+                open={isIcModalOpen}
+                onOpenChange={setIsIcModalOpen}
+                dealName={projectName}
+                projectId={projectId || 'PROJ-MAIN'}
+                synthesis={synthesis}
+                dealModel={model}
+                documents={documents}
+                initialDocumentType={selectedDocType}
+            />
         </div>
     )
 }

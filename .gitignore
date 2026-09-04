@@ -6,8 +6,6 @@ dist/
 .mcp.json
 .claude
 .agents 
-.claude/settings.local.json
-.claude/settings.json
 *.log
 .DS_Store
 settings-bedrock.json

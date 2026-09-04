@@ -76,6 +76,14 @@ async function handleRequest(
         return
     }
 
+    if (route === '/upload-file' && (req.method === 'POST' || req.method === 'PUT')) {
+        const storagePath = requestUrl.searchParams.get('path') || (req.headers['x-storage-path'] as string) || ''
+        const contentType = (req.headers['content-type'] as string) || 'application/octet-stream'
+        const mod = await server.ssrLoadModule(backendModuleUrl('uploadStorageProxy.ts'))
+        await mod.default(req, res, storagePath, contentType)
+        return
+    }
+
     if (route === '/submit' && req.method === 'POST') {
         const params = await readJsonBody(req)
         const mod = await server.ssrLoadModule(backendModuleUrl('submitDealPacket.ts'))

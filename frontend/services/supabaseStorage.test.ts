@@ -190,4 +190,15 @@ describe('supabaseStorage service', () => {
         await expect(uploadDocumentToSupabaseStorage({ file: new Blob(['x']), fileName: 'doc.pdf' })).resolves.toMatchObject({ storageFileUrl: 'https://storage/doc.pdf' })
         expect(global.fetch).toHaveBeenCalledTimes(3)
     })
+
+    it('falls back to same-origin proxy when direct R2 and Supabase fail', async () => {
+        global.fetch = vi.fn()
+            .mockResolvedValueOnce({ ok: true, json: async () => ({ storageProvider: 'r2', uploadUrl: 'https://worker/upload', path: 'p/doc.pdf', publicUrl: 'https://pub-3b04d9f4c75546caae7c86bd7b6847de.r2.dev/p/doc.pdf', supabaseFallback: { signedUrl: 'https://storage/signed', path: 'p/doc.pdf', publicUrl: 'https://storage/doc.pdf' } }) })
+            .mockRejectedValueOnce(new TypeError('Failed to fetch')) // R2 fails
+            .mockResolvedValueOnce({ ok: false, status: 503 }) // Supabase fails
+            .mockResolvedValueOnce({ ok: true, status: 200 }) // Proxy fallback succeeds
+        const res = await uploadDocumentToSupabaseStorage({ file: new Blob(['binary']), fileName: 'doc.pdf' })
+        expect(res.storageFileUrl).toBe('https://pub-3b04d9f4c75546caae7c86bd7b6847de.r2.dev/p/doc.pdf')
+        expect(global.fetch).toHaveBeenCalledTimes(4)
+    })
 })

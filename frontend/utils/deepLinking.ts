@@ -116,6 +116,7 @@ export interface ParsedDeepLink {
     view: 'landing' | 'login' | 'dashboard' | null
     projectQuery: string | null
     tab: WorkspaceTab | null
+    exportDoc?: 'loi' | 'ic_memo' | null
 }
 
 /**
@@ -152,7 +153,7 @@ export function parseUrlDeepLinkState(search: string, hash?: string): ParsedDeep
     const rawSearch = search && typeof search === 'string' ? search : ''
     const params = new URLSearchParams(rawSearch.startsWith('?') ? rawSearch : `?${rawSearch}`)
     const rawHash = hash && typeof hash === 'string' ? hash : ''
-    const cleanHash = rawHash.replace(/^#+/, '').trim()
+    const cleanHash = rawHash.replace(/^#+/, '').trim().toLowerCase()
     const hashParams = new URLSearchParams(cleanHash)
     
     // Project query
@@ -164,6 +165,23 @@ export function parseUrlDeepLinkState(search: string, hash?: string): ParsedDeep
 
     if (!tab && rawHash) {
         tab = resolveWorkspaceTab(rawHash)
+    }
+
+    // Export document detection (?export=loi, ?modal=loi, ?export=ic_memo, or hash #loi, #ic_memo)
+    const rawExport = (params.get('export') || params.get('modal') || '').toLowerCase().trim()
+    let exportDoc: 'loi' | 'ic_memo' | null = null
+    if (rawExport === 'loi' || cleanHash === 'loi' || cleanHash === 'export-loi') {
+        exportDoc = 'loi'
+    } else if (
+        rawExport === 'ic_memo' ||
+        rawExport === 'ic-memo' ||
+        rawExport === 'memo' ||
+        cleanHash === 'ic_memo' ||
+        cleanHash === 'ic-memo' ||
+        cleanHash === 'memo' ||
+        cleanHash === 'export-ic-memo'
+    ) {
+        exportDoc = 'ic_memo'
     }
 
     const isOAuthSuccessCallback = params.has('code') || 
@@ -194,12 +212,13 @@ export function parseUrlDeepLinkState(search: string, hash?: string): ParsedDeep
         params.has('project') ||
         params.has('deal') ||
         params.has('tab') ||
-        tab !== null
+        tab !== null ||
+        exportDoc !== null
     ) {
         view = 'dashboard'
     }
 
-    return { view, projectQuery, tab }
+    return { view, projectQuery, tab, exportDoc }
 }
 
 /**
@@ -276,6 +295,7 @@ export function buildProjectPermalink(options: {
     tab?: WorkspaceTab | string
     origin?: string
     pathname?: string
+    exportDoc?: 'loi' | 'ic_memo'
 }): string {
     const origin = options.origin || (typeof window !== 'undefined' ? window.location.origin : '')
     const pathname = options.pathname || (typeof window !== 'undefined' ? window.location.pathname : '/')
@@ -290,6 +310,10 @@ export function buildProjectPermalink(options: {
 
     if (options.tab && options.tab !== 'overview') {
         params.set('tab', options.tab)
+    }
+
+    if (options.exportDoc) {
+        params.set('export', options.exportDoc)
     }
 
     const qs = params.toString()

@@ -504,6 +504,27 @@ export default function ProjectSynthesisCard({
                             <RefreshCw className={runningSynthesis ? 'animate-spin' : undefined} />
                             {runningSynthesis ? 'Re-running synthesis…' : 'Re-run synthesis'}
                         </Button>
+                        {(() => {
+                            const failedDocsInProject = projectDocuments.filter(d => ['failed', 'upload_failed', 'error'].includes((d.status || '').toLowerCase()) || Boolean(d.errorMessage))
+                            if (failedDocsInProject.length === 0) return null
+                            return (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="gap-1.5 font-bold border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400"
+                                    onClick={() => {
+                                        if (onOpenRetryScopeModal && failedDocsInProject.length > 0) {
+                                            onOpenRetryScopeModal(failedDocsInProject[0], 'project')
+                                        } else if (onRetryAllFailedDocs) {
+                                            onRetryAllFailedDocs()
+                                        }
+                                    }}
+                                >
+                                    <RotateCw className="h-4 w-4" />
+                                    <span>Retry all failed ({failedDocsInProject.length})</span>
+                                </Button>
+                            )
+                        })()}
                         <Button
                             type="button"
                             variant="secondary"
@@ -533,6 +554,34 @@ export default function ProjectSynthesisCard({
                         ) : null}
                     </div>
                 </div>
+                {(() => {
+                    const failedDocsInProject = projectDocuments.filter(d => ['failed', 'upload_failed', 'error'].includes((d.status || '').toLowerCase()) || Boolean(d.errorMessage))
+                    if (failedDocsInProject.length === 0) return null
+                    return (
+                        <div className="mt-2 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 text-xs text-amber-800 dark:text-amber-300 font-medium">
+                                <TriangleAlert className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                                <span>{failedDocsInProject.length} document{failedDocsInProject.length === 1 ? '' : 's'} failed extraction. Re-running failed documents ensures complete cross-document synthesis.</span>
+                            </div>
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                className="h-7 px-3 text-xs font-bold border-amber-500/40 bg-amber-500/20 hover:bg-amber-500/30 text-amber-700 dark:text-amber-300 shrink-0 gap-1.5"
+                                onClick={() => {
+                                    if (onOpenRetryScopeModal && failedDocsInProject.length > 0) {
+                                        onOpenRetryScopeModal(failedDocsInProject[0], 'project')
+                                    } else if (onRetryAllFailedDocs) {
+                                        onRetryAllFailedDocs()
+                                    }
+                                }}
+                            >
+                                <RotateCw className="h-3 w-3" />
+                                <span>Retry all failed ({failedDocsInProject.length})</span>
+                            </Button>
+                        </div>
+                    )
+                })()}
                 <p className="mt-2 text-xs text-amber-700 dark:text-amber-400 font-medium bg-amber-500/10 border border-amber-500/20 rounded-md px-2.5 py-1 inline-block">
                     ⚠️ <strong>Note:</strong> Normal synthesis runs automatically when documents finish processing. Only click <strong>&quot;Re-run synthesis&quot;</strong> in case of a workflow failure or bug.
                 </p>
@@ -563,7 +612,7 @@ export default function ProjectSynthesisCard({
                             <div className="flex items-center gap-2 bg-amber-900/10 dark:bg-amber-950/60 border border-amber-500/40 rounded-lg px-3 py-1.5 shrink-0 self-start sm:self-center">
                                 <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400 animate-bounce" />
                                 <span className="text-xs font-mono font-bold text-amber-900 dark:text-amber-200">
-                                    Elapsed: {formatElapsed(synthesisElapsedSeconds)}
+                                    Elapsed: {formatElapsed(synthesisElapsedSeconds)} • Est: ~{Math.max(18, (extractionTotalCount - extractionFinishedCount) * 18)}s remaining
                                 </span>
                             </div>
                         </div>
@@ -614,7 +663,7 @@ export default function ProjectSynthesisCard({
                             <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
                                 <Badge variant="outline" className="font-mono text-xs font-bold border-primary/40 bg-primary/10 px-2.5 py-1 text-primary gap-1">
                                     <Clock className="h-3.5 w-3.5" />
-                                    Elapsed: {formatElapsed(synthesisElapsedSeconds)}
+                                    Elapsed: {formatElapsed(synthesisElapsedSeconds)} • Est: ~28s
                                 </Badge>
                                 <Badge variant="secondary" className="text-xs font-semibold px-2.5 py-1 text-foreground border border-border">
                                     OpenAI 5.6 Terra

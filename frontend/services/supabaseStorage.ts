@@ -216,6 +216,29 @@ export async function uploadDocumentToSupabaseStorage(options: {
     }
   }
 
+  // 3. Same-Origin Proxy Fallback: If direct R2 and Supabase storage uploads could not complete
+  // (e.g. browser CORS restrictions or network disconnects), try proxying through the app's
+  // same-origin backend directly to R2 before giving up.
+  if (!uploadSucceeded && ticket.path) {
+    try {
+      const proxyRes = await uploadFetch(`/api/diligence/upload-file?path=${encodeURIComponent(ticket.path)}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': fileType || 'application/octet-stream',
+          'X-Storage-Path': ticket.path,
+        },
+        body: options.file,
+      }, 120_000)
+      if (proxyRes?.ok) {
+        uploadSucceeded = true
+        resolvedPublicUrl = ticket.publicUrl
+        resolvedPath = ticket.path
+      }
+    } catch {
+      // Ignore proxy fallback failure and proceed to throw detailed errors
+    }
+  }
+
   if (!uploadSucceeded) {
     throw new Error(`Storage upload failed: ${errors.join('; ') || 'neither provider confirmed the upload'}.`)
   }
