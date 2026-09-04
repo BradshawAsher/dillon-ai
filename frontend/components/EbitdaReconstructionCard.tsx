@@ -14,6 +14,10 @@ function money(value: number) {
 }
 
 function pct(value: number) {
+    // Guard non-finite input so a bad upstream ratio can never render as
+    // "Infinity%" / "NaN%", matching the shared formatters in utils
+    // (formatMagnitude, formatCompactUsd, formatConfidencePercent).
+    if (!Number.isFinite(value)) return 'N/A'
     return `${(value * 100).toFixed(1)}%`
 }
 
