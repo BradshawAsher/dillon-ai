@@ -210,7 +210,7 @@ export function AnalysisWorkspaceView({
                         </div>
                     </div>
                     <div id="analysis-benchmark" className="scroll-mt-6">
-                        <BenchmarkComparisonCard model={hydratedDealModel} />
+                        <BenchmarkComparisonCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
                     </div>
                     <div id="analysis-position" className="scroll-mt-6">
                         <MarketPositionCard model={hydratedDealModel} />

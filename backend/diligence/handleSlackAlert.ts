@@ -54,12 +54,40 @@ export function extractGeoLocationFromHeaders(headers: Record<string, string | s
  * Server-side Slack webhook dispatcher.
  * Bypasses all browser CORS restrictions and ad-blockers by executing from Node.js runtime.
  */
-export async function dispatchServerSlackWebhook(slackMessage: Record<string, unknown>): Promise<{ success: boolean; error?: string }> {
-  const webhookUrl =
-    process.env.SLACK_WEBHOOK_URL || ''
+export async function dispatchServerSlackWebhook(
+  slackMessage: Record<string, unknown>,
+  targetWebhookUrl?: string
+): Promise<{ success: boolean; error?: string }> {
+  let webhookUrl = process.env.SLACK_WEBHOOK_URL || ''
+
+  if (typeof targetWebhookUrl === 'string' && targetWebhookUrl.trim()) {
+    const trimmed = targetWebhookUrl.trim()
+    try {
+      const parsed = new URL(trimmed)
+      if (parsed.protocol !== 'https:') {
+        return { success: false, error: 'Target webhook must use HTTPS protocol' }
+      }
+      const host = parsed.hostname.toLowerCase()
+      // SSRF protection: reject localhost, link-local, private IP addresses
+      if (
+        host === 'localhost' ||
+        host === '127.0.0.1' ||
+        host === '::1' ||
+        host.startsWith('10.') ||
+        host.startsWith('192.168.') ||
+        host.startsWith('169.254.') ||
+        /^172\.(1[6-9]|2\d|3[01])\./.test(host)
+      ) {
+        return { success: false, error: 'Loopback and private network webhook URLs are disallowed' }
+      }
+      webhookUrl = trimmed
+    } catch {
+      return { success: false, error: 'Invalid target webhook URL' }
+    }
+  }
 
   if (!webhookUrl) {
-    console.warn('[SlackAlertServer] No SLACK_WEBHOOK_URL configured; skipping dispatch.')
+    console.warn('[SlackAlertServer] No webhook URL configured; skipping dispatch.')
     return { success: false, error: 'No webhook URL configured' }
   }
 
@@ -106,6 +134,9 @@ export default async function handleSlackAlert(req: {
 }) {
   const body = req.params || {}
   const rawPayload = (body.payload && typeof body.payload === 'object') ? (body.payload as Record<string, unknown>) : body
+  const targetWebhookUrl = typeof body.targetWebhookUrl === 'string'
+    ? body.targetWebhookUrl
+    : (typeof body.webhookUrl === 'string' ? body.webhookUrl : undefined)
 
   if (!rawPayload || Object.keys(rawPayload).length === 0) {
     return { success: false, error: 'Empty alert payload' }
@@ -122,11 +153,11 @@ export default async function handleSlackAlert(req: {
 
     try {
       const enrichedPayload = JSON.parse(payloadString)
-      return await dispatchServerSlackWebhook(enrichedPayload)
+      return await dispatchServerSlackWebhook(enrichedPayload, targetWebhookUrl)
     } catch {
       // fallback to raw payload if replacement parsing fails
     }
   }
 
-  return await dispatchServerSlackWebhook(rawPayload)
+  return await dispatchServerSlackWebhook(rawPayload, targetWebhookUrl)
 }

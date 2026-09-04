@@ -36,6 +36,7 @@ import {
     Target,
     History,
     Edit3,
+    Radio,
 } from 'lucide-react'
 
 type CommandPaletteProps = {
@@ -405,6 +406,15 @@ export default function CommandPalette({
             group: 'Deal Strategy & Negotiation',
             keywords: ['email drafts', 'investment memo', 'broker email', 'seller outreach', 'loi follow up', 'ic memo'],
             badge: 'Email'
+        },
+        {
+            id: 'card-war-room',
+            label: 'Deal War Room Bot (Slack & Microsoft Teams)',
+            icon: <Radio className="h-4 w-4 text-emerald-500" />,
+            action: () => onSelectTab('overview', 'overview-war-room'),
+            group: 'Deal Strategy & Negotiation',
+            keywords: ['war room', 'slack', 'teams', 'bot', 'webhook', 'broadcast', 'alerts', 'notifications', 'chat'],
+            badge: 'Overview'
         },
 
         // --- Workspace Tabs ---

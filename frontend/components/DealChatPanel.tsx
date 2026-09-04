@@ -299,7 +299,7 @@ function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealMo
 - For the zero-token deal questionnaire and local Word/pasted-stat prefill: use [Quick Deal Questionnaire](#quick-deal-questionnaire) or [Word / Pasted Stats Prefill](#quick-deal-document-prefill).
 - For Projects Portfolio tab: ALWAYS use [Projects](tab:documents).
 - Available Tabs & Primary Anchors:
-  - tab:overview (anchors: #deal-overview, #overview-snapshot, #overview-health, #overview-actions, #overview-timeline)
+  - tab:overview (anchors: #deal-overview, #overview-snapshot, #overview-health, #overview-war-room, #overview-actions, #overview-timeline)
   - tab:analysis (anchors: #analysis-deal-on-a-page, #analysis-scorecard, #analysis-ebitda-quality, #analysis-revenue-bridge, #analysis-cohort-retention, #analysis-breakeven, #analysis-market-comps, #analysis-financing-scenarios, #analysis-asset-comp, #analysis-monte-carlo, #analysis-risk-matrix, #analysis-key-person, #analysis-seller-qa, #analysis-mgmt-questions, #analysis-closing-checklist, #analysis-term-sheet, #analysis-dd-requests)
   - tab:diagnostics (anchors: #deal-diagnostics, #diag-thesis, #diag-decision, #diag-quick-wins, #diag-strengths, #diag-risk-summary, #diag-risk-matrix, #diag-key-person, #diag-owner-dep, #diag-diligence-comp, #diag-closing-checklist, #diag-seller-qa, #diag-mgmt-questions, #diag-playbook, #diag-negotiation-impact, #diag-timeline, #diag-investor-readiness, #diag-term-sheet, #diag-dd-requests)
   - tab:diligence (anchors: #diligence-documents, #diligence-quality, #add-back-quality-card, #customer-concentration-card, #cohort-retention-card, #diligence-project-synth)
@@ -308,7 +308,7 @@ function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealMo
   - tab:valuation (anchors: #valuation-summary, #valuation-multiples, #valuation-dcf, #valuation-precedent, #valuation-gap, #valuation-comps, #valuation-sensitivity, #valuation-risk-adjusted)
   - tab:returns (anchors: #returns-summary, #returns-waterfall, #returns-sensitivity, #returns-cashflow, #returns-all-cash, #returns-financed, #returns-scenario, #returns-base, #returns-cash-on-cash, #returns-payback, #returns-hold-period)
   - tab:growth (anchors: #growth-projections, #growth-scenarios, #growth-drivers, #growth-revenue-bridge, #growth-sensitivity, #growth-value-creation, #growth-levers, #growth-leverage)
-  - tab:negotiation (anchors: #negotiation-levers, #negotiation-impact, #negotiation-playbook, #negotiation-seller, #negotiation-mgmt, #negotiation-timeline, #negotiation-terms)
+  - tab:negotiation (anchors: #negotiation-valuation-bridge, #negotiation-levers, #negotiation-impact, #negotiation-playbook, #negotiation-seller, #negotiation-mgmt, #negotiation-timeline, #negotiation-terms)
   - tab:documents (anchors: #projects-summary-metrics, #project-card-active, #project-card-documents, #project-portfolio, #documents-grid)
   - tab:spending (anchors: #spending-model, #spending-api-calls)
   - tab:compare (anchors: #compare-kpis, #compare-filters, #compare-matrix)
@@ -322,6 +322,14 @@ function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealMo
   - tab:account (anchors: #account-api-keys, #account-profile, #workspace-version-control)
 
 ## Deep Diligence Feature Highlights & Exact Physical UI Locations:
+- Deal Room Slack & Microsoft Teams War Room Bot:
+  - Location: **Overview Tab > Deal War Room Bot card** (#overview-war-room).
+  - Deep-link: [Deal War Room Bot](tab:overview#overview-war-room)
+  - Capabilities: Direct webhook integration to deal team channels (Slack and Microsoft Teams) for real-time synthesis Buy/Pass verdicts, critical red flags (>10% revenue discrepancies, unverified add-backs), and 1-click manual deal summary broadcasts.
+- Purchase Price Valuation Bridge & APA (Purchase Agreement) Contract Drafter:
+  - Location: **Negotiation Levers Tab > Purchase Price Adjustment Schedule & APA Clause Drafter** (#negotiation-valuation-bridge).
+  - Deep-link: [Valuation Bridge & APA Drafter](tab:negotiation#negotiation-valuation-bridge)
+  - Capabilities: Quantifies discovered red flags, unverified add-backs, and multiple haircuts into a definitive valuation bridge (LOI Price -> Multiple Haircut -> Dollar Deductions -> Counter-Offer). Automatically drafts Section 2.3 Valuation Adjustment, Section 8.2(c) Special Indemnity Escrow, and Section 3.14 Specific Reps & Warranties contract language with 1-click clipboard copy.
 - Quick Deal Questionnaire & Interactive Intake Assistant:
   - Location: **Top Project Intake card > Quick Deal Questionnaire > Prefill from Word or pasted stats**.
   - Deep-link: [Quick Deal Questionnaire](#quick-deal-questionnaire) or [Word / Pasted Stats Prefill](#quick-deal-document-prefill).

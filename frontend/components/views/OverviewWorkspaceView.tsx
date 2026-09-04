@@ -10,6 +10,7 @@ import QuickValuationCard from '../QuickValuationCard'
 import DealRadarCard from '../DealRadarCard'
 import DealActionItemsCard from '../DealActionItemsCard'
 import SellerQuestionsCard from '../SellerQuestionsCard'
+import DealWarRoomCard from '../DealWarRoomCard'
 import { sumMeasuredCost } from '../../utils/costModel'
 import { isRowMatchingProject } from '../../utils/projectWorkspace'
 
@@ -162,6 +163,13 @@ export function OverviewWorkspaceView({
                                 projectSummaries={projectSummaries}
                             />
                         </div>
+                        <DealWarRoomCard
+                            projectId={activeProjectId || 'default-project'}
+                            projectName={dealName || suggestedProjectName}
+                            model={hydratedDealModel}
+                            synthesis={activeProjectSynthesis}
+                            documents={activeProjectDocuments}
+                        />
                     </>
                 )
             })()}
