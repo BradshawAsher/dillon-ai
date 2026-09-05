@@ -14,6 +14,10 @@ function money(value: number) {
 }
 
 function pct(value: number) {
+    // Guard non-finite input so a bad upstream ratio can never render as
+    // "Infinity%" / "NaN%", matching the shared formatters in utils
+    // (formatMagnitude, formatCompactUsd, formatConfidencePercent).
+    if (!Number.isFinite(value)) return 'N/A'
     return `${(value * 100).toFixed(1)}%`
 }
 
@@ -121,7 +125,12 @@ export default function EbitdaReconstructionCard({ model, onOpenEvidence }: { mo
     const adjustedEbitda = ebitda !== null ? ebitda + netAdjustment : null
     const askingPrice = model.askingPrice ?? model.purchasePrice ?? null
 
-    if (revenue === null || ebitda === null) return null
+    // Non-positive revenue makes every margin below undefined: line 127 already
+    // guards `revenue > 0`, but `margin` did not, so a confirmed revenue of 0
+    // rendered "Infinity% margin" and a bogus "unusually high" warning. An
+    // EBITDA-from-revenue reconstruction is meaningless without positive
+    // revenue, so hide the card as we do for a missing value.
+    if (revenue === null || revenue <= 0 || ebitda === null) return null
 
     const margin = ebitda / revenue
     const adjustedMargin = adjustedEbitda && revenue > 0 ? adjustedEbitda / revenue : margin

@@ -795,11 +795,15 @@ export default function CommandPalette({
             }
             if (e.key === 'ArrowDown') {
                 e.preventDefault()
+                // Guard against an empty result set: `% 0` is NaN, which would
+                // wedge selectedIndex on NaN until the next query change.
+                if (filtered.length === 0) return
                 setSelectedIndex((prev) => (prev + 1) % filtered.length)
                 return
             }
             if (e.key === 'ArrowUp') {
                 e.preventDefault()
+                if (filtered.length === 0) return
                 setSelectedIndex((prev) => (prev - 1 + filtered.length) % filtered.length)
                 return
             }

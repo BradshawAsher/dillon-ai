@@ -22,6 +22,12 @@ describe('getSeverityForGroup', () => {
         expect(getSeverityForGroup('negotiation-lever')).toBe('informational')
     })
 
+    it('falls back to informational for an unknown group from runtime data', () => {
+        // Synthesis JSON can carry a group outside the compile-time union; the
+        // function must still return a valid severity, not undefined.
+        expect(getSeverityForGroup('surprise-group' as InsightGroupType)).toBe('informational')
+    })
+
     it('assigns a severity to every group type', () => {
         const all: InsightGroupType[] = [
             'red-flag', 'yellow-flag', 'green-flag', 'takeaway',

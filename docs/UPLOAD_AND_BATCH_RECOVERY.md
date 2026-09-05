@@ -24,6 +24,12 @@ R2 is the primary upload target for all file sizes. Supabase signed resumable
 upload remains available as a fallback. All backend document downloads route
 through the Cloudflare Worker CDN edge proxy (`resolveCdnStorageFetchUrl`) with
 1-year immutable caching to eliminate Supabase storage egress.
+The same-origin binary upload proxy is restricted to local development. A
+production browser never forwards the complete source document through a Vercel
+Function after both direct storage providers fail; it reports the storage error
+so the user can retry. This prevents large request bodies from consuming Vercel
+Fast Origin Transfer. The metadata-only `/api/diligence/upload-url` and
+`/api/diligence/submit` requests remain unchanged.
 After a successful storage upload,
 `/api/diligence/submit` receives metadata and the storage URL only, regardless
 of document size. It never receives an 18 MB document encoded in JSON.

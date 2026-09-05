@@ -20,4 +20,9 @@ describe('riskLevelVariant', () => {
         expect(riskLevelVariant('')).toBe('outline')
         expect(riskLevelVariant('pending')).toBe('outline')
     })
+
+    it('falls back to outline for null/undefined', () => {
+        expect(riskLevelVariant(null)).toBe('outline')
+        expect(riskLevelVariant(undefined)).toBe('outline')
+    })
 })

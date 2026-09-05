@@ -28,6 +28,11 @@ export function riskSignalVariant(trafficLight?: string | null, riskLevel?: stri
  * expensive (destructive), above 7x warrants a warning, at or below is healthy.
  */
 export function entryMultipleVariant(multiple: number): KpiVariant {
+    // A non-finite multiple means it could not be derived (e.g. zero or missing
+    // EBITDA upstream). Without this guard NaN fails both `>` tests and falls to
+    // 'success', painting an unknown multiple as a healthy green KPI. Show the
+    // neutral 'default' variant instead.
+    if (!Number.isFinite(multiple)) return 'default'
     if (multiple > 12) return 'destructive'
     if (multiple > 7) return 'warning'
     return 'success'

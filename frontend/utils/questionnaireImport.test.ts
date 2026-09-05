@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { readFileSync } from 'node:fs'
 
 import {
@@ -9,6 +9,14 @@ import {
 } from './questionnaireImport'
 
 describe('questionnaireImport', () => {
+    // exceljs is a heavy dependency whose first dynamic import can take several
+    // seconds. Warm it once here so the cold-import cost is paid outside any
+    // individual test's timeout budget rather than causing the first
+    // spreadsheet test to flakily time out.
+    beforeAll(async () => {
+        await import('exceljs')
+    }, 30000)
+
     afterEach(() => {
         vi.unstubAllGlobals()
     })

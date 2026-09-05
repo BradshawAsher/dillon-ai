@@ -32,5 +32,12 @@ export function getSeverityForGroup(groupType: InsightGroupType): InsightSeverit
         case 'takeaway':
         case 'negotiation-lever':
             return 'informational'
+        default:
+            // The union is exhaustive at compile time, but the group type is read
+            // from synthesis JSON, so an unforeseen value can arrive at runtime.
+            // Without this the function returned undefined while typed as
+            // InsightSeverity, corrupting downstream sorting. Treat unknown groups
+            // as low-signal 'informational' rather than a false critical/medium.
+            return 'informational'
     }
 }

@@ -7,9 +7,13 @@
 
 export type MaterialSeverity = 'critical' | 'medium' | 'low'
 
-export function severityForSourceGroup(sourceGroup: string): MaterialSeverity {
-    if (sourceGroup === 'red-flag' || sourceGroup === 'conflict') return 'critical'
-    if (sourceGroup === 'yellow-flag' || sourceGroup === 'missing-document' || sourceGroup === 'open-question') {
+export function severityForSourceGroup(sourceGroup: string | null | undefined): MaterialSeverity {
+    // Normalize before matching: source groups arrive from the synthesis JSON,
+    // where casing and stray whitespace vary ("Red-Flag", " conflict "). Exact
+    // equality let those fall through to 'low', hiding a critical finding.
+    const group = (sourceGroup ?? '').trim().toLowerCase()
+    if (group === 'red-flag' || group === 'conflict') return 'critical'
+    if (group === 'yellow-flag' || group === 'missing-document' || group === 'open-question') {
         return 'medium'
     }
     return 'low'

@@ -840,3 +840,33 @@ The repository has strong Vitest unit/domain coverage, a real loopback multipart
 - No Supabase schema, RLS, storage, upload, or n8n workflow change.
 - No live LLM request is made to estimate capacity.
 - No commit or push unless requested after verification.
+
+---
+
+# Stress benchmark reliability and Fast Origin Transfer guardrails (2026-09-05)
+
+## Verified findings
+
+- The scheduled benchmark failed before issuing any requests because the GitHub Actions repository has no `SUPABASE_URL` or `SUPABASE_SERVICE_ROLE_KEY` secrets configured. That failed run generated no Vercel, Cloudflare, Supabase, n8n, or LLM traffic.
+- The stress harness calls Cloudflare R2 and Supabase directly; it does not target the production Vercel application. Its synthetic PDF body is only a few dozen bytes, so it cannot explain the reported Vercel Fast Origin Transfer increase.
+- The combined stress runner imports two modules that start themselves at import time and then explicitly invokes both exported runners. Once credentials are configured, that would run both workloads twice and produce misleading measurements.
+- Production uploads try Cloudflare R2 directly and then Supabase directly, but the final fallback unconditionally posts the complete binary file through the same-origin Vercel API. Vercel counts request bodies sent from its CDN to a Function as Fast Origin Transfer.
+
+## Targeted changes
+
+1. Make each stress sub-runner execute exactly once, whether invoked independently or through the combined runner, and preserve the requested count and concurrency in the generated report.
+2. Add a clear GitHub Actions credential preflight and accept an anon-key secret fallback while retaining service-role support for installations whose test-table policies require it.
+3. Keep browser-to-R2 and browser-to-Supabase uploads unchanged, but disable the Vercel binary proxy by default. Permit it only through an explicit production feature flag and enforce a bounded payload size when enabled.
+4. Update upload tests and recovery documentation to describe the direct-storage behavior and explicit emergency fallback.
+
+## Verification
+
+1. Run focused storage upload tests and a local no-credential stress-run smoke check.
+2. Rebuild the Vercel API bundle.
+3. Run TypeScript typechecking, unit tests, API integration tests, and the production build.
+
+## Explicit non-goals
+
+- Do not send live documents, invoke n8n, or spend LLM tokens during verification.
+- Do not enable a production Vercel upload proxy automatically.
+- Do not commit or push without a separate user request.

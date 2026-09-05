@@ -94,6 +94,10 @@ export default function DataOriginBadge({
             className="relative inline-flex items-center"
             onMouseEnter={() => hasDetails && setShowPopover(true)}
             onMouseLeave={() => setShowPopover(false)}
+            // Mirror hover with focus/blur so keyboard users reach the source /
+            // formula detail popover too; hover-only left it mouse-exclusive.
+            onFocus={() => hasDetails && setShowPopover(true)}
+            onBlur={() => setShowPopover(false)}
         >
             <button
                 type="button"

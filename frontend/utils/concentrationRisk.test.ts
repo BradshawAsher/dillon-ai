@@ -42,4 +42,17 @@ describe('getConcentrationRisk', () => {
         expect(() => getConcentrationRisk(many)).not.toThrow()
         expect(getConcentrationRisk(many).variant).toBe('destructive')
     })
+
+    it('ignores a non-finite share instead of letting it poison the max', () => {
+        expect(getConcentrationRisk([
+            { revenueShare: NaN },
+            { revenueShare: 0.45 },
+        ]).variant).toBe('destructive')
+        // A lone NaN share should not read as high risk.
+        expect(getConcentrationRisk([{ revenueShare: NaN }]).variant).toBe('warning')
+    })
+
+    it('detects a critical finding regardless of severity casing', () => {
+        expect(getConcentrationRisk([{ revenueShare: 0.1, severity: 'Critical' }]).variant).toBe('destructive')
+    })
 })

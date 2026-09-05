@@ -4,12 +4,14 @@ const STORAGE_CDN_URL = (process.env.VITE_STORAGE_CDN_URL || process.env.STORAGE
 const R2_PUBLIC_URL = (process.env.VITE_R2_PUBLIC_URL || process.env.R2_PUBLIC_URL || 'https://pub-3b04d9f4c75546caae7c86bd7b6847de.r2.dev').replace(/\/+$/, '')
 
 /**
- * Same-origin fallback proxy for direct R2 binary uploads.
+ * Local-development fallback proxy for direct R2 binary uploads.
  *
  * When browser extensions, corporate proxies, or transient socket drops block
  * direct cross-origin PUT requests from the browser to Cloudflare Workers,
- * the frontend routes the file stream through this same-origin endpoint.
+ * the local frontend can route the file stream through this endpoint.
  * Node forwards the stream server-to-server to Cloudflare R2 with zero CORS restrictions.
+ * Production browser builds deliberately do not call this route because doing
+ * so on Vercel would consume Fast Origin Transfer for the complete request body.
  */
 export default async function uploadStorageProxy(
     req: IncomingMessage,

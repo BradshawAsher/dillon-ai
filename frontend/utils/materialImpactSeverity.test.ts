@@ -18,4 +18,15 @@ describe('severityForSourceGroup', () => {
         expect(severityForSourceGroup('green-flag')).toBe('low')
         expect(severityForSourceGroup('')).toBe('low')
     })
+
+    it('normalizes casing and whitespace before matching', () => {
+        expect(severityForSourceGroup(' Red-Flag ')).toBe('critical')
+        expect(severityForSourceGroup('CONFLICT')).toBe('critical')
+        expect(severityForSourceGroup('Yellow-Flag')).toBe('medium')
+    })
+
+    it('treats null or undefined as low without throwing', () => {
+        expect(severityForSourceGroup(null)).toBe('low')
+        expect(severityForSourceGroup(undefined)).toBe('low')
+    })
 })

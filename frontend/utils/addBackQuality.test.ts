@@ -34,4 +34,15 @@ describe('getOverallAddBackQuality', () => {
             { quality: 'unsupported' },
         ]).variant).toBe('destructive')
     })
+
+    it('matches quality regardless of case or surrounding whitespace', () => {
+        expect(getOverallAddBackQuality([
+            { quality: 'Supported' },
+            { quality: '  UNSUPPORTED ' },
+        ]).variant).toBe('destructive')
+        expect(getOverallAddBackQuality([
+            { quality: 'Supported' },
+            { quality: 'Partial' },
+        ]).variant).toBe('warning')
+    })
 })

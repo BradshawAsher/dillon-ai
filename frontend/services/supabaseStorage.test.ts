@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { requestSignedUploadUrl, uploadDocumentToSupabaseStorage } from './supabaseStorage'
+import { isSameOriginUploadProxyAllowed, requestSignedUploadUrl, uploadDocumentToSupabaseStorage } from './supabaseStorage'
 import { supabaseAuthClient } from './supabaseAuth'
 import { uploadResumable } from './resumableUpload'
 
@@ -8,6 +8,11 @@ vi.mock('./resumableUpload', () => ({ RESUMABLE_CHUNK_BYTES: 6 * 1024 * 1024, up
 describe('supabaseStorage service', () => {
     beforeEach(() => {
         vi.restoreAllMocks()
+    })
+
+    it('allows the same-origin binary proxy only during local development', () => {
+        expect(isSameOriginUploadProxyAllowed(true)).toBe(true)
+        expect(isSameOriginUploadProxyAllowed(false)).toBe(false)
     })
 
     it('requests signed upload URL via /api/diligence/upload-url', async () => {

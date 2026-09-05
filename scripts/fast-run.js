@@ -16,5 +16,11 @@ esbuild.buildSync({
 });
 
 const extraArgs = process.argv.slice(3);
-const res = spawnSync('node', [out, ...extraArgs], { stdio: 'inherit' });
+const res = spawnSync('node', [out, ...extraArgs], {
+    stdio: 'inherit',
+    env: {
+        ...process.env,
+        MERGEWORKS_STRESS_ENTRY: path.basename(target),
+    },
+});
 process.exit(res.status || 0);
