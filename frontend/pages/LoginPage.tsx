@@ -3,6 +3,8 @@ import {
     ArrowLeft,
     ArrowRight,
     CheckCircle2,
+    Eye,
+    EyeOff,
     Lock,
     Mail,
     Shield,
@@ -60,6 +62,7 @@ export default function LoginPage({
     const [password, setPassword] = useState('')
     const [fullName, setFullName] = useState('')
     const [team, setTeam] = useState('')
+    const [showPassword, setShowPassword] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
     const [socialLoading, setSocialLoading] = useState<'google' | 'github' | 'microsoft' | null>(null)
     const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -439,18 +442,27 @@ export default function LoginPage({
                                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                     <input
                                         id="auth-password"
-                                        type="password"
+                                        type={showPassword ? 'text' : 'password'}
                                         name="password"
                                         autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         placeholder="••••••••••••"
-                                        className="w-full rounded-lg border border-border bg-background py-2.5 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                                        className="w-full rounded-lg border border-border bg-background py-2.5 pl-9 pr-11 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                                         required
                                         minLength={6}
                                         aria-invalid={Boolean(errorMessage && !password)}
                                         aria-describedby={errorMessage ? 'auth-error' : undefined}
                                     />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword((open) => !open)}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                        aria-pressed={showPassword}
+                                    >
+                                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                    </button>
                                 </div>
                             </div>
 
