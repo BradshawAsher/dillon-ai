@@ -9,6 +9,15 @@ import { R2_PUBLIC_URL, resolveStorageCdnUrl } from './storageCdn'
 // pull in the Supabase auth client.
 export { resolveStorageCdnUrl }
 
+/**
+ * The same-origin binary proxy is a local-development recovery aid only.
+ * Production uploads stay direct-to-storage so complete document bodies do not
+ * cross the hosting CDN/function boundary and consume Fast Origin Transfer.
+ */
+export function isSameOriginUploadProxyAllowed(isDevelopment: boolean): boolean {
+  return isDevelopment
+}
+
 export interface StorageUploadResult {
   storageFileUrl: string
   storagePath: string
@@ -216,10 +225,10 @@ export async function uploadDocumentToSupabaseStorage(options: {
     }
   }
 
-  // 3. Same-Origin Proxy Fallback: If direct R2 and Supabase storage uploads could not complete
-  // (e.g. browser CORS restrictions or network disconnects), try proxying through the app's
-  // same-origin backend directly to R2 before giving up.
-  if (!uploadSucceeded && ticket.path) {
+  // 3. Local-development proxy fallback. Production deliberately stops here
+  // rather than forwarding the complete binary through a Vercel Function,
+  // which would duplicate transfer bytes and consume Fast Origin Transfer.
+  if (!uploadSucceeded && ticket.path && isSameOriginUploadProxyAllowed(import.meta.env.DEV)) {
     try {
       const proxyRes = await uploadFetch(`/api/diligence/upload-file?path=${encodeURIComponent(ticket.path)}`, {
         method: 'POST',
@@ -237,6 +246,8 @@ export async function uploadDocumentToSupabaseStorage(options: {
     } catch {
       // Ignore proxy fallback failure and proceed to throw detailed errors
     }
+  } else if (!uploadSucceeded) {
+    errors.push('same-origin binary proxy disabled in production')
   }
 
   if (!uploadSucceeded) {

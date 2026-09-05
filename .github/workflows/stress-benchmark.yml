@@ -57,10 +57,26 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci --prefix frontend
 
-      - name: Execute 3-Layer Stress Test Suite
+      - name: Verify benchmark credentials
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ]; then
+            echo "::error::Missing GitHub Actions secret SUPABASE_URL. Add it under Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+          if [ -z "$SUPABASE_SERVICE_ROLE_KEY" ] && [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "::error::Missing SUPABASE_SERVICE_ROLE_KEY or SUPABASE_ANON_KEY. The service-role key is required when test-table RLS blocks anonymous writes."
+            exit 1
+          fi
+
+      - name: Execute zero-token stress suite
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           STORAGE_CDN_URL: ${{ secrets.STORAGE_CDN_URL || 'https://dillon-ai-worker.bradshin231.workers.dev' }}
           R2_PUBLIC_URL: ${{ secrets.R2_PUBLIC_URL || 'https://pub-3b04d9f4c75546caae7c86bd7b6847de.r2.dev' }}
         run: |

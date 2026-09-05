@@ -11,7 +11,7 @@ if (!fs.existsSync(reportsDir)) {
 
 async function runAllStressTests() {
     console.log('='.repeat(80))
-    console.log('🚀 MERGEWORKS UNIFIED 3-LAYER LOAD & STRESS TEST SUITE')
+    console.log('🚀 MERGEWORKS ZERO-TOKEN STORAGE, DATABASE & QUEUE STRESS SUITE')
     console.log(`🚀 Started at: ${new Date().toISOString()}`)
     console.log('='.repeat(80))
 
@@ -22,7 +22,7 @@ async function runAllStressTests() {
     const layer2 = await runStorageAndDbStressTest()
 
     // 2. Run Layer 3: n8n Pipeline Queue & Ingestion Resilience
-    console.log('\n[2/2] RUNNING LAYER 3: N8N PIPELINE QUEUE & INGESTION RESILIENCE...')
+    console.log('\n[2/2] RUNNING LAYER 3: PIPELINE QUEUE REGISTRATION RESILIENCE...')
     const layer3 = await runPipelineStressTest()
 
     // Generate markdown report
@@ -40,29 +40,29 @@ async function runAllStressTests() {
 
 | Subsystem | Operation | Requests | Latency P50 | Latency P95 | Latency P99 | Failures | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Cloudflare R2** | HTTP PUT Upload (Worker Proxy) | 25 | ${layer2.uploadStats.p50} ms | ${layer2.uploadStats.p95} ms | ${layer2.uploadStats.p99} ms | 0 | ✅ PASS (Zero Egress) |
-| **Supabase PostgreSQL** | Transaction INSERT | 25 | ${layer2.dbWriteStats.p50} ms | ${layer2.dbWriteStats.p95} ms | ${layer2.dbWriteStats.p99} ms | 0 | ✅ PASS (Included Plan) |
-| **Supabase PostgreSQL** | Pooled SELECT Query | 25 | ${layer2.dbReadStats.p50} ms | ${layer2.dbReadStats.p95} ms | ${layer2.dbReadStats.p99} ms | 0 | ✅ PASS (Included Plan) |
+| **Cloudflare R2** | HTTP PUT Upload (Worker Proxy) | ${layer2.count} | ${layer2.uploadStats.p50} ms | ${layer2.uploadStats.p95} ms | ${layer2.uploadStats.p99} ms | ${layer2.uploadFailures} | ${layer2.uploadFailures === 0 ? '✅ PASS' : '⚠️ DEGRADED'} (Zero Egress) |
+| **Supabase PostgreSQL** | Transaction INSERT | ${layer2.count} | ${layer2.dbWriteStats.p50} ms | ${layer2.dbWriteStats.p95} ms | ${layer2.dbWriteStats.p99} ms | ${layer2.dbWriteFailures} | ${layer2.dbWriteFailures === 0 ? '✅ PASS' : '⚠️ DEGRADED'} (Included Plan) |
+| **Supabase PostgreSQL** | Pooled SELECT Query | ${layer2.count} | ${layer2.dbReadStats.p50} ms | ${layer2.dbReadStats.p95} ms | ${layer2.dbReadStats.p99} ms | ${layer2.dbReadFailures} | ${layer2.dbReadFailures === 0 ? '✅ PASS' : '⚠️ DEGRADED'} (Included Plan) |
 
 ---
 
-## 2. n8n Pipeline & Batch Queue Resilience (Layer 3)
+## 2. Pipeline Queue Registration Resilience (Layer 3)
 
 | Metric | Measured Value | Target SLO | Status |
 | :--- | :--- | :--- | :--- |
-| **Batch Ingestion Concurrency** | 10 Documents @ 5 Concurrency | $\ge 5$ docs / sec | ✅ PASS |
+| **Batch Registration Concurrency** | ${layer3.documentCount} Documents @ ${layer3.concurrency} Concurrency | Zero dropped rows | ${layer3.isPass ? '✅ PASS' : '⚠️ DEGRADED'} |
 | **Queue Ingestion P50 Latency** | ${layer3.stats.p50} ms | $< 1000$ ms | ✅ PASS |
 | **Queue Ingestion P95 Latency** | ${layer3.stats.p95} ms | $< 2000$ ms | ✅ PASS |
-| **Queue Retention / Integrity** | 100% (0 dropped rows) | 100% | ✅ PASS |
+| **Queue Retention / Integrity** | ${layer3.registeredCount}/${layer3.documentCount} registered (${layer3.acceptanceFailures} failures) | 100% | ${layer3.isPass ? '✅ PASS' : '⚠️ DEGRADED'} |
 | **LLM Token Spend** | $0.00 (Zero-Token Mock) | $0.00 | ✅ PASS |
 
 ---
 
 ## 3. Key Findings & Performance Observations
 
-1. **Cloudflare R2 Proxy Upload Speed**: Parallel PUT operations through the Cloudflare Worker proxy consistently complete under 500ms P50 with **zero egress fees**.
-2. **Supabase Connection Pooling (Supavisor)**: Handles concurrent read and write operations seamlessly with low latencies (< 150ms P50).
-3. **Queue Retention**: 100% of batch documents are durably registered in Supabase before worker dispatch, eliminating ghost documents or orphaned submissions.
+1. **Cloudflare R2 Upload Path**: ${layer2.count} synthetic PUT operations ran directly against the Cloudflare Worker at ${layer2.concurrency} concurrency; measured upload P50 was ${layer2.uploadStats.p50} ms.
+2. **Supabase Database Path**: Measured write P50 was ${layer2.dbWriteStats.p50} ms and read P50 was ${layer2.dbReadStats.p50} ms for this run.
+3. **Queue Registration**: This zero-token layer measures durable Supabase registration only. It does not invoke n8n or an LLM, so it must not be presented as measured n8n worker capacity.
 4. **Data Isolation**: All test runs are scoped to timestamped test project IDs and automatically purged, preventing any accumulation of database bloat.
 `
 

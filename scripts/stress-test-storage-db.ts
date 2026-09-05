@@ -254,14 +254,21 @@ export async function runStorageAndDbStressTest() {
     console.log(`\nOverall Layer 2 Status: ${isSuccess ? '✅ PASS - R2 and Database operations completed with 0 errors' : '⚠️ WARN - Some operations experienced failures'}\n`)
 
     return {
+        count: opts.count,
+        concurrency: opts.concurrency,
         uploadStats,
         dbWriteStats,
         dbReadStats,
+        uploadFailures,
+        dbWriteFailures,
+        dbReadFailures,
         isSuccess,
     }
 }
 
-void runStorageAndDbStressTest().catch((err) => {
-    console.error('Fatal storage/db stress test error:', err)
-    process.exit(1)
-})
+if (process.env.MERGEWORKS_STRESS_ENTRY === 'stress-test-storage-db.ts') {
+    void runStorageAndDbStressTest().catch((err) => {
+        console.error('Fatal storage/db stress test error:', err)
+        process.exit(1)
+    })
+}
