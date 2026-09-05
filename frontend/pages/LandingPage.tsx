@@ -16,6 +16,7 @@ import {
     Loader2,
     Lock,
     LogIn,
+    LogOut,
     Play,
     ShieldCheck,
     Sparkles,
@@ -42,7 +43,9 @@ interface LandingPageProps {
 }
 
 export default function LandingPage({ onLaunchDashboard, onGoToLogin, currentUser: propUser, onSignOut }: LandingPageProps) {
-    const [activeUser, setActiveUser] = useState<AppAuthUser | null>(() => propUser || getLocalAppAuth())
+    const isAuthControlled = propUser !== undefined
+    const [localUser, setLocalUser] = useState<AppAuthUser | null>(() => getLocalAppAuth())
+    const activeUser = isAuthControlled ? propUser : localUser
     const [showWalkthroughModal, setShowWalkthroughModal] = useState(false)
     const [selectedWalkthroughDemoId, setSelectedWalkthroughDemoId] = useState<DemoVariantId>('short-supademo')
     const [showAccessModal, setShowAccessModal] = useState(false)
@@ -69,16 +72,20 @@ export default function LandingPage({ onLaunchDashboard, onGoToLogin, currentUse
 
     useEffect(() => {
         window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
-        if (propUser) {
-            setActiveUser(propUser)
-        }
+    }, [])
+
+    // App owns authentication in normal use. Only standalone/uncontrolled
+    // renderers need their own listener; subscribing in both places causes a
+    // save-event/prop-update loop whenever Supabase returns a fresh user object.
+    useEffect(() => {
+        if (isAuthControlled) return
         const unsubscribe = initAuthListener((user) => {
-            setActiveUser(user)
+            setLocalUser(user)
         })
         return () => {
             unsubscribe?.()
         }
-    }, [propUser])
+    }, [isAuthControlled])
 
     useEffect(() => {
         const sectionIds = ['hero', 'features', 'live-preview', 'evidence', 'pipeline', 'cost-model', 'faqs']
@@ -226,7 +233,7 @@ export default function LandingPage({ onLaunchDashboard, onGoToLogin, currentUse
     ]
 
     return (
-        <div className="min-h-screen bg-background text-foreground font-sans antialiased selection:bg-primary/20 selection:text-primary overflow-x-hidden">
+        <div className="min-h-screen bg-background text-foreground font-sans antialiased selection:bg-primary/20 selection:text-primary">
             <a
                 href="#hero"
                 className="absolute left-4 top-4 z-50 -translate-y-16 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-md transition-transform focus:translate-y-0 focus:outline-none focus:ring-2 focus:ring-ring"
@@ -234,19 +241,86 @@ export default function LandingPage({ onLaunchDashboard, onGoToLogin, currentUse
                 Skip to main content
             </a>
             {/* Header / Navigation Bar */}
-            <header className="sticky top-0 z-40 border-b border-border/80 bg-background/80 backdrop-blur-md">
-                <div className="mx-auto max-w-7xl w-full flex items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-                    <div className="flex items-center gap-3.5 shrink-0">
-                        <DillonLogo size="lg" />
-                        <div className="flex flex-col justify-center">
-                            <span className="text-2xl sm:text-[26px] font-black tracking-tight text-black dark:text-white leading-none">Dillon AI</span>
-                            <span className="text-xs font-semibold text-muted-foreground mt-1 leading-none whitespace-nowrap hidden md:inline">
-                                Autonomous M&amp;A Due Diligence • by MergeWorks
-                            </span>
+            <header id="landing-header" className="sticky top-0 z-40 border-b border-border/80 bg-background/80 backdrop-blur-md">
+                <div className="mx-auto w-full max-w-7xl px-3 sm:px-6 lg:px-8">
+                    <div className="flex min-w-0 items-center justify-between gap-2 py-3 sm:gap-4">
+                        <div className="flex min-w-0 shrink items-center gap-2.5 sm:gap-3.5">
+                            <DillonLogo size="lg" />
+                            <div className="flex min-w-0 flex-col justify-center">
+                                <span className="truncate text-xl font-black leading-none tracking-tight text-black dark:text-white sm:text-[26px]">Dillon AI</span>
+                                <span className="mt-1 hidden whitespace-nowrap text-xs font-semibold leading-none text-muted-foreground md:inline">
+                                    Autonomous M&amp;A Due Diligence • by MergeWorks
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="ml-auto flex min-w-0 shrink-0 items-center gap-1 sm:gap-2">
+                            {activeUser ? (
+                                <>
+                                    <div className="hidden items-center gap-1.5 rounded-lg border border-border/80 bg-background/80 px-2.5 py-1 text-xs md:flex">
+                                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/20 text-[10px] font-bold text-primary">
+                                            {activeUser.name.charAt(0).toUpperCase()}
+                                        </div>
+                                        <Badge variant={activeUser.role === 'admin' ? 'default' : 'secondary'} className="px-1.5 py-0 text-[9px]">
+                                            {activeUser.role === 'admin' ? 'Admin' : 'Member'}
+                                        </Badge>
+                                        <span className="hidden max-w-[120px] truncate font-semibold text-foreground lg:inline">
+                                            {activeUser.name}
+                                        </span>
+                                    </div>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground"
+                                        aria-label="Sign out"
+                                        title="Sign out"
+                                        onClick={async () => {
+                                            await signOutUser()
+                                            setLocalUser(null)
+                                            onSignOut?.()
+                                        }}
+                                    >
+                                        <LogOut className="h-4 w-4 shrink-0 sm:mr-1.5" />
+                                        <span className="hidden sm:inline">Sign Out</span>
+                                    </Button>
+                                </>
+                            ) : (
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 px-2 text-xs font-semibold hover:bg-muted"
+                                    onClick={onGoToLogin || onLaunchDashboard}
+                                >
+                                    <LogIn className="h-3.5 w-3.5 sm:mr-1.5" />
+                                    <span className="hidden sm:inline">Sign In</span>
+                                </Button>
+                            )}
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="hidden shrink-0 border-primary/30 text-xs font-semibold text-primary hover:bg-primary/10 xl:inline-flex"
+                                onClick={() => setShowWalkthroughModal(true)}
+                            >
+                                <Play className="mr-1.5 h-3.5 w-3.5 shrink-0 fill-current" />
+                                Guided Walkthrough
+                            </Button>
+                            <Button
+                                type="button"
+                                size="sm"
+                                className="shrink-0 whitespace-nowrap bg-gradient-to-r from-primary to-indigo-600 px-2.5 text-xs font-bold text-white shadow-sm hover:from-primary/90 hover:to-indigo-600/90 sm:px-4"
+                                onClick={onLaunchDashboard}
+                            >
+                                <span className="sm:hidden">Open App</span>
+                                <span className="hidden sm:inline">{activeUser ? 'Open App Dashboard' : 'Launch App Dashboard'}</span>
+                                <ArrowRight className="ml-1 h-4 w-4 shrink-0 sm:ml-1.5" />
+                            </Button>
                         </div>
                     </div>
 
-                    <nav className="hidden xl:flex items-center gap-0.5 sm:gap-1 rounded-full border border-border/60 bg-muted/30 p-1 text-xs font-semibold text-muted-foreground ml-6 xl:ml-8 mr-auto">
+                    <nav aria-label="Landing page sections" className="hidden items-center justify-center gap-0.5 border-t border-border/50 py-2 text-xs font-semibold text-muted-foreground xl:flex">
                         {[
                             { id: 'hero', label: 'Hero' },
                             { id: 'features', label: 'Features' },
@@ -260,7 +334,7 @@ export default function LandingPage({ onLaunchDashboard, onGoToLogin, currentUse
                                 key={item.id}
                                 type="button"
                                 onClick={() => scrollToSection(item.id)}
-                                className={`rounded-full px-2.5 sm:px-3 py-1 transition-all hover:bg-background hover:text-foreground hover:shadow-2xs whitespace-nowrap ${
+                                className={`whitespace-nowrap rounded-full px-3 py-1 transition-all hover:bg-background hover:text-foreground hover:shadow-2xs ${
                                     activeSection === item.id
                                         ? 'text-primary font-bold bg-primary/10 shadow-2xs'
                                         : ''
@@ -270,67 +344,6 @@ export default function LandingPage({ onLaunchDashboard, onGoToLogin, currentUse
                             </button>
                         ))}
                     </nav>
-
-                    <div className="flex items-center gap-2 shrink-0 ml-auto">
-                        {activeUser ? (
-                            <div className="flex items-center gap-2">
-                                <div className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-background/80 px-2.5 py-1 text-xs">
-                                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/20 text-primary text-[10px] font-bold">
-                                        {activeUser.name.charAt(0).toUpperCase()}
-                                    </div>
-                                    <Badge variant={activeUser.role === 'admin' ? 'default' : 'secondary'} className="text-[9px] px-1.5 py-0">
-                                        {activeUser.role === 'admin' ? 'Admin' : 'Member'}
-                                    </Badge>
-                                    <span className="font-semibold text-foreground max-w-[120px] truncate hidden sm:inline">
-                                        {activeUser.name}
-                                    </span>
-                                </div>
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    className="text-xs text-muted-foreground hover:text-foreground h-8 px-2"
-                                    onClick={async () => {
-                                        await signOutUser()
-                                        setActiveUser(null)
-                                        onSignOut?.()
-                                    }}
-                                >
-                                    Sign Out
-                                </Button>
-                            </div>
-                        ) : (
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="text-xs font-semibold hover:bg-muted"
-                                onClick={onGoToLogin || onLaunchDashboard}
-                            >
-                                <LogIn className="mr-1.5 h-3.5 w-3.5" />
-                                <span>Sign In</span>
-                            </Button>
-                        )}
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="hidden lg:inline-flex text-xs font-semibold border-primary/30 text-primary hover:bg-primary/10 shrink-0"
-                            onClick={() => setShowWalkthroughModal(true)}
-                        >
-                            <Play className="mr-1.5 h-3.5 w-3.5 fill-current shrink-0" />
-                            Guided Walkthrough
-                        </Button>
-                        <Button
-                            type="button"
-                            size="sm"
-                            className="bg-gradient-to-r from-primary to-indigo-600 font-bold text-white shadow-sm hover:from-primary/90 hover:to-indigo-600/90 shrink-0 whitespace-nowrap text-xs px-4"
-                            onClick={onLaunchDashboard}
-                        >
-                            <span>{activeUser ? 'Open App Dashboard' : 'Launch App Dashboard'}</span>
-                            <ArrowRight className="ml-1.5 h-4 w-4 shrink-0" />
-                        </Button>
-                    </div>
                 </div>
             </header>
 
