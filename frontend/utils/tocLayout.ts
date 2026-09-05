@@ -14,6 +14,9 @@ export const TOC_DEFAULT_WIDTH = 140
 
 /** Clamps a width to the allowed range and rounds to a whole pixel. */
 export function clampTocWidth(width: number): number {
+    // A non-finite width (NaN from a bad drag delta, ±Infinity) would survive the
+    // min/max as NaN and set an unusable sidebar width — fall back to the default.
+    if (!Number.isFinite(width)) return TOC_DEFAULT_WIDTH
     return Math.round(Math.max(TOC_MIN_WIDTH, Math.min(TOC_MAX_WIDTH, width)))
 }
 

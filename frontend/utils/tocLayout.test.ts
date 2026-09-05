@@ -17,6 +17,11 @@ describe('clampTocWidth', () => {
         expect(clampTocWidth(10)).toBe(TOC_MIN_WIDTH)
         expect(clampTocWidth(999)).toBe(TOC_MAX_WIDTH)
     })
+
+    it('falls back to the default for a non-finite width', () => {
+        expect(clampTocWidth(Number.NaN)).toBe(TOC_DEFAULT_WIDTH)
+        expect(clampTocWidth(Number.POSITIVE_INFINITY)).toBe(TOC_DEFAULT_WIDTH)
+    })
 })
 
 describe('parseStoredTocWidth', () => {
