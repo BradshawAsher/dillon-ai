@@ -226,7 +226,7 @@ export default function LandingPage({ onLaunchDashboard, onGoToLogin, currentUse
     ]
 
     return (
-        <div className="min-h-screen bg-background text-foreground font-sans antialiased selection:bg-primary/20 selection:text-primary">
+        <div className="min-h-screen bg-background text-foreground font-sans antialiased selection:bg-primary/20 selection:text-primary overflow-x-hidden">
             <a
                 href="#hero"
                 className="absolute left-4 top-4 z-50 -translate-y-16 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-md transition-transform focus:translate-y-0 focus:outline-none focus:ring-2 focus:ring-ring"
@@ -235,18 +235,18 @@ export default function LandingPage({ onLaunchDashboard, onGoToLogin, currentUse
             </a>
             {/* Header / Navigation Bar */}
             <header className="sticky top-0 z-40 border-b border-border/80 bg-background/80 backdrop-blur-md">
-                <div className="w-full flex items-center justify-between px-4 py-3 sm:px-8">
+                <div className="mx-auto max-w-7xl w-full flex items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
                     <div className="flex items-center gap-3.5 shrink-0">
                         <DillonLogo size="lg" />
                         <div className="flex flex-col justify-center">
                             <span className="text-2xl sm:text-[26px] font-black tracking-tight text-black dark:text-white leading-none">Dillon AI</span>
-                            <span className="text-xs font-semibold text-muted-foreground mt-1 leading-none whitespace-nowrap">
+                            <span className="text-xs font-semibold text-muted-foreground mt-1 leading-none whitespace-nowrap hidden md:inline">
                                 Autonomous M&amp;A Due Diligence • by MergeWorks
                             </span>
                         </div>
                     </div>
 
-                    <nav className="hidden lg:flex items-center gap-0.5 sm:gap-1 rounded-full border border-border/60 bg-muted/30 p-1 text-xs font-semibold text-muted-foreground ml-6 lg:ml-8 mr-auto">
+                    <nav className="hidden xl:flex items-center gap-0.5 sm:gap-1 rounded-full border border-border/60 bg-muted/30 p-1 text-xs font-semibold text-muted-foreground ml-6 xl:ml-8 mr-auto">
                         {[
                             { id: 'hero', label: 'Hero' },
                             { id: 'features', label: 'Features' },
@@ -315,7 +315,7 @@ export default function LandingPage({ onLaunchDashboard, onGoToLogin, currentUse
                             type="button"
                             variant="outline"
                             size="sm"
-                            className="hidden sm:inline-flex text-xs font-semibold border-primary/30 text-primary hover:bg-primary/10 shrink-0"
+                            className="hidden lg:inline-flex text-xs font-semibold border-primary/30 text-primary hover:bg-primary/10 shrink-0"
                             onClick={() => setShowWalkthroughModal(true)}
                         >
                             <Play className="mr-1.5 h-3.5 w-3.5 fill-current shrink-0" />
