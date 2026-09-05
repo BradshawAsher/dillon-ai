@@ -8,8 +8,10 @@
 export type RiskBadgeVariant = 'destructive' | 'warning' | 'secondary' | 'outline'
 
 /** critical/high → destructive, medium → warning, low → secondary, else outline. */
-export function riskLevelVariant(riskLevel: string): RiskBadgeVariant {
-    const normalized = riskLevel.trim().toLowerCase()
+export function riskLevelVariant(riskLevel: string | null | undefined): RiskBadgeVariant {
+    // A missing risk level should render the neutral 'outline' variant, not throw
+    // on `.trim()` — synthesis rows sometimes carry a null/undefined level.
+    const normalized = (riskLevel ?? '').trim().toLowerCase()
     if (normalized === 'critical' || normalized === 'high') return 'destructive'
     if (normalized === 'medium') return 'warning'
     if (normalized === 'low') return 'secondary'
