@@ -36,4 +36,21 @@ describe('classifyVerdictTone', () => {
         // "caution" is checked before "risk", so a caution+risk verdict is warning.
         expect(classifyVerdictTone('Caution: some risk')).toBe('warning')
     })
+
+    it('does not treat substring lookalikes as verdict language', () => {
+        // "pass" is a substring of "bypass" / "compass"; "hold" of "shareholder"
+        // / "threshold"; "warn" of "warranty"; "buy" of "buyer".
+        expect(classifyVerdictTone('Bypass concentration via earnout')).toBe('neutral')
+        expect(classifyVerdictTone('Shareholder approval required')).toBe('neutral')
+        expect(classifyVerdictTone('Warranty coverage is adequate')).toBe('neutral')
+        expect(classifyVerdictTone('Buyer due diligence incomplete')).toBe('neutral')
+        expect(classifyVerdictTone('Compass check under review')).toBe('neutral')
+        expect(classifyVerdictTone('Threshold analysis pending')).toBe('neutral')
+    })
+
+    it('still matches stemmed verdict verbs as whole words', () => {
+        expect(classifyVerdictTone('Renegotiation recommended')).toBe('warning')
+        expect(classifyVerdictTone('Escalate to IC')).toBe('destructive')
+        expect(classifyVerdictTone('Acquisition recommended')).toBe('success')
+    })
 })
