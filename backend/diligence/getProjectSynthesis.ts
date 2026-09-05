@@ -1,4 +1,5 @@
 import { supabase } from '../supabaseClient'
+import { buildTenantPostgrestFilter } from './tenantAuth'
 
 type Params = {
     environment?: 'production' | 'test'
@@ -38,6 +39,9 @@ export type ProjectCitation = {
 
 export type ProjectSynthesisItem = {
     projectId: string
+    userId?: string
+    team?: string
+    isDemo?: boolean
     letterOfIntentPresent?: boolean
     projectName?: string
     companyName?: string
@@ -346,7 +350,7 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
             : defaultLimit
 
     const fullColumns = `
-        id, project_id, project_name, company_name, project_status,
+        id, project_id, project_name, company_name, user_id, team, is_demo, project_status,
         documents_received_count, documents_completed_count,
         missing_documents_json, cross_document_conflicts_json, open_questions_json, negotiation_levers_json,
         final_judgement_json, final_recommendation, final_risk_level, final_traffic_light,
@@ -358,7 +362,7 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
     `
 
     const portfolioColumns = `
-        id, project_id, project_name, company_name, project_status,
+        id, project_id, project_name, company_name, user_id, team, is_demo, project_status,
         documents_received_count, documents_completed_count,
         final_recommendation, final_risk_level, final_traffic_light,
         ai_error_message, ai_global_confidence,
@@ -372,6 +376,11 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
         .from('project_syntheses') as any)
         .select(isScoped ? fullColumns : portfolioColumns)
         .or('is_placeholder.is.null,is_placeholder.eq.false')
+
+    const tenantFilter = buildTenantPostgrestFilter(req.user)
+    if (tenantFilter) {
+        query = query.or(tenantFilter)
+    }
 
     if (req.params.projectId && req.params.projectId.trim().length > 0) {
         query = query.eq('project_id', req.params.projectId.trim())
@@ -472,6 +481,9 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
 
             return {
                 projectId: row.project_id ?? '',
+                userId: row.user_id || undefined,
+                team: row.team || undefined,
+                isDemo: Boolean(row.is_demo),
                 projectName: row.project_name || undefined,
                 companyName: row.company_name || undefined,
                 projectStatus: row.project_status ?? '',

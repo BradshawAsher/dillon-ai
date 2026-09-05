@@ -6,6 +6,9 @@ export type SubmissionHistoryItem = {
     submissionNotes: string
     analystName: string
     analystEmail: string
+    userId?: string
+    team?: string
+    isDemo?: boolean
     projectId: string
     projectStage: string
     documentType: string

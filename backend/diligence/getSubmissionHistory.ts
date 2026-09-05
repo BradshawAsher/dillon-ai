@@ -1,4 +1,5 @@
 import { supabase } from '../supabaseClient'
+import { buildTenantPostgrestFilter } from './tenantAuth'
 
 type Params = {
     environment?: 'production' | 'test'
@@ -194,7 +195,7 @@ export default async function getSubmissionHistory(req: {
 
     const fullColumns = `
         id, request_id, deal_name, company_name, workstream, submission_notes,
-        analyst_name, analyst_email, project_id, project_stage, document_type,
+        analyst_name, analyst_email, user_id, team, is_demo, project_id, project_stage, document_type,
         detected_document_type, detected_document_types_json, table_structure_status,
         table_structure_issues, detected_header_row, column_map_confidence, validated_column_map,
         employee_count, employee_type, employee_as_of_date, employee_confidence, employee_citation,
@@ -212,7 +213,7 @@ export default async function getSubmissionHistory(req: {
 
     const lightweightColumns = `
         id, request_id, deal_name, company_name, workstream, submission_notes,
-        analyst_name, analyst_email, project_id, project_stage, document_type,
+        analyst_name, analyst_email, user_id, team, is_demo, project_id, project_stage, document_type,
         detected_document_type, table_structure_status, math_check_status,
         submission_batch_id, expected_batch_document_count, file_name, source_relative_path, file_size, file_type,
         trigger_timestamp, status, environment, received_at, processing_started_at, processed_at,
@@ -224,6 +225,11 @@ export default async function getSubmissionHistory(req: {
     let query = (supabase.from('documents') as any)
         .select(isFull ? fullColumns : lightweightColumns)
         .eq('environment', environment)
+
+    const tenantFilter = buildTenantPostgrestFilter(req.user)
+    if (tenantFilter) {
+        query = query.or(tenantFilter)
+    }
 
     if (req.params.projectId && req.params.projectId.trim().length > 0) {
         query = query.eq('project_id', req.params.projectId.trim())
@@ -277,6 +283,9 @@ export default async function getSubmissionHistory(req: {
             submissionNotes: row.submission_notes ?? '',
             analystName: row.analyst_name ?? '',
             analystEmail: row.analyst_email ?? '',
+            userId: row.user_id ?? undefined,
+            team: row.team ?? undefined,
+            isDemo: Boolean(row.is_demo),
             projectId: row.project_id ?? '',
             projectStage: row.project_stage ?? '',
             documentType: row.document_type ?? '',

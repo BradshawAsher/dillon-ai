@@ -18,6 +18,49 @@ export interface LoiParams {
     authorTitle?: string
     exclusivityDays?: number
     isPostLoi?: boolean
+    draftTerms?: Partial<LoiDraftTerms>
+}
+
+export type LoiTransactionStructure = 'Asset Purchase' | 'Equity Purchase'
+
+export interface LoiDraftTerms {
+    buyerName: string
+    buyerEntity: string
+    sellerName: string
+    authorTitle: string
+    offerPrice: number | null
+    transactionStructure: LoiTransactionStructure
+    offerValidityDays: number
+    expirationTime: string
+    exclusivityDays: number
+    generalEscrowPercent: number
+    generalEscrowMonths: number
+    nwcTrueUpDays: number
+    transitionMonths: number
+    transitionIncludedDays: number
+    nonCompeteYears: number
+    nonCompeteRadiusMiles: number
+    governingLaw: string
+}
+
+export const DEFAULT_LOI_DRAFT_TERMS: LoiDraftTerms = {
+    buyerName: 'Diligence Deal Team',
+    buyerEntity: 'MergeWorks Acquisition Partners LLC',
+    sellerName: 'The Shareholders / Owners of the Company',
+    authorTitle: 'Managing Partner',
+    offerPrice: null,
+    transactionStructure: 'Asset Purchase',
+    offerValidityDays: 14,
+    expirationTime: '5:00 PM EST',
+    exclusivityDays: 60,
+    generalEscrowPercent: 10,
+    generalEscrowMonths: 12,
+    nwcTrueUpDays: 90,
+    transitionMonths: 6,
+    transitionIncludedDays: 60,
+    nonCompeteYears: 5,
+    nonCompeteRadiusMiles: 50,
+    governingLaw: 'State of Delaware',
 }
 
 export interface LoiTerms {
@@ -35,6 +78,7 @@ export interface LoiTerms {
     generalEscrow: number
     specialEscrow: number
     bridge: ValuationBridgeResult
+    draftTerms: LoiDraftTerms
 }
 
 function formatMoney(val?: number | null): string {
@@ -50,13 +94,52 @@ function nonNegativeOrFallback(value: number | null | undefined, fallback: numbe
     return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : fallback
 }
 
+function boundedNumber(value: unknown, fallback: number, min: number, max: number): number {
+    const number = Number(value)
+    return Number.isFinite(number) ? Math.min(max, Math.max(min, number)) : fallback
+}
+
+function cleanText(value: unknown, fallback: string): string {
+    return typeof value === 'string' && value.trim().length > 0 ? value.trim() : fallback
+}
+
+export function resolveLoiDraftTerms(params: LoiParams): LoiDraftTerms {
+    const draft = params.draftTerms ?? {}
+    const legacyExclusivity = params.exclusivityDays ?? DEFAULT_LOI_DRAFT_TERMS.exclusivityDays
+    return {
+        buyerName: cleanText(draft.buyerName ?? params.buyerName, DEFAULT_LOI_DRAFT_TERMS.buyerName),
+        buyerEntity: cleanText(draft.buyerEntity ?? params.buyerEntity, DEFAULT_LOI_DRAFT_TERMS.buyerEntity),
+        sellerName: cleanText(draft.sellerName ?? params.sellerName, DEFAULT_LOI_DRAFT_TERMS.sellerName),
+        authorTitle: cleanText(draft.authorTitle ?? params.authorTitle, DEFAULT_LOI_DRAFT_TERMS.authorTitle),
+        offerPrice: asPositiveOffer(draft.offerPrice),
+        transactionStructure: draft.transactionStructure === 'Equity Purchase' ? 'Equity Purchase' : 'Asset Purchase',
+        offerValidityDays: Math.round(boundedNumber(draft.offerValidityDays, DEFAULT_LOI_DRAFT_TERMS.offerValidityDays, 1, 120)),
+        expirationTime: cleanText(draft.expirationTime, DEFAULT_LOI_DRAFT_TERMS.expirationTime),
+        exclusivityDays: Math.round(boundedNumber(draft.exclusivityDays, legacyExclusivity, 1, 365)),
+        generalEscrowPercent: boundedNumber(draft.generalEscrowPercent, DEFAULT_LOI_DRAFT_TERMS.generalEscrowPercent, 0, 100),
+        generalEscrowMonths: Math.round(boundedNumber(draft.generalEscrowMonths, DEFAULT_LOI_DRAFT_TERMS.generalEscrowMonths, 0, 60)),
+        nwcTrueUpDays: Math.round(boundedNumber(draft.nwcTrueUpDays, DEFAULT_LOI_DRAFT_TERMS.nwcTrueUpDays, 1, 365)),
+        transitionMonths: Math.round(boundedNumber(draft.transitionMonths, DEFAULT_LOI_DRAFT_TERMS.transitionMonths, 0, 36)),
+        transitionIncludedDays: Math.round(boundedNumber(draft.transitionIncludedDays, DEFAULT_LOI_DRAFT_TERMS.transitionIncludedDays, 0, 365)),
+        nonCompeteYears: Math.round(boundedNumber(draft.nonCompeteYears, DEFAULT_LOI_DRAFT_TERMS.nonCompeteYears, 0, 10)),
+        nonCompeteRadiusMiles: Math.round(boundedNumber(draft.nonCompeteRadiusMiles, DEFAULT_LOI_DRAFT_TERMS.nonCompeteRadiusMiles, 0, 500)),
+        governingLaw: cleanText(draft.governingLaw, DEFAULT_LOI_DRAFT_TERMS.governingLaw),
+    }
+}
+
+function asPositiveOffer(value: unknown): number | null {
+    const number = Number(value)
+    return Number.isFinite(number) && number > 0 ? number : null
+}
+
 export function deriveLoiTerms(params: LoiParams): LoiTerms {
     const { model, synthesis } = params
     const facts = parseDocumentedFacts(model.documentedFactsJson)
     const bridge = computeValuationBridge(model, synthesis)
+    const draftTerms = resolveLoiDraftTerms(params)
     const askingPrice = firstPositive(model.askingPrice, model.purchasePrice)
     const preliminaryLoiPrice = firstPositive(model.purchasePrice, askingPrice)
-    const offerPrice = firstPositive(bridge.defensibleCounterOffer, model.purchasePrice, askingPrice)
+    const offerPrice = firstPositive(draftTerms.offerPrice, bridge.defensibleCounterOffer, model.purchasePrice, askingPrice)
     const revenue = typeof facts.revenue?.value === 'number' ? facts.revenue.value : null
     const ebitda = typeof facts.ebitda_sde?.value === 'number' ? facts.ebitda_sde.value : null
     const seniorDebt = nonNegativeOrFallback(model.seniorDebtAmount, Math.round(offerPrice * 0.60))
@@ -74,9 +157,10 @@ export function deriveLoiTerms(params: LoiParams): LoiTerms {
         sellerNote,
         equityCheck: Math.max(0, offerPrice - seniorDebt - sellerNote),
         nwcTarget: nonNegativeOrFallback(model.workingCapitalRequirement, Math.round((revenue || 2_000_000) * 0.10)),
-        generalEscrow: Math.round(offerPrice * 0.10),
+        generalEscrow: Math.round(offerPrice * (draftTerms.generalEscrowPercent / 100)),
         specialEscrow: bridge.totalSpecialEscrow ?? 0,
         bridge,
+        draftTerms,
     }
 }
 
@@ -88,16 +172,7 @@ export function deriveLoiTerms(params: LoiParams): LoiTerms {
  * when preliminary LOI is being renegotiated post-diligence.
  */
 export function generateLoiMarkdown(params: LoiParams): string {
-    const {
-        synthesis,
-        projectName,
-        projectId = 'PROJ-MAIN',
-        buyerName = 'Diligence Deal Team',
-        buyerEntity = 'MergeWorks Acquisition Partners LLC',
-        sellerName = 'The Shareholders / Owners of the Company',
-        authorTitle = 'Managing Partner',
-        exclusivityDays = 60,
-    } = params
+    const { synthesis, projectName, projectId = 'PROJ-MAIN' } = params
 
     const terms = deriveLoiTerms(params)
     const {
@@ -115,13 +190,32 @@ export function generateLoiMarkdown(params: LoiParams): string {
         generalEscrow,
         specialEscrow,
         bridge,
+        draftTerms,
     } = terms
+    const {
+        buyerName,
+        buyerEntity,
+        sellerName,
+        authorTitle,
+        transactionStructure,
+        offerValidityDays,
+        expirationTime,
+        exclusivityDays,
+        generalEscrowPercent,
+        generalEscrowMonths,
+        nwcTrueUpDays,
+        transitionMonths,
+        transitionIncludedDays,
+        nonCompeteYears,
+        nonCompeteRadiusMiles,
+        governingLaw,
+    } = draftTerms
     const sectorKey = detectSector((synthesis as any)?.industry || projectName)
     const sector = getSectorProfile(sectorKey)
     const sectorName = sector.shortCategory || sector.displayName || 'General Commercial'
 
     const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
-    const expirationDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+    const expirationDate = new Date(Date.now() + offerValidityDays * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
 
     const lines: string[] = []
 
@@ -131,7 +225,7 @@ export function generateLoiMarkdown(params: LoiParams): string {
     lines.push(`**STRICTLY CONFIDENTIAL**`)
     lines.push('')
     lines.push(`**DATE**: ${dateStr}`)
-    lines.push(`**OFFER EXPIRATION**: ${expirationDate} (5:00 PM EST)`)
+    lines.push(`**OFFER EXPIRATION**: ${expirationDate} (${expirationTime})`)
     lines.push(`**TARGET COMPANY**: ${projectName} (Project Reference: ${projectId})`)
     lines.push(`**ACQUIRING ENTITY**: ${buyerEntity} ("Buyer")`)
     lines.push(`**SELLER(S)**: ${sellerName} ("Seller")`)
@@ -155,7 +249,7 @@ export function generateLoiMarkdown(params: LoiParams): string {
 
     // SECTION 1: TRANSACTION STRUCTURE & PURCHASE PRICE
     lines.push(`## 1. Transaction Structure & Purchase Price (Non-Binding)`)
-    lines.push(`- **Transaction Structure**: Asset Purchase of substantially all operating assets, customer relationships, contracts, intellectual property, and goodwill, free and clear of all liens and encumbrances. Buyer shall assume only designated operating liabilities.`)
+    lines.push(`- **Transaction Structure**: ${transactionStructure} of ${transactionStructure === 'Asset Purchase' ? 'substantially all operating assets, customer relationships, contracts, intellectual property, and goodwill, free and clear of all liens and encumbrances. Buyer shall assume only designated operating liabilities' : 'all issued and outstanding equity interests of the Company, subject to mutually agreed debt, cash, working-capital, and liability adjustments'}.`)
     lines.push(`- **Enterprise Value / Purchase Price**: **${formatMoney(offerPrice)}** (${offerPrice > 0 && ebitda && multiple !== null ? `${multiple.toFixed(2)}x Adjusted EBITDA` : 'Cash-free, debt-free basis'}).`)
     if (isPostLoiDeal) {
         lines.push(`- **Preliminary LOI vs. Revised Counter-Offer Reconciliation**: Preliminary agreed LOI purchase price was ${formatMoney(preliminaryLoiPrice)}. Buyer's revised post-diligence counter-offer of ${formatMoney(offerPrice)} reflects empirical Quality of Earnings (QoE) add-back disallowances totaling ${formatMoney(bridge.totalDisallowedAddbacks)}, special indemnity holdbacks of ${formatMoney(specialEscrow)}, and industry margin parity adjustments.`)
@@ -180,12 +274,12 @@ export function generateLoiMarkdown(params: LoiParams): string {
     // SECTION 3: WORKING CAPITAL TARGET & ADJUSTMENT MECHANISM
     lines.push(`## 3. Working Capital Target Peg (Non-Binding)`)
     lines.push(`- **Target Net Working Capital (NWC Peg)**: **${formatMoney(nwcTarget)}** (subject to mutual review of 12-month trailing monthly balance sheet averages).`)
-    lines.push(`- **Post-Closing True-Up Mechanism**: Net Working Capital shall be measured as Current Assets (excluding cash) minus Current Liabilities (excluding debt and income tax payables). At closing, an estimated NWC balance will be delivered. Within **90 days** post-closing, Buyer will deliver a final closing balance sheet with a dollar-for-dollar cash true-up adjustment.`)
+    lines.push(`- **Post-Closing True-Up Mechanism**: Net Working Capital shall be measured as Current Assets (excluding cash) minus Current Liabilities (excluding debt and income tax payables). At closing, an estimated NWC balance will be delivered. Within **${nwcTrueUpDays} days** post-closing, Buyer will deliver a final closing balance sheet with a dollar-for-dollar cash true-up adjustment.`)
     lines.push('')
 
     // SECTION 4: INDEMNITY ESCROW & SPECIAL HOLDBACKS
     lines.push(`## 4. Indemnification, Escrow & Specific Liabilities (Non-Binding)`)
-    lines.push(`- **General Indemnity Escrow**: **${formatMoney(generalEscrow)}** (10% of purchase price) held in third-party escrow for **12 months** post-closing to secure customary representations, warranties, and post-closing covenants.`)
+    lines.push(`- **General Indemnity Escrow**: **${formatMoney(generalEscrow)}** (${generalEscrowPercent}% of purchase price) held in third-party escrow for **${generalEscrowMonths} months** post-closing to secure customary representations, warranties, and post-closing covenants.`)
     if (specialEscrow > 0) {
         lines.push(`- **Special Specific Indemnity Escrow**: **${formatMoney(specialEscrow)}** held in dedicated indemnity escrow for identified diligence liabilities (e.g. state sales tax nexus contingencies, environmental remediation, or key customer renewal obligations).`)
         lines.push(`  - *Escrow Release*: Released upon receipt of official state clearance certificate or milestone satisfaction.`)
@@ -195,15 +289,15 @@ export function generateLoiMarkdown(params: LoiParams): string {
 
     // SECTION 5: MANAGEMENT TRANSITION & EMPLOYMENT
     lines.push(`## 5. Founder Transition & Key Personnel (Non-Binding)`)
-    lines.push(`- **Seller Transition Consulting**: Existing leadership shall provide transitional consulting for a period of **3 to 6 months** post-closing (first 60 days included; thereafter at agreed market consulting rate).`)
+    lines.push(`- **Seller Transition Consulting**: Existing leadership shall provide transitional consulting for a period of up to **${transitionMonths} months** post-closing (first ${transitionIncludedDays} days included; thereafter at agreed market consulting rate).`)
     lines.push(`- **Key Employee Retention**: Buyer intends to offer continued employment to all active operational personnel on substantially similar terms, preserving company culture and operating continuity.`)
-    lines.push(`- **Non-Competition & Non-Solicitation**: Sellers and key executives shall execute customary **5-year non-competition** and **non-solicitation** agreements within a 50-mile geographic radius covering all current product/service territories.`)
+    lines.push(`- **Non-Competition & Non-Solicitation**: Sellers and key executives shall execute customary **${nonCompeteYears}-year non-competition** and **non-solicitation** agreements within a ${nonCompeteRadiusMiles}-mile geographic radius covering all current product/service territories.`)
     lines.push('')
 
     // SECTION 6: CONDITIONS PRECEDENT & DEFINITIVE AGREEMENT
     lines.push(`## 6. Conditions Precedent to Closing (Non-Binding)`)
     lines.push(`Closing of the acquisition shall be subject to the following standard conditions:`)
-    lines.push(`1. Execution of a mutually acceptable definitive Asset Purchase Agreement ("APA") containing customary representations, warranties, covenants, and indemnities.`)
+    lines.push(`1. Execution of a mutually acceptable definitive ${transactionStructure === 'Asset Purchase' ? 'Asset Purchase Agreement ("APA")' : 'Stock Purchase Agreement ("SPA")'} containing customary representations, warranties, covenants, and indemnities.`)
     lines.push(`2. Satisfactory completion of confirmatory financial, tax, Quality of Earnings (QoE), legal, environmental, and insurance due diligence.`)
     lines.push(`3. Receipt of formal senior debt financing commitment on terms acceptable to Buyer.`)
     lines.push(`4. Receipt of all necessary landlord consents, key customer contract assignments, and governmental permits.`)
@@ -229,7 +323,7 @@ export function generateLoiMarkdown(params: LoiParams): string {
     lines.push(`Each party shall bear its own legal, accounting, tax advisory, and transaction fees and expenses incurred in connection with the negotiation, diligence, and closing of the proposed transaction.`)
     lines.push('')
     lines.push(`### 7.5 Governing Law & Jurisdiction`)
-    lines.push(`This LOI and all related disputes shall be governed by and construed in accordance with the laws of the State of Delaware, without regard to conflicts of law principles.`)
+    lines.push(`This LOI and all related disputes shall be governed by and construed in accordance with the laws of the ${governingLaw}, without regard to conflicts of law principles.`)
     lines.push('')
     lines.push('---')
     lines.push('')

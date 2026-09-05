@@ -137,9 +137,11 @@ export function userFromHeaders(headers: IncomingHttpHeaders): User {
 
   const fullName = decode(headers['x-analyst-name'])
   const email = decode(headers['x-analyst-email'])
+  const id = decode(headers['x-user-id'])
+  const team = decode(headers['x-user-team'])
 
   if (fullName.length > 0 && email.length > 0) {
-    return { fullName, email }
+    return { fullName, email, id: id || undefined, team: team || undefined }
   }
 
   return FALLBACK_USER

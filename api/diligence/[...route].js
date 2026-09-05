@@ -21557,6 +21557,54 @@ var supabase = new Proxy({}, {
   }
 });
 
+// backend/diligence/tenantAuth.ts
+var ADMIN_EMAILS = /* @__PURE__ */ new Set([
+  "bradshaw@mergeworks.io",
+  "brad@mergeworks.io",
+  "srijan@mergeworks.io",
+  "admin@mergeworks.io",
+  "info@mergeworks.org",
+  "bradshin231@gmail.com",
+  "s-basher@outlook.com",
+  "srijanchallapalli@gmail.com",
+  "ykakarl1@umbc.edu",
+  "basher2@uw.edu",
+  "basher2@cs.washington.edu"
+]);
+function isMergeWorksAdmin(user) {
+  if (!user || !user.email) return false;
+  const cleanEmail = user.email.trim().toLowerCase();
+  if (user.team === "Pod 1 (Internal)") return true;
+  if (cleanEmail.endsWith("@mergeworks.io") || cleanEmail.endsWith("@mergeworks.org")) return true;
+  return ADMIN_EMAILS.has(cleanEmail);
+}
+function isGuestUser(user) {
+  if (!user) return true;
+  if (user.id && user.id.trim().length > 0) return false;
+  const cleanEmail = (user.email || "").trim().toLowerCase();
+  return cleanEmail.length === 0 || cleanEmail === "dashboard@mergeworks.local" || cleanEmail === "guest";
+}
+function buildTenantPostgrestFilter(user) {
+  if (isMergeWorksAdmin(user)) {
+    return null;
+  }
+  if (isGuestUser(user)) {
+    return "is_demo.eq.true";
+  }
+  const conditions = ["is_demo.eq.true"];
+  if (user?.id && user.id.trim().length > 0) {
+    conditions.push(`user_id.eq.${user.id.trim()}`);
+  }
+  if (user?.email && user.email.trim().length > 0) {
+    const cleanEmail = user.email.trim().toLowerCase();
+    conditions.push(`analyst_email.ilike.${cleanEmail}`);
+  }
+  if (user?.team && user.team.trim().length > 0 && user.team.trim().toLowerCase() !== "external member") {
+    conditions.push(`team.eq.${user.team.trim()}`);
+  }
+  return conditions.join(",");
+}
+
 // backend/diligence/getProjectSynthesis.ts
 function getNumberOrNull(value) {
   if (typeof value === "number" && Number.isFinite(value)) return value;
@@ -21793,7 +21841,7 @@ async function getProjectSynthesis(req) {
   const defaultLimit = isScoped ? 10 : 50;
   const limitNum = typeof req.params.limit === "number" ? req.params.limit : typeof req.params.limit === "string" && parseInt(req.params.limit, 10) > 0 ? parseInt(req.params.limit, 10) : defaultLimit;
   const fullColumns = `
-        id, project_id, project_name, company_name, project_status,
+        id, project_id, project_name, company_name, user_id, team, is_demo, project_status,
         documents_received_count, documents_completed_count,
         missing_documents_json, cross_document_conflicts_json, open_questions_json, negotiation_levers_json,
         final_judgement_json, final_recommendation, final_risk_level, final_traffic_light,
@@ -21804,7 +21852,7 @@ async function getProjectSynthesis(req) {
         valuation_confidence_score, investment_confidence_score, is_placeholder
     `;
   const portfolioColumns = `
-        id, project_id, project_name, company_name, project_status,
+        id, project_id, project_name, company_name, user_id, team, is_demo, project_status,
         documents_received_count, documents_completed_count,
         final_recommendation, final_risk_level, final_traffic_light,
         ai_error_message, ai_global_confidence,
@@ -21814,6 +21862,10 @@ async function getProjectSynthesis(req) {
         valuation_confidence_score, investment_confidence_score, is_placeholder
     `;
   let query = supabase.from("project_syntheses").select(isScoped ? fullColumns : portfolioColumns).or("is_placeholder.is.null,is_placeholder.eq.false");
+  const tenantFilter = buildTenantPostgrestFilter(req.user);
+  if (tenantFilter) {
+    query = query.or(tenantFilter);
+  }
   if (req.params.projectId && req.params.projectId.trim().length > 0) {
     query = query.eq("project_id", req.params.projectId.trim());
   }
@@ -21890,6 +21942,9 @@ async function getProjectSynthesis(req) {
     const uniqueCitationSources = Array.from(new Set(citationDetails.map((c) => c.sourceFile).filter((name) => Boolean(name))));
     return {
       projectId: row.project_id ?? "",
+      userId: row.user_id || void 0,
+      team: row.team || void 0,
+      isDemo: Boolean(row.is_demo),
       projectName: row.project_name || void 0,
       companyName: row.company_name || void 0,
       projectStatus: row.project_status ?? "",
@@ -22187,7 +22242,7 @@ async function getSubmissionHistory(req) {
   const limitNum = typeof req.params.limit === "number" ? req.params.limit : typeof req.params.limit === "string" && parseInt(req.params.limit, 10) > 0 ? parseInt(req.params.limit, 10) : defaultLimit;
   const fullColumns = `
         id, request_id, deal_name, company_name, workstream, submission_notes,
-        analyst_name, analyst_email, project_id, project_stage, document_type,
+        analyst_name, analyst_email, user_id, team, is_demo, project_id, project_stage, document_type,
         detected_document_type, detected_document_types_json, table_structure_status,
         table_structure_issues, detected_header_row, column_map_confidence, validated_column_map,
         employee_count, employee_type, employee_as_of_date, employee_confidence, employee_citation,
@@ -22204,7 +22259,7 @@ async function getSubmissionHistory(req) {
     `;
   const lightweightColumns = `
         id, request_id, deal_name, company_name, workstream, submission_notes,
-        analyst_name, analyst_email, project_id, project_stage, document_type,
+        analyst_name, analyst_email, user_id, team, is_demo, project_id, project_stage, document_type,
         detected_document_type, table_structure_status, math_check_status,
         submission_batch_id, expected_batch_document_count, file_name, source_relative_path, file_size, file_type,
         trigger_timestamp, status, environment, received_at, processing_started_at, processed_at,
@@ -22213,6 +22268,10 @@ async function getSubmissionHistory(req) {
         input_tokens, output_tokens, total_tokens, cost_usd, model_used, created_at, updated_at
     `;
   let query = supabase.from("documents").select(isFull ? fullColumns : lightweightColumns).eq("environment", environment);
+  const tenantFilter = buildTenantPostgrestFilter(req.user);
+  if (tenantFilter) {
+    query = query.or(tenantFilter);
+  }
   if (req.params.projectId && req.params.projectId.trim().length > 0) {
     query = query.eq("project_id", req.params.projectId.trim());
   }
@@ -22243,6 +22302,9 @@ async function getSubmissionHistory(req) {
       submissionNotes: row.submission_notes ?? "",
       analystName: row.analyst_name ?? "",
       analystEmail: row.analyst_email ?? "",
+      userId: row.user_id ?? void 0,
+      team: row.team ?? void 0,
+      isDemo: Boolean(row.is_demo),
       projectId: row.project_id ?? "",
       projectStage: row.project_stage ?? "",
       documentType: row.document_type ?? "",
@@ -22314,6 +22376,186 @@ async function getSubmissionHistory(req) {
       updatedAt: row.updated_at ?? ""
     };
   });
+}
+
+// backend/diligence/getCapacityTelemetry.ts
+var PROCESSING_STATUSES = /* @__PURE__ */ new Set(["processing", "running"]);
+var QUEUED_STATUSES = /* @__PURE__ */ new Set(["uploading", "accepted", "queued", "received", "submitted"]);
+var ACTIVE_STATUSES = /* @__PURE__ */ new Set([...PROCESSING_STATUSES, ...QUEUED_STATUSES]);
+var RATE_LIMIT_PATTERN = /(429|rate.?limit|quota|tokens?.?per.?minute|requests?.?per.?minute|\btpm\b|\brpm\b)/i;
+var MAX_INTERVAL_MS = 6 * 60 * 60 * 1e3;
+var STALE_ACTIVE_MS = 20 * 60 * 1e3;
+function asTimestamp(value) {
+  if (!value) return null;
+  const timestamp = new Date(String(value)).getTime();
+  return Number.isFinite(timestamp) ? timestamp : null;
+}
+function asPositiveNumber(value) {
+  const number = Number(value);
+  return Number.isFinite(number) && number > 0 ? number : null;
+}
+function percentile(values, fraction) {
+  if (values.length === 0) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  const index = (sorted.length - 1) * fraction;
+  const lower = Math.floor(index);
+  const upper = Math.ceil(index);
+  const interpolated = sorted[lower] + (sorted[upper] - sorted[lower]) * (index - lower);
+  return Math.round(interpolated * 10) / 10;
+}
+function intervalForRow(row, nowMs) {
+  const start = asTimestamp(row.processing_started_at);
+  if (start === null) return null;
+  const completedEnd = asTimestamp(row.processed_at);
+  const normalizedStatus = String(row.status ?? "").trim().toLowerCase();
+  const freshActive = ACTIVE_STATUSES.has(normalizedStatus) && nowMs - Math.max(asTimestamp(row.updated_at) ?? 0, asTimestamp(row.created_at) ?? 0, start) <= STALE_ACTIVE_MS;
+  const end = completedEnd ?? (freshActive ? nowMs : null);
+  if (end === null || end <= start || end - start > MAX_INTERVAL_MS) return null;
+  const batchId = String(row.submission_batch_id || row.project_id || row.request_id || row.id || "unknown");
+  return { start, end, batchId };
+}
+function concurrencyPeaks(intervals) {
+  const events = intervals.flatMap((interval) => [
+    { at: interval.start, delta: 1, batchId: interval.batchId },
+    { at: interval.end, delta: -1, batchId: interval.batchId }
+  ]).sort((a, b) => a.at - b.at || a.delta - b.delta);
+  let documents = 0;
+  let peakConcurrentDocuments = 0;
+  let peakConcurrentBatches = 0;
+  let peakAt = null;
+  const batchCounts = /* @__PURE__ */ new Map();
+  for (const event of events) {
+    documents += event.delta;
+    const nextBatchCount = (batchCounts.get(event.batchId) ?? 0) + event.delta;
+    if (nextBatchCount <= 0) batchCounts.delete(event.batchId);
+    else batchCounts.set(event.batchId, nextBatchCount);
+    if (documents > peakConcurrentDocuments) {
+      peakConcurrentDocuments = documents;
+      peakAt = event.at;
+    }
+    peakConcurrentBatches = Math.max(peakConcurrentBatches, batchCounts.size);
+  }
+  return {
+    peakConcurrentDocuments,
+    peakConcurrentBatches,
+    peakAt: peakAt === null ? null : new Date(peakAt).toISOString()
+  };
+}
+function calculateCapacityTelemetry(rows, options = {}) {
+  const environment = options.environment === "test" ? "test" : "production";
+  const lookbackDays = Math.min(90, Math.max(1, Math.round(options.lookbackDays ?? 30)));
+  const now = options.now ?? /* @__PURE__ */ new Date();
+  const nowMs = now.getTime();
+  const intervals = rows.map((row) => intervalForRow(row, nowMs)).filter((value) => value !== null);
+  const peaks = concurrencyPeaks(intervals);
+  const completedDurations = intervals.filter((interval) => interval.end < nowMs).map((interval) => (interval.end - interval.start) / 1e3);
+  const inputTokens = rows.map((row) => asPositiveNumber(row.input_tokens)).filter((value) => value !== null);
+  const totalTokens = rows.map((row) => asPositiveNumber(row.total_tokens)).filter((value) => value !== null);
+  let processingDocuments = 0;
+  let queuedDocuments = 0;
+  let staleActiveDocuments = 0;
+  let failedDocuments = 0;
+  let rateLimitSignals = 0;
+  const activeBatchIds = /* @__PURE__ */ new Set();
+  const modelCounts = /* @__PURE__ */ new Map();
+  for (const row of rows) {
+    const status = String(row.status ?? "").trim().toLowerCase();
+    const lastActivity = Math.max(
+      asTimestamp(row.updated_at) ?? 0,
+      asTimestamp(row.created_at) ?? 0,
+      asTimestamp(row.processing_started_at) ?? 0
+    );
+    const isFresh = ACTIVE_STATUSES.has(status) && nowMs - lastActivity <= STALE_ACTIVE_MS;
+    if (isFresh) {
+      if (PROCESSING_STATUSES.has(status)) processingDocuments += 1;
+      else if (QUEUED_STATUSES.has(status)) queuedDocuments += 1;
+      activeBatchIds.add(String(row.submission_batch_id || row.project_id || row.request_id || row.id || "unknown"));
+    } else if (ACTIVE_STATUSES.has(status)) {
+      staleActiveDocuments += 1;
+    }
+    const errorMessage = String(row.error_message ?? "");
+    if (status.includes("fail")) failedDocuments += 1;
+    if (RATE_LIMIT_PATTERN.test(errorMessage)) rateLimitSignals += 1;
+    const model = String(row.model_used ?? "").trim() || "Unreported";
+    modelCounts.set(model, (modelCounts.get(model) ?? 0) + 1);
+  }
+  const batchRows = /* @__PURE__ */ new Map();
+  for (const row of rows) {
+    const batchId = String(row.submission_batch_id ?? "").trim();
+    if (!batchId) continue;
+    const group = batchRows.get(batchId) ?? [];
+    group.push(row);
+    batchRows.set(batchId, group);
+  }
+  const recentBatches = [...batchRows.entries()].map(([batchId, batchDocuments]) => {
+    const batchIntervals = batchDocuments.map((row) => intervalForRow(row, nowMs)).filter((value) => value !== null);
+    const starts = batchIntervals.map((interval) => interval.start);
+    const ends = batchIntervals.map((interval) => interval.end);
+    const startedAtMs = starts.length > 0 ? Math.min(...starts) : null;
+    const finishedAtMs = ends.length > 0 ? Math.max(...ends) : null;
+    return {
+      batchId,
+      projectId: String(batchDocuments.find((row) => row.project_id)?.project_id ?? ""),
+      documents: batchDocuments.length,
+      completed: batchDocuments.filter((row) => ["completed", "approved"].includes(String(row.status ?? "").toLowerCase())).length,
+      failed: batchDocuments.filter((row) => String(row.status ?? "").toLowerCase().includes("fail")).length,
+      peakConcurrentDocuments: concurrencyPeaks(batchIntervals).peakConcurrentDocuments,
+      startedAt: startedAtMs === null ? null : new Date(startedAtMs).toISOString(),
+      finishedAt: finishedAtMs === null ? null : new Date(finishedAtMs).toISOString(),
+      durationSeconds: startedAtMs === null || finishedAtMs === null ? null : Math.round((finishedAtMs - startedAtMs) / 100) / 10
+    };
+  }).sort((a, b) => (b.startedAt ?? "").localeCompare(a.startedAt ?? "")).slice(0, 8);
+  return {
+    generatedAt: now.toISOString(),
+    environment,
+    lookbackDays,
+    sampleDocuments: rows.length,
+    completedWithTiming: completedDurations.length,
+    current: {
+      processingDocuments,
+      queuedDocuments,
+      activeBatches: activeBatchIds.size,
+      staleActiveDocuments
+    },
+    observed: {
+      ...peaks,
+      durationP50Seconds: percentile(completedDurations, 0.5),
+      durationP95Seconds: percentile(completedDurations, 0.95),
+      inputTokensP50: percentile(inputTokens, 0.5),
+      inputTokensP95: percentile(inputTokens, 0.95),
+      totalTokensP50: percentile(totalTokens, 0.5),
+      totalTokensP95: percentile(totalTokens, 0.95)
+    },
+    reliability: {
+      failedDocuments,
+      failureRate: rows.length > 0 ? Math.round(failedDocuments / rows.length * 1e4) / 100 : 0,
+      rateLimitSignals
+    },
+    modelMix: [...modelCounts.entries()].map(([model, documents]) => ({ model, documents })).sort((a, b) => b.documents - a.documents),
+    recentBatches
+  };
+}
+async function getCapacityTelemetry({
+  params
+} = {}) {
+  const environment = params?.environment === "test" ? "test" : "production";
+  const requestedDays = Number(params?.lookbackDays ?? 30);
+  const lookbackDays = Number.isFinite(requestedDays) ? Math.min(90, Math.max(1, Math.round(requestedDays))) : 30;
+  const since = new Date(Date.now() - lookbackDays * 24 * 60 * 60 * 1e3).toISOString();
+  const columns = "id, request_id, project_id, submission_batch_id, status, processing_started_at, processed_at, created_at, updated_at, input_tokens, output_tokens, total_tokens, model_used, error_message";
+  const rows = [];
+  const pageSize = 1e3;
+  for (let from = 0; from < 5e3; from += pageSize) {
+    const { data, error } = await supabase.from("documents").select(columns).eq("environment", environment).gte("created_at", since).order("created_at", { ascending: false }).range(from, from + pageSize - 1);
+    if (error) {
+      console.error("[getCapacityTelemetry] Supabase query error:", error);
+      throw error;
+    }
+    const page = data ?? [];
+    rows.push(...page);
+    if (page.length < pageSize) break;
+  }
+  return calculateCapacityTelemetry(rows, { environment, lookbackDays });
 }
 
 // backend/diligence/getEvalRuns.ts
@@ -22596,7 +22838,13 @@ async function submitDealPacket(req) {
   const normalizedSourceRelativePath = sourceRelativePath.toLowerCase();
   if (!req.params.skipDuplicateCheck) {
     try {
-      const { data: duplicateDocs } = await supabase.from("documents").select("id, request_id, created_at, updated_at, status, source_relative_path").ilike("project_id", normalizedProjectId).ilike("file_name", normalizedFileName).eq("file_size", req.params.fileSize).eq("status", "completed").limit(100);
+      let duplicateQuery = supabase.from("documents").select("id, request_id, created_at, updated_at, status, source_relative_path").ilike("project_id", normalizedProjectId).ilike("file_name", normalizedFileName).eq("file_size", req.params.fileSize).eq("status", "completed").limit(100);
+      if (req.user.id) {
+        duplicateQuery = duplicateQuery.or(`user_id.eq.${req.user.id},is_demo.eq.true`);
+      } else if (req.user.email && req.user.email !== "dashboard@mergeworks.local") {
+        duplicateQuery = duplicateQuery.or(`analyst_email.ilike.${req.user.email.trim().toLowerCase()},is_demo.eq.true`);
+      }
+      const { data: duplicateDocs } = await duplicateQuery;
       const existingDocument = duplicateDocs?.find((document2) => {
         const existingPath = normalizeSourceRelativePath(document2.source_relative_path, req.params.fileName).toLowerCase();
         return existingPath === normalizedSourceRelativePath;
@@ -22667,7 +22915,13 @@ async function submitDealPacket(req) {
     storagePath: req.params.storagePath ?? ""
   };
   try {
-    await supabase.from("documents").delete().ilike("project_id", normalizedProjectId).ilike("file_name", normalizedFileName).eq("source_relative_path", sourceRelativePath).eq("status", "upload_failed");
+    let deleteQuery = supabase.from("documents").delete().ilike("project_id", normalizedProjectId).ilike("file_name", normalizedFileName).eq("source_relative_path", sourceRelativePath).eq("status", "upload_failed");
+    if (req.user.id) {
+      deleteQuery = deleteQuery.eq("user_id", req.user.id);
+    } else if (req.user.email && req.user.email !== "dashboard@mergeworks.local") {
+      deleteQuery = deleteQuery.ilike("analyst_email", req.user.email.trim().toLowerCase());
+    }
+    await deleteQuery;
   } catch {
   }
   try {
@@ -22681,6 +22935,9 @@ async function submitDealPacket(req) {
         submission_notes: req.params.submissionNotes,
         analyst_name: req.user.fullName,
         analyst_email: req.user.email,
+        user_id: req.user.id || null,
+        team: req.user.team || null,
+        is_demo: false,
         project_stage: req.params.projectStage,
         document_type: req.params.documentType,
         file_name: req.params.fileName,
@@ -22719,7 +22976,9 @@ async function submitDealPacket(req) {
     { key: "analystEmail", value: req.user.email },
     { key: "triggerTimestamp", value: triggerTimestamp },
     { key: "requestID", value: requestID },
-    { key: "environment", value: environment }
+    { key: "environment", value: environment },
+    ...req.user.id ? [{ key: "userId", value: req.user.id }] : [],
+    ...req.user.team ? [{ key: "userTeam", value: req.user.team }] : []
   ];
   if (req.params.storageFileUrl) {
     formData.push({ key: "storageFileUrl", value: req.params.storageFileUrl });
@@ -22918,7 +23177,7 @@ async function retryFailedDocument(req) {
 
 // backend/diligence/n8nExecutionCancellation.ts
 var BASE_URL = "https://merge-works.app.n8n.cloud/api/v1";
-var ACTIVE_STATUSES = ["running", "waiting", "new", "unknown"];
+var ACTIVE_STATUSES2 = ["running", "waiting", "new", "unknown"];
 var WORKFLOW_IDS = /* @__PURE__ */ new Set(["vBnMdx8cvSFIFx6m", "W5Jp7CJIQbNy0qlY", "91TN7kUY3RXoMip2", "iOaYHcZLktC6aO2u", "0OVTAMMp2iMx53Aw", "IoSad3rTYJMk4Mon"]);
 var TRIGGER_TYPES = /* @__PURE__ */ new Set(["n8n-nodes-base.webhook", "n8n-nodes-base.executeWorkflowTrigger"]);
 var KNOWN_TRIGGERS = /* @__PURE__ */ new Set(["Webhook", "When Executed by Another Workflow", "Retry failed document webhook"]);
@@ -22969,7 +23228,7 @@ async function cancelBatchExecutions(scope) {
   });
   const listMatches = async () => {
     const matches = /* @__PURE__ */ new Map();
-    for (const status of ACTIVE_STATUSES) {
+    for (const status of ACTIVE_STATUSES2) {
       let cursor = "";
       const seen = /* @__PURE__ */ new Set();
       do {
@@ -22982,14 +23241,14 @@ async function cancelBatchExecutions(scope) {
         const payload = await response.json();
         if (!Array.isArray(payload.data)) throw new Error("n8n returned an invalid execution list.");
         for (let execution of payload.data) {
-          if (!WORKFLOW_IDS.has(execution.workflowId) || !ACTIVE_STATUSES.includes(execution.status)) continue;
+          if (!WORKFLOW_IDS.has(execution.workflowId) || !ACTIVE_STATUSES2.includes(execution.status)) continue;
           let matchesScope = executionMatchesScope(execution, scope);
           if (matchesScope === null) {
             const detail = await request(`/executions/${encodeURIComponent(execution.id)}?includeData=true`);
             if (detail.status === 404) continue;
             if (!detail.ok) throw new Error(`Unable to inspect execution ${execution.id} (${detail.status}).`);
             execution = await detail.json();
-            if (!ACTIVE_STATUSES.includes(execution.status)) continue;
+            if (!ACTIVE_STATUSES2.includes(execution.status)) continue;
             matchesScope = executionMatchesScope(execution, scope);
           }
           if (matchesScope === null) throw new Error(`Execution ${execution.id} has no readable trigger input; cancellation cannot be verified.`);
@@ -23015,7 +23274,7 @@ async function cancelBatchExecutions(scope) {
           if (verify.status === 404) continue;
           if (!verify.ok) throw new Error(`Execution ${execution.id}: unable to verify cancellation (${verify.status}).`);
           const terminal = await verify.json();
-          if (ACTIVE_STATUSES.includes(terminal.status) || !terminal.status) throw new Error(`Execution ${execution.id} is still active. Retry Stop Batch.`);
+          if (ACTIVE_STATUSES2.includes(terminal.status) || !terminal.status) throw new Error(`Execution ${execution.id} is still active. Retry Stop Batch.`);
           if (terminal.status === "canceled") result.canceled++;
         } catch (error) {
           result.errors.push(error instanceof Error ? error.message : "n8n cancellation failed.");
@@ -23031,7 +23290,7 @@ async function cancelBatchExecutions(scope) {
 }
 
 // backend/diligence/stopBatchSubmission.ts
-var ACTIVE_STATUSES2 = /* @__PURE__ */ new Set(["accepted", "queued", "pending", "processing", "received", "running", "submitted", "uploading", "waiting"]);
+var ACTIVE_STATUSES3 = /* @__PURE__ */ new Set(["accepted", "queued", "pending", "processing", "received", "running", "submitted", "uploading", "waiting"]);
 var TERMINAL_STATUSES = /* @__PURE__ */ new Set(["completed", "approved", "failed", "processing_failed", "error", "rejected", "upload_failed", "stopped", "stopped_by_user"]);
 var normalizedText = (value) => typeof value === "string" ? value.trim() : "";
 async function stopBatchSubmission(req) {
@@ -23073,7 +23332,7 @@ async function stopBatchSubmission(req) {
   const statusResults = [];
   const currentRows = await resolveRows();
   currentRows.forEach((row) => scope.requestIDs.add(row.request_id));
-  const activeRows = currentRows.filter((row) => ACTIVE_STATUSES2.has(normalizedText(row.status).toLowerCase()));
+  const activeRows = currentRows.filter((row) => ACTIVE_STATUSES3.has(normalizedText(row.status).toLowerCase()));
   for (let offset = 0; offset < activeRows.length; offset += 3) {
     statusResults.push(...await Promise.all(activeRows.slice(offset, offset + 3).map(async (row) => {
       try {
@@ -23138,6 +23397,8 @@ async function chatAssistant(req) {
   const question = boundedText(req.params.question, "question", 8e3, true);
   const context = boundedText(req.params.context, "context", 1e5);
   const sessionId = boundedText(req.params.sessionId, "sessionId", 200);
+  const isSparringMode = req.params.isSparringMode === true;
+  const sparringSystemPrompt = isSparringMode ? `You are role-playing as the Seller's CFO and Lead M&A Broker defending the asking price. Push back hard on the buyer's proposed haircuts, add-back disallowances, and escrow demands. After your in-character pushback (2-4 paragraphs), break character with a "---" divider and provide a Tactical Coach Assessment section rating the buyer's argument strength and suggesting counter-moves with APA clause references.` : "";
   const response = await n8nFinancialAgent.rawRequest({
     path: "webhook/dd-chat",
     method: "POST",
@@ -23147,6 +23408,8 @@ async function chatAssistant(req) {
       context,
       sessionId,
       isDebateMode: req.params.isDebateMode === true,
+      isSparringMode,
+      sparringSystemPrompt,
       userAnthropicApiKey: boundedText(req.params.userAnthropicApiKey, "userAnthropicApiKey", 1e3),
       userOpenAiApiKey: boundedText(req.params.userOpenAiApiKey, "userOpenAiApiKey", 1e3),
       userGeminiApiKey: boundedText(req.params.userGeminiApiKey, "userGeminiApiKey", 1e3),
@@ -23154,6 +23417,283 @@ async function chatAssistant(req) {
     }
   });
   return response.data;
+}
+
+// backend/diligence/questionnaireDraftAssistant.ts
+var TEXT_FIELDS = /* @__PURE__ */ new Set([
+  "dealName",
+  "companyName",
+  "industry",
+  "city",
+  "state",
+  "businessDescription",
+  "customerConcentrationNotes",
+  "generalNotes"
+]);
+var NUMBER_FIELDS = /* @__PURE__ */ new Set([
+  "employeeCount",
+  "askingPrice",
+  "annualRevenue",
+  "reportedEbitda",
+  "grossMarginPercent",
+  "ownerCompensation",
+  "disallowedAddBacks",
+  "cashIncluded",
+  "accountsReceivable",
+  "inventory",
+  "equipmentAndVehicles",
+  "realEstate",
+  "intellectualProperty",
+  "otherAssets",
+  "accountsPayable",
+  "shortTermDebt",
+  "longTermDebt",
+  "otherLiabilities",
+  "equityContributionPercent",
+  "interestRate",
+  "amortizationYears",
+  "sellerNoteAmount",
+  "sellerNoteInterestRate",
+  "bearRevenueGrowth",
+  "baseRevenueGrowth",
+  "bullRevenueGrowth",
+  "bearEbitdaMargin",
+  "baseEbitdaMargin",
+  "bullEbitdaMargin",
+  "exitMultiple",
+  "topCustomerConcentrationPercent",
+  "leaseExpiryYears"
+]);
+var ENUM_FIELDS = {
+  ebitdaOrSdeType: /* @__PURE__ */ new Set(["EBITDA", "SDE"]),
+  keyPersonRisk: /* @__PURE__ */ new Set(["low", "moderate", "high"])
+};
+var REQUIRED_FIELDS = ["dealName", "askingPrice", "annualRevenue", "reportedEbitda"];
+var ALLOWED_FIELDS = /* @__PURE__ */ new Set([...TEXT_FIELDS, ...NUMBER_FIELDS, ...Object.keys(ENUM_FIELDS)]);
+var MAX_IMAGE_DATA_URL_LENGTH = 28e5;
+function boundedText2(value, field, maxLength, required = false) {
+  const text2 = typeof value === "string" ? value.trim() : "";
+  if (required && !text2) throw new Error(`${field} is required`);
+  if (text2.length > maxLength) throw new Error(`${field} exceeds the maximum length`);
+  return text2;
+}
+function sanitizeCurrentValues(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const sanitized = {};
+  for (const [field, raw] of Object.entries(value)) {
+    if (!ALLOWED_FIELDS.has(field)) continue;
+    if (typeof raw === "string" && raw.trim()) sanitized[field] = raw.trim().slice(0, 1e3);
+    if (typeof raw === "number" && Number.isFinite(raw)) sanitized[field] = raw;
+  }
+  return sanitized;
+}
+function sanitizeField(raw) {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const candidate = raw;
+  const field = typeof candidate.field === "string" ? candidate.field : "";
+  if (!ALLOWED_FIELDS.has(field)) return null;
+  let value;
+  if (TEXT_FIELDS.has(field)) {
+    if (typeof candidate.value !== "string" || !candidate.value.trim()) return null;
+    value = candidate.value.trim().slice(0, 2e3);
+  } else if (NUMBER_FIELDS.has(field)) {
+    const parsed = typeof candidate.value === "number" ? candidate.value : Number(candidate.value);
+    if (!Number.isFinite(parsed) || parsed < 0 || parsed > 1e10) return null;
+    value = parsed;
+  } else {
+    const enumValue = typeof candidate.value === "string" ? candidate.value : "";
+    if (!ENUM_FIELDS[field]?.has(enumValue)) return null;
+    value = enumValue;
+  }
+  const confidence = typeof candidate.confidence === "number" && Number.isFinite(candidate.confidence) ? Math.min(1, Math.max(0, candidate.confidence)) : 0.5;
+  const kind = candidate.kind === "derived" || candidate.kind === "assumption" ? candidate.kind : "extracted";
+  return {
+    field,
+    value,
+    confidence,
+    source: boundedText2(candidate.source, "source", 1e3) || "AI-assisted extraction",
+    sourceLocation: boundedText2(candidate.sourceLocation, "sourceLocation", 500),
+    period: boundedText2(candidate.period, "period", 100),
+    units: boundedText2(candidate.units, "units", 100),
+    kind,
+    origin: "ai"
+  };
+}
+function unwrapResponse(value) {
+  let candidate = value;
+  if (Array.isArray(candidate)) candidate = candidate[0];
+  if (candidate && typeof candidate === "object") {
+    const record = candidate;
+    candidate = record.output ?? record.data ?? record;
+  }
+  if (typeof candidate === "string") {
+    try {
+      candidate = JSON.parse(candidate);
+    } catch {
+      throw new Error("Questionnaire AI returned an invalid response");
+    }
+  }
+  if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) {
+    throw new Error("Questionnaire AI returned an invalid response");
+  }
+  return candidate;
+}
+function sanitizeQuestionnaireDraftResponse(value, requestId) {
+  const candidate = unwrapResponse(value);
+  const seen = /* @__PURE__ */ new Set();
+  const draftId = typeof candidate.draftId === "string" ? candidate.draftId : void 0;
+  const fields = (Array.isArray(candidate.fields) ? candidate.fields : []).map(sanitizeField).filter((field) => Boolean(field)).filter((field) => {
+    if (seen.has(field.field)) return false;
+    seen.add(field.field);
+    return true;
+  });
+  const warnings = (Array.isArray(candidate.warnings) ? candidate.warnings : []).filter((warning) => typeof warning === "string" && Boolean(warning.trim())).slice(0, 20).map((warning) => warning.trim().slice(0, 500));
+  const missingRequiredFields = REQUIRED_FIELDS.filter((field) => !seen.has(field));
+  return { requestId, draftId, fields, warnings, missingRequiredFields };
+}
+async function questionnaireDraftAssistant(req) {
+  const requestId = boundedText2(req.params.requestId, "requestId", 200, true);
+  const sourceType = boundedText2(req.params.sourceType, "sourceType", 20, true);
+  if (sourceType !== "text" && sourceType !== "image") throw new Error("sourceType must be text or image");
+  const fileName = boundedText2(req.params.fileName, "fileName", 255);
+  const sourceText = boundedText2(req.params.sourceText, "sourceText", 5e4);
+  const imageDataUrl = boundedText2(req.params.imageDataUrl, "imageDataUrl", MAX_IMAGE_DATA_URL_LENGTH);
+  const requestedProvider = boundedText2(req.params.userProvider, "userProvider", 20).toLowerCase();
+  const userProvider = ["openai", "anthropic", "gemini", "deepseek"].includes(requestedProvider) ? requestedProvider : "";
+  const genericUserApiKey = boundedText2(req.params.userApiKey, "userApiKey", 1e3);
+  const providerKeys = {
+    openai: boundedText2(req.params.userOpenAiApiKey, "userOpenAiApiKey", 1e3),
+    anthropic: boundedText2(req.params.userAnthropicApiKey, "userAnthropicApiKey", 1e3),
+    gemini: boundedText2(req.params.userGeminiApiKey, "userGeminiApiKey", 1e3),
+    deepseek: boundedText2(req.params.userDeepseekApiKey, "userDeepseekApiKey", 1e3)
+  };
+  const userApiKey = userProvider ? genericUserApiKey || providerKeys[userProvider] : "";
+  const docPrimaryModel = boundedText2(req.params.docPrimaryModel, "docPrimaryModel", 100);
+  const docBackupModel = boundedText2(req.params.docBackupModel, "docBackupModel", 100);
+  if (sourceType === "text" && !sourceText) throw new Error("sourceText is required for text assistance");
+  if (sourceType === "image") {
+    if (!/^data:image\/(?:png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(imageDataUrl)) {
+      throw new Error("imageDataUrl must be a PNG, JPEG, or WebP data URL");
+    }
+    const encoded = imageDataUrl.slice(imageDataUrl.indexOf(",") + 1);
+    const approximateBytes = Math.floor(encoded.length * 3 / 4);
+    if (approximateBytes > 2 * 1024 * 1024) throw new Error("Quick Fill images must be 2 MB or smaller");
+  }
+  if (req.params.dispatchAsync) {
+    try {
+      await supabase.from("questionnaire_drafts").upsert({
+        id: requestId,
+        session_id: `draft_${requestId}`,
+        source_name: fileName || "Broker Teaser",
+        source_type: sourceType,
+        extracted_fields_json: [],
+        warnings_json: [],
+        status: "processing"
+      });
+    } catch (err) {
+      console.warn("[questionnaireDraftAssistant] Failed to insert initial processing row:", err);
+    }
+    void n8nFinancialAgent.rawRequest({
+      path: "webhook/dd-questionnaire-prefill",
+      method: "POST",
+      bodyType: "json",
+      json: {
+        requestId,
+        sourceType,
+        fileName,
+        sourceText,
+        imageDataUrl,
+        currentValues: sanitizeCurrentValues(req.params.currentValues),
+        userProvider,
+        userApiKey,
+        docPrimaryModel,
+        docBackupModel
+      }
+    }).catch((err) => {
+      console.error("[questionnaireDraftAssistant] Async webhook dispatch error:", err);
+      void supabase.from("questionnaire_drafts").update({
+        status: "failed",
+        warnings_json: [err instanceof Error ? err.message : String(err)]
+      }).eq("id", requestId);
+    });
+    return { status: "queued", requestId };
+  }
+  const response = await n8nFinancialAgent.rawRequest({
+    path: "webhook/dd-questionnaire-prefill",
+    method: "POST",
+    bodyType: "json",
+    json: {
+      requestId,
+      sourceType,
+      fileName,
+      sourceText,
+      imageDataUrl,
+      currentValues: sanitizeCurrentValues(req.params.currentValues),
+      userProvider,
+      userApiKey,
+      docPrimaryModel,
+      docBackupModel
+    }
+  });
+  return sanitizeQuestionnaireDraftResponse(response.data, requestId);
+}
+async function getQuestionnaireDraft(req) {
+  const requestId = boundedText2(req.params.requestId, "requestId", 200, true);
+  try {
+    const { data: statusRow, error: statusErr } = await supabase.from("questionnaire_drafts").select("id, status").eq("id", requestId).maybeSingle();
+    if (statusErr) {
+      console.warn("[getQuestionnaireDraft] Supabase heartbeat query warning:", statusErr.message);
+      return { status: "processing", requestId };
+    }
+    if (!statusRow || statusRow.status !== "completed" && statusRow.status !== "draft" && statusRow.status !== "failed") {
+      return { status: "processing", requestId };
+    }
+    if (statusRow.status === "failed") {
+      const { data: failedRow } = await supabase.from("questionnaire_drafts").select("warnings_json").eq("id", requestId).maybeSingle();
+      let warnings2 = failedRow?.warnings_json;
+      if (typeof warnings2 === "string") {
+        try {
+          warnings2 = JSON.parse(warnings2);
+        } catch {
+          warnings2 = [];
+        }
+      }
+      const errMsg = Array.isArray(warnings2) && warnings2.length > 0 ? String(warnings2[0]) : "Draft extraction failed";
+      return { status: "failed", requestId, error: errMsg };
+    }
+    const { data, error } = await supabase.from("questionnaire_drafts").select("id, session_id, source_name, source_type, extracted_fields_json, warnings_json, status").eq("id", requestId).maybeSingle();
+    if (error || !data) {
+      return { status: "processing", requestId };
+    }
+    let fields = data.extracted_fields_json;
+    if (typeof fields === "string") {
+      try {
+        fields = JSON.parse(fields);
+      } catch {
+        fields = [];
+      }
+    }
+    let warnings = data.warnings_json;
+    if (typeof warnings === "string") {
+      try {
+        warnings = JSON.parse(warnings);
+      } catch {
+        warnings = [];
+      }
+    }
+    if (data.status === "completed" || data.status === "draft" || Array.isArray(fields) && fields.length > 0) {
+      const sanitized = sanitizeQuestionnaireDraftResponse({
+        fields,
+        warnings,
+        draftId: data.id
+      }, requestId);
+      return { status: "completed", ...sanitized };
+    }
+    return { status: "processing", requestId };
+  } catch (err) {
+    console.warn("[getQuestionnaireDraft] Error checking draft status:", err);
+    return { status: "processing", requestId };
+  }
 }
 
 // backend/diligence/createUploadUrl.ts
@@ -23369,10 +23909,26 @@ function extractGeoLocationFromHeaders(headers = {}) {
   const location2 = parts.length > 0 ? parts.join(", ") : "Global / Direct Visitor";
   return { location: location2, ip, country, city, userAgent };
 }
-async function dispatchServerSlackWebhook(slackMessage) {
-  const webhookUrl = process.env.SLACK_WEBHOOK_URL || "";
+async function dispatchServerSlackWebhook(slackMessage, targetWebhookUrl) {
+  let webhookUrl = process.env.SLACK_WEBHOOK_URL || "";
+  if (typeof targetWebhookUrl === "string" && targetWebhookUrl.trim()) {
+    const trimmed = targetWebhookUrl.trim();
+    try {
+      const parsed = new URL(trimmed);
+      if (parsed.protocol !== "https:") {
+        return { success: false, error: "Target webhook must use HTTPS protocol" };
+      }
+      const host = parsed.hostname.toLowerCase();
+      if (host === "localhost" || host === "127.0.0.1" || host === "::1" || host.startsWith("10.") || host.startsWith("192.168.") || host.startsWith("169.254.") || /^172\.(1[6-9]|2\d|3[01])\./.test(host)) {
+        return { success: false, error: "Loopback and private network webhook URLs are disallowed" };
+      }
+      webhookUrl = trimmed;
+    } catch {
+      return { success: false, error: "Invalid target webhook URL" };
+    }
+  }
   if (!webhookUrl) {
-    console.warn("[SlackAlertServer] No SLACK_WEBHOOK_URL configured; skipping dispatch.");
+    console.warn("[SlackAlertServer] No webhook URL configured; skipping dispatch.");
     return { success: false, error: "No webhook URL configured" };
   }
   const payloadString = JSON.stringify(slackMessage);
@@ -23411,6 +23967,7 @@ async function dispatchServerSlackWebhook(slackMessage) {
 async function handleSlackAlert(req) {
   const body = req.params || {};
   const rawPayload = body.payload && typeof body.payload === "object" ? body.payload : body;
+  const targetWebhookUrl = typeof body.targetWebhookUrl === "string" ? body.targetWebhookUrl : typeof body.webhookUrl === "string" ? body.webhookUrl : void 0;
   if (!rawPayload || Object.keys(rawPayload).length === 0) {
     return { success: false, error: "Empty alert payload" };
   }
@@ -23422,11 +23979,11 @@ async function handleSlackAlert(req) {
     payloadString = payloadString.replace(/\{\{USER_AGENT\}\}/g, geo.userAgent.slice(0, 100));
     try {
       const enrichedPayload = JSON.parse(payloadString);
-      return await dispatchServerSlackWebhook(enrichedPayload);
+      return await dispatchServerSlackWebhook(enrichedPayload, targetWebhookUrl);
     } catch {
     }
   }
-  return await dispatchServerSlackWebhook(rawPayload);
+  return await dispatchServerSlackWebhook(rawPayload, targetWebhookUrl);
 }
 
 // api/diligence/[...route].src.ts
@@ -23575,7 +24132,9 @@ function userFromHeaders(headers) {
   };
   const fullName = decode(headers["x-analyst-name"]);
   const email = decode(headers["x-analyst-email"]);
-  return fullName.length > 0 && email.length > 0 ? { fullName, email } : fallbackUser;
+  const id = decode(headers["x-user-id"]);
+  const team = decode(headers["x-user-team"]);
+  return fullName.length > 0 && email.length > 0 ? { fullName, email, id: id || void 0, team: team || void 0 } : fallbackUser;
 }
 var MAX_REQUEST_BODY_BYTES = 5 * 1024 * 1024;
 function readJsonBody(req) {
@@ -23648,7 +24207,7 @@ function getClientIp(headers) {
 function bucketFor(route, method) {
   const upper = method.toUpperCase();
   if (upper === "GET" || upper === "HEAD" || upper === "OPTIONS") return "read";
-  if (route === "submit" || route === "retry-failed-document" || route === "chat") return "trigger";
+  if (route === "submit" || route === "retry-failed-document" || route === "chat" || route === "questionnaire-draft") return "trigger";
   return "write";
 }
 function rateLimit(ip, route, method) {
@@ -23737,6 +24296,13 @@ async function handler(req, res) {
       sendJson(req, res, 200, data, "public, s-maxage=10, stale-while-revalidate=60");
       return;
     }
+    if (route === "capacity-telemetry" && req.method === "GET") {
+      const lookbackDays = requestUrl.searchParams.get("lookbackDays") ?? void 0;
+      const cacheKey = `capacity-telemetry-${environment}-${lookbackDays ?? "30"}`;
+      const data = await withMemCache(cacheKey, () => getCapacityTelemetry({ params: { environment, lookbackDays }, user }), 15e3);
+      sendJson(req, res, 200, data, "public, s-maxage=30, stale-while-revalidate=120");
+      return;
+    }
     if (route === "workflow-errors" && req.method === "GET") {
       const data = await withMemCache(`workflow-errors-${environment}`, () => getWorkflowErrors({ params: { environment }, user }), 15e3);
       sendJson(req, res, 200, data, "public, s-maxage=30, stale-while-revalidate=120");
@@ -23801,6 +24367,16 @@ async function handler(req, res) {
     if (route === "chat" && req.method === "POST") {
       const params = await readJsonBody(req);
       sendJson(req, res, 200, await chatAssistant({ params, user }));
+      return;
+    }
+    if (route === "questionnaire-draft" && req.method === "GET") {
+      const requestId = requestUrl.searchParams.get("requestId") ?? "";
+      sendJson(req, res, 200, await getQuestionnaireDraft({ params: { requestId }, user }));
+      return;
+    }
+    if (route === "questionnaire-draft" && req.method === "POST") {
+      const params = await readJsonBody(req);
+      sendJson(req, res, 200, await questionnaireDraftAssistant({ params, user }));
       return;
     }
     if (route === "retry-failed-document" && req.method === "POST") {

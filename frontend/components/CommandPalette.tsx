@@ -39,6 +39,7 @@ import {
     Radio,
     Printer,
     Briefcase,
+    Gauge,
 } from 'lucide-react'
 
 type CommandPaletteProps = {
@@ -128,6 +129,30 @@ export default function CommandPalette({
             group: 'Actions & Exports',
             keywords: ['ic memo', 'investment committee', 'pdf', 'print', 'diligence memo', 'memo', 'qoe bridge', 'apa', 'covenants', 'export'],
             badge: 'IC Memo'
+        },
+        {
+            id: 'loi-terms-editor',
+            label: 'Edit Letter of Intent (LOI) Commercial & Legal Terms',
+            icon: <Scale className="h-4 w-4 text-violet-500" />,
+            action: () => {
+                if (onExportLoi) {
+                    onExportLoi()
+                } else {
+                    window.dispatchEvent(new CustomEvent('mergeworks:open-export-modal', { detail: { docType: 'loi', activeTab: 'terms' } }))
+                }
+            },
+            group: 'Actions & Exports',
+            keywords: ['loi', 'terms', 'editor', 'draft terms', 'buyer entity', 'exclusivity', 'escrow', 'nwc true-up', 'governing law'],
+            badge: 'LOI'
+        },
+        {
+            id: 'spending-capacity-telemetry',
+            label: 'Live Capacity Telemetry — Active Document Workers & Batch Load',
+            icon: <Gauge className="h-4 w-4 text-emerald-500" />,
+            action: () => onSelectTab('spending', 'spending-capacity-telemetry'),
+            group: 'Actions & Exports',
+            keywords: ['capacity', 'telemetry', 'workers', 'concurrency', 'active jobs', 'throughput', 'p95', 'tokens', 'batch load', 'rpm', 'tpm'],
+            badge: 'Capacity'
         },
         {
             id: 'retry-failed-docs',

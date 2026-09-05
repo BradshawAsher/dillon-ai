@@ -729,7 +729,7 @@ export default function ProjectSynthesisCard({
                         {/* Footer Subtext and Stop Action */}
                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 pt-1 border-t border-border/60 text-xs">
                             <p className="text-muted-foreground font-medium">
-                                Cross-document synthesis typically completes in 25–45 seconds. Polling live results every 3 seconds…
+                                Cross-document synthesis typically completes in 25–45 seconds. Realtime updates are backed by periodic recovery checks.
                             </p>
                             {onStopSynthesis && (
                                 <Button

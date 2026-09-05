@@ -48,6 +48,16 @@ async function handleRequest(
         return
     }
 
+    if (route === '/capacity-telemetry' && req.method === 'GET') {
+        const environment = requestUrl.searchParams.get('environment') === 'test' ? 'test' : 'production'
+        const lookbackDays = requestUrl.searchParams.get('lookbackDays') ?? undefined
+        const mod = await server.ssrLoadModule(backendModuleUrl('getCapacityTelemetry.ts'))
+        const result: unknown = await mod.default({ params: { environment, lookbackDays }, user })
+        res.setHeader('Content-Type', 'application/json')
+        res.end(JSON.stringify(result))
+        return
+    }
+
     if (route === '/synthesis' && req.method === 'GET') {
         const environment = requestUrl.searchParams.get('environment') === 'test' ? 'test' : 'production'
         const mod = await server.ssrLoadModule(backendModuleUrl('getProjectSynthesis.ts'))

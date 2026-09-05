@@ -1,11 +1,15 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import {
+    Activity,
     Building2,
     CreditCard,
     Download,
+    Gauge,
     Layers,
     MessageSquare,
+    RefreshCw,
     Search,
+    Timer,
     TrendingUp,
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
@@ -15,6 +19,8 @@ import { Button } from '../lib/shadcn/button'
 import { calculateDocumentCost, calculateSynthesisCost } from '../utils/diligenceDashboardUtils'
 import { getStoredChatBillingRecords } from './DealChatPanel'
 import { estimateChatQueryCost } from '../utils/costModel'
+import { identityHeaders } from '../lib/identity'
+import type { CapacityTelemetry } from '../../backend/diligence/getCapacityTelemetry'
 
 type SpendingAnalyticsTabProps = {
     documents?: any[]
@@ -92,6 +98,36 @@ export default function SpendingAnalyticsTab({
     const [searchTerm, setSearchTerm] = useState('')
     const [selectedBusiness, setSelectedBusiness] = useState<string>('all')
     const [chatRefreshTick, setChatRefreshTick] = useState(0)
+    const [capacity, setCapacity] = useState<CapacityTelemetry | null>(null)
+    const [capacityLoading, setCapacityLoading] = useState(true)
+    const [capacityError, setCapacityError] = useState('')
+
+    const refreshCapacity = useCallback(async () => {
+        setCapacityLoading(true)
+        try {
+            const response = await fetch('/api/diligence/capacity-telemetry?environment=production&lookbackDays=30', {
+                headers: identityHeaders(),
+            })
+            const body = await response.json().catch(() => null)
+            if (!response.ok) {
+                throw new Error(body && typeof body === 'object' && 'error' in body ? String(body.error) : `HTTP ${response.status}`)
+            }
+            setCapacity(body as CapacityTelemetry)
+            setCapacityError('')
+        } catch (error) {
+            setCapacityError(error instanceof Error ? error.message : String(error))
+        } finally {
+            setCapacityLoading(false)
+        }
+    }, [])
+
+    useEffect(() => {
+        void refreshCapacity()
+        const interval = window.setInterval(() => {
+            if (document.visibilityState === 'visible') void refreshCapacity()
+        }, 30_000)
+        return () => window.clearInterval(interval)
+    }, [refreshCapacity])
 
     // Listen to live chat billing updates dispatched by DealChatPanel
     useEffect(() => {
@@ -527,6 +563,102 @@ export default function SpendingAnalyticsTab({
                     </CardContent>
                 </Card>
             </div>
+
+            <Card id="spending-capacity-telemetry" className="scroll-mt-6 border border-border bg-card shadow-xs">
+                <CardHeader className="border-b border-border bg-muted/20 pb-3">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                                <Gauge className="h-4 w-4 text-primary" />
+                                <CardTitle className="text-base font-bold">Live Capacity Telemetry</CardTitle>
+                                <Badge variant="outline" className="text-[10px] font-semibold">Observed, not enforced</Badge>
+                            </div>
+                            <CardDescription className="text-xs">
+                                Lightweight production timing and token metadata. No concurrency limit is active, and no analysis payloads are loaded.
+                            </CardDescription>
+                        </div>
+                        <Button variant="outline" size="sm" onClick={() => void refreshCapacity()} disabled={capacityLoading} className="gap-1.5 text-xs">
+                            <RefreshCw className={`h-3.5 w-3.5 ${capacityLoading ? 'animate-spin' : ''}`} />
+                            Refresh
+                        </Button>
+                    </div>
+                </CardHeader>
+                <CardContent className="p-4 space-y-4">
+                    {capacityError && !capacity ? (
+                        <div role="alert" className="rounded-md border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-700 dark:text-red-300">
+                            Capacity telemetry is unavailable: {capacityError}
+                        </div>
+                    ) : (
+                        <>
+                            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                                <div className="rounded-lg border border-border bg-background p-3">
+                                    <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                        <Activity className="h-3.5 w-3.5 text-emerald-600" /> Current workers
+                                    </div>
+                                    <p className="mt-1 text-2xl font-black text-foreground">{capacity?.current.processingDocuments ?? '—'}</p>
+                                    <p className="text-[11px] text-muted-foreground">{capacity?.current.queuedDocuments ?? '—'} queued across {capacity?.current.activeBatches ?? '—'} active batches</p>
+                                </div>
+                                <div className="rounded-lg border border-border bg-background p-3">
+                                    <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                        <Gauge className="h-3.5 w-3.5 text-primary" /> 30-day observed peak
+                                    </div>
+                                    <p className="mt-1 text-2xl font-black text-foreground">{capacity?.observed.peakConcurrentDocuments ?? '—'}</p>
+                                    <p className="text-[11px] text-muted-foreground">documents; {capacity?.observed.peakConcurrentBatches ?? '—'} batches at once</p>
+                                </div>
+                                <div className="rounded-lg border border-border bg-background p-3">
+                                    <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                        <Timer className="h-3.5 w-3.5 text-blue-600" /> Processing time
+                                    </div>
+                                    <p className="mt-1 text-2xl font-black text-foreground">{capacity?.observed.durationP50Seconds != null ? `${capacity.observed.durationP50Seconds}s` : '—'}</p>
+                                    <p className="text-[11px] text-muted-foreground">p50; p95 {capacity?.observed.durationP95Seconds != null ? `${capacity.observed.durationP95Seconds}s` : '—'}</p>
+                                </div>
+                                <div className="rounded-lg border border-border bg-background p-3">
+                                    <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                        <Layers className="h-3.5 w-3.5 text-amber-600" /> Input load
+                                    </div>
+                                    <p className="mt-1 text-2xl font-black text-foreground">{capacity?.observed.inputTokensP50 != null ? `${Math.round(capacity.observed.inputTokensP50 / 100) / 10}k` : '—'}</p>
+                                    <p className="text-[11px] text-muted-foreground">p50 tokens; p95 {capacity?.observed.inputTokensP95 != null ? `${Math.round(capacity.observed.inputTokensP95 / 100) / 10}k` : '—'}</p>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-lg border border-border/70 bg-muted/20 px-3 py-2 text-[11px] text-muted-foreground">
+                                <span><strong className="text-foreground">{capacity?.sampleDocuments ?? '—'}</strong> documents sampled</span>
+                                <span><strong className="text-foreground">{capacity?.reliability.failedDocuments ?? '—'}</strong> failed ({capacity?.reliability.failureRate ?? '—'}%)</span>
+                                <span><strong className="text-foreground">{capacity?.reliability.rateLimitSignals ?? '—'}</strong> stored rate-limit signals</span>
+                                <span><strong className="text-foreground">{capacity?.current.staleActiveDocuments ?? '—'}</strong> stale active rows excluded</span>
+                                {capacity?.generatedAt && <span className="ml-auto">Updated {new Date(capacity.generatedAt).toLocaleTimeString()}</span>}
+                            </div>
+
+                            {capacity && capacity.recentBatches.length > 0 && (
+                                <div className="overflow-x-auto rounded-lg border border-border">
+                                    <table className="w-full min-w-[640px] text-left text-xs">
+                                        <thead className="bg-muted/30 text-[10px] uppercase tracking-wide text-muted-foreground">
+                                            <tr>
+                                                <th className="px-3 py-2">Recent batch</th>
+                                                <th className="px-3 py-2">Documents</th>
+                                                <th className="px-3 py-2">Peak overlap</th>
+                                                <th className="px-3 py-2">Elapsed</th>
+                                                <th className="px-3 py-2">Result</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-border">
+                                            {capacity.recentBatches.slice(0, 5).map((batch) => (
+                                                <tr key={batch.batchId}>
+                                                    <td className="max-w-64 truncate px-3 py-2 font-mono text-[11px]" title={batch.batchId}>{batch.projectId || batch.batchId}</td>
+                                                    <td className="px-3 py-2">{batch.documents}</td>
+                                                    <td className="px-3 py-2 font-semibold">{batch.peakConcurrentDocuments}</td>
+                                                    <td className="px-3 py-2">{batch.durationSeconds != null ? `${batch.durationSeconds}s` : 'In progress'}</td>
+                                                    <td className="px-3 py-2">{batch.completed} complete{batch.failed > 0 ? `, ${batch.failed} failed` : ''}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </>
+                    )}
+                </CardContent>
+            </Card>
 
             {/* Visual Spending Velocity Histogram & Top Spend Leaderboard */}
             <div id="spending-breakdown" className="scroll-mt-6 grid gap-6 md:grid-cols-3">

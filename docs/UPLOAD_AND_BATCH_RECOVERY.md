@@ -71,6 +71,16 @@ never fall back to an inline API request. See [Vercel's direct-upload guidance](
   label absent results as unavailable, not pending, zero, or successfully analyzed.
   This display-only list is not used as synthesis evidence.
 
+## Batch upload concurrency and worker throughput
+
+Browser uploads are dispatched in chunks of 3 (`CONCURRENCY = 3` in `frontend/pages/DueDiligenceDashboard.tsx`). This client-side chunking prevents browser socket saturation and naturally staggers downstream LLM intake across time.
+
+At the LLM worker level:
+- A single shared OpenAI Tier 4 key safely sustains **15 to 25 concurrent document extractions** (~3 to 4 active simultaneous batches of 5–8 documents).
+- If additional batches arrive concurrently, documents remain registered with `status: 'queued'` and drain in order as 25–40 second extraction workers complete.
+- Enterprise customers using BYOK keys bypass the platform quota entirely, scaling platform concurrency linearly with enterprise tenants.
+- For complete token math, TPM limits, and stress testing data, see [Concurrency & Capacity Limits](../test_sets/stress_reports/CAPACITY_LIMITS.md).
+
 ## Batch status and timer
 
 The expected count is not reduced to the number of rows received. Only an
