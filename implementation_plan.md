@@ -870,3 +870,33 @@ The repository has strong Vitest unit/domain coverage, a real loopback multipart
 - Do not send live documents, invoke n8n, or spend LLM tokens during verification.
 - Do not enable a production Vercel upload proxy automatically.
 - Do not commit or push without a separate user request.
+
+---
+
+# Logged-in landing header responsive repair (2026-09-05)
+
+## Verified root cause
+
+- At a 1440 px viewport, the landing header is 1425 px wide while its authenticated brand, navigation, identity, sign-out, walkthrough, and dashboard controls extend to roughly 1727 px.
+- The prior `overflow-x-hidden` change masks that oversized flex row, so the right-side actions are clipped rather than reflowed.
+- The same one-row composition cannot fit on phone widths even though some labels are hidden.
+- The landing page also subscribes to authentication even though `App` already owns and passes that state. Supabase emits a fresh user object, the landing listener saves it, and the resulting custom event/prop update can repeatedly resubscribe until React reports a maximum update-depth error.
+
+## Targeted changes
+
+1. Separate the brand/actions row from the section navigation at desktop widths so the two groups no longer compete for one fixed-width flex row.
+2. Keep the signed-in identity visible on medium screens, use an icon-based sign-out control on phones, and shorten the dashboard action label on phones.
+3. Remove the page-level horizontal clipping workaround and rely on containers that fit their viewport.
+4. Use the application-owned auth prop without creating a duplicate landing-page listener; retain the listener only for standalone uncontrolled renders.
+5. Add a focused browser regression test for authenticated header geometry and the auth update loop.
+
+## Verification
+
+1. Run the focused landing-page test, TypeScript typecheck, and production build.
+2. Browser-check authenticated landing layouts at phone, tablet, laptop, and 1440 px desktop widths.
+3. Confirm document width never exceeds viewport width and every header action remains inside the header bounds.
+
+## Explicit non-goals
+
+- Do not change authentication, landing-page content, dashboard navigation, or walkthrough behavior.
+- Do not commit or push without a separate user request.
