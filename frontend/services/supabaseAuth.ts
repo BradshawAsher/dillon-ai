@@ -9,7 +9,11 @@ import {
     sendSignOutSlackAlert,
 } from './slackAlertService'
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder-project.supabase.co'
+// Authentication and Realtime must go directly to Supabase. VITE_SUPABASE_URL
+// may point at the storage/PostgREST Cloudflare proxy, whose cache is not an
+// authentication boundary.
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_AUTH_URL
+    || 'https://sihpsqrunkwkxhhnwoqe.supabase.co'
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder-anon-key'
 
 export const supabaseAuthClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {

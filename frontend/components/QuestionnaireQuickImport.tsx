@@ -27,6 +27,7 @@ import {
     getActiveProviders,
 } from './ApiKeyModal'
 import ByokConfirmDialog, { maskApiKey, shouldSkipByokConfirm } from './common/ByokConfirmDialog'
+import { authenticatedIdentityHeaders } from '../lib/identity'
 
 type QuestionnaireQuickImportProps = {
     disabled?: boolean
@@ -290,7 +291,7 @@ export default function QuestionnaireQuickImport({ disabled = false, openRequest
                             : '')
             const response = await fetch('/api/diligence/questionnaire-draft', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', ...await authenticatedIdentityHeaders() },
                 body: JSON.stringify({
                     requestId,
                     sourceType,
@@ -323,7 +324,9 @@ export default function QuestionnaireQuickImport({ disabled = false, openRequest
                 while (Date.now() - startTime < maxWaitMs) {
                     await new Promise((resolve) => setTimeout(resolve, 2000))
                     try {
-                        const pollRes = await fetch(`/api/diligence/questionnaire-draft?requestId=${encodeURIComponent(requestId)}`)
+                        const pollRes = await fetch(`/api/diligence/questionnaire-draft?requestId=${encodeURIComponent(requestId)}`, {
+                            headers: await authenticatedIdentityHeaders(),
+                        })
                         if (!pollRes.ok) continue
                         const data = await pollRes.json()
                         if (data.status === 'completed' && Array.isArray(data.fields)) {

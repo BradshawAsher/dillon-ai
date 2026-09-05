@@ -9,7 +9,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { Connect, Plugin, ViteDevServer } from 'vite'
 
-import { installBackendGlobals, readJsonBody, userFromHeaders } from './nodeRuntime'
+import { authenticatedUserFromHeaders, installBackendGlobals, readJsonBody } from './nodeRuntime'
 
 // Pick up N8N_WEBHOOK_SECRET etc. from frontend/.env in dev mode, matching
 // the standalone server's behavior.
@@ -37,7 +37,7 @@ async function handleRequest(
 ) {
     const requestUrl = new URL(req.url ?? '/', 'http://localhost')
     const route = requestUrl.pathname
-    const user = userFromHeaders(req.headers)
+    const user = await authenticatedUserFromHeaders(req.headers)
 
     if (route === '/history' && req.method === 'GET') {
         const environment = requestUrl.searchParams.get('environment') === 'test' ? 'test' : 'production'

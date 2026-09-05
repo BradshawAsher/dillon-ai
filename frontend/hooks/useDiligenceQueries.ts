@@ -4,7 +4,7 @@ import type { ProjectSynthesisItem } from '../../backend/diligence/getProjectSyn
 import type { WorkflowErrorItem } from '../../backend/diligence/getWorkflowErrors'
 import type { WatchdogEventItem } from '../../backend/diligence/getWatchdogEvents'
 import type { DealModel, ProjectActionTracker } from './backend/diligence'
-import { identityHeaders } from '../lib/identity'
+import { authenticatedIdentityHeaders } from '../lib/identity'
 import { diligenceQueryKeys } from '../lib/queryClient'
 
 async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
@@ -46,7 +46,7 @@ export function useSubmissionHistoryQuery(params: SubmissionHistoryQueryParams =
       if (limit) queryParams.set('limit', String(limit))
 
       return fetchJson<SubmissionHistoryItem[]>(`/api/diligence/history?${queryParams.toString()}`, {
-        headers: identityHeaders(),
+        headers: await authenticatedIdentityHeaders(),
       })
     },
     enabled,
@@ -75,7 +75,7 @@ export function useProjectSynthesisQuery(params: ProjectSynthesisQueryParams = {
       if (limit) queryParams.set('limit', String(limit))
 
       return fetchJson<ProjectSynthesisItem[]>(`/api/diligence/synthesis?${queryParams.toString()}`, {
-        headers: identityHeaders(),
+        headers: await authenticatedIdentityHeaders(),
       })
     },
     enabled,
@@ -98,7 +98,7 @@ export function usePortfolioKpisQuery(options: { enabled?: boolean } = {}) {
     queryKey: diligenceQueryKeys.kpis(),
     queryFn: async () => {
       return fetchJson<PortfolioKpis>('/api/diligence/kpis', {
-        headers: identityHeaders(),
+        headers: await authenticatedIdentityHeaders(),
       })
     },
     enabled: options.enabled ?? true,
@@ -114,7 +114,7 @@ export function useDealModelsQuery(projectId?: string, options: { enabled?: bool
     queryKey: diligenceQueryKeys.dealModels(projectId),
     queryFn: async () => {
       const url = `/api/diligence/deal-models${projectId ? `?projectId=${encodeURIComponent(projectId)}` : ''}`
-      return fetchJson<DealModel[]>(url, { headers: identityHeaders() })
+      return fetchJson<DealModel[]>(url, { headers: await authenticatedIdentityHeaders() })
     },
     enabled: options.enabled ?? true,
     staleTime: 30_000,
@@ -128,7 +128,7 @@ export function useSaveDealModelMutation() {
     mutationFn: async (params: Partial<DealModel> & { projectId: string }) => {
       return fetchJson<DealModel>('/api/diligence/deal-models', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...identityHeaders() },
+        headers: { 'Content-Type': 'application/json', ...await authenticatedIdentityHeaders() },
         body: JSON.stringify(params),
       })
     },
@@ -149,7 +149,7 @@ export function useProjectActionTrackerQuery(projectId?: string, options: { enab
       if (!projectId) return null
       return fetchJson<ProjectActionTracker>(
         `/api/diligence/project-action-tracker?projectId=${encodeURIComponent(projectId)}`,
-        { headers: identityHeaders() }
+        { headers: await authenticatedIdentityHeaders() }
       )
     },
     enabled: Boolean(projectId) && (options.enabled ?? true),
@@ -164,7 +164,7 @@ export function useSaveProjectActionTrackerMutation() {
     mutationFn: async (params: { projectId: string; checklistJson?: string; questionsJson?: string }) => {
       return fetchJson<ProjectActionTracker>('/api/diligence/project-action-tracker', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...identityHeaders() },
+        headers: { 'Content-Type': 'application/json', ...await authenticatedIdentityHeaders() },
         body: JSON.stringify(params),
       })
     },
@@ -184,7 +184,7 @@ export function useRetryDocumentMutation() {
     mutationFn: async (payload: { id?: number; requestID?: string; projectId?: string }) => {
       return fetchJson<{ ok: boolean; status?: string }>('/api/diligence/retry-failed-document', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...identityHeaders() },
+        headers: { 'Content-Type': 'application/json', ...await authenticatedIdentityHeaders() },
         body: JSON.stringify(payload),
       })
     },

@@ -81,6 +81,32 @@ never fall back to an inline API request. See [Vercel's direct-upload guidance](
 
 Browser uploads are dispatched in chunks of 3 (`CONCURRENCY = 3` in `frontend/pages/DueDiligenceDashboard.tsx`). This client-side chunking prevents browser socket saturation and naturally staggers downstream LLM intake across time.
 
+Batch visibility and processing concurrency are separate concerns. Every
+authenticated browser request sends its Supabase access token to the API. The
+API verifies that token directly with Supabase Auth, scopes history and
+synthesis reads to the verified `user_id`, and keeps its short-lived response
+cache partitioned by that ID. Browser-supplied analyst, user, and team headers
+are attribution hints only; they cannot grant access. Regular users see their
+own rows plus official demo rows. Administrators can deliberately disable data
+isolation to inspect the global portfolio, without changing what other signed-in
+users see.
+
+Do not use a shared team label such as `External Member` as an authorization
+boundary. Users with the same display team still own independent batches. The
+Projects view is derived from the already-scoped document and synthesis data, so
+it follows the same rule rather than becoming a second global project feed.
+
+Authenticated Supabase proxy responses and user-scoped Vercel API responses
+must use `private, no-store` and vary on `Authorization`. Only truly public,
+unauthenticated PostgREST reads may use the Worker's short edge cache. This
+prevents one session's project response from being reused by another session.
+
+`project_syntheses.user_id` is populated by the database from the project's
+document owner when exactly one owner can be established. Ambiguous or
+unattributable legacy synthesis rows remain unassigned and admin-only instead of
+being guessed. This preserves per-user Realtime delivery as well as ordinary
+API polling.
+
 At the LLM worker level:
 - A single shared OpenAI Tier 4 key safely sustains **15 to 25 concurrent document extractions** (~3 to 4 active simultaneous batches of 5–8 documents).
 - If additional batches arrive concurrently, documents remain registered with `status: 'queued'` and drain in order as 25–40 second extraction workers complete.

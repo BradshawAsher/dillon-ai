@@ -19,7 +19,7 @@ import { Button } from '../lib/shadcn/button'
 import { calculateDocumentCost, calculateSynthesisCost } from '../utils/diligenceDashboardUtils'
 import { getStoredChatBillingRecords } from './DealChatPanel'
 import { estimateChatQueryCost } from '../utils/costModel'
-import { identityHeaders } from '../lib/identity'
+import { authenticatedIdentityHeaders } from '../lib/identity'
 import type { CapacityTelemetry } from '../../backend/diligence/getCapacityTelemetry'
 
 type SpendingAnalyticsTabProps = {
@@ -106,7 +106,7 @@ export default function SpendingAnalyticsTab({
         setCapacityLoading(true)
         try {
             const response = await fetch('/api/diligence/capacity-telemetry?environment=production&lookbackDays=30', {
-                headers: identityHeaders(),
+                headers: await authenticatedIdentityHeaders(),
             })
             const body = await response.json().catch(() => null)
             if (!response.ok) {

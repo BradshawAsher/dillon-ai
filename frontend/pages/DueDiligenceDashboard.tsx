@@ -115,6 +115,7 @@ import {
 import { Button } from '../lib/shadcn/button'
 import { getStoredTheme, setStoredTheme } from '../lib/darkMode'
 import { getDataSource, setDataSource } from '../lib/dataSource'
+import { authenticatedIdentityHeaders } from '../lib/identity'
 import { supabaseAuthClient } from '../services/supabaseAuth'
 import {
     buildReturnsDisplayModel,
@@ -1158,7 +1159,6 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 if (user) {
                     if (user.id && row.userId && row.userId === user.id) return true
                     if (user.email && row.analystEmail && row.analystEmail.toLowerCase() === user.email.toLowerCase()) return true
-                    if (user.team && row.team && user.team.toLowerCase() === row.team.toLowerCase()) return true
                     const pk = getProjectKey(row)
                     if (user.email && isOwnedByUser(pk, user.email)) return true
                     return false
@@ -1225,7 +1225,6 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 }
                 if (user) {
                     if (user.id && s.userId && s.userId === user.id) return true
-                    if (user.team && s.team && user.team.toLowerCase() === s.team.toLowerCase()) return true
                     const pk = s.projectId || ''
                     if (user.email && isOwnedByUser(pk, user.email)) return true
                     return false
@@ -3229,7 +3228,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
             const response = await fetch('/api/diligence/run-synthesis', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', ...await authenticatedIdentityHeaders() },
                 body: JSON.stringify({
                     projectId: activeProjectId,
                     environment: activeHistoryEnvironment,
@@ -3297,7 +3296,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
             const response = await fetch('/api/diligence/run-synthesis', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', ...await authenticatedIdentityHeaders() },
                 body: JSON.stringify({
                     projectId: activeProjectId,
                     environment: activeHistoryEnvironment,
@@ -3369,7 +3368,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 validDocs.map(doc => queue.run(async () => {
                     const response = await fetch('/api/diligence/retry-failed-document', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 'Content-Type': 'application/json', ...await authenticatedIdentityHeaders() },
                         body: JSON.stringify({
                             requestID: doc.requestID,
                             environment: activeHistoryEnvironment,
@@ -3440,7 +3439,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 validDocs.map(doc => queue.run(async () => {
                     const response = await fetch('/api/diligence/retry-failed-document', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 'Content-Type': 'application/json', ...await authenticatedIdentityHeaders() },
                         body: JSON.stringify({
                             requestID: doc.requestID,
                             environment: activeHistoryEnvironment,
@@ -3655,7 +3654,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 failedDocs.map(doc => queue.run(async () => {
                     const response = await fetch('/api/diligence/retry-failed-document', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 'Content-Type': 'application/json', ...await authenticatedIdentityHeaders() },
                         body: JSON.stringify({
                             requestID: doc.requestID,
                             environment: activeHistoryEnvironment,
@@ -3776,7 +3775,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 failedDocs.map(doc => queue.run(async () => {
                     const response = await fetch('/api/diligence/retry-failed-document', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 'Content-Type': 'application/json', ...await authenticatedIdentityHeaders() },
                         body: JSON.stringify({
                             requestID: doc.requestID,
                             environment: activeHistoryEnvironment,
@@ -3889,7 +3888,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
             const response = await fetch('/api/diligence/retry-failed-document', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', ...await authenticatedIdentityHeaders() },
                 body: JSON.stringify({
                     requestID,
                     environment: activeHistoryEnvironment,
@@ -3987,7 +3986,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             }
             const response = await fetch('/api/diligence/stop-batch', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', ...await authenticatedIdentityHeaders() },
                 body: JSON.stringify(target),
             })
             const body = await response.json() as BatchStopResponse
@@ -4024,7 +4023,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         try {
             const response = await fetch('/api/diligence/stop-synthesis', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', ...await authenticatedIdentityHeaders() },
                 body: JSON.stringify({ projectId: activeProjectId, environment: activeHistoryEnvironment }),
             })
             const body = await response.json() as { error?: string }

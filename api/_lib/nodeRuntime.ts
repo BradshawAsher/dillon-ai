@@ -1,10 +1,12 @@
 // Minimal Node runtime bundled with Vercel API functions.
 // Dispatches requests to n8n Cloud and provides serverless request parsing.
 import type { IncomingHttpHeaders, IncomingMessage } from 'node:http'
+import crypto from 'node:crypto'
 
 import { HttpError } from './httpError'
 import type { MultipartEntry } from '../../backend/diligence/storedFileMultipart'
 import { fetchWithDocumentHandoff } from '../../backend/diligence/documentHandoff'
+import { supabaseAuth } from '../../backend/supabaseClient'
 
 const N8N_BASE_URL = 'https://merge-works.app.n8n.cloud/'
 
@@ -139,6 +141,77 @@ export function userFromHeaders(headers: IncomingHttpHeaders): ApiUser {
   return fullName.length > 0 && email.length > 0
     ? { fullName, email, id: id || undefined, team: team || undefined }
     : fallbackUser
+}
+
+function bearerTokenFromHeaders(headers: IncomingHttpHeaders): string {
+  const value = headers.authorization
+  if (typeof value !== 'string') return ''
+  const match = value.match(/^Bearer\s+(.+)$/i)
+  return match?.[1]?.trim() || ''
+}
+
+const verifiedUserCache = new Map<string, { expiresAt: number; promise: Promise<ApiUser> }>()
+const VERIFIED_USER_CACHE_MS = 30_000
+
+async function verifyAccessToken(token: string): Promise<ApiUser> {
+  const { data, error } = await supabaseAuth.auth.getUser(token)
+  const authUser = data?.user
+  if (error || !authUser) {
+    throw new HttpError(401, 'Your session is invalid or expired. Please sign in again.')
+  }
+
+  const rawEmail = typeof authUser.email === 'string' ? authUser.email.trim().toLowerCase() : ''
+  const isAnonymous = Boolean(authUser.is_anonymous)
+  const email = rawEmail || (isAnonymous ? `guest-${authUser.id.slice(0, 8)}@mergeworks.guest` : '')
+  if (!email) {
+    throw new HttpError(401, 'The authenticated account does not have a usable identity.')
+  }
+
+  const userMetadata = authUser.user_metadata && typeof authUser.user_metadata === 'object'
+    ? authUser.user_metadata as Record<string, unknown>
+    : {}
+  const appMetadata = authUser.app_metadata && typeof authUser.app_metadata === 'object'
+    ? authUser.app_metadata as Record<string, unknown>
+    : {}
+  const metadataName = typeof userMetadata.full_name === 'string'
+    ? userMetadata.full_name
+    : typeof userMetadata.name === 'string'
+      ? userMetadata.name
+      : ''
+  // Team membership can affect display, but only server-controlled app_metadata
+  // is accepted. user_metadata is user-editable and must not grant access.
+  const team = typeof appMetadata.team === 'string' && appMetadata.team.trim()
+    ? appMetadata.team.trim()
+    : undefined
+
+  return {
+    fullName: metadataName.trim() || (isAnonymous ? 'Guest Analyst' : email.split('@')[0]),
+    email,
+    id: authUser.id,
+    team,
+  }
+}
+
+/**
+ * Resolves the request identity from a Supabase-issued access token.
+ * Browser-provided analyst headers are attribution hints only and are never an
+ * authorization source.
+ */
+export async function authenticatedUserFromHeaders(headers: IncomingHttpHeaders): Promise<ApiUser> {
+  const token = bearerTokenFromHeaders(headers)
+  if (!token) return fallbackUser
+  const cacheKey = crypto.createHash('sha256').update(token).digest('hex')
+  const cached = verifiedUserCache.get(cacheKey)
+  if (cached && cached.expiresAt > Date.now()) return cached.promise
+
+  const promise = verifyAccessToken(token)
+  verifiedUserCache.set(cacheKey, { expiresAt: Date.now() + VERIFIED_USER_CACHE_MS, promise })
+  try {
+    return await promise
+  } catch (error) {
+    verifiedUserCache.delete(cacheKey)
+    throw error
+  }
 }
 
 // The /api/diligence/* routes are internet-reachable and unauthenticated, and

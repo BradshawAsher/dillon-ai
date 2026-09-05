@@ -9,6 +9,7 @@ import { Input } from '../lib/shadcn/input'
 import { formatCurrencyValue } from '../utils/aiSubmissionData'
 import { buildDocumentLinkedEvidence, type EvidenceItem } from '../utils/evidence'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
+import { authenticatedIdentityHeaders } from '../lib/identity'
 
 type BridgeItem = {
     id: string
@@ -87,7 +88,7 @@ export default function ValuationImpactBridge({ synthesis, baseValue, documents 
         try {
             const resp = await fetch('/api/diligence/deal-models', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', ...await authenticatedIdentityHeaders() },
                 body: JSON.stringify({ projectId: synthesis.projectId, valuationBridgeJson: JSON.stringify(items) }),
             })
             if (!resp.ok) throw new Error(`Save failed: ${resp.statusText}`)

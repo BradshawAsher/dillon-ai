@@ -1,5 +1,5 @@
 import { supabaseAuthClient } from './supabaseAuth'
-import { identityHeaders } from '../lib/identity'
+import { authenticatedIdentityHeaders } from '../lib/identity'
 import { getDataSource } from '../lib/dataSource'
 import { RESUMABLE_CHUNK_BYTES, uploadResumable } from './resumableUpload'
 import { R2_PUBLIC_URL, resolveStorageCdnUrl } from './storageCdn'
@@ -64,7 +64,7 @@ export async function requestSignedUploadUrl(params: {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      ...identityHeaders(),
+      ...await authenticatedIdentityHeaders(),
     },
     body: JSON.stringify(params),
   }, 30_000)

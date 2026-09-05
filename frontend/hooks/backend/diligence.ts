@@ -17,7 +17,7 @@ import type { ProjectSynthesisItem } from '../../../backend/diligence/getProject
 import type { WorkflowErrorItem } from '../../../backend/diligence/getWorkflowErrors'
 import type { WatchdogEventItem } from '../../../backend/diligence/getWatchdogEvents'
 import { getDataSource } from '../../lib/dataSource'
-import { identityHeaders } from '../../lib/identity'
+import { authenticatedIdentityHeaders } from '../../lib/identity'
 import type { DiligenceFinding } from '../../utils/diligence'
 import type { SubmissionHistoryItem } from '../../utils/submissionHistory'
 
@@ -241,7 +241,7 @@ function useLiveSubmissionHistory() {
             if (skipCache) queryParams.set('_refresh', String(Date.now()))
 
             const data = await fetchJson<SubmissionHistoryItem[]>(`/api/diligence/history?${queryParams.toString()}`, {
-                headers: identityHeaders(),
+                headers: await authenticatedIdentityHeaders(),
             })
             return data
         }, [])
@@ -262,7 +262,7 @@ function useLiveProjectSynthesis() {
             if (skipCache) queryParams.set('_refresh', String(Date.now()))
 
             const data = await fetchJson<ProjectSynthesisItem[]>(`/api/diligence/synthesis?${queryParams.toString()}`, {
-                headers: identityHeaders(),
+                headers: await authenticatedIdentityHeaders(),
             })
             return data
         }, [])
@@ -272,13 +272,13 @@ function useLiveProjectSynthesis() {
 function useLiveDealModels() {
     return useQuery(useCallback(async (params: Record<string, unknown> = {}) => {
         const projectId = typeof params.projectId === 'string' ? params.projectId : ''
-        return fetchJson<DealModel[]>(`/api/diligence/deal-models${projectId ? `?projectId=${encodeURIComponent(projectId)}` : ''}`, { headers: identityHeaders() })
+        return fetchJson<DealModel[]>(`/api/diligence/deal-models${projectId ? `?projectId=${encodeURIComponent(projectId)}` : ''}`, { headers: await authenticatedIdentityHeaders() })
     }, []))
 }
 
 function useLiveSaveDealModel() {
     return useQuery(useCallback(async (params: Record<string, unknown> = {}) => {
-        return fetchJson<DealModel>('/api/diligence/deal-models', { method: 'POST', headers: { 'Content-Type': 'application/json', ...identityHeaders() }, body: JSON.stringify(params) })
+        return fetchJson<DealModel>('/api/diligence/deal-models', { method: 'POST', headers: { 'Content-Type': 'application/json', ...await authenticatedIdentityHeaders() }, body: JSON.stringify(params) })
     }, []))
 }
 
@@ -288,13 +288,13 @@ function useLiveProjectActionTracker() {
     return useQuery(useCallback(async (params: Record<string, unknown> = {}) => {
         const projectId = typeof params.projectId === 'string' ? params.projectId : ''
         if (!projectId) return null
-        return fetchJson<ProjectActionTracker>(`/api/diligence/project-action-tracker?projectId=${encodeURIComponent(projectId)}`, { headers: identityHeaders() })
+        return fetchJson<ProjectActionTracker>(`/api/diligence/project-action-tracker?projectId=${encodeURIComponent(projectId)}`, { headers: await authenticatedIdentityHeaders() })
     }, []))
 }
 
 function useLiveSaveProjectActionTracker() {
     return useQuery(useCallback(async (params: Record<string, unknown> = {}) => {
-        return fetchJson<ProjectActionTracker>('/api/diligence/project-action-tracker', { method: 'POST', headers: { 'Content-Type': 'application/json', ...identityHeaders() }, body: JSON.stringify(params) })
+        return fetchJson<ProjectActionTracker>('/api/diligence/project-action-tracker', { method: 'POST', headers: { 'Content-Type': 'application/json', ...await authenticatedIdentityHeaders() }, body: JSON.stringify(params) })
     }, []))
 }
 
@@ -303,7 +303,7 @@ function useLiveSubmitDealPacket() {
         useCallback(async (params: Record<string, unknown> = {}) => {
             return fetchJson<SubmitResponse>('/api/diligence/submit', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', ...identityHeaders() },
+                headers: { 'Content-Type': 'application/json', ...await authenticatedIdentityHeaders() },
                 body: JSON.stringify(params),
             })
         }, []), null, true
@@ -577,14 +577,14 @@ import { benchmarkGroundTruthSyntheses } from '../../evals/ground_truths'
 function useLiveWorkflowErrors() {
     return useQuery(useCallback(async (params: Record<string, unknown> = {}) => {
         const environment = params.environment === 'test' ? 'test' : 'production'
-        return fetchJson<WorkflowErrorItem[]>(`/api/diligence/workflow-errors?environment=${environment}`, { headers: identityHeaders() })
+        return fetchJson<WorkflowErrorItem[]>(`/api/diligence/workflow-errors?environment=${environment}`, { headers: await authenticatedIdentityHeaders() })
     }, []))
 }
 
 function useLiveWatchdogEvents() {
     return useQuery(useCallback(async (params: Record<string, unknown> = {}) => {
         const environment = params.environment === 'test' ? 'test' : 'production'
-        return fetchJson<WatchdogEventItem[]>(`/api/diligence/watchdog-events?environment=${environment}`, { headers: identityHeaders() })
+        return fetchJson<WatchdogEventItem[]>(`/api/diligence/watchdog-events?environment=${environment}`, { headers: await authenticatedIdentityHeaders() })
     }, []))
 }
 
@@ -592,7 +592,7 @@ function useLiveUpdateSubmissionConsideration() {
     return useQuery(useCallback(async (_params: Record<string, unknown> = {}) => {
         return fetchJson<{ ok: boolean }>('/api/diligence/submission-consideration', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', ...identityHeaders() },
+            headers: { 'Content-Type': 'application/json', ...await authenticatedIdentityHeaders() },
         })
     }, []))
 }
@@ -744,7 +744,7 @@ export function useGetEvalRuns() {
             // local report file). The browser never holds a database key.
             try {
                 const response = await fetch('/api/diligence/eval-runs', {
-                    headers: identityHeaders(),
+                    headers: await authenticatedIdentityHeaders(),
                 })
                 if (response.ok) {
                     const text = await response.text()

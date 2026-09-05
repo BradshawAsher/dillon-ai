@@ -3,6 +3,7 @@
 import type { IncomingHttpHeaders, IncomingMessage } from 'node:http'
 import type { MultipartEntry } from '../backend/diligence/storedFileMultipart'
 import { fetchWithDocumentHandoff } from '../backend/diligence/documentHandoff'
+import { supabaseAuth } from '../backend/supabaseClient'
 
 const N8N_BASE_URL = 'https://merge-works.app.n8n.cloud/'
 
@@ -145,6 +146,44 @@ export function userFromHeaders(headers: IncomingHttpHeaders): User {
   }
 
   return FALLBACK_USER
+}
+
+export async function authenticatedUserFromHeaders(headers: IncomingHttpHeaders): Promise<User> {
+  const authorization = typeof headers.authorization === 'string' ? headers.authorization : ''
+  const match = authorization.match(/^Bearer\s+(.+)$/i)
+  const token = match?.[1]?.trim() || ''
+  if (!token) return FALLBACK_USER
+
+  const { data, error } = await supabaseAuth.auth.getUser(token)
+  const authUser = data?.user
+  if (error || !authUser) throw new Error('Your session is invalid or expired. Please sign in again.')
+
+  const rawEmail = typeof authUser.email === 'string' ? authUser.email.trim().toLowerCase() : ''
+  const isAnonymous = Boolean(authUser.is_anonymous)
+  const email = rawEmail || (isAnonymous ? `guest-${authUser.id.slice(0, 8)}@mergeworks.guest` : '')
+  if (!email) throw new Error('The authenticated account does not have a usable identity.')
+
+  const userMetadata = authUser.user_metadata && typeof authUser.user_metadata === 'object'
+    ? authUser.user_metadata as Record<string, unknown>
+    : {}
+  const appMetadata = authUser.app_metadata && typeof authUser.app_metadata === 'object'
+    ? authUser.app_metadata as Record<string, unknown>
+    : {}
+  const metadataName = typeof userMetadata.full_name === 'string'
+    ? userMetadata.full_name
+    : typeof userMetadata.name === 'string'
+      ? userMetadata.name
+      : ''
+  const team = typeof appMetadata.team === 'string' && appMetadata.team.trim()
+    ? appMetadata.team.trim()
+    : undefined
+
+  return {
+    fullName: metadataName.trim() || (isAnonymous ? 'Guest Analyst' : email.split('@')[0]),
+    email,
+    id: authUser.id,
+    team,
+  }
 }
 
 export function readJsonBody(req: IncomingMessage): Promise<Record<string, unknown>> {

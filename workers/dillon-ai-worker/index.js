@@ -59,9 +59,13 @@ export default {
       }
     }
 
-    // 4. Supabase Proxy (with 30s Edge Caching for GET reads)
+    // 4. Supabase proxy. Never share-cache a response whose contents can vary
+    // by bearer token (Auth, Realtime, Storage, or RLS-protected PostgREST).
     url.hostname = 'sihpsqrunkwkxhhnwoqe.supabase.co';
     const isRead = request.method === 'GET' || request.method === 'HEAD';
+    const isPublicRestRead = isRead
+      && path.startsWith('rest/v1')
+      && !request.headers.has('authorization');
     
     // Copy headers and set Host to Supabase
     const forwardHeaders = new Headers(request.headers);
@@ -73,7 +77,7 @@ export default {
       body: isRead ? null : request.body,
     });
 
-    const fetchOptions = isRead
+    const fetchOptions = isPublicRestRead
       ? { cf: { cacheEverything: true, cacheTtl: 30 } }
       : {};
 
@@ -81,8 +85,11 @@ export default {
     const responseHeaders = new Headers(originRes.headers);
     responseHeaders.set('Access-Control-Allow-Origin', '*');
     
-    if (isRead && originRes.status === 200) {
+    responseHeaders.append('Vary', 'Authorization');
+    if (isPublicRestRead && originRes.status === 200) {
       responseHeaders.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=59');
+    } else if (isRead) {
+      responseHeaders.set('Cache-Control', 'private, no-store');
     }
 
     return new Response(originRes.body, {

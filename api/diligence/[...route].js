@@ -21535,25 +21535,44 @@ if (shouldShowDeprecationWarning()) console.warn("\u26A0\uFE0F  Node.js 20 and b
 
 // backend/supabaseClient.ts
 var _client = null;
+var _authClient = null;
 var DEFAULT_SUPABASE_URL = "https://dillon-ai-worker.bradshin231.workers.dev";
+var DEFAULT_DIRECT_SUPABASE_URL = "https://sihpsqrunkwkxhhnwoqe.supabase.co";
+function getSupabaseKey() {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || "";
+  if (!key) {
+    throw new Error("SUPABASE_SERVICE_ROLE_KEY is not set \u2014 refusing to create a Supabase client without a key.");
+  }
+  return key;
+}
 function getClient() {
   if (_client) return _client;
   if (process.env.NODE_ENV !== "production" && !process.env.NODE_TLS_REJECT_UNAUTHORIZED) {
     process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
   }
   const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || "";
-  if (!key) {
-    throw new Error("SUPABASE_SERVICE_ROLE_KEY is not set \u2014 refusing to create a Supabase client without a key.");
-  }
+  const key = getSupabaseKey();
   _client = createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false }
   });
   return _client;
 }
+function getAuthClient() {
+  if (_authClient) return _authClient;
+  const url = process.env.SUPABASE_AUTH_URL || DEFAULT_DIRECT_SUPABASE_URL;
+  _authClient = createClient(url, getSupabaseKey(), {
+    auth: { persistSession: false, autoRefreshToken: false }
+  });
+  return _authClient;
+}
 var supabase = new Proxy({}, {
   get(_target, prop) {
     return getClient()[prop];
+  }
+});
+var supabaseAuth = new Proxy({}, {
+  get(_target, prop) {
+    return getAuthClient()[prop];
   }
 });
 
@@ -21574,7 +21593,6 @@ var ADMIN_EMAILS = /* @__PURE__ */ new Set([
 function isMergeWorksAdmin(user) {
   if (!user || !user.email) return false;
   const cleanEmail = user.email.trim().toLowerCase();
-  if (user.team === "Pod 1 (Internal)") return true;
   if (cleanEmail.endsWith("@mergeworks.io") || cleanEmail.endsWith("@mergeworks.org")) return true;
   return ADMIN_EMAILS.has(cleanEmail);
 }
@@ -21584,7 +21602,7 @@ function isGuestUser(user) {
   const cleanEmail = (user.email || "").trim().toLowerCase();
   return cleanEmail.length === 0 || cleanEmail === "dashboard@mergeworks.local" || cleanEmail === "guest";
 }
-function buildTenantPostgrestFilter(user) {
+function buildTenantPostgrestFilter(user, options = {}) {
   if (isMergeWorksAdmin(user)) {
     return null;
   }
@@ -21595,12 +21613,9 @@ function buildTenantPostgrestFilter(user) {
   if (user?.id && user.id.trim().length > 0) {
     conditions.push(`user_id.eq.${user.id.trim()}`);
   }
-  if (user?.email && user.email.trim().length > 0) {
+  if (options.includeAnalystEmail !== false && user?.email && user.email.trim().length > 0) {
     const cleanEmail = user.email.trim().toLowerCase();
     conditions.push(`analyst_email.ilike.${cleanEmail}`);
-  }
-  if (user?.team && user.team.trim().length > 0 && user.team.trim().toLowerCase() !== "external member") {
-    conditions.push(`team.eq.${user.team.trim()}`);
   }
   return conditions.join(",");
 }
@@ -21862,7 +21877,7 @@ async function getProjectSynthesis(req) {
         valuation_confidence_score, investment_confidence_score, is_placeholder
     `;
   let query = supabase.from("project_syntheses").select(isScoped ? fullColumns : portfolioColumns).or("is_placeholder.is.null,is_placeholder.eq.false");
-  const tenantFilter = buildTenantPostgrestFilter(req.user);
+  const tenantFilter = buildTenantPostgrestFilter(req.user, { includeAnalystEmail: false });
   if (tenantFilter) {
     query = query.or(tenantFilter);
   }
@@ -23987,6 +24002,9 @@ async function handleSlackAlert(req) {
 }
 
 // api/diligence/[...route].src.ts
+import crypto4 from "node:crypto";
+
+// api/_lib/nodeRuntime.ts
 import crypto3 from "node:crypto";
 
 // api/_lib/httpError.ts
@@ -24119,22 +24137,51 @@ function installBackendGlobals() {
     }
   };
 }
-function userFromHeaders(headers) {
-  const decode = (value) => {
-    if (typeof value !== "string" || value.length === 0) {
-      return "";
-    }
-    try {
-      return decodeURIComponent(value).trim();
-    } catch {
-      return "";
-    }
+function bearerTokenFromHeaders(headers) {
+  const value = headers.authorization;
+  if (typeof value !== "string") return "";
+  const match = value.match(/^Bearer\s+(.+)$/i);
+  return match?.[1]?.trim() || "";
+}
+var verifiedUserCache = /* @__PURE__ */ new Map();
+var VERIFIED_USER_CACHE_MS = 3e4;
+async function verifyAccessToken(token) {
+  const { data, error } = await supabaseAuth.auth.getUser(token);
+  const authUser = data?.user;
+  if (error || !authUser) {
+    throw new HttpError(401, "Your session is invalid or expired. Please sign in again.");
+  }
+  const rawEmail = typeof authUser.email === "string" ? authUser.email.trim().toLowerCase() : "";
+  const isAnonymous = Boolean(authUser.is_anonymous);
+  const email = rawEmail || (isAnonymous ? `guest-${authUser.id.slice(0, 8)}@mergeworks.guest` : "");
+  if (!email) {
+    throw new HttpError(401, "The authenticated account does not have a usable identity.");
+  }
+  const userMetadata = authUser.user_metadata && typeof authUser.user_metadata === "object" ? authUser.user_metadata : {};
+  const appMetadata = authUser.app_metadata && typeof authUser.app_metadata === "object" ? authUser.app_metadata : {};
+  const metadataName = typeof userMetadata.full_name === "string" ? userMetadata.full_name : typeof userMetadata.name === "string" ? userMetadata.name : "";
+  const team = typeof appMetadata.team === "string" && appMetadata.team.trim() ? appMetadata.team.trim() : void 0;
+  return {
+    fullName: metadataName.trim() || (isAnonymous ? "Guest Analyst" : email.split("@")[0]),
+    email,
+    id: authUser.id,
+    team
   };
-  const fullName = decode(headers["x-analyst-name"]);
-  const email = decode(headers["x-analyst-email"]);
-  const id = decode(headers["x-user-id"]);
-  const team = decode(headers["x-user-team"]);
-  return fullName.length > 0 && email.length > 0 ? { fullName, email, id: id || void 0, team: team || void 0 } : fallbackUser;
+}
+async function authenticatedUserFromHeaders(headers) {
+  const token = bearerTokenFromHeaders(headers);
+  if (!token) return fallbackUser;
+  const cacheKey = crypto3.createHash("sha256").update(token).digest("hex");
+  const cached = verifiedUserCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) return cached.promise;
+  const promise = verifyAccessToken(token);
+  verifiedUserCache.set(cacheKey, { expiresAt: Date.now() + VERIFIED_USER_CACHE_MS, promise });
+  try {
+    return await promise;
+  } catch (error) {
+    verifiedUserCache.delete(cacheKey);
+    throw error;
+  }
 }
 var MAX_REQUEST_BODY_BYTES = 5 * 1024 * 1024;
 function readJsonBody(req) {
@@ -24238,11 +24285,14 @@ function rateLimit(ip, route, method) {
 installBackendGlobals();
 function sendJson(req, res, status, body, cacheControl) {
   const jsonString = JSON.stringify(body);
-  const etag = `"${crypto3.createHash("md5").update(jsonString).digest("hex")}"`;
+  const etag = `"${crypto4.createHash("md5").update(jsonString).digest("hex")}"`;
   res.setHeader("Content-Type", "application/json; charset=utf-8");
   res.setHeader("ETag", etag);
   if (cacheControl) {
     res.setHeader("Cache-Control", cacheControl);
+    if (cacheControl.startsWith("private")) {
+      res.setHeader("Vary", "Authorization");
+    }
   }
   if (req.headers["if-none-match"] === etag) {
     res.statusCode = 304;
@@ -24253,6 +24303,12 @@ function sendJson(req, res, status, body, cacheControl) {
   res.end(jsonString);
 }
 var memCache = /* @__PURE__ */ new Map();
+var PRIVATE_USER_CACHE_CONTROL = "private, no-store";
+function cacheScopeForUser(user) {
+  if (isMergeWorksAdmin(user)) return "admin-global";
+  if (user.id) return `user-${user.id}`;
+  return "guest-demo";
+}
 async function withMemCache(key, fn, ttlMs = 8e3) {
   const cached = memCache.get(key);
   if (cached && Date.now() < cached.expiresAt) {
@@ -24279,7 +24335,8 @@ async function handler(req, res) {
     return;
   }
   try {
-    const user = userFromHeaders(req.headers);
+    const user = await authenticatedUserFromHeaders(req.headers);
+    const cacheScope = cacheScopeForUser(user);
     if (route === "eval-runs" && req.method === "GET") {
       const full = requestUrl.searchParams.get("full") === "true";
       const limitNum = requestUrl.searchParams.get("limit") ?? void 0;
@@ -24291,42 +24348,42 @@ async function handler(req, res) {
       const projectId = requestUrl.searchParams.get("projectId") ?? void 0;
       const limitNum = requestUrl.searchParams.get("limit") ?? void 0;
       const full = requestUrl.searchParams.get("full") === "true";
-      const cacheKey = `history-${environment}-${projectId ?? "all"}-${full}-${limitNum ?? "default"}`;
+      const cacheKey = `history-${cacheScope}-${environment}-${projectId ?? "all"}-${full}-${limitNum ?? "default"}`;
       const data = await withMemCache(cacheKey, () => getSubmissionHistory({ params: { environment, projectId, limit: limitNum, full }, user }), 6e3);
-      sendJson(req, res, 200, data, "public, s-maxage=10, stale-while-revalidate=60");
+      sendJson(req, res, 200, data, PRIVATE_USER_CACHE_CONTROL);
       return;
     }
     if (route === "capacity-telemetry" && req.method === "GET") {
       const lookbackDays = requestUrl.searchParams.get("lookbackDays") ?? void 0;
-      const cacheKey = `capacity-telemetry-${environment}-${lookbackDays ?? "30"}`;
+      const cacheKey = `capacity-telemetry-${cacheScope}-${environment}-${lookbackDays ?? "30"}`;
       const data = await withMemCache(cacheKey, () => getCapacityTelemetry({ params: { environment, lookbackDays }, user }), 15e3);
-      sendJson(req, res, 200, data, "public, s-maxage=30, stale-while-revalidate=120");
+      sendJson(req, res, 200, data, PRIVATE_USER_CACHE_CONTROL);
       return;
     }
     if (route === "workflow-errors" && req.method === "GET") {
-      const data = await withMemCache(`workflow-errors-${environment}`, () => getWorkflowErrors({ params: { environment }, user }), 15e3);
-      sendJson(req, res, 200, data, "public, s-maxage=30, stale-while-revalidate=120");
+      const data = await withMemCache(`workflow-errors-${cacheScope}-${environment}`, () => getWorkflowErrors({ params: { environment }, user }), 15e3);
+      sendJson(req, res, 200, data, PRIVATE_USER_CACHE_CONTROL);
       return;
     }
     if (route === "synthesis" && req.method === "GET") {
       const projectId = requestUrl.searchParams.get("projectId") ?? void 0;
       const limitNum = requestUrl.searchParams.get("limit") ?? void 0;
-      const cacheKey = `synthesis-${environment}-${projectId ?? "all"}-${limitNum ?? "default"}`;
+      const cacheKey = `synthesis-${cacheScope}-${environment}-${projectId ?? "all"}-${limitNum ?? "default"}`;
       const data = await withMemCache(cacheKey, () => getProjectSynthesis({ params: { environment, projectId, limit: limitNum }, user }), 6e3);
-      sendJson(req, res, 200, data, "public, s-maxage=10, stale-while-revalidate=60");
+      sendJson(req, res, 200, data, PRIVATE_USER_CACHE_CONTROL);
       return;
     }
     if (route === "kpis" && req.method === "GET") {
       const projectId = requestUrl.searchParams.get("projectId") ?? void 0;
-      const cacheKey = `kpis-${environment}-${projectId ?? "all"}`;
+      const cacheKey = `kpis-${cacheScope}-${environment}-${projectId ?? "all"}`;
       const data = await withMemCache(cacheKey, () => getDiligenceKpis({ params: { environment, projectId }, user }), 1e4);
-      sendJson(req, res, 200, data, "public, s-maxage=30, stale-while-revalidate=120");
+      sendJson(req, res, 200, data, PRIVATE_USER_CACHE_CONTROL);
       return;
     }
     if (route === "deal-models" && req.method === "GET") {
       const projectId = requestUrl.searchParams.get("projectId") ?? "";
-      const data = await withMemCache(`deal-models-${projectId}`, () => getDealModels({ params: { projectId }, user }), 6e3);
-      sendJson(req, res, 200, data, "public, s-maxage=30, stale-while-revalidate=120");
+      const data = await withMemCache(`deal-models-${cacheScope}-${projectId}`, () => getDealModels({ params: { projectId }, user }), 6e3);
+      sendJson(req, res, 200, data, PRIVATE_USER_CACHE_CONTROL);
       return;
     }
     if (route === "deal-models" && req.method === "POST") {
@@ -24337,8 +24394,8 @@ async function handler(req, res) {
     }
     if (route === "project-action-tracker" && req.method === "GET") {
       const projectId = requestUrl.searchParams.get("projectId") ?? "";
-      const data = await withMemCache(`action-tracker-${projectId}`, () => getProjectActionTracker({ params: { projectId }, user }), 6e3);
-      sendJson(req, res, 200, data, "public, s-maxage=30, stale-while-revalidate=120");
+      const data = await withMemCache(`action-tracker-${cacheScope}-${projectId}`, () => getProjectActionTracker({ params: { projectId }, user }), 6e3);
+      sendJson(req, res, 200, data, PRIVATE_USER_CACHE_CONTROL);
       return;
     }
     if (route === "project-action-tracker" && req.method === "POST") {

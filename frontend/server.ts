@@ -33,7 +33,7 @@ import handleAccessRequestImport from '../backend/diligence/handleAccessRequest'
 import handleSlackAlertImport from '../backend/diligence/handleSlackAlert'
 import { cleanOrphanRecords } from '../backend/diligence/cleanOrphans'
 import getEvalRunsImport from '../backend/diligence/getEvalRuns'
-import { installBackendGlobals, userFromHeaders } from './nodeRuntime'
+import { authenticatedUserFromHeaders, installBackendGlobals } from './nodeRuntime'
 
 try {
     process.loadEnvFile()
@@ -164,7 +164,7 @@ app.get('/api/diligence/history', async (req, res) => {
         const full = req.query.full === 'true'
         const rows = await getSubmissionHistory({
             params: { environment, projectId, limit, full },
-            user: userFromHeaders(req.headers),
+            user: await authenticatedUserFromHeaders(req.headers),
         })
         res.json(rows)
     } catch (error) {
@@ -178,7 +178,7 @@ app.get('/api/diligence/capacity-telemetry', async (req, res) => {
         const lookbackDays = typeof req.query.lookbackDays === 'string' || typeof req.query.lookbackDays === 'number' ? req.query.lookbackDays : undefined
         res.json(await getCapacityTelemetry({
             params: { environment, lookbackDays },
-            user: userFromHeaders(req.headers),
+            user: await authenticatedUserFromHeaders(req.headers),
         }))
     } catch (error) {
         res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
@@ -192,7 +192,7 @@ app.get('/api/diligence/synthesis', async (req, res) => {
         const limit = typeof req.query.limit === 'string' || typeof req.query.limit === 'number' ? req.query.limit : undefined
         const rows = await getProjectSynthesis({
             params: { environment, projectId, limit },
-            user: userFromHeaders(req.headers),
+            user: await authenticatedUserFromHeaders(req.headers),
         })
         res.json(rows)
     } catch (error) {
@@ -206,7 +206,7 @@ app.get('/api/diligence/kpis', async (req, res) => {
         const projectId = typeof req.query.projectId === 'string' ? req.query.projectId : undefined
         const data = await getDiligenceKpisImport({
             params: { environment, projectId },
-            user: userFromHeaders(req.headers),
+            user: await authenticatedUserFromHeaders(req.headers),
         })
         res.json(data)
     } catch (error) {
@@ -226,7 +226,7 @@ app.get('/api/diligence/eval-runs', async (req, res) => {
 
 app.get('/api/diligence/deal-models', async (req, res) => {
     try {
-        res.json(await getDealModels({ params: { projectId: typeof req.query.projectId === 'string' ? req.query.projectId : '' }, user: userFromHeaders(req.headers) }))
+        res.json(await getDealModels({ params: { projectId: typeof req.query.projectId === 'string' ? req.query.projectId : '' }, user: await authenticatedUserFromHeaders(req.headers) }))
     } catch (error) {
         res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
     }
@@ -234,7 +234,7 @@ app.get('/api/diligence/deal-models', async (req, res) => {
 
 app.post('/api/diligence/deal-models', express.json(), async (req, res) => {
     try {
-        res.json(await saveDealModel({ params: req.body, user: userFromHeaders(req.headers) }))
+        res.json(await saveDealModel({ params: req.body, user: await authenticatedUserFromHeaders(req.headers) }))
     } catch (error) {
         res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
     }
@@ -242,7 +242,7 @@ app.post('/api/diligence/deal-models', express.json(), async (req, res) => {
 
 app.get('/api/diligence/project-action-tracker', async (req, res) => {
     try {
-        res.json(await getProjectActionTracker({ params: { projectId: typeof req.query.projectId === 'string' ? req.query.projectId : '' }, user: userFromHeaders(req.headers) }))
+        res.json(await getProjectActionTracker({ params: { projectId: typeof req.query.projectId === 'string' ? req.query.projectId : '' }, user: await authenticatedUserFromHeaders(req.headers) }))
     } catch (error) {
         res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
     }
@@ -250,7 +250,7 @@ app.get('/api/diligence/project-action-tracker', async (req, res) => {
 
 app.post('/api/diligence/project-action-tracker', express.json(), async (req, res) => {
     try {
-        res.json(await saveProjectActionTracker({ params: req.body, user: userFromHeaders(req.headers) }))
+        res.json(await saveProjectActionTracker({ params: req.body, user: await authenticatedUserFromHeaders(req.headers) }))
     } catch (error) {
         res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
     }
@@ -261,7 +261,7 @@ app.post('/api/diligence/submit', express.json({ limit: '50mb' }), async (req, r
     try {
         const ack = await submitDealPacket({
             params: req.body,
-            user: userFromHeaders(req.headers),
+            user: await authenticatedUserFromHeaders(req.headers),
         })
         res.json(ack)
     } catch (error) {
@@ -271,7 +271,7 @@ app.post('/api/diligence/submit', express.json({ limit: '50mb' }), async (req, r
 
 app.post('/api/diligence/chat', express.json({ limit: '128kb' }), async (req, res) => {
     try {
-        res.json(await chatAssistant({ params: req.body, user: userFromHeaders(req.headers) }))
+        res.json(await chatAssistant({ params: req.body, user: await authenticatedUserFromHeaders(req.headers) }))
     } catch (error) {
         res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
     }
@@ -280,7 +280,7 @@ app.post('/api/diligence/chat', express.json({ limit: '128kb' }), async (req, re
 app.get('/api/diligence/questionnaire-draft', async (req, res) => {
     try {
         const requestId = String(req.query.requestId || '')
-        res.json(await getQuestionnaireDraft({ params: { requestId }, user: userFromHeaders(req.headers) }))
+        res.json(await getQuestionnaireDraft({ params: { requestId }, user: await authenticatedUserFromHeaders(req.headers) }))
     } catch (error) {
         res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
     }
@@ -288,7 +288,7 @@ app.get('/api/diligence/questionnaire-draft', async (req, res) => {
 
 app.post('/api/diligence/questionnaire-draft', express.json({ limit: '3mb' }), async (req, res) => {
     try {
-        res.json(await questionnaireDraftAssistant({ params: req.body, user: userFromHeaders(req.headers) }))
+        res.json(await questionnaireDraftAssistant({ params: req.body, user: await authenticatedUserFromHeaders(req.headers) }))
     } catch (error) {
         res.status(400).json({ error: error instanceof Error ? error.message : String(error) })
     }
@@ -297,7 +297,7 @@ app.post('/api/diligence/questionnaire-draft', express.json({ limit: '3mb' }), a
 app.get('/api/diligence/workflow-errors', async (req, res) => {
     try {
         const environment = req.query.environment === 'test' ? 'test' : 'production'
-        res.json(await getWorkflowErrors({ params: { environment }, user: userFromHeaders(req.headers) }))
+        res.json(await getWorkflowErrors({ params: { environment }, user: await authenticatedUserFromHeaders(req.headers) }))
     } catch (error) {
         res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
     }
@@ -306,7 +306,7 @@ app.get('/api/diligence/workflow-errors', async (req, res) => {
 app.get('/api/diligence/watchdog-events', async (req, res) => {
     try {
         const environment = req.query.environment === 'test' ? 'test' : 'production'
-        res.json(await getWatchdogEvents({ params: { environment }, user: userFromHeaders(req.headers) }))
+        res.json(await getWatchdogEvents({ params: { environment }, user: await authenticatedUserFromHeaders(req.headers) }))
     } catch (error) {
         res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
     }
@@ -314,7 +314,7 @@ app.get('/api/diligence/watchdog-events', async (req, res) => {
 
 app.post('/api/diligence/submission-consideration', express.json(), async (req, res) => {
     try {
-        res.json(await updateSubmissionRow({ params: req.body, user: userFromHeaders(req.headers) }))
+        res.json(await updateSubmissionRow({ params: req.body, user: await authenticatedUserFromHeaders(req.headers) }))
     } catch (error) {
         res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
     }
@@ -322,7 +322,7 @@ app.post('/api/diligence/submission-consideration', express.json(), async (req, 
 
 app.post('/api/diligence/retry-failed-document', express.json(), async (req, res) => {
     try {
-        res.status(202).json(await retryFailedDocument({ params: req.body, user: userFromHeaders(req.headers) }))
+        res.status(202).json(await retryFailedDocument({ params: req.body, user: await authenticatedUserFromHeaders(req.headers) }))
     } catch (error) {
         res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
     }
@@ -330,7 +330,7 @@ app.post('/api/diligence/retry-failed-document', express.json(), async (req, res
 
 app.post('/api/diligence/stop-batch', express.json(), async (req, res) => {
     try {
-        res.json(await stopBatchSubmission({ params: req.body, user: userFromHeaders(req.headers) }))
+        res.json(await stopBatchSubmission({ params: req.body, user: await authenticatedUserFromHeaders(req.headers) }))
     } catch (error) {
         res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
     }
@@ -338,7 +338,7 @@ app.post('/api/diligence/stop-batch', express.json(), async (req, res) => {
 
 app.post('/api/diligence/stop-synthesis', express.json(), async (req, res) => {
     try {
-        res.json(await stopProjectSynthesis({ params: req.body, user: userFromHeaders(req.headers) }))
+        res.json(await stopProjectSynthesis({ params: req.body, user: await authenticatedUserFromHeaders(req.headers) }))
     } catch (error) {
         res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
     }
@@ -346,7 +346,7 @@ app.post('/api/diligence/stop-synthesis', express.json(), async (req, res) => {
 
 app.post(['/api/diligence/run-synthesis', '/api/diligence/trigger-project-synthesis'], express.json(), async (req, res) => {
     try {
-        res.json(await triggerProjectSynthesis({ params: req.body, user: userFromHeaders(req.headers) }))
+        res.json(await triggerProjectSynthesis({ params: req.body, user: await authenticatedUserFromHeaders(req.headers) }))
     } catch (error) {
         res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
     }
@@ -354,7 +354,7 @@ app.post(['/api/diligence/run-synthesis', '/api/diligence/trigger-project-synthe
 
 app.post('/api/diligence/access-request', express.json(), async (req, res) => {
     try {
-        res.json(await handleAccessRequest({ params: req.body, user: userFromHeaders(req.headers) }))
+        res.json(await handleAccessRequest({ params: req.body, user: await authenticatedUserFromHeaders(req.headers) }))
     } catch (error) {
         res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
     }
@@ -362,7 +362,7 @@ app.post('/api/diligence/access-request', express.json(), async (req, res) => {
 
 app.post(['/api/diligence/slack-alert', '/api/slack-alert'], express.json(), async (req, res) => {
     try {
-        res.json(await handleSlackAlert({ params: req.body, headers: req.headers, user: userFromHeaders(req.headers) }))
+        res.json(await handleSlackAlert({ params: req.body, headers: req.headers, user: await authenticatedUserFromHeaders(req.headers) }))
     } catch (error) {
         res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
     }
