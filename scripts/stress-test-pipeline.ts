@@ -13,8 +13,6 @@ if (fs.existsSync(envPath)) {
 
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || ''
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || ''
-const baseUrl = process.env.API_URL || 'http://localhost:3000'
-
 if (!supabaseUrl || !supabaseKey) {
     console.error('❌ Missing SUPABASE_URL or SUPABASE_ANON_KEY/SERVICE_ROLE_KEY in frontend/.env')
     process.exit(1)
@@ -64,9 +62,9 @@ export async function runPipelineStressTest() {
     const testProjectId = `stress-pipeline-project-${Date.now()}`
 
     console.log('='.repeat(80))
-    console.log('⚡ MERGEWORKS LAYER 3: N8N PIPELINE & QUEUE RESILIENCE STRESS TEST')
+    console.log('⚡ MERGEWORKS LAYER 3: PIPELINE QUEUE REGISTRATION STRESS TEST')
     console.log(`⚡ Session: ${testSessionId} | Documents: ${opts.documentCount} | Concurrency: ${opts.concurrency}`)
-    console.log('⚡ Zero-Token Mode: Uses test environment mocks to test n8n queueing with $0 LLM spend')
+    console.log('⚡ Zero-Token Mode: Tests durable queue registration without invoking n8n or an LLM')
     console.log('='.repeat(80))
 
     const limit = pLimit(opts.concurrency)
@@ -158,11 +156,11 @@ export async function runPipelineStressTest() {
 
     // Print summary table
     console.log('\n' + '='.repeat(80))
-    console.log('📊 LAYER 3: N8N PIPELINE & QUEUE RESILIENCE BENCHMARK SUMMARY')
+    console.log('📊 LAYER 3: PIPELINE QUEUE REGISTRATION BENCHMARK SUMMARY')
     console.log('='.repeat(80))
     console.table([
         {
-            Pipeline: 'n8n Batch Ingestion Queue',
+            Pipeline: 'Supabase Batch Registration Queue',
             'Total Docs': opts.documentCount,
             Concurrency: opts.concurrency,
             RPS: throughputRps,
@@ -179,12 +177,18 @@ export async function runPipelineStressTest() {
     console.log(`\nOverall Layer 3 Status: ${isPass ? '✅ PASS - Pipeline queue absorbed batch with zero dropped rows' : '⚠️ WARN - Pipeline experienced degradation'}\n`)
 
     return {
+        documentCount: opts.documentCount,
+        concurrency: opts.concurrency,
         stats,
+        acceptanceFailures,
+        registeredCount,
         isPass,
     }
 }
 
-void runPipelineStressTest().catch((err) => {
-    console.error('Fatal pipeline stress test error:', err)
-    process.exit(1)
-})
+if (process.env.MERGEWORKS_STRESS_ENTRY === 'stress-test-pipeline.ts') {
+    void runPipelineStressTest().catch((err) => {
+        console.error('Fatal pipeline stress test error:', err)
+        process.exit(1)
+    })
+}
