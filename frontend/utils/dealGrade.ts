@@ -12,7 +12,9 @@ export type DealGrade = {
 
 /** Maps a score/maxScore ratio to a letter grade with its badge colours. */
 export function computeDealGrade(totalScore: number, maxScore: number): DealGrade {
-    const pct = maxScore > 0 ? totalScore / maxScore : 0
+    // A non-finite score (NaN from an upstream divide, ±Infinity) must not slip
+    // through the ratio and land on an arbitrary letter — treat it as 0%.
+    const pct = maxScore > 0 && Number.isFinite(totalScore) ? totalScore / maxScore : 0
     if (pct >= 0.85) return { letter: 'A', color: 'text-green-700 dark:text-green-300', bg: 'bg-green-100 dark:bg-green-900/40' }
     if (pct >= 0.70) return { letter: 'B', color: 'text-emerald-700 dark:text-emerald-300', bg: 'bg-emerald-100 dark:bg-emerald-900/40' }
     if (pct >= 0.55) return { letter: 'C', color: 'text-amber-700 dark:text-amber-300', bg: 'bg-amber-100 dark:bg-amber-900/40' }
