@@ -136,6 +136,7 @@ import { fallbackDiligenceFindings } from '../utils/diligence'
 import {
     createProjectSummaries,
     getProjectKey,
+    isGenericName,
     isRowMatchingProject,
     isSystemTestProbeFile,
     persistActiveProjectKey,
@@ -2109,9 +2110,15 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
             return 'Apex Industrial Technologies LLC'
         }
         if (selectedFiles.length > 0) {
-            return selectedFiles[0].name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ')
+            const nonGenericFile = selectedFiles.find((file) => {
+                const clean = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ')
+                return !isGenericName(clean)
+            })
+            if (nonGenericFile) {
+                return nonGenericFile.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ')
+            }
         }
-        return dealName || activeViewProject?.name || 'New Project'
+        return dealName || activeViewProject?.name || 'New Diligence Project'
     }, [dealName, activeViewProject, selectedFiles, isQuestionnaireTour, isTourActive])
 
     const suggestedProjectId = useMemo(() => {

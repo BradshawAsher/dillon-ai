@@ -242,6 +242,11 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
     )
     const allProjects = useMemo(() => {
         const filteredRows = rows.filter((row) => {
+            const pid = (row.projectId || '').toLowerCase()
+            const pk = getProjectKey(row).toLowerCase()
+            // Benchmark harness evaluation runs belong exclusively to the Evals tab
+            if (pid.startsWith('mml-dd-') || pk.startsWith('mml-dd-')) return false
+
             const status = row.status.trim().toLowerCase()
             const risk = `${row.trafficLight} ${row.riskLevel}`.trim().toLowerCase()
             const workstreamMatches = workstreamFilter === 'all' || row.workstream.trim() === workstreamFilter
@@ -251,7 +256,19 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                 || (riskFilter === 'high' && /red|high/.test(risk))
             return workstreamMatches && statusMatches && riskMatches
         })
-        return createProjectSummaries(filteredRows, null, syntheses)
+        const summaries = createProjectSummaries(filteredRows, null, syntheses)
+
+        // Deduplicate duplicate demo test projects by normalized projectName so guests see one clean card per deal
+        const seenNames = new Set<string>()
+        return summaries.filter((project) => {
+            const normName = (project.projectName || '').trim().toLowerCase()
+            if (normName.includes('apex precision dynamics') || normName.includes('apex industrial')) {
+                if (seenNames.has('apex')) return false
+                seenNames.add('apex')
+                return true
+            }
+            return true
+        })
     }, [riskFilter, rows, statusFilter, syntheses, workstreamFilter])
 
     const { activeProjects, archivedProjects, activeProjectCount, reviewProjectCount, readyProjectCount, totalDocuments } = useMemo(() => {

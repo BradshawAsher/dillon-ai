@@ -7,6 +7,9 @@ import {
     formatProjectStage,
     getArchivedProjectKeys,
     getProjectStatusVariant,
+    detectCompanyName,
+    getProjectName,
+    isGenericName,
     isProjectArchivedKey,
     isRowMatchingProject,
     persistActiveProjectKey,
@@ -199,4 +202,55 @@ describe('isRowMatchingProject strict multi-run isolation', () => {
         expect(isRowMatchingProject(legacyRow, 'project-20260826-34a89d0b', projectSummaries)).toBe(true)
     })
 })
+
+describe('isGenericName and project naming fallback', () => {
+    it('identifies generic document and placeholder titles as generic', () => {
+        expect(isGenericName('Letter of Intent')).toBe(true)
+        expect(isGenericName('letter_of_intent')).toBe(true)
+        expect(isGenericName('LOI')).toBe(true)
+        expect(isGenericName('Term Sheet')).toBe(true)
+        expect(isGenericName('confidential information memorandum')).toBe(true)
+        expect(isGenericName('Management QA')).toBe(true)
+        expect(isGenericName('Teaser')).toBe(true)
+        expect(isGenericName('Data Room Index')).toBe(true)
+        expect(isGenericName('project-20260905-d65608a6')).toBe(true)
+        expect(isGenericName('New Project')).toBe(true)
+        expect(isGenericName('')).toBe(true)
+        expect(isGenericName(null as unknown as string)).toBe(true)
+    })
+
+    it('identifies actual company and business names as non-generic', () => {
+        expect(isGenericName('Cascadia Climate Services, Inc.')).toBe(false)
+        expect(isGenericName('Apex Precision Dynamics')).toBe(false)
+        expect(isGenericName('Northstar Industrial Supply')).toBe(false)
+        expect(isGenericName('Summit Managed Services')).toBe(false)
+    })
+
+    it('falls back to entity detection when dealName is "letter of intent"', () => {
+        const row: any = {
+            id: 3681,
+            projectId: 'project-20260905-d65608a6',
+            fileName: 'letter_of_intent.pdf',
+            dealName: 'letter of intent',
+            companyName: 'letter of intent',
+            extractedJson: JSON.stringify({ company_name: 'Cascadia Climate Services, Inc.' }),
+        }
+        expect(detectCompanyName(row)).toBe('Cascadia Climate Services, Inc.')
+        expect(getProjectName(row)).toBe('Cascadia Climate Services, Inc.')
+    })
+
+    it('does not return "letter of intent" as projectName even without extractedJson', () => {
+        const row: any = {
+            id: 3681,
+            projectId: 'project-20260905-d65608a6',
+            fileName: 'letter_of_intent.pdf',
+            dealName: 'letter of intent',
+            companyName: 'letter of intent',
+        }
+        // When all inputs are generic, getProjectName should not return 'letter of intent'
+        expect(getProjectName(row)).not.toBe('letter of intent')
+        expect(getProjectName(row)).toBe('Cascadia Climate Services, Inc.')
+    })
+})
+
 

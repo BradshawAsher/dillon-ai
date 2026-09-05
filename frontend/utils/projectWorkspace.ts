@@ -157,7 +157,7 @@ function normalizeText(value: string | null | undefined) {
     return (typeof value === 'string' ? value : '').trim().toLowerCase()
 }
 
-function isGenericName(name: string): boolean {
+export function isGenericName(name: string): boolean {
     if (!name || name.trim().length === 0) return true
     const norm = normalizeText(name)
     return (
@@ -168,6 +168,20 @@ function isGenericName(name: string): boolean {
         norm.includes('confidential information memorandum') ||
         norm.includes('confidential_information_memorandum') ||
         norm.includes('balance sheet jan') ||
+        norm.includes('letter of intent') ||
+        norm.includes('letter_of_intent') ||
+        norm === 'loi' ||
+        norm.startsWith('loi ') ||
+        norm.endsWith(' loi') ||
+        norm.includes('term sheet') ||
+        norm.includes('term_sheet') ||
+        norm.includes('management qa') ||
+        norm.includes('management_qa') ||
+        norm.includes('teaser') ||
+        norm.includes('data room') ||
+        norm.includes('data_room') ||
+        norm.includes('seller adjusted ebitda bridge') ||
+        norm.includes('book tax reconciliation') ||
         ['n/a', 'na', 'unknown', 'none'].includes(norm)
     )
 }
@@ -279,7 +293,7 @@ export function getProjectName(row: SubmissionHistoryItem, allProjectRows?: Subm
     if (detected) return detected
 
     const rawName = row.dealName?.trim() || row.companyName?.trim() || ''
-    if (rawName && !rawName.toLowerCase().includes('medical spa')) return rawName
+    if (rawName && !isGenericName(rawName) && !rawName.toLowerCase().includes('medical spa')) return rawName
 
     return 'Cascadia Climate Services, Inc.'
 }
