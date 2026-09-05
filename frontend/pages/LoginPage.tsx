@@ -360,7 +360,11 @@ export default function LoginPage({
 
                         {/* Error Alert */}
                         {errorMessage && (
-                            <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive flex items-start gap-2">
+                            <div
+                                id="auth-error"
+                                role="alert"
+                                className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive flex items-start gap-2"
+                            >
                                 <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
                                 <div className="leading-relaxed">{errorMessage}</div>
                             </div>
@@ -368,7 +372,11 @@ export default function LoginPage({
 
                         {/* Success Alert */}
                         {successMessage && (
-                            <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-600 dark:text-emerald-400 flex items-start gap-2">
+                            <div
+                                id="auth-success"
+                                role="status"
+                                className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-600 dark:text-emerald-400 flex items-start gap-2"
+                            >
                                 <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5" />
                                 <div className="leading-relaxed">{successMessage}</div>
                             </div>
@@ -378,54 +386,70 @@ export default function LoginPage({
                         <form onSubmit={handleSubmit} className="space-y-4">
                             {mode === 'signup' && (
                                 <div>
-                                    <label className="block text-xs font-semibold text-foreground mb-1.5">
+                                    <label htmlFor="auth-full-name" className="block text-xs font-semibold text-foreground mb-1.5">
                                         Full Name
                                     </label>
                                     <div className="relative">
                                         <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                         <input
+                                            id="auth-full-name"
                                             type="text"
+                                            name="name"
+                                            autoComplete="name"
                                             value={fullName}
                                             onChange={(e) => setFullName(e.target.value)}
                                             placeholder="e.g. Sarah Jenkins"
                                             className="w-full rounded-lg border border-border bg-background py-2.5 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                                             required={mode === 'signup'}
+                                            aria-invalid={Boolean(errorMessage && !fullName.trim())}
+                                            aria-describedby={errorMessage ? 'auth-error' : undefined}
                                         />
                                     </div>
                                 </div>
                             )}
 
                             <div>
-                                <label className="block text-xs font-semibold text-foreground mb-1.5">
+                                <label htmlFor="auth-email" className="block text-xs font-semibold text-foreground mb-1.5">
                                     Work Email
                                 </label>
                                 <div className="relative">
                                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                     <input
+                                        id="auth-email"
                                         type="email"
+                                        name="email"
+                                        autoComplete="email"
+                                        inputMode="email"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
                                         placeholder="you@firm.com"
                                         className="w-full rounded-lg border border-border bg-background py-2.5 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                                         required
+                                        aria-invalid={Boolean(errorMessage && !email.trim())}
+                                        aria-describedby={errorMessage ? 'auth-error' : undefined}
                                     />
                                 </div>
                             </div>
 
                             <div>
-                                <label className="block text-xs font-semibold text-foreground mb-1.5">
+                                <label htmlFor="auth-password" className="block text-xs font-semibold text-foreground mb-1.5">
                                     Password
                                 </label>
                                 <div className="relative">
                                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                     <input
+                                        id="auth-password"
                                         type="password"
+                                        name="password"
+                                        autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         placeholder="••••••••••••"
                                         className="w-full rounded-lg border border-border bg-background py-2.5 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                                         required
                                         minLength={6}
+                                        aria-invalid={Boolean(errorMessage && !password)}
+                                        aria-describedby={errorMessage ? 'auth-error' : undefined}
                                     />
                                 </div>
                             </div>
@@ -433,7 +457,7 @@ export default function LoginPage({
                             {mode === 'signup' && (
                                 <div>
                                     <div className="flex items-center justify-between mb-1.5">
-                                        <label className="block text-xs font-semibold text-foreground">
+                                        <label htmlFor="auth-team" className="block text-xs font-semibold text-foreground">
                                             Custom Team / Firm Name <span className="font-normal text-muted-foreground">(Optional)</span>
                                         </label>
                                         <span className="text-[10px] text-muted-foreground">Default: External Member</span>
@@ -441,7 +465,10 @@ export default function LoginPage({
                                     <div className="relative">
                                         <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                                         <input
+                                            id="auth-team"
                                             type="text"
+                                            name="organization"
+                                            autoComplete="organization"
                                             value={team}
                                             onChange={(e) => setTeam(e.target.value)}
                                             placeholder="e.g. Acme Capital, Blue Ridge Search Fund"
