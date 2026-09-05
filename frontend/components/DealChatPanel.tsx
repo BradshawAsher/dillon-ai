@@ -18,6 +18,7 @@ import { recalculateAdjustedEbitdaWithDisallowances, classifyAddBackCategory, DE
 import { getCohortsForProject, computeCohortSummary } from '../utils/cohortRetention'
 import { calculateWorkingCapitalPeg } from '../utils/workingCapitalPeg'
 import { getFallbackStableUrl } from '../utils/deploymentVersions'
+import { authenticatedIdentityHeaders } from '../lib/identity'
 import { estimateChatQueryCost } from '../utils/costModel'
 import type { ManualDealFormData } from '../utils/manualDealIntake'
 import { classifyQuestionnaireFile, questionnaireDraftFromImport, questionnaireDraftValues, type QuestionnaireDraft } from '../utils/questionnaireDraft'
@@ -3111,7 +3112,7 @@ async function streamGeminiSse(
         `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(geminiModel)}:streamGenerateContent?alt=sse&key=${encodeURIComponent(apiKey.trim())}`,
         {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', ...await authenticatedIdentityHeaders() },
             body: JSON.stringify({ contents }),
         }
     )
@@ -3614,7 +3615,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
 
                 const res = await fetch('/api/diligence/questionnaire-draft', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', ...await authenticatedIdentityHeaders() },
                     body: JSON.stringify({
                         requestId: crypto.randomUUID(),
                         sourceType: 'image',
@@ -4323,7 +4324,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                 try {
                     const res = await fetch('/api/diligence/chat', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 'Content-Type': 'application/json', ...await authenticatedIdentityHeaders() },
                         body: JSON.stringify({
                             question: trimmed,
                             context,
@@ -4562,7 +4563,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                 try {
                     const res = await fetch('/api/diligence/chat', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 'Content-Type': 'application/json', ...await authenticatedIdentityHeaders() },
                         body: JSON.stringify({
                             question: prompt,
                             context,

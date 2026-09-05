@@ -377,7 +377,10 @@ export default async function getProjectSynthesis(req: { params: Params; user: U
         .select(isScoped ? fullColumns : portfolioColumns)
         .or('is_placeholder.is.null,is_placeholder.eq.false')
 
-    const tenantFilter = buildTenantPostgrestFilter(req.user)
+    // project_syntheses has no analyst_email column. Ownership is stamped as
+    // user_id when synthesis is created, so ordinary users are scoped strictly
+    // to their account rather than every member with the same display team.
+    const tenantFilter = buildTenantPostgrestFilter(req.user, { includeAnalystEmail: false })
     if (tenantFilter) {
         query = query.or(tenantFilter)
     }

@@ -13,10 +13,6 @@ describe('tenantAuth utilities', () => {
             expect(isMergeWorksAdmin({ email: 'partner@mergeworks.org' })).toBe(true)
         })
 
-        it('identifies Pod 1 internal team as admin', () => {
-            expect(isMergeWorksAdmin({ email: 'tester@custom.com', team: 'Pod 1 (Internal)' })).toBe(true)
-        })
-
         it('identifies external non-admin users', () => {
             expect(isMergeWorksAdmin({ email: 'external@acme-cap.com' })).toBe(false)
             expect(isMergeWorksAdmin({ email: 'guest' })).toBe(false)
@@ -43,7 +39,6 @@ describe('tenantAuth utilities', () => {
         it('returns null for admins so all records are visible', () => {
             expect(buildTenantPostgrestFilter({ email: 'bradshaw@mergeworks.io' })).toBeNull()
             expect(buildTenantPostgrestFilter({ email: 'admin@mergeworks.io' })).toBeNull()
-            expect(buildTenantPostgrestFilter({ email: 'user@acme.com', team: 'Pod 1 (Internal)' })).toBeNull()
         })
 
         it('returns demo-only filter for guest users', () => {
@@ -61,7 +56,15 @@ describe('tenantAuth utilities', () => {
             expect(filter).toContain('is_demo.eq.true')
             expect(filter).toContain('user_id.eq.123e4567-e89b-12d3-a456-426614174000')
             expect(filter).toContain('analyst_email.ilike.analyst@acmecapital.com')
-            expect(filter).toContain('team.eq.Acme M&A')
+            expect(filter).not.toContain('team.eq.')
+        })
+
+        it('omits analyst email for tables that only support user_id ownership', () => {
+            const filter = buildTenantPostgrestFilter({
+                id: '123e4567-e89b-12d3-a456-426614174000',
+                email: 'analyst@acmecapital.com',
+            }, { includeAnalystEmail: false })
+            expect(filter).toBe('is_demo.eq.true,user_id.eq.123e4567-e89b-12d3-a456-426614174000')
         })
     })
 })

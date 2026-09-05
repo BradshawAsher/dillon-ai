@@ -74,3 +74,29 @@ export function identityHeaders(): Record<string, string> {
   return headers
 }
 
+/**
+ * Returns the display identity headers plus the current Supabase access token.
+ *
+ * The display headers are retained for backwards-compatible attribution, but
+ * the API must derive authorization from the bearer token rather than trusting
+ * browser-controlled identity values.
+ */
+export async function authenticatedIdentityHeaders(): Promise<Record<string, string>> {
+  const headers = identityHeaders()
+
+  try {
+    const { supabaseAuthClient } = await import('../services/supabaseAuth')
+    const { data } = await supabaseAuthClient.auth.getSession()
+    const accessToken = data.session?.access_token
+    if (accessToken) {
+      headers.Authorization = `Bearer ${accessToken}`
+    }
+  } catch {
+    // The API treats a missing/invalid bearer token as a guest request. Keeping
+    // this helper best-effort lets the demo experience continue during auth
+    // initialization or when Supabase is temporarily unavailable.
+  }
+
+  return headers
+}
+

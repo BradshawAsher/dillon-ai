@@ -18,7 +18,6 @@ const ADMIN_EMAILS = new Set([
 export function isMergeWorksAdmin(user?: { email?: string; team?: string }): boolean {
   if (!user || !user.email) return false
   const cleanEmail = user.email.trim().toLowerCase()
-  if (user.team === 'Pod 1 (Internal)') return true
   if (cleanEmail.endsWith('@mergeworks.io') || cleanEmail.endsWith('@mergeworks.org')) return true
   return ADMIN_EMAILS.has(cleanEmail)
 }
@@ -34,7 +33,10 @@ export function isGuestUser(user?: { email?: string; id?: string }): boolean {
   )
 }
 
-export function buildTenantPostgrestFilter(user?: { email?: string; id?: string; team?: string }): string | null {
+export function buildTenantPostgrestFilter(
+  user?: { email?: string; id?: string; team?: string },
+  options: { includeAnalystEmail?: boolean } = {},
+): string | null {
   if (isMergeWorksAdmin(user)) {
     // Admins have global visibility across all tenants
     return null
@@ -51,13 +53,9 @@ export function buildTenantPostgrestFilter(user?: { email?: string; id?: string;
     conditions.push(`user_id.eq.${user.id.trim()}`)
   }
 
-  if (user?.email && user.email.trim().length > 0) {
+  if (options.includeAnalystEmail !== false && user?.email && user.email.trim().length > 0) {
     const cleanEmail = user.email.trim().toLowerCase()
     conditions.push(`analyst_email.ilike.${cleanEmail}`)
-  }
-
-  if (user?.team && user.team.trim().length > 0 && user.team.trim().toLowerCase() !== 'external member') {
-    conditions.push(`team.eq.${user.team.trim()}`)
   }
 
   return conditions.join(',')

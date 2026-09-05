@@ -25,6 +25,10 @@ const backendMocks = vi.hoisted(() => ({
     handleSlackAlert: vi.fn(),
 }))
 
+const supabaseMocks = vi.hoisted(() => ({
+    getUser: vi.fn(),
+}))
+
 vi.mock('../../backend/diligence/getProjectSynthesis', () => ({ default: backendMocks.getProjectSynthesis }))
 vi.mock('../../backend/diligence/getDealModels', () => ({ default: backendMocks.getDealModels }))
 vi.mock('../../backend/diligence/saveDealModel', () => ({ default: backendMocks.saveDealModel }))
@@ -45,6 +49,11 @@ vi.mock('../../backend/diligence/createUploadUrl', () => ({ default: backendMock
 vi.mock('../../backend/diligence/updateSubmissionRow', () => ({ default: backendMocks.updateSubmissionRow }))
 vi.mock('../../backend/diligence/handleAccessRequest', () => ({ default: backendMocks.handleAccessRequest }))
 vi.mock('../../backend/diligence/handleSlackAlert', () => ({ default: backendMocks.handleSlackAlert }))
+vi.mock('../../backend/supabaseClient', () => ({
+    supabaseAuth: {
+        auth: { getUser: supabaseMocks.getUser },
+    },
+}))
 
 import handler from '../../api/diligence/[...route].src'
 import { HttpError } from '../../api/_lib/httpError'
@@ -134,6 +143,7 @@ beforeEach(() => {
         mock.mockReset()
         mock.mockResolvedValue({ source: key })
     }
+    supabaseMocks.getUser.mockReset()
 
     vi.stubGlobal('fetch', vi.fn((input: string | URL | Request, init?: RequestInit) => {
         const url = new URL(typeof input === 'string' || input instanceof URL ? input.toString() : input.url)
@@ -168,49 +178,49 @@ describe('diligence API route contracts', () => {
             path: '/api/diligence/history?environment=test&projectId=project-history&limit=8&full=true',
             mock: 'getSubmissionHistory',
             expected: { params: { environment: 'test', projectId: 'project-history', limit: '8', full: true }, user: fallbackUser },
-            cacheControl: 'public, s-maxage=10, stale-while-revalidate=60',
+            cacheControl: 'private, no-store',
         },
         {
             name: 'capacity telemetry',
             path: '/api/diligence/capacity-telemetry?environment=test&lookbackDays=14',
             mock: 'getCapacityTelemetry',
             expected: { params: { environment: 'test', lookbackDays: '14' }, user: fallbackUser },
-            cacheControl: 'public, s-maxage=30, stale-while-revalidate=120',
+            cacheControl: 'private, no-store',
         },
         {
             name: 'workflow-errors',
             path: '/api/diligence/workflow-errors?environment=test',
             mock: 'getWorkflowErrors',
             expected: { params: { environment: 'test' }, user: fallbackUser },
-            cacheControl: 'public, s-maxage=30, stale-while-revalidate=120',
+            cacheControl: 'private, no-store',
         },
         {
             name: 'synthesis',
             path: '/api/diligence/synthesis?environment=test&projectId=project-synthesis&limit=7',
             mock: 'getProjectSynthesis',
             expected: { params: { environment: 'test', projectId: 'project-synthesis', limit: '7' }, user: fallbackUser },
-            cacheControl: 'public, s-maxage=10, stale-while-revalidate=60',
+            cacheControl: 'private, no-store',
         },
         {
             name: 'kpis',
             path: '/api/diligence/kpis?environment=test&projectId=project-kpis',
             mock: 'getDiligenceKpis',
             expected: { params: { environment: 'test', projectId: 'project-kpis' }, user: fallbackUser },
-            cacheControl: 'public, s-maxage=30, stale-while-revalidate=120',
+            cacheControl: 'private, no-store',
         },
         {
             name: 'deal-models',
             path: '/api/diligence/deal-models?projectId=project-model',
             mock: 'getDealModels',
             expected: { params: { projectId: 'project-model' }, user: fallbackUser },
-            cacheControl: 'public, s-maxage=30, stale-while-revalidate=120',
+            cacheControl: 'private, no-store',
         },
         {
             name: 'project-action-tracker',
             path: '/api/diligence/project-action-tracker?projectId=project-actions',
             mock: 'getProjectActionTracker',
             expected: { params: { projectId: 'project-actions' }, user: fallbackUser },
-            cacheControl: 'public, s-maxage=30, stale-while-revalidate=120',
+            cacheControl: 'private, no-store',
         },
     ]
 
@@ -254,7 +264,7 @@ describe('diligence API route contracts', () => {
         expect(backendMocks[mock]).toHaveBeenCalledWith(expect.objectContaining({ params: payload, user: fallbackUser }))
     })
 
-    it('decodes analyst headers and forwards them to backend operations', async () => {
+    it('does not trust browser-provided analyst headers for authorization', async () => {
         await apiRequest('/api/diligence/history?projectId=user-forwarding', {
             headers: {
                 'x-analyst-name': encodeURIComponent('Dana López'),
@@ -263,8 +273,61 @@ describe('diligence API route contracts', () => {
         })
 
         expect(backendMocks.getSubmissionHistory).toHaveBeenCalledWith(expect.objectContaining({
-            user: { fullName: 'Dana López', email: 'dana@example.com' },
+            user: fallbackUser,
         }))
+    })
+
+    it('verifies a bearer token and derives the backend identity from Supabase Auth', async () => {
+        supabaseMocks.getUser.mockResolvedValueOnce({
+            data: {
+                user: {
+                    id: '123e4567-e89b-12d3-a456-426614174000',
+                    email: 'verified@example.com',
+                    is_anonymous: false,
+                    user_metadata: { full_name: 'Verified User', team: 'Spoofed Team' },
+                    app_metadata: { team: 'Verified Workspace' },
+                },
+            },
+            error: null,
+        })
+
+        await apiRequest('/api/diligence/history?projectId=verified-user', {
+            headers: {
+                Authorization: 'Bearer valid-user-token',
+                'x-analyst-email': 'spoofed-admin@mergeworks.io',
+                'x-user-id': '00000000-0000-0000-0000-000000000000',
+            },
+        })
+
+        expect(supabaseMocks.getUser).toHaveBeenCalledWith('valid-user-token')
+        expect(backendMocks.getSubmissionHistory).toHaveBeenCalledWith(expect.objectContaining({
+            user: {
+                id: '123e4567-e89b-12d3-a456-426614174000',
+                email: 'verified@example.com',
+                fullName: 'Verified User',
+                team: 'Verified Workspace',
+            },
+        }))
+    })
+
+    it('rejects an invalid bearer token instead of falling back to identity headers', async () => {
+        supabaseMocks.getUser.mockResolvedValueOnce({
+            data: { user: null },
+            error: { message: 'invalid JWT' },
+        })
+
+        const result = await apiRequest('/api/diligence/history?projectId=invalid-user', {
+            headers: {
+                Authorization: 'Bearer invalid-user-token',
+                'x-analyst-email': 'admin@mergeworks.io',
+            },
+        })
+
+        expect(result).toMatchObject({
+            status: 401,
+            body: { error: 'Your session is invalid or expired. Please sign in again.' },
+        })
+        expect(backendMocks.getSubmissionHistory).not.toHaveBeenCalled()
     })
 
     it('returns JSON 404 responses for unknown routes and unsupported methods', async () => {
@@ -297,6 +360,39 @@ describe('diligence API route contracts', () => {
 })
 
 describe('diligence API cache and protection behavior', () => {
+    it('keeps cached batch history isolated between authenticated users', async () => {
+        const usersByToken: Record<string, { id: string; email: string }> = {
+            'token-user-a': { id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', email: 'a@example.com' },
+            'token-user-b': { id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', email: 'b@example.com' },
+        }
+        supabaseMocks.getUser.mockImplementation(async (token: string) => ({
+            data: {
+                user: {
+                    ...usersByToken[token],
+                    is_anonymous: false,
+                    user_metadata: {},
+                    app_metadata: {},
+                },
+            },
+            error: null,
+        }))
+        backendMocks.getSubmissionHistory.mockImplementation(async ({ user }: { user: { id: string } }) => ([
+            { projectId: `project-${user.id}`, userId: user.id },
+        ]))
+        const path = '/api/diligence/history?projectId=cache-isolation-project&limit=3'
+
+        const userA = await apiRequest(path, { headers: { Authorization: 'Bearer token-user-a' } })
+        const userB = await apiRequest(path, { headers: { Authorization: 'Bearer token-user-b' } })
+        const userAAgain = await apiRequest(path, { headers: { Authorization: 'Bearer token-user-a' } })
+
+        expect(userA.body).toEqual([{ projectId: 'project-aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', userId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' }])
+        expect(userB.body).toEqual([{ projectId: 'project-bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', userId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb' }])
+        expect(userAAgain.body).toEqual(userA.body)
+        expect(userA.headers.get('cache-control')).toBe('private, no-store')
+        expect(userA.headers.get('vary')).toContain('Authorization')
+        expect(backendMocks.getSubmissionHistory).toHaveBeenCalledTimes(2)
+    })
+
     it('serves matching ETags as 304 without repeating the backend read', async () => {
         backendMocks.getSubmissionHistory.mockResolvedValue([{ id: 'etag-row' }])
         const path = '/api/diligence/history?projectId=etag-project&limit=3'
