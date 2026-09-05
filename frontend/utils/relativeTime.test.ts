@@ -9,6 +9,11 @@ describe('formatRelativeTime', () => {
         expect(formatRelativeTime(0, NOW)).toBe('Pending')
     })
 
+    it('reports a non-finite timestamp as pending', () => {
+        expect(formatRelativeTime(Number.NaN, NOW)).toBe('Pending')
+        expect(formatRelativeTime(Number.POSITIVE_INFINITY, NOW)).toBe('Pending')
+    })
+
     it('reports sub-minute gaps as just now', () => {
         expect(formatRelativeTime(NOW - 30_000, NOW)).toBe('Just now')
         expect(formatRelativeTime(NOW, NOW)).toBe('Just now')

@@ -14,5 +14,9 @@ export function formatConfidencePercent(raw: string | undefined | null): string 
     const num = Number(raw)
     if (!Number.isFinite(num)) return null
     const pct = num <= 1 ? num * 100 : num
-    return `${Math.round(pct)}%`
+    // A confidence is a probability: clamp to [0, 100] so bad upstream data —
+    // a fraction above 1 ("1.5"), a percent above 100 ("150"), or a negative
+    // value — can never render an impossible "150%" or "-40%" label.
+    const clamped = Math.min(100, Math.max(0, pct))
+    return `${Math.round(clamped)}%`
 }

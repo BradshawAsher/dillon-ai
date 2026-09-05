@@ -19,4 +19,9 @@ describe('severityBadgeClass', () => {
     it('is trim- and case-insensitive', () => {
         expect(severityBadgeClass('  CRITICAL  ')).toContain('text-destructive')
     })
+
+    it('falls back to neutral styling for null/undefined', () => {
+        expect(severityBadgeClass(null)).toContain('text-muted-foreground')
+        expect(severityBadgeClass(undefined)).toContain('text-muted-foreground')
+    })
 })

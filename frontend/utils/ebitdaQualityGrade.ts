@@ -12,7 +12,7 @@ export type EbitdaQualityGrade = {
 
 /** Maps a score/maxScore ratio to the EBITDA-quality grade with its colour. */
 export function getEbitdaQualityGrade(totalScore: number, maxScore: number): EbitdaQualityGrade {
-    if (maxScore <= 0) return { grade: 'N/A', color: 'text-muted-foreground' }
+    if (!(maxScore > 0) || !Number.isFinite(totalScore)) return { grade: 'N/A', color: 'text-muted-foreground' }
     const pct = totalScore / maxScore
     if (pct >= 0.8) return { grade: 'A', color: 'text-green-600' }
     if (pct >= 0.6) return { grade: 'B', color: 'text-blue-600' }

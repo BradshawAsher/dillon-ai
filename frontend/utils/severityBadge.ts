@@ -6,8 +6,11 @@
  * Border/background/text classes for a severity badge. critical/high are
  * destructive, medium is amber, everything else is a muted neutral.
  */
-export function severityBadgeClass(severity: string): string {
-    const lower = severity.trim().toLowerCase()
+export function severityBadgeClass(severity: string | null | undefined): string {
+    // AI findings occasionally omit a severity; coalesce to '' so a null/undefined
+    // value renders the neutral badge instead of throwing on `.trim()`. Matches the
+    // null-tolerant contract of riskDotClass.
+    const lower = (severity ?? '').trim().toLowerCase()
     if (lower === 'critical' || lower === 'high') {
         return 'border-destructive/30 bg-destructive/10 text-destructive'
     }

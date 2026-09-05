@@ -21,6 +21,11 @@ describe('getEbitdaQualityGrade', () => {
         expect(gradeAt(0.59)).toBe('C')
     })
 
+    it('returns N/A for a non-finite score or max', () => {
+        expect(getEbitdaQualityGrade(NaN, 100).grade).toBe('N/A')
+        expect(getEbitdaQualityGrade(50, NaN).grade).toBe('N/A')
+    })
+
     it('returns a colour class alongside the grade', () => {
         expect(getEbitdaQualityGrade(1, 1).color).toContain('green')
     })

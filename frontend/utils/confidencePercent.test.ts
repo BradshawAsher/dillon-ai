@@ -14,6 +14,12 @@ describe('formatConfidencePercent', () => {
         expect(formatConfidencePercent('0')).toBe('0%')
     })
 
+    it('clamps out-of-range values into 0..100', () => {
+        expect(formatConfidencePercent('150')).toBe('100%')
+        expect(formatConfidencePercent('-0.4')).toBe('0%')
+        expect(formatConfidencePercent('-40')).toBe('0%')
+    })
+
     it('returns null when there is nothing usable', () => {
         expect(formatConfidencePercent(undefined)).toBeNull()
         expect(formatConfidencePercent(null)).toBeNull()

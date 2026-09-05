@@ -14,7 +14,9 @@
  * A future timestamp (now < timestamp) collapses to "Just now".
  */
 export function formatRelativeTime(timestamp: number, now: number = Date.now()): string {
-    if (timestamp === 0) return 'Pending'
+    // A missing/unparsed timestamp (0, NaN, or a non-finite value) is "Pending"
+    // rather than the "NaNd ago" a bare arithmetic path would produce.
+    if (timestamp === 0 || !Number.isFinite(timestamp)) return 'Pending'
     const diffMin = Math.floor((now - timestamp) / 60_000)
     if (diffMin < 1) return 'Just now'
     if (diffMin < 60) return `${diffMin}m ago`

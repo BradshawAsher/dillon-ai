@@ -2,6 +2,10 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "dev": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "test": "npm --prefix frontend test",
+    "typecheck": "npm --prefix frontend run typecheck",
     "eval": "node scripts/fast-run.js scripts/run-evals.ts",
     "eval:failures": "node scripts/fast-run.js scripts/failure-report.ts",
     "stress:api": "node scripts/fast-run.js scripts/stress-test-api.ts",

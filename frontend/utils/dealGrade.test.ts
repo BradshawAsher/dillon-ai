@@ -21,6 +21,11 @@ describe('computeDealGrade', () => {
         expect(computeDealGrade(50, 0).letter).toBe('F')
     })
 
+    it('treats a non-finite score as 0% (grade F)', () => {
+        expect(computeDealGrade(NaN, 100).letter).toBe('F')
+        expect(computeDealGrade(Infinity, 100).letter).toBe('F')
+    })
+
     it('returns colour and background classes alongside the letter', () => {
         const grade = computeDealGrade(1, 1)
         expect(grade.letter).toBe('A')
