@@ -34,6 +34,10 @@ export type NwcPegResult = {
     definitiveAgreementClause: string
 }
 
+function isFiniteNumber(value: unknown): value is number {
+    return typeof value === 'number' && Number.isFinite(value)
+}
+
 /**
  * Generates rolling monthly NWC data points anchored around documented balance sheet facts.
  */
@@ -45,12 +49,20 @@ export function generateMonthlyNwcSeries(
     baseAccrued: number,
     monthsCount = 24
 ): WorkingCapitalMonthPoint[] {
-    const monthlyRev = Math.max(10000, Math.round(baseRevenue / 12))
+    const safeMonths = isFiniteNumber(monthsCount) && monthsCount > 0 ? Math.min(120, Math.floor(monthsCount)) : 0
+    const safeRevenue = isFiniteNumber(baseRevenue) && baseRevenue > 0 ? baseRevenue : 12_400_000
+    const safeAr = isFiniteNumber(baseAr) && baseAr >= 0 ? baseAr : Math.round(safeRevenue * 0.08)
+    const safeInventory = isFiniteNumber(baseInventory) && baseInventory >= 0 ? baseInventory : Math.round(safeRevenue * 0.04)
+    const safeAp = isFiniteNumber(baseAp) && baseAp >= 0 ? baseAp : Math.round(safeRevenue * 0.05)
+    const safeAccrued = isFiniteNumber(baseAccrued) && baseAccrued >= 0 ? baseAccrued : Math.round(safeRevenue * 0.02)
+    const monthlyRev = Math.max(10000, Math.round(safeRevenue / 12))
     const series: WorkingCapitalMonthPoint[] = []
 
-    // 24 calendar months ending in current month
+    // Calendar months ending in the current month. A non-finite or non-positive
+    // count returns an empty series so callers never divide by zero or take
+    // Math.min/max over an empty list (which yields ±Infinity).
     const now = new Date()
-    for (let i = monthsCount - 1; i >= 0; i--) {
+    for (let i = safeMonths - 1; i >= 0; i--) {
         const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
         const period = d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' })
         const monthIndex = d.getMonth() // 0 = Jan, 11 = Dec
@@ -61,10 +73,10 @@ export function generateMonthlyNwcSeries(
         const noiseFactor = 1 + ((i % 5) - 2) * 0.02
 
         const monthRev = Math.round(monthlyRev * seasonalFactor * noiseFactor)
-        const ar = Math.round(baseAr * (monthRev / monthlyRev) * (1 + ((i % 3) - 1) * 0.03))
-        const inventory = Math.round(baseInventory * seasonalFactor * (1 + ((i % 4) - 2) * 0.02))
-        const ap = Math.round(baseAp * (monthRev / monthlyRev) * (1 + ((i % 3) - 1) * 0.02))
-        const accrued = Math.round(baseAccrued * (1 + ((i % 6) - 3) * 0.015))
+        const ar = Math.round(safeAr * (monthRev / monthlyRev) * (1 + ((i % 3) - 1) * 0.03))
+        const inventory = Math.round(safeInventory * seasonalFactor * (1 + ((i % 4) - 2) * 0.02))
+        const ap = Math.round(safeAp * (monthRev / monthlyRev) * (1 + ((i % 3) - 1) * 0.02))
+        const accrued = Math.round(safeAccrued * (1 + ((i % 6) - 3) * 0.015))
 
         const currentAssets = ar + inventory
         const currentLiabilities = ap + accrued
@@ -98,12 +110,20 @@ export function calculateWorkingCapitalPeg(
     customClosingNwc?: number
 ): NwcPegResult {
     const facts = parseDocumentedFacts(model.documentedFactsJson)
-    const rawRevenue = typeof facts.revenue?.value === 'number' ? facts.revenue.value : null
+    const rawRevenue = typeof facts.revenue?.value === 'number' && Number.isFinite(facts.revenue.value)
+        ? facts.revenue.value
+        : null
     const revenue = rawRevenue && rawRevenue > 0 ? rawRevenue : 12_400_000
 
-    const ar = typeof facts.accounts_receivable?.value === 'number' ? facts.accounts_receivable.value : Math.round(revenue * 0.08)
-    const inventory = typeof facts.inventory?.value === 'number' ? facts.inventory.value : Math.round(revenue * 0.04)
-    const ap = typeof facts.accounts_payable?.value === 'number' ? facts.accounts_payable.value : Math.round(revenue * 0.05)
+    const ar = typeof facts.accounts_receivable?.value === 'number' && Number.isFinite(facts.accounts_receivable.value)
+        ? facts.accounts_receivable.value
+        : Math.round(revenue * 0.08)
+    const inventory = typeof facts.inventory?.value === 'number' && Number.isFinite(facts.inventory.value)
+        ? facts.inventory.value
+        : Math.round(revenue * 0.04)
+    const ap = typeof facts.accounts_payable?.value === 'number' && Number.isFinite(facts.accounts_payable.value)
+        ? facts.accounts_payable.value
+        : Math.round(revenue * 0.05)
     const accrued = Math.round(revenue * 0.02)
 
     const fullSeries = generateMonthlyNwcSeries(revenue, ar, inventory, ap, accrued, 24)
@@ -113,19 +133,21 @@ export function calculateWorkingCapitalPeg(
 
     const nwcValues = selectedSlice.map(p => p.nwc)
     const totalNwc = nwcValues.reduce((sum, v) => sum + v, 0)
-    const averageNwc = Math.round(totalNwc / selectedSlice.length)
-    const minNwc = Math.min(...nwcValues)
-    const maxNwc = Math.max(...nwcValues)
+    const averageNwc = selectedSlice.length > 0 ? Math.round(totalNwc / selectedSlice.length) : 0
+    const minNwc = nwcValues.length > 0 ? nwcValues.reduce((min, v) => (v < min ? v : min), nwcValues[0]) : 0
+    const maxNwc = nwcValues.length > 0 ? nwcValues.reduce((max, v) => (v > max ? v : max), nwcValues[0]) : 0
     const nwcSwing = maxNwc - minNwc
     const volatilityPercent = averageNwc > 0 ? Math.round((nwcSwing / averageNwc) * 100) : 0
 
+    const safeCollar = isFiniteNumber(collarPercent) && collarPercent >= 0 ? collarPercent : 5
     const targetPeg = averageNwc
-    const collarLowerLimit = Math.round(targetPeg * (1 - collarPercent / 100))
-    const collarUpperLimit = Math.round(targetPeg * (1 + collarPercent / 100))
+    const collarLowerLimit = Math.round(targetPeg * (1 - safeCollar / 100))
+    const collarUpperLimit = Math.round(targetPeg * (1 + safeCollar / 100))
 
-    // Default closing estimated NWC is latest month if not explicitly customized
+    // Default closing estimated NWC is latest month if not explicitly customized.
+    // A NaN custom close would fail every comparison and leak into the clause.
     const latestMonthNwc = selectedSlice[selectedSlice.length - 1]?.nwc ?? targetPeg
-    const closingEstimatedNwc = customClosingNwc !== undefined ? customClosingNwc : latestMonthNwc
+    const closingEstimatedNwc = isFiniteNumber(customClosingNwc) ? customClosingNwc : latestMonthNwc
 
     let adjustmentType: 'surplus_to_seller' | 'deficit_to_buyer' | 'within_collar' = 'within_collar'
     let adjustmentAmount = 0
@@ -160,7 +182,7 @@ export function calculateWorkingCapitalPeg(
         maxNwc,
         nwcSwing,
         volatilityPercent,
-        collarBandPercent: collarPercent,
+        collarBandPercent: safeCollar,
         collarLowerLimit,
         collarUpperLimit,
         closingEstimatedNwc,

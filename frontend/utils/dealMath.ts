@@ -189,7 +189,15 @@ export function calculateIrr(cashFlows: number[]): number | null {
 
 /** Net present value of a cash-flow series at a given discount rate. */
 export function calculateNpv(cashFlows: number[], discountRate: number): number | null {
-    if (discountRate <= -1) {
+    // NaN <= -1 is false, so a non-finite rate would otherwise fall through
+    // and produce a NaN NPV that callers treat as a real dollar amount.
+    if (!Number.isFinite(discountRate) || discountRate <= -1) {
+        return null
+    }
+    if (!Array.isArray(cashFlows) || cashFlows.length === 0) {
+        return null
+    }
+    if (cashFlows.some((cashFlow) => !Number.isFinite(cashFlow))) {
         return null
     }
 

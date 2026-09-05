@@ -54,4 +54,24 @@ describe('workingCapitalPeg utility', () => {
         expect(result.adjustmentType).toBe('surplus_to_seller')
         expect(result.adjustmentAmount).toBe(2000000 - result.collarUpperLimit)
     })
+
+    it('returns an empty series for a non-positive or non-finite month count', () => {
+        expect(generateMonthlyNwcSeries(12_400_000, 950000, 450000, 600000, 240000, 0)).toEqual([])
+        expect(generateMonthlyNwcSeries(12_400_000, 950000, 450000, 600000, 240000, Number.NaN)).toEqual([])
+        expect(generateMonthlyNwcSeries(12_400_000, 950000, 450000, 600000, 240000, -3)).toEqual([])
+    })
+
+    it('falls back to the default 5% collar when the percent is non-finite', () => {
+        const result = calculateWorkingCapitalPeg(mockModel, '12m', Number.NaN)
+        expect(result.collarBandPercent).toBe(5)
+        expect(result.collarLowerLimit).toBe(Math.round(result.targetPeg * 0.95))
+        expect(Number.isFinite(result.collarUpperLimit)).toBe(true)
+    })
+
+    it('ignores a non-finite custom closing NWC instead of leaking NaN into the adjustment', () => {
+        const result = calculateWorkingCapitalPeg(mockModel, '12m', 5, Number.NaN)
+        expect(Number.isFinite(result.closingEstimatedNwc)).toBe(true)
+        expect(result.adjustmentType).toBeDefined()
+        expect(Number.isFinite(result.adjustmentAmount)).toBe(true)
+    })
 })

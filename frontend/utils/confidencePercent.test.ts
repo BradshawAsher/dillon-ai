@@ -25,5 +25,20 @@ describe('formatConfidencePercent', () => {
         expect(formatConfidencePercent(null)).toBeNull()
         expect(formatConfidencePercent('')).toBeNull()
         expect(formatConfidencePercent('high')).toBeNull()
+        expect(formatConfidencePercent(Number.NaN)).toBeNull()
+        expect(formatConfidencePercent(Number.POSITIVE_INFINITY)).toBeNull()
+    })
+
+    it('accepts a numeric confidence the same way as a string', () => {
+        expect(formatConfidencePercent(87)).toBe('87%')
+        expect(formatConfidencePercent(0.82)).toBe('82%')
+        expect(formatConfidencePercent(1)).toBe('100%')
+        expect(formatConfidencePercent(0)).toBe('0%')
+    })
+
+    it('honors an explicit percent sign so 1% is not scaled to 100%', () => {
+        expect(formatConfidencePercent('1%')).toBe('1%')
+        expect(formatConfidencePercent('85%')).toBe('85%')
+        expect(formatConfidencePercent('0.5%')).toBe('1%')
     })
 })

@@ -96,6 +96,16 @@ export default function LandingPage({ onLaunchDashboard, onGoToLogin, currentUse
         return () => window.removeEventListener('scroll', handleScroll)
     }, [])
 
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape' && openFaqIndex !== null) {
+                setOpenFaqIndex(null)
+            }
+        }
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [openFaqIndex])
+
     const faqs = [
         {
             question: 'What is Dillon AI Due Diligence?',
@@ -217,6 +227,12 @@ export default function LandingPage({ onLaunchDashboard, onGoToLogin, currentUse
 
     return (
         <div className="min-h-screen bg-background text-foreground font-sans antialiased selection:bg-primary/20 selection:text-primary">
+            <a
+                href="#hero"
+                className="absolute left-4 top-4 z-50 -translate-y-16 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-md transition-transform focus:translate-y-0 focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+                Skip to main content
+            </a>
             {/* Header / Navigation Bar */}
             <header className="sticky top-0 z-40 border-b border-border/80 bg-background/80 backdrop-blur-md">
                 <div className="w-full flex items-center justify-between px-4 py-3 sm:px-8">
@@ -319,7 +335,7 @@ export default function LandingPage({ onLaunchDashboard, onGoToLogin, currentUse
             </header>
 
             {/* HERO SECTION (Above the Fold) */}
-            <section id="hero" className="relative overflow-hidden border-b border-border/50 bg-gradient-to-b from-primary/5 via-background to-background py-16 sm:py-24">
+            <section id="hero" tabIndex={-1} className="relative overflow-hidden border-b border-border/50 bg-gradient-to-b from-primary/5 via-background to-background py-16 sm:py-24">
                 <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.12),transparent_50%)]" />
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="mx-auto max-w-4xl text-center space-y-6">
@@ -961,7 +977,9 @@ export default function LandingPage({ onLaunchDashboard, onGoToLogin, currentUse
                             <div key={faq.question} className="rounded-xl border border-border bg-card shadow-2xs overflow-hidden transition-all">
                                 <button
                                     type="button"
+                                    id={`faq-question-${idx}`}
                                     aria-expanded={openFaqIndex === idx}
+                                    aria-controls={`faq-panel-${idx}`}
                                     onClick={() => setOpenFaqIndex(openFaqIndex === idx ? null : idx)}
                                     className="w-full p-5 text-left flex items-center justify-between gap-4 font-bold text-sm sm:text-base text-foreground hover:bg-muted/30 cursor-pointer"
                                 >
@@ -972,7 +990,12 @@ export default function LandingPage({ onLaunchDashboard, onGoToLogin, currentUse
                                     {openFaqIndex === idx ? <ChevronUp className="h-5 w-5 text-primary shrink-0" /> : <ChevronDown className="h-5 w-5 text-muted-foreground shrink-0" />}
                                 </button>
                                 {openFaqIndex === idx && (
-                                    <div className="px-5 pb-5 pt-2 text-xs sm:text-sm text-muted-foreground leading-relaxed border-t border-border/40 bg-muted/10 space-y-3">
+                                    <div
+                                        id={`faq-panel-${idx}`}
+                                        role="region"
+                                        aria-labelledby={`faq-question-${idx}`}
+                                        className="px-5 pb-5 pt-2 text-xs sm:text-sm text-muted-foreground leading-relaxed border-t border-border/40 bg-muted/10 space-y-3"
+                                    >
                                         <p>{faq.answer}</p>
                                         {faq.badge && (
                                             <Badge variant="secondary" className="text-[10px] font-mono font-bold">

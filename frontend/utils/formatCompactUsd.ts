@@ -19,7 +19,11 @@ export function formatCompactUsd(value: number): string {
     if (typeof value !== 'number' || !Number.isFinite(value)) return 'N/A'
     const sign = value < 0 ? '-' : ''
     const abs = Math.abs(value)
-    if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(1)}M`
+    // Rounding-aware tier edges: 999.95M+ rounds to "1000.0M" at one decimal,
+    // and 999,500+ rounds to "1000K" at zero decimals. Promote those to the
+    // next suffix so a headline figure never reads as four-digit mantissa.
+    if (abs >= 999_950_000) return `${sign}$${(abs / 1_000_000_000).toFixed(1)}B`
+    if (abs >= 999_500) return `${sign}$${(abs / 1_000_000).toFixed(1)}M`
     if (abs >= 1_000) return `${sign}$${(abs / 1_000).toFixed(0)}K`
     return `${sign}$${Math.round(abs).toLocaleString()}`
 }

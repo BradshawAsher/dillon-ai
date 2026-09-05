@@ -13,6 +13,17 @@ describe('formatCompactUsd', () => {
         expect(formatCompactUsd(1_500)).toBe('$2K') // rounds to nearest whole K
     })
 
+    it('promotes a rounding-up thousands figure to millions instead of $1000K', () => {
+        expect(formatCompactUsd(999_500)).toBe('$1.0M')
+        expect(formatCompactUsd(999_499)).toBe('$999K')
+    })
+
+    it('promotes a rounding-up millions figure to billions instead of $1000.0M', () => {
+        expect(formatCompactUsd(999_950_000)).toBe('$1.0B')
+        expect(formatCompactUsd(1_250_000_000)).toBe('$1.3B')
+        expect(formatCompactUsd(-999_950_000)).toBe('-$1.0B')
+    })
+
     it('formats sub-thousand values with comma grouping', () => {
         expect(formatCompactUsd(500)).toBe('$500')
         expect(formatCompactUsd(999)).toBe('$999')

@@ -54,6 +54,25 @@ describe('calculateIrr', () => {
     })
 })
 
+describe('calculateNpv', () => {
+    it('discounts a simple two-period series', () => {
+        expect(calculateNpv([-100, 110], 0.1)).toBeCloseTo(0, 6)
+    })
+
+    it('returns null for a non-finite or undefined discount rate', () => {
+        expect(calculateNpv([-100, 110], Number.NaN)).toBeNull()
+        expect(calculateNpv([-100, 110], Number.POSITIVE_INFINITY)).toBeNull()
+        expect(calculateNpv([-100, 110], -1)).toBeNull()
+        expect(calculateNpv([-100, 110], -1.5)).toBeNull()
+    })
+
+    it('returns null when a cash-flow entry is non-finite or the series is empty', () => {
+        expect(calculateNpv([], 0.1)).toBeNull()
+        expect(calculateNpv([-100, Number.NaN, 110], 0.1)).toBeNull()
+        expect(calculateNpv([-100, Number.POSITIVE_INFINITY], 0.1)).toBeNull()
+    })
+})
+
 describe('computeAllCashReturns — golden case', () => {
     // Hand-computed reference deal:
     //   initial investment = 110.0M + 1.5M + 2.0M           = 113.5M

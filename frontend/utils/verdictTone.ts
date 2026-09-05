@@ -13,36 +13,48 @@ export type VerdictTone = 'warning' | 'destructive' | 'success' | 'neutral'
  *   4. anything else                             -> 'neutral'
  * Because warning is checked first, "proceed with caution" resolves to warning.
  */
+/** True when `word` appears as its own token (not a substring of a longer word). */
+function hasWord(text: string, word: string): boolean {
+    return new RegExp(`\\b${word}\\b`, 'i').test(text)
+}
+
+/** True when a word starts with `stem` (renegotiate / renegotiation, escalate / escalation). */
+function hasStem(text: string, stem: string): boolean {
+    return new RegExp(`\\b${stem}\\w*`, 'i').test(text)
+}
+
 export function classifyVerdictTone(rec?: string, trafficLight?: string): VerdictTone {
     const normRec = (rec || '').trim().toLowerCase()
     const normLight = (trafficLight || '').trim().toUpperCase()
 
     if (
-        normRec.includes('renegotiat') ||
-        normRec.includes('caution') ||
-        normRec.includes('warn') ||
-        normRec.includes('hold') ||
+        hasStem(normRec, 'renegotiat') ||
+        hasWord(normRec, 'caution') ||
+        hasWord(normRec, 'warn') ||
+        hasWord(normRec, 'warning') ||
+        hasWord(normRec, 'warnings') ||
+        hasWord(normRec, 'hold') ||
         normLight === 'YELLOW'
     ) {
         return 'warning'
     }
 
     if (
-        normRec.includes('abort') ||
-        normRec.includes('pass') ||
-        normRec.includes('reject') ||
-        normRec.includes('escalat') ||
-        normRec.includes('risk') ||
+        hasWord(normRec, 'abort') ||
+        hasWord(normRec, 'pass') ||
+        hasStem(normRec, 'reject') ||
+        hasStem(normRec, 'escalat') ||
+        hasWord(normRec, 'risk') ||
         normLight === 'RED'
     ) {
         return 'destructive'
     }
 
     if (
-        normRec.includes('proceed') ||
-        normRec.includes('buy') ||
-        normRec.includes('acquire') ||
-        normRec.includes('green') ||
+        hasStem(normRec, 'proceed') ||
+        hasWord(normRec, 'buy') ||
+        hasStem(normRec, 'acqui') ||
+        hasWord(normRec, 'green') ||
         normLight === 'GREEN'
     ) {
         return 'success'
