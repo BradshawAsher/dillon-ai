@@ -8,6 +8,11 @@ describe('gradeAgainstBenchmark', () => {
         expect(gradeAgainstBenchmark({ value: null, benchmark: band, higherIsBetter: true }).label).toBe('—')
     })
 
+    it('returns an em dash for a non-finite value', () => {
+        expect(gradeAgainstBenchmark({ value: NaN, benchmark: band, higherIsBetter: true }).label).toBe('—')
+        expect(gradeAgainstBenchmark({ value: Infinity, benchmark: band, higherIsBetter: false }).label).toBe('—')
+    })
+
     describe('higher-is-better metrics', () => {
         it('grades at or above each band edge', () => {
             expect(gradeAgainstBenchmark({ value: 30, benchmark: band, higherIsBetter: true }).label).toBe('Excellent')

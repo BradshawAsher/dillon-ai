@@ -18,7 +18,10 @@ export type BenchmarkGrade = {
 
 /** Grades `value` against its benchmark band, respecting metric direction. */
 export function gradeAgainstBenchmark(row: BenchmarkGradeInput): BenchmarkGrade {
-    if (row.value === null) return { label: '—', color: 'text-muted-foreground' }
+    // Guard the whole non-finite set, not just null: a NaN or Infinity from an
+    // upstream divide-by-zero would otherwise fall through every band edge and be
+    // graded 'Poor', misrepresenting an unknown metric as a bad one.
+    if (row.value === null || !Number.isFinite(row.value)) return { label: '—', color: 'text-muted-foreground' }
     const v = row.value
     const b = row.benchmark
 
