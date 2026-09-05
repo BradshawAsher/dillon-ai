@@ -28,6 +28,7 @@ import {
     signOutUser,
     type AppAuthUser,
 } from '../services/supabaseAuth'
+import { assessPasswordStrength } from '../utils/passwordStrength'
 
 interface LoginPageProps {
     onLoginSuccess: (user: AppAuthUser) => void
@@ -73,12 +74,20 @@ export default function LoginPage({
         setErrorMessage(null)
         setSuccessMessage(null)
 
-        if (!email.trim() || !password) {
+        const trimmedEmail = email.trim()
+        const trimmedName = fullName.trim()
+
+        if (!trimmedEmail || !password) {
             setErrorMessage('Please provide both your email and password.')
             return
         }
 
-        if (mode === 'signup' && !fullName.trim()) {
+        if (password.length < 6) {
+            setErrorMessage('Password must be at least 6 characters.')
+            return
+        }
+
+        if (mode === 'signup' && !trimmedName) {
             setErrorMessage('Please enter your full name.')
             return
         }
@@ -87,7 +96,7 @@ export default function LoginPage({
 
         try {
             if (mode === 'signup') {
-                const res = await signUpWithPassword(email, password, fullName, team.trim() || undefined)
+                const res = await signUpWithPassword(trimmedEmail, password, trimmedName, team.trim() || undefined)
                 if (!res.success) {
                     setErrorMessage(res.error || 'Unable to create account. Please check your details.')
                 } else {
@@ -96,7 +105,7 @@ export default function LoginPage({
                     }
                 }
             } else {
-                const res = await signInWithPassword(email, password)
+                const res = await signInWithPassword(trimmedEmail, password)
                 if (!res.success) {
                     setErrorMessage(res.error || 'Invalid email or password. Please try again.')
                 } else {
@@ -141,6 +150,10 @@ export default function LoginPage({
             setSocialLoading(null)
         }
     }
+
+    const passwordStrength = mode === 'signup' && password.length > 0
+        ? assessPasswordStrength(password)
+        : null
 
     const handleMicrosoftAuth = async () => {
         setErrorMessage(null)
@@ -464,6 +477,28 @@ export default function LoginPage({
                                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                     </button>
                                 </div>
+                                {passwordStrength && (
+                                    <div className="mt-2 space-y-1" aria-live="polite">
+                                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                                            <div
+                                                className={`h-full rounded-full transition-all ${
+                                                    passwordStrength.score <= 1
+                                                        ? 'bg-destructive'
+                                                        : passwordStrength.score === 2
+                                                            ? 'bg-amber-500'
+                                                            : passwordStrength.score === 3
+                                                                ? 'bg-emerald-500'
+                                                                : 'bg-green-600'
+                                                }`}
+                                                style={{ width: `${passwordStrength.percent}%` }}
+                                            />
+                                        </div>
+                                        <p className="text-[11px] text-muted-foreground">
+                                            Password strength: <span className="font-semibold text-foreground">{passwordStrength.label}</span>
+                                            {passwordStrength.score === 0 ? ' — use at least 6 characters' : ''}
+                                        </p>
+                                    </div>
+                                )}
                             </div>
 
                             {mode === 'signup' && (
