@@ -13,6 +13,11 @@ describe('formatBreakevenValue', () => {
         expect(formatBreakevenValue(999.6, '$')).toBe('$1,000')
     })
 
+    it('places the minus sign before the currency symbol for negatives', () => {
+        expect(formatBreakevenValue(-500, '$')).toBe('-$500')
+        expect(formatBreakevenValue(-1_234_567, '$')).toBe('-$1,234,567')
+    })
+
     it('guards non-finite values with a dash placeholder', () => {
         expect(formatBreakevenValue(Infinity, '$')).toBe('—')
         expect(formatBreakevenValue(NaN, 'x')).toBe('—x')
