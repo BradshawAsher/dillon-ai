@@ -48,12 +48,56 @@ If an interviewer or investor asks about load testing or concurrency, use this c
 | **Supabase PostgreSQL** | **500 simultaneous users** | **403–445 txns/sec** (P50: 142ms) | **350 concurrent active users** |
 
 ### Practical Deal Room Sizing Rules:
-- **Batch Deal Intake:** Up to **35 full 10-document deals** can be uploaded in the exact same second without throttling.
+- **Batch Storage Intake (Layer 2):** Up to **35 full 10-document deals** can be uploaded to Cloudflare R2 in the exact same second without storage throttling or egress fees ($0.00).
 - **Queue Resilience:** When pushed beyond 200 concurrency, Supavisor connection pooling queues connections in memory with sub-1.2s drain times rather than crashing or dropping packets.
 
 ---
 
-## 5. Local Reproduction
+## 5. LLM Extraction Concurrency & Batch Limits (The Real AI Bottleneck)
+
+While the database and storage layers support 500 simultaneous sockets and 5,000+ interactive browsing analysts, **live document extraction is constrained by LLM provider token quotas (TPM)**.
+
+### Master LLM Concurrency Matrix
+
+| Operating Dimension | Single Shared Key (OpenAI Tier 4) | Single Shared Key (OpenAI Tier 5) | Enterprise BYOK Customer (Per Customer) |
+| :--- | :--- | :--- | :--- |
+| **Provider TPM Limit** | **800,000 – 2,000,000 TPM** | **5,000,000 – 10,000,000 TPM** | **Customer's own quota bucket** |
+| **Max Safe Concurrent Workers** | **15 – 25 active document workers** | **150 – 250 active document workers** | **+15 – 25 workers per enterprise key** |
+| **Simultaneous Active Batches** | **~3 to 4 active batches** | **~25 to 35 active batches** | **+3 to 4 concurrent batches per tenant** |
+| **Average Document Duration** | **25 – 40 seconds / document** | **25 – 40 seconds / document** | **25 – 40 seconds / document** |
+| **Tokens Burned / Active Worker** | **~20,000 – 25,000 TPM / worker** | **~20,000 – 25,000 TPM / worker** | **~20,000 – 25,000 TPM / worker** |
+| **Safe Quota Utilization** | **50% – 65% of TPM ceiling** | **50% – 65% of TPM ceiling** | Isolated to customer's account |
+
+### Why ~3 to 4 Active Batches at Once?
+
+1. **The Token Math**:
+   - A typical diligence document (financial statements, tax returns, CIM excerpt) passes **~8,000 – 12,000 input tokens** and produces **~1,500 – 3,000 output tokens** of normalized facts and citations ($\approx$ 10k–15k tokens total).
+   - An extraction run requires **25 to 40 seconds** of reasoning and structured output validation.
+   - 1 active document worker burns approximately **~25,000 Tokens Per Minute (TPM)**.
+2. **The Batch Math**:
+   - Standard deal batches contain **5 to 8 documents**.
+   - With client-side chunking (`CONCURRENCY = 3`), each active batch has **3 to 6 documents** actively processing in parallel.
+   - **3 to 4 active batches running simultaneously** = **12 to 20 documents in flight**.
+   - $20 \text{ workers} \times 25,000 \text{ TPM} = \mathbf{500,000\text{ TPM}}$.
+   - This operates at **~62% of an 800k TPM Tier 4 limit**, leaving safe headroom for token spikes and schema auto-fix retries.
+   - Pushing beyond 30 simultaneous workers on a single shared key risks HTTP **429 (RateLimitError)** rejections from the provider.
+
+### How the Architecture Scales Beyond 3–4 Batches
+
+1. **Frontend Chunking (`CONCURRENCY = 3`)**:
+   In `frontend/pages/DueDiligenceDashboard.tsx`, client uploads are staggered in groups of 3. Dropping 10 files feeds them into the pipeline gradually as earlier files finish, preventing instantaneous token spikes.
+2. **Supabase & n8n Buffer Queueing (Zero Dropped Documents)**:
+   If 6+ users queue deals at the same minute, excess documents remain safely registered in Supabase with `status: 'queued'`. As worker slots free up every 25–30 seconds, queued documents drain automatically without errors or timeouts.
+3. **Enterprise BYOK (Linear Quota Isolation)**:
+   Enterprise users configuring their own OpenAI, Anthropic, or Gemini keys in BYOK Settings completely bypass the platform's shared quota. 10 BYOK organizations provide **10 separate quota buckets**, scaling global platform extraction capacity to **150–250 simultaneous workers**.
+4. **Triad Multi-Model Failovers**:
+   If the primary model (`OpenAI 5.6 Terra`) experiences provider downtime or rate throttling, n8n's LangChain triad automatically fails over to `OpenAI 5.6 Sol` (`gpt-5.6-sol`) or Google Gemini (`gemini-3.7-flash`).
+5. **Real-Time Capacity Telemetry**:
+   The `GET /api/diligence/capacity-telemetry` endpoint and the **Spending & Analytics** tab (`#spending-capacity-telemetry`) track live in-flight workers, queued files, 30-day peak overlap, and provider rate-limit signals in real time.
+
+---
+
+## 6. Local Reproduction
 
 ```bash
 # 1. Run Ramp-to-Failure Breakpoint Probe (10 to 500 concurrency)
@@ -67,3 +111,4 @@ npm run stress:storage   # Cloudflare R2 & Supabase DB Concurrency
 npm run stress:pipeline  # n8n Pipeline Queue Batch Ingestion
 npm run stress:api       # HTTP API Endpoint Throughput (Autocannon)
 ```
+

@@ -167,4 +167,49 @@ describe('LOI Generator (generateLoiMarkdown)', () => {
         expect(html).not.toContain('<script>window.opener.stolen=true</script>')
         expect(html).toContain('&lt;script&gt;window.opener.stolen=true&lt;/script&gt;')
     })
+
+    it('applies one edited terms object to commercial and binding LOI language', () => {
+        const params: LoiParams = {
+            model: mockModel,
+            synthesis: mockSynthesis,
+            projectName: 'Atlantic Beverage Distribution',
+            draftTerms: {
+                buyerName: 'Avery Buyer',
+                buyerEntity: 'Avery Capital LLC',
+                sellerName: 'Atlantic Holdings Inc.',
+                authorTitle: 'Principal',
+                offerPrice: 5_750_000,
+                transactionStructure: 'Equity Purchase',
+                offerValidityDays: 21,
+                expirationTime: '3:00 PM PT',
+                exclusivityDays: 45,
+                generalEscrowPercent: 7.5,
+                generalEscrowMonths: 18,
+                nwcTrueUpDays: 75,
+                transitionMonths: 9,
+                transitionIncludedDays: 30,
+                nonCompeteYears: 3,
+                nonCompeteRadiusMiles: 25,
+                governingLaw: 'State of Washington',
+            },
+        }
+        const terms = deriveLoiTerms(params)
+        const markdown = generateLoiMarkdown(params)
+        const html = generateLoiHtml(params)
+
+        expect(terms.offerPrice).toBe(5_750_000)
+        expect(terms.generalEscrow).toBe(431_250)
+        expect(markdown).toContain('**Transaction Structure**: Equity Purchase')
+        expect(markdown).toContain('Stock Purchase Agreement ("SPA")')
+        expect(markdown).toContain('**45 days**')
+        expect(markdown).toContain('(7.5% of purchase price)')
+        expect(markdown).toContain('**18 months**')
+        expect(markdown).toContain('**75 days**')
+        expect(markdown).toContain('up to **9 months**')
+        expect(markdown).toContain('**3-year non-competition**')
+        expect(markdown).toContain('25-mile geographic radius')
+        expect(markdown).toContain('laws of the State of Washington')
+        expect(markdown).toContain('Name: Avery Buyer')
+        expect(html).toContain('Avery Capital LLC')
+    })
 })

@@ -1144,11 +1144,26 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
     const submissionHistory: SubmissionHistoryItem[] = useMemo(() => {
         const user = authUser || getStoredAuth()
-        const base = (!isolationModeEnabled || (user && user.role === 'admin' && !isolationModeEnabled))
+        const isAdmin = user?.role === 'admin'
+        const allowGlobalUnfiltered = isAdmin && !isolationModeEnabled
+
+        const base = allowGlobalUnfiltered
             ? rawSubmissionHistory
             : rawSubmissionHistory.filter((row: SubmissionHistoryItem) => {
+                if (row.isDemo || (row as any).is_demo) return true
+                const pid = (row.projectId || '').toLowerCase()
+                if (pid.startsWith('mml-dd-sample') || pid.startsWith('cascadia') || pid.startsWith('apex') || pid.startsWith('demo')) {
+                    return true
+                }
+                if (user) {
+                    if (user.id && row.userId && row.userId === user.id) return true
+                    if (user.email && row.analystEmail && row.analystEmail.toLowerCase() === user.email.toLowerCase()) return true
+                    if (user.team && row.team && user.team.toLowerCase() === row.team.toLowerCase()) return true
+                    const pk = getProjectKey(row)
+                    if (user.email && isOwnedByUser(pk, user.email)) return true
+                    return false
+                }
                 const pk = getProjectKey(row)
-                if (user?.email) return isOwnedByUser(pk, user.email)
                 const owner = getProjectOwner(pk)
                 return owner === 'guest' || owner === 'localdev@mergeworks.io'
             })
@@ -1197,11 +1212,25 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
     const visibleProjectSyntheses = useMemo(() => {
         const user = authUser || getStoredAuth()
-        const base = (!isolationModeEnabled || (user && user.role === 'admin' && !isolationModeEnabled))
+        const isAdmin = user?.role === 'admin'
+        const allowGlobalUnfiltered = isAdmin && !isolationModeEnabled
+
+        const base = allowGlobalUnfiltered
             ? rawProjectSyntheses
             : rawProjectSyntheses.filter((s: any) => {
+                if (s.isDemo || s.is_demo) return true
+                const pid = (s.projectId || '').toLowerCase()
+                if (pid.startsWith('mml-dd-sample') || pid.startsWith('cascadia') || pid.startsWith('apex') || pid.startsWith('demo')) {
+                    return true
+                }
+                if (user) {
+                    if (user.id && s.userId && s.userId === user.id) return true
+                    if (user.team && s.team && user.team.toLowerCase() === s.team.toLowerCase()) return true
+                    const pk = s.projectId || ''
+                    if (user.email && isOwnedByUser(pk, user.email)) return true
+                    return false
+                }
                 const pk = s.projectId || ''
-                if (user?.email) return isOwnedByUser(pk, user.email)
                 const owner = getProjectOwner(pk)
                 return owner === 'guest' || owner === 'localdev@mergeworks.io'
             })

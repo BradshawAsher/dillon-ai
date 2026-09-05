@@ -98,5 +98,6 @@ describe('ExportDiligenceModal', () => {
         expect(html).toContain('Indemnity Escrows &amp; Holdbacks')
         expect(html).toContain('Legally Binding Exclusivity (&quot;No-Shop&quot;) &amp; Confidentiality')
         expect(html).toContain('Exact LOI Markdown')
+        expect(html).toContain('Edit LOI Terms')
     })
 })

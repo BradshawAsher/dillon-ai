@@ -1,9 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { submitAccessRequest, supabase } from './accessRequestService'
+import { supabaseAuthClient } from './supabaseAuth'
 
 describe('submitAccessRequest', () => {
     beforeEach(() => {
         vi.restoreAllMocks()
+    })
+
+    it('reuses the app-wide Supabase client', () => {
+        expect(supabase).toBe(supabaseAuthClient)
     })
 
     it('submits successfully via backend API if available', async () => {

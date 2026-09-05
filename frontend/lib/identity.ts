@@ -4,6 +4,8 @@
 export type AnalystIdentity = {
   name: string
   email: string
+  id?: string
+  team?: string
 }
 
 const STORAGE_KEY = 'dueDiligenceDashboard.analystIdentity'
@@ -17,6 +19,8 @@ export function getIdentity(): AnalystIdentity | null {
         return {
           name: parsedAuth.name || parsedAuth.email.split('@')[0],
           email: parsedAuth.email.trim(),
+          id: parsedAuth.id || undefined,
+          team: parsedAuth.team || undefined,
         }
       }
     }
@@ -31,7 +35,12 @@ export function getIdentity(): AnalystIdentity | null {
       typeof parsed.email === 'string' &&
       parsed.email.trim().length > 0
     ) {
-      return { name: parsed.name, email: parsed.email }
+      return {
+        name: parsed.name,
+        email: parsed.email,
+        id: parsed.id,
+        team: parsed.team,
+      }
     }
   } catch {
     // storage unavailable or corrupted — treat as signed out
@@ -52,8 +61,16 @@ export function identityHeaders(): Record<string, string> {
   if (!identity) {
     return {}
   }
-  return {
+  const headers: Record<string, string> = {
     'x-analyst-name': encodeURIComponent(identity.name),
     'x-analyst-email': encodeURIComponent(identity.email),
   }
+  if (identity.id) {
+    headers['x-user-id'] = encodeURIComponent(identity.id)
+  }
+  if (identity.team) {
+    headers['x-user-team'] = encodeURIComponent(identity.team)
+  }
+  return headers
 }
+

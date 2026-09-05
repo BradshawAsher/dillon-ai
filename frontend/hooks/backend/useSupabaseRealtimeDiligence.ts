@@ -58,12 +58,15 @@ export function useSupabaseRealtimeDiligence({
                     if (docDebounceTimer) clearTimeout(docDebounceTimer)
                     docDebounceTimer = setTimeout(() => {
                         const targetProjId = (payload.new as any)?.project_id || activeProjectRef.current
-                        void queryClient.invalidateQueries({ queryKey: ['diligence', 'history'] })
-                        if (targetProjId) {
-                            void queryClient.invalidateQueries({ queryKey: ['diligence', 'history', targetProjId] })
+                        if (onDocRef.current) {
+                            onDocRef.current(payload)
+                        } else {
+                            const invalidations = [queryClient.invalidateQueries({ queryKey: ['diligence', 'kpis'] })]
+                            if (targetProjId) {
+                                invalidations.push(queryClient.invalidateQueries({ queryKey: ['diligence', 'history', targetProjId] }))
+                            }
+                            void Promise.all(invalidations)
                         }
-                        void queryClient.invalidateQueries({ queryKey: ['diligence', 'kpis'] })
-                        onDocRef.current?.(payload)
                     }, 2000)
                 }
             )
@@ -79,19 +82,22 @@ export function useSupabaseRealtimeDiligence({
                     if (synthDebounceTimer) clearTimeout(synthDebounceTimer)
                     synthDebounceTimer = setTimeout(() => {
                         const targetProjId = (payload.new as any)?.project_id || activeProjectRef.current
-                        void queryClient.invalidateQueries({ queryKey: ['diligence', 'synthesis'] })
-                        if (targetProjId) {
-                            void queryClient.invalidateQueries({ queryKey: ['diligence', 'synthesis', targetProjId] })
+                        if (onSynthRef.current) {
+                            onSynthRef.current(payload)
+                        } else {
+                            const invalidations = [queryClient.invalidateQueries({ queryKey: ['diligence', 'kpis'] })]
+                            if (targetProjId) {
+                                invalidations.push(queryClient.invalidateQueries({ queryKey: ['diligence', 'synthesis', targetProjId] }))
+                            }
+                            void Promise.all(invalidations)
                         }
-                        void queryClient.invalidateQueries({ queryKey: ['diligence', 'kpis'] })
-                        onSynthRef.current?.(payload)
                     }, 2000)
                 }
             )
             .subscribe((status) => {
                 if (status === 'SUBSCRIBED') {
                     setIsConnected(true)
-                } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+                } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
                     setIsConnected(false)
                 }
             })
@@ -99,6 +105,7 @@ export function useSupabaseRealtimeDiligence({
         return () => {
             if (docDebounceTimer) clearTimeout(docDebounceTimer)
             if (synthDebounceTimer) clearTimeout(synthDebounceTimer)
+            setIsConnected(false)
             void supabaseAuthClient.removeChannel(channel)
         }
     }, [enabled, projectId])

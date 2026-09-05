@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../lib/shadcn/card'
 import { Button } from '../lib/shadcn/button'
 import { Badge } from '../lib/shadcn/badge'
-import { Check, Copy, Download, FileText, Printer, Sparkles, X, ShieldAlert, Scale, DollarSign, BookOpen } from 'lucide-react'
+import { Check, Copy, Download, FileText, Printer, Sparkles, X, ShieldAlert, Scale, DollarSign, BookOpen, Pencil } from 'lucide-react'
 import type { ProjectSynthesisItem, DealModel } from '../hooks/backend/diligence'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import { generateIcMemoMarkdown, generateIcMemoHtml } from '../utils/icMemoGenerator'
-import { deriveLoiTerms, generateLoiHtml, generateLoiMarkdown } from '../utils/loiGenerator'
+import { DEFAULT_LOI_DRAFT_TERMS, deriveLoiTerms, generateLoiHtml, generateLoiMarkdown, type LoiDraftTerms } from '../utils/loiGenerator'
 import { computeValuationBridge } from '../utils/valuationBridge'
 import { downloadTextFile } from '../utils/downloadFile'
 
@@ -37,12 +37,15 @@ export function ExportDiligenceModal({
     initialDocumentType = 'ic_memo',
 }: ExportDiligenceModalProps) {
     const [copied, setCopied] = useState(false)
-    const [activeTab, setActiveTab] = useState<'preview' | 'markdown'>('preview')
+    const [activeTab, setActiveTab] = useState<'terms' | 'preview' | 'markdown'>('preview')
     const [exportDocType, setExportDocType] = useState<'ic_memo' | 'loi'>(initialDocumentType)
+    const [loiDraftTerms, setLoiDraftTerms] = useState<LoiDraftTerms>({ ...DEFAULT_LOI_DRAFT_TERMS })
 
     useEffect(() => {
         if (open) {
             setExportDocType(initialDocumentType)
+            setActiveTab('preview')
+            setLoiDraftTerms({ ...DEFAULT_LOI_DRAFT_TERMS })
         }
     }, [open, initialDocumentType])
 
@@ -73,17 +76,24 @@ export function ExportDiligenceModal({
         documents: docItems
     })
 
-    const loiMarkdownContent = generateLoiMarkdown({
+    const loiParams = {
         model: dealModel,
         synthesis,
         projectName: dealName,
         projectId,
-    })
+        draftTerms: loiDraftTerms,
+    }
+
+    const loiMarkdownContent = generateLoiMarkdown(loiParams)
 
     const markdownContent = exportDocType === 'loi' ? loiMarkdownContent : icMarkdownContent
 
     const bridge = computeValuationBridge(dealModel, synthesis)
-    const loiTerms = deriveLoiTerms({ model: dealModel, synthesis, projectName: dealName, projectId })
+    const loiTerms = deriveLoiTerms(loiParams)
+
+    const updateLoiTerm = <K extends keyof LoiDraftTerms>(key: K, value: LoiDraftTerms[K]) => {
+        setLoiDraftTerms((current) => ({ ...current, [key]: value }))
+    }
 
     const handleCopy = async () => {
         try {
@@ -109,7 +119,7 @@ export function ExportDiligenceModal({
             projectId,
         }
         const html = exportDocType === 'loi'
-            ? generateLoiHtml(exportParams)
+            ? generateLoiHtml({ ...exportParams, draftTerms: loiDraftTerms })
             : generateIcMemoHtml({ ...exportParams, documents: docItems })
 
         const printWindow = window.open('', '_blank', 'width=900,height=800')
@@ -171,7 +181,10 @@ export function ExportDiligenceModal({
                     <div className="flex items-center gap-2 p-1 bg-muted/40 rounded-lg border border-border/60">
                         <button
                             type="button"
-                            onClick={() => setExportDocType('ic_memo')}
+                            onClick={() => {
+                                setExportDocType('ic_memo')
+                                setActiveTab('preview')
+                            }}
                             className={`flex-1 py-1.5 px-3 text-xs font-bold rounded-md flex items-center justify-center gap-1.5 transition-colors ${
                                 exportDocType === 'ic_memo'
                                     ? 'bg-background shadow-xs text-primary border border-border/80'
@@ -238,6 +251,19 @@ export function ExportDiligenceModal({
                     {/* TABS HEADER */}
                     <div className="flex items-center justify-between border-b border-border pb-2">
                         <div className="flex items-center gap-2">
+                            {exportDocType === 'loi' && (
+                                <button
+                                    type="button"
+                                    onClick={() => setActiveTab('terms')}
+                                    className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
+                                        activeTab === 'terms'
+                                            ? 'bg-primary text-primary-foreground'
+                                            : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                                    }`}
+                                >
+                                    Edit LOI Terms
+                                </button>
+                            )}
                             <button
                                 type="button"
                                 onClick={() => setActiveTab('preview')}
@@ -269,7 +295,79 @@ export function ExportDiligenceModal({
                     </div>
 
                     {/* PREVIEW CONTAINER */}
-                    {activeTab === 'preview' ? (
+                    {activeTab === 'terms' && exportDocType === 'loi' ? (
+                        <div id="loi-terms-editor" className="scroll-mt-6 space-y-4 rounded-lg border border-border/70 bg-card p-4 text-xs">
+                            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                    <div className="flex items-center gap-2 font-bold text-sm text-foreground">
+                                        <Pencil className="h-4 w-4 text-primary" />
+                                        Draft commercial and legal terms
+                                    </div>
+                                    <p className="mt-1 text-[11px] text-muted-foreground">Every edit updates the preview, Markdown, and print/PDF from the same terms object.</p>
+                                </div>
+                                <Button type="button" variant="outline" size="sm" onClick={() => setLoiDraftTerms({ ...DEFAULT_LOI_DRAFT_TERMS })}>
+                                    Reset defaults
+                                </Button>
+                            </div>
+
+                            <div className="grid gap-3 sm:grid-cols-2">
+                                <label className="space-y-1">
+                                    <span className="font-semibold">Buyer signatory</span>
+                                    <input aria-label="Buyer signatory" value={loiDraftTerms.buyerName} onChange={(event) => updateLoiTerm('buyerName', event.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2" />
+                                </label>
+                                <label className="space-y-1">
+                                    <span className="font-semibold">Buyer entity</span>
+                                    <input aria-label="Buyer entity" value={loiDraftTerms.buyerEntity} onChange={(event) => updateLoiTerm('buyerEntity', event.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2" />
+                                </label>
+                                <label className="space-y-1">
+                                    <span className="font-semibold">Seller</span>
+                                    <input aria-label="Seller" value={loiDraftTerms.sellerName} onChange={(event) => updateLoiTerm('sellerName', event.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2" />
+                                </label>
+                                <label className="space-y-1">
+                                    <span className="font-semibold">Buyer title</span>
+                                    <input aria-label="Buyer title" value={loiDraftTerms.authorTitle} onChange={(event) => updateLoiTerm('authorTitle', event.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2" />
+                                </label>
+                                <label className="space-y-1">
+                                    <span className="font-semibold">Offer price</span>
+                                    <input aria-label="Offer price" type="number" min="1" step="1000" value={loiDraftTerms.offerPrice ?? ''} placeholder={String(loiTerms.offerPrice)} onChange={(event) => updateLoiTerm('offerPrice', event.target.value === '' ? null : Number(event.target.value))} className="w-full rounded-md border border-input bg-background px-3 py-2 font-mono" />
+                                    <span className="block text-[10px] text-muted-foreground">Blank uses the defensible model offer: {formatMoney(loiTerms.bridge.defensibleCounterOffer)}</span>
+                                </label>
+                                <label className="space-y-1">
+                                    <span className="font-semibold">Transaction form</span>
+                                    <select aria-label="Transaction form" value={loiDraftTerms.transactionStructure} onChange={(event) => updateLoiTerm('transactionStructure', event.target.value as LoiDraftTerms['transactionStructure'])} className="w-full rounded-md border border-input bg-background px-3 py-2">
+                                        <option>Asset Purchase</option>
+                                        <option>Equity Purchase</option>
+                                    </select>
+                                </label>
+                                <label className="space-y-1">
+                                    <span className="font-semibold">Offer valid (days)</span>
+                                    <input aria-label="Offer validity days" type="number" min="1" max="120" value={loiDraftTerms.offerValidityDays} onChange={(event) => updateLoiTerm('offerValidityDays', Number(event.target.value))} className="w-full rounded-md border border-input bg-background px-3 py-2" />
+                                </label>
+                                <label className="space-y-1">
+                                    <span className="font-semibold">Expiration time</span>
+                                    <input aria-label="Expiration time" value={loiDraftTerms.expirationTime} onChange={(event) => updateLoiTerm('expirationTime', event.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2" />
+                                </label>
+                                <label className="space-y-1">
+                                    <span className="font-semibold">Exclusivity (days)</span>
+                                    <input aria-label="Exclusivity days" type="number" min="1" max="365" value={loiDraftTerms.exclusivityDays} onChange={(event) => updateLoiTerm('exclusivityDays', Number(event.target.value))} className="w-full rounded-md border border-input bg-background px-3 py-2" />
+                                </label>
+                                <label className="space-y-1">
+                                    <span className="font-semibold">Governing law</span>
+                                    <input aria-label="Governing law" value={loiDraftTerms.governingLaw} onChange={(event) => updateLoiTerm('governingLaw', event.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2" />
+                                </label>
+                            </div>
+
+                            <div className="grid gap-3 rounded-lg border border-border/70 bg-muted/20 p-3 sm:grid-cols-3">
+                                <label className="space-y-1"><span className="font-semibold">General escrow (%)</span><input aria-label="General escrow percent" type="number" min="0" max="100" step="0.5" value={loiDraftTerms.generalEscrowPercent} onChange={(event) => updateLoiTerm('generalEscrowPercent', Number(event.target.value))} className="w-full rounded-md border border-input bg-background px-3 py-2" /></label>
+                                <label className="space-y-1"><span className="font-semibold">Escrow term (months)</span><input aria-label="Escrow months" type="number" min="0" max="60" value={loiDraftTerms.generalEscrowMonths} onChange={(event) => updateLoiTerm('generalEscrowMonths', Number(event.target.value))} className="w-full rounded-md border border-input bg-background px-3 py-2" /></label>
+                                <label className="space-y-1"><span className="font-semibold">NWC true-up (days)</span><input aria-label="NWC true-up days" type="number" min="1" max="365" value={loiDraftTerms.nwcTrueUpDays} onChange={(event) => updateLoiTerm('nwcTrueUpDays', Number(event.target.value))} className="w-full rounded-md border border-input bg-background px-3 py-2" /></label>
+                                <label className="space-y-1"><span className="font-semibold">Transition (months)</span><input aria-label="Transition months" type="number" min="0" max="36" value={loiDraftTerms.transitionMonths} onChange={(event) => updateLoiTerm('transitionMonths', Number(event.target.value))} className="w-full rounded-md border border-input bg-background px-3 py-2" /></label>
+                                <label className="space-y-1"><span className="font-semibold">Included transition (days)</span><input aria-label="Included transition days" type="number" min="0" max="365" value={loiDraftTerms.transitionIncludedDays} onChange={(event) => updateLoiTerm('transitionIncludedDays', Number(event.target.value))} className="w-full rounded-md border border-input bg-background px-3 py-2" /></label>
+                                <label className="space-y-1"><span className="font-semibold">Non-compete (years)</span><input aria-label="Non-compete years" type="number" min="0" max="10" value={loiDraftTerms.nonCompeteYears} onChange={(event) => updateLoiTerm('nonCompeteYears', Number(event.target.value))} className="w-full rounded-md border border-input bg-background px-3 py-2" /></label>
+                                <label className="space-y-1"><span className="font-semibold">Non-compete radius (miles)</span><input aria-label="Non-compete radius miles" type="number" min="0" max="500" value={loiDraftTerms.nonCompeteRadiusMiles} onChange={(event) => updateLoiTerm('nonCompeteRadiusMiles', Number(event.target.value))} className="w-full rounded-md border border-input bg-background px-3 py-2" /></label>
+                            </div>
+                        </div>
+                    ) : activeTab === 'preview' ? (
                         exportDocType === 'loi' ? (
                             <div className="space-y-4 rounded-lg border border-border/70 bg-card p-4 text-xs">
                                 {/* LOI OFFER HEADER STRIP */}
@@ -280,7 +378,7 @@ export function ExportDiligenceModal({
                                     </div>
                                     <div className="flex items-center gap-1.5 flex-wrap">
                                         <Badge variant="outline" className="font-semibold text-xs border-primary/40 text-primary">
-                                            Asset Purchase • Cash-Free, Debt-Free
+                                            {loiTerms.draftTerms.transactionStructure} • Cash-Free, Debt-Free
                                         </Badge>
                                         {loiTerms.isPostLoiDeal ? (
                                             <Badge variant="outline" className="font-semibold text-xs border-amber-500/50 bg-amber-500/10 text-amber-800 dark:text-amber-300">
@@ -335,7 +433,7 @@ export function ExportDiligenceModal({
                                             {formatMoney(loiTerms.nwcTarget)}
                                         </p>
                                         <p className="text-[11px] text-muted-foreground">
-                                            Subject to 12-month trailing monthly balance sheet average. Includes a 90-day post-closing dollar-for-dollar cash true-up adjustment.
+                                            Subject to 12-month trailing monthly balance sheet average. Includes a {loiTerms.draftTerms.nwcTrueUpDays}-day post-closing dollar-for-dollar cash true-up adjustment.
                                         </p>
                                     </div>
 
@@ -348,7 +446,7 @@ export function ExportDiligenceModal({
                                             <span className="font-mono font-bold text-sm text-foreground">
                                                 {formatMoney(loiTerms.generalEscrow)}
                                             </span>
-                                            <span className="text-[10px] text-muted-foreground">(10% General Escrow)</span>
+                                            <span className="text-[10px] text-muted-foreground">({loiTerms.draftTerms.generalEscrowPercent}% General Escrow)</span>
                                         </div>
                                         {bridge.totalSpecialEscrow > 0 ? (
                                             <p className="text-[11px] text-amber-700 dark:text-amber-400 font-medium">
@@ -356,7 +454,7 @@ export function ExportDiligenceModal({
                                             </p>
                                         ) : (
                                             <p className="text-[11px] text-muted-foreground">
-                                                Held in third-party escrow for 12 months post-closing to secure customary representations &amp; warranties.
+                                                Held in third-party escrow for {loiTerms.draftTerms.generalEscrowMonths} months post-closing to secure customary representations &amp; warranties.
                                             </p>
                                         )}
                                     </div>
@@ -369,7 +467,7 @@ export function ExportDiligenceModal({
                                         Legally Binding Exclusivity ("No-Shop") &amp; Confidentiality
                                     </p>
                                     <p className="text-[11px]">
-                                        Seller agrees to a <strong>60-day strict exclusivity period</strong> from execution. All discussions and diligence data remain strictly governed by the mutual NDA. Governing law: State of Delaware.
+                                        Seller agrees to a <strong>{loiTerms.draftTerms.exclusivityDays}-day strict exclusivity period</strong> from execution. All discussions and diligence data remain strictly governed by the mutual NDA. Governing law: {loiTerms.draftTerms.governingLaw}.
                                     </p>
                                 </div>
                             </div>

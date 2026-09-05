@@ -17,6 +17,7 @@ import saveDealModelImport from '../backend/diligence/saveDealModel'
 import getProjectActionTrackerImport from '../backend/diligence/getProjectActionTracker'
 import saveProjectActionTrackerImport from '../backend/diligence/saveProjectActionTracker'
 import getSubmissionHistoryImport from '../backend/diligence/getSubmissionHistory'
+import getCapacityTelemetryImport from '../backend/diligence/getCapacityTelemetry'
 import getWorkflowErrorsImport from '../backend/diligence/getWorkflowErrors'
 import { getDiligenceKpis as getDiligenceKpisImport } from '../backend/diligence/getDiligenceKpis'
 import getWatchdogEventsImport from '../backend/diligence/getWatchdogEvents'
@@ -56,6 +57,7 @@ const saveProjectActionTracker = interopDefault(saveProjectActionTrackerImport)
 const getWorkflowErrors = interopDefault(getWorkflowErrorsImport)
 const getWatchdogEvents = interopDefault(getWatchdogEventsImport)
 const getSubmissionHistory = interopDefault(getSubmissionHistoryImport)
+const getCapacityTelemetry = interopDefault(getCapacityTelemetryImport)
 const retryFailedDocument = interopDefault(retryFailedDocumentImport)
 const stopBatchSubmission = interopDefault(stopBatchSubmissionImport)
 const stopProjectSynthesis = interopDefault(stopProjectSynthesisImport)
@@ -165,6 +167,19 @@ app.get('/api/diligence/history', async (req, res) => {
             user: userFromHeaders(req.headers),
         })
         res.json(rows)
+    } catch (error) {
+        res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
+    }
+})
+
+app.get('/api/diligence/capacity-telemetry', async (req, res) => {
+    try {
+        const environment = req.query.environment === 'test' ? 'test' : 'production'
+        const lookbackDays = typeof req.query.lookbackDays === 'string' || typeof req.query.lookbackDays === 'number' ? req.query.lookbackDays : undefined
+        res.json(await getCapacityTelemetry({
+            params: { environment, lookbackDays },
+            user: userFromHeaders(req.headers),
+        }))
     } catch (error) {
         res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
     }

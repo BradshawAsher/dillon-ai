@@ -7,6 +7,7 @@ const backendMocks = vi.hoisted(() => ({
     getDealModels: vi.fn(),
     saveDealModel: vi.fn(),
     getSubmissionHistory: vi.fn(),
+    getCapacityTelemetry: vi.fn(),
     getEvalRuns: vi.fn(),
     getWorkflowErrors: vi.fn(),
     getDiligenceKpis: vi.fn(),
@@ -28,6 +29,7 @@ vi.mock('../../backend/diligence/getProjectSynthesis', () => ({ default: backend
 vi.mock('../../backend/diligence/getDealModels', () => ({ default: backendMocks.getDealModels }))
 vi.mock('../../backend/diligence/saveDealModel', () => ({ default: backendMocks.saveDealModel }))
 vi.mock('../../backend/diligence/getSubmissionHistory', () => ({ default: backendMocks.getSubmissionHistory }))
+vi.mock('../../backend/diligence/getCapacityTelemetry', () => ({ default: backendMocks.getCapacityTelemetry }))
 vi.mock('../../backend/diligence/getEvalRuns', () => ({ default: backendMocks.getEvalRuns }))
 vi.mock('../../backend/diligence/getWorkflowErrors', () => ({ default: backendMocks.getWorkflowErrors }))
 vi.mock('../../backend/diligence/getDiligenceKpis', () => ({ getDiligenceKpis: backendMocks.getDiligenceKpis }))
@@ -167,6 +169,13 @@ describe('diligence API route contracts', () => {
             mock: 'getSubmissionHistory',
             expected: { params: { environment: 'test', projectId: 'project-history', limit: '8', full: true }, user: fallbackUser },
             cacheControl: 'public, s-maxage=10, stale-while-revalidate=60',
+        },
+        {
+            name: 'capacity telemetry',
+            path: '/api/diligence/capacity-telemetry?environment=test&lookbackDays=14',
+            mock: 'getCapacityTelemetry',
+            expected: { params: { environment: 'test', lookbackDays: '14' }, user: fallbackUser },
+            cacheControl: 'public, s-maxage=30, stale-while-revalidate=120',
         },
         {
             name: 'workflow-errors',

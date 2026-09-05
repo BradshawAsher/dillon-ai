@@ -27,6 +27,7 @@ export interface AppAuthUser {
     team: string
     role: 'admin' | 'tester'
     avatarUrl?: string
+    isAnonymous?: boolean
 }
 
 const STORAGE_KEY = 'mergeworks.auth'
@@ -55,12 +56,15 @@ export function getDefaultTeamForEmail(email: string): string {
 }
 
 export function mapSupabaseUserToAppUser(user: User | null, customTeam?: string): AppAuthUser | null {
-    if (!user || !user.email) return null
-    const email = user.email.trim().toLowerCase()
+    if (!user) return null
+    const isAnonymous = Boolean(user.is_anonymous)
+    const rawEmail = (user.email || '').trim().toLowerCase()
+    const email = rawEmail || (isAnonymous ? `guest-${user.id.slice(0, 8)}@mergeworks.guest` : '')
+    if (!email) return null
     const metadata = user.user_metadata || {}
-    const name = metadata.full_name || metadata.name || email.split('@')[0] || 'User'
+    const name = metadata.full_name || metadata.name || (isAnonymous ? 'Guest Analyst' : email.split('@')[0]) || 'User'
     const defaultTeam = getDefaultTeamForEmail(email)
-    let team = (customTeam && customTeam.trim()) || metadata.team || defaultTeam
+    let team = (customTeam && customTeam.trim()) || metadata.team || (isAnonymous ? 'Guest' : defaultTeam)
 
     // Disallow external non-admin users from assigning themselves internal Pod 1
     if (team.toLowerCase().startsWith('pod 1') && defaultTeam === 'External Member') {
@@ -76,6 +80,7 @@ export function mapSupabaseUserToAppUser(user: User | null, customTeam?: string)
         team,
         role,
         avatarUrl: metadata.avatar_url || metadata.picture,
+        isAnonymous,
     }
 }
 
@@ -378,6 +383,39 @@ export async function signOutUser() {
 }
 
 /**
+ * Ensures an active session exists (anonymous if user is not signed in).
+ * This provides every guest with an isolated auth.uid() so Supabase Realtime
+ * WebSockets and RLS policies work seamlessly without cross-user leakage.
+ */
+export async function ensureAnonymousSession(): Promise<AppAuthUser | null> {
+    if (typeof window === 'undefined') return null
+    const existing = getLocalAppAuth()
+    if (existing && !existing.isAnonymous) return existing
+
+    try {
+        const { data: { session } } = await supabaseAuthClient.auth.getSession()
+        if (session?.user) {
+            const appUser = mapSupabaseUserToAppUser(session.user)
+            if (appUser) {
+                saveAppAuth(appUser)
+                return appUser
+            }
+        }
+
+        const { data, error } = await supabaseAuthClient.auth.signInAnonymously()
+        if (error || !data.user) return null
+
+        const guestUser = mapSupabaseUserToAppUser(data.user)
+        if (guestUser) {
+            saveAppAuth(guestUser)
+        }
+        return guestUser
+    } catch {
+        return null
+    }
+}
+
+/**
  * Initialize and listen to Auth Changes
  */
 export function initAuthListener(onUserChange: (user: AppAuthUser | null) => void) {
@@ -397,6 +435,12 @@ export function initAuthListener(onUserChange: (user: AppAuthUser | null) => voi
                 return
             }
         }
+        // If unauthenticated guest, establish isolated anonymous session
+        ensureAnonymousSession().then((guestUser) => {
+            if (guestUser) {
+                onUserChange(guestUser)
+            }
+        }).catch(() => {})
     }).catch(() => {})
 
     // 3. Listen to instant custom app event
@@ -418,8 +462,8 @@ export function initAuthListener(onUserChange: (user: AppAuthUser | null) => voi
                 saveAppAuth(appUser)
                 onUserChange(appUser)
 
-                // Trigger Slack alert on SIGNED_IN event
-                if (_event === 'SIGNED_IN' && typeof window !== 'undefined') {
+                // Trigger Slack alert on SIGNED_IN event (skip for anonymous guest sessions)
+                if (_event === 'SIGNED_IN' && !session.user.is_anonymous && typeof window !== 'undefined') {
                     const userCreatedAt = session.user.created_at ? new Date(session.user.created_at).getTime() : 0
                     const isGenuineNewAccount = userCreatedAt > 0 && (Date.now() - userCreatedAt) < 600000 // within 10 minutes of signup
                     const alertKey = `mergeworks.signupAlertSent.${session.user.id}`

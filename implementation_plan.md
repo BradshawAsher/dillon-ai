@@ -807,3 +807,36 @@ The repository has strong Vitest unit/domain coverage, a real loopback multipart
 4. Append guided steps for Overview, Diligence batch/result, Synthesis, and the Projects portfolio, using stable existing card anchors.
 5. Restore the pre-tour tab when the walkthrough exits and remove the derived project automatically.
 6. Update unit, Playwright, gallery, and documentation expectations; verify TypeScript, tests, production build, and the rendered browser flow.
+
+---
+
+# Capacity telemetry, Realtime consolidation, and LOI terms editor (2026-09-04)
+
+## Verified findings
+
+- The dashboard's `CONCURRENCY = 3` chunks browser submission requests; it is not a global n8n or LLM worker limit. Recent production records already show batches with 5–9 overlapping document processing windows.
+- The production `documents` table contains enough lightweight timing, token, model, status, and error fields to measure observed capacity without loading analysis JSON or adding a database migration.
+- The browser constructs two Supabase clients with the same project and auth storage key. Realtime then invalidates both broad portfolio queries and project-scoped queries for each event, while the dashboard callback also refreshes the active project.
+- The LOI generator contains editable business terms as hard-coded prose. The modal preview, Markdown download, and print/PDF path must consume one resolved terms object so they cannot disagree.
+
+## Targeted changes
+
+1. Add a read-only `GET /api/diligence/capacity-telemetry` endpoint that returns current processing/queued documents, active batches, observed document and batch concurrency, p50/p95 processing duration and token volume, failures, rate-limit signals, model mix, and recent batch peaks for a bounded lookback window.
+2. Add a Spending & Analytics capacity card with an explicit observed-versus-configured distinction, a manual refresh action, and a low-frequency refresh while that tab is mounted. Do not introduce throttling, queue enforcement, RLS changes, paid calls, or n8n workflow changes.
+3. Reuse the existing authenticated Supabase browser singleton for access requests, remove duplicate-client construction, narrow Realtime invalidation to the active project, handle timeout/disconnect states, and correct the stale three-second polling copy.
+4. Add a typed LOI draft terms model and editor for parties, offer, transaction form, validity, exclusivity, escrow, working-capital true-up, transition, non-compete, and governing law. Feed the same terms into the on-screen preview, Markdown, and printable HTML.
+5. Give the capacity UI and LOI editor stable DOM anchors and register them with the chat/command navigation surfaces required by repository conventions.
+
+## Verification
+
+1. Add pure unit tests for concurrency sweep-line calculations, batch overlap, percentiles, stale active rows, rate-limit classification, and LOI term overrides.
+2. Extend API integration coverage for the new read-only endpoint and update access-request/Reatime component tests for singleton and scoped invalidation behavior.
+3. Run the focused LOI, export modal, Spending Analytics, Realtime, chat panel, and command palette tests.
+4. Rebuild the Vercel API bundle, then run TypeScript typechecking, the zero-token API integration suite, the production build, and browser verification of the capacity card and LOI editor.
+
+## Explicit non-goals
+
+- No concurrency cap or provider-side queue is added in this change.
+- No Supabase schema, RLS, storage, upload, or n8n workflow change.
+- No live LLM request is made to estimate capacity.
+- No commit or push unless requested after verification.

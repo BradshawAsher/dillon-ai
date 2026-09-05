@@ -11,6 +11,8 @@ const N8N_BASE_URL = 'https://merge-works.app.n8n.cloud/'
 export type ApiUser = {
   fullName: string
   email: string
+  id?: string
+  team?: string
 }
 
 const fallbackUser: ApiUser = {
@@ -131,8 +133,12 @@ export function userFromHeaders(headers: IncomingHttpHeaders): ApiUser {
 
   const fullName = decode(headers['x-analyst-name'])
   const email = decode(headers['x-analyst-email'])
+  const id = decode(headers['x-user-id'])
+  const team = decode(headers['x-user-team'])
 
-  return fullName.length > 0 && email.length > 0 ? { fullName, email } : fallbackUser
+  return fullName.length > 0 && email.length > 0
+    ? { fullName, email, id: id || undefined, team: team || undefined }
+    : fallbackUser
 }
 
 // The /api/diligence/* routes are internet-reachable and unauthenticated, and

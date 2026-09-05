@@ -4,6 +4,8 @@
 declare type User = {
   fullName: string
   email: string
+  id?: string
+  team?: string
 }
 
 declare type MultipartFormDataEntry =

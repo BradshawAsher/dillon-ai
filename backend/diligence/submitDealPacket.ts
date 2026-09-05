@@ -47,7 +47,7 @@ export default async function submitDealPacket(req: { params: Params; user: User
   // full submission history and syncing data tables (which adds 2-4s latency).
   if (!req.params.skipDuplicateCheck) {
     try {
-      const { data: duplicateDocs } = await supabase
+      let duplicateQuery = supabase
         .from('documents')
         .select('id, request_id, created_at, updated_at, status, source_relative_path')
         .ilike('project_id', normalizedProjectId)
@@ -55,6 +55,14 @@ export default async function submitDealPacket(req: { params: Params; user: User
         .eq('file_size', req.params.fileSize)
         .eq('status', 'completed')
         .limit(100)
+
+      if (req.user.id) {
+        duplicateQuery = duplicateQuery.or(`user_id.eq.${req.user.id},is_demo.eq.true`)
+      } else if (req.user.email && req.user.email !== 'dashboard@mergeworks.local') {
+        duplicateQuery = duplicateQuery.or(`analyst_email.ilike.${req.user.email.trim().toLowerCase()},is_demo.eq.true`)
+      }
+
+      const { data: duplicateDocs } = await duplicateQuery
 
       const existingDocument = duplicateDocs?.find((document) => {
         const existingPath = normalizeSourceRelativePath(document.source_relative_path, req.params.fileName).toLowerCase()
@@ -130,13 +138,21 @@ export default async function submitDealPacket(req: { params: Params; user: User
 
   // Remove any previous failed upload attempts for this file in this project so retries don't create zombie duplicate rows
   try {
-    await supabase
+    let deleteQuery = supabase
       .from('documents')
       .delete()
       .ilike('project_id', normalizedProjectId)
       .ilike('file_name', normalizedFileName)
       .eq('source_relative_path', sourceRelativePath)
       .eq('status', 'upload_failed')
+
+    if (req.user.id) {
+      deleteQuery = deleteQuery.eq('user_id', req.user.id)
+    } else if (req.user.email && req.user.email !== 'dashboard@mergeworks.local') {
+      deleteQuery = deleteQuery.ilike('analyst_email', req.user.email.trim().toLowerCase())
+    }
+
+    await deleteQuery
   } catch {
     // Non-fatal
   }
@@ -154,6 +170,9 @@ export default async function submitDealPacket(req: { params: Params; user: User
         submission_notes: req.params.submissionNotes,
         analyst_name: req.user.fullName,
         analyst_email: req.user.email,
+        user_id: req.user.id || null,
+        team: req.user.team || null,
+        is_demo: false,
         project_stage: req.params.projectStage,
         document_type: req.params.documentType,
         file_name: req.params.fileName,
@@ -194,6 +213,8 @@ export default async function submitDealPacket(req: { params: Params; user: User
     { key: 'triggerTimestamp', value: triggerTimestamp },
     { key: 'requestID', value: requestID },
     { key: 'environment', value: environment },
+    ...(req.user.id ? [{ key: 'userId', value: req.user.id }] : []),
+    ...(req.user.team ? [{ key: 'userTeam', value: req.user.team }] : []),
   ]
 
   if (req.params.storageFileUrl) {

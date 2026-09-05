@@ -34,12 +34,14 @@ export function isAdmin(): boolean {
 export const DATA_ISOLATION_EVENT = 'mergeworks:data-isolation-change'
 
 export function isDataIsolationEnabled(): boolean {
-    if (typeof window === 'undefined') return false
+    if (typeof window === 'undefined') return true
     // Runs during initial render; a disabled/unavailable localStorage (private
     // mode, storage blocked) must not throw and white-screen the app. Matches the
     // try/catch pattern the identity/dataSource/darkMode helpers already use.
     try {
-        return localStorage.getItem(ISOLATION_KEY) === 'true'
+        const val = localStorage.getItem(ISOLATION_KEY)
+        if (val === null) return true
+        return val === 'true'
     } catch {
         return false
     }
@@ -223,7 +225,7 @@ export default function LoginButton({ onNavigateAccount }: { onNavigateAccount?:
         </button>
     )
 
-    if (authUser) {
+    if (authUser && !authUser.isAnonymous) {
         return (
             <div className="flex items-center gap-2">
                 {isolationButton}

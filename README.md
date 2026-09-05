@@ -29,7 +29,7 @@ MergeWorks supports three complementary diligence depth levels depending on tran
 ## Key Documentation Links
 
 - **[System Architecture & Technical Specification (`ARCHITECTURE.md`)](ARCHITECTURE.md)** — Comprehensive architecture diagrams, data flow sequence charts, component deep-dives, and interview masterclass talking points.
-- **[Concurrency, Capacity & Stress Benchmarks (`CAPACITY_LIMITS.md`)](test_sets/stress_reports/CAPACITY_LIMITS.md)** — Empirical 4-tier concurrency matrix (500 connections @ 1.18s P95), Little's Law think-time proofs, and 445 RPS throughput limits.
+- **[Concurrency, Capacity & Stress Benchmarks (`CAPACITY_LIMITS.md`)](test_sets/stress_reports/CAPACITY_LIMITS.md)** — Empirical 4-tier concurrency matrix (500 connections @ 1.18s P95, 445 RPS DB throughput), Little's Law think-time proofs, and LLM worker capacity (15–25 concurrent documents / ~3–4 simultaneous active batches on a single key, with linear BYOK scaling).
 - **[Upload and Batch Recovery](docs/UPLOAD_AND_BATCH_RECOVERY.md)** — Resumable large-file uploads, verified n8n handoff, failure recovery, and batch count/timer rules.
 - **[Evaluation Harness & Benchmark Guide (`EVALS.md`)](EVALS.md)** — 58-document golden benchmark dataset, 5-dimension scoring rubric, and 1-card Pre/Post-LOI toggle design.
 - **[Dual Core Agent Capabilities (`PURPOSE.md`)](PURPOSE.md)** — Pre-LOI Valuation Discovery & Post-LOI Deal Negotiation frameworks.

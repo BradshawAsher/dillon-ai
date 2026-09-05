@@ -1,17 +1,8 @@
-import { createClient } from '@supabase/supabase-js'
+import { supabaseAuthClient } from './supabaseAuth'
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder-project.supabase.co'
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder-anon-key'
-
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-    },
-    realtime: {
-        transport: typeof WebSocket !== 'undefined' ? WebSocket : class DummyWebSocket {} as any,
-    },
-})
+// Reuse the app-wide browser client. Creating a second GoTrue client for the
+// same project/storage key causes duplicate auth listeners and Realtime noise.
+export const supabase = supabaseAuthClient
 
 export interface AccessRequestPayload {
     fullName: string

@@ -6,6 +6,7 @@ import getProjectSynthesis from '../../backend/diligence/getProjectSynthesis'
 import getDealModels from '../../backend/diligence/getDealModels'
 import saveDealModel from '../../backend/diligence/saveDealModel'
 import getSubmissionHistory from '../../backend/diligence/getSubmissionHistory'
+import getCapacityTelemetry from '../../backend/diligence/getCapacityTelemetry'
 import getEvalRuns from '../../backend/diligence/getEvalRuns'
 import getWorkflowErrors from '../../backend/diligence/getWorkflowErrors'
 import { getDiligenceKpis } from '../../backend/diligence/getDiligenceKpis'
@@ -101,6 +102,13 @@ export default async function handler(req: ApiRequest, res: ServerResponse) {
             const cacheKey = `history-${environment}-${projectId ?? 'all'}-${full}-${limitNum ?? 'default'}`
             const data = await withMemCache(cacheKey, () => getSubmissionHistory({ params: { environment, projectId, limit: limitNum, full }, user }), 6_000)
             sendJson(req, res, 200, data, 'public, s-maxage=10, stale-while-revalidate=60')
+            return
+        }
+        if (route === 'capacity-telemetry' && req.method === 'GET') {
+            const lookbackDays = requestUrl.searchParams.get('lookbackDays') ?? undefined
+            const cacheKey = `capacity-telemetry-${environment}-${lookbackDays ?? '30'}`
+            const data = await withMemCache(cacheKey, () => getCapacityTelemetry({ params: { environment, lookbackDays }, user }), 15_000)
+            sendJson(req, res, 200, data, 'public, s-maxage=30, stale-while-revalidate=120')
             return
         }
         if (route === 'workflow-errors' && req.method === 'GET') {
