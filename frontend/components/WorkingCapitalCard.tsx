@@ -6,6 +6,7 @@ import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
 import { calculateWorkingCapitalPeg, type RollingTimeframe } from '../utils/workingCapitalPeg'
+import { normalizePercentageFraction } from '../utils/dealMath'
 
 type Props = {
     model: DealModel
@@ -24,28 +25,37 @@ export default function WorkingCapitalCard({ model }: Props) {
     const data = useMemo(() => {
         const facts = parseDocumentedFacts(model.documentedFactsJson)
         const rawRevenue = typeof facts.revenue?.value === 'number' ? facts.revenue.value : null
-        const revenue = rawRevenue && rawRevenue > 0 ? rawRevenue : 12_400_000
-        const ar = typeof facts.accounts_receivable?.value === 'number' ? facts.accounts_receivable.value : 850_000
-        const inventory = typeof facts.inventory?.value === 'number' ? facts.inventory.value : 420_000
-        const cash = typeof facts.cash_equivalents?.value === 'number' ? facts.cash_equivalents.value : 350_000
+        const revenue = rawRevenue && rawRevenue > 0 ? rawRevenue : null
+        const ar = typeof facts.accounts_receivable?.value === 'number' ? facts.accounts_receivable.value : null
+        const inventory = typeof facts.inventory?.value === 'number' ? facts.inventory.value : null
+        const ap = typeof facts.accounts_payable?.value === 'number' ? facts.accounts_payable.value : null
+        const accrued = typeof facts.accrued_expenses?.value === 'number' ? facts.accrued_expenses.value : null
+        const cogs = typeof facts.cogs?.value === 'number'
+            ? facts.cogs.value
+            : typeof facts.cost_of_goods_sold?.value === 'number' ? facts.cost_of_goods_sold.value : null
+
+        if (revenue === null || [ar, inventory, ap, accrued].every((value) => value === null)) return null
 
         const dailyRevenue = revenue / 365
         const dso = ar ? Math.round(ar / dailyRevenue) : null
-        const dih = inventory ? Math.round(inventory / (revenue * 0.6 / 365)) : null
+        const dih = inventory && cogs && cogs > 0 ? Math.round(inventory / (cogs / 365)) : null
 
-        const currentAssets = (ar ?? 0) + (inventory ?? 0) + (cash ?? 0)
-        const estimatedPayables = revenue * 0.12
-        const netWC = currentAssets - estimatedPayables
+        // Transaction NWC normally excludes cash and debt. Only documented
+        // operating current assets/liabilities belong in this snapshot.
+        const currentAssets = (ar ?? 0) + (inventory ?? 0)
+        const currentLiabilities = (ap ?? 0) + (accrued ?? 0)
+        const netWC = currentAssets - currentLiabilities
         const wcAsPercentOfRev = (netWC / revenue) * 100
         const wcRequirement = model.workingCapitalRequirement ?? 0
 
-        const growth = model.baseRevenueGrowth ?? 0.05
+        const growth = normalizePercentageFraction(model.baseRevenueGrowth) ?? 0.05
         const additionalWCNeeded = netWC * growth
 
         const items = [
             { label: 'Accounts receivable', value: ar, days: dso ? `${dso} days sales` : null },
             { label: 'Inventory', value: inventory, days: dih ? `${dih} days on hand` : null },
-            { label: 'Cash & equivalents', value: cash, days: null },
+            { label: 'Accounts payable', value: ap, days: null },
+            { label: 'Accrued expenses', value: accrued, days: null },
         ].filter(i => i.value != null && i.value > 0) as { label: string; value: number; days: string | null }[]
 
         return {
@@ -57,6 +67,12 @@ export default function WorkingCapitalCard({ model }: Props) {
             dso,
             dih,
             revenue,
+            assumptions: [
+                ...(dih === null && inventory ? ['Inventory days unavailable because documented COGS is missing'] : []),
+                ...(ar === null ? ['Accounts receivable is missing'] : []),
+                ...(ap === null ? ['Accounts payable is missing'] : []),
+                ...(accrued === null ? ['Accrued expenses is missing'] : []),
+            ],
         }
     }, [model])
 
@@ -91,11 +107,15 @@ export default function WorkingCapitalCard({ model }: Props) {
                     </button>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                    Normalized rolling NWC peg benchmarks, seasonal swing volatility, and Definitive Purchase Agreement (APA) closing adjustment provisions.
+                    Operating NWC snapshot plus an illustrative peg model. Validate the peg against actual month-end balances before using legal language.
                 </p>
             </CardHeader>
 
             <CardContent className="p-4 space-y-4">
+                <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs leading-5 text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+                    The rolling series is synthetic, modeled from the available annual snapshot; it is not extracted monthly history. {pegResult.assumedInputs.join(' · ')}
+                    {data.assumptions.length > 0 ? ` · ${data.assumptions.join(' · ')}` : ''}
+                </div>
                 {/* Core Net Working Capital Metrics */}
                 <div className="grid grid-cols-3 gap-2 text-center">
                     <div className="rounded-lg bg-muted/50 p-2">
@@ -185,7 +205,7 @@ export default function WorkingCapitalCard({ model }: Props) {
                             <div className="flex items-center justify-between">
                                 <span className="text-[11px] font-semibold text-foreground flex items-center gap-1">
                                     <FileText className="h-3 w-3 text-muted-foreground" />
-                                    APA Section 2.4 Legal Peg Clause (GAAP Normalization)
+                                    Illustrative APA Section 2.4 Draft
                                 </span>
                                 <button
                                     type="button"

@@ -76,6 +76,7 @@ describe('Valuation Bridge & APA Clause Generator', () => {
             expect(bridge.totalEvDeduction).toBe(1_120_000)
             expect(bridge.totalSpecialEscrow).toBe(180_000)
             expect(bridge.defensibleCounterOffer).toBe(8_880_000) // $10,000,000 - $1,120,000
+            expect(bridge.totalSavingsDollars).toBe(1_120_000)
         })
 
         it('respects user item handling overrides', () => {
@@ -98,6 +99,34 @@ describe('Valuation Bridge & APA Clause Generator', () => {
             expect(bridge.totalEvDeduction).toBe(150_000)
             expect(bridge.totalSpecialEscrow).toBe(0)
             expect(bridge.defensibleCounterOffer).toBe(4_850_000)
+        })
+
+        it('does not invent dollar deductions or escrows from narrative-only risks', () => {
+            const bridge = computeValuationBridge({
+                purchasePrice: 5_000_000,
+                documentedFactsJson: JSON.stringify({ ebitda_sde: { value: 1_000_000 } }),
+            } as unknown as DealModel, {
+                redFlags: ['Customer concentration exceeds 40% and equipment needs maintenance'],
+            } as unknown as ProjectSynthesisItem)
+
+            expect(bridge.items).toEqual([])
+            expect(bridge.totalEvDeduction).toBe(0)
+            expect(bridge.totalSpecialEscrow).toBe(0)
+            expect(bridge.totalSavingsDollars).toBe(0)
+        })
+
+        it('uses the questionnaire reported EBITDA fact for add-back disallowance', () => {
+            const bridge = computeValuationBridge({
+                purchasePrice: 4_800_000,
+                documentedFactsJson: JSON.stringify({
+                    ebitda_sde: { value: 1_110_000 },
+                    reported_ebitda: { value: 1_250_000 },
+                }),
+            } as unknown as DealModel)
+
+            expect(bridge.reportedEbitda).toBe(1_250_000)
+            expect(bridge.totalDisallowedAddbacks).toBe(140_000)
+            expect(bridge.items[0]?.totalDeduction).toBe(Math.round(140_000 * (4_800_000 / 1_110_000)))
         })
     })
 

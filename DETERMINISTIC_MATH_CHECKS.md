@@ -1,89 +1,100 @@
-# Deterministic Math Checks — How They Work
+# Deterministic Math Checks
 
-## What are they?
+## Where to find the ledger
 
-Deterministic math checks are **pure arithmetic verifications** that run without any AI/LLM involvement. When the per-document analysis extracts financial numbers from an uploaded document, the system runs a set of arithmetic formulas to verify the numbers are internally consistent.
+In the application workspace, open:
 
-These are not AI opinions — they're facts. If Revenue minus COGS does not equal the stated Gross Profit, that's a verifiable error (or a sign something was misread).
+**Diligence → Financial data quality & Math Reconciliation → Master Deterministic Math & Reconciliation Ledger**
 
-## Where do they run?
+The direct UI anchor is `#diligence-master-math-checks`. The ledger has filters for P&L Integrity, Balance Sheet, Cross-Doc Ties, and Underwriting Math.
 
-In the n8n per-document analysis workflow (`[Pod 1] - Financial DD Agent - MCP Test - Robust Per Document AI Analysis`, ID: `W5Jp7CJIQbNy0qlY`):
+## What “deterministic” means
 
-1. The LLM extracts raw financial numbers from the document (revenue, COGS, gross profit, EBITDA, total assets, total liabilities, equity, etc.) — extraction routes across our production multi-model architecture (OpenAI 5.6 Terra as primary with OpenAI 5.6 Sol as automatic fallback, and Claude Sonnet 5 for Anthropic BYOK)
-2. After extraction, a **deterministic reconciliation step** runs the formulas below — this step is pure arithmetic with **no LLM involvement**, so it cannot hallucinate regardless of which model produced the inputs
-3. Results are stored in the document row's `reconciliationJson` field
+The formulas and comparisons run in ordinary code and consume no LLM tokens. The source values are still extracted from documents by an LLM or parser, so deterministic arithmetic does not make an extracted value automatically correct. Open the evidence drawer and review the source citation before relying on a result.
 
-## What formulas are checked?
+The UI uses three result classes:
 
-| Check | Formula | What it catches |
-|-------|---------|-----------------|
-| Gross Profit | Revenue − COGS = Gross Profit | Misread revenue, missing COGS, or wrong GP figure |
-| EBITDA | Revenue − Operating Expenses ≈ EBITDA | Significant unexplained gap between revenue and EBITDA |
-| Equity | Total Assets − Total Liabilities = Equity | Balance sheet that doesn't balance |
-| Margin consistency | EBITDA / Revenue = implied margin | Margin that's implausibly high (>80%) or negative |
-| Scale sanity | Numbers in same power-of-ten | Catches $500K read as $500M or vice versa |
+- **Verified tie:** An arithmetic identity has a separately stated comparator, or the same metric and period appears in two independent uploaded documents, and the values agree within tolerance.
+- **Mismatch:** One of those comparable values exceeds tolerance.
+- **Calculated only:** The formula produced a useful ratio or underwriting output but had no independent value to verify against. Market ranges never turn a calculation into a verified tie.
 
-## Tolerance
+The ledger does not report “100% concordance” merely because it found no conflicts. When no comparable facts exist, the Cross-Doc Ties filter is empty.
 
-Each check uses a **2% tolerance** by default. This accounts for:
-- Rounding in source documents
-- Minor items omitted from one line but included in another
-- Period-boundary differences (e.g., accrual vs. cash)
+## Per-document workflow
 
-## Data format (the `reconciliationJson` field)
-
-Each completed document stores a JSON object like:
+The live n8n workflow is **[Pod 1] - Financial DD Agent - Robust Per Document AI Analysis** (`W5Jp7CJIQbNy0qlY`). Its output parser and BYOK routes share this fact contract:
 
 ```json
 {
-  "status": "passed",       // "passed" | "warning" | "partial"
-  "warnings": [],           // string[] of plain-English issues
-  "metrics": {
-    "gross_profit": {
-      "value": 450000,       // Computed value from formula
-      "actual": 448000,      // Value stated in the document
-      "withinTolerance": true,
-      "formula": "Revenue - COGS"
-    },
-    "ebitda_check": {
-      "value": 180000,
-      "actual": 162000,
-      "withinTolerance": false,
-      "formula": "Revenue - OpEx"
-    }
+  "metric": "revenue",
+  "raw_value": "$1,250,000",
+  "normalized_value": 1250000,
+  "period": "FY2025",
+  "currency": "USD",
+  "confidence": 0.96,
+  "status": "confirmed",
+  "citation": {
+    "source_file": "2025 P&L.xlsx",
+    "row_or_cell": "B12",
+    "excerpt": "Total revenue $1,250,000"
   }
 }
 ```
 
-## How they show in the frontend
+Only confirmed facts with finite normalized values enter reconciliation. Identity comparisons also require matching, non-empty periods and currencies.
 
-The `MathChecksSection` component (used on Overview, Synthesis, Valuation, Returns, Growth, and Latest Doc Submission) renders these checks in two modes:
+## Supported checks and calculations
 
-### Compact mode (Overview, Valuation, Returns, Growth tabs)
-- Grid of small cards showing each metric
-- Green checkmark / red X / yellow triangle for status
-- The **computed value** (from the formula)
-- The **formula** text shown directly below the number
-- If verification **failed**: shows the actual value from the document + percentage deviation
-- Click any card → opens Evidence Drawer with full detail
+### Identities that can pass or fail
 
-### Full mode (Synthesis tab)
-- Grouped by source document
-- Larger cards with all the same detail
-- Pass/warning badge per document
-- Warnings listed below
+| Stored key | Identity | Requirements |
+|---|---|---|
+| `gross_profit_check` | Revenue − COGS = stated Gross Profit | Revenue, COGS, and stated Gross Profit for the same period/currency |
+| `operating_income_check` | Gross Profit − Operating Expenses = stated Operating Income | All three facts for the same period/currency |
+| `balance_sheet_check` | Total Assets = Total Liabilities + stated Equity | All three facts for the same period/currency |
+| `working_capital_check` | Current Assets − Current Liabilities = stated Working Capital | All three facts for the same period/currency |
 
-## Why this matters for deal analysis
+These checks use a tolerance of `max($1, 2% × absolute computed value)`.
 
-1. **Catches extraction errors**: If the AI misread "$1.2M" as "$12M", the cross-check will flag it
-2. **Identifies document inconsistencies**: A P&L where Revenue − Expenses ≠ stated EBITDA may indicate undisclosed items
-3. **Builds confidence**: When all checks pass, you know the numbers are internally consistent
-4. **No AI hallucination risk**: These are pure math — Revenue minus COGS either equals GP or it doesn't
+### Deterministic calculations
 
-## What they DON'T do
+These are useful outputs but do not receive a pass/fail status without an independent comparator:
 
-- They don't verify numbers against external sources
-- They don't assess whether the numbers are "reasonable" for the industry (that's what the AI synthesis does)
-- They don't catch fraud where all numbers are internally consistent but fabricated
-- They only run when 2+ related numbers are extracted from the same document
+- Gross margin = Gross Profit ÷ Revenue
+- EBITDA/SDE margin = EBITDA/SDE ÷ Revenue
+- Net assets = Total Assets − Total Liabilities
+- Revenue per employee = Revenue ÷ confirmed employee count for the same year
+- Debt to assets = Debt ÷ Total Assets
+- Debt to EBITDA = Debt ÷ EBITDA/SDE
+- DSCR = explicit Free Cash Flow ÷ explicit Annual Debt Service
+- Entry multiple = Purchase or Asking Price ÷ EBITDA/SDE
+- Unlevered payback = (Price + Fees + Working Capital) ÷ (EBITDA × (1 − Tax Rate) − Maintenance Capex)
+- Illustrative senior DSCR = unlevered annual cash flow ÷ amortizing senior debt service, using the saved rate and term
+- Working-capital funding gap = deal-model requirement − documented working capital
+
+The last four use saved deal-model inputs in the browser. Any fallback assumptions are disclosed in the check notes.
+
+## Cross-document ties
+
+The browser canonicalizes metric and period labels, then compares facts only across different documents. Examples include revenue in a tax return versus revenue in a P&L, provided both extractions use the same period. The comparison uses a 2% relative tolerance and shows both filenames and values.
+
+It does not treat an AI-written synthesis conflict as a deterministic mismatch, and it does not infer tax-line or depreciation ties unless those numeric facts were actually extracted.
+
+## Scale and quality warnings
+
+The workflow also records warnings for:
+
+- A raw value and normalized value differing by 100× or more.
+- Same-metric facts within one document differing by 100× or more for the same period/currency.
+- Missing period or currency alignment between facts needed by a formula.
+- EBITDA margin above 100% or below −50%. This is a sanity warning, not an identity check.
+
+## Code locations
+
+- Live workflow updater and contract: `scripts/update-n8n-math-contract.cjs`
+- Unified ledger builder: `frontend/utils/unifiedMathChecks.ts`
+- Numeric cross-document comparison: `frontend/utils/crossDocumentConflicts.ts`
+- Ledger UI: `frontend/components/UnifiedMathChecksCard.tsx`
+- Workspace placement: `frontend/components/views/DiligenceWorkspaceView.tsx`
+
+Existing document rows are not retroactively re-extracted by this change. New or deliberately reprocessed documents receive the repaired fact contract and reconciliation v3 output.

@@ -7,7 +7,6 @@ import DealOverviewCard from '../DealOverviewCard'
 import QuickFilterBar from '../QuickFilterBar'
 import DealModelReadinessCard from '../DealModelReadinessCard'
 import FinancialCompletenessCard from '../FinancialCompletenessCard'
-import MathChecksSection from '../MathChecksSection'
 import UnifiedMathChecksCard from '../UnifiedMathChecksCard'
 import DataQualityChecksCard from '../DataQualityChecksCard'
 import AddBackQualityCard from '../AddBackQualityCard'
@@ -264,15 +263,7 @@ export function DiligenceWorkspaceView({
                 <UnifiedMathChecksCard
                     documents={activeProjectDocuments}
                     model={hydratedDealModel}
-                    synthesis={activeProjectSynthesis}
                     onOpenEvidence={setActiveEvidence}
-                />
-                <MathChecksSection
-                    documents={activeProjectDocuments}
-                    onOpenEvidence={setActiveEvidence}
-                    compact
-                    title="Project math checks"
-                    description="Aggregated deterministic checks across all processed documents."
                 />
                 <DataQualityChecksCard model={hydratedDealModel} />
                 <Suspense fallback={null}>

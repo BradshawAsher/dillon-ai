@@ -145,7 +145,7 @@ export default function NegotiationValuationBridgeCard({ model, synthesis, proje
                         </div>
                         <p className="text-lg font-bold text-emerald-700 dark:text-emerald-400 mt-0.5">{formatMoney(bridge.defensibleCounterOffer)}</p>
                         <p className="text-[10px] font-semibold text-emerald-700/80 dark:text-emerald-400/80 mt-0.5">
-                            Total buyer relief: {formatMoney(bridge.totalSavingsDollars)} ({bridge.totalSavingsPercent.toFixed(1)}%)
+                            Purchase-price reduction: {formatMoney(bridge.totalSavingsDollars)} ({bridge.totalSavingsPercent.toFixed(1)}%)
                         </p>
                     </div>
                 </div>

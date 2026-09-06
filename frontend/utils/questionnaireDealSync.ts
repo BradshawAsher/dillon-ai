@@ -158,6 +158,11 @@ export function reconstructQuestionnaireFormData(
         }
     }
 
+    // DealModel persists rates/margins as decimal fractions, while the
+    // questionnaire inputs display whole percentages. Legacy questionnaire
+    // rows may already contain whole percentages, so accept both.
+    const toFormPercent = (value: number) => Math.abs(value) <= 1 ? value * 100 : value
+
     // 4. Augment with DealModel values
     if (dealModel) {
         const dmAny = dealModel as any
@@ -168,19 +173,19 @@ export function reconstructQuestionnaireFormData(
         if (!reconstructed.askingPrice && dealModel.askingPrice) reconstructed.askingPrice = dealModel.askingPrice
         if (!reconstructed.annualRevenue && dealModel.revenue) reconstructed.annualRevenue = dealModel.revenue
         if (!reconstructed.reportedEbitda && dealModel.ebitda) reconstructed.reportedEbitda = dealModel.ebitda
-        if (dealModel.equityContributionPercent) reconstructed.equityContributionPercent = dealModel.equityContributionPercent
-        if (dealModel.interestRate) reconstructed.interestRate = dealModel.interestRate
+        if (dealModel.equityContributionPercent) reconstructed.equityContributionPercent = toFormPercent(dealModel.equityContributionPercent)
+        if (dealModel.interestRate) reconstructed.interestRate = toFormPercent(dealModel.interestRate)
         if (dealModel.loanTermYears || dealModel.amortizationYears) {
             reconstructed.amortizationYears = dealModel.loanTermYears || dealModel.amortizationYears || 10
         }
         if (dealModel.sellerNoteAmount) reconstructed.sellerNoteAmount = dealModel.sellerNoteAmount
         if (dealModel.exitMultiple) reconstructed.exitMultiple = dealModel.exitMultiple
-        if (dealModel.bearRevenueGrowth) reconstructed.bearRevenueGrowth = dealModel.bearRevenueGrowth
-        if (dealModel.baseRevenueGrowth) reconstructed.baseRevenueGrowth = dealModel.baseRevenueGrowth
-        if (dealModel.bullRevenueGrowth) reconstructed.bullRevenueGrowth = dealModel.bullRevenueGrowth
-        if (dealModel.bearEbitdaMargin) reconstructed.bearEbitdaMargin = dealModel.bearEbitdaMargin
-        if (dealModel.baseEbitdaMargin) reconstructed.baseEbitdaMargin = dealModel.baseEbitdaMargin
-        if (dealModel.bullEbitdaMargin) reconstructed.bullEbitdaMargin = dealModel.bullEbitdaMargin
+        if (dealModel.bearRevenueGrowth) reconstructed.bearRevenueGrowth = toFormPercent(dealModel.bearRevenueGrowth)
+        if (dealModel.baseRevenueGrowth) reconstructed.baseRevenueGrowth = toFormPercent(dealModel.baseRevenueGrowth)
+        if (dealModel.bullRevenueGrowth) reconstructed.bullRevenueGrowth = toFormPercent(dealModel.bullRevenueGrowth)
+        if (dealModel.bearEbitdaMargin) reconstructed.bearEbitdaMargin = toFormPercent(dealModel.bearEbitdaMargin)
+        if (dealModel.baseEbitdaMargin) reconstructed.baseEbitdaMargin = toFormPercent(dealModel.baseEbitdaMargin)
+        if (dealModel.bullEbitdaMargin) reconstructed.bullEbitdaMargin = toFormPercent(dealModel.bullEbitdaMargin)
         if (dealModel.debtAssumed) reconstructed.longTermDebt = dealModel.debtAssumed
         if (dealModel.cashAcquired) reconstructed.cashIncluded = dealModel.cashAcquired
 

@@ -3,7 +3,7 @@ import { Landmark } from 'lucide-react'
 
 import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
-import { resolveLoanTermYears } from '../utils/dealMath'
+import { computeAmortizingLoan, normalizePercentageFraction, resolveLoanTermYears } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
 import CardInfoPopover from './common/CardInfoPopover'
@@ -36,9 +36,10 @@ export default function FinancingScenariosCard({ model }: Props) {
         const price = model.purchasePrice ?? model.askingPrice
         if (!ebitda || !price || ebitda <= 0) return null
 
-        const rate = model.interestRate ?? 0.07
+        const rate = normalizePercentageFraction(model.interestRate) ?? 0.07
         const term = resolveLoanTermYears(model.amortizationYears, model.loanTermYears)
-        const annualPaymentFactor = rate > 0 ? (rate * Math.pow(1 + rate, term)) / (Math.pow(1 + rate, term) - 1) : 1 / term
+        const taxRate = normalizePercentageFraction(model.taxRate) ?? 0.25
+        const operatingCashFlow = ebitda * (1 - taxRate) - (model.maintenanceCapex ?? 0)
 
         const configs = [
             { label: 'All Cash', pct: 1.0 },
@@ -49,8 +50,8 @@ export default function FinancingScenariosCard({ model }: Props) {
         return configs.map(c => {
             const down = price * c.pct
             const loan = price - down
-            const annualDebt = loan > 0 ? loan * annualPaymentFactor : 0
-            const cfAfterDebt = ebitda - annualDebt
+            const annualDebt = computeAmortizingLoan(loan, rate, term)?.annualDebtService ?? 0
+            const cfAfterDebt = operatingCashFlow - annualDebt
             const cocReturn = down > 0 ? (cfAfterDebt / down) * 100 : 0
             const payback = cfAfterDebt > 0 ? down / cfAfterDebt : Infinity
             return {
@@ -79,7 +80,7 @@ export default function FinancingScenariosCard({ model }: Props) {
                         <CardTitle className="text-lg">Financing scenarios</CardTitle>
                         <CardInfoPopover cardId="financing-scenarios" />
                     </div>
-                    <Badge variant="outline">{((model.interestRate ?? 0.07) * 100).toFixed(1)}% rate · {resolveLoanTermYears(model.amortizationYears, model.loanTermYears)}yr term</Badge>
+                    <Badge variant="outline">{((normalizePercentageFraction(model.interestRate) ?? 0.07) * 100).toFixed(1)}% rate · {resolveLoanTermYears(model.amortizationYears, model.loanTermYears)}yr term</Badge>
                 </div>
             </CardHeader>
             <CardContent className="p-4">

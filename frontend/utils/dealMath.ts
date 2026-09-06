@@ -79,7 +79,64 @@ export function normalizeEquityFraction(value: number | null | undefined): numbe
     if (!isNumber(value) || value <= 0) {
         return 0.3
     }
-    return value > 1 ? value / 100 : value
+    return Math.min(1, value > 1 ? value / 100 : value)
+}
+
+/**
+ * Converts a persisted percentage to the decimal convention used by DealModel.
+ * Legacy questionnaire rows stored whole percentages (9.5 meaning 9.5%), while
+ * the deal-model editor stores decimals (0.095). This accepts both conventions.
+ */
+export function normalizePercentageFraction(value: number | null | undefined): number | null {
+    if (!isNumber(value)) return null
+    return Math.abs(value) > 1 ? value / 100 : value
+}
+
+export type AmortizingLoanResult = {
+    monthlyPayment: number
+    annualDebtService: number
+    remainingBalance: number
+    totalPayments: number
+    elapsedPayments: number
+}
+
+/** Monthly-amortizing loan schedule used by cards and exports. */
+export function computeAmortizingLoan(
+    principal: number,
+    annualRateInput: number,
+    amortizationYears: number,
+    elapsedYears = 0,
+): AmortizingLoanResult | null {
+    const annualRate = normalizePercentageFraction(annualRateInput)
+    if (!isNumber(principal) || principal < 0 || annualRate === null || annualRate < 0
+        || !isNumber(amortizationYears) || amortizationYears <= 0 || !isNumber(elapsedYears)) {
+        return null
+    }
+
+    const totalPayments = Math.max(1, Math.round(amortizationYears * 12))
+    const elapsedPayments = Math.min(totalPayments, Math.max(0, Math.round(elapsedYears * 12)))
+    if (principal === 0) {
+        return { monthlyPayment: 0, annualDebtService: 0, remainingBalance: 0, totalPayments, elapsedPayments }
+    }
+
+    const monthlyRate = annualRate / 12
+    const monthlyPayment = monthlyRate === 0
+        ? principal / totalPayments
+        : principal * monthlyRate / (1 - (1 + monthlyRate) ** -totalPayments)
+    const remainingBalance = elapsedPayments >= totalPayments
+        ? 0
+        : monthlyRate === 0
+            ? principal - monthlyPayment * elapsedPayments
+            : principal * (1 + monthlyRate) ** elapsedPayments
+                - monthlyPayment * (((1 + monthlyRate) ** elapsedPayments - 1) / monthlyRate)
+
+    return {
+        monthlyPayment,
+        annualDebtService: monthlyPayment * 12,
+        remainingBalance: Math.max(0, remainingBalance),
+        totalPayments,
+        elapsedPayments,
+    }
 }
 
 /**
@@ -154,9 +211,21 @@ function isNumber(value: unknown): value is number {
  * sign change has no IRR, and non-convergence must not be reported as a number.
  */
 export function calculateIrr(cashFlows: number[]): number | null {
+    if (!Array.isArray(cashFlows) || cashFlows.some((value) => !Number.isFinite(value))) {
+        return null
+    }
     if (!cashFlows.some((value) => value < 0) || !cashFlows.some((value) => value > 0)) {
         return null
     }
+
+    // More than one sign change can produce multiple mathematically valid IRRs.
+    // A single Newton starting guess would select one arbitrarily, so fail closed.
+    const nonZeroSigns = cashFlows.filter((value) => value !== 0).map((value) => Math.sign(value))
+    const signChanges = nonZeroSigns.slice(1).reduce(
+        (count, sign, index) => count + (sign !== nonZeroSigns[index] ? 1 : 0),
+        0,
+    )
+    if (signChanges !== 1) return null
 
     let rate = 0.1
 
@@ -233,7 +302,8 @@ export function computeAllCashReturns(inputs: DealMathInputs): AllCashReturns {
 
     const fees = resolve('transactionFees', inputs.transactionFees, DEAL_MATH_DEFAULTS.transactionFees)
     const workingCapital = resolve('workingCapital', inputs.workingCapital, DEAL_MATH_DEFAULTS.workingCapital)
-    const taxRate = resolve('taxRate', inputs.taxRate, DEAL_MATH_DEFAULTS.taxRate)
+    const rawTaxRate = resolve('taxRate', inputs.taxRate, DEAL_MATH_DEFAULTS.taxRate)
+    const taxRate = normalizePercentageFraction(rawTaxRate)
     const capex = resolve('maintenanceCapex', inputs.maintenanceCapex, DEAL_MATH_DEFAULTS.maintenanceCapex)
     // The cash-flow schedule is a whole number of annual periods (Array.from
     // floors a fractional length anyway), so normalize the hold to an integer up
@@ -248,7 +318,9 @@ export function computeAllCashReturns(inputs: DealMathInputs): AllCashReturns {
     const exitMultiple = resolve('exitMultiple', inputs.exitMultiple, impliedExitMultiple)
 
     const initialInvestment = purchasePrice === null ? null : purchasePrice + fees + workingCapital
-    const annualCashFlow = ebitda === null ? null : ebitda * (1 - taxRate) - capex
+    const annualCashFlow = ebitda === null || taxRate === null || taxRate < 0 || taxRate > 1
+        ? null
+        : ebitda * (1 - taxRate) - capex
 
     const annualRoi = initialInvestment !== null && initialInvestment > 0 && annualCashFlow !== null
         ? annualCashFlow / initialInvestment

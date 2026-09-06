@@ -3,7 +3,7 @@ import { ArrowLeftRight } from 'lucide-react'
 
 import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
-import { resolveLoanTermYears } from '../utils/dealMath'
+import { computeAmortizingLoan, normalizePercentageFraction, resolveLoanTermYears } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
 
@@ -27,26 +27,27 @@ export default function FinancingComparisonCard({ model }: Props) {
     const data = useMemo(() => {
         const facts = parseDocumentedFacts(model.documentedFactsJson)
         const rawEbitda = typeof facts.ebitda_sde?.value === 'number' ? facts.ebitda_sde.value : null
-        const ebitda = rawEbitda && rawEbitda > 0 ? rawEbitda : 2_400_000
+        const ebitda = rawEbitda && rawEbitda > 0 ? rawEbitda : null
         const rawPrice = model.purchasePrice ?? model.askingPrice
-        const price = rawPrice && rawPrice > 0 ? rawPrice : 5_000_000
+        const price = rawPrice && rawPrice > 0 ? rawPrice : null
+        if (ebitda === null || price === null) return null
 
-        const rate = model.interestRate ?? 0.07
+        const rate = normalizePercentageFraction(model.interestRate) ?? 0.07
         const term = resolveLoanTermYears(model.amortizationYears, model.loanTermYears)
-        const taxRate = model.taxRate ?? 0.25
-        const afterTaxEbitda = ebitda * (1 - taxRate)
+        const taxRate = normalizePercentageFraction(model.taxRate) ?? 0.25
+        const operatingCashFlow = ebitda * (1 - taxRate) - (model.maintenanceCapex ?? 0)
 
         const calcOption = (label: string, equityPct: number, debtPct: number, sellerPct: number, riskLevel: 'low' | 'medium' | 'high'): FinancingOption => {
             const equity = price * equityPct
             const debt = price * debtPct
             const sellerNote = price * sellerPct
-            const monthlyDebt = debt > 0 ? (debt * (rate / 12)) / (1 - Math.pow(1 + rate / 12, -term * 12)) : 0
-            const sellerMonthly = sellerNote > 0 ? (sellerNote * 0.05 / 12) + (sellerNote / (5 * 12)) : 0
+            const monthlyDebt = computeAmortizingLoan(debt, rate, term)?.monthlyPayment ?? 0
+            const sellerMonthly = computeAmortizingLoan(sellerNote, 0.05, 5)?.monthlyPayment ?? 0
             const totalMonthly = monthlyDebt + sellerMonthly
             const annualDebtService = totalMonthly * 12
-            const annualCashFlow = afterTaxEbitda - annualDebtService
+            const annualCashFlow = operatingCashFlow - annualDebtService
             const cashOnCash = equity > 0 ? (annualCashFlow / equity) * 100 : 0
-            const dscr = annualDebtService > 0 ? afterTaxEbitda / annualDebtService : Infinity
+            const dscr = annualDebtService > 0 ? operatingCashFlow / annualDebtService : Infinity
 
             return { label, equity, debt, sellerNote, monthlyDebt: Math.round(totalMonthly), annualCashFlow: Math.round(annualCashFlow), cashOnCash, dscr: isFinite(dscr) ? dscr : 99, risk: riskLevel }
         }

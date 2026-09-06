@@ -33,6 +33,7 @@ export type DocumentedFact = {
     overrideCategory?: string
     overriddenBy?: string
     overriddenAt?: string
+    isReconciled?: boolean
 }
 
 export type MetricInput = {
@@ -165,7 +166,7 @@ export function findCitedDocument(sourceFile: string | undefined, documents: Sub
 }
 
 export type EvidenceStatusPresentation = {
-    label: 'Confirmed' | 'Estimated' | 'Contradicted' | 'Illustrative' | 'Calculated' | 'Synthesized' | 'Needs review'
+    label: 'Confirmed' | 'Confirmed & Reconciled' | 'Estimated' | 'Contradicted' | 'Illustrative' | 'Calculated' | 'Synthesized' | 'Needs review'
     variant: 'success' | 'warning' | 'destructive' | 'secondary' | 'outline'
 }
 
@@ -253,23 +254,45 @@ export function isFactReconciled(
     if (fact.isReconciled || /reconcil|double-verif|forensic/.test((fact.provenance || '').toLowerCase())) return true
 
     if (!documents || documents.length === 0) return false
+    const citedSource = fact.citations?.[0]?.source_file || fact.source_document
+    const citedDocument = citedSource ? findCitedDocument(citedSource, documents) : undefined
     for (const doc of documents) {
+        if (citedDocument && doc !== citedDocument) continue
         if (!doc.reconciliationJson) continue
         try {
             const recon = typeof doc.reconciliationJson === 'string' ? JSON.parse(doc.reconciliationJson) : doc.reconciliationJson
             const metrics = recon?.metrics
             if (!metrics) continue
             const candidateKeys: Record<string, string[]> = {
-                ebitda_sde: ['ebitda_check', 'ebitda', 'ebitda_sde', 'operating_income'],
-                revenue: ['revenue', 'gross_revenue', 'gross_profit', 'margin_check'],
-                gross_profit: ['gross_profit', 'gp_check'],
-                total_assets: ['balance_sheet', 'equity_check', 'assets'],
-                debt: ['debt_check', 'liabilities', 'equity_check'],
+                // These names match the live per-document reconciliation
+                // payload. A ratio such as EBITDA margin is deliberately not
+                // evidence that the EBITDA input itself reconciled.
+                revenue: ['gross_profit_check'],
+                cogs: ['gross_profit_check'],
+                gross_profit: ['gross_profit_check'],
+                operating_expenses: ['operating_income_check'],
+                operating_income: ['operating_income_check'],
+                total_assets: ['balance_sheet_check'],
+                total_liabilities: ['balance_sheet_check'],
+                equity: ['balance_sheet_check'],
+                current_assets: ['working_capital_check'],
+                current_liabilities: ['working_capital_check'],
+                working_capital: ['working_capital_check'],
             }
             const matchingKeys = candidateKeys[key] || [key]
+            const reconciliationInputKeys: Record<string, string[]> = {
+                gross_profit: ['reported_gross_profit', 'gross_profit'],
+                operating_income: ['reported_operating_income', 'operating_income'],
+                working_capital: ['reported_working_capital', 'working_capital'],
+            }
             for (const mk of matchingKeys) {
-                if (metrics[mk]?.withinTolerance === true) {
-                    return true
+                const metric = metrics[mk]
+                if (metric?.withinTolerance !== true || !metric.inputs || typeof metric.inputs !== 'object') continue
+                for (const inputKey of reconciliationInputKeys[key] || [key]) {
+                    const inputValue = Number(metric.inputs[inputKey])
+                    if (!Number.isFinite(inputValue)) continue
+                    const scale = Math.max(Math.abs(fact.value), Math.abs(inputValue), 1)
+                    if (Math.abs(fact.value - inputValue) / scale <= 0.02) return true
                 }
             }
         } catch { }

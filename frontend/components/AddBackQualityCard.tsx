@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import {
     BadgeCheck,
     CheckSquare,
@@ -18,133 +18,13 @@ import { buildDocumentLinkedEvidence, parseDocumentedFacts, type EvidenceItem } 
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import { getOverallAddBackQuality } from '../utils/addBackQuality'
 import {
-    classifyAddBackCategory,
     getTaxonomyBadge,
     recalculateAdjustedEbitdaWithDisallowances,
-    type AddBackTaxonomyCategory,
 } from '../utils/addBackTaxonomy'
-
-type AddBackItem = {
-    id: string
-    label: string
-    amount: number | null
-    quality: 'supported' | 'partial' | 'unsupported'
-    category: AddBackTaxonomyCategory
-    detail: string
-    sourceFile?: string
-    sourceLocation?: string
-    excerpt?: string
-    confidence?: number | null
-    status?: string
-}
+import { parseAddBackItems } from '../utils/addBackItems'
 
 function money(value: number) {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value)
-}
-
-function parseAddBacksFromSynthesis(
-    synthesis: ProjectSynthesisItem | undefined,
-    facts: Record<string, { value?: number; status?: string; provenance?: string }>
-): AddBackItem[] {
-    const items: AddBackItem[] = []
-
-    const totalAddBacks = facts.add_backs
-    if (totalAddBacks && typeof totalAddBacks.value === 'number' && totalAddBacks.value > 0) {
-        items.push({
-            id: 'item-total-addbacks',
-            label: 'Total reported add-backs',
-            amount: totalAddBacks.value,
-            quality: totalAddBacks.status === 'confirmed' ? 'supported' : 'partial',
-            category: 'aggressive',
-            detail: totalAddBacks.status === 'confirmed'
-                ? 'Total add-back figure is confirmed in uploaded documents.'
-                : 'Total reported but individual line items not independently verified.',
-            status: totalAddBacks.status,
-        })
-    }
-
-    if (!synthesis) return items
-
-    const addBackPattern = /add.?back|adjustment|owner.?(?:salary|comp|benefit|perquisite|perk)|personal|non.?recurring|one.?time/i
-    const structuredGroups = [
-        ...(synthesis.structuredFindings?.redFlags ?? []),
-        ...(synthesis.structuredFindings?.yellowFlags ?? []),
-        ...(synthesis.structuredFindings?.crossDocumentConflicts ?? []),
-        ...(synthesis.structuredFindings?.openQuestions ?? []),
-        ...(synthesis.structuredFindings?.negotiationLevers ?? []),
-        ...(synthesis.structuredFindings?.keyTakeaways ?? []),
-    ]
-
-    let idx = 0
-    for (const finding of structuredGroups) {
-        if (!finding || !finding.text) continue
-        if (!addBackPattern.test(finding.text)) continue
-        const amountMatch = finding.text.match(/\$[\d,]+(?:\.\d+)?[KkMm]?|\d+(?:,\d{3})+/)
-        let amount: number | null = null
-        if (amountMatch) {
-            const raw = amountMatch[0].replace(/[$,]/g, '')
-            amount = parseFloat(raw)
-            if (/[Kk]$/.test(amountMatch[0])) amount *= 1000
-            if (/[Mm]$/.test(amountMatch[0])) amount *= 1_000_000
-        }
-
-        const isUnsupported = /unsupported|unsubstantiated|cannot.+verif|no.+documentation|question/i.test(finding.text)
-        const isPartial = /partial|some|limited|unclear|inconsisten/i.test(finding.text)
-        const primaryCitation = finding.citations?.[0]
-        const category = classifyAddBackCategory(finding.text)
-
-        items.push({
-            id: `item-${idx++}`,
-            label: finding.text.length > 80 ? finding.text.slice(0, 77) + '…' : finding.text,
-            amount,
-            quality: isUnsupported ? 'unsupported' : isPartial ? 'partial' : 'supported',
-            category,
-            detail: finding.text,
-            sourceFile: primaryCitation?.sourceFile,
-            sourceLocation: primaryCitation?.sourceLocation,
-            excerpt: primaryCitation?.excerpt,
-            confidence: finding?.confidence ?? undefined,
-            status: finding?.status ?? undefined,
-        })
-    }
-
-    if (items.length === 0) {
-        const allText = [
-            ...synthesis.redFlags,
-            ...synthesis.yellowFlags,
-            ...synthesis.crossDocumentConflicts,
-            ...synthesis.openQuestions,
-            ...synthesis.negotiationLevers,
-            ...synthesis.keyTakeaways,
-        ]
-
-        for (const text of allText) {
-            if (!addBackPattern.test(text)) continue
-            const amountMatch = text.match(/\$[\d,]+(?:\.\d+)?[KkMm]?|\d+(?:,\d{3})+/)
-            let amount: number | null = null
-            if (amountMatch) {
-                const raw = amountMatch[0].replace(/[$,]/g, '')
-                amount = parseFloat(raw)
-                if (/[Kk]$/.test(amountMatch[0])) amount *= 1000
-                if (/[Mm]$/.test(amountMatch[0])) amount *= 1_000_000
-            }
-
-            const isUnsupported = /unsupported|unsubstantiated|cannot.+verif|no.+documentation|question/i.test(text)
-            const isPartial = /partial|some|limited|unclear|inconsisten/i.test(text)
-            const category = classifyAddBackCategory(text)
-
-            items.push({
-                id: `item-fallback-${idx++}`,
-                label: text.length > 80 ? text.slice(0, 77) + '…' : text,
-                amount,
-                quality: isUnsupported ? 'unsupported' : isPartial ? 'partial' : 'supported',
-                category,
-                detail: text,
-            })
-        }
-    }
-
-    return items
 }
 
 const getOverallQuality = getOverallAddBackQuality
@@ -160,8 +40,8 @@ export default function AddBackQualityCard({
     documents?: SubmissionHistoryItem[]
     onOpenEvidence?: (item: EvidenceItem) => void
 }) {
-    const facts = parseDocumentedFacts(model.documentedFactsJson)
-    const items = useMemo(() => parseAddBacksFromSynthesis(synthesis, facts), [synthesis, facts])
+    const facts = useMemo(() => parseDocumentedFacts(model.documentedFactsJson), [model.documentedFactsJson])
+    const items = useMemo(() => parseAddBackItems(synthesis, facts), [synthesis, facts])
 
     // Disallowance toggles (defaults to disallowed for personal perks / unsupported items)
     const [disallowedMap, setDisallowedMap] = useState<Record<string, boolean>>(() => {
@@ -174,6 +54,16 @@ export default function AddBackQualityCard({
         return initial
     })
 
+    useEffect(() => {
+        const next: Record<string, boolean> = {}
+        for (const item of items) {
+            if (item.category === 'disallowed' || item.category === 'management_deficit' || item.quality === 'unsupported') {
+                next[item.id] = true
+            }
+        }
+        setDisallowedMap(next)
+    }, [items])
+
     if (items.length === 0) return null
 
     const toggleDisallowed = (id: string) => {
@@ -185,12 +75,18 @@ export default function AddBackQualityCard({
 
     const overall = getOverallQuality(items)
     const totalAmount = items.reduce((sum, item) => sum + (item.amount ?? 0), 0)
+    const reportedTotalAmount = typeof facts.add_backs?.value === 'number' && facts.add_backs.value > 0
+        ? facts.add_backs.value
+        : null
+    const hasAggregateVariance = reportedTotalAmount !== null
+        && Math.abs(reportedTotalAmount - totalAmount) > Math.max(1, reportedTotalAmount * 0.02)
     const revenue = facts.revenue?.status === 'confirmed' && typeof facts.revenue?.value === 'number' ? facts.revenue.value : null
-    const addBacksAsPercentOfRevenue = revenue && totalAmount > 0 ? totalAmount / revenue : null
+    const addBackExposure = reportedTotalAmount ?? totalAmount
+    const addBacksAsPercentOfRevenue = revenue && addBackExposure > 0 ? addBackExposure / revenue : null
 
     const reportedEbitda = typeof model.ebitda === 'number' && model.ebitda > 0
         ? model.ebitda
-        : (facts.reported_ebitda?.value || 1250000)
+        : (facts.reported_ebitda?.value || facts.ebitda_sde?.value || 0)
 
     const multiple = model.exitMultiple || 4.5
 
@@ -219,11 +115,24 @@ export default function AddBackQualityCard({
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                         <Badge variant={overall.variant}>{overall.label}</Badge>
-                        {totalAmount > 0 && <Badge variant="outline">{money(totalAmount)} total add-backs</Badge>}
+                        {reportedTotalAmount !== null ? (
+                            <Badge variant="outline">{money(reportedTotalAmount)} reported total</Badge>
+                        ) : totalAmount > 0 ? (
+                            <Badge variant="outline">{money(totalAmount)} itemized add-backs</Badge>
+                        ) : null}
+                        {hasAggregateVariance && <Badge variant="warning">{money(totalAmount)} itemized</Badge>}
                     </div>
                 </div>
             </CardHeader>
             <CardContent className="space-y-4 p-4">
+                {hasAggregateVariance && (
+                    <div className="flex items-start gap-2 rounded-md border border-warning/30 bg-warning/5 px-3 py-2">
+                        <CircleAlert className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+                        <p className="text-sm text-foreground">
+                            The reported aggregate is <strong>{money(reportedTotalAmount!)}</strong>, while identifiable line items total <strong>{money(totalAmount)}</strong>. The aggregate is shown for reconciliation but is not counted as another supported/partial/unsupported item.
+                        </p>
+                    </div>
+                )}
                 {addBacksAsPercentOfRevenue !== null && addBacksAsPercentOfRevenue > 0.15 && (
                     <div className="flex items-start gap-2 rounded-md border border-warning/30 bg-warning/5 px-3 py-2">
                         <CircleAlert className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
@@ -328,15 +237,15 @@ export default function AddBackQualityCard({
                 <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-muted/20 p-3">
                     <div className="flex flex-wrap gap-4">
                         <div>
-                            <p className="text-xs text-muted-foreground">Supported</p>
+                            <p className="text-xs text-muted-foreground">Evidence supported</p>
                             <p className="text-lg font-semibold text-success">{items.filter((i) => i.quality === 'supported').length}</p>
                         </div>
                         <div>
-                            <p className="text-xs text-muted-foreground">Partial</p>
+                            <p className="text-xs text-muted-foreground">Evidence partial</p>
                             <p className="text-lg font-semibold text-warning">{items.filter((i) => i.quality === 'partial').length}</p>
                         </div>
                         <div>
-                            <p className="text-xs text-muted-foreground">Unsupported</p>
+                            <p className="text-xs text-muted-foreground">Evidence unsupported</p>
                             <p className="text-lg font-semibold text-destructive">{items.filter((i) => i.quality === 'unsupported').length}</p>
                         </div>
                     </div>
@@ -348,7 +257,7 @@ export default function AddBackQualityCard({
                 </div>
 
                 <p className="text-xs text-muted-foreground">
-                    Check or uncheck boxes to simulate SBA lender add-back exclusions. Quality scores reflect documentary evidence in uploaded files.
+                    Evidence quality and lender eligibility are separate: a documented personal expense can be evidence-supported while still disallowed by banking rules. Check or uncheck items to simulate buyer/lender exclusions.
                 </p>
             </CardContent>
         </Card>

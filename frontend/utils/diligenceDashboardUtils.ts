@@ -3,7 +3,7 @@ import type { DealModel } from '../hooks/backend/diligence'
 import type { SubmissionHistoryItem } from './submissionHistory'
 import { isFailedSubmissionStatus, normalizeSubmissionStatus } from './submissionHistory'
 import { deriveDocumentedFacts } from './documentedFacts'
-import { normalizeEquityFraction } from './dealMath'
+import { normalizeEquityFraction, normalizePercentageFraction } from './dealMath'
 import { sourceRelativePathForFile } from '../../shared/sourceRelativePath'
 
 export function getFindingVariant(findingType: FindingType): 'destructive' | 'success' {
@@ -419,28 +419,60 @@ export function buildReturnsDisplayModel(model: DealModel) {
     return merged as DealModel
 }
 
+/**
+ * Canonicalizes percentage-bearing DealModel fields to decimal fractions.
+ * This keeps legacy questionnaire rows (20, 9.5, 7.5) compatible with the
+ * deal-model editor and calculation cards, which use (0.20, 0.095, 0.075).
+ */
+export function normalizeDealModelPercentages(model: DealModel): DealModel {
+    const percentageFields: Array<keyof DealModel> = [
+        'taxRate',
+        'equityContributionPercent',
+        'interestRate',
+        'bearRevenueGrowth',
+        'baseRevenueGrowth',
+        'bullRevenueGrowth',
+        'bearEbitdaMargin',
+        'baseEbitdaMargin',
+        'bullEbitdaMargin',
+    ]
+    let changed = false
+    const normalized = { ...model }
+    for (const field of percentageFields) {
+        const current = model[field]
+        if (typeof current !== 'number') continue
+        const next = normalizePercentageFraction(current)
+        if (next !== null && next !== current) {
+            ;(normalized as unknown as Record<string, unknown>)[field] = next
+            changed = true
+        }
+    }
+    return changed ? normalized : model
+}
+
 export function withDerivedCapitalStack(model: DealModel): DealModel {
-    const price = model.purchasePrice ?? model.askingPrice
+    const canonicalModel = normalizeDealModelPercentages(model)
+    const price = canonicalModel.purchasePrice ?? canonicalModel.askingPrice
     const hasFinancingInputs =
-        model.equityContributionPercent != null ||
-        model.sellerNoteAmount != null ||
-        model.debtAssumed != null
-    if (price == null || price <= 0 || !hasFinancingInputs) return model
+        canonicalModel.equityContributionPercent != null ||
+        canonicalModel.sellerNoteAmount != null ||
+        canonicalModel.debtAssumed != null
+    if (price == null || price <= 0 || !hasFinancingInputs) return canonicalModel
 
     // Resolve the equity input through the shared normalizer: the field is
     // saved as a decimal (0.3), but a user who types a whole percent (30) into
     // it would otherwise multiply the price by 30. normalizeEquityFraction is
     // the single place that disambiguates, and every consumer must use it.
-    const equityPct = normalizeEquityFraction(model.equityContributionPercent)
+    const equityPct = normalizeEquityFraction(canonicalModel.equityContributionPercent)
     const equity = Math.max(0, price * equityPct)
-    const sellerNote = model.sellerNoteAmount ?? 0
+    const sellerNote = canonicalModel.sellerNoteAmount ?? 0
     const seniorDebt = Math.max(0, price - equity - sellerNote)
 
     return {
-        ...model,
+        ...canonicalModel,
         equityAmount: equity,
         seniorDebtAmount: seniorDebt,
-        loanTermYears: model.amortizationYears ?? model.loanTermYears ?? null,
+        loanTermYears: canonicalModel.amortizationYears ?? canonicalModel.loanTermYears ?? null,
     }
 }
 

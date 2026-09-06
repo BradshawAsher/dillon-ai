@@ -6,6 +6,7 @@ import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
 import CardInfoPopover from './common/CardInfoPopover'
+import { normalizePercentageFraction } from '../utils/dealMath'
 
 type Props = {
     model: DealModel
@@ -54,10 +55,11 @@ export default function QuickValuationCard({ model, synthesis }: Props) {
         }
 
         if (ebitda && model.holdPeriodYears && model.baseRevenueGrowth != null) {
-            const futureEbitda = ebitda * Math.pow(1 + model.baseRevenueGrowth, model.holdPeriodYears)
+            const growth = normalizePercentageFraction(model.baseRevenueGrowth) ?? 0
+            const futureEbitda = ebitda * Math.pow(1 + growth, model.holdPeriodYears)
             const exitMult = model.exitMultiple ?? 4
             results.push({
-                name: 'DCF-lite (exit value)',
+                name: 'Projected exit value',
                 low: futureEbitda * (exitMult - 1),
                 mid: futureEbitda * exitMult,
                 high: futureEbitda * (exitMult + 1),

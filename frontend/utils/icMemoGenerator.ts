@@ -1,7 +1,7 @@
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
 import type { SubmissionHistoryItem } from './submissionHistory'
 import { parseDocumentedFacts } from './evidence'
-import { entryMultiple } from './dealMath'
+import { entryMultiple, normalizeEquityFraction } from './dealMath'
 import {
     computeValuationBridge,
     generateValuationBridgeClause,
@@ -117,7 +117,7 @@ export function generateIcMemoMarkdown(params: IcMemoParams): string {
     const fees = model.transactionFees ?? 0
     const nwc = model.workingCapitalRequirement ?? 0
     const totalUses = price + fees + nwc
-    const eqPercent = model.equityContributionPercent ?? 0.3
+    const eqPercent = normalizeEquityFraction(model.equityContributionPercent)
     const buyerEquity = Math.round(totalUses * eqPercent)
     const sellerNote = model.sellerNoteAmount ?? 0
     const seniorDebt = Math.max(0, totalUses - buyerEquity - sellerNote)
@@ -144,7 +144,7 @@ export function generateIcMemoMarkdown(params: IcMemoParams): string {
     lines.push('| :--- | :--- | :--- | :--- |')
     lines.push(`| Initial LOI Valuation | ${formatMoney(bridge.baselinePurchasePrice)} | Baseline | Starting Baseline |`)
     lines.push(`| Less: EV Deductions | ${formatDeduction(bridge.totalEvDeduction)} | Price Cut | APA Section 2.3 Closing Reduction |`)
-    lines.push(`| Less: Special Escrow Holdback | ${formatDeduction(bridge.totalSpecialEscrow)} | Escrow | APA Section 8.2(c) Indemnity Holdback |`)
+    lines.push(`| Separate: Special Escrow Holdback | ${formatMoney(bridge.totalSpecialEscrow)} | Escrow (not a price cut) | APA Section 8.2(c) Indemnity Holdback |`)
     lines.push(`| **Defensible Net Counter-Offer** | **${formatMoney(bridge.defensibleCounterOffer)}** | **Net Cost** | **Recommended Purchase Consideration** |`)
     lines.push('')
 
@@ -221,7 +221,7 @@ export function generateIcMemoHtml(params: IcMemoParams): string {
     const fees = model.transactionFees ?? 0
     const nwc = model.workingCapitalRequirement ?? 0
     const totalUses = price + fees + nwc
-    const eqPercent = model.equityContributionPercent ?? 0.3
+    const eqPercent = normalizeEquityFraction(model.equityContributionPercent)
     const buyerEquity = Math.round(totalUses * eqPercent)
     const sellerNote = model.sellerNoteAmount ?? 0
     const seniorDebt = Math.max(0, totalUses - buyerEquity - sellerNote)

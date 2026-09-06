@@ -123,6 +123,7 @@ import {
     formatElapsedDuration,
     hydrateModelFactsFromDocuments,
     isDuplicateProjectDocument,
+    normalizeDealModelPercentages,
     PENDING_EXAMPLE_MODE_SUBMISSION_KEY,
     withDerivedCapitalStack,
     type PendingExampleModeSubmission,
@@ -2038,7 +2039,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     }, [activeProjectDocuments.length, isExampleMode, walkthrough])
 
     const hydratedDealModel = useMemo(
-        () => hydrateModelFactsFromDocuments(activeDealModel, activeProjectDocuments),
+        () => normalizeDealModelPercentages(hydrateModelFactsFromDocuments(activeDealModel, activeProjectDocuments)),
         [activeDealModel, activeProjectDocuments]
     )
 

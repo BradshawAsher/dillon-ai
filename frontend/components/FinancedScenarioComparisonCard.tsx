@@ -4,7 +4,7 @@ import type { DealModel } from '../hooks/backend/diligence'
 import { Badge } from '../lib/shadcn/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { GrowthLineChart, type ChartDatum } from './DealCharts'
-import { calculateIrr } from '../utils/dealMath'
+import { calculateIrr, computeAmortizingLoan, normalizeEquityFraction, normalizePercentageFraction, resolveLoanTermYears } from '../utils/dealMath'
 import InfoTip, { FINANCIAL_TERMS } from './InfoTip'
 import CardInfoPopover from './common/CardInfoPopover'
 
@@ -28,23 +28,24 @@ export default function FinancedScenarioComparisonCard({ model }: { model: DealM
     const price = model.purchasePrice ?? model.askingPrice
     const fees = model.transactionFees ?? 0
     const workingCapital = model.workingCapitalRequirement ?? 0
-    const equityPercent = model.equityContributionPercent ?? 0.3
+    const equityPercent = normalizeEquityFraction(model.equityContributionPercent)
     const sellerNote = model.sellerNoteAmount ?? 0
-    const rate = model.interestRate ?? 0.1
-    const amortizationYears = model.amortizationYears ?? 10
-    const holdPeriod = model.holdPeriodYears ?? 5
-    const tax = model.taxRate ?? 0.25
+    const rate = normalizePercentageFraction(model.interestRate) ?? 0.1
+    const amortizationYears = resolveLoanTermYears(model.amortizationYears, model.loanTermYears)
+    const holdPeriod = Math.max(1, Math.floor(model.holdPeriodYears ?? 5))
+    const tax = normalizePercentageFraction(model.taxRate) ?? 0.25
     const capex = model.maintenanceCapex ?? 0
     const exitCosts = model.exitCosts ?? 0
     const uses = price === null ? null : price + fees + workingCapital
     const debt = uses === null ? null : Math.max(0, uses * (1 - equityPercent) - sellerNote)
     const equity = uses === null || debt === null ? null : uses - debt - sellerNote
-    const annualDebtService = debt === null || amortizationYears <= 0 ? null : rate === 0 ? debt / amortizationYears : debt * ((rate * (1 + rate) ** amortizationYears) / (((1 + rate) ** amortizationYears) - 1))
-    const debtAtExit = debt === null || annualDebtService === null ? null : Math.max(0, rate === 0 ? debt - annualDebtService * Math.min(holdPeriod, amortizationYears) : debt * (1 + rate) ** Math.min(holdPeriod, amortizationYears) - annualDebtService * (((1 + rate) ** Math.min(holdPeriod, amortizationYears) - 1) / rate))
+    const loan = debt === null ? null : computeAmortizingLoan(debt, rate, amortizationYears, holdPeriod)
+    const annualDebtService = loan?.annualDebtService ?? null
+    const debtAtExit = loan?.remainingBalance ?? null
     const scenarios: Scenario[] = [
-        { name: 'Bear', growth: model.bearRevenueGrowth ?? 0, margin: model.bearEbitdaMargin ?? 0.15, exitMultiple: model.bearExitMultiple ?? 3 },
-        { name: 'Base', growth: model.baseRevenueGrowth ?? 0.05, margin: model.baseEbitdaMargin ?? 0.2, exitMultiple: model.baseExitMultiple ?? 4 },
-        { name: 'Bull', growth: model.bullRevenueGrowth ?? 0.1, margin: model.bullEbitdaMargin ?? 0.25, exitMultiple: model.bullExitMultiple ?? 5 },
+        { name: 'Bear', growth: normalizePercentageFraction(model.bearRevenueGrowth) ?? 0, margin: normalizePercentageFraction(model.bearEbitdaMargin) ?? 0.15, exitMultiple: model.bearExitMultiple ?? 3 },
+        { name: 'Base', growth: normalizePercentageFraction(model.baseRevenueGrowth) ?? 0.05, margin: normalizePercentageFraction(model.baseEbitdaMargin) ?? 0.2, exitMultiple: model.baseExitMultiple ?? 4 },
+        { name: 'Bull', growth: normalizePercentageFraction(model.bullRevenueGrowth) ?? 0.1, margin: normalizePercentageFraction(model.bullEbitdaMargin) ?? 0.25, exitMultiple: model.bullExitMultiple ?? 5 },
     ]
     const ready = revenue !== null && equity !== null && annualDebtService !== null && debtAtExit !== null
 

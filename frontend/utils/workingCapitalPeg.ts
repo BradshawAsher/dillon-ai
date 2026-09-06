@@ -32,6 +32,8 @@ export type NwcPegResult = {
     adjustmentAmount: number
     monthlyData: WorkingCapitalMonthPoint[]
     definitiveAgreementClause: string
+    isIllustrative: boolean
+    assumedInputs: string[]
 }
 
 function isFiniteNumber(value: unknown): value is number {
@@ -50,7 +52,8 @@ export function generateMonthlyNwcSeries(
     monthsCount = 24
 ): WorkingCapitalMonthPoint[] {
     const safeMonths = isFiniteNumber(monthsCount) && monthsCount > 0 ? Math.min(120, Math.floor(monthsCount)) : 0
-    const safeRevenue = isFiniteNumber(baseRevenue) && baseRevenue > 0 ? baseRevenue : 12_400_000
+    const safeRevenue = isFiniteNumber(baseRevenue) && baseRevenue > 0 ? baseRevenue : 0
+    if (safeRevenue === 0 || safeMonths === 0) return []
     const safeAr = isFiniteNumber(baseAr) && baseAr >= 0 ? baseAr : Math.round(safeRevenue * 0.08)
     const safeInventory = isFiniteNumber(baseInventory) && baseInventory >= 0 ? baseInventory : Math.round(safeRevenue * 0.04)
     const safeAp = isFiniteNumber(baseAp) && baseAp >= 0 ? baseAp : Math.round(safeRevenue * 0.05)
@@ -113,18 +116,21 @@ export function calculateWorkingCapitalPeg(
     const rawRevenue = typeof facts.revenue?.value === 'number' && Number.isFinite(facts.revenue.value)
         ? facts.revenue.value
         : null
-    const revenue = rawRevenue && rawRevenue > 0 ? rawRevenue : 12_400_000
+    const revenue = rawRevenue && rawRevenue > 0 ? rawRevenue : 0
+    const assumedInputs: string[] = []
 
     const ar = typeof facts.accounts_receivable?.value === 'number' && Number.isFinite(facts.accounts_receivable.value)
         ? facts.accounts_receivable.value
-        : Math.round(revenue * 0.08)
+        : (() => { assumedInputs.push('Accounts receivable estimated at 8% of annual revenue'); return Math.round(revenue * 0.08) })()
     const inventory = typeof facts.inventory?.value === 'number' && Number.isFinite(facts.inventory.value)
         ? facts.inventory.value
-        : Math.round(revenue * 0.04)
+        : (() => { assumedInputs.push('Inventory estimated at 4% of annual revenue'); return Math.round(revenue * 0.04) })()
     const ap = typeof facts.accounts_payable?.value === 'number' && Number.isFinite(facts.accounts_payable.value)
         ? facts.accounts_payable.value
-        : Math.round(revenue * 0.05)
-    const accrued = Math.round(revenue * 0.02)
+        : (() => { assumedInputs.push('Accounts payable estimated at 5% of annual revenue'); return Math.round(revenue * 0.05) })()
+    const accrued = typeof facts.accrued_expenses?.value === 'number' && Number.isFinite(facts.accrued_expenses.value)
+        ? facts.accrued_expenses.value
+        : (() => { assumedInputs.push('Accrued expenses estimated at 2% of annual revenue'); return Math.round(revenue * 0.02) })()
 
     const fullSeries = generateMonthlyNwcSeries(revenue, ar, inventory, ap, accrued, 24)
 
@@ -167,12 +173,13 @@ export function calculateWorkingCapitalPeg(
     const formattedLower = `$${collarLowerLimit.toLocaleString()}`
     const formattedUpper = `$${collarUpperLimit.toLocaleString()}`
 
-    const definitiveAgreementClause = `SECTION 2.4 Working Capital Adjustment.
-(a) Target Working Capital Peg. The Base Purchase Price is based on the assumption that the Closing Working Capital of ${companyName} shall equal ${formattedPeg} (the "Target Working Capital"), calculated on a normalized ${timeframeLabel} average in accordance with GAAP applied consistently with the Past Practice of the Company.
+    const definitiveAgreementClause = revenue > 0 ? `[ILLUSTRATIVE DRAFT — REPLACE SYNTHETIC MONTHLY SERIES WITH ACTUAL MONTH-END BALANCES BEFORE USE]
+SECTION 2.4 Working Capital Adjustment.
+(a) Target Working Capital Peg. Subject to validation against actual monthly ledgers, the Base Purchase Price assumes that Closing Working Capital of ${companyName} shall equal ${formattedPeg} (the "Target Working Capital"), based on an illustrative ${timeframeLabel} series modeled from the available annual snapshot.
 (b) Collar Bandwidth. No adjustment shall be made to the Purchase Price if the Closing Working Capital is between ${formattedLower} and ${formattedUpper} (the "Working Capital Collar").
 (c) Post-Closing Adjustment. 
   (i) If Closing Working Capital exceeds the Upper Collar Limit (${formattedUpper}), Buyer shall pay to Seller within five (5) Business Days of final determination an amount equal to such excess as an upward purchase price adjustment.
-  (ii) If Closing Working Capital is less than the Lower Collar Limit (${formattedLower}), Seller shall pay to Buyer (or Buyer shall be entitled to release from the Indemnity/Working Capital Escrow) within five (5) Business Days of final determination an amount equal to such deficit as a dollar-for-dollar reduction to the Purchase Price.`
+  (ii) If Closing Working Capital is less than the Lower Collar Limit (${formattedLower}), Seller shall pay to Buyer (or Buyer shall be entitled to release from the Indemnity/Working Capital Escrow) within five (5) Business Days of final determination an amount equal to such deficit as a dollar-for-dollar reduction to the Purchase Price.` : ''
 
     return {
         selectedTimeframe: timeframe,
@@ -190,5 +197,9 @@ export function calculateWorkingCapitalPeg(
         adjustmentAmount,
         monthlyData: selectedSlice,
         definitiveAgreementClause,
+        isIllustrative: true,
+        assumedInputs: revenue > 0
+            ? ['Monthly history is synthetically modeled from an annual snapshot', ...assumedInputs]
+            : ['Annual revenue is missing; no working-capital series was generated'],
     }
 }

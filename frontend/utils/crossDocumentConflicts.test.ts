@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
     canonicalMetric,
     canonicalPeriod,
+    compareFactsAcrossDocuments,
     detectContradictions,
     observationsFromDocuments,
     observationsFromRunDocs,
@@ -155,6 +156,21 @@ describe('detectContradictions', () => {
     })
 })
 
+describe('compareFactsAcrossDocuments', () => {
+    it('returns independently sourced matches as well as mismatches', () => {
+        const comparisons = compareFactsAcrossDocuments([
+            obs('tax-return.pdf', 'revenue', 1_000_000, '2025'),
+            obs('p-and-l.xlsx', 'revenue', 1_015_000, 'FY2025'),
+            obs('cim.pdf', 'ebitda', 500_000, 'TTM'),
+            obs('qoe.xlsx', 'ebitda', 400_000, 'LTM'),
+        ])
+
+        expect(comparisons).toHaveLength(2)
+        expect(comparisons.find((item) => item.metric === 'revenue')?.withinTolerance).toBe(true)
+        expect(comparisons.find((item) => item.metric === 'ebitda')?.withinTolerance).toBe(false)
+    })
+})
+
 describe('adapters', () => {
     it('observationsFromDocuments emits every competing fact, not just the best', () => {
         const documents = [
@@ -164,6 +180,26 @@ describe('adapters', () => {
         const observations = observationsFromDocuments(documents)
         expect(observations).toHaveLength(2)
         expect(detectContradictions(observations)).toHaveLength(1)
+    })
+
+    it('accepts the legacy managed-parser fact shape while migrations drain', () => {
+        const observations = observationsFromDocuments([{
+            fileName: 'legacy-tax.pdf',
+            financialFactsJson: JSON.stringify([{
+                fact_name: 'Revenue',
+                fact_type: 'revenue',
+                numeric_value: 2_500_000,
+                period: '2025',
+                citations: [{ source_file: 'legacy-tax.pdf', excerpt: 'Gross receipts 2,500,000' }],
+            }]),
+        }])
+
+        expect(observations).toMatchObject([{
+            sourceDoc: 'legacy-tax.pdf',
+            metric: 'revenue',
+            value: 2_500_000,
+        }])
+        expect(observations[0].citations?.[0].excerpt).toContain('2,500,000')
     })
 
     it('observationsFromDocuments tolerates malformed JSON', () => {

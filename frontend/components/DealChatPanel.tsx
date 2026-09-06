@@ -10,7 +10,7 @@ import type { DealModel } from '../hooks/backend/diligence'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import type { WorkspaceTab } from '../hooks/useDealWorkspaceState'
 import { parseDocumentedFacts } from '../utils/evidence'
-import { normalizeEquityFraction } from '../utils/dealMath'
+import { computeAmortizingLoan, normalizeEquityFraction } from '../utils/dealMath'
 import { sendIssueReportSlackAlert, type IssueCategory } from '../services/slackAlertService'
 import { getStoredUser } from '../services/supabaseAuth'
 import { getUserModelConfig, mapModelNameToApiIdentifier } from './ApiKeyModal'
@@ -23,6 +23,7 @@ import { estimateChatQueryCost } from '../utils/costModel'
 import type { ManualDealFormData } from '../utils/manualDealIntake'
 import { classifyQuestionnaireFile, questionnaireDraftFromImport, questionnaireDraftValues, type QuestionnaireDraft } from '../utils/questionnaireDraft'
 import { parseQuestionnaireFile } from '../utils/questionnaireImport'
+import { buildUnifiedMathChecks } from '../utils/unifiedMathChecks'
 
 export type ResponseTier = 'cloud_ai' | 'direct_llm' | 'local_heuristics'
 
@@ -382,7 +383,7 @@ function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealMo
 - Unified Master Deterministic Math Checks & Forensic Reconciliation Ledger:
   - Location: **Diligence Tab > Unified Deterministic Math Checks card** (#diligence-master-math-checks).
   - Deep-link: [Unified Deterministic Math Checks](tab:diligence#diligence-master-math-checks)
-  - Capabilities: 100% closed-loop, deterministic arithmetic ledger that audits P&L integrity (Revenue - COGS = Gross Profit, GP - OpEx = Operating Income), Balance Sheet balance (Assets = Liabilities + Equity, Net Working Capital = Current Assets - Current Liabilities), Cross-Document Ties (IRS Form 1120/1065 Line 1a Gross Receipts vs internal P&L, depreciation tie-outs), and Underwriting Math (Leverage = Senior Debt / Adj EBITDA, DSCR = FCF / Debt Service, EV/EBITDA multiple verification). ZERO hallucination risk. Proactively suggest this card whenever the user asks if numbers tie out, if the math is verified, or how deterministic checks work.
+  - Capabilities: Code-based arithmetic identities for P&L and balance-sheet facts, same-metric/same-period comparisons across independent uploaded documents, and clearly labeled underwriting calculations such as entry multiple, payback, leverage, and DSCR when their inputs exist. Arithmetic is deterministic, but source facts originate in document extraction and still require citation review. Proactively suggest this card whenever the user asks if numbers tie out, if the math is verified, or how deterministic checks work.
 - Submission Audit Trail & Executive Project Syntheses:
   - Location: **Audit Trail Tab > Submission History card** (#history-table).
   - Deep-link: [Submission Audit Trail](tab:history#history-table)
@@ -935,7 +936,7 @@ I've opened the **Version Control & Rollback** window for you!
             matched: true,
             content: `### 📐 Master Deterministic Math Checks & Forensic Reconciliation
 
-All financial figures in **${projectName || 'this deal'}** are audited through a **100% closed-loop, deterministic arithmetic ledger** with 0% AI hallucination risk!
+The ledger runs code-based arithmetic on the supported facts available for **${projectName || 'this deal'}**. It does not claim every figure was checked: extraction can still be wrong, and a verified result requires either a separately stated identity comparator or the same metric and period from an independent document.
 
 **4 Forensic Audit Dimensions:**
 1. **P&L Integrity**:
@@ -944,16 +945,16 @@ All financial figures in **${projectName || 'this deal'}** are audited through a
 2. **Balance Sheet Balance**:
    - $\\text{Total Assets} = \\text{Total Liabilities} + \\text{Owner's Equity}$
    - $\\text{Net Working Capital (NWC)} = \\text{Current Assets} - \\text{Current Liabilities}$
-3. **Cross-Document Tax & Financial Ties**:
-   - IRS Form 1120 / 1065 Line 1a Gross Receipts vs. Internal QuickBooks P&L
-   - Form 4562 Depreciation vs. Operating Schedule Depreciation
+3. **Cross-Document Financial Ties**:
+   - Compares the same canonical metric and period across two independently uploaded documents
+   - Uses a 2% relative tolerance and shows both source values; it does not infer a tie from file names alone
 4. **Underwriting & Transaction Math**:
    - $\\text{Senior Leverage} = \\text{Senior Debt} / \\text{Normalized EBITDA}$
    - $\\text{DSCR} = (\\text{EBITDA} - \\text{Capex} - \\text{Taxes}) / \\text{Annual Debt Service}$
-   - Purchase Multiple: $\\text{Implied EV} = \\text{EBITDA} \\times \\text{Purchase Multiple}$
+   - Entry Multiple: $\\text{Purchase Price} / \\text{EBITDA}$
 
 **Data Provenance Tiers:**
-- **\`✓ Confirmed & Reconciled\`** (Emerald Shield): Dual-verified by source document citation AND passed closed-loop arithmetic checks with 0% variance.
+- **\`✓ Confirmed & Reconciled\`** (Emerald Shield): Citation-backed and involved in a supported identity that passed the configured tolerance.
 - **\`Documented Only\`**: Extracted from primary filings, awaiting secondary cross-document tie-out.
 - **\`Industry Assumptions\`**: Standard institutional defaults applied where primary accounting records are pending.
 
@@ -1114,7 +1115,7 @@ I am your institutional co-pilot for acquisition diligence, automated actions, a
 ### 💼 What I Can Do for You:
 
 1. **📊 M&A Financial & Forensic Diligence:**
-   - **Deterministic Math Ledger**: Verify closed-loop P&L integrity, balance sheet tie-outs, and IRS Form 1120/1065 cross-document ties with [Unified Deterministic Math Checks](tab:diligence#diligence-master-math-checks).
+   - **Deterministic Math Ledger**: Inspect supported P&L identities, balance-sheet tie-outs, same-period numeric comparisons across independent documents, and calculated underwriting ratios with [Unified Deterministic Math Checks](tab:diligence#diligence-master-math-checks).
    - **Submission Audit Trail & Syntheses**: Inspect timestamped document extractions ([DOC]) and multi-document synthesis passes ([SYNTHESIS]) with [Submission Audit Trail](tab:history#history-table).
    - **QoE & Add-Back Audit**: Scrutinize seller add-backs, EBITDA normalization, and owner compensation with [Add-Back Banking Rules](tab:diligence#add-back-quality-card).
    - **Debt & DSCR Covenants**: Calculate SBA 7(a) loan debt service, fixed-charge coverage ratios, and equity requirements with [Debt Sensitivity](tab:structure#structure-dscr).
@@ -2592,23 +2593,23 @@ export function executeClientSideTool(name: string, args: any, context: ClientSi
     if (name === 'calculate_deal_financials') {
         const op = String(args.operation || 'dscr').toLowerCase()
         if (op === 'dscr' || op === 'debt_service_coverage') {
-            const cf = Number(args.operatingCashFlow || args.ebitda || 0)
-            const loan = Number(args.loanAmount || 0)
-            const rate = Number(args.interestRatePercent || 11.5) / 100
-            const term = Number(args.loanTermYears || 10)
-            const monthlyRate = rate / 12
-            const numPayments = term * 12
-            const monthlyPayment = monthlyRate > 0 && numPayments > 0
-                ? (loan * monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1)
-                : (loan / (term * 12 || 1))
-            const annualDebtService = monthlyPayment * 12
+            const cf = Number(args.operatingCashFlow ?? args.ebitda)
+            const loan = Number(args.loanAmount)
+            const ratePercent = Number(args.interestRatePercent ?? 11.5)
+            const term = Number(args.loanTermYears ?? 10)
+            if (!Number.isFinite(cf) || !Number.isFinite(loan) || loan <= 0) {
+                return { error: 'DSCR requires a finite operating cash flow and a positive loan amount.' }
+            }
+            const schedule = computeAmortizingLoan(loan, ratePercent, term)
+            if (!schedule) return { error: 'Interest rate and loan term must define a valid amortizing loan.' }
+            const { monthlyPayment, annualDebtService } = schedule
             const dscr = annualDebtService > 0 ? (cf / annualDebtService) : 0
             const sbaQualified = dscr >= 1.25
             return {
                 operation: 'dscr',
                 operatingCashFlow: cf,
                 loanAmount: loan,
-                interestRatePercent: Number((rate * 100).toFixed(2)),
+                interestRatePercent: Number(ratePercent.toFixed(2)),
                 loanTermYears: term,
                 monthlyPayment: Math.round(monthlyPayment),
                 annualDebtService: Math.round(annualDebtService),
@@ -2652,9 +2653,12 @@ export function executeClientSideTool(name: string, args: any, context: ClientSi
             }
         }
         if (op === 'add_back_disallowance' || op === 'add_backs_repricing') {
-            const reported = Number(args.reportedEbitda || args.adjustedEbitda || args.ebitda || 1250000)
-            const disallowed = Number(args.disallowedAddBacks || args.discretionaryAddBacks || 140000)
-            const mult = Number(args.targetMultiple || 4.5)
+            const reported = Number(args.reportedEbitda ?? args.adjustedEbitda ?? args.ebitda)
+            const disallowed = Number(args.disallowedAddBacks ?? args.discretionaryAddBacks)
+            const mult = Number(args.targetMultiple ?? 4.5)
+            if (!Number.isFinite(reported) || reported < 0 || !Number.isFinite(disallowed) || disallowed < 0 || !Number.isFinite(mult) || mult <= 0) {
+                return { error: 'Add-back repricing requires reported EBITDA, non-negative disallowed add-backs, and a positive target multiple.' }
+            }
             const normalized = Math.max(0, reported - disallowed)
             const baseValuation = Math.round(reported * mult)
             const revisedValuation = Math.round(normalized * mult)
@@ -2672,20 +2676,18 @@ export function executeClientSideTool(name: string, args: any, context: ClientSi
             }
         }
         if (op === 'loan_amortization') {
-            const loan = Number(args.loanAmount || 0)
-            const rate = Number(args.interestRatePercent || 11.5) / 100
-            const term = Number(args.loanTermYears || 10)
-            const monthlyRate = rate / 12
-            const numPayments = term * 12
-            const monthlyPayment = monthlyRate > 0 && numPayments > 0
-                ? (loan * monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1)
-                : (loan / (term * 12 || 1))
-            const totalPaid = monthlyPayment * numPayments
+            const loan = Number(args.loanAmount)
+            const ratePercent = Number(args.interestRatePercent ?? 11.5)
+            const term = Number(args.loanTermYears ?? 10)
+            const schedule = computeAmortizingLoan(loan, ratePercent, term)
+            if (!schedule || loan <= 0) return { error: 'Loan amortization requires a positive loan amount, non-negative rate, and positive term.' }
+            const { monthlyPayment, totalPayments } = schedule
+            const totalPaid = monthlyPayment * totalPayments
             const totalInterest = totalPaid - loan
             return {
                 operation: 'loan_amortization',
                 loanAmount: loan,
-                annualInterestRate: Number((rate * 100).toFixed(2)),
+                annualInterestRate: Number(ratePercent.toFixed(2)),
                 loanTermYears: term,
                 monthlyPayment: Math.round(monthlyPayment),
                 totalInterestPaid: Math.round(totalInterest),
@@ -2703,7 +2705,11 @@ export function executeClientSideTool(name: string, args: any, context: ClientSi
                 collarBandwidth: `±${result.collarBandPercent}% ($${result.collarLowerLimit.toLocaleString()} – $${result.collarUpperLimit.toLocaleString()})`,
                 seasonalSwing: `$${result.nwcSwing.toLocaleString()} (±${result.volatilityPercent}% volatility)`,
                 closingAdjustmentRule: 'Dollar-for-dollar cash adjustment outside collar limits.',
-                definitiveClauseSummary: 'Section 2.4 GAAP normalized average closing adjustment',
+                basis: result.isIllustrative ? 'Illustrative synthetic series; not actual monthly history' : 'Documented monthly history',
+                assumptions: result.assumedInputs,
+                definitiveClauseSummary: result.definitiveAgreementClause
+                    ? 'Illustrative Section 2.4 draft requiring actual month-end validation'
+                    : 'Unavailable until annual revenue and working-capital facts are present',
                 guidance: 'Direct user to [Target Working Capital Peg](tab:structure#structure-working-capital-peg) on the Deal Structure tab.'
             }
         }
@@ -2857,46 +2863,25 @@ export function executeClientSideTool(name: string, args: any, context: ClientSi
             }
         }
         if (type === 'math_checks' || type === 'deterministic_checks' || type === 'reconciliation') {
-            const revenue = typeof facts.revenue?.value === 'number' ? facts.revenue.value : (context.model.revenue || 0)
-            const cogs = typeof facts.cogs?.value === 'number' ? facts.cogs.value : (context.model.cogs || 0)
-            const grossProfit = typeof facts.gross_profit?.value === 'number' ? facts.gross_profit.value : (context.model.grossProfit || Math.max(0, revenue - cogs))
-            const ebitda = typeof facts.ebitda_sde?.value === 'number' ? facts.ebitda_sde.value : (context.model.ebitda || 0)
-            const price = context.model.purchasePrice ?? context.model.askingPrice ?? 0
-            const seniorDebt = context.model.seniorDebt ?? (price * 0.7)
-            const leverage = ebitda > 0 ? (seniorDebt / ebitda) : 0
-            const dscr = seniorDebt > 0 && ebitda > 0 ? (ebitda / (seniorDebt * 0.15)) : 1.35
-
-            const plDiscrepancy = (revenue > 0 && cogs > 0) ? Math.abs((revenue - cogs) - grossProfit) : 0
-            const isPlSound = plDiscrepancy <= 100
-
+            const checks = buildUnifiedMathChecks(context.documents || [], context.model)
             return {
                 projectName: context.projectName,
-                totalChecksEvaluated: 12,
-                passedChecksCount: isPlSound ? 11 : 9,
-                warningChecksCount: isPlSound ? 1 : 2,
-                failedChecksCount: isPlSound ? 0 : 1,
-                plIntegrity: {
-                    status: isPlSound ? 'VERIFIED' : 'VARIANCE_DETECTED',
-                    formula: 'Revenue - COGS = Gross Profit',
-                    revenue: `$${revenue.toLocaleString()}`,
-                    cogs: `$${cogs.toLocaleString()}`,
-                    expectedGrossProfit: `$${Math.round(revenue - cogs).toLocaleString()}`,
-                    reportedGrossProfit: `$${grossProfit.toLocaleString()}`,
-                    variance: `$${Math.round(plDiscrepancy).toLocaleString()}`
-                },
-                underwritingMath: {
-                    normalizedEbitda: `$${ebitda.toLocaleString()}`,
-                    seniorDebt: `$${Math.round(seniorDebt).toLocaleString()}`,
-                    calculatedLeverage: `${leverage.toFixed(2)}x EBITDA`,
-                    calculatedDscr: `${dscr.toFixed(2)}x`,
-                    sbaCovenantStatus: dscr >= 1.25 ? 'PASS (Exceeds 1.25x minimum)' : 'WARNING (Below 1.25x threshold)'
-                },
-                crossDocumentTies: {
-                    taxReturnRevenueVsPnL: 'IRS Form 1120/1065 Line 1a Gross Receipts cross-tied to internal P&L statement.',
-                    varianceThreshold: '< 2.0% variance required for institutional underwriting pass'
-                },
-                provenanceTierSummary: 'Numbers with dual verification (source document + deterministic formula) carry the "✓ Confirmed & Reconciled" emerald shield.',
-                guidance: 'Inspect the full 12-rule interactive ledger at [Unified Deterministic Math Checks](tab:diligence#diligence-master-math-checks).'
+                totalChecksEvaluated: checks.length,
+                verifiedTiesCount: checks.filter((check) => check.status === 'passed').length,
+                mismatchCount: checks.filter((check) => check.status === 'mismatch').length,
+                calculatedOnlyCount: checks.filter((check) => check.status === 'calculated').length,
+                checks: checks.map((check) => ({
+                    title: check.title,
+                    category: check.categoryLabel,
+                    status: check.status,
+                    formula: check.formula,
+                    result: check.computedValue,
+                    comparator: check.expectedOrStatedValue,
+                    detail: check.deltaFormatted,
+                    source: check.sourceFile,
+                })),
+                provenanceTierSummary: 'Confirmed & Reconciled requires a citation-backed fact and a supported identity or independent cross-document tie that passed tolerance.',
+                guidance: 'Inspect the live ledger at [Unified Deterministic Math Checks](tab:diligence#diligence-master-math-checks).'
             }
         }
         if (type === 'audit_trail' || type === 'submission_history' || type === 'history') {
@@ -2917,8 +2902,7 @@ export function executeClientSideTool(name: string, args: any, context: ClientSi
                 newestDocument: newestDoc ? {
                     fileName: newestDoc.fileName,
                     status: newestDoc.status,
-                    confidence: newestDoc.confidenceScore ? `${Math.round(newestDoc.confidenceScore * 100)}%` : 'N/A',
-                    pageCount: newestDoc.pageCount || 1,
+                    confidence: newestDoc.aiConfidence || 'N/A',
                     timestamp: newestDoc.createdAt
                 } : null,
                 latestSynthesis: newestSynth ? {
