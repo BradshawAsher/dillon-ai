@@ -11,6 +11,7 @@ import {
     getEvidenceStatusPresentation,
     getProvenanceCategory,
     getProvenanceCategoryPresentation,
+    isFactReconciled,
     parseDocumentedFacts,
 } from './evidence'
 
@@ -252,6 +253,30 @@ describe('buildFactEvidence P&L source fallback', () => {
         expect(
             buildFactEvidence({ field: 'revenue', title: 'Revenue', facts, documents: [namedDoc('2024_income_statement.pdf')] }).sourceFile,
         ).toBe('2024_income_statement.pdf')
+    })
+})
+
+describe('isFactReconciled live reconciliation keys', () => {
+    const confirmedFact = { value: 100, status: 'confirmed' }
+    const withMetric = (key: string, inputKey: string, withinTolerance = true): SubmissionHistoryItem => ({
+        fileName: 'financials.pdf',
+        reconciliationJson: JSON.stringify({ metrics: { [key]: { withinTolerance, inputs: { [inputKey]: 100 } } } }),
+    } as SubmissionHistoryItem)
+
+    it('maps P&L identity participants to gross_profit_check', () => {
+        const documents = [withMetric('gross_profit_check', 'revenue')]
+        expect(isFactReconciled('revenue', confirmedFact, documents)).toBe(true)
+        expect(isFactReconciled('cogs', confirmedFact, [withMetric('gross_profit_check', 'cogs')])).toBe(true)
+        expect(isFactReconciled('gross_profit', confirmedFact, [withMetric('gross_profit_check', 'reported_gross_profit')])).toBe(true)
+    })
+
+    it('maps balance-sheet and working-capital identity participants', () => {
+        expect(isFactReconciled('equity', confirmedFact, [withMetric('balance_sheet_check', 'equity')])).toBe(true)
+        expect(isFactReconciled('working_capital', confirmedFact, [withMetric('working_capital_check', 'reported_working_capital')])).toBe(true)
+    })
+
+    it('does not treat an EBITDA margin calculation as EBITDA reconciliation', () => {
+        expect(isFactReconciled('ebitda_sde', confirmedFact, [withMetric('ebitda_margin', 'ebitda_sde')])).toBe(false)
     })
 })
 

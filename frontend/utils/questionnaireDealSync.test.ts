@@ -139,4 +139,20 @@ describe('questionnaireDealSync', () => {
         expect(reconstructed?.interestRate).toBe(8.5)
         expect(reconstructed?.sellerNoteAmount).toBe(200000)
     })
+
+    it('converts canonical DealModel fractions back to questionnaire percentages', () => {
+        const reconstructed = reconstructQuestionnaireFormData('proj-canonical', [], {
+            projectName: 'Canonical Deal',
+            equityContributionPercent: 0.2,
+            interestRate: 0.095,
+            baseRevenueGrowth: 0.075,
+            baseEbitdaMargin: 0.225,
+            documentedFactsJson: '{}',
+        } as DealModel)
+
+        expect(reconstructed?.equityContributionPercent).toBe(20)
+        expect(reconstructed?.interestRate).toBe(9.5)
+        expect(reconstructed?.baseRevenueGrowth).toBe(7.5)
+        expect(reconstructed?.baseEbitdaMargin).toBe(22.5)
+    })
 })

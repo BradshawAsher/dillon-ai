@@ -23,8 +23,8 @@ MergeWorks supports three complementary diligence depth levels depending on tran
 | Diligence Tier | Inputs Required | Processing Time & Cost | When to Use | Core Outputs |
 | :--- | :--- | :--- | :--- | :--- |
 | **Tier 1: Quick Deal Screen** | 4 essential fields: Company Name, Asking Price, Annual Revenue, Reported EBITDA | Instant (0.05s) · $0 · 0 LLM tokens | Initial 1-page broker teasers, NDA emails, inbound screening | EV/EBITDA & EV/Rev multiples, senior debt capacity (3.0x–3.5x leverage), equity check needed, basic DSCR viability |
-| **Tier 2: Detailed Questionnaire & CIM Prefill** | Balance sheet items (AR/AP, inventory, equipment, debt), owner add-backs, customer concentration %, growth assumptions | ~15s optional AI assist or local Word/text parsing · 1-click model generation | Confidential Information Memorandums (CIMs), 5–10 page financial packets | Full institutional LBO model, normalized EBITDA with add-back disallowance haircuts, tangible net worth, SBA 7(a) amortization schedule, 3-scenario IRR (Bear/Base/Bull), Deal Memo |
-| **Tier 3: Multi-Document AI Diligence Pipeline** | Raw accounting source files: 3–5 years Tax Returns (Form 1120/1065), P&Ls, Balance Sheets, Bank Statements, AR/AP aging | 1–3 minutes · Multi-model OCR (`OpenAI 5.6 Terra` / `Sol`) | Post-LOI confirmatory diligence, formal binding offer preparation | Proof-of-cash revenue verification, cross-document reconciliation (Tax Return vs QuickBooks P&L), phantom revenue detection, customer churn risk, automated Investment Committee Buy/Pass synthesis |
+| **Tier 2: Detailed Questionnaire & CIM Prefill** | Balance sheet items (AR/AP, inventory, equipment, debt), owner add-backs, customer concentration %, growth assumptions | ~15s optional AI assist or local Word/text parsing · 1-click model generation | Confidential Information Memorandums (CIMs), 5–10 page financial packets | Illustrative five-year LBO workbook, normalized EBITDA screen, tangible net worth, amortization schedule, Bear/Base/Bull scenarios, Deal Memo |
+| **Tier 3: Multi-Document AI Diligence Pipeline** | Raw accounting source files: 3–5 years Tax Returns (Form 1120/1065), P&Ls, Balance Sheets, Bank Statements, AR/AP aging | 1–3 minutes · Multi-model OCR (`OpenAI 5.6 Terra` / `Sol`) | Post-LOI confirmatory diligence, formal binding offer preparation | Extracted cash evidence, cross-document reconciliation when matching facts and periods are present, risk detection, and automated Investment Committee Buy/Pass synthesis |
 
 ## Key Documentation Links
 
@@ -33,7 +33,7 @@ MergeWorks supports three complementary diligence depth levels depending on tran
 - **[Upload and Batch Recovery](docs/UPLOAD_AND_BATCH_RECOVERY.md)** — Resumable large-file uploads, verified n8n handoff, failure recovery, and batch count/timer rules.
 - **[Evaluation Harness & Benchmark Guide (`EVALS.md`)](EVALS.md)** — 58-document golden benchmark dataset, 5-dimension scoring rubric, and 1-card Pre/Post-LOI toggle design.
 - **[Dual Core Agent Capabilities (`PURPOSE.md`)](PURPOSE.md)** — Pre-LOI Valuation Discovery & Post-LOI Deal Negotiation frameworks.
-- **[Deterministic Math Verification (`DETERMINISTIC_MATH_CHECKS.md`)](DETERMINISTIC_MATH_CHECKS.md)** — Zero-hallucination accounting verification rules.
+- **[Deterministic Math Verification (`DETERMINISTIC_MATH_CHECKS.md`)](DETERMINISTIC_MATH_CHECKS.md)** — Code-based arithmetic reconciliation over extracted source facts.
 
 ## Distributed Multi-Agent Architecture & Data Flow
 
@@ -50,7 +50,7 @@ Browser (React 19 SPA + TanStack Query v5 + TanStack Table)
   ├── 2. Storage CDN & Edge Caching (Cloudflare Worker -> R2 Public CDN max-age=1yr / REST s-maxage=10 <15ms)
   ├── 3. Instant Portfolio Metrics -> PostgreSQL RPC (get_portfolio_diligence_kpis <2ms, <400B)
   ├── 4. Metadata Dispatch -> same-origin API -> verified temporary attachment -> Pod 1 n8n Webhooks
-  ├── 5. Tier 1-2 Extraction Agents & Deterministic Math Engine (Zero-Hallucination Guard)
+  ├── 5. Tier 1-2 Extraction Agents & Deterministic Math Engine (Arithmetic Consistency Guard)
   ├── 6. Tier 3-4 Synthesis Consolidator & Idempotent Watchdog Gate -> IC Deal Memo
   └── 7. Tier 5 Deal Copilot & Real-Time Stream -> Supabase Realtime CDC (WebSockets push <15ms)
 ```

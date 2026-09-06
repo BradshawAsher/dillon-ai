@@ -156,7 +156,7 @@ export function deriveLoiTerms(params: LoiParams): LoiTerms {
         seniorDebt,
         sellerNote,
         equityCheck: Math.max(0, offerPrice - seniorDebt - sellerNote),
-        nwcTarget: nonNegativeOrFallback(model.workingCapitalRequirement, Math.round((revenue || 2_000_000) * 0.10)),
+        nwcTarget: nonNegativeOrFallback(model.workingCapitalRequirement, 0),
         generalEscrow: Math.round(offerPrice * (draftTerms.generalEscrowPercent / 100)),
         specialEscrow: bridge.totalSpecialEscrow ?? 0,
         bridge,

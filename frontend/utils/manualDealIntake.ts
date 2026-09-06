@@ -1,5 +1,6 @@
 import type { ProjectCitation, ProjectStructuredFindingGroups } from '../../backend/diligence/getProjectSynthesis'
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
+import { normalizePercentageFraction } from './dealMath'
 
 export type ManualDealFormData = {
     // 1. Business Basics
@@ -358,9 +359,9 @@ export function buildManualDealModel(formData: ManualDealFormData, projectId: st
     // undefined leak straight into transactionFees / closingCosts.
     const askingPrice = Number.isFinite(formData.askingPrice) ? Math.max(0, formData.askingPrice) : 0
     const annualRevenue = Number.isFinite(formData.annualRevenue) ? Math.max(0, formData.annualRevenue) : 0
-    const equityPct = formData.equityContributionPercent || 20
-    const sellerNote = formData.sellerNoteAmount || 0
-    const equityAmount = Math.max(0, (askingPrice * equityPct) / 100)
+    const equityPct = normalizePercentageFraction(formData.equityContributionPercent) ?? 0.2
+    const sellerNote = Number.isFinite(formData.sellerNoteAmount) ? Math.max(0, formData.sellerNoteAmount) : 0
+    const equityAmount = Math.max(0, askingPrice * Math.min(1, Math.max(0, equityPct)))
     const seniorDebt = Math.max(0, askingPrice - equityAmount - sellerNote)
 
     const documentedFacts = {
@@ -368,9 +369,9 @@ export function buildManualDealModel(formData: ManualDealFormData, projectId: st
         industry: formData.industry,
         location: `${formData.city}, ${formData.state}`.trim().replace(/^,\s*|,\s*$/g, ''),
         employeeCount: formData.employeeCount,
-        asking_price: { value: formData.askingPrice, status: 'confirmed', raw_value: `$${formData.askingPrice.toLocaleString()}`, confidence: 1 },
-        purchase_price: { value: formData.askingPrice, status: 'confirmed', raw_value: `$${formData.askingPrice.toLocaleString()}`, confidence: 1 },
-        revenue: { value: formData.annualRevenue, status: 'confirmed', raw_value: `$${formData.annualRevenue.toLocaleString()}`, confidence: 1 },
+        asking_price: { value: askingPrice, status: 'confirmed', raw_value: `$${askingPrice.toLocaleString()}`, confidence: 1 },
+        purchase_price: { value: askingPrice, status: 'confirmed', raw_value: `$${askingPrice.toLocaleString()}`, confidence: 1 },
+        revenue: { value: annualRevenue, status: 'confirmed', raw_value: `$${annualRevenue.toLocaleString()}`, confidence: 1 },
         ebitda_sde: { value: adjustedEbitda, status: 'confirmed', raw_value: `$${adjustedEbitda.toLocaleString()}`, confidence: 1 },
         reported_ebitda: { value: formData.reportedEbitda, status: 'confirmed', raw_value: `$${formData.reportedEbitda.toLocaleString()}`, confidence: 1 },
         adjusted_ebitda: { value: adjustedEbitda, status: 'confirmed', raw_value: `$${adjustedEbitda.toLocaleString()}`, confidence: 1 },
@@ -381,7 +382,7 @@ export function buildManualDealModel(formData: ManualDealFormData, projectId: st
         net_asset_value: { value: netAssetValue, status: 'confirmed', raw_value: `$${netAssetValue.toLocaleString()}`, confidence: 1 },
         top_customer_concentration_pct: { value: formData.topCustomerConcentrationPercent, status: 'confirmed', raw_value: `${formData.topCustomerConcentrationPercent}%`, confidence: 1 },
         key_person_risk: { value: formData.keyPersonRisk, status: 'confirmed', confidence: 1 },
-        askingPrice: formData.askingPrice,
+        askingPrice,
         reportedEbitda: formData.reportedEbitda,
         adjustedEbitda,
         disallowedAddBacks: formData.disallowedAddBacks,
@@ -397,34 +398,37 @@ export function buildManualDealModel(formData: ManualDealFormData, projectId: st
 
     return {
         projectId,
-        askingPrice: formData.askingPrice,
-        purchasePrice: formData.askingPrice,
+        askingPrice,
+        purchasePrice: askingPrice,
         debtAssumed: formData.longTermDebt || 0,
         cashAcquired: formData.cashIncluded || 0,
         workingCapitalRequirement: Math.round(annualRevenue * 0.1),
         transactionFees: Math.round(askingPrice * 0.035),
         holdPeriodYears: 5,
-        taxRate: 25,
+        taxRate: 0.25,
         closingCosts: Math.round(askingPrice * 0.015),
         maintenanceCapex: Math.round(annualRevenue * 0.025),
         exitMultiple: formData.exitMultiple || 5.0,
-        exitCosts: 4,
-        equityContributionPercent: formData.equityContributionPercent,
-        interestRate: formData.interestRate || 9.5,
+        // DealModel stores exit costs as dollars, not a percentage. The old
+        // questionnaire wrote the literal number 4 (intended as 4%), which
+        // made every exit scenario subtract only four dollars.
+        exitCosts: Math.round(adjustedEbitda * (formData.exitMultiple || 5.0) * 0.04),
+        equityContributionPercent: Math.min(1, Math.max(0, equityPct)),
+        interestRate: normalizePercentageFraction(formData.interestRate) ?? 0.095,
         amortizationYears: formData.amortizationYears || 10,
-        sellerNoteAmount: formData.sellerNoteAmount || 0,
+        sellerNoteAmount: sellerNote,
         seniorDebtAmount: seniorDebt,
         equityAmount: equityAmount,
         loanTermYears: formData.amortizationYears || 10,
         revenue: formData.annualRevenue,
         ebitda: adjustedEbitda,
         projectName: formData.dealName,
-        bearRevenueGrowth: formData.bearRevenueGrowth,
-        baseRevenueGrowth: formData.baseRevenueGrowth,
-        bullRevenueGrowth: formData.bullRevenueGrowth,
-        bearEbitdaMargin: formData.bearEbitdaMargin,
-        baseEbitdaMargin: formData.baseEbitdaMargin,
-        bullEbitdaMargin: formData.bullEbitdaMargin,
+        bearRevenueGrowth: normalizePercentageFraction(formData.bearRevenueGrowth) ?? 0,
+        baseRevenueGrowth: normalizePercentageFraction(formData.baseRevenueGrowth) ?? 0,
+        bullRevenueGrowth: normalizePercentageFraction(formData.bullRevenueGrowth) ?? 0,
+        bearEbitdaMargin: normalizePercentageFraction(formData.bearEbitdaMargin) ?? 0,
+        baseEbitdaMargin: normalizePercentageFraction(formData.baseEbitdaMargin) ?? 0,
+        bullEbitdaMargin: normalizePercentageFraction(formData.bullEbitdaMargin) ?? 0,
         bearExitMultiple: Math.max(2.0, (formData.exitMultiple || 5.0) - 1.2),
         baseExitMultiple: formData.exitMultiple || 5.0,
         bullExitMultiple: (formData.exitMultiple || 5.0) + 1.2,

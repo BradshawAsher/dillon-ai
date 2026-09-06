@@ -536,10 +536,10 @@ export const CARD_DESCRIPTIONS: Record<string, CardDescription> = {
     'math-checks': {
         title: 'Deterministic Math & Formula Checks',
         category: 'Data Integrity & Reconciliation',
-        whatItIs: 'Rigorous deterministic verification of mathematical formulas across extracted financial statements (e.g. Gross Margin = Revenue - COGS, Operating Income = Gross Profit - OpEx).',
-        calculation: 'Absolute and percentage variance between reported financial line items and calculated arithmetic results (Tolerance ≤ 0.5%).',
-        diligenceImpact: 'Guarantees the underlying arithmetic in target financial statements reconciles with zero rounding or omission errors.',
-        benchmarkOrTarget: '100% Passed Math Checks across all ingested financial documents',
+        whatItIs: 'Code-based arithmetic identities across extracted financial statements plus same-metric, same-period comparisons between independent uploaded documents.',
+        calculation: 'Compares reported figures with calculated identities using a 2% relative tolerance. Ratios and underwriting outputs are shown separately as calculated values.',
+        diligenceImpact: 'Surfaces extraction mistakes and source-document inconsistencies while preserving the distinction between a verified tie and an unsupported calculation.',
+        benchmarkOrTarget: 'Review every mismatch and every source citation before relying on the result',
     },
     'public-data-enrichment': {
         title: 'Public & Web Intelligence Enrichment',

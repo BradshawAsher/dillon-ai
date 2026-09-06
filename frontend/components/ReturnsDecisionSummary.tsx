@@ -5,7 +5,7 @@ import type { DealModel } from '../hooks/backend/diligence'
 import { Card, CardContent } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
 import { Badge } from '../lib/shadcn/badge'
-import { computeAllCashReturns } from '../utils/dealMath'
+import { computeAllCashReturns, computeAmortizingLoan, normalizeEquityFraction, normalizePercentageFraction, resolveLoanTermYears } from '../utils/dealMath'
 import { parseDocumentedFacts } from '../utils/evidence'
 
 import { safeFormatCurrency } from '../utils/diligenceDashboardUtils'
@@ -76,13 +76,13 @@ export default function ReturnsDecisionSummary({ model }: { model: DealModel }) 
     })
 
     const uses = price + (model.transactionFees ?? 10_000) + (model.workingCapitalRequirement ?? 20_000)
-    const equityPercent = model.equityContributionPercent ?? 0.3
+    const equityPercent = normalizeEquityFraction(model.equityContributionPercent)
     const equity = uses * equityPercent
     const debt = Math.max(0, uses - equity - (model.sellerNoteAmount ?? 0))
-    const interestRate = model.interestRate ?? 0.1
-    const amortization = model.amortizationYears ?? 10
-    const annualDebtService = interestRate === 0 ? debt / amortization : debt * ((interestRate * (1 + interestRate) ** amortization) / ((1 + interestRate) ** amortization - 1))
-    const operatingCashFlow = ebitda * (1 - (model.taxRate ?? 0.25)) - (model.maintenanceCapex ?? 10_000)
+    const interestRate = normalizePercentageFraction(model.interestRate) ?? 0.1
+    const amortization = resolveLoanTermYears(model.amortizationYears, model.loanTermYears)
+    const annualDebtService = computeAmortizingLoan(debt, interestRate, amortization)?.annualDebtService ?? 0
+    const operatingCashFlow = ebitda * (1 - (normalizePercentageFraction(model.taxRate) ?? 0.25)) - (model.maintenanceCapex ?? 10_000)
     const dscr = annualDebtService > 0 ? operatingCashFlow / annualDebtService : null
 
     const hasIllustrativeOrUnconfirmed = !ebitdaIsConfirmed || !revenueIsConfirmed || !priceIsConfirmed

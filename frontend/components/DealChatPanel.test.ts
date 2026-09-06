@@ -420,17 +420,17 @@ describe('DealChatPanel Client-Side AI Tools', () => {
         expect(anthropicSchema?.properties?.exportType?.enum).toContain('ic_memo')
     })
 
-    it('queries master deterministic math checks ledger and closed-loop tie-out status', async () => {
+    it('queries the live math ledger without inventing passed checks', async () => {
         const { executeClientSideTool } = await import('./DealChatPanel')
         const result = executeClientSideTool('query_deal_data', {
             queryType: 'math_checks'
         }, mockContext)
 
-        expect(result.totalChecksEvaluated).toBe(12)
-        expect(result.passedChecksCount).toBeGreaterThan(0)
-        expect(result.plIntegrity.status).toBe('VERIFIED')
-        expect(result.plIntegrity.formula).toBe('Revenue - COGS = Gross Profit')
-        expect(result.underwritingMath.sbaCovenantStatus).toBeDefined()
+        expect(result.totalChecksEvaluated).toBe(result.checks.length)
+        expect(result.verifiedTiesCount).toBe(0)
+        expect(result.mismatchCount).toBe(0)
+        expect(result.calculatedOnlyCount).toBe(result.totalChecksEvaluated)
+        expect(result.checks.some((check: any) => check.title === 'Entry Multiple')).toBe(true)
         expect(result.provenanceTierSummary).toContain('Confirmed & Reconciled')
         expect(result.guidance).toContain('tab:diligence#diligence-master-math-checks')
     })

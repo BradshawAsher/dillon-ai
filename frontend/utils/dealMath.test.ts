@@ -4,10 +4,13 @@ import {
     DEAL_MATH_DEFAULTS,
     calculateIrr,
     calculateNpv,
+    computeAmortizingLoan,
     computeAllCashReturns,
     debtToAssets,
     ebitdaMargin,
     entryMultiple,
+    normalizeEquityFraction,
+    normalizePercentageFraction,
     priceGapPercent,
     ratio,
     revenuePerEmployee,
@@ -51,6 +54,33 @@ describe('calculateIrr', () => {
         // Pathological series must fail closed rather than emit a bogus rate.
         const result = calculateIrr([-1, 0, 0, 0, 0, 1e12])
         expect(result === null || Number.isFinite(result)).toBe(true)
+    })
+
+    it('fails closed when non-conventional cash flows can have multiple IRRs', () => {
+        expect(calculateIrr([-100, 230, -132])).toBeNull()
+    })
+
+    it('rejects non-finite cash flows', () => {
+        expect(calculateIrr([-100, Number.NaN, 200])).toBeNull()
+    })
+})
+
+describe('percentage and amortization normalization', () => {
+    it('accepts canonical decimals and legacy whole percentages', () => {
+        expect(normalizePercentageFraction(0.095)).toBe(0.095)
+        expect(normalizePercentageFraction(9.5)).toBe(0.095)
+        expect(normalizePercentageFraction(-10)).toBe(-0.1)
+        expect(normalizePercentageFraction(Number.NaN)).toBeNull()
+        expect(normalizeEquityFraction(150)).toBe(1)
+    })
+
+    it('uses one monthly amortizing schedule for debt service and exit balance', () => {
+        const loan = computeAmortizingLoan(1_000_000, 0.08, 10, 5)
+        expect(loan).not.toBeNull()
+        expect(loan!.monthlyPayment).toBeCloseTo(12_132.76, 2)
+        expect(loan!.annualDebtService).toBeCloseTo(145_593.1, 1)
+        expect(loan!.remainingBalance).toBeCloseTo(598_368.69, 1)
+        expect(computeAmortizingLoan(1_000_000, 8, 10, 5)?.remainingBalance).toBeCloseTo(loan!.remainingBalance, 6)
     })
 })
 

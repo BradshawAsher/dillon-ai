@@ -3,7 +3,7 @@ import { ChartNoAxesCombined } from 'lucide-react'
 import type { DealModel } from '../hooks/backend/diligence'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
-import { calculateIrr } from '../utils/dealMath'
+import { calculateIrr, normalizePercentageFraction } from '../utils/dealMath'
 import { buildDerivedEvidence, buildFactEvidence, parseDocumentedFacts, type EvidenceItem } from '../utils/evidence'
 import { safeFormatCurrency } from '../utils/diligenceDashboardUtils'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
@@ -29,17 +29,21 @@ export default function ScenarioComparisonCard({ model, documents = [], onOpenEv
     const years = model.holdPeriodYears ?? 5
     const price = model.purchasePrice ?? model.askingPrice
     const initial = price === null ? null : price + (model.transactionFees ?? 0) + (model.workingCapitalRequirement ?? 0)
-    const taxRate = model.taxRate ?? 0.25
+    const taxRate = normalizePercentageFraction(model.taxRate) ?? 0.25
     const capex = model.maintenanceCapex ?? 0
     const exitCosts = model.exitCosts ?? 0
-    const scenarios = [['Bear', model.bearRevenueGrowth ?? 0, model.bearEbitdaMargin ?? 0.15, model.bearExitMultiple ?? 3], ['Base', model.baseRevenueGrowth ?? 0.05, model.baseEbitdaMargin ?? 0.2, model.baseExitMultiple ?? 4], ['Bull', model.bullRevenueGrowth ?? 0.1, model.bullEbitdaMargin ?? 0.25, model.bullExitMultiple ?? 5]] as const
+    const scenarios = [
+        ['Bear', normalizePercentageFraction(model.bearRevenueGrowth) ?? 0, normalizePercentageFraction(model.bearEbitdaMargin) ?? 0.15, model.bearExitMultiple ?? 3],
+        ['Base', normalizePercentageFraction(model.baseRevenueGrowth) ?? 0.05, normalizePercentageFraction(model.baseEbitdaMargin) ?? 0.2, model.baseExitMultiple ?? 4],
+        ['Bull', normalizePercentageFraction(model.bullRevenueGrowth) ?? 0.1, normalizePercentageFraction(model.bullEbitdaMargin) ?? 0.25, model.bullExitMultiple ?? 5],
+    ] as const
     const ready = revenue !== null && scenarios.every(([, growth, margin, multiple]) => growth !== null && margin !== null && multiple !== null)
     const allCashReady = initial !== null && initial > 0
     const growthChartData = revenue === null ? [] : Array.from({ length: years + 1 }, (_, year) => ({
         label: year === 0 ? 'Today (Reported)' : `Year ${year} (Projected)`,
-        Bear: revenue * (1 + (model.bearRevenueGrowth ?? 0)) ** year,
-        Base: revenue * (1 + (model.baseRevenueGrowth ?? 0.05)) ** year,
-        Bull: revenue * (1 + (model.bullRevenueGrowth ?? 0.1)) ** year,
+        Bear: revenue * (1 + (normalizePercentageFraction(model.bearRevenueGrowth) ?? 0)) ** year,
+        Base: revenue * (1 + (normalizePercentageFraction(model.baseRevenueGrowth) ?? 0.05)) ** year,
+        Bull: revenue * (1 + (normalizePercentageFraction(model.bullRevenueGrowth) ?? 0.1)) ** year,
     }))
 
     return <Card className="overflow-hidden"><CardHeader className="border-b border-border bg-card/80"><div className="flex flex-wrap items-center justify-between gap-2"><div className="flex items-center gap-2"><ChartNoAxesCombined className="h-5 w-5 text-primary" /><CardTitle className="text-xl">Bear / base / bull scenarios</CardTitle><CardInfoPopover cardId="scenario-comparison" /></div><DataOriginBadge origin="assumption" label="Multi-Scenario Projection" /></div><CardDescription>All-cash five-year projection from documented starting revenue and analyst-entered scenario assumptions.</CardDescription></CardHeader><CardContent className="p-5">{!ready ? <p className="rounded-lg border border-dashed border-border bg-muted/20 p-4 text-sm text-muted-foreground">Add documented revenue plus revenue-growth, EBITDA-margin, and exit-multiple assumptions for each scenario.</p> : <><GrowthLineChart data={growthChartData} /><div className="mt-5 grid gap-3 lg:grid-cols-3">{scenarios.map(([name, growth, margin, multiple]) => {

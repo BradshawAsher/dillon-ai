@@ -4,7 +4,7 @@ import type { ReactNode } from 'react'
 import type { DealModel } from '../hooks/backend/diligence'
 import { Badge } from '../lib/shadcn/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
-import { calculateIrr } from '../utils/dealMath'
+import { calculateIrr, computeAmortizingLoan, normalizeEquityFraction, normalizePercentageFraction, resolveLoanTermYears } from '../utils/dealMath'
 import { buildDerivedEvidence, buildFactEvidence, parseDocumentedFacts, type EvidenceItem } from '../utils/evidence'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import { CashFlowChart } from './DealCharts'
@@ -78,11 +78,11 @@ export default function FinancedReturnsCard({ model, documents = [], onOpenEvide
     const ebitda = (ebitdaFact?.status === 'confirmed' || ebitdaFact?.status === 'illustrative') && typeof ebitdaFact.value === 'number' ? ebitdaFact.value : null
     const priceIsConfirmed = model.purchasePrice !== null && model.purchasePrice !== undefined
     const price = model.purchasePrice ?? model.askingPrice
-    const tax = model.taxRate ?? 0.25
-    const equityPct = model.equityContributionPercent ?? 0.3
-    const rate = model.interestRate ?? 0.1
-    const amortizationYears = model.amortizationYears ?? 10
-    const holdPeriod = model.holdPeriodYears ?? 5
+    const tax = normalizePercentageFraction(model.taxRate) ?? 0.25
+    const equityPct = normalizeEquityFraction(model.equityContributionPercent)
+    const rate = normalizePercentageFraction(model.interestRate) ?? 0.1
+    const amortizationYears = resolveLoanTermYears(model.amortizationYears, model.loanTermYears)
+    const holdPeriod = Math.max(1, Math.floor(model.holdPeriodYears ?? 5))
     const exitMultiple = model.exitMultiple ?? 4
     const exitCosts = model.exitCosts ?? (ebitda === null ? 0 : ebitda * exitMultiple * 0.02)
     const capex = model.maintenanceCapex ?? 0
@@ -93,11 +93,12 @@ export default function FinancedReturnsCard({ model, documents = [], onOpenEvide
     const debt = uses === null ? null : Math.max(0, uses * (1 - equityPct) - sellerNote)
     const equity = uses === null || debt === null ? null : uses - debt - sellerNote
     const operatingCashFlow = ebitda === null ? null : ebitda * (1 - tax) - capex
-    const annualDebtService = debt === null || amortizationYears <= 0 ? null : rate === 0 ? debt / amortizationYears : debt * ((rate * (1 + rate) ** amortizationYears) / (((1 + rate) ** amortizationYears) - 1))
+    const loan = debt === null ? null : computeAmortizingLoan(debt, rate, amortizationYears, holdPeriod)
+    const annualDebtService = loan?.annualDebtService ?? null
     const cashAfterDebt = operatingCashFlow === null || annualDebtService === null ? null : operatingCashFlow - annualDebtService
     const coc = equity && cashAfterDebt !== null && equity > 0 ? cashAfterDebt / equity : null
     const dscr = annualDebtService && operatingCashFlow !== null && annualDebtService > 0 ? operatingCashFlow / annualDebtService : null
-    const debtBalanceAtExit = debt === null || annualDebtService === null ? null : Math.max(0, rate === 0 ? debt - annualDebtService * Math.min(holdPeriod, amortizationYears) : debt * (1 + rate) ** Math.min(holdPeriod, amortizationYears) - annualDebtService * (((1 + rate) ** Math.min(holdPeriod, amortizationYears) - 1) / rate))
+    const debtBalanceAtExit = loan?.remainingBalance ?? null
     const exitEnterpriseValue = ebitda === null ? null : ebitda * exitMultiple
     const exitEquityProceeds = exitEnterpriseValue === null || debtBalanceAtExit === null ? null : exitEnterpriseValue - exitCosts - debtBalanceAtExit - sellerNote
     const cashFlows = equity !== null && operatingCashFlow !== null && annualDebtService !== null && exitEquityProceeds !== null
@@ -271,4 +272,3 @@ export default function FinancedReturnsCard({ model, documents = [], onOpenEvide
         </Card>
     )
 }
-

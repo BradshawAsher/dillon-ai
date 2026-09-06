@@ -2,7 +2,7 @@ import { Scale, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react'
 
 import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
-import { normalizeEquityFraction } from '../utils/dealMath'
+import { computeAmortizingLoan, normalizeEquityFraction, normalizePercentageFraction, resolveLoanTermYears } from '../utils/dealMath'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
 
@@ -47,7 +47,7 @@ export default function DealRulesOfThumb({ model }: Props) {
 
     if (price && ebitda && model.holdPeriodYears) {
         const years = model.holdPeriodYears
-        const taxRate = model.taxRate ?? 0.25
+        const taxRate = normalizePercentageFraction(model.taxRate) ?? 0.25
         const annualCash = ebitda * (1 - taxRate) - (model.maintenanceCapex ?? 0)
         const payback = annualCash > 0 ? price / annualCash : null
         if (payback !== null) {
@@ -72,8 +72,16 @@ export default function DealRulesOfThumb({ model }: Props) {
 
     if (model.interestRate && model.equityContributionPercent && price) {
         const equity = price * normalizeEquityFraction(model.equityContributionPercent)
-        const debt = price - equity
-        const dscr = ebitda ? (ebitda * (1 - (model.taxRate ?? 0.25))) / (debt * model.interestRate + debt / (model.amortizationYears ?? 10)) : null
+        const debt = Math.max(0, price - equity - (model.sellerNoteAmount ?? 0))
+        const annualDebtService = computeAmortizingLoan(
+            debt,
+            normalizePercentageFraction(model.interestRate) ?? 0,
+            resolveLoanTermYears(model.amortizationYears, model.loanTermYears),
+        )?.annualDebtService ?? 0
+        const operatingCashFlow = ebitda
+            ? ebitda * (1 - (normalizePercentageFraction(model.taxRate) ?? 0.25)) - (model.maintenanceCapex ?? 0)
+            : null
+        const dscr = operatingCashFlow !== null && annualDebtService > 0 ? operatingCashFlow / annualDebtService : null
         if (dscr !== null && Number.isFinite(dscr)) {
             rules.push({
                 label: 'Est. DSCR',

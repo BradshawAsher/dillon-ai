@@ -1,7 +1,7 @@
 import ExcelJS from 'exceljs'
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from './evidence'
-import { resolveLoanTermYears } from './dealMath'
+import { calculateIrr, computeAmortizingLoan, normalizeEquityFraction, normalizePercentageFraction, resolveLoanTermYears } from './dealMath'
 import { calculateWorkingCapitalPeg } from './workingCapitalPeg'
 import { computeValuationBridge } from './valuationBridge'
 
@@ -43,20 +43,25 @@ export function buildLiveExcelWorkbook({
     workbook.calcProperties.fullCalcOnLoad = true
 
     const facts = parseDocumentedFacts(model.documentedFactsJson)
-    const rawRevenue = typeof facts.revenue?.value === 'number' ? facts.revenue.value : 12_400_000
-    const rawEbitda = typeof facts.ebitda_sde?.value === 'number' ? facts.ebitda_sde.value : 2_400_000
+    const rawRevenue = typeof facts.revenue?.value === 'number' ? facts.revenue.value : 0
+    const rawEbitda = typeof facts.ebitda_sde?.value === 'number' ? facts.ebitda_sde.value : 0
     const rawGrossProfit = typeof facts.gross_profit?.value === 'number' ? facts.gross_profit.value : Math.round(rawRevenue * 0.45)
-    const purchasePrice = model.purchasePrice && model.purchasePrice > 0 ? model.purchasePrice : (model.askingPrice && model.askingPrice > 0 ? model.askingPrice : 10_000_000)
+    const purchasePrice = model.purchasePrice && model.purchasePrice > 0 ? model.purchasePrice : (model.askingPrice && model.askingPrice > 0 ? model.askingPrice : 0)
     const askingPrice = model.askingPrice && model.askingPrice > 0 ? model.askingPrice : purchasePrice
 
-    const seniorDebtRate = model.interestRate ?? 0.08
+    const seniorDebtRate = normalizePercentageFraction(model.interestRate) ?? 0.08
     const seniorDebtTerm = resolveLoanTermYears(model.amortizationYears, model.loanTermYears)
-    const seniorDebtAmount = model.seniorDebtAmount && model.seniorDebtAmount > 0 ? model.seniorDebtAmount : Math.round(purchasePrice * 0.6)
-    const sellerNoteAmount = model.sellerNoteAmount ?? Math.round(purchasePrice * 0.15)
-    const taxRate = model.taxRate ?? 0.25
-    const growthRate = model.baseRevenueGrowth ?? 0.05
-    const holdPeriod = model.holdPeriodYears ?? 5
-    const buyerEquity = purchasePrice - seniorDebtAmount - sellerNoteAmount
+    const sellerNoteAmount = typeof model.sellerNoteAmount === 'number' && Number.isFinite(model.sellerNoteAmount)
+        ? Math.max(0, model.sellerNoteAmount)
+        : Math.round(purchasePrice * 0.15)
+    const fallbackEquity = purchasePrice * normalizeEquityFraction(model.equityContributionPercent)
+    const seniorDebtAmount = typeof model.seniorDebtAmount === 'number' && Number.isFinite(model.seniorDebtAmount)
+        ? Math.max(0, model.seniorDebtAmount)
+        : Math.max(0, purchasePrice - fallbackEquity - sellerNoteAmount)
+    const taxRate = normalizePercentageFraction(model.taxRate) ?? 0.25
+    const growthRate = normalizePercentageFraction(model.baseRevenueGrowth) ?? 0.05
+    const projectionYears = 5
+    const buyerEquity = Math.max(0, purchasePrice - seniorDebtAmount - sellerNoteAmount)
 
     const nwcResult = calculateWorkingCapitalPeg(model, '12m', 5)
 
@@ -99,7 +104,7 @@ export function buildLiveExcelWorkbook({
         ['Buyer Equity Injected ($)', { formula: 'B4-B6-B9', result: buyerEquity }, 'Sponsor Equity'],
         ['Corporate Tax Rate', taxRate, 'Federal + State Combined'],
         ['Annual Revenue Growth %', growthRate, 'Base Case CAGR'],
-        ['Investment Hold Period (Years)', holdPeriod, 'Underwriting Horizon'],
+        ['Workbook Projection Horizon (Years)', projectionYears, 'Fixed 5-Year LBO Schedule'],
         ['Target Working Capital Peg ($)', nwcResult.targetPeg, '12-Month Trailing Avg Peg'],
         ['NWC Collar Bandwidth (±%)', nwcResult.collarBandPercent / 100, 'Zero-Adjustment Collar'],
     ])
@@ -145,11 +150,9 @@ export function buildLiveExcelWorkbook({
     const projectedOpex = projectedRevenue.map((revenue) => revenue * opexRatio)
     const projectedEbitda = projectedGrossProfit.map((grossProfit, index) => grossProfit - projectedOpex[index])
     const projectedCapex = projectedRevenue.map((revenue) => revenue * 0.03)
-    const monthlyDebtRate = seniorDebtRate / 12
-    const debtPayments = Math.max(1, seniorDebtTerm * 12)
-    const annualDebtService = monthlyDebtRate > 0
-        ? seniorDebtAmount * monthlyDebtRate / (1 - Math.pow(1 + monthlyDebtRate, -debtPayments)) * 12
-        : seniorDebtAmount / Math.max(1, seniorDebtTerm)
+    const loanSchedule = computeAmortizingLoan(seniorDebtAmount, seniorDebtRate, seniorDebtTerm, projectionYears)
+    const annualDebtService = loanSchedule?.annualDebtService ?? 0
+    const seniorDebtAtExit = loanSchedule?.remainingBalance ?? seniorDebtAmount
     const projectedTaxes = projectedEbitda.map((ebitda, index) => Math.max(0, (ebitda - projectedCapex[index]) * taxRate))
     const projectedFcf = projectedEbitda.map((ebitda, index) => ebitda - projectedCapex[index] - annualDebtService - projectedTaxes[index])
     const projectedDscr = projectedEbitda.map((ebitda) => annualDebtService > 0 ? (ebitda * (1 - taxRate)) / annualDebtService : 0)
@@ -231,15 +234,20 @@ export function buildLiveExcelWorkbook({
     multiples.forEach((m, idx) => {
         const rowIdx = idx + 2
         const enterpriseValue = m * projectedEbitda[4]
-        const endingEquity = enterpriseValue - seniorDebtAmount * 0.5
-        const moic = buyerEquity > 0 ? endingEquity / buyerEquity : 0
-        const irr = moic > 0 ? Math.pow(moic, 1 / holdPeriod) - 1 : 0
+        const endingEquity = enterpriseValue - seniorDebtAtExit - sellerNoteAmount
+        const leveredCashFlows = buyerEquity > 0
+            ? [-buyerEquity, ...projectedFcf.map((cashFlow, year) => cashFlow + (year === projectionYears - 1 ? endingEquity : 0))]
+            : null
+        const moic = leveredCashFlows
+            ? leveredCashFlows.slice(1).reduce((sum, cashFlow) => sum + cashFlow, 0) / buyerEquity
+            : 0
+        const irr = leveredCashFlows ? calculateIrr(leveredCashFlows) : null
         wsReturns.addRow([
             `${m.toFixed(1)}x EBITDA`,
             { formula: `${m}*'5-Yr Projections & Cash Flow'!$F$7`, result: enterpriseValue },
-            { formula: `B${rowIdx}-('Assumptions & Structure'!$B$6*0.5)`, result: endingEquity },
-            { formula: `C${rowIdx}/'Assumptions & Structure'!$B$11`, result: moic },
-            { formula: `(D${rowIdx}^(1/'Assumptions & Structure'!$B$14))-1`, result: irr },
+            { formula: `B${rowIdx}-${seniorDebtAtExit}-'Assumptions & Structure'!$B$9`, result: endingEquity },
+            { formula: `(SUM('5-Yr Projections & Cash Flow'!B12:F12)+C${rowIdx})/'Assumptions & Structure'!$B$11`, result: moic },
+            { formula: `IRR(CHOOSE({1,2,3,4,5,6},-'Assumptions & Structure'!$B$11,'5-Yr Projections & Cash Flow'!B12,'5-Yr Projections & Cash Flow'!C12,'5-Yr Projections & Cash Flow'!D12,'5-Yr Projections & Cash Flow'!E12,'5-Yr Projections & Cash Flow'!F12+C${rowIdx}))`, result: irr ?? 0 },
         ])
         const row = wsReturns.getRow(rowIdx)
         row.getCell(2).numFmt = currencyFmt
@@ -269,12 +277,12 @@ export function buildLiveExcelWorkbook({
     Object.entries(facts).forEach(([key, fact]) => {
         if (fact && fact.value !== undefined) {
             const formattedVal = typeof fact.value === 'number' ? `$${fact.value.toLocaleString()}` : String(fact.value)
-            const sourceDoc = fact.source_document || (fact as any).documentSource || 'Due Diligence Packet'
-            const excerptText = fact.quote_snippet || (fact as any).excerpt || 'Verified from primary financial records'
+            const sourceDoc = fact.source_document || (fact as any).documentSource || 'Source not recorded'
+            const excerptText = fact.quote_snippet || (fact as any).excerpt || 'Citation not recorded'
             wsAudit.addRow([
                 key.replace(/_/g, ' ').toUpperCase(),
                 formattedVal,
-                fact.confidence ? `${Math.round(fact.confidence * 100)}%` : '95%',
+                typeof fact.confidence === 'number' ? `${Math.round(fact.confidence * 100)}%` : 'Not recorded',
                 sourceDoc,
                 excerptText,
             ])

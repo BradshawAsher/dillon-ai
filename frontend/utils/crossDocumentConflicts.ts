@@ -44,6 +44,12 @@ export type ContradictionRecord = {
     citations: Array<{ source_file?: string; row_or_cell?: string; excerpt?: string }>
 }
 
+/** Every comparable cross-document pair, including verified matches. */
+export type FactComparisonRecord = ContradictionRecord & {
+    withinTolerance: boolean
+    tolerancePct: number
+}
+
 export type ConflictDetectorOptions = {
     /** Below this relative delta, two values are considered consistent. */
     tolerancePct?: number
@@ -118,6 +124,64 @@ function severityFor(deltaPct: number, opts: Required<Omit<ConflictDetectorOptio
     return 'info'
 }
 
+/**
+ * Returns every independently sourced metric+period comparison. Unlike
+ * `detectContradictions`, this includes pairs that agree within tolerance so a
+ * UI can award a verified match only when two real source documents tie.
+ */
+export function compareFactsAcrossDocuments(
+    observations: FactObservation[],
+    options: ConflictDetectorOptions = {},
+): FactComparisonRecord[] {
+    const opts = { ...DEFAULT_OPTIONS, ...options }
+    const aliases = options.metricAliases ?? {}
+    const groups = new Map<string, Array<FactObservation & { canonMetric: string; canonPeriod: string }>>()
+
+    for (const obs of observations) {
+        if (!isFiniteNumber(obs.value)) continue
+        const canonMetric = canonicalMetric(obs.metric, aliases)
+        if (!canonMetric) continue
+        const canonPeriod = canonicalPeriod(obs.period)
+        const key = `${canonMetric}|${canonPeriod}`
+        const bucket = groups.get(key) ?? []
+        bucket.push({ ...obs, canonMetric, canonPeriod })
+        groups.set(key, bucket)
+    }
+
+    const comparisons: FactComparisonRecord[] = []
+    for (const bucket of groups.values()) {
+        for (let i = 0; i < bucket.length; i += 1) {
+            for (let j = i + 1; j < bucket.length; j += 1) {
+                const a = bucket[i]
+                const b = bucket[j]
+                if (a.sourceDoc === b.sourceDoc) continue
+                const scale = Math.max(Math.abs(a.value), Math.abs(b.value))
+                if (scale === 0) continue
+                const deltaPct = Math.abs(a.value - b.value) / scale
+                comparisons.push({
+                    metric: a.canonMetric,
+                    period: a.canonPeriod,
+                    docA: a.sourceDoc,
+                    docB: b.sourceDoc,
+                    valueA: a.value,
+                    valueB: b.value,
+                    deltaPct,
+                    severity: severityFor(deltaPct, opts),
+                    citations: [...(a.citations ?? []), ...(b.citations ?? [])],
+                    withinTolerance: deltaPct <= opts.tolerancePct,
+                    tolerancePct: opts.tolerancePct,
+                })
+            }
+        }
+    }
+
+    return comparisons.sort((x, y) => {
+        if (x.withinTolerance !== y.withinTolerance) return x.withinTolerance ? 1 : -1
+        const sev = SEVERITY_RANK[y.severity] - SEVERITY_RANK[x.severity]
+        return sev !== 0 ? sev : y.deltaPct - x.deltaPct
+    })
+}
+
 const SEVERITY_RANK: Record<ConflictSeverity, number> = { critical: 3, warning: 2, info: 1 }
 
 /**
@@ -128,54 +192,9 @@ export function detectContradictions(
     observations: FactObservation[],
     options: ConflictDetectorOptions = {},
 ): ContradictionRecord[] {
-    const opts = { ...DEFAULT_OPTIONS, ...options }
-    const aliases = options.metricAliases ?? {}
-
-    const groups = new Map<string, Array<FactObservation & { canonMetric: string; canonPeriod: string }>>()
-    for (const obs of observations) {
-        if (!isFiniteNumber(obs.value)) continue
-        const canonMetric = canonicalMetric(obs.metric, aliases)
-        if (canonMetric.length === 0) continue
-        const canonPeriod = canonicalPeriod(obs.period)
-        const key = `${canonMetric}|${canonPeriod}`
-        const bucket = groups.get(key) ?? []
-        bucket.push({ ...obs, canonMetric, canonPeriod })
-        groups.set(key, bucket)
-    }
-
-    const records: ContradictionRecord[] = []
-    for (const bucket of groups.values()) {
-        if (bucket.length < 2) continue
-        for (let i = 0; i < bucket.length; i += 1) {
-            for (let j = i + 1; j < bucket.length; j += 1) {
-                const a = bucket[i]
-                const b = bucket[j]
-                // Only compare across documents; two facts from one document are
-                // the intra-document math checks' concern, not this detector's.
-                if (a.sourceDoc === b.sourceDoc) continue
-                const scale = Math.max(Math.abs(a.value), Math.abs(b.value))
-                if (scale === 0) continue
-                const deltaPct = Math.abs(a.value - b.value) / scale
-                if (deltaPct <= opts.tolerancePct) continue
-                records.push({
-                    metric: a.canonMetric,
-                    period: a.canonPeriod,
-                    docA: a.sourceDoc,
-                    docB: b.sourceDoc,
-                    valueA: a.value,
-                    valueB: b.value,
-                    deltaPct,
-                    severity: severityFor(deltaPct, opts),
-                    citations: [...(a.citations ?? []), ...(b.citations ?? [])],
-                })
-            }
-        }
-    }
-
-    return records.sort((x, y) => {
-        const sev = SEVERITY_RANK[y.severity] - SEVERITY_RANK[x.severity]
-        return sev !== 0 ? sev : y.deltaPct - x.deltaPct
-    })
+    return compareFactsAcrossDocuments(observations, options)
+        .filter((record) => !record.withinTolerance)
+        .map(({ withinTolerance: _withinTolerance, tolerancePct: _tolerancePct, ...record }) => record)
 }
 
 // ---------------------------------------------------------------------------
@@ -194,7 +213,7 @@ type DocumentLike = {
  * genuine cross-document conflict on a string-formatted figure is silently
  * dropped. */
 function readFactValue(fact: any): number | null {
-    const raw = fact?.normalizedValue ?? fact?.normalized_value ?? fact?.value
+    const raw = fact?.normalizedValue ?? fact?.normalized_value ?? fact?.numeric_value ?? fact?.value
     const value = Number(raw)
     if (Number.isFinite(value)) return value
     if (typeof raw !== 'string') return null
@@ -211,13 +230,13 @@ function readFactValue(fact: any): number | null {
 }
 
 function readFactCitations(fact: any): FactObservation['citations'] {
-    const citation = fact?.citation
-    if (!citation) return undefined
-    return [{
-        source_file: citation.source_file,
-        row_or_cell: citation.row_or_cell,
-        excerpt: citation.excerpt,
-    }]
+    const citations = fact?.citation ? [fact.citation] : Array.isArray(fact?.citations) ? fact.citations : []
+    if (citations.length === 0) return undefined
+    return citations.map((citation: any) => ({
+        source_file: citation?.source_file,
+        row_or_cell: citation?.row_or_cell,
+        excerpt: citation?.excerpt,
+    }))
 }
 
 /**
@@ -247,7 +266,7 @@ export function observationsFromDocuments(documents: DocumentLike[]): FactObserv
             facts.push(...extraFacts)
         }
         for (const fact of facts) {
-            const metric = (fact?.metric ?? '').trim()
+            const metric = String(fact?.metric ?? fact?.fact_type ?? fact?.fact_name ?? '').trim()
             const value = readFactValue(fact)
             if (metric.length === 0 || value === null) continue
             observations.push({

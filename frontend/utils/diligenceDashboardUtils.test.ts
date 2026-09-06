@@ -188,6 +188,20 @@ describe('withDerivedCapitalStack', () => {
         expect(out.equityAmount).toBe(300_000)
         expect(out.seniorDebtAmount).toBe(700_000)
     })
+
+    it('normalizes all legacy questionnaire percentage fields', () => {
+        const out = withDerivedCapitalStack({
+            ...base,
+            taxRate: 25,
+            interestRate: 9.5,
+            baseRevenueGrowth: 7.5,
+            baseEbitdaMargin: 22.5,
+        })
+        expect(out.taxRate).toBe(0.25)
+        expect(out.interestRate).toBe(0.095)
+        expect(out.baseRevenueGrowth).toBe(0.075)
+        expect(out.baseEbitdaMargin).toBe(0.225)
+    })
 })
 
 describe('formatConfidencePercent', () => {

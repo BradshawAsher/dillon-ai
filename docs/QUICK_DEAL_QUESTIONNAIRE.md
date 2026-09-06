@@ -92,7 +92,7 @@ The questionnaire is implemented in [`frontend/components/ManualDealIntakeForm.t
 
 ## 4. Deterministic Mathematical Engine
 
-All calculations are executed deterministically by [`frontend/utils/manualDealIntake.ts`](../frontend/utils/manualDealIntake.ts) with strict bounds checking and zero-division guards.
+Questionnaire calculations are executed deterministically by [`frontend/utils/manualDealIntake.ts`](../frontend/utils/manualDealIntake.ts). Money inputs are sanitized before model construction, division is guarded, and percentage fields are converted from the form's whole-percent display convention (for example `9.5`) to the deal model's decimal convention (`0.095`). Legacy rows using whole percentages are normalized when hydrated.
 
 ### Normalized EBITDA & Valuation Multiple
 $$\text{Adjusted EBITDA} = \max(0, \text{Reported EBITDA} - \text{Disallowed Add-backs})$$
@@ -139,11 +139,11 @@ The engine evaluates qualitative and financial thresholds to generate institutio
 Users can instantly test realistic industry profiles with one click:
 
 1. **🏭 Precision Manufacturing ($4.8M Asking)**
-   - $5.2M Revenue, $1.25M Reported EBITDA, $140K Disallowed Add-Backs, $1.85M Equipment/Vehicles, 28% Customer Concentration.
+   - $5.2M Revenue, $1.25M Reported EBITDA, $140K Disallowed Add-Backs, $1.85M Equipment/Vehicles, 38% Customer Concentration.
 2. **❄️ HVAC & Commercial Services ($3.2M Asking)**
    - $4.1M Revenue, $890K Reported SDE, $65K Disallowed Add-Backs, and recurring maintenance agreement revenue.
-3. **💻 Enterprise B2B SaaS ($8.5M Asking)**
-   - $4.2M ARR, 84% Gross Margin, $850K IP Book Value, 18% Customer Concentration, High Capital Efficiency.
+3. **💻 Enterprise B2B SaaS ($6.5M Asking)**
+   - $3.4M ARR, 82% Gross Margin, $850K IP Book Value, 18% Customer Concentration, High Capital Efficiency.
 
 ---
 

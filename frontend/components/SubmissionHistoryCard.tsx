@@ -1210,7 +1210,7 @@ export default function SubmissionHistoryCard({
                                                 <ExpandableInsightGroup
                                                     title="Red Flags"
                                                     items={redFlags}
-                                                    tone="destructive"
+                                                    colorTheme="destructive"
                                                     itemCount={redFlags.length}
                                                     className="border-destructive/30 bg-destructive/5"
                                                     emptyLabel="No red flags recorded."
@@ -1221,7 +1221,7 @@ export default function SubmissionHistoryCard({
                                                 <ExpandableInsightGroup
                                                     title="Yellow Flags"
                                                     items={yellowFlags}
-                                                    tone="warning"
+                                                    colorTheme="warning"
                                                     itemCount={yellowFlags.length}
                                                     className="border-warning/30 bg-warning/5"
                                                     emptyLabel="No yellow flags recorded."
@@ -1232,7 +1232,7 @@ export default function SubmissionHistoryCard({
                                                 <ExpandableInsightGroup
                                                     title="Green Flags / Strengths"
                                                     items={greenFlags}
-                                                    tone="success"
+                                                    colorTheme="success"
                                                     itemCount={greenFlags.length}
                                                     className="border-success/30 bg-success/5"
                                                     emptyLabel="No green flags recorded."
@@ -1243,7 +1243,7 @@ export default function SubmissionHistoryCard({
                                                 <ExpandableInsightGroup
                                                     title="Open Diligence Questions"
                                                     items={openQuestions}
-                                                    tone="default"
+                                                    colorTheme="default"
                                                     itemCount={openQuestions.length}
                                                     className="border-border bg-background"
                                                     emptyLabel="No open questions recorded."
@@ -1254,7 +1254,7 @@ export default function SubmissionHistoryCard({
                                                 <ExpandableInsightGroup
                                                     title="Negotiation Levers"
                                                     items={negotiationLevers}
-                                                    tone="default"
+                                                    colorTheme="default"
                                                     itemCount={negotiationLevers.length}
                                                     className="border-border bg-background"
                                                     emptyLabel="No negotiation levers recorded."

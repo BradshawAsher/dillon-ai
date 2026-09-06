@@ -30,6 +30,9 @@ describe('workingCapitalPeg utility', () => {
         expect(result.definitiveAgreementClause).toContain('SECTION 2.4 Working Capital Adjustment')
         expect(result.definitiveAgreementClause).toContain('Cascadia Climate Services, Inc.')
         expect(result.definitiveAgreementClause).toContain('trailing twelve (12) month')
+        expect(result.definitiveAgreementClause).toContain('ILLUSTRATIVE DRAFT')
+        expect(result.isIllustrative).toBe(true)
+        expect(result.assumedInputs[0]).toContain('synthetically modeled')
     })
 
     it('calculates 6m and 24m timeframes correctly', () => {
@@ -73,5 +76,13 @@ describe('workingCapitalPeg utility', () => {
         expect(Number.isFinite(result.closingEstimatedNwc)).toBe(true)
         expect(result.adjustmentType).toBeDefined()
         expect(Number.isFinite(result.adjustmentAmount)).toBe(true)
+    })
+
+    it('does not invent a $12.4M company when revenue is missing', () => {
+        const result = calculateWorkingCapitalPeg({ documentedFactsJson: '{}' } as any)
+        expect(result.monthlyData).toEqual([])
+        expect(result.targetPeg).toBe(0)
+        expect(result.definitiveAgreementClause).toBe('')
+        expect(result.assumedInputs[0]).toContain('revenue is missing')
     })
 })

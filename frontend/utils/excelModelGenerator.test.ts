@@ -74,6 +74,9 @@ describe('excelModelGenerator', () => {
         expect(wsReturns).toBeDefined()
         expect(wsReturns?.rowCount).toBeGreaterThanOrEqual(7)
         expect((wsReturns?.getCell('B2').value as any)?.formula).toContain('5-Yr Projections & Cash Flow')
+        expect((wsReturns?.getCell('C2').value as any)?.formula).not.toContain('*0.5')
+        expect((wsReturns?.getCell('D2').value as any)?.formula).toContain('B12:F12')
+        expect((wsReturns?.getCell('E2').value as any)?.formula).toContain('IRR(')
 
         const wsAudit = wb.getWorksheet('Documented Facts Audit Trail')
         expect(wsAudit).toBeDefined()
