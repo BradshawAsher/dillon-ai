@@ -3,6 +3,7 @@ import { Focus } from 'lucide-react'
 
 import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
+import { normalizePercentageFraction, DEAL_MATH_DEFAULTS } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
 
@@ -63,10 +64,10 @@ export default function SensitivityRankingCard({ model }: Props) {
         const ebitdaMargin = model.baseEbitdaMargin ?? 0.20
         const exitMult = model.exitMultiple ?? 4.0
         const holdPeriod = model.holdPeriodYears ?? 5
-        const intRate = model.interestRate ?? 0.07
-        const taxRate = model.taxRate ?? 0.25
-        const capex = model.maintenanceCapex ?? (rev * 0.02)
-        const fees = model.transactionFees ?? 0
+        const intRate = normalizePercentageFraction(model.interestRate) ?? DEAL_MATH_DEFAULTS.interestRate
+        const taxRate = normalizePercentageFraction(model.taxRate) ?? DEAL_MATH_DEFAULTS.taxRate
+        const capex = model.maintenanceCapex ?? DEAL_MATH_DEFAULTS.maintenanceCapex
+        const fees = model.transactionFees ?? DEAL_MATH_DEFAULTS.transactionFees
 
         const baseMoic = computeMoic(ebitda, rev, price, growthRate, ebitdaMargin, exitMult, holdPeriod, intRate, taxRate, capex, fees)
 

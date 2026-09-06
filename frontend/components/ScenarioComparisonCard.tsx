@@ -3,7 +3,7 @@ import { ChartNoAxesCombined } from 'lucide-react'
 import type { DealModel } from '../hooks/backend/diligence'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
-import { calculateIrr, normalizePercentageFraction } from '../utils/dealMath'
+import { calculateIrr, normalizePercentageFraction, DEAL_MATH_DEFAULTS } from '../utils/dealMath'
 import { buildDerivedEvidence, buildFactEvidence, parseDocumentedFacts, type EvidenceItem } from '../utils/evidence'
 import { safeFormatCurrency } from '../utils/diligenceDashboardUtils'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
@@ -28,9 +28,9 @@ export default function ScenarioComparisonCard({ model, documents = [], onOpenEv
     const revenueEvidence = buildFactEvidence({ field: 'revenue', title: 'Starting revenue', facts: parsedFacts, documents })
     const years = model.holdPeriodYears ?? 5
     const price = model.purchasePrice ?? model.askingPrice
-    const initial = price === null ? null : price + (model.transactionFees ?? 0) + (model.workingCapitalRequirement ?? 0)
-    const taxRate = normalizePercentageFraction(model.taxRate) ?? 0.25
-    const capex = model.maintenanceCapex ?? 0
+    const initial = price === null ? null : price + (model.transactionFees ?? DEAL_MATH_DEFAULTS.transactionFees) + (model.workingCapitalRequirement ?? DEAL_MATH_DEFAULTS.workingCapital)
+    const taxRate = normalizePercentageFraction(model.taxRate) ?? DEAL_MATH_DEFAULTS.taxRate
+    const capex = model.maintenanceCapex ?? DEAL_MATH_DEFAULTS.maintenanceCapex
     const exitCosts = model.exitCosts ?? 0
     const scenarios = [
         ['Bear', normalizePercentageFraction(model.bearRevenueGrowth) ?? 0, normalizePercentageFraction(model.bearEbitdaMargin) ?? 0.15, model.bearExitMultiple ?? 3],

@@ -3,7 +3,7 @@ import { Activity } from 'lucide-react'
 
 import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
-import { resolveLoanTermYears } from '../utils/dealMath'
+import { resolveLoanTermYears, normalizePercentageFraction, DEAL_MATH_DEFAULTS, computeAmortizingLoan } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
 
@@ -34,7 +34,7 @@ export default function KeyMetricsTrendCard({ model }: Props) {
         const baseRevenue = revenue ?? ebitda / margin
         const exitMult = model.exitMultiple ?? 4.0
         const debt = model.seniorDebtAmount ?? 0
-        const rate = model.interestRate ?? 0.07
+        const rate = normalizePercentageFraction(model.interestRate) ?? DEAL_MATH_DEFAULTS.interestRate
         const term = resolveLoanTermYears(model.amortizationYears, model.loanTermYears)
 
         const results: MetricProjection[] = []
@@ -69,7 +69,7 @@ export default function KeyMetricsTrendCard({ model }: Props) {
         })
 
         if (debt > 0) {
-            const monthlyPayment = (debt * (rate / 12)) / (1 - Math.pow(1 + rate / 12, -term * 12))
+            const monthlyPayment = computeAmortizingLoan(debt, rate, term)?.monthlyPayment ?? 0
             const paidAfter3 = Array.from({ length: 36 }).reduce<number>((bal, _, i) => {
                 const interest = bal * (rate / 12)
                 const principal = monthlyPayment - interest

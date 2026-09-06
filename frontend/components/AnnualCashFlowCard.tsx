@@ -3,7 +3,7 @@ import { Banknote } from 'lucide-react'
 
 import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
-import { computeAmortizingLoan, normalizeEquityFraction, normalizePercentageFraction, resolveLoanTermYears } from '../utils/dealMath'
+import { computeAmortizingLoan, normalizeEquityFraction, normalizePercentageFraction, resolveLoanTermYears, DEAL_MATH_DEFAULTS } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
 
@@ -26,12 +26,12 @@ export default function AnnualCashFlowCard({ model }: Props) {
 
         if (!price || !ebitda) return null
 
-        const taxRate = normalizePercentageFraction(model.taxRate) ?? 0.25
-        const capex = model.maintenanceCapex ?? 0
+        const taxRate = normalizePercentageFraction(model.taxRate) ?? DEAL_MATH_DEFAULTS.taxRate
+        const capex = model.maintenanceCapex ?? DEAL_MATH_DEFAULTS.maintenanceCapex
 
         const equityPct = normalizeEquityFraction(model.equityContributionPercent) * 100
         const debt = price * (1 - equityPct / 100) - (model.sellerNoteAmount ?? 0)
-        const rate = normalizePercentageFraction(model.interestRate) ?? 0.07
+        const rate = normalizePercentageFraction(model.interestRate) ?? DEAL_MATH_DEFAULTS.interestRate
         const amortYears = resolveLoanTermYears(model.amortizationYears, model.loanTermYears)
         const annualDebtService = computeAmortizingLoan(Math.max(0, debt), rate, amortYears)?.annualDebtService ?? 0
 

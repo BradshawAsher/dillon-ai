@@ -4,6 +4,7 @@ import { Zap } from 'lucide-react'
 import type { DealModel } from '../hooks/backend/diligence'
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
+import { normalizePercentageFraction, DEAL_MATH_DEFAULTS } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
 
@@ -96,8 +97,9 @@ export default function QuickWinsCard({ model, synthesis }: Props) {
         }
 
         const debt = model.seniorDebtAmount ?? 0
-        if (debt > 0 && (model.interestRate ?? 0) > 0.06) {
-            const rateSavings = debt * ((model.interestRate ?? 0.07) - 0.06)
+        const normalizedRate = normalizePercentageFraction(model.interestRate) ?? DEAL_MATH_DEFAULTS.interestRate
+        if (debt > 0 && normalizedRate > 0.06) {
+            const rateSavings = debt * (normalizedRate - 0.06)
             result.push({
                 title: 'Shop for lower interest rate',
                 impact: `Save $${Math.round(rateSavings).toLocaleString()}/yr in interest`,

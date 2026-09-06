@@ -3,6 +3,7 @@ import { TrendingUp } from 'lucide-react'
 
 import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
+import { normalizePercentageFraction, DEAL_MATH_DEFAULTS } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
 
@@ -18,10 +19,10 @@ export default function PaybackTimelineCard({ model }: Props) {
 
         if (!price || !ebitda || ebitda <= 0) return null
 
-        const taxRate = model.taxRate ?? 0.25
-        const capex = model.maintenanceCapex ?? 0
-        const transactionFees = model.transactionFees ?? 0
-        const workingCapital = model.workingCapitalRequirement ?? 0
+        const taxRate = normalizePercentageFraction(model.taxRate) ?? DEAL_MATH_DEFAULTS.taxRate
+        const capex = model.maintenanceCapex ?? DEAL_MATH_DEFAULTS.maintenanceCapex
+        const transactionFees = model.transactionFees ?? DEAL_MATH_DEFAULTS.transactionFees
+        const workingCapital = model.workingCapitalRequirement ?? DEAL_MATH_DEFAULTS.workingCapital
         const totalInvestment = price + transactionFees + workingCapital
         const growth = model.baseRevenueGrowth ?? 0.05
 

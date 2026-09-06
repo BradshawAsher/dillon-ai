@@ -3,7 +3,7 @@ import { Shield } from 'lucide-react'
 
 import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
-import { computeAmortizingLoan, normalizeEquityFraction, normalizePercentageFraction, resolveLoanTermYears } from '../utils/dealMath'
+import { computeAmortizingLoan, normalizeEquityFraction, normalizePercentageFraction, resolveLoanTermYears, DEAL_MATH_DEFAULTS } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
 
@@ -29,10 +29,10 @@ export default function DebtServiceCoverageCard({ model }: Props) {
 
         if (!price || !ebitda || ebitda <= 0) return null
 
-        const taxRate = normalizePercentageFraction(model.taxRate) ?? 0.25
+        const taxRate = normalizePercentageFraction(model.taxRate) ?? DEAL_MATH_DEFAULTS.taxRate
         const equity = price * normalizeEquityFraction(model.equityContributionPercent)
         const debt = price - equity - (model.sellerNoteAmount ?? 0)
-        const rate = normalizePercentageFraction(model.interestRate) ?? 0.07
+        const rate = normalizePercentageFraction(model.interestRate) ?? DEAL_MATH_DEFAULTS.interestRate
         const amortYears = resolveLoanTermYears(model.amortizationYears, model.loanTermYears)
         const annualDebtService = computeAmortizingLoan(Math.max(0, debt), rate, amortYears)?.annualDebtService ?? 0
 

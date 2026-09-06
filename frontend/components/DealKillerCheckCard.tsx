@@ -3,7 +3,7 @@ import { AlertOctagon } from 'lucide-react'
 
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
-import { normalizeEquityFraction } from '../utils/dealMath'
+import { normalizeEquityFraction, normalizePercentageFraction, DEAL_MATH_DEFAULTS, resolveLoanTermYears, computeAmortizingLoan } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
 import InPlaceEvidencePopover, { EvidenceDetails } from './InPlaceEvidencePopover'
@@ -30,16 +30,12 @@ export default function DealKillerCheckCard({ model, synthesis }: Props) {
 
         if (!price || !ebitda || ebitda <= 0) return null
 
-        const taxRate = model.taxRate ?? 0.25
+        const taxRate = normalizePercentageFraction(model.taxRate) ?? DEAL_MATH_DEFAULTS.taxRate
         const debt = price - price * normalizeEquityFraction(model.equityContributionPercent) - (model.sellerNoteAmount ?? 0)
-        const rate = model.interestRate ?? 0.07
-        const amortYears = model.amortizationYears ?? 10
+        const rate = normalizePercentageFraction(model.interestRate) ?? DEAL_MATH_DEFAULTS.interestRate
+        const amortYears = resolveLoanTermYears(model.amortizationYears, model.loanTermYears)
 
-        const monthlyRate = rate / 12
-        const nPayments = amortYears * 12
-        const monthlyPayment = debt > 0 && monthlyRate > 0
-            ? debt * (monthlyRate * Math.pow(1 + monthlyRate, nPayments)) / (Math.pow(1 + monthlyRate, nPayments) - 1)
-            : 0
+        const monthlyPayment = computeAmortizingLoan(Math.max(0, debt), rate, amortYears)?.monthlyPayment ?? 0
         const annualDebtService = monthlyPayment * 12
         const afterTaxEbitda = ebitda * (1 - taxRate)
         const dscr = annualDebtService > 0 ? afterTaxEbitda / annualDebtService : 99

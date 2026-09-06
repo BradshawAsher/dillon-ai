@@ -4,6 +4,7 @@ import { Award, ChevronDown, ChevronUp } from 'lucide-react'
 import type { DealModel } from '../hooks/backend/diligence'
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
+import { normalizePercentageFraction, DEAL_MATH_DEFAULTS } from '../utils/dealMath'
 import CardInfoPopover from './common/CardInfoPopover'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { computeDealGrade } from '../utils/dealGrade'
@@ -91,8 +92,8 @@ export default function DealGradeCard({ model, synthesis }: Props) {
 
     // Payback dimension (0-3 points)
     if (price && ebitda && ebitda > 0) {
-        const taxRate = model.taxRate ?? 0.25
-        const annualCash = ebitda * (1 - taxRate) - (model.maintenanceCapex ?? 0)
+        const taxRate = normalizePercentageFraction(model.taxRate) ?? DEAL_MATH_DEFAULTS.taxRate
+        const annualCash = ebitda * (1 - taxRate) - (model.maintenanceCapex ?? DEAL_MATH_DEFAULTS.maintenanceCapex)
         if (annualCash > 0) {
             const payback = price / annualCash
             let score = 0

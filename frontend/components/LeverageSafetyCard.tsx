@@ -3,7 +3,7 @@ import { ShieldAlert, TrendingDown, Layers } from 'lucide-react'
 
 import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
-import { resolveLoanTermYears } from '../utils/dealMath'
+import { resolveLoanTermYears, normalizePercentageFraction, DEAL_MATH_DEFAULTS, computeAmortizingLoan } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
 import DataOriginBadge from './common/DataOriginBadge'
@@ -35,18 +35,19 @@ export default function LeverageSafetyCard({ model }: Props) {
         const sellerNote = rawSellerNote > 0 ? rawSellerNote : (rawDebt + rawSellerNote > 0 ? 0 : 750_000)
         const totalDebt = debt + sellerNote
 
-        const baseRate = model.interestRate ?? 0.08
+        const baseRate = normalizePercentageFraction(model.interestRate) ?? DEAL_MATH_DEFAULTS.interestRate
         const term = resolveLoanTermYears(model.amortizationYears, model.loanTermYears)
         const calcDebtService = (rate: number) => {
             if (debt <= 0) return 0
-            return (debt * (rate / 12)) / (1 - Math.pow(1 + rate / 12, -term * 12)) * 12
+            return (computeAmortizingLoan(debt, rate, term)?.monthlyPayment ?? 0) * 12
         }
 
-        const sellerNoteRate = 0.05
-        const sellerNoteService = sellerNote * sellerNoteRate + (sellerNote / (model.holdPeriodYears ?? 5))
+        const sellerNoteService = sellerNote > 0
+            ? (computeAmortizingLoan(sellerNote, DEAL_MATH_DEFAULTS.sellerNoteRate, DEAL_MATH_DEFAULTS.sellerNoteTermYears)?.annualDebtService ?? 0)
+            : 0
         const totalDebtServiceBase = calcDebtService(baseRate) + sellerNoteService
 
-        const taxRate = model.taxRate ?? 0.25
+        const taxRate = normalizePercentageFraction(model.taxRate) ?? DEAL_MATH_DEFAULTS.taxRate
         const afterTaxEbitda = ebitda * (1 - taxRate)
 
         const currentDscr = totalDebtServiceBase > 0 ? afterTaxEbitda / totalDebtServiceBase : Infinity

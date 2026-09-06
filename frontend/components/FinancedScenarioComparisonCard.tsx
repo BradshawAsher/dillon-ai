@@ -4,7 +4,7 @@ import type { DealModel } from '../hooks/backend/diligence'
 import { Badge } from '../lib/shadcn/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { GrowthLineChart, type ChartDatum } from './DealCharts'
-import { calculateIrr, computeAmortizingLoan, normalizeEquityFraction, normalizePercentageFraction, resolveLoanTermYears } from '../utils/dealMath'
+import { calculateIrr, computeAmortizingLoan, normalizeEquityFraction, normalizePercentageFraction, resolveLoanTermYears, DEAL_MATH_DEFAULTS } from '../utils/dealMath'
 import InfoTip, { FINANCIAL_TERMS } from './InfoTip'
 import CardInfoPopover from './common/CardInfoPopover'
 
@@ -26,15 +26,15 @@ type Scenario = { name: 'Bear' | 'Base' | 'Bull'; growth: number; margin: number
 export default function FinancedScenarioComparisonCard({ model }: { model: DealModel }) {
     const revenue = documentedRevenue(model)
     const price = model.purchasePrice ?? model.askingPrice
-    const fees = model.transactionFees ?? 0
-    const workingCapital = model.workingCapitalRequirement ?? 0
+    const fees = model.transactionFees ?? DEAL_MATH_DEFAULTS.transactionFees
+    const workingCapital = model.workingCapitalRequirement ?? DEAL_MATH_DEFAULTS.workingCapital
     const equityPercent = normalizeEquityFraction(model.equityContributionPercent)
     const sellerNote = model.sellerNoteAmount ?? 0
-    const rate = normalizePercentageFraction(model.interestRate) ?? 0.1
+    const rate = normalizePercentageFraction(model.interestRate) ?? DEAL_MATH_DEFAULTS.interestRate
     const amortizationYears = resolveLoanTermYears(model.amortizationYears, model.loanTermYears)
     const holdPeriod = Math.max(1, Math.floor(model.holdPeriodYears ?? 5))
-    const tax = normalizePercentageFraction(model.taxRate) ?? 0.25
-    const capex = model.maintenanceCapex ?? 0
+    const tax = normalizePercentageFraction(model.taxRate) ?? DEAL_MATH_DEFAULTS.taxRate
+    const capex = model.maintenanceCapex ?? DEAL_MATH_DEFAULTS.maintenanceCapex
     const exitCosts = model.exitCosts ?? 0
     const uses = price === null ? null : price + fees + workingCapital
     const debt = uses === null ? null : Math.max(0, uses * (1 - equityPercent) - sellerNote)

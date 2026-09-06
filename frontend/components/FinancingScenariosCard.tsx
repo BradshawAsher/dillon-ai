@@ -3,7 +3,7 @@ import { Landmark } from 'lucide-react'
 
 import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
-import { computeAmortizingLoan, normalizePercentageFraction, resolveLoanTermYears } from '../utils/dealMath'
+import { computeAmortizingLoan, normalizePercentageFraction, resolveLoanTermYears, DEAL_MATH_DEFAULTS } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
 import CardInfoPopover from './common/CardInfoPopover'
@@ -36,10 +36,10 @@ export default function FinancingScenariosCard({ model }: Props) {
         const price = model.purchasePrice ?? model.askingPrice
         if (!ebitda || !price || ebitda <= 0) return null
 
-        const rate = normalizePercentageFraction(model.interestRate) ?? 0.07
+        const rate = normalizePercentageFraction(model.interestRate) ?? DEAL_MATH_DEFAULTS.interestRate
         const term = resolveLoanTermYears(model.amortizationYears, model.loanTermYears)
-        const taxRate = normalizePercentageFraction(model.taxRate) ?? 0.25
-        const operatingCashFlow = ebitda * (1 - taxRate) - (model.maintenanceCapex ?? 0)
+        const taxRate = normalizePercentageFraction(model.taxRate) ?? DEAL_MATH_DEFAULTS.taxRate
+        const operatingCashFlow = ebitda * (1 - taxRate) - (model.maintenanceCapex ?? DEAL_MATH_DEFAULTS.maintenanceCapex)
 
         const configs = [
             { label: 'All Cash', pct: 1.0 },
@@ -80,7 +80,7 @@ export default function FinancingScenariosCard({ model }: Props) {
                         <CardTitle className="text-lg">Financing scenarios</CardTitle>
                         <CardInfoPopover cardId="financing-scenarios" />
                     </div>
-                    <Badge variant="outline">{((normalizePercentageFraction(model.interestRate) ?? 0.07) * 100).toFixed(1)}% rate · {resolveLoanTermYears(model.amortizationYears, model.loanTermYears)}yr term</Badge>
+                    <Badge variant="outline">{((normalizePercentageFraction(model.interestRate) ?? DEAL_MATH_DEFAULTS.interestRate) * 100).toFixed(1)}% rate · {resolveLoanTermYears(model.amortizationYears, model.loanTermYears)}yr term</Badge>
                 </div>
             </CardHeader>
             <CardContent className="p-4">

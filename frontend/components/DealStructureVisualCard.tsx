@@ -4,8 +4,8 @@ import type { DealModel } from '../hooks/backend/diligence'
 import { Badge } from '../lib/shadcn/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
-import { buildDerivedEvidence, type EvidenceItem } from '../utils/evidence'
-import { parseDocumentedFacts } from '../utils/evidence'
+import { buildDerivedEvidence, type EvidenceItem, parseDocumentedFacts } from '../utils/evidence'
+import { normalizeEquityFraction, normalizePercentageFraction, DEAL_MATH_DEFAULTS, resolveLoanTermYears, computeAmortizingLoan } from '../utils/dealMath'
 import { MoneyBarChart } from './DealCharts'
 import DataOriginBadge from './common/DataOriginBadge'
 
@@ -23,7 +23,7 @@ export default function DealStructureVisualCard({ model, onOpenEvidence }: { mod
     const fees = model.transactionFees ?? (isIllustrativePreview ? 10_000 : 0)
     const workingCapital = model.workingCapitalRequirement ?? (isIllustrativePreview ? 20_000 : 0)
     const sellerNote = model.sellerNoteAmount ?? 0
-    const equityPercent = model.equityContributionPercent ?? 0.3
+    const equityPercent = normalizeEquityFraction(model.equityContributionPercent) ?? 0.3
     const uses = price + fees + workingCapital
     const equity = uses * equityPercent
     const seniorDebt = Math.max(0, uses - equity - sellerNote)
@@ -39,11 +39,11 @@ export default function DealStructureVisualCard({ model, onOpenEvidence }: { mod
     const facts = parseDocumentedFacts(model.documentedFactsJson)
     const ebitda = facts.ebitda_sde?.status === 'confirmed' && typeof facts.ebitda_sde.value === 'number' ? facts.ebitda_sde.value : null
     const leverage = ebitda !== null && ebitda > 0 ? seniorDebt / ebitda : null
-    const taxRate = model.taxRate ?? 0.25
-    const capex = model.maintenanceCapex ?? 0
-    const interestRate = model.interestRate ?? 0.1
-    const amortizationYears = Math.max(1, model.amortizationYears ?? 10)
-    const annualDebtService = seniorDebt === 0 ? 0 : interestRate === 0 ? seniorDebt / amortizationYears : seniorDebt * ((interestRate * (1 + interestRate) ** amortizationYears) / ((1 + interestRate) ** amortizationYears - 1))
+    const taxRate = normalizePercentageFraction(model.taxRate) ?? DEAL_MATH_DEFAULTS.taxRate
+    const capex = model.maintenanceCapex ?? DEAL_MATH_DEFAULTS.maintenanceCapex
+    const interestRate = normalizePercentageFraction(model.interestRate) ?? DEAL_MATH_DEFAULTS.interestRate
+    const amortizationYears = resolveLoanTermYears(model.amortizationYears, model.loanTermYears)
+    const annualDebtService = (computeAmortizingLoan(seniorDebt, interestRate, amortizationYears)?.monthlyPayment ?? 0) * 12
     const operatingCashFlow = ebitda === null ? null : ebitda * (1 - taxRate) - capex
     const dscr = operatingCashFlow !== null && annualDebtService > 0 ? operatingCashFlow / annualDebtService : null
     const hasIllustrativeFinancing = isIllustrativePreview || model.interestRate === null || model.interestRate === undefined || model.amortizationYears === null || model.amortizationYears === undefined

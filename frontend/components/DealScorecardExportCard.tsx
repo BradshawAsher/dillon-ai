@@ -4,7 +4,7 @@ import { Award, Check, Copy, AlertOctagon, AlertTriangle, CheckCircle2 } from 'l
 import type { DealModel } from '../hooks/backend/diligence'
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
-import { normalizeEquityFraction } from '../utils/dealMath'
+import { normalizeEquityFraction, normalizePercentageFraction, DEAL_MATH_DEFAULTS } from '../utils/dealMath'
 import { copyToClipboard } from '../utils/clipboard'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
@@ -57,12 +57,12 @@ export default function DealScorecardExportCard({ model, synthesis, projectName 
         const multiple = price / ebitda
         const margin = revenue && revenue > 0 ? ebitda / revenue : (model.baseEbitdaMargin ?? 0.20)
         const growth = model.baseRevenueGrowth ?? 0.05
-        const taxRate = model.taxRate ?? 0.25
+        const taxRate = normalizePercentageFraction(model.taxRate) ?? DEAL_MATH_DEFAULTS.taxRate
         const holdYears = model.holdPeriodYears ?? 5
         const exitMult = model.exitMultiple ?? 4.0
 
         // Key metrics
-        const afterTaxCash = ebitda * (1 - taxRate) - (model.maintenanceCapex ?? 0)
+        const afterTaxCash = ebitda * (1 - taxRate) - (model.maintenanceCapex ?? DEAL_MATH_DEFAULTS.maintenanceCapex)
         const payback = afterTaxCash > 0 ? price / afterTaxCash : 0
 
         const futureRevenue = (revenue ?? ebitda / margin) * Math.pow(1 + growth, holdYears)
@@ -140,7 +140,7 @@ export default function DealScorecardExportCard({ model, synthesis, projectName 
         const equity = price * (equityPct / 100)
         const sellerNote = model.sellerNoteAmount ?? 0
         const seniorDebt = price - equity - sellerNote
-        const rate = model.interestRate ?? 0.07
+        const rate = normalizePercentageFraction(model.interestRate) ?? DEAL_MATH_DEFAULTS.interestRate
         const financingSummary = `Equity: $${Math.round(equity).toLocaleString()} (${equityPct}%) | Senior debt: $${Math.round(seniorDebt).toLocaleString()} at ${(rate * 100).toFixed(1)}%${sellerNote > 0 ? ` | Seller note: $${Math.round(sellerNote).toLocaleString()}` : ''}`
 
         // Recommendation logic (mirrors DealGradeCard scoring)

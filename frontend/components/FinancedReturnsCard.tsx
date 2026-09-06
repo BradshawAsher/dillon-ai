@@ -4,7 +4,7 @@ import type { ReactNode } from 'react'
 import type { DealModel } from '../hooks/backend/diligence'
 import { Badge } from '../lib/shadcn/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
-import { calculateIrr, computeAmortizingLoan, normalizeEquityFraction, normalizePercentageFraction, resolveLoanTermYears } from '../utils/dealMath'
+import { calculateIrr, computeAmortizingLoan, normalizeEquityFraction, normalizePercentageFraction, resolveLoanTermYears, DEAL_MATH_DEFAULTS } from '../utils/dealMath'
 import { buildDerivedEvidence, buildFactEvidence, parseDocumentedFacts, type EvidenceItem } from '../utils/evidence'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import { CashFlowChart } from './DealCharts'
@@ -78,16 +78,16 @@ export default function FinancedReturnsCard({ model, documents = [], onOpenEvide
     const ebitda = (ebitdaFact?.status === 'confirmed' || ebitdaFact?.status === 'illustrative') && typeof ebitdaFact.value === 'number' ? ebitdaFact.value : null
     const priceIsConfirmed = model.purchasePrice !== null && model.purchasePrice !== undefined
     const price = model.purchasePrice ?? model.askingPrice
-    const tax = normalizePercentageFraction(model.taxRate) ?? 0.25
+    const tax = normalizePercentageFraction(model.taxRate) ?? DEAL_MATH_DEFAULTS.taxRate
     const equityPct = normalizeEquityFraction(model.equityContributionPercent)
-    const rate = normalizePercentageFraction(model.interestRate) ?? 0.1
+    const rate = normalizePercentageFraction(model.interestRate) ?? DEAL_MATH_DEFAULTS.interestRate
     const amortizationYears = resolveLoanTermYears(model.amortizationYears, model.loanTermYears)
     const holdPeriod = Math.max(1, Math.floor(model.holdPeriodYears ?? 5))
     const exitMultiple = model.exitMultiple ?? 4
-    const exitCosts = model.exitCosts ?? (ebitda === null ? 0 : ebitda * exitMultiple * 0.02)
-    const capex = model.maintenanceCapex ?? 0
-    const fees = model.transactionFees ?? 0
-    const wc = model.workingCapitalRequirement ?? 0
+    const exitCosts = model.exitCosts ?? (ebitda === null ? 0 : ebitda * exitMultiple * DEAL_MATH_DEFAULTS.exitCostRate)
+    const capex = model.maintenanceCapex ?? DEAL_MATH_DEFAULTS.maintenanceCapex
+    const fees = model.transactionFees ?? DEAL_MATH_DEFAULTS.transactionFees
+    const wc = model.workingCapitalRequirement ?? DEAL_MATH_DEFAULTS.workingCapital
     const sellerNote = model.sellerNoteAmount ?? 0
     const uses = price === null ? null : price + fees + wc
     const debt = uses === null ? null : Math.max(0, uses * (1 - equityPct) - sellerNote)

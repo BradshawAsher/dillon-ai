@@ -3,7 +3,7 @@ import { CalendarDays } from 'lucide-react'
 
 import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
-import { resolveLoanTermYears } from '../utils/dealMath'
+import { resolveLoanTermYears, normalizePercentageFraction, DEAL_MATH_DEFAULTS, computeAmortizingLoan } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
 
@@ -24,16 +24,14 @@ export default function WeeklyProjectionCard({ model }: Props) {
         const annualRevenue = revenue ?? ebitda / margin
         const monthlyRevenue = annualRevenue / 12
         const monthlyEbitda = ebitda / 12
-        const taxRate = model.taxRate ?? 0.25
-        // maintenanceCapex is an absolute annual dollar amount; only the fallback
-        // is expressed as 2% of revenue.
-        const annualCapex = model.maintenanceCapex ?? (annualRevenue * 0.02)
+        const taxRate = normalizePercentageFraction(model.taxRate) ?? DEAL_MATH_DEFAULTS.taxRate
+        const annualCapex = model.maintenanceCapex ?? DEAL_MATH_DEFAULTS.maintenanceCapex
         const monthlyCapex = annualCapex / 12
 
         const debt = model.seniorDebtAmount ?? 0
-        const rate = model.interestRate ?? 0.07
+        const rate = normalizePercentageFraction(model.interestRate) ?? DEAL_MATH_DEFAULTS.interestRate
         const term = resolveLoanTermYears(model.amortizationYears, model.loanTermYears)
-        const monthlyDebt = debt > 0 ? (debt * (rate / 12)) / (1 - Math.pow(1 + rate / 12, -term * 12)) : 0
+        const monthlyDebt = computeAmortizingLoan(Math.max(0, debt), rate, term)?.monthlyPayment ?? 0
 
         const months = []
         let cumulative = -(model.equityAmount ?? price - debt - (model.sellerNoteAmount ?? 0))

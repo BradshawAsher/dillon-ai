@@ -38,6 +38,8 @@ export const DEAL_MATH_DEFAULTS = {
     workingCapital: 0,
     taxRate: 0.25,
     maintenanceCapex: 0,
+    /** Default senior debt interest rate when none is saved. */
+    interestRate: 0.07,
     holdPeriodYears: 5,
     /**
      * Last-resort exit multiple, used only when the entry multiple cannot be
@@ -48,6 +50,12 @@ export const DEAL_MATH_DEFAULTS = {
     exitCostRate: 0.02,
     /** Amortization/loan term in years, used when none is saved. */
     loanTermYears: 10,
+    /** Seller note coupon rate — no DealModel field yet, so centralized here. */
+    sellerNoteRate: 0.05,
+    /** Seller note amortization term in years. */
+    sellerNoteTermYears: 5,
+    /** Maintenance capex as a fraction of revenue, used only in the Excel export. */
+    capexRevenueRatio: 0.03,
 } as const
 
 /**

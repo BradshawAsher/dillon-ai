@@ -3,7 +3,7 @@ import { Vault } from 'lucide-react'
 
 import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
-import { resolveLoanTermYears } from '../utils/dealMath'
+import { resolveLoanTermYears, normalizePercentageFraction, DEAL_MATH_DEFAULTS, computeAmortizingLoan } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
 
@@ -30,9 +30,9 @@ export default function CashReserveAnalysisCard({ model }: Props) {
         const monthlyRevenue = (revenue ?? ebitda / (model.baseEbitdaMargin ?? 0.20)) / 12
         const monthlyOpex = monthlyRevenue - (ebitda / 12)
         const debt = model.seniorDebtAmount ?? 0
-        const rate = model.interestRate ?? 0.07
+        const rate = normalizePercentageFraction(model.interestRate) ?? DEAL_MATH_DEFAULTS.interestRate
         const term = resolveLoanTermYears(model.amortizationYears, model.loanTermYears)
-        const monthlyDebt = debt > 0 ? (debt * (rate / 12)) / (1 - Math.pow(1 + rate / 12, -term * 12)) : 0
+        const monthlyDebt = computeAmortizingLoan(Math.max(0, debt), rate, term)?.monthlyPayment ?? 0
 
         const reserves: ReserveItem[] = []
 

@@ -1,7 +1,7 @@
 import ExcelJS from 'exceljs'
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from './evidence'
-import { calculateIrr, computeAmortizingLoan, normalizeEquityFraction, normalizePercentageFraction, resolveLoanTermYears } from './dealMath'
+import { calculateIrr, computeAmortizingLoan, normalizeEquityFraction, normalizePercentageFraction, resolveLoanTermYears, DEAL_MATH_DEFAULTS } from './dealMath'
 import { calculateWorkingCapitalPeg } from './workingCapitalPeg'
 import { computeValuationBridge } from './valuationBridge'
 
@@ -45,20 +45,22 @@ export function buildLiveExcelWorkbook({
     const facts = parseDocumentedFacts(model.documentedFactsJson)
     const rawRevenue = typeof facts.revenue?.value === 'number' ? facts.revenue.value : 0
     const rawEbitda = typeof facts.ebitda_sde?.value === 'number' ? facts.ebitda_sde.value : 0
-    const rawGrossProfit = typeof facts.gross_profit?.value === 'number' ? facts.gross_profit.value : Math.round(rawRevenue * 0.45)
+    const documentedGrossProfit = typeof facts.gross_profit?.value === 'number' ? facts.gross_profit.value : null
+    const grossProfitIsAssumed = documentedGrossProfit === null
+    const rawGrossProfit = documentedGrossProfit ?? Math.round(rawRevenue * 0.45)
     const purchasePrice = model.purchasePrice && model.purchasePrice > 0 ? model.purchasePrice : (model.askingPrice && model.askingPrice > 0 ? model.askingPrice : 0)
     const askingPrice = model.askingPrice && model.askingPrice > 0 ? model.askingPrice : purchasePrice
 
-    const seniorDebtRate = normalizePercentageFraction(model.interestRate) ?? 0.08
+    const seniorDebtRate = normalizePercentageFraction(model.interestRate) ?? DEAL_MATH_DEFAULTS.interestRate
     const seniorDebtTerm = resolveLoanTermYears(model.amortizationYears, model.loanTermYears)
     const sellerNoteAmount = typeof model.sellerNoteAmount === 'number' && Number.isFinite(model.sellerNoteAmount)
         ? Math.max(0, model.sellerNoteAmount)
-        : Math.round(purchasePrice * 0.15)
+        : 0
     const fallbackEquity = purchasePrice * normalizeEquityFraction(model.equityContributionPercent)
     const seniorDebtAmount = typeof model.seniorDebtAmount === 'number' && Number.isFinite(model.seniorDebtAmount)
         ? Math.max(0, model.seniorDebtAmount)
         : Math.max(0, purchasePrice - fallbackEquity - sellerNoteAmount)
-    const taxRate = normalizePercentageFraction(model.taxRate) ?? 0.25
+    const taxRate = normalizePercentageFraction(model.taxRate) ?? DEAL_MATH_DEFAULTS.taxRate
     const growthRate = normalizePercentageFraction(model.baseRevenueGrowth) ?? 0.05
     const projectionYears = 5
     const buyerEquity = Math.max(0, purchasePrice - seniorDebtAmount - sellerNoteAmount)
@@ -95,12 +97,12 @@ export function buildLiveExcelWorkbook({
         ['Deal / Target Name', projectName, 'Target Entity'],
         ['Asking Price', askingPrice, 'Seller Teaser / CIM'],
         ['Agreed Purchase Price', purchasePrice, 'LOI Valuation'],
-        ['Senior Debt % of Purchase', seniorDebtAmount / purchasePrice, 'SBA 7(a) / Senior Bank'],
+        ['Senior Debt % of Purchase', purchasePrice > 0 ? seniorDebtAmount / purchasePrice : 0, 'SBA 7(a) / Senior Bank'],
         ['Senior Debt Financing ($)', { formula: 'B4*B5', result: seniorDebtAmount }, 'Senior Principal'],
         ['Senior Debt Interest Rate', seniorDebtRate, 'Annual Variable Rate'],
         ['Senior Debt Amortization (Years)', seniorDebtTerm, 'Amortization Period'],
         ['Seller Note Financing ($)', sellerNoteAmount, 'Subordinated Seller Note'],
-        ['Seller Note Interest Rate', 0.05, 'Subordinated Note Coupon'],
+        ['Seller Note Interest Rate', DEAL_MATH_DEFAULTS.sellerNoteRate, 'Subordinated Note Coupon'],
         ['Buyer Equity Injected ($)', { formula: 'B4-B6-B9', result: buyerEquity }, 'Sponsor Equity'],
         ['Corporate Tax Rate', taxRate, 'Federal + State Combined'],
         ['Annual Revenue Growth %', growthRate, 'Base Case CAGR'],
@@ -149,7 +151,7 @@ export function buildLiveExcelWorkbook({
     const projectedGrossProfit = projectedRevenue.map((revenue, index) => revenue - projectedCogs[index])
     const projectedOpex = projectedRevenue.map((revenue) => revenue * opexRatio)
     const projectedEbitda = projectedGrossProfit.map((grossProfit, index) => grossProfit - projectedOpex[index])
-    const projectedCapex = projectedRevenue.map((revenue) => revenue * 0.03)
+    const projectedCapex = projectedRevenue.map((revenue) => revenue * DEAL_MATH_DEFAULTS.capexRevenueRatio)
     const loanSchedule = computeAmortizingLoan(seniorDebtAmount, seniorDebtRate, seniorDebtTerm, projectionYears)
     const annualDebtService = loanSchedule?.annualDebtService ?? 0
     const seniorDebtAtExit = loanSchedule?.remainingBalance ?? seniorDebtAmount
@@ -167,7 +169,7 @@ export function buildLiveExcelWorkbook({
         formula: `${column}2*(B3/B2)`,
         result: projectedCogs[index + 1],
     }))])
-    wsModel.addRow(['Gross Profit', ...yearColumns.map((column, index) => ({ formula: `${column}2-${column}3`, result: projectedGrossProfit[index] }))])
+    wsModel.addRow([grossProfitIsAssumed ? 'Gross Profit [45% margin — assumed]' : 'Gross Profit', ...yearColumns.map((column, index) => ({ formula: `${column}2-${column}3`, result: projectedGrossProfit[index] }))])
     wsModel.addRow(['Gross Margin %', ...yearColumns.map((column, index) => ({ formula: `${column}4/${column}2`, result: projectedGrossProfit[index] / projectedRevenue[index] }))])
     wsModel.addRow(['Operating Expenses (SG&A)', rawOpex, ...yearColumns.slice(1).map((column, index) => ({
         formula: `${column}2*(B6/B2)`,
@@ -175,7 +177,7 @@ export function buildLiveExcelWorkbook({
     }))])
     wsModel.addRow(['Adjusted EBITDA', ...yearColumns.map((column, index) => ({ formula: `${column}4-${column}6`, result: projectedEbitda[index] }))])
     wsModel.addRow(['EBITDA Margin %', ...yearColumns.map((column, index) => ({ formula: `${column}7/${column}2`, result: projectedEbitda[index] / projectedRevenue[index] }))])
-    wsModel.addRow(['Capital Expenditures (Capex)', ...yearColumns.map((column, index) => ({ formula: `${column}2*0.03`, result: projectedCapex[index] }))])
+    wsModel.addRow([`Capital Expenditures (Capex) [${(DEAL_MATH_DEFAULTS.capexRevenueRatio * 100).toFixed(0)}% of Rev — assumed]`, ...yearColumns.map((column, index) => ({ formula: `${column}2*${DEAL_MATH_DEFAULTS.capexRevenueRatio}`, result: projectedCapex[index] }))])
     wsModel.addRow(['Annual Senior Debt Service', {
         formula: "IF('Assumptions & Structure'!$B$7=0,'Assumptions & Structure'!$B$6/'Assumptions & Structure'!$B$8,'Assumptions & Structure'!$B$6*('Assumptions & Structure'!$B$7/12)/(1-(1+'Assumptions & Structure'!$B$7/12)^(-'Assumptions & Structure'!$B$8*12))*12)",
         result: annualDebtService,

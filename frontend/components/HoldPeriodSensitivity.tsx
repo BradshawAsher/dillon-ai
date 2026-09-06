@@ -1,7 +1,7 @@
 import { Timer } from 'lucide-react'
 
 import type { DealModel } from '../hooks/backend/diligence'
-import { calculateIrr } from '../utils/dealMath'
+import { calculateIrr, normalizePercentageFraction, DEAL_MATH_DEFAULTS } from '../utils/dealMath'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
@@ -24,10 +24,10 @@ export default function HoldPeriodSensitivity({ model }: Props) {
     const price = model.purchasePrice ?? model.askingPrice
     if (!price || price <= 0) return null
 
-    const taxRate = model.taxRate ?? 0.25
-    const capex = model.maintenanceCapex ?? 0
-    const fees = model.transactionFees ?? 0
-    const wc = model.workingCapitalRequirement ?? 0
+    const taxRate = normalizePercentageFraction(model.taxRate) ?? DEAL_MATH_DEFAULTS.taxRate
+    const capex = model.maintenanceCapex ?? DEAL_MATH_DEFAULTS.maintenanceCapex
+    const fees = model.transactionFees ?? DEAL_MATH_DEFAULTS.transactionFees
+    const wc = model.workingCapitalRequirement ?? DEAL_MATH_DEFAULTS.workingCapital
     const exitCosts = model.exitCosts ?? 0
     const exitMult = model.exitMultiple ?? 4
     const baseGrowth = model.baseRevenueGrowth ?? 0.05

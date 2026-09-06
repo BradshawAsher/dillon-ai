@@ -2,7 +2,7 @@ import { Scale, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react'
 
 import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
-import { computeAmortizingLoan, normalizeEquityFraction, normalizePercentageFraction, resolveLoanTermYears } from '../utils/dealMath'
+import { computeAmortizingLoan, normalizeEquityFraction, normalizePercentageFraction, resolveLoanTermYears, DEAL_MATH_DEFAULTS } from '../utils/dealMath'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
 
@@ -47,8 +47,8 @@ export default function DealRulesOfThumb({ model }: Props) {
 
     if (price && ebitda && model.holdPeriodYears) {
         const years = model.holdPeriodYears
-        const taxRate = normalizePercentageFraction(model.taxRate) ?? 0.25
-        const annualCash = ebitda * (1 - taxRate) - (model.maintenanceCapex ?? 0)
+        const taxRate = normalizePercentageFraction(model.taxRate) ?? DEAL_MATH_DEFAULTS.taxRate
+        const annualCash = ebitda * (1 - taxRate) - (model.maintenanceCapex ?? DEAL_MATH_DEFAULTS.maintenanceCapex)
         const payback = annualCash > 0 ? price / annualCash : null
         if (payback !== null) {
             rules.push({
@@ -75,11 +75,11 @@ export default function DealRulesOfThumb({ model }: Props) {
         const debt = Math.max(0, price - equity - (model.sellerNoteAmount ?? 0))
         const annualDebtService = computeAmortizingLoan(
             debt,
-            normalizePercentageFraction(model.interestRate) ?? 0,
+            normalizePercentageFraction(model.interestRate) ?? DEAL_MATH_DEFAULTS.interestRate,
             resolveLoanTermYears(model.amortizationYears, model.loanTermYears),
         )?.annualDebtService ?? 0
         const operatingCashFlow = ebitda
-            ? ebitda * (1 - (normalizePercentageFraction(model.taxRate) ?? 0.25)) - (model.maintenanceCapex ?? 0)
+            ? ebitda * (1 - (normalizePercentageFraction(model.taxRate) ?? DEAL_MATH_DEFAULTS.taxRate)) - (model.maintenanceCapex ?? DEAL_MATH_DEFAULTS.maintenanceCapex)
             : null
         const dscr = operatingCashFlow !== null && annualDebtService > 0 ? operatingCashFlow / annualDebtService : null
         if (dscr !== null && Number.isFinite(dscr)) {

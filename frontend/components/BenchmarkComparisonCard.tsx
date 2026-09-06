@@ -3,7 +3,7 @@ import { BarChart3, Building2 } from 'lucide-react'
 
 import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
-import { normalizeEquityFraction } from '../utils/dealMath'
+import { normalizeEquityFraction, normalizePercentageFraction, DEAL_MATH_DEFAULTS, resolveLoanTermYears, computeAmortizingLoan } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
 import CardInfoPopover from './common/CardInfoPopover'
@@ -76,19 +76,15 @@ export default function BenchmarkComparisonCard({ model, synthesis }: Props) {
         }
 
         const growth = model.baseRevenueGrowth
-        const taxRate = model.taxRate ?? 0.25
-        const capex = model.maintenanceCapex ?? 0
+        const taxRate = normalizePercentageFraction(model.taxRate) ?? DEAL_MATH_DEFAULTS.taxRate
+        const capex = model.maintenanceCapex ?? DEAL_MATH_DEFAULTS.maintenanceCapex
         const annualCF = ebitda * (1 - taxRate) - capex
         const payback = annualCF > 0 ? price / annualCF : null
 
         const debt = price * (1 - normalizeEquityFraction(model.equityContributionPercent))
-        const rate = model.interestRate ?? 0.07
-        const amortYears = model.amortizationYears ?? 10
-        const monthlyRate = rate / 12
-        const nPayments = amortYears * 12
-        const monthlyPayment = debt > 0 && monthlyRate > 0
-            ? debt * (monthlyRate * Math.pow(1 + monthlyRate, nPayments)) / (Math.pow(1 + monthlyRate, nPayments) - 1)
-            : 0
+        const rate = normalizePercentageFraction(model.interestRate) ?? DEAL_MATH_DEFAULTS.interestRate
+        const amortYears = resolveLoanTermYears(model.amortizationYears, model.loanTermYears)
+        const monthlyPayment = computeAmortizingLoan(debt, rate, amortYears)?.monthlyPayment ?? 0
         const annualDS = monthlyPayment * 12
         const dscr = annualDS > 0 ? (ebitda * (1 - taxRate)) / annualDS : null
 

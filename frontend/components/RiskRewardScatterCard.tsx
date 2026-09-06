@@ -3,6 +3,7 @@ import { Target } from 'lucide-react'
 
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
+import { normalizePercentageFraction, DEAL_MATH_DEFAULTS } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
 
@@ -41,8 +42,8 @@ export default function RiskRewardScatterCard({ model, synthesis }: Props) {
         const ebitdaMargin = model.baseEbitdaMargin ?? 0.20
         const exitMult = model.exitMultiple ?? 4.0
         const holdPeriod = model.holdPeriodYears ?? 5
-        const taxRate = model.taxRate ?? 0.25
-        const fees = model.transactionFees ?? 0
+        const taxRate = normalizePercentageFraction(model.taxRate) ?? DEAL_MATH_DEFAULTS.taxRate
+        const fees = model.transactionFees ?? DEAL_MATH_DEFAULTS.transactionFees
 
         const initial = price + fees
         const yearlyRevenue = Array.from({ length: holdPeriod }, (_, y) => rev * (1 + growthRate) ** (y + 1))

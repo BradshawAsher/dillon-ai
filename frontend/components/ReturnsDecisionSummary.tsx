@@ -5,7 +5,7 @@ import type { DealModel } from '../hooks/backend/diligence'
 import { Card, CardContent } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
 import { Badge } from '../lib/shadcn/badge'
-import { computeAllCashReturns, computeAmortizingLoan, normalizeEquityFraction, normalizePercentageFraction, resolveLoanTermYears } from '../utils/dealMath'
+import { computeAllCashReturns, computeAmortizingLoan, normalizeEquityFraction, normalizePercentageFraction, resolveLoanTermYears, DEAL_MATH_DEFAULTS } from '../utils/dealMath'
 import { parseDocumentedFacts } from '../utils/evidence'
 
 import { safeFormatCurrency } from '../utils/diligenceDashboardUtils'
@@ -66,23 +66,23 @@ export default function ReturnsDecisionSummary({ model }: { model: DealModel }) 
     const results = computeAllCashReturns({
         ebitda,
         purchasePrice: price,
-        transactionFees: model.transactionFees ?? 10_000,
-        workingCapital: model.workingCapitalRequirement ?? 20_000,
-        taxRate: model.taxRate ?? 0.25,
-        maintenanceCapex: model.maintenanceCapex ?? 10_000,
-        holdPeriodYears: model.holdPeriodYears ?? 5,
-        exitMultiple: model.exitMultiple ?? 4,
-        exitCosts: model.exitCosts ?? 16_000,
+        transactionFees: model.transactionFees,
+        workingCapital: model.workingCapitalRequirement,
+        taxRate: model.taxRate,
+        maintenanceCapex: model.maintenanceCapex,
+        holdPeriodYears: model.holdPeriodYears,
+        exitMultiple: model.exitMultiple,
+        exitCosts: model.exitCosts,
     })
 
-    const uses = price + (model.transactionFees ?? 10_000) + (model.workingCapitalRequirement ?? 20_000)
+    const uses = price + (model.transactionFees ?? DEAL_MATH_DEFAULTS.transactionFees) + (model.workingCapitalRequirement ?? DEAL_MATH_DEFAULTS.workingCapital)
     const equityPercent = normalizeEquityFraction(model.equityContributionPercent)
     const equity = uses * equityPercent
     const debt = Math.max(0, uses - equity - (model.sellerNoteAmount ?? 0))
-    const interestRate = normalizePercentageFraction(model.interestRate) ?? 0.1
+    const interestRate = normalizePercentageFraction(model.interestRate) ?? DEAL_MATH_DEFAULTS.interestRate
     const amortization = resolveLoanTermYears(model.amortizationYears, model.loanTermYears)
     const annualDebtService = computeAmortizingLoan(debt, interestRate, amortization)?.annualDebtService ?? 0
-    const operatingCashFlow = ebitda * (1 - (normalizePercentageFraction(model.taxRate) ?? 0.25)) - (model.maintenanceCapex ?? 10_000)
+    const operatingCashFlow = ebitda * (1 - (normalizePercentageFraction(model.taxRate) ?? DEAL_MATH_DEFAULTS.taxRate)) - (model.maintenanceCapex ?? DEAL_MATH_DEFAULTS.maintenanceCapex)
     const dscr = annualDebtService > 0 ? operatingCashFlow / annualDebtService : null
 
     const hasIllustrativeOrUnconfirmed = !ebitdaIsConfirmed || !revenueIsConfirmed || !priceIsConfirmed
@@ -177,7 +177,7 @@ export default function ReturnsDecisionSummary({ model }: { model: DealModel }) 
                     </div>
 
                     <p className="text-xs leading-relaxed text-muted-foreground">
-                        <strong>Assumptions in use:</strong> {(equityPercent * 100).toFixed(0)}% buyer equity ({money(equity, currency)}), {(interestRate * 100).toFixed(0)}% debt interest, {model.holdPeriodYears ?? 5}-year hold period, {model.exitMultiple ?? 4}.0x exit multiple, and {((model.taxRate ?? 0.25) * 100).toFixed(0)}% tax rate.
+                        <strong>Assumptions in use:</strong> {(equityPercent * 100).toFixed(0)}% buyer equity ({money(equity, currency)}), {(interestRate * 100).toFixed(0)}% debt interest, {model.holdPeriodYears ?? 5}-year hold period, {model.exitMultiple ?? 4}.0x exit multiple, and {((normalizePercentageFraction(model.taxRate) ?? DEAL_MATH_DEFAULTS.taxRate) * 100).toFixed(0)}% tax rate.
                     </p>
                 </div>
 

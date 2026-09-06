@@ -3,6 +3,7 @@ import { Calendar } from 'lucide-react'
 
 import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
+import { normalizePercentageFraction, DEAL_MATH_DEFAULTS } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
 
@@ -31,7 +32,7 @@ export default function DealTimingCard({ model }: Props) {
         if (!revenue && !ebitda) return null
 
         const holdPeriodYears = model.holdPeriodYears ?? 5
-        const taxRate = model.taxRate ?? 0.25
+        const taxRate = normalizePercentageFraction(model.taxRate) ?? DEAL_MATH_DEFAULTS.taxRate
 
         // Calendar year alignment (default fiscal year)
         const now = new Date()

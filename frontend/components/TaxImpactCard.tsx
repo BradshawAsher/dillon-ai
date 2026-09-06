@@ -3,6 +3,7 @@ import { Receipt } from 'lucide-react'
 
 import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
+import { normalizePercentageFraction, DEAL_MATH_DEFAULTS } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
 
@@ -31,8 +32,8 @@ export default function TaxImpactCard({ model }: Props) {
 
         if (!price || !ebitda || ebitda <= 0) return null
 
-        const taxRate = model.taxRate ?? 0.25
-        const interestRate = model.interestRate ?? 0.07
+        const taxRate = normalizePercentageFraction(model.taxRate) ?? DEAL_MATH_DEFAULTS.taxRate
+        const interestRate = normalizePercentageFraction(model.interestRate) ?? DEAL_MATH_DEFAULTS.interestRate
         const seniorDebt = model.seniorDebtAmount ?? 0
         const sellerNote = model.sellerNoteAmount ?? 0
         const totalDebt = seniorDebt + sellerNote

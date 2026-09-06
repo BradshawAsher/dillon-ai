@@ -3,6 +3,7 @@ import { TrendingUp } from 'lucide-react'
 
 import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
+import { normalizePercentageFraction, DEAL_MATH_DEFAULTS } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
 import CardInfoPopover from './common/CardInfoPopover'
@@ -56,7 +57,7 @@ export default function InvestmentMetricsCard({ model }: Props) {
         const holdYears = model.holdPeriodYears ?? 5
         const exitMult = model.exitMultiple ?? (price / ebitda)
         const growthRate = model.baseRevenueGrowth ?? 0.05
-        const taxRate = model.taxRate ?? 0.25
+        const taxRate = normalizePercentageFraction(model.taxRate) ?? DEAL_MATH_DEFAULTS.taxRate
 
         const annualCash = ebitda * (1 - taxRate)
         const totalCashFlow = annualCash * holdYears

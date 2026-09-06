@@ -3,7 +3,7 @@ import type { DealModel } from '../hooks/backend/diligence'
 import type { SubmissionHistoryItem } from './submissionHistory'
 import { isFailedSubmissionStatus, normalizeSubmissionStatus } from './submissionHistory'
 import { deriveDocumentedFacts } from './documentedFacts'
-import { normalizeEquityFraction, normalizePercentageFraction } from './dealMath'
+import { normalizeEquityFraction, normalizePercentageFraction, DEAL_MATH_DEFAULTS } from './dealMath'
 import { sourceRelativePathForFile } from '../../shared/sourceRelativePath'
 
 export function getFindingVariant(findingType: FindingType): 'destructive' | 'success' {
@@ -384,13 +384,13 @@ export function buildReturnsDisplayModel(model: DealModel) {
         transactionFees: model.transactionFees ?? Math.round(resolvedPrice * 0.01),
         workingCapitalRequirement: model.workingCapitalRequirement ?? 0,
         holdPeriodYears: model.holdPeriodYears ?? 5,
-        taxRate: model.taxRate ?? 0.25,
-        maintenanceCapex: model.maintenanceCapex ?? Math.round(ebitdaNum * 0.1),
-        exitMultiple: model.exitMultiple ?? model.ebitdaMultiple ?? 5,
-        exitCosts: model.exitCosts ?? Math.round(resolvedPrice * 0.015),
+        taxRate: model.taxRate ?? DEAL_MATH_DEFAULTS.taxRate,
+        maintenanceCapex: model.maintenanceCapex ?? DEAL_MATH_DEFAULTS.maintenanceCapex,
+        exitMultiple: model.exitMultiple ?? model.ebitdaMultiple ?? DEAL_MATH_DEFAULTS.exitMultiple,
+        exitCosts: model.exitCosts ?? Math.round(resolvedPrice * DEAL_MATH_DEFAULTS.exitCostRate),
         equityContributionPercent: model.equityContributionPercent ?? 0.3,
-        interestRate: model.interestRate ?? 0.1,
-        amortizationYears: model.amortizationYears ?? 10,
+        interestRate: model.interestRate ?? DEAL_MATH_DEFAULTS.interestRate,
+        amortizationYears: model.amortizationYears ?? DEAL_MATH_DEFAULTS.loanTermYears,
         sellerNoteAmount: model.sellerNoteAmount ?? 0,
         bearRevenueGrowth: model.bearRevenueGrowth ?? 0,
         baseRevenueGrowth: model.baseRevenueGrowth ?? 0.05,

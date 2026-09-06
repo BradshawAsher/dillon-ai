@@ -1,6 +1,7 @@
 import { Settings2, HelpCircle } from 'lucide-react'
 
 import type { DealModel } from '../hooks/backend/diligence'
+import { normalizePercentageFraction, normalizeEquityFraction, DEAL_MATH_DEFAULTS } from '../utils/dealMath'
 import { Card, CardContent } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
 import { Badge } from '../lib/shadcn/badge'
@@ -179,11 +180,11 @@ function buildRow(label: string, valueStr: string, isSet: boolean): AssumptionRo
 }
 
 function getReturnsAssumptions(model: DealModel): AssumptionRow[] {
-    const holdPeriod = pickNumber(model.holdPeriodYears, 5)
-    const taxRate = pickNumber(model.taxRate, 0.25)
+    const holdPeriod = pickNumber(model.holdPeriodYears, DEAL_MATH_DEFAULTS.holdPeriodYears)
+    const taxRate = pickNumber(normalizePercentageFraction(model.taxRate), DEAL_MATH_DEFAULTS.taxRate)
     const exitMultiple = pickNumber(model.exitMultiple, 4)
-    const equity = pickNumber(model.equityContributionPercent, 0.3)
-    const interest = pickNumber(model.interestRate, 0.1)
+    const equity = pickNumber(normalizeEquityFraction(model.equityContributionPercent), 0.3)
+    const interest = pickNumber(normalizePercentageFraction(model.interestRate), DEAL_MATH_DEFAULTS.interestRate)
     const amortization = pickNumber(model.amortizationYears, 10)
     return [
         buildRow('Hold period', `${holdPeriod.value} yrs`, holdPeriod.isSet),
