@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { CheckCircle2, CircleAlert, Clock, Clock3, Download, Loader2, RefreshCw, Search, X } from 'lucide-react'
+import { CheckCircle2, CircleAlert, Clock, Clock3, Download, ExternalLink, FileText, Layers, Loader2, RefreshCw, Search, ShieldCheck, Sparkles, X } from 'lucide-react'
 
 import ExpandableInsightGroup from './ExpandableInsightGroup'
 import ExpandableText from './ExpandableText'
@@ -7,6 +7,7 @@ import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
+import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { Input } from '../lib/shadcn/input'
 import { Progress } from '../lib/shadcn/progress'
 import { Switch } from '../lib/shadcn/switch'
@@ -170,6 +171,51 @@ function downloadDocumentAnalysis(row: SubmissionHistoryItem) {
     downloadTextFile(fileSafeName(row.fileName || row.dealName || 'document') + '-analysis.md', report, 'text/markdown;charset=utf-8')
 }
 
+function downloadSynthesisAnalysis(synth: ProjectSynthesisItem) {
+    const section = (title: string, items: string[] | undefined) => [
+        '## ' + title,
+        ...(items && items.length > 0 ? items.map((item) => '- ' + item) : ['- None recorded.']),
+        '',
+    ]
+    const report = [
+        '# Project Synthesis: ' + (synth.projectName || synth.companyName || synth.projectId),
+        '',
+        'Project ID: ' + synth.projectId,
+        'Status: ' + formatSubmissionStatus(synth.projectStatus || 'completed'),
+        'Traffic Light: ' + (synth.finalTrafficLight || 'Pending'),
+        'Risk Level: ' + (synth.finalRiskLevel || 'Pending'),
+        'Model Used: ' + (synth.modelUsed || synth.model_used || 'OpenAI 5.6 Terra'),
+        'Version: ' + (synth.synthesis_version || 'v1'),
+        'Documents: ' + (synth.documentsCompletedCount || 0) + ' of ' + (synth.documentsReceivedCount || 0) + ' completed',
+        'Generated: ' + new Date().toLocaleString(),
+        '',
+        '## Executive Recommendation',
+        synth.finalRecommendation || 'No recommendation recorded.',
+        '',
+        '## Final Judgment Summary',
+        synth.finalJudgmentSummary || 'No judgment summary recorded.',
+        '',
+        '## Valuation',
+        'Lower: ' + (synth.valuationLowerBound || 'Pending'),
+        'Base: ' + (synth.valuationBaseEstimate || 'Pending'),
+        'Upper: ' + (synth.valuationUpperBound || 'Pending'),
+        'Confidence: ' + (synth.valuationConfidence || synth.aiConfidence || 'Pending'),
+        '',
+        ...section('Red Flags', synth.redFlags),
+        ...section('Yellow Flags', synth.yellowFlags),
+        ...section('Green Flags', synth.greenFlags),
+        ...section('Open Questions', synth.openQuestions),
+        ...section('Negotiation Levers', synth.negotiationLevers),
+        '## Telemetry',
+        'Input tokens: ' + (synth.inputTokens?.toLocaleString() || 'N/A'),
+        'Output tokens: ' + (synth.outputTokens?.toLocaleString() || 'N/A'),
+        'Total tokens: ' + (synth.totalTokens?.toLocaleString() || 'N/A'),
+        'Cost: ' + (synth.costUsd != null ? '$' + synth.costUsd.toFixed(4) : 'N/A'),
+    ].join('\n')
+
+    downloadTextFile(fileSafeName(synth.projectName || synth.companyName || synth.projectId) + '-synthesis.md', report, 'text/markdown;charset=utf-8')
+}
+
 function getRowCompletenessScore(row: SubmissionHistoryItem) {
     const values = [
         row.requestID,
@@ -251,8 +297,27 @@ type EvidenceItem = {
     formula?: string
 }
 
+export type AuditTrailRow =
+    | {
+          itemType: 'document'
+          key: string
+          timestamp: number
+          displayTimestamp: string
+          status: string
+          doc: SubmissionHistoryItem
+      }
+    | {
+          itemType: 'synthesis'
+          key: string
+          timestamp: number
+          displayTimestamp: string
+          status: string
+          synth: ProjectSynthesisItem
+      }
+
 type SubmissionHistoryCardProps = {
     rows: SubmissionHistoryItem[]
+    syntheses?: ProjectSynthesisItem[]
     loading: boolean
     error: string | null
     activeEnvironment: 'production' | 'test'
@@ -267,6 +332,7 @@ type SubmissionHistoryCardProps = {
 
 export default function SubmissionHistoryCard({
     rows,
+    syntheses = [],
     loading,
     error,
     activeEnvironment,
@@ -278,6 +344,7 @@ export default function SubmissionHistoryCard({
     onOpenProject,
     onOpenEvidence,
 }: SubmissionHistoryCardProps) {
+    const [itemFilter, setItemFilter] = useState<'all' | 'documents' | 'syntheses'>('all')
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedStatus, setSelectedStatus] = useState('all')
     const [hideDuplicates, setHideDuplicates] = useState(true)
@@ -350,10 +417,49 @@ export default function SubmissionHistoryCard({
         return uniqueRows.sort((left, right) => getRowSortValue(right) - getRowSortValue(left))
     }, [sortedRows])
 
+    const baseDocRows = hideDuplicates ? dedupedRows : sortedRows
+
+    const docAuditRows = useMemo<AuditTrailRow[]>(() => {
+        return baseDocRows.map((doc) => ({
+            itemType: 'document' as const,
+            key: `doc-${getRowKey(doc)}`,
+            timestamp: getRowSortValue(doc),
+            displayTimestamp: getDisplayTimestamp(doc),
+            status: doc.status,
+            doc,
+        }))
+    }, [baseDocRows])
+
+    const synthAuditRows = useMemo<AuditTrailRow[]>(() => {
+        return syntheses.map((synth) => {
+            const rawTime = synth.projectProcessedAt || synth.updatedAt || synth.createdAt || ''
+            return {
+                itemType: 'synthesis' as const,
+                key: `synth-${synth.id || synth.projectId}-${rawTime}`,
+                timestamp: getTimestampValue(rawTime),
+                displayTimestamp: rawTime || 'Pending',
+                status: synth.projectStatus || 'completed',
+                synth,
+            }
+        })
+    }, [syntheses])
+
+    const allAuditRows = useMemo<AuditTrailRow[]>(() => {
+        let combined: AuditTrailRow[] = []
+        if (itemFilter === 'all') {
+            combined = [...docAuditRows, ...synthAuditRows]
+        } else if (itemFilter === 'documents') {
+            combined = [...docAuditRows]
+        } else {
+            combined = [...synthAuditRows]
+        }
+        return combined.sort((left, right) => right.timestamp - left.timestamp)
+    }, [docAuditRows, synthAuditRows, itemFilter])
+
     const statusOptions = useMemo(() => {
         const nextStatuses = new Set<string>()
 
-        sortedRows.forEach((row) => {
+        allAuditRows.forEach((row) => {
             const status = row.status.trim()
 
             if (status.length > 0) {
@@ -362,13 +468,12 @@ export default function SubmissionHistoryCard({
         })
 
         return ['all', ...[...nextStatuses].sort((left, right) => left.localeCompare(right))]
-    }, [sortedRows])
+    }, [allAuditRows])
 
-    const baseRows = hideDuplicates ? dedupedRows : sortedRows
     const normalizedQuery = searchQuery.trim().toLowerCase()
-    const visibleRows = useMemo(() => {
-        return baseRows.filter((row) => {
-            const matchesStatus = selectedStatus === 'all' || row.status === selectedStatus
+    const visibleAuditRows = useMemo(() => {
+        return allAuditRows.filter((row) => {
+            const matchesStatus = selectedStatus === 'all' || row.status.toLowerCase() === selectedStatus.toLowerCase()
 
             if (!matchesStatus) {
                 return false
@@ -378,39 +483,69 @@ export default function SubmissionHistoryCard({
                 return true
             }
 
-            const searchableText = [
-                row.requestID,
-                row.dealName,
-                row.companyName,
-                row.workstream,
-                row.fileName,
-                row.analystName,
-                row.analystEmail,
-                row.projectId,
-                row.projectStage,
-                row.documentType,
-                row.submissionNotes,
-                row.riskLevel,
-                row.category,
-                row.trafficLight,
-                row.ebitdaExtracted,
-                row.aiSummary,
-                row.aiEscalationReason,
-                row.aiIntent,
-                row.valuationLowerBound,
-                row.valuationBaseEstimate,
-                row.valuationUpperBound,
-                row.valuationCurrency,
-                row.investmentBuyReasoning,
-            ]
-                .join(' ')
-                .toLowerCase()
+            if (row.itemType === 'document') {
+                const doc = row.doc
+                const searchableText = [
+                    doc.requestID,
+                    doc.dealName,
+                    doc.companyName,
+                    doc.workstream,
+                    doc.fileName,
+                    doc.analystName,
+                    doc.analystEmail,
+                    doc.projectId,
+                    doc.projectStage,
+                    doc.documentType,
+                    doc.submissionNotes,
+                    doc.riskLevel,
+                    doc.category,
+                    doc.trafficLight,
+                    doc.ebitdaExtracted,
+                    doc.aiSummary,
+                    doc.aiEscalationReason,
+                    doc.aiIntent,
+                    doc.valuationLowerBound,
+                    doc.valuationBaseEstimate,
+                    doc.valuationUpperBound,
+                    doc.valuationCurrency,
+                    doc.investmentBuyReasoning,
+                ]
+                    .join(' ')
+                    .toLowerCase()
 
-            return searchableText.includes(normalizedQuery)
+                return searchableText.includes(normalizedQuery)
+            } else {
+                const synth = row.synth
+                const searchableText = [
+                    synth.projectId,
+                    synth.projectName,
+                    synth.companyName,
+                    synth.projectStatus,
+                    synth.finalRecommendation,
+                    synth.finalJudgmentSummary,
+                    synth.finalRiskLevel,
+                    synth.finalTrafficLight,
+                    synth.modelUsed,
+                    synth.model_used,
+                    synth.synthesis_version,
+                    synth.valuationLowerBound,
+                    synth.valuationBaseEstimate,
+                    synth.valuationUpperBound,
+                    ...(synth.redFlags || []),
+                    ...(synth.yellowFlags || []),
+                    ...(synth.greenFlags || []),
+                    ...(synth.openQuestions || []),
+                    ...(synth.negotiationLevers || []),
+                ]
+                    .join(' ')
+                    .toLowerCase()
+
+                return searchableText.includes(normalizedQuery)
+            }
         })
-    }, [baseRows, normalizedQuery, selectedStatus])
+    }, [allAuditRows, normalizedQuery, selectedStatus])
 
-    const selectedRow = visibleRows.find((row) => getRowKey(row) === selectedRowKey) ?? visibleRows[0]
+    const selectedAuditRow = visibleAuditRows.find((row) => row.key === selectedRowKey) ?? visibleAuditRows[0]
     const totalDuplicateRowsHidden = sortedRows.length - dedupedRows.length
     const activeRowCount = dedupedRows.filter((row) => isActiveSubmissionStatus(row.status)).length
     const completedRowCount = dedupedRows.filter((row) => normalizeSubmissionStatus(row.status) === 'completed').length
@@ -433,8 +568,13 @@ export default function SubmissionHistoryCard({
                         </CardDescription>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                        <Badge variant="secondary">Rows: {sortedRows.length}</Badge>
-                        <Badge variant="outline">Unique requests: {dedupedRows.length}</Badge>
+                        <Badge variant="secondary">Total Activity: {docAuditRows.length + synthAuditRows.length}</Badge>
+                        <Badge variant="outline">Docs: {docAuditRows.length}</Badge>
+                        {synthAuditRows.length > 0 ? (
+                            <Badge variant="outline" className="border-purple-500/30 text-purple-400 bg-purple-500/10">
+                                Syntheses: {synthAuditRows.length}
+                            </Badge>
+                        ) : null}
                         <Badge variant={activeEnvironment === 'test' ? 'warning' : 'secondary'}>
                             Viewing: {activeEnvironment}
                         </Badge>
@@ -477,11 +617,14 @@ export default function SubmissionHistoryCard({
 
                 {/* Anthropic API Credit Balance & Document Failure Alert */}
                 {(() => {
-                    const failedRows = visibleRows.filter((row) =>
-                        ['failed', 'error', 'rejected'].includes((row.status || '').trim().toLowerCase()) ||
-                        (row.errorMessage || row.aiEscalationReason || '').toLowerCase().includes('credit') ||
-                        (row.errorMessage || row.aiEscalationReason || '').toLowerCase().includes('balance')
-                    )
+                    const failedRows = visibleAuditRows
+                        .filter((r): r is Extract<AuditTrailRow, { itemType: 'document' }> => r.itemType === 'document')
+                        .map((r) => r.doc)
+                        .filter((row) =>
+                            ['failed', 'error', 'rejected'].includes((row.status || '').trim().toLowerCase()) ||
+                            (row.errorMessage || row.aiEscalationReason || '').toLowerCase().includes('credit') ||
+                            (row.errorMessage || row.aiEscalationReason || '').toLowerCase().includes('balance')
+                        )
 
                     if (failedRows.length === 0) return null
 
@@ -541,6 +684,69 @@ export default function SubmissionHistoryCard({
                     </div>
                 ) : null}
 
+                {/* Segmented Filter: All Activity | Documents | Project Syntheses */}
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/70 bg-muted/20 p-2">
+                    <div className="inline-flex rounded-lg border border-border bg-background/80 p-1 text-xs">
+                        <button
+                            type="button"
+                            onClick={() => setItemFilter('all')}
+                            className={cn(
+                                'flex items-center gap-1.5 rounded-md px-3 py-1.5 font-medium transition-all',
+                                itemFilter === 'all'
+                                    ? 'bg-primary text-primary-foreground shadow-xs font-semibold'
+                                    : 'text-muted-foreground hover:text-foreground'
+                            )}
+                        >
+                            <Layers className="h-3.5 w-3.5" />
+                            All Activity
+                            <span className={cn('ml-1 rounded-full px-1.5 py-0.2 text-[10px] font-mono', itemFilter === 'all' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-muted text-muted-foreground')}>
+                                {docAuditRows.length + synthAuditRows.length}
+                            </span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setItemFilter('documents')}
+                            className={cn(
+                                'flex items-center gap-1.5 rounded-md px-3 py-1.5 font-medium transition-all',
+                                itemFilter === 'documents'
+                                    ? 'bg-primary text-primary-foreground shadow-xs font-semibold'
+                                    : 'text-muted-foreground hover:text-foreground'
+                            )}
+                        >
+                            <FileText className="h-3.5 w-3.5 text-blue-400" />
+                            Documents
+                            <span className={cn('ml-1 rounded-full px-1.5 py-0.2 text-[10px] font-mono', itemFilter === 'documents' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-muted text-muted-foreground')}>
+                                {docAuditRows.length}
+                            </span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setItemFilter('syntheses')}
+                            className={cn(
+                                'flex items-center gap-1.5 rounded-md px-3 py-1.5 font-medium transition-all',
+                                itemFilter === 'syntheses'
+                                    ? 'bg-primary text-primary-foreground shadow-xs font-semibold'
+                                    : 'text-muted-foreground hover:text-foreground'
+                            )}
+                        >
+                            <Sparkles className="h-3.5 w-3.5 text-purple-400" />
+                            Project Syntheses
+                            <span className={cn('ml-1 rounded-full px-1.5 py-0.2 text-[10px] font-mono', itemFilter === 'syntheses' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-muted text-muted-foreground')}>
+                                {synthAuditRows.length}
+                            </span>
+                        </button>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <span className="inline-flex items-center gap-1 rounded border border-blue-500/30 bg-blue-500/10 px-1.5 py-0.5 text-[10px] font-mono text-blue-400">
+                            DOC = Ingestion
+                        </span>
+                        <span className="inline-flex items-center gap-1 rounded border border-purple-500/30 bg-purple-500/10 px-1.5 py-0.5 text-[10px] font-mono text-purple-400">
+                            SYNTHESIS = Executive AI
+                        </span>
+                    </div>
+                </div>
+
                 <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
                     <div className="relative">
                         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -580,9 +786,9 @@ export default function SubmissionHistoryCard({
                     })}
                 </div>
 
-                {visibleRows.length === 0 && !loading ? (
+                {visibleAuditRows.length === 0 && !loading ? (
                     <div className="rounded-lg border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
-                        {sortedRows.length === 0 ? 'No submission history returned yet.' : 'No rows match the current filters.'}
+                        {allAuditRows.length === 0 ? 'No activity history returned yet.' : 'No items match the current filters.'}
                     </div>
                 ) : (
                     <div id="history-table" className="grid gap-4 2xl:grid-cols-[minmax(0,0.9fr)_minmax(560px,1.1fr)] items-start scroll-mt-6">
@@ -590,25 +796,171 @@ export default function SubmissionHistoryCard({
                             <Table className="min-w-[720px]">
                                 <TableHeader>
                                     <TableRow className="hover:bg-transparent">
-                                        <TableHead className="w-[180px]">Status</TableHead>
-                                        <TableHead>Deal</TableHead>
-                                        <TableHead>File</TableHead>
+                                        <TableHead className="w-[190px]">Status & Type</TableHead>
+                                        <TableHead>Deal / Project</TableHead>
+                                        <TableHead>File / Analysis</TableHead>
                                         <TableHead className="w-[240px]">Latest Activity</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {visibleRows.map((row) => {
-                                        const title = row.dealName || row.companyName || 'Untitled submission'
-                                        const detail = row.companyName || row.workstream || 'No company or workstream yet'
-                                        const rowKey = getRowKey(row)
-                                        const isSelected = selectedRow ? getRowKey(selectedRow) === rowKey : false
-                                        const duplicateCount = duplicateCountsByRequestId.get(row.requestID) ?? 0
-                                        const showDuplicateBadge = duplicateCount > 1 && row.requestID.trim().length > 0
-                                        const rowDurationSec = getDocumentExtractionDurationSec(row)
+                                    {visibleAuditRows.map((auditRow) => {
+                                        const isSelected = selectedAuditRow ? selectedAuditRow.key === auditRow.key : false
 
+                                        if (auditRow.itemType === 'document') {
+                                            const row = auditRow.doc
+                                            const title = row.dealName || row.companyName || 'Untitled submission'
+                                            const detail = row.companyName || row.workstream || 'No company or workstream yet'
+                                            const duplicateCount = duplicateCountsByRequestId.get(row.requestID) ?? 0
+                                            const showDuplicateBadge = duplicateCount > 1 && row.requestID.trim().length > 0
+                                            const rowDurationSec = getDocumentExtractionDurationSec(row)
+
+                                            return (
+                                                <TableRow
+                                                    key={auditRow.key}
+                                                    role="button"
+                                                    tabIndex={0}
+                                                    aria-selected={isSelected}
+                                                    className={cn(
+                                                        'cursor-pointer border-b border-border/80 align-top',
+                                                        isSelected && 'bg-accent/60 hover:bg-accent/60'
+                                                    )}
+                                                    onClick={() => setSelectedRowKey(auditRow.key)}
+                                                    onKeyDown={(event) => {
+                                                        if (event.key === 'Enter' || event.key === ' ') {
+                                                            event.preventDefault()
+                                                            setSelectedRowKey(auditRow.key)
+                                                        }
+                                                    }}
+                                                >
+                                                    <TableCell>
+                                                        <div className="space-y-2">
+                                                            <div className="flex flex-wrap items-center gap-1.5">
+                                                                <span className="inline-flex items-center gap-1 rounded border border-blue-500/30 bg-blue-500/10 px-1.5 py-0.5 text-[10px] font-mono font-semibold uppercase tracking-wider text-blue-400">
+                                                                    <FileText className="h-3 w-3 text-blue-400 shrink-0" />
+                                                                    DOC
+                                                                </span>
+                                                                <Badge variant={getStatusVariant(row.status)} className="gap-1">
+                                                                    <StatusIcon status={row.status} />
+                                                                    {formatSubmissionStatus(row.status)}
+                                                                </Badge>
+                                                                {rowDurationSec !== null ? (
+                                                                    <Badge variant="outline" className="gap-1 text-[10px] font-mono text-muted-foreground border-border/80 bg-muted/30">
+                                                                        <Clock className="h-3 w-3 text-muted-foreground shrink-0" />
+                                                                        {formatElapsedDuration(rowDurationSec)}
+                                                                    </Badge>
+                                                                ) : null}
+                                                                {showDuplicateBadge ? <Badge variant="outline">Duplicate candidate</Badge> : null}
+                                                                {row.needsHumanReview ? <Badge variant="warning">Human review</Badge> : null}
+                                                                {row.tableStructureStatus === 'needs_review' ? <Badge variant="warning">Table structure review</Badge> : null}
+                                                            </div>
+                                                            <p className="break-all font-mono text-xs text-muted-foreground">
+                                                                {row.requestID || 'No request ID'}
+                                                            </p>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="space-y-1">
+                                                            {row.projectId && onOpenProject ? (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(event) => {
+                                                                        event.stopPropagation()
+                                                                        onOpenProject(row.projectId)
+                                                                    }}
+                                                                    className="text-left font-medium text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                                                    aria-label={`Open project ${title} in Projects`}
+                                                                >
+                                                                    {title}
+                                                                </button>
+                                                            ) : <p className="font-medium text-foreground">{title}</p>}
+                                                            <p className="text-xs text-muted-foreground">{detail}</p>
+                                                            {row.workstream ? (
+                                                                <p className="text-xs text-muted-foreground">Workstream: {row.workstream}</p>
+                                                            ) : null}
+                                                            {row.documentType ? (
+                                                                <p className="text-xs text-muted-foreground">Document type: {row.documentType}</p>
+                                                            ) : null}
+                                                            {row.detectedDocumentType ? (
+                                                                <p className="text-xs text-muted-foreground">AI detected: {row.detectedDocumentType}</p>
+                                                            ) : null}
+                                                            {row.projectId ? (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(event) => {
+                                                                        event.stopPropagation()
+                                                                        onOpenProject?.(row.projectId)
+                                                                    }}
+                                                                    className="font-mono text-xs text-muted-foreground underline-offset-2 hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                                                >
+                                                                    Project ID: {row.projectId}
+                                                                </button>
+                                                            ) : null}
+                                                            {hasAiEnrichment(row) ? (
+                                                                <div className="flex flex-wrap gap-2 pt-1">
+                                                                    {row.trafficLight ? <Badge variant="outline">{row.trafficLight}</Badge> : null}
+                                                                    {row.riskLevel ? <Badge variant="outline">Risk: {row.riskLevel}</Badge> : null}
+                                                                </div>
+                                                            ) : null}
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="space-y-1">
+                                                            <p className="font-medium text-foreground">{row.fileName || 'No file name'}</p>
+                                                            <p className="text-xs text-muted-foreground">{row.fileType || 'Unknown file type'}</p>
+                                                            {['failed', 'error', 'rejected'].includes((row.status || '').trim().toLowerCase()) || row.errorMessage ? (
+                                                                <div className="mt-1.5 rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive">
+                                                                    <p className="font-semibold flex items-start gap-1">
+                                                                        <CircleAlert className="h-3.5 w-3.5 shrink-0 mt-0.5 text-destructive" />
+                                                                        <span>{row.errorMessage || 'Processing stalled or failed (Anthropic credit limit or format issue).'}</span>
+                                                                    </p>
+                                                                </div>
+                                                            ) : null}
+                                                            {row.ebitdaExtracted ? (
+                                                                <p className="text-xs text-muted-foreground">EBITDA: {row.ebitdaExtracted}</p>
+                                                            ) : null}
+                                                            {row.submissionNotes ? (
+                                                                <ExpandableText text={row.submissionNotes} maxHeight={40} className="text-xs text-muted-foreground" />
+                                                            ) : null}
+                                                            <Button
+                                                                type="button"
+                                                                size="sm"
+                                                                variant="outline"
+                                                                className="mt-2"
+                                                                onClick={(event) => {
+                                                                    event.stopPropagation()
+                                                                    downloadDocumentAnalysis(row)
+                                                                }}
+                                                            >
+                                                                <Download />
+                                                                Download analysis
+                                                            </Button>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="space-y-1 text-sm text-foreground">
+                                                            <p>{formatEasternTime(getDisplayTimestamp(row))}</p>
+                                                            {rowDurationSec !== null ? (
+                                                                <p className="text-xs text-muted-foreground flex items-center gap-1 font-mono">
+                                                                    <Clock className="h-3 w-3 text-primary/70 shrink-0" />
+                                                                    Duration: {formatElapsedDuration(rowDurationSec)}
+                                                                </p>
+                                                            ) : null}
+                                                            <p className="text-xs text-muted-foreground">n8n row ID: {row.id || 'Pending'}</p>
+                                                            {row.environment ? (
+                                                                <p className="text-xs text-muted-foreground">Environment: {row.environment}</p>
+                                                            ) : null}
+                                                        </div>
+                                                    </TableCell>
+                                                </TableRow>
+                                            )
+                                        }
+
+                                        // Synthesis Row
+                                        const synth = auditRow.synth
+                                        const synthTitle = synth.projectName || synth.companyName || synth.projectId
                                         return (
                                             <TableRow
-                                                key={rowKey}
+                                                key={auditRow.key}
                                                 role="button"
                                                 tabIndex={0}
                                                 aria-selected={isSelected}
@@ -616,99 +968,87 @@ export default function SubmissionHistoryCard({
                                                     'cursor-pointer border-b border-border/80 align-top',
                                                     isSelected && 'bg-accent/60 hover:bg-accent/60'
                                                 )}
-                                                onClick={() => setSelectedRowKey(rowKey)}
+                                                onClick={() => setSelectedRowKey(auditRow.key)}
                                                 onKeyDown={(event) => {
                                                     if (event.key === 'Enter' || event.key === ' ') {
                                                         event.preventDefault()
-                                                        setSelectedRowKey(rowKey)
+                                                        setSelectedRowKey(auditRow.key)
                                                     }
                                                 }}
                                             >
                                                 <TableCell>
                                                     <div className="space-y-2">
-                                                        <div className="flex flex-wrap items-center gap-2">
-                                                            <Badge variant={getStatusVariant(row.status)} className="gap-1">
-                                                                <StatusIcon status={row.status} />
-                                                                {formatSubmissionStatus(row.status)}
+                                                        <div className="flex flex-wrap items-center gap-1.5">
+                                                            <span className="inline-flex items-center gap-1 rounded border border-purple-500/30 bg-purple-500/10 px-1.5 py-0.5 text-[10px] font-mono font-semibold uppercase tracking-wider text-purple-400">
+                                                                <Sparkles className="h-3 w-3 text-purple-400 shrink-0" />
+                                                                SYNTHESIS
+                                                            </span>
+                                                            <Badge variant={getStatusVariant(synth.projectStatus || 'completed')} className="gap-1">
+                                                                <StatusIcon status={synth.projectStatus || 'completed'} />
+                                                                {formatSubmissionStatus(synth.projectStatus || 'completed')}
                                                             </Badge>
-                                                            {rowDurationSec !== null ? (
-                                                                <Badge variant="outline" className="gap-1 text-[10px] font-mono text-muted-foreground border-border/80 bg-muted/30">
-                                                                    <Clock className="h-3 w-3 text-muted-foreground shrink-0" />
-                                                                    {formatElapsedDuration(rowDurationSec)}
+                                                            {synth.synthesis_version ? (
+                                                                <Badge variant="outline" className="text-[10px] font-mono text-muted-foreground border-border/80 bg-muted/30">
+                                                                    {synth.synthesis_version}
                                                                 </Badge>
                                                             ) : null}
-                                                            {showDuplicateBadge ? <Badge variant="outline">Duplicate candidate</Badge> : null}
-                                                            {row.needsHumanReview ? <Badge variant="warning">Human review</Badge> : null}
-                                                            {row.tableStructureStatus === 'needs_review' ? <Badge variant="warning">Table structure review</Badge> : null}
                                                         </div>
                                                         <p className="break-all font-mono text-xs text-muted-foreground">
-                                                            {row.requestID || 'No request ID'}
+                                                            Project: {synth.projectId}
                                                         </p>
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>
                                                     <div className="space-y-1">
-                                                        {row.projectId && onOpenProject ? (
+                                                        {synth.projectId && onOpenProject ? (
                                                             <button
                                                                 type="button"
                                                                 onClick={(event) => {
                                                                     event.stopPropagation()
-                                                                    onOpenProject(row.projectId)
+                                                                    onOpenProject(synth.projectId)
                                                                 }}
                                                                 className="text-left font-medium text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                                                                aria-label={`Open project ${title} in Projects`}
+                                                                aria-label={`Open project ${synthTitle} in Projects`}
                                                             >
-                                                                {title}
+                                                                {synthTitle}
                                                             </button>
-                                                        ) : <p className="font-medium text-foreground">{title}</p>}
-                                                        <p className="text-xs text-muted-foreground">{detail}</p>
-                                                        {row.workstream ? (
-                                                            <p className="text-xs text-muted-foreground">Workstream: {row.workstream}</p>
-                                                        ) : null}
-                                                        {row.documentType ? (
-                                                            <p className="text-xs text-muted-foreground">Document type: {row.documentType}</p>
-                                                        ) : null}
-                                                        {row.detectedDocumentType ? (
-                                                            <p className="text-xs text-muted-foreground">AI detected: {row.detectedDocumentType}</p>
-                                                        ) : null}
-                                                        {row.projectId ? (
-                                                            <button
-                                                                type="button"
-                                                                onClick={(event) => {
-                                                                    event.stopPropagation()
-                                                                    onOpenProject?.(row.projectId)
-                                                                }}
-                                                                className="font-mono text-xs text-muted-foreground underline-offset-2 hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                                                            >
-                                                                Project ID: {row.projectId}
-                                                            </button>
-                                                        ) : null}
-                                                        {hasAiEnrichment(row) ? (
-                                                            <div className="flex flex-wrap gap-2 pt-1">
-                                                                {row.trafficLight ? <Badge variant="outline">{row.trafficLight}</Badge> : null}
-                                                                {row.riskLevel ? <Badge variant="outline">Risk: {row.riskLevel}</Badge> : null}
-                                                            </div>
-                                                        ) : null}
+                                                        ) : (
+                                                            <p className="font-medium text-foreground">{synthTitle}</p>
+                                                        )}
+                                                        <p className="text-xs text-muted-foreground">
+                                                            {synth.documentsCompletedCount || 0} of {synth.documentsReceivedCount || 0} documents synthesized
+                                                        </p>
+                                                        <div className="flex flex-wrap gap-1.5 pt-1">
+                                                            {synth.finalTrafficLight ? <Badge variant="outline">{synth.finalTrafficLight}</Badge> : null}
+                                                            {synth.finalRiskLevel ? <Badge variant="outline">Risk: {synth.finalRiskLevel}</Badge> : null}
+                                                            <Badge variant="secondary" className="text-[10px] font-mono">
+                                                                {synth.modelUsed || synth.model_used || 'OpenAI 5.6 Terra'}
+                                                            </Badge>
+                                                        </div>
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>
                                                     <div className="space-y-1">
-                                                        <p className="font-medium text-foreground">{row.fileName || 'No file name'}</p>
-                                                        <p className="text-xs text-muted-foreground">{row.fileType || 'Unknown file type'}</p>
-                                                        {['failed', 'error', 'rejected'].includes((row.status || '').trim().toLowerCase()) || row.errorMessage ? (
-                                                            <div className="mt-1.5 rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive">
-                                                                <p className="font-semibold flex items-start gap-1">
-                                                                    <CircleAlert className="h-3.5 w-3.5 shrink-0 mt-0.5 text-destructive" />
-                                                                    <span>{row.errorMessage || 'Processing stalled or failed (Anthropic credit limit or format issue).'}</span>
-                                                                </p>
-                                                            </div>
-                                                        ) : null}
-                                                        {row.ebitdaExtracted ? (
-                                                            <p className="text-xs text-muted-foreground">EBITDA: {row.ebitdaExtracted}</p>
-                                                        ) : null}
-                                                        {row.submissionNotes ? (
-                                                            <ExpandableText text={row.submissionNotes} maxHeight={40} className="text-xs text-muted-foreground" />
-                                                        ) : null}
+                                                        <p className="font-medium text-foreground text-xs line-clamp-2">
+                                                            {synth.finalRecommendation || synth.finalJudgmentSummary || 'Project synthesis evaluation completed.'}
+                                                        </p>
+                                                        <div className="flex flex-wrap gap-1.5 pt-1">
+                                                            {(synth.redFlags || []).length > 0 ? (
+                                                                <Badge variant="destructive" className="text-[10px]">
+                                                                    {(synth.redFlags || []).length} Red Flags
+                                                                </Badge>
+                                                            ) : null}
+                                                            {(synth.yellowFlags || []).length > 0 ? (
+                                                                <Badge variant="warning" className="text-[10px]">
+                                                                    {(synth.yellowFlags || []).length} Yellow
+                                                                </Badge>
+                                                            ) : null}
+                                                            {(synth.greenFlags || []).length > 0 ? (
+                                                                <Badge variant="success" className="text-[10px]">
+                                                                    {(synth.greenFlags || []).length} Green
+                                                                </Badge>
+                                                            ) : null}
+                                                        </div>
                                                         <Button
                                                             type="button"
                                                             size="sm"
@@ -716,27 +1056,24 @@ export default function SubmissionHistoryCard({
                                                             className="mt-2"
                                                             onClick={(event) => {
                                                                 event.stopPropagation()
-                                                                downloadDocumentAnalysis(row)
+                                                                downloadSynthesisAnalysis(synth)
                                                             }}
                                                         >
-                                                            <Download />
-                                                            Download analysis
+                                                            <Download className="h-3.5 w-3.5" />
+                                                            Download synthesis
                                                         </Button>
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>
                                                     <div className="space-y-1 text-sm text-foreground">
-                                                        <p>{formatEasternTime(getDisplayTimestamp(row))}</p>
-                                                        {rowDurationSec !== null ? (
+                                                        <p>{formatEasternTime(synth.projectProcessedAt || synth.updatedAt || synth.createdAt)}</p>
+                                                        {synth.totalTokens ? (
                                                             <p className="text-xs text-muted-foreground flex items-center gap-1 font-mono">
-                                                                <Clock className="h-3 w-3 text-primary/70 shrink-0" />
-                                                                Duration: {formatElapsedDuration(rowDurationSec)}
+                                                                <Sparkles className="h-3 w-3 text-purple-400 shrink-0" />
+                                                                {synth.totalTokens.toLocaleString()} tokens {synth.costUsd != null ? `($${synth.costUsd.toFixed(4)})` : ''}
                                                             </p>
                                                         ) : null}
-                                                        <p className="text-xs text-muted-foreground">n8n row ID: {row.id || 'Pending'}</p>
-                                                        {row.environment ? (
-                                                            <p className="text-xs text-muted-foreground">Environment: {row.environment}</p>
-                                                        ) : null}
+                                                        <p className="text-xs text-muted-foreground font-mono">Synthesis ID: {synth.id || 'N/A'}</p>
                                                     </div>
                                                 </TableCell>
                                             </TableRow>
@@ -747,9 +1084,219 @@ export default function SubmissionHistoryCard({
                         </div>
 
                         <div className="rounded-lg border border-border bg-muted/20 p-4">
-                            {selectedRow ? (
+                            {selectedAuditRow ? (
+                                selectedAuditRow.itemType === 'synthesis' ? (() => {
+                                    const synth = selectedAuditRow.synth
+                                    const synthTitle = synth.projectName || synth.companyName || synth.projectId
+                                    const status = synth.projectStatus || 'completed'
+                                    const redFlags = synth.redFlags || []
+                                    const yellowFlags = synth.yellowFlags || []
+                                    const greenFlags = synth.greenFlags || []
+                                    const openQuestions = synth.openQuestions || []
+                                    const negotiationLevers = synth.negotiationLevers || []
+
+                                    return (
+                                        <div className="space-y-4">
+                                            <div className="flex flex-wrap items-start justify-between gap-3">
+                                                <div className="space-y-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="inline-flex items-center gap-1 rounded border border-purple-500/30 bg-purple-500/10 px-2 py-0.5 text-[11px] font-mono font-semibold uppercase tracking-wider text-purple-400">
+                                                            <Sparkles className="h-3.5 w-3.5 text-purple-400 shrink-0" />
+                                                            Project Synthesis
+                                                        </span>
+                                                        <p className="text-xs text-muted-foreground font-mono">ID: {synth.projectId}</p>
+                                                    </div>
+                                                    <h3 className="text-lg font-semibold text-foreground">
+                                                        {synthTitle}
+                                                    </h3>
+                                                </div>
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <Button type="button" size="sm" onClick={() => downloadSynthesisAnalysis(synth)}>
+                                                        <Download className="h-3.5 w-3.5" />
+                                                        Download synthesis
+                                                    </Button>
+                                                    {synth.projectId && onOpenProject ? (
+                                                        <Button type="button" size="sm" variant="outline" onClick={() => onOpenProject(synth.projectId)}>
+                                                            <ExternalLink className="h-3.5 w-3.5" />
+                                                            Open in Projects
+                                                        </Button>
+                                                    ) : null}
+                                                    <Badge variant={getStatusVariant(status)} className="gap-1">
+                                                        <StatusIcon status={status} />
+                                                        {formatSubmissionStatus(status)}
+                                                    </Badge>
+                                                    {synth.finalTrafficLight ? (
+                                                        <Badge variant={getSubmissionInsightTone(synth.finalTrafficLight)}>
+                                                            {synth.finalTrafficLight}
+                                                        </Badge>
+                                                    ) : null}
+                                                    {synth.finalRiskLevel ? (
+                                                        <Badge variant="outline">
+                                                            Risk: {synth.finalRiskLevel}
+                                                        </Badge>
+                                                    ) : null}
+                                                </div>
+                                            </div>
+
+                                            {/* Scope & Telemetry Banner */}
+                                            <div className="grid gap-3 sm:grid-cols-3">
+                                                <div className="rounded-lg border border-purple-500/20 bg-purple-500/[0.04] p-3">
+                                                    <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Document Scope</p>
+                                                    <p className="mt-1 text-base font-bold text-foreground">
+                                                        {synth.documentsCompletedCount || 0} / {synth.documentsReceivedCount || 0}
+                                                    </p>
+                                                    <p className="text-xs text-muted-foreground">Documents analyzed in synthesis pass</p>
+                                                </div>
+                                                <div className="rounded-lg border border-border bg-background p-3">
+                                                    <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">AI Model & Version</p>
+                                                    <p className="mt-1 text-sm font-semibold text-foreground font-mono">
+                                                        {synth.modelUsed || synth.model_used || 'OpenAI 5.6 Terra'}
+                                                    </p>
+                                                    <p className="text-xs text-muted-foreground">{synth.synthesis_version || 'Synthesis v1'}</p>
+                                                </div>
+                                                <div className="rounded-lg border border-border bg-background p-3">
+                                                    <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Tokens & Cost</p>
+                                                    <p className="mt-1 text-sm font-semibold text-foreground font-mono">
+                                                        {synth.totalTokens ? `${synth.totalTokens.toLocaleString()} tokens` : 'N/A'}
+                                                    </p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {synth.costUsd != null ? `$${synth.costUsd.toFixed(4)} USD` : 'Cost logged'}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            {/* Executive Recommendation Box */}
+                                            <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/[0.06] p-4">
+                                                <div className="flex items-center gap-2 text-emerald-400">
+                                                    <ShieldCheck className="h-4 w-4 shrink-0" />
+                                                    <p className="text-xs font-semibold uppercase tracking-wider">Executive Recommendation</p>
+                                                </div>
+                                                <p className="mt-1.5 text-sm font-medium text-foreground">
+                                                    {synth.finalRecommendation || 'Pending synthesis pass completion.'}
+                                                </p>
+                                                {synth.finalJudgmentSummary ? (
+                                                    <p className="mt-2 text-xs text-muted-foreground leading-relaxed border-t border-emerald-500/20 pt-2">
+                                                        {synth.finalJudgmentSummary}
+                                                    </p>
+                                                ) : null}
+                                            </div>
+
+                                            {/* Valuation Summary */}
+                                            <div className="rounded-lg border border-border bg-background p-3">
+                                                <div className="flex items-center justify-between">
+                                                    <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Valuation Range</p>
+                                                    <Badge variant="secondary" className="text-[10px]">
+                                                        Confidence: {synth.valuationConfidence || synth.aiConfidence || 'High'}
+                                                    </Badge>
+                                                </div>
+                                                <div className="mt-2 grid grid-cols-3 gap-2 text-center">
+                                                    <div className="rounded border border-border/60 bg-muted/30 p-2">
+                                                        <p className="text-[10px] text-muted-foreground uppercase font-mono">Lower Bound</p>
+                                                        <p className="text-sm font-bold text-foreground mt-0.5">{synth.valuationLowerBound || 'Pending'}</p>
+                                                    </div>
+                                                    <div className="rounded border border-primary/40 bg-primary/10 p-2">
+                                                        <p className="text-[10px] text-primary uppercase font-mono">Base Estimate</p>
+                                                        <p className="text-sm font-bold text-foreground mt-0.5">{synth.valuationBaseEstimate || 'Pending'}</p>
+                                                    </div>
+                                                    <div className="rounded border border-border/60 bg-muted/30 p-2">
+                                                        <p className="text-[10px] text-muted-foreground uppercase font-mono">Upper Bound</p>
+                                                        <p className="text-sm font-bold text-foreground mt-0.5">{synth.valuationUpperBound || 'Pending'}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Flag Sections */}
+                                            {redFlags.length > 0 ? (
+                                                <ExpandableInsightGroup
+                                                    title="Red Flags"
+                                                    items={redFlags}
+                                                    tone="destructive"
+                                                    itemCount={redFlags.length}
+                                                    className="border-destructive/30 bg-destructive/5"
+                                                    emptyLabel="No red flags recorded."
+                                                />
+                                            ) : null}
+
+                                            {yellowFlags.length > 0 ? (
+                                                <ExpandableInsightGroup
+                                                    title="Yellow Flags"
+                                                    items={yellowFlags}
+                                                    tone="warning"
+                                                    itemCount={yellowFlags.length}
+                                                    className="border-warning/30 bg-warning/5"
+                                                    emptyLabel="No yellow flags recorded."
+                                                />
+                                            ) : null}
+
+                                            {greenFlags.length > 0 ? (
+                                                <ExpandableInsightGroup
+                                                    title="Green Flags / Strengths"
+                                                    items={greenFlags}
+                                                    tone="success"
+                                                    itemCount={greenFlags.length}
+                                                    className="border-success/30 bg-success/5"
+                                                    emptyLabel="No green flags recorded."
+                                                />
+                                            ) : null}
+
+                                            {openQuestions.length > 0 ? (
+                                                <ExpandableInsightGroup
+                                                    title="Open Diligence Questions"
+                                                    items={openQuestions}
+                                                    tone="default"
+                                                    itemCount={openQuestions.length}
+                                                    className="border-border bg-background"
+                                                    emptyLabel="No open questions recorded."
+                                                />
+                                            ) : null}
+
+                                            {negotiationLevers.length > 0 ? (
+                                                <ExpandableInsightGroup
+                                                    title="Negotiation Levers"
+                                                    items={negotiationLevers}
+                                                    tone="default"
+                                                    itemCount={negotiationLevers.length}
+                                                    className="border-border bg-background"
+                                                    emptyLabel="No negotiation levers recorded."
+                                                />
+                                            ) : null}
+
+                                            {/* Raw Final Judgment JSON */}
+                                            {(synth.finalJudgmentJson || synth.finalJudgementJson) ? (
+                                                <ExpandableInsightGroup
+                                                    title="Final Judgment JSON"
+                                                    items={[]}
+                                                    itemCount={1}
+                                                    className="border-border bg-background"
+                                                    emptyLabel="No raw JSON returned."
+                                                >
+                                                    <pre className="mt-2 max-h-[220px] overflow-auto whitespace-pre-wrap break-words rounded-md bg-muted/60 p-3 text-xs text-foreground font-mono">
+                                                        {synth.finalJudgmentJson || synth.finalJudgementJson}
+                                                    </pre>
+                                                </ExpandableInsightGroup>
+                                            ) : null}
+
+                                            {/* Timestamps */}
+                                            <div className="grid gap-3 sm:grid-cols-3">
+                                                <div className="rounded-lg border border-border bg-background p-3">
+                                                    <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Processed At</p>
+                                                    <p className="mt-1 text-sm text-foreground">{formatEasternTime(synth.projectProcessedAt)}</p>
+                                                </div>
+                                                <div className="rounded-lg border border-border bg-background p-3">
+                                                    <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Created At</p>
+                                                    <p className="mt-1 text-sm text-foreground">{formatEasternTime(synth.createdAt)}</p>
+                                                </div>
+                                                <div className="rounded-lg border border-border bg-background p-3">
+                                                    <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Updated At</p>
+                                                    <p className="mt-1 text-sm text-foreground">{formatEasternTime(synth.updatedAt)}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )
+                                })() : (
                                 <div className="space-y-4">
                                     {(() => {
+                                        const selectedRow = selectedAuditRow.doc
                                         const aiViewModel = getAiSubmissionViewModel(selectedRow)
                                         const reconciliation = getReconciliationView(selectedRow.reconciliationJson)
                                         const documentImpact = computeImpactMetrics([selectedRow])
@@ -1294,7 +1841,7 @@ export default function SubmissionHistoryCard({
                                         )
                                     })()}
                                 </div>
-                            ) : (
+                            )) : (
                                 <div className="flex h-full min-h-[220px] items-center justify-center rounded-lg border border-dashed border-border bg-background px-4 text-center text-sm text-muted-foreground">
                                     Select a history row to inspect its async status and extracted results.
                                 </div>

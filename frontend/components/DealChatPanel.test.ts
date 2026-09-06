@@ -419,6 +419,73 @@ describe('DealChatPanel Client-Side AI Tools', () => {
         expect(anthropicSchema?.properties?.exportType?.enum).toContain('loi')
         expect(anthropicSchema?.properties?.exportType?.enum).toContain('ic_memo')
     })
+
+    it('queries master deterministic math checks ledger and closed-loop tie-out status', async () => {
+        const { executeClientSideTool } = await import('./DealChatPanel')
+        const result = executeClientSideTool('query_deal_data', {
+            queryType: 'math_checks'
+        }, mockContext)
+
+        expect(result.totalChecksEvaluated).toBe(12)
+        expect(result.passedChecksCount).toBeGreaterThan(0)
+        expect(result.plIntegrity.status).toBe('VERIFIED')
+        expect(result.plIntegrity.formula).toBe('Revenue - COGS = Gross Profit')
+        expect(result.underwritingMath.sbaCovenantStatus).toBeDefined()
+        expect(result.provenanceTierSummary).toContain('Confirmed & Reconciled')
+        expect(result.guidance).toContain('tab:diligence#diligence-master-math-checks')
+    })
+
+    it('queries submission audit trail activity log and synthesis count', async () => {
+        const { executeClientSideTool } = await import('./DealChatPanel')
+        const result = executeClientSideTool('query_deal_data', {
+            queryType: 'audit_trail'
+        }, mockContext)
+
+        expect(result.filterTabsAvailable).toEqual(['All Activity', 'Documents Only', 'Project Syntheses'])
+        expect(result.guidance).toContain('tab:history#history-table')
+    })
+
+    it('navigates cleanly to master deterministic math checks card and audit trail table', async () => {
+        const { executeClientSideTool } = await import('./DealChatPanel')
+        let navigatedTab = ''
+        let navigatedAnchor = ''
+        const testCtx = {
+            ...mockContext,
+            onNavigateTab: (tab: any, anchor?: string) => {
+                navigatedTab = tab
+                navigatedAnchor = anchor || ''
+            }
+        }
+
+        const mathNav = executeClientSideTool('navigate_to_card', {
+            tab: 'diligence',
+            cardAnchor: 'diligence-master-math-checks'
+        }, testCtx)
+        expect(mathNav.success).toBe(true)
+        expect(navigatedTab).toBe('diligence')
+        expect(navigatedAnchor).toBe('diligence-master-math-checks')
+
+        const auditNav = executeClientSideTool('navigate_to_card', {
+            tab: 'history',
+            cardAnchor: 'history-table'
+        }, testCtx)
+        expect(auditNav.success).toBe(true)
+        expect(navigatedTab).toBe('history')
+        expect(navigatedAnchor).toBe('history-table')
+    })
+
+    it('verifies math_checks and audit_trail are registered in tool schemas', async () => {
+        const { CHAT_AGENT_OPENAI_TOOLS, CHAT_AGENT_ANTHROPIC_TOOLS } = await import('./DealChatPanel')
+        const openAiQuery = CHAT_AGENT_OPENAI_TOOLS.find(t => t.function.name === 'query_deal_data')
+        const openAiParams = openAiQuery?.function.parameters as any
+        expect(openAiParams?.properties?.queryType?.enum).toContain('math_checks')
+        expect(openAiParams?.properties?.queryType?.enum).toContain('audit_trail')
+
+        const anthropicQuery = CHAT_AGENT_ANTHROPIC_TOOLS.find(t => t.name === 'query_deal_data')
+        const anthropicSchema = anthropicQuery?.input_schema as any
+        expect(anthropicSchema?.properties?.queryType?.enum).toContain('math_checks')
+        expect(anthropicSchema?.properties?.queryType?.enum).toContain('audit_trail')
+    })
 })
 
 

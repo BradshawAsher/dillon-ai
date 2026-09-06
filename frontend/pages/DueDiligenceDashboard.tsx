@@ -5097,6 +5097,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                             <div id="history-table" className="scroll-mt-6">
                                 <SubmissionHistoryCard
                                     rows={submissionHistory}
+                                    syntheses={visibleProjectSyntheses}
                                     loading={submissionHistoryLoading}
                                     error={submissionHistoryError}
                                     activeEnvironment={activeHistoryEnvironment}

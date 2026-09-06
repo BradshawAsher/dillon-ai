@@ -8,6 +8,7 @@ import QuickFilterBar from '../QuickFilterBar'
 import DealModelReadinessCard from '../DealModelReadinessCard'
 import FinancialCompletenessCard from '../FinancialCompletenessCard'
 import MathChecksSection from '../MathChecksSection'
+import UnifiedMathChecksCard from '../UnifiedMathChecksCard'
 import DataQualityChecksCard from '../DataQualityChecksCard'
 import AddBackQualityCard from '../AddBackQualityCard'
 import RecurringVsOneTimeCard from '../RecurringVsOneTimeCard'
@@ -19,7 +20,7 @@ import CostPerRunCard from '../CostPerRunCard'
 import ProjectChecklistCard from '../ProjectChecklistCard'
 import { sumMeasuredCost } from '../../utils/costModel'
 import { isRowMatchingProject } from '../../utils/projectWorkspace'
-import { formatElapsedDuration, getDocumentExtractionDurationSec } from '../../utils/diligenceDashboardUtils'
+import { formatElapsedDuration, getDocumentExtractionDurationSec, getProjectTimingSummary } from '../../utils/diligenceDashboardUtils'
 
 import { lazyWithRetry } from '../../utils/lazyWithRetry'
 const EbitdaReconstructionCard = lazyWithRetry(() => import('../EbitdaReconstructionCard'))
@@ -97,12 +98,17 @@ export function DiligenceWorkspaceView({
                             {activeProjectDocuments?.length || 0} Docs
                         </Badge>
                         {(() => {
-                            const totalSec = (activeProjectDocuments || []).reduce((sum, d) => sum + (getDocumentExtractionDurationSec(d) || 0), 0)
-                            if (totalSec > 0) {
+                            const timing = getProjectTimingSummary(activeProjectDocuments || [], activeProjectSynthesis)
+                            const displaySec = timing.extractionWallClockSec ?? (activeProjectDocuments || []).reduce((sum, d) => sum + (getDocumentExtractionDurationSec(d) || 0), 0)
+                            if (displaySec > 0) {
                                 return (
-                                    <Badge variant="outline" className="font-mono text-[10px] font-normal tracking-wide gap-1 text-muted-foreground bg-muted/20 border-border/80">
+                                    <Badge
+                                        variant="outline"
+                                        className="font-mono text-[10px] font-normal tracking-wide gap-1 text-muted-foreground bg-muted/20 border-border/80"
+                                        title={timing.documentComputeSec ? `Cumulative compute: ~${formatElapsedDuration(timing.documentComputeSec)} across parallel workers` : undefined}
+                                    >
                                         <Clock className="h-3 w-3 text-primary/70" />
-                                        ~{formatElapsedDuration(totalSec)} extraction
+                                        ~{formatElapsedDuration(displaySec)} extraction
                                     </Badge>
                                 )
                             }
@@ -255,6 +261,12 @@ export function DiligenceWorkspaceView({
                     <DealModelReadinessCard model={hydratedDealModel} documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} />
                 </div>
                 <FinancialCompletenessCard model={hydratedDealModel} documents={activeProjectDocuments} onOpenEvidence={setActiveEvidence} />
+                <UnifiedMathChecksCard
+                    documents={activeProjectDocuments}
+                    model={hydratedDealModel}
+                    synthesis={activeProjectSynthesis}
+                    onOpenEvidence={setActiveEvidence}
+                />
                 <MathChecksSection
                     documents={activeProjectDocuments}
                     onOpenEvidence={setActiveEvidence}

@@ -900,3 +900,146 @@ The repository has strong Vitest unit/domain coverage, a real loopback multipart
 
 - Do not change authentication, landing-page content, dashboard navigation, or walkthrough behavior.
 - Do not commit or push without a separate user request.
+
+---
+
+# Deal Fit Analysis Accordions & Popover Clipping Fix (2026-09-05)
+
+## Verified Root Causes
+
+1. **Green Flags Not Auto-Expanding**:
+   - `frontend/components/DealFitCard.tsx` initialized `expandedRedFlags` to `true`, but `expandedGreenFlags` to `false` (`useState(false)`). The prior intention was to minimize positive clutter and highlight risk items, but this created an asymmetric user experience where users had to manually click to see verified strengths.
+2. **Negotiation Levers Not Auto-Expanding**:
+   - In `DealFitCard.tsx`, `synthesis.negotiationLevers` was never implemented as an expandable list/accordion. Instead, it was flattened into a single string inside general thesis matches: `good.push({ text: "${synthesis.negotiationLevers.length} negotiation levers available for purchase price improvement", ... })`. Because it was a single line item, there was no toggle or expandable list for the user to open.
+3. **Hover Popover Hidden Behind Card**:
+   - The root `<Card>` wrapper in `DealFitCard.tsx` had `className="overflow-hidden"`.
+   - `<InPlaceEvidencePopover>` renders an absolutely positioned dropdown (`absolute z-50 ... top-full mt-1.5`).
+   - When hovering near the bottom of the card, the popover extended below the bottom edge of `<Card>`. Because the container had `overflow: hidden`, any content protruding outside the card was immediately clipped and rendered invisible/hidden.
+
+## Targeted Changes
+
+1. **`frontend/components/DealFitCard.tsx`**:
+   - Default both `expandedRedFlags` and `expandedGreenFlags` to `true`.
+   - Add `expandedNegotiationLevers` state (defaulting to `true`).
+   - Extract individual `negotiationLevers` into a typed list `negotiationLeverList: string[]` in `useMemo`.
+   - Remove the flattened single-string bullet from `matches`.
+   - Render a dedicated, beautiful expandable accordion for `negotiationLeverList` (styled with blue theme and `Sparkles` icon) directly under Green Flags. Each lever item includes full text, its own `InPlaceEvidencePopover` with citation details, and an "Ask AI" button.
+   - Update the positive signals badge count: `{matches.length + greenFlagList.length + negotiationLeverList.length}`.
+   - Change `<Card className="overflow-hidden">` to `<Card className="overflow-visible relative z-20">` to prevent clipping child popovers and ensure popovers stack cleanly above sibling sections.
+
+## Verification Plan
+
+1. Verify `DealFitCard.tsx` syntax, types, and build (`npm run build` or `npx tsc --noEmit`).
+2. Run test suites (`npm test` / `npx vitest run`).
+3. Empirically inspect `git diff frontend/components/DealFitCard.tsx` to ensure surgical edits.
+4. Verify in browser or component tests that both Green Flags and Negotiation Levers are auto-expanded by default, each lever is actionable with citation popover, and hovering opens the popover cleanly above the card without clipping.
+
+## Explicit Non-Goals
+
+- Do not alter backend synthesis logic, n8n workflows, or Supabase database rows.
+- Do not commit or push without an explicit user instruction.
+
+---
+
+# AI Extraction / Diligence Runtime Wall-Clock Calibration (2026-09-05)
+
+## Verified Root Causes
+
+1. **Serial Sum vs. Parallel Wall-Clock Elapsed Time**:
+   - In [`DealOverviewCard.tsx`](file:///frontend/components/DealOverviewCard.tsx#L160) and [`DiligenceWorkspaceView.tsx`](file:///frontend/components/views/DiligenceWorkspaceView.tsx#L100), the runtime was calculated using `reduce((acc, doc) => acc + (getDocumentExtractionDurationSec(doc) || 0), 0)`.
+   - When a deal (such as Cascadia) has 23 documents averaging ~32s each, summing them sequentially produced `~12m 14s` (23 × 32s = 736s).
+   - This reflected total cumulative worker compute time, not actual wall-clock elapsed turnaround time. Because documents are extracted concurrently across parallel workers and followed by a synthesis pass, the actual clock time was only ~3.5 to 4 minutes.
+2. **Missing Utilization of `getProjectTimingSummary`**:
+   - The repository already has [`getProjectTimingSummary(documents, synthesis)`](file:///frontend/utils/diligenceDashboardUtils.ts#L676), which tracks true windowed wall-clock time (`extractionWallClockSec`), synthesis duration (`synthesisSec`), and total project time (`totalProjectSec`).
+
+## Targeted Changes
+
+1. **`frontend/components/DealOverviewCard.tsx`**:
+   - Import `getProjectTimingSummary` from `../utils/diligenceDashboardUtils`.
+   - Calculate `timing = getProjectTimingSummary(documents || [], synthesis)`.
+   - Compute wall-clock runtime (`timing.totalProjectSec ?? (timing.extractionWallClockSec ? timing.extractionWallClockSec + (timing.synthesisSec || 0) : totalExtractionSec)`).
+   - Update KPI card label to `'AI diligence runtime'` and format value with true wall-clock time (`~4m` or `~3m 45s`).
+   - In the detail string, communicate both metrics clearly: `${completedDocs.length} docs (${avgExtractionSec}s avg/doc · ~${formatElapsedDuration(timing.documentComputeSec || totalComputeSec)} compute in parallel)`.
+2. **`frontend/components/views/DiligenceWorkspaceView.tsx`**:
+   - Use `getProjectTimingSummary` for the header extraction runtime badge, displaying wall-clock elapsed extraction time while preserving cumulative compute time in the tooltip.
+
+## Verification Plan
+
+1. Run TypeScript check (`npx tsc --noEmit`).
+2. Run unit tests (`npm test` / `vitest`).
+3. Verify that Cascadia and other deals report real wall-clock turnaround time with clear parallel compute context.
+
+---
+
+# Institutional Audit Trail, Unified Math Reconciliation Ledger, and Reconciled Fact Provenance Tier (2026-09-05)
+
+## 1. Goal Description
+Implement three interconnected forensic capabilities:
+1. **Audit Trail Enhancement**: Incorporate Project Synthesis runs alongside document submission rows in the Audit Trail (`tab:history`), with explicit `[DOC]` vs `[SYNTHESIS]` badges, a segmented filter bar (`All Activity` | `Documents` | `Project Syntheses`), and a dedicated Synthesis Audit inspection drawer.
+2. **Unified Deterministic Math Checks**: Build a comprehensive "Master Arithmetic Integrity & Reconciliation Ledger" component in the Diligence tab that centralizes all deterministic math checks across the entire deal room (P&L formulas, Balance Sheet identities, Cross-Document Ties, and Underwriting Math) with categorized tabs/accordions, tolerance indicators, and one-click citation proof.
+3. **"Confirmed & Reconciled" Data Tier**: Introduce a new top-tier data status (`Confirmed & Reconciled`) in `DealModelReadinessCard.tsx` and the evidence provenance system to distinguish numbers that are merely stated in a document (`Document Confirmed`) from numbers that are **both** documented and validated by deterministic reconciliation / cross-document ties.
+
+## 2. User Review Required
+- **Audit Trail Item Composition**: Syntheses will appear in chronological sequence with document submissions based on their execution timestamps (`projectProcessedAt` / `updatedAt` / `createdAt`), with a distinct purple badge (`[SYNTHESIS]`) and recommendation chips (`PROCEED`, `CAUTION`, `RENEGOTIATE`, `WALK AWAY`).
+- **Unified Math Checks Scope**: The new master ledger will aggregate both intra-document checks (`reconciliationJson`), cross-document reconciliations (`tax vs cim`, `bank vs p&l`), and core model equations (multiples, EBITDA bridge, cash flow payback).
+- **Data Tier Hierarchy**: Establishes a 5-tier institutional scale:
+  1. `Confirmed & Reconciled` (Tier 1: Document quote + arithmetic check verified)
+  2. `Document Confirmed` (Tier 2: Document quote without math verification)
+  3. `Calculated Formula` (Tier 3: Pure formula output from verified inputs)
+  4. `Estimated / Benchmark` (Tier 4: Proxy or benchmark)
+  5. `Analyst Assumption` (Tier 5: Buyer-calibrated parameter)
+
+## 3. Proposed Changes
+
+### Component 1: Audit Trail Synthesis Integration
+- **[MODIFY] [`DueDiligenceDashboard.tsx`](file:///frontend/pages/DueDiligenceDashboard.tsx)**:
+  - Pass `syntheses={visibleProjectSyntheses}` into `<SubmissionHistoryCard>`.
+- **[MODIFY] [`SubmissionHistoryCard.tsx`](file:///frontend/components/SubmissionHistoryCard.tsx)**:
+  - Accept `syntheses?: ProjectSynthesisItem[]`.
+  - Add segmented filter pills: `All (N)`, `Documents (D)`, `Project Syntheses (S)`.
+  - Merge document items and synthesis items chronologically into a unified audit feed.
+  - Render distinct badge indicators: `[DOC]` (blue/slate) vs `[SYNTHESIS]` (purple/indigo with `Sparkles` icon).
+  - Add a dedicated Synthesis Inspection Drawer for synthesis rows showing model name (`OpenAI 5.6 Terra` / `Claude Opus 5`), prompt version, final recommendation, valuation bounds, red flag count, token cost, and runtime.
+
+### Component 2: Unified Master Deterministic Math Checks Ledger
+- **[NEW] [`UnifiedMathChecksCard.tsx`](file:///frontend/components/UnifiedMathChecksCard.tsx)**:
+  - Dedicated card with HTML anchor `id="diligence-master-math-checks"`.
+  - Master summary counter: e.g. `{passedCount} / {totalCount} Arithmetic Checks Passed (100% Deterministic Integrity · Zero Hallucination)`.
+  - 4 Categorical filter tabs/accordions:
+    1. **P&L Integrity** ($\text{Rev} - \text{COGS} = \text{GP}$, $\text{GP} - \text{OpEx} = \text{EBITDA}$, Margin %)
+    2. **Balance Sheet & Solvency** ($\text{Assets} - \text{Liab} = \text{Equity}$, Working Capital Peg)
+    3. **Cross-Document Ties** (Tax Return vs CIM, Bank vs P&L, Add-backs vs Financial Schedule)
+    4. **Underwriting Math** (Entry Multiple, Payback Period, Debt Service Coverage)
+  - Detailed check cards with equation formulas, reported vs calculated values, delta %, and click-to-open evidence drawer.
+- **[MODIFY] [`DiligenceWorkspaceView.tsx`](file:///frontend/components/views/DiligenceWorkspaceView.tsx)**:
+  - Embed `<UnifiedMathChecksCard>` in the Diligence view with anchor `id="diligence-master-math-checks"`.
+- **[MODIFY] [`DealChatPanel.tsx`](file:///frontend/components/DealChatPanel.tsx) & [`CommandPalette.tsx`](file:///frontend/components/CommandPalette.tsx)**:
+  - Register `tab:diligence#diligence-master-math-checks` in `buildContext()` and Command Palette.
+
+### Component 3: "Confirmed & Reconciled" Data Tier
+- **[MODIFY] [`evidence.ts`](file:///frontend/utils/evidence.ts)**:
+  - Update `getEvidenceStatusPresentation` and `getProvenanceCategoryPresentation` to support `'reconciled'` / `'confirmed_reconciled'`:
+    - Label: `Confirmed & Reconciled` (variant: `success`, double shield/check styling).
+- **[MODIFY] [`documentedFacts.ts`](file:///frontend/utils/documentedFacts.ts)**:
+  - Enhance `deriveDocumentedFacts` / `DocumentedFact` to flag `isReconciled: true` when a fact is backed by a verified formula in `reconciliationJson` or cross-document conflict detector.
+- **[MODIFY] [`DealModelReadinessCard.tsx`](file:///frontend/components/DealModelReadinessCard.tsx)**:
+  - Compute `reconciledCount` alongside `confirmedCount` and `assumptionsSet`.
+  - Display tri-tier summary badge: `{reconciledCount} Confirmed & Reconciled · {confirmedCount} Document Confirmed · {assumptionsNeeded} Needed`.
+  - For each documented fact card, render `Confirmed & Reconciled` (emerald double-check) vs `Document Confirmed` (blue single check) vs `Estimated/Needed`.
+
+## 4. Verification Plan
+
+### Automated Tests
+- `npx vitest run components/DealChatPanel.test.ts` (Card anchor & navigation registry)
+- `npx vitest run components/DealModelReadinessCard.test.ts` (or create if missing)
+- `npm test` (Full 131 test suite)
+- `npx tsc --noEmit` (TypeScript compilation check)
+
+### Manual Verification
+- **Audit Trail**: Switch between `All`, `Documents`, and `Project Syntheses`. Verify clicking a synthesis row opens the synthesis audit drawer.
+- **Master Math Checks**: Inspect the master ledger in Diligence tab. Verify all 4 categories display arithmetic equations and delta calculations.
+- **Readiness Tiers**: Verify facts that pass arithmetic reconciliation receive the `Confirmed & Reconciled` badge and are counted in the readiness header.
+
+## 5. Explicit Non-Goals
+- No modification of n8n production LLM model configurations or credentials.
+- No automated `git commit` or `git push` without user instruction.

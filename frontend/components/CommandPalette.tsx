@@ -368,6 +368,15 @@ export default function CommandPalette({
             badge: 'Analysis'
         },
         {
+            id: 'card-master-math-checks',
+            label: 'Unified Deterministic Math Checks & Forensic Integrity Ledger',
+            icon: <Calculator className="h-4 w-4 text-emerald-500" />,
+            action: () => onSelectTab('diligence', 'diligence-master-math-checks'),
+            group: 'Diligence & Forensic Accounting',
+            keywords: ['math', 'checks', 'deterministic', 'reconciliation', 'tie-out', 'balance sheet', 'p&l', 'integrity', 'formula', 'cross-doc', 'verified', 'ledger'],
+            badge: 'Reconciliation'
+        },
+        {
             id: 'card-add-back-rules',
             label: 'Institutional Add-Back Banking Rules & SBA Disallowances',
             icon: <FileCheck className="h-4 w-4 text-emerald-500" />,

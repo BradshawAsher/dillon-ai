@@ -21,7 +21,7 @@ import { parseMagnitudeMoney } from '../utils/documentedFacts'
 import type { EvidenceItem } from './EvidenceDrawer'
 import ExpandableText from './ExpandableText'
 import ActionableRecommendationInfoButton from './ActionableRecommendationInfoButton'
-import { formatElapsedDuration, getDocumentExtractionDurationSec, getSynthesisDurationSec } from '../utils/diligenceDashboardUtils'
+import { formatElapsedDuration, getDocumentExtractionDurationSec, getSynthesisDurationSec, getProjectTimingSummary } from '../utils/diligenceDashboardUtils'
 import { riskLevelVariant } from '../utils/riskVariant'
 
 type DealOverviewCardProps = {
@@ -157,10 +157,21 @@ export default function DealOverviewCard({ syntheses, projects, currentProjectId
             documents,
         })
     }
-    const totalExtractionSec = (documents || []).reduce((acc, doc) => acc + (getDocumentExtractionDurationSec(doc) || 0), 0)
+    const timing = getProjectTimingSummary(documents || [], synthesis)
+    const fallbackSynth = getSynthesisDurationSec(synthesis)
+    const synthSec = timing.synthesisSec ?? fallbackSynth
+    const hasExtractionWallClock = timing.extractionWallClockSec !== null && timing.extractionWallClockSec > 0
+    const wallClockTotalSec = hasExtractionWallClock
+        ? (timing.extractionWallClockSec! + (synthSec || 0))
+        : (timing.totalProjectSec ?? (timing.extractionWallClockSec || synthSec || 0))
+
+    const totalExtractionSec = wallClockTotalSec > 0
+        ? wallClockTotalSec
+        : (documents || []).reduce((acc, doc) => acc + (getDocumentExtractionDurationSec(doc) || 0), 0)
+
     const completedDocs = (documents || []).filter(d => ['completed', 'approved'].includes((d.status || '').toLowerCase()) || getDocumentExtractionDurationSec(d) !== null)
-    const avgExtractionSec = completedDocs.length > 0 ? Math.round(totalExtractionSec / completedDocs.length) : 18
-    const synthesisDuration = getSynthesisDurationSec(synthesis)
+    const avgExtractionSec = timing.averageDocumentSec ?? (completedDocs.length > 0 ? Math.round(((timing.documentComputeSec || totalExtractionSec)) / completedDocs.length) : 18)
+    const hasParallelCompute = Boolean(timing.documentComputeSec && timing.documentComputeSec > totalExtractionSec * 1.2)
 
     const kpis = [
         { label: 'Price vs. base value', value: priceGapPercent === null ? 'Not available' : `${Math.abs(priceGapPercent).toFixed(1)}% ${priceGapPercent > 0 ? 'above' : priceGapPercent < 0 ? 'below' : 'at'} base`, detail: 'Asking price ÷ supported base value − 1', source: exampleMode ? 'Example data' : 'Synthesis + assumption', evidence: evidenceForSynthesis('Price vs. supported base value') },
@@ -169,7 +180,13 @@ export default function DealOverviewCard({ syntheses, projects, currentProjectId
         { label: 'EBITDA margin', value: ebitdaMargin === null ? 'Not available' : `${(ebitdaMargin * 100).toFixed(1)}%`, detail: 'EBITDA/SDE ÷ revenue', source: exampleMode ? 'Example data' : (documentedFacts.ebitda_sde?.status === 'confirmed' && documentedFacts.revenue?.status === 'confirmed' ? 'Documented' : 'Estimated'), evidence: evidenceForFact('ebitda_sde', 'EBITDA margin evidence') },
         { label: 'Debt to assets', value: debtToAssets === null ? 'Not available' : `${(debtToAssets * 100).toFixed(1)}%`, detail: 'Debt ÷ total assets', source: exampleMode ? 'Example data' : (documentedFacts.debt?.status === 'confirmed' && documentedFacts.total_assets?.status === 'confirmed' ? 'Documented' : 'Estimated'), evidence: evidenceForFact('debt', 'Debt-to-assets evidence') },
         { label: 'Revenue per employee', value: revenuePerEmployee === null ? 'Not available' : formatCurrencyValue(String(revenuePerEmployee), metricCurrency), detail: 'Revenue ÷ employee count', source: exampleMode ? 'Example data' : (documentedFacts.revenue?.status === 'confirmed' ? 'Documented' : 'Estimated'), evidence: evidenceForFact('revenue', 'Revenue-per-employee evidence') },
-        { label: 'AI extraction runtime', value: totalExtractionSec > 0 ? `~${formatElapsedDuration(totalExtractionSec)}` : '~1m 30s', detail: `${completedDocs.length > 0 ? `${completedDocs.length} docs (${avgExtractionSec}s avg/doc)` : 'Per-document forensic processing'}`, source: 'Telemetry', evidence: evidenceForSynthesis('AI extraction runtime telemetry') },
+        {
+            label: 'AI diligence runtime',
+            value: totalExtractionSec > 0 ? `~${formatElapsedDuration(totalExtractionSec)}` : '~1m 30s',
+            detail: `${completedDocs.length > 0 ? `${completedDocs.length} docs (${avgExtractionSec}s avg/doc${hasParallelCompute ? ` · ~${formatElapsedDuration(timing.documentComputeSec!)} compute` : ''})` : 'Per-document forensic processing'}`,
+            source: 'Telemetry',
+            evidence: evidenceForSynthesis('AI diligence runtime telemetry')
+        },
     ]
     const decisionDrivers = synthesis ? [
         {

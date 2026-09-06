@@ -224,15 +224,57 @@ export function getProvenanceCategoryPresentation(args: {
 }
 
 /** One status vocabulary for facts, findings, and calculated metrics. */
-export function getEvidenceStatusPresentation(status?: string, provenance?: string): EvidenceStatusPresentation {
+export function getEvidenceStatusPresentation(status?: string, provenance?: string, isReconciled?: boolean): EvidenceStatusPresentation {
     const normalized = `${status ?? ''} ${provenance ?? ''}`.trim().toLowerCase()
     if (/contradict|conflict/.test(normalized)) return { label: 'Contradicted', variant: 'destructive' }
+    if (/reconcil|double-verif|forensic/.test(normalized) || isReconciled) {
+        return { label: 'Confirmed & Reconciled', variant: 'success' }
+    }
     if (/illustrative|assum/.test(normalized)) return { label: 'Illustrative', variant: 'warning' }
     if (/estimate/.test(normalized)) return { label: 'Estimated', variant: 'warning' }
     if (/confirm|documented|fully documented/.test(normalized)) return { label: 'Confirmed', variant: 'success' }
     if (/calculat/.test(normalized)) return { label: 'Calculated', variant: 'secondary' }
     if (/synthes/.test(normalized)) return { label: 'Synthesized', variant: 'secondary' }
     return { label: 'Needs review', variant: 'outline' }
+}
+
+/**
+ * Determines whether a quantitative fact from a document is also backed by
+ * deterministic arithmetic reconciliation or independent cross-document validation.
+ */
+export function isFactReconciled(
+    key: string,
+    fact?: DocumentedFact | null,
+    documents?: SubmissionHistoryItem[]
+): boolean {
+    if (!fact || typeof fact.value !== 'number') return false
+    const status = (fact.status || '').toLowerCase()
+    if (!['confirmed', 'reconciled', 'documented'].includes(status)) return false
+    if (fact.isReconciled || /reconcil|double-verif|forensic/.test((fact.provenance || '').toLowerCase())) return true
+
+    if (!documents || documents.length === 0) return false
+    for (const doc of documents) {
+        if (!doc.reconciliationJson) continue
+        try {
+            const recon = typeof doc.reconciliationJson === 'string' ? JSON.parse(doc.reconciliationJson) : doc.reconciliationJson
+            const metrics = recon?.metrics
+            if (!metrics) continue
+            const candidateKeys: Record<string, string[]> = {
+                ebitda_sde: ['ebitda_check', 'ebitda', 'ebitda_sde', 'operating_income'],
+                revenue: ['revenue', 'gross_revenue', 'gross_profit', 'margin_check'],
+                gross_profit: ['gross_profit', 'gp_check'],
+                total_assets: ['balance_sheet', 'equity_check', 'assets'],
+                debt: ['debt_check', 'liabilities', 'equity_check'],
+            }
+            const matchingKeys = candidateKeys[key] || [key]
+            for (const mk of matchingKeys) {
+                if (metrics[mk]?.withinTolerance === true) {
+                    return true
+                }
+            }
+        } catch { }
+    }
+    return false
 }
 
 /** Evidence for a single documented fact (revenue, EBITDA, debt, ...). */
@@ -244,6 +286,7 @@ export function buildFactEvidence(args: {
 }): EvidenceItem {
     const fact = args.facts[args.field]
     const citation = fact?.citations?.[0]
+    const isReconciled = isFactReconciled(args.field, fact, args.documents)
 
     let sourceFile = citation?.source_file
     if (!sourceFile && args.documents.length > 0) {
@@ -259,6 +302,11 @@ export function buildFactEvidence(args: {
         }
     }
 
+    const effectiveStatus = isReconciled ? 'Confirmed & Reconciled' : fact?.status
+    const effectiveProvenance = isReconciled
+        ? (fact?.provenance ? `${fact.provenance} (Reconciled)` : 'Documented & Deterministically Reconciled')
+        : (fact?.provenance || 'Documented')
+
     return buildDocumentLinkedEvidence({
         title: args.title,
         sourceFile: sourceFile,
@@ -267,8 +315,8 @@ export function buildFactEvidence(args: {
         period: fact?.period,
         currency: fact?.currency,
         confidence: fact?.confidence,
-        status: fact?.status,
-        provenance: fact?.provenance || 'Documented',
+        status: effectiveStatus,
+        provenance: effectiveProvenance,
         documents: args.documents,
         fallbackSourceFile: 'Source file was not returned',
     })
