@@ -190,7 +190,7 @@ export default function DealFitCard({ model, synthesis }: Props) {
     }
 
     return (
-        <Card className="overflow-visible relative z-20">
+        <Card id="deal-fit" className="overflow-visible relative z-20 scroll-mt-6">
             <CardHeader className="border-b border-border bg-card/80 pb-3">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">

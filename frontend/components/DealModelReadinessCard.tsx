@@ -38,7 +38,7 @@ export default function DealModelReadinessCard({ model, documents, onOpenEvidenc
     const assumptionsSet = assumptionLabels.filter(([key]) => model[key] !== null && model[key] !== undefined).length
 
     return (
-        <Card className="overflow-hidden">
+        <Card id="deal-model-readiness" className="overflow-hidden scroll-mt-6">
             <CardHeader className="border-b border-border bg-card/80">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
