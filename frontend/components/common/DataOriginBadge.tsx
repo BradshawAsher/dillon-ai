@@ -1,5 +1,7 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { FileCheck, PenLine, BarChart2, Sliders, Calculator } from 'lucide-react'
+import { useFloatingPosition } from '../../hooks/useFloatingPosition'
 
 export type DataOrigin =
     | 'extracted'     // Documented facts from uploaded files (CIM, Tax Returns, P&L)
@@ -78,6 +80,7 @@ export default function DataOriginBadge({
     onClick,
 }: DataOriginBadgeProps) {
     const [showPopover, setShowPopover] = useState(false)
+    const buttonRef = useRef<HTMLButtonElement | null>(null)
     const config = ORIGIN_CONFIG[origin] || ORIGIN_CONFIG.assumption
     const Icon = config.icon
     const displayLabel = label || config.defaultLabel
@@ -88,6 +91,15 @@ export default function DataOriginBadge({
     }${formula ? ` Formula: ${formula}` : ''}`
 
     const hasDetails = Boolean(citation || formula || description || interactive)
+
+    const coords = useFloatingPosition({
+        isOpen: showPopover,
+        targetRef: buttonRef,
+        popoverWidth: 260,
+        preferredPlacement: 'top',
+        margin: 6,
+        padding: 12,
+    })
 
     return (
         <span
@@ -100,6 +112,7 @@ export default function DataOriginBadge({
             onBlur={() => setShowPopover(false)}
         >
             <button
+                ref={buttonRef}
                 type="button"
                 data-origin-badge={origin}
                 title={titleText}
@@ -119,10 +132,20 @@ export default function DataOriginBadge({
                 <span>{displayLabel}</span>
             </button>
 
-            {showPopover && (citation || formula || description) ? (
+            {showPopover && (citation || formula || description) && typeof document !== 'undefined' && createPortal(
                 <div
                     role="tooltip"
-                    className="absolute bottom-full left-1/2 z-50 mb-1.5 w-56 -translate-x-1/2 rounded-lg border border-border bg-popover p-2.5 text-left text-xs text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95 pointer-events-none"
+                    style={{
+                        position: 'fixed',
+                        top: coords.top !== undefined ? `${coords.top}px` : undefined,
+                        bottom: coords.bottom !== undefined ? `${coords.bottom}px` : undefined,
+                        left: coords.left !== undefined ? `${coords.left}px` : undefined,
+                        right: coords.right !== undefined ? `${coords.right}px` : undefined,
+                        width: coords.width !== undefined ? `${coords.width}px` : undefined,
+                        maxHeight: coords.maxHeight !== undefined ? `${coords.maxHeight}px` : undefined,
+                        zIndex: 99999,
+                    }}
+                    className="overflow-y-auto rounded-lg border border-border bg-popover p-2.5 text-left text-xs text-popover-foreground shadow-xl ring-1 ring-border/50 animate-in fade-in-0 zoom-in-95 pointer-events-none"
                 >
                     <div className="flex items-center gap-1.5 font-bold">
                         <Icon className="h-3.5 w-3.5 text-primary" />
@@ -143,8 +166,9 @@ export default function DataOriginBadge({
                             {formula}
                         </div>
                     ) : null}
-                </div>
-            ) : null}
+                </div>,
+                document.body
+            )}
         </span>
     )
 }

@@ -31,7 +31,8 @@ MergeWorks supports three complementary diligence depth levels depending on tran
 - **[System Architecture & Technical Specification (`ARCHITECTURE.md`)](ARCHITECTURE.md)** — Comprehensive architecture diagrams, data flow sequence charts, component deep-dives, and interview masterclass talking points.
 - **[Concurrency, Capacity & Stress Benchmarks (`CAPACITY_LIMITS.md`)](test_sets/stress_reports/CAPACITY_LIMITS.md)** — Empirical 4-tier concurrency matrix (500 connections @ 1.18s P95, 445 RPS DB throughput), Little's Law think-time proofs, and LLM worker capacity (15–25 concurrent documents / ~3–4 simultaneous active batches on a single key, with linear BYOK scaling).
 - **[Upload and Batch Recovery](docs/UPLOAD_AND_BATCH_RECOVERY.md)** — Resumable large-file uploads, verified n8n handoff, failure recovery, and batch count/timer rules.
-- **[Evaluation Harness & Benchmark Guide (`EVALS.md`)](EVALS.md)** — 58-document golden benchmark dataset, 5-dimension scoring rubric, and 1-card Pre/Post-LOI toggle design.
+- **[Evaluation Harness & Benchmark Guide (`EVALS.md`)](EVALS.md)** — 30 data rooms, 78 scored benchmark documents (357 total files), 8-dimension scoring rubric, and 1-card Pre/Post-LOI toggle design.
+- **[Mathematical Calculations & Formulas (`MATH_CALCULATIONS.md`)](MATH_CALCULATIONS.md)** — Deterministic financial arithmetic, evaluation scoring mechanics, and negotiation formulas.
 - **[Dual Core Agent Capabilities (`PURPOSE.md`)](PURPOSE.md)** — Pre-LOI Valuation Discovery & Post-LOI Deal Negotiation frameworks.
 - **[Deterministic Math Verification (`DETERMINISTIC_MATH_CHECKS.md`)](DETERMINISTIC_MATH_CHECKS.md)** — Code-based arithmetic reconciliation over extracted source facts.
 
@@ -255,7 +256,7 @@ batch progress, and project synthesis before promoting a change. See
 ## Key UI features
 
 - **Multi-Modal VDR Ingestion Dropzone** — Ingests 9 asset classes (PDF, XLSX, DOCX, EML, WEBP, PPTX, MP3, MP4, and client-side unpacked ZIP archives) with direct presigned cloud uploads.
-- **Interactive Evals & Harness Tab** — 1-Card per deal with real-time `Pre-LOI Discovery` ↔ `Post-LOI Negotiation` toggle, 58 golden benchmark documents, and per-document precision inspection.
+- **Interactive Evals & Harness Tab** — 1-Card per deal with real-time `Pre-LOI Discovery` ↔ `Post-LOI Negotiation` toggle, 78 scored benchmark documents across 30 full data rooms (357 total files), and per-document precision inspection.
 - **Guided Walkthrough & Simulated VDR Modal** — macOS-style interactive VDR file explorer, step-by-step feature tours, and mission quests.
 - **Overview tab** with Summary / Deep Analysis sub-tabs — Deal Memo shown first.
 - **AI Chatbot** (floating panel) — context-aware Q&A about the active project and all other projects in the portfolio.
@@ -290,7 +291,8 @@ batch progress, and project synthesis before promoting a change. See
 | `PURPOSE.md` | Dual core capabilities: Pre-LOI Discovery & Post-LOI Negotiation |
 | `DETERMINISTIC_MATH_CHECKS.md` | How deterministic math checks work |
 | `GROUND_TRUTH_METHODOLOGY.md` | Ground truth creation methodology, gold standard datasets & high-accuracy architecture |
-| `EVALS.md` | Evaluation harness guide, 7-dimension scoring & CI/CD benchmark tests |
+| `EVALS.md` | Evaluation harness guide, 8-dimension scoring & CI/CD benchmark tests |
+| `MATH_CALCULATIONS.md` | Deterministic mathematical formulas, verification equations & unified calculation engine |
 | `EVAL_FAQ_AND_EDGE_CASES.md` | Evaluation edge-case handling & buyer defense FAQ |
 
 ## Production Stack & Zero-Egress Architecture

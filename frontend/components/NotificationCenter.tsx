@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react"
+import { createPortal } from "react-dom"
 import {
   Bell,
   CheckCheck,
@@ -8,6 +9,7 @@ import {
   Info,
   Sparkles,
 } from "lucide-react"
+import { useFloatingPosition } from "../hooks/useFloatingPosition"
 
 export type Notification = {
   id: string
@@ -68,6 +70,16 @@ export default function NotificationCenter({
 }: NotificationCenterProps) {
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
+  const buttonRef = useRef<HTMLButtonElement>(null)
+
+  const coords = useFloatingPosition({
+    isOpen: open,
+    targetRef: buttonRef,
+    popoverWidth: 320,
+    preferredPlacement: "bottom",
+    margin: 8,
+    padding: 16,
+  })
 
   const unreadCount = notifications.filter((n) => !n.read).length
 
@@ -76,7 +88,9 @@ export default function NotificationCenter({
     function handleClickOutside(event: MouseEvent) {
       if (
         containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
+        !containerRef.current.contains(event.target as Node) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(event.target as Node)
       ) {
         setOpen(false)
       }
@@ -91,11 +105,12 @@ export default function NotificationCenter({
   }, [open])
 
   return (
-    <div ref={containerRef} className="relative">
+    <div className="relative">
       {/* Bell button */}
       <button
+        ref={buttonRef}
         onClick={() => setOpen((prev) => !prev)}
-        className="relative px-4 py-2 text-sm rounded-md border border-border bg-background text-foreground hover:bg-muted transition-colors"
+        className="relative px-4 py-2 text-sm rounded-md border border-border bg-background text-foreground hover:bg-muted transition-colors cursor-pointer"
         aria-label="Notifications"
       >
         <Bell className="h-4 w-4" />
@@ -105,8 +120,21 @@ export default function NotificationCenter({
       </button>
 
       {/* Dropdown panel */}
-      {open && (
-        <div className="absolute left-0 top-full mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-lg border border-border bg-background shadow-lg z-50">
+      {open && typeof document !== "undefined" && createPortal(
+        <div
+          ref={containerRef}
+          style={{
+            position: "fixed",
+            top: coords.top !== undefined ? `${coords.top}px` : undefined,
+            bottom: coords.bottom !== undefined ? `${coords.bottom}px` : undefined,
+            left: coords.left !== undefined ? `${coords.left}px` : undefined,
+            right: coords.right !== undefined ? `${coords.right}px` : undefined,
+            width: coords.width !== undefined ? `${coords.width}px` : undefined,
+            maxHeight: coords.maxHeight !== undefined ? `${coords.maxHeight}px` : "75vh",
+            zIndex: 99999,
+          }}
+          className="overflow-y-auto rounded-xl border border-border bg-background shadow-2xl animate-in fade-in-0 zoom-in-95 duration-150 ring-1 ring-border/50"
+        >
           {/* Header */}
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
             <h3 className="text-sm font-semibold text-foreground">
@@ -214,7 +242,8 @@ export default function NotificationCenter({
               </ul>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

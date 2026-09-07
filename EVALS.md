@@ -36,19 +36,20 @@ graph TD
 
 ---
 
-## 7-Dimension Scoring System (Max 80 Points)
+## 8-Dimension Scoring System (Max 80–90 Points)
 
-Every document is scored across **7 core dimensions** totaling 80 maximum points, converted to a 0–100% score:
+Every document is scored across **8 core dimensions** (Max 80 points in Pre-LOI mode, 90 points in Post-LOI confirmatory diligence mode), converted to a normalized 0–100% score:
 
 | Dimension | Max Points | Evaluation Criteria |
 | :--- | :--- | :--- |
 | **1. Classification** | **10 pts** | Matches detected document type (P&L, CIM, Add-Back Notes, Concentration Table, Balance Sheet). Exact match = 10 pts, secondary match = 7 pts. |
 | **2. Financial Facts** | **10 pts** | Compares extracted numerical metrics (Revenue, EBITDA, COGS, Net Income) year-over-year. $\le 1\%$ error = 10 pts, $\le 5\%$ error = 5 pts. |
 | **3. Risk & Flag Recall** | **20 pts** | Evaluates traffic light accuracy (10 pts) + keyword recall ratio of expected Red & Yellow risk flags (10 pts). |
-| **4. Valuation Accuracy** | **15 pts** | Compares calculated valuation base estimate against ground-truth bounds ($\le 15\%$ error = 15 pts, $\le 30\%$ error = 10 pts). |
+| **4. Valuation Accuracy** | **10 pts** | Compares calculated valuation base estimate against ground-truth bounds ($\le 15\%$ error = 10 pts, $\le 30\%$ error = 6 pts). |
 | **5. Employee Evidence** | **5 pts** | Verifies extracted headcount and payroll evidence against agreements. |
 | **6. Math Checks** | **10 pts** | Validates row/column total consistency and accounting balance checks. |
-| **7. Acquisition Judgment** | **10 pts** | **New**: Evaluates bottom-line M&A recommendation fidelity (**PROCEED**, **RENEGOTIATE**, **ESCALATE**). Exact match = 10 pts, adjacent risk posture = 5 pts. |
+| **7. Acquisition Judgment** | **10 pts** | Evaluates bottom-line M&A recommendation fidelity (**PROCEED**, **RENEGOTIATE**, **ESCALATE**). Exact match = 10 pts, adjacent risk posture = 5 pts. |
+| **8. Cross-Doc Conflicts** | **15 pts (Post-LOI) / 5 pts (Pre-LOI)** | Evaluates cross-document reconciliation and discrepancy detection (tax return vs. P&L revenue, book vs. bank cash). |
 
 ### Partial Credit Scoring Rules
 The evaluation harness awards partial credit for near-misses and adjacent risk postures:

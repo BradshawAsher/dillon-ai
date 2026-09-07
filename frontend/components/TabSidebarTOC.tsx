@@ -503,7 +503,7 @@ export default function TabSidebarTOC({
                 </div>
 
                 {/* Section List */}
-                <ul className="max-h-[calc(100vh-4.2rem)] overflow-y-auto p-1 space-y-0.5 custom-scrollbar">
+                <ul className="max-h-[calc(100vh-8rem)] overflow-y-auto p-1 pb-4 space-y-0.5 custom-scrollbar">
                     {sections.map((section) => {
                         const isActive = activeSection === section.id
                         return (

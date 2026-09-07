@@ -182,6 +182,16 @@ export function isGenericName(name: string): boolean {
         norm.includes('data_room') ||
         norm.includes('seller adjusted ebitda bridge') ||
         norm.includes('book tax reconciliation') ||
+        norm.includes('form 1120') ||
+        norm.includes('form_1120') ||
+        norm.includes('1120-s') ||
+        norm.includes('1120s') ||
+        norm.includes('form 1065') ||
+        norm.includes('form_1065') ||
+        norm.includes('form 1040') ||
+        norm.includes('schedule c') ||
+        norm.includes('tax return') ||
+        norm.includes('simulation') ||
         ['n/a', 'na', 'unknown', 'none'].includes(norm)
     )
 }
@@ -672,7 +682,7 @@ export function getProjectStatusVariant(statusLabel: string | null | undefined):
 export function createProjectSummaries(
     rows: SubmissionHistoryItem[],
     inFlightBatch?: { projectId: string; dealName?: string; projectStage?: string; expectedDocumentCount?: number } | null,
-    syntheses?: Array<{ projectId: string; projectProcessedAt?: string; projectStatus?: string }>
+    syntheses?: Array<{ projectId: string; projectProcessedAt?: string; projectStatus?: string; projectName?: string; companyName?: string }>
 ): ProjectSummary[] {
     const archivedKeys = new Set(getArchivedProjectKeys())
     const rowsByProject = new Map<string, SubmissionHistoryItem[]>()
@@ -787,11 +797,20 @@ export function createProjectSummaries(
             && matchingSynth.projectStatus !== 'synthesis_blocked'
         )
 
+        const synthProjName = matchingSynth?.projectName?.trim()
+        const synthCompName = matchingSynth?.companyName?.trim()
+
         return {
             projectKey,
             projectId: latestRow.projectId,
-            projectName: getProjectName(latestRow, sortedRows),
-            companyName: getCompanyName(latestRow, sortedRows),
+            projectName: (synthProjName && !isGenericName(synthProjName))
+                ? synthProjName
+                : getProjectName(latestRow, sortedRows),
+            companyName: (synthCompName && !isGenericName(synthCompName))
+                ? synthCompName
+                : (synthProjName && !isGenericName(synthProjName))
+                ? synthProjName
+                : getCompanyName(latestRow, sortedRows),
             stage: latestRow.projectStage,
             workstream: latestRow.workstream || 'All workstreams',
             latestActivity: getDisplayTimestamp(latestRow) || 'Pending',

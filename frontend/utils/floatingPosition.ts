@@ -71,10 +71,12 @@ export function computeFloatingPosition({
 
     if (placement === 'top') {
         newCoords.bottom = viewportHeight - rect.top + margin
-        newCoords.maxHeight = Math.min(MAX_PANEL_HEIGHT, Math.max(MIN_PANEL_HEIGHT, spaceAbove - padding))
+        const availableAbove = Math.max(0, spaceAbove - padding)
+        newCoords.maxHeight = Math.min(MAX_PANEL_HEIGHT, Math.max(80, availableAbove))
     } else {
         newCoords.top = rect.bottom + margin
-        newCoords.maxHeight = Math.min(MAX_PANEL_HEIGHT, Math.max(MIN_PANEL_HEIGHT, spaceBelow - padding))
+        const availableBelow = Math.max(0, spaceBelow - padding)
+        newCoords.maxHeight = Math.min(MAX_PANEL_HEIGHT, Math.max(80, availableBelow))
     }
 
     if (viewportWidth < MOBILE_BREAKPOINT) {

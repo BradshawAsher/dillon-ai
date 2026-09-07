@@ -21,7 +21,7 @@ export default function IdentityGate() {
 
   if (identity && !editing) {
     return (
-      <div className="fixed bottom-4 left-4 z-50 flex items-center gap-2 rounded-full border border-border bg-card py-1 pl-3 pr-1 shadow-retool-md">
+      <div className="fixed bottom-4 left-4 z-60 flex items-center gap-2 rounded-full border border-border bg-card py-1 pl-3 pr-1 shadow-retool-md">
         <span className="text-xs text-muted-foreground">
           Submitting as <span className="font-medium text-foreground">{identity.name}</span>
         </span>

@@ -1472,8 +1472,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
     }, [activeSubmissionBatch, dealName, projectStage, submissionHistory])
 
     const projectSummaries = useMemo(
-        () => createProjectSummaries(submissionHistory, inFlightBatchPlaceholder),
-        [submissionHistory, inFlightBatchPlaceholder]
+        () => createProjectSummaries(submissionHistory, inFlightBatchPlaceholder, visibleProjectSyntheses),
+        [submissionHistory, inFlightBatchPlaceholder, visibleProjectSyntheses]
     )
 
     const availableProjects = useMemo(() => {
@@ -2101,7 +2101,13 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         ? QUESTIONNAIRE_TOUR_FORM_DATA.companyName
         : isTourActive
         ? 'Apex Industrial Technologies LLC'
-        : (activeViewProject?.name || dealName || (isExampleMode ? 'Apex Industrial Technologies (Atlas Demo)' : ''))
+        : (
+            (activeProjectSynthesis?.projectName && !isGenericName(activeProjectSynthesis.projectName) ? activeProjectSynthesis.projectName : '') ||
+            (activeProjectSynthesis?.companyName && !isGenericName(activeProjectSynthesis.companyName) ? activeProjectSynthesis.companyName : '') ||
+            activeViewProject?.name ||
+            dealName ||
+            (isExampleMode ? 'Apex Industrial Technologies (Atlas Demo)' : '')
+        )
 
     const suggestedProjectName = useMemo(() => {
         if (isQuestionnaireTour) {
@@ -4705,6 +4711,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                             activeProjectDocuments={activeProjectDocuments}
                             dealName={effectiveDealName}
                             suggestedProjectName={suggestedProjectName}
+                            onUpdateDealModel={handleDealModelChange}
                         />
                     ) : null}
 
@@ -5266,9 +5273,12 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
 
             <aside
                 aria-label="Quick Actions"
-                className={`fixed bottom-2.5 left-3 z-40 transition-all duration-300 ${
+                className={`fixed bottom-2.5 z-60 transition-all duration-300 ${
                     activeEvidence ? 'opacity-0 pointer-events-none -translate-x-10 scale-95' : 'opacity-100 translate-x-0 scale-100'
                 }`}
+                style={{
+                    left: isTocCollapsed ? '0.75rem' : `${tocWidth + 12}px`,
+                }}
             >
                 {isLeftQuickDockVisible ? (
                     <div className="flex items-center gap-1.5 rounded-full border border-border/80 bg-background/90 p-1.5 shadow-xl backdrop-blur-md animate-in fade-in-0 duration-200">

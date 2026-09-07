@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect, ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { FileText, AlertTriangle, X, ShieldCheck, Bot, Pin, Edit3, RotateCcw } from 'lucide-react'
+import { useFloatingPosition } from '../hooks/useFloatingPosition'
 
 export interface EvidenceDetails {
     metricName: string
@@ -38,13 +40,20 @@ export default function InPlaceEvidencePopover({
 }: InPlaceEvidencePopoverProps) {
     const [isPinned, setIsPinned] = useState(false)
     const [isHovered, setIsHovered] = useState(false)
-    const [computedAlign, setComputedAlign] = useState<'left' | 'right'>('left')
-    const [verticalPlacement, setVerticalPlacement] = useState<'bottom' | 'top'>('bottom')
     
     const isOpen = isPinned || isHovered
     const popoverRef = useRef<HTMLDivElement>(null)
     const buttonRef = useRef<HTMLButtonElement>(null)
     const hoverTimeoutRef = useRef<number | null>(null)
+
+    const coords = useFloatingPosition({
+        isOpen,
+        targetRef: buttonRef,
+        popoverWidth: 350,
+        preferredPlacement: 'bottom',
+        margin: 8,
+        padding: 16,
+    })
 
     const clearHoverTimer = () => {
         if (hoverTimeoutRef.current !== null) {
@@ -108,34 +117,6 @@ export default function InPlaceEvidencePopover({
             document.removeEventListener('keydown', handleKeyDown)
         }
     }, [isOpen])
-
-    useEffect(() => {
-        if (!isOpen || !buttonRef.current) return
-
-        const rect = buttonRef.current.getBoundingClientRect()
-        const popoverWidth = 320
-        const popoverHeight = 320
-
-        // Horizontal alignment check
-        if (align === 'left') {
-            setComputedAlign('left')
-        } else if (align === 'right') {
-            setComputedAlign('right')
-        } else {
-            if (rect.left + popoverWidth > window.innerWidth - 20) {
-                setComputedAlign('right')
-            } else {
-                setComputedAlign('left')
-            }
-        }
-
-        // Vertical placement check to prevent bottom-of-screen cutoff
-        if (rect.bottom + popoverHeight > window.innerHeight - 20 && rect.top > popoverHeight + 20) {
-            setVerticalPlacement('top')
-        } else {
-            setVerticalPlacement('bottom')
-        }
-    }, [isOpen, align])
 
     const handleAskAi = (e: React.MouseEvent) => {
         e.stopPropagation()
@@ -209,14 +190,25 @@ export default function InPlaceEvidencePopover({
                 ) : null}
             </button>
 
-            {isOpen && (
+            {isOpen && typeof document !== 'undefined' && createPortal(
                 <div
                     ref={popoverRef}
+                    role="dialog"
+                    aria-label={`Evidence details for ${evidence.metricName}`}
                     onMouseEnter={handleMouseEnter}
                     onMouseLeave={handleMouseLeave}
-                    className={`absolute z-50 w-80 max-w-[calc(100vw-2rem)] max-h-[75vh] overflow-y-auto rounded-xl border border-border bg-popover p-3.5 shadow-2xl text-popover-foreground animate-in fade-in zoom-in-95 duration-150 ${
-                        verticalPlacement === 'top' ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
-                    } ${computedAlign === 'right' ? 'right-0' : 'left-0'}`}
+                    style={{
+                        position: 'fixed',
+                        top: coords.top !== undefined ? `${coords.top}px` : undefined,
+                        bottom: coords.bottom !== undefined ? `${coords.bottom}px` : undefined,
+                        left: coords.left !== undefined ? `${coords.left}px` : undefined,
+                        right: coords.right !== undefined ? `${coords.right}px` : undefined,
+                        width: coords.width !== undefined ? `${coords.width}px` : undefined,
+                        maxHeight: coords.maxHeight !== undefined ? `${coords.maxHeight}px` : '75vh',
+                        zIndex: 99999,
+                    }}
+                    className="overflow-y-auto rounded-xl border border-border bg-popover p-3.5 shadow-2xl text-popover-foreground animate-in fade-in-0 zoom-in-95 duration-150 ring-1 ring-border/50"
+                    onClick={(e) => e.stopPropagation()}
                 >
                     <div className="flex items-start justify-between gap-2 border-b border-border/60 pb-2">
                         <div>
@@ -348,7 +340,8 @@ export default function InPlaceEvidencePopover({
                             </button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </span>
     )

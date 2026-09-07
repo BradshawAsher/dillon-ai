@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { CheckCircle, ChevronLeft, ChevronRight, Clock, Compass, Download, FileQuestion, FileText, Filter, FolderPlus, Handshake, Landmark, Layers, Lightbulb, Loader2, MessageCircleQuestion, RefreshCw, RotateCw, Scale, Search, ShieldAlert, Sparkles, TriangleAlert } from 'lucide-react'
+import { Calendar, CheckCircle, ChevronLeft, ChevronRight, ClipboardCheck, Clock, Compass, Download, FileQuestion, FileText, Filter, FolderPlus, Handshake, Landmark, Layers, Lightbulb, Loader2, MessageCircleQuestion, RefreshCw, RotateCw, Scale, Search, ShieldAlert, Sparkles, TriangleAlert } from 'lucide-react'
 
 import type { DealModel, ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { isActiveSubmissionStatus, isTerminalSubmissionStatus, type SubmissionHistoryItem } from '../utils/submissionHistory'
@@ -1681,6 +1681,40 @@ export default function ProjectSynthesisCard({
                                     >
                                         Review negotiation levers
                                     </button> : null}
+                                    {onSwitchTab ? (
+                                        <>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    onSwitchTab('negotiation')
+                                                    window.setTimeout(() => {
+                                                        const el = document.getElementById('negotiation-timeline')
+                                                        el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                                                    }, 150)
+                                                }}
+                                                className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background/90 px-3.5 py-1.5 text-xs font-semibold text-foreground hover:bg-muted hover:border-primary/40 transition-colors shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
+                                                title="View 17-week sequential milestone roadmap from LOI to close"
+                                            >
+                                                <Calendar className="h-3.5 w-3.5 text-primary shrink-0" />
+                                                Timeline to close
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    onSwitchTab('diagnostics')
+                                                    window.setTimeout(() => {
+                                                        const el = document.getElementById('diag-closing-checklist')
+                                                        el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                                                    }, 150)
+                                                }}
+                                                className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background/90 px-3.5 py-1.5 text-xs font-semibold text-foreground hover:bg-muted hover:border-primary/40 transition-colors shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
+                                                title="View 12-item M&A closing readiness checklist"
+                                            >
+                                                <ClipboardCheck className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                                Closing checklist
+                                            </button>
+                                        </>
+                                    ) : null}
                                 </div>
                             </div>
 

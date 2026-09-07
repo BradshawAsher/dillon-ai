@@ -12,7 +12,7 @@ import DealActionItemsCard from '../DealActionItemsCard'
 import SellerQuestionsCard from '../SellerQuestionsCard'
 import DealWarRoomCard from '../DealWarRoomCard'
 import { sumMeasuredCost } from '../../utils/costModel'
-import { isRowMatchingProject } from '../../utils/projectWorkspace'
+import { isRowMatchingProject, isGenericName } from '../../utils/projectWorkspace'
 
 import { lazyWithRetry } from '../../utils/lazyWithRetry'
 const DealMemoView = lazyWithRetry(() => import('../DealMemoView'))
@@ -128,13 +128,21 @@ export function OverviewWorkspaceView({
                 const synthCost = totalSynthCost > 0 ? totalSynthCost : measured.synthesisCost > 0 ? measured.synthesisCost : activeSynthRuns * 0.12
                 const totalDealCost = docCost + synthCost
 
+                const effectiveProjectName = (
+                    (activeProjectSynthesis?.projectName && !isGenericName(activeProjectSynthesis.projectName) ? activeProjectSynthesis.projectName : '') ||
+                    (activeProjectSynthesis?.companyName && !isGenericName(activeProjectSynthesis.companyName) ? activeProjectSynthesis.companyName : '') ||
+                    dealName ||
+                    suggestedProjectName ||
+                    'Active Diligence Target'
+                )
+
                 return (
                     <>
                         <div id="overview-snapshot" className="scroll-mt-6">
                             <DealSummaryBanner
                                 model={hydratedDealModel}
                                 synthesis={activeProjectSynthesis}
-                                projectName={dealName || suggestedProjectName}
+                                projectName={effectiveProjectName}
                                 docCost={docCost}
                                 totalCost={totalDealCost}
                                 onSwitchTab={setActiveWorkspaceTab}
@@ -145,7 +153,7 @@ export function OverviewWorkspaceView({
                             <DealMemoView
                                 model={hydratedDealModel}
                                 synthesis={activeProjectSynthesis}
-                                projectName={dealName || suggestedProjectName}
+                                projectName={effectiveProjectName}
                                 documents={activeProjectDocuments}
                                 onSwitchTab={setActiveWorkspaceTab}
                             />
@@ -165,7 +173,7 @@ export function OverviewWorkspaceView({
                         </div>
                         <DealWarRoomCard
                             projectId={activeProjectId || 'default-project'}
-                            projectName={dealName || suggestedProjectName}
+                            projectName={effectiveProjectName}
                             model={hydratedDealModel}
                             synthesis={activeProjectSynthesis}
                             documents={activeProjectDocuments}

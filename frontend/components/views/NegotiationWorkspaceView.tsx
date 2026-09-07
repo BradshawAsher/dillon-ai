@@ -11,6 +11,7 @@ import AcquisitionTimelineCard from '../AcquisitionTimelineCard'
 import InvestorReadinessCard from '../InvestorReadinessCard'
 import TermSheetCard from '../TermSheetCard'
 import DDRequestListCard from '../DDRequestListCard'
+import type { DealModel } from '../../hooks/backend/diligence'
 
 type NegotiationWorkspaceViewProps = {
     activeProjectSynthesis: any
@@ -19,6 +20,7 @@ type NegotiationWorkspaceViewProps = {
     activeProjectDocuments: any[]
     dealName: string
     suggestedProjectName: string
+    onUpdateDealModel?: (updated: Partial<DealModel>) => void
 }
 
 export function NegotiationWorkspaceView({
@@ -28,6 +30,7 @@ export function NegotiationWorkspaceView({
     activeProjectDocuments,
     dealName,
     suggestedProjectName,
+    onUpdateDealModel,
 }: NegotiationWorkspaceViewProps) {
     return (
         <section className="space-y-6">
@@ -54,7 +57,11 @@ export function NegotiationWorkspaceView({
             </div>
             <div id="negotiation-playbook" className="scroll-mt-6">
                 <div id="negotiation-levers" className="scroll-mt-6">
-                    <NegotiationPlaybook synthesis={activeProjectSynthesis} model={hydratedDealModel} />
+                    <NegotiationPlaybook
+                        synthesis={activeProjectSynthesis}
+                        model={hydratedDealModel}
+                        onUpdateDealModel={onUpdateDealModel}
+                    />
                 </div>
             </div>
             <div id="negotiation-impact" className="scroll-mt-6">

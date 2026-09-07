@@ -64,4 +64,26 @@ describe('computeFloatingPosition', () => {
         expect(coords.maxHeight).toBeGreaterThanOrEqual(160)
         expect(coords.maxHeight).toBeLessThanOrEqual(520)
     })
+
+    it('clamps maxHeight when space above is tight so it never pushes off the top of the viewport', () => {
+        // Space below is very tight (30px), space above is 120px
+        const coords = computeFloatingPosition({
+            ...base,
+            rect: { top: 120, bottom: 770, left: 200 },
+        })
+        expect(coords.placement).toBe('top')
+        // Available above is 120 - 8 (margin) - 16 (padding) = 96px
+        expect(coords.maxHeight).toBe(96)
+    })
+
+    it('clamps maxHeight when space below is tight so it never pushes off the bottom of the viewport', () => {
+        // Space above is 20px, space below is 150px
+        const coords = computeFloatingPosition({
+            ...base,
+            rect: { top: 20, bottom: 650, left: 200 },
+        })
+        expect(coords.placement).toBe('bottom')
+        // Available below is 800 - 650 - 8 (margin) - 16 (padding) = 126px
+        expect(coords.maxHeight).toBe(126)
+    })
 })
