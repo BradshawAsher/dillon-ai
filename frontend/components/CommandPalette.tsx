@@ -404,6 +404,15 @@ export default function CommandPalette({
             badge: 'Diligence'
         },
         {
+            id: 'card-public-web-research',
+            label: 'Public & Web Intelligence',
+            icon: <Search className="h-4 w-4" />,
+            action: () => onSelectTab('diagnostics', 'diag-public-data'),
+            group: 'Diligence & Forensic Accounting',
+            keywords: ['web', 'research', 'website', 'public intelligence', 'search'],
+            badge: 'Risk & Playbook'
+        },
+        {
             id: 'card-revenue-bridge',
             label: 'Revenue Bridge & Value Creation Growth Levers',
             icon: <TrendingUp className="h-4 w-4 text-emerald-500" />,

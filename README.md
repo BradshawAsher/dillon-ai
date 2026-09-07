@@ -28,6 +28,8 @@ MergeWorks supports three complementary diligence depth levels depending on tran
 
 ## Key Documentation Links
 
+- **[Web Search Status, Setup & Pricing](docs/WEB_SEARCH_SETUP.md)** — Live web search is not yet available; compares Brave, OpenAI, and Tavily and explains future hosted/BYOK integration.
+
 - **[System Architecture & Technical Specification (`ARCHITECTURE.md`)](ARCHITECTURE.md)** — Comprehensive architecture diagrams, data flow sequence charts, component deep-dives, and interview masterclass talking points.
 - **[Concurrency, Capacity & Stress Benchmarks (`CAPACITY_LIMITS.md`)](test_sets/stress_reports/CAPACITY_LIMITS.md)** — Empirical 4-tier concurrency matrix (500 connections @ 1.18s P95, 445 RPS DB throughput), Little's Law think-time proofs, and LLM worker capacity (15–25 concurrent documents / ~3–4 simultaneous active batches on a single key, with linear BYOK scaling).
 - **[Upload and Batch Recovery](docs/UPLOAD_AND_BATCH_RECOVERY.md)** — Resumable large-file uploads, verified n8n handoff, failure recovery, and batch count/timer rules.

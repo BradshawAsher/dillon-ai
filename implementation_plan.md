@@ -1086,3 +1086,99 @@ Implement three interconnected forensic capabilities:
 ## 5. Explicit Non-Goals
 - No modification of n8n production LLM model configurations or credentials.
 - No automated `git commit` or `git push` without user instruction.
+
+---
+
+# Context-Aware AI Explanations and Honest Enrichment Fixes (2026-09-07)
+
+## 1. Root Causes
+
+- Shared card actions open the deal chatbot, but several prompts contain only the card title and omit the values currently visible to the user.
+- Some project-level synthesis groups do not open the evidence drawer, so their findings cannot reach the shared Explain with AI action.
+- The collapsed tab tutorial banner hides both tab information and Ask AI controls.
+- Seller and management response analysis can be triggered before the user has entered a substantive response.
+- Web enrichment currently contains deterministic placeholder claims presented as if they were researched facts in both frontend and n8n code.
+- Industry benchmark behavior is duplicated across components and the chatbot, and its internally maintained illustrative values lack explicit provenance and validation warnings.
+
+## 2. Frontend Changes
+
+- **[MODIFY] `frontend/components/common/CardInfoPopover.tsx`**
+  - Capture a bounded, cleaned snapshot of the containing card's visible text and include it with the card definition, calculation, benchmark, and active project in the chatbot prompt.
+  - Preserve an optional explicit context override for components that are not rendered inside a standard card.
+- **[MODIFY] `frontend/components/walkthrough/WorkspaceTabTutorialBanner.tsx`**
+  - Keep tab information and Ask AI available in collapsed mode.
+- **[MODIFY] `frontend/components/SellerQuestionsCard.tsx` and `frontend/components/ManagementQuestionTracker.tsx`**
+  - Disable response analysis until at least one answer or analyst input exists, while retaining partial-response analysis.
+- **[MODIFY] project synthesis/evidence components**
+  - Route project-level red, yellow, green, negotiation, and summary outputs into the evidence drawer so each can use the contextual Explain with AI action.
+- **[MODIFY] `frontend/components/common/DataOriginBadge.tsx`**
+  - Make non-clickable provenance badges keyboard-accessible and able to open their explanation popover; remove the unreachable disabled-button state.
+
+## 3. Enrichment and Benchmark Changes
+
+- **[MODIFY] `frontend/components/DealChatPanel.tsx` and `frontend/components/PublicDataEnrichmentCard.tsx`**
+  - Remove fabricated review counts, ratings, traffic, technology, and legal-clearance claims.
+  - Route enrichment requests through the server research tool and return an explicit unavailable/not-configured result when real search is not available.
+- **[MODIFY] `frontend/utils/verticalBenchmarks.ts`, `frontend/components/IndustryBenchmarksCard.tsx`, and chatbot benchmark handling**
+  - Use one benchmark profile source, infer the likely sector from project context, and label all figures as illustrative internal ranges requiring analyst validation.
+  - Add provenance and as-of metadata; never describe these ranges as live market research.
+
+## 4. Live n8n Workflow
+
+- **[MODIFY] Deal chatbot workflow `LBZVN8zeFT03Wn12`**
+  - Replace the placeholder Code Tool with a real search-backed tool available through n8n Gateway or an existing configured credential.
+  - Require returned URLs/snippets, disclose uncertainty, and prohibit unsupported claims such as “no litigation found.”
+  - Preserve all current chat model, memory, BYOK, retry, and fallback nodes and connections.
+  - Publish and re-read the active workflow after validation. If a real search credential cannot be attached safely, remove/disable fabricated output and report the exact remaining credential requirement instead of publishing fake data.
+
+## 5. Verification
+
+- Focused DealChatPanel, seller-question, management-question, evidence-drawer, benchmark, and provenance tests.
+- Full Vitest suite, `npx tsc --noEmit`, and production build.
+- Browser verification of a shared card, collapsed tutorial banner, response-analysis guard, evidence-drawer action, and enrichment request.
+- n8n configuration validation plus active-version verification after publish.
+
+## 6. Non-Goals
+
+- No changes to existing n8n model nodes, retry/fallback branches, credentials, or provider routing.
+- No paid/live enrichment execution during automated tests.
+- No commit or push unless requested separately.
+
+## 7. Implementation Status After Inspection (2026-09-07)
+
+This section records completed work separately from the proposal above. Frontend changes remain local and uncommitted; they are not deployed to Vercel.
+
+| Planned area | Verified implementation state |
+| --- | --- |
+| Shared card explanations | Local: card definition, formula and bounded visible card text are sent to chat. Standard Card containers now have a stable context attribute; explicit aiContext is supported. Input-only values still require explicit context. |
+| Collapsed tab banner | Local: information and Ask AI controls now remain available, including an accessible label for the compact button. |
+| Seller/management response analysis | Local: exact written responses are included; analysis requires a response or thesis-impact note. An answered checkbox alone does not count as written evidence. |
+| Evidence explanations | Local: synthesis flags, questions, negotiation levers, executive recommendation, and the document AI summary now expose the evidence action. The drawer forwards excerpt, source, status, provenance and formula. Exhaustive coverage across every custom output remains unverified. |
+| Provenance badge interaction | Local: badges open via keyboard/click; the popup stays reachable on focus and supports Escape. |
+| Public research | Fabricated facts removed locally and from the published n8n tool. Real search remains UNIMPLEMENTED. The tool returns search_provider_not_configured. No search provider credentials are available through MCP. |
+| Industry benchmarks | Local card and direct/BYOK tool share the 11-profile internal ranges. They are labeled illustrative; marketAsOf is null because no market source date exists. The hosted n8n tool still has the older six-sector table and needs synchronization. No sourced benchmark database exists. |
+| Deployment/testing | Latest typecheck passed. Production build passed earlier in this work. After correcting the stale scenario-label assertion to test provenance semantics, the full Vitest suite passed: 134 files, 1246 tests. The focused chat/benchmark/lineage run also passed: 54 tests. Browser verification of the final edits remains pending. |
+
+### Confirmed Live Chat State
+
+- Chat Assistant workflow: `LBZVN8zeFT03Wn12`.
+- Published safe-unavailable version: `77f03ba6-c54a-436e-87e0-b2c9c1d0c76a`; publish succeeded and version contents were re-read.
+- Latest recorded executions `70657`, `70656`, and `70654` succeeded before this publish. No new live LLM run was made to test the published fallback.
+- Full workflow-details inspection still reports unresolved header-auth credential `zBezOWIFrHJ7zVG1`. Version/history reads succeed. This is not proof that production webhook authentication fails; no credentials were changed.
+
+### Remaining Research Implementation
+
+### Temporary Website Label and Setup Guide (2026-09-07)
+
+- Keep live search unavailable: label the public research card and chat composer, disable research submission, and remove the inactive dispatch handler.
+- Add `docs/WEB_SEARCH_SETUP.md` with ranked Brave/OpenAI/Tavily options, dated official pricing, shared hosted/BYOK architecture, setup steps and rollout checks. Link it from README.
+- Verify unavailable markup with an existing component integration test, run frontend tests/typecheck/build, and commit only this task's files on a `codex/` branch before pushing. Preserve unrelated working-tree edits.
+- Verification: 134 test files / 1,247 tests passed, frontend typecheck passed, and production build passed (existing large-chunk warning). Final browser verification and production deployment are not claimed by these checks.
+
+### Future Provider Work
+
+1. Configure a search provider. A Brave Search Agent tool validates, but the attempted draft node received no automatically assigned Gateway credential and was removed before publication. A configured Brave API credential is the simplest direct Agent-tool option. OpenAI Responses web search is an alternative using an existing OpenAI account, with additional integration work.
+2. Provide one authenticated server research endpoint/tool contract to both hosted chat and direct/BYOK chat. Direct chat currently bypasses n8n when a custom key is present, so an n8n-only search change is insufficient.
+3. Return real search results with URLs, retrieval time, query and explicit unknowns. Keep provider failure visible; never synthesize ratings or legal clearance.
+4. Synchronize the hosted benchmark tool and agent instructions with the shared internal profile/provenance contract; do not label internal values as verified market medians.
+5. Test search success, empty results and provider failure with mocks, then run one bounded live search once a provider is configured. Complete browser verification and deploy frontend changes separately.

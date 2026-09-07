@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Check, CheckSquare, Copy, Download, MessageSquareText, Plus, Square, Trash2, RotateCcw, Edit2 } from 'lucide-react'
+import { Bot, Check, CheckSquare, Copy, Download, MessageSquareText, Plus, Square, Trash2, RotateCcw, Edit2 } from 'lucide-react'
 
 import type { ProjectSynthesisItem, DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
@@ -159,7 +159,26 @@ export default function SellerQuestionsCard({ synthesis, model }: Props) {
         URL.revokeObjectURL(url)
     }
 
+    const handleAskAiToAnalyze = () => {
+        const formattedQnA = questions.map((q, i) => {
+            const ans = q.notes?.trim() ? q.notes.trim() : (q.answered ? '(Marked answered without written note)' : '(No response recorded yet)')
+            return `Question ${i + 1}: ${q.question}\nSeller Response: ${ans}`
+        }).join('\n\n')
+
+        const promptText = `Here are the questions and responses collected so far from the seller / broker for ${projectName}:\n\n${formattedQnA}\n\nPlease perform an in-depth adversarial diligence review of these seller responses:\n1. Identify credibility risks, evasive answers, or inconsistencies with typical SMB accounting and the company's financial model.\n2. Detail the specific risks exposed for a buyer (e.g. key-person dependency, customer churn, unrecorded liabilities, overstated add-backs).\n3. What specific follow-up questions, documentary evidence demands, or contract protections (indemnity caps, special reps & warranties, purchase price escrow holdbacks) should we require?`
+
+        window.dispatchEvent(
+            new CustomEvent('mergeworks:open-chat-ask', {
+                detail: {
+                    question: promptText,
+                    topic: 'Seller Responses Analysis',
+                },
+            })
+        )
+    }
+
     const answeredCount = questions.filter(q => q.answered).length
+    const hasSellerResponse = questions.some(q => Boolean(q.notes?.trim()))
 
     return (
         <Card className="overflow-hidden">
@@ -171,6 +190,16 @@ export default function SellerQuestionsCard({ synthesis, model }: Props) {
                         <CardInfoPopover cardId="seller-questions" />
                     </div>
                     <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={handleAskAiToAnalyze}
+                            disabled={!hasSellerResponse}
+                            className="inline-flex items-center gap-1.5 rounded-md border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary hover:bg-primary/20 hover:border-primary/50 transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                            title={hasSellerResponse ? 'Ask AI to analyze seller responses and deal impact' : 'Write at least one seller response first'}
+                        >
+                            <Bot className="h-3.5 w-3.5" />
+                            <span>Ask AI to Analyze</span>
+                        </button>
                         <Badge variant="secondary">{answeredCount}/{questions.length} answered</Badge>
                         <button
                             type="button"

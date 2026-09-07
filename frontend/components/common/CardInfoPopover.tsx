@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { Info, X, HelpCircle, Calculator, ShieldAlert, Target } from 'lucide-react'
+import { Info, X, HelpCircle, Calculator, ShieldAlert, Target, Bot } from 'lucide-react'
 import { getCardDescription, CardDescription } from './cardDescriptions'
 import { useFloatingPosition } from '../../hooks/useFloatingPosition'
 
@@ -13,6 +13,7 @@ interface CardInfoPopoverProps {
     benchmark?: string
     className?: string
     buttonSize?: 'xs' | 'sm' | 'default'
+    aiContext?: string
 }
 
 export default function CardInfoPopover({
@@ -24,6 +25,7 @@ export default function CardInfoPopover({
     benchmark: customBenchmark,
     className = '',
     buttonSize = 'sm',
+    aiContext,
 }: CardInfoPopoverProps) {
     const [isOpen, setIsOpen] = useState(false)
     const popoverRef = useRef<HTMLDivElement | null>(null)
@@ -100,6 +102,35 @@ export default function CardInfoPopover({
         xs: 'h-5 w-5 p-0',
         sm: 'h-6 w-6 p-0',
         default: 'h-7 w-7 p-0',
+    }
+
+    const handleAskAi = (e: React.MouseEvent) => {
+        e.stopPropagation()
+        const containingCard = buttonRef.current?.closest('[data-ai-explain-context], .rounded-xl.border.bg-card')
+        const visibleCardText = (aiContext || (containingCard as HTMLElement | null)?.innerText || containingCard?.textContent)
+            ?.replace(/\s+/g, ' ')
+            .replace(/Ask AI to Explain/gi, '')
+            .trim()
+            .slice(0, 4000)
+        setIsOpen(false)
+        const projectName = (typeof window !== 'undefined' && (window as any).__mergeworks_active_project_name) || 'this deal'
+        const question = `Explain the "${title}" card for ${projectName} using the exact context below.
+
+CARD DEFINITION: ${whatItIs}
+${calculation ? `CALCULATION / SOURCE: ${calculation}` : ''}
+${diligenceImpact ? `DILIGENCE IMPACT: ${diligenceImpact}` : ''}
+${benchmark ? `TARGET / BENCHMARK: ${benchmark}` : ''}
+${visibleCardText ? `VISIBLE CARD CONTENT: ${visibleCardText}` : 'VISIBLE CARD CONTENT: No live card values were available. Say which values you need instead of inventing them.'}
+
+Explain the important values and findings, identify calculation or evidence risks, and recommend concrete diligence questions or contract protections. Clearly distinguish documented facts, calculations, assumptions, and benchmarks. Do not invent missing values.`
+        window.dispatchEvent(
+            new CustomEvent('mergeworks:open-chat-ask', {
+                detail: {
+                    question,
+                    topic: title,
+                },
+            })
+        )
     }
 
     return (
@@ -211,6 +242,18 @@ export default function CardInfoPopover({
                                     <span><strong>Target / Benchmark:</strong> {benchmark}</span>
                                 </div>
                             )}
+
+                            {/* Ask AI to Explain Button */}
+                            <div className="pt-2 mt-2 border-t border-border/50">
+                                <button
+                                    type="button"
+                                    onClick={handleAskAi}
+                                    className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 px-3 py-1.5 text-[11px] font-bold text-primary hover:bg-primary/20 hover:border-primary/50 transition-all cursor-pointer shadow-2xs"
+                                >
+                                    <Bot className="h-3.5 w-3.5" />
+                                    <span>Ask AI to Explain</span>
+                                </button>
+                            </div>
                         </div>
                     </div>,
                     document.body
@@ -218,4 +261,3 @@ export default function CardInfoPopover({
         </div>
     )
 }
-
